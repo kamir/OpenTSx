@@ -1,0 +1,1129 @@
+\documentclass[fontsize=11pt, twoside, a4paper]{scrartcl}
+\usepackage{geometry}
+\geometry{left=30mm, right=20mm}
+\usepackage{fancyhdr}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[singlespacing]{setspace}
+\usepackage[ngerman]{babel}
+\usepackage{csquotes}
+%\usepackage[style=numeric,maxnames=7]{biblatex}
+\usepackage[citestyle=numeric,bibstyle=numeric,maxnames=7]{biblatex}
+\usepackage{enumitem}
+\usepackage[]{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+	\definecolor{hellgruen}{rgb}{0.6,0.9,0.4}
+	\definecolor{hellblau}{rgb}{0.6,0.8,0.9}
+	\definecolor{hellgelb}{rgb}{0.9,0.9,0.0}
+\usepackage{colortbl}
+\usepackage{caption}
+\usepackage{bibgerm}
+\usepackage{textcomp}
+\usepackage{prettyref}
+\usepackage{titleref}
+%%% Für Abschnitte %%%
+\newrefformat{sec}{siehe Abschnitt~\ref{#1} \ auf Seite \pageref{#1}}
+\usepackage{graphicx}
+\usepackage{epsfig}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{lastpage}
+\usepackage{float}
+\usepackage{tocloft}
+\tocloftpagestyle{empty}
+
+\pagestyle{fancy}
+\fancyhf{}
+%\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+%\renewcommand{\subsectionmark}[1]{\markright{\thesubsection\ #1}}
+%\fancyhead[L]{\nouppercase{\sl{\rightmark}}}
+\fancyhead[RE]{\nouppercase{\sl{\leftmark}}}
+\fancyhead[LO]{\nouppercase{\sl{\leftmark}}}
+\fancyfoot[L]{}
+\fancyfoot[C]{}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt} %Trennungslinie der Kopfzeile wird entfernt
+\renewcommand{\footrulewidth}{0pt} %Trennungslinie der Fußzeile wird entfernt
+\addtocontents{toc}{\protect\thispagestyle{fancy}}
+
+\addbibresource{BA-Literaturverzeichnis.bib}
+\DeclareFieldFormat[article,incollection]{title}{#1}  %titel nicht in AnfÃŒhrungszeichen
+\DeclareFieldFormat[thesis]{title}{\textit{#1}}  %titel von bachelor- oder phd-thesis kursiv
+\DeclareFieldFormat[article]{volume}{\textbf{#1}} %volume von article fett
+\DeclareFieldFormat{urldate}{(\bibstring{abgerufen am}\space#1)}
+\renewcommand*{\mkbibnamelast}[1]{\textsc{#1}}	% nachnamen in small caps
+\renewcommand*{\mkbibnamefirst}[1]{\textsc{#1}}	% vornamen in small caps
+\DefineBibliographyStrings{ngerman}{andothers={et\addabbrvspace al\adddot}} % ändert die Formatierung von "and others"
+\setlength{\bibitemsep}{12pt} % regelt dem Abstand zwischen den Einträgen im Literaturverzeichnis
+
+ \renewbibmacro*{volume+number+eid}{%
+      \printfield{volume}%
+      \setunit*{\addcomma\space}% NEW
+      \printfield{number}%
+      \setunit{\addcomma\space}%
+      \printfield{eid}}
+
+\begin{document}
+\pagestyle{empty}
+\begin{center}\begin{Huge}
+\textit{Bachelorarbeit}
+\end{Huge}\end{center}
+\begin{verbatim}
+
+\end{verbatim}
+\begin{center}\begin{Huge}
+Rekonstruktion komplexer Netzwerke\\
+ mittels Kreuzkorrelationsmethode
+\end{Huge}\end{center}
+\begin{verbatim}
+
+
+
+
+\end{verbatim}
+\begin{center}
+\begin{Large}
+\textbf{vorgelegt durch:}\\
+Berit Schreck
+\begin{verbatim}
+
+\end{verbatim}
+\textbf{Betreuer:}\\
+PD Dr. Jan W. Kantelhardt\\
+\end{Large}\end{center}
+\begin{verbatim}
+
+
+\end{verbatim}
+\begin{center}
+\includegraphics[scale=0.75]{logo.jpg}
+\end{center}
+\begin{verbatim}
+
+
+\end{verbatim}
+\begin{center}\begin{Large}
+Institut für Physik\\
+Naturwissenschaftliche Fakultät II\\
+Martin-Luther-Universität Halle-Wittenberg\\
+\end{Large}\end{center}
+
+\newpage
+\begin{verbatim}
+
+\end{verbatim}
+\newpage
+%\thispagestyle{empty}
+\pagenumbering{Roman}
+\tableofcontents
+
+\newpage
+\begin{verbatim}
+
+\end{verbatim}
+\newpage
+\pagenumbering{arabic}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.5pt}
+\section{Einleitung}
+\label{sec:St8}
+Adolphe Quetelet gilt als Begründer der Sozialphysik \cite{AdolpheQuetelet}, welche sich mit sozialen Fragestellungen beschäftigt und diese mit Hilfe mathematischer und physikalischer Modelle (bzw. naturwissenschaftlichen Gesetzen) beschreibt. Man fragt sich jedoch zu Recht, ob diese Vorgehensweise ohne Einschränkungen möglich ist. Frank Schweitzer meint dazu, dass es\, \glqq \,\ldots immer mit einer Abstraktion des Problems verbunden [ist], die bestimmte Aspekte der Realität außer Acht lässt.\grqq \cite{FrankSchweitzer}.\\
+Auf Grund des gestiegenen Interesse sowohl in der Wissenschaft\footnote{Es entstanden eigene wissenschaftliche Zeitschriften (z.B. \, \glqq Dynamics of Socio-Economic Systems\grqq\,) und  die bereits etablierten passten ihr Publikationsspektrum entsprechend an.} als auch in der Öffentlichkeit\footnote{Der \,\glqq Harvard Business Manager\grqq\,veröffentlichte einen Artikel mit dem Titel \, \glqq Was ist Soziophysik?\grqq\, , weitere Artikel sind z.B. bei \,\glqq Sueddeutsche\grqq\, zu finden.}, wurde am 25.3.2001 die Gründung eines neuen Arbeitskreises durch den Vorstandsrat der Deutschen Physikalischen Gesellschaft (DPG) beschlossen \cite{GruendungSOE}, welcher später ein eigener Fachverband wurde.
+Ab diesem Zeitpunkt gibt es einen eigenen Fachverband für Sozio-ökonomische Systeme (SOE), dessen Ziele und Anwendungsgebiete im Bereich der sozialen Systeme unter anderem beinhaltet: die Modellierung sozialer Interaktionen, die Erforschung von Gruppendynamik und Verhalten einer Menge, sowie Koordination von Entscheidungen und Wählerverhalten \cite{SOE}. Insbesondere Statistische Physiker beschäftigen sich mit komplexen Netzwerken in sozioökonomischen Systemen.\\
+Netzwerk ist der häufig gebrauchte Begriff für das mathematische Konstrukt eines Graphen \cite{ComplexNetworks}, die beiden Begriffe werden synonym verwendet. Ein Netzwerk besteht aus einer Menge von Knoten und einer Anzahl von Verbindungen, auch Kanten genannt. Jedes Element ist durch einen Knoten repräsentiert; wir werden im weiteren Verlauf sehen, dass die einzelnen Elemente in dieser Arbeit Wikipedia-Artikel sind. Deren Verbindung ist durch die Links gegeben, wobei die Linkstärke angibt, wie stark zwei Artikel miteinander korreliert sind, d.h. wie ähnlich sie sich sind, bezogen auf das Zugriffsverhalten der Nutzer. In den letzten Jahren gab es eine bemerkenswerte Entwicklung in der Erforschung von Netzwerken. Während zuvor Netzwerke mit maximal einigen hundert Knoten betrachtet wurden, konnte man nun, auf Grund der neusten technischen Standards, Millionen oder sogar Billionen Knoten starke Netzwerke analysieren \cite{Newman}. Aber warum ist es nun so wichtig, den Aufbau eines Netzwerks zu charakterisieren? Weil die Struktur immer auch die Funktion beeinflusst und umgekehrt \cite{ExploringNetworks}.In \cite{Boccaletti} findet sich eine Einteilung der verschiedenen Arten von Netzwerken anhand ihrer Eigenschaften. Durch statistische Methoden soll die Frage geklärt werden: \glqq Wie kann ich beschreiben wie ein Netzwerk aussieht, wenn ich es nicht wirklich sehen kann?\grqq \cite{Newman}.\\
+Netzwerke findet man in vielen Themenbereichen, wie z.B. in der Geophysik \cite{ChaoticDynamics} oder in dem Finanzsektor \cite{EconomicIndex}. Es gibt auch physikalische Beispiele für Netzwerke, z.B. im Fachgebiet der Kondensierten Materie \cite{CondensedMatter}. Ein gutes Beispiel für ein Informationsnetzwerk ist Netzwerk der Zitate innerhalb wissenschaftlicher Veröffentlichungen \cite{Egghe}. Zu den technologischen Netzwerken zählt die Erforschung von Stromnetzen \cite{Watts}. Metabolische Netzwerke \cite{Jeong} werden im Rahmen von biologischen Netzwerken untersucht. Die Idee physiologische Funktionen mit Hilfe eines Netzwerkes darzustellen wurde in \cite{Physiology} umgesetzt. Eine gute Übersicht über die verschiedenen Bereiche, in denen Netzwerke erforscht werden, sowie zugehörige Publikationsbeispiele bietet \cite{Newman}\footnote{Siehe dazu vor allen Dingen S.182 in diesem Artikel.}. Soziale Netzwerke zeichnen sich dadurch aus, dass die sozialen Beziehungen zwischen einer bestimmten Anzahl an Personen oder deren Gruppen abstrahiert beschrieben werden. In der Literatur gibt es eine Vielfalt an unterschiedlichen Beziehungen, die Gegenstand einer wissenschaftlichen Arbeit sind, so z.B. die Muster von Kontakten und wechselseitigen Bindungen zwischen Menschen \cite{Scott,Wasserman}. Weitere Beispiele sind die geschäftlichen Beziehungen zwischen Firmen \cite{Mariolis,Mizruchi}, sowie Verwandtschaftsverhältnisse auf Grund ehelicher Verknüpfungen zwischen Familien \cite{Padgett}.\\[\baselineskip]
+Können Netzwerke als \,\glqq komplex\grqq\, bezeichnet werden? Unter \, \glqq Komplexität\grqq\, versteht man, dass die Eigenschaften eines Systems durch isolierte Betrachtung der einzelnen Komponenten nicht erfassbar sind. In der Abstraktion des Modells werden einige Wechselwirkungen weggelassen. Zusätzlich wird die Beschreibung erschwert durch Eigenschaften komplexer Systeme wie z.B. nicht-lineare Wechselwirkungen und Rückkopplung.\\
+Als anschauliches Beispiel für ein komplexes Netzwerk kann das Gehirn genannt werden. Die Funktion eines einzelnen Neurons mit samt seinem Axon ist bereits gut erforscht, aber alleine kann es nur einen elektrischen Impuls weiterleiten. Erst die Kombination mehrerer Neuronen und das daraus entstehende Netzwerk ergeben komplexe Funktionen, wie Lernen und Fühlen. Dabei reichen schon 302 Nervenzellen aus, so wenige besitzt der Fadenwurm \cite{SpektrumWissenschaft}. \\[\baselineskip]
+Während man in der Theorie von \textit{regulären Netzwerken} und \textit{zufälligen Graphen} spricht, so zeichnen sich reale Netzwerke dadurch aus, dass sie \glqq zwischen diesen Extremen von Ordnung und Zufälligkeit\grqq \, liegen \cite{ExploringNetworks}. Dadurch besitzen \textit{komplexe Netzwerke} nicht-triviale topologische Eigenschaften. Zur Beschreibung von Graphen wurden in der Netzwerkforschung bzw. in der Graphentheorie verschiedene grundlegende Begriffe eingeführt, welche im Ergebnisteil \prettyref{sec:St6} ausführlich erläutert werden.
+Eine wichtige Frage, im Zuge der größer werdenden Netzwerke, die nun analysiert werden konnten, war: Wie lässt sich solch ein großes Netzwerk (übersichtlich) darstellen? \cite{Newman}. Eine einfache graphische Darstellung von Knoten und Kanten war in diesem Fall, im Gegensatz zur Analyse von Kommunikationswegen zwischen kleinen Gruppen von Menschen \cite{ValdisKrebs}, nicht mehr zielführend.\\[\baselineskip]
+
+In dieser Arbeit wird anhand des Beispiels der Online-Enzyklopädie \,\glqq Wikipedia\grqq \, ein soziales Netzwerk untersucht, dazu werden die Zugriffsstatistiken einzelner Seiten verwendet. Unter einem Zugriff versteht man das Öffnen einer Seite im Web-Browser. Jeweils zwei Artikel werden zu einem Indexpaar zusammengefasst, dieses wird dann mit Hilfe der mathematischen Methode \textit{Kreuzkorrelation} auf die Ähnlichkeit des Zugriffsverhalten bezogen auf beide Artikel untersucht. Der Wert der Ähnlichkeit wird dann \,\glqq Linkstärke\grqq\, genannt, welche die Stärke der Verbindung dieser Seiten beschreibt. Die Linkstärke liegt im Wertebereich $[-1:1]$, wobei ein Wert von $1,0$ eine maximale Kreuzkorrelation anzeigt. Für die Filterung wird ein Schwellenwert festgelegt. Die verbleibenden Artikel und deren Verbindungen können dann mit Hilfe von Netzwerken graphisch dargestellt werden, sowie mit Hilfe der Graphentheorie untersucht und beschrieben werden.\\
+Die gesamte Arbeit gliedert sich in fünf Kapitel. Nach der Einleitung werden im zweiten Kapitel die Grundlagen erläutert. Zum Einen wird die Online-Enzyklopädie \,\glqq Wikipedia\grqq\, vorgestellt, zum Anderen werden die verwendeten Daten beschrieben und deren Einbettung in die SQL-Datenbank. Die Auswahl der betrachteten Seiten wird im 3. Kapitel behandelt, dabei werden besonders die Namensraum-Verteilung und die ausgewählten Pakete behandelt. Die mathematischen Methoden der Zeitreihenanalyse werden im Kapitel 4 erläutert. Dieses Kapitel ist in drei Unterabschnitte gegliedert, wobei auf die Bereinigung vom Tages-/Wochengang, die Kreuzkorrelation und die statistischen Tests näher eingegangen wird. Im Ergebnis-Kapitel werden die verschiedenen Diagramme präsentiert und interpretiert. Nach der Charakterisierung der Ergebnisse erfolgt die Darstellung der Netzwerke. Abschließend findet ein Vergleich mit statischen Netzwerken statt. In letzten zwei Kapiteln wird eine Zusammenfassung gegeben und der Ausblick dargestellt.
+
+\section{Grundlagen}
+\subsection{Wikipedia}
+Der Name Wikipedia wurde aus \textit{Wiki}, dem hawaiianischen Wort für \glqq schnell\grqq \,, und \textit{Encyclopedia}, was aus dem Englischen kommt und \glqq Enzyklopädie\grqq \,bedeutet, kreiert.
+Wikipedia ist eine freie, kollektiv erstellte Online-Enzyklopädie. Wobei das Wort \glqq frei\grqq \, darauf anspielt, dass das Unternehmen Wikipedia nicht-kommerziell geführt wird, sondern ein gemeinnütziger Verein ist, und das Ziel darin besteht, eine frei lizenzierte Enzyklopädie zu schaffen \cite{Wikipedia}. Auf Grund der Tatsache, dass jeder sich an Wikipedia beteiligen kann, indem er Artikel schreibt oder verändert, wird es als kollektives Projekt betrachtet. Gegründet wurde Wikipedia am 15. Januar 2001 von Jimmy Wales und Larry Sanger \cite{Wikipedia}. Die erste Idee zu solch einem Projekt gab es bereits 1993, an der Umsetzung scheiterte Rick Gates jedoch.\\[\baselineskip]
+Die Enzyklopädie ist über das Internet einsehbar, die Artikel lassen sich mittels Web-Browser abrufen. Mittlerweile gibt es sie in 285 Sprachversionen \cite{WikipediaSprachen}, wovon die Englische die größte darstellt, mit ca. 8 Millionen verschiedenen Artikeln. Die deutsche Sprachversion ist mit ca. 1.5 Millionen Artikeln die zweitgrößte \cite{WikipediaSprachen}. Dabei unterscheiden sich nicht nur die Anzahl der Artikel, sondern auch deren Inhalte in verschiedenen Sprachversionen. Wobei zu erwähnen ist, dass sich unter den Sprachversionen auch solche befinden, welche in einem Dialekt geschrieben wurden. Es gibt sogar Sprachversionen, welche nur Artikel enthalten, die automatisch per Computer erstellt wurden. Nur ca. 28 \% der Sprachversionen enthalten mehr als 10.000 Artikel \cite{ZehnDinge} und können somit als vollwertige Enzyklopädie betrachtet werden. Die Größe der Enzyklopädie spiegelt sich auch in der Zugriffsstatistik wieder. Während die englische Wikipedia am häufigsten aufgerufen wird, wird die zweitbeliebteste Sprachversion, die deutsche Wikipedia, deutlich weniger abgerufen \cite{Alexa}.\\
+
+
+\subsection{Verwendete Daten}
+Die Daten, welche dieser Arbeit zugrunde liegen, beziehen sich auf die Versionen der Artikel, welche zum Zeitpunkt der Datenerhebung öffentlich zugänglich waren. Sie wurden von Domas Mituzas gesammelt, in einem gesamten Zeitrahmen vom 1. Oktober 2008 bis zum 6. Februar 2010 \cite{DomasMituzas}. Die Sammlung wurde im Dezember 2009 von Lev Muchnik bearbeitet und danach für die vorliegende Forschungsarbeit zur Verfügung gestellt. Dabei werden für ein Zeitintervall von einer Stunde die Zugriffe für jeden Artikel gezählt. Es ist für jeden von uns betrachteten Artikel mindestens ein Zeitfenster von 6720 Stunden verfügbar, was 280 Tagen entspricht. Die Rohdaten liegen zum einen als binäres Abbild vor und zum Anderen als SQL-Datenbank.
+\begin{figure}[H]
+\centering
+	\includegraphics[angle=270,width=0.8\textwidth]{PageID_500952.eps}
+	\caption{Zugriffszeitreihe für einen Beispielartikel. Diese Zeitreihe basiert nicht auf den Rohdaten, der Wochengang wurde anhand der Gleichungen \ref{Wochengang1} und \ref{Wochengang2} herausgerechnet. Solche bearbeiteten Zeitreihen werden für die weitere Analyse verwendet.}
+\end{figure}
+
+\subsection{Beschreibung der Datenbank}
+Die vorhandenen Rohdaten wurden in eine SQL-Datenbank eingepflegt. In Folge der Normierung des Datenmodells gibt es verschiedene Tabellen, je nach Bedeutung der Daten. Pro Artikel findet sich eine Zeile mit META-Daten wie Name, Sprache etc. Jede Veränderung eines Artikels (Editier-Ereignis) bildet einen separaten Eintrag.  
+\begin{table}[H]
+\caption{Übersicht über die SQL-Datenbank Struktur. Gleiche Informationskategorien wurden mit der gleichen Farbe hinterlegt.}
+	\begin{tabular}{|l|l|l|l|l|}
+		\hline
+		\multicolumn{5}{|c|}{\textbf{SQL-Datenbank Struktur}}\\
+		\hline
+		languages & namespaces & pagenames & pagenameshash & userscache \\
+		\hline
+		\cellcolor{hellgruen}LanguageID & \cellcolor{hellgruen}LanguageID & \cellcolor{hellblau}PageID & Hash & UserID \\
+		Short Name & \cellcolor{hellgelb}NamespaceID & \cellcolor{hellgruen}LanguageID & \cellcolor{hellblau}PageID & User Name \\
+		Long Name & NamespaceOriginalID & \cellcolor{hellgelb}NamespaceID &  & \\
+		Project URL & Namespace Name & Page Name & & \\
+		\hline
+	\end{tabular}
+\end{table}
+Der Abruf von Daten erfolgt über Verknüpfungen zwischen den Tabellen. Daher ist man an gleichen Informationskategorien interessiert, um diese als Verknüpfungspunkt zu verwenden. Die Zugriffsdaten liegen in einer binären Datenbank vor, von dort können die Zeitreihen mittels der PageIDs extrahiert werden. Die SQL-Datenbank dient mehr zur Abfrage bestimmter Informationen über die Artikel
+
+\section{Auswahl der betrachteten Seiten}
+\subsection{Namensraum-Verteilung}
+Zu jedem Artikel gibt es verschiedene Arten von Seiten. Die schriftlichen Daten sind in der \,\glqq Hauptseite\grqq\, untergebracht. Informationen z.B. in Form von Bildern gehören zu Seiten der Kategorie \glqq Datei\grqq . Im Folgenden findet sich eine Auflistung der verschiedenen Kategorien. Zu beachten ist, dass es zu jeder Kategorie auch Diskussionsseiten gibt.
+\begin{table}[H]
+\centering
+\caption{nach \cite{namespace}}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\multicolumn{4}{|c|}{\textbf{Wikipedia Namensraum}}\\
+\hline
+\multicolumn{2}{|c|}{\textit{Hauptnamensraum}} & \multicolumn{2}{|c|}{\textit{Diskussionsnamensraum}}\\
+\hline
+0 & Hauptseite & Diskussion & 1 \\
+2 & Benutzer & Benutzer Diskussion & 3 \\
+4 & Wikipedia & Wikipedia Diskussion & 5 \\
+6 & Datei & Datei Diskussion & 7 \\
+8 & \textsc{MediaWiki} & \textsc{MediaWiki} Diskussion & 9 \\
+10 & Dokumentenvorlage & Dokumentenvorlage Diskussion & 11 \\
+12 & Hilfe & Hilfe Diskussion & 13 \\
+14 & Kategorie & Kategorie Diskussion & 15 \\
+100 & Portal & Portal Diskussion & 101 \\
+108 & Buch & Buch Diskussion & 109 \\
+\hline
+\multicolumn{4}{|c|}{\textit{Virtueller Namesraum}}\\
+\hline
+-1 & \multicolumn{3}{|c|}{Spezial}\\
+-2 & \multicolumn{3}{|c|}{Medien}\\
+\hline
+\end{tabular}
+\end{table}
+
+Als Vorbetrachtung wurde nun die Zusammensetzung der Seiten bezogen auf die Namensräume analysiert. Für die Sprachen bezieht sich die Darstellung auf alle Artikel, welche in dieser Sprachversion verfügbar sind. Bei den Städten wurden dagegen Pakete ausgewählt (\prettyref{sec:St1}), welche dann analysiert wurden.
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{Namespaces_Verteilung_Berlin_Heidelberg.png}
+		\caption*{Städte}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{Namespaces_Verteilung_en_ge.png}
+		\caption*{Sprachen}
+		\end{figure}
+	\end{minipage}	
+\caption{Darstellung der prozentualen Namensraum-Verteilung der Seiten bezogen auf das ausgewählte Paket}
+\end{figure}
+Die Hauptartikel mit dem Namensraum \glqq 0 \grqq \, (in blau dargestellt) machen den Großteil der Seiten aus. Des Weiteren zeigt sich, dass der Anteil dynamischer Seiten, zu denen alle Diskussionsseiten zählen, verschwindend gering ist, gegenüber dem der statischen Seiten, die in dem Hauptnamensraum zu finden sind. Deswegen wird sich im Weiteren bei der Auswahl der zu analysierenden Seiten auf die Hauptartikel beschränkt. 
+
+\subsection{Ausgewählte Pakete}
+\label{sec:St1}
+Bei den Paketen wird eine Seite ausgewählt, welche zum Namensraum \glqq Hauptartikel\grqq\, gehört. Danach werden alle Seiten, welche durch statische Links\footnote{Statische Links zwischen zwei Seiten ergeben sich durch direkte Verknüpfungen im Text, d.h. durch Klicken auf den Link gelangt man zu der anderen Seite.} mit dieser Seite verknüpft sind, hinzugefügt. Die Gesamtanzahl der Seiten, die Startseite und deren verlinkte Seiten, ergeben dann ein Paket an Seiten, mit welchem die Analyse durchgeführt wird.\\
+In zwei verschiedenen Kategorien wurden Pakete ausgewählt, zum Einen Städte und zum Anderen Unternehmen aus bestimmten Aktienindizes. Bei den Städten können die einzelnen Pakete nochmals unterteilt werden in die zwei Gebiete Städtegruppen und einzelne Städte. Die Städtegruppen umfassen \,\glqq deutsche Städte\grqq\, und \,\glqq englische Städte\grqq. Unter den einzelnen Städten befinden sich die in Deutschland liegenden Städte Heidelberg, Berlin, Sulingen, Bad Harzburg im Harz und die englischen Städte Oxford und Birmingham. Des Weiteren wurden die Seiten der Firmen der folgenden Aktienindizes ausgewählt: DAX\footnote{DAX steht für \textit{Deutscher Aktienindex} und listet die 30 größten börsennotierten deutschen Unternehmen \cite{DAX}.} und S\&P500 \footnote{S\&P500 bedeutet \textit{Standard and Poor's 500}, er enthält die 500 größten Unternehmen der USA und ist damit der drittgrößte amerikanische Börsenindex \cite{SP500}.}. \\
+Bei den Städten war die Größe ein ausschlaggebendes Kriterium. Berlin wurde als große Stadt aus der deutschen Wikipedia ausgewählt, während Heidelberg als mittlere, sowie Sulingen und Bad Harzberg im Harz als kleine Stadt eingestuft werden. Die englischen Städte Oxford und Birmingham sind von mittlerer Größe. Zu beachten sind die unterschiedlichen Definition in Deutschland und UK ab welcher Größe ein Ort als Stadt gilt \cite{Stadt}. Während dies in Deutschland schon ab 2.000 Einwohnern der Fall ist, so liegt die Untergrenze in Großbritannien bei 10.000 Personen.  
+
+\section{Mathematische Methoden der Zeitreihenanalyse}
+
+\subsection{Bereinigung vom Tages-/Wochengang}
+\label{sec:St7}
+Bei der Datenanalyse ist es wichtig die Rohdaten aufzubereiten. Daher wurden im folgenden Vorbetrachtungen durchgeführt, in denen fehlerhafte Zeitreihen ausgeschlossen werden und die relevanten Informationen herausgefiltert werden.\\
+Wie bereits in \cite{CircadianPatterns} dargestellt gibt es zeitliche Schwankungen in den Zeitreihen, welche durch den Schlaf-Wach-Rhythmus, jahreszeitlich bedingt oder durch kulturelle Aspekte hervorgerufen werden. In den hier vorliegenden Daten gibt es eine Beeinflussung sowohl durch den Tages- als auch den Wochenrhythmus.\\
+Für die Normierung der Daten wird die Summe aller Zugriffe in jeder Stunde des jeweiligen Wochentages über alle 42 Wochen gebildet. Die folgende Formel verdeutlicht beispielhaft die Vorgehensweise für die Berechnung des Mittelwertes für die erste Stunde am Montag.
+\begin{align}
+x_{Montag,1h}= \displaystyle \dfrac{1}{42} \cdot \sum_{u=0}^{41} x_{1h+186h\cdot u}
+\label{Wochengang1}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $u$ & = & jeweilige Woche\\
+\end{tabular}
+\end{table}
+Für die weiteren 23 Stunden des Montags wird wird $x$ entsprechend angepasst. Zur Berechnung der 24 Dienstagswerte wird dementsprechend bei $t=25h+168h\cdot u$, $t=26h+168h\cdot u$ usw. bis $t=48h+168h\cdot u$ aufsummiert. Falls auf einen Artikel in einer oder mehreren Wochen nicht zugegriffen wurde (z.B. weil dieser erst später neu angelegt wurde), so werden die Anzahl der Summanden und der Faktor $\dfrac{1}{42}$ entsprechend angepasst.\\
+Anschließend wird jeder Wert innerhalb eines Zeitintervalls, welches hier eine Stunde beträgt, durch diese Mittelwerte geteilt.
+\begin{align}
+x(t) = \dfrac{x_{t}}{x_{Tag,t\, mod\, 24h}}
+\label{Wochengang2}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $x$ & \ldots & Rohdaten Zeitreihe\\
+\end{tabular}
+\end{table}
+Dadurch werden neue Zeitreihen erzeugt, welche alle den Mittelwert $\overline{x} = 1$ haben.\\
+Aus \cite{Burst} werden ein paar Beispielzeitreihen mit jeweiligem Wochengang gezeigt. Im vorliegenden Bild wurde die gleiche Methode zur Berechnung des Wochengangs verwendet. 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\textwidth]{Wochengang.png}
+	\caption{Beispiele der Wikipedia Zugriffsstatistik aus \cite{Burst} für drei ausgewählte Artikel mit \textit{(a\& b)} eher stationärer Zugriffsrate (Thema \,\glqq Illuminati (book)\grqq\,), \textit{(c\& d)} mit plötzlicher endogener Zunahme an Aktivität (Peak am Sonntag, 7. Mai 2009, Thema \,\glqq Heidelberg\grqq\,), und \textit{(e\& f)} eine exogene Zunahme an Aktivität (Thema \,\glqq Amoklauf Erfurt\grqq\, hat einen Peak am Mittwoch, 11. März 2009, als ein anderer Amoklauf in Winneden passierte). Die linke Seite zeigt die kompletten stündlichen Zugriffszeitreihen (vom 1. Januar 2009 bis zum 21. Oktober 2009; z.B. für 42 Wochen = 294 Tage = 7056 Stunden) mit Nummern im Diagramm, welche die Höhe der Peaks angeben, welche abgeschnitten wurden, um die Fluktuationen in der Basislinie zu zeigen. Der rechte Teil zeigt die durchschnittliche Zugriffsrate für jede Stunde während eines Wochenzyklus von Montag bis Sonntag. Zu beachten ist der Effekt der Peaks auf den durchschnittlichen Zyklus am Sonntag in \textit{(d)} und am Mittwoch und Donnerstag in \textit{(f)}.}
+\end{figure}
+Es zeigt sich, dass sich die Wochenverläufe der einzelnen Artikel sehr stark unterscheiden. Des Weiteren ist der Tagesverlauf deutlich sichtbar. Stunden mit sehr wenigen Zugriffen deuten auf Schlafphasen der Wikipedia-Benutzer hin, welche typischerweise in der Nacht liegen. Hohe Zugriffszahlen sind in den Tagesstunden und somit Wachphasen zu finden.
+
+
+\subsection{Kreuzkorrelation}
+
+\subsubsection{Vorfilterung}
+Zur Bereinigung der Zeitreihen werden diese vor Berechnung der Kreuz-Korrelation gefiltert. Dazu wird das wöchentliche Zugriffsvolumen erfasst. Sollte auf einen Artikel innerhalb einer Woche nicht zugegriffen worden sein, so wird die Zeitreihe entfernt. Die Auffälligkeit könnte auf technische Probleme zurückzuführen sein.\\
+Auf Grund der fehlenden Statistik kann ein Woche ohne Zugriffe nicht verwendet werden.
+
+\subsubsection{Methode der Kreuzkorrelation und Mittelwertbildung}
+Der Begriff Korrelationskoeffizient wurde erstmals von \textsc{Pearson} \textsc{1846} \cite{Pearson} erwähnt und später von \textsc{Bravais} mitgeprägt. Wendet man dies nun auf zeitgleiche Messsignale an, so ergibt sich die Kreuzkorrelation. Die Berechnung der Kreuzkorrelation ist eine mathematische Methode zur Quantifizierung der Ähnlichkeit zweier Signale. Ihre Verwendung ist daher vielfältig, ein Gebiet der Anwendung stellt z.B. die Materialwissenschaften und die Werkstofftechnik \cite{Ultraschall} dar, sowie die Astrophysik \cite{DarkEnergy}. Desweiteren gibt es Anwendungsbeispiele außerhalb der Physik, wie z.B. medizinische Themen \cite{Psychosozial} und seismografische \cite{RandomFields}.\\
+Die Kreuzkorrelationsfunktion ist nach \cite{Signaluebertragung} wie folgt definiert
+\begin{align}
+R_{x,y}(\tau) = \int_{- \infty}^{+ \infty} \, x(t) \cdot y(t-\tau) \, dt
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $R_{x,y}$ & = & Korrelationsfunktion\\
+	 & $t$ & = & Zeit\\
+	 & $\tau$ & = & Zeitverschiebung\\
+\end{tabular}
+\end{table}
+Für den Fall zweier identischer Zeitreihen ergibt sich die Autokorrelationsfunktion, für verschiedene Zeitreihen die Kreuzkorrelationsfunktion \cite{Ultraschall}. \\
+Auf Grund der Variation der Zugriffsvolumen wird für eine quantitative Aussage zur normierten Kreuzkorrelationsfunktion \cite{Ultraschall} übergegangen
+\begin{align}
+\varphi(\tau) = \dfrac{R_{x,y}}{\sigma_{x}\,\sigma_{y}}
+\label{KK}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $\sigma_{x} \, , \sigma_{y}$ & = & Standardabweichung der Signale $x(t)$ bzw. $y(t)$\\
+\end{tabular}
+\end{table}
+Für diskrete Funktionen, wie die hier vorliegenden Zeitreihen, wird die Summenschreibweise verwendet. Da sich die zu untersuchenden Auswirkungen von der ersten Zeitreihe auf die zweite innerhalb eines Messintervalls von einer Stunde liegen, wird die zeitliche Verschiebung $\tau = 0$ gesetzt\footnote{D.h. es wird ohne Zeitverschiebung gerechnet, die Signale werden zu gleichen Zeitpunkten miteinander verglichen.}. Auf diese Weise kann nun der Tageswert der Kreuzkorrelation berechnet werden:
+\begin{align}
+\varphi_{T} (0) = \dfrac{\sum_{\substack{t=1h+24h\cdot T}}^{24h(1+T)} \bigl( x(t) - \overline{x} \bigr) \cdot \bigl( y(t) - \overline{y} \bigr)}{\sqrt{\sum_{\substack{t=1h+24h\cdot T}}^{24h(1+T)} \bigl( x(t) - \overline{x} \bigr)^{2}} \,\, \sqrt{\sum_{\substack{t=1h+24h\cdot T}}^{24h(1+T)} \bigl( y(t) - \overline{y} \bigr)^{2}}}
+\label{KreuzKorrelation}
+\end{align}
+
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $\overline{x} \, , \overline{y}$ & = & Mittelwerte der Signale $x(t)$ bzw. $y(t)$\\
+\end{tabular}
+\end{table}
+Zur Berechnung des Mittelwertes wird die Definition des arithmetischen Mittel \cite{TaschenbuchMathematik} verwendet:
+\begin{align}
+\overline{x}_{arithm} = \frac{1}{24} \sum_{\substack{t=1h}}^{24h} x(t) = \dfrac{x(1h)+x(2h)+ \ldots +x(24h)}{24}
+\label{Mittelwert}
+\end{align}
+
+Die folgenden Beispiele sollen einen Eindruck geben für den Zusammenhang zwischen den Zeitreihen und dem dazugehörigen Kreuzkorrelationswert. Der Wertebereich ist für $\left[-1:1\right]$ definiert, wobei $1$ völlige Korrelation bedeutet und $-1$ Anti-Korrelation. Werte um $0$ zeigen, dass die untersuchten Zeitreihen unkorreliert sind.
+\begin{figure}[htbp]
+\centering
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{sinus_009_001.eps}
+		\caption*{$\varphi(\tau=0) = 1.000$}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{sinus_009_007.eps}
+		\caption*{$\varphi(\tau=0) = 0.946$}
+		\end{figure}
+	\end{minipage}	
+
+
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{sinus_009_006.eps}
+		\caption*{$\varphi(\tau=0) = 0.320$}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{sinus_009_002.eps}
+		\caption*{$\varphi(\tau=0) = -1.000$}
+		\end{figure}
+	\end{minipage}	
+\caption{Dargestellt sind verschiedene Kombinationen von Zeitreihen (hier: gegeneinander verschobene Sinusfunktionen, bei Sinusfunktion 6 mit zufälligen Phasensprüngen) mit dazugehörigem Korrelationswert nach Gleichung \ref{KK}.}
+\end{figure}
+
+ Zur statistisch zuverlässigen Charakterisierung des Zusammenhangs zwischen den beiden zu untersuchenden Zeitreihen geht man zu größeren Zeitskalen über. Für den Monatswert wird der Median (nach \cite{TaschenbuchMathematik})der Tageswerte gebildet. Zuvor wurden die Tageswerte $\varphi_{T}$ der Größe nach sortiert.
+Diese Methode wird verwendet, damit einzelne, sehr stark abweichende Tage, den Gesamtwert nicht verfälschen. Es ergibt sich für den Monatswert:
+\begin{align}
+x_{M} = \begin{cases} \varphi_{T+1}& \text{falls $n'=2T+1$},\\
+							\nonumber\\
+							 \dfrac{\varphi_{T+1}+\varphi_{T}}{2}& \text{falls $n'=2T$}. \end{cases}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $n'$ & = & $n - f_{T}$\\
+	 & $n$ & = & 28 Tage $\ldots$ Gesamtanzahl der Werte pro Monat\\
+	 & $f_{T}$ & $\ldots$ & fehlerhafte Tage pro Monat\\
+	 & $T$ & \ldots & Tag\\
+\end{tabular}
+\end{table}
+Die Gesamtanzahl der Werte pro Monat wurde auf 28 Tage festgesetzt. Die vorliegenden Datenreihen umfassen 42 Wochen. Ein Monat entspricht einem Zeitraum von 4 Wochen. Dieses Zeitfenster wird nun um eine Woche verschoben, der 2. Monat umfasst somit die Wochen 2 bis 5. Mit dieser Definition ergeben sich 38 mögliche Verschiebungen des Zeitfensters und daher enthält der vorliegende \glqq Jahres \grqq -Zeitraum 38 Episoden der Dauer eines Monats.\\ 
+
+Für den Jahreswert werden Monate mit $f_{M} \geqslant 19$ ausgeschlossen, auf Grund der zugeringen Statistik. Anschließend wird der Mittelwert (nach \cite{TaschenbuchMathematik}) gebildet, das Ergebnis stellt den Jahreswert dar. 
+\begin{align}
+\overline{x}_{J,arithm} = \frac{1}{m'} \sum_{\substack{i=1}}^{m'} x_{M,i} = \dfrac{x_{M,1}+x_{M,2}+ \ldots +x_{M,m'}}{m'}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $m'$ & = & $m - f_{M}$\\
+	 & $m$ & = & 38 Monate $\ldots$ Gesamtanzahl der Werte pro Jahr\\
+	 & $f_{M}$ & $\ldots$ & fehlerhafte Monate pro Jahr\\
+\end{tabular}
+\end{table}
+Die Standardabweichung (nach \cite{TaschenbuchStatistik}) für ein Jahr ist ein Maß für die Heterogenität bzw. Homogenität der Tage innerhalb des Jahres. Ein hoher Wert für die Standardabweichung stellt hierbei eine große Streuung der Werte dar. Dementsprechend bedeutet ein kleiner Wert, dass viele Werte kaum vom Mittelwert abweichen. Fehlerhafte Tage heißt in diesem Fall, dass mindestens eine der Zeitreihen keinen Zugriff in diesem Zeitfenster hatte. Der Nenner (siehe Gleichung \ref{KreuzKorrelation}) würde Null werden und damit wäre der Ausdruck mathematisch nicht definiert. Die fehlerhaften Berechnungen, welche 'Not a Number' ergeben würden - d.h. mathematisch nicht definierte Operationen werden ausgeführt - werden ausgeschlossen.
+\begin{align}
+s_{J} = \sqrt{\dfrac{1}{m'}\,\sum_{\substack{i=1}}^{m'} \bigl( \varphi_{M,i}-\overline{\varphi}_{M}\bigr)^{2}}
+\label{Standardabweichung}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $m'$ & = & $m - f_{M}$\\
+\end{tabular}
+\end{table}
+
+
+\subsection{Statistische Tests}
+Zur Verifizierung der Ergebnisse wurden zwei verschiedene Signifikanztests durchgeführt. Diese liefern eine Aussage über die Qualität der gewonnen Ergebnisse. Es kann eine Schwelle für die Irrtumswahrscheinlichkeit festgelegt werden, für alle darüber liegenden Werte kann mit sehr großer Wahrscheinlichkeit ausgeschlossen werden, dass sie zufällig zu Stande kommen.
+\subsubsection{Signifikanztest 1}\label{sec:St1}
+Für diesen Test wird eine konstante zeitliche Verschiebung der zweiten Zeitreihe eingeführt, dieser Wert beträgt hier 20 Wochen\footnote{D.h. $\tau$ wird auf 3360 h gesetzt.}. Der Zeitabstand ist so groß, dass unmöglich Auswirkungen von der ersten auf die zweite Zeitreihe sichtbar werden können. Es liegen nun zwei statistisch völlig unabhängige Zeitreihen vor. Die Ergebnisse geben dann ein Maß für die tatsächliche Unabhängigkeit beider Zeitreihen\footnote{Die Beurteilung erfolgt nach dem gleichen Schema wie bei der Kreuzkorrelationsfunktion.}. Von diesen verschobenen Zeitreihen wird, wie bei der Anwendung der Kreuz-Korrelationsmethode, der Tageswert berechnet. Im weiteren wird nach dem gleichen Schema wie für die Berechnung der Kreuzkorrelation verfahren, man erhält Monats- und Jahreswerte. 
+\subsubsection{Signifikanztest 2}
+Um den Umfang der Werte zu erhöhen, und so die Statistik zu verbessern, wird nun die zeitliche Verschiebung variabel gehalten. Somit wird $\tau = 20,21, \ldots 38,1, \ldots 19$ gesetzt. Für jede Verschiebung wird für jeden Tag ein Wert berechnet. Wie zuvor (\prettyref{sec:St1}) wird für die Monats- und Jahreswerte verfahren.\\
+Die Bewertung der Ergebnisse bezieht sich hauptsächlich auf diesen Test, auf Grund der verbesserten Statistik gegenüber dem Signifikanztest 1.
+
+\subsection{Charakterisierung von Netzwerken}
+\label{sec:St6}
+Ein Graph beschreibt eine Ansammlung von Knoten und deren Verbindungen\footnote{Die Verbindungen werden auch als \textit{Kanten} bezeichnet.}, dargestellt durch Linien \cite{GraphTheory}.\\
+\begin{figure}[H]
+	\centering
+		\includegraphics[width=0.25\textwidth]{Struktur_Netzwerk.png}
+		\caption{Beispielnetzwerk zur Verdeutlichung der Begriffe. Die verschiedenen Knoten werden durch Kanten verbunden. Dieses Netzwerk besteht aus 6 Knoten und 8 Kanten. Es ist ungerichtet, d.h. die Kanten sind in beide Richtungen äquivalent.}
+\end{figure}
+Zum Einen gibt es \textit{ungerichtete} Netzwerke, zum Anderen \textit{gerichtete}. Bei ungerichteten beinhaltet die Verbindung, egal von welchem der beiden Knoten ausgegangen wird, die selbe Wertigkeit. Ein Unterschied in der Beziehung der Knoten zueinander kann nur durch gerichtete Netzwerke sichtbar gemacht werden. Die Kante wird dann meist durch einen Pfeil dargestellt, welcher von einem Knoten ausgeht auf den anderen zeigt, somit ist eine Richtung erkennbar. Gerichtete Netzwerke sind besonders wichtig zur Charakterisierung von dynamische Prozessen \cite{ComplexNetworks}. Der Unterschied zwischen \textit{gewichteten} und \textit{ungewichteten} Netzwerken besteht darin, dass bei Ersterem die Verbindungen mit einem Wert belegt werden und dadurch anhand ihrer Bedeutung unterschiedlich stark hervorgehoben werden. Eine weitere Einteilung wird zwischen \textit{statischen} und \textit{dynamischen} Netzwerken vorgenommen. Wobei hier die Zuordnung anhand des Kriteriums: \glqq Ist das Netzwerk statisch oder entwickelt es sich noch?\grqq\,, vorgenommen wird \cite{ComplexNetworks}.\\
+\emph{
+\textbf{Definition:}\qquad Ein \emph{ungerichteter} Graph G ist ein Tripel (V(G),E(G),$f_{G}$), bestehend aus einer nichtleeren Menge V(G) von \emph{Knoten} (bzw. Ecken), einer nicht disjunkten Menge E(G) von \emph{Kanten} und einer Abbildung $f_{G}$, die jeder Kante $e \, \epsilon \, E(G)$ die Menge {x,y} zuordnet:}
+\begin{align}
+e \mapsto {x,y}
+\end{align}
+nach \cite{GraphDefinition}\\[\baselineskip]
+
+\subsubsection*{Matrizen}
+Wie schon im Einleitungsteil angesprochen, gibt es nun verschiedene Begriffe, welche die Netzwerke charakterisieren und somit eine Einordnung dieser vorgenommen werden kann.\\
+Eine wichtige Art der Darstellung der Verbindungen innerhalb des Netzwerkes wird mittels des Formalismus einer Matrix \cite{ComplexNetworks} angegeben. Hierbei gibt es zwei verschiedene Arten.
+
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.3\textwidth}
+		\begin{align*}
+		\left(
+	\begin{matrix}
+		0.0 & 2.3 & 4.1 & 0.0\\
+		2.3 & 0.0 & 1.0 & 0.0\\
+		4.1 & 1.0 & 0.0 & 7.1\\
+		0.0 & 0.0 & 7.1 & 0.0
+	\end{matrix}	
+	\right)
+		\end{align*}
+		\caption*{Gewichtete Matrix}
+	\end{minipage}
+	\begin{minipage}[t]{0.3\textwidth}
+		\begin{align*}
+		\left(
+	\begin{matrix}
+		0 & 1 & 1 & 0\\
+		1 & 0 & 1 & 0\\
+		1 & 1 & 0 & 1\\
+		0 & 0 & 1 & 0
+	\end{matrix}
+	\right)
+		\end{align*}
+		\caption*{Matrix der Nachbarn}
+	\end{minipage}		
+\end{figure}
+\begin{figure}[H]
+	\centering
+		\includegraphics[width=0.35\textwidth]{test.png}
+	\caption{Netzwerk, welches durch die zwei verschiedenen Matrizen beschrieben wird. Die Beschreibung eines Netzwerkes mit Hilfe einer Matrix ist ein üblicher Formalismus.}
+\end{figure}
+
+\subsubsection*{Kürzester Weg}
+Häufig wird für ein Netzwerk der \textit{kürzeste Weg} angegeben, welcher teilweise auch als \textit{Geodätischer Weg} bezeichnet wird \cite{Newman}. Es gibt verschiedene Arten: Zum Einen können zwei Knoten fest vorgegeben sein \cite{ShortestPath}, oder der Startknoten wurde festgelegt und der kürzeste Weg zwischen allen Knoten ist gesucht. In beiden Fällen muss der kürzeste Weg, bedingt durch die Gewichtung, nicht unbedingt mit dem Weg der kürzesten Länge übereinstimmen. 
+
+\subsubsection*{Clusterkoeffizient}
+Der Clusterkoeffizient beschreibt die Cliquenbildung (bzw. Transitivität) eines Netzwerks. Eine Clique entsteht, wenn jeder Knoten mit jedem über Nachbarn verbunden ist. Wenn Knoten A mit Knoten B verbunden ist und ebenso Knoten B und C verbunden sind, dann folgt daraus, dass auch die Knoten A und C verbunden sein müssen \cite{Newman}. Dies wird Transitivität genannt. Bezogen auf soziale Netzwerke würde man sagen,\, \glqq der Freund meines Freundes ist auch mein Freund\grqq. Der Clusterkoeffizient wäre dann die mittlere Wahrscheinlichkeit, dass\, \glqq der Freund meines Freundes auch tatsächlich mein Freund ist\grqq . Im Sinne der Graphentheorie misst der Clusterkoeffizient die Dichte an Dreiecken in einem Netzwerk. Es gibt zwei verschiedene Definitionen eines Clusterkoeffizienten, diese werden als globaler bzw. lokaler Clusterkoeffizient bezeichnet. Der Begriff des \textit{globalen Clusterkoeffizienten} berücksichtigt das Verhältnis von Dreiecken zu verbundenen Tripeln zueinander, wobei ein Dreieck eine Menge von drei Knoten beschreibt, bei dem jeder Knoten mit jedem verbunden ist \cite{Newman}, während ein \glqq verbundenes Tripel\grqq \, einen Knoten beschreibt, der mit zwei anderen Knoten verbunden ist, welche aber keine gemeinsame Kante haben \cite{Newman}. Der Clusterkoeffizient ist nach \cite{Boccaletti} wie folgt definiert
+\begin{align}
+	C = \dfrac{3 \cdot Anzahl \,\, der \,\, Dreiecke}{Anzahl\,\, der\,\, verbundenen\,\, Tripel}
+	\label{C1}
+\end{align}  
+Der \textit{lokale Clusterkoeffizient} bezieht sich dagegen darauf, wie viele Kanten ein Knoten im Verhältnis zu seiner Anzahl an möglichen Kanten besitzt. Daraus lässt sich dann der Clusterkoeffizient für den Knoten $i$ berechnen\footnote{Diese Formel gilt nur für einen ungerichteten Graphen.} \cite{Watts,Newman}.
+\begin{align}
+C_{i} = \dfrac{2\, n}{k_{i}(k_{i} - 1)} \qquad bzw.\qquad C_{i} = \dfrac{Anzahl \,\,der \,\,mit\,\, Knoten\,\, i \,\, verbundenen \,\, Dreiecke}{Anzahl\,\, der\,\, in\,\,Knoten\,\, i\,\, zentrierten\,\, Tripel} 
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $n$ & \ldots & tatsächlich vorhandene Kanten\\
+	 & $k_{i}$ & \ldots & Nachbarn des Knoten $i$\\
+\end{tabular}
+\end{table}
+Aus der Definition des lokalen Clusterkoeffizienten ergibt sich der Clusterkoeffizient für das gesamte Netzwerk mit Hilfe des Mittelwerts \cite{Newman}.
+\begin{align}
+C' = \dfrac{1}{N} \sum_{\substack{i}} C_{i}
+\label{C2}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $N$ & \ldots & Anzahl der Knoten\\
+\end{tabular}
+\end{table}
+Hierbei sei besonders darauf hingewiesen, dass die Gleichungen (\ref{C1}) und (\ref{C2}) durchaus sehr unterschiedliche Ergebnisse liefern können (siehe Abbildung \ref{Abb15}).
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.3\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{clustercoefficient1.png}
+		\caption*{$C_{1,2,3,4}=\lbrace 0,0,0,0\rbrace$\\ $C=0$ \\ $C'=0$}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.3\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{clustercoefficient2.png}
+		\caption*{$C_{1,2,3,4}=\lbrace 1,1,1,1\rbrace$\\ $C=1$ \\ $C'=4$}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.3\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{clustercoefficient3.png}
+		\caption*{$C_{1,2,3,4}=\lbrace 1,0,1,\frac{1}{3}\rbrace$\\ $C=\frac{7}{12}$ \\ $C'=\frac{2}{3}$}
+		\end{figure}
+	\end{minipage}
+	\caption{Diverse Netzwerke mit dazugehörigem lokalen Clusterkoeffizient $C_{i}$, globalem Clusterkoeffizient $C$ und der Mittelwert der lokalen Clusterkoeffizienten $C'$ (, dieser Clusterkoeffizient gilt global). (\textit{Links}) Der minimale Wert des Clusterkoeffizienten wird dargestellt, das Netzwerk enthält keinerlei Dreiecke. (\textit{Mitte}) Dieses Netzwerk besitzt den maximalen Wert des Clusterkoeffizienten, es enthält die größtmögliche Anzahl an Kanten. (\textit{Rechts}) Ein Netzwerk, welches unterschiedliche Werte für die unterschiedlichen Definitionen des Clusterkoeffizienten liefert.}
+\label{Abb15}
+\end{figure}
+\subsubsection*{Gradverteilung}
+Das Wort \textit{Gradverteilung} leitet sich von dem englischen \glqq Degree Distribution\grqq\, ab. In einem Netzwerk haben nicht alle Knoten gleich viele Kanten und somit nicht den gleichen \textit{Knotengrad} \cite{Albert}. Die Knotengrade werden mit Hilfe der Verteilungsfunktion $P(k)$ charakterisiert, diese gibt die Wahrscheinlichkeit an, das ein zufällig gewählter Knoten genau $k$ Kanten enthält. Erstellt man nun ein Histogramm und trägt $P(k)$ über dem Grad $k$ auf, so gibt dieses Histogramm die Gradverteilung des Netzwerks \cite{Newman} an. Für einen zufälligen Graphen ergibt sich eine Poisson-Verteilung\footnote{Die Poisson-Verteilung ergibt sich nur für Netzwerke mit großem Umfang, ansonsten entspricht die Gradverteilung einer Binominalverteilung \cite{RandomGraphs}.} \cite{RandomGraphs}. Diese Verteilung hat einen Peak bei $P\left(\langle k\rangle\right)$ \cite{Albert}, da der Großteil der Knoten ungefähr den selben Grad hat, welcher nahe an dem Mittelwert der Grade $\langle k\rangle$ liegt. Um so erstaunlicher ist jedoch, dass für reale Netzwerke Gradverteilungen gefunden werden, welche gänzlich davon abweichen. Diese können für solche Netzwerke durch Potenzgesetze oder Exponentialgesetze beschrieben werden \cite{Newman} siehe Abbildung \ref{Gradverteilungen}. Netzwerke mit einem abklingenden Potenzgesetz werden skalenfrei genannt.
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.6\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{DegreeDistribution1.png}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.6\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{DegreeDistribution2.png}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.6\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{DegreeDistribution3.png}
+		\end{figure}
+	\end{minipage}
+	
+	\caption{Verschiedene Gradverteilungen für diverse reale Netzwerke \cite{Newman}. Dabei wurde die Verteilungsfunktion $P(k)$ über dem Grad $k$ aufgetragen. Für einige Netzwerke ergibt sich ein exponentieller Zusammenhang, während für andere ein Potenzgesetz gilt, je nachdem ob die Achse für den Grad linear oder logarithmisch dargestellt wird. Die Abbildung \textit{(e)} stellt den einzigen Fall mit einer linearen Skala da, alle anderen sind logarithmisch.}
+	\label{Gradverteilungen}
+\end{figure}
+
+\section{Ergebnisse}
+\subsection{Gesamtdiagramme}
+\label{sec:St2}
+Für die Darstellung des Gesamtplots werden sowohl die Kreuzkorrelationswerte und deren Standardabweichung, als auch die Werte des Signifikanztests 2 und die dazugehörige Standardabweichung aufgetragen. Zu jedem Indexpaar gehören somit vier Werte. Ein Indexpaar zeichnet sich durch zwei Seiten aus von denen mittels der Kreuzkorrelationsmethode die Linkstärke bestimmt wird. Zur besseren Interpretation werden die Ergebnisse nach der Höhe des Kreuzkorrelationswertes sortiert, und so in eine Reihenfolge abhängig vom Rang gebracht. Der Wert nimmt steigendem Rang des Indexpaares ab.
+
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei500.eps}
+		\caption*{(a) Heidelberg}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei501.eps}
+		\caption*{(b) Berlin}
+		\end{figure}
+	\end{minipage}	
+\caption{Ergebnisdarstellung eines Teils der Pakete (\textit{a\& b}). In dieser Darstellung werden die großen Städtegezeigt. Dabei werden vier verschiedene Werte über den Indexpaaren aufgetragen. Ein Indexpaar ist die Kombination aus zwei verschiedenen Artikeln. Für diese wurden folgende Werte berechnet: Kreuzkorrelations-Mittelwert (rote Pluszeichen), Kreuzkorrelations-Standardabweichung (grüne Kreuze), Signifikanztest2-Mittelwert (blaue Linie) und Signifikanztest2-Standardabweichung (lila Linie). Anschließend wurden die Ergebnisse nach dem Kreuzkorrelations-Mittelwert absteigend sortiert. Es sind deutliche Unterschiede zu erkennen, was den größten Kreuzkorrelationswert, sowie die beiden Standardabweichungen angeht. Der Mittelwert des Signifikanztest 2 liegt durchgängig im negativen Bereich. Zur Einschätzung der Größe der Pakete siehe Tabelle \ref{AnzahlIndexpaare}. }	
+\label{Abb1}
+\end{figure}
+\begin{verbatim}
+
+
+
+
+
+
+\end{verbatim}	
+\begin{figure}[H]
+\centering
+	
+	\begin{minipage}[b]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei502.eps}
+		\caption*{(c) Deutsche Städte}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[b]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei503.eps}
+		\caption*{(d) Englische Städte}
+		\end{figure}
+	\end{minipage}
+
+		\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei504.eps}
+		\caption*{(e) Birmingham}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei505.eps}
+		\caption*{(f) Oxford}
+		\end{figure}
+	\end{minipage}
+	
+		\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei506.eps}
+		\caption*{(g) Sulingen}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei507.eps}
+		\caption*{(h) Bad Harzburg im Harz}
+		\end{figure}
+	\end{minipage}
+\caption{Ergebnisdarstellung der restlichen Pakete \textit{(c-h)}. Städtegruppen, sowie die mittleren und die kleineren Städte werden dargestellt. Für weitere Erläuterungen siehe Abbildung \ref{Abb1}.}
+\end{figure}
+
+In den Gesamtplots der Ergebnisse wird sichtbar, dass bei einigen Paketen die Standardabweichung des Signifikanztest 2 den gleichen Verlauf wie die Kreuzkorrelationswerte aufweist (siehe Heidelberg, Berlin, Sulingen, Bad Harzburg im Harz), während bei den restlichen Paketen eher ein starkes Schwanken der Standardabweichung sichtbar wird.\\
+Der Wert des Signifikanztest 2 liegt größtenteils im negativen Bereich. Eine ausführliche Begründung
+hierzu ist im Abschnitt \ref{sec:St5} zu finden.\\
+Ein markanter Unterschied innerhalb der Pakete ist die Höhe der größten Kreuzkorrelationswerte. Bei Birmingham und Bad Harzburg im Harz sind sehr hohe Korrelationswerte zu finden, die um die \textit{0,7} liegen, während, sich wie z.B. bei den englischen Städten, der höchste Kreuzkorrelationswert noch unter \textit{0,4} befindet.\\
+Für Birmingham werden nun die höchsten Kreuzkorrelationswerte näher betrachtet. Dabei stellt sich heraus, dass die Linkstärke zwischen den Artikeln \glqq I. World War\grqq \,und \glqq II. World War\grqq \, \textit{0,755} beträgt. Die zweithöchste Linkstärke mit \textit{0,572} wird für die Seiten \glqq England\grqq\, und \glqq UK\grqq \,berechnet.\\
+Die Verteilung der Standardabweichung der Kreuzkorrelationswerte stellt sich sehr unterschiedlich dar. Bei dem Paket \,\glqq deutsche Städte\grqq\, liegen die Werte der Standardabweichung in einem sehr breiten Bereich, und können sowohl Werte nahe bei \textit{0,0}, aber auch um \textit{0,2} annehmen. Im Gegensatz dazu steht das Paket der \,\glqq englischen Städte\grqq\,. Hier finden sich nur vereinzelt hohe Werte. Ein hoher Wert in der Standardabweichung der Kreuzkorrelation lässt auf eine hohe Dynamik im Jahresverlauf schließen.\\
+Bei den verschiedenen Paketen ist zu beachten, dass die Anzahl an Seiten, welche sie umfassen, sehr stark variiert. Die meisten Pakete umfassen ca. 200 Seiten, einzig das Paket \,\glqq deutsche Städte\grqq\, enthält ca. 7,5-mal so viele Artikel. 
+Abhängig von der Anzahl der Artikel ergibt sich die Anzahl der Indexpaare.
+\begin{table}[H]
+	\centering
+\caption{Anzahl der Indexpaare für die verschiedenen Pakete. Hieraus gewinnt man einen Überblick, wie viele Indexpaare in den einzelnen Gesamtplots abgebildet sind. Zu beachten ist hierbei, dass diese Anzahl sehr variiert, während sie bei den meisten Paketen ca. 200 Artikel umfasst, so sind es bei dem Paket \,\glqq deutsche Städte\grqq\, ca. 7,5-mal so viele.}
+	\begin{tabular}{|l|r|r|}
+		\hline
+		Paket & Anzahl Artikel & Anzahl Artikel \\
+		 & vor der Bereinigung & nach der Bereinigung \\
+		\hline
+		Heidelberg & 200 & 195  \\
+		Berlin & 200 & 192 \\
+		Deutsche Städte & 1567 & 1567 \\
+		Englische Städte & 161 & 161 \\
+		Birmingham & 171 & 146 \\
+		Oxford & 154 & 136 \\ 
+		Sulingen & 270 & 188 \\
+		Bad Harzburg im Harz & 247 & 177 \\
+		\hline
+	\end{tabular}
+	\label{AnzahlIndexpaare}
+\end{table}
+
+\subsubsection{Auswirkungen der Bereinigung vom Tages-/Wochengang}
+Wie schon zuvor erwähnt, werden die Zeitreihen vom Wochengang bereinigt. Die Auswirkungen, insbesondere die Verbesserung der Ergebnisse, sollen hier aufgeführt werden.
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei510_ohne.eps}
+		\caption*{ohne Bereinigung}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{LOG_Datei504_ohne.eps}
+		\caption*{mit Bereinigung}
+		\end{figure}
+	\end{minipage}	
+\caption{Vergleich Ergebnisdarstellungen der berechneten Werte mit vorhandenem Tages-/Wochengang und mit zuvor herausgerechnetem. Die Verbesserungen werden hier deutlich sichtbar. Für nähere Erläuterungen zur Bereinigungsmethode \prettyref{sec:St7}.}
+\end{figure}
+Obwohl bereits mit den Rohdaten, vor der Bereinigung zum Teil sehr hohe Kreuzkorrelationswerte berechnet werden, so sind diese jedoch keine signifikanten Werte. Es gibt ein Kriterium, wann ein Kreuzkorrelationswert als signifikant angesehen werden kann. Dies ist der Fall, wenn die gleichen Daten in beliebiger Reihenfolge kombiniert keine statistische Abhängigkeit mehr aufweisen. Diese Bedingung wird im Signifikanztest geprüft. In den Rohdaten zeigt sich, dass auch zeitlich unabhängige Kombinationen der Daten einen hohen Kreuzkorrelationswert liefern. Die Werte sind somit falsch positiv, da sie zufällig einen hohen Wert ergeben und nicht durch ihre Ähnlichkeit im zeitlichen Verlauf. Die Werte des Signifikanztest 2 schwanken hier stark, in einem Bereich von \textit{0,4} bis \textit{-0,2}, so dass auch bei den zufälligen Daten hohe Kreuzkorrelationswerte erzielt werden. Daraus lässt sich schließen, dass die zufällig erstellten Zeitreihen nicht vollkommen statistisch unabhängig voneinander sind. Im Idealfall sollten sie dies jedoch sein, da es sich, erzeugt durch die Verschiebungen, um zeitlich unabhängige Zeitreihen handelt. Auch die Standardabweichung des Signifikanztest nimmt recht hohe Werte an, die teilweise sogar über \textit{0,2} liegen. Selbst nach Einführung einer Signifikanzschwelle können keine definitiv signifikanten Werte bestimmt werden. Mit Hilfe der Signifikanzschwelle werden echt positive von falsch positiven Werte unterschieden. Die Signifikanzschwelle wurde hier auf einen Wert festgelegt, der dreimal so groß wie die Standardabweichung des Signifikanztest ist.\\ 
+Im Gegensatz hierzu steht der bereinigte Ergebnisplot, welcher eindeutig signifikante Kreuzkorrelationswerte liefert. Durch eine Ähnlichkeit der einzelnen Wochentage in jeder Woche ergaben sich, auch bei Verschiebung der Zeitreihen, hohe Kreuzkorrelationswerte. Der Anteil, welcher für den Wochentag charakteristisch ist, wird raus gerechnet. Das Ergebnis ist eine Zeitreihe mit einem Zugriffswert der nicht durch den Wochenrhythmus \,\glqq verfälscht\grqq\, wird.
+Daher wurden alle Pakete (im Abschnitt \ref{sec:St2}) vorher bereinigt und erst anschließend die Kreuzkorrelation berechnet.
+
+\subsection{Verteilungen der Werte und zeitlicher Verlauf}
+\label{sec:St5}
+Für die Verteilungen der Kreuzkorrelations-Werte (Linkstärken) werden die Werte gruppiert (\glqq gebinnt\grqq) und anschließend logarithmisch aufgetragen. Unter \glqq Binning\grqq\, versteht man das Zusammenfassen von Daten innerhalb eines vorgegebenen Abschnitts zu einem einzigen Wert. In diesem Fall werden die Werte in einem bestimmten Intervall gezählt und die normierte Häufigkeit bei dem kleinsten Wert des Intervalls aufgetragen. Die Häufigkeit des vorhandenen Wertes wird logarithmisch aufgetragen. Des Weiteren wird der Graph so normiert, dass die Fläche unter der Kurve immer 1 ergibt. Da diese Darstellung aus den bereits zuvor erhaltenen Ergebnissen folgt, ist auch hier wieder der unterschiedliche Umfang der Pakete (siehe Tabelle \ref{AnzahlIndexpaare}) zu berücksichtigen.
+\begin{verbatim}
+
+
+
+\end{verbatim}
+\begin{figure}[hbtp]
+\centering
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei500.eps}
+		\caption*{(a) Heidelberg}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei501.eps}
+		\caption*{(b) Berlin}
+		\end{figure}
+	\end{minipage}	
+\caption{Histogramme der Jahreswerte für einen Teil der Pakete (\textit{a\&b}). Die Werte wurden vorher gebinnt und anschließend deren Häufigkeit logarithmisch über den Indexpaaren aufgetragen. Für die Kreuzkorrelationswerte ergibt sich eine Gaußverteilung (Parabel in der semi-logarithmischen Darstellung) deren Maximum nahe \textit{0,0} liegt, welche im positiven Bereich von einer einfach exponentiellen Funktion (linear in semi-logarithmischer Darstellung) überlagert wird. Dabei sind alle Werte neben der Gaußverteilung signifikante Werte. Auch für die anderen Werte ergeben sich Gaußverteilungen, wobei die unterschiedliche Breite der Gaußverteilungen zu beachten ist.}	
+\label{Abb8}
+\end{figure}
+\begin{verbatim}
+
+
+
+\end{verbatim}
+
+\begin{figure}[H]
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei502.eps}
+		\caption*{(c) Deutsche Städte}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei503.eps}
+		\caption*{(d) Englische Städte}
+		\end{figure}
+	\end{minipage}
+
+		\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei504.eps}
+		\caption*{(e) Birmingham}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei505.eps}
+		\caption*{(f) Oxford}
+		\end{figure}
+	\end{minipage}
+
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei506.eps}
+		\caption*{(g) Sulingen}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.45\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{gesamt_LOG_Datei507.eps}
+		\caption*{(h) Bad Harzburg im Harz}
+		\end{figure}
+	\end{minipage}
+\caption{Histogramme der Jahreswerte für die restlichen Pakete \textit{(c-h)}. Für weitere Erläuterungen siehe Abbildung \ref{Abb8}.}
+\end{figure}
+Bei den Kreuzkorrelationswerten ergibt sich einerseits eine Gaußverteilung \ref{fit}. Der linke Teil der Kurve enthält Werte, die durch statistisch unabhängige Prozesse zustande kommen. Die Gaußverteilung kann somit als Normierung für statistische Relevanz angenommen werden. Diese Gaußverteilung wird nun in Richtung der positiven Werte fortgeführt. Man erkennt nun, dass sich in diesem Bereich auf die Gaußverteilung noch ein einfach exponentiell abfallender Anteil addiert. Diese Werte, welche zwischen Gaußkurve und Ergebniskurve liegen, werden als signifikant identifiziert. Das Maximum der Funktion liegt bei allen Paketen bei \textit{0,0}. Damit zeigt sich, dass die Gaußverteilung symmetrisch aufgebaut ist und der Anteil an positiven und negativen Werten nahezu gleich groß ist. Ohne signifikante Links würde man nur eine solche Verteilung erwarten.\\
+\begin{figure}[H]
+	\centering
+		\includegraphics[angle=270,width=0.75\textwidth]{gesamt_LOG_Datei500_fit.eps}
+		\label{fit}
+\caption{Verdeutlichung der als signifikant anzusehenden Werte. An die logarithmische Verteilung der Kreuzkorrelationswerte wurde eine Parabel nach Gleichung \ref{Parabelfit} angepasst, sowie ein linearer Fit wie in Abschnitt \ref{sec:St9} erklärt. Die Fläche zwischen der Parabel und der linearen Funktion (blau schraffiert) stellt den Signifikanzbereich da. Alle Werte innerhalb dieser Fläche gelten als signifikant.}
+\label{gefittetesBild}
+\end{figure}
+Während sich die Ergebniswerte der Kreuzkorrelation über einen Bereich von \textit{-0,1} bis zu \textit{0,8} erstrecken, verteilt sich die Standardabweichung der Kreuzkorrelationswerte in einem kleineren Bereich von \textit{0,0} bis ca. \textit{0,2}. Nach Einführung einer Signifikanzschwelle, welche dreimal so groß wie die mittlere Standardabweichung ist und somit bei \textit{0,3} liegt, gäbe es immer noch eine nicht zu vernachlässigende Anzahl an Werten, welche über dieser Schwelle liegen. Des Weiteren zeigt sich auch hier eine Gaußverteilung, die vom Maximum ausgehend im positiveren Bereich von einer linearen abklingenden Funktion überlagert wird. Bei der Standardabweichung liegt das Maximum bei den meisten Ergebnissen um \textit{0,05}. Daraus lässt sich schließen, dass die Monatswerte voneinander abweichen, womit man eine gewisse Dynamik innerhalb des Jahresverlaufes sieht. Diese Schlussfolgerung folgt aus der Tatsache, dass die Standardabweichung der Monatswerte größer ist als Null. D.h. die Werte sind unterschiedlich und verändern sich von Monat zu Monat. Die Dynamik der Werte ist relativ gering. Zum Einen, da der häufigste Wert \textit{0,05} ist, was ein kleiner Wert ist. Zum Anderen liegt die Verteilung der Werte in einem schmalen Intervall.\\
+Für den Siginifikanztest 2 ergeben sich Jahreswerte, die in einem Intervall zwischen \textit{-0,1} und \textit{0,0} einer Gaußverteilung gleichen. Die schmale Verteilung zeigt, dass statistisch unabhängige Daten auch nur Werte in diesem Bereich ergeben. Dies ist ein weiteres Indiz dafür, dass die Kreuzkorrelationswerte, welche im hohen positiven Bereich liegen, signifikant sind. Zu beachten ist hierbei das Maximum der Verteilung, welches leicht verschoben zur Null im Negativen liegt. Eine mögliche Begründung hierfür wäre, dass der Großteil der Datenwerte im zu untersuchenden Abschnitt unter dem Mittelwert in diesem Bereich liegt (siehe Definition der Kreuzkorrelation). Dadurch ergeben sich mehr negative Tageswerte der Kreuzkorrelation als positive, womit der Median einen negativen Wert annimmt. Die zugehörige Standardabweichung des Siginifikanztests 2 liefert auch wieder eine schmale Gaußverteilung im Wertebereich \textit{0,0} bis \textit{0,2}. Das Maximum deckt sich mit dem der Standardabweichung der Kreuzkorrelationswerte. Der Vergleich beider Standardabweichungen zeigt, dass im Signifikanztest weniger Dynamik im Jahresverlauf der Werte vorhanden ist, wie man wegen der großen Verschiebung der Reihen gegeneinander auch erwartet.\\
+Die Dynamik wird näher betrachtet, dazu werden die Histogramme der Kreuzkorrelationswerte für jeden Monat und jedes Paket dargestellt. Als Beispiel wird hier das Paket Englische Städte angeführt. 
+\begin{figure}[H]
+		\begin{minipage}[t]{0.42\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{01_Woche_503.eps}
+		\caption*{Beginn 1.Woche}
+		\end{figure}
+	\end{minipage}	
+	\begin{minipage}[t]{0.42\textwidth}
+		\begin{figure}[H]
+		\includegraphics[angle=270,width=\textwidth]{29_Woche_503.eps}
+		\caption*{Beginn 29. Woche}
+		\end{figure}
+	\end{minipage}
+\caption{Histogramme der Monatswerte für das Paket Englische Städte. Dabei wurde ein früher Zeitpunkt (1. Woche) und ein später Zeitpunkt (29. Woche) gewählt, um die unterschiedlichen Verteilungen zu zeigen. Das Augenmerk liegt wieder auf dem zur Gaußverteilung hinzukommenden, rechten Teil. In dem Diagramm mit Beginn 1. Woche ist der Verlauf sehr flach, es gibt viele signifikante Kreuzkorrelationswerte. Ein sehr steiler Abfall ist in dem Monatsabschnitt ab der 29. Woche zu finden, es gibt wenige signifikante Werte.}
+\end{figure}
+\label{sec:St3}
+Die Anfangswochen aller Pakete zeigen einen sehr flachen Verlauf. Viele Werte liegen über der Gaußverteilung und im linearen Bereich, es gibt somit viele signifikante Kreuzkorrelationswerte. Im weiteren Verlauf des Jahres werden die linearen Anteile steiler in ihrem Abfall. Es gibt dann nur noch wenige signifikante Kreuzkorrelationswerte, dafür aber teilweise sehr hoch signifikante. Näheres zur Analyse und Charakterisierung der Steigungen \prettyref{sec:St4}.
+
+\subsection{Charakterisierung der Ergebnisse}
+\label{sec:St9}
+Zur Quantifizierung der zuvor gewonnen Ergebnisse (\prettyref{sec:St5}) wurden verschiedene Anpassungen von Funktionen durchgeführt. Im ersten Schritt wurde die Gaußverteilung der Kreuzkorrelationswerte gefittet, um, wie schon zuvor erwähnt, eine Abgrenzung von zufälligen und signifikanten Werten zu erhalten. Eine Gaußverteilung ergibt in einem logarithmischen Diagramm eine Parabel. Es wurde folgende Parabel-Funktion verwendet
+\begin{align}
+y = a + b \cdot x + c \cdot x^{2}
+\label{Parabelfit}
+\end{align}
+Für ein Beispiel zur Darstellung der Anpassung der Parabel-Funktion siehe Abbildung \ref{gefittetesBild}.\\
+Um die Ergebnisse besser vergleichen zu können, wurde ein Fit-Bereich der Ergebniswerte von \textit{-0,07} bis \textit{0,0} gewählt. Zur Bestimmung dieses Bereiches wurde zuvor eine Untersuchung bezüglich des optimalen Fitbereichs durchgeführt. Von den so erhaltenen Fitbereichen wurde die Schnittmenge ausgewählt und als hier verwendeter Fit-Bereich festgelegt. Hierbei sei noch erwähnt, dass sich sowohl für den optimalen Fit-Bereich als auch für den daraus bestimmten eine ähnlich hohe Fitgüte ergab. Diese wurde mit Hilfe der Pearson-Korrelation \cite{Pearson} bestimmt.
+\begin{align}
+r^{2} = \left(\dfrac{\sum (X_{i} - \overline{X}) (Y_{i} - \overline{Y})}{\sqrt{\sum (X_{i} - \overline{X})^{2} \sum (Y_{i} - \overline{Y})^{2}}}\right)^{2}
+\end{align}
+\begin{table}[H]
+\begin{tabular}{rccl}
+mit  & $X$ & \ldots & X-Werte\\
+	 & $Y$ & \ldots & Y-Werte\\
+\end{tabular}
+\end{table}
+Anschließend werden die durch den Fit erhaltenen Parameter a,b,c aus Gleichung \ref{Parabelfit} in typische Parameter der Gaußverteilung umgerechnet:
+\begin{align}
+	x_{max} &= - \, \frac{b}{2\,a}\\
+	y_{max} &= c - \, \frac{b^{2}}{4 \, a}\\
+	\sigma &= \sqrt{-\,\frac{1}{2 \, a}}
+\end{align}
+\begin{table}[H]
+	\centering
+    \caption{Ergebnisse des Parabelfits für alle Pakete. Dabei wurde die Gaußverteilung wie im Text beschrieben an die Kreuzkorrelationswerte gefittet.}
+    \vspace{1mm}
+    \begin{tabular}{|l|r|r|c|c|}
+	\hline
+	Paket & $x_{max}$ & $y_{max}$ & $\sigma$ & Güte des Fits $r^{2}$ \\
+	\hline
+	Heidelberg & 0,037 & 2,33 & 0,036 & 0,998 \\
+	Berlin & 0,008 & 1,25 & 0,028 & 0,999 \\
+	Deutsche Städte & 0,05 & 2,788 & 0,041 & 0,998 \\
+	Englische Städte & 0,03 & 2,305 & 0,054 & 0,996 \\
+	Birmingham & 0,023 & 2,62 & 0,034 & 0,996 \\
+	Oxford & 0,029 & 2,69 & 0,037 & 0,999 \\ 
+	Sulingen & -0,003 & 2,00 & 0,027 & 0,989 \\
+	Bad Harzburg im Harz & -0,010 & 2,11 & 0,022 & 0,987 \\
+	\hline
+    \end{tabular}
+\end{table}
+Anschließend kann man mit Hilfe der hier gewonnen Informationen einen linearen Fit durchführen, siehe hierfür auch Abbildung \ref{gefittetesBild}. Eigentlich ergibt sich ein exponentieller Abfall, auf Grund der logarithmischen Darstellung wird die Funktion linear. Der Anfangswert für den linearen Fit muss dabei im abfallenden Teil der Parabel liegen. Es werden zunächst die Histogramme der Monatswerte für verschiedene Bereiche gefittet. Die Fit-Güte der einzelnen Abschnitte wird verglichen und der Bereich mit dem höchsten Mittelwert für die Fit-Güte wird dann auf die Jahreswerte angewendet. Die Ergebnisse wurden für alle $x$-Werte im Bereich von \textit{0,1} bis \textit{0,35} gefittet.
+\vspace{5mm}\\
+\begin{table}[H]
+	\centering
+\caption{Ergebnisse des linearen Fits für die verschiedenen Pakete. Ähnliche Steigungen wurden in derselben Farbe markiert, Werte die bei rund \textit{-13} liegen wurden hellgrün markiert, um \textit{-20} in hellblau. Nur die Steigung des Pakets Berlin konnte keiner dieser Gruppe zugeordnet werden und wurde daher hellgelb hinterlegt.}
+	    \vspace{2mm}
+    \begin{tabular}{|l|r|c|}
+	\hline
+	Paket & Steigung $s$ & Güte des Fits \\
+	\hline
+	Heidelberg & \cellcolor{hellgruen}-14,3 & 0,988 \\
+	Berlin & \cellcolor{hellgelb}-6,8 & 0,958 \\
+	Deutsche Städte & \cellcolor{hellblau}-22,0 & 0,985 \\
+	Englische Städte & \cellcolor{hellblau}-21,2 & 0,965 \\
+	Birmingham & \cellcolor{hellblau}-18,3 & 0,931 \\
+	Oxford & \cellcolor{hellblau}-19,8 & 0,956 \\ 
+	Sulingen &  \cellcolor{hellgruen}-12,5 & 0,984 \\
+	Bad Harzburg im Harz &  \cellcolor{hellgruen}-11,6 & 0,967 \\
+	\hline
+    \end{tabular}
+\end{table}
+Der exponentiell abfallende Anteil erscheint in semi-logarithmischer Darstellung linear und kann dementsprechend mit einer linearen Funktion gefittet werden.
+\begin{align}
+y = s \cdot x + a 
+\end{align} 
+Es wird festgestellt, dass man anhand der vorliegenden Ergebnisse die Pakete in verschiedene Gruppen einteilen kann. Während die eine Gruppe Pakete mit Steigungen um \textit{-13} (hellgrün) enthält, besitzen die anderen Pakete eine Steigung von rund \textit{-20} (hellblau). Nur Berlin lässt sich nicht einer Gruppe zuordnen, die Steigung war hier mit \textit{-6,8} zu flach für beide der Gruppen und wird daher hellgelb hinterlegt.\\[\baselineskip]
+Im nächsten Schritt wurden nun die Monatswerte (Abbildungen hierzu \prettyref{sec:St3}) der Steigungen normiert. So kann man die Verläufe der Steigungen während eines Jahres besser vergleichen. Für die Normierung wurde die jeweilige Steigung $x$ durch den Betrag des Mittelwertes $\vert \overline{x} \vert$ des gesamten Paketes geteilt und anschließend der Kehrwert gebildet.
+\begin{align}
+	y = \left(\dfrac{\,\,\,\,x\,\,\,\,}{\,\,\vert\,\,\overline{x}\,\,\vert\,\,}\right)^{-1}
+\end{align}
+\label{sec:St4}
+\begin{figure}[H]
+	\centering
+	\includegraphics[angle=270,width=0.8\textwidth]{Steigungen_MW.eps}
+	\caption{Inverse der normierten linearen Steigungen der einzelnen Monate für alle analysierten Pakete. Es ergibt sich eine eindeutige Zuordnung in zwei Gruppen, wobei die erstere aus den Paketen Heidelberg und Berlin besteht und die restlichen Pakete der zweiten Gruppe zugeordnet werden können. Eine besondere Ähnlichkeit ist zwischen Sulingen und Bad Harzburg im Harz zu erkennen. Auffallend ist der starke Abfall am Jahresanfang, welcher bei allen Paketen zu beobachten ist.}
+\end{figure}
+Deutlich zu sehen sind die unterschiedlichen Verläufe, woraus zu schließen ist, dass die Pakete Heidelberg und Berlin in eine Gruppe gehören, während die restlichen Pakete die zweite Gruppe darstellen. Eine besondere Ähnlichkeit ist zwischen den Paketen Sulingen und Bad Harzburg im Harz zu erkennen. Zu beachten ist, dass für alle Pakete, und somit auch für beide Gruppen, die Anfangswerte hoch sind und ab der 7. Woche sich niedrigere Werte ergeben. D.h. am Anfang des Jahres liegen flachere Steigungen vor, während ab der 7. Woche die Verteilung steiler wird. Bei der Gruppe mit den sechs Paketen gibt es noch die Besonderheit, dass die Pakete zum Jahresende hin, ab der 25. Woche, unabhängig voneinander und die Steigungsverläufe nicht mehr identisch sind. Bei der anderen Gruppe mit den zwei Paketen werden die zwei Minima sehr deutlich sichtbar. Das eine Minimum liegt bei der Woche 11, während das andere für die 29. Woche zu finden ist. 
+
+\subsection{Netzwerkdarstellung}
+Die zuvor erhaltenen Ergebnisse können nun mit Hilfe eines Netzwerks dargestellt werden. Dies dient zur besseren Analyse, da die Netzwerke dann mit mathematischen Definitionen aus der Graphentheorie beschrieben werden. In dieser Arbeit wurden ungerichtete Netzwerke erstellt. Abbildung \ref{Matrix} zeigt die Matrix der Nachbarn für das Paket \,\glqq englische Städte\grqq\, in Farbkodierung.
+\begin{figure}[H]
+	\centering
+		\includegraphics[width=0.5\textwidth]{adj_matrix_Paket_015_berlin.png}
+		
+	\caption{Darstellung des Paketes Berlin durch eine gewichtete Matrix. Die Werte der Matrix wurden farbig kodiert. Hierbei stehen dunkle Felder für schwache und helle Felder für starke Links.}
+	\label{Matrix}
+\end{figure}
+
+Eine Darstellung des Clusterkoeffizienten für die von uns untersuchten Netzwerke befindet sich im Anhang \ref{sec:St10}. Der Unterschied der beiden Clusterkoeffizienten wird deutlich, jedoch ähnelt sich der Verlauf beider. Die Koeffizienten wurden über der jeweiligen Woche aufgetragen. Ein Clusterkoeffizient von null bedeutet, dass keine Dreiecke vorhanden sind, dies ist z.B. bei den \,\glqq englischen Stdäten\grqq\, zum größten Teil des Jahres der Fall. Nimmt der Clusterkoeffizient einen Wert über eins an, so liegen mehr Dreiecke als Tripel vor. Dies kann man in der 48. Woche bei \,\glqq Birmingham\grqq\, beobachten. Des Weiteren wird, auf Grund der zeitlichen Auflösung und der Entwicklung des Clusterkoeffizienten die hohe Dynamik innerhalb des Jahres deutlich.\\[\baselineskip]
+Die Gradverteilung wurde auch für unsere ausgewählten Pakete berechnet siehe dazu Anhang \ref{sec:St11}. Es zeigt sich eine hohe Dynamik im Jahresverlauf. Während am Jahresanfang viele Grade vorhanden sind, so fallen diese bis zur zehnten Woche ab, teilweise sogar bis über die 20. Woche hinaus. Ein hoher Gradverteilungswert bedeutet, dass die Knoten viele Verbindungen besitzen. Kleine Werte werden auch erreicht, dort sind dann innerhalb des gesamten Netzwerkes entsprechend wenig Verbindungen vorhanden.\\[\baselineskip]
+Jeder Artikel wird in unserem Netzwerk durch einen Knoten dargestellt. Die Link\-stärke zwischen zwei Artikeln wird durch die Kanten repräsentiert, welche je nach Wert eine unterschiedliche Transparenz erhalten. Je höher der Kreuzkorrelationswert, desto kräftiger die Farbe. Diese Eigenschaft, die Zuordnung eines Werts zu einer Kante, nennt man gewichtet. Der Graph ist ungerichtet, da mit der vorliegenden Methode nicht festgestellt werden kann, welcher Artikel zuerst angeklickt wurde. Des Weiteren wurden die Knoten, hier für das Paket deutsche Städte, anhand ihrer geografischen Daten positioniert siehe Abbildung \ref{DE_Cities_ACCESS}. Man spricht von einem \,\glqq eingebettetem Netzwerk\grqq. Es erfolgte eine lokale Einbettung in den euklidischen Raum. Die Abstände der Knoten sind nun mit Normen des Raumes berechenbar. Mit der Einbettung ändert sich auch die Charakteristik des Netzwerkes, jedoch erhält man mehr Informationen bei Abbildung im realen Raum.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.65\textwidth]{DE_Cities_ACCESS.png}
+
+	\caption{Netzwerkdarstellung der Linkstärken für die deutsche Städte. Dabei wurden die Knoten entsprechend ihrer geografischen Position angeordnet \cite{GoogleMaps}. Die Kanten erhalten eine Gewichtung entsprechend ihrer Linkstärke. Je kräftiger die Farbe, desto höher der Wert der Linkstärke.}
+		\label{DE_Cities_ACCESS}
+\end{figure}
+Des Weiteren können Netzwerke mit Hilfe des Programm \glqq Cytoscape\grqq \, \cite{Cytoscape} erstellt werden. Im folgenden Bild wurden die Ergebnisse des Pakets \,\glqq englische Städte\grqq\, dargestellt siehe Abbildung \ref{Netzwerk}. Die Kanten wurden mit der Linkstärke gewichtet und anschließend mit Hilfe einer Farbtabelle kodiert. Dabei wurden die Farben des Regenbogens verwendet. Lila stellt dabei die kleinste Linkstärke dar, über Blau, Grün, Gelb und Orange steigert sich die Linkstärke, bis hin zu Rot, was den höchsten Wert markiert. Zusätzlich wurden noch die Kanten nach ihrem Wert angeordnet, wobei links die mit niedriger Linkstärke und rechts die stark korrelierten zu finden sind. 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{Netzwerk.png}
+	
+	\caption{Netzwerkdarstellung der Linkstärken für das Paket \,\glqq englische Städte\grqq. Erstellt mit \textit{Cytoscape} \cite{Cytoscape}. Die Kanten sind entsprechend ihrer Linkstärke gewichtet und mit Hilfe der Regenbogenfarben kodiert. Es ergibt sich folgende Reihenfolge der Farben für steigende Linkstärken: Lila - Blau - Grün - Gelb - Orange - Rot. Anschließend wurden die Kanten mit geringem Wert links und die mit hohem Wert rechts im Netzwerk angeordnet.}
+	\label{Netzwerk}
+\end{figure}
+Es zeigt sich, dass es nur wenig stark korrelierte Knoten gibt, da nur wenige rote Kanten im Bild zu sehen sind. Diese stark verlinkten Knoten haben auch nur wenige Verbindungen zu anderen Knoten, maximal vier Verlinkungen, während die Knoten, welche Verbindungen mit weniger Linkstärke aufweisen, oftmals eine recht große Zahl an Verlinkungen besitzen. Auffällig ist auch, dass es sehr viel mehr Verlinkungen mit geringer Linkstärke gibt als stark korrelierte. Dieses, in \prettyref{sec:St2} gewonnene Ergebnis, wird hier nochmal deutlich anhand der Flächen im Netzwerk, welche die einzelnen Linkstärken (bzw. Farben) für sich beanspruchen.\\
+Bei vielen Netzwerken musste, um eine übersichtliche Darstellung zu erhalten, eine Schwelle eingeführt werden. Nur die stärksten Links wurden dargestellt und so die Anzahl sowohl der Knoten als auch der Kanten reduziert. Diese Schwelle entspricht der, schon zuvor erwähnten, Signifikanzschwelle. Die Kreuzkorrelationswerte müssen mindestens drei mal so groß sein wie der Wert des Signifikanztest 2, um dargestellt zu werden. Diese Schwelle muss jedoch an das Netzwerk angepasst werden und erhöht werden bei einer entsprechend höheren Zahl an Knoten bzw. Kanten.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{englischeStaedte_Degree.eps}
+	\label{englischeStaedte_Degree}
+	\caption{Netzwerkdarstellung der Linkstärken für das Paket \,\glqq englische Städte\grqq. In dieser Darstellung wurden die Knoten bezüglich ihres Grades angeordnet. Es zeigt sich, dass die Knoten mit hohen Linkstärken (rote Verbindungen) in ihrer Anzahl an Verbindungen wenige besitzen und andersherum.}
+\end{figure}
+In einer anderen Art der Darstellung des gleichen Netzwerkes wird deutlich, dass Knoten, welche einen starken Link haben (rote Verbindung) wenige ausgehende bzw. reinkommende Verbindungen haben, während solche Knoten mit vielen Verbindungen nur solche Verbindungen besitzen, die einen niedrigen Korrelationswert haben (blaue Verbindung) siehe Abbildung \ref{englischeStaedte_Degree}. Als Beispiel für Artikel mit vielen Verbindungen sind \,\glqq Leicester\grqq\, (\textit{33}) und \,\glqq Newcastle upon Tyne\grqq \,(\textit{22}) zu nennen. Der Artikel zur Stadt \,\glqq Lisburn\grqq hat wenige Verbindungen (\textit{2}).
+
+\section{Zusammenfassung}
+Das Ziel dieser Arbeit war es, komplexe Netzwerke mittels Kreuzkorrelationsmethode zu rekonstruieren. Am Beispiel Wikipedia konnte dies verdeutlicht werden. Es gelang die Linkstärke der verschieden Artikel zueinander zu berechnen. Bevor die Kreuzkorrelationsmethode angewendet werden konnte, mussten die Daten jedoch gefiltert werden, aufgrund der Tatsache, dass einige der Zeitreihen ganze Tage hatten, in denen nicht auf den entsprechenden Artikel zugegriffen wurde. Kein Zugriff lies auf technische Probleme schließen. Eine Anpassung des Algorithmus war nötigt, um die fehlerhaften Tagen auszusortieren. Monate mit mehr als der Hälfte fehlerhafte Tage wurden ebenfalls verworfen. Werte, die man mit Hilfe der Kreuzkorrelation für die einzelnen Tage erhielt, sollten sinnvoll zu Monats- bzw. Jahreswerten zusammen gefasst werden. Es mussten geeignete Methoden gefunden werden, was zu der Berechnung von Median bzw. Mittelwert über den entsprechenden Abschnitt führte. Zur Verifizierung der Ergebnisse wurden Signifikanztests eingeführt, wovon für die weiteren Darstellungen nur der zweite verwendet wurde, da dieser sich als aussagekräftiger erwies. Die Werte (Kreuzkorrelationswert, Standardabweichung der Kreuzkorrelation, Signifikanztest 2 und Standardabweichung des Signifikanztest 2) konnten auf zwei verschiedene Arten dargestellt werden: Zum Einen als Wert in Abhängigkeit von den Indexpaaren und zum Anderen als Histogramm, in dem die Häufigkeit der Werte wiedergegeben wird. Es konnten etliche signifikante Verbindungen der Artikel festgestellt werden. Überraschend waren die Verläufe, welche sich in den Verteilungen der Linkstärken ergaben. Alle Werte zeigten einrseits eine Gaußverteilung, beim Kreuzkorrelationswert ergab sich jedoch zusätzlich ein einfach exponentieller Anteil im positiven Bereich. Dies stellt sich als Maß für die Anzahl der signifikanten Werte dar. Im Diagramm der gesamten Ergebnisse konnten die signifikanten Werte mit Hilfe einer Schwelle ausfindig gemacht werden, diese Schwelle musste vorher festgelegt werden.\\
+Häufigkeitsverteilungen wurden zusätzlich von den Kreuzkorrelationswerten für jeden Monat und jedes Paket erstellt, diese, in richtiger Reihenfolge hintereinander betrachtet, ergeben einen Eindruck vom Jahresverlauf. Die Verläufe bzw. die Steigungen der linearen Anteile der Jahreswerte wurden durch Anpassungsfunktionen charakterisiert. Durch einen Vergleich dieser konnten die Pakete verschiedenen Gruppen zugeordnet werden. Drei verschiedene Gruppen waren zu finden, Steigungen um den Wert \textit{-13}, \textit{-20} und eine Gruppe mit nur einem Paket\footnote{Das ein Paket ist Berlin, dessen Steigung mit \textit{-6,8} keiner der zuvor gefundenen Gruppen zugeordnet werden konnte.}. Eine weitere Gruppeneinteilung geschah durch die Normierung der Monatswerte der Steigungen, mit anschließendem Vergleich der zeitlichen Entwicklung. \\
+Der entscheidende Schritt, die Rekonstruktion der komplexen Netzwerke, konnte nun vorgenommen werden. Insbesondere wurde in diesem Schritt mit \textit{Cytoscape} gearbeitet, welches Vorteile in der Verarbeitung großer Datenmenge und Optionen bezüglich der Darstellung bot. 
+
+\section{Ausblick}
+Weiterführend wäre es interessant die Steigungen der Monatswerte näher zu untersuchen. Wie schon im Abschnitt \ref{sec:St9} erwähnt zeichnen sich die hier untersuchten Pakete dadurch aus, dass ihre normierten inversen Steigungen am Anfang sehr stark abfallen. Dabei stellt sich die Frage, ob diese Auffälligkeit nur (zufällig) bei den hier ausgewählten Paketen auftritt. Die Untersuchung weiterer Pakete könnte zeigen, ob diese Auffälligkeit zufällig zu Stande kamen. Gleichermaßen sollten die Pakete aus einem anderen \,\glqq Themengebiet\grqq \, ausgewählt werden. Die bisherige Auswahl kann für diesen Zweck nicht als repräsentativ angesehen werden, da sie nur Städte und Städtegruppen umfasst. Es wäre dienlich weitere Daten von anderen Jahren zur Analyse zur Verfügung zu haben. Es konnte nicht geklärt werden, ob dieser beschriebene Verlauf für das analysierte Jahr charakteristisch ist oder auch in anderen Jahren zu finden ist. Mit Hilfe von zusätzlichen Daten wäre die Beantwortung der Frage möglich.\\
+In Bezug auf die Darstellung der Netzwerke wären weitere Schritte denkbar. Zum Einen könnte die Signifikanzschwelle näher untersucht werden, wobei zu klären wäre wie groß diese sein muss, in Abhängigkeit von der gesamten Größe des Netzwerkes, um ein überschaubares (reduziertes) Netzwerk zu erhalten. Zum Anderen wäre noch über die Art der Darstellung nachzudenken. Die farbige Kodierung durch die Regenbogenfarben ist als Beispiel zu sehen, natürlich wären noch viele andere Arten denkbar. Die Anordnung der Knoten und ebenso der Kanten ist mit Hilfe weiterer Methoden möglich. Diesbezüglich sei erwähnt, dass viele der Methoden zur Anordnung schon in den Darstellungsprogrammen, wie \textit{Cytoscape} oder \textit{Map Equation}, implementiert sind.\\
+Bezüglich des Nutzerverhaltens von Wikipedia kam die Frage auf, warum viele Leute die englische Version der Wikipedia benutzen anstatt die in ihrer Landessprache. Dies möchte ich in Zukunft insbesondere für die schwedische Wikipedia klären\footnote{Projektförderung durch die schwedische Wikipedia (vertreten durch Herrn Motzkau) ist bereits bewilligt.}. In dieser Arbeit lag der Fokus auf der englischen und der deutschen Wikipedia, im nächsten Schritt soll die schwedische Wikipedia zusammen mit weiteren Sprachversionen, die einen ähnlichen Umfang an Artikeln bzw. an Zugriff und Änderungen der Artikel haben, mit der englischen verglichen werden. Das Ändern der Artikel soll dabei ein Schwerpunkt sein, insbesondere die Fragestellung, ob der Artikel mit gleichem Thema in Englisch und in der jeweilige Muttersprache von einer Person zur gleichen Zeit \,\glqq editiert\grqq\, werden. Die Personen, welche die Seiten überarbeiten, sollen den verschiedenen Zeitzonen auf der Erde zugeordnet werden. Man erhofft sich so Aufschluss über deren Geolokalisierung. Anhand der Zugriffsmuster soll mit Hilfe des Wochen- und Tagesrhythmus eine ähnliche Lokalisierung vorgenommen werden. Mit den Ergebnissen könnte dann eine Qualitätsverbesserung der schwedischen Wikipedia-Artikel vorgenommen werden.
+\newpage
+\section{Literatur}
+\renewcommand\refname{}
+\printbibliography
+
+\newpage
+\makeatletter
+\renewcommand{\thesection}{\Alph{section}}
+\setcounter{section}{0}
+\section{Anhang}
+\renewcommand{\thesubsection}{\Roman{subsection}}
+\setcounter{subsection}{0}
+\subsection{Knoten, Links und normierte Steigungen}
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei500_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(a) Heidelberg}
+		\end{figure}
+	\end{minipage}
+
+\caption{Anzahl der Knoten und der Links, sowie normierte Steigungen für das Paket \textit{(a)}. In rot dargestellt ist die Anzahl der Links über den Wochen wobei die Signifikanzschwelle \textit{0,5} verwendet wird. Die Anzahl der Knoten (grün) wurde mit dem Faktor zehn multipliziert, um die Verläufe in einem Diagramm darstellen zu können. In blau sieht man die normierte Steigung \prettyref{sec:St9}, die angepasst wurde für eine übersichtliche Darstellung.}	
+\label{nodes}
+\end{figure}
+
+\begin{figure}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei501_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(b) Berlin}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei502_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(c) deutsche Städte}
+		\end{figure}
+	\end{minipage}
+\caption{Anzahl der Knoten und der Links, sowie normierte Steigungen für einen Teil der Pakete \textit{(b\&c)}. Für nähere Erläuterungen siehe Abbildung \ref{nodes}.}
+\end{figure}
+
+\begin{figure}
+		\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei503_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(d) englische Städte}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei504_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(e) Birmingham}
+		\end{figure}
+	\end{minipage}
+\caption*{Anzahl der Knoten und der Links, sowie normierte Steigungen für einen Teil der Pakete \textit{(d\&e)}. Für nähere Erläuterungen siehe Abbildung \ref{nodes}.}
+\end{figure}
+
+\begin{figure}	
+		\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei505_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(f) Oxford}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei506_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(g) Sulingen}
+		\end{figure}
+	\end{minipage}
+\caption{Anzahl der Knoten und der Links, sowie normierte Steigungen für die restlichen Pakete \textit{(f\&g)}. Nähere Erläuterungen siehe Abbildung \ref{nodes}.}
+\end{figure}
+
+\begin{figure}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei507_dat_analyse_ts=05_dat_plot1.png}
+		\caption*{(h) Bad Harzberg im Harz}
+		\end{figure}
+	\end{minipage}
+\caption{Anzahl der Knoten und der Links, sowie normierte Steigungen für das Paket \textit{(h)}. Nähere Erläuterungen siehe Abbildung \ref{nodes}.}
+\end{figure}
+
+
+\subsection{Clusterkoeffizienten}
+\label{sec:St10}
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei500_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(a) Heidelberg}
+		\end{figure}
+	\end{minipage}
+\caption{Clusterkoeffizient für das Paket \textit{(a)}. Es wird sowohl der \textit{globale Clusterkoeffizient}, als auch der \textit{mittlere Clusterkoeffizient} dargestellt wobei \textit{0,5} als Signifikanzschwelle für die Links verwendet wurde. Zur Unterscheidung dieser Koeffizienten \prettyref{sec:St9}. Es wird deutlich, dass sie unterschiedliche Ergebnisse liefern. Ein Clusterkoeffizient mit dem Wert Null bedeutet, dass keine Dreiecksverbindungen der Knoten vorliegen.}	
+\label{cluster}
+\end{figure}
+
+\begin{figure}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei501_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(b) Berlin}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei502_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(c) deutsche Städte}
+		\end{figure}
+	\end{minipage}
+\caption{Clusterkoeffizient für einen Teil der Pakete \textit{(b\&c)}. Für nähere Erläuterungen siehe Abbildung \ref{cluster}.}
+\end{figure}
+
+\begin{figure}
+		\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei503_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(d) englische Städte}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei504_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(e) Birmingham}
+		\end{figure}
+	\end{minipage}
+\caption{Clusterkoeffizient für einen Teil der Pakete \textit{(d\&e)}. Für nähere Erläuterungen siehe Abbildung \ref{cluster}.}
+\end{figure}
+
+\begin{figure}	
+		\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei505_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(f) Oxford}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei506_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(g) Sulingen}
+		\end{figure}
+	\end{minipage}
+\caption{Clusterkoeffizient für die restlichen Pakete \textit{(f\&g)}. Nähere Erläuterungen siehe Abbildung \ref{cluster}.}
+\end{figure}
+
+\begin{figure}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei507_dat_analyse_ts=05_dat_plot2.png}
+		\caption*{(h) Bad Harzberg im Harz}
+		\end{figure}
+	\end{minipage}
+\caption{Clusterkoeffizient für das Paket \textit{(h)}. Nähere Erläuterungen siehe Abbildung \ref{cluster}.}
+\end{figure}
+
+\subsection{Gradverteilungen}
+\label{sec:St11}
+\begin{figure}[H]
+\centering
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei500_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(a) Heidelberg}
+		\end{figure}
+	\end{minipage}
+\caption{Gradverteilung eines Paketes \textit{(a)}. Dargestellt ist der maximale Grad und der durchschnittliche Grad, welcher mit dem Faktor zehn multipliziert wurde. Die Vergrößerung der Werte bewirkt, dass die Graphen in einem Diagramm sichtbar sind. Des Weiteren sind die Werte für die Größe der ausgedehntesten Komponente.}	
+\label{degree}
+\end{figure}
+
+\begin{figure}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei501_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(b) Berlin}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei502_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(c) deutsche Städte}
+		\end{figure}
+	\end{minipage}
+\caption{Gradverteilung für einen Teil der Pakete \textit{(b\&c)}. Für nähere Erläuterungen siehe Abbildung \ref{degree}.}
+\end{figure}
+
+\begin{figure}
+		\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei503_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(d) englische Städte}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei504_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(e) Birmingham}
+		\end{figure}
+	\end{minipage}
+\caption{Gradverteilung für einen Teil der Pakete \textit{(d\&e)}. Für nähere Erläuterungen siehe Abbildung \ref{degree}.}
+\end{figure}
+
+\begin{figure}	
+		\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei505_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(f) Oxford}
+		\end{figure}
+	\end{minipage}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei506_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(g) Sulingen}
+		\end{figure}
+	\end{minipage}
+\caption{Gradverteilung für die restlichen Pakete \textit{(f\&g)}. Nähere Erläuterungen siehe Abbildung \ref{degree}.}
+\end{figure}
+
+\begin{figure}
+	\begin{minipage}[t]{0.75\textwidth}
+		\begin{figure}[H]
+		\includegraphics[width=\textwidth]{LOG_Datei507_dat_analyse_ts=05_dat_plot3.png}
+		\caption*{(h) Bad Harzberg im Harz}
+		\end{figure}
+	\end{minipage}
+\caption{Gradverteilung für das Paket \textit{(h)}. Nähere Erläuterungen siehe Abbildung \ref{degree}.}
+\end{figure}
+\newpage
+\section{Danksagung}
+Ein großes Dankeschön geht zunächst an meinen Betreuer Herrn PD Dr. Jan W. Kantelhardt, der es mir ermöglichte die Arbeit in seiner Arbeitsgruppe zu schreiben, sowie die Unterstützung in dieser Arbeit und die Zusage hierzu für das nächste Projekt. Vielen Dank auch für die gute Betreuung, vor allen Dingen bezogen auf die organisatorischen Dinge.\\[\baselineskip]
+Ein besonderer Dank gilt auch Mirko Kämpf, der mir den Umgang und die Struktur der Datenverarbeitung anhand gezielt ausgewählter Beispiele näher brachte. Im weiteren Verlauf der Arbeit half er mir jegliche Art von Problemen zu lösen und mich teilweise vor der Verzweiflung zu bewahren. Ihm sei ebenso für das Korrekturlesen und die damit verbundenen Anmerkungen, sowie für alle bereichernden Gespräche gedankt.\\[\baselineskip] 
+Auch den zwei Bachelorstudenten der Arbeitsgruppe, Patrick Wohlfahrt und Arne Böker, sei gedankt für die Aufmunterungen und hilfreichen Tipps bei Problemen.\\[\baselineskip]
+Zuletzt gilt mein Dank meiner Familie und Freunden, die mich in dieser Zeit häufiger entbehren mussten, als Ihnen lieb war und immer interessiert waren an meinem Fortschritt. Besonders erwähnt sei Erik Kohl, dass er die Kraft besaß mich immer wieder aufzumuntern!
+\newpage
+\section{Eidesstattliche Erklärung}
+\begin{flushleft}
+\begin{verbatim}
+
+\end{verbatim}
+Hiermit versichere ich, dass ich die vorliegende Arbeit selbstständig verfasst und keine anderen als die angegebenen Quellen und Hilfsmittel benutzt habe, dass alle Stellen der Arbeit, die wörtlich oder sinngemäß aus anderen Quellen übernommen wurden, als solche kenntlich gemacht sind und dass die Arbeit in gleicher oder ähnlicher Form noch keiner Prüfungsbehörde vorgelegt wurde.\\[4.0\baselineskip]
+Berit Schreck\\
+Halle (Saale), den 23. August 2012
+\end{flushleft}
+\end{document}

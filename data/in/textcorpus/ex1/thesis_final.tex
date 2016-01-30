@@ -1,0 +1,264 @@
+\documentclass[a4paper,12pt,twoside]{article}
+\usepackage{geometry} \geometry{a4paper, top=35mm, left=30mm, right=20mm, bottom=30mm, headsep=5mm, footskip=12mm}%Seitenränder
+\usepackage[utf8]{inputenc}
+%\usepackage{German}
+\usepackage{epsfig}
+\usepackage{color}
+\usepackage{wrapfig}%ermöglicht text-umflossenes Bildlayout
+\usepackage{graphicx}
+\usepackage{SIunits}%Einheiten wie "\milli\volt"
+\usepackage{amsmath}
+\usepackage[font=small]{caption}%kann Captions umformatieren
+\usepackage{subfigure}%Mehrere Bilder in einer figure-Umgebung
+\usepackage{multirow}%kann Zeilen oder Spalten in einer Tabelle zusammenfassen.
+%
+\usepackage{float}
+\floatstyle{plaintop}
+\restylefloat{table}%damit Captions über table stehen.
+%
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead[\leftmark]{}
+\chead[]{}
+\rhead[]{\rightmark}
+\lfoot[\thepage]{}
+\cfoot[]{}
+\rfoot[]{\thepage}
+%
+\author{Arne Böker}
+\title{Reconstruction of complex networks based on event time series}
+%
+\makeatletter
+\renewcommand{\paragraph}{%
+  \@startsection{paragraph}{4}%
+  {\z@}{1.5ex \@plus 1ex \@minus .2ex}{-1em}%
+  {\normalfont\normalsize\bfseries}%
+}
+\makeatother
+%
+\newcommand{\blankpage}{ %ermöglicht Einfügen von weißen Seiten
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+}
+%
+\begin{document}
+\begin{titlepage}
+\centering
+% Upper part of the page
+\includegraphics[width=10cm]{logo}\\
+\textsc{\Large Martin-Luther University \\Halle-Wittenberg}\\[1cm]
+\hrule
+{\color{white}42} \\[0.5cm]
+\textsc{\huge Bachelor Thesis}\\[0.5cm]
+% Title
+{\huge \bf Reconstruction of complex networks\\[0.1cm] based on event time series}\\[1cm]
+\hrule
+{\color{white}42} \\[1cm]
+% Author and supervisor
+\Large
+\emph{Author:}\\
+\textbf{Arne Böker}\\[0.5cm]
+\emph{Supervisor:} \\
+\textbf{PD Dr. Jan W. Kantelhardt}\\[0.5cm]
+Institute of Physics, Faculty of Science II\\
+Martin-Luther-University Halle-Wittenberg
+\vfill
+% Bottom of the page
+{\large September 25, 2012}
+\end{titlepage}
+\newpage
+\blankpage
+\thispagestyle{plain}
+\pagenumbering{Roman}
+\tableofcontents
+\newpage
+\blankpage
+%
+\pagenumbering{arabic}
+\section{Introduction}
+\paragraph*{} In the course of the past decade, the term `Web 2.0' has come into existence. It is used to describe recent functions of the Internet, which allow the users to communicate faster than before through short messages, commenting, blogs, \emph{et cetera}. Especially in combination with the novel development of mobile Internet, some Web 2.0 media have taken over a large part of our everyday lives and of our interaction with other people.
+\paragraph*{} This development combines well with the field of socio-economic physics, which is not very old itself. The new working group SOE of the German physical association DPG has been founded in 2001 and gained the status of a division in 2009. Web 2.0 provides many large social networks with large amounts of data. These networks are of great interest for sociology and for sociophysics, which uses methods of network physics (graph theory) to describe and analyze these social networks theoretically. We will use this approach too, and take a look at the online encyclopedia Wikipedia as an example for an online social network. Its users interact by reading and editing encyclopedia entries and by discussing them on special `Talk' pages, making Wikipedia an encyclopedia (content network) and a communication network at the same time.
+\paragraph*{} A network consists of nodes (vertices) and edges. If the nodes have a property which is changing with time, these changes can be compared for a pair of nodes by mathematical methods. For changes behaving similarly, we draw an edge between the nodes. Doing this for many pairs of nodes, we can reconstruct a network from the `property time series'. The network can usually also be constructed as a weighted network because the mathematical comparison methods give continuously distributed results, and possibly as a directed network because the methods may yield interaction directionality. There are many social networks and various mathematical methods to use, so the idea can be implemented in very different ways. As already mentioned, we are using Wikipedia as a social network. Each Wikipedia page is a node, time stamps of page edits form the time series. These time series are compared using the Event Synchronization method, which will be introduced in section \ref{sec:ES}. We will end up with two networks, one `static network' which uses the links between Wikipedia pages (coded in the page content) as edges, and one `dynamic network', which is our reconstructed network from the page edit time series\footnote{Note that both networks may change with the progressing development of Wikipedia. They are both snapshots of a limited time.}.
+\paragraph*{} In order to work with Wikipedia's structure and not only with the encyclopedic content, it is necessary to understand basic characteristics of Wikipedia. The second chapter, after this introduction, gives an overview of the relevant features of Wikipedia and of the dataset we are working with. Even more important is a deeper understanding of the Event Synchronization algorithm. Event Synchronization has been developed just ten years ago and has not been used very widely yet, so the third chapter introduces the method itself before treating its general properties and our usage of it. Afterwards we can step to network reconstruction itself. Chapter four shows our calculated results and some network graphs. In the final chapter we will give a round-up of what has been done for this thesis and a thematically similar parallel thesis as well as an outlook to possible future work regarding network reconstruction and Wikipedia.
+\newpage
+%
+\section{About Wikipedia}
+\paragraph*{} We are using data collected from the online encyclopedia Wikipedia between 01/2009 and 10/2009. This section gives a short introduction into relevant features of Wikipedia and our dataset.\vspace{-6pt}
+\subsection{What is Wikipedia?}
+\paragraph*{} The name \emph{Wikipedia} is a portmanteau of the hawaiian \emph{wiki} meaning `quick' and \emph{encyclopedia}. Wikipedia is, in its own words, `a free, collaboratively edited, and multilingual Internet encyclopedia' [{\sc Wikipedia}2012a] founded by Jimmy Wales and Larry Sanger in 2001. `Free' means that the content is accessible for anyone and the organization behind Wikipedia (the Wikimedia Foundation) is a non-profit organization, `collaboratively edited' means that any user is allowed to edit or create articles - which is vital for us: Because of this collaborative character we can regard Wikipedia as a social network. Wikipedia is `multilingual' not as a single encyclopedia in several languages but as multiple encyclopedias. There are 285 Wikipedias in different languages or dialects with very variable numbers of articles. The largest version is the English Wikipedia with more than four million articles and 24 million other pages [{\sc Wikipedia}2012b] (see also section \ref{ssec:namespaces}), the German, French and Dutch Wikipedias also contain more than a million articles apiece. Other more exotic language versions can have less than 100 articles, in some cases these articles are only automatically generated. The contents of different Wikipedias are generally developed independently from each other, making each language version an encyclopedia of its own.\vspace{-6pt}
+\subsection{Characteristics of our data}
+\label{ssec:data}
+\vspace{-12pt}
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=13cm]{example_timeseries}
+\vspace{-3mm}
+\caption{Continuous time series plot $f(t)$ (blue line) with a threshold at 1.0 and events (maxima exceeding 1.0) marked as spikes.}
+\label{img:example_timeseries}
+\vspace{-6mm}
+\end{figure}
+\paragraph*{} Our dataset was collected by Domas Mituzas from 2008 to 2010 [{\sc Mituzas}2010] and prepared in 2009 by Lev Muchnik, who made it available to us. Beside other data, it contains date and time for every edit that happened during a total time of 40 weeks.\\
+This way we get an edit time series for each Wikipedia page to work with. These time series are different from usual time series in format (see Figure \ref{img:example_timeseries} - the red spikes visualize the event time series format), so to quantify synchronicity we need a suitable algorithm, which we will introduce in section \ref{ssec:whyES}.
+\subsection{Namespaces}
+\label{ssec:namespaces}
+\paragraph*{} Wikipedia pages are grouped by their general functions into \emph{namespaces}. They can be recognized by title prefixes on Wikipedia pages. For example the page `{\sf Category:Physics}' is part of the namespace {\sf Category} while the page {\sf Physics} belongs to the namespace {\sf Main}\footnote{The `Main' namespace is not displayed in Wikipedia.}. There are 16 main namespaces and 14 respective `talk' namespaces for discussions among editors (see Table 1 on page \pageref{tbl:namespaces} for details), each assigned a number from -2 to 15 and 100 to 111.
+\paragraph*{}
+\begin{wrapfigure}{r}{7.5cm}
+\centering
+\includegraphics[width=6.5cm]{namespaces}
+\caption{An example namespace distribution from the Hebrew Wikipedia in 2009. The large blue bar is the namespace `Main', taking up 70\% of all pages.}
+\vspace{-2cm}
+\label{img:namespaces}
+\end{wrapfigure}
+Among these namespaces, the \emph{Main} namespace (0) is the most interesting for us as it contains the Wikipedia articles. Looking at the distribution of namespaces in Wikipedia, it becomes clear that it is the most common too, but not dominant enough to ignore the other namespaces.
+\paragraph*{} Figure \ref{img:namespaces} shows an example namespace distribution: The complete bar signifies the 1000 most actively edited pages from the Hebrew Wikipedia, different colours stand for the different namespaces. The large blue bar is namespace 0, but 1, 2, 3 and 4 still make up about one fourth of the total pages. The numbers can vary: some Wikipedias consist almost solely of articles, in others they make less than 50\%. Because of this discrepancy it is necessary to focus on articles and exclude all other pages, so our results will always refer to those.\\
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{|c|l|c|l|}
+\hline
+{\bf Index} & {\bf Title} & {\bf Index} & {\bf Title}\\
+\hline
+0 & Main & 1 & Talk\\
+\hline
+2 & User & 3 & User talk\\
+\hline
+4 & Wikipedia & 5 & Wikipedia talk\\
+\hline
+6 & File & 7 & File talk\\
+\hline
+8 & MediaWiki & 9 & MediaWiki talk\\
+\hline
+10 & Template & 11 & Template talk\\
+\hline
+12 & Help & 13 & Help talk\\
+\hline
+14 & Category & 15 & Category talk\\
+\hline
+100 & Portal & 101 & Portal talk\\
+\hline
+102 & Book & 103 & Book talk\\
+\hline
+104 & Word & 105 & Word talk\\
+\hline
+106 & Text & 107 & Text talk\\
+\hline
+108 & Quote & 109 & Quote talk\\
+\hline
+110 & News & 111 & News talk\\
+\hline
+-1 & \multicolumn{3}{|c|}{Media}\\
+\hline
+-2 & \multicolumn{3}{|c|}{Special}\\
+\hline
+\end{tabular} 
+\end{center}
+\vspace{-12pt}
+\label{tbl:namespaces}
+\caption{Overview over the namespaces of Wikipedia with index numbers. Wikipedia itself only lists namespaces -2 to 101, 107 and 108, with the last two namespaces corresponding to our 102 and 103 [{\sc Wikipedia}2012d]. The remaining namespaces are probably outdated, but have to be listed here because they are part of our dataset.}
+\end{table}
+\newpage
+\subsection{Nodegroups}
+\label{ssec:nodegroups}
+\paragraph*{} To construct a network, we need vertices (nodes) and edges. In our networks Wikipedia pages will serve as nodes. Each node is assigned a time series, the time series' calculated synchronicities give the weight for the edges. This way we construct a weighted dynamic network, which then is compared to the static (unweighted) link network.
+\paragraph*{} Since our computational  power does not suffice to calculate the synchronicity of all pairings between several millions of Wikipedia pages, we choose \emph{nodegroups} with a maximum of a few thousand nodes. Until now we have performed our analysis on 10 such nodegroups, all of which are static networks centered around one article. Two of the central articles are about the financial indices {\bf DAX} and {\bf S\&P 500}, another two are {\bf lists of cities} in Germany and the United Kingdom. Note that German cities generally have more than 2,000 inhabitants and UK cities more than 10,000. Also city status in the UK is granted by the monarch and because of this harder to achieve than in Germany [{\sc Wikipedia}2012c]. So there are a lot more cities in Germany than in the UK. The remaining six nodegroups are selected cities of different size in Germany and the UK, namely {\bf Heidelberg, Berlin, Oxford, Birmingham, Sulingen} and {\bf Bad Harzburg im Harz}. The articles regarding Oxford, Birmingham, the UK city list and the financial articles are from the English Wikipedia, the five articles referring to German cities are part of the German Wikipedia. The nodegroups can partly be contained in other Wikipedias because links between different language versions are possible. Especially links between two articles about the same topic in different languages are common.
+\newpage
+%
+\subsection{Behaviour for Wikipedia data}
+\paragraph*{} We calculate ES using edit time series from Wikipedia. Working on this, it has become apparent that most wikipedia pages are edited very rarely. This can lead to surprising results, which we will address in this section. It should be noted that the algorithm cannot work if there are less than four events in at least one of the time series, so we disregard all pages with fewer than four edits. This is a large part of the data, but in turn it means that our results are based only on pages of relatively high public interest.
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{disc_results}
+\caption{All results for one example dataset (the DAX nodegroup as defined in section \ref{ssec:nodegroups}), sorted by density of the less active time series. Black dots are calibrated ES results, green dots calibrated results of the surrogate data test. The red line (right axis) marks the event count in the less active time series. The bottom axis is only an index for the result points. For very low event counts the ES results can only take clearly discrete values, for higher event counts they are continuous and clearly lower.}
+\label{img:disc_results}
+\end{figure}
+\paragraph*{} Figure \ref{img:disc_results} shows all results for one example group of Wikipedia pages (the DAX nodegroup), sorted by the lesser density among the two time series. Each point is the calibrated result for one pair of time series (left axis) - black for the strength of ES, green for the strength of ES in the surrogate data test. The red line (right axis) marks the lower event count among the two time series, i.e. the number of edits of the less edited article. We can see that for low event counts (low densities) there are only few possible result values while for higher event counts the number of possible results is increased, observable by the clear horizontal lines on the left side, whose number increases with increasing density until they are not separately recognizable anymore. Furthermore, the results for an event count of 4 are always either 0 or larger than 1, decreasing with higher densities. This can be explained via the calibration, which is generally larger for high event counts because in that case both time series have similarly high density, while the low event counts only apply to one of the time series and the other one may contain any number of events, in many cases leading to high ratios, small calibration values and accordingly large calibrated results.
+\paragraph*{} The effect of discrete values for low densities leads to a second effect, which can be seen in Figure \ref{img:disc_quotient}. The graph depicts the relative frequencies of values from 0 to 5 for the quotient of strength of ES and surrogate data test. The lines represent different filters: the black line contains all results; the red, blue and green lines only results from time series with an event count greater than 50, 100 or 150. The effect illustrated by this is a preference of integer quotients like $\frac{1}{1},\;\frac{2}{1},\;\frac{3}{1}$. For most quotients the green line shows the highest values, followed by blue, red and black, but at such integer positions the graphs contain peaks and the order is inverted, so the black line is on top. For quotients like $\frac{1}{2},\;\frac{1}{3},\;\dots$ this effect can be seen if the reciprocal x axis is chosen. The behaviour of the graph remains unchanged.\\
+Going back to the ES results this means that "simple" quotients are generally more common than others, but preferredly for low event counts, while the values for higher event counts are more evenly distributed.\\
+Additionally, Figure \ref{img:disc_quotient} also hints at the value 0 for the strength of ES being very high for low event counts. We take a closer look at this in Figure \ref{img:disc_zero}.\newpage
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=13cm]{disc_quotient}
+\vspace{-0.7cm}
+\caption{Strength of ES over surrogate data test (horizontal axis) in a histogram (vertical axis: relative frequencies). The black line contains all results, the red, blue and green lines only results with event counts greater than 50, 100, or 150. All lines peak when the strength of ES is a multiple of the surrogate data test. At the peaks the order of the lines is inverted, the black line being highest. This means that these numbers are most common for low densities.}
+\label{img:disc_quotient}
+\end{figure}
+\vspace{-0.5cm}
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=13cm]{disc_zero}
+\vspace{-0.7cm}
+\caption{Relative frequencies of event counts up to 50 in all results (red line) or only results with a strength of ES $Q=0$ for the original/surrogate data (black/green lines). While only 12 percent of all used time series contain exactly four events, 26 percent of the zero results are calculated from time series with four events. For event counts above 10 the red line is above the other two, which means that zero results are less common than for lower densities.}
+\label{img:disc_zero}
+\vspace{-2cm}
+\end{figure}\newpage
+\paragraph*{} Figure \ref{img:disc_zero} shows the distribution of event counts among all used pairs of time series (red) or only pairs for which the result was zero (black line: real data, green line: surrogate data). For low event counts (from 4 to 10) the black and green lines are clearly higher than the red line, which means that a greater part of the zero results than of all results lies in this area. For higher event counts the red line is on top. Because the green and black lines do not deviate significantly from each other, this cannot be a consequence of synchronicity or asynchronicity.
+\paragraph*{} If two time series contain very few events, these events are likely to be far away from any events in the respective other time series, especially because of possible response edits or reverts, as mentioned earlier. This way a result of zero can be explained as a kind of noise effect due to the very low event counts. For higher event counts this kind of noise is unlikely to appear, so zero is less common as a result.
+\paragraph*{} Though it is important to take note of these effects, their influence on the results is not strong enough to justify the effort of mathematically exact comprehension in this case, so we will not go beyond the above descriptions and explanatory approaches and instead advance to the original aim of network reconstruction.
+\newpage
+%
+
+\newpage
+%
+\section{Conclusion and prospect}
+\subsection{Cross correlation analysis for access data}
+\paragraph*{} The studied Wikipedia dataset (see section \ref{ssec:data}) does not only contain page edit times, but also access rates. These are much higher and can be used as discrete time series with an hourly binning. This has been done by Berit Schreck parallelly to this project [{\sc Schreck}2012]. She has applied a cross correlation algorithm to the time series and used the results as link strengths.
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{Access-Network}
+\caption{German cities' network calculated from access time series using cross correlation. Figure taken from [{\sc Schreck}2012] for comparison.}
+\label{img:map_access}
+\end{figure}\newpage
+\paragraph*{} The access network (Figure \ref{img:map_access}) appears to have properties quite different from our edit network. Link strengths are more homogenously distributed, also the south of Germany seems to contain more links than before, visible by the higher fraction of red colour.
+\paragraph*{} Measures from graph theory, such as node degrees, have been mentioned earlier. While we did not use them for the edit networks, some analysis has already been done regarding the access networks. More is to be done in the future, the aim being a comparison between the static link network and the reconstructed access and edit networks.
+\subsection{Event Synchronization analysis for access data}
+\begin{wrapfigure}{r}{8cm}
+\centering
+\includegraphics[width=7.7cm]{example_timeseries}
+\caption{A continuous (or discrete) time series can be transformed into an event time series by marking maxima exceeding a certain threshold as events.}
+\label{img:mk_idea}
+\end{wrapfigure}
+\paragraph*{} Our Wikipedia access data are different from the edit data in their format: While the access time series are time series with a value $f(t)$ for every point of time $t$, the edit time series are event time series, as described earlier. To improve comparability, it might be useful to transform the access time series into the event time series format.\\
+Figure \ref{img:mk_idea} is an example for how this can be achieved. We choose a threshold value $f_0$ and then generate a new event time series by placing events at all $t_i$ with $f(t_i)>f_0$. This method has already been used in the previous works applying ES [{\sc Quiroga}2002, {\sc Malik}2010] and could be useful in this context again.
+\subsection{Conclusion}
+The aim of this work was to use the algorithm of Event Synchronization (ES) to reconstruct complex networks from event time series. To do so, we needed to understand the recently developed algorithm first and to learn how to interpret the results calculated by it. We achieved this by running experiments with randomly generated time series and finding a calibration function, which helped us to sort out insignificant links. We also introduced a test of significance and compared its results to the calibration function. The same analyses have been performed not only for the strength of ES, which we used as link strengths, but also for the delay value, which can be useful as a directed link strength.\\
+We applied the algorithm to 10 groups of articles from the online encyclopedia Wikipedia, especially from its English and German versions. The results could be drawn as histograms and classified in three different types with close connection to the Wikipedia language the respective nodegroups are based on. We drew network graphs and described them optically, keeping in mind that more detailed mathematical descriptions are possible and necessary to understand the results.
+%
+\rhead[]{}
+\blankpage
+\section*{References}
+\addcontentsline{toc}{section}{References}
+[{\sc Kämpf}2012] {\sc M. Kämpf, S. Tismer, J. W. Kantelhardt, L. Muchnik.} \emph{Burst event and return interval statistics in Wikipedia access and edit data.} Physica A {\bf 391, 23}, p. 6101–6111 (2012).\\[6pt]
+
+[{\sc Mituzas}2010] {\sc D. Mituzas.} \emph{Page view statistics for Wikimedia projects.}\\{\tt http://dammit.lt/wikistats} - last visit 2012/09/16 \\[6pt]
+
+
+[{\sc Quiroga}2002] {\sc R. Quian Quiroga, T. Kreuz, P. Grassberger}. \emph{E} Physical Review E {\bf 66}, 041904 (2002).\\[6pt]
+
+
+
+[{\sc Schreck}2012] {\sc B. Schreck}. \emph{Rekonstruktion komplexer Netzwerke mittels Kreuzkorrelationsmethode.} Bachelor thesis, MLU Halle-Wittenberg, 2012. \\[6pt]
+[{\sc Sumi}2011] {\sc R. Sumi, T. Yasseri, A. Rung}. \emph{Edit wars in Wikipedia.} WebSci Conference 2011, Koblenz. {\tt http://journal.webscience.org/523} \\[6pt]
+[{\sc Wikipedia}2012a] {\tt http://en.wikipedia.org/wiki/Wikipedia} - last visit 2012/09/10 \\[6pt]
+[{\sc Wikipedia}2012b] {\tt http://meta.wikimedia.org/wiki/List\_of\_Wikipedias} - last visit 2012/09/10 \\[6pt]
+[{\sc Wikipedia}2012c] {\tt http://en.wikipedia.org/wiki/City} - last visit 2012/09/16 \\[6pt]
+[{\sc Wikipedia}2012d] {\tt http://en.wikipedia.org/wiki/Wikipedia:Namespaces} - last visit 2012/09/15 \\[6pt]
+[{\sc Yasseri}2012a] {\sc T. Yasseri, R. Sumi, J. Kertész}. \emph{Circadian patterns of Wikipedia editorial sctivity: A demographic analysis.} PLOS ONE {\bf 7}, e30091 (2012).\\[6pt]
+[{\sc Yasseri}2012b] {\sc T. Yasseri, R. Sumi, A. Rung, A. Kornai, J. Kertész}. \emph{Dynamics of conflicts in Wikipedia.} PLOS ONE {\bf 7}, e38869 (2012).\\[6pt]
+\newpage
+\blankpage
+\section*{Acknowledgements}
+\addcontentsline{toc}{section}{Acknowledgements}
+\paragraph*{} First of all I would like to thank my supervisor PD Dr. Jan W. Kantelhardt for giving me the opportunity to write this thesis as a part of his working group and for various forms of support during the process.
+\paragraph*{} As parts of the working group, Berit Schreck and Patrick Wohlfahrt have been very supportive too, giving advice when needed and creating a very good atmosphere throughout the time.
+\paragraph*{} Maybe most importantly I want to give thanks to Mirko Kämpf for keeping the necessary technical structure working and providing technical as well as methodical help. His willingness to help others and his ability to stay calm and rational amazed me on many occasions.
+\paragraph*{} Finally thanks to everyone who gave this thesis its form by proofreading or small hints. I appreciated their help and flexibility.
+\newpage
+\blankpage
+\section*{Declaration}
+\addcontentsline{toc}{section}{Declaration in lieu of an oath}
+I declare that I wrote this thesis autonomously, that no resources and auxiliaries were used apart from those mentioned in the thesis, direct or indirect excerpts from other sources were marked and the thesis was not submitted to another examination institution before in identical or similar form.\\[60pt]
+Arne Böker\\
+Halle (Saale), 2012/09/25
+\end{document}

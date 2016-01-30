@@ -1,0 +1,786 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.1.1  (Unix)">
+	<META NAME="CREATED" CONTENT="20121017;11504800">
+	<META NAME="CHANGED" CONTENT="20140317;21562300">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 2cm }
+		P { margin-bottom: 0.21cm }
+		H2 { margin-bottom: 0.21cm }
+		H2.western { font-family: "Liberation Sans", sans-serif; font-size: 14pt; font-style: italic }
+		H2.cjk { font-family: "WenQuanYi Micro Hei"; font-size: 14pt; font-style: italic }
+		H2.ctl { font-family: "Lohit Hindi"; font-size: 14pt; font-style: italic }
+		H4 { margin-bottom: 0.21cm }
+		H4.western { font-family: "Liberation Serif", serif }
+		H4.cjk { font-family: "WenQuanYi Micro Hei" }
+		H4.ctl { font-family: "Lohit Hindi" }
+		H3 { margin-bottom: 0.21cm }
+		H3.western { font-family: "Liberation Sans", sans-serif }
+		H3.cjk { font-family: "WenQuanYi Micro Hei" }
+		H3.ctl { font-family: "Lohit Hindi" }
+		H1 { margin-bottom: 0.21cm }
+		H1.western { font-family: "Liberation Sans", sans-serif; font-size: 16pt }
+		H1.cjk { font-family: "WenQuanYi Micro Hei"; font-size: 16pt }
+		H1.ctl { font-family: "Lohit Hindi"; font-size: 16pt }
+		TD P { margin-bottom: 0cm }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<DIV TYPE=HEADER>
+	<P ALIGN=LEFT STYLE="margin-bottom: 0.5cm; font-style: normal; font-weight: normal; text-decoration: none">
+	<FONT FACE="Apple Braille, fantasy"><FONT SIZE=2><SPAN LANG="en-US">Mirko
+	Kämpf (</SPAN><A HREF="mailto:mirko@cloudera.com"><SPAN LANG="zxx">mirko@cloudera.com</SPAN></A><SPAN LANG="en-US">)
+	Version: 1.0.0                  </SPAN><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN LANG="en-US">Draft:
+	</SPAN></FONT><FONT SIZE=2 STYLE="font-size: 10pt"><SPAN LANG="en-US"><I><B>HDMS
+	: Hadoop Distributed Metastore</B></I></SPAN></FONT></FONT></FONT></P>
+</DIV>
+<P ALIGN=CENTER><FONT SIZE=2><SPAN LANG="en-US">To be submitted to
+</SPAN></FONT><A HREF="https://papers.usenix.org/hotcrp/icac-mbds14/index"><SPAN LANG="en-US"><I><U>ICAC
+'14: MBDS</U></I></SPAN></A></P>
+<P ALIGN=CENTER><FONT SIZE=5><B>HDMS : Hadoop Distributed Metastore </B></FONT>
+</P>
+<H1 CLASS="western" ALIGN=CENTER><FONT SIZE=4><I>Abstract</I></FONT></H1>
+<P ALIGN=JUSTIFY STYLE="margin-left: 1.97cm; margin-right: 2.01cm; font-weight: normal">
+<FONT SIZE=2 STYLE="font-size: 11pt">Big Data Analytics is still a
+growing field which connects multiple disciplines, like statistics,
+computational science, physics, and engineering. Quite often the
+driving forces research projects, or business objectives which guide
+to new challenges in operations research. Especially
+interdisciplinary project groups have to integrate more than just
+data sets. Communication and project management methods have to be
+integrated into a shared workspace which allows a clear projection of
+specialized views for all participating actors during all project
+stages, no matter if analysis algorithms are under development or if
+latest approaches are explored during first operations. Common
+integrated development environments offers such functionality for
+many different technologies, but usually those tools are very
+specific for either engineers or scientists.    </FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-left: 1.97cm; margin-right: 2.01cm; font-weight: normal">
+<FONT SIZE=2 STYLE="font-size: 11pt">Because more and more data sets
+and concurring analysis approaches and models are available it is
+very important to track a projects life cycle and design decisions.
+We propose the &quot;<I>Hadoop Distributed Metastore</I>&quot;, which
+is an knowledge aggregation and exploration system. It covers and
+connects two layers: (a) on the  methodological level it offers an
+extendable flexible shareable long term memory functionality which
+allows automatic pattern detection in user activities and (b) on the
+technical level it offers pre implemented connectors to several
+subsystem, especially to components present in multiple Hadoop
+clusters. </FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-left: 1.97cm; margin-right: 2.01cm; font-weight: normal">
+<FONT SIZE=2 STYLE="font-size: 11pt">The metadata integration layer
+(MIL) is able to connect multiple distributed metadata stores (DMS)
+and exposes it's functionality via an explorative graph connected to
+a facetted search interface. Aggregated metadata from one or many
+clusters helps to find supporting information for model selection and
+parameter validation based on collected descriptive data set
+statistics. Our approach lowers the barriers between disciplines and
+allows faster and more efficient knowledge aggregation to support
+agile operations in interdisciplinary data analysis projects.</FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-left: 1.97cm; margin-right: 2.01cm; font-weight: normal">
+<BR><BR>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-left: 1.97cm; margin-right: 2.01cm; font-weight: normal">
+<BR><BR>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-left: 1.97cm; margin-right: 2.01cm; font-weight: normal">
+<BR><BR>
+</P>
+<H2 CLASS="western"></H2>
+<H1 CLASS="western" STYLE="page-break-before: always"><FONT SIZE=4><I><B>1.
+Introduction</B></I></FONT></H1>
+<P><FONT SIZE=4><I><B>What is our motivation? </B></I></FONT>
+</P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I><SPAN STYLE="background: #ffff00">Complex
+systems research,<BR>Dynamic networks,<BR>Growth processes in non
+stationary systems</SPAN></I></FONT></P>
+<P><FONT SIZE=4><I><B><BR>What are the problems to be solve</B></I></FONT>d?</P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I>-
+Networks can not easily be handled on a large scale.<BR>- Several
+processing steps are executed manually and error prune <BR>- one has
+less information about required resources / runtime <BR>-
+Visualization has several limitations ... filtering should be done
+before the export to a workstation <BR>- Interpretation of results in
+an distributed environment works only if all data can be browsed
+easily</I></FONT></P>
+<P STYLE="font-weight: normal"><BR><BR>
+</P>
+<P><FONT SIZE=4><I><B>Answer operative questions: <BR></B></I></FONT><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN LANG="en-US"><I><SPAN STYLE="font-weight: normal">-
+Trace back to single procedures and their runtime parameters<BR>-
+Find appropriate resources and analysis methods  </SPAN></I></SPAN></FONT>
+</P>
+<P STYLE="font-weight: normal"><BR><BR>
+</P>
+<P><FONT SIZE=4><I><B>Our approach:</B></I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I>-
+Describe a complex data structure for Time Dependent Multilayer
+Graphs, and Dynamic Graphs </I></FONT>
+</P>
+<P STYLE="font-style: normal; font-weight: normal"><FONT SIZE=2 STYLE="font-size: 10pt">	a)
+	single node properties as time series, correlation or dependency 
+matrix for time frames, <BR>		edge lists, node lists filtered by node
+properties (<B>Input</B> for time dependent graph analysis, <BR>		time
+dependent graphs)</FONT></P>
+<P STYLE="font-style: normal; font-weight: normal"><FONT SIZE=2 STYLE="font-size: 10pt">	b)
+	time dependent graph properties (ensemble properties); scalar
+properties: nr of clusters, <BR>		number of links, average path
+length, ...; list of nodes per clusters;  </FONT>
+</P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I>-
+Maintain a data set life cycle descriptor and several named views,
+which can be used one-click export</I></FONT></P>
+<P STYLE="font-style: normal; font-weight: normal"><FONT SIZE=2 STYLE="font-size: 10pt">	a)
+	Collect and share properties of data sets <BR>		* parameters for
+creation procedures (setup for collectors or extractors)<BR>		*
+storage requirements and properties (block size, number of records,
+path)<BR>		* simple descriptive statistics of tables and network
+properties<BR>		* derived results and links to literature</FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I>-
+Derive export connector parameters from Metadata</I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I>-
+Collect as much data as possible automatically </I></FONT>
+</P>
+<P STYLE="font-weight: normal"><BR><BR>
+</P>
+<P STYLE="font-weight: normal"><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<H1 CLASS="western" STYLE="page-break-before: always"><FONT SIZE=2>B.
+Data Driven Research based on Interconnected Clusters</FONT></H1>
+<P ALIGN=JUSTIFY><FONT SIZE=2>In an interdisciplinary research
+environment we have to cover multiple problems in one place. From
+resource allocation to data management and selection of appropriate
+algorithms we also need a common understanding of several aspects,
+although not all participants  in the project have the same
+background. This implies that for several levels of operation a
+certain tool set has to be used, but the stack of tools has to be
+interconnected es well. That mean, an data set or algorithm discovery
+service has to combine the application level view and the operator
+view. It covers technological aspects to figure out if an approach is
+possible and also doable, or if it would be possible, if enough
+ressource would be available. In this sense the system also collects
+the demand of the users to offer information on the operators to
+impro<SPAN STYLE="background: transparent">ve the system the right
+way.</SPAN></FONT></P>
+<H3 CLASS="western"><FONT SIZE=2><SPAN STYLE="background: transparent">B.1
+Integration of Data Centers and Knowledge-Management</SPAN></FONT></H3>
+<P><FONT SIZE=2><SPAN STYLE="background: transparent">To know
+everything about available data sets and applicable algorithms is
+unpossible. To select an existing apporach in order to use it or to
+improve requires an implementation of the software and also the
+availability of that certain data set. Quite often such data sets are
+not availble or it  is expensive to move data around, especially if
+we have large data sets. Interconncted clusters which tell each other
+what data they contain and what algorithms are implemented could
+solve this problem.  </SPAN></FONT>
+</P>
+<P ALIGN=JUSTIFY><FONT SIZE=2><SPAN STYLE="background: transparent">In
+order to manage the acces stored knowledge within such a data cloud
+semantic web technologie will be used. Especially the creation of an
+ontologie which describes relations between scientific disciplins,
+their methods, tools and reuslts will help to create high quality
+search results or even  data set discovery services. </SPAN></FONT>
+</P>
+<H3 CLASS="western"><FONT SIZE=2><SPAN STYLE="background: transparent">B.2
+Dataset and Algorithm discover</SPAN>y</FONT></H3>
+<P ALIGN=JUSTIFY><FONT SIZE=2>For the beginning we work with a
+webbased catalogue. This is a kind of registry that contains
+descriptions of data sets and projects which are related to this data
+sets. Based on simple properties one can search for data sets and
+than colaboration can be initiated. The next step is a collection of
+research results related to this data set or to comparable data sets.
+Appropriate analysis methods which are used for a cetrain data set,
+the cost and the outcome of analysis is also listed. Based in this
+data and by using an ontology the preparation phase of
+interdisciplinary research projects is supported as an ontology
+translates the same conept to different representations either in
+languages or into different scientific contexts. </FONT>
+</P>
+<H3 CLASS="western"><FONT SIZE=2>B.3 Outlook on Cluster Optimization
+Methods</FONT></H3>
+<P ALIGN=JUSTIFY><FONT SIZE=2>The impact of changes on the setup of a
+certain cluster should be analyzed based on a reliable method. Right
+now some good experience is the tool of choice but if we would
+collect runtime logs of special algorithms, related to the system
+setup and the data sets used for an individual computation, we would
+have the input for systematic optimization tasks. Analytical as well
+as numerical approaches combined with simulations offer a plenty of
+new insights into running systems. This aspect is very important in
+order to find optimized runtime setups for individual tasks which can
+be started in different clusters. The development of real world
+benchmarks, based on real computations not just dummy problems could
+lead us to new horizon. </FONT>
+</P>
+<P ALIGN=JUSTIFY><FONT SIZE=2>We would than be able to analyze of the
+scaling behavior related to a certain workload dependent on changed
+properties of any involved component. The performance optimization
+based on cluster simulations will be possible and useful, to figure
+out what parameters have the important effect on performance and
+cost. Such benchmark results could also be applied to select, in
+which environment some analysis would be done most efficiently, or w
+could learn how make a certain cluster more efficient and not to
+waste resources because of non optimized configurations. Monitoring
+tools already allow the collection and preparation of such runtime
+performance metrics. But we have to connect this information to the
+service discovery process. To use monitor data on that level can be
+compared to a closed feedback loop.</FONT></P>
+<H3 CLASS="western"><FONT SIZE=2>B.4 Goals of the Integration
+Platform – Definition of Requirements</FONT></H3>
+<P ALIGN=JUSTIFY><FONT SIZE=2>A first conclusion so far:
+contributions from multiple data locations or topic domains will lead
+to multi-cluster environments while the amount of data in that
+clusters grows on and because more and more until now isolated data
+sets will be related to each other. Data sets will be spread over
+multiple clusters, either because one cluster has not enough capacity
+or if the special type of data requires local storage, e.g. based on
+juristic restrictions. </FONT>
+</P>
+<P ALIGN=JUSTIFY><FONT SIZE=2>The second important aspect is: an
+interdisciplinary approach needs a clear understanding of common
+concepts and well configured tool chains and optimized workflows
+which are not limited to single knowledge domains.</FONT></P>
+<P ALIGN=JUSTIFY><FONT SIZE=2>Related to this conclusion we found two
+requirements: We need two layers on top of our existing cluster
+infrastructure: a) the data sets and related metadata have to be
+handled efficiently and b) interdisciplinary communication has to be
+enabled by connecting established tool sets to a cluster spanning
+collaboration environment. </FONT>
+</P>
+<P ALIGN=JUSTIFY><FONT SIZE=2>That means system operation tools,
+software development systems, and workflow engines have to interact
+with each other. Based on standardized interfaces we can build and
+connected data processing systems directly to knowledge management
+tools as well as to operations optimization <SPAN LANG="en-US">tool
+sets. </SPAN></FONT>
+</P>
+<P ALIGN=JUSTIFY><FONT SIZE=2>There is another reason to have
+multiple clusters to be integrated into one data analysis platform.
+If we have some time dependent properties and some structural
+properties of a complex system represented by large data sets either
+as a result of large scale simulations or even measurements, we would
+have to mix two complementary access patterns during the analysis
+procedure. It is quite difficult to handle this. If we want to apply
+different algorithms to the same dataset with different resource
+allocation, YARN will give one answer. It allows a job related
+resource management to handle different requirements of different
+applications more individual. But YARN does not connect clusters
+directly.</FONT></P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P ALIGN=JUSTIFY><BR><BR>
+</P>
+<P STYLE="margin-top: 0.42cm; page-break-after: avoid"><BR><BR>
+</P>
+<P STYLE="margin-top: 0.42cm; page-break-before: always; page-break-after: avoid">
+<FONT FACE="Liberation Sans, sans-serif"><FONT SIZE=4><I><B>2.
+Related Work</B></I></FONT></FONT></P>
+<P><FONT SIZE=4><I><B>Existing metadata management systems ... </B></I></FONT>
+</P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I><SPAN STYLE="background: #ffff00">Hive
+and HCatalog ...</SPAN></I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I><SPAN STYLE="background: #ffff00">Data
+set representation in Kite ...</SPAN></I></FONT></P>
+<P><FONT SIZE=4><I><B>Graph storage and Graph processing systems  </B></I></FONT>
+</P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I><SPAN STYLE="background: #ffff00">Girpah
+...</SPAN></I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I><SPAN STYLE="background: #ffff00">GraphX
+...</SPAN></I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=2 STYLE="font-size: 11pt"><I><SPAN STYLE="background: #ffff00">Titan...</SPAN></I></FONT></P>
+<P STYLE="font-weight: normal"><BR><BR>
+</P>
+<P STYLE="margin-top: 0.42cm; page-break-after: avoid"><BR><BR>
+</P>
+<P STYLE="margin-top: 0.42cm; page-break-before: always; page-break-after: avoid">
+<FONT FACE="Liberation Sans, sans-serif"><FONT SIZE=4><I><B>3.
+Extended Dataset Descriptors</B></I></FONT></FONT></P>
+<P><FONT SIZE=4><I><B>How to describe multiple views of composed data
+set?</B></I></FONT></P>
+<P><FONT SIZE=4><I><B>How to describe the data set life cycle?</B></I></FONT></P>
+<H3 CLASS="western" STYLE="font-style: normal; page-break-after: avoid">
+<FONT COLOR="#000000"><FONT FACE="Liberation Sans, sans-serif"><FONT SIZE=2><B>D.1
+Representation of Data sets</B></FONT></FONT></FONT></H3>
+<P ALIGN=JUSTIFY STYLE="margin-top: 0.42cm"><FONT SIZE=2><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">In
+Complex systems analysis we have to deal with two general classes of
+data sets. </SPAN></SPAN></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><I><SPAN STYLE="font-weight: normal">Base
+data sets </SPAN></I></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">are
+the results of data collection procedures, either measurements or
+simulation computations. Based on such data sets different processing
+stages like filtering, clustering, feature detection and others will
+create </SPAN></SPAN></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><I><SPAN STYLE="font-weight: normal">derived
+data sets</SPAN></I></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">,
+which are just relevant in a certain </SPAN></SPAN></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><I><SPAN STYLE="font-weight: normal">processing
+context</SPAN></I></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">,
+and they will vary based on the applied parameters. Because of this,
+the processing method and the parameter set has to be handled as a
+part of the derived data set in its processing context, if it should
+be used in any further analysis step or if it should be interpreted
+at the end. Otherwise we would not have the required traceability and
+transparency of the procedures.</SPAN></SPAN></FONT></FONT></FONT></P>
+<H4 CLASS="western" STYLE="font-style: normal; page-break-after: avoid">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><B>D.1.1
+Simple Graphs</B></FONT></FONT></FONT></H4>
+<P ALIGN=JUSTIFY STYLE="font-style: normal; font-weight: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>Simple
+Graph properties are stored in Hive tables in the HDFS or HBase,
+depending on the type of algorithm which will be applied later. Each
+algorithm knows the data sources it can be operate on. During the
+initialization phase or during the algorithm and data set discovery
+phase, this context information is used to suggest relevant pre
+processing steps in order to apply a certain algorithm on a data set.
+If we want to calculate the degree distribution of a graph, and its
+dependence on single nodes properties, there is no need for
+additional libraries or frameworks. Hive, Pig an Impala allow us to
+implement such analysis quit easy. If we want to apply certain
+cluster detection algorithms implemented in Mahout, some knowledge on
+possible data structures is needed. The procedure of fitting data to
+the selected processing tool will be automatized by the HDGS as it
+handles multiple synchronize representations of datasets. Such a
+redundant storage is useful to speed up processing time and to lower
+latency of the system. Adjacency lists, or link lists together with
+node lists can be used to store graphs or networks in HBase tables or
+HDFS files. This data structures are named base data set, as this
+data is the result of a simple data collection process.</FONT></FONT></FONT></P>
+<H4 CLASS="western"><FONT SIZE=2>D.1.2 Graph Partitions </FONT>
+</H4>
+<P ALIGN=JUSTIFY STYLE="font-style: normal; font-weight: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>In
+order to apply analysis steps just to some partition of an entire
+graph, such a partition is represented in a localized form on a
+single node of a cluster if we need in memory processing, e.g. based
+on GPU processing capabilities, or it is spread over a certain
+ensemble of cluster-nodes, in order to apply a non map reduce
+algorithm but still on top of the hadoop processing framework. The
+same representation as for simple graphs is used to handle graph
+partitions. The graph partition is a derived data set.</FONT></FONT></FONT></P>
+<H4 CLASS="western"><FONT SIZE=2>D.1.3 Multiplex Networks, Temporal
+Networks and k-partite Networks</FONT></H4>
+<P><FONT SIZE=2><SPAN STYLE="background: transparent">To express a
+single network, an adjacency matrix or the adjacency list is used. In
+the simplest way of such an matrix all nodes are of the same type and
+just the index within a node list is used to represent such a node. A
+link is just a number, 0 or 1 in the simplest situation or any other
+number to express a link strength as a continuos variable. A
+k-partite network consists of k different types of nodes. Therefore a
+certain encoding of this node property or node type is used. One way
+to this to use an additional list which maps the node id of a node
+with a certain type to a list of node id's used in the adjacency
+matrix. In order to express multpile types of links which express
+different relations between nodes, one need an n-dimensional vector,
+in order to collect n different types of conections. Such a vector
+would have to be identified by an id, which is used as the value
+within the adjacency matrix. To maintion temporal networks we need an
+additional timestamp for each link. The adjacency matrix can contain
+many empty fields which are not stored if we work on an adjacency
+list instead. In this case one has to maintain the following list:</SPAN></FONT></P>
+<UL>
+	<LI><P><FONT SIZE=2><SPAN STYLE="background: transparent">node
+	properties list (id as Integer, properties as Vector of Objects,
+	time stamp as Long)</SPAN></FONT></P>
+	<LI><P><FONT SIZE=2><SPAN STYLE="background: transparent">link
+	properties list (id as Integer, properties as Vector of Objects,
+	time stamp as Long)</SPAN></FONT></P>
+	<LI><P><FONT SIZE=2><SPAN STYLE="background: transparent">link list
+	(id as Integer, OrderedList of Integers, creation time &amp;
+	destruction time as Long)</SPAN></FONT></P>
+</UL>
+<P><FONT SIZE=2><SPAN STYLE="background: transparent">The link list
+is very important. It opens the concept of a simple adjacency matrix
+to a more flexible representation of temporal networks as well as
+multiplex networks an even hypergraphs, if the ordered list contains
+more than two elements, otherwise the first value is used as the
+source if the link and the second one as the destination.</SPAN></FONT></P>
+<P STYLE="font-style: normal; font-weight: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><SPAN STYLE="background: transparent">We
+are interested in time dependent analysis. The first step is, to
+collect data in a way, that allows efficient access to the data.
+Depending on the algorithm, a certain order or grouping ba a certain
+property is required. Therefore the MapReduce framework is used.
+Random access to special properies, especially in the context of
+simulations ther the simulation algorithm just updates a certain
+state of a stored value eliminates the need for holding all systems
+state in memory of the compute nodes. As HBase maintains a web-scale
+key value store, there all data is stored as a record with one uniqe
+identifier without the need of predefined database schema it gives us
+a storage for large graphs. Each change of a value in the HBase table
+gets a time stamp, therfore we can maintain the history of a graph
+during a simulation run. In order to do graph simulation or analysis
+calculations we have to load references to the memory of the compute
+nodes. Appropriate operations which can interact with the nodes
+properties have to be implemented and the developer of such an
+application can define its own abstraction layers on top of this
+generic graph representation on top of Hbase. Many exisitng
+algorithms are not able to operate on such a generic data structure
+like introduced above. Therefore we have to calculate a of a
+projection of such a tensor lik structure to a 2-diensional matrix,
+the well known adjacency matrix. Or we would have to reimplement the
+algorithms.        </SPAN></FONT></FONT></FONT>
+</P>
+<H4 CLASS="western"><FONT SIZE=2>D.1.4 Definition of Complex Systems
+Views</FONT></H4>
+<P STYLE="font-style: normal; font-weight: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><SPAN STYLE="background: transparent">In
+the following section it is assumed to have a data storage for on
+generic network implemented by an HBase server. As we want to study
+properties of this certain complex system we create a
+ComplexSystemRepresentation (CSR) which is defined by a set of
+initial nodes. To load the state of the system at one point in time
+we have to specify a certain time interval which contains this time
+stamp. Now we lookup the nodes, which there created before the
+beginning of this interval and also all links which are existing
+within this interval. This procedure would give us a temporal
+network. If we are intersted in an aggregated network we select the
+appropriate start time of the interval. The first step is to merge
+all properties of a single onject like a node or a link. That means
+during time, such properties can change. We have to define, how such
+properties shoulf have to be mapped to our final network view. One
+way is to aggrgate the data. Another way would be to calculate
+average values. A result of this procedure is a list of nodes and a
+list of links with the time stamp which is exactly in the middle of
+complete interval. From time series we go to just one value at one
+point in time. Time dependent analysis ist done by repeating this
+provedure multiple times for a sliding time frame. </SPAN></FONT></FONT></FONT>
+</P>
+<P STYLE="font-style: normal; font-weight: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><SPAN STYLE="background: transparent">The
+best way to process such generic data structure depends in the
+analysis algorihm. In order to do simulations and analysis in one
+place, an efficient intermediate data representation on top of an
+distibuted storage an processing layer is a key issue. We have to
+define generic projections for several types of views but the core
+idea is, that such view are use-case specific but the applied
+operations are quite often just simple aggregations, filter or
+grouping. And again the MapReduce framework solves such tasks best.
+HDFS files are not a good representation for a realy large time
+dependent graph because we need random access to certain values.
+HBase allows to store the data in the needed way but we need a higher
+level abstraction of a generic graph as a generic system which is not
+just a set of data but also has a certain way how relations and
+system changes are handled. In this sense we will not build a new
+monolythic software. Rather we want to fill the gap between the
+existing systems which do a part of the work related to large graph
+analysis realy well.</SPAN></FONT></FONT></FONT></P>
+<H4 CLASS="western" STYLE="page-break-after: avoid"><FONT SIZE=2>D.1.5
+Properties of Dynamic Networks</FONT></H4>
+<P ALIGN=JUSTIFY STYLE="font-style: normal; font-weight: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>In
+order to have a dynamic network representation we use time dependent
+node and link properties. This leads to a time series for each single
+property which could be analyzed later, as the dynamic of structural
+properties is quite often relevant to certain analytical question.
+Sometimes we have to handle multiple snapshots of the entire, one
+adjacency matrix or list for each time step. In this case we use a
+derived dataset to connect the procedure of preparation or
+aggregation method to the raw data set and to the intermediate
+results. Such a procedure can be just filtering, averaging, or even a
+quite comprehensive structure analysis or a even a correlation
+analysis. Such algorithms are able to derive new graph
+representations based on given data set and the results lead to new
+time series data which for itself can be handled as a base data set
+again. The concept of storing the processing context of derived data
+sets is an important aspect of the scientific method and it allows
+the implementation of a semantic toolkit for data set and algorithm
+detection as well. The responsibility of the HDGS impelentation is to
+provide a set of data types and data mappers as well a some reference
+implementions for a complete analysis-scenario like it is shon figure
+3. All green circles in  this figure are data structures which will
+be stored eihther in HDFS or in Hbase. We define mapper to convert
+different inter mediate data types from one to each other as well as
+data import and export connectors to external systems. The
+environment for such an integration is shown in figure 4. </FONT></FONT></FONT>
+</P>
+<H3 CLASS="western" STYLE="font-style: normal; text-decoration: none">
+</H3>
+<P STYLE="margin-bottom: 0cm; font-style: normal"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><U><B>Classes
+of Analysis Methods</B></U></FONT></FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<BR>
+</P>
+<P STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><U>Time
+Series Analysis</U></FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>Properties
+of single elements or subsystems, are handled by time series, as the
+values evolve in time. The agents id or date of birth is just a fixed
+value assigned once and never changed. But the size, the age, the
+number of actions done or many other aspects are values which have to
+stored as an average value for time intervals or related to an time
+stamp the event occurred. Such time series can be filtered, detrended
+or aggregated to get scalar values or new, maybe shorter time series,
+with less values, but more meaning.</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>Algorithms
+like correlation analysis (Autocorrelation, RIS or DFA) are used to
+qualify the properties of the single elements, the data was obtained
+from. Peak detection algorithms are helpful to filter out extreme
+events, which can be used to classify the time series as well as an
+input for synchronization analysis. </FONT></FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal">
+<BR>
+</P>
+<P STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><U>Correlation
+Analysis</U></FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>The
+goal of correlation analysis is to detect connection or correlations
+between elements or subsystems. based on such correlation it is
+possible to model the interaction processes between several
+subsystem, expressed by individual layers in our multiplex network.
+We have to filter the results of correlation analysis, dependent on
+the context we are interested in, so it can be useful to modify
+calculated correlation values based with weights, dependent on
+structural or temporal properties of different data layers. </FONT></FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2><FONT COLOR="#000000"><SPAN STYLE="font-style: normal"><U><SPAN STYLE="font-weight: normal">Network
+Analysis</SPAN></U></SPAN></FONT><FONT COLOR="#000000"><SPAN STYLE="font-style: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-weight: normal">
+</SPAN></SPAN></SPAN></FONT></FONT></FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=2>Results
+of correlation analysis are expressed as network structure. This can
+be k-partite networks or multiplex networks both types can be
+aggregated networks or just temporal networks. All of those
+representations are input for structural analysis of the underlying
+system as well as a special type of input data, as it is related to
+the agents. Agents behavior is bound to the underlying system
+description, which is for itself a network. Our simulation framework
+consists of a set of multiple interconnected networks, but it is also
+a tool to handle co-evolving networks, based on simulations and data
+analysis methods. </FONT></FONT></FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; text-decoration: none"><BR>
+</P>
+<P><BR><BR>
+</P>
+<P><BR><BR>
+</P>
+<P ALIGN=JUSTIFY STYLE="font-weight: normal"><BR><BR>
+</P>
+<P ALIGN=JUSTIFY STYLE="font-style: normal; text-decoration: none"><BR><BR>
+</P>
+<P STYLE="margin-top: 0.42cm; page-break-before: always; page-break-after: avoid">
+<FONT FACE="Liberation Sans, sans-serif"><FONT SIZE=4><I><B>4.
+Metadata Integration and Knowledge-Exploration</B></I></FONT></FONT></P>
+<P><FONT SIZE=4><I><B>Cluster spanning analysis workflows ...</B></I></FONT></P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<TABLE WIDTH=693 BORDER=1 BORDERCOLOR="#000000" CELLPADDING=4 CELLSPACING=0>
+	<COL WIDTH=683>
+	<TR>
+		<TD WIDTH=683 VALIGN=TOP>
+			<P ALIGN=JUSTIFY><IMG SRC="T1formattedHTML_html_mb1f21d6.png" NAME="Grafik3" ALIGN=LEFT WIDTH=654 HEIGHT=377 BORDER=0><BR CLEAR=LEFT><BR>
+			</P>
+		</TD>
+	</TR>
+	<TR>
+		<TD WIDTH=683 VALIGN=TOP>
+			<P ALIGN=JUSTIFY STYLE="margin-left: 1cm; margin-right: 1.06cm"><FONT FACE="Palatino Linotype, serif"><FONT SIZE=1 STYLE="font-size: 8pt"><B>Figure
+			3:</B></FONT></FONT><FONT FACE="Palatino Linotype, serif"><FONT SIZE=1 STYLE="font-size: 8pt">
+			Sketch of the complet analysis procedure. Part one is the data
+			retrievel level which ends with an collection of time series
+			related to certain elements of the system of interest. White
+			circles show processes or procedures and green circles show data
+			objects which are collected ans analysed. The interpretation
+			results like shown here for the example of cluster detection is
+			sometimes more od an interdisciplinary task, than just data
+			analysis. While part 1 is quite technical in part 2 we find the
+			scientifc field which is related to network reconstuction. </FONT></FONT>
+			</P>
+		</TD>
+	</TR>
+</TABLE>
+<H1 CLASS="western"></H1>
+<P><FONT SIZE=4><I><B>How to connect multiple knowledge bases?</B></I></FONT></P>
+<P STYLE="margin-top: 0.42cm; page-break-before: always; page-break-after: avoid">
+<FONT FACE="Liberation Sans, sans-serif"><FONT SIZE=4><I><B>5.
+Implementation of a prototype </B></I></FONT></FONT>
+</P>
+<P><FONT SIZE=4><I><B>Single Shared Semantic Metastore</B></I></FONT></P>
+<P><FONT SIZE=3><I><SPAN STYLE="font-weight: normal">What is SMW?<BR>Why
+do we use SMW? </SPAN></I></FONT><FONT SIZE=4><I><B><BR>	</B></I></FONT><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">Simple
+to use Triple-Store with build in functionalities for fast
+prototyping (Query language, <BR>	RDF export to external Java Script
+Clients)</SPAN></SPAN></FONT></P>
+<P><FONT SIZE=4><I><B>Multi level data collectors ...</B></I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=3><I>What are the levels to
+log?</I></FONT></P>
+<P STYLE="font-weight: normal"><FONT SIZE=3><I>	Design =&gt; Research
+literature<BR>	Developers =&gt; Code and Design<BR>	Analyst =&gt;
+Data Set properties<BR>	Operator =&gt; Resources and Runtime
+properties<BR>	Auto 1 =&gt; Algorithm specific data<BR>	Auto 2 =&gt;
+Cluster specific data</I></FONT></P>
+<P><FONT SIZE=3><I><SPAN STYLE="font-weight: normal"><BR>How do we
+collect data? </SPAN></I></FONT><FONT SIZE=4><I><B><BR></B></I></FONT><FONT SIZE=3><SPAN LANG="en-US"><I><SPAN STYLE="font-weight: normal">	Active
+logging: <BR>		ecl push file, …<BR>		ecl import mail file, …<BR>		hook
+into MR<BR>	Passive logging: <BR>		grab existing data from Hive MS
+<BR>		find data in HDFS (job history)</SPAN></I></SPAN></FONT><FONT SIZE=4><I><B><BR></B></I></FONT><BR><BR>
+</P>
+<H1 CLASS="western"><FONT SIZE=4><I>6. Conclusion</I></FONT></H1>
+<P><BR><BR>
+</P>
+<P ALIGN=LEFT STYLE="margin-bottom: 0cm"><FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3><U><B>Simulation
+Workflow<BR></B></U><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-weight: normal">Level
+1 – Description of an analysis procedure in a Wiki page</SPAN></SPAN></FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Level
+2 – Selection of Jobs, from a Job-Registry</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Level
+3 – Connecting Jobs to each other with [Output|Input] Data(Formats)
+and parameter sets</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Level
+4 – Create an Oozie file for this analysis procedure </FONT></FONT></FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Level
+5 – Submit Jobs and observation of output via Job-Observer-Views </FONT></FONT></FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Level
+6 – Collect and store Job-Runner-Metadata</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Level
+7 – Maintain the state of transformation graph</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3><BR><U><B>Overhead</B></U></FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>A
+- Register Jobs within a Job-Registry </FONT></FONT></FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>B
+- Register [Output|Input] Data(Formats) and correlate them to data
+sets</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>C
+- Manage Oozie workflow templates for several scenarios</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=4><I>D
+- Maintain Meta data within the wiki-collaboration workspace</I></FONT></FONT></FONT></P>
+<P><BR><BR>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>The
+proposed “Integrated Multi Scale Multi Model Simulation and
+Analysis” system offers  modularity and integration in one place.
+Such a simulation approach changes the idea of computer based
+simulation as it opens the simulation scenario to multiple
+implementations of simulation algorithms and model variants. Instead
+of one fixed model, which is used to calculate one result for one set
+of initial data, we have now an open system to simulate a complex
+system by an iterative approach. We can add new aspects, and redo
+relevant steps and evaluate changes directly. The change of
+algorithms or parameters can be in the focus of optimization studies.
+While we are looking on the impact of some special changes in the
+simulation setup it is also possible to change reference data by
+multiple external public data sets and redo the simulation procedure
+to study the impact of data sources and data quality on our
+simulation results.  </FONT></FONT></FONT>
+</P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>At
+the same time the in place data analysis concept which combines
+efficient time series analysis procedures and network analysis
+enables short feedback loops or for example a direct interaction
+between simulation and based on this method the system supports an
+more flexible adaptable iterative research process than a classical
+simulation tool.</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>Such
+an integrative concept offers large computation, Big Data processing,
+scalable numerical analysis, and process Metadata management in one
+place.</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY STYLE="margin-bottom: 0cm; font-style: normal; font-weight: normal; text-decoration: none">
+<FONT COLOR="#000000"><FONT FACE="Liberation Serif, serif"><FONT SIZE=3>And
+finally an very important aspect is the integration of lots of
+nonfunctional requirements like scalability of throughput and storage
+capacity as well as reliability and operational robustness.</FONT></FONT></FONT></P>
+<P ALIGN=JUSTIFY>Finally application developers can access datasets
+without any need on handling large datasets. Research projects would
+have major advantages, as the setup of an analysis task would be done
+in a short time instead of a many weeks long project, just to prepare
+the analysis setup. This approach would lower the barriers of
+interdisciplinary and inter institutional projects significantly. 
+</P>
+<H1 CLASS="western"><FONT SIZE=4><I><B>Outlook</B></I></FONT></H1>
+<P ALIGN=JUSTIFY>Webservices are offered and used for many years.
+Different technologies are competing and many integration patterns
+are known to interact with web services in a distributed
+heterogeneous application environment. Flexibility in the system
+architecture based on loose coupling of components is a key feature
+in the service oriented world of SOA applications. Lets assume we
+want to do some analysis on a large data set which is already stored
+in the cloud. But as our approach is quite innovative there is no web
+service implementing our preferred method. We would have to setup our
+own storage and processing cluster and then we would have to import
+the dataset. Than hadoop distributes the calculation to the place
+there data is stored. The same idea should be transferred to a multi
+cluster environment in which subsystems communicate via web service
+infrastructure. Therefore each cluster would offer some of the core
+functionality via simple web services. Enterprise integration
+patterns are now used to connect processing clusters and interact
+with them.  
+</P>
+<P ALIGN=JUSTIFY>Dataset discovery services are offered by the
+Context &amp; Discovery Service Component. Therefore this Subsystem
+uses the Webservice offered by the Cloud Data Service Directory and
+Cloud Dataset Directory. Beside such directories web search engines
+and semantic web tools based on RDFs and special ontologies will be
+used to find relevant datasets which are not yet published in such a
+standardized way until now. Companies, data service providers and
+research institutions will provide individual instances of Linked
+Data Cloud Masters (green box in figure 2) in their data centers.
+Clusters can be connected to each other by an <B>n : m</B> relation
+in this way. 
+</P>
+<P ALIGN=JUSTIFY>On an abstract level those services are simple web
+services, but what they do is something new. We can automatically
+detect the location of certain datasets and related processing
+capabilities together with information about operating conditions.
+Based on the well known Hadoop infrastructure it would be easy to
+submit queries, scripts or even map reduce code by a web service call
+to a remote cluster. Instead of moving data from one data center or
+laboratory to another we would just move programs and collect the
+results. Tools like Hive, Pig, HCatalog and Oozie will be the
+building blocks of such an integration layer on top of the core
+Hadoop System which stores data in HDFS or HBase.  
+</P>
+<H3 CLASS="western"><FONT COLOR="#000000"><FONT FACE="Verdana, sans-serif"><FONT SIZE=3>References</FONT></FONT></FONT></H3>
+<P ALIGN=LEFT><FONT FACE="Verdana, sans-serif"><FONT COLOR="#000000"><FONT SIZE=3>(1)
+Investigating Web Services on the World Wide
+Web</FONT></FONT><FONT COLOR="#000000"><FONT SIZE=2 STYLE="font-size: 9pt"><BR></FONT></FONT><FONT COLOR="#2300dc"><FONT SIZE=2 STYLE="font-size: 9pt"><U>http://www2008.org/papers/fp389.html</U></FONT></FONT></FONT></P>
+<P ALIGN=LEFT><FONT COLOR="#000000"><FONT FACE="Verdana, sans-serif"><FONT SIZE=3><SPAN LANG="en-US">(2)
+Web Service Discovery Mechanisms: Looking for a Needle in a
+Haystack?</SPAN></FONT></FONT></FONT><FONT FACE="Verdana, sans-serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN LANG="en-US"><BR></SPAN></FONT></FONT><A HREF="http://mmlabold.ceid.upatras.gr/people/sakkopoulos/conf/ht04.pdf"><FONT COLOR="#2300dc"><FONT FACE="Verdana, sans-serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN LANG="en-US">http://mmlabold.ceid.upatras.gr/people/sakkopoulos/conf/ht04.pdf</SPAN></FONT></FONT></FONT></A></P>
+<P ALIGN=LEFT><FONT COLOR="#000000"><FONT FACE="Verdana, sans-serif"><FONT SIZE=3>(3)
+Discovery of Web Services in a Federated Registry
+Environment</FONT></FONT></FONT><FONT FACE="Verdana, sans-serif"><FONT SIZE=2 STYLE="font-size: 9pt"><BR></FONT></FONT><A HREF="http://lsdis.cs.uga.edu/lib/download/MWSDI-ICWS04-final.pdf"><FONT COLOR="#2300dc"><FONT FACE="Verdana, sans-serif"><FONT SIZE=2 STYLE="font-size: 9pt">http://lsdis.cs.uga.edu/lib/download/MWSDI-ICWS04-final.pdf</FONT></FONT></FONT></A></P>
+<P ALIGN=LEFT><FONT COLOR="#262626"><FONT FACE="Verdana, sans-serif"><FONT SIZE=3><SPAN STYLE="font-weight: normal">(4)
+Mapping the Evolution of Scientific
+Fields</SPAN></FONT></FONT></FONT><FONT COLOR="#2300dc"><FONT FACE="Verdana, sans-serif"><FONT SIZE=5 STYLE="font-size: 20pt"><U><B><BR></B></U></FONT></FONT></FONT><FONT COLOR="#2300dc"><FONT FACE="Verdana, sans-serif"><FONT SIZE=2 STYLE="font-size: 9pt"><U><SPAN STYLE="font-weight: normal">http://www.plosone.org/article/info:doi/10.1371/journal.pone.0010355</SPAN></U></FONT></FONT></FONT></P>
+</BODY>
+</HTML>

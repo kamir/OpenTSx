@@ -1,0 +1,25 @@
+{
+    "contents" : "",
+    "created" : 1445185500960.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3D80CD9A",
+    "lastKnownWriteTime" : 4319255808,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "jlpcafcjt5",
+        "caption" : "distrData",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=distrData&cache_key=jlpcafcjt5",
+        "displayedObservations" : "1000",
+        "environment" : "",
+        "object" : "distrData",
+        "totalObservations" : "1000",
+        "variables" : "4"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

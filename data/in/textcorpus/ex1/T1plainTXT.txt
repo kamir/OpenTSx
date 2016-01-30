@@ -1,0 +1,185 @@
+﻿To be submitted to ICAC '14: MBDS
+HDMS : Hadoop Distributed Metastore 
+Abstract
+Big Data Analytics is still a growing field which connects multiple disciplines, like statistics, computational science, physics, and engineering. Quite often the driving forces research projects, or business objectives which guide to new challenges in operations research. Especially interdisciplinary project groups have to integrate more than just data sets. Communication and project management methods have to be integrated into a shared workspace which allows a clear projection of specialized views for all participating actors during all project stages, no matter if analysis algorithms are under development or if latest approaches are explored during first operations. Common integrated development environments offers such functionality for many different technologies, but usually those tools are very specific for either engineers or scientists.    
+Because more and more data sets and concurring analysis approaches and models are available it is very important to track a projects life cycle and design decisions. We propose the "Hadoop Distributed Metastore", which is an knowledge aggregation and exploration system. It covers and connects two layers: (a) on the  methodological level it offers an extendable flexible shareable long term memory functionality which allows automatic pattern detection in user activities and (b) on the technical level it offers pre implemented connectors to several subsystem, especially to components present in multiple Hadoop clusters. 
+The metadata integration layer (MIL) is able to connect multiple distributed metadata stores (DMS) and exposes it's functionality via an explorative graph connected to a facetted search interface. Aggregated metadata from one or many clusters helps to find supporting information for model selection and parameter validation based on collected descriptive data set statistics. Our approach lowers the barriers between disciplines and allows faster and more efficient knowledge aggregation to support agile operations in interdisciplinary data analysis projects.
+
+
+
+
+1. Introduction
+What is our motivation? 
+Complex systems research,
+Dynamic networks,
+Growth processes in non stationary systems
+
+What are the problems to be solved?
+- Networks can not easily be handled on a large scale.
+- Several processing steps are executed manually and error prune 
+- one has less information about required resources / runtime 
+- Visualization has several limitations ... filtering should be done before the export to a workstation 
+- Interpretation of results in an distributed environment works only if all data can be browsed easily
+
+Answer operative questions: 
+- Trace back to single procedures and their runtime parameters
+- Find appropriate resources and analysis methods  
+
+Our approach:
+- Describe a complex data structure for Time Dependent Multilayer Graphs, and Dynamic Graphs 
+	a) 	single node properties as time series, correlation or dependency  matrix for time frames, 
+		edge lists, node lists filtered by node properties (Input for time dependent graph analysis, 
+		time dependent graphs)
+	b) 	time dependent graph properties (ensemble properties); scalar properties: nr of clusters, 
+		number of links, average path length, ...; list of nodes per clusters;  
+- Maintain a data set life cycle descriptor and several named views, which can be used one-click export
+	a) 	Collect and share properties of data sets 
+		* parameters for creation procedures (setup for collectors or extractors)
+		* storage requirements and properties (block size, number of records, path)
+		* simple descriptive statistics of tables and network properties
+		* derived results and links to literature
+- Derive export connector parameters from Metadata
+- Collect as much data as possible automatically 
+
+
+
+B. Data Driven Research based on Interconnected Clusters
+In an interdisciplinary research environment we have to cover multiple problems in one place. From resource allocation to data management and selection of appropriate algorithms we also need a common understanding of several aspects, although not all participants  in the project have the same background. This implies that for several levels of operation a certain tool set has to be used, but the stack of tools has to be interconnected es well. That mean, an data set or algorithm discovery service has to combine the application level view and the operator view. It covers technological aspects to figure out if an approach is possible and also doable, or if it would be possible, if enough ressource would be available. In this sense the system also collects the demand of the users to offer information on the operators to improve the system the right way.
+B.1 Integration of Data Centers and Knowledge-Management
+To know everything about available data sets and applicable algorithms is unpossible. To select an existing apporach in order to use it or to improve requires an implementation of the software and also the availability of that certain data set. Quite often such data sets are not availble or it  is expensive to move data around, especially if we have large data sets. Interconncted clusters which tell each other what data they contain and what algorithms are implemented could solve this problem.  
+In order to manage the acces stored knowledge within such a data cloud semantic web technologie will be used. Especially the creation of an ontologie which describes relations between scientific disciplins, their methods, tools and reuslts will help to create high quality search results or even  data set discovery services. 
+B.2 Dataset and Algorithm discovery
+For the beginning we work with a webbased catalogue. This is a kind of registry that contains descriptions of data sets and projects which are related to this data sets. Based on simple properties one can search for data sets and than colaboration can be initiated. The next step is a collection of research results related to this data set or to comparable data sets. Appropriate analysis methods which are used for a cetrain data set, the cost and the outcome of analysis is also listed. Based in this data and by using an ontology the preparation phase of interdisciplinary research projects is supported as an ontology translates the same conept to different representations either in languages or into different scientific contexts. 
+B.3 Outlook on Cluster Optimization Methods
+The impact of changes on the setup of a certain cluster should be analyzed based on a reliable method. Right now some good experience is the tool of choice but if we would collect runtime logs of special algorithms, related to the system setup and the data sets used for an individual computation, we would have the input for systematic optimization tasks. Analytical as well as numerical approaches combined with simulations offer a plenty of new insights into running systems. This aspect is very important in order to find optimized runtime setups for individual tasks which can be started in different clusters. The development of real world benchmarks, based on real computations not just dummy problems could lead us to new horizon. 
+We would than be able to analyze of the scaling behavior related to a certain workload dependent on changed properties of any involved component. The performance optimization based on cluster simulations will be possible and useful, to figure out what parameters have the important effect on performance and cost. Such benchmark results could also be applied to select, in which environment some analysis would be done most efficiently, or w could learn how make a certain cluster more efficient and not to waste resources because of non optimized configurations. Monitoring tools already allow the collection and preparation of such runtime performance metrics. But we have to connect this information to the service discovery process. To use monitor data on that level can be compared to a closed feedback loop.
+B.4 Goals of the Integration Platform – Definition of Requirements
+A first conclusion so far: contributions from multiple data locations or topic domains will lead to multi-cluster environments while the amount of data in that clusters grows on and because more and more until now isolated data sets will be related to each other. Data sets will be spread over multiple clusters, either because one cluster has not enough capacity or if the special type of data requires local storage, e.g. based on juristic restrictions. 
+The second important aspect is: an interdisciplinary approach needs a clear understanding of common concepts and well configured tool chains and optimized workflows which are not limited to single knowledge domains.
+Related to this conclusion we found two requirements: We need two layers on top of our existing cluster infrastructure: a) the data sets and related metadata have to be handled efficiently and b) interdisciplinary communication has to be enabled by connecting established tool sets to a cluster spanning collaboration environment. 
+That means system operation tools, software development systems, and workflow engines have to interact with each other. Based on standardized interfaces we can build and connected data processing systems directly to knowledge management tools as well as to operations optimization tool sets. 
+There is another reason to have multiple clusters to be integrated into one data analysis platform. If we have some time dependent properties and some structural properties of a complex system represented by large data sets either as a result of large scale simulations or even measurements, we would have to mix two complementary access patterns during the analysis procedure. It is quite difficult to handle this. If we want to apply different algorithms to the same dataset with different resource allocation, YARN will give one answer. It allows a job related resource management to handle different requirements of different applications more individual. But YARN does not connect clusters directly.
+
+
+
+
+
+
+
+
+
+
+2. Related Work
+Existing metadata management systems ... 
+Hive and HCatalog ...
+Data set representation in Kite ...
+Graph storage and Graph processing systems  
+Girpah ...
+GraphX ...
+Titan...
+
+
+3. Extended Dataset Descriptors
+How to describe multiple views of composed data set?
+How to describe the data set life cycle?
+D.1 Representation of Data sets
+In Complex systems analysis we have to deal with two general classes of data sets. Base data sets are the results of data collection procedures, either measurements or simulation computations. Based on such data sets different processing stages like filtering, clustering, feature detection and others will create derived data sets, which are just relevant in a certain processing context, and they will vary based on the applied parameters. Because of this, the processing method and the parameter set has to be handled as a part of the derived data set in its processing context, if it should be used in any further analysis step or if it should be interpreted at the end. Otherwise we would not have the required traceability and transparency of the procedures.
+D.1.1 Simple Graphs
+Simple Graph properties are stored in Hive tables in the HDFS or HBase, depending on the type of algorithm which will be applied later. Each algorithm knows the data sources it can be operate on. During the initialization phase or during the algorithm and data set discovery phase, this context information is used to suggest relevant pre processing steps in order to apply a certain algorithm on a data set. If we want to calculate the degree distribution of a graph, and its dependence on single nodes properties, there is no need for additional libraries or frameworks. Hive, Pig an Impala allow us to implement such analysis quit easy. If we want to apply certain cluster detection algorithms implemented in Mahout, some knowledge on possible data structures is needed. The procedure of fitting data to the selected processing tool will be automatized by the HDGS as it handles multiple synchronize representations of datasets. Such a redundant storage is useful to speed up processing time and to lower latency of the system. Adjacency lists, or link lists together with node lists can be used to store graphs or networks in HBase tables or HDFS files. This data structures are named base data set, as this data is the result of a simple data collection process.
+D.1.2 Graph Partitions 
+In order to apply analysis steps just to some partition of an entire graph, such a partition is represented in a localized form on a single node of a cluster if we need in memory processing, e.g. based on GPU processing capabilities, or it is spread over a certain ensemble of cluster-nodes, in order to apply a non map reduce algorithm but still on top of the hadoop processing framework. The same representation as for simple graphs is used to handle graph partitions. The graph partition is a derived data set.
+D.1.3 Multiplex Networks, Temporal Networks and k-partite Networks
+To express a single network, an adjacency matrix or the adjacency list is used. In the simplest way of such an matrix all nodes are of the same type and just the index within a node list is used to represent such a node. A link is just a number, 0 or 1 in the simplest situation or any other number to express a link strength as a continuos variable. A k-partite network consists of k different types of nodes. Therefore a certain encoding of this node property or node type is used. One way to this to use an additional list which maps the node id of a node with a certain type to a list of node id's used in the adjacency matrix. In order to express multpile types of links which express different relations between nodes, one need an n-dimensional vector, in order to collect n different types of conections. Such a vector would have to be identified by an id, which is used as the value within the adjacency matrix. To maintion temporal networks we need an additional timestamp for each link. The adjacency matrix can contain many empty fields which are not stored if we work on an adjacency list instead. In this case one has to maintain the following list:
+node properties list (id as Integer, properties as Vector of Objects, time stamp as Long)
+link properties list (id as Integer, properties as Vector of Objects, time stamp as Long)
+link list (id as Integer, OrderedList of Integers, creation time & destruction time as Long)
+The link list is very important. It opens the concept of a simple adjacency matrix to a more flexible representation of temporal networks as well as multiplex networks an even hypergraphs, if the ordered list contains more than two elements, otherwise the first value is used as the source if the link and the second one as the destination.
+We are interested in time dependent analysis. The first step is, to collect data in a way, that allows efficient access to the data. Depending on the algorithm, a certain order or grouping ba a certain property is required. Therefore the MapReduce framework is used. Random access to special properies, especially in the context of simulations ther the simulation algorithm just updates a certain state of a stored value eliminates the need for holding all systems state in memory of the compute nodes. As HBase maintains a web-scale key value store, there all data is stored as a record with one uniqe identifier without the need of predefined database schema it gives us a storage for large graphs. Each change of a value in the HBase table gets a time stamp, therfore we can maintain the history of a graph during a simulation run. In order to do graph simulation or analysis calculations we have to load references to the memory of the compute nodes. Appropriate operations which can interact with the nodes properties have to be implemented and the developer of such an application can define its own abstraction layers on top of this generic graph representation on top of Hbase. Many exisitng algorithms are not able to operate on such a generic data structure like introduced above. Therefore we have to calculate a of a projection of such a tensor lik structure to a 2-diensional matrix, the well known adjacency matrix. Or we would have to reimplement the algorithms.        
+D.1.4 Definition of Complex Systems Views
+In the following section it is assumed to have a data storage for on generic network implemented by an HBase server. As we want to study properties of this certain complex system we create a ComplexSystemRepresentation (CSR) which is defined by a set of initial nodes. To load the state of the system at one point in time we have to specify a certain time interval which contains this time stamp. Now we lookup the nodes, which there created before the beginning of this interval and also all links which are existing within this interval. This procedure would give us a temporal network. If we are intersted in an aggregated network we select the appropriate start time of the interval. The first step is to merge all properties of a single onject like a node or a link. That means during time, such properties can change. We have to define, how such properties shoulf have to be mapped to our final network view. One way is to aggrgate the data. Another way would be to calculate average values. A result of this procedure is a list of nodes and a list of links with the time stamp which is exactly in the middle of complete interval. From time series we go to just one value at one point in time. Time dependent analysis ist done by repeating this provedure multiple times for a sliding time frame. 
+The best way to process such generic data structure depends in the analysis algorihm. In order to do simulations and analysis in one place, an efficient intermediate data representation on top of an distibuted storage an processing layer is a key issue. We have to define generic projections for several types of views but the core idea is, that such view are use-case specific but the applied operations are quite often just simple aggregations, filter or grouping. And again the MapReduce framework solves such tasks best. HDFS files are not a good representation for a realy large time dependent graph because we need random access to certain values. HBase allows to store the data in the needed way but we need a higher level abstraction of a generic graph as a generic system which is not just a set of data but also has a certain way how relations and system changes are handled. In this sense we will not build a new monolythic software. Rather we want to fill the gap between the existing systems which do a part of the work related to large graph analysis realy well.
+D.1.5 Properties of Dynamic Networks
+In order to have a dynamic network representation we use time dependent node and link properties. This leads to a time series for each single property which could be analyzed later, as the dynamic of structural properties is quite often relevant to certain analytical question. Sometimes we have to handle multiple snapshots of the entire, one adjacency matrix or list for each time step. In this case we use a derived dataset to connect the procedure of preparation or aggregation method to the raw data set and to the intermediate results. Such a procedure can be just filtering, averaging, or even a quite comprehensive structure analysis or a even a correlation analysis. Such algorithms are able to derive new graph representations based on given data set and the results lead to new time series data which for itself can be handled as a base data set again. The concept of storing the processing context of derived data sets is an important aspect of the scientific method and it allows the implementation of a semantic toolkit for data set and algorithm detection as well. The responsibility of the HDGS impelentation is to provide a set of data types and data mappers as well a some reference implementions for a complete analysis-scenario like it is shon figure 3. All green circles in  this figure are data structures which will be stored eihther in HDFS or in Hbase. We define mapper to convert different inter mediate data types from one to each other as well as data import and export connectors to external systems. The environment for such an integration is shown in figure 4. 
+
+Classes of Analysis Methods
+
+Time Series Analysis
+Properties of single elements or subsystems, are handled by time series, as the values evolve in time. The agents id or date of birth is just a fixed value assigned once and never changed. But the size, the age, the number of actions done or many other aspects are values which have to stored as an average value for time intervals or related to an time stamp the event occurred. Such time series can be filtered, detrended or aggregated to get scalar values or new, maybe shorter time series, with less values, but more meaning.
+Algorithms like correlation analysis (Autocorrelation, RIS or DFA) are used to qualify the properties of the single elements, the data was obtained from. Peak detection algorithms are helpful to filter out extreme events, which can be used to classify the time series as well as an input for synchronization analysis. 
+
+Correlation Analysis
+The goal of correlation analysis is to detect connection or correlations between elements or subsystems. based on such correlation it is possible to model the interaction processes between several subsystem, expressed by individual layers in our multiplex network. We have to filter the results of correlation analysis, dependent on the context we are interested in, so it can be useful to modify calculated correlation values based with weights, dependent on structural or temporal properties of different data layers. 
+
+Network Analysis 
+Results of correlation analysis are expressed as network structure. This can be k-partite networks or multiplex networks both types can be aggregated networks or just temporal networks. All of those representations are input for structural analysis of the underlying system as well as a special type of input data, as it is related to the agents. Agents behavior is bound to the underlying system description, which is for itself a network. Our simulation framework consists of a set of multiple interconnected networks, but it is also a tool to handle co-evolving networks, based on simulations and data analysis methods. 
+
+
+
+
+
+4. Metadata Integration and Knowledge-Exploration
+Cluster spanning analysis workflows ...
+
+
+Figure 3: Sketch of the complet analysis procedure. Part one is the data retrievel level which ends with an collection of time series related to certain elements of the system of interest. White circles show processes or procedures and green circles show data objects which are collected ans analysed. The interpretation results like shown here for the example of cluster detection is sometimes more od an interdisciplinary task, than just data analysis. While part 1 is quite technical in part 2 we find the scientifc field which is related to network reconstuction. 
+
+How to connect multiple knowledge bases?
+5. Implementation of a prototype 
+Single Shared Semantic Metastore
+What is SMW?
+Why do we use SMW? 
+	Simple to use Triple-Store with build in functionalities for fast prototyping (Query language, 
+	RDF export to external Java Script Clients)
+Multi level data collectors ...
+What are the levels to log?
+	Design => Research literature
+	Developers => Code and Design
+	Analyst => Data Set properties
+	Operator => Resources and Runtime properties
+	Auto 1 => Algorithm specific data
+	Auto 2 => Cluster specific data
+
+How do we collect data? 
+	Active logging: 
+		ecl push file, …
+		ecl import mail file, …
+		hook into MR
+	Passive logging: 
+		grab existing data from Hive MS 
+		find data in HDFS (job history)
+
+6. Conclusion
+
+Simulation Workflow
+Level 1 – Description of an analysis procedure in a Wiki page
+Level 2 – Selection of Jobs, from a Job-Registry
+Level 3 – Connecting Jobs to each other with [Output|Input] Data(Formats) and parameter sets
+Level 4 – Create an Oozie file for this analysis procedure 
+Level 5 – Submit Jobs and observation of output via Job-Observer-Views 
+Level 6 – Collect and store Job-Runner-Metadata
+Level 7 – Maintain the state of transformation graph
+
+Overhead
+A - Register Jobs within a Job-Registry 
+B - Register [Output|Input] Data(Formats) and correlate them to data sets
+C - Manage Oozie workflow templates for several scenarios
+D - Maintain Meta data within the wiki-collaboration workspace
+
+The proposed “Integrated Multi Scale Multi Model Simulation and Analysis” system offers  modularity and integration in one place. Such a simulation approach changes the idea of computer based simulation as it opens the simulation scenario to multiple implementations of simulation algorithms and model variants. Instead of one fixed model, which is used to calculate one result for one set of initial data, we have now an open system to simulate a complex system by an iterative approach. We can add new aspects, and redo relevant steps and evaluate changes directly. The change of algorithms or parameters can be in the focus of optimization studies. While we are looking on the impact of some special changes in the simulation setup it is also possible to change reference data by multiple external public data sets and redo the simulation procedure to study the impact of data sources and data quality on our simulation results.  
+At the same time the in place data analysis concept which combines efficient time series analysis procedures and network analysis enables short feedback loops or for example a direct interaction between simulation and based on this method the system supports an more flexible adaptable iterative research process than a classical simulation tool.
+Such an integrative concept offers large computation, Big Data processing, scalable numerical analysis, and process Metadata management in one place.
+And finally an very important aspect is the integration of lots of nonfunctional requirements like scalability of throughput and storage capacity as well as reliability and operational robustness.
+Finally application developers can access datasets without any need on handling large datasets. Research projects would have major advantages, as the setup of an analysis task would be done in a short time instead of a many weeks long project, just to prepare the analysis setup. This approach would lower the barriers of interdisciplinary and inter institutional projects significantly. 
+Outlook
+Webservices are offered and used for many years. Different technologies are competing and many integration patterns are known to interact with web services in a distributed heterogeneous application environment. Flexibility in the system architecture based on loose coupling of components is a key feature in the service oriented world of SOA applications. Lets assume we want to do some analysis on a large data set which is already stored in the cloud. But as our approach is quite innovative there is no web service implementing our preferred method. We would have to setup our own storage and processing cluster and then we would have to import the dataset. Than hadoop distributes the calculation to the place there data is stored. The same idea should be transferred to a multi cluster environment in which subsystems communicate via web service infrastructure. Therefore each cluster would offer some of the core functionality via simple web services. Enterprise integration patterns are now used to connect processing clusters and interact with them.  
+Dataset discovery services are offered by the Context & Discovery Service Component. Therefore this Subsystem uses the Webservice offered by the Cloud Data Service Directory and Cloud Dataset Directory. Beside such directories web search engines and semantic web tools based on RDFs and special ontologies will be used to find relevant datasets which are not yet published in such a standardized way until now. Companies, data service providers and research institutions will provide individual instances of Linked Data Cloud Masters (green box in figure 2) in their data centers. Clusters can be connected to each other by an n : m relation in this way. 
+On an abstract level those services are simple web services, but what they do is something new. We can automatically detect the location of certain datasets and related processing capabilities together with information about operating conditions. Based on the well known Hadoop infrastructure it would be easy to submit queries, scripts or even map reduce code by a web service call to a remote cluster. Instead of moving data from one data center or laboratory to another we would just move programs and collect the results. Tools like Hive, Pig, HCatalog and Oozie will be the building blocks of such an integration layer on top of the core Hadoop System which stores data in HDFS or HBase.  
+References
+(1) Investigating Web Services on the World Wide Web
+http://www2008.org/papers/fp389.html
+(2) Web Service Discovery Mechanisms: Looking for a Needle in a Haystack?
+http://mmlabold.ceid.upatras.gr/people/sakkopoulos/conf/ht04.pdf
+(3) Discovery of Web Services in a Federated Registry Environment
+http://lsdis.cs.uga.edu/lib/download/MWSDI-ICWS04-final.pdf
+(4) Mapping the Evolution of Scientific Fields
+http://www.plosone.org/article/info:doi/10.1371/journal.pone.0010355

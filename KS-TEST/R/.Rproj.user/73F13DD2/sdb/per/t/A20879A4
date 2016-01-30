@@ -1,0 +1,18 @@
+{
+    "contents" : "require(graphics)\n\n#\n# Some technical background.\n# \n#    http://stats.stackexchange.com/questions/113032/ks-test-and-ks-boot-exact-p-values-and-ties\n#\n#\n\n#\n#\n#distrData <- read.table('./../../data/out/NRCTESTS/dump-raw/1000_-100.0_100.0_testdata.tsv', header=FALSE, sep=\"\\t\", skip=9)\n#\ninputfile = \"/GITHUB/Hadoop 2.TS/data/out/NRCTESTS/dump-raw/1000_-100.0_100.0_testdata.tsv\"\ndistrData <- read.delim2( inputfile, header=FALSE, comment.char=\"#\")\ncolnames(distrData) <- c(\"id\", \"x1\", \"x2\", \"note\")\nstr(distrData)\n\n\nx1 <- distrData$x1\nx2 <- distrData$x2\n\n# Do x and y come from the same distribution?\ntr <- ks.test(x1, x2)\ntr$p.value\n\nplot(ecdf(x1), xlim = range(c(x1, x2)))\nplot(ecdf(x2), add = TRUE, lty = \"dashed\")\n\nView(distrData)\n\n\n\n",
+    "created" : 1445175738299.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1150916468",
+    "id" : "A20879A4",
+    "lastKnownWriteTime" : 1445244551,
+    "path" : "/GITHUB/Hadoop 2.TS/KS-TEST/R/ks-test.R",
+    "project_path" : "ks-test.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
