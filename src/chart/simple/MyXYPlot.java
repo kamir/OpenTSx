@@ -4,6 +4,7 @@
  */
 package chart.simple;
 
+import app.bucketanalyser.TSOperationControlerPanel;
 import data.series.Messreihe;
 import java.awt.PaintContext;
 import java.awt.RenderingHints;
@@ -62,7 +63,7 @@ public class MyXYPlot extends javax.swing.JDialog {
 
     public boolean doStoreChart = false;
     
-    public FileControlerPanel2 fileControlerPanel = null;
+    public TSOperationControlerPanel fileControlerPanel = null;
             
     public static MyXYPlot openAndGet(Vector<Messreihe> phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
         Messreihe[] r = new Messreihe[ phasenDiagramm.size() ];
@@ -78,7 +79,7 @@ public class MyXYPlot extends javax.swing.JDialog {
         pl.setVisible(true);
         pl.setAlwaysOnTop(false);
         
-        FileControlerPanel2 fcp = new FileControlerPanel2( phasenDiagramm , pl.chart, title , null );
+        TSOperationControlerPanel fcp = new TSOperationControlerPanel( phasenDiagramm , pl.chart, title , null );
  
         pl.fileControlerPanel = fcp;
         

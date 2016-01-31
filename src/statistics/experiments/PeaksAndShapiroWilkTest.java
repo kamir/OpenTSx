@@ -1,6 +1,6 @@
 package statistics.experiments;
 
-import algorithms.dataqualitytest.InfluenceOfSinglePeakTester;
+import app.thesis.dataqualitytest.InfluenceOfSinglePeakTester;
 import stdlib.StdRandom;
 
 /**

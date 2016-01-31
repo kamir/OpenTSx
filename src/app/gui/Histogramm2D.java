@@ -14,7 +14,9 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 /**
- * Eine Tabelle in n Spalten wird mit variablem 
+ * The PROTOTYPE is used for 2D-Degree-Distibutions.
+ * 
+ * Eine Tabelle mit n Spalten wird mit variablem 
  * log-Binning in ein 2D Histogramm umgewandelt.
  * 
  * Dabei erfolgt das Erzeugen der BINS mit einem Faktor f und einer
@@ -33,7 +35,6 @@ import javax.swing.JFrame;
 public class Histogramm2D {
 
     static boolean debug = true;
-    
     
     static String delim = ",";
         

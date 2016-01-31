@@ -1,5 +1,6 @@
 package statphys.detrending;
 
+import data.TestDataFactory;
 import chart.simple.MultiChart;
 import data.series.Messreihe;
 import java.util.Vector;

@@ -38,7 +38,7 @@ public class SampleDataGenerator {
 
             /**
              * LRC time sries - simple Fourier Filter Method
-             * Uncorrelated time series
+             * applied to uncorrelated time series
              */
             a[1] = TSBucketCreator_Uncorrelated.mode_GAUSSIAN + "";
             Properties props = new Properties();

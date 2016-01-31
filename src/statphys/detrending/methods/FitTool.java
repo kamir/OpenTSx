@@ -6,9 +6,12 @@
 package statphys.detrending.methods;
 
 /**
+ *  The fit function used in DFA should be implemented in a plugable
+ *  component.
+ * 
+ *  We should implement all fundamental math based on Apache Commons Math.
  *
- * @author kamir
- */
+ **/
 public class FitTool {
 
 }

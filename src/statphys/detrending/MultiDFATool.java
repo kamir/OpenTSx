@@ -1,5 +1,6 @@
 package statphys.detrending;
 
+import data.TestDataFactory;
 import chart.simple.MultiChart;
 import chart.simple.MultiChartDialog;
 import data.series.Messreihe;

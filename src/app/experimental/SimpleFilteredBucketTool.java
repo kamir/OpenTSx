@@ -1,7 +1,8 @@
 /**
+ * 
  * FilteredBucketTool loads a full TSBucket into memory,
  * and uses a list to filter records before they are processed.
- *  * 
+ * 
  * To process this data set it uses an instance of class derived 
  * from "SingleRowTSO".
  *
@@ -215,10 +216,6 @@ public class SimpleFilteredBucketTool extends AbstractTSProcessor {
             }
         }   
     }
-    
-    
-    
-    
     
 }
 

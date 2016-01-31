@@ -21,10 +21,12 @@ import java.util.Vector;
 public class LogBinningToolv2 {
     
     public static Messreihe getLogBinnedMessreihe( Messreihe mrOrig , int nrOfBins ) { 
+        
         Messreihe mr = new Messreihe();         
         double data[][] = new double[2][nrOfBins];
         mr.setLabel( mrOrig.getLabel() + "_logBin" );
         return mr;
+    
     };
     
     public static void main( String[] args ) throws IOException { 

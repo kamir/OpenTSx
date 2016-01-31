@@ -1,5 +1,6 @@
 /**
- * BucketTool loads a full TSBucket into memory. 
+ * 
+ * BucketTool loads a full TSBucket into the workstations memory. 
  * 
  * To process this data set it uses an instance of class derived 
  * from "SingleRowTSO".

@@ -7,6 +7,7 @@
  */
 package chart.simple;
 
+import app.bucketanalyser.TSOperationControlerPanel;
 import app.bucketanalyser.MacroTrackerFrame;
 import data.series.Messreihe;
 import data.export.MesswertTabelle;
@@ -53,7 +54,7 @@ import org.w3c.dom.Document;
 
 public class MultiChart extends javax.swing.JDialog {
 
-    public static Color bgCOLOR = Color.white;
+    public static Color bgCOLOR = Color.BLACK;
 
     public static void open2(Vector<Messreihe> rows, boolean b) {
 
@@ -251,7 +252,7 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.setVisible(true);
 //            }
 //        });
-        FileControlerPanel2 fcp = new FileControlerPanel2( mrs, dialog.chart , string, dialog.statisticTextField );
+        TSOperationControlerPanel fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
         fcp.registerPanelHolder(dialog);
         
         MacroTrackerFrame._registerDialogToNode( string, dialog );

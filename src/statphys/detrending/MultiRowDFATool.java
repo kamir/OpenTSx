@@ -14,6 +14,10 @@
 
 package statphys.detrending;
 
+import analysistools.utils.FitbereichLogScale;
+import analysistools.FluctuationFunktion;
+import data.MultiRowContainer;
+import data.TestDataFactory;
 import chart.simple.MultiChart;
 import data.series.Messreihe;
 import java.util.Vector;
@@ -24,13 +28,13 @@ import java.util.Vector;
  */
 public class MultiRowDFATool {
 
-    static Fitbereich defaultFit = new Fitbereich( 1.25, 2.0 );
+    static FitbereichLogScale defaultFit = new FitbereichLogScale( 1.25, 2.0 );
 
     public static Vector<Messreihe> convertToMessreihe(Vector<FluctuationFunktion> vFs ) {
         Vector<Messreihe> mr = new Vector<Messreihe>();
         for( FluctuationFunktion m : vFs ) {
 
-            mr.add( m.Fs );
+            mr.add( m.getFs() );
             System.out.println( m.getLabel() +  "   alpha = " + m.calcAlpha(defaultFit) );
 
         };
@@ -44,7 +48,7 @@ public class MultiRowDFATool {
         Vector<FluctuationFunktion> v = new Vector<FluctuationFunktion>();
 
 
-        for( String l : cont.labels ) {
+        for( String l : cont.getLabels() ) {
 
             // mit Begrenzung auf N/4
 //            MultiDFATool tool = new MultiDFATool();
@@ -53,7 +57,7 @@ public class MultiRowDFATool {
             MultiDFATool2 tool = new MultiDFATool2();
             System.out.println( "Container-Label: [" + l +"]" );
 
-            Vector<Messreihe> r = cont.reihenHash.get(l);
+            Vector<Messreihe> r = cont.getRowSets().get(l);
             System.out.println( "Label des 1. Elements: [" + r.elementAt(0).getLabel() + "] size=" + r.size() );
             tool.runDFA( r, 2 );
 

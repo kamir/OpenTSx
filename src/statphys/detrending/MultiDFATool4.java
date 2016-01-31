@@ -1,5 +1,7 @@
 package statphys.detrending;
 
+import analysistools.HZDouble;
+import data.TestDataFactory;
 import chart.simple.MultiBarChart;
 import chart.simple.MultiChart;
 import data.series.Messreihe;
