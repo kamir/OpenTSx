@@ -1,0 +1,979 @@
+
+ar
+X
+
+iv
+:c
+
+on
+d-
+
+m
+at
+
+/9
+90
+
+52
+92
+
+v1
+  [
+
+co
+nd
+
+-m
+at.
+
+sta
+t-m
+
+ec
+h]
+
+  2
+0 M
+
+ay
+ 19
+
+99
+Empirical Phase Diagram of Congested Traffic Flow
+
+H. Y. Lee1,2, H.-W. Lee1, and D. Kim1,2
+1Center for Theoretical Physics, Seoul National University, Seoul 151-742, Korea
+
+2Department of Physics, Seoul National University, Seoul 151-742, Korea
+
+We present an empirical phase diagram of the congested traffic flow measured on a highway
+section with one effective on-ramp. Through the analysis of local density-flow relations and global
+spatial structure of the congested region, four distinct congested traffic states are identified. These
+states appear at different levels of the upstream flux and the on-ramp flux, thereby generating a
+phase digram of the congested traffic flow. Observed traffic states are discussed in connection with
+recent theoretical analyses.
+
+PACS numbers: 89.40.+k, 05.70.Fh, 45.70.Qj, 47.55.-t
+
+Rich physical phenomena in traffic flow have been
+investigated by both empirical and theoretical studies.
+Two distinct traffic states, the free flow and the traffic
+jam state, have been identified from measurements on ho-
+mogeneous highways [1] and various properties of them
+have been successfully reproduced by traffic models [2].
+Further empirical studies [3,4] have reported the pres-
+
+ence of additional traffic states, where typical vehicle ve-
+locities take intermediate values between the velocity lev-
+els of the free flow and the traffic jam. In these states,
+vehicle motions in all lanes are synchronized and the no-
+tion of a unique density-flow relation breaks down. From
+local traffic patterns, three different types are classified
+[3]. These congested traffic states [5] appear mostly near
+ramps and theoretical studies [6,7] of the ramp effects
+reproduced some of their features such as the discontin-
+uous transition from the free flow to the congested flow
+and the high flux level of the congested flow.
+Recently, more extensive theoretical studies [8,9] have
+
+revealed that for highways with an on-ramp, several dis-
+tinct congested traffic states appear depending on the
+levels of the upstream flux and the on-ramp flux. A phase
+diagram is constructed [8,9] and metastabilities between
+these states are also investigated [9]. Yet the relation be-
+tween these studies and the observations [3,4] is not clear
+and especially no empirical evidence for the predicted
+phase diagram has been reported to our knowledge.
+In this Letter, we present an analysis of the congested
+
+traffic flow measured on a highway in Seoul, Korea. From
+the studies of the traffic patterns at fixed locations and
+the global spatial structures, we find 4 qualitatively dis-
+tinct congested traffic states. Appearance of each state
+depends on the upstream flux and the on-ramp flux, from
+which we construct the empirical phase diagram. These 4
+states exhibit features that agree with theoretical studies
+[8,9]. But differences are also discovered.
+For the study, we use the traffic data of the Olympic
+
+Highway which connects the east and west ends of Seoul.
+Since it is an intra-city highway, there are many ramps
+and the spacings between them are rather short (∼ 1 km).
+But in some sections, lane dividers separate the lane 1
+and 2 from the lane 3 and 4, and as a result, the two in-
+ner lanes become a ramp-free highway. Our investigation
+
+is focused on a 14 km east-bound section, between Seoul
+bridge and Young-dong bridge, that contains a long (≈ 5
+km) lane divider [10]. In this section, 6 on-ramps and 6
+off-ramps exist (all of them connected to the outermost
+lane 4) and 15 image detectors record the flux q and the
+average velocity v for each lane at every one minute in-
+terval [Fig. 1(a)]. Among the ramps located outside the
+ideal ramp-free region, usually only one or two of them
+are effective and the flux through other ramps are small.
+For the analysis, inner-lane traffic data for 14 different
+days in June and July, 1998 are used. We search con-
+gested traffic states that are long-lived (∼ 1 hour) and
+appear practically everyday. In this way, we identify 4
+congested traffic states, for each of which, data for a par-
+ticular day are presented below to demonstrate its typical
+features.
+The first kind of the congested traffic states, which we
+
+call CT1, is shown in Fig. 1(b), where the on-ramp ON3
+at x = 8.6 km is the main ramp in the time interval de-
+picted in the figure and the traffic between x ≈ 3 km
+and x ≈ 10 km is congested. The spatial extension of
+the congested region does not expand with time (within
+our estimated accuracy of 1 km/h) but the boundaries
+of the region are not stationary. Also systematic oscil-
+lation develops spontaneously near the upstream bound-
+ary, which is manifest in the velocity vs. time plot at D4
+[Fig. 1(c)]. Notice that the velocity oscillation is ampli-
+fied and its period is enhanced as the upstream boundary
+is approached. Peaks of the velocity move with velocity
+∼ −13 km/h. Similar features are reported in Ref. [11].
+We mention that the oscillation is not caused by the tem-
+poral variations in the upstream flux. Another charater-
+istic of the CT1 state is the two-dimensional covering of
+the density-flow relation [Fig. 1(d)].
+The second kind of the congested traffic states, CT2,
+
+is shown in Fig. 2(a), where the effective ramp is ON3.
+The density-flow relations cover two-dimensional areas
+[Fig. 2(b)]. In contrast to the CT1 state, however, the
+boundaries of the congested region are almost motionless
+and the development of the large amplitude oscillation is
+not observed [Fig. 2(c)] even though the velocity levels
+are comparable to those in the congested region of the
+CT1 state.
+
+1
+
+
+
+
+The third kind of the congested traffic states, CT3, is
+shown in Fig. 3(a), where the effective ramp is ON4. The
+boundaries of the congested region are again motionless.
+The congested region is much shorter compared to the
+CT1 and CT2 states. More important difference appears
+in Fig. 3(b). The density-flow relation at each detector
+location inside the congested region forms a straight line,
+implying that the velocity (v = q/ρ) remains almost con-
+stant even under the significant flux fluctuations. How-
+ever the values of the velocity are different for different
+detectors. [In 3 out of 14 investigated days, we also ob-
+serve a wide congested region (∼ 4 km) with the station-
+ary and almost homogeneous velocity profile. Here we do
+not present this as another distinct traffic state since the
+number of available data sets is too small.]
+The fourth and the last kind of the congested traf-
+
+fic states, CT4, is shown in Fig. 4, which appears dur-
+ing morning rush hours. The effective ramp is ON3.
+While the downstream boundary of the congested region
+remains stationary, the upstream boundary propagates
+backwards and the congested region expands monotoni-
+cally, unlike all other congested traffic states mentioned
+above. The expansion rate is higher for the higher level
+of the flux in the upstream region where the free flow
+is maintained, and the observed values of the rate range
+from 2.2 km/h to 8.8 km/h. The density-flow relation
+covers a two-dimensional area and the development of
+the large amplitude oscillation is not observed.
+We examine differences in the appearance conditions of
+
+the 4 congested traffic states. Recent theoretical studies
+using one lane models [8,9] suggest that the flux level fup
+at the right upstream of the congested region, where the
+free flow is maintained, and the on-ramp flux frmp are
+the two important control parameters. These studies as-
+sume an ideal situation where fup and frmp are constants.
+While they fluctuate in reality, however, dominant fluctu-
+ations come from short time scale (one minute) variations
+and the fluctuations are greatly suppressed in long time
+scale (ten minutes or longer). Thus we use the average
+values of fup and frmp over the time intervals (typically 1
+hour long) during which a particular state is maintained
+[12]. In Fig. 5, each point (frmp, fup) thus obtained is
+marked with a different symbol depending on the main-
+tained congested traffic state. Notice that although there
+are some overlaps, each symbol occupies a clearly distin-
+guishable region in the frmp-fup plane. This difference
+in the data locations verifies the roles of frmp and fup as
+important control parameters, in agreement with Refs.
+[8,9]. Also the metastability between the free flow and
+the CT1, CT2, CT3 states is observed as studied in Ref.
+[9].
+We now make a detailed comparison of the measure-
+
+ment data with the theoretical studies [8,9]. The CT1
+state is similar to the recurring hump (RH) state in Refs.
+[6,9]. In both states, the congested regions do not ex-
+pand and systematic oscillations develop. The oscillation
+in the CT1 state, however, exhibits features that are not
+shared by the RH state, such as the oscillation amplifi-
+
+cation and the period enhancement [13]. The CT2 state
+can be related to the pinned localized cluster (PLC) state
+[8,9] [in Ref. [9], a different term “standing localized clus-
+ter” (SLC) state is used to denote the same state]. In
+both states, the congested region does not expand and
+no systematic oscillation develops. Also the spatial vari-
+ation of the long time (∼ 1 hour) averaged density-flow
+relations from the upstream to the downstream is essen-
+tially identical to the pattern for the PLC state [Fig. 2(b)
+in Ref. [9]]. And the data locations of the CT2 state in
+the frmp-fup plane [Fig. 5] are to the left of those of the
+CT1 state, which agrees with the relationship between
+the PLC and the RH state [9]. The two-dimensional
+covering of the density-flow plane in the CT1 and CT2
+states, on the other hand, is not shared by the RH and
+PLC states. We speculate that the covering property
+may be due to fluctuations effects that are not taken
+into account in Refs. [8,9]. For example, it is recently
+demonstrated that fluctuations in vehicle types can gen-
+erate the two-dimensional covering [14]. We also suspect
+that short time scale fluctuations in fup and frmp may
+generate a similar effect.
+The CT3 state is also similar to the predicted PLC
+
+state in regard to the stationary boundaries of the con-
+gested region and the absence of the systematic oscil-
+lations. The data locations of the state in the fup-frmp
+plane [Fig. 5] are also in reasonable agreement with those
+of the PLC state [8,9]. However the property of the con-
+stant velocity in this state is not shared by the PLC state.
+This property implies that the car following dynamics in
+this state is significantly different from that assumed in
+many theoretical models [2,7], that is, the velocity ad-
+justment to the spatial gap.
+The CT4 state can be related to the oscillating con-
+
+gested traffic (OCT) state or homogeneous congested
+traffic (HCT) state [8,9], both of which exhibit the ex-
+pansion of the congested region to the upstream. In the-
+oretical studies, it is found that the congested region of
+the OCT state contains large clusters with the jam char-
+acter while the congested region of the HCT state is ho-
+mogeneous [8,9]. The density-flow relation of the CT4
+state does not demonstrate the characteristic line of the
+jam, which suggests that the HCT state is the proper
+theoretical counterpart of the CT4 state. As for the two-
+dimensional covering property of the CT4 state, we men-
+tion that the same covering can be reproduced for the
+HCT state [14]. Also the data locations of the CT4 state
+in the phase diagram are consistent with the prediction
+for the HCT state.
+We next compare our data with the German highway
+
+data in Ref. [3], where congested traffic flows are classified
+into 3 types (i,ii,iii) according to local density-flow rela-
+tions without much regard to spatial structures. In this
+classification, the CT1, CT2, and CT4 states with non-
+stationary density-flow relations belong to the type (iii),
+and the CT3 state with the stationary velocity property
+to the type (ii). We also observe the type (i) state that is
+characterized by the stationary velocity and density pro-
+
+2
+
+
+
+files. However, this state is always short-lived (less than
+5 minutes), which is too short for our analysis, and we
+do not include this state in our classification.
+
+It is also interesting to compare the CT1 state with the
+congested traffic state reported in Ref. [11], which we call
+CT1’ state tentatively. In both states, the amplification
+and the periodicity enhancement of the velocity oscilla-
+tion occur and the average velocity levels rise during the
+amplification. On the other hand, the velocity oscillation
+in the CT1’ state grows to generate mature jam clusters
+and the density-flow relation approaches the characteris-
+tic line (the line J in Ref. [11]) of the traffic jam, while
+this feature is absent in the CT1 state [see Fig. 1(d)].
+This difference suggests that the CT1 and CT1’ states
+may be distinct congested traffic states. They also seem
+to appear at different regions in the frmp-fup plane. From
+the data give in Ref. [11], we estimate fup ≥ 1600 veh/h
+(information for frmp is not available) for the CT1’ state
+(compare with Fig. 5). A recent study [15] also suggests
+that the CT1’ state is related rather to the theoretically
+predicted OCT state [8,9], instead of the RH state.
+
+In summary, 4 congested traffic states are identified
+by combining temporal traffic patterns at fixed locations
+and spatial structure of the congested region. It is found
+that these 4 states appear at different levels of the up-
+stream flux and the on-ramp flux. An empirical phase
+diagram is constructed and compared with recent pre-
+dictions. Many properties of the observed states agree
+with predictions but deviations are also found. Lastly
+we mention that there exist regions in the frmp-fup plane
+which are not probed by our data. Thus it is possible that
+additional congested traffic states exist in those regions.
+Further investigation is necessary.
+
+We thank Young-Ihn Lee and Seung Jin Lee for pro-
+viding the traffic data, and Sung Yong Park for fruitful
+discussions. H.-W.L. was supported by the Korea Science
+and Engineering Foundation. This work is supported by
+the Korea Science and Engineering Foundation through
+the SRC program at SNU-CTP, and also by Korea Re-
+search Foundation (1998-015-D00055).
+
+[1] B. S. Kerner and H. Rehborn, Phys. Rev. E 53, R1297
+(1996), and references cited therein.
+
+[2] K. Nagel and M. Schreckenberg, J. Phys. I (France) 2,
+2221 (1992); B. S. Kerner and P. Konha¨user, Phys. Rev.
+E 48, R2335 (1993); ibid. 50, 54 (1994); M. Bando et al.,
+Phys. Rev. E 51, 1035 (1995); S. Krauss, P. Wagner, and
+C. Gawron, Phys. Rev. E 55, 5597 (1997).
+
+[3] B. S. Kerner and H. Rehborn, Phys. Rev. E 53, R4275
+(1996).
+
+[4] B. S. Kerner and H. Rehborn, Phys. Rev. Lett. 79, 4030
+(1997).
+
+[5] We use the term congested traffic states to denote all
+
+states which do not belong to the free flow.
+[6] H. Y. Lee, H.-W. Lee, and D. Kim, Phys. Rev. Lett. 81,
+
+1130 (1998).
+[7] D. Helbing and M. Treiber, Phys. Rev. Lett. 81, 3042
+
+(1998).
+[8] D. Helbing, A. Hennecke, and M. Treiber, Phys. Rev.
+
+Lett. in press (cond-mat/9809324).
+[9] H. Y. Lee, H.-W. Lee, and D. Kim, Phys. Rev. E 59,
+
+5101 (1999).
+[10] To be precise, the lane divider is not perfect at two loca-
+
+tions where a small number of vehicles can be exchanged
+between the lanes 2 and 3.
+
+[11] B. S. Kerner, Phys. Rev. Lett. 81, 3797 (1998).
+[12] Both quantities are averaged over the two inner lanes.
+
+And frmp is estimated from the difference between the
+maximum flux level near the downstream end of the con-
+gested region and the flux level near the upstream end of
+congested region.
+
+[13] A recent theoretical study [15] reproduces the oscillation
+amplification and the period enhancement. But in this
+study, the congested region expands monotonically with
+time, which makes a clear distinction from the CT1 state.
+
+[14] M. Treiber and D. Helbing, J. Phys. A 32, L17 (1999).
+[15] M. Treiber and D. Helbing, cond-mat/9901239.
+
+3
+
+
+
+
+
+0 0.5 3.1 3.7 5.8 6.9 8.5 13.0 14.2
+
+D2 D3 D4 D5 D6 D7 D8
+
+x (km)
+
+x (km)0
+
+1.8
+
+E1
+
+1.7
+
+ON1 E2 ON2 E3 ON3 E4 ON4 E5 ON4
+
+D1 D9 D10
+
+ON6E6ON5
+
+3.2 6.1 9.5
+
+7.6 9.2 9.7 10.9 11.5 12.3
+
+7.4 8.0 8.6 10.911.411.812.512.8
+
+D12 D15D14D13D11
+
+(a)
+
+1
+2
+3
+4
+
+(b)
+
+7:30
+
+8:00
+
+8:30
+
+t
+
+4 6
+8 10
+
+12 14
+
+x (km)
+
+0
+50
+
+100
+
+ρ (veh/km)
+
+0
+30
+60
+90
+
+7:30 8:00 8:30
+
+v 
+(km
+
+/h)
+
+t
+
+D6
+
+0
+30
+60
+90
+
+7:30 8:00 8:30
+
+v 
+(km
+
+/h)
+
+t
+
+D5
+
+0
+30
+60
+90
+
+7:30 8:00 8:30
+
+v 
+(km
+
+/h)
+
+t
+
+D4
+
+(c)
+
+0
+30
+60
+90
+
+7:30 8:00 8:30
+
+v 
+(km
+
+/h)
+
+t
+
+D3
+
+0
+
+1000
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D5
+
+(d)
+
+0
+
+1000
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D4
+
+FIG. 1. (a) Detector (Dn), on-ramp (ONn), and off-ramp
+(En) locations in the Olympic Highway section studied in this
+work. The dashed line in the middle denotes the lane divider.
+(b) The 3D density profile of the CT1 state. (c) Velocity
+vs. time plots at different detectors (solid line for the lane
+1 and dashed line for the lane 2). The stop-and-go pattern
+appears at D4 but the free flow is observed at D3. (d) The
+density-flow relations at D5 and D4 from 7:30 to 8:30 data.
+The characteristic line of the traffic jam does not appear.
+
+(a)
+
+12:00
+
+12:30
+
+13:00
+
+t
+
+4 6
+8 10
+
+12 14
+16
+
+x (km)
+
+0
+50
+
+100
+
+ρ (veh/km)
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D11
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D10
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D9
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D8
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D6
+
+(b)
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D5
+
+0
+30
+60
+90
+
+12:00 12:30 13:00
+v 
+
+(km
+/h)
+
+t
+
+D8
+
+0
+30
+60
+90
+
+12:00 12:30 13:00
+
+v 
+(km
+
+/h)
+
+t
+
+D6
+
+(c)
+
+0
+30
+60
+90
+
+12:00 12:30 13:00
+
+v 
+(km
+
+/h)
+
+t
+
+D5
+
+FIG. 2. The 3D density profile (a), density-flow relations
+(b), and velocity vs. time plots (c) of the CT2 state. In
+contrast to the CT1 state, the amplification of the velocity
+fluctuations does not occur.
+
+(a)
+
+21:30
+
+22:00
+
+22:30
+
+t
+
+6 8
+10 12
+
+14
+
+x (km)
+
+0
+50
+
+100
+
+ρ (veh/km)
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D13
+
+v=76
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D12
+
+v=77
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D11
+
+v=55
+
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D10
+
+v=25
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+(b)
+
+D9
+
+v=73
+0
+ 
+
+1000
+ 
+
+2000
+
+0 40 80 120
+
+q 
+(ve
+
+h/h
+)
+
+ρ (veh/km)
+
+D8
+
+v=65
+
+FIG. 3. The 3D density profile (a) and density-flow re-
+lations (b) of the CT3 state. The velocity remains almost
+constant at each detector.
+
+4
+
+
+
+6:40
+
+7:00
+
+7:20
+
+t
+
+2 4
+6 8
+
+10 12
+14
+
+x (km)
+
+0
+60
+
+120
+
+ρ (veh/km)
+
+FIG. 4. The 3D density profile of the CT4 state.
+
+800
+
+1200
+
+1600
+
+2000
+
+0 200 400 600 800
+
+f up
+ 
+(ve
+
+h/h
+)
+
+frmp (veh/h)
+
+CT1
+CT2
+CT3
+CT4
+
+FIG. 5. The phase diagram of the four congested traf-
+fic states on the Olympic Highway. The upstream flux fup
+and the on-ramp flux frmp are average values over the time
+interval during which a particular congested traffic state is
+maintained. The free flow is also observed below the dashed
+line.
+
+5
+
+

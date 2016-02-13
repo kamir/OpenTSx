@@ -1,0 +1,1903 @@
+
+Computer-Aided Civil and Infrastructure Engineering 25 (2010) 596–612
+
+A Robust and Efficient Method for Fusing
+Heterogeneous Data from Traffic Sensors on Freeways
+
+J.W.C. van Lint∗ & Serge P. Hoogendoorn
+
+Department of Transport & Planning, Faculty of Civil Engineering and Geosciences, Delft University of Technology,
+The Netherlands
+
+Abstract: Fusing freeway trafﬁc data such as spot
+speeds and travel times from a variety of trafﬁc sen-
+sors (loops, cameras, automated vehicle identiﬁcation
+systems) into a coherent, consistent, and reliable picture
+of the prevailing trafﬁc conditions (e.g., speeds, ﬂows) is
+a critical task in any off- or online trafﬁc management
+or data archival system. This task is challenging as such
+data differ in terms of spatial and temporal resolution,
+accuracy, reliability, and most importantly in terms of
+spatiotemporal semantics. In this article, we propose a
+data fusion algorithm (the extended generalized Treiber-
+Helbing ﬁlter [the EGTF]) which, although heuristic in
+nature, uses basic notions from trafﬁc ﬂow theory and is
+generic in the sense that it does not impose any restric-
+tions on the way the data are structured in a temporal
+or spatial way. This implies that the data can stem from
+any data source, given they provide a means to distin-
+guish between free ﬂowing and congested trafﬁc. On the
+basis of (ground truth and sensor) data from a micro-
+simulation tool, we demonstrate that the EGTF method
+results in accurate reconstructed trafﬁc conditions and is
+robust to increasing degrees of data corruption. Further
+research should focus on validating the approach on real
+data. The method can be straightforwardly implemented
+in any trafﬁc data archiving system or application which
+requires consistent and coherent trafﬁc data from trafﬁc
+sensors as inputs.
+
+1 INTRODUCTION
+
+Traffic data collection and archiving systems are es-
+sential tools for both online (and real-time) intelligent
+transportation systems (ITS) applications, such as travel
+
+∗To whom correspondence should be addressed. E-mail: j.w.c.
+vanlint@tudelft.nl.
+
+time prediction (Dharia and Adeli, 2003; Van Lint
+et al., 2005), incident detection (Karim andAdeli, 2003),
+dynamic speed limits, and ramp metering (Hegyi et al.,
+2005; Wang et al., 2006), as well as offline applications,
+such as policy/measure evaluation studies and the de-
+velopment, calibration, and validation of the tools nec-
+essary to perform these tasks (e.g., traffic simulation
+models). Furthermore, the advance of scientific re-
+search relies heavily on the availability of large amounts
+of detailed and reliable empirical data. In the last
+decades, the amount of empirical data becoming avail-
+able for both online and offline use has increased
+steeply, particularly in terms of the wide range of sen-
+sor technologies applied to obtain these data, ranging
+from inductive loop detectors, radar, microwave, and
+ultrasonic sensors to infrared cameras and in-vehicle
+GPS/GSM receivers/transmitters (“floating car data”),
+to name a few.
+However, data from a multitude of different traffic
+
+sensors do not necessarily mount up to consistent, co-
+herent, and meaningful information. Data from such
+different sensors are typically characterized by differ-
+ent formats, semantics, temporal and spatial resolution,
+and accuracy, and also differ in availability and relia-
+bility both as a function of location, time, and circum-
+stances. Both from technical and methodological points
+of view, the integration of such heterogeneous data into
+comprehensive and consistent information on the state
+of traffic in a network (e.g., in terms of speed, flow, or
+density) is a complex and challenging task. This article
+focuses on the methodological challenge, that is, on the
+mathematical and statistical tools for fusing traffic data
+from multiple sensors.
+Fusion of data from a multitude of sources (Dailey
+
+et al., 1996; Varshney, 1997) generally leads to the fol-
+lowing:
+
+C© 2009 Computer-Aided Civil and Infrastructure Engineering.
+DOI: 10.1111/j.1467-8667.2009.00617.x
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 597
+
+• increased confidence and accuracy and reduced
+ambiguity;
+
+• increased robustness, as one sensor can collect in-
+formation where others are unavailable, inopera-
+tive, or ineffective;
+
+• enhanced spatial and temporal coverage, for in-
+stance because one sensor can work when or where
+another sensor cannot;
+
+• and (more tentatively) decreased costs because (a)
+a suite of “average” sensors can achieve the same
+level of performance as a single, highly-reliable
+sensor at a significantly lower cost, and (b) fewer
+sensors may be required to obtain a (for a par-
+ticular application) sufﬁcient picture of the system
+state.
+
+With these arguments in mind, data fusion tech-
+niques provide an obvious solution for traffic state es-
+timation. Most approaches to traffic state estimation
+(e.g., Wang et al., 2006; Van Lint et al., 2008), how-
+ever, consider only a single data source (e.g., 1-minute
+aggregate flows or averaged speeds from local detec-
+tors), which is due to the constraints of the solution
+approach chosen (this will be elaborated in Section 2).
+Of the (few) studies which do consider data from var-
+ious traffic sensors (e.g., Dailey et al., 1996; Kikuchi
+et al., 2000), most are concerned with limited traffic
+networks or corridors (e.g., single traffic links). Recent
+contributions (Herrera and Bayen, 2008; Van Lint and
+Hoogendoorn, 2007), however, demonstrate that with
+well-known techniques such as first-order traffic flow
+models and extended Kalman filters, fusing data from
+local detectors and probe vehicles is possible and both
+technically and economically feasible, given the data
+can be appropriately aligned. In this article, we will pro-
+pose an alternative and much simpler solution for traf-
+fic data fusion, which extends and generalizes the spa-
+tiotemporal traffic data filter first proposed in Treiber
+and Helbing (2002). Our contribution, the so-called ex-
+tended generalized Treiber-Helbing filter (EGTF), is
+generic in the sense that it does not impose any restric-
+tions on the way the data are structured in a temporal or
+spatial way, given they provide a means to distinguish
+between free flowing and congested traffic.
+The article is structured as follows. In Section 2, we
+
+will first briefly introduce some basic notions in multi-
+sensor data and information fusion. Next, we will recall
+some of the (spatiotemporal) characteristics of traffic
+data and discuss why common dynamic state estima-
+tion techniques (such as Kalman filters) cannot be easily
+applied for fusing semantically different traffic data. In
+Section 3, the alternative method proposed in this arti-
+cle is outlined. Section 4 then describes the experimen-
+tal setup with which we will provide evidence for the
+
+validity and robustness of the method. Note that to this
+end, synthetic data from a micro-simulation model are
+used, as validation of the EGTF method requires both
+sensor data as well as the underlying ground-truth data
+(high-resolution trajectories of all vehicles on a large
+freeway stretch during a significant time period). The
+latter was not available for actual traffic in this study.
+Section 5 then presents the results, and in the final sec-
+tion (6), conclusions are drawn and recommendations
+for further research into (and application of) the pro-
+posed EGTF method are discussed.
+
+2 FRAMEWORKFORTRAFFICDATAFUSION
+
+2.1 Multi-sensor data fusion—a brief overview
+
+Multi-sensor fusion, which can be defined as the “syn-
+ergistic combination of data or information from mul-
+tiple sensors” (Luo et al., 2002), has been studied and
+applied extensively in many fields of science and engi-
+neering, such as robotics, medical diagnosis, image pro-
+cessing, air traffic control, remote sensing, and ocean
+surveillance (see e.g., Yager, 2004; Xiong and Svensson,
+2002; Varshney, 1997; Piella, 2003; Linn and Hall, 1991).
+There are many ways to classify fusion techniques. Most
+differentiate between (hierarchical) levels of fusion, for
+example, between fusion of raw sensor data (Level 1);
+fusion of features extracted from the raw data (Level 2);
+and fusion of objects or events deduced from these fea-
+tures (Level 3) (Varshney, 1997; Luo et al., 2002). Ex-
+amples for these three fusion levels in traffic science and
+practice include, for instance, speed/density estimation
+from raw sensor data (Level 1), determining queue lo-
+cations and lengths from these estimated speeds (Level
+2), and incident detection on the basis of the previous
+two (Level 3, see e.g., Ivan and Sethi (1998)). Another
+way of categorizing is by means of the (families) of so-
+lution techniques which have been proposed for multi-
+sensor fusion. For example, Luo et al. (2002) distinguish
+between the following:
+
+Estimation methods including weighted averaging,
+least squares estimation, and recursive approaches
+such as Kalman or particle filtering.
+
+Classiﬁcation methods such as clustering algorithms
+and unsupervised techniques such as LVQ and self-
+organizing maps.
+
+Inference methods such as graphical (Bayesian belief)
+networks, Dempster-Shafer methods.
+
+Artiﬁcial intelligence methods including expert sys-
+tems, fuzzy inference engines, and adaptive neural
+networks, to name a few.
+
+Clearly, there is a strong relation between these
+categorizations. Estimation methods such as Kalman
+
+
+
+598 van Lint & Hoogendoorn
+
+filtering are especially suitable for Level 1 fusion, that
+is, fusion of noisy (raw) sensor data; classification meth-
+ods are typically tailored for feature extraction; whereas
+higher level inference systems combine such features to
+derive evidence for the occurrence of particular events
+and objects or to support decision making on the basis
+of fused data and/or features. In a typical multi-sensor
+fusion application, different combinations of techniques
+are employed to go from raw data to for example deci-
+sions on the basis of inferred events. In this article, we
+will focus on the first fusion category, that is, Level 1
+fusion of raw traffic sensor data (speeds, vehicle speeds
+and positions, travel times), using (state) estimation and
+spatiotemporal averaging methods. To this end, we will
+first briefly recall some basic characteristics of raw traf-
+fic data and discuss the limitations of typical state esti-
+mation techniques used in traffic applications with re-
+spect to these different types of data.
+
+2.2 Characteristics of traffic data and consequences
+for data fusion
+
+Data from traffic sensors come in many forms and
+qualities, but can essentially be subdivided along two
+dimensions. The first relates to their spatiotemporal
+semantics, that is, do the data represent local traffic
+quantities (flow, time headway(s), etc.) or do the data
+reflect quantities over space (journey speed, space mean
+speed, travel time, and trajectories). The second relates
+to the degree of aggregation, where data may represent
+an aggregate or average over fixed time periods (e.g.,
+1-minute aggregate flows or averaged speeds), or a sin-
+gle event (vehicle passage, travel time, full trajectory).
+Table 1 overviews this classification with a few exam-
+ples. In this section, we briefly discuss some characteris-
+tics of local and spatial data and (in the final subsection)
+which constraints these pose on data fusion and state
+estimation techniques.
+In the next two sections, we will briefly discuss some
+
+properties of local and spatial traffic data relevant to the
+data fusion algorithm proposed in this article.
+
+2.2.1 Local trafﬁc data. The basic macroscopic traffic
+variables used to describe a traffic state include flow q
+
+Table 1
+Classification of data from traffic sensors with some examples
+
+Event-based Aggregate
+
+Local Vehicle passage, speed,
+length
+
+Traffic flow, time and
+harmonic mean speed
+
+Spatial Vehicle travel, time,
+journey speed,
+trajectory samples
+
+Space mean speed, mean
+travel time, mean
+journey speed
+
+(veh/h), (space) mean speed u (km/h), and vehicular
+density ρ (veh/km), which are related to one another
+by q = ρu. From its definition, vehicular flow can be
+measured with local traffic sensors, whereas density and
+space mean speed cannot (see Table 1). However, with
+local detection equipment, the space mean speed can be
+approximated by the local harmonicmean speed, that is,
+
+uS ≈ uH =
+(
+1
+N
+
+∑
+i
+
+1
+vi
+
+)−1
+
+The approximation is exact under the assumption of
+homogeneity and stationarity on the road section and
+time period of interest. The local arithmetic (or simply
+time) mean speed uT = 1N
+
+∑
+vi provides a biased ap-
+
+proximation of the space mean, due to the fact that in
+a time sample, faster observations are over represented.
+Especially in congestion (where speeds are typically be-
+low 50 km/h), this bias is significant. Time averaging
+under these congested conditions may lead to overesti-
+mates of speed of 20% and more. A typical example of
+a traffic monitoring system in which these biased time
+mean speeds are collected is the MoniCa system, op-
+erational on the motorway network in the Netherlands
+(around 6,600 km). MoniCa dual induction loops are in-
+stalled at every 500 m for around 1/3 of the network,
+whereas another 1/3 has only limited traffic monitor-
+ing, and roughly 1/3 has nothing at all. Besides biased
+speeds and the limited spatial coverage in some areas, a
+third major issue within MoniCa is that of the available
+data (aggregate flows and time mean speeds) on aver-
+age 5–10% is missing or otherwise deemed unreliable,
+with regular extremes to over 25 or 30%.
+There are also other ways to estimate density and
+
+speed from local detector equipment using (local) sen-
+sor occupancyOcc, which is the ratio of time a sensor is
+occupied by vehicles in a certain time period. However,
+also then, bias due to time averaging is a major con-
+cern (see e.g., Papageorgiou and Vigos, 2008; Hellinga,
+2002).
+
+2.2.2 Travel time and trajectory data. Travel time can
+be measured by means of, for example, automated ve-
+hicle identification (AVI) systems, which identify vehi-
+cles at two consecutive locations A and B at time in-
+stants tA and tB and deduce the realized travel time
+with TT
+
+AB
+t = tB − tA (Figure 1). AVI systems may em-
+
+ploy cameras and license plate detection technology, or
+maymatch vehicles through induction footprints, tolling
+tags, or otherwise. Methodologically, the most impor-
+tant characteristics of travel time are the following.
+
+1. Travel time can only be measured for realized
+trips, that is, after a vehicle has finished it. Real-
+ized travel time TTt of a vehicle arriving at time
+t hence represents something entirely different
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 599
+
+Fig. 1. Relationship between vehicle trajectories (the thick
+solid and dotted lines), realized and actual travel time (TTt
+and TTt), average journey speed (ut), and the underlying
+speeds (represented by a speed contour plot, where dark
+
+areas represent low speeds).
+
+than the so-called actual travel time TTt of a ve-
+hicle departing at t, which must be predicted by
+definition (Figure 1).
+
+2. Realized travel time (or its reciprocal average
+realized journey speed ut = L/TTt) is a scalar
+representation of the traffic conditions (e.g., the
+speed v(s, x), s ≤ t) a vehicle encountered during
+its trip over a route with length L. There are fol-
+lowing two immediate consequences.
+a. The relationship between travel time and the
+
+underlying traffic conditions is underdeter-
+mined, that is, it is possible to estimate travel
+time from local speeds (e.g., Ni and Wang,
+2008; Van Lint and Van der Zijpp, 2003),
+but conversely, it is not possible to estimate
+local speeds from travel time, unless other
+sources of information are available. Under-
+determinedness is a common problem in
+traffic state estimation, for example, in esti-
+mating origin-destination flows, where addi-
+tional information is also needed to solve the
+problem (see e.g., Castillo et al., 2008; Castillo
+et al., 2008).
+
+b. A travel timemeasurement provides informa-
+tion related to a fixed spatial entity (a route
+
+or road segment) but over a variable time pe-
+riod, which duration in fact equals the travel
+time measurement itself.
+
+We will discuss the consequences of these proper-
+ties of travel time for traffic state estimation in Sec-
+tion 2.3. By sampling data (location and/or speed) from
+instrumented vehicles (e.g., through GPS or GSM) at
+consecutive time instants, vehicle trajectories can also
+be measured. The relationship between vehicle trajec-
+tories, travel time, and the underlying speeds is illus-
+trated in Figure 1. Clearly, when all vehicle trajecto-
+ries are sampled at high frequencies, the traffic state
+(prevailing speeds, flows, densities, travel times, etc.)
+can be completely deduced from these so-called ﬂoat-
+ing car data (FCD). However, at penetration rates far
+below 100%, FCD at best provide a proxy for average
+speed on the road segments from which these data are
+collected.
+
+2.2.3 Spatiotemporal trafﬁc patterns. Before discussing
+traffic state estimation techniques, let us first illustrate
+some of the typical spatiotemporal traffic patterns ob-
+served in practice on the basis of real traffic data
+(speeds1). Figure 2 illustrates these patterns with space-
+time contour maps of the speeds (top graph) and flows
+(bottom graph) along a 20 km 3-lane freeway section in
+the Netherlands (theA12 betweenGouda andUtrecht).
+Figure 2 shows the following.
+
+1. Under free-flow conditions, perturbations (e.g.,
+changes in average speed) propagate in the same
+direction of traffic flow with a (positive) speed
+cfree, which appears remarkably constant and is in
+the same order of magnitude as the average traffic
+speed.
+
+2. Under congested conditions, a number of dif-
+ferent patterns can be observed, which are de-
+scribed and discussed elsewhere (e.g., in Kerner
+(2004); Helbing and Treiber (2002); Kesting and
+Treiber (2008)). Regardless of the precise num-
+ber of different congested patterns and their traf-
+fic flow theoretical interpretation (for an overview
+see e.g., Hoogendoorn and Bovy (2001)), in con-
+gested traffic, perturbations propagate in the op-
+posite direction of traffic, that is, with negative
+speeds ccong (on freeways between −15 to −20
+km/h (Treiber and Helbing, 2002)). Figure 2 il-
+lustrates how some congested patterns may travel
+over 15 km in the upstream direction.
+
+The main consequence of the spatiotemporal char-
+acteristics of traffic patterns discussed above is that
+data from local sensors cannot be averaged or inter-
+polated orthogonally (which is what often happens in
+
+
+
+600 van Lint & Hoogendoorn
+
+Fig. 2. Speeds (km/h) and flows (veh/h) obtained from
+inductive loop detectors along a typical densely used 3-lane
+
+freeway section in the Netherlands.
+
+practice) as a means to “estimate” the traffic conditions
+between measurements or consecutive time periods. In-
+stead, these data must be extrapolated over space and
+time along the characteristic curves mentioned above,
+which differ in congested and free-flow operations. This
+is the basis for the spatiotemporal filter introduced by
+Treiber and Helbing (2002), the extensions to this filter
+proposed in this article, and also for the model-based
+traffic state estimators discussed in the next subsection.
+
+2.3 Traffic state estimation techniques
+
+The generic structure of a traffic state estimation/data
+fusion approach typically includes three components:
+
+1. data fromwhatever sensors available (see e.g., Ta-
+ble 1);
+
+2. some mathematical model which formalizes the
+relationship of the data with the underlying dy-
+namic phenomena (e.g., an analytical traffic flow
+model);
+
+3. data assimilation techniques which combine the
+former two (data + model).
+
+The most widely applied data assimilation tech-
+nique applied to traffic state estimation problems is
+the Kalman Filter (KF) and/or its many variations (ex-
+tended and unscented KF, particle filters). For exam-
+ple, Wang and Papageorgiou (2005) and Wang et al.
+(2006) combine a so-called second-order macroscopic
+traffic flow model with the extended KF to estimate ve-
+hicular density and speed from sparse local data from
+induction loops. Van Lint and co-workers demonstrate
+a multi-class first-order macroscopic traffic flow model
+and a dual extended KF for the same purpose (Van Lint
+et al., 2008). Such KF approaches exploit the fact that
+analytical traffic flow models can be numerically solved,
+in which case they can be expressed in state-space form
+(k depicts discrete time steps of duration �t):
+
+xk+1 = f (xk,wk,uk)+ ηk (1)
+
+yk = h(xk, vk)+ ζk (2)
+
+Equation (1) depicts the process equation, which de-
+scribes the dynamics of state xk+1 (density and/or speed)
+as a function of xk and external disturbances uk (for ex-
+ample traffic demand at network boundaries) plus an
+error term ηk, reflecting errors in the process model
+(e.g., model misspecification). The function f contains
+(possibly time-varying) parameters wk, for example the
+kinematic wave speed or road capacity. Equation (2)
+depicts the observation equation hwhich relates the sys-
+tem state to (observable) outputs yk. Also hmay contain
+(possibly time-varying) parameters vk. The error term ζk
+depicts errors in either the observation model h and/or
+the observations themselves. The fundamental diagram
+of traffic flow q = Qe(ρ), or u = Ue(ρ), relating speed
+or flow to density, is a good example of such an obser-
+vation equation.
+Details on KF algorithms can be found in many text-
+
+books (e.g., Simon, 2006), let us just make a few remarks
+on their applicability to traffic state estimation and data
+fusion. The key advantage of KF-based state estimation
+approaches is that they provide a convenient and princi-
+pled approach to recursively correct state estimates by
+balancing the errors (uncertainties) in the process and
+observation model and in the data (yobsk ) with
+
+xk = Gk
+(
+yobsk − yk
+
+)
+(3)
+
+The so-called Kalman gainGk in (3) can be informally
+understood as
+
+Gk = variance process modelvariance observation model and data
+× sensitivity observation model to state
+
+This implies that (1) the more uncertain the data
+are (conceived), the more weight is put on the model
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 601
+
+predictions and vice versa, and (2) that the KF ad-
+justs xk proportional to the sensitivity of the observation
+model to changes in the state variables. For example,
+under free-flow conditions, the relationship between
+traffic density and speed is very weak, which would im-
+ply only small corrections in state variables (xk) even if
+the speeds measured with sensors (yobsk ) differ largely
+from those predicted by the observation model (yk).
+This intuitive structure can be easily explained to traf-
+fic operators and professionals using such state estima-
+tion tools. Moreover, the same process and observation
+model can be subsequently used for prediction and con-
+trol purposes, given proper predictions of the boundary
+conditions (traffic demand, turnfractions, and capacity
+constraints) and estimates of the model parameters are
+available.
+There is, however, one major drawback of KF ap-
+
+proaches, which relates to the spatial and temporal
+alignment of the data. For every data source used, an
+(additional) observation Equation (2) is required. This
+is not necessarily a problem, as long as the spatial and
+temporal discretization of the data (detector locations
+xd and time periods of size �T) can be aligned with
+the discretization used in the model (road segments
+of length �x and time periods of size �t). For exam-
+ple, some spatial data can be transformed fairly easily
+into local measurements, such as sampled floating car
+data (Herrera and Bayen, 2008; Van Lint and Hoogen-
+doorn, 2007). This, however, is not the case for, for ex-
+ample, travel time or journey (segment) speeds. These
+are available after trips are realized, that is, after a time
+period equal to the measured travel time. As a result, a
+(realized) travel time observation equation has the fol-
+lowing general form:
+
+yk = h(xk, xk−1, . . . , xk−TTmax)+ ϑt (4)
+where the output variable yk now depicts (realized)
+travel time, and TTmax is the maximum observed travel
+time on the route of interest. Using Equation (4) hence
+necessitates maintaining state variables xk (speeds, den-
+sities) for as many discrete time instants as required to
+deduce the longest possible realized travel time. To il-
+lustrate that this leads to practical and computational
+problems, consider a traffic corridor constituted of N
+segments (of typically 500 m) on which state variables
+(e.g., densities) are estimated, which are corrected ev-
+ery �T time units (of typically 1 minute). To facil-
+itate observation Equation (4), the number of state
+variables increases to Naug = N × TTmax/�T. On a
+congested corridor of say 20 km, TTmax may become
+as high as 60 minutes or more, yielding an augmented
+state vector with 1,000 variables or more. As in the KF
+procedure also an error covariance matrix is maintained
+of size (Naug)2, this approach would lead to very un-
+
+wieldy computations for any realistic traffic network or
+corridor.
+We conclude that in the case of combining data which
+
+cannot be straightforwardly aligned, and/or which re-
+quire augmenting the state vector with multiple time pe-
+riods, it makes sense to use a simpler approach for data
+fusion, that is, one with far less degrees of freedom. In
+Ou et al. (2008), such travel times have been success-
+fully combined with loop data, where they were used as
+a constraint on travel times estimated from loop detec-
+tor data. In the current article, it is our aim to show that
+travel times can also be directly fused with other types of
+data. In the next section, we will present this approach.
+
+3 PROPOSEDMETHODOLOGYFORTRAFFIC
+DATAFUSION
+
+3.1 The generalized Treiber–Helbing filter (GTF) for a
+single data source
+
+Let us first consider a single data source j. For filtering
+these data over space and time, we use the approach of
+Treiber and Helbing (2002) stating that the quantity z
+at (t, x) can be reconstructed as follows:
+
+z(t, x) = w(t, x)zcong(t, x)+ (1− w(t, x))zfree(t, x) (5)
+
+In Equation (5), the reconstruction involves a con-
+vex (weighted) combination of two reconstructions of
+the signal. The first (zcong(t, x)) assumes congested traf-
+fic operations and the second (zfree(t, x)) free-flow con-
+ditions. Further below, we will discuss the weighting
+mechanism in detail. Let us first note that in both free
+flow and congestion, it is assumed that information
+(measured with traffic sensors) travels along the charac-
+teristics with constant characteristic speeds ccong or cfree,
+respectively. The underlying assumption is that traffic
+can be represented sufficiently well by a bilinear fun-
+damental diagram, which according to Newell (1993a,
+1993b) is “a not too unreasonable postulate.” This bi-
+linear fundamental diagram reads
+
+q = Qe(ρ) =
+{
+
+cfreeρ ρ ≤ ρc
+qc + ccongρ otherwise
+
+(6)
+
+According to the kinematic wave theory (Richards,
+1956; Lighthill andWhitham, 1955), the assumption that
+the characteristic speeds c(ρ) are indeed constant for all
+traffic states (ρ) yields that the resulting trajectories of
+traffic perturbations are in fact straight lines (moving
+downstream under free-flow conditions and upstream
+under congested conditions).
+
+
+
+602 van Lint & Hoogendoorn
+
+Proof: Consider the conservation of vehicles equation
+
+∂ρ
+
+∂t
++ ∂q
+
+∂x
+= 0. (7)
+
+Substituting (6) in (7) yields
+
+∂ρ
+
+∂t
++ c(ρ) ∂ρ
+
+∂x
+= 0 (8)
+
+with
+
+c(ρ) = ∂
+∂ρ
+
+Qe(ρ) =
+{
+cfree ρ ≤ ρc
+ccong otherwise.
+
+�
+
+Now consider that we have traffic sensors at loca-
+tions (ti , xi ), providing data zi (e.g., speeds, flows, etc.).
+Whereas Treiber and Helbing (2002) assume that these
+data points stem from sources that provide data in an
+equidistant rectangular grid (e.g., local detectors pro-
+ducing averaged speeds over fixed time intervals), in this
+article, we will relax this constraint and assume that the
+data may stem from any point (ti , xi ). This implies that
+we also consider event-based data sources, such as tra-
+jectory data from moving vehicles (FCD - floating car
+data), or for example realized travel times from AVI
+systems. How these are processed by the generalized
+Treiber-Helbing filter (GTF) will be explained further
+below. Let us first define similar to Treiber and Helbing
+(2002) the following anisotropic filter kernel:
+
+φcong(t, x) ≡ φ0
+(
+t − x
+
+ccong
+, x
+)
+, and
+
+φfree(t, x) ≡ φ0
+(
+t − x
+
+cfree
+, x
+)
+
+(9)
+
+with
+
+φ0(t, x) = exp
+(
+−|x|
+
+σ
+− |t |
+
+τ
+
+)
+(10)
+
+In (10), σ and τ are parameters of the filter ker-
+nel (9) which describe the width and time window
+size of the “influence” region around the points (t, x)
+where the traffic quantity z is estimated. The larger the
+distance (xi − x, ti − t) between (t, x) and some data
+points (ti , xi ), the smaller the weight of the data zi in
+the estimation of z(t, x). With (9) the weight of a single
+data point zi in the estimation of z(t, x) equals
+
+β icong(t, x) = φcong(xi − x, ti − t), and
+β ifree(t, x) = φfree(xi − x, ti − t) (11)
+
+Loosely speaking, the weight is determined by the dis-
+tance between the points (t, x) where we want to esti-
+mate z(t, x) and the data points (ti , xi ), considering the
+speed at which information moves through the flow un-
+der free-flow or congested conditions. As the chosen
+
+kernel in (10) decays exponentially for large values of
+xi − x and ti − t, it is favorable to limit the distance over
+space and time for which data points are still used in the
+estimation of z(t, x). Define A(t, x) as the area around
+points (t, x) fromwhich data are used to estimate z(t, x),
+and NA(t, x) as the number of data points zi ∈ A(t, x).
+The estimation for the two condition-dependent esti-
+mates zcong(t, x) and zfree(t, x) from Equation (5) then
+becomes
+
+zcong(t, x) =
+
+NA(t,x)∑
+i=1
+
+β icong(t, x)zi
+
+NA(t,x)∑
+i=1
+
+β icong(t, x)
+
+, and
+
+zfree(t, x) =
+
+NA(t,x)∑
+i=1
+
+β ifree(t, x)zi
+
+NA(t,x)∑
+i=1
+
+β ifree(t, x)
+
+(12)
+
+Before using these equations for fusing data from
+different data sources, we will first discuss two factors
+which are important in the estimation of z(t, x) : the area
+A(t, x), which governs the amount of data used for each
+estimation point, and the weight factor w(t, x).
+
+3.2 Filter design considerations and computational
+efficiency
+
+In contrast to KF-based approaches, the complexity of
+the GTF scales linearly with the size of the vector of
+quantities (speeds, flows, densities) which needs to be
+estimated. There are two factors which determine how
+much computations are needed for the estimation. The
+coarser the estimation grid is chosen (i.e., the larger �x
+and �t), the fewer estimation points z(t, x) need to be
+calculated. The second factor affecting computational
+complexity is the area A(t, x), which may be specific
+for each estimation point (t, x) in terms of both shape
+and size. The larger A(t, x) is chosen, the more data
+points are considered in the estimation of z(t, x) and the
+smoother (and possibly more accurate) the estimation
+becomes. On the other hand, the larger A(t, x) becomes
+(in the limit A(t, x) = A (the entire space time grid con-
+sidered)), the more computationally demanding the al-
+gorithm (Equation (12)) will be. As a pragmatic choice,
+we will consider a circular area around each estimation
+point with a radius rA(t, x) defined by
+
+rA(t, x) =
+√
+(�Tmax)2 + (�Lmax)2 (13)
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 603
+
+with
+
+NA(t, x) ≥ 2
+where �Tmax and �Lmax are constants determining the
+farthest distance over time and space for which data
+points are still considered in the estimation of z(t, x).
+A(t, x) necessarily needs to be large enough such that at
+every (t, x) at least two data points zi are near enough
+to be used in the estimation of z(t, x). In many practical
+cases, for example, with �Tmax and �Lmax set to con-
+stants of an order larger than σ and τ (a few km and 10–
+15 minutes, respectively), NA(t, x) will be larger than 2
+(in the order of 10 or more).
+A second important filter design choice is the weight
+
+factor w(t, x) used in (5). This factor describes to
+which degree the conditions in points (t, x) are dic-
+tated by free-flow traffic operations (w(t, x) = 0); by
+congested traffic operations (w(t, x) = 1); or a combi-
+nation of both (0 < w(t, x) < 1). Treiber and Helbing
+(2002) propose to use speed data ui for this purpose
+and use the following expression to calculate this weight
+factor:
+
+w(t, x) = 1
+2
+
+[
+1+ tanh
+
+(
+Vc − u∗(t, x)
+
+�V
+
+)]
+(14)
+
+with
+
+u∗(t, x) = min(ucong(t, x),ufree(t, x)) (15)
+In (15), ucong(t, x) and ufree(t, x) are calculated with
+
+(12), so that u∗(t, x) effectively represents a lowerbound
+of the speed u(t, x) given the available data points ui .
+Note that the hyperbolic tangent function in (14) is an
+arbitrary filter design choice. Any crisp, smooth, or even
+fuzzy function which is able to discriminate between
+free-flowing and congested traffic operations based on
+whatever data are available (density/occupancy, speed)
+would in principle do.
+
+3.3 The EGTF for multiple data sources
+
+The GTF formulated above is able to reconstruct traffic
+conditions on the basis of data stemming from a par-
+ticular data source j which provides data from sensors
+at points (t ( j)i , x
+
+( j)
+i ). Let z
+
+( j)(t, x) denote the considered
+traffic value as reconstructed from data source j with (in
+that order) Equations (15), (14), (13), (12), and (5). To
+fuse data from multiple data sources into one estimate
+z(t, x), we propose the following linear combination:
+
+z(t, x) =
+
+∑
+j
+
+α( j)(t, x)
+N( j)A (t,x)∑
+
+i=1
+φ
+( j)
+i (t, x)z
+
+( j)(t, x)
+
+∑
+j
+
+α( j)(t, x)
+N( j)A (t,x)∑
+
+i=1
+φ
+( j)
+i (t, x)
+
+(16)
+
+3.3.1 Data source speciﬁc weights. In Equation (16),
+two weight factors (α( j)(t, x) and φ( j)i (t, x)) are used.
+The first (dynamic) weight factor α( j)(t, x) in (16) is data
+source specific and can be interpreted as a dynamic indi-
+cator of the reliability of the data from source j at (t, x).
+It could for example be determined on the basis of a
+priori estimates of the measurement accuracy of data
+source j. We make two assumptions in setting α( j)(t, x).
+
+1. We assume α( j)(t, x) ∝ 1/( j)(t, x), where (( j))2
+depicts the error variance of data measured with
+data source j.
+
+2. We assume that ( j)(t, x) is constant in free-flow
+operations and constant under congested condi-
+tions, where the latter is smaller than the former.
+Specifically, let ( j)0 represent the standard devia-
+tion of the measurement error of data source j un-
+der congestion (u(t, x) 
+ Vc) and [1+ μ( j)]( j)0 ,
+with μ( j) ≥ 0, the standard deviation under free-
+flowing conditions (u(t, x) � Vc).
+
+We can then reuse the datasource specific weight
+w( j)(t, x) calculated with (14) to compute α( j)(t, x) as
+follows
+
+α( j)(t, x) = 1
+
+
+( j)
+0 [1+ μ( j)(1− w( j)(t, x))]
+
+(17)
+
+The second weight factor in (16), φ( j)i (t, x), is data
+source and data point specific and reflects the fact that
+data from different sources will result in a different
+spatiotemporal distinction between congested and free-
+flow conditions. This is due to, for example, the fact that
+one data source will have more data points available
+around a certain estimation point (t, x) than other data
+sources. Using Equations (11) and (14) we propose
+
+φ
+( j)
+i (t, x) = w( j)(t, x) · β i,( j)cong(t, x)
+
++ (1− w( j)(t, x)) · β i,( j)free (t, x) (18)
+
+We will return to these data source-specific weights in
+Section 4.2. In the next subsection, we will discuss how
+to use the data fusion filter for travel time data.
+
+3.3.2 Fusing realized travel times with local trafﬁc data.
+Let us now consider realized travel times TTAB(t) mea-
+sured with AVI systems at consecutive locations xA and
+xB. Such a realized travel time then provides (ex post)
+a proxy for the average speed in a space-time area
+{(t − TTAB(t), xA), (t, xB)} which equals
+
+vAB(s) = LAB
+TTAB(t)
+
+,with t − TTAB(t) ≤ s ≤ t (19)
+
+Clearly, a new estimate vS(s) becomes available with
+every vehicle finishing its trip over AB. Now consider
+discrete time periods k = (tk−1, tk] of typically 1, 3, or 5
+
+
+
+604 van Lint & Hoogendoorn
+
+minutes. The average travel time of vehicles departing
+during such periods equals TTAB(k) =
+
+∑
+TTAB(t), t ∈
+
+(tk−1, tk]. Let us denote the average travel time of ve-
+hicles arriving in k by TTAB(k). Note that TTAB(k) �=
+TTAB(k− TTAB(k)) as vehicles arriving in k may have
+departed at time instants t spread over several discrete
+departure time periods. Nonetheless, nothing prevents
+one from using TTAB(k) to approximate the spacemean
+speed over AB for all vehicles arriving in period k, which
+analogously to (19) reads
+
+u¯AB(k) = LAB
+TTAB(k)
+
+(20)
+
+On the basis of (20) we can translate the travel
+time measurement into a series of speed measurements
+at discrete time points {tk − TTAB(k), tk − TTAB(k)+
+1, . . . , tk} along the line
+
+ϒ = {(t, x) | t ∈ (tk−TTAB(k), tk]
+and x = xA + u¯AB(k) · (tk − t)} (21)
+
+The line ϒ in Equation (21) describes an average ve-
+hicle trajectory between AVI stations with a slope equal
+to u¯AB(k), such that we can treat consecutive travel
+time measurements as FCD samples, on the basis of
+which we can use the same formula for the dynamic data
+source-specific weight α( j)(t, x) as in Equation (17).
+Figure 3 illustrates this process schematically and shows
+that the trajectory described by ϒ may lead to both
+under- and overestimated speeds on different locations
+and time instants. ( j)0 should hence be chosen propor-
+tional to the distance between the consecutive AVI sta-
+tions, reflecting the fact that the reconstructed vehicle
+trajectory with (20) and (21) becomes a coarser (and
+possibly more biased) approximation of the real aver-
+age vehicle trajectory with a larger AVI station spacing.
+
+Fig. 3. Schematic outline of the “conversion” of realized
+travel times TT into discrete FCD speed measurements.
+
+4 EXPERIMENTALSETUP
+
+To test the feasibility of the proposed EGTF method
+and analyze its properties, we will use data generated
+by a traffic micro-simulation tool FOSIM2. One rea-
+son for using micro-simulation data is that this provides
+ground-truth data (space mean speeds in this case) over
+a long freeway section, which are not readily available
+in practice. Secondly, it enables us to freely emulate
+any possible sensor configuration under many differ-
+ent scenarios (e.g., spacing, reliability), and finally, al-
+though drivers in micro-simulation tools behave differ-
+ently than real-world drivers, the problem to be solved
+is essentially still the same, that is, the reconstruction of
+complex traffic patterns from heterogeneous and unre-
+liable sensor data.
+
+4.1 Freeway corridor and basic sensor configuration
+
+To generate both ground-truth data (uS) as well as all
+detector data, a FOSIM implementation of the 19 km
+A13 southbound freeway section between Delft and
+Rotterdam is used as shown in Figure 4. This corridor
+contains six on-ramps, five off-ramps, and three weav-
+ing sections (combined on/off-ramps). The underlying
+origin-destination (OD) matrix was estimated on the
+basis of loop detector data collected on a weekday af-
+ternoon peak in 2006 and tuned rudimentary such that
+a realistic traffic pattern resulted, with congestion occur-
+ring at the two bottlenecks where also in reality conges-
+tion sets in first.
+To make a comparison between different scenarios
+
+possible, a single simulation was run, fromwhich all data
+(ground-truth and sensor data) were derived. As the
+EGTF effectively removes the high frequency fluctua-
+tions (smaller than τ (s) and σ ) (m) from the data, the
+reconstructed traffic conditions on the basis of the var-
+ious data sources are compared against ﬁltered ground-
+truth data (with the same filter settings as will be used
+for the data fusion itself—see below), such that the
+differences in performance solely reflects error vari-
+ance due to using different data sources. In our case,
+the ground-truth data depict the space mean speeds
+uS(k,m) over equidistant space time regions (k,m) of
+size 30 (s)× 100 (m). Figure 5 shows a speed contour
+map of both raw (top) and filtered (bottom) ground-
+truth data. The drive direction is from bottom to top.
+In the ensuing the sensor data will be filtered and
+
+fused in the same space-time discretization as the
+ground-truth data, that is a grid of 30 (s)× 100 (m).
+Three data sources (sensor types) are considered:
+
+1. FCD, where a certain percentage P of all
+vehicles communicate their current location
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 605
+
+Fig. 4. Schematic drawing of the 19 km A13 freeway corridor
+from The Hague to Rotterdam.
+
+and speed at fixed time intervals of τfcd seconds.
+The first data transmission for each probe vehicle
+is assumed to occur at the moment of entering the
+freeway section.
+
+Fig. 5. Space-time contour map of raw (top) and filtered
+(bottom) ground-truth speeds. The drive direction is from
+
+bottom to top.
+
+2. One-minute time mean speeds uT and harmonic
+mean speeds uH from induction loops (or any
+other type of local detector), spaced evenly at a
+distance of �loop meters, for which we will use
+multiples of 500 meters (500, 1000, 1500 meters).
+
+3. Average realized travel times TT(k) from AVI
+stations spaced at a distance of �avi meters for
+which we will use multiples of 1,500 m (1,500 and
+3,000 m).
+
+4.2 Filter parameter settings and weights
+
+Applying the EGTF to fuse data from different sources
+requires setting a number of parameters. To deduce
+the characteristic speeds (ccong and cfree), an optimiza-
+tion method was used (the standard line search algo-
+rithm implemented in fmincon.m, Matlab 7.5) in which
+the data fusion algorithm was run with ground-truth
+speeds as inputs (so z(t, x) = uS(t, x)), such as to min-
+imize the difference between the average filtered and
+
+
+
+606 van Lint & Hoogendoorn
+
+Table 2
+Data source weight settings
+
+Data source ( j)∗0 μ
+( j)
+
+uloopT 4 2
+
+uloopH 3 1.5
+vfcd 1 3
+
+u¯aviT
+1
+500�avi 1
+
+∗ in (km/h)
+
+original data (i.e., the structural error or bias: 〈z〉 −
+〈uS〉)3. On the basis thereof, the following values (which
+differ slightly from the ones proposed for real traffic
+data in Treiber and Helbing (2002)) are used
+
+ccong = −25 km/h
+cfree = 80 km/h.
+
+The other core filter parameters are chosen on the ba-
+sis of Treiber and Helbing (2002), that is, σ = 300 (m);
+τ = 30 (s); �V = 10 (km/h); and Vc = 80 (km/h). For
+setting the parameters to calculate the data source spe-
+cific weights in (17), the following rationale was used.
+
+1. Harmonic mean speeds are more reliable than
+time mean speeds.
+
+2. The unreliability of local data (from loops) in-
+creases faster with lower speeds than from spatial
+data. This is first of all due to increasingly smaller
+samples per time period (in the limit of zero speed
+the sample size is also zero), and secondly caused
+by the fact that the measurement equipment itself
+makes larger errors as vehicles pass over at lower
+speeds.
+
+3. As in congestion, the speeds of vehicles are
+strongly correlated, we assume that speeds from
+FCD under congestion are more reliable than
+from local sensors.
+
+4. The reliability of vehicle trajectories deduced
+from averaged realized travel times (see Section
+
+Table 3
+Data fusion scenarios assessed
+
+Induction loops
+
+No scenarios Loop spacing (m) % Missing Data type % FCD AVI spacing (m)
+
+5 (1× 5) 500 5, 10, 20, 35, 50 uH - -
+9 (3× 3) 500; 1,000; 1,500 10 uT 2, 5, 10 -
+9 (3× 3) 500; 1,000; 1,500 10 uH 2, 5, 10 -
+6 (3× 2) 500; 1,000; 1,500 10 uT - 1,500; 3,000
+6 (3× 2) 500; 1,000; 1,500 10 uH - 1,500; 3,000
+
+3.3.2) is proportional to the distance betweenAVI
+stations.
+
+The data source-specific weights and parameters are
+listed in Table 2 and were chosen on the basis of rough
+estimates on a selection of ground-truth data.
+
+4.3 Scenarios: combinations of sensors and data
+reliability
+
+Below we will assess the performance of the proposed
+data fusion technique under controlled scenarios which
+differ with respect to the following.
+
+1. The data sources used: induction loops, FCD, and
+AVI (see Section 4.1).
+
+2. The spacing of the loop detectors (500; 1,000;
+1,500 m) and AVI systems (1,500; 3,000 m).
+
+3. The type induction loop data, that is, harmonic
+versus time mean speed (uH and uT , respectively,
+see Section 4.1).
+
+4. The percentage loop detector data missing, which
+is simulated by labeling M% uniformly random
+selected loop measurements z( j)(ti , xi ) as missing,
+and replacing these with null values. These null
+values are then discarded by the EGTF algorithm.
+It is assumed that no FCD or AVI data are miss-
+ing.
+
+5. The percentage FCD, which we vary between 0, 2,
+5, and 10% (see Section 4.1).
+
+To limit the total number of scenarios evaluated,
+not all possible combinations are simulated. Table 3
+overviews the in-total 35 data fusion scenarios consid-
+ered, which are grouped into six scenario categories,
+listed as rows in Table 3. The first row depicts sce-
+narios in which only harmonic mean speeds from loop
+detectors spaced 500 m apart are considered and where
+the amount of randomly missing data was varied. Rows
+2 and 3 depict scenarios where different loop data
+are combined with different percentages FCD, whereas
+rows 4 and 5 list scenarios which combine loop data and
+AVI data.
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 607
+
+Table 4
+Performance measures
+
+RMSE (m/s)
+
+√
+1
+
+Nkm
+
+Nkm∑
+k,m
+
+(z(k,m)− uS(k,m))2
+
+MAPE∗ (%) 100Nkm
+
+Nkm∑
+k,m
+
+|�rel(k,m)|
+
+MPE (%) 100Nkm
+
+Nkm∑
+k,m
+
+�rel(k,m)
+
+SPE (%) 100×
+√
+
+1
+Nkm
+
+(�rel(k,m)− MPE100 )2
+
+∗ �rel(k,m) = z(k,m)−uS(k,m)uS(k,m) represents the relative error.
+
+4.4 Performance measures
+
+As performance measures, we use the root mean of the
+squared error (RMSE) and three relative error mea-
+sures, which, in contrast to RMSE, weigh errors rela-
+tive to the ground-truth speeds. As it is predominantly
+errors at low speeds (under congestion) which are rel-
+evant for traffic management purposes, these relative
+error measures are more informative than RMSE. The
+relative measures (Table 4) include the mean percent-
+age error (MPE) which indicates structural bias, the
+standard deviation of the percentage error (SPE), which
+is a measure for the variability around theMPE, and the
+mean absolute percentage error (MAPE) which pro-
+vides a combined indication of the relative error (bias
+and variance).
+
+5 RESULTSANDDISCUSSION
+
+5.1 Quantitative results single data sources
+
+Table 5 first lists the results of applying the filter to
+harmonic mean speeds from loops with increasing per-
+centages of missing data. As can be expected, RMSE,
+MAPE, and SRE (a proxy for variance) increase with
+increasing amounts of missing data, albeit in a moder-
+ate and below proportional sense. This indicates that
+the filter provides a graceful deterioration of the re-
+sulting state estimate even if up to 50% of the data is
+(randomly) missing. To further substantiate this claim,
+
+Table 5
+Results increasing missing data
+
+Data missing (%) RMSE MAPE MPE SPE
+
+0 0.53 1.71 −0.36 3.81
+5 0.58 1.85 −0.36 4.12
+10 0.63 1.96 −0.38 4.38
+20 0.72 2.24 −0.27 5.02
+35 0.86 2.65 −0.25 5.90
+50 1.08 3.24 −0.11 7.48
+
+Fig. 6. Space-time contour map of harmonic mean speeds of
+500 m spaced loops in case of 0% (top) and 50% (bottom)
+
+missing data.
+
+Table 5 shows that the MPE (proxy for bias) does not
+increase at all and remains well below |1%| under all de-
+grees of missing data. This is qualitatively illustrated by
+Figure 6, which shows that the resulting speed contour
+map in case of 0% and 50% randomly missing sensor
+data are still quite similar.
+Table 6 lists the results of filtering each individual
+
+data source, where a random selection of 10% of the
+loop data was deliberately dubbed missing/unreliable
+matching approximately the degree of data corruption
+corresponding to practice (in the Netherlands). Note
+that the results differ slightly from 5 due to a different
+random seed which was used to generate the sensor data
+for this scenario.
+As expected, both bias (MPE) and variance (SRE)
+
+as well as the overall error (RMSE and MAPE) in-
+crease with wider sensor spacing (both for AVI and
+loops) and with smaller data samples (i.e., lower per-
+centages FCD).4 Also the difference in bias between
+time mean speeds (uloopT ) and harmonic mean speeds
+(uloopH ) is clearly observable by comparing MPE (and
+
+
+
+608 van Lint & Hoogendoorn
+
+Table 6
+Results individual data sources. Note that 10% of the raw
+
+data from loops (uloopT and u
+loop
+H ) is dubbed unreliable/missing
+
+RMSE MAPE MPE SPE
+
+uloopT 500 m 0.67 2.63 2.02 4.61
+1,000 m 1.06 3.71 2.48 7.05
+1,500 m 1.80 6.35 2.83 14.38
+
+uloopH 500 m 0.60 1.94 −0.42 4.42
+1,000 m 1.04 3.22 0.13 7.03
+1,500 m 1.83 5.97 0.41 13.72
+
+FCD 2% 1.94 6.86 −2.98 10.04
+5% 1.46 5.07 −2.18 7.68
+10% 1.29 4.42 −2.25 6.91
+
+AVI 1,500 m 2.32 6.80 −1.60 12.40
+3,000 m 3.49 11.07 −2.06 19.33
+
+MAPE). In the former, this bias is positive (structural
+overestimation of speeds) and in the latter it is virtu-
+ally zero. Clearly, on the basis of a single source of data,
+densely spaced loop detectors are superior for speed es-
+timation over the other data sources.
+
+5.2 Quantitative results of data fusion
+
+Tables 7, 8, and 9 show the MAPE, MPE (“bias”),
+and SPE (“variance”) results of all data fusion
+scenarios considered. The first observation one can
+make is that fusing time mean speeds from densely
+spaced loops (�loop = 500 m) with FCD practically
+eliminates the structural bias. This is still true for larger
+detector spacing, in which case also the variance is sig-
+nificantly reduced, compared to the case where no addi-
+tional data sources are used.
+The same holds also for (the in principle more ac-
+
+curate) harmonic mean speeds; also then the addition
+of FCD data decreases error variance. For example,
+the state estimate on the basis of just uloopH spaced at
+1,500 m results in a bias (MPE) of 2.8% and a rela-
+
+Table 7
+MAPE results of data fusion
+
+FCD AVI
+
+2% 5% 10% 1,500 m 3,000 m
+
+uloopT 500 m 3.40 3.51 3.58 3.57 4.83
+1,000 m 4.37 4.06 3.90 4.39 6.39
+1,500 m 5.13 4.38 4.09 5.05 7.71
+
+uloopH 500 m 3.51 3.61 3.66 3.26 4.36
+1,000 m 4.44 4.12 3.95 4.20 6.06
+1,500 m 5.21 4.42 4.11 4.94 7.51
+
+Table 8
+MPE results of data fusion
+
+FCD AVI
+
+2% 5% 10% 1,500 m 3,000 m
+
+uloopT 500 m −0.53 −1.02 −1.58 0.80 1.35
+1,000 m −1.08 −1.39 −1.83 0.44 1.04
+1,500 m −1.65 −1.68 −2.01 −0.00 0.31
+
+uloopH 500 m −1.47 −1.52 −1.87 −0.37 −0.14
+1,000 m −1.68 −1.67 −1.98 −0.34 −0.01
+1,500 m −2.09 −1.88 −2.11 −0.62 −0.52
+
+Table 9
+SPE results of data fusion
+
+FCD AVI
+
+2% 5% 10% 1,500 m 3,000 m
+
+uloopT 500 m 5.57 5.66 5.79 6.47 9.28
+1,000 m 6.97 6.40 6.23 7.87 11.98
+1,500 m 7.97 6.75 6.42 9.24 14.39
+
+uloopH 500 m 5.60 5.70 5.82 6.01 8.44
+1,000 m 6.99 6.42 6.24 7.58 11.39
+1,500 m 7.99 6.76 6.43 9.09 14.03
+
+tive standard deviation (SPE) of 14% (see Table 6).
+After fusing these loop data with 5% FCD, the MPE
+reduces to around 2% and the standard deviation is
+reduced to less than 7%. Less dramatic reductions in
+errors can be observed when combining loop data with
+theAVI data. Although densely spaced loops producing
+harmonic mean speeds would still yield the best overall
+results, wider loop spacing in combination with either
+FCD or AVI data provides clear added value in terms
+of performance. Vice versa, (offline) state estimation on
+the basis of just data from AVI stations spaced at 3,000
+m (i.e., realized travel time) can be improved in terms
+of both bias and variance significantly by adding addi-
+tional loops (or other local detection equipment), even
+at a wide spacing of 1,500 m. In that case, for example,
+the SPE reduces from over 19% to 14% and MPE from
+−2% to around −0.5%, yielding improvements in vari-
+ance and bias of 25 and 75%, respectively.
+
+5.3 Qualitative results and discussion
+
+To illustrate the quantitative results presented above,
+Figure 7 shows contour maps of speeds reconstructed
+by a number of different combinations of data sources.
+When looked upon from a distance, each of the pre-
+sented speed contour estimates appears to reproduce
+the congestion patterns correctly, that is, each com-
+bination reproduces congestion at the right place and
+the right time instants. Figure 7 illustrates that the
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 609
+
+Fig. 7. Space-time contour maps of four example data fusion combinations.
+
+additional bias and variance caused by wider spacing,
+lower samples FCD, and/or the use of coarser AVI data
+reflect errors predominantly in the estimates around
+the edges (head and tail) of the congested regions.
+A more densely spaced sensor configuration reveals
+more accurately the trajectories of shock waves and the
+boundaries between congested and non-congested traf-
+fic. Alternatively, fusing different coarsely spaced (or
+sampled) data sources has the same effect. Data fusion
+does indeed improve the state estimation/data recon-
+struction significantly. The results presented above in
+our view illustrate the robustness and suitability of the
+proposed filter to this particular application. It enables
+fusing both statistically and semantically very different
+data into a consistent and coherent space-time grid of
+estimates.
+There are a number of issues which should be kept in
+
+mind when interpreting these results. The proposed ap-
+proach enables the reconstruction of any traffic quantity
+which propagates over space time along characteristics
+(speeds, density, flow, percentage trucks, vehicle com-
+position, etc.), on the basis of any type of sensor data,
+
+under the premise that these sensor data provide infor-
+mation on the traffic quantity of interest. The approach
+can only be applied if the relationship (over space-time)
+between the quantity of interest and the actual data
+measured can be quantified, which in not all cases is
+straightforward or even possible.
+In the example in this article, the state estimation
+
+quantity chosen is space mean speed. All data sources
+considered (loops, FCD, and AVI) provide informa-
+tion related to this quantity. If, however, the choice was
+made to estimate density, the use of FCD data would
+have been more difficult. Possibly, one could use the
+fundamental diagram to relate FCD speeds to density
+under congested conditions and use an estimate of the
+penetration rate of the equipped vehicles to estimate
+the density under free-flow conditions. Another possi-
+bility could be in the use of other FCD data if avail-
+able, such as time headway or distance gap to predeces-
+sor, which could be used as samples of the average flow
+and density. Either way, in the proposed data fusion
+method, a low setting of the data source weights could
+be used to emphasize a possibly weak relation between
+
+
+
+610 van Lint & Hoogendoorn
+
+FCD data and density. As such, many data sources can
+be exploited, even if these provide only very coarse and
+inaccurate information.
+Let us finally remark that the results here provide a
+
+proof of concept. They are the result of common sense
+but nonetheless to a degree arbitrary choices made for
+the filter parameters and the data source weights. More
+elaborate analysis on the basis of detailed (and real) ve-
+hicle trajectory data is needed to assess the impacts of
+the parameter and weight setting. In the next and final
+section, we will make some recommendations for fur-
+ther rationalizing these settings and implementing the
+filter in a real traffic data archiving system.
+
+6 CONCLUSIONS, IMPLICATIONS,
+ANDFURTHERRESEARCH
+
+In this article, a new robust and efficient method is put
+forward for fusing heterogeneous and semantically dif-
+ferent data from different traffic sensors, such as lo-
+cal sensors (induction loops, radar, microwave, etc.),
+AVI systems, or data from moving vehicles (FCD).
+The method is generic in that it allows fusion of data
+from any (fixed or moving) data source. Moreover, the
+method enables the reconstruction of any traffic quan-
+tity which evolves over space and time along traffic char-
+acteristics, provided each data source used contains in-
+formation (however coarse or imprecise) which can be
+quantitatively related to the traffic quantity of interest.
+The main conclusions on the basis of experiments
+
+with synthetic data from a validated micro-simulation
+tool (providing both ground-truth and various sensor
+data) are as follows:
+
+1. The method is robust to random amounts of miss-
+ing data. The filter produces an nearly unbiased
+estimate of the ground-truth data even if up to
+50% of the data is randomly missing.
+
+2. The method also works with coarse data, which
+could be due to either widely spaced sensors,
+or for example structural failure of sensors. In
+that case however, estimation bias increases with
+wider spacing due to estimation errors at the head
+and tail of congestion.
+
+3. In case the available sensor data are coarse, fusing
+multiple (coarse) data sources leads to a signifi-
+cant reduction in both estimation bias and vari-
+ance of up to 75% and 25%, respectively
+
+The proposed data fusion method as presented in this
+article constitutes a simple but efficient algorithm which
+could be implemented and used in central traffic data
+archiving and processing facilities to perform a number
+of critical tasks:
+
+Data visualization. The method produces equidistant
+rectangular contour maps of speeds, flows, or what-
+ever traffic quantity is chosen which allow fast and
+easy visualization (imaging) of the sensor data.
+
+Data cleaning and ﬁltering. If no data are available on
+a particular location/time, the filter estimates these
+from data which are available. By further analyzing
+the (data source specific) weights (e.g., in respect
+to those associated with neighboring sensors) also
+mechanisms can be designed to detect possibly un-
+reliable data in the first place. This is a subject for
+further research.
+
+(ex post) Incident/bottleneck detection. Causes for
+traffic congestion (bottlenecks or incidents) can be
+more accurately pinpointed to a particular time and
+location, and the consequences (the resulting con-
+gestion) can bemore accurately estimated and visu-
+alized. Further research could focus on automated
+procedures of detecting frequent or incidental bot-
+tleneck locations.
+
+Travel time estimation. The equidistant time-space
+contours of speeds provide the ideal ingredients for
+trajectory-based travel time estimation (see e.g.,
+Van Lint and Van der Zijpp, 2003).
+
+The above points all relate to offline use of the filter.
+There may also be online applications possible. The fil-
+ter could be used for real-time state estimation, where
+the state (e.g., speed/density) at a certain time t along
+a certain route would be continuously updated with the
+arrival of new data (from whatever source). This state
+estimate could then be input to many possible real-
+time applications (ramp metering, travel time predic-
+tion, routing algorithms, etc.). The filter may even be
+used for rough prediction purposes by itself, although
+it could never predict any state change (e.g., the onset
+of congestion) if such a change is not already visible in
+(some of) the sensor data.
+Let us finally propose a few directions of further re-
+
+search in terms of the underlying methodology. The fil-
+ter contains a number of parameters which were set
+on the basis of common sense or engineering judge-
+ment in this article. Further research is needed into
+principled and preferably automated procedures, which
+derive these parameters directly from the data (from
+whichever source), or by combining a priori estimates
+and observations, for example, on the basis of Bayesian
+approaches.
+
+ACKNOWLEDGMENT
+
+This research is supported by the Dutch Technology
+Foundation STW, applied science division of NWO, and
+
+
+
+A method for fusing heterogeneous data from trafﬁc sensors 611
+
+the Technology Program of the Ministry of Economic
+Affairs under grant DCB 7814.
+
+NOTES
+
+1. Corrected for arithmetic averaging on the basis of Van
+Lint (2004).
+
+2. FOSIM (Freeway Operations Simulation), developed
+at Delft University of Technology, is a traffic micro-
+simulation package which has been extensively cali-
+brated and validated for traffic operations on Dutch
+freeways and is used by the Dutch Ministry of
+Transport, Public Works and Water Management as a
+freeway design tool for ex ante freeway capacity esti-
+mation FOSIM (FOSIM (Freeway OperationsSIMula-
+tion), 2008; Vermijs and Schuurman, 1994).
+
+3. Minimizing the (root) mean squared error may in fact
+induce bias, as the filter algorithm deliberately removes
+the high frequency deviations (smaller than τ (s) and σ )
+(m) from the data.
+
+4. Note how the increase in the error is more pronounced
+in the relative error measures than in the RMSE, which
+is caused by the fact that the RMSE weighs errors at
+higher speeds more heavily than errors at lower speeds.
+Relatively, errors at lower speeds are much larger and
+more important for many applications, for example,
+travel time estimation.
+
+REFERENCES
+
+Castillo, A. E., Conejo, A. J., Mene´ndez, J. M. & Jime´nez, P.
+(2008), The observability problem in traffic network mod-
+els, Computer-Aided Civil and Infrastructure Engineering,
+23(3), 208–22.
+
+Castillo, A. E., Mene´ndez, J. M. & Sa´nchez-Cambronero,
+S. (2008), Traffic estimation and optimal counting lo-
+cation without path enumeration using Bayesian net-
+works, Computer-Aided Civil and Infrastructure Engineer-
+ing, 23(3), 189–207.
+
+Dailey, D. J., Harn, P. & Lin, P.-J. (1996), ITS data fusion,
+Technical Report Research Project T9903, Task 9, Wash-
+ington State Transportation Commission, Department of
+Transportation and the U.S. Department of Transporta-
+tion, Federal Highway Administration.
+
+Dharia, A. & Adeli, H. (2003), Neural network model for
+rapid forecasting of freeway link travel time, Engineer-
+ing Applications of Artiﬁcial Intelligence, 16(7–8), 607–
+13.
+
+FOSIM (Freeway Operations SIMulation) (2008), http://
+www.fosim.nl/IndexUK.html.
+
+Hegyi, A., De Schutter, B. & Hellendoorn, H. (2005), Model
+predictive control for optimal coordination of ramp meter-
+ing and variable speed limits, Transportation Research Part
+C: Emerging Technologies, 13(3), 185.
+
+Helbing, D. & Treiber, M. (2002), Critical discussion of syn-
+chronized flow, Cooperative Transportation Dynamics, 1,
+2.1–2.24.
+
+Hellinga, B. R. (2002), Improving freeway speed estimates
+from single-loop detectors, Journal of Transportation En-
+gineering, 128(1), 58–67.
+
+Herrera, J. C. & Bayen, A. M. (2008), Traffic flow reconstruc-
+tion using mobile sensors and loop detector data, Trans-
+portation Research Board 87th Annual Meeting, Trans-
+portation Research Board, p. 18, 08-1868.
+
+Hoogendoorn, S. P. & Bovy, P. H. L. (2001), State-of-the-art
+of vehicular traffic flow modeling, Proc. Institution of Me-
+chanical Engineers, 215(1), 283–303.
+
+Ivan, J. N. & Sethi, V. (1998), Data fusion of fixed detector and
+probe vehicle data for incident detection, Computer-Aided
+Civil and Infrastructure Engineering, 13, 329–37.
+
+Karim, A. & Adeli, H. (2003), Fast automatic incident de-
+tection on urban and rural freeways using wavelet energy
+algorithm, Journal of Transportation Engineering, ASCE,
+129(1), 57–68.
+
+Kerner, B. S. (2004), The Physics of Trafﬁc: Empirical Free-
+way Pattern Features, Engineering Applications, and The-
+ory, Springer, Berlin, New York.
+
+Kesting, A. & Treiber, M. (2008), How reaction time, update
+time, and adaptation time influence the stability of traffic
+flow, Computer-Aided Civil and Infrastructure Engineering,
+23, 125–37.
+
+Kikuchi, S., Miljkovitc, D. & van Zuylen, H. (2000), Exami-
+nation of methods that adjust observed traffic volumes on a
+network, Transport Research Record, 1717, 109–19.
+
+Lighthill, M. & Whitham, G. (1955), On kinematic waves ii: a
+theory of traffic flow on long crowded roads, Proceedings of
+the Royal Society of London Series A, 229(1178), 317–45.
+
+Linn, R. J. & Hall, D. L. (1991), A survey of multi-sensor data
+fusion systems, Proceedings of the SPIE - The International
+Society for Optical Engineering, Orlando, Florida, 13–29.
+
+Luo, R., Yih, C.-C. & Su, K. L. (2002), Multisensor fusion and
+integration: approaches, applications, and future research
+directions, Sensors Journal, IEEE, 2(2), 107–19.
+
+Newell, G. (1993a), A simplified theory of kinematic waves in
+highway traffic: part i. General theory, Transportation Re-
+search Part B: Methodological, 27(4), 281–87.
+
+Newell, G. (1993b), A simplified theory of kinematic waves
+in highway traffic: part ii. Queueing at freeway bottlenecks,
+Transportation Research B:Methodological, 27(4), 289–303.
+
+Ni, D. &Wang, H. (2008), Trajectory reconstruction for travel
+time estimation, Journal of Intelligent Transportation Sys-
+tems, 12(3), 113–25.
+
+Ou, Q., Van Lint, J. & Hoogendoorn, S. (2008), Piecewise
+inverse speed correction by using individual travel times,
+Transportation Research Record: Journal of the Transporta-
+tion Research Board, 2049(-1), 92–102. 10.3141/2049-11.
+
+Papageorgiou, M. & Vigos, G. (2008), Relating time-
+occupancy measurements to space-occupancy and link
+vehicle-count, Transportation Research Part C: Emerging
+Technologies, 16(1), 1–17.
+
+Piella, G. (2003), A general framework for multiresolution im-
+age fusion: from pixels to regions, Information Fusion, 4(4),
+259–80.
+
+Richards, P. (1956), Shock waves on the highway, Operations
+Research, 4, 42–51.
+
+Simon, D. (2006), Optimal State Estimation: Kalman, H-
+inﬁnity, and Nonlinear Approaches, John Wiley & Sons,
+New York.
+
+Treiber, M. & Helbing, D. (2002), Reconstructing the spatio-
+temporal traffic dynamics from stationary detector data,
+Cooper@tive Transport@tion Dyn@mics, 1, 3.1–3.24.
+
+
+
+612 van Lint & Hoogendoorn
+
+Van Lint, J. & Hoogendoorn, S. P. (2007), The technical and
+economic benefits of data fusion for real-timemonitoring of
+freeway traffic,World Congress of Transportation Research,
+WCTRS, Berkely, California.
+
+Van Lint, J. W. C. (2004), Reliable travel time prediction for
+freeways, TRAIL Thesis series, TUD Technische Univer-
+siteit Delft, Delft.
+
+Van Lint, J. W. C., Hoogendoorn, S. P. & Hegyi, A. (2008),
+Dual ekf state and parameter estimation in multi-class first-
+order traffic flow models, Proceedings of the 17th IFAC
+(International Federation of Automatic Control) World
+Congress, Seoul, Korea.
+
+Van Lint, J. W. C., Hoogendoorn, S. P. & Van Zuylen, H.
+J. (2005), Accurate travel time prediction with state-space
+neural networks under missing data, Transportation Re-
+search Part C: Emerging Technologies, 13(5–6), 347–69.
+
+Van Lint, J. W. C. & Van der Zijpp, N. J. (2003), Improving a
+travel time estimation algorithm by using dual loop detec-
+tors, Transportation Research Record, 1855, 41–48.
+
+Varshney, P. K. (1997), Multisensor data fusion, Electron-
+ics and Communications Engineering Journal (December),
+245–53.
+
+Vermijs, R. G. M. M. & Schuurman, H. (1994), Evaluating ca-
+pacity of freeway weaving sections and on-ramps using the
+microscopic simulation model fosim, Proceedings of the sec-
+ond international symposium on highway capacity, Vol. 2,
+Sydney, Australia, 651–70.
+
+Wang, Y. & Papageorgiou, M. (2005), Real-time freeway traf-
+fic state estimation based on extended Kalman filter: a gen-
+eral approach, Transportation Research Part B, 39, 141–67.
+
+Wang, Y., Papageorgiou, M. & Messmer, A. (2006), A real
+time freeway network traffic surveillance tool, IEEE Trans-
+actions on Control Systems Technology, 14(1).
+
+Xiong, N. & Svensson, P. (2002), Multi-sensor management
+for information fusion: issues and approaches, Information
+Fusion, 3(2), 163–86.
+
+Yager, R. R. (2004), A framework for multi-source data fu-
+sion, Information Sciences, 163(1–3), 175–200.
+
+

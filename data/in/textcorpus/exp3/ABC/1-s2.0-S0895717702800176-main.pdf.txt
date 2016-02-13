@@ -1,0 +1,1881 @@
+
+PERGAMON 
+
+MATHEMATICAL 
+AND 
+COMPUTER 
+MODELLING 
+
+Mathematical and Computer Modelling 35 (2002) 481-508 
+www.elsevier.com/locate/mcm 
+
+Synchron ized F low as a New Traffic Phase  and 
+Re la ted  Prob lems for Traffic F low Mode l l ing  
+
+B.  S. KERNER 
+DaimlerChrysler AG, HPC: E224 
+
+70546 Stuttgart, Germany 
+
+Abst rac t - -An  empirical study of spatial-temporal features of traffic flow patterns is presented. 
+A critical comparison of model results and results of traffic theories with real features of the traffic 
+patterns is given. Predictable features of congested traffic flow are discussed. Results of an application 
+of methods for the tracing and the prediction of moving traffic jams and of other spatial-temporal 
+patterns in congested traffic are considered. A qualitative theory of congested traffic flow is discussed. 
+~) 2002 Elsevier Science Ltd. All rights reserved. 
+
+Keywords- -Traf f ic  flow patterns, Traffic flow models, Congested traffic, Synchronized flow, Wide 
+moving jams. 
+
+1. INTRODUCTION 
+
+THE FUNDAMENTAL D IAGRAM 
+
+Up to now, it is almost self-evident that both homogeneous and time independent solutions of a 
+mathematical traffic flow model should belong to a curve on the flow-density plane which goes 
+through the original and has at least one maximum. This curve is called the fundamental diagram 
+for traffic flow (Figure la). It  represents the result of experimental observations that the higher 
+the vehicle density in traffic flow, the lower the average vehicle speed (e.g., [1-44]). 
+
+Recall that real traffic in empirical observations can be in either free or in congested regime. 
+Empirical points measured at some location which corresponds to free flow can really be rep- 
+resented by a curve on the flow density plane. This curve is cut off at some limit (maximum) 
+
+point k~'max/'~(free),~max'~(free)hl (Figure lb). Congested traffic can be determined as states of traffic where 
+the average vehicle speed is lower than the minimum possible speed which is related to this limit 
+point [43]. It is well known that within congestion, the flow-density data do not form a neat re- 
+lationship but show a broad and complex spreading of measurement points, i.e., the flow-density 
+data cover a two-dimensional region in the flow-density plane (Figure lb) (e.g., [43,44]). This 
+complexity in traffic flow is usually interpreted either as fluctuations, or as an instability, or else 
+as a traffic jam formation. These features of real traffic flow should be explained by traffic models 
+
+(e.g., [12-15,17-25,30-36,38-41]). 
+The fundamental diagram will be called as the basic assumption (1) for traffic flow modelling. 
+
+It is either a result of a traffic flow model or it is used in models explicitly (e.g., [1-41]). 
+
+I would like to thank H. Rehborn, M. Aleksic, and S. Klenov for their help, the public authorities of Hessen for the 
+support in the preparation of data and the German Ministry of Education and Research for the support within 
+the project "SANDY". 
+
+0895-7177/02/$ - see front matter (~ 2002 Elsevier Science Ltd. All rights reserved. Typeset by .Afl/~S-TE X 
+PII: S0895-7177(01)00178-9 
+
+
+
+482 B.S. KERNER 
+
+/' 
+
+free flow ~ congested flow 
+q, flow rate q(vehicles/h) / '  
+
+T A ...... ,,,,(free) .~'~1_ '~.  4, --. 
+, ,  , " ,max-  . "  | / \ 12s04 .. 
+! I \ I l .i 1'¢. ;~ '  ~ • , 
+
+' p, density 0 '20~'4 '0 '60  p (v~m)  
+p(free) 
+
+max 
+
+(a) Illustration of the fundamental (b) Real patterns which have 
+diagram, been observed in different coun- 
+
+tries (e.g., [43,44]). 
+
+Figure 1. 
+
+To show the mentioned complexity of traffic, in addition to the basic assumption (1), it is often 
+proposed that a traffic flow model should have the following feature (it will be called the basic 
+assumption (2)). There is a range of the vehicle density where initial hypothetical homogeneous 
+and time independent solutions of the model are unstable with respect to infinitesimal pertur- 
+bations (e.g., [12-15,17-25,30-36,38-41]). In other words, in this range of the vehicle density 
+the related points of the fundamental diagram cannot exist in calculations and simulations of 
+the model. Instead of these points, a complex spatial-temporal dynamics should be the model 
+result (e.g., [12-15,17-25,30-36,38-41]). The mentioned instability should explain and predict 
+results of observations that in congested traffic, a wide spreading of experimental points on the 
+flow-density plane is usually realized, and the breakdown, hysteresis, and the "stop-and'go" phe- 
+nomena occur (e.g., [12-15,17-25,30--36,38-41]). Either only the basic assumption (1) or both of 
+the basic assumptions (1) and (2) are usually the basic assumptions of traffic flow models which 
+claim to predict and explain real spatial-temporal behavior of traffic flow (see e.g., [12-15,17- 
+25,30-36,38-41] and the references there). 
+
+However, the recent empirical discovering of synchronized traffic flow as a new traffic flow phase 
+by Kerner in collaboration with Rehborn [45] has cast doubt on both these basic assumptions 
+of traffic flow models. In particular, empirical investigations allow us to suggest that there is no 
+fundamental diagram which can describe hypothetical homogeneous states of synchronized flow. 
+Besides, empirical investigations allow us to suggest that there are no unstable hypothetical ho- 
+mogeneous and stationary states of traffic flow with respect to infinitesimal perturbations [46-49]. 
+This may be the reason why traffic flow models and theories at present (see e.g., [1-19,21-32,34- 
+37,39-41] and the references there) still cannot explain and predict important features of traffic 
+flow patterns in congested regime which have been discovered recently [46-54]. In this paper, 
+empirical features of traffic flow patterns in congested traffic are considered. Some hypotheses, 
+i.e., new basic assumptions for a traffic flow theory by the author [46-49] are discussed. 
+
+2. METASTABIL ITY  OF  FREE FLOW WITH 
+RESPECT OF  MOVING JAM FORMATION 
+
+Traffic flow dynamics is a very old field. Up to recent time, theoretical studying has mainly been 
+based on an application and on a further development of such classical traffic models and theories 
+as the Lighthill-Whitham-model [1], the Herman et al. car-following models [2,55], the Newell- 
+model [3], the Prigogine kinetic model [4], the Payne macroscopic model [5], the Wiedemann 
+psycho-physical model [6], the Gipps-model [7], different queuing models (e.g., [8,9]), and other 
+theoretical approaches (see papers in [10,11]). 
+
+In the past years, a wide community of physicists and mathematicians has been involved in a 
+studying of the traffic flow dynamics [12-14,40,41]. On one hand, new traffic flow models and 
+
+
+
+Synchronized Flow 483 
+
+theoretical approaches, in particular, Nagel-Schreckenberg cellular automata model [15] and a 
+new approach to the optimal velocity (OV) models [3,16] made by Bando et al. [15] have been 
+proposed and developed. On the other hand, last results of the nonlinear physics of dissipative 
+distributed systems, in particular, a theory of autosolitons (localized dissipative patterns) [56], 
+have been applied by Kerner and Konh~user for a development of a nonlinear theory of moving 
+traffic jams. In the frame of this theory, the following has been predicted [18]. 
+
+(i) Wide moving jams possess some characteristics, i.e., unique, coherent, predictable, and 
+reproducible parameters. Recall that a wide moving jam is an upstream moving localized 
+structure which is restricted by two upstream moving fronts where the vehicle speed and 
+the density change spatially sharply. The width of the wide moving jam in the longitudinal 
+direction is considerably higher than the width of the jam's fronts. 
+
+(ii) Free traffic flow is in a metastable state with respect to the jam emergence, if the flow rate 
+in a free flow is higher than the flow rate in the outflow from a wide moving jam, qout. In 
+this case, a wide moving jam can exist and be excited in this free flow. In contrast, if the 
+flow rate in a free flow is lower than qout, then the free flow is stable with respect to the 
+wide moving jam formation. Wide moving jams can neither exist for a long time nor be 
+excited by a short time local perturbation in this free flow. Note that the characteristic 
+flow rate qout is related to the case when free flow is formed in the outflow from a wide 
+moving jam. 
+
+These two results have indeed been found in empirical investigations of the jam propaga- 
+tion [57,58]. Therefore, the mentioned Properties (i), (ii) of jams and free flows [18] can be con- 
+sidered as necessary requirements for each traffic flow model [19,59]. Later studying by Bando 
+et al. [20], by Kraufi et al. [21], by Barlovic et al. [22], by Helbing and Schreckenberg [23], by 
+Treiber et al. [24], and by Mahnke and Kanpu~s [25] showed that there can be a lot of traffic flow 
+models and theoretical approaches which ar@ able to reproduce Properties (i) and (ii) of moving 
+jams and free flows which have first been found out from an investigation of a macroscopic traffic 
+flow model in [18]. 
+
+Note that the existence of the characteristics, i.e., unique, coherent, predictable, and repro- 
+ducible parameters of wide moving jams has been used for a development of methods for tracing 
+and prediction of moving traffic jams and time-dependent travel times [60-64]. These methods 
+use essentially the fact that the velocities of the propagation of the moving jams' fronts can 
+be calculated with the available measured traffic data. Besides, the methods work without any 
+validations of model parameters at different highway infrastructure and other road conditions. 
+Some results of the application of the methods [64-66] will be considered below. 
+
+3. CONGESTED FLOW 
+
+When the vehicle density is high enough, traffic is usually in a congested regime (e.g., [4,8- 
+14,26-30,41]). Often congested flow is defined as a traffic state which occurs only due to a highway 
+bottleneck as the inevitable consequence of an upstream flow that exceeds the downstream ca- 
+pacity of the bottleneck. In this definition, it is obvious to propose that congested flow is not 
+self-organizing, but rigidly controlled by external constraints. However, observations have shown 
+that although bottlenecks are the most frequent reason, they are not the only reason for the 
+occurrence of congested traffic [51]. Besides, in [45-51,57,58], it has been shown that different 
+self-organizing processes are responsible for features of real traffic congestion. For these reasons, 
+the mentioned definition of congested traffic will not be used in the paper. 
+
+In the paper, phenomena will be defined through their features rather than through the reasons 
+of their occurrence. Congested traffic states will be defined as counter states to states of free 
+flow (e.g., [43]). It is well known that experimental points which are related to free flow can be 
+approximately presented by a curve with a positive slope in the flow-density plane. Congested 
+traffic will be determined, therefore, as a state of traffic where the average vehicle speed is lower 
+
+
+
+484 B .S .  KERNER 
+
+/,~(free) ,~(free) than the minimum possible speed which is related to the limit point ~max , tumax / in free flow 
+(Figure lb) (e.g., [43,44]). In this definition, nothing is said about reasons of the occurrence 
+of the congestion. It is linked to the mentioned experimental facts that a congested state can 
+spontaneously occur also away from bottlenecks and that there are a lot of diverse self-organizing 
+effects which are responsible for the congestion [45,49,50,57]. 
+
+One of the well-known phenomena in congested traffic flow is the 'stop-and-go' phenomenon 
+which has experimentally been studied by a lot of authors, in particular by Treiterer [42] and 
+Koshi et al. [43]. Koshi et al. [43] found out that the vehicle speed across different highway 
+lanes within the 'stop-and-go' waves can be synchronized. The synchronization of the vehicle 
+speeds on different highway lanes is often observed in congested traffic away from bottlenecks 
+and if only one route for traffic exists. It seems reasonable that in each state of congested flow, 
+vehicles try to change to that lane for which the vehicle speed seems to be higher. This may 
+increase the density on this lane and consequently decreases the vehicle speed, i.e., this process 
+can synchronize the vehicle speed with the speeds on the other lanes leading to synchronized 
+traffic flow. The tendency to equilibrate the speed across lanes in dense enough traffic flow can 
+show almost any multilane traffic flow model. 
+
+4. TWO PHASES IN CONGESTED TRAFFIC: 
+WIDE MOVING JAMS AND SYNCHRONIZED FLOW 
+
+4A. Objective Criteria for Different Phases in Congested Traffic 
+
+It has already been mentioned that within congested traffic, the flow-density data do not form 
+a neat relationship but show a broad and complex spreading of measurement points, i.e., the flow- 
+density data cover a two-dimensional region in the flow-density plane (Figure lb) (e.g., [43,44]). 
+In [45], it has been shown that if those data are removed from the data of the congested traffic 
+where wide moving traffic jams are realized, nevertheless the remaining congested traffic data 
+show a wide scattering within a two-dimensional area in the flow-density plane. This remain- 
+ing congested traffic has been called "synchronized flow". Thus, the author suggested that in 
+congested traffic, two different traffic phases should be distinguished, wide moving jams and syn- 
+chronized flow [45,51]. Before the reasons for this suggestion will be considered, let us formulate 
+an objective criterion for wide moving jams as a separate traffic phase in real congested traffic. 
+
+Traffic is a complex nonlinear process where diverse spatial-temporal patterns occur. This 
+process may be considered as a nonequilibrium process. It is well known that in a lot of nonequi- 
+librium physical, chemical, and biological distributed systems, complex spatial-temporal patterns 
+appear. A class of spatial-temporal patterns which possesses qualitative similar spatial-temporal 
+features is usually considered a separate phase of a such nonequilibrium distributed system. Re- 
+spectively, different classes of spatial-temporal patterns can be considered as different phases of 
+the system. Phase transitions between these different phases of the system and also possible com- 
+plex dynamics inside each of the phases determine the complexity of the system (e.g., [56,67]). 
+To determine such a separate phase, there should be some objective criteria for this phase. These 
+objective criteria should allow to distinguish such spatial-temporal features of the phase which 
+are unique only for this phase. Besides, these unique spatial-temporal features should remain the 
+same for this phase within the whole range of the control parameters of the system where the 
+phase can occur and exist. 
+
+This analogy with nonlinear nonequilibrium physical, chemical, and biological distributed sys- 
+tems has been used by the author for a differentiation of the different phases in congested traffic. 
+The related objective criteria for the identification of different traffic phases in congested regime 
+are the following [45,46,52,53]. 
+
+• A local spatial-temporal upstream moving traffic pattern in congested regime, i.e., the 
+pattern which is spatially restricted by two upstream moving (downstream and upstream) 
+
+
+
+Synchronized Flow 485 
+
+fronts is a separate traffic phase "a wide moving jam", if the pattern possesses the following 
+characteristic feature. The pattern as a whole local structure propagates through any 
+other traffic states and through any other spatial-temporal patterns, and also through any 
+bottlenecks (e.g., at on-ramps and off-ramps) keeping the mean velocity of the downstream 
+front of the pattern. 
+
+• All other states and spatial-temporal patterns in congested traffic which do not possess 
+this characteristic feature belong to the traffic phase "synchronized flow". 
+
+Indeed, only wide moving jams possess this characteristic feature [45-47,51,57]. For this reason, 
+a wide moving jam has been distinguished in congested traffic as the separate traffic phase "wide 
+moving jam". 
+
+This behavior of wide moving jams can clearly be seen in Figure 2c, where the sequence of 
+two wide jams propagates through at least three bottlenecks (in intersections I1, I2, and I3, 
+
+FreewayA5-North ,09.10.1992 
+traffic fl0w 
+
+Oo o o 
+-..L ix) co .~¢n o~ ,,,q G0 co ~ ~ ....,. _.~ ...a, 0 -~ PO (O.l~ 01 0) 
+
+aBI"IB.  x  km) 
+I I I I I I I ', ', I ', ', ', ', ', 
+
+wide moving jams 
+free flow wide moving jams 
+
+x 
+
+q~ 
+
+(d) - -  D12-1eft - - -  D12-midd le  
+.... D12-right 
+
+q(veh./h) 
+3000 
+
+2000 
+
+1000 
+
+0 
+
+13:30 14:30 15:30 
+
+v(km/h) wide moving jams 
+140 ~ 
+
+70 
+
+0 
+13:30 14:30 15:30 
+
+2 
+downstream 
+of synchro- 
+I flow 
+
+. . . . . . . . .  ,Am)  
+
+(e) - -D6-1ef t  - - -D6-midd le  
+
+q(veh./h) .... D6-r ight  
+
+2000 ~ L , 
+
+0 i i i i i i = 
+
+13:30 14:30 15:30 
+v(km/h) wide 
+
+120 moving jams synchronized 
+I I flow 
+
+oo 
+
+i 0 i i i i i i i 
+
+13:30 14:30 15:30 
+
+Figure 2. Explanation of traffic phases: free flow, wide moving jams, and synchro- 
+nized flow (b)-(e) on a section of the highway A5-North (a) in Germany [52,57]. 
+
+
+
+486 B.S. KERNER 
+
+Figure 2a) and through different sometimes very complex states of synchronized flow (Figure 2e, 
+bottom). In contrast to the wide moving jam, after synchronized flow has occurred at an on- 
+ramp, the downstream front of the synchronized flow is fixed at the on-ramp. This effect is shown 
+in Figure 2c. In this figure, the downstream front of the synchronized flow is shown by the dotted 
+line. The location of this fixed downstream front determines the effective location of a bottleneck 
+at the on-ramp [50]. Therefore, there are three traffic phases [45,46]: 
+
+1. free flow, 
+2. synchronized flow, 
+3. a wide moving jam. 
+
+4B. Traffic Phases in the Flow-Density Plane 
+It has already been mentioned that for the identification of the traffic phases "a wide moving 
+
+jam" and "synchronized flow" in congested traffic, a spatial-temporal analysis of traffic is nec- 
+essary in general. This analysis must include a simultaneous measurement of traffic variables at 
+different locations on a highway (e.g., Figure 2). After such a spatial-temporal study of traffic 
+has been performed and the traffic phases have been distinguished, some features of the found 
+traffic phases may be represented and in addition investigated in the flow-density plane. Such a 
+representation of the three traffic phases in the flow-density plane is shown in Figure 3. In this 
+figure, the stationary propagation of the downstream front of a wide moving jam is represented 
+by the characteristic line for the downstream front which is called 'line J '  [45,57] (Figure 3, right). 
+The slope of line J equals to the velocity of the downstream front of the wide moving jam. It 
+should be noted that in the case shown in Figure 3, right, a synchronized flow is formed in the 
+outflow from the wide moving jam. In this case, the flow rate at the point where the downstream 
+jam front changes into the synchronized flow, qo (syn), is lower than the flow rate qout which occurs 
+(at other detectors) when a free flow is formed downstream of the jam (Figure 3, right) [46,51]. 
+A more detailed consideration of line J can be found in [46,53]. 
+
+Freeway A5-North, 09.10.1992 
+
+Free flow (F) Synchronized Wide moving jam (J) 
+flow (S) 
+
+-- left lane - - -  middle lane ..... right lane 
+v [km/h] 
+150 
+
+100 • ~....: .: ~.,.,. .  , . .~  . , . ,  . .  
+
+5o D9 
+
+08:30 08:45 
+
+v [km/h] v [kin/h] ,0o D ] ~  Ioo ;am D6 
+
+50 50 ~ , ~ . .  
+
+0 . . . . . . . . . . . .  0 . . . . . . .  
+09:00 09:15 09:30 15:00 15:15 15:30 15:45 16:00 14:35 14:50 15:05 15:20 15:35 
+
+q [vehicles/h] 
+3000 "1 
+
+el( free ) 1""7~" 
+-'max ] /~- - -F  
+
+,ooo 
+
+o|: D9-1eft lane 
+0 40 80 
+
+p [vehicles/kin] 
+
+q [vehicles/h] 
+3000 -] ,,. 3000 
+
+s q qyu I . . ,  
+1ooo jl  ou (ot--  oo 
+
+, 0 r D6-1eft lane o 
+120 0 40 80 120 
+
+p [vehicles&m] 
+
+q [vehicles/hi 
+
+40 80 120 
+p [vehicles&ml 
+
+Figure 3. Three phases of traffic in the flow-density plane. 
+
+
+
+Synchronized Flow 487 
+
+4C. Features of Wide Moving Jams 
+
+From the mentioned objective criterion for wide moving jams, it follows that independent 
+from the state of traffic in the outflow from a wide moving jam, the velocity of the downstream 
+jam front is the characteristic, i.e., unique, coherent, predictable, and reproducible parameter. To 
+explain this, note that the moving of the downstream front of a wide moving jam is a deterministic 
+process of driver's escaping from the jam. The velocity vg of this process is determined by the 
+density Pma× inside the jam and by the an average delay time Tdel between two vehicles following 
+one another escaping from the jam [68]: 
+
+1 
+Vg - . (1) 
+
+PmaxTdel 
+
+The vehicle speed and the flow rate inside a wide moving jam are either zero or negligible for the 
+jam propagation. In other words, it can be suggested that each vehicle inside the jam is at least 
+once in a stop during a time-interval very large in comparison with 7del- Therefore, the related 
+average "stop time" Tstop satisfies the condition 
+
+Tstop ~ Tdel. (2) 
+
+This suggestion also means that there is no influence of the inflow into the jam on the jam's 
+outflow. A wide moving jam separates the traffic flows upstream and downstream of the jam. 
+No states of synchronized flow possesses the feature of wide moving jams (2). 
+
+4D. Spatial-Temporal Patterns of Synchronized Flow 
+
+Note that a spatial-temporal pattern consisting only of the traffic phase "synchronized flow" as 
+well the pattern '% wide moving jam" is sometimes also localized spatially. There are downstream 
+and upstream fronts (boundaries) of the spatial-temporal pattern of synchronized flow where the 
+vehicle speed and the density spatially sharply change. The downstream front of the pattern of 
+synchronized flow separates synchronized flow upstream and free flow downstream. The upstream 
+front of the pattern synchronized flow separates the synchronized flow downstream either from free 
+flow o1" from a wide moving jam upstream. In contrast to a wide moving jam whose downstream 
+front propagates upstream stationary, after a synchronized flow has occurred at an on-ramp (or 
+at another bottleneck), the downstream front of the pattern the synchronized flow is always f i xed  
+at the bottleneck. Also, in contrast to the wide moving jam whose upstream front propagates 
+upstream continuously, the upstream propagation of the upstream front of the synchronized flow 
+often has a spatial limit. 
+
+4E. Examples of Differentiation of Traffic Phases 
+
+These differences in the mentioned spatial-temporal features of wide moving jams and patterns 
+of synchronized flow are illustrated in some examples of traffic flow spatial-temporal patterns in 
+Figure 4. In these examples, results of local simultaneous measurements of the vehicle speed (left) 
+and the flow rate (right) at different locations are shown in time and in space. Figures 4b-4d 
+are related to the section of the highway A5-South which schematic configuration is shown in 
+Figure 4a. Each induction double loop detector (see the sets of the detectors D1 . . . . .  D24 in 
+Figure 4a) records the crossing of a vehicle and measures its speed. A local road computer 
+calculates the flow rate and the average vehicle speed in one minute intervals. 
+
+The section has three bottlenecks which effective locations are marked as "BI", "B2", and 
+"B3" in Figures 4b-4d. The effective bottleneck "BI" is linked to the off-ramp at the d~tectors 
+D23-off. If too many vehicles would like to leave the highway to the off-ramp either the phase 
+transition from free flow to a wide moving jam (it will be called as the ' F  ~ J'-transition) or to 
+synchronized flow (it will be called as the 'F --* S'-transition) occurs. The effective location of 
+
+
+
+488 B .S .  KERNER 
+
+(a) A5-South 
+
+traffic flow p 
+
+, I , .~  , , .  , , , ', : ', . :  : ' , . ' ,  ', : : ', ', ' , ' , :  ; 
+- , .  . . . . . . . . . . .  - - -  ~ . . . .  (k • ~ ~ ~ - ~ ~, .,. ,.~ = ~ ~ ~ - ~ .~x m) o ~ i~ ,.' :~ i~ , i~ ~ ~,, .' b* ~,,i-~ ~. :~ :~ ' ~* "~.~" 
+
+/" "',, : , 
+
+D i ~ l .o f f .2~'x  /%//~ DI 5-on-3 
+DS-on D6-off " -D I3 -o f f - I  / / D IS-on-2 
+
+D I5 -on . l  
+
+(b) A5-South, 23.06.1998 Moving jam 
+I 
+i 
+
+i zed  fl( 
+
+Moving jam 
+
+B l 
+
+2 
+
+t ime 1~00 O x p~tl] 
+
+(c) A5-South, 18.06.1997 
+
+F---->; 
+indt 
+syn~ B" 
+
+24 
+
+t ime 1@00 
+
+Moving jam "A" Moving jam "B" 
+
+10:00  * '~o x lXml  
+
+B, 
+
+(d) A5-South, 17.03.1997 
+
+:24 
+
+B, 
+2 
+
+Figure 4. An overview of traffic patterns on three different days observed on the 
+section of the highway A5-South (a): (b)-(d) dependencies of the average (across all 
+lanes) vehicle speed (left) and the total flow rate across the highway (right) on t ime 
+and space. 
+
+the bott leneck "Bfl' is at about 23.4km. The effective bott leneck "B2" is l inked to the on-ramp 
+
+at the detectors D16. The effective location of this bottleneck is at about  17.1 km. The effective 
+
+bott leneck "S3" is linked to the on-ramp at the detectors D6. The effective location of this 
+
+bott leneck is at about 6.4 km. 
+
+
+
+Synchronized Flow 489 
+
+To emphasize the qualitative difference between the traffic phase "a wide moving jam" and the 
+traffic phase "synchronized flow", let us first consider Figure 4b. It can be seen that a moving 
+jam first emerges in the vicinity of the bottleneck "BI". The physics of this 'F --* J'-transition 
+has been considered in [54]. The jam propagates further through the whole highway section, 
+where two other bottlenecks "B2" and "B3" exist, keeping the velocity of the downstream front 
+of the jam. Therefore, this traffic pattern belongs to the traffic phase "a wide moving jam". 
+Propagating near the effective location of the bottleneck "B2", the wide moving jam causes the 
+'F --* S'-transition at the on-ramp at D16 (at x ~ 17.1 km). Indeed, the spatial-temporal pattern 
+which appears upstream of the bottleneck "B2" is further localized upstream of the bottleneck. 
+The downstream front of this pattern is fixed at the bottleneck. The upstream front of the 
+pattern is also located at some distance upstream of the bottleneck. Therefore, this pattern 
+does not possess the characteristic feature of wide moving jams. As a result, correspondingly to 
+the criteria mentioned above this pattern is a spatial-temporal pattern of synchronized flow (in 
+Figure 4b the pattern is marked as "pattern of synchronized flow"). 
+
+The other two examples in Figures 4c and 4d show some more complex patterns. However, 
+the traffic phases "a wide moving jam" and "synchronized flow" can also easily be distinguished 
+from one another. For example, two wide moving jams which are marked as moving jam "A" 
+and moving jam "B" in Figure 4c can be considered. The moving jam "A" propagates through 
+the bottleneck "B3" and through complex pattern of synchronized flow which is formed at this 
+bottleneck keeping the velocity of the jam downstream front. The same conclusion can be drawn 
+from the propagation of the moving jam "B" through the bottlenecks "B2" and "B3" and also 
+through complex patterns of synchronized flow at these bottlenecks. Therefore, the moving jams 
+"A" and "B" belong to the traffic phase "a wide moving jam". In both cases, upstream of 
+each of the bottlenecks "BI", "B2", and "B3" spatial-temporal patterns which do not possess 
+the characteristic feature of wide moving jams occur. The downstream fronts of each of these 
+patterns are fixed at the related bottlenecks. Therefore, they all belong to the traffic phase 
+"synchronized flow". 
+
+5. PHASE TRANSIT IONS 
+
+Due to the existence of three traffic phases, there are three different types of phase transitions 
+in traffic [50]: 
+
+(1) 'free flow ~-~ jam', 
+
+(2) 'free flow ~ synchronized flow', 
+
+(3) 'synchronized flow ~ jam(s)' which will be called as the 'S ~ J'-transitions. 
+
+Observations show that all of these phase transitions are local first-order phase transitions [50]. 
+This means that these transitions are accompanied by sometimes similar looking breakdown, 
+hysteresis, and nucleation effects. However, it must be distinguished between them because 
+the nonlinear features of these phase transitions are qualitatively different. This differentiation 
+determines one of the main difficulties in the understanding of the observations and of the traffic 
+flow theory. 
+
+/ (free) (free)\ Recently, Kerner found out that the existence of the limit point in free flow ~qm~x , pm~x ) 
+(Figure lb) is linked to the F --* S-transition rather than the F ~ J-transition [49,51]. As a 
+consequence, it turns out that the cascade of two phase transitions 'free flow --* synchronized flow' 
+--* wide moving jam(s)' (it will be called as the 'F --* S --* J '  transitions) is usually responsible 
+for the jam emergence in free traffic flow [51]. 
+
+Thus, the F --* S-transition is the most frequent phase transition in free flow. Because this 
+transition is the local first-order one, each local perturbation whose amplitude exceeds some crit- 
+ical amplitude should cause this transition (the nucleation effect). Obviously, if these conclusions 
+are correct, then the F --* S-transition and the effect of self-maintaining of synchronized flow 
+
+
+
+490 B.S. KERNER 
+
+mu~t occur and show qualitatively the same features in all following cases when for example the 
+F ~ S-transition occurs at an on-ramp. 
+
+(1) When a random local fluctuation whose amplitude exceeds the critical amplitude occurs in 
+the vicinity of the on-ramp in an initial free flow (the F ~ S-transition at the bottleneck 
+"B3" in Figure 4d). This phase transition is shown in more detailed in Figure 5a. 
+
+(2) When an upstream moving jam which has initially occurred far enough downstream of 
+the on-ramp reaches the on-ramp, and besides the F --~ S-transition can occur in the 
+initial free flow (the F -~ S-transition induced by moving jam at the bottleneck "B2" in 
+Figure 4b). Indeed, in this case the moving jam plays a role of the local perturbation (a 
+nucleus for the F ~ S-transition) of the highest possible amplitude. 
+
+(3) When a localized region of synchronized flow propagating upstream which has initially 
+occurred far enough downstream of the on-ramp reaches the on-ramp, and nearby the 
+F ~ S-transition can occur in the initial free flow at the on-ramp (the F ~ S-transition 
+induced by synchronized flow at the bottleneck "B3" in Figure 4c). Also in this case the 
+localized region of synchronized flow plays the role of a nucleus for the phase transition. 
+
+Case (1) is related to a random (spontaneous) F -~ S-transition and Cases (2) and (3) are induced 
+F ~ S-transitions. Figure 4b-4d show that all these cases really occur in real traffic flow. After 
+the F ~ S-transition has occurred, the behavior of synchronized flow which is self-maintained 
+at the on-ramp is qualitatively the same in all these cases (Figures 4b-4d). This confirms the 
+conclusions made in [50]. 
+
+6. COMMON FEATURES OF SPATIAL-TEMPORAL 
+TRAFFIC PATTERNS AT BOTTLENECKS 
+
+Spatial-temporal traffic patterns can occur away from bottlenecks [47,51]. However, just as 
+defects and impurities are important in physical systems, so are bottlenecks, such as on- and off- 
+ramps, in traffic flow. Observations show that a bottleneck can trigger phase transitions, which 
+is why spatial-temporal traffic patterns are considerably more likely to form near the bottleneck. 
+It can been supposed that the probability of the F ~ S-transition has a maximum at a so-called 
+effective location of the bottleneck [52]. 
+
+6A. Genera l  Pat tern  at I so lated Bot t leneck  
+
+Let us first consider a bottleneck on a highway which is located far enough from other bot- 
+tlenecks, so that the effects at other bottlenecks of the highway do not influence the pattern 
+formation and the pattern's features at the bottleneck. Such a bottleneck will be called an iso- 
+lated bottleneck. After the F -~ S-transition at the isolated bottleneck has occurred, a spatial- 
+temporal traffic pattern is formed upstream of the isolated bottleneck. This pattern will be called 
+as the general pattern at an isolated bottleneck. Empirical investigations of the general pattern 
+which have been made in [51,52] allow us to suggest the following common features of a lot of 
+the general patterns at an isolated bottleneck. 
+
+(i) The general pattern consists often of two parts. 
+(1) The pattern which consists only of synchronized flow (the region of synchronized flow 
+
+in Figure 6a). 
+(2) The pattern which consists of an alternation of wide moving jams (the region of wide 
+
+moving jams in Figure 6a). 
+(ii) The spatial-temporal pattern of synchronized flow (the region of synchronized flow in 
+
+Figure 6a) consists of two parts. 
+(1) A region of synchronized flow where no moving narrow jams are formed (in Figure 6a, 
+
+the width of this part is Rs). 
+(2) The pinch region in synchronized flow, i.e, the region where narrow moving jams 
+
+emerge (in Figure 6a, the width of this part is Rps). 
+
+
+
+Synchronized Flow 491 
+
+(a) A5-South, 17.03.1997 
+FtE S-transition pinch region pinch region . . • ~ moving jams IAi 
+
+Stop-and-G ~ ~ o  ", ,~t~l l l lm~ /moving jams lhi ~,; ..... and lB i /  
+ffaffic t~f~c\ ~ J j~ J i~  .... \ , l  
+
+7o1 '1o £3000  "1o 
+> U 
+
+. '  8: °L'- :qMIV - 
+7:oo '~ .~r  • / 5 - 7:oo "-L~r~v. 5 
+
+8".00 '~'~w. ./ . . . . .  8:00 '~-~ .. . 
+t ime 9:20"0 x tKml t ime g:20~O x [kin] 
+
+(b )  A5-South, 17.03.1997, - -  leftlane - -  - middlelane • • • rightlane 
+
+40 40 '~ ' " 
+• iop  
+
+0 I q I '1 I 0 
+
+06:30 07:10 07:50 08:30 09:10 06:30 07:10 07:50 08:30 09:10 
+
+80 80 rv,- 
+
+40 , 40 :51 
+
+o11° 37 i°ff 7 o 
+06:30 07:10 07:50 08:30 09:10 06:30 07:10 07:50 08:30 09:10 
+
+120 A B 
+80 D5 120 
+
+80 
+
+40 [ 4 ' o8:52 40 
+0 0 
+
+06:30 07:10 07:50 08:30 09:10 06:30 07:10 07:50 08:30 09:10 
+
+( c ) A5-South, 17.03.1997 
+
+f low rate [vehic les/h]  
+3000- .  ...................... : 
+
+qou~ 
+1500 - 
+
+: D6-1eft lane 
+
+0 Pmin I n(frce) I 
+0 25 rmax 50 
+
+density [vehicles/km] 
+
+Figure 5. I l lustration of common features of spatial-temporal patterns of synchronized flow [45,46,50,51]. (a),(b) 
+Overview of the following spatial-temporal phenomena: (i) the F --* S-transit ion at the on-ramp at D6 (solid up 
+arrow, D6, (b)); (ii) the propagation of synchronized flow upstream (solid up arrows at D5-D3, (b)); (iii) the 
+pinch effect in synchronized flow ((a), (b), D5, and D4); (iv) the emergence of narrow jams in the pinch region 
+(D5-D3,  (b)); (v) the transformation of the narrow jams into wide moving jams, i.e., the S --* J - t ransi t ions (D1, 
+(b)); (vi) the return S --* F-transit ion (dotted up arrows at D1-D6);  (vii) the propagation of wide traffic jams 
+through free flow (the jams "A" and "B", down arrows at DT) and through different states of synchronized flow 
+(D6-D3,  (b)). (a) Dependencies of the average (across all lanes) vehicle speed (left) and the total  flow rate across 
+the highway (right) on t ime and space. (b) Dependencies of the vehicle speed for each lane on t ime at different 
+detectors. (c) Traffic phases in the flow-density plane: free flow (black points), synchronized flow (circles) and a 
+part  of line J. Arrows in (c) are related to the F --* S-transit ion (at t ~ 06 : 37, compare with (b), D6) and the 
+return S -* F-transi t ion (at t ~ 08 : 57, (c), D6). 
+
+
+
+492 B. S. KERNER 
+
+direction of flow effective location 
+)" of the bottleneck 
+
+wide moving . . . .  (downgtream front 
+
+(a) 
+
+(b) 
+
+i Rw~u ! R ~ Rs j  ~. ,I ~" PS I, r; 
+free flow region of wide "~ pinch region free flow 
+
+moving jams ...(narrow moving jams) _.. 
+v 
+
+synchronized flow 
+
+upstream front of effective location 
+direction of flow gvnchronized flow of the bottleneck 
+
+i R :Rs : :  
+free flow pinch region free flow 
+
+(narrow moving jams) 
+
+synchronized flow 
+
+direction of flow upstream front of effective location 
+synchronized flow of the bottleneck 
+
+X 
+
+X 
+
+(c) 
+
+: R s i x 1 
+free flow free flow 
+
+synchronized flow 
+
+Figure 6. Schematic illustration of the spatial structure of traffic flow patterns at 
+an isolated bottleneck [51,52,62]. (a) The general pattern, (b) the synchronized flow 
+pattern (SP) of Type 1, (c) (SP) of Type 2. 
+
+(iii) The downstream front (boundary) of the pattern of synchronized flow (this front is also 
+the downstream front of the general pattern as a whole pattern) is located at the effective 
+location of the bottleneck (Figure 6a). 
+
+(iv) The upstream boundary of synchronized flow is determined by the location where a narrow 
+moving jam is just transformed into a wide moving jam. At this place, the S ---* J- 
+transition has occurred. Because the transformation of different narrow moving jams 
+into wide moving jams can occur at slightly different locations, the upstream boundary 
+(front) of synchronized flow performs complex spatial oscillations over time. However, 
+these oscillations have usually relatively small amplitude in comparison with the mean 
+length of the pinch region Lpinch. 
+
+(v) The successive process of the transformation of narrow moving jams into wide moving 
+jams at the upstream boundary (front) of synchronized flow leads to the formation of 
+a sequence of wide moving jams. The sequence of wide moving jams (a "stop-and-go" 
+pattern) may propagate far away from the location where the wide moving jams have first 
+initially been formed (i.e., from the upstream front of synchronized flow). 
+
+A narrow moving jam may be considered as a nucleus of the traffic phase "wide moving jam" 
+inside the traffic phase "synchronized flow". At the upstream boundary (front) of synchronized 
+
+
+
+Synchronized Flow 493 
+
+flow where a narrow moving jam has just transformed into a wide moving jam is also the location 
+of the S --* J-transition. 
+
+Items (i)-(v) are illustrated in Figures 5a and 5b, where the pattern which has occurred 
+upstream of the on-ramp at D6 is shown. This example is qualitatively the same as well as the 
+case of the pattern observed on 13.01.1997 which has been considered in [51]. 
+
+6B. "Foreign" Wide Moving Jams 
+
+The only difference to the case observed on 13.01.1997 [51] is that in the case in Figure 5a 
+and 5b, two other wide moving jams (moving jams "A" and "B" in Figures 5a and 5b) which 
+have initially occurred downstream of the effective location of the bottleneck at the on-ramp 
+D6 propagate through the pattern under consideration. Such wide moving jams (moving jams 
+"A" and "B") will be called "foreign" wide moving jams in comparison with the wide moving 
+jams which are formed at the upstream front of the synchronized flow inside the pattern under 
+consideration due to the transformation of narrow moving jams into wide moving jams (Item (v)). 
+Thus, until these two "foreign" wide moving jams "A" and "B" do not reach the bottleneck B3, 
+this bottleneck B3 can be considered as an isolated one. In the latter case, the features of the 
+pattern at the on-ramp D6 (Figures 5a and 5b) are related to the features of the general pattern 
+in Items (i)-(v) above [51]. See also the explanation in the caption in Figure 5. 
+
+6C. Synchronized Flow Pattern at Isolated Bottleneck 
+
+There are cases when instead of the general pattern at the isolated bottleneck shown in Fig- 
+ure 6a, some synchronized flow patterns, or (SP) for short, are observed (Figures 6b and 6c). 
+There are two types of such (SP): 
+
+(i) Type 1, and 
+(ii) Type 2. 
+
+In (SP) of Type 1, the region of wide moving jams does not occur at the upstream boundary of 
+the synchronized flow, i.e., this pattern consists only of the pattern of synchronized flow where 
+the pinch region is formed. In (SP) of Type 2, the pinch region and the region of wide moving 
+jams do not occur at the upstream boundary of the synchronized flow. 
+
+A qualitative explanation of (SP) of Type 1 may be the following. Let the flow rate upstream of 
+the pattern be lower than qout. Then, upstream of the upstream front (boundary) of synchronized 
+flow, wide moving jams disappear over time. Such situations can occur if at some distance 
+upstream of the effective location of a bottleneck, a large enough percentage of vehicles leave 
+the highway to an off-ramp. This situation is realized in the case shown in Figure 4b for (SP) 
+which is formed at the bottleneck B2 (this pattern is marked as "pattern of synchronized flow" 
+in Figure 4b). 
+
+7. "EXPANDED" SPATIAL-TEMPORAL 
+TRAFFIC FLOW PATTERNS 
+
+A real highway has a lot of bottlenecks. Therefore, it can occur that two or more different sepa- 
+rated pinch regions upstream of different highway bottlenecks can appear almost simultaneously. 
+In this case, it can be expected that a complex dynamics of the jams' interaction may occur when 
+some wide moving jams from the downstream sequence of moving jams due to their upstream 
+propagation reach the upstream pinch region where narrow moving jams are just emerging [53]. 
+Recall that such wide moving jams from the downstream sequence of the jams have been called 
+above as "foreign" wide moving jams. 
+
+Examples of such cases are shown in Figures 4c and 4d and Figures 5a and 5b. In Figure 4c, 
+the wide moving jam "A" which has initially occurred upstream of the bottleneck B2 and the 
+wide moving jam "B" which has initially occurred upstream of the bottleneck B1 are "foreign" 
+
+
+
+494 B.S. KERNER 
+
+wide moving jams for the pattern occurred upstream of the bottleneck B3. Indeed, both wide 
+moving jams "A" and "B" propagate through the pinch region (upstream of the bottleneck B3) 
+where narrow moving jams are just emerging. Qualitatively, the same situation is shown in 
+Figure 5b where two "foreign" wide moving jams "A" and "B" propagate through the pattern 
+occurred upstream of the bottleneck B3 where narrow moving jams are just emerging. As a result 
+of the propagation of "foreign" wide moving jams instead of different sequence of moving jams 
+which have initially occurred at different spatial separated bottlenecks, a united sequence of wide 
+moving jams can be formed [53]. 
+
+A much more complicated case can occur, if two or more effective locations of different bottle- 
+necks exist on a highway very close one to another. To explain this important case, consider an 
+effective location of a bottleneck on a highway where a spatial-temporal pattern first occurs. Let 
+us assume that downstream of this "first" bottleneck a free flow is realized, i.e., the downstream 
+front of the pattern is located at the bottleneck during the whole time under consideration. Let 
+us further assume that the upstream boundary (front) of synchronized flow in this pattern reaches 
+the effective location of the next (second) upstream bottleneck on the highway. In this case, it 
+can occur that the upstream boundary (front) of synchronized flow propagates further upstream 
+of the second bottleneck. The spatial-temporal pattern which occurs in this case will be called 
+an "e:~panded" pattern. 
+
+An empirical example of an "expanded" pattern which occurred on the section of the highway 
+A5-North is shown in Figures 7a-7c. The section has at least three bottlenecks "BNorthl", 
+"BNorth2" , and "BNorth3" (Figure 7b). The bottleneck "BNorthl" may be linked to a curve and 
+a gradient on the highway (a bottleneck without obvious reason) in the vicinity of the detectors 
+D18 (x ~ 15.5 kin). The bottleneck "BNorth2" is linked to the on-ramp at the detectors D16 (x 
+13.1 km). The bottleneck "BNorth3" is linked to the on-ramp at the detectors D7 (x ~ 5.2km). 
+First, the F ~ S-transition occurs at the bottleneck "BNorthl" (up-arrow in Figure 7c, D18). 
+Then a spatial-temporal pattern begins to form upstream of bottleneck "BNorthl" (Figures 7b and 
+7c, D17). After the upstream front (boundary) of the synchronized flow in this pattern reaches the 
+bottleneck "BNorth2" (Figure 7b and 7c, D16), this upstream front propagates further upstream. 
+In the "expanded" pattern in Figures 7b and 7c, the region of synchronized flow expands at least 
+over the bottleneck "BNorth2". In this "expanded" pattern, wide moving jams can already occur 
+downstream of the bottleneck "BNorth2" because a part of the pinch region has been formed 
+between the bottleneck "BNorthl" and the bottleneck "BNorth2" (Figure 7b). These wide moving 
+jams which propagate further upstream can be considered as "foreign" jams for another part of 
+the pinch region upstream of the bottleneck "BNorth2" where other narrow moving jams emerge. 
+
+Therefore, the "expanded" pattern can have qualitatively similar spatial-temporal structure as 
+well the general pattern on an isolated bottleneck shown in Figure 6. However, there are some 
+important peculiarities of "expanded" patterns. First, in an "expanded" pattern, the pinch region 
+can be much longer than in the case of an isolated bottleneck (many of tens or even hundreds 
+kilometer). Indeed, the pinch region in the "expanded" pattern can cover a lot of bottlenecks. 
+Symbolically, this effect is shown by effective locations of bottlenecks B2 . . . . .  Bn in Figure 7d 
+which all are covered by the pinch region. It must be noted that this pinch region has initially 
+begun to form upstream of the bottleneck B1. Second, a lot of "foreign" wide moving jams which 
+are formed inside different parts of the pinch region between different bottlenecks can propagate 
+through the "expanded" pattern (symbolically this effect is shown in Figure 7d). 
+
+8. COMPARISON OF EXPERIMENTAL  FEATURES 
+OF TRAFF IC  PATTERNS WITH MODEL RESULTS 
+
+It has already been noted (see Section 2) that the model results about the existence of the 
+characteristic, i.e., predictable and reproducible parameters of wide moving traffic jams and that 
+states of a free flow are metastable states if the flow rate in the free flow exceeds qout (first 
+
+
+
+Synchronized Flow 495 
+
+(a)  A5-North ¢ramc flow 
+
+/ l  t t  I I I I I I t I I  I I I I I I I I I I I I I .... / i / 
+
+B Nor th  I 
+
+: '. 
+
+16:00 '~"--. . . '5 
+time 19:00 0 x [km] 
+
+(c )  A5-North, 21.06.1996, - -  left lane 
+
+v [km]h] 
+120 
+80 
+40 ,  D19 
+0 I 
+
+12:40 13:10 13:40 
+v [krrgh] 
+
+120 ~ 
+80 
+40 
+
+0 I ~ I I 
+
+12:40 13:10 13:40 
+v [km/h] 
+
+120 ~ 
+80 
+40 
+
+01 '  'h  I 
+
+12:40 13:10 13:40 
+
+(b)  AS-North, 21.06.1996 
+
+~°~~ o 
+% 2 : o o " ~ - ~  . 15 
+
+lO 
+
+lime 19:00 × [kin] 
+
+- - -  middle lane ..... right lane 
+
+v [km/h] 
+120 ~ Dl6 
+40 * 
+
+0 ' ' 
+
+12:40 13:10 13:40 
+v [km/h] 
+
+120 • 
+
+40 
+0 ,, j , , ,  j 
+
+12:40 13:10 13:40 
+v [kr rgh]  
+
+120 " • D14 
+
+40 
+
+0 , , ,  I i 
+
+12:40 13:10 13:40 
+
+wide mm w 
+m. 
+
+(d) 
+
+up= 
+synchronized flow ~e . . . . . . . .  c= .... , . . . . . . . . . . . . . .  5J ...... , _.,, Jree now 
+
+| L I III 
+
+synchronized flow 
+
+Figure 7. Illustration of features of "expanded" spatial-temporal patterns [62], 
+(a) Schematic picture of the section of the highway A5-North, (b) overview of an 
+empirical "expanded" spatial-temporal pattern which has initially occurred at the ef- 
+fective location of the bottleneck BNorthl and later expands over two other upstream 
+bottlenecks BNorth2 and BNorth3, (C) dependencies of the average vehicle speed at 
+different detectors. (d) Schematic illustration of a spatial structure of "expanded" 
+traffic flow patterns. The up-arrow in (a) symbolically shows the F --~ S-transition 
+which occurs at the effective bottleneck BNorthl in the vicinity of the detectors D18 
+probably due to the curve and the gradient on the highway at this place. 
+
+
+
+496 B.S. KERNER 
+
+predicted in [18]) have indeed been discovered in empirical investigations [57]. These results can 
+be obtained from a mathematical consideration of traffic as a system which consists of only free 
+flow and moving jams. For an analysis of such traffic, the basic assumptions (1) and (2) which 
+have been considered in the introduction can be used. 
+
+However, there are other important empirical results which are linked to the features of spatial- 
+temporal patterns of synchronized flow considered above which apparently cannot be explained in 
+the frame of the basic assumptions (1) and (2). For this reason, the author questioned the basic 
+assumptions (1) and (2) of traffic flow models at present [53,54]. These empirical results [45,49,51- 
+54] are as follows. 
+
+(1) Either at on-ramps or away from bottlenecks, the F ~ J-transition has never been 
+observed, wide moving jam(s) emerge only due to the F ~ S ~ J-transitions. Therefore, 
+
+~(free) ,,(free)~ (Figure la) is linked to the F ~ S-transition the limit point of free flow I.p'max , t/max ] 
+rather than to the F ~ J-transition. 
+
+(2) Synchronized flow of Types (i) and (ii) [45] can exist on a highway for a long time, i.e., it 
+can be stable at least with respect to small amplitude perturbations. 
+
+~bottle in the (3) After the F ~ S-transition has occurred at an on-ramp, the flow rate ~out 
+outflow from the downstream boundary of synchronized flow (i.e., the boundary where 
+synchronized flow is transferred into free flow downstream) can change in a very wide 
+range. Besides, this discharge flow ra te  qbottle can considerably exceed the flow rate out 
+from a wide jam, qout (Figure 5c). 
+
+9. PREDICTABLE FEATURES OF TRAFFIC 
+FLOW PATTERNS IN CONGESTED TRAFFIC.  
+
+METHODS FOR TRAFFIC FORECASTING 
+
+It must be noted that traffic forecasting based on an application of different dynamic traffic 
+flow models whose parameters should be validated corresponding to real traffic conditions is the 
+well-known approach (e.g., [28]). However, due to very complex dynamics of real traffic flow 
+which strongly depend on the infrastructure of a highway, weather, etc., it is difficult to choose a 
+set of model parameters in a way that the model shows results compatible with real traffic flow. 
+
+It has already been stressed that the downstream front of a wide moving jam possesses some 
+characteristics, i.e., predictable and reproducible parameters which do not depend on initial 
+conditions and on time and are also the same for different wide moving jams. Recall that the 
+velocity of the downstream front of a wide moving jam is always the characteristic parameter 
+independent of the traffic p, arameters downstream from the jam [51,59]. The latter property 
+allows us to make a predict!on of ~he propagation of wide moving jams without any validating 
+of model parameters from available traffic ~ata [60]: Similar conclusion can be made for some 
+important spatial-temporal features of patterns of synchronized flow [45,50,61,62]. 
+
+Based on these empirical discoveries, Kerner et al. [60-62] have proposed an alternative ap- 
+proach to a traffic prediction in contrast to the modelling approach mentioned above (e.g., [28] 
+and references there). In [60-62], the features of traffic patterns are determined experimentally 
+and then used for a tracing and prediction of macroscopic properties of the traffic patterns with- 
+out any validation of model parameters. In this approach [60-62], macroscopic parameters of 
+spatial-temporal traffic patterns based on traffic measurements are determined first. An example 
+of these macroscopic parameters is the velocity of the fronts of moving jams. The second step is 
+to determine, also based on traffic measurements, the characteristic features of spatial-temporal 
+dynamics of these macroscopic parameters of the pattern as functions of traffic flow rate, average 
+speed, and infrastructure peculiarities. In particular, the conditions for the pattern formation, the 
+dependencies of the locations of the fronts and the longitudinal widths of different traffic phases 
+inside the patterns should be found. Finally, the properties of the spatial-temporal dynamics of 
+the macroscopic pattern parameters are used for the predictions of the pattern behaviour. 
+
+
+
+(a) 
+
+Synchronized Flow 
+
+ql(t), vz(t ) ~(t), V2(t ) 
+
+Models ,,ASDA" and .FOTO": 
+I. Reco~iticm of traffic _nh~e: r-.,,fze¢ tmili¢"; 
+
+S-.synchronized tzaffi¢"; J-.wide moving ~c jam" 
+2. Tracine and vrediction of  the traffic ohases 
+
+:!i!::/.ii 
+
+iaml jaml =),tab jam2 jtm2 y=yar.h/f~ x~ (t) xdo~(t ) X.p (t) xw (t) xa=,.(t ) ~e~.w 
+
+497 
+
+(b) . I oy , ,~  tra~°fo.=:e,~°~ of 
+local determination | traffic phase: L~ po~lble phase transitions, i.e. 
+measurements of local traffic phase J .free flow" ] - J  determination of the probabi- 
+(e.g. detection site) (e.g. by fuzzy logic) / ' I lib/of F-~S-phase transitions 
+
+~. ~.~u i / Tracing Rind foreealtlng of the 
+
+I " I determination of :=  I lJ:t A A I I ==(t) ~."(Owe ~oTo 
+n ;- - - : I 'i : .  ; : : : " "L  I \ "  traffic P hne: -w ide~l  - -  of =. | I J.wtde movinl jim" object, l.e. 
+
+I " l (~=, .~ao.  of I rnovlng traffic jam" 
+' I "~(0  x." (O,~ ~OA 
+
+Figure 8. Illustration of the approach to traffic flow pattern tracing and forecast- 
+ing [60--62]. (a) I[lustration of a recognition of different traffic phases and the spatial 
+boundaries (fronts) between these phases. (b) Illustration of the choice of the traffic 
+model for a tracing and prediction of different traffic phases. 
+
+Figures 8a and 8b illustrate the approach [60-62], due to local measurements of traffic the 
+recognition of the traffic phases is performed first. Second the initial fronts of wide moving 
+jams jam "am Xup (tO), XJ~own(t0 ) and of patterns of synchronized synch synch flow Xup (to), Xdow, (to) are determined. 
+These fronts define the spatial size and location of the related "synchronized flow" object and 
+"wide moving jam" object in congested regime. Finally, with the models ASDA and FeTe ,  the 
+tracing and forecasting of these objects fronts in time and space is calculated, i.e., the positions 
+
+jam "am synch of all fronts Xup (•),X3Jown(t),Xup (t), synch Xdown (t) as the functions of time are found. Note that for 
+the traffic forecasting historical time series at least for the flow rates are necessary. In other 
+words, after the recognition of the mentioned traffic objects in congested regime, these objects 
+are traced and predicted as macroscopic single objects, i.e., the determination of the location and 
+the length of the related objects at any time is the aim of the approach. The knowledge of these 
+parameters of traffic objects as well as the average vehicle speed inside the objects allow us to 
+calculate other traffic characteristics, e.g., travel time or vehicle trajectories. 
+
+This philosophy has been used in [60-62] for developing a model for tracing and prediction of 
+moving jams which has been called "ASDA" and of a model for tracing and prediction of the 
+F --~ S-transition and of patterns of synchronized flow. The latter model has been called "FeTe"  
+(forecasting of traffic objects). The test of both models ASDA and FeTe  which has been 
+performed in an on-line application on the highway A5 in Germany based on available measured 
+traffic data has shown that these models allow us to predict the F ---* S-transition, the propagation 
+of moving traffic jams and spatial-temporal features of patterns of synchronized flow without 
+parameter calibration under different infrastructures and environmental conditions [63-66]. 
+
+
+
+498 B.S .  KERNEt% 
+
+Movingjams 
+
+@ 
+Synchronized 
+flow 
+
+(a) Histogram A5-North on 12.04.2000 from 18:00-20:00 (printed from online oper- 
+ation). 
+
+(b) Histogram A5-South on 17.07.2000 from 07:30-09:30 using all available traffic 
+data (31 sets of detectors), 
+
+. . . . . . . . . . . .  iiiii     ii i i i 
+i..: :.. : i l L :  . . . . . . . . . . . . . . .  __...:.. . i _  J L.. ~ i  
+
+• : . . . . . . .  i 7.!+%,~ ~i ~ ~ 
+
+. . . . . . . . . .  ~i ~7~ ~4#!~t::~ 
+
+. . . . . . . . . . . . . . . .  ] . ,  . . . . . . . . . . .  ~ ~ ,,'.'" .. ~',~t:~: 
+
+(c) the same day and the time interval as well in (b) but using reduced input data 
+(nine of 31 sets of detectors). 
+
+Figure 9. Results of the on-line application of the models ASDA and FOTO [63,64]. 
+
+
+
+Synchronized Flow 499 
+
+In the practical application FOTOwin for traffic of traffic objects (wide moving jams and 
+patterns of synchronized flow) [63], which has been realized in a research project for the federal 
+state of Hessen in Germany, both the models for the automatic tracing of jams (ASDA) and for 
+the forecasting of traffic objects (FOTO) have been integrated. Examples of this application are 
+shown in Figure 9. Many useful applications of the models ASDA and FOTO are possible, the 
+output information of the models can be used for driver information systems or for traffic control 
+systems. It is possible to predict the dissolution of moving jams and of patterns of synchronized 
+flOW. 
+
+The models have been tested on a lot of experimental data and it shows very good results. 
+For the verification of the model results, empirical data of an infrastructure with many detection 
+sites has been chosen. First, the data of all detectors has been used (Figure 9b). Then, the data 
+of some detectors has been omitted and the process of the traffic pattern recognition has been 
+repeated (Figure 9c). The data which has not been used are taken for comparison to the model 
+results. Figure 9c shows the results of ASDA and FOTO with a strongly reduced configuration of 
+the input values, instead of 31 detection sites for the models, only nine detection sites are used, 
+i.e., only 30% of the detection site infrastructure. The histogram A5-South on July 7, 2000 from 
+07:30-09:30am (Figure 9c) shows a very similar result at the same situation as in Figure 9b with 
+all detectors as input, in spite of the strongly reduced input information in Figure 9c, the analysis 
+of the road section and the generation of traffic objects with the models ASDA and FOTO is 
+very similar. 
+
+10. HYPOTHESES TO THEORY OF TRAFFIC FLOW 
+
+To explain empirical features of traffic flow patterns which have been considered above, the au- 
+thor has proposed alternative hypotheses (basic assumptions) for traffic flow theory [46-48,51,52]. 
+These basic assumptions will be discussed below. 
+
+10A. A Hypothesis About the Mult itude of Homogeneous States (Steady States) 
+of Traffic Flow [45,46] 
+
+In the flow-density plane, hypothetical homogeneous, and stationary, i.e., time-independent 
+states (steady states) of traffic flow on a multilane-road are related to a curve (curve F) for free 
+flow and to a two-dimensional region for synchronized flow (Figure 10a). The multitude of states 
+of free flow on a multilane-road overlaps hypothetical homogeneous and stationary states (steady 
+states) of synchronized flow in the density. They are separated by a gap in the flow rate at a 
+given density. 
+
+The multitude of hypothetical homogeneous and stationary states of synchronized flow on a 
+multilane road (hatched region in Figure 10a) is identical to the related multitude of hypothet- 
+ical homogeneous and stationary states of traffic flow on a one-lane road (hatched region in 
+Figure 10b). 
+
+Note that hypothetical homogeneous and stationary states of synchronized flow cannot exist 
+in a vicinity of the jam density Pmax (i.e., the vehicle density inside a wide moving jam), exactly 
+if the vehicle speed is lower than some minimal possible vehicle speed (narrow) (Figure 10) which ~)min 
+may be about 5-10 km/h. Therefore, the related points in the hatched regions in Figure 10 have 
+been excepted. 
+
+10B. A Hypothesis About the Behavior of Infinitesimal Perturbations in Initially 
+Homogeneous States of Traffic Flow [46-48] 
+
+Independently of the vehicle density in an initial state of flow, infinitesimal perturbations of 
+traffic flow variables (the vehicle speed and/or the density) do not grow in any hypothetical 
+homogeneous and stationary states of either free or synchronized flow or else of homogeneous-in- 
+speed states of synchronized flow. In the whole possible density range, hypothetical homogeneous 
+
+
+
+500 B. S. KERNER 
+
+Flow rate, q (a) Flow rate, q 
+J q(m~ee ) Synchronized qma~.A 
+
+q (~Ynx)'~ .-- .~ 
+q°"t 
+
+(syn) 
+qmin, out :..F." F ......... ~'""'" 0' 
+
+Density, p Pmax 
+
+(b) 
+
+Density, p Pmax 
+
+Figure 10. Hypotheses about hypothetical steady states of traffic flow: the concate- 
+nation of states of free flow (curve F) with hypothetical homogeneous and stationary 
+(steady) states of synchronized flow (hatched region) and with line J for the down- 
+stream front of a wide moving jam (line J) for a multilane (a) and one-lane road 
+(b) [46,48,51,54]. 
+
+and stationary states of traffic flow can exist. In other words, in the whole possible density range 
+(Figure 10), there are no unstable hypothetical homogeneous and stationary states of traffic flow 
+with respect to infinitesimal perturbations of any traffic flow variables. 
+
+10C. A Hypothes is  About  Cont inuous Spatial -Temporal  Transit ions Between 
+Different States of Synchronized Flow [46-48] 
+
+Local perturbations in synchronized flow can cause continuous spatial-temporal transitions 
+between different states of both hypothetical homogeneous and homogeneous-in-speed states of 
+synchronized flow (hatched region in Figure 10). 
+
+10D. Explanat ion of the Hypotheses  for Hypothet ica l  Homogeneous (Steady) States 
+of Traffic F low 
+
+To explain these hypotheses, note that in synchronized flow, spacing between vehicles is rela- 
+tively low (i.e., the density is relatively high) in comparison with free flow at the same flow rate 
+(Figure 10). At low spacing, a driver is able to recognize a change in the spacing to the vehicle 
+in front of him, even if the difference in speed is negligible. In other words, the driver is able 
+to maintain a time-independent spacing (without taking fluctuations into account) to the vehicle 
+in front of him in an initially homogeneous state of synchronized flow. The ability of drivers to 
+maintain a time-independent spacing should be valid for a finite range of spacing. Therefore, a 
+given vehicle speed may be related to an infinite multitude of homogeneous states with different 
+densities in a limited range (for example, the range ^ (syn) < < ,(syn) is related to homogeneous- Pmin _ P_  pmax 
+in-speed states of synchronized flow for a fixed vehicle speed, dotted line in Figure lla). For 
+this reason, the multitude of homogeneous states of synchronized flow covers a two-dimensional 
+region in the flow-density plane (hatched region in Figures 10, l la, and llc). States of free flow 
+(curve F in Figure l lc) and states of synchronized flow (hatched region) overlap in densities, 
+
+_(free) i.e., pmax > Ps, where Ps is the limit (minimum) density for hypothetical homogeneous and 
+stationary states of synchronized flow (the density Ps in Figure l lc  is related to the flow rate 
+q(Syn) which is shown in Figure 10a). However, in free flow on a multilane road due to the min,out 
+possibility for vehicles to overtake the average vehicle, speed can be higher than the maximum 
+speed in synchronized flow at the same density. Therefore, there is a gap in the flow rate between 
+states of free flow and synchronized flow at a given density (Figure 10a). 
+
+Small enough perturbations in spacing which are linked to an original fluctuation in the braking 
+of a vehicle do not grow. Indeed, small enough changes in spacing are allowed, therefore, drivers 
+should not immediately react on it. For this reason, even after a time delay, which is due to a 
+finite reaction time of drivers rreac, the drivers upstream should not brake stronger than drivers 
+in front of them to avoid an accident. As a result, a local perturbation of traffic variables (density 
+
+
+
+Synchronized Flow 501 
+
+Flow rate, q 
+
+q(free) I max 
+
+~(syn) i -1max 
+qout 
+
+[ 
+
+[ 
+o 7, '  
+
+Pmin J  i, 
+
+The critical 
+amplitude of 
+
+density 
+perturbation 
+
+APe 
+
+(a) 
+Synchronized 
+
+o(S.yn) :: ': 
+,-m,n i + 
+
+.(free) + : 
+emax ', ' 
+
+> 
+
+Pmax 
+Density, p 
+
+g5 
+
+Flow rate, q 
+
+q(free) 
+max /, 
+
+q(Syn) 
+max 
+
+Ps 
+
+The 
+probability of 
+overtaking, P 
+
+l_ 
+
+(c) 
+Synchronized f~Z:-7_,: 
+
+J , 
+
+r max 
+
+p(free) Density, p 
+max 
+
+0 f /  ,..(free) ,.,(syn).(syn) PS .(free) Pmax / 
+I-'max I% r'max ~'max 
+
+Pth 
+Density, p Density, p 
+
+P min 
+
+! (d) 
+
+1/.0,i ps 
+
+Figure 11. Explanation of hypotheses to the three-phase-traffic-theory [48,52]. States 
+of free (curve F) and synchronized flow (hatched region) in (a),(c) are the same as 
+in Figure 10a. 
+
+or vehicle speed) of small enough amplitude does not grow. An occurrence of this perturbation 
+may cause a spatial-temporal transition to another state of synchronized flow. In other words, 
+local perturbations may cause continuous spatial-temporal transitions between different states of 
+synchronized flow. 
+
+Independently of the vehicle density on a one-lane road vehicles cannot overtake. Therefore, 
+hypothetical homogeneous and stationary (steady) states of traffic flow on the one-lane road at 
+higher density are identical to hypothetical homogeneous and stationary states of synchronized 
+flow on a multilane road (hatched regions in Figure 10). Lower density states of flow on the 
+one-lane road can be approximately represented by a curve (curve O in Figure 10b) which at 
+low enough density has a slope equal to the same desired speed of vehicles as in free flow on 
+a multilane road (Figure 10a). In real traffic flow a spatial alternation of states of free and 
+synchronized flow on a multilane-road in a middle density range can lead to the occurrence of 
+'mixture states' [46]. 
+
+10E. A Hypothes is  About  Two Different K inds of  Nuc leat ion  Effects 
+in Traffic Flow [47-49] 
+
+There are two qualitatively different kinds of nucleation effects with two related kinds of 
+metastability effects in traffic flow. 
+
+1. The nucleation effect which is responsible for the jam's formation, i.e., for the F --~ J- 
+transition and the S --~ Y-transition (Figures 11a and 11b). 
+
+2. The nucleation effect which is responsible for the F --* S-transition (Figures 11c and 11d). 
+
+
+
+502 B.S. KERNER 
+
+The nucleation effect which is responsible for the F ~ S-transition is linked to an avalanche 
+self-decrease in the mean probability of overtaking in traffic flow, P. This self-decrease in the 
+mean value of the probability of overtaking will be realized, if such a critical local perturbation of 
+traffic variables (vehicle speed or/and density) occurs which causes an initial local decrease in the 
+mean probability of overtaking below some critical value Pcr (dotted curve Pcr in Figure 11d). A 
+dependence of the critical amplitude of the density perturbation on the density for the F ~ S- 
+transition is shown by the curve Fs in Figure llb. In contrast, the nucleation effect which is 
+responsible for the jam's formation is linked to an avalanche self-growth of the amplitude of a local 
+critical perturbation of the traffic variables (density or/and vehicle speed), i.e., when the initial 
+amplitude of the local perturbation exceeds some critical amplitude. Note that dependencies 
+of the critical amplitude of the density perturbation on the density are shown by the curve Fj 
+for the F ~ J-transition and by the curve  Sj for the phase transition the S ~ J-transition in 
+Figure llb. The curve Sj is related to a fixed vehicle speed, dotted line in Figure l la. 
+
+10F. A Hypothesis  About  the Critical Ampl i tude of Local Perturbat ions and the 
+Probabi l i ty of Phase Transitions in Free Flow [47-49] 
+
+At each given density in free flow, the critical amplitude of a local perturbation of traffic 
+variables (density or/and vehicle speed) which is needed for the realization of the F ~ S- 
+transition (curve Fs in Figure llb) is considerably lower than the critical amplitude of a local 
+perturbation which is needed for the realization of the F ~ J-transition (curve Fj in Figure 1 la). 
+Therefore, at each given density in free flow, the probability of an occurrence of the F --* S- 
+transition is considerably higher than of the F -~ J-transition. The threshold density Pth for 
+the F --* S-transition can differ both from the threshold density Pb (where Pb -~  Pmin) for the 
+F --* J-transition and from the limit density Ps for homogeneous states of synchronized flow. 
+
+Because the critical value of the mean probability of overtaking is an increasing function of 
+the density (Figure l ld, dotted curve Pcr), the higher the density in free flow is the lower the 
+amplitude of a local perturbation of the traffic variables (density (curve Fs in Figure llb) or/and 
+vehicle speed) which causes an avalanche self-decrease in the mean probability of overtaking in 
+
+(free) the related local region. At the limit density for free flow p = pma× , the critical amplitude of 
+a local perturbation of traffic variables (density or/and vehicle speed) which is needed for the 
+realization of the F ~ S-transition reaches zero, respectively, the probability of the F ~ S- 
+transition reaches one. 
+
+10G. A Hypothesis About the Nucleation Effect Which is Responsible for the 
+Jam Emergence [51] 
+
+Line J (line J in Figure l la) determines the threshold of the jam's existence and excitation. 
+In other words, all (an infinite number !) homogeneous states of traffic flow which are related 
+to line J in the flow-density plane are threshold states with respect to the jam's formation. 
+Line J separates all homogeneous states of both free and synchronized flow into two qualitatively 
+different classes. 
+
+1. In states which are related to points in the flow-density plane lying below (see axes in 
+Figure l la) line J, no jams either can continue to exist or can be excited. 
+
+2. States which are related to points in the flow-density plane lying on and above line J are 
+metastable states with respect to the jam's formation where the related nucleation effect 
+can be realized. Only the local perturbations of traffic variables whose amplitude exceeds 
+some critical amplitude grow and can lead to the jam's formation (up arrows, curves Fj 
+and Sj in Figure llb), otherwise jams do not occur (down arrows, curves Fj and Sj in 
+Figure llb). The former critical local perturbations act as nucleation centers (nuclei) for 
+the jam's formation. 
+
+
+
+Synchronized Flow 503 
+
+The critical amplitude of the local perturbations is maximal at line J and depends both on the 
+density and on the flow rate above line J. The critical amplitude of the local perturbations is 
+considerably lower in synchronized flow than in free flow (compare the curve F j  with the curve Sj 
+in Figure 1 lb). The lower the vehicle speed in synchronized flow is the lower the critical amplitude 
+of perturbations for states of synchronized flow which are related to the same difference between 
+the densities in these states and the corresponding threshold densities on the line J. 
+
+All conclusions about spatial-temporal transitions between different states of synchronized flow 
+(Section 10C), about the metastable and the stable states, and the critical amplitude of the local 
+perturbations in synchronized flow on a multilane road are obviously valid also for the related 
+states of flow on a one-lane road (i.e., for the states in the hatched region in Figure 10b). Thus, 
+the pinch effect where narrow moving jams emerge can also occur on a one-lane road. 
+
+10H. Exp lanat ion  of  Hypotheses  for Nuc leat ion  Effects in Traff ic F low [47-49,51] 
+
+To explain the hypotheses, note that in free flow of low enough densities, a driver is not hindered 
+to overtake, i.e., the related mean probability of overtaking is P = 1 (Figure l ld).  The higher the 
+density in free flow is the lower the mean probability of overtaking. However, in free flow up to 
+
+_(free) the limit point p = pmax , the mean probability of overtaking does not decrease drastically (solid 
+curve PF, Figure l ld).  Indeed, in free flow the difference between vehicle speeds on different 
+lanes of a highway can be high enough. Therefore, the mean probability ior a vehicle to be 
+able to overtake is also high. In contrast to that in synchronized flow of high enough density, 
+drivers are not able to overtake at all, i.e., P = 0. The lower the density of synchronized flow 
+is the higher the mean probability of overtaking. However, in synchronized flow up to the limit 
+point p = Ps, the mean probability of overtaking cannot increase drastically (solid curve Ps, 
+Figure l ld). Indeed, in contrast to free flow, in synchronized flow the difference between vehicles 
+speeds on different lines of a highway is low. This hinders the overtaking. Therefore, at each 
+
+r (free)l 
+given vehicle density in the density range {Ps, pm~x J, where states of free flow and synchronized 
+flow overlap in the density, the mean probability of overtaking in free flow is considerably higher 
+than in synchronized flow. As a result, the dependence P(p) is Z-shaped, i.e., it has a hysteresis 
+loop, and therefore, it consists of three branches. 
+
+(i) The branch PF for free flow. 
+(ii) The branch Ps for synchronized flow. 
+(iii) The branch Pcr which is related to the critical value of the mean mean probability of 
+
+overtaking (Figure l ld).  
+
+The sense of the branch Per is the following. If in a local region of free flow due to a local 
+perturbation of traffic variables (speed or/and density) the mean probability of overtaking is 
+decreased below the critical value Per, then an avalanche self-decrease in the mean probability of 
+overtaking occurs leading to a self-formation of synchronized flow where P = Ps (down arrow in 
+Figure l ld).  If on the contrary in a local region of synchronized flow due to a local perturbation of 
+traffic variables the mean probability of overtaking is increased above the critical value Per, then 
+an avalanche self-increase in the mean probability of overtaking occurs leading to a self-formation 
+of free flow where P = PF (up arrow in Figure l ld).  
+
+Because the critical value Per of the mean probability of overtaking merges with the value Pk~ 
+(free) of the mean probability of overtaking for free flow at the limit density p -- pm~× for free flow, 
+
+already a local perturbation of traffic variables of a very small (but finite) amplitude causes an 
+(free) avalanche self-decrease in the mean probability of overtaking at the limit density p = pma× . 
+
+Therefore, in free flow at the limit density p = p(mf~,e~ ¢), the probability of the F --~ S-transition 
+reaches one. 
+
+Above a threshold of any local first-order phase transition, the higher the distance from the 
+threshold is the higher the related mean probability of the occurrence of the phase transition. In 
+other words, above the related threshold density p -- Pth (Figure l lb)  the probability of the F 
+
+
+
+504 B .S .  KERNER 
+
+S-transition should be an increasing function of the density in free flow reaching one at the limit 
+(free) density p = pmax for free flow. Such behavior of the probability of the breakdown phenomenon 
+
+in a freeway bottleneck has recently been found by Persaud et al. [69]. This experiment is an 
+additional confirmation of the finding by Kerner and Rehborn in [50] that the latter phenomenon 
+is caused by the first-order local F --* S-transition. 
+
+_(free) Therefore, the existence of the limit point p - -  pmax for free flow is indeed linked to the 
+occurrence of the F ~ S-transition. On the contrary, the critical amplitude of traffic variables 
+(density or/and vehicle speed) which is needed for the F -~ J-transition (curve Fj  in Figure 11b) 
+
+_(free) is a relatively high finite value even at the limit density p = pmax • Indeed, as it has been 
+mentioned, at any density the probability of the F --* J-transition is considerably lower than of 
+the F -* S-transition. To explain this [49], let us recall that synchronized flow occurs, if due to 
+a local perturbation of traffic variables (density or/and vehicle speed) the mean probability of 
+overtaking decreases below the critical value Pcr (Figure 11d). The critical amplitude of a local 
+perturbation which is able to cause the local avalanche self-decrease in the mean probability of 
+overtaking can be considerably lower than the critical amplitude of a local perturbation which 
+is needed for the F ~ J-transition. Indeed, for the occurrence of synchronized flow an initial 
+perturbation itself does not necessarily have to increase avalanche-like. It must only cause an 
+avalanche-like decrease in the mean value of the probability of overtaking. In contrast, for the 
+jam formation the amplitude of the critical perturbation itself must begin to grow avalanche-like 
+in an initial free flow. 
+
+An explanation of the hypothesis about the nucleation effect which is responsible for the jam's 
+formation has been made in [51]. Other hypotheses about features of congested flow can be found 
+in [46,47]. 
+
+10I. Hypothes is  About  Three Kinds of Maximal  Highway Capacity [51] 
+
+There are three kinds of "maximal" capacity on a multilane highway which depend on which 
+phase (free flow, synchronized flow, or wide moving jam) the traffic is in. The related maximal 
+
+(free) ,~(syn) and capacity for the phase "free flow" is qmax , for the phase "synchronized flow" it is ,/max , 
+downstream of the phase "wide moving jam" it is qout (Figure 10a). 
+
+10J. Hypotheses  About  Spatial-Temporal Features of Traffic F low Patterns at 
+Isolated Bott lenecks [52,62] 
+
+(i) If two Conditions (a) and (b) are fulfilled: 
+(a) the traffic demand upstream of the last wide moving jam in the sequence of wide 
+
+moving jams in the general pattern does not become lower than qout, and 
+(b) the synchronized flow is self-maintained at the effective location of the bottleneck, 
+
+i.e,, the downstream front of the synchronized flow remains to be fixed in space over 
+time, then the general pattern (Figure 6a) eternally exists after the pattern has been 
+formed. Therefore, there is only one type of spatial-temporal traffic flow pattern in 
+this case. The latter also means that the longer the time after the general pattern 
+has been formed, the higher the number of the wide moving jams in the sequence of 
+wide moving jams is. Consequently, the width of the region of wide moving jams, 
+RWMJ (Figure 6a) continuously increases over time. 
+
+_(pinch) (i.e., the flow rate which is averaged (ii) The mean flow rate inside the pinch region, Umean 
+during a time interval which is considerable longer than the maximum duration of narrow 
+moving jams) satisfies the condition: 
+
+q(pinch)  
+mean < qout. (3) 
+
+The flow rate out from a wide moving jam qout is related to the case when a free flow is 
+formed in the outflow from the jam. Correspondingly to (3), a wide moving jam at the 
+
+
+
+Synchronized Flow 505 
+
+upstream boundary of the synchronized flow (Figure 6a) can be considered as a region 
+where 'superfluous' vehicles which cannot immediately pass through the pinch region 
+should be virtually stored. In particular, if the flow rate upstream of the region of the 
+wide moving jams is increasing, then the width of the most upstream wide moving jam is 
+correspondingly increasing. 
+
+(iii) Let the general pattern (Figure 6a) occur at an isolated bottleneck which is linked neither 
+to on- and off-ramps (nor to a merger of two or more different roads), nor there are on- and 
+
+_(bottle) off-ramps in the vicinity of the bottleneck. Then, the mean discharge flow rate (/out, mean 
+(the flow rate through the fixed downstream front of synchronized flow which is averaged 
+
+(pinch) ,, _.(bottle) (pinch) 
+in the same manner as qmCan ) which in this case qout, mean ~ qmean , corresponding 
+
+~(bottle) to (3) satisfies the condition t/out ' mean < qout. 
+(iv) The average time from the emergence of a narrow wide moving jam in the pinch region 
+
+till the transformation of the narrow moving jam into a wide moving jam T, ar~ow can be 
+estimated from the formula 
+
+Lpinch = IVnarrow, meanlTnarrow, (4) 
+
+where Vnarrow, mean is the mean velocity of a narrow jam and Lpinc h is the mean length of 
+the pinch region. In the representative data in Figure 5b, Lpinch ~ 3 km, v,,,~,.,-o~, m~,~,, 
+-16k in /h ,  and T~a~row ~ 11rain. To explain narrow moving jams which emerge in the 
+pinch region of synchronized flow [51], the following may be supposed. If a vehicle is in 
+a stop inside a narrow moving jam then the related value of 7~top will be either less or of 
+the same order of magnitude as Tdel. As a result, time gaps between vehicles remain of 
+the same order of magnitude both inside and outside of the narrow moving jam. Thus, it 
+may be supposed that in contrast to a wide moving jam, the narrow moving jam does not 
+separate the traffic flows upstream and downstream of the narrow moving jam. 
+
+The pinch effect can also occur on a one-lane road. Thus, all conclusions made above about 
+the spatial-temporal structure of the general and synchronized flow patterns shown in Figure 6 
+and also for expanded patterns shown in Figure 7d for a multilane-road are also valid for patterns 
+which can occur upstream of a bottleneck on a one-lane road. The only one difference is that on 
+the one-lane road, no free flow (vehicles cannot overtake on the one-lane road) exist. Therefore, 
+it can be assumed that downstream of an insolated bottleneck on the one-lane road instead of 
+fi'ee flow (Figure 6) a traffic flow which is related to the curve O in Figure 10b is realized. The 
+same conclusion may be made for the region on the one-lane road upstream of the general and 
+synchronized flow patterns or upstream of an expanded pattern. Instead of free flow (see Figures 6 
+and 7d), a traffic flow which is related to the curve O in Figure 10b should be realized on the 
+one-lane road. 
+
+10K. Hypotheses  About  D ischarge Flow Rate  at On-Ramps [52] 
+
+1. Depending on the highway infrastructure in the vicinity of the on-ramp and on the traffic 
+_(bottle) demand the discharge flow rate qout , i.e., the flow rate through the fixed downstream 
+
+front of synchronized flow in a spatial-temporal pattern at the on-ramp can be changed 
+[~(syn) q(syn) ] (Figure 10a) within the range tumax , min,outJ 
+
+q(Syn) < _(bottle) ~(syn) 
+min,out -- (/out < __ t/max . (5) 
+
+_(bottle) 2. The discharge flow rate (/out can be considerably higher than the flow rate out from a 
+wide moving jam, qout 
+
+q(bottle) 
+out > qout, (6) 
+
+where qout is related to the case when a free flow is formed downstream of the wide moving 
+jam. 
+
+
+
+506 B.S. KERNER 
+
+To explain these hypotheses, note that corresponding to (3) and the empirical results [52], the 
+following conditions are valid: 
+
+q(Syn) > qout > ,(pinch) (7) 
+max t /mean , 
+
+q(sy.) (s) qout ~ min,out" 
+_(pinch) (pinch) [52]. On one Besides, the flow rate (/mean cannot be lower than some minimum value qmean,min 
+
+_(bottle) hand, the discharge flow rate %ut satisfies conditions (5). On the other hand, the obvious 
+(bottle) 
+
+condition for the mean value of the discharge flow rate, qout, mean, is valid 
+
+q(bOtt le)  ---- ~(pinch) out, mean ~mean -{- qon-ramp, mean, (9) 
+where qon-ramp, mean is the mean flow rate through the on-ramp which should be averaged in the 
+
+_(pinch) _(bottle) 
+same manner as the flow rates qmean and %ut, mean" Because conditions (7) and (8) are fulfilled, 
+and the discharge flow rate can change at nearly the same vehicle speed in the large range (5) 
+
+_(bottle) 
+(Figure 10a), if qon-ramp changes then the discharge flow rate qout can also change in the same 
+manner. 
+
+However, it must be noted that empirical observations show [70] that if the pinch effect occurs 
+upstream of the bottleneck on the main road then another pinch effect often occurs on the 
+on-ramp upstream of the effective location of the bottleneck. This effect can lead to a two- 
+dimensional development of the traffic flow pattern through the intersection between different 
+roads of the traffic network. Therefore, an independent consideration of the discharge flow rate 
+q(bottle) out and the flow rate qon-ramp, mean is usually not possible. A nonlinear dynamics between 
+spatial-temporal effects inside two different pinch regions (on the main road and on the on-ramp) 
+should be taken into account. Often such very complex nonlinear dynamics occurs if the discharge 
+
+• (bottle) O qmax • flOW race qout is approaching the maximum capacity of the highway in synchronized fl w (syn) 
+
+11. CONCLUSIONS 
+
+The physics of traffic flow is proving to be much richer than most researchers working in the 
+field had expected. Recent experimental observations of real traffic patterns have discovered 
+new phases of traffic flow, such as synchronized flow, and revealed a large number of features 
+that are qualitatively similar to those observed in other nonlinear systems. The next challenge 
+for mathematicians and physicists in this field is to develop new mathematical and theoretical 
+concepts to explain these features. 
+
+REFERENCES 
+1. M.J. Lighthill and G.B. Whitham, Proc. R. Soc. A 229, 317, (1955). 
+2. D.C. Gazis, R. Herman and R.W. Rothery, Operations Res. 9, 545-567, (1961). 
+3. G.F. Newell, Operations Res. 9, 209, (1961). 
+4. I. Prigogine and R. Herman, Kinetic Theory of Vehicular Traffic, American Elsevier, New York, (1971). 
+5. H.J. Payne, In Mathematical Models of Public Systems, Volume 1, (Edited by G.A. Bekey), Simulation 
+
+Council, La Jolla, (1971). 
+6. R. Wiedemann, Simulation des Verkehrsflusses, University of Karlsruhe, Kaxlsruhe, (1974). 
+7. P.G. Gipps, Trans. Res. B. 15, 105-111, (1981). 
+8. G.F. Newell, Applications of Queueing Theory, Chapman Hall, London, (1982). 
+9. C.F. Daganzo, Fundamentals of Transportation and Traffic Operations, Elsevier Science, New York, (1997). 
+
+10. J.-B. Lesort, Editor, Transportation and traffic theory, In Proceedings of the 13 th International Symposium 
+on Transportation and Traffic Theory, Elsevier Science, Oxford, (1996). 
+
+11. A. Ceder, Editor, Transportation and traffic theory, In Proceedings of the 1~ th International Symposium on 
+Transportation and Traffic Theory, Elsevier Science, Oxford, (1999). 
+
+12. D.E. Wolf, M. Schreckenberg and A. Bachem, Editors, Traffic and granular flow, In Proceedings of the 
+International Workshop on Traffic and Granular Flow, World Scientific, Singapore, (October 1995). 
+
+13. M. Schreckenberg and D.E. Wolf, Editors, Traffic and granular flow '97, In Proceedings of the International 
+Workshop on Traffic and Granular Flow, October 1997, Springer, Singapore, (1998). 
+
+
+
+Synchronized Flow 507 
+
+14. D. Helbing, H.J. Herrmann, M. Schreckenberg and D.E. Wolf, Editors, Traffic and granular flow '99, In Pro- 
+ceedings of the International Workshop on Traffic and Granular Flow, October 1999, Springer, Heidelberg, 
+(2000). 
+
+15. K. Nagel and M. Schreckenberg, J. Phys. (France) 1 2, 2221, (1992). 
+16. G.B. Whitham, Proc. R. Soc. London A 428, 49, (1990). 
+17. M. Bando, K. Hasebe, A. Nakayama, A. Shibata and Y. Sugiyama, Phys. Rev. E 51, 1035-1042~ (1995). 
+18. B.S. Kerner and P. Konh~iuser, Phys. Rev. E 50, 54-83, (1994). 
+19. M. Herrmann and B.S. Kerner, Physica A 255, 163-188, (1998). 
+20. M. Bando, K. Hasebe, A. Nakayama, A. Shibata and Y. Sugiyama, J. Phys. I France 5, 1389, (1995). 
+21. S. KrauB, P. Wagner and C. Gawron, Phys. Rev. E 53, 5597, (1997). 
+22. R. Barlovic, L. Santen, A. Schadschneider and M. Schreckenberg, Eur. Phys. J. B. 5, 793, (1998). 
+23. D. Helbing and M. Schreckenberg, Phys. Rev. E 59, R2505, (1999). 
+24. M. Treiber, A. Hennecke and D. Helbing, Phys. Rev. E 59, 239, (1999). 
+25. R. Mahnke and J. Kaupu~s, Phys. Rev. E 59, 117, (1999). 
+26. G.B. Whitham, Linear and Nonlinear Waves, Wiley, New York, (1974). 
+27. A.D. May, Traffic Flow Fundamental, Prentice Hall, N J, (1990). 
+28. M. Cremer, Der Verkehrsfluss auf Schnellstrassen, Springer, Berlin, (1979). 
+29. W. Leutzbach, Introduction to the Theory of Traffic Flow, Springer, Berlin, (1988). 
+30. D. Helbing, Verkehrsdynamik, Springer, Berlin, (1997). 
+31. R. Kfihne, In Highway Capacity and Level of Service, (Edited by U. Brannolte), p. 211, A.A. Balkema, 
+
+Rotterdam, (1991). 
+32. K. Nagel, D.E. Wolf, P. Wagner and P. Simon, Phys. Rev. E 58, 1425-1437, (1999). 
+33. B.S. Kerner, S.L. Klenov and P. Konh~iuser, Phys. Rev. E 56, 4200-4216, (1997). 
+34. B.S. Kerner, P. Konh~iuser and M. Schilke, Phys. Rev. E 51, 6243-6246, (1995). 
+35. H.Y. Lee, H.-W. Lee and D. Kim, Phys. Rev. Lett. 81, 1130, (1998). 
+36. D. Helbing and M. Treiber, Phys. Rev. Lett. 81, 3042-3045, (1998). 
+37. D. Helbing, A. Hennecke and M. Treiber, Phys. Rev. Lett. 82, 4360, (1999). 
+38. H.Y. Lee, H.-W. Lee and D. Kim, Phys. Rev. E 59, 5101, (1999). 
+39. M. Treiber, A. Hennecke and D. Helbing, Phys. Rev. E 62, 1805, (2000). 
+40. D. Chowdhury, L. Santen and A. Schadschneider, Physics Reports 329, 199, (2000). 
+41. D. Helbing, Rev. Mod. Phys. (to appear). 
+42. J. Treiterer, Investigation of traffic dynamics by aerial photogrammetry techniques, Ohio State University 
+
+Technical Report PB 246 094, Columbus, OH, (1975). 
+43. M. Koshi, M. Iwasaki and I. Ohkura, In Proceedings of 8 th International Symposium on Transportation and 
+
+Traffic Theory, (Edited by V.F. Hurdle et al.), p. 403, University of Toronto Press, Toronto, Ontario, (1983). 
+44. F.L. Hall, B.L. Allen and M.A. Gunter, Trans. Res. A 20, 197, (1986). 
+45. B.S. Kerner and H. Rehborn, Phys. Rev. E 53, R4275-R4278, (1996). 
+46. B.S. Kerner, A theory of congested traffic flow, In Proceedings of the 5 ~d Symposium on Highway Capacity and 
+
+Level of Service, Volume 2, (Edited by R. Rysgaard), pp. 621-642, Road Directorate, Ministry of Transport, 
+Denmark, (1998). 
+
+47. B.S. Kerner, Theory of congested traffic flow: Self-organization without bottlenecks, In Transportation and 
+Traffic Theory, (Edited by A. Ceder), pp. 147-171, Elsevier Science, Amsterdam, (1999). 
+
+48. B.S. Kerner, Congested traffic flow: Observations and theory, Transportation Research Record 1678, 160- 
+167, (1999). 
+
+49. B.S. Kerner, The physics of traffic, Physics World 12 (8), 25-30, (August 1999). 
+50. B.S. Kerner and H. Rehborn, Phys. Rev. Lett. 79, 4030, (1997). 
+51. B.S. Kerner, Phys. Rev. Lett. 81, 3797, (1998). 
+52. B.S. Kerner, Transportation Research Record 1710, 136, (2000). 
+53. B.S. Kerner, Phase transitions in traffic flow, [14], 253-284. 
+54. B.S. Kerner, J. of Physics A: Math. Gen. 33, L221, (2000). 
+55. R. Herman, E.W. Montroll, R.B. Potts and R.W. Rothery, Operations Res. 7, 86-106, (1959). 
+56. B.S. Kerner and V.V. Osipov, Autosolitons: A New Approach to Problems of Self-Organization and Turbu- 
+
+lence, Kluwer, Dordrecht, (1994). 
+57. B.S. Kerner and H. Rehborn, Phys. Rev. E 53, R1297-R1300, (1996). 
+58. B.S. Kerner and H. Rehborn, Internationales verkehrswesen 50 (5), 196-203, (1998). 
+59. B.S. Kerner, Traffic and granular flow '97, In Proceedings o/ the International Workshop on Traffic and 
+
+Granular Flow, October 1997, pp. 239-267, Springer, Singapore, (1998). 
+60. B.S. Kerner, H. Rehborn and H. Kirschfink, German patent DE 196 47 127 (www.depanet. de) (U.S.-patent 
+
+U.S. 5861820 (dips-2.dips.org)), (1998); B.S. Kerner and H. Rehborn, German patent publication DE 198 35 
+979. 
+
+61. B.S. Kerner, M. Aleksic and U. Denneler, German Patent Publication DE 199 44 077. 
+62. B.S. Kerner, German Patent Publication DE 199 44 075. 
+63. B.S. Kerner, M. Aleksic, H. Rehborn and A. Haug, In Proceedings of 7 ~h ITS World Congress on Intelligent 
+
+Transport Systems, Turin, 6-9. Nov., Paper No.: 2035, (2000); Traffic Engineering ~ Control 42, 282-287, 
+(2001). 
+
+
+
+508 B.S. KERNER 
+
+64. B.S. Kerner, H. Rehborn, M. Aleksic, A. Haug and R. Lange, Straflenverkehrstechnik 10//~000, S, 521-527; 
+Traffic Engineering ~ Control 42, 345-350, (2001). 
+
+65. B.S. Kerner, H. Rehborn and M. Aleksic, Traffic and granular flow '99, In Proceedings of the International 
+Workshop on Traffic and Granular Flow, October 1999, pp. 339-344, Springer, Heidelberg, (2000). 
+
+66. B.S. Kerner, M. Aleksic and H. Rehborn, In Proceedings of 9 th IFAC Symposium Control in Transportation 
+Systems ~000, Volume ~, June 13-15, 2000, (Edited by E. Schnieder and U. Becker), pp. 501-506, IFAC. 
+
+67. H. Haken, Synergetics, Springer, Berlin, (1997). 
+68. B.S. Kerner, Transportation Systems, (Edited by M. Papageorgiou and A. Pouliezos), pp. 765-770, Elsevier 
+
+Science, London, (1997). 
+69. B. Persaud, S. Yagar and R. Brownlee, Transportation Research Record 1634, 64, (1998). 
+70. B.S. Kerner, (unpublished). 
+
+

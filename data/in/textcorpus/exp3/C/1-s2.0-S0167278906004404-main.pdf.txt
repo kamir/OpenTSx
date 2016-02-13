@@ -1,0 +1,850 @@
+
+Physica D 226 (2007)
+
+ho
+ac
+
+, H
+
+ity
+f Ar
+bing
+
+m 1
+12
+ated
+Abstract
+
+Using detrended fluctuation analysis (DFA) we perform scaling analysis of short datasets of length 500–1500 data points. We quantify the
+long range correlation (exponent α) by computing the mean value of the local exponents αL (in the asymptotic regime). The local exponents
+are obtained as the (numerical) derivative of the logarithm of the fluctuation function F(s) with respect to the logarithm of the scale factor
+s:αL = d log10 F(s)/d log10 s. These local exponents display huge variations and complicate the correct quantification of the underlying
+correlations. We propose the use of the phase randomized surrogate (PRS), which preserves the long range correlations of the original data,
+to minimize the variations in the local exponents. Using the numerically generated uncorrelated and long range correlated data, we show that
+performing DFA on several realizations of PRS and estimating αL from the averaged fluctuation functions (of all realizations) can minimize the
+variations in αL . The application of this approach to the fetal cardiac data (RR intervals) is discussed and we show that there is a statistically
+significant correlation between α and the gestation age.
+c© 2006 Elsevier B.V. All rights reserved.
+Keywords: Time series; Biological signal processing and instrumentation; Fluctuation phenomena, random processes, noise and Brownian motion
+
+1. Introduction
+
+The art of quantifying long range correlations (LRC) in
+a given system has received considerable interest in diverse
+fields. By identifying the long range correlations, it is possible
+to understand the nature of the correlations governing the
+dynamics of the system and classify the system into different
+dynamical states based on the correlations. One of the most
+commonly used methods to quantify the correlations in the
+given system is detrended fluctuation analysis (DFA) [1,2].
+Another method becoming increasingly used for quantifying
+LRC is multiresolution wavelet analysis [3,4] (and the
+
+LRC in the system [6–8]. Traditionally, the local exponents
+are obtained [6,7] from the derivative of the logarithm of the
+fluctuation function (see methodology section for details) with
+respect to the logarithm of the scale factor. In [8], an αβ filter
+based on the Kalman filter approach, has been introduced to
+estimate the local exponents [8] (Note: Here αβ represents
+the name of the new filter introduced in [8] to quantify
+LRC in a given dataset and should not be confused with the
+fluctuation exponent α or the power spectral exponent β used to
+characterize the LRC in a given dataset.). Using this approach
+the LRC in the human cardiac data (RR intervals) (available
+Detrended fluctuation analysis of s
+cardi
+
+R.B. Govindana,∗, J.D. Wilsona, H. Preißlb,c
+
+aGraduate Institute of Technology, Univers
+bDepartment of Obstetrics and Gynecology, University o
+
+cMEG-Center, University of Tu¨
+
+Received 1 June 2006; received in revised for
+Available online
+
+Communic
+references therein). Recently, much emphasis is placed on
+observation of local exponents αL , as commonly done in
+correlation dimension analysis [5], to correctly characterize the
+
+∗ Corresponding author. Tel.: +1 501 6837083; fax: +1 501 5698039.
+E-mail address: rbgovindan@ualr.edu (R.B. Govindan).
+
+0167-2789/$ - see front matter c© 2006 Elsevier B.V. All rights reserved.
+doi:10.1016/j.physd.2006.10.019
+23–31
+www.elsevier.com/locate/physd
+
+rt datasets: An application to fetal
+data
+
+. Eswaranb, J.Q. Campbellb, C.L. Loweryb
+
+of Arkansas at Little Rock, AR 72204, USA
+kansas for Medical Sciences, Little Rock, AR 72205, USA
+en, 72076, Tu¨bingen, Germany
+
+8 September 2006; accepted 27 October 2006
+December 2006
+by R. Roy
+via http://www.physionet.org) has been revisited and shown to
+distinguish between the normal and congestive heart failure
+cases. By applying this method to the fetal heart data [9,10],
+it has been demonstrated that the LRC in the fetal heart data
+can be retrieved even in the samples containing 50% of random
+missing values or up to 50 min of consecutive missing samples
+in recordings of ∼8 h length.
+
+
+
+
+
+
+
+hy
+
+iω iωG
+24 R.B. Govindan et al. / P
+
+The local exponents estimated using traditional methods
+will display huge variations especially for short datasets
+which makes the quantification of the LRC difficult. In this
+paper, we show that the phase randomized surrogate (PRS)
+which preserves the power spectrum (and hence two point
+correlations) of the given data can be used to minimize the large
+variations in the local exponents computed from the fluctuation
+function. For a given dataset, we simulate several realizations
+of PRS and perform DFA for each realization. Then the local
+exponents are estimated using the averaged DFA fluctuation
+function from all the realizations. We apply this approach to
+the numerically generated uncorrelated and LRC data and show
+that the local exponents αL and the fluctuation exponents α can
+be reliably estimated.
+
+The paper is organized as follows: In Section 2 we discuss
+the methodology of DFA and the surrogate analysis. The
+application of the current approach to the numerically simulated
+datasets will be discussed in Section 3 and its application to
+fetal cardiac data will be dealt with in Section 4. In Section 5,
+we discuss the results and draw conclusions. Our aim is not
+to compare the performance of the αβ filter and the current
+approach and hence throughout this paper we will discuss only
+the application of phase randomized surrogates to minimize
+variations in the local exponents.
+
+2. Methodology of DFA and surrogate analysis
+
+DFA allows reliable quantification of the correlations in non-
+stationary data. It has been applied to wide variety of datasets
+ranging from heart-beat time series [2,11,12], atmospheric
+temperature data [13], to DNA sequences [1]. A list (not
+complete) of applications of DFA to various disciplines is well
+documented in [14]. Let xi , i = 1 to N be the observations
+(time series) made as a function of time (not necessarily a
+continuous function of time) and N be the length of the series.
+The methodology of DFA involves four steps [12]:
+
+(1) Construct profile function as follows: yk = ∑ki=1(xi −
+x)/σ (x), where x and σ(x) indicate the mean and standard
+deviation of xi . Subtraction of the mean in this step is
+not mandatory as it will be eliminated in step 3. The
+normalization by standard deviation is to facilitate the
+(linear) combination of the different fluctuation functions
+of the surrogates (see below).
+
+(2) Divide the profile function into M = N/s disjoint time
+windows (indexed ν) of size s. When the length of the
+window is not an integer multiple of the length of the data, a
+short portion of the data at the end of the record will be left
+unanalyzed. In order not to discard this portion, we divide
+the profile starting from the other end [12]. Thus we have a
+total of (ν = 1 to) 2M disjoint segments of size s.
+
+(3) The data inside ν-th window of the profile are fitted by a
+m-th order polynomial pmν . Depending on the order of the
+polynomial, DFA is designated as DFAm. In general DFA
+of order m will remove a polynomial trend of order m from
+profile and hence a polynomial trend of order m − 1 from
+
+the original time series. Thus successive higher orders of
+DFA will systematically eliminate the higher order trends
+sica D 226 (2007) 23–31
+
+present, if any, in the data allowing reliable quantification
+of the correlations.
+
+(4) Finally we compute the DFA fluctuation function F(s) as
+follows:
+
+F(s) =
+√√√√ 1
+
+2M
+
+2M∑
+ν=1
+
+1
+s
+
+s∑
+k=1
+[y(ν−1)s+k − pm(ν−1)s+k]2.
+
+In order to establish the relation between F(s) and s, steps
+(2)–(4) are repeated for different values of s. Usually the
+minimum value of s is chosen asm+2 (Note:m is the order
+of the DFA.) [15] and the maximum is chosen as one quarter
+of the length of record (i.e. N/4). For long range correlated
+data F(s) follows a power law: F(s) ∼ sα , where α is
+called the DFA fluctuation exponent. The exponent α is
+estimated as follows:
+
+α = lim
+s→∞
+
+d log10 F(s)
+d log10 s
+
+. (1)
+
+Numerically we compute the local exponents αL as follows:
+
+αL i =
+log10 F(si+1)− log10 F(si )
+
+log10 si+1 − log10 si
+,
+
+where i is the index counting the box size s and takes values
+from 1 to number of windows (s values) minus 1. For all
+practical purposes we approximate α by the mean value of
+the last few values of αL . For datasets of length 1/2K and
+1K data points, we consider last 10 points and for 3/2K data
+points we consider the last 15 points for the estimation of α.
+(Note: 1 K denotes 1000 data points.) For short range and
+uncorrelated data α takes a value of 0.5. For anti-correlated
+data α is less than 0.5. For long range correlated data α
+is greater than 0.5. The fluctuation exponent α is related
+to the exponent β obtained from the power spectrum by
+α = (1+ β)/2.
+
+As mentioned in the introduction, αL is obtained from short
+datasets display huge fluctuations. In a theoretical setting,
+scaling analysis of numerous copies of the given dataset (having
+the same correlation aspects) can be performed to minimize the
+fluctuations in local exponents [15]. For experimental datasets,
+assuming ergodicity, one has to repeat the same experiment
+several times to get multiple copies of the original data so
+as to minimize these fluctuations, which is a tedious process.
+Instead, if it is possible to generate several copies of the given
+dataset preserving the (two point) correlations, the scaling
+analysis can be performed for each copy. An average of the
+results of all the copies will reduce the variations in the local
+exponents. One possible approach to create several copies of the
+dataset preserving the correlation aspects of the original data
+is by generating PRS. This type of surrogate was introduced
+in nonlinear time series analysis by Theiler [16] to address
+the hypothesis of whether or not the given data are generated
+by linearly correlated noise with Gaussian innovations. This is
+generated by taking the Fourier transform F(ω) of the data xi
+(after setting the mean to zero). F(ω) can be decomposed into
+amplitude series r(ω) and phase series eiω, F(ω) = r(ω)eiω.
+
+Then e is replaced by the phase series e obtained for
+Gaussian distributed random numbers (ηi ) with same length N
+
+
+
+sic
+R.B. Govindan et al. / Phy
+
+as the original data xi [17]. On the phase randomized signal
+F ′(ω) = r(ω)eiωG an inverse Fourier transform is applied
+to get PRS, x ′(t) in time domain. It is easy to understand
+that the power spectrum P(ω) (square of the amplitude series)
+computed from x(t) and x ′(t) will be the same and both will
+exhibit the same two point correlations (precisely, will have
+the same α and β values). Because of the fact that x ′(t) differs
+from x(t) only in the random orientations, the local exponents
+αL computed from x(t) and x ′(t) will show similar (large)
+variations. However, in the case of the latter, we have an
+additional advantage of generating several realizations of x ′(t)
+and thereby obtaining a better estimate for αL and α from the
+average of F(s). In the next section we discuss the application
+of this approach to the numerically generated data and show
+that using this approach α can be estimated reliably. Finally, we
+discuss the application of this approach to the fetal cardiac data.
+
+For a given dataset, the different realizations of PRS will
+have different standard deviation. As a result, the F(s) obtained
+for each realization will have slightly different magnitudes
+though all of them will run parallel to each other (indicating
+that they exhibit the same scaling behavior). This will cause
+problems when the F(s) from different realizations are linearly
+combined. In order to avoid this problem, in the construction
+of the profile function, (see step (1) of DFA), in addition to
+removing the mean value, we also normalize the data by the
+standard deviation.
+
+For all the systems discussed here we use second order
+polynomial detrending, DFA2, however, the proposed method
+can be applied to DFA of any order. For each dataset
+considered in this work we generate 50 realizations of PRS and
+compute the DFA2 fluctuation function of each realization. As
+mentioned above, PRS is introduced to identify the presence of
+nonlinear structure in a given time series. At 95% significance
+level, a recommendation of 19 (39) different realizations of
+surrogates for one (two) sided tests has been made [18].
+However, in this work we use 50 different realizations of PRS
+to minimize the variations in αL . Further, in the following
+discussion we designate the average fluctuation function of
+all the (50) realizations as the averaged surrogate fluctuation
+function.
+
+3. Application to uncorrelated and long range correlated
+data
+
+Long range correlated and uncorrelated data are generated
+by the Fourier filter technique [19]. These datasets are
+retrogradely generated by exploiting the property that the power
+spectrum of these signals displays the following power-law:
+P(ω) ∼ ω−β . LRC with the desired exponent α can be
+generated by multiplying F(ω) by ω−β/2. Here F(ω) is the
+Fourier transform of the zero mean and unit variance Gaussian
+white noise process ηi for which β is zero. The modified
+function is then inverse Fourier transformed back to obtain LRC
+in the time domain. Different copies of the LRC data can be
+generated for different seed values of ηi .
+For this study we consider datasets with exponent α
+ranging from 0.5 to 1.5 in steps of 0.1. The DFA2 fluctuation
+a D 226 (2007) 23–31 25
+
+functions F(s) versus scale function s of a single realization
+of each exponent are given in Fig. 1a (in double logarithmic
+representation) for 1/2K, 1K and 3/2K (and are indicated as
+Original data). Qualitatively, it is easy to infer the scaling
+behavior of the fluctuation functions by comparing with the
+straight lines with exponents 0.5 (first line on the bottom right
+corner), 1 (second line on the bottom right corner) and 1.5
+(at the top left corner). The averaged surrogate fluctuation
+functions obtained for these datasets are also shown in Fig. 1
+(and are indicated as Surrogate data). The fluctuation functions
+obtained from surrogates display less (or almost no visible)
+variations compared to ones obtained from the original data.
+As the averaged surrogate fluctuation functions display less
+variations, the scaling exponent can be estimated within a
+narrow range using these fluctuation functions (see Fig. 1
+results of surrogate data). In order to reveal variations in
+F(s) we plot in Fig. 2 the local exponents αL for three
+different datasets α = 0.5, 1 and 1.5 versus the logarithm
+of the scale size s. It is very clear that the αL obtained from
+the original data (gray color) display wide fluctuations while
+those obtained from the surrogate data (black color) display
+narrow fluctuations around the mean α value expected for
+that dataset. It is also interesting to note that the range of
+these variations (width) around the mean α value is larger
+for the higher exponents than for the smaller. In Fig. 2, the
+fluctuation functions obtained from the original data, and from
+the averaged surrogate fluctuation functions as well, in the short
+range s < 10 samples display a strong deviation from the
+expected scaling behavior and is an intrinsic problem of DFA.
+The degree of deviation from the expected scaling behavior
+depends on the nature of α and seems to be independent of the
+length N of the data. These observations are similar to those
+found by Hu et al. [20]. Further, in the applications which focus
+on short-range correlations, a correction factor is introduced by
+Kantelhardt et al. [15] to correct the anomalies at short time
+scales and thereby to reliably estimate the short term exponents.
+This correction term can be applied for any given order of
+DFA. In this application we are interested in the long range
+correlation aspects of the fetal cardiac data and hence we do
+not apply corrections to minimize the anomalies at short time
+scales.
+
+Next, we show that the variations in F(s) can be reduced if
+it is obtained as the ensemble average of different (ensemble)
+copies of the data (Note: We use the term “ensemble copies”
+to indicate the different copies of the original data and the term
+“realizations” to indicate the different copies of the surrogate
+data). Each ensemble copy will have the same correlation aspect
+as the data under study. We consider two different scenarios
+and compare them with the results obtained using PRS. In
+scenario 1, for each input exponent αin, we generate 15 different
+ensemble copies of the data. The fluctuation function obtained
+for each copy is averaged across different ensemble copies.
+As mentioned in the methodology, the DFA exponent α is
+computed from the average fluctuation function through αL .
+In Fig. 3, the left side panels display the α values and their
+
+variations (standard deviation of αL in the asymptotic limit)
+obtained for three different data lengths. For 1/2K the variation
+
+
+
+hy
+
+s
+1K
+obtained for α = 0.5–1.5 in steps of 0.1. For the sake of clarity we have shifted the curves by a constant factor. Results obtained for the original data are shown
+on the left side. For each dataset used on the left side, the averaged surrogate fluctuation functions are plotted versus the scale size s on the right side in double
+logarithmic representation. The solid lines shown on the right (bottom) corner correspond to α = 0.5 (first line from bottom) and α = 1 (second line from bottom)
+and are to guide the eye. The solid line shown on the left top corner corresponds to α = 1.5 and is also to guide the eye.
+
+is quite high while it is low for 1K and 3/2K. Between 1K
+and 3/2K, the results are comparable (i.e.) both show the
+same degree of variations. As we propose to use 50 surrogate
+realizations for a given dataset, in scenario 2 for each exponent
+αin we generate 50 ensemble copies of the data. The scaling
+exponents obtained (as discussed above for 15 ensemble copies)
+are shown in the middle column of Fig. 3. Compared to the
+results of scenario 1, the variations in the exponents obtained
+for 50 ensemble copies are small. Also in this case, variations
+go down systematically when the number of data points are
+increased from 1/2 to 3/2K. We consider just single realization
+of each αin and perform DFA on the (50 realizations of) PRS
+and get the surrogate fluctuation function. The DFA exponent α
+values and their variations obtained from surrogate fluctuation
+functions are shown in right side panels. Compared to scenario
+1, the results obtained from PRS show less variations. For
+lower exponents the variations in the local exponents are almost
+the same for scenario 2 and the exponents obtained from
+surrogate analysis (see the results for 3/2K). However, for
+higher exponents, the exponents obtained from surrogates show
+less variations compared to scenario 2. These results suggest
+that the reliability of estimation of the exponents is increased
+when the exponents are estimated from the ensemble averaged
+fluctuation function. Further, from the error-bar shown in Fig. 3
+(last column), it is clear that all the three different data lengths
+
+the scaling exponent of the given data. For numerical data we
+have an alternative way of synthesizing different (ensemble)
+copies of the data and improve the reliability of the estimate.
+For real life datasets, the chances of getting multiple copies of
+the data are limited (see methodology section) and hence we
+use surrogate analysis to estimate the exponent with reasonably
+good reliability.
+
+4. Application to fetal cardiac data
+
+One of the convenient ways to understand the physiology
+of the heart is by examining the time interval between the
+successive cardiac cycles, often called the RR interval (time
+intervals between the maximum wave (R) of the successive
+cardiac cycles of the cardiogram). DFA has been applied to
+RR intervals of (human adult) normal (α ∼ 1) and congestive
+heart failure (CHF) (α ≥ 1.3) cases and shown to distinguish
+between the two groups [2]. The primary conclusion of this
+study is that normal heart beats display 1/ω like behavior
+whereas the CHF cases display 1/ω2 (Brownian motion) like
+behavior. However, in a recent study [8], using DFA by
+analyzing the local exponents of the fluctuation function, it has
+been shown that the normal group shows deviations from unity
+at short time scales with αL > 1 and in the asymptotic regime
+they tend to unity while the CHF group also shows deviations
+26 R.B. Govindan et al. / P
+
+Fig. 1. Log–Log plot of DFA2 fluctuation functions F(s) versus the scale size
+correlated data with α ranging from 0.5 to 1.5 for three different lengths, 1/2K,
+display almost the same degree of uncertainty, suggesting a
+minimum of 1/2K data points would be sufficient to capture
+sica D 226 (2007) 23–31
+
+of the numerically simulated single realization of uncorrelated and long range
+and 3/2K (1K = 1000 data points). Curves from bottom to top represent F(s)
+from unity at short time scales but with αL < 1 and with two
+characteristic scales in the intermediate and long term range.
+
+
+
+R.B. Govindan et al. / Physica D 226 (2007) 23–31 27
+
+Fig. 2. The variation of the local exponents αL with logarithm of the scale size s for three datasets with exponent α = 0.5, 1 and 1.5 for three different lengths
+1/2K, 1K, and 3/2K. Results of the original data are shown in gray color and the results of the surrogate data are shown in black color. In each plot the mean
+exponent expected for the dataset being plotted is shown as a dashed line as a guide to the eye.
+
+Fig. 3. The fluctuation exponent α obtained from the local exponents versus the scaling exponent αin expected for the dataset, for three different data lengths. For
+each input exponent αin, the α values obtained from the average F(s) of 15 ensemble copies are shown on the left and from 50 ensembles copies are shown in the
+
+middle. For a single realization of each αin, the α values obtained from the averaged surrogate fluctuation function are shown on the right. Error-bars represent the
+standard deviations (i.e.) variations of the local exponents αL in the asymptotic limit.
+
+
+
+hy
+28 R.B. Govindan et al. / P
+
+Also in the same study [8], the authors have demonstrated the
+existence of multiple cross-overs in the local exponents, for
+the sleep and wake periods of a CHF subject, which are not
+apparent in the fluctuation function F(s). As mentioned in the
+introduction, DFA has also been applied to fetal RR intervals [9,
+10] and shown that LRC in the fetal cardiac activity can be
+retrieved with a reasonable accuracy even with intermediate
+missing data (refer to [9] for details).
+
+The dynamics of the fetal cardiac activity, in addition to the
+intrinsic cardiac dynamics, is complicated by the behavioral
+aspects of the fetus, like breathing, movements, sleep and
+wake states, etc. [21]. A decade ago, recording fetal cardiac
+activity (cardiogram) was a difficult task [22]. However,
+with the development of modern technology and advent of
+research in superconductors, it is now possible to record fetal
+cardiograms using a Superconducting Quantum Interference
+Device (SQUID). A device, called SARA (SQUID Array
+for Reproductive Assessment), installed at UAMS has been
+specifically designed to study maternal–fetal electrophysiology.
+This instrument is completely non-invasive, and detects weak
+biomagnetic fields associated with the electrophysiological
+activity in the human body [23]. SARA is equipped with
+151 primary magnetic sensors with an approximate distance
+between the sensors of 3 cm and spread over an area of 850 cm2.
+The sensor array spans the maternal abdomen longitudinally
+from the symphysis pubis to the uterine fundus and a similar
+distance laterally. As there are 151 sensors covering the entire
+range of the maternal abdomen, it is possible to record fetal
+cardiac activity with good quality even when the fetus changes
+position. A combination of Independent Component Analysis
+(ICA) and Hilbert transform (HT) (employing the multichannel
+fetal Magnetocardiogram (fMCG) signals) have been proposed
+recently [24] to extract the fetal RR intervals in a reliable way,
+even when the cardiogram suffers due to fetal movement.
+
+For this study we consider 36 pregnant women who
+presented with healthy singleton pregnancies. This study was
+approved by the UAMS Human Research Advisory Committee
+and an informed consent was obtained from each subject.
+In all subjects SARA recordings are made between 1 and 6
+times during pregnancy at a regular interval of two weeks up
+to the time of birth. Altogether, 126 recordings are obtained
+between 27 and 40 weeks of gestation. Each recording lasted
+for a minimum of 6 min to a maximum of 16 min based
+on the comfort of the mother. All the signals are sampled at
+312.5 Hz. The fMCG recorded by SARA are contaminated
+by the maternal magnetocardiogram. The latter is removed
+by signal space projection techniques [25,26]. The resulting
+signals are bandpass filtered between 0.5 and 50 Hz using a 4-th
+order Butterworth filter. Using the combination of ICA and HT
+based approaches [24], fetal RR intervals are extracted from the
+fMCG. Depending on the duration of the recording, the length
+of the datasets ranged between 800 and 2250 beats (intervals)
+(at the rate of approximately 142 beats/min).
+
+The application of DFA2 to the RR intervals of a typical
+fetus at six different gestation ages, 28–38 weeks with
+
+an interval of 2 weeks, is shown in Fig. 4 where the
+DFA2 fluctuation functions F(s) are plotted versus the scale
+sica D 226 (2007) 23–31
+
+size s in Log–Log representation (indicated as Original data).
+The fluctuation functions display variations and cross-over
+behaviors. The averaged surrogate fluctuation functions are also
+shown in Fig. 4 (indicated as Surrogate data). These fluctuation
+functions display little (or almost no visible) variations and the
+cross-over behaviors are seen more clearly. In Fig. 5, we display
+the variation of the local exponents αL obtained from the
+fluctuation functions in Fig. 4, with the logarithm of the scale
+function s. As seen for the numerically generated data (Fig. 2),
+αL obtained for the RR intervals display large fluctuations
+(gray color) while the exponents obtained from the surrogates
+(black color) show less variations. At the earlier gestation ages
+<34 weeks, the exponents (in the asymptotic regime) are (by
+and large) less than 1 while for later gestation ages ≥34, the
+exponents approach 1.3–1.5.
+
+The variations of fluctuation exponent α with the gestation
+age, for all the fetuses are shown in Fig. 6. The results obtained
+for the surrogate datasets are also given in Fig. 6. We treat each
+recording as an independent entity. The correlation (measured
+by the linear correlation coefficient) between α and gestation
+age along with its associated probability p are given in each
+plot. There is a weak but statistically significant correlation
+between α and gestation age for the exponents obtained from
+surrogate datasets while the correlation is not significant for
+the exponents obtained from original datasets. Based on the
+results of the numerical datasets (that, as shown in Fig. 3, the
+surrogate analysis improves the estimation of the exponents),
+one would expect the surrogate dataset to capture the relation if
+at all existing (though we do not have any hypothesis to claim
+for a relation) between α and gestation age in a better way and
+is indeed observed in Fig. 6. The positive correlation between
+α and gestation age is in agreement with the scaling results of
+the cardiac data of preterm infants in the conceptional weeks
+between 30 and 50 weeks, reported elsewhere [27].
+
+5. Conclusion
+
+In earlier works [11,28], the DFA results of short biological
+datasets are validated by comparing with the scaling analysis
+of the artificial dataset of the same length and the same
+correlation aspects (DFA exponent) as the original biological
+data. In the present work we propose to perform DFA on several
+realizations of PRS and estimate the fluctuation exponent from
+the averaged surrogate fluctuation function. By applying this
+approach to (single) realizations of numerical datasets we have
+shown increased sensitivity of the current approach.
+
+Application of this approach to the fetal RR intervals shows
+that there is a weak (positive) correlation between α and
+gestation age indicating that the correlation aspects of the data
+increases (from α < 1 to α ∼ 1.2) with the maturation
+of the fetus. In a cross-sectional study of fetal cardiac data
+between 20 to 41 weeks of gestation, Echeverrı´a et al. [10]
+have shown that below 24 weeks of gestation, the scaling
+behavior is close to a white noise process while for above 24
+weeks fetal cardiac data exhibit uniform power-law behavior
+
+with α → 1. Based on the observations that many neuronal
+developments take place during 22–26 weeks of gestation, and
+
+
+
+R.B. Govindan et al. / Physica D 226 (2007) 23–31 29
+
+Fig. 4. Log–Log plot of DFA2 fluctuation functions versus the scale function s of the RR intervals of a typical fetus in six different gestation ages. Curves from
+bottom to top correspond to gestation ages 28–38 weeks with an interval of 2 weeks. The curves are shifted by a constant factor for the sake of clarity. The results
+obtained for the original data are shown on the left side. The averaged surrogate fluctuation functions are shown on the right side. The solid lines on the right side
+bottom corner and the left side top corner are guide to eye and correspond to α = 1 and 1.5, respectively.
+
+Fig. 5. The variation of the local exponent αL with the logarithm of scale size s obtained from the fluctuation functions shown in Fig. 4. The results of the original
+data are shown in gray color and the results of the surrogates are shown in black color. Three horizontal lines (from bottom to top) are to guide the eye and correspond
+
+to αL = 0.5, 1 and 1.5.
+
+
+
+hy
+Fig. 6. The fluctuation exponent α for low-risk fetuses as a function of gestation age. Results obtained from the fluctuation functions of RR intervals are shown in
+top panel. Results obtained from the averaged surrogate fluctuation functions are given in bottom panel. The linear correlation coefficient ρ between α and gestation
+age is given in each plot. Also the probability associated with ρ under the hypothesis of no correlation between α and gestation age with the significance level of
+0.05 is also given in the plots. There is a correlation between ρ and gestation age in both cases. However, the correlation is statistically significant (p < 0.05) for
+the results obtained using surrogate analysis.
+
+that evoked brain responses for given external stimuli have been
+demonstrated in pre-term infants [29,30] and also during the
+antenatal period [31], the manifestation of the scale invariance
+of fetal cardiac data during the same period of 24 weeks has
+been argued as being indicative of neuronal maturation of the
+fetal nervous system [10]. In an another cross-sectional study of
+cardiac data of preterm infants between 30 and 50 conceptional
+weeks, Nakamura et al. [27] have shown a positive correlation
+between α and conceptional week. This positive correlation has
+been argued as being indicative of maturation of autonomic
+nervous activity. Based on the above arguments the positive
+correlation between α and gestation week in our datasets could
+be related to the maturation of the neuronal system of the fetal
+nervous system. In adults, day–night differences in the scaling
+exponents has been reported elsewhere [32]. Also sleep–wake
+transitions are shown to alter the scaling properties of cardiac
+data [11]. As there is no strong evidence for sleep–wake
+cycles in preterm infants below 36 weeks [10,33], the scaling
+behaviour of α → 1 in the earlier gestation could be related
+to fetal neuronal development. However, after 36 weeks, the
+variations in the exponents may not be exactly attributable to
+neuronal development as these variations may also be caused by
+sleep–wake transitions [10]. A further investigation is needed
+
+In a different cross-sectional study of fetal cardiac data [34],
+the fractal nature at short time scales have been shown
+to exhibit negative correlation with gestation age. Again
+these observations are related to the development of input
+mechanisms, such as baroreceptors, chemoreceptors, etc. [35].
+Another, different study [36] uses a short-term intermittency
+exponent (4–16 beats) derived from a multifractal analysis to
+quantify the sharp transients in the fetal cardiac data. The
+variation of this short-term exponent with gestation age has
+been argued to be a milestone for maturation of heart rate
+dynamics [36]. In our case we have not pursued the scaling
+exponents at short time scales and this will be done in future
+work.
+
+Acknowledgments
+
+This work was supported by NIH grants 5R01-NS-36277-
+05A1 and 5R33-EB-00978-02.
+
+References
+
+[1] C.-K. Peng, S.V. Buldyrev, A.L. Goldberger, S. Havlin, F. Sciortino,
+M. Simon, H.E. Stanley, Long-range correlations in nucleotide sequences,
+Nature 356 (1992) 168–170.
+
+[2] C.-K. Peng, S. Havlin, H.E. Stanley, A.L. Goldberger, Quantification of
+30 R.B. Govindan et al. / P
+in this direction to understand the variations of α in the later
+gestational age.
+sica D 226 (2007) 23–31
+scaling exponents and cross over phenomena in nonstationary heartbeat
+time series, Chaos 5 (1995) 82–87.
+
+
+
+R.B. Govindan et al. / Physica D 226 (2007) 23–31 31
+
+[3] S. Thurner, M.C. Feurstein, M.C. Teich, Multiresolution wavelet analysis
+of heartbeat intervals discriminates healthy and patients from those with
+cardiac pathology, Phys. Rev. Lett. 80 (1998) 1544–1547.
+
+[4] S. Thurner, M.C. Feurstein, S.B. Lowen, M.C. Teich, Receiver-operating-
+Characteristic analysis reveals superiority of scale-dependent wavelet and
+spectral measures for assessing cardiac dysfunction, Phys. Rev. Lett. 81
+(1998) 5688–5691.
+
+[5] H. Kantz, T. Schreiber, in: B. Chirkov, P. Cvitanovic, F. Moss, H. Swinney
+(Eds.), Nonlinear Time Series Analysis, Cambridge University Press, IK,
+2002.
+
+[6] N. Sapir, R. Karasik, S. Havlin, E. Simon, J.M. Hausdorff, Detecting
+scaling in the period dynamics of multimodal signals: Application to
+Parkinson tremor, Phys. Rev. E 67 (2003) 031903.
+
+[7] D. Maraun, H. Rust, J. Timmer, Tempting long-memory — on the
+interpretation of DFA results, Nonlinear Process. Geophys. 11 (2004)
+495–503.
+
+[
+
+[
+
+[
+
+[
+
+[
+[
+
+[
+
+[
+
+[
+
+[
+
+[20] K. Hu, P.Ch. Ivanov, Z. Chen, P. Carpena, H.E. Stanley, Effect of trends
+on detrended fluctuation analysis, Phys. Rev. E 64 (2001) 011114.
+
+[21] J.G. Nijhuis (Ed.), Fetal Behavior: Development and Perinatal Aspects,
+Oxford University Press, NY, 1992.
+
+[22] J.F. Pie´ri, J.A. Crowe, B.R. Hayers-Gill, C.J. Spencer, K. Bhogal,
+D.K. James, Compact long-term recorder for the transabdominal foetal
+and maternal electrocardiogram, Med. Biol. Eng. Comput. 39 (2001)
+118–125.
+
+[23] H. Eswaran, H. Preißl, J.D. Wilson, P. Murphy, C.L. Lowery,
+First magnetomyographic recording of the uterine activity with
+spatial–temporal resolution using 151 channel sensor array, Am. J. Obstet.
+Gynecol. 187 (2002) 145–151.
+
+[24] J.D. Wilson, R.B. Govindan, J.Q. Campbell, J.O. Hatton, C.L. Lowery,
+H. Preißl, Integrated approach for fetal QRS detection (submitted for
+publication).
+
+[25] M. Samonas, M. Petrou, A.A. Ioannides, Identification and elimination
+
+[8] J.C. Echeverrı´a, M.S. Woolfson, J.A. Crowe, B.R. Hayes-Gill, G.D.H.
+
+Croaker, H. Vyas, Interpretation of heart rate variability via detrended
+fluctuation analysis and αβ filter, Chaos 13 (2003) 467–475.
+
+[9] J.C. Evheverrı´a, B.R. Hayes-Gill, J.A. Crowe, M.S. Woolfson, G.D.H.
+Croaker, Detrended fluctuation analysis: A suitable method for studying
+fetal heart rate variability? Physiol. Meas. 25 (2004) 763–774.
+
+10] J.C. Echeverrı´a, M.S. Woolfson, J.A. Crowe, B.R. Hayes-Gill, J.F. Pie´ri,
+C.J. Spencer, D.K. James, Does fractality in heart rate variability indicate
+the development of fetal neural processes? Phys. Lett. A 331 (2004)
+225–230.
+
+11] A. Bunde, S. Havlin, J.W. Kantelhardt, T. Penzel, J.-H. Peter, K. Voigt,
+Correlated and uncorrelated regions in heart-rate fluctuations during sleep,
+Phys. Rev. Lett. 85 (2000) 3736–3739.
+
+12] J.W. Kantelhardt, Y. Ashkenazy, P.Ch. Ivanov, A. Bunde, S. Havlin,
+T. Penzel, J.-H. Peter, H.E. Stanley, Characterization of sleep stages by
+correlations in the magnitude and sign of heartbeat increments, Phys. Rev.
+E. 65 (2002) 051908-1-6.
+
+13] E. Koscielny Bunde, A. Bunde, S. Havlin, H.E. Roman, Y. Goldreich,
+H.-J. Schellenhuber, Indication of a universal persistence law governing
+atmospheric variability, Phys. Rev. Lett. 81 (1998) 729–732.
+
+14] http://www.physionet.org/physiotools/dfa/citations.shtml.
+15] J.W. Kantelhardt, E. Koscielny-Bunde, H.A. Rego, S. Havlin, A. Bunde,
+
+Detecting long-range correlations with detrended fluctuation analysis,
+Physica A 295 (2001) 441–454.
+
+16] J. Theiler, A. Longtin, B. Galdrikian, D.D. Farmer, Testing for
+nonlinearity in time series: The method of surrogate data, Physica D 58
+(1992) 77–94.
+
+17] T. Schreiber, A. Schmitz, Improved surrogate data for nonlinearity tests,
+Phys. Rev. Lett. 77 (1996) 635–638.
+
+18] T. Schreiber, A. Schmitz, Surrogate time series, Physica D 142 (2000)
+346–382.
+
+19] J. Timmer, M. Ko¨nig, On generating power law noise, Astron. Atrophys.
+300 (1995) 707–710.
+of cardiac contribution in single-trial magnetoencephalographic signals,
+IEEE Trans. Biomed. Eng. 44 (1997) 386–393.
+
+[26] J. Vrba, S.E. Robinson, J. Mccubbin, C.L. Lowery, H. Eswaran, J.D.
+Wilson, P. Murphy, H. Preißl, Fetal MEG redistribution by projection
+operators, IEEE Trans. Biomed. Eng. 51 (2004) 1207–1218.
+
+[27] T. Nakamura, H. Horio, S. Miyashita, Y. Chiba, S. Sato, Identification of
+development and autonomic nerve activity from heart rate variability in
+preterm infants, Biosystems 79 (2005) 117–124.
+
+[28] J.W. Kantelhardt, T. Penzel, S. Rostig, H.F. Becker, S. Havlin, A.
+Bunde, Breathing during REM and non-REM sleep: Correlated versus
+uncorrelated behaviour, Physica A 319 (2003) 447–457.
+
+[29] L. Mrzljak, H.B.M. Uylings, I. Kostovic, C.G. van Eden, Prenatal
+development of neurons in the human prefrontal cortex: I. A qualitative
+Golgi study, J. Comp. Neurol. 271 (1988) 355–386.
+
+[30] V. Glover, N.M. Fisk, Fetal pain: Implications for research and practice,
+Br. J. Obstet. Gynaecol. 106 (1999) 881–886.
+
+[31] H. Eswaran, J.D. Wilson, H. Preissl, S.E. Robinson, J. Vrba, P. Murphy,
+D.F. Rose, C.L. Lowery, Magnetoencephalographic recordings of visual
+evoked brain activity in the human fetus, Lancet 360 (2002) 779–780.
+
+[32] P.C. Ivanov, A. Bunde, L.A.N. Amaral, S. Havlin, J. Fritsch-Yelle,
+R.M. Baevsky, H.E. Stanley, A.L. Goldberger, Sleep–wake differences in
+scaling behavior of human heartbeat: Analysis of terrestrial and long-term
+space flight data, Europhys. Lett. 48 (1999) 594–600.
+
+[33] F. Torres, C. Anderson, The normal EEG of the human newborn, J. Clin.
+Neurophysiol. 2 (1985) 89–103.
+
+[34] A. Kikuchi, N. Unno, T. Horikoshi, T. Shimizu, S. Kozuma, Y. Taketani,
+Changes in fractal features of fetal heart rate during pregnancy, Early
+Hum. Dev. 81 (2005) 655–661.
+
+[35] P. Van Leeuwen, D. Geue, S. Lange, W. Hatzmann, D. Gro¨nemeyer,
+Changes in the frequency power spectrum of fetal rate in the course of
+pregnancy, Prenat. Diagn. 23 (2003) 909–916.
+
+[36] M.K. Yum, J.H. Kim, A very-short-term intermittency of fetal heart rates
+and developmental milestone, Pediatr. Res. 53 (2003) 915–919.
+
+
+
+	Detrended fluctuation analysis of short datasets: An application to fetal cardiac data
+	Introduction
+	Methodology of DFA and surrogate analysis
+	Application to uncorrelated and long range correlated data
+	Application to fetal cardiac data
+	Conclusion
+	Acknowledgments
+	References
+
+

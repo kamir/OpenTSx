@@ -1,0 +1,526 @@
+
+PHYSICA 
+ELSEVIER Physica A 211 (1994) 84-92 
+
+Cellular automata models for general traffic 
+conditions on a line 
+
+L.C.Q. Vilar, A.M.C. de Souza l 
+Centro Brasileiro de Pesquisas Fisicas/CNPq, Rua Xavier Sigaud 150, 22290-180 Rio de Janeiro, Brazil 
+
+Received 3 January 1994; revised 7 April 1994 
+
+Abstract 
+
+By the use of the methods proposed in a recent article we were able to shed some fight on 
+the experimentally obtained flux-density relation in traffic flow. We suggest an order parameter 
+showing the existence of two regimes in freeway traffic. We also introduce the case of traffic at 
+signal condition, analysing the effects of convenient traffic parameters on the flux-density diagram. 
+
+1. Introduction 
+
+Traditionally, the treatment of the problem of traffic flow was based on the analysis 
+
+of experimental data. However, the poverty of data in critical regions led to a series 
+of different interpretations about the behaviour of relations among the fundamental 
+traffic parameters, density and flux. These include proposals so divergent as the "reverse 
+
+lambda", discontinuous, and continuous forms for flow-occupancy relationships ( [ 1 ] and 
+
+references therein). In part this is caused by the absence of criteria in the experimental 
+methods used, showing the lack of an adequate theoretical approach to the problem to 
+guide this research. Besides, some earlier analyses seem not to have taken precisely into 
+consideration these same methods, as it was argued in [ 1 ]. This question remains open 
+
+until now. 
+The first theoretical models were based on fluid and nonlinear equations [2-6] .  They 
+
+were well suited to treat traffic at very high or low car densities, but could not be 
+trivially extended to the whole interval of observable densities. So they could not be of 
+
+1 On leave of absence from Departamento de Fisica, Universidade Federal de Sergipe, 49000-000, Aracaju-SE, 
+Brazil. 
+
+0378-4371/94/$07.00 (~) 1994 Elsevier Science B.V. All rights reserved 
+SSDl0378-4371 (94)00167-R 
+
+
+
+L.C.Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 85 
+
+much help in clearing up the precise flow-occupancy relationship. For this reason, and 
+for the fact that we intend to examine the particular problem of signalized ways, we 
+base our work in the recently introduced cellular automata (CA) traffic models [7]. 
+
+In the next section we give a review of this model. In Section 3 we define the 
+convenient parameters and show the diagrams for freeway transit. Nextly we introduce 
+the case of traffic under signal constraints. In the conclusion we hope to give a possible 
+explanation to the experimental problem about the critical region of the flux-density 
+diagram. 
+
+2. The  mode l  
+
+The use of a CA approach to model traffic flowing along a line was made by K. 
+Nagel and M. Schreckenberg [7]. They obtained a nice agreement with experimental 
+data, which signed the correctness of the proposal. 
+
+The CA were constituted of an array of L sites, each site being occupied by one car 
+(with integer velocity v) or being empty. The parallel update rules were the following: 
+(i) vj --* vj + 1 if the distance of the jth car to the next car is greater than vj + 1, 
+
+and taking vj = V,~x as a limit. 
+( i i )  vj ~ d - 1 if the distance to the next car is d <_ vj. 
+
+(iii) vj ~ vj - 1 with a random probability p if vj >_ 1. 
+(iv) The jth car is advanced vj sites. 
+
+Other works then followed using this technique [8,9]. In this paper, we will join 
+some new rules to the basic automatum presented above, in order to have a wider 
+comprehension of the cases we want to study. They will be introduced sequentially 
+along the text. 
+
+3. Free traff ic 
+
+Here we consider a line with periodic boudary condition (closed circuit), with a 
+random initial distribution of car positions and null initial velocities. We want to study 
+the properties of the fundamental (flux × density) diagram. So, we define the parameters 
+
+1 to+T 
+
+fii = ~ E ni(t) , (1) 
+t=to + 1 
+
+and 
+
+1 to+T 
+
+(li "~ ~ E mi(t)  
+t=t0+l 
+
+(2) 
+
+The first expression represents the density of cars on the site i (Si) over a time period 
+T; to is the relaxation time, usually taken as to = 10 x L, following the prescription 
+
+
+
+86 L.C.Q. Vilar, A.M.C.  de Souza / Physica A 211 (1994) 84-92 
+
+0.6 
+
+0.4 
+-o 
+
+.e l  
+
+(1 ", 
+•p  
+
+° ,  
+o 
+
+0.2 
+
+•6  
+
+•°  
+
+0.0 
+0.0 
+
+I I I I 
+
+• .~!-::::... . 
+
+..'~~..~':'=~":" ".. .. 
+
+" " " . . . .  h i "  • . .  
+:'e" " .  . ' ,  Im '  , 
+
+. .  " . .~  . 
+
+e . ,  
+• I1~. 
+
+0.2 0.4 0.6 0.8 1.0 
+P 
+
+Fig. 1. Flux x density diagram for free traffic with Vmax = 5, p = 0.2 and L = 1000. Small circles represent 
+simulations for T = 100 and big circles represent simulations for T = 10000. 
+
+of [7]; hi(t) is zero if Si is empty and one if it is occupied at time t. The second 
+expression represents the flux of cars on Si; mi(t) is one if at time t - 1 there was a 
+car behind or at Si and at t it is found after Si (i.e., a car is detected passing by Si) and 
+zero otherwise• 
+
+To look for a possible transition between a free and a jammed phase, we also define 
+a parameter 
+
+to+T 1 
+ffli = 1 - 2T~----~ ~ li(t) , (3) 
+
+t=to + 1 
+
+where l i(t) is one if at time t - 1 Si is occupied (empty) and at time t it is empty 
+(occupied); l i(t) is zero if at both times Si is occupied or empty• This choice of 
+parameter is made on the consideration that a jammed regime means that all cars are 
+grouped in long clusters• 
+
+Obviously, for free traffic, as this system is a homogeneous one due to the considered 
+boundary conditions, none of these parameters will be position dependent• So, along 
+this section the subindex i will be omitted. 
+
+In Fig. 1 we show the cases with T --- 100 and T = 10000 (L -- 1000). The first 
+presents the natural dispersion of points that is expected for the low accuracy caused by 
+the small interval of time for the measurements. This kind of dispersion is exactly what 
+is seen in the experimental data (see for exemple the comparison of Figs. 4 and 5 of  
+Ref. [7] ). It is not easy to establish any conclusion from such experimental diagrams, 
+what has led to the discussion of what would be the correct form of the flux-density 
+relation [ 1 ]. With higher values of T, we see that we can improve this until the obtention 
+of  a well defined curve is achieved. This is the most favourable point of this approach• 
+
+
+
+L.C.Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 87 
+
+1"0 t I I I F 
+
+0.8 0 'L)m~= I 
+
+q 
+0.4 
+
+0 
+
+0.2 
+
+0.0  i i i i 
+0.0 0.2 0.¢ 0.6 0.8 1.0 
+
+/3 
+
+Fig. 2. Flux x density diagram for free traffic with p = O. Lines are solutions of F~I. (4),  while points are 
+taken  f rom s imula t ions  (L  = 1000, T = 1000)  fo r  some d i f fe rent  Vmax. 
+
+In the low density limit, the exact solution for any v,,~x and p can be easily obtained 
+by analising the evolution of the automatum for one car, and appears as 
+
+q = (Vma= - p)p  , (4) 
+
+and we see that in this limit p just scales the maximum velocity to a lower value. At 
+high density, the asymptotic behaviour can be obtained by the reasoning that this system 
+presents a kind of "particle-hole" symmetry, with a hole appearing with a Umax = 1 
+independently of the Urea= of the particle. So, in this limit, 
+
+q= (1 -p ) (1  -p )  (5) 
+
+For p = 0 we observe by numerical results that only the two regimes above exist. We 
+always find q = Vm~xP if p < 1/( 1 + v) and q = 1 -p  otherwise. So, the exact result for 
+this CA when p = 0, but with an arbitrary Vr~x = v, is given by the implicit equation 
+
+v 1 (v~v - v/1 + 0 2) 
+q= ~-~v + (P - ]---~v) -( -~ ~_ ~ ~ ~-~ 
+
+( Vr2v + lv~'-~) (p 1 v ( v~v - lv/]---~) 
+(~/~ + iyq__~__b~ ) - ~-~--~v ) + (q - ~--+--~v ) (v/~ + ~ ) (6) 
+
+Some solutions for different v are plotted in Fig. 2. The point that we observe is that, 
+by the definitions we used for q and p, all the curves in the graphic of q against p, 
+independently of u and p ,  cannot transpose the line q = 1 -p .  This condition is fulfilled 
+by the solution of Eq. (4), where the flux rises until it meets this line in the point 
+
+p=l / ( l+u)  , q=v/ ( l+v)  (7) 
+
+
+
+88 L.C.Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 
+
+1. (3  I I I I / 
+0.8 0 L*,,~,= 1 
+
+~' U ~ = 2. ~ ;  
+
+0.6 0 L~,,= 10 
+
+M 
+
+0.2 
+
+0.0 0.2 0.4 0.6 0.8 1.0 
+
+P 
+Fig. 3. Order parameter as a function of the density for different v,,tax and p = 0. The full lines are guides to 
+the eye. 
+
+and then falls along it. This agrees with the particular solution obtained in Ref. [8] in 
+
+the limit when we have Vmax = 1. 
+Although our solution is restricted to the case p = 0, the independence of this no- 
+
+crossing statement on the values of p happens because a non-zero value of p just makes 
+
+the probability of occurence of higher velocities low. So, for a given density, the value 
+
+of the flux has to be lower (or equal) than in the case of a null p. 
+
+Here, we make a change in relation to the basic CA of last section. We do not take 
+
+a fixed value of V,n,~x for all cars, but rather a Vmax distribution between a low, VL, and 
+a high, vH, velocity. 
+
+In this numerical treatment, the change of a fixed Um,~x to a random distribution of 
+maximum velocities showed that the shape of the curves remained unchanged, but now 
+
+the Vmax that appears in the formulas above should be understood as the lowest value of 
+the distribution (vL).  An interesting point is that the existence of a sole car with VL is 
+
+sufficient to make this change, no matter how high is vn. 
+
+The order parameter is shown in Fig. 3, where it is plotted against p for several values 
+
+of Cm~x (p = 0). There we see two distinct regions. The first, where the parameter is 
+zero, is associated with a free regime. The cars are able to develop their maximum 
+velocity, which means that there is no correlation between them. After a transition 
+point the order parameter is not zero anymore, representing the region associated with a 
+jammed phase 2. The critical density pc is a function of the maximum velocity and for 
+
+p = 0 it is given by Eq. (5).  We show this phase diagram in Fig. 4. As an observation, 
+
+we comment that the value of L = I000 is already sufficient to assure the thermodynamic 
+
+2 A more detailed and complete analysis of the criticality of this model is under preparation. 
+
+
+
+L.C.Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 89 
+
+1 0.8 
+0.6 
+
+Pc  
+
+0.4 
+
+0.2 
+
+0.0 
+
+J P  
+
+I I I 
+
+5 10 15 20 
+
+max 
+
+Fig. 4. Diagram of criticai density (at the transition point) against maximum velocity showing a free (FP) 
+and a jammed (JP) phase. The values for this curve were taken from Eq. (5). 
+
+limit, i.e., increasing this value does not change these results. 
+We would like to point out now the similarity between our results about the phase 
+
+description above and what was obtained by Nagatani [ 10]. This happens because our 
+parameter M is directly related to the parameter which he called "mean velocity" ((v) = 
+1 - M when Vmax = 1 ), since the ergodicity of the CA admits identifying spatial means 
+of measurements done at a fixed time with temporal means of measurements done at a 
+fixed position. We observe that the characteristics of this transition are already completely 
+described just considering an one-lane traffic model. It seems that the inclusion of an 
+extra lane, introduced by Nagatani, does not bring any further insight on them. 
+
+4. Traf f ic  l ight  
+
+Our motivation for the analysis of traffic under a stop-and-go condition lies in the 
+problem noticed by Lighthill and Whitham [2] of the existence of a non-functional 
+relation between flux and density obtained from avaiable experimental data (see Fig. 19 
+of Ref. [2] ). This was against the theoretical results, and none satisfactory explanation 
+was given by them. 
+
+Our changes in the basic CA of Section 2 begin by the inclusion of N traffic lights 
+equally spaced along the array. We define the time of duration of green, yellow and red 
+lights as Tg, Ty and T,., respectively. The duration of the full cycle is To During Tg all 
+cars move freely following the rules of the basic CA. During Tr the signal behaves as a 
+car with zero velocity, stopping the cars behind it. Ty avoids the possibility of having a 
+car with velocity greater than the distance ds to the signal just at the moment of change 
+
+
+
+90 L.C.Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 
+
+1.0 , , i , 
+
+0.8 
+
+0.6 
+
+q 
+
+0.4 
+
+0.2 
+
+PoO 
+
+0.0 
+0.0 
+
+• oo • 
+
+r oO 
+
+I I I I 
+
+0.2 0.4 0.6 0.8 
+
+P 
+
+ql* I 
+Ib 
+
+.0 
+
+Fig. 5. Flux x density diagram for signalized traffic with Vmax = 4, p = 0, L = 1000, Tg/Tc = 24/40,  N = 4. 
+The simulation was made with several radars in different positions, dr = 10,30,70, 125,210. 
+
+from green to red light. During Ty we consider the car immediately before the signal 
+(with velocity v and distance ds to the signal) which will obey the rules: 
+(i) I f v (Ty  - 1) > ds then the car will follow the rules of the basic CA. 
+(ii) If v(Ty - 1) _< ds then the car will follow the rules for the red signal. 
+
+A typical flux-density graphic is shown in Fig. 5. It was obtained with several "radars" 
+(where the measurements are made) at different positions in relation to each signal. 
+This has to be taken into consideration because the signals create an inhomogeneity in 
+the system. The existence of two well defined curves can be now easily explained. The 
+one at higher densities is related to measurements made at distances from the traffic light 
+smaller than the mean size of the queue generated by the signal. The other is related 
+to measurements made at distances bigger than this mean size. So for a given number 
+of cars, there will be two classes of measurements giving two different densities for the 
+same flux. We notice that both curves have the same maximum. 
+
+In Fig. 6 we show the curve obtained by only one radar at a distance dr from a signal. 
+We see that when the number of cars increases so that the mean queue size gets higher 
+than dr, the behaviour of the measured flux changes from the low to the high density 
+curve of Fig. 5. 
+
+A change on the number of signals does not modify any of the conclusions above. In 
+the same way, the important features of the fundamental diagram are not sensible to the 
+independent variation of T 8 and Tc, but only to the variation of the relation Tg/Tc. So 
+this is the principal parameter on which the CA will depend. To study this dependence, 
+we define the variables qM, the maximum value of the flux; PM, which is the mean 
+between the values of p at the two points of maximum flux; and UM = qM/PM, which 
+is the mean maximum velocity of the system. In Fig. 7 we see the relation between 
+
+
+
+L.C,Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 91 
+
+1.0 
+
+0.8 
+
+0.6 
+
+q 
+
+0.4  
+
+0.2 " 
+
+t • 
+
+0.0 i i i i 
+0.0 0.2 0.4 0.6 0.8 
+
+P 
+.0 
+
+Fig. 6. Same system of Fig. 5 but using a simulation with only one radar(dr = 75). 
+
+3 
+
+2) M 
+
+2 
+
+0 
+0.0 
+
+I I I I 
+
+// 
+Y 
+
+I I i l 
+
+0.2 0.4 0.6 O.B 
+
+Tg/T  c 
+
+.0 
+
+Fig. 7. Mean maximum velocity as a function of Tg/To The line is a quadratic fitting for the data with a 
+standard deviation of 4%. 
+
+vM and Tg/Tc. It shows how the velocity of  the cars is so strongly dependent on Tg/Tc, 
+fal l ing rapidly f rom the max imum that occurs, obviously, when Tg/Tc = 1. For example, 
+at a typical value o f  Tg/Tc = 0.5, vM would be only approximately 36% of  its max imum 
+for free traffic. 
+
+
+
+92 L.C.Q. Vilar, A.M.C. de Souza / Physica A 211 (1994) 84-92 
+
+5. Conclusion 
+
+The question for the interpretation of the shape of the fundamental diagram can now 
+be answered in the following way: the "reverse A" and discontinuous forms are not 
+
+plausible in the case of freeway traffic; the continuous and continuous differentiable 
+form will occur with a non-zero p, while the "inverse V" form will happen if p = 0. 
+
+An interesting point to be stressed is that in the analysis of experimental data the value 
+of p can be discovered if we restrict ourselves to the limits of high and low densities 
+
+(using the expressions (6) and (7),  and admitting a calibration for the experimental 
+
+diagrams such as that done in Ref. [7] ) and so avoiding the troublesome intermediary 
+
+region where the spreading of points does not allow a precise conclusion. 
+
+As p is associated to an aleatory braking that is not caused by the presence of a car 
+
+ahead, we can imagine that this factor would be related to the dirigibility conditions of 
+
+the roads. So, for good freeways, p would be null and we would have a more adequate 
+
+description for the flux-density relation by an "inverse V" form. 
+
+Also the question for the interpretation of the non-functional relation between flux 
+
+and density in the case of signalized traffic would be answered by the existence of 
+
+two distinct curves for the same system. This seems not to have been obtained by any 
+
+theoretical model until now. 
+So, our results seem to be qualitatively in accordance with the known experimental 
+
+data, clarifying some intriguing points in traffic research. 
+
+Acknowledgement 
+
+The authors acknowledge financial support from the Brazilian agency CNPq. 
+
+References 
+
+[1] EL. Hall, B.L. Allen and M.A. Gunter, Transpn. Res A 20 (1986) 197. 
+[2] M.J. Lighthill, ER.S. and G.B. Whitham, Proc. Royal Soc. Lond. A 229 (1955) 317. 
+[3] L.C. Edie, Oper. Res. 9 (1961) 66. 
+[4] 1. Prigogine and EC. Andrews, Oper. Res. 8 (1960) 789. 
+[5] D.C. Gazis, R. Herman and R.W. Rothery, Oper. Res. 9 (1961) 545. 
+[6] For a recent approach along this line: G.B. Whitham, Proc. Royal Soc. Lond. A 428 (1990) 49. 
+[7] K. Nagel and M. Schreckenberg, J. Physique I 2 (1992) 2221. 
+[ 8] A. Schadschneider and M. Schreckenberg, J. Phys. A 26 (1992) L697. 
+[9] K. Nagel and H.J. Herrmann, Physica A 199 (1993) 254. 
+
+[10] T. Nagatani, J. Phys. A 26 (1993) L781, L1015. 
+
+

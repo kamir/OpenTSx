@@ -1,0 +1,1983 @@
+
+* Corresponding author.
+
+E-mail address: boris.kerner@daimlerchrysler.com (B.S. Kerner).
+
+www.elsevier.com/locate/trc
+
+Transportation Research Part C 12 (2004) 369–400
+0968-090X/$ - see front matter � 2004 Elsevier Ltd. All rights reserved.
+Recognition and tracking of spatial–temporal congested
+traﬃc patterns on freeways
+
+Boris S. Kerner *, Hubert Rehborn, Mario Aleksic, Andreas Haug
+
+Daimler Chrysler AG, Telematics Research (RIC/TS), HPC: T729, D-73734 Esslingen, Germany
+
+Received 9 July 2001; received in revised form 2 April 2003
+
+Abstract
+
+The two models FOTO (Forecasting of Traﬃc Objects) and ASDA (Automatische Staudynamikanalyse:
+
+Automatic Tracking of Moving Traﬃc Jams) for the automatic recognition and tracking of congested spa-
+
+tial–temporal traﬃc ﬂow patterns on freeways are presented. The models are based on a spatial–temporal
+
+traﬃc phase classiﬁcation made in the three-phase traﬃc theory by Kerner. In this traﬃc theory, in con-
+
+gested traﬃc two diﬀerent phases are distinguished: ‘‘wide moving jam’’ and ‘‘synchronized ﬂow’’. The
+
+model FOTO is devoted to the identiﬁcation of traﬃc phases and to the tracking of synchronized ﬂow.
+
+The model ASDA is devoted to the tracking of the propagation of moving jams. The general approach
+
+and the diﬀerent extensions of the models FOTO and ASDA are explained in detail. It is stressed that
+the models FOTO and ASDA perform without any validation of model parameters in diﬀerent environ-
+
+mental and traﬃc conditions. Results of the online application of the models FOTO and ASDA at the
+
+TCC (Traﬃc Control Center) of Hessen near Frankfurt (Germany) are presented and evaluated.
+
+� 2004 Elsevier Ltd. All rights reserved.
+
+Keywords: Local traﬃc measurements on freeways; Classiﬁcation of traﬃc phases; Tracking of spatial–temporal
+
+congested patterns; Freeway bottlenecks; Suitability of the freeway infrastructure for congested pattern recognition;
+
+Traﬃc control center; Field trial evaluation of models ASDA/FOTO; Three-phase traﬃc theory; Wide moving jams;
+
+Synchronized traﬃc ﬂow
+doi:10.1016/j.trc.2004.07.015
+
+
+
+
+1. Introduction: Spatial–temporal pattern classiﬁcation
+
+It is well-known that traﬃc on freeways can be either, ‘‘free’’ or ‘‘congested‘‘. The congested
+regime of traﬃc shows very complex spatial–temporal traﬃc patterns (e.g., the classical works
+by Treiterer, 1975; Koshi et al., 1983). Therefore, the online automatic recognition and tracking
+of traﬃc patterns in the congested regime is one of the main problems for traﬃc control centers
+where measurements of traﬃc ﬂow are collected and interpreted.
+One of the approaches and trials in traﬃc technology to estimate, track and predict traﬃc pat-
+
+terns is an application of either microscopic (in particular, the car-following models), mesoscopic
+or macroscopic traﬃc ﬂow models which calculate the movement of individual vehicles and/or the
+average vehicle speed and the density spatial–temporal distributions in freeway networks (e.g.,
+Wiedemann, 1974; Cremer, 1979; May and Keller, 1968; Papageorgiou, 1983; Ben-Akiva et al.,
+1994; Daganzo, 1994; Gartner et al., 1997; Kronja¨ger and Konha¨user, 1997; Kates and Bogenber-
+ger, 1997; Leutzbach, 1988; Kaumann et al., 2000; review of traﬃc models by Helbing, 2001).
+Traﬃc data measured at some locations on a freeway can be used as some kind of ‘‘boundary con-
+ditions’’ for these mathematical traﬃc ﬂow models which should calculate spatial–temporal dis-
+tributions of traﬃc variables on the whole freeway. Unfortunately, practical online applications
+of this approach have some principle problems. One of the main problems is the necessity of a
+validation of some model parameters. These parameters are strongly dependent on the infrastruc-
+ture, the weather and other environmental conditions. Therefore, it is very hard to ﬁnd and adapt
+a set of the model parameters which are valid for real traﬃc ﬂow in all possible totally diﬀerent
+conditions. This is one of the principle reasons why the mentioned models are up to now far from
+being used for practical online applications on freeways. Another principal problem for online
+application of this model approach is associated with the probabilistic nature of conjested pat-
+terns at bottlenecks: Depending on initial conditions diﬀerent types of the patterns can occur
+at the same traﬃc demand and traﬃc conditions.
+Recently Kerner, in collaboration with Rehborn, has found out that two qualitatively diﬀerent
+
+traﬃc phases should be distinguished in the congested regime of traﬃc: ‘‘synchronized traﬃc
+ﬂow’’ and ‘‘wide moving traﬃc jams’’ (Kerner and Rehborn, 1996a). Therefore, there are three
+traﬃc phases: (i) free traﬃc ﬂow, (ii) synchronized traﬃc ﬂow and (iii) wide moving traﬃc jams.
+Based on these empirical ﬁndings, Kerner developed a three-phase traﬃc theory, which allows to
+explain results of empirical observations of the phase transitions between these three traﬃc phases
+and the spatial–temporal properties of patterns in congested traﬃc at freeway bottlenecks (Ker-
+ner, 1998a,b; Kerner, 1999a,b,c; Kerner, 2000a,b,c; Kerner, 2001a,b; Kerner, 2002a,b,c; Kerner,
+2004a). Based on this theory, Kerner proposed a model approach to the spatial–temporal con-
+gested traﬃc pattern recognition, tracking and prognosis on freeways which has been realized
+in the models ASDA (Kerner et al., 1998; Kerner and Rehborn, 2000) and FOTO (Kerner
+et al., 2001a; Kerner, 2001b).
+Note that a detailed consideration of empirical congested traﬃc pattern features on German,
+
+American, and Canadian freeways, the physics and theory of the onset of congestion and con-
+gested traﬃc patterns, engineering applications of the physics of traﬃc (congested pattern recog-
+nition, tracking, prediction, and control) is recently made in the book (Kerner, 2004b).
+The model FOTO (Forecasting of Traﬃc Objects) identiﬁes the traﬃc phases and performs
+
+370 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+the tracking of the patterns of the traﬃc phase ‘‘synchronized ﬂow’’. The model ASDA
+
+
+
+(Automatische Staudynamikanalyse: Automatic Tracking of Moving Traﬃc Jams) performs the
+automatic tracking of the propagation of moving traﬃc jams.
+It must be noted that in contrast to the conventional model approach mentioned above, the
+
+models FOTO and ASDA perform without any validation of model parameters in diﬀerent envi-
+ronmental and traﬃc conditions (see results in Kerner et al., 2000a,b,c; Kerner et al., 2001b,c;
+Kniss, 2000). Recall that according to the three-phase traﬃc theory a wide moving jam is a local-
+ized congested pattern which is spatially restricted by two upstream moving fronts where the aver-
+age vehicle speed and the density sharply change. The both fronts of the wide moving jam
+propagate continuously upstream. Inside the wide moving jam each vehicle is in a stop at least
+for a ﬁnite time which is large enough that there is no inﬂuence of the traﬃc upstream of the wide
+moving jam on the traﬃc downstream and vice versa. Synchronized traﬃc ﬂow is also separated
+spatially either from free ﬂow or from a wide moving jam by the downstream front and by the
+upstream front where vehicle speed sharply changes. However, the ﬂow rate in contrast to a wide
+moving jam can remain in synchronized ﬂow almost constant inside these fronts.
+To distinguish between wide moving jams and synchronized ﬂow in the congested regime of
+
+traﬃc the following objective criteria can be applied (Kerner, 2000b,c). After a wide moving
+jam has emerged, it propagates through either free ﬂow or any states of synchronized ﬂow or
+any kinds of bottlenecks (e.g., on- and oﬀ ramps) keeping the velocity of the jam�s downstream
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 371
+front. In contrast to a wide moving jam, after synchronized ﬂow has occurred at a bottleneck
+the downstream front of the pattern of synchronized ﬂow is usually ﬁxed at the bottleneck. A
+more detailed consideration of empirical spatial–temporal features of synchronized ﬂow and wide
+moving jams can be found in (Kerner, 2002b,c).
+The main features of the approach FOTO and ASDA are the following (Kerner et al., 1998;
+
+Kerner and Rehborn, 2000; Kerner et al., 2001a; Kerner, 2001b): In FOTO based on local meas-
+urements of traﬃc (detectors D1 and D2 in Fig. 1) the local recognition of the traﬃc phases is
+Fig. 1. Illustration of the approach of the models FOTO and ASDA (Kerner et al., 2001b).
+
+
+
+tracking of the traﬃc objects ‘‘synchronized ﬂow’’ and ‘‘wide moving jam’’ performs also between
+detectors, i.e., also when the object fronts and the object widths cannot be measured at all. Note,
+
+that the models FOTO and ASDA allow us to predict a merging and/or a dissolution of initially
+diﬀerent two or more traﬃc objects ‘‘synchronized ﬂow’’ and of initially diﬀerent two or more
+traﬃc objects ‘‘wide moving jam’’ which occur between locations of the detectors (a merging of
+wide moving jams with synchronized ﬂow is not possible; see the objective criteria for the traﬃc
+phases above). Using the average vehicle speed and density within the traﬃc objects (which are
+known from empirical studies and current traﬃc measurements) one can calculate other traﬃc
+characteristics, e.g., trip travel times and/or vehicle trajectories.
+In the article, the models FOTO and ASDA are formulated in detail. A statistical evaluation of
+
+FOTO and ASDA model results is made based on a four months ﬁeld trial on freeways in the
+federal state ‘‘Hessen’’ (Germany). Based on empirical data the quality of the congested spa-
+tial–temporal pattern recognition and tracking under diﬀerent detector conﬁgurations is studied.
+The article is organized as follows: A description of the model FOTO for the traﬃc phase recog-
+nition will be considered in Section 2. The tracking of wide moving jams with the model ASDA
+will be presented in Section 3. A tracking of synchronized ﬂow will be discussed in Section 4. Re-
+sults of the model application and evaluation will be presented in Section 5.
+
+2. Determination of traﬃc phases with the model FOTO
+
+The recognition of congested patterns with the model FOTO (Kerner et al., 2001a; Kerner,
+2001b) will be limited here to traﬃc data measured at stationary detectors on freeways. In a prac-
+tical application, for the classiﬁcation of the traﬃc phases based on such local measurements a
+fuzzy inference system is used.
+
+2.1. Set of fuzzy rules for traﬃc phase determination with FOTO
+
+The current traﬃc measurements for each detector q(t) and v(t) are considered in a set of fuzzy
+rules. The fact that the ﬂow rate in synchronized ﬂow is usually much higher than the ﬂow rate in
+wide moving traﬃc jams is taken into account as well as other empirical features of the traﬃc
+performed ﬁrst. Secondly, FOTO and ASDA perform the recognition of the moving fronts of
+wide moving jams xðjamÞup , x
+
+ðjamÞ
+down and of the fronts of synchronized ﬂow x
+
+ðsynÞ
+up , x
+
+ðsynÞ
+down at the detectors.
+
+These fronts deﬁne the spatial size and location of the related ‘‘synchronized ﬂow’’ object and
+‘‘wide moving jam’’ object. Finally, the models FOTO and ASDA perform the tracking of these
+objects� fronts in time and space, i.e., the positions of all fronts xðjamÞup ðtÞ, xðjamÞdownðtÞ, xðsynÞup ðtÞ, xðsynÞdownðtÞ
+as functions of time are found between the detectors where no measurements of traﬃc variables are
+possible. This tracking which is independent on the local measurements is related to the actual
+online description of the spatial–temporal features of the traﬃc objects.
+In other words, in the approach FOTO and ASDA after the recognition of the traﬃc objects
+
+‘‘synchronized ﬂow’’ and ‘‘wide moving jam’’ at the detector locations these objects are tracked
+as macroscopic single objects, i.e., only the determination of the location of the object fronts
+and the object widths (in the longitudinal direction) at any time is the aim of the approach. This
+
+372 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+phases ‘‘synchronized ﬂow’’ and ‘‘wide moving jam’’.
+
+
+
+With the current ﬂow rate fuzziﬁed into the values ‘‘low’’ and ‘‘high’’ and the vehicle speed fuz-
+ziﬁed into the values ‘‘low’’, ‘‘medium’’ and ‘‘high’’, the following fuzzy rules are implemented
+(Fig. 2):
+
+Rule1: If the vehicle speed is ‘‘high’’, the traﬃc phase is ‘‘free ﬂow’’.
+Rule2: If the vehicle speed is ‘‘medium’’, the traﬃc phase is ‘‘synchronized ﬂow’’.
+Rule3: If the vehicle speed is ‘‘low’’ and the ﬂow rate is ‘‘high’’, the traﬃc phase is ‘‘synchronized
+
+ﬂow’’.
+Rule4: If both the vehicle speed and the ﬂow rate are ‘‘low’’, the traﬃc phase is ‘‘wide moving
+
+Fig. 2. Illustration of FOTO. Fuzziﬁcation of the input variables with the basic rules: (a) ‘‘vehicle speed’’ and (b) ‘‘ﬂow
+
+rate’’. The degree of membership is determined for each fuzzy set by the membership function (see curves ‘‘low’’,
+
+‘‘medium’’ and ‘‘high’’ in (a) and ‘‘low’’ and ‘‘high’’ in (b)). Dashed lines show the degrees of membership for an
+
+example with v = 28km/h, q = 980veh./h.
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 373
+jam’’.
+
+The numerical values of the membership functions are found based on the empirical data at the
+A5. It turns out that the same values may be used for all detectors at the A5-North and A5-South
+and for the rest of the Hessen freeways as well as for freeways near Magdeburg and Munich (Sec-
+tion 5.2). It may be expected that these numerical values can be inﬂuenced by traﬃc regulations
+(overtaking laws, variable speed limits, etc.) and peculiarities of the infrastructure (roadworks,
+narrow lanes, road gradient, etc.). Therefore, the numerical values have to be adapted for example
+for US freeways or inner-urban expressways with ﬁxed speed limits. Additionally, an accident or a
+sudden road blockage can lead to the necessity of adapted membership functions because the
+infrastructure changes.
+
+2.2. Defuzziﬁcation
+
+Note, that the traﬃc phases recognized by the fuzzy rules are not numerical values. These
+phases are also not scalable among each other: For example, the traﬃc phase ‘‘free ﬂow’’ cannot
+be weighted numerically in comparison with the traﬃc phase ‘‘wide moving jam’’. Therefore, the
+defuzziﬁcation is not performed with the standard methods COG (center of gravity) or MOM
+
+
+
+(mean of maxima). Instead, the traﬃc state with the highest degree of membership after process-
+ing all fuzzy rules is used.
+Let us demonstrate the use of these fuzzy sets for one example shown in Fig. 3. Table 1 related
+
+to Fig. 3 shows the degree of membership for the measured values of vehicle speed and ﬂow rate,
+the degrees of membership for the four fuzzy rules and the classiﬁed traﬃc state at the detector D5
+for some time moments between 8:45 and 9:10 am. The values for ﬂow rates (‘‘q’’ in veh./h and per
+lane) and vehicle speed (‘‘v’’ in km/h) are fuzziﬁed according to the fuzzy membership functions in
+Fig. 2. The membership values for ﬂow rates (‘‘low’’ and ‘‘high’’) and speeds (‘‘low’’, ‘‘medium’’
+and ‘‘high’’) are in each minute used in the four fuzzy rules. The resulting traﬃc phase with the
+maximum degree of membership of the four fuzzy rules ‘‘Rule1–Rule4’’ can be found in the most
+
+FOTO decision (right axis)
+average speed [km/h] (left axis)
+
+FOTO decision (right axis)
+average flow rate [veh/h] per lane
+(left axis)
+
+free
+
+syn
+
+jam
+D5
+
+D4
+
+free
+
+syn
+
+jam
+D5
+
+free
+
+syn
+
+jam
+
+D4
+
+free
+
+syn
+
+jam
+
+traffic flow
+
+x (km)
+
+A5-South
+
+(b)
+
+(a)
+
+374 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+free
+
+syn
+
+jam
+
+D2
+
+free
+
+syn
+
+jam
+
+D2
+
+ 
+
+Fig. 3. Traﬃc phases determination with FOTO: (a) a part of the section of the freeway A5-South and (b) average
+
+speed (left) and ﬂow rate (right) at detectors D5, D4 and D2 on 11th March, 2002 (left axis in each diagram) together
+with the corresponding decision of FOTO about the current traﬃc phase (right axis in each diagram).
+
+
+
+right column (‘‘syn’’: synchronized ﬂow, ‘‘jam’’: wide moving jam, ‘‘free’’: free traﬃc ﬂow). The
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 375
+evaluation of this application will be made in Section 5. Note, that low speeds are measured at
+the detector D5 between 8:45 and 8:58 am. Despite these jam-like low speeds, the traﬃc state
+is classiﬁed as ‘‘synchronized ﬂow’’ because the ﬂow rate is still high.
+However, in some cases the distinction between synchronized ﬂow and wide moving jams based
+
+on the four fuzzy rules mentioned above is not accurate. To cope with such special measurement
+constellations, an extended set of fuzzy rules has been developed. The approach and an empirical
+example for the utility of the extended rules can be found in Appendix A.
+Table 1
+
+Example for the use of the four fuzzy rules in the model FOTO
+
+Time q v Flow Speed Rule1 Rule2 Rule3 Rule4 Phase
+
+Low High Low Medium High ‘‘Free’’ ‘‘Syn’’ ‘‘Syn’’ ‘‘Jam’’
+
+08:45 1260 30 0 1 0.5 0.5 0 0 0.5 0.5 0 Syn
+
+08:46 1100 24 0.125 0.875 0.8 0.2 0 0 0.2 0.8 0.125 Syn
+
+. . ..
+08:57 940 21 0.325 0.675 0.95 0.05 0 0 0.05 0.675 0.325 Syn
+
+08:58 800 16 0.5 0.5 1 0 0 0 0 0.5 0.5 Syn
+
+08:59 480 12 0.9 0.1 1 0 0 0 0 0.1 0.9 Jam
+
+. . ..
+09:03 220 5 1 0 1 0 0 0 0 0 1 Jam
+
+09:04 980 28 0.275 0.725 0.6 0.4 0 0 0.4 0.6 0.275 Syn
+
+. . ..
+09:09 1260 64 0 1 0 0.8 0.2 0.2 0.8 0 0 Syn
+
+09:10 1460 72 0 1 0 0.4 0.6 0.6 0.4 0 0 Free
+3. Tracking of moving jams with the model ASDA
+
+The model ASDA (Kerner et al., 1998; Kerner and Rehborn, 2000) is used to track a moving
+jam at all times, i.e., even when the moving jam is between detectors and therefore the jam cannot
+be measured. To get an overview on the model ASDA, let us consider Fig. 4 where in a schematic
+illustration the dynamic movement of a wide moving jam is shown on a freeway section at diﬀer-
+ent times.
+The schematic illustration for the model ASDA (Fig. 4(a)) shows a measurement infrastructure
+
+with two detectors (Q0,Qn) on a road section. After a moving jam has been observed in the cyclic
+measured data at Qn at time t0 by the model FOTO, the model ASDA starts to calculate contin-
+uously the positions of the upstream front, xðjamÞup ðtÞ. After the downstream front of the moving jam
+is registered at the detector Qn at the later time t1, the model ASDA starts to calculate continu-
+ously the positions of the downstream front, xðjamÞdownðtÞ and consequently the jam width
+LS ¼ xðjamÞdown � xðjamÞup . This can be done cyclically even if none of the detectors is within or close to
+the wide moving jam. For this calculation the measured traﬃc data of the vehicle ﬂow rate
+q0(t) and qn(t) and the vehicle speeds w0(t) and wn(t) at the detectors Q0 and Qn are needed.
+The model ASDA for this simple case has been published in (Kerner et al., 2001b).
+
+
+
+376 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+3.1. F
+
+In
+such
+movi
+
+(a) E
+
+(b) E
+
+Fig. 4
+
+sectio
+ormulation of the model ASDA
+
+real applications several detectors following one another exist on freeways (Fig. 4(b)). In
+a case the determination of the positions of the upstream and downstream front of a wide
+ng jam results in the following formula (1) and (2), respectively:
+
+quation for the position of the upstream front of the moving traﬃc jam:
+
+xðjamÞup ðtÞ ¼ Liþ1 þ
+Z t
+tðiþ1Þ
+0
+
+vðjamÞup ðtÞdt
+
+� Liþ1 �
+Z t
+tðiþ1Þ
+0
+
+qðiÞ0 ðtÞ � qmin
+qmax � qðiÞ0 ðtÞ=wðiÞ0 ðtÞ
+
+� � dt; t P tðiþ1Þ0 ; i ¼ 1; 2; . . . ð1Þ
+
+quation for the position of the downstream front of the moving traﬃc jam:
+
+xðjamÞdownðtÞ ¼ Ljþ
+Z t
+tðjÞ
+1
+
+vðjamÞdownðtÞdt � Lj�
+Z t
+tðjÞ
+1
+
+qðjÞðjamÞout ðtÞ � qmin
+qmax� qðjÞðjamÞout ðtÞ=wðjÞmaxðtÞ
+
+� � dt; t P tðjÞ1 ; j¼ 1;2; . . .
+ð2Þ
+
+. Illustration of ASDA: (a) schema of the moving jam recognition with two detectors and (b) schema of a freeway
+
+n with several detectors with co-ordinates Lk�3,. . .,Lk.
+
+
+
+with
+index
+
+wide
+
+of he
+movi
+HGV
+and (
+
+lowin
+wher
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 377
+In the beginning, detector i = k�1 is used in (1) and the downstream front of the jam is not
+tracked since it has not reached detector ‘‘k’’ yet.
+First, we will deﬁne the time points when the next detector upstream for the calculation of the
+
+velocity of the upstream front of the moving jam has to be used in (1). If the following inequality
+becomes true:
+
+xðjamÞup ðtÞ 6 Lk�1; ð5Þ
+the measurements of the detector with index, ‘‘i = k�2’’ (Fig. 4(b)) have to be used in formula (1).
+In the inequality (5) Lk�1 is the x co-ordinate of the detector with index ‘‘i = k�1’’. On the other
+hand, the upstream front of the jam is registered at detector ‘‘i = k�1’’ at the time tðk�1Þ0 when the
+upstream front reaches that detector, i.e.,
+
+xðjamÞup t
+ðk�1Þ
+0
+
+� �
+¼ Lk�1 with xðjamÞup tðk�1Þ0
+
+� �
+¼ Lk þ
+
+Z tðk�1Þ
+0
+
+ðkÞ
+vðjamÞup ðtÞdt: ð6Þ
+g algorithm can be applied. This algorithm will be illustrated for the case shown in Fig. 4(b)
+e the upstream front of a moving jam has just been registered at the detector ‘‘i + 1 = k’’.
+no detector within the jam, qmin can be approximated either through the formula (4a) or (4b):
+
+qmin ¼ tðjÞ1 � tðjÞ0
+� ��1 Z tðjÞ1
+
+tðjÞ
+0
+
+qðjÞminðtÞdt; ð4aÞ
+
+qmin ¼ 0: ð4bÞ
+where ‘‘j’’ is the detector used in formula (2).
+For the choice of the correct detector ‘‘i’’, whose measured data should be used in (1), the fol-
+avy goods vehicles (HGV) including a (small) average distance between vehicles inside the
+ng jam (e.g., LHGV = 17m); APC is the fraction of PC and (1�APC) is the fraction of
+. These fractions can be determined with the local detector measurements. In formulas (1)
+2), qmin can be set to the mean measured ﬂow rate within the jam. At times when there is
+the detectors ‘‘j’’ downstream of the wide moving jam; qmin is the measured ﬂow rate inside the
+moving jam; qmax is the vehicle density inside the moving jam; v
+
+ðjamÞ
+downðtÞ and vðjamÞup ðtÞ are the veloc-
+
+ities of the downstream and upstream fronts of the moving jam, respectively.
+
+The parameter qmax can be calculated directly from the traﬃc data via the following formula:
+
+qmax ¼
+1000
+
+LPC � APC þ LHGV � ð1� APCÞ
+vehicles
+
+km
+
+� �
+ð3Þ
+
+with LPC being the expected average length of passenger cars (PC) including a (small) average dis-
+tance between vehicles inside the moving jam (e.g., LPC = 7m) and LHGV being the average length
+moving jam; qðjÞðjamÞout and w
+ðjÞ
+max are the measured ﬂow rate and the averaged vehicle speed at
+axis x: e.g., Lm > Ln for m > n; Li+1, Lj are the co-ordinates of the corresponding detectors; t
+ðiþ1Þ
+0
+
+indicates the time when the upstream jam front has been measured at the detector ‘‘i + 1’’; tðjÞ1 indi-
+cates the time when the downstream jam front has been measured at the detector ‘‘j’’; qðiÞ0 ðtÞ and
+wðiÞ0 ðtÞ are the measured ﬂow rate and the averaged vehicle speed at the detectors ‘‘i’’ upstream of a
+index ‘‘i’’ in (1) and ‘‘j’’ in (2) for the detectors, whose values at time t have to be used, the
+es ‘‘i’’ and ‘‘j’’ increase in the direction of the ﬂow, i.e., corresponding the direction of the
+t
+0
+
+
+
+Note that there is always a diﬀerence D between the calculated xðjamÞup and the real co-ordinate of
+the upstream front of the moving jam. If, for example, inequality (5) is still false for the calculated
+upstream front at time tðk�1Þ0 when that front is already registered at detector k�1, the calculated
+xðjamÞup t
+
+ðk�1Þ
+0
+
+� �
+is deﬁnitely too high. In that case, the algorithm sets xðjamÞup t
+
+ðk�1Þ
+0
+
+� �
+to Lk�1. Similarly,
+
+the calculated xðjamÞup ðtÞ is deﬁnitely too low if xðjamÞup ðtÞ 6 Lk�1, but the jam�s upstream front has not
+yet been detected by detector ‘‘k�1’’ at time t. Then, xðjamÞup ðtÞ is set to Lk�1 + e where e is a small
+given value (we use e = 1m).
+Consequently, the choice of the next upstream detector in formula (1) does not depend on the
+
+calculated position of the jam�s upstream front, but on the registration times of the upstream front
+at the detectors: Detector ‘‘i = k�m�1’’ is used in (1) as soon as the jam�s upstream front has been
+registered by the detector ‘‘k�m’’ at time tðk�mÞ0 .
+A similar algorithm is applied to choose the detector to be used for the position of the down-
+
+stream front of the moving jam in formula (2). That formula can ﬁrst be applied at time tðkÞ1 when
+the jam�s downstream front is registered at detector ‘‘k’’. As soon as that front is registered at the
+next upstream detector ‘‘k�1’’ at time tðk�1Þ1 , the data of detector j = k�1 is used in (2).
+In a similar manner to the remark of the diﬀerence between the real and calculated position of
+
+the upstream front of the moving jam described above, the calculated position of the jam�s down-
+stream front is corrected according to the registration times of the downstream front at the detec-
+
+tors: If the calculated xðjamÞdownðtÞ > Lk�p, but the downstream front has already been registered at
+detector ‘‘k�p’’, xðjamÞdownðtÞ is set to Lk�p�e (e is the above mentioned small value) and if the calcu-
+lated xðjamÞdownðtÞ < Lk�p, but the jam�s downstream front has not yet been registered at detector
+‘‘k�p’’, xðjamÞdownðtÞ is set to Lk�p.
+The case of one wide moving traﬃc jam detected between the detector ‘‘i = k�1’’ and ‘‘i = k’’
+
+has been discussed above (Fig. 4(b)). If after the ﬁrst moving jam—as it happens often in traﬃc
+ﬂow—further wide moving jams appear and these wide moving jams are spatially close together
+with small distances so that there is no detector in between, the model ASDA has to be extended.
+In this case, the results of empirical investigations of characteristic features of wide moving jams
+(Kerner and Rehborn, 1996b) can be applied. In particular, the velocity of the downstream front
+of a wide moving jam is the characteristic parameter. If this velocity was recently measured for a
+speciﬁc wide moving jam, it is applied for the prognosis of the velocity of the downstream front of
+wide moving jams while this parameter cannot be measured. For the tracking of a wide moving
+jam which is downstream of the ﬁrst one, it can also be assumed that the velocity of the upstream
+front of this jam equals the known characteristic velocity of the downstream front of the ﬁrst
+moving jam.
+
+3.2. Extensions of ASDA for on-ramps, oﬀ-ramps and changing of number of freeway lanes upstream
+
+of a moving jam
+
+In this and the next Section 3.3 all ﬂow rates are related to the ﬂow rate per freeway lane. At an
+on-ramp the ﬂow rate qðiÞ0 ðtÞ will be extended by the in-ﬂowing ﬂow rate (distributed on all ‘‘n’’
+freeway lanes) qon(t)/n, if the upstream front of a moving jam has passed the detector ‘‘i + 1’’
+in the driving direction after the on-ramp (Fig. 5(a)). In other words, the ﬂow rate qðiÞ0 ðtÞ in (1)
+
+378 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+should be replaced by
+
+
+
+Co
+drivi
+subtr
+
+Fig. 5
+
+of a m
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 379
+q�ðiÞ0 ðtÞ ¼ qðiÞ0 ðtÞ þ
+qonðtÞ
+n
+
+: ð7Þ
+
+rrespondingly, when the upstream front of a moving jam passed the detector ‘‘i + 1’’ in the
+ng direction after the oﬀ-ramp (Fig. 5(b)), the contribution of the ﬂow rate qoﬀ(t)/n has to be
+acted, i.e., qðiÞ0 ðtÞ in (1) should be replaced by
+
+q�ðiÞ0 ðtÞ ¼ qðiÞ0 ðtÞ �
+qoffðtÞ
+n
+
+: ð8Þ
+
+. Extensions of the model ASDA: on- and oﬀ-ramps and lane reductions upstream (a)–(c) and downstream (d)–(f)
+
+oving jam.
+
+
+
+In
+upstr
+of la
+
+�ðiÞ m ðiÞ
+
+In th
+jam
+
+Z t �ðiÞ
+
+At
+on a on ðjÞðjamÞ
+
+placed by
+
+In
+upstr
+ber o
+
+Th
+
+t t �ðjÞðjamÞ
+
+380 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+xðjamÞdownðtÞ ¼ Lj þ
+tðjÞ
+1
+
+vðjamÞdownðtÞdt � Lj �
+tðjÞ
+1
+
+qout ðtÞ � qmin
+qmax � q�ðjÞðjamÞout ðtÞ=wðjÞmaxðtÞ
+
+� � dt;
+
+t P tðjÞ; j ¼ 1; 2; . . . ð14Þ
+us, formula (2) for the position of the downstream front of the moving jam is replaced by
+
+Z Z
+q�ðjÞðjamÞout ðtÞ ¼
+n
+m
+qðjÞðjamÞout ðtÞ: ð13Þ
+q�ðjÞðjamÞout ðtÞ ¼ qðjÞðjamÞout ðtÞ þ
+qoffðtÞ
+n
+
+: ð12Þ
+
+the case of a reduction in the number of freeway lanes downstream of a moving jam and
+eam of the detector ‘‘j’’ the ﬂow rate qðjÞðjamÞout ðtÞ has to be applied in (2) in relation to the num-
+f lanes (Fig. 5(f)), i.e., qðjÞðjamÞout in (2) should be replaced by
+5(d)), i.e., the ﬂow rate qout in (2) should be replaced by
+
+q�ðjÞðjamÞout ðtÞ ¼ qðjÞðjamÞout ðtÞ �
+qonðtÞ
+n
+
+: ð11Þ
+
+Correspondingly, when the downstream front of a moving jam has just passed an oﬀ-ramp, the
+contribution of the ﬂow rate qoﬀ(t)/n (Fig. 5(e)) has to be added, i.e., q
+
+ðjÞðjamÞ
+out in (2) should be re-
+an on-ramp the ﬂow rate qðjÞðjamÞout in (2) will be reduced by the in-ﬂowing ﬂow rate (distributed
+ll n lanes) q (t)/n, if the downstream front of the moving jam has passed the on-ramp (Fig.
+3.3. Extensions of ASDA for on-ramps, oﬀ-ramps and changing of number of freeway lanes down-
+
+stream of a moving jam
+� Liþ1 �
+tðiþ1Þ
+0
+
+q0 ðtÞ � qmin
+qmax � q�ðiÞ0 ðtÞ=wðiÞ0 ðtÞ
+
+� � dt; t P tðiþ1Þ0 ; i ¼ 1; 2; . . . ð10Þ
+xðjamÞup ðtÞ ¼ Liþ1 þ
+Z t
+tðiþ1Þ
+0
+
+vðjamÞup ðtÞdt
+e above cases, instead of the formula (1) for the position of the upstream front of the moving
+the following formula should be used:
+q0 ðtÞ ¼ n q0 ðtÞ: ð9Þ
+the case of a reduction in the number of freeway lanes downstream of the detector ‘‘i’’ and
+eam of the moving jam the ﬂow rate qðiÞ0 ðtÞ in (1) has to be applied in relation to the number
+nes (Fig. 5(c)), i.e., qðiÞ0 ðtÞ in (1) should be replaced by
+1
+
+
+
+down
+ﬁrst b
+of sy
+
+to its upstream propagation from the bottleneck. Let us further consider an upstream detector
+
+chron
+from
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 381
+A
+
+and also taking into account the ﬂow rates to the on- and oﬀ-ramps.
+For the calculation of the upstream front location of synchronized ﬂow at time t, xðsynÞup ðtÞ, we set
+
+the origin x = 0 to the location of the detector ‘‘B’’. With the distance D between the detectors
+‘‘A’’ and ‘‘B’’, the location of the detector ‘‘A’’ is x = �D. Since the upstream front of synchro-
+nized ﬂow is somewhere between the detectors ‘‘A’’ and ‘‘B’’, the following inequality holds:
+
+�D < xðsynÞup ðtÞ < 0: ð15Þ
+To estimate the position xðsynÞup ðtÞ, two diﬀerent approaches have been developed and evaluated:
+
+(i) the ASDA-like approach (Section 4.1) and (ii) the cumulative ﬂow rate approach (Section 4.2).
+
+4.1. The ASDA-like approach for tracking the upstream front of synchronized ﬂow
+
+Let us assume that a synchronized ﬂow at the detector ‘‘B’’ has been registered at t = tsyn,B (Fig.
+6(a)). At t > tsyn,B the position xðsynÞup ðtÞ of the front of synchronized ﬂow downstream and free ﬂow
+upstream between any two neighboring detectors ‘‘A’’ and ‘‘B’’ (the detectors ‘‘A’’ and ‘‘B’’ char-
+acterized by the ﬂow rates qA(t), qB(t) and the densities qA(t), qB(t), respectively) can be calculated
+by the ASDA-like formula:
+
+xðsynÞup ðtÞ ¼
+Z t
+tsyn;B
+
+vðsynÞup ðtÞdt ¼
+Z t
+tsyn;B
+
+qAðtÞ � qBðtÞ
+qAðtÞ � qBðtÞ
+
+dt; t > tsyn;B: ð16Þ
+
+On- and oﬀ-ramps are handled in the same way as in the model ASDA. Recall that in the case
+of the tracking of wide moving jams with the model ASDA it has empirically been shown that the
+upstream front position of a wide moving jam xðjamÞup ðtÞ (1) is in close agreement with the real jam
+
+front
+ized ﬂow is somewhere between detectors ‘‘A’’ and ‘‘B’’ at time t. The ﬂow rate upstream
+synchronized ﬂow is computed by taking the incoming ﬂow from the detector ‘‘A’’, q (t),
+‘‘A’’ where traﬃc is still in the phase ‘‘free ﬂow’’ at time t > tsyn,B when traﬃc at the detector
+‘‘B’’ is still in the phase ‘‘synchronized ﬂow’’ (Fig. 6(a)). It is clear that the upstream front of syn-
+an on-ramp) on a freeway section while the upstream front is inﬂuenced by the upstream supply of
+vehicles.
+The best results of tracking of synchronized ﬂow with FOTO can be achieved, if a detector is
+
+close to the eﬀective location of the bottleneck where the downstream front xðsynÞdownðtÞ of the syn-
+chronized ﬂow is ﬁxed. In contrast to the downstream front, the upstream front of synchronized
+ﬂow begins to move upstream after the phase transition from free to synchronized ﬂow has oc-
+curred at the bottleneck.
+Let us consider a detector ‘‘B’’ where synchronized ﬂow has ﬁrst been detected at time tsyn,B due
+stream front xdownðtÞ of ‘‘synchronized ﬂow’’ objects are tracked after synchronized ﬂow has
+een detected by the model FOTO. It is taken into account that the downstream front xðsynÞdownðtÞ
+nchronized ﬂow is usually spatially ﬁxed at the eﬀective location of the bottleneck (e.g., near
+4. Tracking of synchronized ﬂow with the model FOTO
+
+Similarly to the jam-tracking model ASDA, the positions of the upstream front xðsynÞup ðtÞ and theðsynÞ
+position which is found from measurements of the jam propagation through diﬀerent
+
+
+
+382 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+detectors. However, in the case of the tracking of the front of synchronized ﬂow with the formula
+(16) we found that the calculated front position xðsynÞup ðtÞ sometimes shows a very poor correspond-
+ence with measurements of this front at detectors. For example in Figs. 6(b) and (c), the diﬀerence
+in the front positions xðsynÞup ðtÞ calculated through the formula (16) (dashed curve in Fig. 6(c)) and
+found through the measurements (black points in Fig. 6(c)) is sometimes up to 100%. This is be-
+cause the mean empirical velocity of the synchronized ﬂow�s upstream front is �vðsynÞup ¼ �7:9km/h,
+however the mean calculated velocity through (16) is �vðsynÞup ¼ �11km/h.
+
+Fig. 6. Tracking of synchronized ﬂow with FOTO: (a) schema of the synchronized ﬂow tracking, (b) the velocity
+
+vðsynÞup ðtÞ calculated through the formula (16) and (c) the location of the calculated upstream front of synchronized ﬂow
+xðsynÞup ðtÞ for the ASDA-like approach (16) (dashed curve) and for the cumulative ﬂow rate approach (18) and (19) (solid
+curve). Black points in (c) are related to the measurements of the ﬁrst occurrence of synchronized ﬂow at the detectors.
+
+In (b), (c) data on January 28, 2002, arrangement of detectors in Fig. 3(a).
+
+
+
+inves
+(16)
+
+over
+Th
+
+strea
+cumu
+t
+syn,B total
+and the cumulative ﬂow rate into the region of synchronized ﬂow which is inﬂuenced by the ﬂow
+on the main road measured at the detector ‘‘A’’ and the on- and oﬀ-ramps between the detectors
+‘‘A’’ and ‘‘B’’:
+
+DM totalðtÞ ¼
+Z t
+tsyn;B
+
+qBðtÞdt �
+Z t
+tsyn;B
+
+ðqAðtÞ þ qonðtÞ � qoffðtÞÞdt; t > tsyn;B: ð17Þ
+
+The ﬂow rates in (17) are the total ﬂow rates across the whole cross sections. DMtotal(t) is the net
+number of vehicles leaving the road section between the detectors ‘‘A’’ and ‘‘B’’. When the num-
+ber of vehicles between the detectors increases, DMtotal(t) is negative. To make the FOTO formu-
+las for the determination of xðsynÞup ðtÞ independent of the number of lanes n, DMtotal(t) is
+‘‘normalized’’ to the traﬃc volume per lane, DMlane(t), which will further be used as DM(t):
+
+DMðtÞ ¼ DM laneðtÞ ¼ DM totalðtÞn : ð18Þ
+
+The correspondence between xðsynÞup ðtÞ and DM(t) has been found empirically to be approxi-
+mately a linear function:
+
+xðsynÞup ðtÞ ¼ lDMðtÞ; ð19Þ
+l is a constant, xðsynÞup ðtÞ is the front position relative to the detector ‘‘B’’ (in meters), the unit of
+DM(t) is (veh./lane). However, this is an average behavior of the upstream front. When measure-
+ments of DM(t) are inserted into (19), the calculated front position xðsynÞup ðtÞ (19) can sometimes
+contradict condition (15). In this case, the calculated value xðsynÞup ðtÞ (19) is adjusted according to
+(15), i.e., if the calculated value xðsynÞup ðtÞ > 0, it is set to zero, and if the calculated value
+
+xðsynÞup ð
+m front position xðsynÞup ðtÞ of synchronized ﬂow (Fig. 6(c), black points) and the change of the
+lated number of vehicles between the detectors ‘‘A’’ and ‘‘B’’ that occurred after the time
+. This change is the diﬀerence DM of the cumulative ﬂow rate passing the detector ‘‘B’’
+and shorter measurement intervals. An important advantage of this approach is that it works
+without any parameter validation through the use of the measured traﬃc data only.
+
+4.2. Cumulative ﬂow rates approach for tracking the upstream front of synchronized ﬂow
+
+Empirical observations have shown that there is a nearly linear correspondence between the up-
+the road even if the ﬂow rate remains almost a constant value (see Kerner, 2002b).
+e error of this ASDA-like approach decreases with smaller distances between the detectors
+xðsynÞup ðtÞ, i.e., in synchronized ﬂow the formula (16) leads often to an incorrect result. This is linked
+to a feature of synchronized ﬂow which usually exhibits a very high change in the vehicle density
+tigations show that for free ﬂow upstream of the front location xðsynÞup ðtÞ the assumption of
+is nearly valid. However downstream of the synchronized ﬂow upstream front location
+The reason for this behavior may be the following: The formula (16) assumes that the ﬂow rates
+and the vehicle densities which are measured at the location ‘‘A’’ are nearly the same as in free
+ﬂow directly upstream of the location of the front xðsynÞup ðtÞ. In addition, this formula assumes that
+measurements of these traﬃc variables at the detector ‘‘B’’ are nearly the same as these variables
+directly downstream of the synchronized ﬂow upstream front location, xðsynÞup ðtÞ. Our empirical
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 383
+tÞ 6 �D, it is set to �D + e, where e is the above mentioned small value, e	D.
+
+
+
+For the bottleneck near the detector D6 (Fig. 3(a)) it has empirically been found that the mean
+value l = 33 (m/veh.) can be used in (19). For diﬀerent empirical examples at diﬀerent bottlenecks
+of the sections of the freeway A5 under consideration a variation of 28 < l < 40 has been found.
+Nevertheless we have used the constant value of l = 33 (m/veh.) in the FOTO application. This
+shows good results for the tracking of the synchronized ﬂow because a possible mistake in this
+constant is about 15%. However, the constant l in (19) might be diﬀerent for bottlenecks at other
+freeway sections. Thus, in these cases the constant l in (19) should be validated based on historical
+empirical data.
+An example of the application of the formula (19) for the tracking of the synchronized ﬂow is
+
+shown in Fig. 6(c) (solid curve). The example was done with a reduced infrastructure where only
+data from D1, D5 and D5-oﬀ are used. The times of the phase transitions measured directly at the
+detectors D1, D2, D3, D4 and D5 are shown as a reference with black circles. In comparison to
+the positions calculated by the ASDA-like formula (dashed curve in Fig. 6(c), error 100% at 6:56:
+the upstream front of synchronized ﬂow supposed to be at �4.0km, is in reality at �2.0km), the
+positions from the cumulative ﬂow rate formula (19) match the actually measured phase transi-
+tions at the detectors (black points in Fig. 6(c)) much better.
+This approach of the cumulative ﬂow rates allows the determination of the upstream front of
+
+the synchronized ﬂow in good accordance to the real propagation. An additional parameter l (19)
+is needed which is valid for a speciﬁc bottleneck. Recall that an empirical determination of the
+parameter l is only possible in good measurement infrastructures with many detectors. Therefore
+the approach based on cumulative ﬂow rates is less optimal in network installations with larger
+detector distances and measurement intervals.
+
+4.3. FOTO in the case of several detectors and dissolving synchronized ﬂow
+
+So far we have discussed the tracking of the upstream front of synchronized ﬂow between a
+detector ‘‘A’’ where traﬃc is still in the state ‘‘free ﬂow’’ and a detector ‘‘B’’ where synchronized
+ﬂow has initially been detected. Once the upstream front of the synchronized ﬂow has reached the
+detector ‘‘A’’ at a time tsyn,A, the further propagation of synchronized ﬂow can be tracked by
+monitoring the traﬃc volume since tsyn,A between a next upstream detector ‘‘C’’ and the detector
+‘‘A’’. With the new detector distance D� between the detectors ‘‘C’’ and ‘‘A’’, the same method as
+for the tracking of the upstream front between the detectors ‘‘A’’ and ‘‘B’’ is used. However, this
+method can only be used as long as traﬃc at the detector ‘‘A’’ is in the state ‘‘synchronized ﬂow’’,
+i.e., no wide moving jam occurred at the detector ‘‘A’’.
+When the upstream supply of vehicles ﬂowing into the area of synchronized ﬂow from the
+
+main road decreases, the upstream front of synchronized ﬂow can begin to move downstream
+until it reaches the bottleneck and the synchronized ﬂow is dissolved. In the course of this proc-
+ess, the situation can occur that the upstream front of synchronized ﬂow moves downstream
+across the detector ‘‘A’’ at time tfree,A but traﬃc is still in the synchronized ﬂow state at the next
+downstream detector ‘‘B’’. In this case, the same methods as for the tracking of the upstream
+front of the expanding synchronized ﬂow between the detectors ‘‘A’’ and ‘‘B’’ is used. The dif-
+ference is that in (17) the time tfree,B should be replaced by the time tfree,A and the resulting coor-
+dinate of the upstream front of synchronized ﬂow xðsynÞup ðtÞ (19) should be replaced by xðsynÞup ðtÞ ¼
+
+384 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+�Dþ lDMðtÞ.
+
+
+
+5. Online application and evaluation of the models FOTO and ASDA
+
+5.1. Results of the online application of FOTO and ASDA
+
+In the application FOTOwin both the models FOTO and ASDA are integrated. For operation
+at the TCC in the federal state Hessen near Frankfurt the data exchange is performed with a cen-
+tral information distributor, which manages the data of the detectors. The models have been in-
+stalled ﬁrst on the freeway A5 near the variable message signs equipment between intersection
+‘‘Westkreuz Frankfurt’’ and the intersection ‘‘Anschlussstelle Friedberg’’ in both directions. A
+more detailed consideration of the implementation of the FOTOwin software has been considered
+in (Kerner et al., 2001b).
+FOTOwin has the possibility to show the traﬃc objects over a longer time interval to investi-
+
+gate the spatial–temporal movement of the objects: A space-time diagram gives a history of the
+traﬃc objects (Fig. 7). The x-axis is the time and the y-axis the position on the road. In the rep-
+resentation, moving jam objects are shown in black and synchronized ﬂow objects are shown in
+gray. The infrastructure is shown with horizontal lines for the detectors� positions. Using this
+space-time diagram, the movement of the diﬀerent traﬃc objects in time and space can directly
+be seen.
+It should be noted that in each case the reference for a correct or false classiﬁcation of the traﬃc
+
+phases ‘‘synchronized ﬂow’’ and ‘‘wide moving jam’’ with the model FOTO is made based on the
+following approach: A comparison of the traﬃc phases which follow from the objective criteria
+for the traﬃc phases (see Section 1) based on the local measurements only (i.e., without the appli-
+cation of the model FOTO) with the results of the traﬃc phase reconstruction with the model
+FOTO is made. Naturally the latter is only possible with high quality results if the detector dis-
+tances are small (about or less than 1000m). In this case an interpolation of the minute speed val-
+ues of the detectors give a spatial–temporal structure of congested patterns where the traﬃc phase
+through the objective criteria can be distinguished. Most results of the application FOTO and
+ASDA below will be presented for the sections of freeway A5 where at about 30km length about
+30 detectors exist, i.e., the mean detector distance is 1km.
+For the example shown in Fig. 7 time–space plots of the detector data with interpolation be-
+
+tween detectors look very similar to the results of the models FOTO and ASDA shown here.
+On the one hand, it shows a high quality of the approach. On the other hand, if the distance be-
+tween detectors is not small then the mentioned data interpolation makes a considerable mistake
+in comparison with the real spatial–temporal pattern. We will see below that in contrast to this
+data interpolation, the models FOTO and ASDA allow us to make a high quality tracking of spa-
+tial–temporal congested patterns even at relatively high distances between detectors. Thus, an
+advantage of the models FOTO and ASDA becomes more visible at less ideal detector
+infrastructures.
+For the evaluation of the models FOTO and ASDA the application is tested in strongly reduced
+
+conﬁgurations: traﬃc data of several detectors have been omitted. In the reduced conﬁguration
+the models FOTO and ASDA (Fig. 7(c) and (d)) reproduce the wide moving jams and the syn-
+chronized ﬂow with good accordance in comparison to Fig. 7(a) and (b) where all detectors have
+been used. In particular, a possible dissolving of the objects ‘‘wide moving jam’’ and ‘‘synchro-
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 385
+nized ﬂow’’ which occurs between detectors can be predicted, i.e., even when the objects cannot
+
+
+
+386 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+be measured. An example is shown in Fig. 7(a) where a wide moving jam ‘‘jam1’’ dissolves at
+t = 9:44. This moving jam dissolving is predicted through the jam tracking in the model ASDA
+in the reduced detector conﬁguration at t = 9:41 (Fig. 7(c)), i.e., when the moving jam cannot
+be measured by the detectors.
+Another example where the limitation of the spatial propagation of the object ‘‘synchronized
+
+ﬂow’’ is predicted through the synchronized ﬂow tracking in the model FOTO when the position
+of the upstream front of synchronized ﬂow cannot be measured is shown in Fig. 7(d). In this case,
+a location of the upstream front of synchronized ﬂow is predicted to be located between 10 and
+15km (in the agreement with the result in Fig. 7(b) where the full detector conﬁguration is used)
+whereas the measurements between these freeway locations are not used in the model FOTO in
+
+Fig. 7. Results and evaluation of FOTO and ASDA application: space-time diagrams of spatial–temporal congested
+
+patterns. (a) A5-South on 17th March, 1997 where all available 31 detectors are used. (b) A5-North on 11th August,
+
+2000 where all available 30 detectors are used. (c) Related to (a) where 5 instead of 31 detectors are used. (d) Related to
+
+(b) where 10 instead of 30 detectors are used.
+
+
+
+Fig. 7(d). A statistical evaluation of diﬀerent reduced detector conﬁgurations is described in Sec-
+tion 5.3.
+
+5.2. Online application of FOTO and ASDA in other freeways
+
+FOTOwin has been installed for the whole freeway network in Hessen with estimated 800 detec-
+tors and 850km of freeway network. The models have therefore to cope with diﬀerent detector
+infrastructures (distances between detectors up to 10km), diﬀerent measurement intervals
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 387
+Fig. 8. Results of FOTO and ASDA application in the Rhein/Main area on several freeways: (a) schema of the area
+
+with results of data from 22nd April, 2002 at 8:00, (b) space-time diagram for the freeway A67-North (data from 22nd
+April, 2002).
+
+
+
+(1 and 5 min) and with diﬀerent kinds and mixtures of local, regional, long distance and leisure
+traﬃc. Fig. 8 (a) illustrates FOTO and ASDA results in the Rhein/Main-area: positions of wide
+moving jams (in black color) and regions of synchronized ﬂow (in white color) are marked on the
+diﬀerent freeway sections.
+Fig. 8(b) shows a space-time diagram (22nd April, 2002: 07:15–08:30) for the freeway A67-
+
+North between intersection ‘‘AS Lorsch’’ (km 44) and intersection ‘‘Darmsta¨dter Kreuz’’ (km
+31) within the net in Fig. 8(a) which has a larger percentage of long distance traﬃc than the free-
+way A5 located near the city of Frankfurt. In an example of the FOTO and ASDA-application
+(Fig. 8(b)) three wide moving jams propagating upstream can be seen on the 13km stretch with
+four detectors at 3–5km distance. Note, that because the detectors are in this case far away from
+the bottlenecks (only a detector A67/106N is close to on- and oﬀ-ramps) on the two-lane (in one-
+way) freeway the regions of synchronized ﬂow emerging at those bottlenecks cannot be detected
+and tracked. On the other hand, the wide moving jams are tracked with ASDA at relatively large
+detector distances of 3–5km. The characteristic value of the velocity of the downstream front
+propagation is here �16km/h at a maximum observation distance of 8,1km between the detectors
+A67/103N and A67/107N. This is in good accordance to the results on the freeway sections of A5
+near Frankfurt.
+Additional examples of the ASDA and FOTO application in freeways near Magdeburg and
+
+near Munich (both Germany) are shown in Figs. 9 and 10, respectively. The results of the ASDA
+and FOTO application in these examples are qualitatively the same as the results of the on-line
+application for freeways in Hessen (Figs. 7 and 8).
+
+388 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+Fig. 9. Results and evaluation of FOTO and ASDA application in freeways near Magdeburg: (a), (b) freeways
+
+schemas, (c) all available detectors are used and (d) reduced detector infrastructure. In (c), (d) A2-East, data on 13th
+September, 2002.
+
+
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 389
+5.3. Statistical evaluation of results for diﬀerent reduced detector conﬁgurations
+
+For the online ﬁeld trial made from 13th June, 2000 until 22nd October, 2000 results of the sta-
+tistical evaluation of the models FOTO and ASDA under diﬀerent reduced detector conﬁgura-
+tions have been performed in (Kniss, 2000). This evaluation has shown a very high practical
+relevance of the approach FOTO and ASDA for the recognition and tracking of spatial–temporal
+congested patterns on freeways.
+
+Fig. 10. Results and evaluation of FOTO and ASDA application in freeways near Munich: (a), (b) freeways schemas,
+
+(c) all available detectors are used, (d) reduced detector infrastructure. In (c), (d) A9-North, data on 13th June, 2002. (e)
+
+Complex spatial–temporal traﬃc pattern on A9-South, data on 24th June, 2002.
+
+
+
+Here we will make a more extended evaluation of FOTO and ASDA. The main question which
+we would like to answer is the following: Which reduced detector conﬁguration allows us to make
+the best possible quality recognition and tracking of spatial–temporal congested patterns?
+To ﬁnd out about cost-eﬃcient measurement infrastructures that still lead to good results with
+
+FOTO and ASDA, the following approach has been chosen: The full detector conﬁguration at the
+A5-North (Fig. 11, A5-North: Full) is reduced to only 23% of the detectors (77% of the measure-
+ments have been omitted for the models FOTO and ASDA). These omitted detectors have been
+used for the evaluation of the results performed with reduced detector conﬁgurations.
+The remaining 23% detectors are chosen diﬀerently, i.e., two diﬀerent reduced detector infra-
+
+structures have been studied: (1) Firstly, the detectors between freeway intersections (between
+potential bottlenecks) plus the detectors at on- and oﬀ-ramps have been used (the reduced detec-
+tor infrastructure ‘‘Min1’’ in Fig. 11 and Table 2). (2) Secondly, only main road detectors which
+are located close to the intersections without detectors at ramps have been chosen (the reduced
+detector infrastructure ‘‘Min2’’ in Fig. 11 and Table 2). Both conﬁgurations ‘‘Min1’’ and
+‘‘Min2’’ are oriented at complete balancing of vehicle numbers, i.e., there are no large detector
+distances with undetected on- and/or oﬀ-ramps in between.
+
+390 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+Fig. 11. Three diﬀerent detector conﬁgurations: the conﬁguration ‘‘Full’’ with all available 30 detectors on the main
+
+road, the conﬁguration ‘‘Min1’’ with 5 main road detectors and detectors at on- and oﬀ-ramps and the conﬁguration
+‘‘Min2’’ with 8 main road detectors.
+
+
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 391
+Table 2
+
+Detector infrastructure conﬁgurations on A5-North: ‘‘Full’’, ‘‘Min1’’, ‘‘Min2’’ (Fig. 11)
+
+Detector conﬁguration A5-North
+
+‘‘Full’’ 30 main road detectors and detectors at on- and oﬀ-ramps in the following
+
+intersections ‘‘Anschlussstelle Friedberg’’ (2 detectors),
+
+‘‘Bad Homburger Kreuz’’ (4 detectors), ‘‘Nordwestkreuz’’ (2 detectors),
+
+‘‘Westkreuz’’ (3 detectors)
+
+‘‘Min1’’ 5 main road detectors and detectors at on- and oﬀ-ramps in the following
+
+intersections ‘‘Anschlussstelle Friedberg’’ (2 detectors),
+
+‘‘Bad Homburger Kreuz’’ (4 detectors), ‘‘Nordwestkreuz’’ (2 detectors),
+
+‘‘Westkreuz’’ (3 detectors)
+
+‘‘Min2’’ 8 main road detectors
+
+Table 3
+
+Objects and detection rates in each the two conﬁguration for objects depending on their lifetime
+
+Type of object Objects full
+
+conﬁguration
+
+Min1 Min1 in % of
+
+full conﬁguration
+
+Min2 Min2 in % of full
+
+conﬁguration
+
+Wide moving jam 4826 2029 42 2504 51.9
+
+Wide moving jam > 5min 1632 859 52.6 996 61
+
+Synchronized traﬃc ﬂow 10482 2755 26.3 4318 41.2
+
+Synchronized traﬃc ﬂow > 5min 2933 977 33.3 1870 63.8
+Table 3 shows the number of detected objects ‘‘synchronized ﬂow’’ and ‘‘wide moving jam’’ in
+these three conﬁgurations during the ﬁeld trial. All following analyses use 15.300 empirical objects
+(�4.800 ‘‘wide moving jam’’ objects and �10.500 ‘‘synchronized ﬂow’’ objects) which have oc-
+curred on the section of the freeway A5-North from 13th June, 2000 until 22nd October, 2000.
+The mean life duration the object ‘‘wide moving jam’’ is �9min whereas the mean life duration
+of the object ‘‘synchronized ﬂow’’ is �6min.
+It is important to note that for both conﬁgurations ‘‘Min1’’ and ‘‘Min2’’ the detection rate for
+
+wide moving jams is close to 50% of the case of the ‘‘Full’’ detector conﬁguration, while for the
+synchronized ﬂow the detector conﬁguration ‘‘Min2’’ detects almost 42% of the ‘‘Full’’ detector
+conﬁguration and the detector conﬁguration ‘‘Min1’’ only 26%. In other words, choosing the
+detector conﬁguration in a more optimal way (‘‘Min2’’) in the shown example only 23% of all
+detectors are suﬃcient to detect and track �50% of both kinds of traﬃc objects.
+The detection rate for wide moving jams increases slightly from 51.9% to 61% in the detector
+
+conﬁguration ‘‘Min2’’ if only longer living objects (lifetime longer than 5 min) are considered
+(Table 3). The detector conﬁguration ‘‘Min1’’ shows a similar increase. This eﬀect is more signif-
+icant for synchronized ﬂow objects: the detector conﬁguration ‘‘Min2’’ shows 50% higher detec-
+tion rates for lifetimes above 5min. In the detector conﬁguration ‘‘Min1’’, however, this detection
+rate only increases from 26.3% to 33.3%. The detector conﬁguration‘‘Min2’’ detects twice as many
+(about 2/3 of the objects detected and tracked by the ‘‘Full’’ detector conﬁguration) longer living
+synchronized ﬂow objects than ‘‘Min1’’ (about 1/3 of the objects detected and tracked by the
+‘‘Full’’ detector conﬁguration).
+
+
+
+392 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+In the above analysis, each detection of a ‘‘wide moving jam’’ or ‘‘synchronized ﬂow’’ object
+is weighted in the same way. For example whether a 10-min-living wide moving jam is detected
+already after the second minute or only after the ninth minute makes no diﬀerence in the detec-
+tion rate. Moreover, no distinction is made between diﬀerently sized objects: The detection of a
+2km-wide moving jam counts as much as the detection of a 500m-wide moving jam. To ac-
+count for these diﬀerences, Table 4 gives a comparison of the two conﬁgurations in terms of
+delay time for motorists caused by the traﬃc objects detected over time by the two con-
+ﬁgurations.
+The delay time is calculated by the contributions of each single object with its separate width
+
+and average speed for the whole A5 stretch at each single minute cycle. For the 4-month ﬁeld trial
+the detector conﬁgurations ‘‘Min1’’ and ‘‘Min2’’ detect almost two thirds of the delay time values
+due to an occurrence of a wide moving jam. For synchronized ﬂow objects the detector conﬁgu-
+ration ‘‘Min1’’ shows only one third of the total (for the ‘‘Full’’ conﬁguration) delay time values
+due to an occurrence of the synchronized ﬂow whereas the detector conﬁguration ‘‘Min2’’ is still
+at two third of the total delay time values for synchronized ﬂow objects. Thus, only 23% of the
+detectors estimate up to two third of the full measurement infrastructure, but the advantage of
+the detector conﬁguration ‘‘Min2’’ over ‘‘Min1’’ is smaller for ‘‘wide moving jams’’ and bigger
+for ‘‘synchronized ﬂow’’.
+An illustration of these conclusions for data on 19th October, 2000 at the A5-North is shown in
+
+Fig. 12. The conﬁguration ‘‘Min2’’ indeed allows to detect synchronized ﬂow objects with higher
+accuracy than ‘‘Min1’’ (Fig. 12(a)–(c)). For this reason, the ‘‘Min2’’ travel time comes closer to
+the ‘‘Full’’ travel time (Fig. 12(d)). After 17:00 both reduced conﬁgurations ‘‘Min1’’ and
+‘‘Min2’’ are less accurate in comparison with the ‘‘Full’’ conﬁguration because at km 12–15
+new wide moving jams occur which are not detected. In a free ﬂow condition a travel time would
+be about 15min (at 120km/h), i.e., in the congested condition in Fig. 12 it is nearly twice as much
+as in free ﬂow.
+
+5.4. Evaluation of FOTO and ASDA with respect to the suitability of the infrastructure
+
+A performance analysis during the ﬁeld trial of the FOTOwin application under diﬀerent infra-
+
+Table 4
+
+Delay time of all detected objects for A5-North
+
+Type of object Min1 in % of full conﬁguration Min2 in % of full conﬁguration
+
+Wide moving jam: delay time 56.97 60.84
+
+Synchronized ﬂow: delay time 27.2 63.7
+structures and weather conditions has shown that the models perform without any validation of
+model parameters in diﬀerent environmental and traﬃc conditions. It has been found that both
+wide moving jams and regions of synchronized ﬂow can best be tracked by the models FOTO
+and ASDA when there are no eﬀective locations of bottlenecks between two consecutive detectors
+(Table 5, (i)). In this case, the distance between two detectors can be up to 10km without a big loss
+in quality. Even if the distance is 10–20km, moving jams can still be tracked well while the suit-
+ability for synchronized ﬂow is medium (Kerner et al., 2001c).
+
+
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 393
+When there is a bottleneck between two consecutive detectors, the results highly depend on
+whether or not traﬃc is detected in the vicinity of the bottleneck (Table 5, (ii) and (iii)). This is
+linked to the empirical fact that as opposed to wide moving jams, synchronized ﬂow mostly re-
+mains near a bottleneck. Synchronized ﬂow can only be detected if there is at least one detector
+in the area close to the bottleneck where the phase transition from free to synchronized ﬂow
+
+Fig. 12. Evaluation of FOTO and ASDA for diﬀerent detector conﬁgurations in Fig. 11: (a)–(c) space-time diagrams
+
+for the ‘‘Full’’ (a), ‘‘Min2’’ (b) and ‘‘Min1’’ (c) detector conﬁgurations. (d) Travel time at the whole 30km stretch of the
+
+A5-North for ‘‘Full’’ (black line), ‘‘Min1’’ (thin dotted line) and ‘‘Min2’’ (thick dotted line) detector conﬁgurations.
+
+Table 5
+
+Suitability of the infrastructure for the models FOTO and ASDA
+
+Case Distance between
+
+detectors (km)
+
+Suitability for
+
+moving jams
+
+Suitability for
+
+synchronized ﬂow
+
+(i) No bottlenecks between detectors <10 Very good Very good
+
+10–20 Very good Medium
+
+(ii) Bottlenecks between detectors <3 Very good Medium
+
+3–10 Medium Bad
+
+10–20 Bad Bad
+
+(iii) Detectors both away from bottlenecks and
+
+directly upstream of the bottlenecks
+
+<3 Very good Very good
+
+3–10 Good Good
+
+10–20 Medium Medium
+
+
+
+move slowly, even a distance of 3–5km between the detector and the eﬀective location of the bot-
+tleneck can result in a delay of half an hour or more until the synchronized ﬂow is detected—if the
+
+The models FOTO and ASDA allow to reconstruct and to track the main spatial–temporal fea-
+
+We would like to thank the HLSV (Hessisches Landesamt fu¨r Strassen- und Verkehrswesen:
+
+Hessen ministry for road and traﬃc) for the possibility of a ﬁeld trial and the help in the prepa-
+ration of the data.
+
+Appendix A. Extended set of fuzzy rules
+
+The basic set of fuzzy rules discussed above allows us to perform an accurate classiﬁcation of
+tures of congested patterns in freeway traﬃc, in particular at freeway bottlenecks. These models
+perform without any validation of model parameters in diﬀerent environmental and infrastructure
+situations.
+The discussion of results show the features of FOTO and ASDA with examples which are based
+
+on a stationary infrastructure and their cyclic aggregated measurements. The models FOTO and
+ASDA have been installed at the TCC Hessen (traﬃc control center near Frankfurt, Germany). It
+has been shown that the models are very reliable without any validation of model parameters in
+all diﬀerent situations: most traﬃc objects in congested regime (‘‘wide moving jam’’ and ‘‘synchro-
+nized ﬂow’’) can be reconstructed and tracked even at infrastructures with less detection. The dis-
+solution of the objects ‘‘wide moving jam’’ and ‘‘synchronized ﬂow’’ which occurs between
+detectors can be predicted, i.e., even when the objects cannot be measured. Choosing optimal
+detector positions with regard to the eﬀective locations of bottlenecks gives a large potential
+for saving roadside infrastructure investments: It has been shown in a four month ﬁeld trial that
+with only 23% of all given measurements at the A5 nearly 60% of the relevant information can be
+reconstructed (Table 4).
+The online description of the current traﬃc state and the tracking of traﬃc objects ‘‘wide mov-
+
+ing jam’’ and ‘‘synchronized ﬂow’’ based on stationary measurements performed by the models
+FOTO and ASDA gives successful opportunities to reconstruct and to track realistic traﬃc pat-
+terns for traﬃc control centers as basic information for all kinds of traﬃc management.
+
+Acknowledgments
+upstream front of the synchronized ﬂow reaches the detector at all (see especially the detector con-
+ﬁguration ‘‘Min1’’ with detectors D10 and D19, Fig. 11).
+
+6. Conclusions
+occurs (for example detectors D5, D14, D23 in the detector conﬁguration ‘‘Min2’’, Fig. 11). When
+the detector is further upstream from the bottleneck, the synchronized ﬂow is only detected after
+its upstream front has reached that detector. Since upstream fronts of synchronized ﬂow often
+
+394 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+the traﬃc phase in almost all cases. For the recognition of wide moving jams, those rules use the
+
+
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 395
+FOTO decision (right axis)
+
+average speed [km/h] (left axis)
+
+FOTO decision (right axis)
+
+average flow rate [veh/h] per lane
+(left axis)
+
+free
+
+syn
+
+jam
+
+D2
+
+free
+
+syn
+
+jam
+D3
+
+free
+
+syn
+
+jam
+
+D2
+
+free
+
+syn
+
+jam
+
+D3
+
+basic rules
+extended rules
+
+basic rules
+extended rules
+
+Fig. 13. Comparison of the FOTO decision with basic (circles) and extended fuzzy logic (squares). Data for the A5-
+fact that both the ﬂow rate and the average vehicle speed are at a low level inside a wide moving
+jam. However, there are cases when the ﬂow rate drops sharply inside a moving jam, but remains
+at a relatively high value. If this ﬂow rate remains above 800veh./h, it has a higher degree of mem-
+bership in the fuzzy set ‘‘high’’ than in the fuzzy set ‘‘low’’ with the basic fuzzy rules (Fig. 2). Fig.
+13 shows such an example: The drop in the average vehicle speed and ﬂow rate at detector D3 at
+8:29 is classiﬁed as ‘‘synchronized ﬂow’’ by the basic rules because the ﬂow rate does not get lower
+than 880veh./h at 8:29. The correct classiﬁcation would be ‘‘wide moving jam’’: This wide moving
+jam propagates upstream and reaches D2 at 8:35 where it is correctly classiﬁed even with the basic
+fuzzy rules.
+This problem cannot be solved by simply using diﬀerent membership functions for the ﬂow rate
+
+because ﬂow rates of 880veh./h can also occur in synchronized ﬂow. Analyses suggest that there is
+a certain range of vehicle speeds and ﬂow rates where a distinction between ‘‘synchronized ﬂow’’
+and ‘‘wide moving jam’’ can be made by considering recent changes in time of the ﬂow rate and
+the average vehicle speed in addition to the current values of the ﬂow rate and the speed. This
+was realized with an extended set of 13 fuzzy rules that classiﬁes the moving jam in Fig. 13
+correctly.
+The range of vehicle speeds where the value change of the speed has to be considered is between
+
+the fuzzy sets ‘‘low’’ and ‘‘medium’’ in the basic fuzzy rules. Therefore, these fuzzy sets have been
+split into the three new sets ‘‘very low’’, ‘‘low’’ and ‘‘medium’’ in the extended fuzzy logic (Fig.
+14(a)). The fuzzy set ‘‘high’’ remains the same as in the basic fuzzy logic (Figs. 2(a) and 14(a)).
+The set ‘‘low’’ in the new fuzzy logic is the range of vehicle speeds where the value change of
+
+South, January 28, 2002. The detector arrangement is in Fig. 3(a).
+
+
+
+396 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+the speed is considered. Similarly, the ﬂow rate is classiﬁed in the new sets ‘‘very low’’, ‘‘low’’ and
+‘‘high’’ in the extended fuzzy logic, where ‘‘low’’ is the range where the value change of the ﬂow
+rate is considered (Fig. 14(b)).
+In the case when the vehicle speed is ‘‘low’’ and the ﬂow rate is ‘‘low’’, it is taken into account
+
+that the upstream front of a wide moving jam is accompanied by a sharp drop in both the vehicle
+
+de
+gr
+
+ee
+ o
+
+f
+de
+
+gr
+ee
+
+ o
+f m
+
+em
+be
+
+rs
+hi
+
+p
+
+0
+
+0.5
+
+1.0
+
+500 1000 1500 2000
+
+low high
+
+q [veh./h]
+
+very
+low
+
+(a)
+
+(b)
+
+0
+
+0.5
+
+10 20 30 40 50 60 v [km/h]70 80
+
+Fig. 14. Fuzziﬁcation of the input variables in FOTO with the extended fuzzy logic: (a) ‘‘vehicle speed’’ and (b) ‘‘ﬂow
+
+rate’’.
+speed
+sharp
+and
+tuati
+and i
+than
+Us
+
+such
+drop
+ment
+is co
+feren
+time
+Th
+
+maxt
+ m
+em
+
+be
+rs
+
+hi
+p
+
+1.0 low medium high
+very
+low
+and the ﬂow rate whereas the downstream front of the moving jam is accompanied by a
+rise in the vehicle speed and the ﬂow rate at a detector. The relative changes in the ﬂow rate
+
+the vehicle speed are used as additional input to the fuzzy logic circuit. To account for ﬂuc-
+ons in the measured vehicle speed and the ﬂow rate, the maximum diﬀerences in the ﬂow rate
+n the speed within a higher time interval Dt before the last measurement is considered rather
+taking just these diﬀerences between the last two measurements.
+ually a discrete sequence of measurements is available for FOTO. Let us further consider two
+consecutive moments of time t0 and t
+
+� (t0 > t�) within the interval Dt. If the ﬂow rate has
+ped between the time t� and the time t0, i.e., q(t0) < q(t�), the diﬀerence between the measure-
+, q(t0) at the time t0, and the maximum value measured during the whole time Dt, maxt(q(t)),
+nsidered as a value ‘‘diﬀ’’ in Fig. 15(a). If the ﬂow rate has risen between t� and t0, the dif-
+ce between the measurement q(t0) and the minimum ﬂow rate measured during the whole
+Dt, mint(q(t)), is considered as a value ‘‘diﬀ’’ in Fig. 15(b).
+e input variable dq(t0) to the fuzzy-logic circuit is the change of the ﬂow rate (diﬀ) relative to
+(q(t)) if the ﬂow rate has dropped and relative to q(t0) if the ﬂow rate has risen, i.e.,
+
+dqðt0Þ ¼
+qðt0Þ �max
+
+t
+ðqðtÞÞ
+
+max
+t
+ðqðtÞÞ ; if qðt0Þ 6 qðt
+
+�Þ and dqðt0Þ ¼
+qðt0Þ �min
+
+t
+ðqðtÞÞ
+
+qðt0Þ ;
+
+if qðt0Þ > qðt�Þ:
+
+
+
+ger th
+sition
+likely
+dv(t0)
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 397
+sults achieved with diﬀerent functions.
+
+In
+
+synch
+has b
+i.e., i
+sition
+As
+
+local
+
+(1)
+(2)
+(3)
+
+(4)
+(5)
+0
+
+an the drop in the vehicle speed. Analyses have shown that this is a sign that the phase tran-
+to a wide moving jam did indeed occur whereas a high value of c(t0) indicates that it is less
+that the transition has occurred. The membership functions of the additional variables
+, dq(t0) and c(t0) (Fig. 16) have been chosen empirically by comparing the quality of the re-
+The same method is used to calculate the relative change of the vehicle speed, dv(t0):
+
+dvðt0Þ ¼
+vðt0Þ �max
+
+t
+ðvðtÞÞ
+
+max
+t
+ðvðtÞÞ ; if vðt0Þ 6 vðt
+
+�Þ and dvðt0Þ ¼
+vðt0Þ �min
+
+t
+ðvðtÞÞ
+
+vðt0Þ ;
+
+if vðt0Þ > vðt�Þ:
+Another input variable to the extended fuzzy-logic circuit is the ratio cðt0Þ ¼ dvðt0Þdqðt0Þ of the relative
+
+change of the vehicle speed to the relative change of the ﬂow rate. In the case of negative dv(t0) and
+negative dq(t0) (a potential phase transition either from free ﬂow or from synchronized ﬂow to a
+wide moving jam), a low value of c(t ) indicates that the drop in the ﬂow rate was relatively stron-
+
+diff
+
+diff
+
+q
+
+t
+
+F2F1
+
+t* t0
+
+t
+
+t* t0
+
+(a) diff
+
+diff
+
+q
+
+t
+
+F4F3
+
+t* t0 t* t0
+
+(b)
+
+∆
+
+Fig. 15. The diﬀerence in the ﬂow rate ‘‘diﬀ’’ (down-arrows for ‘‘diﬀ’’ < 0 and up-arrows for ‘‘diﬀ’’ > 0) when within Dt
+there are three measurements: (a) the ﬂow rate has dropped in the last interval (situations F1 and F2), (b) the ﬂow rate
+
+has risen in the last interval (F3 and F4).
+the case of a possible transition from a wide moving jam to another traﬃc phase (free ﬂow or
+ronized ﬂow), i.e., when both dv(t0) and dq(t0) are positive, a similar analysis concerning c(t0)
+een made. If the rise in the vehicle speed is relatively sharper than the rise in the ﬂow rate,
+f c(t0) is high, traﬃc is likely to have remained in the ‘‘wide moving jam’’ phase while a tran-
+to another traﬃc phase is likely to have occurred if c(t0) is low.
+a result, the whole set of fuzzy rules for the online determination of traﬃc phases based on
+detector measurements consists of 13 rules:
+
+If the vehicle speed is ‘‘high’’, the traﬃc phase is ‘‘free ﬂow’’.
+If the vehicle speed is ‘‘medium’’, the traﬃc phase is ‘‘synchronized ﬂow’’.
+If the vehicle speed is not ‘‘high’’ and the ﬂow rate is ‘‘high’’, the traﬃc phase is ‘‘synchro-
+nized ﬂow’’.
+If the vehicle speed is ‘‘very low’’, the traﬃc phase is ‘‘wide moving jam’’.
+If the vehicle speed is ‘‘low’’ and the ﬂow rate is ‘‘very low’’, the traﬃc phase is ‘‘wide mov-
+ing jam’’.
+
+
+
+398 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+0
+
+0.5
+
+1.0
+
+-1 0 +1
+
+negative positive
+
+0v (t )
+
+0(t )
+
+d
+
+0
+
+0.5
+
+1.0
+
+-1 0 +1
+
+negative positive
+
+qd
+
+0.5
+
+1.0 low high
+
+e 
+of
+
+ m
+em
+
+be
+rs
+
+hi
+p
+
+de
+gr
+
+ee
+ o
+
+f m
+em
+
+be
+rs
+
+hi
+p
+
+de
+gr
+
+ee
+ o
+
+f m
+em
+
+be
+rs
+
+hi
+p
+
+(a)
+
+(b)
+(6) If the previous (i.e., at the last time interval) traﬃc phase was not ‘‘wide moving jam’’ and
+the vehicle speed is ‘‘low’’ and the ﬂow rate is ‘‘low’’ and dv(t0) is ‘‘negative’’ and dq(t0) is
+‘‘negative’’ and c(t0) is ‘‘low’’, then the traﬃc phase is ‘‘wide moving jam’’.
+
+(7) If the previous traﬃc phase was not ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and
+the ﬂow rate is ‘‘low’’ and dv(t0) is ‘‘negative’’ and dq(t0) is ‘‘negative’’ and c(t0) is ‘‘high’’,
+then the traﬃc phase is ‘‘synchronized ﬂow’’.
+
+(8) If the previous traﬃc phase was not ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and
+the ﬂow rate is ‘‘low’’ and dv(t0) is not ‘‘negative’’, then the traﬃc phase is ‘‘synchronized
+ﬂow’’.
+
+(9) If the previous traﬃc phase was not ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and
+the ﬂow rate is ‘‘low’’ and dq(t0) is not ‘‘negative’’, then the traﬃc phase is ‘‘synchronized
+ﬂow’’.
+
+(10) If the previous traﬃc phase was ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and the
+ﬂow rate is ‘‘low’’ and dv(t0) is ‘‘positive’’ and dq(t0) is ‘‘positive’’ and c(t0) is ‘‘low’’, then the
+traﬃc phase is ‘‘synchronized ﬂow’’.
+
+(11) If the previous traﬃc phase was ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and the
+ﬂow rate is ‘‘low’’ and dv(t0) is ‘‘positive’’ and dq(t0) is ‘‘positive’’ and c(t0) is ‘‘high’’, then the
+traﬃc phase is ‘‘wide moving jam’’.
+
+(12) If the previous traﬃc phase was ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and the
+ﬂow rate is ‘‘low’’ and dv(t0) is not ‘‘positive’’, then the traﬃc phase is ‘‘wide moving jam’’.
+
+0(t )0
+0 +1
+
+c
++2 +3 +4
+
+de
+gr
+
+e
+
+(c)
+Fig. 16. Fuzziﬁcation of the input variables in FOTO with the extended fuzzy logic: (a) dv(t0); (b) dq(t0); (c) c(t0).
+
+
+
+(13) If the previous traﬃc phase was ‘‘wide moving jam’’ and the vehicle speed is ‘‘low’’ and the
+
+Kerner, B.S., 2004a. Three-Phase Traﬃc Theory and Highway Capacity. Physica A 333, 379–440.
+
+Kerner, B.S., 2004b. The Physics of Traﬃc. Springer, Berlin, New-York, Tokyo.
+
+B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400 399
+Kerner, B.S., Aleksic, M., Denneler, U., 2001. German patent DE 199 44 077 C1, day of notiﬁcation: 14.09.1999, day of
+
+publication: 22.03.2001, patent declaration: 07.02.2002.
+ﬂow rate is ‘‘low’’ and dq(t0) is not ‘‘positive’’, then the traﬃc phase is ‘‘wide moving jam’’.
+
+References
+
+Ben-Akiva, M., Koutsopoulos, H., Mukundan, A., 1994. A dynamic traﬃc model system for ATMS/ATIS operations.
+
+IVHS Journal 2 (1).
+
+Cremer, M., 1979. Der Verkehrsﬂuß auf Schnellstraßen. Springer-Verlag, Berlin.
+
+Daganzo, C., 1994. The cell-transmission model: A dynamic representation of highway traﬃc consistent with the
+
+hydrodynamic theory. Transportation Research B 28, 269–287.
+
+Gartner, N., Messer, C., Rathi, A. (Eds.), 1997. Special Report 165: Revised Monograph on Traﬃc Flow Theory,
+
+Transportation Research Board, Washington, DC.
+
+Helbing, D., 2001. Traﬃc and related self-driven many particle systems. Reviews of Modern Physics 73, 1067.
+
+Kates, R., Bogenberger, K., 1997. Calibration of the mesoscopic highway simulator ANIMAL: Performance under
+
+heavy traﬃc conditions, 4th World Congress on Intelligent Transport Systems, Berlin.
+
+Kaumann, O., Froese, K., Chrobok, R., Wahle, J., Neubert, L., Schreckenberg, M., 2000. On-line simulation of the
+
+freeway network of NRW. In: Helbing, D., Hermann, H.J., Schreckenberg, M., Wolf, D.E. (Eds.), Traﬃc and
+
+Granular Flow �99. Springer, Berlin, pp. 351–356.
+Kerner, B.S., 1998a. Experimental features of self-organization in traﬃc ﬂow. Physical Review Letters 81, 3797–4000.
+
+Kerner, B.S., 1998b. A theory of congested traﬃc ﬂow. In: Rysgaard, R. (Ed.), Proceedings of the 3rd International
+
+Symposium on Freeway Capacity. Road Directorate, Ministry of Transport, Denmark, pp. 621–641.
+
+Kerner, B.S., 1999a. The physics of traﬃc. Physics World (8), 25–30.
+
+Kerner, B.S., 1999b. Congested traﬃc ﬂow: Observations and theory. Transportation Research Record 1678, 160–167.
+
+Kerner, B.S., 1999c. Theory of congested traﬃc ﬂow: Self-organization without bottlenecks. In: Ceder, A. (Ed.),
+
+Proceedings of 14th International Symposium of Transportation and Traﬃc Theory. Elsevier Science Ltd., Oxford,
+
+pp. 147–171.
+
+Kerner, B.S., 2000a. Experimental features of the emergence of moving jams in free traﬃc ﬂow. Journal of Physics A:
+
+Mathematical and General 33, L221–L228.
+
+Kerner, B.S., 2000b. Theory of breakdown phenomenon at freeway bottlenecks. Transportation Research Record 1710,
+
+136–144.
+
+Kerner, B.S., 2000c. Phase transitions in traﬃc ﬂow. In: Helbing, D., Hermann, H.J., Schreckenberg, M., Wolf, D.E.
+
+(Eds.), Traﬃc and Granular Flow �99. Springer, Berlin, pp. 253–284.
+Kerner, B.S., 2001a. Complexity of synchronized ﬂow and related problems for basic assumptions of traﬃc ﬂow
+
+theories. Networks and Spatial Economics 1, 35–76.
+
+Kerner, B.S., 2001b. German patent DE 199 44 075 C2, day of notiﬁcation: 14.09.1999, day of publication: 22.03.2001,
+
+patent declaration: 31.01.2002; US patent US 2002045985 (pending); Japan patent JP 2002117481 (pending).
+
+Kerner, B.S., 2002a. Synchronized ﬂow as a new traﬃc phase and related problems for traﬃc ﬂow modelling.
+
+Mathematical and Computer Modelling 35, 481–508.
+
+Kerner, B.S., 2002b. Empirical macroscopic features of spatial–temporal traﬃc patterns at highway bottlenecks.
+
+Physical Review E 65, 046138.
+
+Kerner, B.S., 2002c. Three-Phase Traﬃc Theory and Highway Capacity, cond-mat/0211684, e-print in the electronic
+
+archive http://arxiv.org/abs/cond-mat/0211684.
+
+
+
+
+Kerner, B.S., Aleksic, M., Rehborn, H., 2000a. Automatic tracing and forecasting of moving traﬃc jams using
+
+predictable features of congested traﬃc ﬂow. In: Schnieder, E., Becker, U. (Eds.), Proceedings of 9th IFAC
+
+Symposium Control in Transportation Systems, vol. 2. IFAC, pp. 501–506.
+
+Kerner, B.S., Aleksic, M., Rehborn, Haug, A., 2000b. A method for the tracing and prediction of traﬃc ﬂow patterns in
+
+the congested regime, In: Proceedings of 7th ITS World Congress on Intelligent Transport Systems, Turin.
+
+Kerner, B.S., Kirschﬁnk, H., Rehborn, H., 1998. German patent DE 196 47 127 C1, day of notiﬁcation: 14.11.1996, day
+
+of publication: 28.05.1998, German patent declaration: 20.04.2000. US-Patent US 5861820. Dutch Patent 100 75 21.
+
+Kerner, B.S., Rehborn, H., 1996a. Experimental properties of complexity in traﬃc ﬂow. Physical Review E 53, R4257–
+
+R4260.
+
+Kerner, B.S., Rehborn, H., 1996b. Experimental features and characteristics of traﬃc jams. Physical Review E 53,
+
+R1297–R1300.
+
+Kerner, B.S., Rehborn, H., 2000. German patent publication DE 198 35 979 A1, day of notiﬁcation: 08.08.1998, day of
+
+publication: 10.02.2000.
+
+Kerner, B.S., Rehborn, H., Aleksic, A., Haug, A., Lange, R., 2000c. Verfolgung und Vorhersage von Verkehrssto¨-
+
+400 B.S. Kerner et al. / Transportation Research Part C 12 (2004) 369–400
+rungen auf Autobahnen mit ‘‘ASDA’’ und ‘‘FOTO’’ im online-Betrieb in der Verkehrsrechnerzentrale Ru¨sselsheim.
+
+Straßenverkehrstechnik 10, 521–527.
+
+Kerner, B.S., Rehborn, H., Aleksic, A., Haug, 2001b. Methods for tracing and forecasting of congested traﬃc patterns
+
+on freeways. Traﬃc Engineering and Control 42 (8), 282–287.
+
+Kerner, B.S., Rehborn, H., Aleksic, A., Haug, A., Lange, R., 2001c. Online automatic tracing and forecasting of traﬃc
+
+patterns. Traﬃc Engineering and Control 42 (10), 345–350.
+
+Kniss, H.C., 2000. Bewertung des online-Betriebs von ASDA/FOTO in der VRZ Ru¨sselsheim, (in German), e-print:
+
+http://asda-foto.k2s.de.
+
+Koshi, M., Iwasaki, M., Ohkura, I., 1983. Some ﬁndings and an overview on vehicular ﬂow characteristics. In: Hurdle,
+
+V.F., Hauer, E., Stewart, G.N. (Eds.), Proceedings of 8th International Symposium on Transportation and Traﬃc
+
+Theory. University of Toronto Press, Toronto, Ontario, pp. 403–426.
+
+Kronja¨ger, W., Konha¨user, P., 1997. Applied traﬃc ﬂow simulation. In: Papageorgiou, M., Pouliezos, A. (Eds.),
+
+Transportation Systems. IFAC, Kreta (Greece), pp. 805–808.
+
+Leutzbach, W., 1988. Introduction to the Theory of Traﬃc Flow. Springer, Berlin.
+
+May, A.D., Keller, H.M., 1968. Evaluation of single- and two-regime traﬃc ﬂow models. In: Proceedings of the 3rd
+
+International Symposium on Transportation and Traﬃc Theory. Karlsruhe, Germany, pp. 37–47.
+
+Papageorgiou, M., 1983. Application of Automatic Control Concepts in Traﬃc Flow Modelling and Control. Springer,
+
+Berlin, New York.
+
+Treiterer, J., 1975. Ohio State University Technical Report No. PB 246 094, Columbus, Ohio (unpublished).
+
+Wiedemann, R., 1974. Simulation des Verkehrsﬂusses, Schriftenreihe des Instituts fu¨r Verkehrswesen, Heft 8,
+
+Universita¨t (TU) Karlsruhe.
+
+
+
+	Recognition and tracking of spatial -- temporal congested traffic patterns on freeways
+	Introduction: Spatial ndash temporal pattern classification
+	Determination of traffic phases with the model FOTO
+	Set of fuzzy rules for traffic phase determination with FOTO
+	Defuzzification
+
+	Tracking of moving jams with the model ASDA
+	Formulation of the model ASDA
+	Extensions of ASDA for on-ramps, off-ramps and changing of number of freeway lanes upstream of a moving jam
+	Extensions of ASDA for on-ramps, off-ramps and changing of number of freeway lanes downstream of a moving jam
+
+	Tracking of synchronized flow with the model FOTO
+	The ASDA-like approach for tracking the upstream front of synchronized flow
+	Cumulative flow rates approach for tracking the upstream front of synchronized flow
+	FOTO in the case of several detectors and dissolving synchronized flow
+
+	Online application and evaluation of the models FOTO and ASDA
+	Results of the online application of FOTO and ASDA
+	Online application of FOTO and ASDA in other freeways
+	Statistical evaluation of results for different reduced detector configurations
+	Evaluation of FOTO and ASDA with respect to the suitability of the infrastructure
+
+	Conclusions
+	Acknowledgments
+	Extended set of fuzzy rules
+	References
+
+

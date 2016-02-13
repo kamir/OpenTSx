@@ -1,0 +1,5926 @@
+
+Vol. 41, No. 2, May 2007, pp. 135–166
+issn 0041-1655 �eissn 1526-5447 �07 �4102 �0135
+
+informs ®
+doi 10.1287/trsc.1070.0192
+
+©2007 INFORMS
+
+Empirical Features of Congested Trafﬁc States and
+Their Implications for Trafﬁc Modeling
+
+Martin Schönhof, Dirk Helbing
+Institute for Economics and Trafﬁc, Dresden University of Technology, Andreas-Schubert Str. 23, 01062 Dresden, Germany
+
+{martin@vwi.tu-dresden.de, helbing@vwi.tu-dresden.de}
+
+We address the controversial issue of trafﬁc ﬂow modeling, whether ﬁrst-order, second-order, or othertrafﬁc models are best supported by empirical facts and theoretical considerations. This is done by a
+critical discussion of the pros and cons of the different theoretical approaches and by the analysis of a large
+set of empirical data with new evaluation techniques. Speciﬁcally, we investigate characteristic properties of the
+congested trafﬁc states on a 30-km-long stretch of the German freeway A5 near Frankfurt/Main. Among the
+approximately 245 breakdowns of trafﬁc ﬂow at several different bottlenecks in 165 days, we have identiﬁed ﬁve
+different kinds of spatiotemporal congestion patterns and their combinations. Based on an “adaptive smoothing
+method” for the visualization of detector data, we also discuss particular features of breakdowns, such as signs
+of unstable trafﬁc ﬂow and the “boomerang effect,” which often seems to be caused by overtaking maneuvers
+of trucks. Controversial issues such as “synchronized ﬂow” or stop-and-go waves are addressed as well. Our
+empirical results are compared with the implications of different theoretical concepts such as ﬁrst-order trafﬁc
+models and the phase diagram of congested trafﬁc states predicted by some second-order models and the
+nonlocal, gas-kinetic based trafﬁc model (GKT model). For a correct understanding of empirical observations
+such as the “general pattern,” it is important to consider particularities such as the fact that off-ramps can
+act as bottlenecks, when activated by downstream on-ramp bottlenecks. As sequences of off- and on-ramps
+generate different congestion patterns than single on-ramps, they must be treated as interconnected bottlenecks.
+Furthermore, our empirical results question Kerner’s three-phase theory.
+
+Key words : trafﬁc ﬂow theories; characterization of empirical trafﬁc states; trafﬁc dynamics; fundamental
+diagram; phase diagram; three-phase trafﬁc theory
+
+History : Received: May 2004; revision received: November 2006; accepted: December 2006.
+
+1. Introduction
+In the past years, the ﬁeld of trafﬁc modeling has been
+characterized by a controversy about the right under-
+standing of one of its most fundamental subjects: traf-
+ﬁc jams. One can distinguish at least three mutually
+inconsistent standpoints:
+1. The Lighthill-Whitham-Richards model (LWR
+
+model) is sufﬁcient to understand the observed traf-
+ﬁc phenomena (Daganzo 1995b, 2002b; Laval and
+Daganzo 2004; Daganzo 1995a, 1994; Cassidy and
+Mauch 2001; Lebacque 1995; Lebacque and Khosh-
+yaran 2005).
+2. So-called second-order models would be needed
+
+to describe the observations (Nagel and Nelson 2005;
+Helbing 2001b).
+3. All previous approaches assuming a fundamen-
+
+tal diagram, including the LWR and second-order
+models, are wrong (Kerner 1999, 2004).
+This controversy may be considered so fundamen-
+
+tal that it questions trafﬁc ﬂow modeling as a scien-
+tiﬁc discipline. Some confusion has been caused by
+the evergrowing number of special terms invented
+for certain observations, so that it is often unclear
+
+whether certain terms are supposed to describe the
+same observation or simulated trafﬁc state, or not.
+Additional confusion has been caused by questioning
+certain theories for the wrong reasons. We will discuss
+these issues in §§2.2, 3.2, and 7.1. A third source of
+confusion is the interpretation of empirical measure-
+ment. This will be addressed in §5.1.
+Our presentation is structured as follows: §§2 and
+
+3 give a critical discussion of ﬁrst- and second-order
+trafﬁc ﬂow models to point out their essential features
+and identify the unresolved questions. While this part
+has the features of a survey, it is needed to resolve
+some misunderstandings in the literature and remind
+us of relevant arguments that may have been forgot-
+ten. Section 2.5 and the sections from 4.2 on will then
+present our own new results, both theoretical and
+empirical.
+In the following, we give a more detailed overview:
+
+§2 will shortly introduce the Lighthill-Whitham-
+Richard (LWR) ﬁrst-order trafﬁc model and its prop-
+erties. Based on this, we will discuss what criticisms
+have been raised against it and how seriously they
+must be taken. In particular, we will give empir-
+
+135
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+136 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+ical evidence of growing perturbations pointing to
+an instability of trafﬁc ﬂow (see §2.5). As these are
+inconsistent with the LWR model, §3 will introduce
+second-order trafﬁc models that imply unstable traf-
+ﬁc ﬂows. However, second-order models have been
+blamed for theoretical inconsistencies. Therefore, §3.2
+will discuss whether and how these criticisms can be
+overcome. This ﬁnally leads us to the nonlocal, gas-
+kinetic-based trafﬁc model (GKT model) in §4, which
+is theoretically consistent. It predicts different kinds
+of congested trafﬁc states, which will be introduced
+in §4.1. These states are predicted to occur under cer-
+tain conditions concerning the freeway ﬂow and bot-
+tleneck strengths, which can be illustrated by means
+of a phase diagram (see §4.2). In contrast to previous
+publications, we will distinguish situations of small
+and large perturbations, which imply different phase
+diagrams due to the predicted multistable nature of
+trafﬁc ﬂows. This has great signiﬁcance for the com-
+parison with empirical data of congested trafﬁc states,
+which is the subject of §6. Before that, §5 motivates
+the choice of our measurement site and describes its
+features. It also introduces an adaptive smoothing
+method, which is suited to visualize spatiotemporal
+trafﬁc patterns in a three-dimensional way and to dis-
+tinguish small but signiﬁcant perturbations from ran-
+dom ﬂuctuations (see §5.3). This method helps to clas-
+sify different trafﬁc states (see §6), to understand spa-
+tial or temporal transitions between them (see §§6.7,
+6.8), and to determine an empirical phase diagram
+(see §6.6). Finally, §7 presents our summary and con-
+clusions, including a discussion of Kerner’s criticism
+of trafﬁc models (see §7.1) and his attempts to clas-
+sify and explain empirical observations from the same
+measurement site by the three-phase theory and its
+extensions (see §7.2).
+
+2. The Lighthill-Whitham-Richards
+Model and Its Limits
+
+2.1. Form and Properties of the
+Lighthill-Whitham-Richards Model
+(LWR Model)
+
+One of the oldest and most-cited models of trafﬁc
+ﬂow is the ﬂuid dynamic model by Lighthill and
+Whitham (1995) and Richards (1956). It is based on
+the continuity equation
+
+���x� t�
+
+�t
++ �Q�x� t�
+
+�x
+= 	+�x� t�− 	−�x� t�� (1)
+
+where ��x� t� denotes the vehicle density and Q�x� t�
+the trafﬁc ﬂow as a function of location x and time
+t. This equation is a direct mathematical implication
+of the conservation of the number of vehicles, i.e., the
+fact that no vehicle is produced or lost along the free-
+way (apart from cases of accidents, maybe). Therefore,
+
+it is one of the most fundamental laws of trafﬁc ﬂows
+and applies without any doubt (with the restriction
+that trafﬁc ﬂows are not continuous, but composed of
+discrete vehicles).
+For the time being, we will set the source terms
+
+	±�x� t� due to ramp ﬂows equal to zero (where the
+plus sign corresponds to on-ramps and the minus
+sign to off-ramps). Lighthill, Whitham, and Richard
+have closed the above continuity equation assuming
+a direct ﬂow-density relationship of the kind
+
+Q�x� t�=Q���x� t��� (2)
+which is called the “fundamental diagram.” This
+requires an adiabatic (i.e. effectively instantaneous)
+adaptation of the trafﬁc ﬂow and average vehicle
+speed V = Q/� to the density �. Because the result-
+ing “ﬂuid-dynamic” trafﬁc model does not contain
+a second-order derivative (such as a diffusion term
+D�2�/�x2), it is called a ﬁrst-order model.
+One can rewrite the LWR model (1), (2) as a non-
+
+linear wave equation
+
+���x� t�
+
+�t
++ dQ���
+
+d�
+
+���x� t�
+
+�x
+= 0� (3)
+
+According to this, the density proﬁle propagates with
+the speed c��� = dQ���/d�, i.e., a formal solution of
+Equation (3) is given by
+
+��x� t�= �
+(
+x−
+
+∫ t
+0
+dt′c���yx�t
+
+′�� t′���0
+)
+� (4)
+
+where
+
+yx�t
+′�= x−
+
+∫ t
+t′
+dt′′v�t′′�
+
+with
+dyx�t
+
+′�
+dt′
+
+= v�t′�= c���yx�t′�� t′�� (5)
+
+is the location with vehicle density � as a function of
+time t′. As this deﬁnes an implicit equation for the
+density ��x� t�, it is hard to solve explicitly (if c is not
+a constant). However, we can see from Equation (4)
+that the initial density proﬁle ��x�0� does not change
+its amplitude in the course of time.1 The shape of the
+density proﬁle can change if the propagation velocity
+c��� is density dependent. For example, it is possible
+that initially smooth density proﬁles will eventually
+form shock fronts. These are predicted to propagate
+with the velocity
+
+C��+��−�=
+Q��+�−Q��−�
+
+�+ −�−
+� (6)
+
+1 According to Kerner, Klenov, and Konhäuser (1997), however, the
+interaction of shock waves can lead to a reduction of the ampli-
+tude. The opposite—i.e., an increase of the amplitude—has, to our
+knowledge, not been reported.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 137
+
+where �+ denotes the density immediately upstream
+of the shock front and �− the density immediately
+downstream of it (Whitham 1974). Because this equa-
+tion is a consequence of vehicle conservation, it is, by
+the way, also expected to be approximately valid for
+congestion fronts in second-order models.
+
+2.2. Criticisms of the Lighthill-Whitham-Richard
+Model
+
+From a theoretical point of view, the LWR model
+should be able to describe the propagation of
+upstream and downstream shock fronts along homo-
+geneous road sections and the formation of vehicle
+queues upstream of bottlenecks. Empirical stud-
+ies suggest that formula (6) is indeed suitable to
+describe the propagation of upstream shock fronts of
+spatially extended congestion patterns (Muñoz and
+Daganzo 2003). Even Kerner uses this formula in his
+patented trafﬁc state estimation tool ASDA/FOTO
+(Kerner et al 2004; Kerner, Kirschﬁnk, and Rehborn
+1998; Kerner and Rehborn 2000; Kerner, Aleksic,
+and Denneler 2001; Kerner 2001), although he has
+strongly criticized the LWR model for not describ-
+ing two subsequent wide moving jams well (Kerner,
+Klenov, and Konhäuser 1997). Kerner and Konhäuser
+(1994a), stated that, according to the LWR model,
+when assuming a parabolic fundamental diagram, the
+downstream shock fronts would eventually change
+their shape and become smoother and smoother. In
+contrast, the experimental data support a stable veloc-
+ity proﬁle over time, moving upstream with constant
+velocity (Kerner and Rehborn 1996a).
+Although Lin and Lo (2003) have pointed out that
+
+two wide moving clusters propagating at the same
+speed can be simulated with the LWR model, if the
+fundamental diagram Q��� is linear in the congested
+(high-density) region, Kerner’s criticism has not been
+convincingly addressed. Lin and Lo have not shown
+that, without being sensitive to the assumed form of
+the fundamental diagram and to initial and bound-
+ary conditions, wide moving jams have invariant,
+continuous wave proﬁles and characteristic constants
+as results of self-organization. According to Kerner
+(1998b), these characteristic constants include the res-
+olution speed c= c0 of downstream congestion fronts
+(while formula (6) allows for different speeds C),
+the density �jam inside of jams, and the outﬂow Qout
+from jams. Kerner and Rehborn (1996a) have given
+some empirical support of these features. It is claimed
+that the propagation speed of wide jams would not
+even be inﬂuenced by passing congested ﬂow (Kerner
+1998b), ramps, or intersections (Kerner and Rehborn
+1996a; Kerner 2000a, b).
+Recently, Nagel and Nelson (2005) summarized the
+
+criticisms of the LWR model, stating that
+1. it would not be able to describe unstable ﬂow,
+
+2. it would not describe spontaneous breakdowns
+of trafﬁc ﬂow, and
+3. it would not explain the two-capacity phe-
+
+nomenon (“capacity drop”).
+While Kerner and Rehborn (1996b, 1998) ﬁnd quite
+
+remarkable capacity drops by about one-third of
+the maximum measured ﬂow values (one-minute
+aggregates), other authors question the measurement
+method (Daganzo, Cassidy, and Bertini 1999; Persaud
+and Hurdle 1991; Banks 1991a, b) or ﬁnd consider-
+ably smaller capacity drops in data of U.S. freeways
+(Persaud, Yagar, and Brownlee 1998; Westland 1998;
+Cassidy and Bertini 1999; Banks 1991b). Therefore,
+the capacity drop seems not to be a ﬁnally accepted
+fact, although the concept is very old (Edie and Foote
+1960). From our point of view, the capacity drop is not
+the most important issue. It depends on what reduc-
+tion in the time gaps drivers ﬁnd acceptable under
+free (i.e., easily predictable) trafﬁc conditions com-
+pared with the reaction time to unexpected events
+(Treiber, Kesting, and Helbing 2006).
+Concerning spontaneous breakdowns, some eval-
+
+uations of vehicle trajectories based on aerial pho-
+tographs suggest the existence of phantom trafﬁc jams
+(Treiterer and Myers 1974; Treiterer and Taylor 1966),
+i.e., the spontaneous formation of trafﬁc jams with no
+obvious reason, such as an accident or a bottleneck.
+This interpretation has been questioned by Daganzo
+(2002a), who states that the breakdown of free traf-
+ﬁc “can be traced back to a lane change in front of
+a highly compressed set of cars” and suggests that
+there actually is a reason for jam formation. However,
+its origin can be a rather small disturbance. Muñoz
+and Daganzo (2002a, p. 134) also proposes that the
+“spontaneous” formation of a trafﬁc jam reported by
+Kerner and Rehborn (1997) may actually have been
+caused by disturbances by vehicles trying to leave the
+freeway over a nearby off-ramp.
+The existence of unstable ﬂow is a controver-
+
+sial issue as well (see next paragraph). However, it
+seems to be commonly accepted that the LWR model,
+without particular assumptions or extensions, cannot
+describe growing amplitudes in the density, speed, or
+ﬂow proﬁles, the spontaneous emergence of stop-and-go
+waves, or other kinds of oscillating trafﬁc patterns.
+
+2.3. Stop-and-Go Waves (Also: Start-Stop Waves)
+Stop-and-go waves have been empirically studied by
+many authors, including Edie and Baverez (1965),
+Mika, Kreer, and Yuan (1969), and Koshi, Iwasaki, and
+Ohkura (1983). The latter have found that the parts of
+the velocity proﬁle that belong to the ﬂuent stages of
+stop-and-go waves do not signiﬁcantly depend on the
+ﬂow (regarding their height and length), while their
+oscillation frequency does. Correspondingly, there is
+no characteristic frequency of stop-and-go trafﬁc. The
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+138 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+average duration of one wave period is normally
+between 4 and 20 minutes for wide trafﬁc jams; see,
+e.g., Mika, Kreer, and Yuan (1969), Kühne (1987),
+Helbing (1997d), Helbing (1997a), Helbing (1997c);
+and the average wave length between 2.5 and 5 km,
+see, e.g., Kerner (1998a). Stop-and-go waves propa-
+gate against the direction of the vehicle ﬂow (Edie
+and Baverez 1965; Mika, Kreer, and Yuan 1969) with
+a velocity c = c0 �= −15 ± 5 km/h (see, e.g., Mika,
+Kreer, and Yuan 1969; Kerner and Rehborn 1996a;
+Kerner 2000a, b; Cassidy and Mauch 2001), and with-
+out spreading (Cassidy and Windover 1995; Windover
+1998; Muñoz and Daganzo 1999).
+
+2.4. Possible Origins of Oscillations
+The existence of stop-and-go waves seems to be an
+accepted fact in the meantime. For example, Daganzo
+(2002a) notes in one of his studies that “large oscilla-
+tions in ﬂow, speed and cumulative count increase in
+amplitude across the detectors spanning a long free-
+way queue and its intervening on-ramps” (p. 133).
+Moreover, Cassidy and Bertini (1999) state that ”the
+discharge ﬂows in active bottlenecks exhibit near-
+stationary patterns that (slowly) alternate about a con-
+stant rate [� � �] The onset of upstream queueing was
+always accompanied by an especially low discharge
+ﬂow followed by a recovery rate and these are the
+effects of driver behavior we do not yet understand”
+(p. 40).
+Even today, there is still no agreement about the
+
+mechanism generating stop-and-go waves. Laval and
+Daganzo (2006) suggests explaining emergent oscil-
+lations by lane-changing maneuvers, particularly at
+locations close to on-ramps or off-ramps. In fact, it
+has recently been shown that coordination problems
+at bottleneck areas can trigger intermittent outﬂows,
+which can be explained with a slightly modiﬁed conti-
+nuity equation, i.e., a ﬁrst-order model (Helbing et al.
+2006). However, how should small oscillations grow
+larger until they ﬁnally form wide-moving jams or
+stop-and-go waves? Daganzo (2002b) and Mauch and
+Cassidy (2002) suggest that small oscillations may be
+increased in amplitude due to a “pumping effect” at
+ramps, i.e., a positive feedback mechanism.
+
+2.5. Growing Perturbations and the
+Boomerang Effect
+
+The open question is: Do oscillations grow only when
+ramps or changes in the number of lanes can support
+a pumping effect? If not, this would seriously ques-
+tion the LWR model, while it would support mod-
+els predicting unstable trafﬁc ﬂows. While the experi-
+ments by Sugiyama et al. (2005) studying circular traf-
+ﬁc ﬂows at high vehicle densities support the idea
+of unstable trafﬁc ﬂow, it must be considered that
+drivers may have unintentionally been inﬂuenced by
+the experimental setup.
+
+Therefore, let us discuss some of our empirical
+results to motivate the following sections of our
+paper. A Fourier analysis (not shown here) has been
+carried out to make sure that the oscillations on the
+investigated German freeway A5 were not induced by
+pulsating inﬂows, because they could be produced by
+trafﬁc lights on the way to the on-ramp. Nevertheless,
+we found several examples of the growth of down-
+stream moving, small perturbations along a three-lane
+freeway section without on- and off-ramps; and of the
+growth of upstream moving, large perturbations (see
+Figures 1 and 2). These examples show that neither
+the proposed pumping effect nor the LWR equation
+are satisfactory explanations.
+We call the mechanism of generating large mov-
+
+ing clusters shown in Figures 1 and 2 the boomerang
+effect (Helbing 2001a; Helbing et al. 2003). The
+boomerang effect clearly supports trafﬁc models with
+an unstable density range. It can be seen in traf-
+ﬁc simulations with second-order models Kerner and
+Konhäuser (1993) and explained as follows: On the
+one hand, a small perturbation corresponds to a clus-
+ter of vehicles, which moves forward in downstream
+direction together with the vehicles. On the other
+hand, a large perturbation like a moving localized
+trafﬁc jam propagates upstream. While inside of the
+trafﬁc jam vehicles are standing, vehicles are leaving it
+at its downstream front, and new vehicles are joining
+the jam at its upstream front. Altogether, this implies
+an upstream motion of the jam. When a small pertur-
+bation grows in size due to unstable trafﬁc ﬂow, the
+propagation direction is eventually turning around,
+which is reﬂected by the term “boomerang effect.”
+Although a breakdown of trafﬁc ﬂow is not always
+
+related to the boomerang effect, it occurs rather fre-
+quently (see also Figures 9b, 13b, 20b, and 21a). At
+least 18 out of 245 congestion patterns were triggered
+in this way. However, the effect is hard to recog-
+nize without a suitable method of data preprocessing
+such as the adaptive smoothing method (see §5.3).
+Nevertheless, it is unlikely that our observation of
+the boomerang effect is an artifact of our method of
+data representation: It can also sometimes be seen in
+classical contour plots without particular preprocess-
+ing (Helbing et al. 2003). The same applies to some
+three-dimensional plots without any spatial smooth-
+ing, when the data are suitably smoothed in time (see
+Figure 1), or to the raw time series (see Figure 2).
+
+3. Second-Order Models and Their
+Criticism
+
+3.1. Mathematical Form of Second-Order Models
+Having presented empirical results questioning the
+LWR model, let us now discuss second-order trafﬁc
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 139
+
+A5 South, 09/25/2001 (Tue.)
+
+V(x, t) (km/h)
+
+480
+
+485
+
+490
+x (km)
+
+7
+
+8
+
+t (h)
+
+120
+80
+40
+
+0
+
+A5 South, 09/25/2001 (Tue.)
+
+6:40 7:00
+7:20 7:40
+
+t (h)
+ 480
+
+ 485
+
+ 490
+
+x (km)
+
+100
+
+50
+
+ 0
+
+V(x, t) (km/h)
+
+A5 South, 05/10/2001 (Thu.)
+
+ 480
+ 485
+
+ 490x (km) 6:20 6:40
+7:00 7:20
+
+t (h)
+
+100
+
+50
+
+ 0
+
+V(x, t) (km/h)
+A5 South, 04/04/2001 (Wed.)
+
+ 480
+ 485
+
+ 490x (km) 6:40 7:00
+7:20 7:40
+
+t (h)
+
+100
+
+50
+
+ 0
+V(x, t) (km/h)
+
+(a) (b)
+
+(c) (d)
+
+Figure 1 Illustration of Growing Perturbations on a Homogeneous Freeway Section Without On- and Off-Ramps Between Kilometers 481.3 and 488
+(See §5.3 for Details of the Data Evaluation and Visualization)
+
+Notes. According to the LWR model, the amplitude of the spatiotemporal velocity proﬁle should not grow along a freeway section without ramps. However, in
+(a), we see a small perturbation propagating downstream and growing slowly. After reaching a sufﬁciently large size and crossing a bottleneck, trafﬁc breaks
+down, the perturbation changes its direction (“boomerang effect”) and travels upstreams with a signiﬁcant growth in amplitude. In order to exclude that the
+growth could be an interpolation effect due to the application of the adaptive smoothing method (see §5.3), (b) shows the same data set, but without any
+spatial smoothing. In contrast to (a), the time-dependent velocity data at the different measurement cross-sections are shown from behind. (c), (d) Examples
+for the growth of medium-sized perturbations propagating upstream in the same representation as (b), but shown from the front (looking against the driving
+direction). Arrows are guides for the eyes, indicating the growth of the velocity amplitudes.
+
+models as a possible alternative. In contrast to Equa-
+tion (2), which implies an immediate adaptation of
+the vehicle velocity V ���x� t�� = Q���x� t��/��x� t� to
+a changing density ��x� t�, most second-order mod-
+els assume the general ﬂuid-dynamic relationship
+Q�x� t�= ��x� t�V �x� t� with an additional partial dif-
+ferential equation for the spatiotemporal change of
+the average velocity V �x� t� of vehicles. This can often
+be written in the form
+
+�V
+
+�t
++ V �V
+
+�x︸ ︷︷ ︸
+transport term
+
+= −1
+�
+
+�P
+
+�x︸ ︷︷ ︸
+pressure term
+
++ 	����
+2V
+
+�x2︸ ︷︷ ︸
+viscosity term
+
++ 1
+�
+�Ve���−V �︸ ︷︷ ︸
+relaxation term
+
+� (7)
+
+This equation was inspired by the Navier-Stokes equa-
+tions for viscous ﬂuids. Together with Equation (1),
+we may call this equation the Payne-Whitham-
+Kühne-Kerner-Konhäuser-Lee model (Payne 1971,
+1979; Whitham 1974; Kühne 1984; Kerner and
+
+Konhäuser 1993; Lee, Lee, and Kim 1999). These equa-
+tions predict linear instability under the condition
+
+�
+
+∣∣∣∣dVed�
+∣∣∣∣>
+
+√
+dP
+
+d�
+�1+ �	���k2�� (8)
+
+where the wave number k is inversely proportional
+to the wave length (Helbing 1997d). The variable P
+is called the trafﬁc pressure, � the relaxation or adap-
+tation time, and Ve the density-dependent “optimal”
+velocity. Furthermore, 	 was chosen constant or set to
+	���= �/�, where �≥ 0 denotes a viscosity coefﬁcient.
+Notice that the Lighthill-Whitham model results in
+
+the limit �→ 0 of instantaneous velocity adjustments.
+However, Whitham himself proposed a second-order
+extension of the LWR model in 1974. The mod-
+els by Payne (1971) and Papageorgiou (1983) are
+obtained for P���= �V0 − Ve����/�2��, with the “free”
+or “desired” average velocity V0 = Ve�0�. For dP/d�=
+−�/�2��� + ���dVe/d�, one ends up with Cremer’s
+model (Cremer 1979). In the model of Phillips
+(1979b, a), there is 	 = 0 and P = ��, where � denotes
+the velocity variance. The models of Kühne (1984,
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+140 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+0
+
+40
+
+80
+
+120
+
+0
+
+600
+
+1,200
+1,800
+
+2,400
+
+km
+ 4
+
+81
+.3
+
+ (
+S
+
+15
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+600
+
+1,200
+
+1,800
+
+2,400
+
+km
+ 4
+
+82
+.2
+
+ (
+S
+
+16
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+600
+
+1,200
+
+1,800
+2,400
+
+km
+ 4
+
+83
+ (
+
+S
+17
+
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+
+600
+
+1,200
+
+1,800
+
+2,400
+
+km
+ 4
+
+84
+.1
+
+ (
+S
+
+18
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+85
+ (
+
+S
+19
+
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+86
+ (
+
+S
+20
+
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+86
+.9
+
+ (
+S
+
+21
+)
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+0
+
+40
+
+80
+
+120
+
+6:40 6:50 7:00 7:10 7:20 7:30 7:40
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+88
+ (
+
+S
+22
+
+)
+
+0
+
+600
+
+1,200
+1,800
+
+2,400
+
+km
+ 4
+
+81
+.3
+
+ (
+S
+
+15
+)
+
+0
+600
+
+1,200
+
+1,800
+
+2,400
+
+km
+ 4
+
+82
+.2
+
+ (
+S
+
+16
+)
+
+0
+600
+
+1,200
+
+1,800
+2,400
+
+km
+ 4
+
+83
+ (
+
+S
+17
+
+)
+
+0
+
+600
+
+1,200
+
+1,800
+
+2,400
+
+km
+ 4
+
+84
+.1
+
+ (
+S
+
+18
+)
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+85
+ (
+
+S
+19
+
+)
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+86
+ (
+
+S
+20
+
+)
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+86
+.9
+
+ (
+S
+
+21
+)
+
+0
+600
+1,200
+1,800
+2,400
+
+km
+ 4
+
+88
+ (
+
+S
+22
+
+)
+
+V (km/h) Q (veh/h/lane)
+
+Time (h:mm)
+
+A5 South, 09/25/2001 (Tue.)
+In
+
+te
+rs
+
+ec
+tio
+
+n 
+B
+
+ad
+ H
+
+om
+bu
+
+rg
+In
+
+te
+rs
+
+ec
+tio
+
+n 
+Fr
+
+an
+kf
+
+ur
+t N
+
+or
+th
+
+-W
+es
+
+t
+
+6:40 6:50 7:00 7:10 7:20 7:30 7:40
+
+V(km/h) Q (veh/h/lane) Truck fraction
+
+Time (h:mm)
+
+A5 South, 04/04/2001 (Wed.)
+
+Figure 2 Further Analysis of the Boomerang Effect Depicted in Figure 1 (For Details of the German Autobahn A5, See §5.2)
+Notes. According to the LWR model, the amplitude of the spatiotemporal velocity proﬁle should not grow along a freeway section without ramps. However,
+in both data sets, we see a small perturbation, which eventually increases: First, while propagating downstream, the extension of the localized perturbation
+grows, i.e., the time intervals, in which ﬂows are high and velocities are reduced (cf. the arrows and circles). This is because more and more vehicles join the
+slower vehicle cluster from behind, which may be caused by a moving bottleneck due to overtaking trucks, as suggested by the peaks in the truck fraction
+at the beginning of the vehicle cluster (right). From one cross-section to the next downstream one, trafﬁc needs more time to reach a “normal” state again.
+Finally, approximately one kilometer before the off-ramp at “Intersection Frankfurt North-West,” which induces many lane-changing maneuvers because of the
+high off-ramp ﬂow (left: 1,980 veh/h/lane between 7:05 a.m. and 7:15 a.m.; right: 1,767 veh/h/lane between 7:05 a.m. and 7:15 a.m.), the velocity drops to
+values around 60 km/h, and a trafﬁc jam travelling against the driving direction appears. Afterward, the reduction in the average speed and ﬂow increases with
+time, thereby causing a growth in the amplitude of the perturbation. To calculate the velocities of the stop waves, we determined the location-speciﬁc time
+when the velocity exceeded the value 60 km/h after the stop wave had passed. Applying linear regression, these times, together with the detector locations,
+implied the mean velocity of the stop wave. On 09/25/01 (left) it was −16�8± 1�4 km/h, whereas on 04/04/01 (right) it was −18�0± 0�8 km/h. The velocities
+of the downstream propagating perturbations were �66±6� km/h (left) and �76±6� km/h (right). To obtain these velocities, we used the times when the mean
+velocity at the cross-sections fell below 110 km/h.
+
+1987) and Kerner and Konhäuser (1993) result for P =
+��0, where �0 is a positive constant. In comparison
+with a similar model by Whitham (1974), they assume
+a ﬁnite viscosity to smooth out shock fronts. This is
+desirable from an empirical and numerical point of
+view, but implies theoretical inconsistencies (see the
+next paragraph).
+
+3.2. How to Survive the Requiem for
+Second-Order Trafﬁc Models
+
+Second-order models have been seriously criticized
+by Daganzo (1995b):
+1. The second-order models would not be well
+
+derived from microscopic models, and there were
+problems with terminating series expansions.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 141
+
+2. The gas-kinetic derivations would imply that the
+speed was a property of the street rather than the
+drivers, and different personalities of drivers, e.g.,
+aggressive and timid ones, could not be distinguished.
+3. The applied numerical solution schemes were
+
+often improper, with many “engineering ﬁxes” and
+too many parameters to ﬁt to empirical data. As a
+consequence, these models would have low predic-
+tive power.
+4. There were inconsistencies regarding the vehicle
+
+velocities. For example, in the case of a discontinuous
+density change at the end of a trafﬁc jam, vehicles
+should be moving backwards due to the symmetric
+viscosity term.
+5. It would be a problem that one of the character-
+
+istic speeds of the second-order model (describing the
+propagation of perturbations) was faster than V , the
+speed of vehicles.
+At the time of publication of the “requiem,” most
+
+of these criticisms were justiﬁed. The many differ-
+ent speciﬁcations of the pressure and relaxation term
+in the literature indicate that there was consider-
+able confusion about the meaning and derivation of
+these terms. In physics, the velocity equation can
+be derived from a gas-kinetic description. Such an
+approach has been followed in trafﬁc modeling as
+well, starting with Prigogine (1961), Paveri-Fontana
+(1975), and Phillips (1977). Based on today’s knowl-
+edge, the conclusions from successful efforts to link
+microscopic and macroscopic trafﬁc models (Helbing
+et al. 2002) are as follows:
+1. The viscosity term cannot be justiﬁed for one-
+
+dimensional ﬂows as it is in physics. It either drops
+out completely or results from a gradient expansion,
+but then it looks differently. The pressure has the form
+P = ��, where � represents the velocity variance of
+vehicles. Of course, the variance must vanish when-
+ever vehicles are stopped, i.e., � = 0 if V = 0. The
+effect of the pressure term can be imagined as fol-
+lows: Starting with a cluster of vehicles on a multilane
+freeway, the cluster will eventually widen due to the
+faster vehicles leaving the slower ones behind. Note
+that problems of series expansion can be avoided by
+direct derivation of macroscopic models from micro-
+scopic ones (Helbing et al. 2002, pp. 543 ff.).
+2. Gas-kinetic models can be used to derive mul-
+
+ticlass multilane models (Helbing 1997d, b; Klar and
+Wegener 1999a, b; Hoogendoorn and Bovy 1998)
+in order to model passing interactions and differ-
+ent behaviors of driver-vehicle units. These allow us
+to distinguish different personalities of drivers (e.g.,
+aggressive and timid ones) as demanded. These mul-
+ticlass models also fulﬁll the requirement that the
+vehicle velocities should not be a property of the road,
+but of the drivers. The same already applies to some
+earlier models (Paveri-Fontana 1975; Helbing 1996;
+Helbing and Greiner 1997; Wagner et al. 1996).
+
+3. Today, proper numerical integration schemes are
+known (Kronjäger and Konhäuser 1997; Helbing and
+Treiber 1999), and high values of anticipation coefﬁ-
+cients can be avoided by nonlocal interaction terms
+(Helbing and Treiber 1999).
+4. The phenomenological viscosity term must be
+
+dropped, but the nonlocal interaction terms result
+in reasonable, anisotropic smoothing effects (Helbing
+and Treiber 1999).
+5. The faster characteristic speed is actually not a
+
+problem if � is correctly interpreted as velocity vari-
+ance. Then, the two characteristic speeds are c+/− ≈
+V ±√�, i.e., the faster characteristic speed is just one
+standard deviation faster than the average velocity.
+Clearly, information can be propagated by the faster
+vehicles at this speed if we assume a ﬁnite veloc-
+ity variance. Otherwise, if � = 0, the pressure term
+disappears, implying c+ = c− = V . Moreover, pertur-
+bations moving with the faster speed c+ decay very
+quickly (Whitham 1974, pp. 339 ff.; Yi et al. 2003).
+Therefore, they are not expected to occur in normal
+trafﬁc situations.
+
+4. The Nonlocal, Gas-Kinetic-Based
+Trafﬁc Model (GKT Model)
+
+To overcome Daganzo’s criticisms, it is necessary to
+derive a macroscopic trafﬁc model from an empir-
+ically supported microscopic trafﬁc model (not vice
+versa). The main problem to be avoided is the pos-
+sible occurrence of negative speeds, not the existence
+of a characteristic speed c+ faster than the average
+velocity V (as long as it does not exceed the speed
+of the fastest car). However, negative speeds can be
+easily prevented by interpreting � as the velocity vari-
+ance of cars, which must vanish when vehicles are
+stopped. This constraint can, for example, be ful-
+ﬁlled by setting ����V �= ����V 2, with an empirically
+determined function ���� > 0 (Helbing 1997d, 1998;
+Treiber, Hennecke, and Helbing 1999).
+One critical question, however, remains: As the
+
+pressure term −�1/�������/�� can become positive,
+would that mean that cars would potentially accel-
+erate into high-density areas? This is not the case, if
+the relaxation term �Ve − V �/� compensates for neg-
+ative �����/��, as in the nonlocal, gas-kinetic-based
+trafﬁc (GKT) model (Helbing 1997d, 1998). The non-
+locality of this model reﬂects the interaction with
+upstream vehicles in a certain distance and causes
+a forward smoothing with no reaction to backward
+conditions, in contrast to a viscosity term (Helbing
+and Treiber 1999; Helbing et al. 2002).2 In summary,
+
+2 This also implies a higher numerical efﬁciency despite its more
+complicated mathematical form. Naturally, the nonlocal GKT
+model takes into account effects of space requirements by vehicle
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+142 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+0
+
+1
+
+2
+
+15
+
+10
+
+5
+
+0
+100
+
+0
+
+MLC PLC SGW
+
+OCT HCTVelocity (km/h) Velocity (km/h)
+
+Velocity (km/h)Velocity (km/h) Velocity (km/h)
+
+Location (km) Time 
+(h)
+
+0
+
+1
+
+2
+
+15
+
+10
+
+5
+
+0
+100
+
+0
+
+Location (km) Time 
+(h)
+
+0
+
+1
+
+2
+
+15
+
+10
+
+5
+
+0
+100
+
+0
+
+Location (km) Time 
+(h)
+
+0
+
+1
+
+2
+
+15
+
+10
+
+5
+
+0
+100
+
+0
+
+Location (km) Time
+(h)
+
+0
+
+1
+
+2
+
+15
+
+10
+
+5
+
+0
+100
+
+0
+
+Location (km)
+Time
+
+(h)
+
+Figure 3 Simulation of Trafﬁc on a Freeway with an On-Ramp at Location x = 10 km, Assuming an Initial Disturbance Travelling Upstream and
+Using the Nonlocal, Gas-Kinetic-Based Trafﬁc (GKT) Model
+
+Notes. Depending on the respective trafﬁc ﬂows on the ramp and on the freeway, ﬁve different kinds of congested trafﬁc states emerge: a moving localized
+cluster (MLC), a pinned localized cluster (PLC), stop-and-go waves (SGW), oscillating congested trafﬁc (OCT), or homogeneous congested trafﬁc (HCT).
+During the ﬁrst minutes of the simulation, the ﬂows on the freeway and the on-ramp were increased from low values to their ﬁnal values.
+
+the GKT model is theoretically consistent and numeri-
+cally efﬁcient (Helbing and Treiber 1999). But is it also
+realistic? In order to compare it with empirical facts
+(see §6), we will now discuss its implications regard-
+ing the predicted congestion states and their respec-
+tive preconditions.
+
+4.1. Congested Trafﬁc States
+For our classiﬁcation of the trafﬁc states predicted by
+the nonlocal GKT model, it is not necessary to present
+its mathematical form here (for details, see Treiber,
+Hennecke, and Helbing 1999; Helbing 2001b; Helbing
+et al. 2001, 2002). In this model, congested trafﬁc is
+typically triggered by bottlenecks (i.e., spatial inho-
+mogeneities along the freeway). As an example, we
+will discuss the situation of an on-ramp entering an
+n-lane freeway at location x= 5 kilometer. If the ramp
+ﬂows Qrmp are equally distributed over a ramp length
+L, we have an inﬂow of
+
+	+ =
+Qrmp
+
+nL
+� (9)
+
+which must be inserted into Equation (1). This inﬂow
+consumes some of the capacity of the freeway and
+causes a bottleneck strength, the size of which is given
+by the entering ramp ﬂow, divided by the number of
+freeway lanes:
+
+ Q= Qrmp
+n
+
+� (10)
+
+lengths and safe time clearances. Correlations between the veloci-
+ties of successive cars can be easily treated as well (Shvetsov and
+Helbing 1999).
+
+When systematically varying the ramp ﬂow Qrmp and
+the freeway ﬂow Qup upstream of the bottleneck, we
+ﬁnd free ﬂow or different kinds of congested ﬂow
+(Helbing, Hennecke, and Treiber 1999). Typical repre-
+sentatives are shown in Figure 3.
+In contrast to Kerner’s classiﬁcation, we do not dis-
+
+tinguish the different trafﬁc states based on measure-
+ments at discrete cross-sections of the freeway. Instead,
+we study the average vehicle speed Vt�x� along a free-
+way section as a function of time or the speeds v�x�t��
+along trajectories of representative vehicles given by
+the relationship dx�t�/dt = v�x�t��. These quantities
+are determined based on the three-dimensional rep-
+resentation of the average velocity V �x� t� as a func-
+tion of location x and time t, which is obtained from
+cross-sectional measurements by means of an adap-
+tive smoothing method (see §5.3).
+If Vt�x� or v�x�t�� are above a certain threshold Vtr,
+
+where x is varied within a homogeneous freeway sec-
+tion upstream of a bottleneck (an inhomogeneity), we
+call the trafﬁc state free trafﬁc (FT)—otherwise, we
+have congested trafﬁc. If these speeds fall below Vtr
+only over a short freeway subsection, and the length
+of this section is approximately stable or stabilizes
+over time, we talk about localized clusters (LC), other-
+wise, of spatially extended congestion states. According
+to simulations, there are two forms of localized clus-
+ters: Pinned localized clusters (PLC) stay at a ﬁxed loca-
+tion over a longer period of time, while moving local-
+ized clusters (MLC), corresponding to Kerner’s wide-
+moving jams (Kerner and Rehborn 1996a), propagate
+upstream with the characteristic speed c0. Stop-and-
+go waves (SGW) may be interpreted as a sequence of
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 143
+
+several moving localized clusters. Alternatively, they
+may be viewed as special case of oscillating congested
+trafﬁc (OCT), but with free trafﬁc ﬂow of order Qout
+between the upstream propagating jams. Generally,
+however, OCT states are just characterized by oscil-
+lating speeds in the congested range. If the speeds
+are congested over a spatially extended area, but not
+oscillating, we call this homogeneous congested trafﬁc
+(HCT). This is typically related to low velocities.
+In summary, besides free trafﬁc, the GKT model
+
+predicts ﬁve different spatiotemporal patterns of con-
+gested trafﬁc states at a simple on-ramp bottleneck:
+PLC, MLC, SGW, OCT, and HCT. Similar trafﬁc
+states have been identiﬁed for second-order mod-
+els such as the Kerner-Konhäuser model (Lee, Lee,
+and Kim 1999) and for ﬂow-conserving bottlenecks in
+a car-following model (Treiber, Hennecke, and Hel-
+bing 2000; Helbing et al. 2002). Note that in empirical
+data, the SGW state may be hard to distinguish from
+OCT states due to their similar appearance. Moreover,
+models assuming adaptive driver behavior or hetero-
+geneous trafﬁc (i.e., different driver-vehicle classes)
+may predict variants of the states depicted in Figure 3.
+However, the trafﬁc patterns are expected to be simi-
+lar for all models with the same stability diagram (see
+next section). Finally, in cases of several bottlenecks
+along the freeway, it should be possible that several
+different congestion patterns are combined with each
+other, giving rise to a large number of possible con-
+gestion patterns with a complex appearance (see §§6.7
+and 6.9).
+
+4.2. Phase Diagram of Trafﬁc States
+The preconditions for the possible occurrence of the
+different trafﬁc states can be illustrated by a phase
+diagram (see Figure 4). Each area of the phase
+diagram represents the parameter combinations for
+which certain kinds of trafﬁc states can exist. The bor-
+derlines between different areas (the so-called phase
+boundaries) can be theoretically understood, based
+on the instability diagram and the dynamic capac-
+ity Qout, i.e., the characteristic outﬂow from congested
+trafﬁc (Kerner and Rehborn 1996a). As a consequence,
+second-order models with a similar instability dia-
+gram are expected to imply similar trafﬁc states and
+phase diagrams as does the GKT model (see, e.g., Lee,
+Lee, and Kim 1999).
+For the theoretical derivation of the phase bound-
+
+aries, one must know that the nonlocal GKT model
+(like the Kerner-Konhäuser model from 1993) predicts
+stable trafﬁc ﬂow, when the velocity changes little
+with the density. More speciﬁcally, there is stable traf-
+ﬁc below some critical density �c1 and above some
+critical density �c4 (see Figure 5).
+For medium trafﬁc densities between two critical
+
+densities �c2 and �c3, trafﬁc ﬂow is linearly unstable,
+
+(a)
+
+Q u
+p 
+
+(ve
+hic
+
+les
+/h/
+
+la
+ne
+
+)
+
+∆Q (vehicles/h/lane)
+
+2,000
+
+1,800
+
+1,600
+
+1,400
+
+1,200
+
+1,000
+
+(b)
+
+200 400 600 800 1,000
+
+C: Q
+tot = Q
+
+c1
+always
+FT
+
+0
+
+A: Q
+tot = Q
+
+m
+ax
+
+Qtot = Qup+∆Q
+
+Qout–Qc3
+
+FT
+
+SGW, OCT HCT
+
+always congested
+
+∆Q (vehicles/h/lane)
+
+Q u
+p 
+
+(ve
+hic
+
+les
+/h/
+
+la
+ne
+
+)
+
+2,000
+
+1,800
+
+1,600
+
+1,400
+
+1,200
+
+1,000
+200 400 600 8000
+
+Qout–Qc4
+
+always
+FT
+
+1,000
+
+B: Q
+tot = Q
+
+out
+
+PLC
+
+C: Q
+tot = Q
+
+c1
+
+Qup ≈ Qc1
+
+MLC
+
+Qtot = Qup+∆Q
+
+HCTSGW, OCT
+
+Figure 4 Schematic Representation of Phase Diagrams of Trafﬁc
+States Assuming (a) Negligible and (b) Large Perturbations
+of the Trafﬁc Flow
+
+Notes. The different areas indicate for which combinations of the upstream
+freeway ﬂow Qup and the bottleneck strength �Q certain trafﬁc states (see
+Figure 3) are predicted to exist. Superimposing both diagrams shows that
+many areas are multistable (see Figure 15a). That is, depending on the initial
+and boundary conditions, one may ﬁnd one out of several possible states.
+Note that the value of Qmax depends on the speed limit V0. SGW states are a
+special case of OCT states, in which the trafﬁc between the congested areas
+ﬂows freely. The existence of PLC and MLC states for a certain range of ﬂows
+indicates that their actual outﬂow can assume a range of different values
+between Qc1 and Qc2.
+
+i.e., even small perturbations can grow and cause a
+breakdown of trafﬁc ﬂow. In the intermediate den-
+sity ranges �c1 ≤ � < �c2 and �c3 < � ≤ �c4, one ﬁnds
+metastable trafﬁc, i.e., sufﬁciently small perturbations
+will fade away, while large enough ones will grow
+and cause a breakdown of trafﬁc ﬂow. The value of
+Qout falls into the metastable regime between �c1 and
+�c2. It depends on the maximum density and the aver-
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+144 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+V
+
+ρ
+
+StableUnstable
+ρc1 ρc2 ρc3 ρc4
+
+ρc1 ρc2 ρc3 ρc4
+
+St
+ab
+
+le
+St
+
+ab
+le
+
+Qc2 ≈ Qmax
+
+ρ
+
+Unstable Stable
+
+Qc4
+Qc3
+
+Q
+
+Qout
+Qc1
+
+Figure 5 Schematic Illustration of Velocity V and Flow Q as a
+Function of the Vehicle Density �
+
+Notes. Grey regions indicate density ranges of metastable trafﬁc ﬂow
+(cf. text), whereas Qck = Q��ck � denotes the ﬂows belonging to the instability
+thresholds �ck .
+
+age time gap, i.e., on the weather conditions, the truck
+fraction, and lane.3
+
+With this background information, we can now
+formulate conditions for the existence of the differ-
+ent trafﬁc states. Doing so, it is important not to
+restrict ourselves to the situations with large ini-
+tial perturbations, which have been studied before
+(Helbing, Hennecke, and Treiber 1999). This will high-
+light the multistable nature of trafﬁc ﬂows. That is,
+even for the same average ramp and freeway ﬂows,
+different trafﬁc states can ultimately result if the ini-
+tial and boundary conditions—e.g., the perturbation
+sizes—differ. This will be important for the compar-
+ison with empirical data in §6. Figure 4 displays the
+phase diagram resulting for small perturbations sepa-
+rately from the one for large perturbations in order to
+resolve a misunderstanding by Kerner, according to
+which the GKT model would predict a transition from
+free ﬂow to “synchronized” congested ﬂows only after
+the occurrence of moving jams (Kerner 2005). For
+
+3 According to Kerner and Rehborn (1996a), the typical outﬂow Qout
+from congested trafﬁc on the German autobahn A5 near Frankfurt
+is 1,100 veh/h for the right lane, 1,600 veh/h for the middle lane,
+and 1,800 veh/h for the left lane if the vehicles inside the conges-
+tion (nearly) get to a standstill.
+
+small perturbations, this is actually not the case (see
+Figure 4a).
+Remembering that the bottleneck strength  Q =
+
+Qrmp/�nL� relates to the effective ramp ﬂow and Qup
+denotes the upstream trafﬁc ﬂow on the freeway, the
+total freeway capacity required downstream of the
+ramp amounts to
+
+Qtot =Qup+ Q� (11)
+
+Therefore, we always expect to ﬁnd spatially extended,
+growing congestion states, if the maximum freeway
+ﬂow Qmax =max� Q��� is exceeded, i.e.,
+
+Qtot =Qup+ Q>Qmax� (12)
+
+which corresponds to the region above line A in Fig-
+ure 4.4 Free trafﬁc ﬂow can in principle exist under
+the condition Qup+ Q<Qmax, the region below line
+A in Figure 4a. This region can be further subdi-
+vided: While above the threshold Q��c1� of metastable
+trafﬁc—i.e., for
+
+Qtot =Qup+ Q>Q��c1�� (13)
+
+corresponding to the region above line C in Figure 4,
+large enough perturbations can also trigger congested
+trafﬁc states, no congested state can occur for
+
+Qtot =Qup+ Q<Q��c1�� (14)
+
+Under this condition, i.e., below line C, one should
+always ﬁnd free ﬂow.
+Assuming model parameters for which the max-
+
+imum ﬂow Qmax is realized for a density approxi-
+mately equal to �c2, trafﬁc ﬂows between the two
+diagonal lines A and C, i.e., Qup +  Q = Q��c1� and
+Qup + Q =Qmax in the  Q-over-Qup phase diagram
+can be either congested or free, depending on the ini-
+tial and boundary conditions.5 Particularly, while free
+ﬂow may persist over long time periods, large pertur-
+bations may trigger congested trafﬁc states.
+Spatially extended congestion can only emerge for
+
+Qup >Qout− Q� (15)
+
+i.e., if the required capacity Qtot =Qup+ Q is greater
+than the available dynamic capacity in the case of
+congested trafﬁc, which is given the outﬂow from
+congested trafﬁc Qout. This line B in Figure 4, in
+principle, does not have to be parallel to lines A
+and C, because Qout may depend on the bottleneck
+
+4 Note that Qmax is a function of the speed limit V0.
+5 If Qmax signiﬁcantly differs from Qc2, the situation becomes more
+complicated.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 145
+
+strength  Q (Treiber, Hennecke, and Helbing 2000;
+Helbing 2001b). For
+
+Q��c1�≤Qtot =Qup+ Q<Qout� (16)
+i.e., in the region below line B, congested trafﬁc states
+cannot grow because the freeway capacity for con-
+gested trafﬁc is higher than the totally required capac-
+ity Qtot. This implies that any resulting congestion
+state should be a localized cluster, i.e., constraint to a
+short freeway section. The existence of moving localized
+clusters (MLC) requires that the trafﬁc ﬂow in the free-
+way section upstream of the ramp is metastable, i.e.,
+
+Qup ≥Q��c1�� (17)
+Otherwise, if Qup <Q��c1�, no MLC can survive, and
+only free ﬂow can exist in the upstream area. Rather
+than propagating through this area, the localized con-
+gestion must stay at the location of the ramp, which
+results in a pinned localized cluster (PLC).6
+
+Let us now discuss the different possible forms of
+spatially extended congested trafﬁc: The trafﬁc ﬂow
+Qcong resulting in the congested area is given by the
+outﬂow Qout from congested trafﬁc minus the inﬂow
+(or bottleneck strength)  Q, i.e.,
+
+Qcong =Qout− Q� (18)
+One can distinguish the following cases: Homogeneous
+congested trafﬁc (HCT) will always occur if the den-
+sity �cong associated with the congested ﬂow Qcong =
+Q��cong� lies in the stable range:
+
+Qcong ≤Q��c4�� i.e.�  Q≥Qout−Q��c4�� (19)
+Moreover, it can occur in the metastable range
+
+Qcong ≤Q��c3�� i.e.�  Q≥Qout−Q��c3�� (20)
+if perturbations in the trafﬁc ﬂow are small enough.
+If the perturbations are supercritical, however,
+
+extended oscillating congested trafﬁc (OCT) can emerge
+whenever
+
+ Q≤Qout−Q��c4� and Qup >Qout− Q (21)
+(see Figure 4b). In the linearly unstable range
+
+ Q≤Qout−Q��c3� and Qup >Qout− Q� (22)
+
+6 Note that pinned localized clusters could also exist under
+metastable conditions, i.e., for Qup < Q��c2� and Qtot < Qmax, if
+the speed inside the PLC state was ﬁnite and the outﬂow higher
+than Qout ≈ 1�800 vehicles per kilometer and lane. For the outﬂow
+QPLCout �V � of a PLC state as a function of the average vehicle speed
+V , we conjecture that limV→0QPLCout �V �=Qout and limV→V0 QPLCout �V �=
+Qmax (cf. Figure 17). An analogous speed-dependence of the outﬂow
+Qout would apply to other congested trafﬁc states if the vehicles
+would still move forward with a ﬁnite average speed V inside the
+congested area.
+
+extended congested trafﬁc will always produce oscil-
+lating rather than homogeneous congested ﬂow. Stop-
+and-go waves (SGW) are a special case of OCT. They
+should primarily occur for not-too-large average den-
+sities �cong in the (partially) congested area—i.e., small
+enough bottleneck strengths  Q, because they require
+free trafﬁc ﬂow between the congested areas.
+
+5. Measurement of Congested
+Trafﬁc States
+
+5.1. Choice of the Measurement Site
+In the following, we will study data from the German
+autobahn A5 close to Frankfurt/Main, because this
+measurement site includes several large road sections
+without on- and off-ramps, and regularly suffers from
+severe trafﬁc congestion. Because this measurement
+site has been the basis of most of Kerner’s empiri-
+cal investigations, it also allows us to gain an inde-
+pendent judgement of the trafﬁc dynamics on this
+freeway, and to assess the validity of Kerner’s far-
+reaching conclusions. Such an independent study is
+needed, because Kerner has called all trafﬁc models
+containing a fundamental diagram into question. We
+will show that this has been done partly for the wrong
+reasons (see §7.1).
+Some of the issues that Kerner has not addressed
+
+in a satisfactory way are the following: What are the
+implications of freeway properties such as
+1. signiﬁcant gradients along the freeway,
+2. the high truck fraction, which varies strongly,
+3. the frequent occurrence of accidents or break-
+
+downs of cars,
+4. the operation of an “intelligent speed control
+
+system” (which adaptively limits the speeds in cases
+of an expected trafﬁc breakdown to 120 km/h or
+100 km/h and in cases of an actual breakdown grad-
+ually to 80 km/h or even 60 km/h), and
+5. the existence of very long ramps (as they provide
+
+an additional lane)?
+We will see that neglecting such aspects leads to
+
+special rather than general conclusions, and some-
+times even to wrong ones:
+1. For example, we will ﬁnd a new mechanism gen-
+
+erating stop-and-go waves at gradient-related bottle-
+necks (see §6.4).
+2. Another mechanism producing stop-and-go
+
+waves is based on the boomerang effect, which is
+probably caused by overtaking maneuvers of trucks
+(see Figures 2, 20b, and 21a).
+3. Breakdowns of cars and accidents often cause
+
+complex congestion patterns at unexpected locations,
+including homogeneous congested trafﬁc (see §§6.2
+and 6.3).
+4. The intelligent speed control system is proba-
+
+bly responsible for the homogeneous-in-speed type
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+146 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+of “synchronized” congested ﬂow (Kerner 1998b);
+see §7.2.
+5. Long off-ramps allow one to leave the freeway
+
+when congested trafﬁc becomes visible downstream.
+This adaptive response of drivers to downstream
+congestion is probably related to the “pinch effect”
+(Kerner 1998a), see §6.7. Long on-ramps may cause
+downstream ﬂows that are higher than the outﬂow
+Qout from congested trafﬁc, because a certain propor-
+tion ��t� of the on-ramp ﬂow may be able to enter
+the freeway downstream of the congestion front that
+is caused by the remaining proportion 1−��t� of the
+on-ramp ﬂow.7
+
+Moreover, the following questions must be
+addressed: What implications does it have if empir-
+ical data are compared with results of macroscopic
+simulation data without considering the measure-
+ment (data aggregation) method? Would empirical
+ﬁndings such as the scattering of synchronized ﬂows
+be naturally reproduced by a macroscopic trafﬁc ﬂow
+model if multiclass and multilane effects are taken
+into account? We will come back to this in §7.1.
+
+5.2. Description of the Measurement Site and
+Trafﬁc Data
+
+In the following investigation, we will focus on veloc-
+ity data aggregated over one-minute intervals for a
+freeway section frequently suffering from serious con-
+gestion. Measurements were available for all free-
+way lanes and most ramps. However, apart from the
+investigation of exceptional situations such as acci-
+dents, we have arithmetically averaged the speeds
+over all freeway lanes (which is particularly justi-
+ﬁed for synchronized ﬂows or other congested traf-
+ﬁc states). A sketch of the measurement site is pre-
+sented in Figure 6. It shows an approximately 30-
+kilometer-long freeway section, which for the most
+part has three lanes into each direction, three inter-
+sections with other freeways, and one junction. At the
+intersections, there are additional merging and
+diverging lanes, some of which are more than one
+kilometer long. Between the intersections “Frank-
+furt North-West” and “Bad Homburg,” but also
+between the latter section and the junction “Fried-
+berg,” there are two approximately 10-kilometer-long
+three-lane freeway sections without disturbances by
+on- or off-ramps. However, the freeway crosses a
+valley between kilometers 478 and 480 with gradi-
+ents of about 2%–3%, which causes an additional
+ﬂow-conserving bottleneck in the northern direction.
+
+7 The description of a scenario with such a particular on-ramp
+design is as follows: If ��t�Qrmp�t� with 0 ≤ ��t� ≤ 1 is the frac-
+tion of the ramp ﬂow Qrmp�t� entering the freeway downstream of
+the congestion front, the effective bottleneck strength is  Q�t� =
+�1− ��t��Qrmp�t�/n, and the ﬂow downstream of the bottleneck is
+Qdown�t�=Qout +��t�Qrmp�t�/n.
+
+Moreover, there is a relatively steep hill (“Köpperner
+Berg”) between kilometers 471 and 472.5, with gra-
+dients up to 5%, but its effect on trafﬁc ﬂow in the
+southern direction is small compared to the slightly
+upstream located Junction Friedberg (although the
+average vehicle speed at Köpperner Berg is often as
+small as 60 km/h, possibly also due to the opera-
+tion of the intelligent speed control). The main bot-
+tlenecks of the studied freeway section in the south-
+ern direction are the Junction Friedberg at kilometer
+471 and the Intersection Bad Homburg at kilometer
+481 (see top of Figure 6), while the main bottlenecks
+in the northern direction are the Intersection Frank-
+furt North-West at kilometer 489 and the bottleneck at
+kilometer 478 due to the uphill gradient (see middle
+of Figure 6).
+We have investigated the available data for both
+
+driving directions of the above freeway between
+04/01/2001 and 09/30/2001 (165 days), which allows
+us to identify the typical features of trafﬁc ﬂow and
+to make statistical analyses. On these days (distin-
+guishing both directions), we identiﬁed more than
+240 breakdowns of trafﬁc ﬂow at several bottlenecks,
+mostly during the morning rush hour between about
+7 a.m. and 9 a.m. and during the afternoon rush
+hour between about 3 p.m. and 7 p.m. (on Fridays,
+between about 1 p.m. and 7 p.m.). Breakdowns were
+also induced by holiday trafﬁc or accidents. The latter
+normally occurred outside of the typical bottleneck
+areas and were protocolled by the road authorities.
+During the investigated time period, about 500 acci-
+dents or breakdowns of vehicles have occurred. How-
+ever, most of them had only a minor impact on the
+trafﬁc ﬂow.8 Finally, note that the average truck frac-
+tion during rush hours was between 10% and 15%
+(with a standard deviation of about 5%), and higher
+during other time periods (apart from Sundays, which
+are truck-free until night). The truck fraction may be
+relevant because trucks are allowed to overtake other
+vehicles, and their speeds are generally limited to 80
+km/h, while speeds of cars are not.
+Our further study is based on aggregate double-
+
+loop detector data containing, among other infor-
+mation, the arithmetically averaged vehicle veloci-
+ties and trafﬁc ﬂows at 30 cross-sections (in direction
+North) or 31 cross-sections (in direction South), see
+Figure 6. We have preprocessed our one-minute data
+by an error correction procedure which is followed
+by a smoothing routine. Except for the few times in a
+month when none of the detectors recorded any data
+for a certain time period due to maintainance work
+or a breakdown of the computer facilities, the data
+showed very few errors of two types:
+
+8 In many cases, the cars involved can be moved to the emergency
+lane and do not block any of the freeway lanes.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 147
+
+465470475480485490
+
+100
+
+150
+
+200
+
+250
+
+Location (km)
+
+Elevation (m)
+
+49
+0.
+
+7
+
+49
+1.
+
+3
+
+49
+1.
+
+9
+49
+
+2.
+5
+
+48
+8.
+
+0
+
+48
+8.
+
+5
+48
+
+9.
+15
+
+48
+9.
+
+5
+
+49
+0.
+
+3
+48
+
+9.
+9
+
+48
+6.
+
+9
+
+48
+6.
+
+0
+
+48
+5
+
+48
+4.
+
+1
+
+48
+3.
+
+0
+
+48
+2.
+
+2
+
+48
+1.
+
+3
+
+48
+0.
+
+7
+
+47
+9.
+
+95
+
+47
+8.
+
+7
+
+47
+7.
+
+4
+
+47
+6.
+
+3
+
+47
+5.
+
+0
+
+47
+4.
+
+0
+
+47
+3.
+
+0
+
+47
+1.
+
+5
+
+47
+0.
+
+7
+
+46
+9.
+
+9
+
+46
+8.
+
+3
+
+46
+6.
+
+65
+
+46
+5.
+
+15
+
+Intersection
+Frankfurt West
+
+Intersection
+Frankfurt North-West Intersection Bad Homburg Junction Friedberg
+
+S2S3S5 S4S6S7S8S9S1
+0
+
+S1
+1
+
+S1
+2
+
+S1
+3
+
+S1
+4
+
+S1
+5
+
+S1
+6
+
+S1
+7
+
+S1
+8
+
+S1
+9
+
+S2
+0
+
+S2
+1
+
+S2
+2
+
+S2
+3
+
+S2
+4
+
+S2
+5
+
+S2
+7
+
+S2
+8
+
+S2
+9
+
+S3
+0
+
+S3
+1
+
+N
+1
+
+N
+2
+
+N
+3
+
+N
+4
+
+N
+5
+
+N
+6
+
+N
+7
+
+N
+8
+
+N
+9
+
+N
+10
+
+N
+11
+
+N
+12
+
+N
+13
+
+N
+14
+
+N
+15
+
+N
+16
+
+N
+17
+
+N
+18
+
+N
+19
+
+N
+20
+
+N
+21
+
+N
+22
+
+N
+23
+
+N
+24
+
+N
+25
+
+N
+26
+
+N
+27
+
+N
+28
+
+N
+29
+
+N
+30
+
+S1
+
+N
+
+49
+3.
+
+2
+49
+
+2.
+8
+
+49
+1.
+
+6
+
+49
+0.
+
+5
+49
+
+0.
+0
+
+48
+8.
+
+8
+
+48
+8.
+
+0
+
+48
+6.
+
+9
+
+48
+6.
+
+0
+
+48
+5.
+
+0
+
+48
+4.
+
+1
+
+48
+2.
+
+9
+
+48
+2.
+
+2
+
+48
+1.
+
+7
+
+48
+0.
+
+7
+
+48
+0.
+
+1
+
+47
+8.
+
+9
+
+47
+7.
+
+8
+
+47
+5.
+
+1
+
+47
+3.
+
+8
+
+47
+2.
+
+7
+
+47
+1.
+
+4
+47
+
+1.
+0
+
+46
+6.
+
+5
+
+47
+2.
+
+05
+
+47
+6.
+
+35
+
+47
+0.
+
+05
+
+46
+8.
+
+35
+
+46
+5.
+
+35
+
+46
+3.
+
+35
+
+S26:
+
+Figure 6 Top: Sketch of the Investigated Freeway Section, Showing the Two Directions of the German Three-Lane Freeway A5 Near Frankfurt/Main
+Bottom: Height Proﬁle Along the Freeway
+
+Notes. Each measurement cross-section of the freeway is marked by a vertical line. It is named with the initial of the driving direction (“N” for north or “S” for
+south), followed by a number increasing in driving direction. The geographical position of each detector is given in kilometers according to the ofﬁcial notation
+of the road authorities.
+
+• Sometimes the data of a cross-section consisted
+only of error bits for a single minute or two subse-
+quent minutes. In this case (amounting to approxi-
+mately 1% of the data), we applied a linear interpo-
+lation in time. If error bits for time intervals longer
+than two minutes were found, all values were set to
+zero. After visualization of the data, these events were
+clearly visible, because errors of this type occurred
+simultaneously for all detectors of a direction.
+• In other cases, some detector (measuring a single
+
+lane at a speciﬁc cross-section) failed, which some-
+times lasted for a few weeks. When trafﬁc around
+this cross-section was congested, we averaged the
+data of the other lanes. Because of similar (synchro-
+nized) velocities in neighboring lanes during con-
+gestion (Kerner and Rehborn 1996b), this procedure
+leads to consistent results for the velocity. If there was
+free trafﬁc, we interpolated the data of the preceding
+cross-section and the following one for the same lane.
+
+5.3. Adaptive Smoothing Method
+In our empirical evaluations, we used an adaptive
+smoothing algorithm (Treiber and Helbing 2002) as
+an alternative to the use of cumulative plots (Newell
+1982; Cassidy and Windover 1995; Coifman 2002;
+
+Muñoz and Daganzo 2002b; Bertini et al. 2004).9 This
+algorithm gives a good spatiotemporal impression of
+trafﬁc patterns based on the data of a few measure-
+ment cross-sections. The adaptive smoothing method
+uses an exponential ﬁlter "�x� t� that smoothes over
+an average time window � and an average spatial
+interval # . In this study, we have always chosen
+� = 1�2 min and # = 0�6 km. The particular feature
+of this method is the smoothing into the respective
+propagation direction of perturbations (i.e., along the
+“characteristic lines”). In free trafﬁc, perturbations are
+assumed to propagate forward (downstream) with a
+speed of approximately cfree = 80 kilometers per hour,
+while in congested trafﬁc, the perturbations travel
+upstream with a speed of about ccong = c0 =−16 kilo-
+meters per hour (cf. Figure 7). These values have
+been calibrated in a way that minimizes discontinu-
+ities in the three-dimensional representation of the
+average velocity along the freeway in the course of
+time and agree well with other observations (Kerner
+and Rehborn 1996a). The adaptive smoothing method
+switches automatically between the free and the con-
+gested regime based on a certain criterion, so that
+there is no subjective element in this method of data
+preprocessing; for details, see Treiber and Helbing
+
+9 For an investigation of trafﬁc data from the same freeway stretch,
+but with the method of cumulative plots, see Bertini et al. (2004).
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+148 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+xi+1
+
+xi
+
+cfree
+xt ′free = t – = const.
+
+cong
+φ (x–x0, t–t0) > const′.
+
+free
+φ (x–x0, t–t0) > const′.
+
+ccong
+xt ′cong = t – = const.
+
+τ
+
+σ
+
+τ
+
+x
+
+t
+
+(x0, t0)
+
+Figure 7 Illustration of the Effects of Two Linear Homogeneous
+Filters with the Kernels 
+free�x� t� and 
+cong�x� t�,
+Respectively, (After Treiber and Helbing 2002)
+
+Notes. The shaded areas denote the regions considered in the calculation
+of a data point at �x� t�. Triangles denote the mainly contributing input data
+sampled in free trafﬁc, squares the ones sampled in congested trafﬁc.
+
+(2002). The main properties and advantages of this
+method are illustrated by Figure 8.
+We have applied this method to the represen-
+
+tation of different quantities such as the average
+velocity V �x� t�, its inverse 1/V �x� t�, the trafﬁc ﬂow
+Q�x� t�, or the vehicle density determined by ��x� t�=
+Q�x� t�/V �x� t�. It turned out that the most intuitive
+picture of the trafﬁc situation was obtained by show-
+ing the average velocity over space and time, but with
+high values on the bottom and small values on the
+top. Therefore, this data representation is based on a
+quantity that is easy and reliable to measure (in con-
+trast to the vehicle density). In the respective plots
+of the inverted average speed over location and time,
+congestion corresponds to “hills,” similar to a typi-
+cal three-dimensional visualization of the density. In
+other words, the higher the value on the vertical axis
+of the graph, the higher is the resistance to the driver
+(the smaller is the velocity).
+Furthermore, the method smooths out statistical
+
+ﬂuctuations of the measurements (which are due to
+the fact that one-minute data average over a small
+number of vehicles only). In this way, the main sys-
+tematic features of trafﬁc patterns become more eas-
+ily visible. Note that if the assumptions of the LWR
+model were true (according to which the ﬂow and
+average speed would be a direct function of the
+density), perturbations in plots obtained with the
+adaptive smoothing method should not grow along
+homogeneous freeway sections.
+
+6. Empirical Features of Congested
+Trafﬁc States
+
+In the following section, we will discuss different
+kinds of spatiotemporal congestion patterns that have
+
+been observed on the investigated section of the Ger-
+man freeway A5.
+
+6.1. Pinned Localized Cluster (PLC)
+Let us start with a discussion of the particular kind of
+spatiotemporal congestion pattern illustrated in Fig-
+ure 9. This pattern normally appears during rush
+hours at bottlenecks of the freeway such as on-ramps
+or gradients and does not move up- or downstream.
+Its location is ﬁxed to the location of the bottleneck
+and its spatial extension is limited.
+Pinned localized clusters (PLC) are characterized by
+
+a localized reduction of velocity and a higher den-
+sity.10 They are mostly triggered by a downstream
+travelling perturbation (see Figure 9a) or they are
+caused by an upstream travelling one that stops at the
+location of the bottleneck (see Figure 9b). Upstream
+and downstream of the PLC we have free trafﬁc ﬂow.
+When the trafﬁc volume becomes too high, PLCs start
+to expand in space, which gives rise to other spa-
+tially extended congestion patterns (see Figure 20a,
+Figure 21b, and §6.8).
+
+6.2. Homogeneous Congested Trafﬁc (HCT)
+One kind of spatially extended congested trafﬁc is
+homogeneous congested trafﬁc (HCT). We observed
+such patterns only after serious accidents or during
+holiday trafﬁc. In Figure 10a, for example, we have
+diagnosed a complete closing of all three lanes by data
+analysis, which has been conﬁrmed by the responsi-
+ble road authorities. After a ﬁrst accident occurred at
+13:50 at kilometer 477.08, 16 other cars were imme-
+diately involved in six subsequent accidents. A quar-
+ter of an hour later, two more accidents happened at
+about the same position. The congestion pattern in
+Figure 10b was also caused by an accident. It occurred
+at 19:15 at kilometer 478.736.
+In homogeneous congested trafﬁc, the (smoothed)
+
+velocity is very low and more or less constant (i.e.
+homogeneous) over a longer section of the freeway.
+The downstream front—i.e., the small road section
+on which the vehicles accelerate again—is located
+slightly downstream of the upstream end of a serious
+bottleneck. The upstream jam front moves upstream,
+which gives rise to a spatially extended congestion
+pattern that grows in time.
+Downstream of homogeneous congested trafﬁc, one
+
+usually ﬁnds free trafﬁc. Once the bottleneck is
+removed (e.g., the accident and the lanes blocked by it
+are cleared), the downstream front of congested traf-
+ﬁc moves upstream with a speed C, which normally
+
+10 This speed reduction is probably a result of interaction-based
+obstruction effects, e.g., due to weaving ﬂows—i.e., frequent lane
+changes close to freeway ramps.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 149
+
+7
+
+490
+
+480
+
+470
+
+Accident
+8
+
+Time (h)
+9 10
+
+Velocity (km/h)
+
+0
+
+100
+
+470
+
+480
+
+490 7
+
+8
+
+9
+
+10
+
+Tim
+e (h
+
+)
+
+Location (km
+)
+
+Velocity (km/h)
+
+0
+
+100
+
+470
+
+480
+
+490
+7
+
+8
+
+9
+10
+
+Tim
+e (h
+
+)
+
+Location (km
+)
+
+7
+
+490
+
+480
+
+470
+
+8
+Time (h)
+
+9 10
+
+(a) (b)
+
+(c) (d)
+
+Figure 8 Three-Dimensional Representations of the Average Speed (Top) and Velocity Contour Plots (Bottom) of Stop-and-Go Waves Observed on
+Thursday, 04/05/2001, in Direction South
+
+Notes. For a discussion of the trafﬁc pattern, see §6.9. Left: Isotropic smoothing parallel to the x- and t-axes, yielding discontinuous patterns. Right: Same
+data using the adaptive smoothing method, where travelling waves become clearly visible. (For better illustration, only every second detector has been used
+here, resulting in an effective mean distance between neighboring detectors of about 2 km, while the actual mean distance is approximately 1 km, cf. Figure 6.)
+(b) Gives the best overview of the details of the velocity proﬁle. The propagation speeds of the 11 main stop-waves are (from left to right, determined as
+described in the caption of Figure 14):−17.2 km/h,−16.3 km/h,−16.9 km/h,−15.4 km/h,−16.6 km/h,−16.77 km/h,−17.7 km/h,−17.4 km/h,−17.7 km/h,
+−15.7 km/h, and −17.1 km/h. Note that, while travelling through Junction Friedberg at km 471, three pairs of waves merge to form three single waves
+afterwards.
+
+agrees with ccong = c0 ≈−16 km/h. The spatial exten-
+sion of homogeneous congested trafﬁc shrinks as soon
+as �c� > �C� (see Figure 10b). The time of disappear-
+ance can, in principle, be forecasted when the clearing
+time and the time-dependent upstream ﬂow Qup�t�
+are known.
+
+A5 South
+04/17/2001
+
+(Tue.)
+
+470
+
+475
+
+480
+
+485
+
+Location (km) 8
+9
+
+10
+
+Time
+(h)
+
+100
+
+0
+
+Velocity (km/h) A5 South
+05/10/2001
+
+(Thu.)
+Velocity (km/h)
+
+480
+
+490
+
+Location (km) 7
+
+8
+
+Time
+(h)
+
+100
+
+0
+
+(a) (b)
+
+Figure 9 Representative Examples of Pinned Localized Clusters at Intersection Bad Homburg
+Notes. For a detailed discussion of the congestion pattern displayed in (a), see §6.8. The pinned localized cluster shown in (b) is triggered by a boomerang
+effect (see §2.5). The PLC state starts at 7:03 a.m., when a large perturbation travelling with the speed −18�26 km/h reaches the on-ramp at kilometer 481.3
+(cross-section S15).
+
+6.3. Oscillating Congested Trafﬁc (OCT)
+Oscillating congested trafﬁc is another kind of
+extended congestion pattern. It has similar features to
+homogeneous congested trafﬁc regarding its develop-
+ment, growth, and dissolution mechanism. However,
+the congested area shows more or less regular oscil-
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+150 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+(a)
+A5 South
+
+08/04/2001
+(Sat.)
+
+470
+
+480
+
+Location (km)
+
+14
+
+15
+
+16
+
+Time
+ (h)
+
+100
+
+0
+
+Velocity (km/h)
+
+(b)
+A5 South
+
+04/16/2001
+(Mon. - Easter)
+
+470
+
+480
+
+Location (km)
+19
+
+20
+
+21
+
+Time
+(h)
+
+100
+0
+
+Velocity (km/h)
+
+Figure 10 Two Representative Examples of Homogeneous Congested Trafﬁc Caused by Accidents
+Notes. In (a), the freeway is effectively blocked because the outﬂow reaching the intersection at cross-section S14 is only 90 vehicles per hour and lane. The
+initial mean speed of the upstream shockwave is C1 = −�7�87± 0�27� km/h, until it reaches the second on-ramp of Junction Friedberg at kilometer 471.5.
+Further upstream, after 2 p.m., it is C2 =−�4�15± 0�11� km/h. The speed of the downstream congestion front is c1 =−�24�18± 2�27� km/h on the section
+between kilometer 476.5 and 471.5; further upstream it is c2 =−�12�42± 0�24� km/h. In (b), a pinned localized cluster with smaller density persists for some
+time after the accident site is cleared, possibly because of continuing efforts in the emergency lane. The speed of the upstream shockwave between kilometer
+478.7 and km 473.0 is C1 =−10�5±0�4 km/h; later on, from kilometer 470.69 to 465.15 it is C2 =−�8�20±0�24� km/h. The speed of the downstream shock
+front between kilometer 477.4 and 473.0 amounts to c1 =−�13�01± 0�35� km/h. Later on, from kilometer 470.69 to 465.15 it is c2 =−�16�31± 1�09� km/h.
+While the speeds of the upstream shock fronts are expected to vary according to Equation (6), the change in the speed of the downstream shock front is
+unexpected. We suggest that this may be due to a higher maximum density �jam or time gap T along the gradient of the freeway.
+
+lations of speed with a frequency and amplitude that
+stay roughly constant over a certain period of time.
+The oscillations propagate upstream with a velocity
+c≈ ccong =−16 km/h, cf. Figure 11.
+Oscillating congested trafﬁc is often surrounded by
+
+free trafﬁc ﬂow and may be triggered by a pertur-
+bation, but it can also arise when the trafﬁc volume
+exceeds a certain value. There are two different disso-
+lution mechanisms:
+• If a temporary bottleneck is lifted (e.g., an acci-
+
+dent site is cleared), the freeway section can again
+cope with the overall trafﬁc volume and the bottle-
+neck becomes inactivated. In this case, the down-
+stream congestion front starts to move upstream with
+a speed c ≈ c0 = ccong, until the upstream front is
+
+(a)
+
+A5 South
+05/28/2001
+
+(Mon.)
+
+470
+
+480
+
+Location (km
+)
+
+10
+
+11
+
+12
+
+Tim
+e (h)
+
+100
+
+0
+
+Velocity (km/h)
+
+(b)
+A5 South
+
+07/31/2001
+(Tue.)
+
+480
+
+490
+9
+
+10
+
+11
+
+Location (km) Tim
+e (h
+
+)
+
+100
+
+0
+
+Velocity (km/h)
+
+Figure 11 Representative Examples of Oscillating Congested Trafﬁc
+Notes. (a) This congestion pattern is caused by an accident at kilometer 478.325 at 9:50 a.m.. The mean propagation velocity of the 12 stop waves is c¯ =
+15�7± 1�2 km/h, and the standard errors in the determination of the velocities of the individual stop waves vary between 0.1 and 1.2 km/h. (b) This oscillating
+congested trafﬁc is the result of an obstruction on the fast lane between kilometers 486.0 and 486.9. The mean propagation velocity of the 11 large stop waves
+amounts to c¯= 17�6± 1�4 km/h.
+
+reached and the congestion is thereby dissolved (see
+Figure 11a).
+• If the time-dependent upstream ﬂow Qup
+
+becomes smaller than Qcong, the vehicle queue shrinks
+and the upstream congestion front moves down-
+stream. If  Q stays long enough above zero, the
+upstream front will ﬁnally reach the bottleneck, ter-
+minating the congestion.
+
+6.4. Stop-and-Go Waves (SGW)
+Another form of congested trafﬁc, which has spatially
+extended and localized features at the same time,
+are stop-and-go waves. They are related to oscillat-
+ing congested trafﬁc, but have a large characteristic
+amplitude, while there is no typical wavelength. Stop-
+and-go waves (SGW) consist of a sequence of trafﬁc
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 151
+
+A5 North
+07/20/2001
+
+(Fri.)
+
+15
+
+16
+
+17
+
+Time
+ (h)
+
+480
+
+490
+
+Location (km)
+
+100
+
+0
+
+Velocity (km/h)
+(a)
+
+A5 North
+04/20/2001
+
+(Fri.)
+
+14
+
+15
+
+16
+
+Time
+(h)
+
+470
+
+480
+
+490
+
+Location (km)
+
+100
+0
+
+Velocity (km/h)
+(b)
+
+Figure 12 Representative Examples of Stop-and-Go Waves with
+Propagation Speeds of (a) 16.6 km/h ± 1.1 km/h and
+(b) 16.5 km/h ± 1.0 km/h
+
+Notes. See Figure 14 for the measurement method. In (a), stop-and-go
+waves appear between 14:30 and 16:10 at the uphill gradient, generating a
+ﬂow-conserving bottleneck between kilometer 475 and kilometer 477 (see
+Figure 6). The interruption of the waves at 16:20 is caused by an accident at
+kilometer 482.8. (b) The stop-and-go waves are created at the uphill gradi-
+ent “Köpperner Berg” between kilometer 474 and kilometer 472 from 14:00
+to 15:10. In both cases, the stop-and-go waves disappear at Intersection
+Frankfurt West due to several off-ramps.
+
+jams with free trafﬁc in between. The trafﬁc jams are
+localized (i.e., spatially conﬁned in space and time),
+and they propagate upstream from the generating
+bottleneck with a velocity of ccong ≈ −16 km/h. The
+spatial and temporal distance between two succes-
+sive trafﬁc jams vary signiﬁcantly. Stop-and-go waves
+are sometimes triggered by small perturbations in the
+trafﬁc ﬂow or may originate from an area of pinned
+localized clusters. (see Figures 12, 20, 21, and §6.7).
+The propagation speed of stop-and-go waves does
+not change when they travel through pinned localized
+clusters (see Figures 20b, 21a) or spatially extended
+congested trafﬁc (Kerner 2000a, b, 2002b; Helbing
+et al. 2003). Their propagation typically ends in free
+trafﬁc, mostly when passing off-ramps.
+
+6.5. Moving Localized Cluster (MLC)
+In the case of a single moving trafﬁc jam (instead of
+a sequence of them), we talk about a moving local-
+ized cluster (MLC). As for a PLC the width of an
+MLC state is limited, but MLC is propagating with
+the speed ccong ≈ −16 km/h rather than staying at a
+particular place.
+
+A5 North
+05/31/2001
+
+(Thu.)
+
+15
+
+16
+
+Time
+ (h)
+
+470
+
+480
+
+490
+
+Location (km)
+
+100
+0
+
+Velocity (km/h)
+
+A5 South
+04/04/2001
+
+(Wed.)
+
+470
+
+480
+Location (km) 7
+
+8
+
+Time (h
+)
+
+100
+
+0
+
+Velocity (km/h)
+
+(a)
+
+(b)
+
+Figure 13 Representative Examples of Moving Localized Clusters
+Notes. In (a), the MLC state emerges at the uphill gradient Köpperner Berg
+(kilometer 474 to kilometer 472, cf. Figure 6). The velocity of the stop wave
+is c = �−18�0± 0�2� km/h, which has been determined as described in the
+caption of Figure 2. (b) At 7:10 a.m., the moving localized cluster is triggered
+at kilometer 488 by a “boomerang effect” (see §2.5). The triggering is due to
+a peak in the ﬂow at kilometer 486.9 (cross-section S21) between 7:01 a.m.
+and 7:06 a.m. with a value of 2,178 veh/h/lane, which is probably caused by
+a platoon of cars behind some overtaking trucks. Note that when passing the
+Intersection Bad Homburg at kilometer 481, the MLC state meets a small,
+downstream moving perturbation that initiates a PLC state at the on-ramp.
+
+An MLC state usually originates at a bottleneck
+from a (large) perturbation of trafﬁc ﬂow. One can
+distinguish two different cases:
+• The perturbation is large enough to travel
+
+upstream from the very beginning (see Figure 13a).
+• The perturbation approaches from upstream and
+
+appears in the form of a high-ﬂow time interval that
+initiates a growing, upstream traveling moving local-
+ized cluster when arriving at a bottleneck, see Fig-
+ure 13a at kilometer 473 and Figure 13b at kilometer
+488. Normally, this high-ﬂow time interval is very dis-
+tinct (Figure 13b) and a boomerang effect (see §2.5)
+can easily be observed. If the high ﬂow at the bottle-
+neck persists for a longer time period, it is more likely
+to observe a stop-and-go wave pattern or multiple
+MLC states rather than a single MLC; see Figure 12.
+
+6.6. Empirical Phase Diagram
+In contrast to previous evaluations (Schönhof and
+Helbing 2004; Helbing et al. 2003), the following
+results were obtained with a semiautomated measure-
+ment method, which is described in Figure 14. The
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+152 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+QS4 (km 469.88)
+
+QS5 (km 470.70)
+
+Junction Friedberg
+A5 South
+
+QS6 (km 471.55)
+
+∆Qon
+1
+
+∆Qoff
+2
+
+∆Qon
+2
+
+∆ Q1st sub = Qon
+2
+
+2
+∆Q3rd sub = ∆Qon + ∆Qon – ∆Qoff
+
+1 2
+
+2
+∆Q2nd sub = ∆Qon – ∆Qoff
+
+2
+
+1st subbottleneck:
+
+Qoff∆
+1
+
+3rd subbottleneck:
+
+2nd subbottleneck:
+
+(d) Measurement site and quantities
+
+Time (h)
+
+Lo
+ca
+
+tio
+n 
+
+(k
+m
+
+)
+
+10 11
+
+466
+468
+470
+472
+474
+476
+478
+480
+482
+484
+
+Velocity
+(km/h)
+
+A5 South
+08/20/01
+Monday
+
+Qup     (at S2, 10:19 – 10:38)
+
+∆Q (10:21 – 10:40)
+
+Qout (at S6, 10:40 – 10:59)
+
+(MLC)
+
+(b) MLC flow measurement
+
+Time (h)
+
+Lo
+ca
+
+tio
+n 
+
+(k
+m
+
+)
+
+7 8 9
+
+466
+
+468
+
+470
+
+472
+
+474
+
+476
+
+Velocity
+(km/h)
+
+A5 South
+04/26/01
+Thursday
+
+Qup     (at S2, 7:16 – 7:35)
+
+∆Q (7:10 – 8:20) Qout (at S6)
+
+(TSG)
+
+(c) TSG/OCT flow measurement
+
+Onset of congestion (see text)
+
+20
+40
+60
+80
+100
+120
+140
+
+Time (h)
+
+Lo
+ca
+
+tio
+n 
+
+(k
+m
+
+)
+
+7 8 9
+
+466
+
+468
+
+470
+
+472
+
+474
+
+476
+
+Velocity
+(km/h)
+
+A5 South
+06/08/01
+Friday
+
+Qup    (at S2, 7:30 – 8:00)
+
+∆Q (7:30 – 8:00) Qout (at S6)
+
+(a) PLC flow measurement
+(PLC)
+
+Onset of congestion (see text)
+
+ 0
+ 20
+ 40
+ 60
+ 80
+ 100
+ 120
+
+ 20
+ 40
+ 60
+ 80
+ 100
+ 120
+
+Figure 14 The Bottleneck Strength �Q and the Upstream Flow Qup on the Freeway as the Quantities Required for Generating the Empirical Phase
+Diagram Were Measured by Averaging Flow Values Over a Certain Time Window, Depending on the Type of Congestion
+
+Notes. As a trapeziform weight function reduces the sensitivity to the beginning and end of the time window, we have weighted values inside the time window
+with 1, the boundary values with 2/3, and the closest values outside of the time window with 1/3. (a) Pinned localized clusters at Junction Friedberg, see (d),
+were often triggered by peaks in the ﬂow, but very soon after the trafﬁc breakdown a stationary state occurred, where congestion was spread over the whole
+junction and the cross-section S4 at km 470 was situated inside the congested area. In this stationary state, the actual bottleneck strength was assumed to
+be the net ramp inﬂow �Q=max��Q1on − �Q1off�0�+max��Q2on − �Q2off�0�. The cross-sections directly upstream of the bottleneck (S4, S3) suffered from the
+congestion and displayed larger ﬂuctuations. Therefore, the upstream ﬂow was measured ≈ 3 km further upstream at cross-section S2 (kilometer 466.65) for
+the same time window as the bottleneck strength �Q, exploiting that the travel time between S2 and the junction is negligible and the number of vehicles on
+this freeway section is conserved. The time window was chosen as the interval during which the congestion (involving detector S4) was stationary. It was also
+the basis for the measurement of the outﬂow Qout at cross-section S6. (b) The inﬂow Qup to a moving localized cluster was averaged over a time interval of
+20-minutes, ending at the time when the velocity at cross-section S2 dropped below 90 km/h. The bottleneck strength was determined with the above formula
+for �Q, averaging over a 20-minute window centered at the time, when the moving localized cluster entered the junction, i.e., when the velocity at cross-section
+S6 exceeded 60 km/h again. The ouﬂow was measured at cross-section S6 during the 20 minutes after the jam passed the junction, i.e., the velocity at S4
+exceeded 60 km/h again. (c) For stop-and-go waves and oscillating congested trafﬁc, Qup was determined as for moving localized clusters, while �Q and Qout
+were obtained as for pinned localized clusters. For the averaging time window we chose the period during which the congestion pattern had its characteristic
+form, i.e., the moments of high initial ﬂows triggering the congestion patterns (see short thick line, “onset of congestion”) did not enter into our measurements.
+This method differs from our previous measurement method (Schönhof and Helbing 2004; Helbing et al. 2003), in which we focussed on the initial ﬂows.
+Finally, outﬂows Qhinderedout of ﬂow-conserving bottlenecks at accident sites were measured at the next downstream cross-section during the obstruction period.
+The reference outﬂow Qout, measured at this place immediately after the velocity increased again (after the accident was cleared), was used to estimate the
+bottleneck strength via �Q≈ Qout −Qhinderedout .
+
+empirical phase diagram for the congestion patterns
+at Junction Friedberg that are depicted in Figure 15,
+and the observed ﬂows for the (other) congestion pat-
+terns presented in the different ﬁgures throughout
+this paper, are surprisingly well compatible with the
+theoretical one (see Figure 4):
+• For values of the overall ﬂow Qtot = Qup +
+
+Qrmp/�nL� below 1,400 vehicles per hour and lane,
+trafﬁc is always free, while above 2,100 vehicles per
+hour and lane, it is always congested.
+• MLC occur for upstream ﬂows above 1,400 vehi-
+
+cles per hour and lane and for overall ﬂows Qtot
+below 1,800 vehicles per hour and lane.
+
+• For 1,800 veh/h/lane≤Qtot ≤ 2�100 veh/h/lane
+and Qup ≥ 1�400 veh/h/lane, we ﬁnd a coexistence of
+FT, OCT, and SGWs.
+• HCT is only found after serious accidents with
+
+lane closures, with a bottleneck strength  Q ≥ 700
+vehicles per hour and lane, cf. Figures 8, 10, and
+21b. Homogeneous congested trafﬁc has not been
+observed upstream of Junction Friedberg (i.e. its most
+upstream located off-ramp).
+Although altogether there is a good agreement
+
+between the theoretical and empirical trafﬁc states,
+and the empirical phase diagram is qualitatively
+compatible with the theoretical phase diagram, we
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 153
+
+Qout – Qc4
+
+Qout – Qc3
+
+2,000
+
+1,800
+
+1,600
+
+1,400
+
+1,200
+
+1,000
+
+0 200 400 600 800 1,000
+
+Q
+up
+
+ (
+ve
+
+hi
+cl
+
+es
+/h
+
+/la
+ne
+
+)
+
+∆Q (vehicles/h/lane)
+
+always
+FT
+
+MLC,
+FT
+PLC6
+
+PLC, FT
+FT
+
+OCT
+
+FT
+
+OCT
+
+HCT
+FT
+
+PLC6
+
+PLC6
+
+PLC6
+
+Qup ≈ Qc1
+
+A: Q
+tot = Q
+
+m
+ax
+
+SGW,
+
+OCT,
+
+MLC,
+
+FT
+
+Qtot = Qup + ∆Q
+
+SGW,
+
+HCT
+OCT
+
+SGW,
+OCT
+
+HCT
+
+always congested
+
+HCT
+
+C: Q
+tot = Q
+
+c1
+
+B: Q
+tot = Q
+
+out
+
+M
+
+F
+
+F
+
+F
+
+F
+
+F
+F
+
+F
+
+F
+
+F
+
+F
+
+F
+F
+
+F
+
+F
+
+F
+
+F
+
+F
+
+F
+
+P P
+
+P
+
+P
+
+P
+
+P O
+
+∆Q (vehicles/h/lane)
+
+C
+
+M
+M
+
+MMM
+
+M
+
+M
+
+M
+
+M
+
+M
+M
+
+F F
+
+F F
+
+F
+F
+
+F
+F
+
+F
+
+F
+F
+
+F
+F
+
+F
+F
+
+F
+
+F
+
+F
+F
+
+P
+P
+
+P S
+
+S
+
+S S
+
+S
+
+S
+S
+
+S
+
+SS SS
+S
+
+S
+
+S
+
+O
+O O
+
+OO
+
+O
+
+O
+
+0 200 400 600 800
+1,000
+
+1,200
+
+1,400
+
+1,600
+
+1,800
+
+Q
+up
+
+ (
+ve
+
+hi
+cl
+
+es
+/h
+
+/la
+ne
+
+)
+
+A5 South: Junction Friedberg
+
+B
+A
+
+B
+2
+
+B
+1
+
+(a) (b)
+
+Figure 15 Comparison of the Theoretical and Empirical Phase Diagram
+Notes. (a) The superposition of the theoretical phase diagrams of the nonlocal GKT model for negligible and large perturbations (see Figure 4) illustrates
+the multistable nature of trafﬁc ﬂows (see §4.2). (For the possible existence of PLC states up to Qtot = Qmax see Footnote 6.) (b) Phase points of empirically
+observed trafﬁc states at the Junction Friedberg as a function of the effective ramp ﬂow �Q per freeway lane and the upstream freeway ﬂow Qup (F = free
+trafﬁc, M=moving localized cluster, S= stop-and-go waves, O= oscillating congested trafﬁc, P= pinned localized clusters).
+
+The ﬂows were measured as described in Figure 14, and free trafﬁc was evaluated over a 20-minute interval before the ﬂow broke down, starting 40 minutes
+before the velocity dropped below 90 km/h at cross-section S5. Solid lines are guides to the eyes to support a comparison with the theoretical phase diagram
+displayed in (a). The dashed lines B1 and B2 reﬂect the empirical variation of the value of the outﬂow Qout from congested trafﬁc, see Figure 17.
+
+want to mention one inconsistency: There are a few
+PLC states with on overall ﬂow Qtot above 1,800
+veh/h/lane. This can have several reasons:
+1. The PLC state may be incorrectly classiﬁed: If
+
+Qtot = Qup +  Q ≈ Qout, the difference between the
+upstream ﬂow Qup and the ﬂow Qcong = Qout −  Q
+in the congested area is small (of the order of 100
+vehicles per hour and lane). As a consequence, the
+upstream congestion front moves very slowly (see
+Equation (6) and the discussion of Figure 9a in §6.8).
+Therefore, within the time period of the rush hour,
+the congestion front may not reach the next upstream
+detector, which is about one kilometer away. In con-
+clusion, the trafﬁc states with a total ﬂow greater than
+1,800 veh/h/lane that were classiﬁed as PLC states
+are potentially extended congested trafﬁc states for
+which the upstream front did not reach the next detec-
+tor before the end of the rush hour.
+2. The outﬂow Qout from congested trafﬁc varies
+
+considerably for all congested trafﬁc states (see Fig-
+ure 17a), which implies that line B representing the
+condition Qtot = Qout in the phase diagram must
+instead be replaced by an area delimited by a lower
+line B1 and an upper line B2. In fact, scaling the
+ﬂows underlying the phase diagram by the empiri-
+cally measured outﬂow Qout gives a very clear pic-
+ture: The nonextended trafﬁc states are then scattered
+around the line Qup/Qout +  Q/Qout = 1, while the
+extended trafﬁc states are above this line (see Fig-
+ure 16), as expected.
+
+The clearer separation of different congested trafﬁc
+states after the scaling with the outﬂows Qout indi-
+cates the importance of understanding the varying
+outﬂows Qout. In fact, the relationship
+
+Qout =Qcong�Vcong�+ Q (23)
+suggests that Qout could be speciﬁed as a function
+of the average speed Vcong in the congested area. In
+other words, the capacity drop would be lower the
+higher the vehicle speed in the congested area is,
+which sounds plausible.
+Figure 17 supports this interpretation: First, the
+
+empirical relationship Qcong�Vcong� is quite compatible
+with the theoretical relationship
+
+Qcong�Vcong�=
+�max�c�
+
+1+ �c�/Vcong
+(24)
+
+that would follow from the“jam line”
+
+Qcong���=
+1
+T
+
+(
+1− �
+
+�max
+
+)
+(25)
+
+and Vcong��� = Qcong���/�. Here, �max again denotes
+the maximum vehicle density per lane, �c� = 16 km/h
+the propagation speed of a downstream congestion
+front, and T = 1/�max/�c� the safe time gap. Second,
+Qout clearly grows with the average speed Vcong in the
+congested area (see Figure 17a). Third, Figure 17b sug-
+gests that the ﬂow Qcong = Qout −  Q� and therefore
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+154 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+M
+
+M
+
+M
+
+M
+
+M
+
+M
+
+M
+
+M
+
+M
+
+M
+
+MM
+
+P P
+P
+
+P
+
+P
+P
+
+P
+
+P
+P
+
+O
+
+O
+O
+
+O
+
+O
+
+O
+
+O
+
+OS
+
+S
+
+S
+
+S
+
+S
+S
+
+S
+
+S
+
+S
+
+S
+
+S
+
+S
+S
+
+S
+
+S
+
+0 0.1 0.2 0.3 0.4
+∆Q /Qout
+
+0.7
+
+0.8
+
+0.9
+
+1.0
+
+1.1
+
+Q
+up
+
+/Q
+ou
+
+t
+
+A5 South: Junction Friedberg
+
+B
+
+O
+O
+
+O
+
+S
+
+SS
+
+S
+
+S
+
+S
+
+M
+
+M
+M
+
+P PP
+
+P
+P
+
+H
+
+HH
+
+0 0.2 0.4 0.6 0.8 1.0
+∆Q /Qout
+
+0.6
+
+0.8
+
+1.0
+
+1.2
+
+1.4
+
+Q
+up
+
+/Q
+ou
+
+t
+
+B
+
+Fig. 10a
+
+Fig. 11aFig. 8 Fig. 21bFig. 11b
+
+Fig. 12b
+
+Fig. 19a
+
+Fig. 21a
+
+Fig. 20b
+
+Fig. 8
+Fig. 12a
+
+Fig. 13a
+
+Fig. 13b
+
+Fig. 12a
+
+Fig. 20a
+
+Fig. 21a
+
+Fig. 8
+
+Fig. 9a
+
+Fig. 9b
+
+Fig. 10b
+
+(a) (b)
+
+Figure 16 Empirical Phase Diagrams, Where the Flows Have Been Scaled by the Respective Outﬂows Qout (See Figure 14 for the Measurement
+Method)
+
+Notes. Illustration (a) shows the congested trafﬁc states observed at Junction Friedberg in direction South, while (b) illustrates the ﬂows corresponding to the
+trafﬁc states displayed in the ﬁgures throughout this paper (M=moving localized cluster, S= stop-and-go waves, O= oscillating congested trafﬁc, P= pinned
+localized clusters). It can be clearly seen that the nonextended trafﬁc states are scattered around the line Qup/Qout + �Q/Qout = 1, as expected, whereas the
+extended trafﬁc states are above this line. Moreover, pinned localized clusters, moving localized clusters, stop-and-go waves/oscillating congested trafﬁc, and
+homogeneous congested trafﬁc are well separated from each other.
+
+Qout itself, tends to increase with the sum of the off-
+ramp ﬂows  Qoff > 0 along Junction Friedberg and
+with the on-ramp ﬂow  Q1on of the ﬁrst on-ramp. In
+accordance with observations, this surprising result
+suggests that it is not correct to treat all the freeway
+lanes in the same way.
+Rather, the left lane is used by vehicles passing
+
+the junction, while the right lane is mainly used by
+vehicles entering and leaving along Junction Fried-
+berg, and by trucks. The middle lane is characterized
+by mixed use. Considering this, it becomes under-
+standable that the off-ramp ﬂows can increase the
+outﬂow Qout as they leave gaps between the vehicles
+remaining on the right lane, which facilitate entering
+the right and middle lanes of the freeway. The on-
+ramp ﬂow  Q1on of the ﬁrst on-ramp seems to increase
+the outﬂow further downstream, as it enhances the
+ﬂow separation between the right lane and the other
+two lanes. This particularly underscores that Junction
+Friedberg cannot be treated like an isolated bottle-
+neck, in contrast to Kerner’s view (2002b). Rather, it
+is understandable only by a detailed analysis of the
+interactions between several on- and off-ramps. Dur-
+ing congested time periods, Junction Friedberg has
+to cope with an overall on-ramp ﬂow of as much as
+1,700 veh/h (which requires the capacity of at least
+one full lane), while the overall off-ramp ﬂow is only
+375 veh/h.
+
+6.7. Spatial Transitions Between Different
+Congestion States and “Pinch Effect”
+
+Freeways are not at all spatially homogeneous. Due to
+the existence of on- and off-ramps, gradients, curves,
+
+etc., a freeway is composed of road sections of differ-
+ent capacities, even if the number of lanes is constant.
+If the capacity is reduced from one road section to the
+next one in a downstream direction, we speak of a
+bottleneck. Upstream of bottlenecks, there is a danger
+of queue formation or congestion if the trafﬁc volume
+becomes too high, while downstream of the upstream
+end of a bottleneck, one mostly observes free traf-
+ﬁc if there is not another activated bottleneck further
+downstream.
+The phase diagrams depicted in Figure 4 assume
+
+only a single bottleneck. In principle, however, phase
+diagrams could also be generated for more com-
+plex freeway geometries with several bottlenecks.
+These would be multidimensional (with one addi-
+tional dimension per bottleneck). For this reason,
+there are many more possibilities for classifying dif-
+ferent congested trafﬁc states for freeways with sev-
+eral bottlenecks. In the simplest case, particularly for
+largely separated bottlenecks, these states would just
+correspond to the possible combinations of the six
+trafﬁc states occurring at a single bottleneck, namely
+FT, PLC, MLC, SGW, OCT, and HCT. It could, how-
+ever, happen that spatially extended trafﬁc states
+inﬂuence the bottlenecks and trafﬁc states upstream
+due to spillover effects.
+For illustration, let us focus here on the combina-
+
+tion of an on-ramp with an off-ramp further upstream
+(see Figure 18 for a sketch). This freeway design is
+often chosen to reduce the magnitude of trafﬁc break-
+downs, because it is favorable when vehicles leave the
+freeway before new ones enter. What would a bottle-
+neck analysis analogous to the one in §4.2 predict for
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 155
+
+P
+
+P
+P
+
+P
+
+P
+P
+
+P P
+
+P
+O
+
+OO O
+
+O
+
+O
+O
+
+O
+
+S
+
+SS
+
+S
+S
+
+S
+
+S SS
+
+S
+
+S
+
+SS
+
+SS
+
+20 30 40 50 60
+
+Average velocity Vcong (at S4, in km/h)
+
+600
+
+800
+
+1,000
+
+1,200
+
+1,400
+
+1,600
+
+1,800
+
+2,000
+
+F
+lo
+
+w
+Q
+
+ (
+ve
+
+hi
+cl
+
+es
+/h
+
+/la
+ne
+
+)
+
+Qout (at S6)X
+
+Qcong (at S4)
+
+Q (Vcong) = |c|ρmax /(1+|c|/Vcong)
+
+P
+P
+
+P
+
+P
+
+P
+
+P
+
+P
+
+P
+
+P
+
+S
+
+S
+S
+
+S
+S
+
+S
+
+S
+S
+
+S
+S
+
+S
+
+S
+
+S
+
+S
+
+S
+
+O
+
+O
+
+O
+
+O
+
+O
+
+O
+
+O
+
+O
+
+300 400 500 600
+
+1,000
+
+1,200
+
+1,400
+
+1,600
+
+Q
+co
+
+ng
+ =
+
+ Q
+ou
+
+t –
+ ∆
+Q
+
+ (
+ve
+
+h/
+h/
+
+la
+ne
+
+)
+S
+
+4
+
+∆Qon + ∆Qoff (veh/h/lane)
+1
+
+(a) (b)
+
+Figure 17 Trafﬁc Flows at Junction Friedberg During Congestion
+Notes. (a) The outﬂows Qout and the upstream congested ﬂow Qcong for the PLC, SGW, and OCT states (represented by ×= P, S, and O, respectively) at
+Junction Friedberg depend on the average velocity Vcong in the congested area. With a maximum density of �max = 109 veh/km/lane, the average dependence
+Qcong�Vcong� is well consistent with theoretically predicted formula (24). (b) The ﬂow Qcong at Junction Friedberg tends to grow with the sum of the off-ramp
+ﬂows �Qoff > 0 and the on-ramp ﬂow of the ﬁrst on-ramp denoted by �Q1on. The dashed line serves as guide for the eye and has the slope +2. The subsequent
+on- and off-ramp ﬂows obviously facilitate a higher average velocity of the vehicles and a higher trafﬁc efﬁciency within the congestion area (see main text).
+
+this setup? In order to discuss this, let us again denote
+the outﬂow capacity downstream of the on-ramp by
+Qout, its bottleneck strength equivalent to the on-ramp
+ﬂow Qrmp by  Qon = Qrmp/n > 0, the upstream ﬂow
+by Qup, and the average congested ﬂow resulting
+immediately upstream of the on-ramp by Qcong. In
+contrast, we will denote the same quantities relating
+to the area of the off-ramp by primes (′), but we will
+introduce the abbreviation − Qoff =−Q′rmp/n′ < 0 for
+the effect of the off-ramp ﬂow Q′rmp > 0.
+
+(a)
+
+(b)
+
+∆Qoff
+
+Qout
+∆Qon
+
+Q ′up
+Q ′up – ∆Qoff = Qup > Qcong = Qout–∆Qon
+
+∆Qon∆Qoff
+
+QoutQ ′up
+Q ′cong = Q ′out + ∆Qoff > Q ′out = Qcong  = Qout–∆Qon
+
+Figure 18 Illustration of Our Notations for a Combination of an
+On-Ramp Bottleneck with an Upstream Off-Ramp
+
+Notes. Trafﬁc ﬂow is from left to right. (a) When the upstream ﬂow Q ′up
+upstream of the off-ramp minus the off-ramp ﬂow �Qoff exceeds the outﬂow
+Qout from congested trafﬁc minus the on-ramp ﬂow �Qon, congested trafﬁc
+upstream of the on-ramp (grey area) is expected to grow. (b) As soon as
+the congested area extends up to the location of the off-ramp, the off-ramp
+bottleneck is activated. Its outﬂow Q ′out is given by the congested ﬂow Qcong
+upstream of the on-ramp, while the congested ﬂow Q ′cong upstream of the
+off-ramp is higher by the amount �Qoff corresponding to the off-ramp ﬂow.
+The ﬂow upstream of the congestion and the off-ramp is denoted by Q ′up.
+
+We expect the following dynamics: Trafﬁc will
+break down at the on-ramp bottleneck ﬁrst. If Qup >
+Qcong = Qout −  Qon, we will have a growing area
+of extended congested trafﬁc, and it will eventually
+reach the location of the off-ramp (cf. Figure 18a).
+What will happen there? From that time on, when the
+off-ramp is completely congested (cf. Figure 18b), the
+capacity downstream of the off-ramp will suddenly
+go down from Q′out =Qout to the congested ﬂow
+
+Q′out =Qcong =Qout− Qon (26)
+due to a spillover effect. This abrupt change in the
+bottleneck capacity restricts the capacity upstream of
+the off-ramp to Qcong+ Qoff. For Qcong+ Qoff <Qout,
+a bottleneck at this position exists, and its effective
+strength  Q is given by the difference
+
+ Q=Qout− �Qcong+ Qoff�= Qon− Qoff (27)
+of these values, because this is the amount of out-
+ﬂow from congested trafﬁc that cannot be served by
+the off-ramp and the downstream freeway ﬂow. For
+Qcong + Qoff >Qout, no bottleneck occurs, which cor-
+responds to a bottleneck strength  Q= 0. This ﬁnally
+results in the expression
+
+ Q = max� Qon− Qoff�0�
+
+= max
+(
+Qrmp
+
+n
+− Q
+
+′
+rmp
+
+n′
+�0
+
+)
+≤ Qon (28)
+
+(Helbing 2003). Whenever  Qon −  Qoff < 0, the off-
+ramp bottleneck is deactivated. For  Q > 0, the
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+156 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+I
+
+I
+
+I
+I
+
+I
+
+I
+
+I
+
+II
+
+I
+
+I
+
+I
+I
+
+I
+
+I
+
+I
+
+I
+
+I
+
+I
+
+I
+
+I
+
+II
+I
+
+I
+
+I
+I
+
+I
+
+I
+
+I
+
+I
+
+I
+
+0 200 400 600 800 1,000
+
+∆Q (vehicles/h/lane)
+
+1,000
+
+1,200
+
+1,400
+
+1,600
+
+1,800
+
+2,000
+
+Q
+up
+
+ (
+ve
+
+hi
+cl
+
+es
+/h
+
+/la
+ne
+
+)
+
+Whole bottleneck
+3rd subbottleneck
+2nd subbottleneckI
+1st subbottleneck
+
+A: Q
+tot =
+
+Q
+m
+
+axB: Q
+tot  = Q
+
+out
+
+Figure 19 Flow Data for the Different Subbottlenecks of Junction Friedberg in Direction South (See Figure 14d)
+Notes. According to our theory, congestion patterns upstream of the off-ramp at kilometer 470 are expected when all subbottlenecks of the whole effective
+bottleneck between cross-sections S4 and S6 suffer from extended congested trafﬁc, speciﬁcally the on-ramp upstream of cross-section S6 (subbottleneck 1),
+the combination of this on-ramp with the upstream off-ramp (subbottleneck 2), and their combination with the next on-ramp upstream (subbottleneck 3).
+For this, the corresponding values of Qup + �Q should all be located above the diagonal corresponding to Qup + �Q = Qout (solid line). This is actually the
+case for the majority of data points, and the remaining points are still within the area of possible outﬂows from extended congestion states (Qtot > 1�600
+veh/h/lane, cf. Figure 17a). In fact, after the ﬁrst signs of a trafﬁc breakdown (namely, reduced speeds at kilometer 471.55, i.e., cross-section S6), congestion
+at Junction Friedberg spreads very rapidly and typically extends over the whole junction up to cross-section S4 at kilometer 469.9 within a few minutes. The
+ﬂow measurements at the subbottlenecks were made as follows: The inﬂow Qup and the bottleneck strength �Q were determined over a time window of 10
+minutes directly before the velocity dropped below 90 km/h at cross-section S5. The upstream ﬂow Q3rd subup of the 3rd subbottleneck was obtained by the ﬂow
+measured at cross-section S5. Because there are no detectors to measure the upstream ﬂows Qup of the 1st and 2nd subbottlenecks directly, we applied the
+formulas Q2nd subup = QS5+�Q1on and Q1st subup = QS5+�Q1on−�Q2off (see Figure 14d, where the bottleneck strength �Q for the subbottlenecks is also deﬁned).
+
+resulting congested ﬂow upstream of the off-ramp is
+expected to be
+
+Q′cong = Q′out+ Qoff =Qout− Qon+ Qoff
+= Qout− Q=Qcong+ Qoff� (29)
+
+Moreover, we ﬁnd
+
+Q′up−Qup = Qoff =Q′cong−Qcong� (30)
+In conclusion, if congested trafﬁc upstream of an on-
+ramp reaches an upstream off-ramp, the off-ramp
+becomes a bottleneck of strength  Q, which is given
+by the difference between the on-ramp and the off-
+ramp ﬂows (or zero, if this difference would be nega-
+tive). Figure 19 illustrates the validity of this picture.11
+
+Because  Q≤ Qon according to Equation (28), and
+because of Q′cong ≥ Qcong according to Equation (29),
+the congestion upstream of the off-ramp is expected
+
+11 At Junction Friedberg and Intersection Bad Homburg, the situa-
+tion is actually even more complicated, because these are made up
+of a series of several on- and off-ramps; see Figures 6 and 14d. How-
+ever, the ﬂow balance is again expected to determine the effective
+bottleneck strength  Q as long as the resulting values are nonneg-
+ative (otherwise, the off-ramp bottleneck is deactivated).
+
+to be milder than the congestion upstream of the
+on-ramp. Note, however, that in reality the situa-
+tion becomes more complicated due to the following
+effects: On the one hand, spatially extended conges-
+tion upstream of the on-ramp, depending on the off-
+ramp and upstream ﬂows, may pass the location of
+the off-ramp. This will obstruct the ﬂow of depart-
+ing vehicles, i.e., reduce the off-ramp ﬂow  Qoff com-
+pared to the situation with free ﬂow at the off-ramp.
+On the other hand, congested trafﬁc upstream of the
+off-ramp will motivate a larger fraction of drivers to
+leave the freeway once they reach the off-ramp. This
+may adjust the bottleneck strength of the off-ramp
+bottleneck in such a way that the upstream conges-
+tion front ﬂuctuates around the upstream end of the
+off-ramp (cf. the discussion of Figure 20b in §6.9).
+The ﬂuctuation and the resulting ﬂips of  Q can be
+a source of oscillatory dynamics upstream of the off-
+ramp, which is often observed (see Figures 8, 20,
+and 21a).
+The above considerations suggest a new interpre-
+
+tation of the “pinch effect” or the “general pattern,”
+respectively, the “general pattern” (Kerner 1998a;
+2002a, b): After 7:00 a.m., Figure 20a shows a conges-
+tion pattern at the on-ramp of Intersection Bad Hom-
+burg at kilometer 481.3, which until 7:40 a.m. looks
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 157
+
+Figure 20 Empirical Example of the “Pinch Effect”
+Notes. (a) Representative example of the “pinch effect” upstream of Intersection Bad Homburg at kilometer 481. One can clearly see the typical spatial
+sequence of homogeneous congested, oscillating congested, and stop-and-go trafﬁc in upstream direction. (b) In this similarly looking congestion pattern,
+two stop-and-go waves pass the next bottleneck Junction Friedberg at kilometer 471, grow wider over there, and continue with a slightly changed velocity
+(15�6± 0�3 km/h compared to 18�0± 0�5 km/h for the ﬁrst stop wave and 15�2± 0�5 km/h compared to 16�2± 0�4 km/h for the second).
+
+like a PLC. This classiﬁcation ﬁts with the overall bot-
+tleneck strength  Q = 606 veh/h/lane for the two
+on-ramps and the inﬂow of Qup = 1�100 veh/h/lane
+(values averaged over the time interval 7:10 a.m. to
+7:40 a.m.). However, for this time interval, the out-
+ﬂow at cross-section S16 downstream of the Intersec-
+tion Bad Homburg is only Qout = 1�568 veh/h/lane.
+Thus, the total inﬂow of Qtot = Qup +  Q = 1�706
+veh/h/lane actually leads to a slowly growing con-
+gestion pattern with the appearance of oscillating
+or even homogeneous congested trafﬁc (the veloci-
+ties within the congested area ﬂuctuate between 10
+km/h and 30 km/h). At 7:53 a.m., the velocity drops
+at cross-section S11, indicating that the whole inter-
+section is congested and that the off-ramp bottle-
+neck is activated. For this new situation, the inﬂow
+(measured three kilometer upstream at cross-section
+S8 as described in Figure 14c) is given by Qup =
+1�487 veh/h/lane, and the bottleneck strength by
+ Q = 206 veh/h/lane (averaged over the next hour,
+
+Figure 21 Combinations of Different Congested Trafﬁc States
+Notes. See main text for details.
+
+see Figure 14c). The point in the phase diagram is
+located inside the MLC region, but relative to the low
+outﬂow of Qout = 1�616 veh/h/lane (see Figure 16),
+the point instead corresponds to stop-and-go waves,
+as observed. While travelling upstream, some of these
+waves vanish due to the small upstream ﬂow of
+1,487 veh/h/lane, whereas one of them persists. This
+surviving SGW enters another area of congested traf-
+ﬁc upstream of Junction Friedberg at kilometer 471.5.
+Note that around kilometer 478, we do not really see a
+merging of small oscillations in favor of a few remain-
+ing moving trafﬁc jams, in contrast to the suggestion
+by Kerner (1998a). Rather, the oscillations seem to dis-
+appear, i.e., they seem to be dissolved in free trafﬁc.
+Although Kerner views the pinch effect as a fea-
+
+ture of a general pattern of congestion (Kerner 2002b),
+we did not frequently observe it. The dissolution or
+merging of narrow jams does not occur very often.
+This may be due to the applied smoothing proce-
+dure. Structures on a smaller scale than # = 0�6 km
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+158 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+may actually merge, but from our point of view, it is
+hard to tell them apart from ﬂuctuations. Therefore,
+we instead propose to interpret the pinch effect as
+result of the particular dynamics generated at a bot-
+tleneck composed of subsequent off- and on-ramps,
+as explained above.
+
+6.8. Transitions Between Congested Trafﬁc
+States in Time
+
+Due to the metastability of trafﬁc ﬂows, transitions
+between different congested trafﬁc states in time, but
+at the same bottleneck, do not occur frequently. Nev-
+ertheless, the phase diagram predicts the possibility
+of such transitions. Normally, in the absence of large
+perturbations (see Figure 4a) we expect a direct tran-
+sition from free ﬂow to spatially extended congested
+trafﬁc when the overall trafﬁc ﬂow Qtot increases. This
+mostly implies a direct transition from free to OCT
+or SGWs, which may sometimes be hard to distin-
+guish empirically. Homogeneous congested trafﬁc is
+only expected when a bottleneck becomes extremely
+large, as for accidents with lane closures or major hol-
+iday trafﬁc. If an accident site is lifted during the rush
+hour, an HCT state may become an OCT or SGW
+state (see Figure 8). In cases where the total ﬂow Qtot
+exceeds a certain value, a PLC should be able to grow
+and to generate an extended form of congestion (see
+Figure 21a at km 471.5). The opposite should also be
+possible if the ﬂow goes down (see Figure 8).
+As an example for more complex transitions in
+
+time, let us discuss Figure 9a in detail: At 7:56 a.m.,
+the trafﬁc breaks down at the on-ramp of Junction
+Bad Homburg. Due to a queueing process, the con-
+gested area extends, and at 8:15 a.m. reaches cross-
+section S13 at kilometer 480. During this time interval,
+the total ﬂow should exceed the outﬂow, i.e., Qtot >
+Qout. The upstream ﬂow is given by the inﬂow mea-
+sured at cross-section S11 minus the off-ramp ﬂow at
+km 480.8. It amounts to Qup = 1�750 veh/h/lane −
+484 veh/h/lane = 1�266 veh/h/lane. The bottleneck
+strength  Q = 693/h/lane is determined by divid-
+ing the on-ramp ﬂow by the number of freeway
+lanes. For these ﬂow values, the phase diagram pre-
+dicts oscillating or even homogeneous congested traf-
+ﬁc. The difference between the total ﬂow Qtot =
+Qup+ Q = 1�959 veh/h/lane and the measured out-
+ﬂow at cross-section S16 of 1,766 veh/h/lane causes
+the upstream congestion front to expand by a dis-
+tance of 1,300m in 20 minutes. Between 8:15 a.m.
+and 8:55 a.m., it travels from cross-section S13 to
+S12. During this time period, there is a stationary
+phase from 8:30 a.m. to 8:50 a.m., where the total
+ﬂow Qtot =Qup+ Q = 1�893 veh/h/lane matches the
+outﬂow Qout = 1�899 veh/h/lane. The correspond-
+ing upstream ﬂow and bottleneck strength are Qup =
+1�180 veh/h/lane and  Q= 713 veh/h/lane, respec-
+tively. In Figure 16b, this state has been classiﬁed
+
+as PLC, although it may also be interpreted as a
+homogeneous congested trafﬁc state that is station-
+ary, i.e., not extending any further. The reason for the
+upstream jam front to cross-section S12 and to ﬁnally
+arrive at cross-section S11 at 9:05 a.m. is a ﬂuctua-
+tion of the inﬂow (Q8�55−9�05 a.m.S11 = 1�901 veh/h/lane >
+Q8�30−8�50 a.m.S11 = 1�765 veh/h/lane). After the off-ramp
+bottleneck is activated around 9:00 a.m., its upstream
+ﬂow Qup = 1�867 veh/h/lane and the resulting over-
+all bottleneck strength  Q = 55 veh/h/lane allow a
+light SGW state during the next 10 minutes. However,
+after the ﬁrst SGW has passed cross-section S11, the
+ﬂow values of Qup and  Q have already decreased
+and lead to a slow dissolution of congestion rather
+than persistent SGW.
+
+6.9. Combinations of Different Congestion States
+Along the Freeway
+
+Congestion normally starts to form upstream of the
+freeway section for which the difference between the
+arriving trafﬁc volume and the section capacity (bot-
+tleneck capacity) is highest. With increasing trafﬁc
+volume, more and more bottlenecks are activated.
+Therefore, we normally have a sequence of differ-
+ent congested trafﬁc patterns along the freeway, and
+the spatiotemporal patterns are given by interactions
+between different bottlenecks. The bottlenecks inﬂu-
+ence each other in a downstream direction by deter-
+mining the upstream ﬂow of the next bottleneck, and
+in an upstream direction by the propagation of con-
+gested trafﬁc patterns (spillback effects). In the fol-
+lowing, we will discuss several examples.
+Let us start with the trafﬁc pattern shown in Fig-
+
+ure 20b. There, a boomerang effect (see §2.5) trig-
+gers an MLC at about 6:55 a.m. Around 7:10 a.m.,
+this MLC state arrives at kilometer 481.3 (cross-section
+S15 of Intersection Bad Homburg), where it triggers
+a PLC at the location of the on-ramp, which even-
+tually extends over the whole intersection ( Q= 698
+veh/h/lane). Within the next hours, the upstream
+front of the localized cluster ﬂuctuates between cross-
+section S12 (which is always congested after 7:50 a.m.)
+and cross-section S11 upstream of the long off-ramp,
+where the velocity stays, overall, above 80 km/h,
+apart from the times when an MLC passes. It seems
+that by ﬂuctuations in the upstream ﬂow, the off-
+ramp bottleneck is alternately activated and deacti-
+vated (see §6.7). The bottleneck strength between 7:20
+a.m. and 9:40 a.m. is given by  Q =  Qon −  Qoff ≈
+187 veh/h/lane and the upstream ﬂow (measured
+before the ﬁrst SGW at cross-section S8 from 7:19
+a.m. to 7:38 a.m.) amounts to Qup = 1�791 veh/h/lane,
+which falls into the area of SGW/OCT states (see Fig-
+ure 16b). Around 9:00 a.m., when the morning rush
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 159
+
+hour calms down, some of the SGW and the conges-
+tion at kilometer 471 (Junction Friedberg) start to dis-
+appear, whereas the congestion at kilometer 480 (at
+Intersection Bad Homburg) persists even longer.
+We will now continue with Figure 8. According
+
+to police reports, at 7:20 a.m. an accident occurred
+at kilometer 483.1. This accident is clearly visible in
+the data, because the downstream front of the jam
+is located between the cross-sections S17 (km 483.0)
+and S18 (km 484.1), where the freeway usually has
+no bottleneck. In our data, the ﬂow at cross-section
+S17, along with the velocity, dropped at 7:08 a.m.,
+whereas the ﬂow drop at cross-section S18 occurred
+one minute later. This is a strong hint that the time
+of the accident was not reported exactly. During the
+ﬁrst half hour after the accident (7:10 a.m. to 7:40
+a.m.), the outﬂow was 1,231 veh/h/lane. This very
+light trafﬁc resulted in high velocities downstream of
+the accident location, which can be seen in the plots.
+Between 7:40 a.m. and 10:00 a.m., the outﬂow reached
+normal values again (1,781 veh/h/lane). Between 7:10
+a.m. and 7:40 a.m., the bottleneck strength was esti-
+mated as  Q = Qnormalout − Qhinderedout = �1�781 − 1�231�
+veh/h/lane= 550 veh/h/lane. At 9:00 a.m., the bot-
+tleneck forming the downstream congestion front
+moved from the accident site at kilometer 483.1 to
+the on-ramp of the Intersection Bad Homburg fur-
+ther upstream (cross-section S15 at kilometer 481.3).
+The inﬂow measured between 6:48 a.m. and 7:07 a.m.
+at cross-section S16 (kilometer 482.2), before conges-
+tion reached this point, was Qup = 1�971 veh/h/lane.
+According to the phase diagram, these ﬂows are
+related to oscillating congested trafﬁc in the neigh-
+borhood of homogeneous congested trafﬁc. Upstream
+of the accident site at cross-section S16, the aver-
+age velocities of the three lanes ﬂuctuate between 12
+km/h and 35 km/h, upstream of the Intersection Bad
+Homburg the ﬂuctuations become larger, resulting in
+clear oscillating congested trafﬁc. The ﬂow conditions
+of the subsequent SGWs and PLC states are displayed
+in Figure 16b.
+Figure 21a shows the breakdown of free trafﬁc
+
+ﬂow at kilometer 471.5 (Junction Friedberg). Conges-
+tion starts at the second on-ramp at 6:23 a.m. with a
+velocity drop at cross-section S6. Five minutes later,
+the velocity upstream of the ﬁrst on-ramp at cross-
+section S4 breaks down as well, and the junction is
+completely congested. After 10 more minutes, dur-
+ing which the bottleneck strength increases, SGW
+are ﬁnally formed (see §6.7). At about 7:50 a.m., we
+observe the formation of a moving localized clus-
+ter around kilometer 486 at the off-ramp of Inter-
+section Frankfurt North-West, which is triggered by
+the boomerang effect (see §2.5). The MLC turns into
+a PLC when it reaches cross-section S14 (Intersec-
+tion Bad Homburg) at 8:10 a.m. because of the small
+
+inﬂow: From 8:00 a.m. to 8:10 a.m., the upstream
+ﬂow Qup measured at cross-section S13 is just 1,079
+veh/h/lane, as many vehicles are leaving over the
+off-ramp located there (see Figure 6). However, the
+following freeway ﬂow (8:10 a.m. to 8:30 a.m.) at this
+cross-section of 1,266 veh/h/lane and the effective
+bottleneck strength of  Q = 704 veh/h/lane caused
+by the ramps still allow the PLC to exist, consider-
+ing the large perturbation by the MLC. According
+to the phase diagram of Figure 16b, the LC should
+even be slowly growing. In fact, the the velocity
+drops at cross-section S13 at 8:23 a.m. and at cross-
+section S12 at 8:48 a.m. At 8:53 a.m., when the con-
+gestion reaches cross-section S11 and extends over the
+whole junction, we expect a different trafﬁc state (see
+§6.7). In fact, moving localized trafﬁc becomes visible,
+which triggers an accident at 8:50 a.m. between cross-
+sections S12 and S13, namely, at kilometer 479.2. This
+results in a bottleneck with an outﬂow of Qhinderedout =
+1�431 veh/h/lane, so that the downstream conges-
+tion at Intersection Bad Homburg disappears. The
+bottleneck strength of the accident location is  Q =
+Qout − Qhinderedout = �1�551 − 1�431� veh/h/lane ≈ 120
+veh/h/lane, where we have estimated the outﬂow
+Qout ≈ 1�551 veh/h/lane by the outﬂow at cross-
+section S11 between 9:47 a.m. and 9:56 a.m., i.e., after
+the accident was cleared. The upstream ﬂow mea-
+sured at cross-section S8 was Qup = 1�816 veh/h/lane,
+which is consistent with the observed stop-and-go
+waves (see Figure 16b). These cross Junction Fried-
+berg at kilometer 471.5, because the ﬂow condi-
+tions over there (with Qup = 1�638 veh/h/lane and
+ Q = 136 veh/h/lane) allow the survival of MLCs
+(see Figure 14). Note that the last MLC dissolved
+before it reaches Junction Friedberg, as its outﬂow
+Qout ≈ 1�860 veh/h/lane is greater than its inﬂow
+Qup ≈ 1�660 veh/h/lane, which is the outﬂow of the
+upstream MLC.
+Figure 21b displays SGWs upstream of Intersection
+
+Bad Homburg; this congestion pattern is generated at
+the uphill gradient shortly downstream of this inter-
+section. Around 17:20, homogeneous congested traf-
+ﬁc forms at the Intersection Frankfurt North-West as
+a result of an accident at kilometer 487.5 at 17:13.
+The downstream front of this HCT pattern is pinned
+between cross-sections N7 and N8, and the outﬂow
+of the accident site is just Qhinderedout = 873 veh/h/lane,
+so that we ﬁnd free trafﬁc ﬂow downstream. If we
+compare this value with the normal outﬂow of Qout ≈
+1700 veh/h/lane in the ﬁrst minutes after the accident
+has been cleared, the estimated bottleneck strength
+is  Q ≈ 827 veh/h/lane, which is consistent with
+the phase diagram (see Figure 15a). After the acci-
+dent has been cleared, the downstream congestion
+front moves upstream until it reaches the next bottle-
+necks at the Intersections Frankfurt North-West and
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+160 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+Frankfurt West. These are less severe due to exist-
+ing off-ramps, and cause OCT. At the same time, the
+increased outﬂow causes a congestion pattern for 45
+minutes at the uphill gradient after Intersection Bad
+Homburg, where trafﬁc was already congested before
+the accident.
+
+7. Summary, Discussion, and
+Conclusions
+
+In this contribution, we critically discussed the argu-
+ments in favor of and against ﬁrst- and second-
+order trafﬁc models. In particular, we pointed out
+that it is possible to formulate a macroscopic traf-
+ﬁc model with a dynamical velocity equation that
+is theoretically consistent—i.e., overcomes the criti-
+cisms raised in Daganzo’s Requiem (Daganzo 1995b)
+and other publications. Such a model is the nonlocal
+GKT model (Treiber, Hennecke, and Helbing 1999),
+which implies the existence of several different kinds
+of congested trafﬁc states. The conditions for the pos-
+sible occurrence of these states have been illustrated
+by a phase diagram as a function of the bottleneck
+strength and the upstream trafﬁc ﬂow. One impor-
+tant point of this phase diagram is the multistable
+nature of trafﬁc ﬂows. That is, several different traf-
+ﬁc states can exist under similar conditions. Their
+occurrence depends on the initial and boundary con-
+ditions, particularly on whether there occurs a large
+perturbation or not (compare Figures 4a and 4b). Sim-
+ilar predictions have been made by microscopic trafﬁc
+models with stable, metastable, and linearly unsta-
+ble trafﬁc regimes (Treiber, Hennecke, and Helbing
+2000; Helbing et al. 2002). However, a trafﬁc model
+without linearly unstable ﬂow regimes, but stable and
+metastable density regimes only, would imply the
+same congestion patterns.12 Furthermore, the validity
+of the phase diagram is not restricted to a particular
+trafﬁc model. The phase diagram approach can also
+be used without linking it to any model.
+In order to test the predictions of the LWR model
+
+and the phase diagram, and in order to assess
+Kerner’s ﬁndings, we have carried out an extensive
+study of empirical trafﬁc states observed at a 30-
+kilometer-long section of the German freeway A5
+near Frankfurt. Despite two freeway intersections,
+there were approximately 10-kilometer-long freeway
+sections without any on- or off-ramps. To obtain a
+more detailed picture of the spatiotemporal dynamics
+of trafﬁc ﬂows, we have used an adaptive smoothing
+algorithm that interpolates and smooths trafﬁc data
+from successive cross-sections of the freeway, taking
+
+12 The main difference would be that OCT would not be expected
+for  Q <Qout −Qc3. According to Figure 15b, this would be com-
+patible with Qout −Qc3 ≈ 400 veh/h/lane.
+
+into account the propagation speeds of perturbations
+in free and congested trafﬁc. The method is based on
+measurements of average vehicle speeds by double-
+loop detectors, which are quite reliable. Our inverted
+speed representation is reminiscent of density plots,
+which are easy to interpret.
+Along the freeway section we studied, we have
+
+found a rich variety of congested trafﬁc states, but the
+great majority of them could, in fact, be interpreted
+as a spatial combination of, altogether, six different,
+elementary trafﬁc states: free trafﬁc (FT), pinned local-
+ized clusters (PLC), moving localized clusters (MLC),
+stop-and-go waves (SGW), oscillating congested traf-
+ﬁc (OCT), and homogeneous congested trafﬁc (HCT);
+see §§6.1 to 6.5. The same states have been found at
+other freeways that we studied (Treiber, Hennecke,
+and Helbing 2000; Helbing et al. 2002). A detailed
+understanding of complex trafﬁc patterns consisting
+of several elementary congestion states is made pos-
+sible by considering combinations of several bottle-
+necks, such as on- and off-ramps (see §§6.7 to 6.9).
+
+7.1. Facing Kerner’s Criticisms
+Because Kerner has generally criticized all models
+with a fundamental diagram (i.e., most trafﬁc models
+ever developed in the history of trafﬁc science), and
+because he has speciﬁcally questioned some features
+of the GKT model, let us address these points in the
+following:
+1. According to Kerner (1998b), models containing
+
+a fundamental diagram could not explain the wide
+scattering of ﬂow-density data observed for synchro-
+nized congested trafﬁc ﬂow.
+2. The phase diagram approach would predict the
+
+transitions free trafﬁc → moving or pinned localized
+cluster → stop-and-go trafﬁc or oscillating congested
+trafﬁc → homogeneous congested trafﬁc as the ramp
+ﬂow or the overall trafﬁc volume Qtot increases. How-
+ever, homogeneous congested trafﬁc would not exist
+(Kerner 2002a, b), and the actual transition to moving
+jams would always require an advance transition to
+synchronized ﬂow.
+Let us comment on these points one by one in the
+
+same order:
+1. Kerner’s criticism is based on a comparison of
+
+his empirical data (usually one-minute aggregates)
+with simulation results that do not simulate the mea-
+surement (aggregation) process and do not contain
+effects of different vehicle classes, different driver
+behaviors, and lane changes. However, it has been
+shown that all three aspects produce a scattering of
+ﬂow-density data in the congested regime (Treiber
+and Helbing 1999; Nishinari, Treiber, and Helbing
+2003). Quite realistic ﬂuctuations of “synchronized”
+congested ﬂow can already be obtained by simulat-
+ing a mixture of two vehicle classes, each obeying
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 161
+
+a macroscopic trafﬁc model with a fundamental dia-
+gram (Treiber and Helbing 1999). Moreover, it has
+been found that the wide scattering of ﬂow-density
+data in synchronized congestion states can be very
+well reproduced by the formula
+
+Q�t�= 1
+T �t�
+
+(
+1− ��t�
+
+�jam�t�
+
+)
+(31)
+
+for the jam line (Kerner and Konhäuser 1994b; Kerner
+and Rehborn 1996b) if not only the vehicle density
+��t� is varied in time, but also the time gap T �t�
+and the jam density �max�t� (Nishinari, Treiber, and
+Helbing 2003), as demanded by Banks (1999). These
+vary naturally due to ﬂuctuating truck fractions and
+driver behaviors (Treiber and Helbing 1999).
+2. HCT clearly exists (see Figure 10), but it occurs
+
+very rarely and only for extremely large bottle-
+neck strengths exceeding  Q ≈ 700 vehicles/h/lane.
+Because freeways are dimensioned in a way to avoid
+bottlenecks of this size, HCT occurs primarily when
+freeway lanes are closed after a serious accident. In
+other words, when excluding cases of accidents from
+the data set, HCT states will normally not be found.
+Moreover, Kerner is wrong in claiming that our the-
+oretical phase diagram would require MLCs to occur
+before the transition to SGWs or OCT. This misunder-
+standing might have occurred by ignoring the depen-
+dence of the trafﬁc state predicted by the theoreti-
+cal phase diagram on the perturbation size. Figure 4a
+clearly shows that a direct transition from FT ﬂow to
+OCT is predicted in cases of small perturbations.
+In summary, according to our analysis, Kerner has
+
+rejected other theories for wrong reasons, namely
+because alternative explanations of empirical facts
+(and the data themselves) were not checked care-
+fully enough. Therefore, we currently do not see any
+reasons to replace well-justiﬁed macroscopic trafﬁc
+models such as the nonlocal GKT model by more
+complicated models trying to explain the same facts
+with a higher number of parameters.
+
+7.2. Criticism of the Three-Phase Theory and Its
+Extensions
+
+7.2.1. Three-Phase Theory and “Moving Syn-
+chronized Patterns.” Kerner’s three phase-theory is
+a well-known attempt at a systematic classiﬁcation of
+different trafﬁc states (Kerner and Rehborn 1996b).
+This classiﬁcation is phenomenological and distin-
+guishes free trafﬁc, synchronized ﬂow, and wide
+moving jams (Kerner et al. 2004). In contrast to
+synchronized ﬂow, wide moving jams are local-
+ized. They have a characteristic outﬂow and a con-
+stant downstream propagation speed (Kerner and
+Rehborn 1996a). Synchronized ﬂow has further been
+subdivided into three different kinds (Kerner and
+
+Rehborn 1996b): (i) stationary and homogeneous states,
+where both the average speed and the ﬂow rate
+are stationary during a relatively long time inter-
+val, (ii) “homogeneous-in-speed states,” see also Kerner
+(1998b), and (iii) nonstationary and nonhomogeneous
+states, see also Kerner (1998b).
+Comparing Kerner’s classiﬁcation with ours, homo-
+
+geneous congested trafﬁc (HCT) may correspond
+to “synchronized” trafﬁc ﬂow of type (i), whereas
+oscillating congested trafﬁc (OCT) seems to relate
+to synchronized ﬂow of type (iii). Moreover, homo-
+geneous-in-speed states resemble the free branch of
+the fundamental diagram, but with a reduced free
+velocity. Therefore, this synchronized ﬂow of type
+(ii) bears features of both free and congested traf-
+ﬁc. This may reﬂect the inﬂuence of the “intelli-
+gent speed control” operated at the studied freeway
+stretch, or it may point to recovering trafﬁc down-
+stream of bottlenecks (see Treiber and Helbing 1999,
+Figure 4; Tilch and Helbing 2000, Figure 3). Finally,
+Kerner’s wide moving jams seem to be comparable
+to moving localized clusters (MLC). A major techni-
+cal difference between the classiﬁcation of Kerner and
+ourselves seems to be that our classiﬁcation is based
+on an analysis of the spatiotemporal trafﬁc dynam-
+ics, while Kerner’s is based on the dynamics at single
+freeway cross-sections or comparisons of the dynam-
+ics at subsequent sections. Moreover, our phase dia-
+gram deﬁnes quantitative existence criteria, whereas
+the three-phase theory stays qualitative.
+Although Kerner claims that the three-phase the-
+
+ory is the only theory that can describe the empirical
+phenomena accurately, he keeps reporting new spa-
+tiotemporal trafﬁc patterns. The general pattern and
+the pinch effect will be critically discussed in the next
+section. Recently, Kerner has introduced the notion
+of a “moving synchronized pattern” (MSP) to resolve
+inconsistencies with his three-phase theory. The rea-
+son for this is Kerner’s microsimulation of localized
+moving jam structures that are stopping at a bottle-
+neck, as we have discovered them in our empirical
+data (see Figures 9b, 20a, and 21a). These localized
+patterns can obviously not be called wide moving
+jams, because these should propagate through all traf-
+ﬁc states.
+MSPs travel with the same speed as wide moving
+
+jams, however, “� � � in contrast with a wide moving
+jam, if a MSP reaches a bottleneck, the MSP is caught
+at the bottleneck: The MSP that propagates upstream
+can exist only for a ﬁnite time” (Kerner 2005, p. 187).
+That is, the actual type of trafﬁc congestion remains
+undeﬁned until it reaches the next upstream bottle-
+neck. It is certainly not scientiﬁc to distinguish two
+apparently identical states that cannot be told apart,
+at least if there is no upstream bottleneck at all. Even
+if there is a bottleneck allowing one to differentiate
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+162 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+between an MSP and a wide moving jam, the “catch-
+ing” of the jam and thus the identity of the trafﬁc
+phenomenon will depend on the bottleneck strength,
+which leaves the classiﬁcation unsatisfactory. Thus,
+a clear identiﬁcation of a wide moving jam in con-
+trast to synchronized trafﬁc is no longer possible, and
+the three-phase theory is severely questioned by this
+shortcoming.
+
+7.2.2. Criticism of the Pinch Effect and Gener-
+alized Pattern Generating Wide Moving Jams. In
+his three-phase theory, Kerner also states that the
+occurrence of wide moving jams would necessarily
+require the previous transition from free to synchro-
+nized ﬂow (Kerner 1998b; 2000a, b) and that the gen-
+eration mechanism could be imagined as follows: In
+the “general pattern,” synchronized trafﬁc upstream
+of a bottleneck would breed wide moving jams based
+on the pinch effect. That is, upstream of a section with
+synchronized congested trafﬁc close to a bottleneck,
+a so-called pinch region should spontaneously give
+birth to narrow vehicle clusters. These perturbations
+should be growing while travelling further upstream.
+Eventually, wide moving jams should be formed by
+the merging or disappearance of narrow jams. Once
+formed, wide jams should suppress the occurrence of
+new narrow jams in between. Instead of forming wide
+jams, however, narrow jams would be able to coexist
+if their distance was larger than about 2.5 km (Kerner
+1998a).
+In our empirical analysis, we have found only a few
+
+examples of Kerner’s pinch effect, i.e., for the merging
+or dissolution of small narrow jams (see Figure 20).
+This may be a consequence of averaging out small
+perturbations by the adaptive smoothing method, but
+we think that such small perturbations are subject
+to interpretation and should not constitute the basis
+of a theory. We did, however, ﬁnd congestion pat-
+terns resembling Kerner’s general pattern. However,
+we do not interpret them as congestion patterns that
+would generally occur at an isolated bottleneck far
+away from other bottlenecks or inhomogeneities, as
+Kerner (2002b) suggests. Kerner (2002b, p. 9) claims
+that “the effective bottleneck at D6 can indeed be con-
+sidered as an isolated bottleneck at the on ramp.” We
+doubt this. According to our analysis, a general pat-
+tern instead occurs because of the complex interaction
+between different on- and off-ramps (and, addition-
+ally, with long ramp lanes). In particular, we interpret
+a general pattern as a combination of an extended
+form of congested trafﬁc between an off-ramp and
+a subsequent on-ramp, with SGWs upstream of the
+off-ramp, which must be treated as a second, weaker
+bottleneck (see §6.7). In our data, the pinch effect
+and general patterns did not clearly occur at ﬂow-
+conserving bottlenecks such as gradients or locations
+
+of accidents, although some simulation models indi-
+cate the possibility of this (Helbing et al. 2002).
+Moreover, we point out that the SGW and wide
+
+moving jams (MLC states) depicted in Figures 12
+and 13 are clearly not emanating from synchronized
+ﬂows or general patterns. We have instead identiﬁed
+two other mechanisms that generate moving localized
+clusters:
+1. SGWs like the ones depicted in Figure 12 and
+
+single MLCs, as shown in Figure 13a seem to appear
+spontaneously at a gradient due to unstable trafﬁc
+ﬂows.
+2. The MLC patterns in Figures 9b, 13b, 20b, and
+
+21a have been initiated by the boomerang effect,
+which is based on a signiﬁcant downstream travelling
+perturbation. The boomerang effect was the origin of
+at least 18 out of 245 cases of trafﬁc breakdowns.
+
+7.3. Conclusions
+Applying the adaptive smoothing method, which can
+visualize small perturbations and distinguish them
+from ﬂuctuations by avoiding that continuously mov-
+ing patterns are split up into artiﬁcial, discontinu-
+ously looking structures (see Figure 8), we obtained
+a more detailed picture of the spatiotemporal dynam-
+ics of trafﬁc ﬂows. We identiﬁed growing perturba-
+tions on freeway stretches without ramps or changes
+in the number of lanes. This questions the validity of
+the LWR model and supports trafﬁc models with an
+unstable trafﬁc regime. The LWR model also does not
+provide a good explanation for the different observed
+congestion states.
+We have shown that the typical trafﬁc pattern
+
+depends on the upstream freeway ﬂow Qup and the
+bottleneck strength  Q.13 Therefore, the frequency of
+different trafﬁc patterns also depends on the weekday
+(see Figure 22). However, there is usually no unique
+relationship between the ﬂow values � Q�Qup� and
+the type of congestion (see Figure 15b). Due to multi-
+stability, initial and boundary conditions are also
+relevant (see Figure 4). Therefore, many trafﬁc break-
+downs are triggered by perturbations in the traf-
+ﬁc ﬂow, e.g., overtaking maneuvers of trucks (see
+Figure 2b).
+In our study, less than 5% of the congested traf-
+
+ﬁc states remained unexplained, considering the bot-
+tlenecks along the freeway known to us.14 However,
+most of them could be related to accidents based
+
+13 The bottlenecks that we identiﬁed along the freeway were related
+to freeway on- or off-ramps, gradients, accidents, or reductions in
+the number of lanes. However, they could have other origins as
+well, like speed limits or road work, accidents in the opposite lanes
+(“rubberneck effect”), bad road conditions (possibly due to rain,
+fog, or ice), bad visibility (e.g., because of blinding sun or tunnel
+entrances), distracting views, or curves.
+14 Note that we did not have a protocol of road works performed.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 163
+
+(a) (b)
+
+0
+
+20
+
+40
+
+80
+
+60
+Fr
+eq
+ue
+nc
+y
+
+Mon Tue Wed Thu Fri Sat Sun
+0
+
+20
+
+40
+
+60
+
+Mon Tue Wed Thu Fri Sat Sun
+
+Fr
+eq
+ue
+nc
+y
+
+PLC
+
+MLC
+
+SGW
+
+OCT
+
+HCT
+PLC
+
+MLC
+
+SGW
+
+OCT
+
+HCT
+
+Figure 22 Absolute Frequencies of Congested Trafﬁc States on the German Freeway A5 Close to Frankfurt (a) in Direction North and (b) in Direction
+South
+
+Notes. One can see a typical dependence of the absolute frequency of congestion and the relative frequency of different kinds of congestion on weekdays. On
+Saturdays and Sundays, congestion occurred less frequently compared to work days, as expected. Moreover, in direction North, congestion patterns appeared
+rarely on Mondays compared to Tuesdays, Wednesdays, or Thursdays, while in direction South, the frequency of trafﬁc breakdowns was surprisingly low on
+Fridays. This could be explained by commuters spending their weekends in the North and living in Frankfurt during the week.
+
+on police reports, or they were cases of forwardly
+moving “phantom” bottlenecks (Gazis and Herman
+1992; Muñoz and Daganzo 2002b), among them two
+congestion patterns moving forward at speeds of 1.6
+km/h and 2.7 km/h (not shown). The most frequent
+states at the investigated freeway section were PLC
+and OCT states (see Figure 22), while large HCT states
+occurred mainly after serious accidents with lane clo-
+sures.15 The downstream fronts of these congestion
+patterns were located at bottlenecks, while for MLC
+and SGW states, they mostly propagated upstream at
+a constant speed c0 ≈−16±2 km/h. However, we also
+found changes in the propagation speed that seem to
+depend on the gradient (see Figure 20b).
+The explanation of complex congestion patterns
+
+requires us to consider the combination of several bot-
+tlenecks. For example, on-ramp bottlenecks are fre-
+quently combined with a closeby upstream off-ramp.
+In such cases, the upstream front of extended forms of
+congested trafﬁc (such as HCT or OCT) is often ﬁxed
+at the location of the off-ramp (Treiber, Hennecke,
+and Helbing 2000; Lee, Lee, and Kim 2000). More-
+over, the congestion type typically changes to a milder
+form upstream, for example, SGWs. Then, the overall
+appearance resembles of the pinch effect or general
+pattern (Kerner 1998a, 2002b). However, SGWs may
+also be generated by the boomerang effect or appear
+spontaneously at a bottleneck (see Figures 9b, 12, 13,
+20b, and 21a.) in contrast to Kerner’s three phase the-
+ory (Kerner et al. 1998a).
+In summary, we have found that the congestion
+
+patterns observed along a section of the freeway A5
+
+15 Otherwise, the freeway would not be appropriately dimensioned.
+
+close to Frankfurt/Main, Germany, were very con-
+sistent with the predictions of the phase diagram of
+trafﬁc states. This phase diagram was motivated by
+properties of the nonlocal GKT model, which we have
+shown to avoid the inconsistencies of second-order
+trafﬁc models (see §4), and which qualitatively agrees
+with phase diagrams obtained for a wide class of car-
+following models. Moreover, we did not ﬁnd Kerner’s
+criticism of models with a fundamental diagram and
+the GKT model convincing. Therefore, it is not nec-
+essary to discard all previous knowledge accumu-
+lated in trafﬁc modeling as suggested by Kerner. The
+phase diagram of trafﬁc states instead offers a sim-
+ple, straightforward, and consistent explanation of a
+wide range of empirical observations in the tradition
+of classical trafﬁc ﬂow modeling.
+
+Acknowledgments
+The authors would like to thank the Volkswagen AG within
+the BMBF research initiative INVENT for ﬁnancial support,
+the Hessisches Landesamt für Straßen und Verkehrswesen for
+providing the freeway data, and Martin Treiber for valuable
+discussions.
+
+References
+Banks, J. H. 1991a. Two-capacity phenomenon at freeway bottle-
+
+necks: A basis for ramp meeting? Transportation Res. Record
+1320 83–90.
+
+Banks, J. H. 1991b. The two-capacity phenomenon: Some theoretical
+issues. Transportation Res. Record 1320 234–241.
+
+Banks, J. H. 1999. An investigation of some characteristics of con-
+gested ﬂow. Transportation Res. Record 1678 128–134.
+
+Bertini, R. L., R. Lindgren, D. Helbing, M. Schönhof. 2004. Empirical
+analysis of ﬂow features on a German autobahn. Proc. 83rd
+Annual Meeting Transportation Res. Board. Washington, D.C.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+164 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+Cassidy, M. J., R. L. Bertini. 1999. Some trafﬁc features at freeway
+bottlenecks. Transportion Res. Part B 33 25–42.
+
+Cassidy, M. J., M. Mauch. 2001. An observed trafﬁc pattern in long
+freeway queues. Transportation Res. Part A 35 143–156.
+
+Cassidy, M. J., J. R. Windover. 1995. Methodology for assessing
+dynamics of freeway trafﬁc ﬂow. Transportation Res. Record 1484
+73–79.
+
+Coifman, B. 2002. Estimating travel times and vehicle trajectories
+in freeways using dual loop detectors. Transportation Res. Part
+A 36 351–364.
+
+Cremer, M. 1979. Der Verkehrsﬂuß auf Schnellstraßen. Modelle,
+Überwachung, Regelung. Springer, Berlin, Germany.
+
+Daganzo, C. F. 1994. The cell transmission model: A dynamic repre-
+sentation of highway trafﬁc consistent with the hydrodynamic
+theory. Transportation Res. Part B 28 269–287.
+
+Daganzo, C. F. 1995a. A ﬁnite difference approximation of the kine-
+matic wave model of trafﬁc ﬂow. Transportation Res. Part B 29
+261–276.
+
+Daganzo, C. F. 1995b. Requiem for second-order ﬂuid approxima-
+tions of trafﬁc ﬂow. Transportation Res. Part B 29 277–286.
+
+Daganzo, C. F. 2002a. A behavioral theory of multi-lane trafﬁc
+ﬂow. I: Long homogeneous freeway sections. Transportation
+Res. Part B 36 131–158.
+
+Daganzo, C. F. 2002b. A behavioral theory of multi-lane trafﬁc
+ﬂow. II: Merges and the onset of congestion. Transportation Res.
+Part B 36 159–169.
+
+Daganzo, C. F., M. J. Cassidy, R. L. Bertini. 1999. Possible explana-
+tions of phase transitions in highway trafﬁc. Transportation Res.
+Part A 33 365–379.
+
+Edie, L. C., E. Baverez. 1965. Generation and propagation of stop-
+start trafﬁc waves. L. Edie, R. Herman, R. Rothery, eds. Vehicu-
+lar Trafﬁc Science, Proc. 3rd Internat. Sympos. Theory Trafﬁc Flow,
+New York, 26–37.
+
+Edie, L. C., R. S. Foote. 1960. Effect of shock waves on tunnel trafﬁc
+ﬂow. Proc. Highway Res. Board, Vol. 37. Transportation Research
+Board of the National Academies, 492–505.
+
+Gazis, P. C., R. Herman. 1992. The moving and “phantom” bottle-
+necks. Transportation Sci. 26 223–229.
+
+Helbing, D. 1996. Gas-kinetic derivation of navier-stokes-like trafﬁc
+equations. Phys. Rev. E 53 2366–2381.
+
+Helbing, D. 1997a. Fundamentals of trafﬁc ﬂow. Phys. Rev. E 55
+3735–3738.
+
+Helbing, D. 1997b. Modelling multi-lane trafﬁc ﬂow with queuing
+effects. Physica A 242 175–194.
+
+Helbing, D. 1997c. Trafﬁc data and their implications for consis-
+tent trafﬁc ﬂow modeling. M. Papageorgiou, A. Pouliezos, eds.
+Transportation Systems. International Federation of Automatic
+Control, Chania, Greece, 809–814.
+
+Helbing, D. 1997d. Verkehrsdynamik. Springer, Berlin, Germany.
+Helbing, D. 1998. Structure and instability of high-density equa-
+
+tions for trafﬁc ﬂow. Phys. Rev. E 57 6176–6179.
+Helbing, D. 2001a. Die wundervolle Welt aktiver Vielteilchen-
+
+systme. Physikalische Blätter 57 27–33.
+Helbing, D. 2001b. Trafﬁc and related self-driven many-particle sys-
+
+tems. Rev. Modern Phys. 73 1067–1141.
+Helbing, D. 2003. A section-based queueing-theoretical trafﬁc
+
+model for congestion and travel time analysis in networks.
+J. Phys. A: Math. General 36 L593–L598.
+
+Helbing, D., A. Greiner. 1997. Modelling and simulation of multi-
+lane trafﬁc ﬂow. Phys. Rev. E 55 5498–5507.
+
+Helbing, D., M. Treiber. 1999. Numerical simulation of macroscopic
+trafﬁc equations. Comput. Sci. Engrg. (CiSE) 5 89–99.
+
+Helbing, D., A. Hennecke, M. Treiber. 1999. Phase diagram of trafﬁc
+states in the presence of inhomogeneities. Phys. Rev. Lett. 82
+4360–4363.
+
+Helbing, D., A. Hennecke, V. Shvetsov, M. Treiber. 2001. MASTER:
+Macroscopic trafﬁc simulation based on a gas-kinetic, non-local
+trafﬁc model. Transportation Res. Part B 35 183–211.
+
+Helbing, D., A. Hennecke, V. Shvetsov, M. Treiber. 2002. Micro- and
+macrosimulation of freeway trafﬁc. Math. Comput. Model. 35
+517–547.
+
+Helbing, D., I. J. Farkas, D. Fasold, M. Treiber, T. Vicsek. 2003.
+Critical discussion of ”synchronized ﬂow,” pedestrian evac-
+uation, and optimal production. M. Fukui, Y. Sugiyama,
+M. Schreckenberg, D. E. Wolf, eds. Proc. Trafﬁc Granular Flow
+’01. Springer, Berlin, Germany, 511–530.
+
+Helbing, D., A. Johansson, J. Mathiesen, M. H. Jensen, A. Hansen.
+2006. Analytical approach to continuous and intermittent bot-
+tleneck ﬂows. Physical Rev. Lett. 97 1–4.
+
+Hoogendoorn, S., P. H. L. Bovy. 1998. Continuum Modelling of
+Multi-Lane Heterogeneous Trafﬁc Flow Operations. TU Delft, Delft,
+The Netherlands.
+
+Kerner, B. S. 1998a. Experimental features of self-organization in
+trafﬁc ﬂow. Phys. Rev. Lett. 81 3797–3800.
+
+Kerner, B. S. 1998b. A theory of congested trafﬁc ﬂow. R. Rysgaard,
+ed. Proc. 3rd Internat. Sympos. Highway Capacity, Vol. 2. Road
+Directorate, Copenhagen, Denmark, 621–642.
+
+Kerner, B. S. 1999. Theory of congested trafﬁc ﬂow: Self-organiza-
+tion without bottlenecks. A. Ceder, ed. Proc. 14th Internat. Sym-
+pos. Transportation Trafﬁc Theory. Pergamon, New York, 147–
+171.
+
+Kerner, B. S. 2000a. Phase transitions in trafﬁc ﬂow. D. Helbing,
+H. J. Herrmann, M. Schreckenberg, D. E. Wolf, eds. Proc.
+Trafﬁc Granular Flow ’99: Social, Trafﬁc and Granular Dynamics.
+Springer, Berlin, Germany, 253–284.
+
+Kerner, B. S. 2000b. Theory of breakdown phenomenon at highway
+bottlenecks. Transportation Res. Record 1710 136–144.
+
+Kerner, B. S. 2001. Verfahren zur Verkehrszustandsüberwachung
+für ein Verkehrsnetz mit effektiven Engstellen. German Patent
+DE 199 44 075 C2.
+
+Kerner, B. S. 2002a. Empirical features of congested patterns at
+highway bottlenecks. Transportation Res. Record 1802 145–154.
+
+Kerner, B. S. 2002b. Empirical macroscopic features of spatiotem-
+poral trafﬁc patterns at highway bottlenecks. Phys. Rev. E 65
+1–30.
+
+Kerner, B. S. 2004. The Physics of Trafﬁc. Springer, Heidelberg, Ger-
+many.
+
+Kerner, B. S. 2005. Microscopic three-phase trafﬁc theory and its
+applications for freeway trafﬁc control. H. S. Mahmassani, ed.
+Proc. 16th Internat. Sympos. Transportation Trafﬁc Theory, Else-
+vier, Amsterdam, The Netherlands, 181–203.
+
+Kerner, B. S., P. Konhäuser. 1993. Cluster effect in initially homoge-
+neous trafﬁc ﬂow. Phys. Rev. E 48 R2335–R2338.
+
+Kerner, B. S., P. Konhäuser. 1994a. Structure and parameters of clus-
+ters in trafﬁc ﬂow. Phys. Rev. E 50 54–83.
+
+Kerner, B. S., P. Konhäuser. 1994b. Structure and parameters of clus-
+ters in trafﬁc ﬂow. Physical Rev. E 50 54–83.
+
+Kerner, B. S., H. Rehborn. 1996a. Experimental features and char-
+acteristics of trafﬁc jams. Phys. Rev. E 53 R1297–R1300.
+
+Kerner, B. S., H. Rehborn. 1996b. Experimental properties of com-
+plexity in trafﬁc ﬂow. Phys. Rev. E 53 R4275–R4278.
+
+Kerner, B. S., H. Rehborn. 1997. Experimental properties of phase
+transitions in trafﬁc ﬂow. Phys. Rev. Lett. 79 4030–4033.
+
+Kerner, B. S., H. Rehborn. 1998. Über zwei Arten von Phasenüber-
+gängen im Verkehrsﬂuss und den daraus resultierenden drei
+Arten von Kapazitäten im Verkehr. Internationales Verkehrswesen
+5 347–348.
+
+Kerner, B. S., H. Rehborn. 2000. Verfahren zur Verkehrszus-
+tandsüberwachung und Fahrzeugzuﬂusssteuerung in einem
+Strassenverkehrsnetz. German Patent DE 198 35 979 A1.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+Transportation Science 41(2), pp. 135–166, © 2007 INFORMS 165
+
+Kerner, B. S., M. Aleksic, M. Denneler. 2001. Verfahren und Vor-
+richtung zur Verkehrszustandsüberwachung. German Patent
+DE 199 44 077 C2.
+
+Kerner, B. S., H. Kirschﬁnk, H. Rehborn. 1998. Verfahren
+zur automatischen Verkehrsüberwachung mit Staudynamik-
+analyse. German Patent DE 196 47 127 C2.
+
+Kerner, B. S., S. L. Klenov, P. Konhäuser. 1997. Asymptotic theory
+of trafﬁc jams. Phys. Rev. E 56 4200–4216.
+
+Kerner, B. S., H. Rehborn, M. Aleksic, A. Haug. 2004. Recognition
+and tracking of spatial-temporal congested trafﬁc patterns on
+freeways. Transportation Res. Part C 12 369–400.
+
+Klar, A., R. Wegener. 1999a. A hierarchy of models for multilane
+trafﬁc. I: Modeling. SIAM J. Appl. Math. 59 983–1001.
+
+Klar, A., R. Wegener. 1999b. A hierarchy of models for multilane
+trafﬁc. II: Numerical investigations. SIAM J. Appl. Math. 59
+1002–1011.
+
+Koshi, M., M. Iwasaki, I. Ohkura. 1983. Some ﬁndings and
+an overview on vehicular ﬂow characteristics. V. F. Hur-
+dle, E. Hauer, G. N. Stewart, eds. Proc. 8th Internat. Sympos.
+Transportation Trafﬁc Flow Theory, University of Toronto Press,
+Toronto, Ontario, 403–426.
+
+Kronjäger, W., P. Konhäuser. 1997. Applied trafﬁc ﬂow simulation.
+M. Papageorigiou, A. Pouliezos, eds. Transportation Systems.
+Vol. II. International Federation of Automatic Controlm Cha-
+nia, Greece, 805–808.
+
+Kühne, R. D. 1984. Macroscopic freeway model for dense traf-
+ﬁc—stop-start waves and incident detection. I. Volmuller,
+R. Hamerslag, eds. Proc. 9th Internat. Sympos. Transportation
+Trafﬁc Theory. VNU Science Press, Utrecht, The Netherlands,
+21–42.
+
+Kühne, R. D. 1987. Freeway speed distribution and acceleration
+noise—calculations from a stochastic continuum theory and
+comparison with measurements. N. H. Gartner, N. H. M.
+Wilson, eds. Proc. 10th Internat. Sympos. Transportation Trafﬁc
+Theory. Elsevier, New York, 119–137.
+
+Laval, J. A., C. F. Daganzo. 2004. Multi-lane hybrid trafﬁc ﬂow
+model: Quantifying the impacts of lane-changing maneuvers
+on trafﬁc ﬂow. Working Paper UCB-ITS-WP-2004-1, Institute of
+Transportation Studies, Berkeley, CA.
+
+Laval, J. A., C. F. Daganzo. 2006. Lane-changing in trafﬁc streams.
+Transportation Res. Part B 40 251–264.
+
+Lebacque, J. P. 1996. The Godunov scheme and what it means for
+ﬁrst order trafﬁc ﬂow models. J. B. Lesort, ed. Transportation and
+Trafﬁc Theory. Proc. 13th Internat. Sympos. Transporation Trafﬁc
+Theory, Pergamon, Oxford, 647–677.
+
+Lebacque, J.-P., M. M. Khoshyaran. 2005. First-order macroscopic
+trafﬁc ﬂow models: Intersection modeling, network modeling.
+H. S. Mahmassani, ed. Transportation and Trafﬁc Theory—Flow,
+Dynamics and Human Interaction, Proc. 16th Internat. Sympos.
+Transportation Trafﬁc Theory, Elsevier, Amsterdam, The Nether-
+lands, 365–386.
+
+Lee, H., H. Lee, D. Kim. 1999. Dynamic states of a contiuum trafﬁc
+equation with on-ramp. Phys. Rev. E 59 5101–5111.
+
+Lee, H., H. Lee, D. Kim. 2000. Phase diagram of congested trafﬁc
+ﬂow: An empirical study. Phys. Rev. E 62 4737–4741.
+
+Lighthill, M. J., G. B. Whitham. 1955. On kinematic waves: II. A the-
+ory of trafﬁc on long crowded roads. Proc. Roy. Soc. London A
+229 317–345.
+
+Lin, W.-H., H. K. Lo. 2003. A theoretical probe of a German exper-
+iment on stationary moving trafﬁc jams. Transportation Res.
+Part B 37 251–261.
+
+Mauch, M., M. J. Cassidy. 2002. Freeway trafﬁc oscillations: Obser-
+vations and predictions. M. A. P. Taylor, ed. Proc. 15th Inter-
+nat. Sympos. Trafﬁc Transportation Theory, Elsevier, Amsterdam,
+The Netherlands, 653–674.
+
+Mika, H. S., J. B. Kreer, L. S. Yuan. 1969. Dual mode behavior of
+freeway trafﬁc. Highway Res. Record 279 1–13.
+
+Muñoz, J. C., C. F. Daganzo. 1999. Experimental observations
+upstream of an active bottleneck caused by a freeway off-ramp.
+PATH working paper, California Partners for Advanced Tran-
+sit and Highways, Richmond, CA.
+
+Muñoz, J. C., C. F. Daganzo. 2002a. The bottleneck mechanism of a
+freeway diverge. Transportation Res. Part A 36 483–505.
+
+Muñoz, J. C., C. F. Daganzo. 2002b. Fingerprinting trafﬁc from
+static freeway sensors. Cooper@tive Tr@nsport@tion Dyn@mics 1
+1.1–1.11.
+
+Muñoz, J. C., C. F. Daganzo. 2003. Structure of the transition zone
+behind freeway queues. Transportation Sci. 37 312–329.
+
+Nagel, K., P. Nelson. 2005. A critical comparison of the kinematic-
+wave model with observational data. H. S. Mahmassani, ed.
+Proc. 16th Internat. Sympos. Transportation Trafﬁc Flow Theory,
+Elsevier, Amsterdam, The Netherlands, 145–163.
+
+Newell, G. F. 1982. Applications of Queuing Theory. Chapman and
+Hall, Cambridge, UK.
+
+Nishinari, K., M. Treiber, D. Helbing. 2003. Interpreting the wide
+scattering of synchronized trafﬁc data by time gap statistics.
+Phys. Rev. E 68 1–4.
+
+Papageorgiou, M. 1983. Applications of Automatic Control Concepts to
+Trafﬁc Flow Modelling and Control. Springer, Berlin, Germany.
+
+Paveri-Fontana, S. L. 1975. On Boltzmann-like treatments for traf-
+ﬁc ﬂow. A critical review of the basic model and an alterna-
+tive proposal for dilute trafﬁc analysis. Transportation Res. 9
+225–235.
+
+Payne, H. 1971. Models of freeway trafﬁc and control. G. A. Bekey,
+ed. Mathematical Models of Public Systems, Vol. 1. Simulation
+Council, La Jolla, CA, 51–61.
+
+Payne, H. 1979. FREFLO: A macroscopic simulation model of free-
+way trafﬁc. Transportation Res. Record 722 68–77.
+
+Persaud, B. N., V. F. Hurdle. 1991. Freeway capacity: Deﬁnition
+and measurement issues. U. Brannolte, ed. Proc. 3rd Internat.
+Sympos. Highway Capacity Level Service. A. A. Balkema Press,
+Rotterdam, The Netherlands, 289–307.
+
+Persaud, B. N., S. Yagar, R. Brownlee. 1998. Exploration of the
+breakdown phenomenon in freeway trafﬁc. Transportation Res.
+Record 1634 64–69.
+
+Phillips, W. F. 1977. Kinetic model for trafﬁc ﬂow. Tech. Rep.
+DOT/RSPD/DPB/50-77/17, National Technical Information
+Service, Springﬁeld, VA 22161.
+
+Phillips, W. F. 1979a. A kinetic model for trafﬁc ﬂow with contin-
+uum implications. Transportation Planning Tech. 5 131–138.
+
+Phillips, W. F. 1979b. A new continuum trafﬁc model obtained from
+kinetic theory. Proc. 1978 IEEE Conf. Decision Control. IEEE,
+New York, 1032–1036.
+
+Prigogine, I. 1961. A Boltzmann-like approach to the statistical the-
+ory of trafﬁc ﬂow. R. Herman, ed. Sympos. Theory Trafﬁc Flow
+1959, Warren, MI, Elsevier, New York, 148–164.
+
+Richards, P. I. 1956. Shock waves on the highway. Oper. Res. 4 42–51.
+Schönhof, M., D. Helbing. 2004. Empirical features of congested
+
+trafﬁc states and their implications for trafﬁc modeling. cond-
+mat/0408138.
+
+Shvetsov, V., D. Helbing. 1999. Macroscopic dynamics of multi-lane
+trafﬁc. Phys. Rev. E 59 6328–6339.
+
+Sugiyama, Y., A. Nakayama, M. Fukui, K. Hasebe, M. Kikuchi,
+K. Nishinari, S. I. Tadaki, S. Yukawa. 2005. Observation, the-
+ory and experiment for freeway trafﬁc as physics of many-
+body system. S. P. Hoogendoorn, S. Luding, P. H. L. Bovy,
+M. Schreckenberg, D. E. Wolf, eds. Proc. Trafﬁc Granular Flow
+’03, Springer, Berlin, Germany, 45–58.
+
+Tilch, B., D. Helbing. 2000. Evaluation of single vehicle data in
+dependence of the vehicle-type, lane, and site. D. Helbing,
+H. J. Herrmann, M. Schreckenberg, D. E. Wolf, eds. Proc. Trafﬁc
+Granular Flow ’99. Springer, Berlin, Germany, 333–338.
+
+Treiber, M., D. Helbing. 1999. Macroscopic simulation of widely
+scattered synchronized trafﬁc states. J. Phys. A: Math. General
+32 L17–L32.
+
+
+
+Schönhof and Helbing: Empirical Features of Congested Trafﬁc States
+166 Transportation Science 41(2), pp. 135–166, © 2007 INFORMS
+
+Treiber, M., D. Helbing. 2002. Reconstructing the spatio-temporal
+trafﬁc dynamics from stationary detector data. Cooper@tive
+Tr@nsport@tion Dyn@mics 1 3.1–3.24.
+
+Treiber, M., A. Hennecke, D. Helbing. 1999. Derivation, properties,
+and simulation of a gas-kinetic-based, non-local trafﬁc model.
+Phys. Rev. E 59 239–253.
+
+Treiber, M., A. Hennecke, D. Helbing. 2000. Congested trafﬁc states
+in empirical observations and microscopic simulations. Phys.
+Rev. E 62 1805–1824.
+
+Treiber, M., A. Kesting, D. Helbing. 2006. Understanding widely
+scattered trafﬁc ﬂows, the capacity drop, and platoons as
+effects of variance-driven time gaps. Phys. Rev. E 74.
+
+Treiterer, J., J. A. Myers. 1974. The hysteresis phenomenon in trafﬁc
+ﬂow. D. Buckley, ed. Proc. 6th Internat. Sympos. Transportation
+Trafﬁc Theory, Reed, London, UK, 13–38.
+
+Treiterer, J., J. I. Taylor. 1966. Trafﬁc ﬂow investigations by pho-
+togrammetric techniques. Highway Res. Record 142 1–12.
+
+Wagner, C., C. Hoffmann, R. Sollacher, J. Wagenhuber, B. Schür-
+mann. 1996. Second-order continuum trafﬁc ﬂow model. Phys.
+Rev. E 54 5073–5085.
+
+Westland, D. 1998. Effect of highway geometry on freeway queu-
+ing at merge sections. R. Rysgaard, ed. Proc. 3rd Internat.
+Sympos. Highway Capacity, Vol. 2. Road Directorate, Denmark,
+1095–1116.
+
+Whitham, G. 1974. Linear and Nonlinear Waves. Wiley, New York.
+Windover, J. R. 1998. Empirical studies of the dynamic features of
+
+freeway trafﬁc. Ph.D. thesis, University of California, Berkeley,
+CA.
+
+Yi, J., H. Lin, L. Alvarez, R. Horowitz. 2003. Stability of macroscopic
+trafﬁc ﬂow modeling through wavefront expansion. Transporta-
+tion Res. Part B 37 661–679.
+
+

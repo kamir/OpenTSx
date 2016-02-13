@@ -1,0 +1,370 @@
+
+Realistische Mikrosimulation von Straßenverkehr mit
+einem einfachen Modell
+
+Martin Treiber und Dirk Helbing
+martin@mtreiber.de, helbing@trafficforum.de
+
+Institut fu¨r Wirtschaft und Verkehr, TU Dresden
+Andreas-Schubert-Straße 23, 01069 Dresden
+
+Kurzfassung
+Wir stellen mit dem Intelligent-Driver Model (IDM) ein Mikromodell vor, welches realita¨ts-
+getreue Simulationseigenschaften mit Einfachheit verbindet. Seine robuste Dynamik so-
+wie die deterministische und kontinuierliche Abha¨ngigkeit der Beschleunigung von lokalen
+Einflussgro¨ßen ermo¨glicht einen Einsatz als Regler in einem Fahrerassistenzsystem. Seine
+sechs Longitudinalparameter sind alle anschaulich und erlauben eine einfache Modellierung
+verschiedener Fahrstile und fahrzeugtyp-spezifischer Eigenschaften, variabler Straßen- und
+Lichtverha¨ltnisse sowie eine Simulation von Linien-Beeinflussungen. Mit Erweiterungen
+ist auch der menschliche Fahrer modellierbar.
+
+Das IDM wird durch ein allgemein formuliertes Spurwechselmodell erga¨nzt, welches
+mit beliebigen Longitudinalmodellen zusammenarbeit und hier erstmals ausfu¨hrlich vorge-
+stellt wird. Wie das IDM hat es Parameter, die direkt den Fahrstil beschreiben.
+
+Wir zeigen anhand von Simulationen tatsa¨chlicher Verkehrssituationen, dass das IDM
+sowohl die beobachtete kollektive Dynamik der Verkehrszusammenbru¨che als auch das
+Longitudinalverhalten einzelner Fahrzeuge (Stichwort Fahrerassistenzsysteme) realistisch
+wiedergeben kann.
+
+1 Einleitung
+
+Bei der Mikrosimulation von Kfz-Verkehr kann man zwei Stoßrichtingen unterscheiden:
+Einerseits eine mo¨glichst realita¨tsnahe Abbildung der tatsa¨chlichen Situation. Dies bedingt
+komplexe Modelle mit i.A. sehr vielen Parametern und einer komplexen Wenn-Dann-Ent-
+scheidungslogik. Hauptvertreter dieser Modellklasse ist das Wiedemann-Modell [1], wel-
+ches in verschiedenen Variationen auch in vielen Mikrosimulationstools verwendet wird,
+z.B. im MITSIM-Verkehrssimulator oder im Mikrosimulator VISSIM (PTV AG). Ku¨rzlich
+wurde von Kerner ein neues Modell dieser Klasse vorgeschlagen, welches die verschiede-
+nen Arten gebundenen Verkehrs beru¨cksichtigen soll [2]. Andererseits bieten auch extrem
+simplifizierende Modelle Vorteile bei der Untersuchung grundlegender Eigenschaften der
+kollektiven Dynamik von Straßenverkehr, obwohl sie Vieles, z.B. Beschleunigungen, un-
+realistisch wiedergeben wie das Optimal-Velocity Modell [3]. Das Gipps-Modell und seiner
+Erweiterungen [4, 5] bauen auf eine a¨hnliche Bremsstrategie wie das IDM auf, haben aber
+keine kontinuierliche Beschleunigungsfunktion und beno¨tigen stochastische Terme fu¨r eine
+
+
+
+zufriedenstellende Modellierung. Eine gute ¨Ubersicht dieser und weiterer Modelle findet
+sich in [6].
+
+Im Abschnitt 2 stellen wir mit dem Intelligent-Driver Model (IDM) [7] ein Mikromo-
+dell vor, welches realita¨tsgetreue Simulationseigenschaften mit Einfachheit verbindet. Wie
+bei vielen einfachen Modellen, aber im Gegensatz zum Wiedemann-Modell, gibt es im
+IDM keine diskreten Fahrdynamik-Bereiche und damit keine verschachtelten Wenn-Dann-
+Bedingungen. Vielmehr ha¨ngt die Beschleunigung kontinuierlich sowie deterministisch von
+Position und Geschwindigkeit Beschleunigung des Vorderfahrzeugs sowie von der eigenen
+Geschwindigkeit ab. Damit eignet es sich als Basismodell fu¨r adaptive Temporegelungen
+(Abschnitt 4.1). Mit zusa¨tzlichen Modifikationen, die das Modell nicht wesentlich verkom-
+plizieren, kann es auch als Modell fu¨r menschliches Fahrverhalten dienen. In Nachsimu-
+lationen tatsa¨chlicher Verkehrszusammenbru¨che (Abschnitt 4.2) zeigen wir, dass das IDM
+auch die beobachtete komplexe kollektive Dynamik reproduzieren kann [7], welche in Rein-
+form durch ein “Phasendiagramm” gestauter Zusta¨nde [8] beschrieben werden kann.
+
+Das IDM wird durch das allgemein formulierte Spurwechselmodell MOBIL erga¨nzt,
+welches mit beliebigen mikroskopischen Longitudinalmodellen zusammenarbeit und in Ab-
+schnitt 3 vorgestellt wird. Auch eine Verallgemeinerung auf Zellula¨re Automaten ist denk-
+bar und fu¨hrt auf Spurwechselregeln, die beispielsweise denen in Referenz [9] a¨hneln.
+Wie das IDM hat MOBIL Parameter, die direkt den Fahrstil beschreiben, insbesondere
+einen “Ho¨flichkeitsfaktor”, der im Vorfeld von Spurwechseln die eigene Behinderung ge-
+genu¨ber mo¨glichen Behinderungen benachbarter Fahrzeuge abwa¨gt. Einen Eindruck von
+Java-basierten Online-Simulationen auf der Basis des Fahrzeugfolgemodells IDM und des
+Spurwechselmoduls MOBIL kann sich der interessierte Leser unter
+http://www.mtreiber.de/MicroApplet/ verschaffen.
+
+2 Das Intelligent-Driver Modell
+
+ sα
+
+ vα
+
+α L
+ Lα−1
+
+ vα−1
+
+ x α  x α−1 vα  vα−1 vα := −∆
+
+Abbildung 1: Zur Formulierung des IDM
+
+Die Beschleunigung eines Fahrer-Fahrzeug-Systems α im Intelligent-Driver Modell (IDM)
+ha¨ngt von der eigenen Geschwindigkeit vα sowie vom Nettoabstand sα zum und der Anna¨he-
+rungsrate ∆vα an das Vorderfahrzeug ab,
+
+
+
+Modellparameter Typischer Wert
+
+Wunschgeschwindigkeit v0 120 km/h
+Zeitlicher Sicherheitsabstand T 1.4 s
+Maximale Beschleunigung a 1.2 m/s2
+Komfortable Bremsverzo¨gerung b 1.5 m/s2
+Minimaler Abstand zum Vorderfahrzeug s0 2 m
+
+Tabelle 1: IDM-Modellparameter mit typischen Werten
+
+v˙IDMα (vα, sα, ∆vα) = a
+
+[
+1−
+
+(
+vα
+v0
+
+)δ
+−
+
+(
+s∗(vα, ∆vα)
+
+sα
+
+)2]
+. (1)
+
+Dieser Ausdruck setzt sich aus einem Beschleunigungsanteil af (v) := a[1 − (v/v0)δ] auf
+freier Strecke sowie aus einer Brems-Wechselwirkung aint(v, s,∆v) = −a[s∗(v,∆v)/s]2
+zusammen. Letzterer wirkt sich vor allem aus, wenn der Abstand zum Vorderfahrzeug zu
+gering oder die Anna¨herungsrate zu hoch ist. Die Wechselwirkung ergibt sich dabei durch
+Vergleich des tatsa¨chlichen Nettoabstands sα mit einem effektiven Wunschabstand
+
+s∗(v,∆v) = s0 + Tv +
+v∆v
+
+2
+√
+
+ab
+. (2)
+
+Der statische Anteil s0 + vT des Wunschabstands ist dabei im Wesentlichen durch die
+Folgezeit T bestimmt, zu der noch ein kleiner Mindestabstand s0 im Stau addiert wird. Der
+dynamische Anteil implementiert ein intelligentes und kontinuierliches Bremsverhalten mit
+folgenden Grenzfa¨llen:
+
+• Anna¨herung an ein stehendes Hindernis: Liegt die no¨tige “kinematische” Verzo¨ge-
+rung bk := v2/(2s) bei gleichma¨ßigem Bremsen unterhalb (bzw. oberhalb) der ”kom-
+fortablen Verzo¨gerung” b, so wird derart mit einer Verzo¨gerung oberhalb (bzw. unter-
+halb) der kinematischen Verzo¨gerung gebremst, dass sich im Verlauf die kinematische
+sowie die tatsa¨chliche Verzo¨gerung dynamisch, kontinuierlich und ohne ¨Uberschwin-
+gen der Wunschverzo¨gerung angleicht.
+
+• Folgeverhalten einschließlich Anna¨hern an ein langsameres Fahrzeug: Die eigene Ge-
+schwindigkeit wird ohne ¨Uberschwingen an die sich dynamisch a¨ndernde “sichere”
+Geschwindigkeit nach [5] angepasst. Dabei fungiert T als Reaktionszeit.
+
+• Das Vorderfahrzeug entfernt sich: Auch bei Absta¨nden unterhalb s0 + vT erfolgt
+nahezu keine Bremsreaktion, in Vorwegnahme des zuku¨nftigen gro¨ßeren Abstandes.
+
+
+
+3 Ein allgemeines Spurwechselmodell
+Im folgenden wird das Grundkonzept der Spurwechselstrategie MOBIL vorgestellt. Basis
+ist die Beurteilung der lokalen Verkehrs-Situation, d.h. der Positionen und Geschwindigkei-
+ten der maximal sechs na¨chsten Nachbarn (vgl. Abb. 2). Wie bei anderen Spurwechselm-
+
+cb f
+
+b’ f’
+
+Abbildung 2: Einflussgro¨ßen des Spurwechselmodells MOBIL
+
+odellen wird ein (instantaner) Spurwechel dann durchgefu¨hrt, wenn er (i) sicher ist, und
+(ii) ein Anreiz fu¨r den Wechsel gegeben ist. Als Sicherheitskriteriums wird die nach einem
+zuna¨chst fiktiven Wechsel erforderliche Bremsverzo¨gerung ab′c des Hinterfahrzeugs auf der
+Zielspur herangezogen:
+
+ab′c ≥ −bsave (3)
+Hierbei ist
+
+aαβ = a
+IDM(vα, sαβ , vα − vβ) (4)
+
+die mit dem IDM oder mit anderen Longitudinalmodellen berechnete Beschleunigung des
+Fahrzeugs α, wenn Fahrzeug β im Nettoabstand sαβ vor ihm fahren wu¨rde. Aufgrund der
+Abha¨ngigkei der IDM-Beschleunigung von der Anna¨herungsrate wird die in der Praxis sehr
+wichtige Abha¨ngigkeit von der Geschwindigkeitsdifferenz beru¨cksichtigt: Ein sicheres Ein-
+scheren vor einem sich schnell na¨herden Fahrzeug (z.B. auf der ¨Uberholspur) bedarf ja i.A.
+eines sehr viel gro¨ßeren Abstandes!
+Fu¨r das Anreizkriterium werden ebenfalls Beschleunigungen herangezogen: Ein Anreiz fu¨r
+einen Wechsel ist dann gegeben, wenn nach einem zuna¨chst fiktiven Wechsel die Summe
+aus der eigenen (IDM-)Beschleunigung und die mit einem Ho¨flichkeitsfaktor gewichteten
+Beschleunigungen der beteiligten Nachbarfahrzeuge um mindestens die Wechselschwelle δ
+ho¨her ist als zuvor. Anders ausgedru¨ckt: Die summierten Bremsverzo¨gerungen werden mi-
+nimiert (MOBIL=“Minimizing Overall Braking Induced by Lane-Changes”). Im einfachs-
+ten symmetrischen Fall ergibt dies fu¨r einen R→L-Spurwechsel:
+
+R → L IF acf ′ + p(ab′c + abf )︸ ︷︷ ︸
+nach dem Wechsel
+
+> acf + p(abc + ab′f ′)︸ ︷︷ ︸
+vor dem Wechsel
+
++δ.
+
+Fu¨r egoistische Fahrer (p = 0) reduziert sich dieses Kriterium auf acf ′ > acf + δ. Erweite-
+rungen dieses Basismodells beinhalten insbesondere die
+
+
+
+• Beru¨cksichtigung des Rechtsfahrgebots durch zusa¨tzliche Terme±∆ auf den rechten
+Seiten der Anreizkriterien fu¨r den R → L- bzw. den L→ R-Wechsel,
+
+• Beru¨cksichtigung der subjektiven Abneigung gegen die rechte Spur (aufgrund der
+“Gefahr des Ausgebremstwerdens” durch LKWs und Probleme des Zuru¨ckwechselns
+auf die ¨Uberholspur) durch sta¨rkere Gewichtung der Behinderung (−aint) auf der
+rechten Spur,
+
+• Longitudinal-Transversal-Kopplung aufgrund des Rechtsu¨berholverbots auf den meis-
+ten europa¨ischen Autobahnen.
+
+4 Simulationergebnisse
+4.1 Verhalten von Einzelfahrzeugen
+
+Die IDM-Beschleunigung ist kontinuierlich und auch in extremen Situationen kollonnen-
+stabil. Abbildung 3 zeigt die simulierte Beschleunigung einer Kolonne von Fahrzeugen als
+Reaktion auf eine Vollbremsung (a1 = −8 m/s2) des vordersten Fahrzeuges 1 bis zum
+Stillstand. Auch bei den hier gewa¨hlten extremen Einstellungen (Folgezeit 0.7 s) und der
+simulierten extremen a¨ußeren Sto¨rung ist die Beschleunigung der Kolonne schwingungsfrei
+und geht nach einigen Fahrzeugen auf die komfortable Verzo¨gerung von b = 2 m/s2 zuru¨ck.
+
+Vollbremsung
+Kolonne von ausgestatteten Fahrzeugen
+
+-8
+-6
+-4
+
+-2
+
+ 0
+
+ 0.9  1  1.1  1.2  1.3  1.4  1.5  1.6
+
+a
+ (m
+
+/s2
+)
+
+T (min)
+
+a (car1)
+a (car2)
+a (car4)
+a (car8)
+
+a (car12)
+a (car16)
+
+Abbildung 3: Simulation zur Demonstration der Kollonnenstabilita¨t des IDM
+
+
+
+4.2 Nachsimulation eines komplexen Stau-Szenarios
+In Abb. 4 (oben) wurde zuna¨chst ein tatsa¨chlich beobachteter Stau mit dem IDM nachsimu-
+liert. Ein zusa¨tzlicher, von der stromabwa¨rtigen Seite in den Simulationsabschnitt laufen-
+der Stau [7] wurde ignoriert, indem wir die gemessenen Detektordaten nur bei den strom-
+aufwa¨rtigen Randbedingungen beru¨cksichtigten Auf Spurwechsel sowie auf die Modellie-
+rung spezifisch menschlichen Fahrverhaltens wurde verzichtet. Die Modellparameter wur-
+den so eingestellt, dass der simulierte Verkehrszusammenbruch an derselben Stelle und zur
+selben Zeit stattfand wie der tatsa¨chliche. Abb. 4 (unten) zeigt das Ergebnis, wenn man bei
+20% der Fahrzeuge die Folgezeit von 1.5 s auf 1.0 s reduziert.
+
+32
+34
+
+36
+38
+
+40
+42 17
+
+18
+19
+
+20
+
+20
+40
+
+x (km)
+Zeit (h)
+
+Verkehrsdichte
+(Fz/km/Spur)
+
+Ausstattungsgrad  0 %
+
+32
+34
+
+36
+38
+
+40
+42 17
+
+18
+19
+
+20
+
+20
+40
+
+x (km)
+Zeit (h)
+
+Verkehrsdichte (Fz/km/Spur) Ausstattungsgrad  20%
+
+Abbildung 4: Potentieller Einfluss der Reduktion der Folgezeit auf die Staubildung
+
+5 Diskussion
+
+Mit der kontinuierlichen Beschleunigungsfunktion (vgl. Abb. 3), den lokalen Einflussgro¨ßen
+und der u¨beraus stabilen Fahrdynamik eignet sich das IDM als Basismodell fu¨r Regler in
+Fahrerassistenzsystemen.
+Aufgrund der wenigen und anschaulichen Modellparameter eignet sich das IDM aber auch
+als Basismodell fu¨r die Simulation menschlichen Fahrverhaltens. Beispielsweise wird ein
+aggressiver Fahrer durch hohe Werte von a und niedrige Folgezeiten charakterisiert, ein
+vorausschauender Fahrer durch niedrige Werte von b, ein vorsichtiger durch niedriges v0
+und hohes T , ein LKW durch niedrige Werte von v0, a und b, usw. Im IDM nicht enthalten
+sind weitere menschliche Eigenschaften wie das Antizipationsverhalten (die Reaktion auf
+
+
+
+mehrere Vorderfahrzeuge) sowie “Frustrationseffekte”. Diese zusa¨tzlichen Eigenschaften,
+die z.B. fu¨r eine realistische Beurteilung des globalen Einflusses von ausgestatteten Fahr-
+zeugen auf den Verkehrsfluss notwendig sind, werden zur Zeit untersucht.
+
+Literatur
+
+[1] Wiedemann,R.: Simulation des Straßenverkehrsflusses, Schriftenreihe des IfV Vol. 8,
+Institut fu¨r Verkehrswesen, Universita¨t Karlsruhe (1974).
+
+[2] Kerner B.S. and Klenov, S.L.: A micropscopic model for phase transitions in traffic flow,
+J. Phys. A: Math. Gen. 35 (2002), pp. L31-L43.
+
+[3] Bando, M, et. al.: “Dynamical model of traffic congestion and numerical simulation,”
+Phys. Rev. E 51 (1995), pp. 1035–1042.
+
+[4] Gipps P.G, Transp. Res. 20 B (1986), pp. 403–414.
+[5] Krauß, S.: “Towards a unified view of microscopic traffic modelling,” in Transporta-
+
+tion Systems (M. Papageorigiou and A. Pouliezos, eds.), II, p. 941, Chania, Greece:
+International Federation of Automatic Control, 1997.
+
+[6] Helbing, D.: “Traffic and related self-driven many-particle systems,” Review of Mo-
+dern Physics 73 (2001), pp. 1067–1141.
+
+[7] Treiber, M, Hennecke, A und Helbing, D.: “Congested traffic states in empirical obser-
+vations and microscopic simulations,” Physical Review E 62 (2000), pp. 1805–1824.
+
+[8] Treiber, M, Hennecke, A und Helbing, D.: “Phase diagram of traffic states in the pre-
+sence of inhomogeneities,” Phys. Rev. Lett. 82 (1999), pp. 4360–4363.
+
+[9] Chowdhury, D, Wolf, D, und Schreckenberg, M, Physica A 235 (1997), p. 417.
+
+

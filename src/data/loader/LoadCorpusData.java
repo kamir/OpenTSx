@@ -6,7 +6,9 @@ import app.bucketanalyser.TSBucketTransformation;
 import app.experimental.SimpleBucketTool;
 import chart.simple.MultiChart;
 import data.series.Messreihe;
+import hadoopts.buckets.generator.TSBucketCreator_TFIDFRecursive;
 import hadoopts.buckets.generator.TSBucketCreator_WordLength;
+import hadoopts.buckets.generator.TSBucketCreator_WordLengthRecursive;
 import hadoopts.core.TSBucket;
 import java.io.IOException;
 import java.util.Vector;
@@ -20,15 +22,22 @@ public class LoadCorpusData {
     public static void main(String[] ARGS) throws IOException, InstantiationException, IllegalAccessException {
 
         // prepare the time series bucket ...
-        hadoopts.buckets.generator.TSBucketCreator_WordLength.main(ARGS);
         
-        String experiment = TSBucketCreator_WordLength.experiment;
+//        hadoopts.buckets.generator.TSBucketCreator_WordLength.main(ARGS);
+//        String experiment = TSBucketCreator_WordLength.experiment;
+
+//        hadoopts.buckets.generator.TSBucketCreator_WordLengthRecursive.main(ARGS);
+//        String experiment = TSBucketCreator_WordLengthRecursive.experiment;
+
+        hadoopts.buckets.generator.TSBucketCreator_TFIDFRecursive.main(ARGS);
+        String experiment = TSBucketCreator_TFIDFRecursive.experiment;
+
         
         MacroTrackerFrame.init("Some Text files " + experiment + ")" );
         
         MacroTrackerFrame.addSource(TSBucketSource.getSource("Corpus"));
 
-        String fn = TSBucketCreator_WordLength.baseOut + "/" + experiment + "/bucket_wordLength_.tsb.vec.seq";
+        String fn = TSBucketCreator_WordLength.baseOut + "/" + experiment + "/bucket_tfidf_.tsb.vec.seq";
         
         loadCorpusDataForExperiment( fn , experiment );
 

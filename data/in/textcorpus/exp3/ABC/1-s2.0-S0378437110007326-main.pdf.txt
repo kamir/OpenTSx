@@ -1,0 +1,781 @@
+
+Physica A 389 (2010) 5468–5478
+
+Contents lists available at ScienceDirect
+
+Physica A
+
+journal homepage: www.elsevier.com/locate/physa
+
+Cross-correlations between Chinese A-share and B-share markets
+Yudong Wang a,∗, Yu Wei b, Chongfeng Wu a
+a Antai College of Economics & Management, Shanghai Jiao Tong University, Fahuazhen Road 535, Shanghai, PR China
+b School of Economics & Management, Southwest Jiaotong University, The First Section of Northern Second Ring Road, Chengdu, Sichuan Province, PR China
+
+a r t i c l e i n f o
+
+Article history:
+Received 4 April 2010
+Received in revised form 17 August 2010
+Available online 15 September 2010
+
+Keywords:
+Chinese stock markets
+Cross-correlations
+Detrended cross-correlation analysis
+Rolling windows
+
+a b s t r a c t
+
+In this paper, we investigate the cross-correlations between Chinese A-share and B-share
+markets. Qualitatively, we find that the return series of Chinese A-share and B-share
+markets were overall significantly cross-correlated based on the analysis of a statistic.
+Quantitatively, employing the detrended cross-correlation analysis, we find that the cross-
+correlations were strongly multifractal in the short-term and weakly multifractal in the
+long-term.Moreover, the cross-correlations of small fluctuationswere persistent and those
+of large fluctuations were anti-persistent in the short-term while cross-correlations of
+all kinds of fluctuations were persistent in the long-term. Using the method of rolling
+windows,we find that the cross-correlationswereweaker andweaker over time, especially
+after the price-limited reform. We attribute the fact to the improvement of market
+efficiency. On the volatility series, our results show that the cross-correlations were much
+stronger than those between return series. Results from rolling windows show that the
+short-term cross-correlations between volatility series are still high now. We also provide
+some relevant discussions later.
+
+© 2010 Elsevier B.V. All rights reserved.
+
+1. Introduction
+
+The pioneer, Peters [1,2] using Rescaled Range analysis (R/S) found the evidence of long-range auto-correlations in several
+financial markets implying the fact of inefficiency. Using R/S method, Cajueiro and Tabak [3] studied the long-range auto-
+correlations inmergingmarkets and found that themarkets becamemore andmore efficient over time. Thismethodwas also
+used to detect the long-range auto-correlations in crude oil markets [4] and volatility series in stock markets [5]. However,
+Lo [6] found that R/S method which was sensitive to short-term auto-correlations could lead to a bias estimation of the
+long-range auto-correlations. To overcome this drawback, Peng et al. [7] proposed detrended fluctuation analysis (DFA)
+when they studied the auto-correlations of molecular chains in deoxyribonucleic acid (DNA). This method can avoid the
+spurious detection of apparent long-range auto-correlations that are an artifact of patchiness. Together with its multifractal
+generalization [8], DFA has been widely used to detect the long-range auto-correlations in financial markets. Alvarez-
+Ramirez et al. [9] using DFA investigated the auto-correlations in US stock markets and found that the breakthrough of
+the long-term trend of the scaling behavior occurred in 1972, at the end of the Bretton Woods system. Alvarez-Ramirez
+et al. [10] analyzed the auto-correlations of WTI crude oil markets and found that the market exhibited a time-varying
+short-term inefficient behavior that became efficient over time. Norouzzadeh and Rahmani [11] using MF-DFA described
+the multifractality of Iranian rial–US dollar exchange rate series and found that the main cause of that was long-range auto-
+correlations. In our previous works [12,13], DFA is also used to investigate the long-range auto-correlations in Chinese stock
+markets. We found that the markets were more and more efficient over time and the main breakthrough of the long-term
+trend of long-range auto-correlations was caused by the price-limited reform.
+
+∗ Corresponding author. Tel.: +86 13512513538.
+E-mail address:wangyudongnj@126.com (Y. Wang).
+
+0378-4371/$ – see front matter© 2010 Elsevier B.V. All rights reserved.
+doi:10.1016/j.physa.2010.08.029
+
+
+
+
+
+
+
+
+Y. Wang et al. / Physica A 389 (2010) 5468–5478 5469
+
+Recently, Podobnik and Stanley [14] extended the DFA to investigate the long-range cross-correlations between two time
+series which have beenwidely tested in previous works [15–22], named detrended cross-correlation analysis (DCCA). DCCA
+method and its multifractal extension [23] have been used to detect the cross-correlations between two financial series in
+some papers [24,25].
+
+In this paper, we analyze the cross-correlations between A-share and B-sharemarkets in China. Our contribution is three-
+fold. First, we not only qualitatively analyze the cross-correlations between the return series of A-share and B-share markets
+employing the statistics recently proposed by Podobnik et al. [26], but also quantitatively study the cross-correlations using
+the detrended cross-correlation analysis [14,23]. Second, using themethod of rolling windows, we investigate the evolution
+of cross-correlations. Third, besides the return series, we also investigate the cross-correlations between the volatility series
+of A-share and B-share markets. Some implications for modeling and the predictability are also discussed at last.
+
+This paper is organized as follows: we provide the methodology in the next section. We show data description and
+empirical results in Sections 3 and 4, respectively. Section 5 provides some relevant discussions. Then, we conclude at the
+last section.
+
+2. Methodology
+
+Conventionally, cross-correlation function functions were widely used to analyze the dynamics of natural systems.
+However, these techniques can only suit to situations for the stationary series. As an important fact,many kinds of time series
+are long-range correlated and nonstationary, and have the strong trends.We need to remove the trendwhichwidely existed
+in the time series. The detrended cross-correlation analysis (DCCA) can well solve these problems and is a robust method of
+detecting the cross-correlations in nonstationary financial markets. DCCA method can be described as follows [14,23]:
+
+Step 1. Consider two time series, {xt , t = 1, . . . ,N} and {yt , t = 1, . . . ,N}, where N is the equal length of these two
+series. Then, we describe the ‘‘profile’’ of each series and get two new series, xxk =∑kt=1(xt − x¯) and yyk =∑kt=1(yt − y¯),
+k = 1, . . . ,N .
+
+Step 2. Divide the both profiles {xxk} and {yyk} into Ns = int(N/s) nonoverlapping segments of equal length s. Since
+the length N of the series is often not a multiple of the considered time scale s, a short part at the end of each profile may
+remain. In order not to disregard this part of the series, the same procedure is repeated starting from the opposite end of
+each profile. Thereby, 2Ns segments are obtained together. We set 10 < s < N/5.
+
+Step 3. We calculate the local trends xx(λ−1)s+j and yy(λ−1)s+j for each of the 2Ns segments by a least-square fit of each
+series. Then determine the co-moved variance
+
+F 2(s, λ) ≡ 1
+s
+
+s−
+j=1
+
+
+xx(λ−1)s+j − xx(λ−1)s+j yy(λ−1)s+j − yy(λ−1)s+j (1)
+
+for λ = 1, 2, . . . ,Ns and
+
+F 2(s, λ) ≡ 1
+s
+
+s−
+j=1
+
+
+xxN−(λ−Ns)s+j − xxN−(λ−Ns)s+j yyN−(λ−Ns)s+j − yyN−(λ−Ns)s+j (2)
+
+for λ = Ns + 1, Ns + 2, . . . , 2Ns. The trends xx(λ−1)s+j and yy(λ−1)s+j can be computed from linear, quadratic or high order
+polynomial fit of each profile for segment λ.
+
+Step 4. Average over all segments to get the fluctuation function
+
+Fq(s) =
+
+
+1
+2Ns
+
+2Ns−
+λ=1
+
+
+F 2(s, λ)
+
+q/21/q
+(3)
+
+for any real value q ≠ 0 and
+
+F0(s) = exp
+
+
+1
+4Ns
+
+2Ns−
+λ=1
+
+ln
+
+F 2(s, λ)
+
+
+. (4)
+
+Step 5. Analyze the scale behavior of the fluctuation function through observe the log–log plots of Fq(s) versus s. If two
+series are long-range cross-correlated, as a power-law
+
+Fq(s) ∼ sα(q). (5)
+Here, the scaling exponent α(q) can be obtained by observing the slope of log–log plot of Fq(s) versus s through the
+
+method of ordinary least squares (OLS). If scaling exponent α(q) > 0.5, the cross-correlations between the kinds of
+fluctuations related to q of two series are persistent (positive). An increase of one price is likely to be followed by an increase
+of the other price. If scaling exponent α(q) < 0.5, the cross-correlations between the kinds of fluctuations related to q of
+two series are anti-persistent (negative). An increase of one price is likely to be followed by a decrease of the other price.
+If α(q) = 0.5, one series is not cross-correlated with the other, and the change of one price cannot affect the behavior the
+other price.
+
+
+
+5470 Y. Wang et al. / Physica A 389 (2010) 5468–5478
+
+re
+tu
+
+rn
+s
+
+re
+tu
+
+rn
+s
+
+re
+tu
+
+rn
+s
+
+0
+
+0.05
+
+0.1
+
+-0.05
+
+-0.1
+
+-0.15
+0 1000 2000 3000 4000
+
+observations
+
+0 1000 2000 3000 4000
+observations
+
+0 1000 2000 3000 4000
+observations
+
+0 1000 2000 3000 4000
+observations
+
+Shenzhen A-share market
+
+-0.2
+
+-0.1
+
+0 0
+
+0.1
+
+0.2
+
+re
+tu
+
+rn
+s
+
+-0.2
+
+-0.1
+
+0.1
+
+0.2
+
+Shanghai B-share market
+
+Shenzhen B-share market
+
+Shanghai A-share market
+
+0
+
+-0.2
+
+-0.1
+
+0.1
+
+0.2
+
+Fig. 1. Returns of Chinese A-share and B-share markets.
+
+3. Data
+
+A-shares are also common shares labeled as RMB which are issued by domestic companies and are bought and sold by
+domestic citizen. B-shares are RMB special shares which are issued by domestic companies which registered domestically,
+but the investors of B-shares are strained in the area of foreign citizens. The nominal values of B-shares are labeled as RMB
+but they are traded using US dollars (in Shanghai) and Hong Kong dollars (in Shenzhen). The total amount of the capital
+in B-share market is strictly restricted by Chinese government. Chinese government set up Shanghai A-share and B-share
+index on February 21st, 1992 and Shenzhen A-share and B-share index on December 19th, 1995.
+
+We choose daily closing data of prices of Shanghai A-share market, Shanghai B-share market, Shenzhen A-share market
+and Shenzhen B-share market from January 2nd, 1996 to April 1st, 2010. Let Pt denote the price of crude oil on day t . The
+daily price return, rt , is calculated as its logarithmic difference, rt = log(Pt) − log(Pt−1). The graphical representation of
+returns of these four markets is illustrated in Fig. 1.
+
+4. Empirical results
+
+4.1. Preliminary analysis
+
+Podobnik et al. [26] introduced a cross-correlation statistic in analogy to the Ljung-Box (LJB) test [27]. For two time series,
+{xt , t = 1, . . . ,N} and {yt , t = 1, . . . ,N}, the test statistic
+
+Qcc(m) = N2
+m−
+i=1
+
+X2i
+N − i . (6)
+
+Here, the cross-correlation function
+
+Xi =
+
+N∑
+k=i+1
+
+xkyk−i
+N∑
+
+k=1
+x2k
+
+N∑
+k=1
+
+y2k
+
+. (7)
+
+The cross-correlation statistic Qcc(m) is approximately χ2(m) distributed with m degrees of freedom. The statistic can
+be used to test the null hypothesis that none of the firstm cross-correlation coefficient is different from zero.
+
+
+
+Y. Wang et al. / Physica A 389 (2010) 5468–5478 5471
+
+-0.5
+
+0
+
+0.5
+
+1
+
+1.5
+
+2
+
+2.5
+
+3
+
+3.5
+
+lo
+g1
+
+0(Q
+cc
+
+)
+
+log10(m)
+0 0.5 1 1.5 2 2.5 3
+
+critical values
+Shanghai markets
+Shenzhen markets
+
+Fig. 2. The cross-correlation statistics.
+
+Fig. 2 shows the cross-correlation statistics for two pairs of return series in Shanghai and Shenzhenmarkets. The degrees
+of freedom vary from 100 to 103. As a comparison, we also show the critical values for the χ2(m) distribution at the 5% level
+of significance in Fig. 2.
+
+In Fig. 2, we can find that the cross-correlation statistics Qcc(m) for two pair of return series are always larger than the
+critical values for the χ2(m) distribution at the 5% level of significance. It seems that for m > 2.5, Qcc(m) are all smaller
+than critical values. However, the statistics Qcc(m) have the trend of being close to the critical values withm increasing and
+are nearly equal to the critical values at m = 103. Thus, we can overall reject the null hypothesis of no cross-correlations.
+In other words, the long-range cross-correlations existed between Shanghai A-share and B-share markets, also between
+Shenzhen A-share and B-share markets.
+
+4.2. Detrended cross-correlation analysis
+
+As suggested in Podobnik et al. [26], the cross-correlation test based on the statistics in Eq. (6) can only be used to test the
+presence of cross-correlations only qualitatively. In order to test the presence of cross-correlations quantitatively, we need
+the DCCA method which can estimate the cross-correlation exponent. We show the log–log plots of fluctuation function
+Fq(s) versus time scale s A-share and B-share markets in Shanghai in Fig. 3 and for two stock markets in Shenzhen in Fig. 4,
+respectively.
+
+In Figs. 3 and 4, we can find that only one line cannot fit the log–log plots of Fq(s) versus time scale swell. We define the
+‘‘crossover’’, s∗, as the turning point when the linear trend of the curves underwent a fundamental change. The short-term
+behavior of financial market is easily influenced by themarket external factors such as themajor events while the long-term
+behavior is determined by the internal factors. With the time evolving, the short-term shocks gradually decay for the effects
+of long-term supply and demandmechanism in themarkets [9]. The scaling exponents for s < s∗ can reflect the short-range
+correlations which also imply the correlated behaviors in the short-term. Then, the scaling exponents for s > s∗ imply the
+correlated behaviors in the long-term. Thus, we can say that the ‘‘crossover’’ can reflect the lasting period of the effects of
+the factors which determine the market short-term behavior. We can find the ‘‘crossover’’ at about log 10(s∗) = 2.25 (178
+days, about 8.5 months). We provide the slopes of each line, just the scaling exponents for s < s∗ and s > s∗ in Table 1.
+
+For q = 2, the scaling exponent is just similar to the Hurst exponent calculated from the method of DFA. When q = 2,
+the scaling exponent for two Shanghai stock markets is 0.5357 for s < s∗ indicating that Shanghai A-share market and B-
+sharemarket are weakly cross-correlated in the short-term. The scaling exponent for two Shenzhen stockmarkets is 0.5541
+for s < s∗ implying the similar cross-correlated behavior to those between two Shanghai markets. For s > s∗, the scaling
+exponent for two Shanghaimarkets is 0.6610, larger than that for s < s∗ indicating that they aremoderately cross-correlated
+in the long-term. The cross-correlations between two Shenzhen markets are also similar to those between two Shanghai
+markets in the long-term.
+
+For other values of q, the scaling exponents indicate the cross-correlated behaviors between the kinds of fluctuations
+related to q. We provide the scaling exponents with q varying from−10 to 10 for two Shanghai markets in Fig. 5 and for two
+Shenzhen markets in Fig. 6, respectively.
+
+From Figs. 5 and 6, for s < s∗, we can find that for Shanghai A-share market and B-share market, the scaling exponents
+decrease from larger than 0.7 to smaller than 0.3 indicating that the cross-correlated behaviors are multifractal in the short-
+term. Moreover, the scaling exponents for q < 0 are larger than 0.5 indicating the cross-correlated behaviors of small
+
+
+
+5472 Y. Wang et al. / Physica A 389 (2010) 5468–5478
+
+-2.6
+
+-2.2
+
+-1.8
+
+-1.4
+
+-1
+
+-0.6
+
+lo
+g(F
+
+q(s
+))
+
+1 1.4 1.8 2.2 2.6 3
+log(s)
+
+Fig. 3. Log–log plots of Fq(s) versus s for returns of Shanghai A-share and B-share markets.
+
+-2.6
+
+-2.2
+
+-1.8
+
+-1.4
+
+-1
+
+-0.6
+
+lo
+g(F
+
+q(s
+))
+
+1 1.4 1.8 2.2 2.6 3
+log(s)
+
+Fig. 4. Log-log plots of Fq(s) versus s for returns of Shenzhen A-share and B-share markets.
+
+fluctuations are persistent (positive) in the short-term. The scaling exponents for q > 3 are smaller than 0.5 indicating
+the cross-correlated behaviors of large fluctuations are anti-persistent (negative) in the short-term. However, for s > s∗,
+the values of α(q) weakly depend on the values of q indicating that the long-term cross-correlated behavior is weakly
+multifractal. Moreover, all of the values of α(q) are larger than 0.5 indicating that the long-term cross-correlated behaviors
+are persistent. The long-term behaviors of the stock markets are all determined by the fundamentals of Chinese economy.
+The long-term situations of economic fundamentals could make the same effects on all of the stock markets. Thus, the
+cross-correlations of all of the large and small fluctuations between A-share and B-sharemarkets were persistent. The cross-
+correlated situations between two Shenzhen stock markets are similar to those between two Shanghai markets.
+
+The overall analysis cannot well capture the dynamics of cross-correlations over time. Similar to the works in
+Refs. [3–5,9,10], we use the method of rolling windows to investigate the evolution of short-term cross-correlations over
+
+
+
+Y. Wang et al. / Physica A 389 (2010) 5468–5478 5473
+
+Table 1
+Scaling exponents for return series with q varying from−10 to 10.
+q Shanghai A-share and B-share markets Shenzhen A-share and B-share markets
+
+S < S∗ S > S∗ S < S∗ S > S∗
+
+−10 0.7401 0.6090 0.7561 0.6918
+−8 0.7258 0.5950 0.7426 0.6674
+−6 0.7069 0.5795 0.7237 0.6394
+−4 0.6811 0.5668 0.6964 0.6140
+−2 0.6457 0.5672 0.6585 0.6047
+0 0.5982 0.5967 0.6103 0.6187
+2 0.5357 0.6610 0.5541 0.6455
+4 0.4548 0.7184 0.4853 0.6648
+6 0.3753 0.7454 0.4188 0.6714
+8 0.3181 0.7544 0.3721 0.672
+10 0.2803 0.7558 0.3411 0.6715
+
+Fig. 5. Scaling exponents for Shanghai A-share and B-share markets with q varying from−10 to 10.
+
+Fig. 6. Scaling exponents for Shenzhen A-share and B-share markets with q varying from−10 to 10.
+
+time. The length of each window is fixed to be 250 business days (about a year). The step is 1 day. We calculate out the
+scaling exponent for two pairs of series in each window for q = 2. The graphical representations are shown in Figs. 7 and 8.
+The time in x-axis is the date of the last day in each window.
+
+In Fig. 7, we can find that the scaling exponent was gradually close to 0.5 with windowmoving indicating that the cross-
+correlations between Shanghai A-share and B-share markets were weaker and weaker over time. The main reason is that
+Chinese stock market gradually became more and more efficient. That is also to say, the predictability of Chinese stock
+markets based on the history of themselves and the other markets was lower and lower. Moreover, at the end of 1997, the
+scaling exponents dropped abruptly from larger than 0.7 to close to 0.5. We attribute this decrease of the degree of cross-
+correlations to the price-limited reform implemented by the government which greatly improved the efficiency of Chinese
+stockmarkets [12,13]. However, we also should notice that, the scaling exponents are still larger than 0.5 indicating that two
+Shanghai stockmarkets wereweakly positively cross-correlated now. Analogous results can be obtained from the situations
+for two Shenzhen stock markets from Fig. 8.
+
+For robustness, we adjust the length of each window to be 175 business days and show the graphical representations in
+Figs. 9 and 10. We can also get the similar results to those from Figs. 5 and 6.
+
+
+
+5474 Y. Wang et al. / Physica A 389 (2010) 5468–5478
+
+Fig. 7. Scaling exponents for q = 2 for two Shanghai markets with window moving. The length of each window is fixed to be 250 days.
+
+Fig. 8. Scaling exponents for q = 2 for two Shenzhen markets with window moving. The length of each window is fixed to be 250 days.
+
+Fig. 9. Scaling exponents for q = 2 for two Shanghai markets with window moving. The length of each window is fixed to be 175 days.
+
+Fig. 10. Scaling exponents for q = 2 for two Shenzhen markets with window moving. The length of each window is fixed to be 175 days.
+
+
+
+Y. Wang et al. / Physica A 389 (2010) 5468–5478 5475
+
+-3
+
+-2.5
+
+-2
+
+-1.5
+
+-1
+
+-0.5
+
+lo
+g(F
+
+q(s
+))
+
+1 1.4 1.8 2.2 2.6 3
+log(s)
+
+Fig. 11. Log-log plots of Fq(s) versus s for volatilities of Shanghai A-share and B-share markets.
+
+4.3. The cross-correlations between volatility series
+
+The magnitude time series which can be taken as the proxy of volatility are always much more strongly auto-correlated
+than the return time series [4,5]. One may expect that magnitude cross-correlations are also much stronger than return
+cross-correlations. Podobnik et al. [31] studied long-range magnitude cross-correlations in collective modes of real-world
+data from finance, physiology, and genomics using time-lag random matrix theory. Their evidence supported the presence
+of strongly long-range cross-correlations. Thus, it is necessary to analyze the cross-correlations between themagnitude time
+series of stock markets.
+
+The cross-correlation statistics Qcc(m) in Eq. (6) for the volatility series of two Shanghai markets and two Shenzhen
+markets are all much larger than the critical values for the χ2(m) distribution at the 5% level of significance with degrees of
+freedom varying from 100 to 103. That is to say, Chinese A-share and B-share markets are strongly cross-correlated.1
+
+Fig. 11 provides the log–log plots of Fq(s) versus time scale s for absolute return series of two Shanghai stock markets.
+The values of q vary from −10 to 10. The situations for two Shenzhen markets are also shown in Fig. 12. We can find that
+the location of ‘‘crossover’’ is at about s∗ = 2.2, very similar to the location in Figs. 5 and 6.
+
+We provide the scaling exponents for different time scale intervals in Table 2. For s < s∗, the change of scaling exponents
+depends on the values of q implying the fact of multifractality. Moreover, the scaling exponents are all larger than 0.5
+implying the persistent cross-correlated behavior between the volatility of Chinese A-share and B-share markets. Especially
+for q < −6, the scaling exponents aremuch close to 1 indicating that the cross-correlations of small fluctuations are strongly
+persistent in the short-term. For s > s∗, the cross-correlated behavior between Chinese A-share and B-share markets are
+also multifractal. Moreover, for q < 0, the scaling exponents are larger than 0.5 indicating that the cross-correlations of
+small fluctuations between A-share and B-share markets are persistent in the long-term. However, for q = 10, the scaling
+exponents are close to 0.5 indicating that the extreme large fluctuations are nearly not cross-correlated in the long-term.
+
+Employing the method of rolling windows, Fig. 13 shows the time-varying scaling exponents for q = 2 for the volatility
+series of Shanghai A-share and B-share markets. The length of each window is also fixed to be 250 business days. We can
+find that although the scaling exponents seemed to run a downward trend from 1997 to 2003, they kept going around 0.6
+after 2003 implying the constant trend of persistent behavior of cross-correlations. That is to say, the volatilities of prices of
+two markets are still persistently cross-correlated now. The situations for two Shenzhen stock markets are very similar to
+those for Shanghai markets.2
+
+5. Discussion
+
+5.1. On the rolling windows
+
+Although has been employed in previous papers, after the influential work in Cajueiro and Tabak [3], the method
+of rolling windows began to be widely used to investigate many topics on the financial markets, such as market
+
+1 To save space, we do not show the figure presentation of the cross-correlation statistics which can be obtained upon request.
+2 To save space, we do not show the graphical representation of the dynamics of the volatility series of two Shenzhen markets. It can be obtained upon
+
+request. It is very similar to that of two Shanghai markets.
+
+
+
+5476 Y. Wang et al. / Physica A 389 (2010) 5468–5478
+
+lo
+g(F
+
+q(s
+))
+
+-3
+
+-2.5
+
+-2
+
+-1.5
+
+-1
+
+-0.5
+
+1 1.4 1.8 2.2 2.6 3
+log(s)
+
+Fig. 12. Log-log plots of Fq(s) versus s for volatilities of Shenzhen A-share and B-share markets.
+
+Table 2
+Scaling exponents for volatility series with q varying from−10 to 10.
+q Shanghai A-share and B-share markets Shenzhen A-share and B-share markets
+
+S < S∗ S > S∗ S < S∗ S > S∗
+
+−10 1.0419 0.7646 1.0458 0.6535
+−8 1.0179 0.7506 1.0201 0.6483
+−6 0.9838 0.7403 0.9822 0.6496
+−4 0.9402 0.7491 0.9313 0.6719
+−2 0.8935 0.8010 0.8825 0.7386
+0 0.8450 0.8476 0.8463 0.8020
+2 0.8081 0.7964 0.8335 0.7446
+4 0.7860 0.6988 0.8404 0.6279
+6 0.7609 0.6173 0.8338 0.5408
+8 0.7377 0.5616 0.8183 0.4869
+10 0.7194 0.5245 0.8028 0.4831
+
+Fig. 13. Scaling exponents for q = 2 for two Shanghai markets with window moving. The length of each window is fixed to be 250 days.
+
+efficiency [3,4,9,10,12,13], the prediction of crash in financial markets [28,29] and risk measurement [30], etc. For different
+purposes, the lengths of the time-window are various. Obviously, as made in Cajueiro and Tabak [3–5], and Tabak and
+Cajueiro [4], for analyzing the evolution of long-term correlations, the length should be several years. To investigate the
+dynamics of short-term correlations, as argued in Grech and Mazur [28], if the length of rolling window is too large, the
+calculated exponent may lose its locality. For example, if the length is larger than a year, the seasonal cycling in financial
+markets may cover the short-term properties and induce to the poor predictability. However, if the length is too small, the
+evolution of the local exponents may be too fierce which can result in the fact that it is hard to observe the trend of local
+exponents. Grech andMazur [28] also argued that the local exponent at a given time t depends on the time-window length.
+Thus, for different purposes, the selection of the length of rolling window should be careful. In this paper, we choose two
+
+
+
+Y. Wang et al. / Physica A 389 (2010) 5468–5478 5477
+
+different lengths of rolling window, 250 and 175 business days to investigate the dynamics of short-term cross-correlations.
+The results are very similar implying the robustness.
+
+5.2. Some implications
+
+We have investigated the cross-correlations between Chinese A-share and B-share markets. The results show that
+the return series were weakly cross-correlated in the short-term. Moreover, short-term cross-correlations displayed high
+complexity (multifractality) indicating that the cross-correlations were easily to be affected by large and small fluctuations.
+The results from rolling windows also show that the short-term cross-correlations were lower and lower. That is to say, it
+is nearly impossible to predict the future prices based on the history of the other markets. However, the long-term cross-
+correlations displayed high degrees and low complexity indicating that the markets were predictable in the long-term.
+For the volatility series, they were strongly cross-correlated both in the short-term and in the long-term implying the high
+predictability.With time varying, the short-term cross-correlations between volatility series changed largely indicating that
+the optimal portfolio varied over time. Investors should not hold the portfolio with fixed weight of each asset.
+
+Our results also have important modeling implications for Chinese stock markets. Firstly, the cross-correlated behavior
+between the return series of A-share and B-share markets were nonlinear (multifractal) implying that conventional linear
+models such as vector auto-regression models (VAR) could not be used to describe the dynamics of the cross-correlations
+between Chinese stock markets. Nonlinear methods are appealing. Secondly, the short-term cross-correlated behavior
+was different from long-term situations implying that modeling the cross-correlations between stock markets should
+consider the different term and period cycling. Thirdly, the cross-correlations were easy to be affected by events such as
+the reforms indicating that using nonlinear model to analyze the cross-correlations between stock markets should consider
+the structural changes caused by the shock of events. On the volatility, the high degrees of cross-correlations which changed
+over time indicating that the linear bivariate GARCHmodels such as BEKK-GARCH cannotwell capture the cross-correlations
+between the volatility of Chinese stock markets.
+
+As an emerging market, Chinese stock markets which have experienced some essential reforms became more and more
+efficient over time. However, they are still not mature markets. They are easily to be affected by market external factors,
+such as many regulated policies imposed by the government, financial crisis and some political factors. Recently, the cross-
+correlations between Chinese stock markets seemed to be larger than 0.5. This was caused by the recent global crisis and
+some unreasonable fiscal andmonetary policies implemented by the government to weaken the effects of crisis. To improve
+the market efficiency and weaken the cross-correlations between stock markets, the government needs to do much more
+work in the future operation.
+
+6. Conclusion
+
+In this article, we investigate the cross-correlations between the return series of Chinese A-share and B-share markets.
+Based on the analysis of the significance of a statistic, we find that the cross-correlations were overall significant. Employing
+themethod of DCCA,we find that the cross-correlationswere stronglymultifractal in the short-term butweaklymultifractal
+in the long-term. Moreover, the cross-correlations of small fluctuations were persistent and those of large fluctuations were
+anti-persistent in the short-term while the cross-correlations of all kinds of fluctuations were persistent in the long-term.
+We also analyze the situations for volatility series and find the cross-correlationsweremuch stronger both in the short-term
+and in the long-term.
+
+Using the method of rolling windows, we find that the short-term cross-correlations between return series were
+gradually close to 0.5 over time while those between volatility series still kept the high degrees. At last, we also show some
+discussions on the method of rolling windows and implications for modeling and practical operations.
+
+Acknowledgements
+
+We thank the main editor, H.E. Stanley for his comments. We also greatly thank the comments from Benjamin M. Tabak
+and the other anonymous reviewers for their helpful suggestions and comments. Yudong Wang dedicates this paper to his
+master supervisor, Professor Rongbao Gu.
+
+Yudong Wang and Chongfeng Wu thank the financial support from National Natural Science Foundation of China (No.
+70831004). YuWei thanks the financial support offered by theNational Natural Science Foundation of China (Nos. 70501025,
+70771097, 71071131), Program for New Century Excellent Talents in University (No. NCET-08-0826), and Fundamental
+Research Funds for the Central Universities (Nos. SWJTU09ZT32, SWJTU09CX088).
+
+References
+
+[1] E. Peters, Chaos and Order in the Capital Market, John Wiley & Sons, New York, 1991.
+[2] E. Peters, Fractal Market Analysis: Applying Chaos Theory to Investment and Economics, John Wiley & Sons, New York, 1994.
+[3] D.O. Cajueiro, B.M. Tabak, Phys. A 336 (2004) 521.
+[4] B.M. Tabak, D.O. Cajueiro, Energy Econ. 29 (2007) 28.
+
+
+
+5478 Y. Wang et al. / Physica A 389 (2010) 5468–5478
+
+[5] D.O. Cajueiro, B.M. Tabak, Phys. A 346 (2005) 577.
+[6] A.W. Lo, Econometrica 59 (1991) 1279.
+[7] C.-K. Peng, et al., Phys. Rev. E 49 (1994) 1685.
+[8] J.W. Kantelhardt, et al., Phys. A 316 (2002) 87.
+[9] J. Alvarez-Ramirez, et al., Phys. A 387 (2008) 6159.
+
+[10] J. Alvarez-Ramirez, J. Alvarez, E. Rodriguez, Energy Econ. 30 (2008) 2645.
+[11] P. Norouzzadeh, B. Rahmani, Phys. A 367 (2006) 328.
+[12] Y. Wang, L. Liu, R. Gu, Int. Rev. Financ. Anal. 18 (2009) 271.
+[13] Y. Wang, et al., Phys. A 389 (2010) 1635.
+[14] B. Podobnik, H.E. Stanley, Phys. Rev. Lett. 100 (2008) 084102.
+[15] J. Karpoff, J. Financ. Quant. Anal. 22 (1987) 109.
+[16] B. LeBaron, W.B. Arthur, R. Palmer, J. Econom. Dynam. Control 23 (1999) 1487.
+[17] V. Plerou, et al., Phys. Rev. Lett. 83 (1999) 1471.
+[18] R.N. Mantegna, Eur. Phys. J. B 11 (1999) 193.
+[19] L. Kullmann, J. Kertesz, K. Kaski, Phys. Rev. E 66 (2002) 026125.
+[20] G. Bonanno, et al., Phys. Rev. E 68 (2003) 046130.
+[21] M. Tumminello, et al., Proc. Natl. Acad. Sci. USA 102 (2005) 10421.
+[22] B. Podobnik, et al., Phys. A 387 (2008) 3954.
+[23] W.X. Zhou, Phys. Rev. E 77 (2008) 066211.
+[24] E.L. Sequeira Junior, T. Stosic, L. Bejan, B. Stosic, Phys. A 389 (2010) 2739.
+[25] B. Podobnik, et al., Proc. Natl. Acad. Sci. USA 106 (2009) 22079.
+[26] B. Podobnik, et al., Eur. Phys. J. B 71 (2009) 243.
+[27] G.M. Ljung, G.E.P. Box, Biometrika 65 (1978) 297.
+[28] D. Grech, Z. Mazur, Phys. A 336 (2004) 133.
+[29] D. Grech, G. Pamuła, Phys. A 387 (2008) 4299.
+[30] Y. Yuan, X.-T. Zhuang, X. Jin, Phys. A 388 (2009) 2189.
+[31] B. Podobnik, D. Wang, D. Horvatic, I. Grosse, H.E. Stanley, Europhys. Lett. 90 (2010) 68001.
+
+
+	Cross-correlations between Chinese A-share and B-share markets
+	Introduction
+	Methodology
+	Data
+	Empirical results
+	Preliminary analysis
+	Detrended cross-correlation analysis
+	The cross-correlations between volatility series
+
+	Discussion
+	On the rolling windows
+	Some implications
+
+	Conclusion
+	Acknowledgements
+	References
+
+

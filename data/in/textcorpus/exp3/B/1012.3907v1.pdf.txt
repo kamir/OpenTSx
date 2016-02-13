@@ -1,0 +1,606 @@
+
+ar
+X
+
+iv
+:1
+
+01
+2.
+
+39
+07
+
+v1
+  [
+
+ph
+ys
+
+ics
+.co
+
+mp
+-p
+
+h]
+  1
+
+7 D
+ec
+
+ 20
+10
+
+Situations in traffic - how quickly they change
+
+M. J. Krawczyk1a, C. Beltran Ruiz2b and K. Ku lakowski1c
+
+1Faculty of Physics and Applied Computer Science, AGH - UST, al.
+Mickiewicza 30, PL-30059 Krako´w, Poland
+
+2Sociedad Iberica de Construcciones Electricas, C/Sepu´lveda 6, 28108
+Alcobendas, Madrid, Spain
+
+agos@fatcat.ftj.agh.edu.pl, bcbeltran@sice.com,
+ckulakowski@novell.ftj.agh.edu.pl
+
+December 20, 2010
+
+Abstract
+
+Spatio-temporal correlations of intensity of traffic are analysed for one
+
+week data collected in the motorway M-30 around Madrid in January
+
+2009. We found that the lifetime of these correlations is the shortest in
+
+the evening, between 6 and 8 p.m. This lifetime is a new indicator how
+
+much attention of drivers is demanded in given traffic conditions.
+
+PACS numbers:
+Keywords: traffic, data analysis, lifetime
+
+1 Introduction
+
+As an interdisciplinary application of statistical physics, physics of traffic is not
+new. As several problems posed there remain to be solved, the topic is far from
+being exhausted. One of central questions is how traffic jams arise, with another
+question - how to control the jams - in the context. Around these issues, a lot
+of modelling approaches have been proposed [1, 2, 3, 4], from partial differential
+equations to cellular automata. As a rule, two phases of traffic are discussed:
+free flow and jam. Apart from these two, a synchronized phase has been dis-
+tinguished [5, 6]. Later, the concept was criticized as ambiguous [7]. According
+to this critique the effect when vehicles move ”nearly synchronized in different
+lanes of the highway” [5] appears in qualitatively different states and therefore it
+cannot be treated as a criterion of a specific phase. Still, the synchronization as
+an effect (not a phase) has been frequently called in [8, 9, 10, 11]. In particular,
+two synchronized modes of traffic have been distinguished in [10]: lightly and
+heavily congested traffic.
+
+Our concern here is devoted to the lifetime of spatial configurations of moving
+vehicles. The motivation is, most briefly, that these lifetimes give information on
+the rates of transitions of the traffic system from one state to another. Specific
+configurations of vehicles with their velocities can be treated as microscopic
+states. This kind of data is hardly available; more often coarse-grained data
+are collected as intensities A averaged over some time periods, 30 seconds at
+best. From readings A1(t) and A2(t) collected with two sensors 1, 2 of distance
+x one from another, we evaluate the time average of the correlation of A1(t)
+with A2(t+ τ). Once the coarse-grained state changes only slightly in time, the
+correlation should show a maximum at the delay τ = x/v, where v is the mean
+velocity of vehicles. Further, the velocity spread of vehicles is expected to lead
+
+1
+
+
+
+
+to a finite length of spatial correlations of A. The latter rescaled again by v is a
+measure of lifetime of the coarse-grained states. An obvious shortcoming of this
+procedure is that the time of measurement (1 minute) is not commensurate with
+the mean time x/v of motion of vehicles from one sensor to another. However,
+this difficulty can be evaded at least partially by averaging over more pairs of
+sensors.
+
+The lifetime seems to be a new tool, and in particular we are not aware
+about any research on the spatio-temporal correlations of traffic flow. In [12],
+the autocorrelation was investigated of the local density, the average velocity
+and the flow for the free-flow, synchronized and congested phases. The autocor-
+relation functions measured with one sensor showed a slow decrease of density
+and flow in the free flow state, and much quicker decrease in the synchronized
+state, while in the congested (stop-and-go) state, the autocorrelation functions
+oscillate in time (Figs. 10 and 12 in [12]). According to [6], the sequence of
+phases from free flow to jammed phase is through the synchronized phase. On
+the other hand, an exemplary time series with a transition from the free flow
+to the congested phase, shown in [12] (Fig. 13), show a sharp character of the
+transition, with only momentary increase of the variance of velocity. Both the
+short time of the transition and the short timescale of the autocorrelation func-
+tions can be due to the metastable character of the synchronized state. The
+data on the lifetime should provide information how quickly the traffic states
+change.
+
+In the next section we give the details on our traffic data. Two subsequent
+sections are devoted to the details of the calculation and to the numerical re-
+sults. Last section contains our conclusions.
+
+2 Data
+
+The data are collected from 1-minute aggregated readings of 24 sets of sensors
+or measurement points- placed along a 13 km-length road stretch of the M30
+motorway that surrounds the center of Madrid. Data sets cover a period of one
+week readings, between January 26th and February 1st, 2009. These real traffic
+datasets provided by the detectors include (i) counting of vehicles; (ii) intensity
+or flow of traffic (vehicles/h); (iii) traffic density (vehicles/km); (iv) occupancy
+data (time that the sensor is detecting the presence of a vehicle); (v) real time
+vehicle speed (km/h); and (vi) vehicle length and classification by categories
+(car, bus, van, truck, etc.). A detailed description of the data can be found in
+[13].
+
+Real world traffic data sets from M30 motorway have been measured by a
+detection system based on inductive loops; these inductive sensors are used in
+detection systems that rely on the principle that a moving magnet a vehicle-
+will induce an electrical current in a nearby conducting wire, fact that is applied
+for the detection of vehicle presence indicators and thus for getting information
+of real traffic data. The base of these vehicle detection systems is the detection
+of the induction change when a metallic mass a vehicle- passes through a loop
+
+2
+
+
+
+ 0
+
+ 1000
+
+ 2000
+
+ 3000
+
+ 4000
+
+ 5000
+
+ 6000
+
+ 7000
+
+ 8000
+
+ 9000
+
+ 0  50  100  150  200  250
+
+A[
+ve
+
+h/h
+]
+
+ρ[veh/km]
+
+Figure 1: The fundamental diagram for two sensors (marked as ∗ and •) in the
+motorway M-30.
+
+installed under the road pavement. The loop forms part of circuits that oscillate
+to a determined frequency that is changed by the variations of the loops induc-
+tance as the metallic mass passes through it. Then the detector will translate
+that physical reality (the presence of a vehicle) into an electrical signal that
+will be processed afterwards by a microprocessor that will digitally treat the
+obtained inputs transmitted by the induction loops so as to obtain real traffic
+data. Detectors can aggregate real data upon different time basis. In the case
+of the M30 motorway detection system, traffic data are aggregated on 1-minute
+integration period basis.
+
+Inductive loops-based detectors are considered as most accurate electronic
+devices for vehicle detection; they are normally used in traffic detection due to
+their high robustness and reliability, their low sensitivity to adverse meteoro-
+logical conditions and their low cost. Therefore, the probability of erroneous
+vehicle sensing is very low, although they can also suffer from shifts in their
+reference frequency, mainly due to big thermal changes in the pavement, and
+from possible breaks or wire short-circuits.
+
+3 Calculations
+
+At the beginning, the fundamental diagram of the data is constructed. This
+diagram express the intensity of traffic as a function of vehicles density. The
+density is calculated from the data as a quotient of intensity A and velocity v
+
+3
+
+
+
+ 0
+
+ 1000
+
+ 2000
+
+ 3000
+
+ 4000
+
+ 5000
+
+ 6000
+
+ 7000
+
+ 8000
+
+ 0  6  12  18  24
+
+A[
+ve
+
+h/h
+]
+
+t[h]
+
+Figure 2: Intensity against time as read with one sensor by 24 h in the motorway
+M-30 (exemplary curve).
+
+at each time point.
+
+For the remaining analysis, the curve showing the dependence of the num-
+ber of vehicles as a function of time is subjected to detrendisation [14]. This
+procedure is performed as follows: For each sensor and day the whole data set
+is divided into one hour long subsets. Each subset is fitted by a cubic function,
+using the ”least square method.” Subsequently, from each measured value, a
+value calculated on the basis of parameters obtained from the fitting procedure
+is subtracted. The procedure is applied if the amount of data in a given time
+period is higher than the number of parameters of the function used for fitting.
+Data prepared in this way is used in further analysis.
+
+We estimate the travel time between each pair of sensors (si, sj), on the basis
+of the distance between them and the average velocity of the vehicles on the
+given portion of the road. After the estimated time, the same vehicles which
+are detected near the sensor si should appear near the sensor sj. Taking into
+account this time shift τ , the Pearson correlation coefficient c, between a given
+pair of sensors, is calculated:
+
+cij =
+
+n∑
+t=1
+
+(xit − x¯i)(xj(t+τ) − x¯j)√
+n∑
+
+t=1
+(xit − x¯i)
+
+2
+
+√
+n∑
+
+t=1
+
+(
+xj(t+τ) − x¯j
+
+)2
+
+4
+
+
+
+0
+20
+
+40
+
+60
+
+80
+
+100
+
+ 0  6  12  18  24
+ 0
+
+ 5
+
+ 10
+
+ 15
+
+ 20
+
+ 25
+<
+
+v
+>
+
+[km
+/h]
+
+σ
+
+t[h]
+
+velocity
+standard deviation
+
+Figure 3: Velocity (red dots, left scale) and its standard deviation (blue stars,
+right scale) against time as read with one sensor by 24 h in the motorway M-30.
+
+where: i, j - items, n - length of the time series, x¯i =
+1
+
+n
+
+n∑
+t=1
+
+xit
+
+(
+x¯j =
+
+1
+
+n
+
+n∑
+t=1
+
+xj(t+τ)
+
+)
+- average value. Obtained values cij lie in the range [−1, 1], where −1 - means
+full anti-correlation, 0 - lack of correlation, and 1 - full correlation. Each value
+is averaged with all other values obtained in the following half-hour.
+
+As it is visible in the data, and what is intuitively understandable, observed
+traffic data is different on workdays and weekends. Because of that, in further
+calculation only data from workdays was taken into account. For all pairs of
+sensors and time periods, obtained values of the correlation coefficients are aver-
+aged over workdays. Collecting all obtained data for half-hour periods of time,
+we obtain a curve which shows how the correlation coefficient depends on the
+distance between sensors. Fitting this curve by a function f(x) = λ exp(−x/ξ)
+we obtain a correlation length ξ for each period of time.
+
+4 Results
+
+In Fig.1 we show the fundamental diagram of the collected data. The overall
+character of the obtained plot is similar to the fundamental diagrams reported
+in literature [1, 2, 3]. The flow intensity against time, is shown in Fig.2. The
+data show that the character of the curve is the same for all working days, see
+also the plots in [13]. In Fig.3 we show the velocity and its standard deviation,
+averaged over 30 minutes. As we see, low velocity is correlated with its large
+
+5
+
+
+
+-0.4
+
+-0.2
+
+ 0
+
+ 0.2
+
+ 0.4
+
+ 0.6
+
+ 0.8
+
+ 1
+
+-25 -20 -15 -10 -5  0  5  10  15  20  25
+
+C
+
+d[km]
+
+ξ 3.4
+
+Figure 4: Correlation against distance - an average over workdays for all pairs
+of 24 sensors between 4 and 4.30 a.m. in the motorway M-30.
+
+variance.
+
+In Figs. 4 and 5, the plots show the data on the correlation coefficient C.
+These results collected for all pairs of sensors are averaged over workdays and
+fitted to see the distance dependence of f(d) = λ exp(−d/ξ). The value of the
+obtained correlation length ξ is 3.4 km for the readings between 4 and 4.30 a.m.,
+and 0.21 km between 6 and 6.30 p.m.
+
+Fig. 6 shows the data on the lifetime τ of the spatial configurations, defined
+as τ = ξ/ < v >. It is remarkable that the increase of the intensity A of
+the flow between 6 and 8 a.m. and the minimum of the velocity < v > at 8
+a.m. accompanied with sharp maximum of the velocity standard deviation σ
+influence the lifetime τ only slightly. Another fall of v after 3 p.m. with even
+sharper peak of σ can be correlated with irregularities of the lifetime τ . It is
+between 6 and 8 p.m. where we observe a qualitative drop of the lifetime τ .
+Simultaneously, the velocity standard deviation σ gets a daily maximum of 25
+km/h, as shown in Fig. 3.
+
+5 Discussion
+
+As it follows from our results, the data collected between 6 and 8 p.m. describe
+states with the lowest mean velocity < v > and the shortest lifetime τ . In
+the same area, the velocity variance σ is the largest. This finding is of inter-
+
+6
+
+
+
+-0.2
+
+ 0
+
+ 0.2
+
+ 0.4
+
+ 0.6
+
+ 0.8
+
+ 1
+
+-25 -20 -15 -10 -5  0  5  10  15  20  25
+
+C
+
+d[km]
+
+ξ=0.21
+
+Figure 5: Correlation against distance - an average over workdays for all pairs
+of 24 sensors between 6 and 6.30 p.m. in the motorway M-30.
+
+est because of the notion, that the velocity variance shows a maximum at the
+transition between the flow phase and the congested phase. It was stated in
+[12], that the existence of this maximum is a numerical artifact of an appear-
+ance of two different phases within the same time interval. Our interpretation
+is that the large velocity variance marks a series of relatively rapid changes be-
+tween different spatial configurations of vehicles. Such a behaviour is perhaps
+more specific for traffic than an unstable synchronized state. The short lifetime
+seems to be an apt characteristics of the varying state. It would be desirable
+to evaluate it also for traffic systems without ramps, where the dynamics is not
+influenced by external sources or sinks.
+
+According to the statistics provided by the Insurance Institute for Highway
+Safety, it is between 5 and 7 p.m. when most people are killed in road acci-
+dents [15]. As we have seen in the presented data, the road conditions in these
+hours are: the largest traffic intensity, moderate mean velocity and the largest
+velocity variance. As noted above, the latter quantity is expected to be low
+in a synchronized phase of any kind, and - what is obvious - in the congested
+phase. The fact that between 6 and 8 p.m. the traffic configurations, as seen
+by drivers, change most quickly, can contribute to the deadly statistics, as these
+quick changes demand for the drivers’ highest attention. It is likely that the
+lifetime proposed here provides a criterion of evaluation and identification of
+potentially dangerous traffic states.
+
+Finally the lifetimes of particular traffic states, when handled within the-
+
+7
+
+
+
+0.000
+
+0.005
+
+0.010
+
+0.015
+
+0.020
+
+0.025
+
+0.030
+
+0.035
+
+0.040
+
+0.045
+
+0.050
+
+0.055
+
+ 0  6  12  18  24
+
+ξ/<
+v>
+
+ [h
+]
+
+t[h]
+
+Figure 6: Lifetime τ = ξ/ < v > against time.
+
+ory of diffusion on networks [16], can be converted into rates of variations of
+time-dependent probabilities of microscopic and coarse-grained states of com-
+plex systems. This kind of modelling, proposed recently in [17], seems to us
+particularly promising in applications to complex systems.
+
+Acknowledgements
+
+The invaluable help of the Madrid City Council for having provided real data for
+analysis from the M30 road is gratefully acknowledged. The research is partially
+supported within the FP7 project SOCIONICAL, No. 231288.
+
+References
+
+[1] D. Chowdhury, L. Santen and A. Schadschneider, Statistical physics of
+vehicular traffic and some related systems, Phys. Reports 329 (2000) 199.
+
+[2] D. Helbing, Traffic and related self-driven many-particle systems, Rev.
+Mod. Phys. 73 (2001) 1067.
+
+[3] K. Nagel, P. Wagner and R. Woesler, Still flowing: Approaches to traffic
+flow and traffic jam modeling, Operation Res. 51 (2003) 681.
+
+[4] S. Maerivoet and B. De Moor, Cellular automata models of road traffic,
+Phys. Rep. 419 (2005) 1.
+
+8
+
+
+
+[5] B. S. Kerner and H. Rehborn, Experimental properties of complexity in
+traffic flow, Phys. Rev. E 53 (1996) R4275.
+
+[6] B. S. Kerner, Experimental features of self-organization in traffic flow,
+Phys. Rev. Lett. 81 (1998) 3797.
+
+[7] M. Scho¨nhof and D. Helbing, Criticism of three-phase traffic theory, Trans-
+portation Res. Part B 43 (2009) 784.
+
+[8] D. Helbing and B. A. Huberman, Coherent moving states in highway traffic,
+Nature 396 (1998) 738.
+
+[9] H. Y. Lee, H.-W. Lee and D. Kim, Origin of synchronized traffic flow on
+highways and its dynamic phase transitions, Phys. Rev. Lett. 81 (1998)
+1130.
+
+[10] I. Lubashevsky, R. Mahnke, P. Wagner and S. Kalenkov, Long-lived states
+in synchronized traffic flow: Empirical prompt and dynamical trap model,
+Phys. Rev. E 66 (2002) 016117.
+
+[11] D. Helbing and K. Nagel, The physics of traffic and regional development,
+Contemp. Phys. 45 (2004) 405.
+
+[12] L. Neubert, L. Santen, A. Schadschneider and M. Schreckenberg, Single-
+vehicle data of highway traffic: A statistical analysis, Phys. Rev. E 60 (1999)
+6480.
+
+[13] A. Riener, K. Zia, A. Ferscha, C. Beltran Ruiz and J. Minguez Rubio,
+AmI technology helps to sustain speed while merging A data driven simu-
+lation study on Madrid motorway ring M30, 14th IEEE/ACM International
+Symposium on Distributed Simulation and Real Time Applications (DS-RT
+2010), Fairfax, VA USA, IEEE Computer Society Press, pp. 10, October
+2010.
+
+[14] J. W. Kantelhardt, E. Koscielny-Bunde, H. H. A. Rego, S. Havlin and A.
+Bunde, Detecting long-range correlations with detrended fluctuation analy-
+sis, Physica A 295 (2001) 441.
+
+[15] www.iihs.org/research/
+
+[16] M. E. J. Newman, Networks. An Introduction, Oxford UP, Oxford 2010.
+
+[17] M. J. Krawczyk,Wandering in the state space, submitted (arXiv:1007.4460)
+
+9
+
+
+	1 Introduction
+	2 Data
+	3 Calculations
+	4 Results
+	5 Discussion
+

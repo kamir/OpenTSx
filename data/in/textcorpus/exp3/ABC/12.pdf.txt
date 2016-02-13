@@ -1,0 +1,669 @@
+
+Author's personal copy
+
+Physica A 388 (2009) 3233–3243
+
+Contents lists available at ScienceDirect
+
+Physica A
+
+journal homepage: www.elsevier.com/locate/physa
+
+Discontinuous transition from free flow to synchronized flow induced
+by short-range interaction between vehicles in a three-phase traffic
+flow model
+Kun Gao a,∗, Rui Jiang b, Bing-Hong Wang a, Qing-Song Wu b
+a Department of Modern Physics, University of Science and Technology of China, Hefei, Anhui, 230026, PR China
+b School of Engineering Science, University of Science and Technology of China, Hefei, Anhui, 230026, PR China
+
+a r t i c l e i n f o
+
+Article history:
+Received 2 January 2009
+Received in revised form 12 April 2009
+Available online 3 May 2009
+
+PACS:
+45.70.Vn
+05.40.-a
+02.60.Cb
+05.65.+b
+
+Keywords:
+Three-phase traffic flow
+Breakdown phenomenon
+Synchronized flow
+Fundamental diagram
+
+a b s t r a c t
+
+In this paper, we incorporate a limitation on the interaction range between neighboring
+vehicles into the cellular automaton model proposed by Gao and Jiang et al. [K. Gao,
+R. Jiang, S. X. Hu, B. H. Wang and Q. S. Wu, Phys. Rev. E 76 (2007) 026105], which was
+established within the framework of Kerner’s three-phase traffic theory and has been
+shown to be able to reproduce the three-phase traffic flow. This modification eliminates an
+unrealistic phenomenon found in the previousmodel, where the velocity-adaptation effect
+between neighboring vehicles can exist even if those vehicles are infinitely far away from
+each other. Therefore, in the improved model, we regulate that such interactions can only
+occur within a finite distance. For simplicity, we suppose a constant value to describe this
+distance in this paper. As a result, when compared to the previous model, the improved
+model mainly simulates the following results which are believed to be an improvement.
+(1) The improved model successfully reproduces the expected discontinuous transition
+from free flow to synchronized flow and the related ‘‘moving synchronized flow pattern’’,
+which are both absent in the original model but have been observed in real traffic. (2) The
+improved model simulates the correlation functions, time headway distributions and
+optimal velocity functions which are all more consistent with the empirical data than
+the previous model and most of the other models published before. (3) Together with
+the previous two models considering the velocity-difference effect, this model finally
+accomplishes a significative process of developing traffic flow models from the traditional
+‘‘fundamental diagram approach’’ to the three-phase traffic theory. This process should be
+helpful for us to understand the traffic dynamics and mechanics further and deeper.
+
+© 2009 Elsevier B.V. All rights reserved.
+
+1. Introduction: Traffic flow theory and traffic flow models
+
+Vehicular traffic has become a title of physics over the last sixty years. Traffic states are often described as some
+kinds of fluid or flow thus are widely called the ‘‘traffic flow’’. The dynamics of traffic flow can be recognized as some
+certain evolutionary motions of typical nonlinear complex systems and have attracted much interest from physicists and
+mathematicians [1–13]. In order to explore the essential rules of the traffic flow, researchers carried out large amounts of
+traffic measures and observations, and established various types of theoretical or computational models based on the data.
+Usually, there are many different ways to explore the traffic models, under different theoretical hypothesis. With phase
+transition thought to exist in traffic flow, the fundamental diagram approach (two-phase hypothesis) and the three-phase
+traffic theory (three-phase hypothesis) have now become the main branches of the modern traffic flow theories.
+
+∗ Corresponding author.
+E-mail addresses: kgao@mail.ustc.edu.cn (K. Gao), rjiang@ustc.edu.cn (R. Jiang).
+
+0378-4371/$ – see front matter© 2009 Elsevier B.V. All rights reserved.
+doi:10.1016/j.physa.2009.04.033
+
+
+
+Author's personal copy
+
+3234 K. Gao et al. / Physica A 388 (2009) 3233–3243
+
+1.1. The fundamental diagram approach
+
+From the 1950s on, several different approaches were developed to simulate the traffic flow, including the macroscopic
+models (the hydrodynamics models [14–20]), the mesoscopic models (the gas-kinetic models [21–24] and the microscopic
+models (the car-following models [25,26] and the cellular automaton models [27–30]). Since the phase transition theory
+was applied on the traffic flow research, most traffic flow models or empirical formulations were established based on a
+two-phase hypothesis, under which the traffic states can be classified into two different traffic phases, i.e., the free flow (F )
+phase and the jammed phase (J). These two traffic phases have obvious differences in their spatial-temporal features and
+can be distinguished by a phase-transition point in the flow-density plane. The flow-density curve, which goes across the
+original point and has at least one maximum, is often called ‘‘the fundamental diagram’’ of traffic flow. Therefore, traffic
+theories in this framework are summarized as a ‘‘fundamental diagram approach’’ [2,3,31].
+The fundamental diagram approach is quite successful in describing the traffic states and traffic evolutions. It can
+
+reproduce important features like the forming and dissolving of queues in the traffic system. So it has been widely
+accepted and well developed during the past decades. However, the two-phase classification in the fundamental diagram
+approach implies that there are only two kinds of traffic states, either free flow or jams, could be long-time steady and
+form a phase. Intermediate states between them, usually shown as low-speed but uninterrupted traffic states, are not yet
+studied adequately. These states are simply considered as temporary and unsteady states, which are of little importance
+to the features of the traffic system. Therefore, the fundamental diagram approach studies the traffic flow in a static way.
+Interactions between vehicles are either vanished (in free flow) or extremely strong (in jams), without any intermediate
+status. Dynamically equivalent states, which should be very popular in real traffic, are seldom studied in the fundamental
+diagram approach.
+
+1.2. Kerner’s three-phase traffic theory
+
+Based on a fairly long observation of the traffic flowon theGerman highways A5, A1, A44, and A3 between 1995 and 1998,
+B.S. Kerner introduced a three-phase traffic theory [32,33], which has been used by Kerner together with his colleagues for
+the development of some three-phase traffic flow models and methods of traffic engineering [34–43]. Three-phase traffic
+theory shows us a brand new prospect on the highway traffic systems [32–40,44,45]. It impels forward the previous phase-
+transition theory in the traffic flow from a two-phase limitation to a possible multi-phase structure. Being different to the
+traditional ‘‘fundamental diagram approach’’, three-phase traffic theory further distinguished the congested traffic states
+into wide moving jams and a newly defined state called the ‘‘synchronized flow’’ (S). Synchronized flow can be considered
+as an intermediate state between the free flow and thewide-moving jams, withmiddle levels of speeds, densities and fluxes.
+Being different to the temporary states in the fundamental diagram approach, synchronized flow contains inner fluctuations
+within a fairly wide amplitude, but the entire phase can be kept long-time steady and nearly homogeneous. It also has its
+own characteristics thus could possibly be distinguished as an individual phase. As a result, there are totally three different
+types of traffic states which divide all the possible traffic flow states into three traffic phases, i.e., the free flow (F ), the
+synchronized flow (S) and the wide moving jams (J).
+Supposed to be different phases, free flow, synchronized flow and wide moving jams should have distinguishable
+
+properties of their own. As we know from the fundamental diagram approach, free flow could be characterized by the
+weak interactions among vehicles, while wide moving jams could be characterized by the long-time stop of vehicles and
+extremely strong blocks. In the sameway, for synchronized flow, Kerner pointed out that synchronized flow is characterized
+by a considerably high flux without any clear density-flux relations. The speeds of vehicles, and the distances or interactions
+between vehicles, are all middle-leveled and quite flexible. Furthermore, Kerner has proposed a fundamental hypothesis of
+his three-phase traffic theory, which says that the steady states of synchronized flow cover a two-dimensional region in the
+flow-density plane. Evolutions within the synchronized flow phase are represented as random walks of the data points in
+the flow-density plane. Synchronized flow usually looks nearly homogeneous in macroscopic scales in the spatial-temporal
+diagram and can keep steady for quite a long time until a phase transition occurs [32–40,44–48].
+As we can see, the definition of the synchronized flow and the phase transitions between the synchronized flow phase
+
+and the other two traffic phases would be the kernel of the three-phase traffic theory. In Kerner’s hypothesis, all the phase
+transitions among the three traffic phases are first-order/discontinuous. However, only the phase transition between free
+flow and synchronized flow (F ↔ S) and the phase transition between synchronized flow and wide moving jams (S ↔ J)
+can spontaneously occur. Under ceratin scales of vehicle densities, either of these two phase transitions can occur with
+probabilities, induced by the random fluctuations occurring somewhere in the traffic flow. When the extent of the random
+fluctuation is higher than a threshold value, the phase transition occurs. The probability of the phase transition will increase
+with an increase of density or time. On the other hand, the phase transition from free flow to jams (F → S) can only occur
+due to some external inducements such as traffic signals or closure of the road.
+With these three traffic phases and two phase transitions occurring with probabilities among them, the three-phase
+
+traffic theory has provided an instructive viewpoint to understand the traffic dynamics and the empirical findings. In
+particular, the three-phase traffic theory gives more reasonable descriptions on the bottleneck induced congested patterns
+than the fundamental diagram approach. It has been discovered from traffic observations that with different sets of flow
+rates on the main road and the on-ramp, different congested patterns emerge at the upstream of the bottleneck. These
+
+
+
+Author's personal copy
+
+K. Gao et al. / Physica A 388 (2009) 3233–3243 3235
+
+different congested patterns have different spatial-temporal features to each other, which can be qualitatively distinguished
+easily. Empirical results tell us that the stop and go waves (traffic jams) can only emerge when the on-ramp flow is high
+enough, namely, under a strong bottleneck; on the other hand, lower on-ramp flow (weak bottleneck) can only induce
+some kinds of ‘‘homogenous congested traffic’’. In the framework of the three-phase traffic theory, Kerner differentiated the
+bottleneck-induced congested states into the following six patterns by different scales of the flows: (1) general pattern (GP);
+(2) widening synchronized flow pattern (WSP), (3) dissolving general pattern (DGP), (4) local synchronized flow pattern
+(LSP), (5) moving synchronized flow pattern (MSP) and (6) synchronized flow pattern with alternations of free flow and
+synchronized flow (ASP). Among them, GP occurs under strong bottlenecks. It consists of a synchronized flow region and a
+series of spontaneously emergedwidemoving jams from the original synchronized flow region.While theWSP occurs under
+weak bottlenecks, consisting of a widening region of synchronized flowwhich is nearly homogeneous. Therefore, compared
+to the empirical results, the three-phase traffic theory provides consistent descriptions on these congested patterns. The
+related empirical evidence has thus provided strong support for the three-phase traffic theory.
+However, on the other hand, nearly all the two-phase traffic flow models, which are under the framework of the funda-
+
+mental diagram approach, give us quite different results. In these results, stop and gowaves emerge underweak bottlenecks
+while homogeneous congested traffic occurs under strong bottlenecks [8,49–51]. Simulation results are contradictory to the
+empirical results. This becomes an obvious drawback for the validity of the fundamental diagram approach. As a result, the
+three-phase traffic theory ismuch better sustained by empirical data and has thus come to be accepted bymore researchers.
+Furthermore, investigations on single vehicle data have discovered that each of the three traffic phases has a particular
+
+microscopic structure; even free flow is not as trivial as previously believed [52]. Therefore, a suitable traffic theory is
+required not only to describe right traffic phases and phase transitions, but also to present the microscopic structures of the
+traffic flow properly. These requirements bring forward new challenges to the traffic flow theories and impel researchers to
+study their theories on microscopic scales.
+In this paper, we will show a cellular automaton (CA) model in the framework of the three-phase traffic theory. We are
+
+going to show this model is consistent with the empirical data and the hypothesis of the three-phase traffic theory in both
+macroscopic and microscopic ways.
+
+2. Previous models in the framework of the three-phase traffic theory
+
+So far, there mainly exist three different series of traffic flow models which are consistent with the three-phase traffic
+theory, i.e., the models by Kerner, Klenov and Wolf [41,42,53,54], the model by Lee [55], and the models by Jiang and
+Wu [56,57]. These models were designed by considering different aspects of possible vehicular traffic dynamics, and most
+of them were represented by cellular automaton (CA) modeling approach. In 2007, Gao, Jiang and Hu et al. proposed other
+possible driving mechanics in their CA traffic flow models [58,59]. These models focus on the influence of the velocity-
+difference between two successive vehicles on the randomization process of the following one (so that we call them
+‘‘Velocity-difference effect (VDE)’’ series models in this paper). This mechanics reflects the fact that drivers usually adapt
+their acceleration and decelerationmotions according to their relative speeds to the vehicles in front of them.When the front
+vehicle moves faster, the driver will feel confident that a sudden deceleration is unlikely to be required and will feel safer
+as a result. On the other hand, when the following vehicle moves faster than the front vehicle, the driver will feel nervous
+and perhaps decelerate as a result of this anxiety. Similar mechanics have ever been described in the classic car-following
+equations as
+
+dvn
+dt
+(t) = λ∆vn (1)
+
+in which∆vn is the velocity-difference between neighboring vehicles, and λ is the sensitive parameter.
+In the VDE series models, the earliest version was published in Ref. [58] (called VDE-I model). The VDE-I model simply
+
+substitutes the constant randomization parameter p in the NSmodel with a variable depending on the velocity-difference as
+
+p =
+{p−, For vi(t) < vi−1(t)
+p0, For vi(t) = vi−1(t)
+p+, For vi(t) > vi−1(t),
+
+with all the other regulations of the NS model unchanged at the same time. This model executes the driving mechanics
+mentioned above by changing the randomization probability of the following vehicle. As a result, it produces some special
+states which are similar in certain aspects to the synchronized flow. In more detail, these states have quite similar spatial-
+temporal features to the synchronized flow, but can’t show proper phase transition phenomena to both the free flow and
+the wide moving jams. Therefore, this kind of ‘‘quasi synchronized flow state’’ hasn’t formed an individual traffic phase, and
+the VDE-I model can only be considered as an intermediate model between the two-phase and the three-phase traffic flow
+models. Essentially, it still belongs to the fundamental diagram approach, because only the free flow phase and jammed
+phase are significant in this model. However, on the other hand, it implies the possible existence of a third phase and shows
+us a possible way to develop the models from the two-phase framework to the three-phase framework.
+After the VDE-Imodelwe carried out furthermodifications and developed it into a VDE-IImodel, published in Ref. [59]. In
+
+theVDE-IImodel,we execute the velocity-difference effect by changing the deceleration extent instead of the randomization
+
+
+
+Author's personal copy
+
+3236 K. Gao et al. / Physica A 388 (2009) 3233–3243
+
+probability in the randomization process. This is equivalent to discretizing the classic car-following equation in Eq. (1)
+directly and representing it with a cellular automaton model. Furthermore, we introduced the slow-to-start effect into this
+model in order to induce the spontaneous emergence of the wide moving jams, namely, the so-called pinch effect in the
+three-phase traffic theory.
+It is worth introducing the velocity-updating rules of the VDE-II model here. The parallel velocity-updating rules are
+
+briefly summarized as the following two steps:
+
+1. Accelerating and braking:
+
+vn(t + 1) = min(vn(t)+ a, vmax, dn(t)) (2)
+2. Randomization with probability pn(t + 1):
+
+vn(t + 1)→ max(vn(t + 1)−∆v, 0).
+
+Here vn(t) is the velocity of vehicle n at time t (vehicle n− 1 precedes vehicle n); dn is the distance from the head of vehicle
+n to the tail of vehicle n − 1. Let tst,n denote the stop time of vehicle n (tst,n = mmeans vehicle n has been stopping for m
+time steps currently) and tc denote the time threshold of slow-to-start effect [56,57,59,60], the randomization probability
+pn(t + 1) and the deceleration extent4v are determined by the following formulations:
+
+pn(t + 1) =
+{
+p0 when tst,n ≥ tc
+pd when tst,n < tc
+
+(3)
+
+∆v =
+
+
+a when tst,n ≥ tc
+b− if (vn(t) < vn−1(t))
+b0 if (vn(t) = vn−1(t))
+b+ if (vn(t) > vn−1(t))
+
+}
+when tst,n < tc .
+
+(4)
+
+The rank of the acceleration and deceleration parameters above are usually required as b+ ≥ a ≥ b−. It’s the adequate
+and necessary condition for the model to simulate the synchronized flow. When this condition is satisfied, the velocity-
+adaptation mechanics are automatically taken into account.
+With these modifications, the VDE-II model shows characteristics much more consistent with the three-phase traffic
+
+theory than the previous VDE-I model. In the VDE-II model, three traffic phases are clearly distinguished, and the phase
+transitions among them occur with probabilities under proper density scales. This model can successfully reproduce the
+synchronized flow phase and the spontaneous discontinuous S → J transition, as well as the corresponding congested
+patterns induced by the bottleneck. However, the F → S transition in this model is not first-order but continuous. This
+means under any fixed vehicle densities, synchronized flow cannot spontaneously occur in free flow. In Kerner’s viewpoint,
+both the F → S transition (breakdown phenomenon) and the S → J transition (pinch effect) can spontaneously occur under
+some certain densities, even on a homogeneous road. In Particular, when the breakdown phenomenon occurs, a ‘‘moving
+synchronized flow patten’’ (MSP) emerges [41,43,54]. These results are still absent in the VDE-II model.
+We have discussed in Ref. [59] that Eq. (4) can be seen as another mathematical formulation of the speed-adaptation
+
+effect firstly proposed by Kerner in Refs. [41,43]. Our VDE-II model can bee seen as a combination of the KKWmodel and the
+Nagel–Schreckenberg model with slow-to-start effect. The velocity-adaptation effect can produce the synchronized flow
+and keep it in dynamical steady states. It’s the kernel of the model to simulate the three-phase traffic flow in both the KKW
+models and the VDE-II model. However, on the other hand, it still needs additional mechanics to produce the first-order
+F → S transition. Therefore, in order to supply the absence of the breakdown phenomenon and the related MSP in the
+VDE-II model, we continued our work and proposed an improved model in this paper.
+
+3. The VDE-III model
+
+In the viewpoint of physics, the VDE-IImodel has overlooked the fact that the interaction range of a certain vehicle should
+be finite. However, in the VDE-II model, each vehicle can influence the randomization process of its following vehicle even
+if the follower is infinitely far away. As a result, metastable states of the free flow would be easily broken by the infinite-
+ranged interactions between neighboring vehicles, which causes the absence of the coexisting scale of the free flow and
+the synchronized flow. In this paper, following Kerner’s idea [42], we are going to take into account the finite interaction
+range between neighboring vehicles.When exceeding this range, denoted byDn, the randomization process of the following
+vehicle will become weak and independent of the preceding vehicle. Following this idea, Eqs. (3) and (4) are improved into
+
+pn(t + 1) =
+{p0 when (tst,n ≥ tc)
+pd when (tst,n < tc & dn ≤ Dn)
+ps when (tst,n < tc & dn > Dn)
+
+
+
+Author's personal copy
+
+K. Gao et al. / Physica A 388 (2009) 3233–3243 3237
+
+Fig. 1. (Color online) The two-dimensional region of the equilibrium states of the synchronized flow in the VDE-III model, obtained in a noiseless limit
+that pd → 1. The dashed line F shows the original left boundary in the VDE-II model.
+
+∆v =
+
+
+
+a when (tst,n ≥ tc)
+b− if (vn(t) < vn−1(t))
+b0 if (vn(t) = vn−1(t))
+b+ if (vn(t) > vn−1(t))
+
+}
+when
+
+(
+tst,n < tc
+
+& dn ≤ Dn
+)
+
+bs when
+(
+
+tst,n < tc
+& dn > Dn
+
+)
+.
+
+Here ps and bs are relatively smaller values. The parameters are selected as tc = 6, vmax = 25, pd = 0.18, p0 = 0.5, ps = 0.08,
+a = 2, b− = bs = 1, b0 = 2, b+ = 5. The spatial and temporal units are selected as 1.5 m and 1 s respectively, and Dn is
+simplified as a constant D = 23.
+It should be noted that a similar idea has also been presented in Kener’s models [41,43]. In the KKW series models, the
+
+interaction rangeDn is defined as a ‘‘synchronization distance’’Dn(∆x, v), whichmay be a function of the speed andheadway
+distance. However, in this paper, we just simplify Dn to be a constant. It can be considered as one special mathematical
+formulation of the synchronize distance. As we are going to show in the following part, the model in this paper shows
+results which are reasonable enough under this special setting up of Dn. On the other hand, this constant Dn also creates
+small changes in the features of the synchronized flow to Kerner’s models.
+As well as the previous VDE-II model in Ref. [59], the VDE-III model is also equivalent to a combination of the KKW CA
+
+model [41] and the Nagel–Schreckenberg (NS) model with the slow-to-start effect [30,60] (see Eqs. (5) and (6) in Ref. [59]).
+Different model rules are adopted for producing different traffic phases respectively. (i) Within the interaction distance D,
+the updating rules of the model switch between the rules of the KKW model and the NS model with probabilities pd (NS
+→ KKW) and 1 − pd (KKW→ NS) respectively, which reproduces the synchronized flow states. (ii) At farther distance
+dn > D, no switching between the two models occurs, the rules of the NS model with weaker noise (ps < pd) reproduces
+the free flow states, including the metastable states which is essentially important to the discontinuous F → S transiton.
+(iii) In the case tst,n ≥ tc , the slow-to-start effect induces the spontaneous emergence of wide moving jams in the regions of
+synchronized flow.
+By introducing the interaction range parameter D into the model, there are only short-range interactions between
+
+vehicles. As a result, the two-dimensional region covered by synchronized states has also be changed. Now we discuss
+the theoretical two-dimensional synchronized flow region under a noiseless limit pd → 1. In this case, the updating rules
+of the KKWmodel are adopted. As in the VDE-II model, the upper boundary U and the left boundary F are also determined
+by the safe speed and the maximum speed respectively, i.e.,
+
+U : JU(ρ) = vρ = dρ = 1− ρl
+and
+
+F : JF (ρ) = ρvmax
+where ρ is the density of vehicles, d is the distance between neighboring vehicles and l is the average length of a single
+vehicle (see Ref. [59]). There is still no lower boundary L in this model. However, the interaction range parameter D further
+restricted d < D, i.e.,
+
+S : J(S) = ρmin = 1D+ l
+which defines a new left boundary F . Thus the two-dimensional region covered by the equilibrium states of the synchronized
+flow is restricted by the left boundary S, upper boundary U and the x axis, as shown in Fig. 1. It is apparent in the VDE-III
+
+
+
+Author's personal copy
+
+3238 K. Gao et al. / Physica A 388 (2009) 3233–3243
+
+Fig. 2. (Color online) The fundamental diagram of the VDE-III model was obtained on a homogeneous circular road by starting from two different types
+of initial states: completely jammed states (branch AHPEF) and homogeneous states (branch ABCDEF and AGCDEF). The curves are based on simulation
+results within a period of 6000 time steps.
+
+Ph
+as
+
+e 
+Tr
+
+an
+si
+
+tio
+n 
+
+Pr
+ob
+
+ab
+ili
+
+ty
+
+Occupancy Rate
+a b
+
+Fig. 3. (Color online) Probabilities of the spontaneous phase transitions under different densities ρ and simulation periods T . For each data point, 1000
+individual runs are carried out to check whether the phase transition occurs within the given duration T under the given density ρ. The concerned
+probability is defined as the number of realizations in which phase transitions occur in comparison with the number of all realizations [41]. (a) F → S
+transition. (d) S → J transition.
+
+model that the synchronized flow region is more limited into a scale of higher densities by comparison to the previous VDE-
+II model. It should also be noticed that when a similar idea was studied by Kerner [42], the boundaries of the equilibrium
+states induced by the synchronized distance Dn(∆x, v) in Kerner’s models were a little different.
+
+4. Simulation results of the VDE-III model
+
+With the VDE-III model, simulations are firstly carried out on a homogeneous circular road with the length L = 10 000
+cells. Fig. 2 shows the fundamental diagramof themodel, inwhich three traffic phases and two discontinuous transitions are
+clearly distinguished, showing a typical double Z-characteristic structure predicted by the three-phase traffic theory [42,43].
+When compared to other three-phase traffic flow models published before, the current model has a much wider hysteresis
+loop in flow rate scales associated with the phase transitions between the free flow and the synchronized flow. During
+the simulation process, the phase transitions occur with probabilities. Under the densities between point G and C in the
+diagram, both the free flow and the synchronized flow can exist. With probabilities, the discontinuous F → S transition
+occurs, corresponding to a fall of the flow rate from line GB to line GC (breakdown phenomenon). The threshold point G for
+the F → S transition in Fig. 2, is related to the boundary F (B)th in the diagram of congested patterns when the on-ramp flow
+rate qon = 0 on an open highway system (see Fig. 17 in Ref. [53]). In the same way, under the densities between point G
+and D, the discontinuous S → J transition makes the flow rate fall from line GD to line HE with probabilities (pinch effect).
+The corresponding phase transition probabilities are plotted in Fig. 3(a) and (b), which increase with the increase of the
+
+
+
+Author's personal copy
+
+K. Gao et al. / Physica A 388 (2009) 3233–3243 3239
+
+Fig. 4. Spontaneous phase transitions on a homogeneous circular road. (a) The breakdown phenomenon, synchronized flow spontaneously emerges in
+the free flow (ρ = 0.145). (b) The pinch effect, wide moving jams spontaneously emerge in the synchronized flow (ρ = 0.45).
+
+Fig. 5. (Color online) Congested patterns on an open roadwith the length L = 10 000, having an on-rampbottleneck at the site x = 8000. (a) GP (qin = 0.65,
+qon = 0.30); (b) WSP (qin = 0.6, qon = 0.13); (c) DGP (qin = 0.6, qon = 0.1); (d) LSP (qin = 0.3, qon = 0.2); (e) MSP (qin = 0.75, qon = 0.005); (f) ASP
+(qin = 0.6, qon = 0.05). Here qin and qon denote the flow rates on the main road and the on-ramp respectively.
+
+density or the simulation period. Typical patterns of these phase transitions are shown on the spatial-temporal diagrams in
+Fig. 4(a) and (b).
+The spontaneously emerged synchronized flow in Fig. 4(a), is usually realized as the ‘‘moving synchronized flow pattern’’
+
+(MSP). The breakdown phenomenon with the emergence of a MSP in Kerner’s prediction is well demonstrated. On the
+other hand, Kerner has also pointed out that the MSP can be induced by a bottleneck as well as other congested patterns.
+These congested patterns are plotted in Fig. 5. On a main road with a single on-ramp bottleneck, with open boundary
+conditions on both ends, different values of the flow rates on themain road (qin) and the on-ramp (qon) induces each of the six
+congested patterns predicted by the three-phase traffic theory. They are (a) general pattern (GP), (b) widening synchronized
+pattern (WSP), (c) dissolving general pattern (DGP), (d) local synchronized pattern (LSP), (e) MSP, and (f) the synchronized
+pattern alternation of free and synchronized flow (ASP). These results are all qualitatively the same as those found earlier
+in Refs. [41,43].
+
+
+
+Author's personal copy
+
+3240 K. Gao et al. / Physica A 388 (2009) 3233–3243
+
+Fig. 6. (Color online) Statistics on one-minute aggregated single vehicle data obtained by loop detectors set on an open road with only one input qin ,
+varying from 0 to 1. For free flow, the road is homogeneous everywhere and qin increases from 0 to 0.8 gradually; for synchronized flow, a speed-limitation
+of vmax = 10 is implemented within the region (8000, 8100), and qin gradually increases from 0.5 to 1.0. The road length is L = 10000. (a)–(b) One-
+minute average flow-density diagrams. (c)–(h) Autocorrelation functions for the local density, the averaged velocity and the flow flux. (i) Cross-correlation
+functions between the density and flow.
+
+Nowwe study some statistical features of themodel based on single vehicle data or one-minute aggregated single vehicle
+data, in order to identify the local structures of the model. Fig. 6(a) and (b) show the one-minute averaged flow-density
+diagrams, being well consistent with the fundamental hypothesis of the three-phase traffic theory. Fig. 6(c)–(h) show the
+autocorrelation functions for the local density, the averaged velocity and the flow flux. Itwas determined that in the free flow
+states, the averaged velocities are only correlated on short time scales, whereas long-ranged correlations are present in the
+time series of the local density aswell as the flow flux. On the other hand, in synchronized flow states, all the autocorrelations
+are close to zero, whichmeans no long-range correlations exist. Furthermore, Fig. 6(i) shows the cross-correlations between
+the density and the flux are strong for free flow while weak for synchronized flow.1 These results are consistent with the
+empirical conclusions based on real measures published in Ref. [61].
+It should be noted that the velocity anticipation effect is still not included in our models. This tells us that the velocity
+
+anticipation effect is not necessary for reproducing the three-phase traffic flow states. However, it does have influences on
+somemicroscopic features such as the timeheadwaydistributions. It has beendiscovered that the timeheadwaydistribution
+of traffic flow should have a cutoff on the temporal axis at a position of less than one second [37,52,61–63], which is
+impossible if the velocity anticipation effect was not considered. For this reason, we plotted the time headway distribution
+
+1 The autocorrelation function for aggregated quantities {x(t)} and the cross-correlation function between {x(t)} and {y(t)} are defined as ax(τ ) =
+〈x(t)x(t+τ)〉−〈x(t)〉2
+〈x(t)2〉−〈x(t)〉2 and cxy(τ ) = 〈x(t)y(t+τ)〉−〈x(t)〉〈y(t)〉√〈x(t)2〉−〈x(t)〉2√〈y(t)2〉−〈y(t)〉2 . Ref. [61] has pointed out that in free flow states, for flux and density, there exist long-range
+
+autocorrelations and strong cross-correlations, which is related to the empirical daily variations in free flow. While in synchronized flow state, no long-
+range correlations could be found.
+
+
+
+Author's personal copy
+
+K. Gao et al. / Physica A 388 (2009) 3233–3243 3241
+
+P 
+(th
+
+)
+
+th[s]
+
+a b
+Fig. 7. (Color online) Normalized time headway distributions of the VDE-III model. (a) Free flow; (b) Synchronized flow.
+
+Fig. 8. (Color online) Optimal velocity (OV) functions of the VDE-III model.
+
+of the VDE-III model in Fig. 7, with a time anticipation embedded. For this, the dn in Eq. (2) is replaced by
+
+deff = dn +max(0,min(vn−1(t)+ a, dn−1, vmax)− dsafe).
+The safe distance dsafe here is chosen as dsafe = 15, which has no qualitative influence on the simulation results above.
+We can see in Fig. 7 that the most important features of the time headway distribution, including the small time cutoff
+and the uniform positions of the maximum distributions for the free flow, are well reproduced by our model. Nevertheless,
+the density-dependent time headway distributions in the synchronized flow, indicated in Ref. [61,62], is still absent in our
+results.We surmise thismight be related tomulti-vehiclemixtures ormulti-lane effects, andneeds to be further investigated
+in the future.
+Finally, we study the velocity-headway relations, i.e., the so-called optimal velocity (OV) functions. As shown in Fig. 8,
+
+the curves for free flow and congested flow are well separated. In free flow states, the asymptotic velocity does not depend
+on the density (headway), but is determined by the speed-limitation. In congested states, the asymptotic velocities are
+much smaller. Furthermore, the OV functions have certain distributions under large values of the headway, which makes it
+much better than most of the previous models in the framework of the three-phase traffic theory (see Ref. [64], most of the
+previous three-phase traffic models do not have a distribution of the OV function under large headways). The OV functions
+in Fig. 8 show features that are almost unanimous to the features shown in the Figure 4 in Ref. [62], and are consistent with
+the empirical findings.
+
+5. Conclusion
+
+Based on our previous velocity-difference series models, as a further development, we restrict in the model rules the
+interactions between neighboring vehicles to be short-ranged. This avoids an unrealistic dynamic in the VDE-II model
+
+
+
+Author's personal copy
+
+3242 K. Gao et al. / Physica A 388 (2009) 3233–3243
+
+that vehicles always have interactions with their neighbours even if the neighbors are infinitely faraway. As a result, the
+simulation results of the modified model become more consistent with the predictions of the three-phase traffic theory.
+The major improvements are: (1) The improved model reproduces the discontinuous transition from the free flow to the
+synchronized flow, together with the breakdown phenomenon and the moving synchronized flow pattern, which are all
+absent in the previous two VDE models but have been observed by Kerner and predicted in his three-phase traffic theory.
+(2) The improvedmodel shows bettermicroscopic characteristics than the previous VDEmodels. It simulates the correlation
+functions identical to the empirical results not only for synchronized flow states, but also for free flow states. The result
+implies that the free flow is not as trivial as we thought before. (3) The improved model reproduces most features of
+the empirical time-headway distributions. On the other hand, the reproduced OV functions are highly consistent with the
+empirical results, which is an obvious improvement when compared to previous models.
+Besides the improvements in describing traffic characteristics, by proposing the VDE-III model in this paper, we finally
+
+established a gradual transformation within a model series from the framework of the traditional ‘‘fundamental diagram
+approach’’ to the three-phase traffic theory. From the VDE-I model to the VDE-III model, the transformation process of the
+model rules and the simulation results induced by these rulesmay be helpful for our understanding of the essential dynamics
+of the traffic flow. We learnt from this trip that: (1) When reproducing the synchronized flow, it may be important in the
+future to determine the correct interaction mechanics between the neighboring vehicles under certain densities, such as
+the velocity-difference effect, for example. (2) The slow-to-start effect shows a valuable suggestion on how wide moving
+jams spontaneously emerge in some less congested regimes, like in the synchronized flow. (3) The short-range limitation
+on the interactions between neighboring vehicles makes the exitance of metastable states of free flow possible and shows
+us a discontinuous transition to congested traffic.
+We have also leant that the parameter of the interaction range between vehicles could be effective enough under the
+
+very simplest form. The constant parameter shows different features to the velocity-related parameters in Kerner’s models.
+As for the velocity anticipation effect, it shows less importance in influencing the macroscopic features of the outputs but is
+quite important to the microscopic structures.
+
+Acknowledgements
+
+This work is funded by the National Basic Research Program of China (No. 2006CB705500), the National Natural Science
+Foundation of China (Grant Nos. 60744003, 10635040, 10532060, 10872194), and the Specialized Research Fund for the
+Doctoral Program of Higher Education of China.
+
+References
+
+[1] D. Helbing, Traffic and related self-driven many particle systems, Rev. Modern Phys. 73 (2001) 1067–1141.
+[2] D. Chowdhury, L. Santen, A. Schadschneider, Statistical physics of vehicular traffic and some related systems, Phys. Rep. 329 (2000) 199–329.
+[3] T. Nagatani, The physics of traffic jams, Rep. Prog. Phys. 65 (2002) 1331–1386.
+[4] A. Schadschneider, in: M. Schreckenberg, D. Wolf (Eds.), Traffic and Granular Flow 97, Springer, Singapore, 1998.
+[5] F.L. Hall, B.L. Allen, M.A. Gunter, Empirical analysis of freeway flow-density relationships, Transp. Res. A 20 (2002) 197–210.
+[6] R. Mahnke, J. Kaupuzs, I. Lubanshevsky, Probabilistic description of traffic flow, Phys. Rep. 408 (2005) 1–130.
+[7] H.Y. Lee, H. Lee, D. Kim, Phase diagram of congested traffic flow: An empirical study, Phys. Rev. E 62 (2000) 4737–4741.
+[8] M. Treiber, A. Hennecke, D. Helbing, Congested traffic states in empirical observations andmicroscopic simulations, Phys. Rev. E 62 (2000) 1805–1824.
+[9] M. Schoenhof, D. Helbing, Empirical features of congested traffic states and their implications for traffic modeling, Transp. Sci. 41 (2007) 135–166.
+[10] K. Nagel, D.E. Wolf, P. Wagner, P. Simon, Two-lane traffic rules for cellular automata: A systematic approach, Phys. Rev. E 58 (1998) 1425–1437.
+[11] P.I. Richards, Shock waves on the highway, Oper. Res. 4 (1956) 42–51.
+[12] H.J. Payne, Freflo: A macroscopic simulation model for freeway traffic, Transp. Res. Rec. 722 (1979) 68–77.
+[13] C.F. Daganzo, Requiem for second-order fluid approximation of traffic flow, Transp. Res. B 29 (1995) 277–286.
+[14] M.J. Lighthill, G.B. Whitham, On kinematic waves: Ii. a theory of traffic flow on long crowed roads, Proc. Roy. Soc. Ser. A 229 (1955) 317–345.
+[15] P.I. Richards, Shock waves on the highway, Oper. Res. 4 (1956) 42–51.
+[16] H.J. Payne, Models of freeway traffic and control, in: G.A. Bekey (Ed.), in: Mathematical Models of Public Systems, vol. 1, Simulation Council, La Jolla,
+
+1971, pp. 51–61.
+[17] H.J. Payne, Freflo: A macroscopic simulation model for freeway traffic, Transp. Res. Rec. 722 (1979) 68–77.
+[18] C.F. Daganzo, Requiem for second-order fluid approximation of traffic flow, Transp. Res. B 29 (1995) 277–286.
+[19] R. Jiang, Q.S. Wu, Z.J. Zhu, A new continuummodel for traffic flow and numerical tests, Transp. Res. B 36 (2002) 405–419.
+[20] R. Jiang, Q.S. Wu, Z.J. Zhu, A new dynamics model for traffic flow, Chin. Sci. Bull. 46 (2001) 345–349.
+[21] I. Prigogine, R. Herman, Kinetic Theory of Vehicular Traffic, American Elsevier, New York, 1971.
+[22] S.L. Paveri-Fontana, On Boltzmann-like treatments for traffic flow. A critical review of the basic model and an alternative proposal for dilute traffic
+
+analysis, Tranp. Res. 9 (1975) 225–235.
+[23] D. Helbing, Derivation and empirical validation of a refined traffic flow model, Physica A 233 (1996) 253–282.
+[24] M. Treiber, A. Hennecke, D. Helbing, Derivation, properties, and simulation of a gas-kinetic based, nonlocal traffic model, Phys. Rev. E 59 (1999)
+
+239–253.
+[25] A. Reuschel, Oesterreichisches Ingenieur-Archir 4 (1950) 193–215.
+[26] L.A. Pipes, J. Appl. Phys. 24 (1953) 274–287.
+[27] M. Cremer, J. Ludwig, A fast simulation model for traffic flow on the basis of boolean operations, J. Math. Comput. Simul. 28 (1986) 297–303.
+[28] S. Wolfram, Statistical mechanics of cellular automata, Rev. Modern Phys. 55 (1983) 601–644.
+[29] O. Biham, A.A. Middleton, D.A. Levine, Self-organization and a dynamical transition in traffic flow models, Phys. Rev. A 46 (1992) R6124–R6127.
+[30] K. Nagel, M. Schreckenberg, J. Physique I 2 (1992) 2221.
+[31] D. Helbing, Rev. Modern Phys. 73 (2001) 1067–1141.
+[32] B.S. Kerner, The Physics of Traffic, Springer, Berlin, New York, 2004.
+[33] B.S. Kerner, Transp. Res. Rec. 1678 (1999) 160–167.
+[34] B.S. Kerner, H. Rehborn, M. Aleksic, A. Haug, Transp. Res. C 12 (2004) 369–400.
+
+
+
+Author's personal copy
+
+K. Gao et al. / Physica A 388 (2009) 3233–3243 3243
+
+[35] B.S. Kerner, H. Rehborn, A. Haug, I. Maiwald-Hiller, Traffic Eng. Control 46 (10) (2005) 380–385.
+[36] B.S. Kerner, S.L. Klenov, A. Hiller, H. Rehborn, Phys. Rev. E 73 (2006) 046107.
+[37] B.S. Kerner, S.L. Klenov, A. Hiller, J. Phys. A: Math. Gen. 39 (2006) 2001–2020.
+[38] B.S. Kerner, H. Rehborn, Phys. Rev. Lett. 79 (1997) 4030.
+[39] B.S. Kerner, H. Rehborn, Phys. Rev. E 53 (1996) R1297.
+[40] B.S. Kerner, H. Rehborn, Phys. Rev. E 53 (1996) R4275.
+[41] B.S. Kerner, S.L. Klenov, D.E. Wolf, J. Phys. A 35 (2002) 9971.
+[42] B.S. Kerner, S.L. Klenov, J. Phys. A 39 (2006) 1775.
+[43] B.S. Kerner, S.L. Klenov, Phys. Rev. E 68 (2003) 036130.
+[44] B.S. Kerner, Phys. Rev. Lett. 81 (1998) 3797.
+[45] B.S. Kerner, Phys. Rev. E 65 (2002) 046138.
+[46] K. Nishinari, M. Treiber, D. Helbing, Phys. Rev. E 68 (2003) 067101.
+[47] D. Helbing, D. Batic, M. Schoenhof, M. Treiber, Physica A 303 (2002) 251–260.
+[48] M. Treiber, D. Helbing, J. Phys. A 32 (1999) L17–L23.
+[49] D. Helbing, A. Hennecke, M. Treiber, Phys. Rev. Lett. 82 (1999) 4360.
+[50] H.Y. Lee, H.W. Lee, D. Kim, Phys. Rev. Lett. 81 (1998) 1130.
+[51] H.Y. Lee, H.W. Lee, D. Kim, Phys. Rev. E 59 (1999) 5101.
+[52] W. Knospe, L. Santen, A. Schadschneider, M. Schreckenberg, Phys. Rev. E 65 (2002) 056133.
+[53] B.S. Kerner, Physica A 333 (2004) 379.
+[54] B.S. Kerner, S.L. Klenov, J. Phys. A 35 (2002) L31.
+[55] H.K. Lee, R. Barlovic, M. Schreckenberg, D. Kim, Phys. Rev. Lett. 92 (2004) 238702.
+[56] R. Jiang, Q.S. Wu, J. Phys. A 36 (2003) 381.
+[57] R. Jiang, Q.S. Wu, European Phys. J. B 46 (2005) 581.
+[58] S.X. Hu, K. Gao, B.H. Wang, Y.F. Lu, C.J. Fu, Physica A 386, 397–406.
+[59] K. Gao, R. Jiang, S.X. Hu, B.H. Wang, Q.S. Wu, Phys. Rev. E 76 (2007) 026105.
+[60] R. Barlovic, L. Santen, A. Schadschneider, M. Schreckenberg, Eur.Phys.J.B 5 (1998) 793.
+[61] L. Neubert, L. Santen, A. Schadschneider, M. Schreckenberg, Phys. Rev. E 60 (1999) 6480.
+[62] W. Knospe, L. Santen, A. Schadschneider, M. Schreckenberg, Phys. Rev. E 70 (2004) 016115.
+[63] B. Tilch, D. Helbing, in: D. Helbing, H.J. Herrmann, M. Schreckenberg, D.E. Wolf (Eds.), Traffic and Granular Flow ’99, Springer, Berlin, 2000.
+[64] Y.M. Yuan, R. Jiang, Q.S. Wu, Characteristics analysis and empirical test of three cellular automaton models for synchronized flow, 2006.
+
+
+
+

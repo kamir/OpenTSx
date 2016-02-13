@@ -1,0 +1,745 @@
+
+Physica A 302 (2001) 234–243
+www.elsevier.com/locate/physa
+
+Scaling analysis of trends using DFA
+Dmitry Vjushina; b , R.B. Govindana;b , Roberto A. Monettia ;∗,
+
+Shlomo Havlina , Armin Bundeb
+aMinerva Center and Department of Physics, Bar-Ilan University, Ramat-Gan 52900, Israel
+
+bInstitut f"ur Theoretische Physik III, Justus-Liebig-Universit"at Giessen, Heinrich-Bu*-Ring 16,
+35392 Giessen, Germany
+
+Abstract
+
+We study two aspects of the detrended .uctuation analysis (DFA) method, namely the scal-
+ing behavior of the leading terms of the best-0t polynomials and the detection of trends. We
+show analytically and numerically that the standard deviation of the leading terms of the best-0t
+polynomials used in DFA displays scaling behavior. Furthermore, we demonstrate that the dis-
+tribution of these terms can be used to reveal the presence of trends in the data. We also argue
+that this distribution can be used as a sensitive tool for identifying weak trends. c© 2001 Elsevier
+Science B.V. All rights reserved.
+
+PACS: 02.70.Hm; 05.45.Tp; 89.75.Da
+
+Keywords: Correlations; Trends; DFA; Scaling
+
+1. Introduction
+
+Long-range correlations in time series are frequently studied by means of the de-
+trended .uctuation analysis (DFA). The basic method was introduced by Peng et al. [1]
+to study long-range correlations in DNA sequences and has been successfully applied
+to a variety of systems ranging from DNA [2–4], heart rate dynamics [5–8], human
+gait [9,10], neuron spikes [11] to atmospheric temperature [12–15] and stock market
+variability [16,17].
+Recently, attempts have been made to understand the e@ect of trends present in the
+
+data through the DFA method [18,19]. Here, we present an alternative method. Instead
+of analyzing the .uctuations around the best polynomial 0ts for a certain time window
+of length s, we analyze the best 0ts themselves. We show that both correlations and
+
+∗ Corresponding author.
+E-mail address: roberto@shoshi.ph.biu.ac.il (R.A. Monetti).
+
+0378-4371/01/$ - see front matter c© 2001 Elsevier Science B.V. All rights reserved.
+PII: S 0378 -4371(01)00467 -8
+
+
+
+D. Vjushin et al. / Physica A 302 (2001) 234–243 235
+
+trends can be identi0ed through the histogram of the coeFcients of the polynomial
+terms used in the DFA method. In fact, while the mean value of the histogram of
+the slopes indicates the presence of trends, the standard deviation of the histogram
+exhibits scaling behavior and provides information about long-range correlations. We
+also propose an analytical approach for these results.
+This paper is organized as follows. In Section 2 we present the methodology used for
+
+trend analysis. Section 3 is devoted to results and discussions and 0nally we conclude
+in Section 4.
+
+2. Methodology
+
+In order to explain our approach, we brie.y review some of the steps comprising
+the DFA algorithm. Consider a typical time window s such as s�N , where N is the
+length of the time series. As in conventional DFA, instead of analyzing the raw time
+series {ui} the pro0le Y (l)=
+
+∑l
+i=1 ui is studied. We use a DFA algorithm where the
+
+pro0le is divided into r=N − s+1 overlapping intervals of size s and the local trend
+for each interval 	 is calculated via a least-square 0t of the data. Then, the detrended
+pro0le is de0ned for intervals of duration s, as the di@erence between the pro0le and
+the 0ts
+
+Z	(l)=Y	(l)− p(k)	 (l) ; (1)
+where p(k)	 (l) is the best-0t polynomial of order k to Y	(l) in the 	th interval. Di@erent
+orders k of DFA (DFA1, DFA2, etc.) only di@er in the order of the polynomial used in
+the 0tting procedure. Since the detrending of the time series is done by the subtraction
+of the 0ts from the pro0le, di@erent orders di@er in their capability of eliminating
+trends in the data. In fact, DFAk removes polynomial trends of order k in the pro0le
+and hence (k − 1)th order in the time series.
+The DFA method has been designed to reveal the scaling behavior of the
+
+detrended pro0le, Z	. For a given window size s, we compute the root mean square
+.uctuation
+
+F(s)=
+
+√√√√ 1
+rs
+
+r∑
+	=1
+
+s∑
+l=1
+
+Z2	 (l) :
+
+The above computation should be repeated for windows of di@erent lengths to estab-
+lish a relationship between F(s) and s. In the presence of long-range correlations the
+.uctuation function increases according to the following power law
+
+F(s) ∼ s� ;
+where � is the .uctuation exponent. In the alternative approach developed here, we
+focus on the analysis of the coeFcients of the polynomial terms and study two aspects:
+(i) the histogram of the values of the coeFcients (direct method) since they contain
+
+
+
+236 D. Vjushin et al. / Physica A 302 (2001) 234–243
+
+information about the trends, and (ii) the scaling behavior of the standard deviation of
+the coeFcients (scaling approach). We describe the approach for DFA1 and DFA2.
+In the conventional DFA1 introduced by Peng et al. [1], a 0rst-order polynomial is
+
+used for each segment, i.e.,
+
+p(1)	 (l)= a
+(1)
+1; 	l+ a
+
+(1)
+0; 	 ; (2)
+
+where a(1)1; 	 and a
+(1)
+0; 	 are the 0tting coeFcients corresponding to the 	th interval. Since
+
+there are r time windows of length s, DFA1 will provide r pairs (a(1)1; 	; a
+(1)
+0; 	) of values,
+
+each of them corresponding to a particular time window. Then, it is straightforward to
+generate histograms using a(1)1; 	 or a
+
+(1)
+0; 	. For DFA2, we use a second-order polynomial
+
+in the 0tting procedure
+
+p(2)	 (l)= a
+(2)
+2; 	l
+
+2 + a(2)1; 	l+ a
+(2)
+0; 	 ; (3)
+
+where a(2)2; 	, a
+(2)
+1; 	, and a
+
+(2)
+0; 	 are the 0tting coeFcients. So, histograms can be generated in
+
+the same way using the values of a(2)2; 	, a
+(2)
+1; 	, and a
+
+(2)
+0; 	 corresponding to each segment 	.
+
+The 0tting coeFcients a(1)1; 	 and a
+(1)
+0; 	 for DFA1 and a
+
+(2)
+2; 	, a
+
+(2)
+1; 	, and a
+
+(2)
+0; 	 for DFA2, etc.,
+
+can be best analyzed by forming histograms. It can be analytically proved (not given
+here) that the histogram curves generated from correlated random Gaussian noise are
+also Gaussian.
+Next, we show how these histograms for a particular time window s can be useful to
+
+detect trends. Also, we will investigate how the standard deviation � of the histogram
+varies for di@erent time windows, i.e., the scaling behavior of histograms.
+
+3. Results and discussion
+
+3.1. Direct method
+
+To demonstrate our approach we generated a series of Gaussian distributed correlated
+data xi (of length N =100 K) with .uctuation exponent �=0:7, zero mean and unit
+standard deviation by means of the Prakash et al. algorithm [20,21]. In addition, using
+this time series, we generated a new one by adding a trend as follows:
+
+ui = xi + Ai ; (4)
+
+where A is a constant.
+Since the aim of DFA method is to remove trends (see Eqs. (2) and (3)), histograms
+
+obtained from time series where trends are absent should have a mean value equal to
+zero. However, for 0nite time series the histograms will usually exhibit a mean value
+di@erent from zero. Then, a criterion is necessary to decide whether or not a trend is
+present in the data, i.e., we need to estimate the lower detection limit for our method.
+This can be accomplished by calculating the mean m of the slopes over R�1 di@erent
+realizations (of length N of a pure noise with the same .uctuation exponent �) and the
+standard deviation � among the mean values. The number of realizations R should be
+
+
+
+D. Vjushin et al. / Physica A 302 (2001) 234–243 237
+
+Table 1
+Values of the standard deviation � among the means of the histograms
+calculated for several values of N and �a
+
+N=� 0.3 0.5 0.7
+
+10 K 2:9× 10−4 5× 10−4 8× 10−4
+100 K 2:7× 10−5 4:4× 10−5 7:8× 10−5
+1000 K 3:5× 10−6 6:2× 10−6 1:1× 10−5
+aThe values correspond to s=32.
+
+increased until convergence is obtained in the value of �. Now, we propose a criterion
+for the existence of a trend just by checking whether or not the mean value of the
+slopes lies within the interval [ − �;+�]. Consequently, if the mean value lies well
+outside this interval, we can con0dently say that the data contain a trend. For this
+purpose, we evaluated for three di@erent values of N and three di@erent values of
+� the testing intervals to apply the criterion for the existence of trends. The results
+are shown in Table 1. We have checked that � does not change signi0cantly when
+increasing R, so the values reported can be considered as asymptotic values.
+Figs. 1(a) and (b) show histograms obtained using DFA1 for A=0 and time win-
+
+dows of length s=32 and 512, respectively. We observe that the mean values of
+the histograms (see Figs. 1(a) and (b)) are within the range de0ned in Table 1 in-
+dicating the absence of trends. Figs. 1(c) and (d) show similar plots obtained for
+A=0:25 × 10−5. It is now possible to see that the mean values (see Figs. 1(c) and
+(d)) of the histograms are well outside the range de0ned in the same table. This is the
+signature of the presence of a trend. It can be shown that for a linear trend (Ai) the
+mean value of the slopes is given by
+
+〈a(1)1; 	〉=AN=2 ; (5)
+which is independent of the analyzing time window s. The values shown in Figs. 1(c)
+and (d) are in accordance to Eq. (5) within the numerical error.
+Earlier works on the detection of trends using DFA [18,19] have focused on the
+
+analysis of the position of the crossover of the DFA curves. Hu et al. [19] have shown
+that for correlated noise with exponent � containing a linear trend, the position sz of
+the crossover in the curve generated by DFA1 is given by
+
+sz ∼ A1=(�−2) : (6)
+Requesting in Eq. (6) that the position of the crossover sz lies beyond the longest
+analyzing time window in DFA (normally N=4), it is possible to estimate the weakest
+linear trend (lower bound) that DFA1 can identify
+
+A¿
+(
+N
+4
+
+)�−2
+≡ Amin : (7)
+
+To illustrate the sensitivity of our method, we compare Amin to the minimum trend
+Alow that the present method can detect. In fact, Alow can be calculated by requesting
+
+
+
+238 D. Vjushin et al. / Physica A 302 (2001) 234–243
+
+_2 0 1
+
+a1
+(1)
+
+0
+
+5000
+
+10000
+
+15000
+
+5000
+
+10000
+
+15000
+
+20000
+
+0
+
+a1
+(1)
+
+(a) (b)
+
+(c) (d)
+
+<a1
+(1)
+
+> =   6.5 10
+_5
+
+<a1
+(1)
+
+> =   8.7 10
+_5
+
+<a1
+(1)
+
+> = 0.125 <a1
+(1)
+
+> = 0.124
+
+1 2_1 _1
+
+-
+-
+
+Fig. 1. Histograms of the leading slopes obtained from DFA1. Panels (a) and (c) represent results for a time
+window 32, and (b) and (d) are for a time window 512. While (a) and (b) consider the data (correlated
+noise) without any trend, (c) and (d) consider the data with a linear trend of A=0:25× 10−5.
+
+
+
+D. Vjushin et al. / Physica A 302 (2001) 234–243 239
+
+that 〈a(1)1; 	〉= �, so we obtain
+
+Alow =
+2�
+N
+
+: (8)
+
+It should be noticed that for the cases considered in Table 1, the values of Alow are at
+least 2 orders of magnitude smaller than the values of Amin.
+In order to provide a criterion for the existence of trends in a real situation, the
+
+simulation suggested above should be performed using arti0cial data of the same length,
+distribution, and .uctuation exponent as those of the real data.
+
+3.2. Scaling analysis
+
+It is clear that the histogram width (i.e., the standard deviation of the slopes) de-
+creases when increasing s (see Fig. 1). We will restrict ourselves, without loss of
+generality, to the study of histograms generated using the leading slopes. Fig. 2 shows
+log–log plots of � of the leading slopes versus s. In the case of pure noise (Fig. 2
+(a)), � displays a power law behavior for DFA1-5. The values of the exponents ob-
+tained are also shown in the 0gure. It is possible to obtain by means of simple scaling
+arguments the behavior of �. Consider the standard deviation of the leading slopes �(k)s
+corresponding to order k of DFA and window size s. As discussed above, the DFA
+method involves a 0tting of the pro0le Y using a polynomial of order k. The leading
+slope can be estimated through the following relation:
+
+dkY (l)
+dlk
+
+∼ a(k)k;	 : (9)
+For pure noise in the absence of trends, the scaling behavior of the .uctuations of the
+pro0le is given by the following expression [22]:
+
+�s(Y ) ∼ s� : (10)
+Then, from Eqs. (9) and (10) we obtain
+
+�(k)s ∼ s−(k−�) = s−�k ; (11a)
+where
+
+�k =(k − �) : (11b)
+A more rigorous proof of this scaling relation for DFA1 is given in the appendix. The
+values of the exponents corresponding to DFA1-5 (see Fig. 2(a)) are in a good agree-
+ment with the scaling behavior predicted by Eq. (11a). Fig. 2(b) shows the scaling
+analysis performed using noise containing a weak linear trend. Since DFA of order k
+removes polynomial trends up to the order (k − 1), deviations from the scaling form
+predicted by Eq. (11a) could only be observed in �(1)s . However, such a weak trend
+is not strong enough to cause a signi0cant change in �(1)s . Noise containing a stronger
+trend is analyzed in Fig. 2(c). In this case, the scaling behavior of �(1)s displays a
+crossover at sz revealing the presence of the trend. Due to the scale used in Fig. 2 the
+
+
+
+240 D. Vjushin et al. / Physica A 302 (2001) 234–243
+
+10 0 10 1 10 2 10 3 10 4 10 5
+s
+
+10
+_25
+
+10
+_15
+
+10
+_5
+
+σ
+s(k
+
+)
+
+10
+_25
+
+10
+_15
+
+10
+_5
+
+σ
+s(k
+
+)
+
+10
+_25
+
+10
+_15
+
+10
+_5
+
+σ
+s(k
+
+)
+
+Pure Noise
+
+A=0.25/105
+
+A=2/105
+
+(a)
+
+(b)
+
+(c)
+
+η1=0.32
+
+η2=1.31
+
+η3=2.31
+
+η4=3.33
+
+η5=4.29
+
+η5=4.28
+
+η4=3.32
+
+η3=2.31
+
+η2=1.31
+
+η1=0.28
+
+η5=4.27
+
+η3=2.31
+
+η4=3.32
+
+η2=1.31
+
+η1=0.13
+
+Fig. 2. Plots of the standard deviation of the leading slopes � versus the time window s. From top to bottom,
+results correspond to DFA1-5. (a) Correlated noise with �=0:7 without any trend, (b) noise with linear
+trend of A=0:25× 10−5 and (c) A=2× 10−5.
+
+position of the crossover sz in the �
+(1)
+s curve is not clearly observed. In fact, within the
+
+short-time regime s¡ sz, the scaling behavior predicted by Eq. (11a) holds because the
+noise dominates over the trend [18]. However, since the trend controls the system for
+s¿ sz, the value of the asymptotic slope (�1 = 0:13) di@ers from the value given by
+
+
+
+D. Vjushin et al. / Physica A 302 (2001) 234–243 241
+
+Eq. (11a) (�1 = 0:30). We expect that for the � curves, the behavior of the position
+of the crossover sz displays similar features to that found in the analysis of DFA
+method [19].
+
+4. Conclusions
+
+In this paper, we have proposed a new method for the detection of trends based
+on DFA. In addition, we have found that the analysis of the slopes of the best-0t
+polynomials provides a new way of estimation of the .uctuation exponent. These results
+might be useful for forecasting some aspects of the dynamics of systems such as trends
+in the atmosphere, tendencies in stock markets, patchiness in DNA sequences, etc.
+
+Acknowledgements
+
+We wish to acknowledge Dr. Webman for useful discussions. RAM would like to
+acknowledge CONICET (Argentina) for 0nancial support.
+
+Appendix
+
+For DFA1, the slope a(1)1; 	 for 	th window of size s is given by
+
+a(1)1; 	 =6
+2
+∑	+s−1
+
+i=	 iYi − (2	+ s− 1)
+∑	+s−1
+
+i=	 Yi
+s(s2 − 1) : (A.1)
+
+Since the mean of a(1)1; 	 is equal to zero for a pure noise, �
+2
+s [a
+
+(1)
+1; 	] =M [(a
+
+(1)
+1; 	)
+
+2]. Then,
+
+M [(a(1)1; 	)
+2] =
+
+36
+s2(s2 − 1)2M
+
+
+
+[
+2
+	+s−1∑
+i=	
+
+iYi − (2	+ s− 1)
+	+s−1∑
+i=	
+
+Yi
+
+]2
+
+
+=
+36
+
+s2(s2 − 1)2
+
+
+4M
+
+
+
+(
+
+	+s−1∑
+i=	
+
+iYi
+
+)2
+
+− 4M [2	+ s− 1]M
+[
+	+s−1∑
+i=	
+
+iYi
+	+s−1∑
+i=	
+
+Yi
+
+]
+
++M [(2	+ s− 1)2]M
+
+
+(
+
+	+s−1∑
+i=	
+
+Yi
+
+)2
+
+ : (A.2)
+
+Assuming that Yi is a fractional Brownian motion with zero mean, variance M [Y 2i ] = i
+2�
+
+and covariance M [YiYj] = 12 (i
+2� + j2� − |i − j|2�) [22], we evaluate separately the
+
+
+
+242 D. Vjushin et al. / Physica A 302 (2001) 234–243
+
+following expressions:
+
+M
+
+
+
+(
+
+	+s−1∑
+i=	
+
+iYi
+
+)2 
+ (2�2 + 5�+ 1)s2�+4
+4(�+ 1)(�+ 2)(2�+ 1)
+
+;
+
+M
+
+[
+	+s−1∑
+i=	
+
+Yi
+	+s−1∑
+i=	
+
+iYi
+
+]
+
+ (3�+ 1)s
+
+2�+3
+
+4(2�+ 1)(2�+ 2)
+;
+
+M
+
+[
+	+s−1∑
+i=	
+
+Yi
+
+]
+
+ s
+
+2�+2
+
+2�+ 2
+;
+
+M [2	+ s− 1]=N + 2s− 1 ;
+
+M [(2	+ s− 1)2]= 43N 2 + 143 Ns− 83N + 133 s2 − 43 s+ 1 :
+Substituting all this expressions in Eq. (A.2) we obtain
+
+M [(a(1)1; 	)
+2] 
+ 6 20�
+
+2 + 53�+ 20
+(�+ 1)(�+ 2)(2�+ 1)
+
+s2(�−1) : (A.3)
+
+Therefore
+
+�s[a
+(1)
+1; 	] ∼ s−(1−�) : (A.4)
+
+References
+
+[1] C.-K. Peng, S.V. Buldyrev, S. Havlin, M. Simons, H.E. Stanley, A.L. Goldberger, Phys. Rev. E 49
+(1994) 1685.
+
+[2] S.V. Buldyrev, A.L. Goldberger, S. Havlin, R.N. Mantegna, M.E. Matsa, C.-K. Peng, M. Simons, H.E.
+Stanley, Phys. Rev. E 51 (1995) 5084.
+
+[3] C.-K. Peng, S.V. Buldyrev, A.L. Goldberger, R.N. Mantegna, M. Simons, H.E. Stanley, Physica A 221
+(1995) 180.
+
+[4] S.V. Buldyrev, N.V. Dokholyan, A.L. Goldberger, S. Havlin, C.-K. Peng, H.E. Stanley,
+G.M. Viswanathan, Physica A 249 (1998) 430.
+
+[5] C.-K. Peng, S. Havlin, H.E. Stanley, A.L. Goldberger, Chaos 5 (1995) 82.
+[6] P.Ch. Ivanov, A. Bunde, L.A. Nunes Amaral, S. Havlin, J. Fritsch-Yelle, R.M. Baevsky, H.E. Stanley,
+
+A.L. Goldberger, Europhys. Lett. 48 (1999) 594.
+[7] Y. Ashkenasy, P.Ch. Ivanov, S. Havlin, C.-K. Peng, A.L. Goldberger, H.E. Stanley, Phys. Rev. Lett.
+
+86 (2001) 1900.
+[8] A. Bunde, S. Havlin, J.W. Kantelhardt, T. Penzel, J.-H. Peter, K. Voigt, Phys. Rev. Lett. 85 (2000)
+
+3736.
+[9] J.M. Hausdor@, S.L. Mitchell, R. Firtion, C.-K. Peng, M.E. Cudkowicz, J.Y. Wei, A.L. Goldberger,
+
+J. Appl. Physiol. 82 (1997) 262.
+[10] C.-K. Peng, J.M. Hausdor@, S. Havlin, J.E. Mietus, H.E. Stanley, A.L. Goldberger, Phys. Rev. E 55
+
+(1997) 845.
+[11] S. Blesic, S. Milosevic, D. Stratimirovic, M. Ljubisavljevic, Physica A 268 (1999) 275.
+[12] E. Koscielny-Bunde, A. Bunde, S. Havlin, H.E. Roman, Y. Goldreich, H.-J. Schellnhuber, Phys. Rev.
+
+Lett. 81 (1998) 729.
+[13] E. Koscielny-Bunde, A. Bunde, S. Havlin, Y. Goldreich, Physica A 231 (1996) 393.
+[14] P. Talkner, R.O. Webber, Phys. Rev. E 62 (2000) 150.
+
+
+
+D. Vjushin et al. / Physica A 302 (2001) 234–243 243
+
+[15] R.B. Govindan, D. Vjushin, S. Brenner, A. Bunde, S. Havlin, H.-J. Schellnhuber, Physica A 294 (2001)
+239.
+
+[16] V. Plerou, P. Gopikrishnan, B. Rosenow, L.A.N. Amaral, H.E. Stanley, Phys. Rev. Lett. 83 (1999)
+1471.
+
+[17] V. Plerou, P. Gopikrishnan, B. Rosenow, L.A.N. Amaral, H.E. Stanley, Physica A 279 (2000) 443.
+[18] J.W. Kantelhardt, E. Koscielny-Bunde, H.H.A. Rego, S. Havlin, A. Bunde, Physica A 295 (2001) 441.
+[19] K. Hu, P.Ch. Ivanov, Z. Chen, P. Carpena, H.E. Stanley, e-print physics=0103018.
+[20] S. Prakash, S. Havlin, M. Schwartz, H.E. Stanley, Phys. Rev. A 46 (1992) R1724.
+[21] H.A. Makse, S. Havlin, M. Schwartz, H.E. Stanley, Phys. Rev. E 53 (1996) 5445.
+[22] M.S. Taqqu, V. Teverovsky, W. Willinger, Fractals 3 (1995) 785.
+
+

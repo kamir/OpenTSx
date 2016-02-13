@@ -1,0 +1,1262 @@
+
+Journal of Economic Geography 7 (2007) pp. 619–634 doi:10.1093/jeg/lbm023
+Advance Access Published on 29 May 2007
+
+Economic geography and the evolution of networks
+Johannes Glu¨ckler*
+
+Abstract
+An evolutionary perspective on economic geography requires a dynamic understanding
+of change in networks. This article explores theories of network evolution for their
+use in geography and develops the conceptual framework of geographical network
+trajectories. It specifically assesses how tie selection constitutes the evolutionary
+process of retention and variation in network structure and how geography affects
+these mechanisms. Finally, a typology of regional network formations is used to discuss
+opportunities for innovation in and across regions.
+
+Keywords: evolution, network trajectory, evolutionary economic geography, social network
+analysis, innovation
+Date submitted: 2 September 2006 Date accepted: 3 February 2007
+
+1. Introduction
+
+The limited explanatory value of neoclassical growth theory to understand unequal
+rates of regional growth and the geographical agglomeration of innovation has
+inspired an evolutionary approach to economic geography (Boschma and Lambooy,
+1999; Boschma and Frenken, 2006). An evolutionary take on economic geography is
+committed to the integration of growth and innovation theories and to endogenous
+explanations of regional economic development (Frenken and Boschma, 2007).
+The project is ambitious and far from being coherently established (Martin and
+Sunley, 2006; Essletzbichler and Rigby, 2007). While endogenous growth theory has
+advanced our understanding of sustained growth through the simultaneous production
+of new technologies and accumulation of knowledge (Romer, 1990)—geographers
+are interested in understanding how innovation is actually performed and why innova-
+tive practice often concentrates in geographical proximity. Interestingly, research
+on evolution in economics has attracted much attention to geography. A lot of the
+economic evidence on path dependence and lock-in has actually been exemplified in
+the context of geographic clusters and agglomeration economies (see Martin and
+Sunley, 2006 for illustrations of the argument).
+One way of analyzing regional economic development is to look at the economy as
+
+interactions in networks. Economists have become increasingly receptive to social
+network concepts, since there is now plentiful evidence of the manifold ways in which
+social networks affect economic outcomes (Granovetter, 2005). Similar to evolutionary
+economics, social network theory often draws on regional clusters to study the
+conditions, outcomes and dynamics of network structure. More generally it seems,
+
+*Catholic University of Eichsta¨tt-Ingolstadt, Ostenstrasse 18, 85072 Eichsta¨tt, Germany.
+email5johannes.glueckler@ku-eichstaett.de4
+
+� The Author (2007). Published by Oxford University Press. All rights reserved. For Permissions, please email: journals.permissions@oxfordjournals.org
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+organization theory has discovered geography as a major contingency for organiza-
+
+tional change (Owen-Smith and Powell, 2004; Freeman and Audia, 2006). In economic
+
+geography, networks have celebrated an exceptional career over many years and they
+have coined terminology in theories of geographical clusters, global cities, international
+
+production systems and globalization. Following a recent critical review, however,
+
+much of the use of networks in economic geography has been rather selective, often
+
+metaphorical and little formalized (Grabher, 2006).
+This article is exploratory of the long neglected development of formal network
+
+theory and analysis in economic geography. It explores the only recently emerging
+
+research on network evolution (McPherson et al., 2001; Baum et al., 2003; Kilduff and
+Tsai, 2003) and aims at integrating concepts from network evolution with economic
+
+geography. This analysis has three objectives: first, to develop the concept of
+
+a geographical network trajectory which defines the evolutionary approach to network
+
+dynamics and which permits the study of network evolution in and across regions;
+
+second, to examine mechanisms of retention and variation in network structure which
+
+are endogenous to network evolution; and third, to assess models of variation in
+
+network trajectories with respect to regional innovation. The article argues that regional
+growth and innovation largely result from the bridging and brokering of unconnected
+
+networks or network clusters. After defining the basic concepts in section two, section
+
+three will discuss in detail the potential mechanisms which constitute the evolutionary
+
+principles of selection, retention and variation mechanisms (and in this sequence).
+
+It closes with a discussion of potential sources of innovation for regional growth.
+
+2. Defining the elements of a geographical network trajectory
+
+2.1. Evolution
+
+There are at least two forms of change which are not evolutionary (Nelson, 1995):
+First, when change is random, future events are independent from previous events such
+
+that there are no inferences from a given course of development on the future. Second,
+
+when change is determined, the outcome of a certain development is also independent
+
+from the sequence of events. More radically, even, equilibrium theory determines a
+
+stable equilibrium which as a final outcome is both independent from the start condi-
+
+tions as well as from the sequence of events (Martin and Sunley, 2006). In contrast,
+
+change is evolutionary when future events are not independent from past events and
+when the sequence of events makes a difference for the outcome. Evolutionary change is
+
+a function of path-dependence and contingency. Path-dependence is a concept of
+
+cumulative causation in which a certain sequence of events creates unequal propensities
+
+for future events. Though path-dependent change allows for inferences from a present
+
+on future states of development, it is subject to contingency. Economic processes are at
+
+the same time contingent in that the agents’ strategies and actions may deviate from
+
+existing development paths. Economic action in open systems is not ex-ante determined
+
+and cannot be predicted through universal spatial laws (Sayer, 2000). If evolution is
+neither random nor determined, the academic interest should focus on both, the
+
+mechanisms that create cumulative causation and lead to path-dependence and those
+
+mechanisms that produce contingency and lead to the emergence of new variety and
+
+potentially path destruction.
+
+620 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+2.2. Network
+
+Looking back at 20 years of research on networks in the social sciences there are all
+kinds of different conceptions and uses of the term. One irritating use of network occurs
+in the governance literature, for instance, where a strategic alliance between two firms
+is often referred to as a network. In the language of network theory a strategic alliance
+is a dyad or relation of a specific type, not yet a network. Moreover, institutional
+economists would object to call a market or a firm a network. However, network theory
+conceives all systems of interactions as networks, and would thus be able to study
+markets as networks (White, 1981; Baker, 1990) or firms as networks. This article
+subscribes to the basic understanding of a network put forward in one of the most
+widely cited definitions: a social network is ‘a specific set of linkages among a defined
+set of persons, with the additional property that the characteristics of these linkages
+as a whole may be used to interpret the social behavior of the persons involved’
+(Mitchell, 1969, 2).
+This definition has two important implications. First, it implies that relations rather
+
+than actors are in the focus of analysis and that the specific structure of relations may
+be used to draw inferences and expectations on individual and collective action
+(Mizruchi, 1994; Gulati, 1998). Structure is not conceived as something virtual, but as
+concrete social interaction. This view helps to bridge the dualism between structure
+and agency since structure is treated in such a way that it can be studied empirically
+and in direct association with economic interaction. Second, empirical networks
+are always socially constructed analytical reductions based on conceptual criteria
+(Marsden, 1990) such as pointed out in Mitchell’s definition: the kind of relationship
+and the set of relevant actors. For the purpose of this article, the discussion focuses on
+networks as formal or informal relationships between individuals (e.g. entrepreneurs,
+employees) or organizations (e.g. firms, projects). Third, since a network so defined
+implies the same kind of relationship for each tie, analytical emphasis is put on the
+structural effects of network position on behavior and opportunity.
+
+2.3. Geography
+
+The relation between geography and networks can be theorized in (at least) two ways:
+First, proximity affects network formation. The most widely used approach in economic
+geography aims at assessing the latent effects of physical proximity/distance on
+economic processes. Sometimes these effects are abbreviated in unfortunate terms
+of ‘spatial causation’. Space, however, is not a necessary cause of human action.
+Instead, there are at least two underlying social technologies implicit in any account
+of the geography of economic relations: communication technology (Storper and
+Venables, 2004) and transport technology (Marquis, 2003). Only with respect to the
+actors’ communication preferences and mobility opportunities may the contingent
+relation between physical space and economic interaction be established. In other
+words: the constraints of proximity only rule if face-to-face is the only mode of
+communication and if travel is prohibitive. In any other case, proximity is contingent
+on the underlying social technologies.
+Second, place makes a difference. Borrowing the notion of the resource bundle from
+
+the theory of the growth of the firm (Penrose, 1959), a place may be conceived as
+a bundle of resources and opportunities with the additional characteristic of spatial
+contiguity. A place-specific resource profile conveys a source of contextuality,
+
+Economic geography and the evolution of networks . 621
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+difference and contingency for economic development (Sayer, 1991; Bathelt and
+Glu¨ckler, 2005). This localized resource profile comprises the structural aspects of
+relationships (e.g. social capital, structural holes) as well as the material, social
+and institutional resources that these relationships access and transfer. The association
+between the region and the network is by no means unidirectional. Places do not only
+constrain network formation but social interaction in networks also shape its
+geography (Storper and Walker, 1989). Both views of geography matter in a concept
+of geographical network trajectory.
+
+2.4. Geographical network trajectory
+
+The essential starting point for any theory of network evolution is the question of
+‘how do structural dimensions of an interorganizational communication network
+at Time 1 affect the interactions among member organizations – specifically, their
+formation of ties to other organizations – at Time 2?’ (Kenis and Knoke, 2002, 277–78).
+The network trajectory (Kilduff and Tsai, 2003) is an appropriate concept in the
+analysis of network evolution which combines the notions of evolution, network and
+geography: it describes a geographically and historically specific development path of
+a network in which the formation and dissolution of ties in earlier stages generates
+cumulative propensities for the formation and dissolution of ties in the future and
+in which the mechanisms of path-disruption and variation are endogenous.
+This perspective explicitly moves beyond the dyadic analysis of single relations to the
+analysis of entire networks of relations. A theory of network evolution, thus, looks
+at the changes that every new tie produces in the existing structure and, conversely,
+at the impact that the structure imposes on the formation of the next tie. Note that the
+unit of analysis is always dyadic tie formation, whereas the object of knowledge is
+network structure.
+Any evolutionary system may be characterized by the principles of selection,
+
+retention (continuity) and variation (Nelson and Winter, 2002). The next section
+discusses these principles in the context of networks. After defining the selection
+principle of relationships, the effects of retention and variation of tie formation are
+discussed in more detail. Retention focuses on those cumulative structural mechanisms
+that cause new ties to reproduce and reinforce an existing network structure.
+Path-dependence is only half the story. Similar to earlier efforts (Boschma and
+Lambooy, 1999), this article explores variation as a set of mechanisms that enables
+novelty and path-disruption. An evolutionary theory which is interested in an
+endogenous understanding of the production of variety needs to go beyond the
+exogenous assumption of variety by random or chance events. Instead, this article
+emphasizes the process of endogenous network variation to explain the emergence of
+novelty from existing paths. Finally, this article aims at exploring the contribution
+of network evolution to an evolutionary economic geography. Complying with
+the discussion above, the geography of network trajectories may be inquired in two
+respects: one is to examine the latent effect of geography on the network trajectory;
+the other is to explore the effect of localized network evolution on regional innovation.
+The following section explores in more detail the nature of the selection mechanism in
+inter-firm networks, as well as the role of geography in processes of network retention
+and variation.
+
+622 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+3. The evolutionary process in the geographical network trajectory
+
+3.1. Selection: competitive selection of relational advantage
+
+Selection mechanisms are often attributed to the environment. While in biology the
+
+natural environment selects biological fitness (natural selection), in evolutionary
+
+economics it is market competition that selects firms (competitive selection),
+
+correspondingly (Knudsen, 2002). Since, in the context of networks, selection refers
+
+to the formation of linkages between members of a network (Gulati, 1995; Stuart, 1998;
+
+Gulati and Gargiulo, 1999; Ahuja, 2000; Venkatraman and Lee, 2004), a number of
+
+particular conditions seem to require a revised notion of the selection principle.
+First, in contrast to the selection of firms, routines or technologies, which are entities,
+
+the linkages in a network are relations between pairs of actors. This has an important
+
+consequence, namely, that the selection of a tie is subject not only to an external
+
+selective environment, but also to the decisions of the mutual members involved.
+
+This implies a dual conceptualization of selection mechanisms. Selection may be
+
+a function of exogenous change with respect to the degree of adaptation of relation-
+
+ships but also a function of endogenous incentives and strategies to choose and change
+
+relations by both parties involved in a relationship.
+Second, new relationships may occur between incumbent firms which have a history
+
+of linkages in the network or new firms without any previous relationship. A complete
+
+theory of network evolution would thus have to theorize both, the emergence and
+
+disappearance of ties and nodes. This article focuses on the dynamics of relationships
+
+and makes selective reference to the interrelation with the dynamics of node entries
+
+and exits.
+Third, interaction is costly and as such a scarce resource. This article treats tie
+
+selection as a problem of the efficient allocation of relationships because empirical
+
+networks of firms are impossible to be fully connected. The law of N-squared states
+
+that the number of possible contacts increases roughly as the square of the number of
+
+actors in a network (Krackhardt, 1994). In other words: ‘most choices are impossible
+
+for most people’ (McPherson et al., 1992, 168). Though the number of potential
+
+relations depends on the actors’ resource endowment and the kind of relationship,
+
+there is always a limit to a firm’s capacity to relate with other firms.
+Fourth, from a utility perspective, a firm’s set of connections may yield differential
+
+returns on the invested relationships. One of the key motives to engage in enduring
+
+relationships with other firms is to access external resources (Pfeffer and Salancik,
+
+1978). This, in turn, increases or decreases a firm’s attractiveness for future alliance
+
+partners. Tie selection may then be conceived as the competitive allocation of scarce
+
+relationships where the commitment dedicated to one relationship invokes opportu-
+
+nity costs for each unrealized contact. These conditions suggest tie selection to be
+
+a competitive process which depends on exogenous changes as well as endogenous
+
+dynamics. To give an example: a relationship between two firms may be more
+
+attractive because of exogenous changes (e.g. market regulation) but also because of
+
+endogenous changes in the network (e.g. one partner has become more attractive
+
+because of her alliance with a third party). While many evolutionary approaches stop
+
+at the exogenous factor, this article explicitly seeks to explore endogenous mecha-
+
+nisms of network evolution that produce retention and variation of existing network
+
+structures.
+
+Economic geography and the evolution of networks . 623
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+3.2. Retention: place-dependence and network trajectory
+
+Network retention refers to the structural effect of past choices on the propensities for
+
+future tie selection within the network. Retention mechanisms result either from the
+
+persistence of ties, that is, slow decay, or the path-dependent formation of new ties.
+Research on the decay of personal relationships between employees suggests that
+
+relationships last longer, the more prominent employees are in the social hierarchy, the
+more similar their work, and the stronger their relations are. Following Burt, decay
+
+is a power function of time in which the probability of decay decreases with tie age
+and node age (Burt, 2000, 23). A review of the organizational literature on networks
+
+suggests, more generally, that homophily is a significant driver of tie selection
+and retention (McPherson et al., 2001; Sorenson, 2003). While studies on the decay of
+
+existing relationships ask how long a given tie will sustain, another approach is to ask
+where the next tie will most likely emerge. A network might experience a massive
+
+turnover of decaying and emerging linkages between its nodes and still display the same
+
+degree of centralization, density and fragmentation. Whenever new ties replicate or
+reinforce a given network structure this indicates the operation of path-dependence.
+
+From the organization literature, three alternative mechanisms are particularly
+interesting:
+First, the preferential attachment-hypothesis expects firms with many ties at one
+
+point in time are more likely to receive new ties in the future than those with fewer ties
+
+(Baraba´si and Reka, 1999). There is obviously accumulative advantage for well
+positioned actors on the one side and a liability of unconnectedness for peripheral
+
+actors on the other (Powell et al., 1996). The concept is based on the observation that
+the degree distribution of a network is scale-free, i.e. follows a power-law (Baraba´si
+
+et al., 2002). Empirical research supports this hypothesis. The alliance behavior of
+multinational corporations suggests that with increasing experience and connectedness,
+
+firms will be more likely to have further alliances in the future (Gulati, 1999). However,
+since firms are limited in the number of relationships they can maintain, the process of
+
+centralization of ties is empirically finite (Holme et al., 2004). Second, the embedding-
+hypothesis expects that future ties form around strong ties by processes of trust and
+
+indirect referrals. This cumulative interconnection leads to processes of social
+
+embedding (Gulati and Gargiulo, 1999). Persistent network structures emerge from
+cognitive embeddedness and the formation of mental models within clique-like groups
+
+of interconnected actors (Baum et al., 2003). Third, the multi-connectivity-hypothesis
+expects that networks expand through a process in which firms seek diversity of
+
+relations and form multiple independent paths among each other to enhance a multiple
+reachability of partners. In an exemplary study, Powell et al. (2005) are amongst the
+
+first to explicitly test alternative hypotheses on the emergence of new relationships in an
+expanding network of inter-firm alliances in US biotechnology. Their research supports
+
+the cumulative advantage of multi-connectivity and demonstrates that new alliances
+
+were more likely to form between those firms that were more multiply or more diversely
+linked to each other at a previous stage (Powell et al., 2005). Following this evidence,
+
+new linkages reinforce an existing multiple cohesion and, over time, cohesive subgroups
+will emerge. Another empirical analysis of the alliance network in biotechnology
+
+corroborates the operation of retention mechanisms (Walker et al., 1997). A year-
+to-year comparison of structural equivalence for each pair of actors showed that if
+
+two firms were structurally equivalent, i.e. they were connected to the same other
+
+624 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+companies, they most likely remained so throughout the subsequent expansion of the
+network. This finding leads Walker et al. (1997) to argue for path dependence in
+network growth. In sum, preferential attachment, embedding and multi-connectivity
+are cumulative retention mechanisms that induce path-dependence in networks.
+Network retention mechanisms do not operate independent of geography.
+Geographical location is a non-relational condition that may strongly affect the
+evolution of the network trajectory. Two classes of processes are important for place-
+dependent effects on the network trajectory: local externalities of communication and
+organizational inertia:
+
+3.2.1. Local externalities of communication
+
+Externalities of communication render additional local ties more likely than the
+formation of extra-regional relations. (Stuart, 1998; Sorenson and Stuart, 2001;
+Powell et al., 2002). Geographical proximity is, of course, a matter of scale: two firms
+may be co-located in the same office building but also in the same country.
+The empirical impact of co-location, however, is often limited to the regional
+level where repeated face-to-face communication is not prohibitive. Powell et al.
+(2005), for instance, found unequivocal evidence for a strong geographical bias
+on strategic alliances in biotechnology. New ties as well as repeat ties were more
+likely when two firms were co-located. Another study on the same sector emphasizes the
+role of knowledge spillovers in local firm alliances and found that co-location and
+local membership in the network compensates for the lack of centrality of a firm’s
+position in the alliance network (Owen-Smith and Powell, 2004). ‘Being there’
+compensates for the disadvantage of low centrality. Information spillovers which are
+typical of serendipitous networks provide cumulative advantage for co-location
+and cluster growth in technology and knowledge-intensive industries. The notion of
+local network retention is further supported by empirical evidence for local
+entrepreneurial relationships to become more persistent and beneficial after start-up
+than more remote relations (Schutjens and Stam, 2003). One explanation for this effect
+is the mechanism of local institutionalization. Doreian and Woodard (1999) identified
+networks in which extra-local forms of institutionalizing relations were not duplicated
+but local relations institutionalized into network structures dedicated to the same
+pool of clients.
+Geographical proximity also affects the entry of nodes in a network. In addition to
+
+the cumulative formation of local ties in response to communication externalities,
+relocation mechanisms further enhance place-dependent agglomeration. Since the
+difficulty of accurate transmission and interpretation of knowledge increases with its
+complexity, spatial proximity often locks-out remote actors from the knowledge flow
+and thus forces them to (re-) locate in spatial proximity in order to participate in the
+cluster communication (Fleming and Sorenson, 2001). Empirical research illustrates
+that the more complex the knowledge in a particular industry, the more do industries
+agglomerate (Sorenson, 2005). Since the propensity to get in contact with someone is
+very low but increases with spatial proximity (McPherson et al., 1992), regions with
+cumulative locational advantage might select talent and knowledge by migration and
+relocation. These findings indicate that networks do not only evolve in terms of the
+geographical mobility of existing relationships but also in terms of entries and exits of
+nodes (firms). Entrepreneurship, new firm foundations and spin-offs (node entry) are
+
+Economic geography and the evolution of networks . 625
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+also an important element of local network retention. Finally, geography is also a
+significant constraint on search behavior: when people need intermediate contacts to
+reach a (socially) remote target, they choose contacts in geographical proximity of this
+target to transfer information (Dodds et al., 2003).
+
+3.2.2. Organizational inertia
+
+According to the theory of organizational inertia the change of core features in
+organizations requires adaptive cascading processes of reorganization which expose
+organizations at a higher risk of unfitness and mortality (Hannan et al., 2004). If this
+is applied to the alliance behavior of firms, some degree of persistence in previous
+network structures can be inferred (Li and Rowley, 2002). Institutions may persist
+because they favor distributional claims on resources of those who exert the power to
+maintain institutions. This resistance to change may be transferred through the network
+when certain actors exert relational power upon others to prevent certain types of
+new ties. Moreover, the interrelatedness of institutions may render the costs of changing
+one out of a set of institutions prohibitive (Frankel, 1955). There is an illustrative
+evidence for retention mechanisms on networks in a geographical perspective. Marquis
+(2003) compared the development of the largest urban community systems of
+interlocking directorships in the US. He demonstrates that the business networks in
+cities established prior to the advent of air travel technology were significantly more
+locally bound than networks in younger cities. Despite the availability of modern travel
+technologies in all cities today, even new corporate board positions were filled with
+local directors. This persistence of geographical network structure in older communities
+illustrates the basic argument of imprinting theory (Stinchcombe, 1965): organizations
+adopt organizational characteristics in response to the environmental conditions during
+their period of foundation. This imprinted pattern sustains through the evolution even
+if in later periods the environment changes. Since the social technology of large distance
+travel was not available before air transport, local business communities were
+constrained to assign local directors on their corporate boards. This imprinted practice
+constitutes a ‘locally legitimate template of action’ (Marquis, 2003, 656) which
+is continuously emulated and thus preserves network structure over time. Social
+networks between individual economic actors as well as between firms convey aspects
+of cumulative, path-dependent evolution over time. The sum of these retention
+mechanisms may ultimately lead to situations of local lock-in (Hassink, 2005; Martin
+and Sunley, 2006), in which previously selected patterns of relations are preserved to
+a degree that new alternatives are prohibitive or do not enter the network. States of
+lock-in are a problem which can only be overcome by a continuous momentum
+of contingency and the emergence of new variation.
+
+3.3. Variation: path-destruction and the structural sources of innovation
+
+A comparison over a large number of different empirical inter-firm networks conveys
+an intriguing observation: inter-firm networks often look the same. They display
+evident patterns of small worlds which are essentially characterized by high local
+clustering and short global separation (Watts, 1999) and display a high degree of
+robustness (Kogut and Walker, 2001). This observation provokes the question if
+there is a possibility for network trajectories to experience variation endogenously.
+
+626 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+In Darwinian terms, variation is defined as a random mutation process which
+fundamentally treats novelty as an exogenous circumstance. The study of the economy,
+however, is dedicated to the exploration of mechanisms that generate novelty and new
+development paths. Hence, variation should be conceived as the result of endogenous
+mechanisms of network formation and dissolution. In the organization literature,
+the major source of contingency and variation in network structure is the bridging
+of unconnected network clusters. Variation in a network refers to the differential
+selection of new ties which countervail against an existing trajectory. Hence, variation
+is defined at the level of tie selection but refers to the change in network structure.
+Tie selection affects the flow and recombination of resources in the network.
+
+Knowledge, preferences and routines enter a cluster of interconnected actors through
+the bridging of structural holes between unconnected clusters (Burt, 2004). Whether this
+new variety is selected into a local cluster depends on processes of adoption and
+adaptation. Empirical research in the context of the social composition of voluntary
+groups found that when group members maintained ties to non-members they were
+likely to leave the group whereas ties within the group and the size of the group
+increased the likelihood for enduring membership in that group (McPherson et al.,
+1992). In short: a link outside the group shortens membership duration in the group.
+It is this contingency of establishing boundary spanning relations which renders
+variation inherently likely in any open system of social and economic relations.
+Empirically, there seems to be a tendency for some new relations to bridge a network
+cluster which essentially countervails the retention mechanisms outlined above.
+In the context of firms, empirical evidence suggests that strategic alliance behavior
+shifts from socially embedded, cohesive or ‘identity-based networks’ in early stages of
+firm emergence to more sparse, rationally managed or ‘calculative networks’ in later
+stages (Hite and Hesterly, 2001; Baum et al., 2003; Lavie 2004). This process offers
+relational variation and the possibility to channel novelty in the established small
+worlds. At the same time and once a bridge is established, the cumulative retention
+mechanisms of preferential attachment, embedding and multi-connectivity increase the
+odds for further external links and thus counter existing patterns of path-dependence.
+But who bridges the cliques: the core or the periphery of a cluster? In a longitudinal
+
+analysis of the evolving Canadian investment bank syndicate network, peripheral
+firms were found to be more likely to span clique boundaries than core firms
+(Baum et al., 2003; Rowley et al., 2005). This finding may be interpreted in the language
+of competitive tie selection: retention mechanisms cumulate into embedded social
+structure and favor early advantage of some actors who become core players in their
+small worlds. Over time, however, peripheral players aim at improving their competitive
+position by spanning small worlds and by sourcing otherwise unconnected clusters
+within the overall network. Notwithstanding, the evolutionary occurrence of boundary-
+spanning ties is to a considerable degree also subject to chance events (Baum et al.,
+2003). Networks are topological associations between actors without an inherent
+geography. Strong ties may be distant or local as well as clique-spanning may be
+remote or close by. In order to avoid an implicit dualism of strong-local ties and
+weak-global linkages, Figure 1 illustrates some of the potential geographies of network
+topologies and their specific variation opportunities. In a geographical perspective,
+then, there are three different concepts of (permanent) geographical place and one
+concept of temporary place with specific opportunities to convey variation during
+network evolution.
+
+Economic geography and the evolution of networks . 627
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+3.3.1. Global bridging
+
+The default of innovation in regional clusters is the notion of a densely connected
+localized inter-firm network which generates variation by establishing bridges to extra-
+regional network clusters in search of new knowledge and complimentary resources.
+This notion is well documented in the literature on neo-Marshallian nodes (Amin and
+Thrift, 1992) which combines Marshall’s logic of a local division of labor with non-local
+exchange relations forward and backward the value chain. Research on the global
+interrelations of the Londoner media industry, for instance, has illustrated empirically,
+that firm networks sustain innovative potential by economizing on local proximity and
+selective access to knowledge external to the urban cluster (Nachum and Keeble, 2003).
+The logic of local clustering and global bridging is also implicit in the literature on
+global cities. Generating variation by sourcing extra-regional assets through boundary
+spanning ties thus corresponds with the illustration of place 1 (Figure 1). If the regional
+economy is dominated by just one interconnected cluster, variation through external
+linkages becomes crucial to avoid technological lock-in and subsequent economic
+decline.
+
+3.3.2. Local bridging
+
+Another possibility is the bridging between different but co-located network clusters
+as represented by place 2 (Figure 1). Local bridging corresponds with notions of the
+learning region and endogenous regional development (Hassink, 2005), where variation
+is generated by recombination and interconnection between distinct clusters of
+relations. The range and scope of variation largely depends on the degree of local
+diversity of network clusters. This perspective fits with the notion that cities are
+conducive to innovation because of local variety (Jacobs, 1969). Urban variety increases
+the serendipity for spillover-effects between industries or subclusters of networks and
+enhances regional growth (Glaeser et al., 1992). However, novelty may not only result
+from the bridging of unconnected parts within but also between different networks.
+
+Figure 1. Alternative geographies of small world topologies.
+
+628 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+In early organizational ecology and contingency approaches, network change is seen as
+an adaptive process responding to exogenous environmental change (Lomi et al., 2005;
+Koka et al., 2006). In contrast, community ecology approaches (Freeman and Audia,
+2006) surmount the network-environment dualism by conceiving a more systemic
+framework of an ecology of networks (Carley, 1999). A view of the network ecology
+permits to analyze the recursive feedback loops between a set of interrelated networks
+as a co-evolutionary process, i.e. evolutionary changes in one network affect the
+direction of evolutionary change in interrelated networks which together form
+ecological community. A perspective of a region as a localized ecological community
+allows for an understanding of innovation as the contingent interaction and causal
+feedbacks between social networks and their material and institutional resource
+endowment, as for example, in the concept of the localized creative field (Scott, 2006).
+Geographers should, however, not fall into the trap of limiting their focus on the region
+and the local community. A recent analysis emphasizes the need to study the interplay
+between community and the wider institutional foundations of (non-local) society
+to understand real regional economic change (Rodrı´guez-Pose and Storper, 2006).
+Strategically, the long-term sustainability of regional network trajectories can be
+enhanced by supporting diversity. Following the principle of ‘compartmentalization’
+(Grabher and Stark, 1997) the co-existence of distinct networks or subclusters offers
+future options for bridging and recombination.
+
+3.3.3. Local brokering
+
+In a third perspective, one may conceive only the weak ties to be co-located while the
+linkages in a topological cluster are all geographically separated (cf. place 3 in Figure 1).
+In the case of network peripherals that are geographically co-located, the interlocking
+of these weak ties may yield maximum variation because of the higher degree of
+diversity in the pool of knowledge and other resources of the local firms. The local
+brokering of separated and diverse network clusters may thus convey a real novel
+recombination of knowledge. Empirical examples are the so-called satellite platforms
+(Markusen, 1996) where multinational firms co-locate to benefit from territorially
+bounded location advantages (e.g. tax conditions, state subsidies, expertise). While
+these firms are well connected internationally, they often remain isolated from each
+other in the satellite location. Though this geographical network formation may have
+been regarded exceptional, it has certainly gained prominence in the global economy.
+On the one hand, there are high technology research and development activities that
+multinational competitors assign to global centers of excellence in close geographical
+proximity to each other (Zeller, 2004). On the other hand, the global offshoring
+of manufacturing and increasingly of services creates new satellite places where
+multinational corporations co-locate specialized business processes (UNCTAD, 2004).
+The agglomeration of similar activities at these peripheral places offers opportunities
+for innovation through the local brokering between the operations. Learning from
+offshore operations might become indispensable in the future, when new processes and
+standards are developed there. In addition, peripheral satellite places may be
+appropriate locations to filter contested innovation into multinational organizations.
+An interesting series of computer simulations supports a viscosity model of innovation
+(McGrath and Krackhardt, 2003): controversial innovation may be more likely to
+
+Economic geography and the evolution of networks . 629
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+diffuse successfully across a network when seeded in the periphery of an organization
+and when the organization is only loosely connected.
+
+3.3.4. Mobile brokering
+
+Geographical proximity is often conceived under conditions of permanent location.
+However, changing travel technologies and induced patterns of mobility also permit
+co-presence in ephemeral encounters. A final way of generating novelty and variation in
+tie selection breaks with the notion of fixed locations and assumes a network cluster
+of interconnected firms (or firm managers) to be geographically distributed and
+who meet repeatedly in temporary clusters, i.e. trade fairs, conventions or other
+arrangements of physical encounter. The more mobile managers become the more likely
+are they to find non-fixed, temporary contexts of mutual encounter and serendipitous
+tie formation. The concepts of ‘ba’ (Nonaka and Konno, 1998) or temporary clusters
+(Maskell et al., 2004) illustrate the notion that face-to-face communication, networking
+and interpersonal referrals are equally facilitated in trade fairs and conventions as in
+contexts of permanent co-location. The extending international mobility of business
+will certainly spawn new opportunities for tie formation which countervail against the
+traditional mode of permanent locational proximity. In the movie industry, for
+instance, producers and studios participate in film festivals around the globe on
+repeated annual travel and thus come close to form a transnational community.
+While a core of actors may be well connected among each other, each place offers new
+opportunities to bridge and broker the core with local but yet unconnected firms.
+Bridging relations in these ba-forms of temporary encounter are serendipitous and thus
+highly contingent on the actual place. As networks increasingly stretch space and
+form permanent and temporary trans-local networks, the mapping of these relation-
+ships is anything but a trivial geometrical task. Since this concept abandons the
+geometry of fixed location it can no longer be represented in a static map.
+
+4. Conclusion
+
+Evolutionary network change is subject to cumulative mechanisms of retention
+which create path-dependent network trajectories. Apart from the established types of
+path-dependence discussed in the literature (i.e. technological lock-in, increasing
+returns to scale and institutional hysteresis, cf. Martin and Sunley, 2006), the emerging
+literature on network evolution suggests additional network-specific mechanisms.
+Preferential attachment, embedding and multi-connectivity also induce path-
+dependence in inter-firm relationships. Moreover, and instead of simply presuming
+novelty, an appropriate evolutionary theory of economic growth should be able to
+explain innovation endogenously. This article has not only looked at the path-creating
+effects of tie selection but also on its path-disrupting effects. Network variation results
+from the process of bridging and brokering between unconnected networks or parts of
+networks. A recombination of network topology with geometrical place has offered
+alternative models of innovation in regional economic development.
+Given the recency and simultaneity of evolutionary theory in economics, organiza-
+
+tion studies, sociology and geography, this article can only be explorative at this stage.
+Rather than supplying a coherent theory of regional network evolution, above all,
+it is lead by a strong curiosity for the benefit that formal network theory offers to an
+
+630 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+evolutionary perspective in economic geography. A fruitful application of network
+evolution to economic geography depends on both conceptual and empirical advance
+with respect to a number of questions. Network structure, for example, is not an end
+but a means of facilitating economic growth and innovation. It represents the
+architecture through which productive resources, social values and economic interests
+circulate. Therefore, the nexus between structure and the actual content of the flows
+merits particular attention in future research, as for example the role of technological
+overlap between firms (Cantner and Graf, 2006) or firm-specific aspects of integration
+in a network (Giuliani, 2006). Moreover, network structure should not be conceived as
+deterministic. More research is needed to find out about the drivers and effects of
+boundary spanning activities at the micro level: why do which firms bridge network
+gaps and what are the real effects for them and for the network structure as a whole?
+Another research challenge addresses the role of place as context for network evolution.
+Apart from the endogenous mechanisms of retention and variation, environmental
+changes may alter crucial conditions. How, for instance, do changes or differences
+in the institutional arena of a locality affect network evolution? Since institutions
+such as conventions and routines define the rules of interaction they certainly influence
+the trajectory of inter-firm networks (Maskell and Malmberg, 2007). Finally, network
+evolution is a complex matter because both, relationships and nodes may emerge or
+disappear simultaneously. While current network theory prioritizes tie formation, the
+causes and consequences of changes in network size should also be addressed.
+Geographical cluster theory suggests that regional agglomeration enhances the rate of
+firm foundation, spin-offs and relocation. So what is the causality and direction of the
+relationship between a path-dependent network trajectory and the growth rate of new
+nodes? Apart from this brief selection of empirical research questions, there are
+considerable practical problems to be overcome. Relational data are only scarcely
+available for industries, organizations and regions. An evolutionary analysis of network
+change in and through regional development requires not only relational but
+also longitudinal data over considerable time periods which are even more difficult
+to obtain (Baum et al., 2003). Network evolution is still in its infancy and the project
+is in search for innovative ideas and methods—isn’t this a good time for geography
+to join?
+
+References
+
+Ahuja, G. (2000) Collaboration networks, structural holes, and innovation: a longitudinal study,
+Administrative Science Quarterly, 45: 425–455.
+
+Amin, A. and Thrift, N. (1992) Neo-Marshallian nodes in global networks, International Journal
+of Urban and Regional Research, 16: 571–587.
+
+Baker, W. E. (1990) Market networks and corporate behavior, American Journal of Sociology, 96:
+589–625.
+
+Baraba´si, A.-L. and Reka, A. (1999) Emergence of scaling in random networks, Science, 286:
+509–512.
+
+Baraba´si, A. L., Jeong, H., Ne´da, Z., Ravasz, E., Schubert, A., Vicsek, T. (2002) Evolution of the
+social network of scientific collaborations, Physica A, 311: 590–614.
+
+Bathelt, H. and Glu¨ckler, J. (2005) Resources in economic geography: from substantive concepts
+towards a relational perspective, Environment and Planning A, 37: 1545–1563.
+
+Baum, J. A., Shipilov, A. V., Rowley, T. J. (2003) Where do small worlds come from? Industrial
+and Corporate Change, 12: 697–725.
+
+Economic geography and the evolution of networks . 631
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+Boschma, R. A. and Frenken, K. (2006) Why is economic geography not an evolutionary science?
+Towards an evolutionary economic geography, Journal of Economic Geography, 6: 273–302.
+
+Boschma, R. A. and Lambooy, J. G. (1999) Evolutionary economics and economic geography,
+Journal of Evolutionary Economics, 9: 411–429.
+
+Burt, R. (2000) Decay functions, Social Networks, 22: 1–28.
+Burt, R. S. (2004) Structural holes and good ideas, American Journal of Sociology, 110: 349–399.
+Cantner, U. and Graf, H. (2006) The network of innovators in Jena: an application of social
+network analysis, Research Policy, 35: 463–480.
+
+Carley, K. M. (1999) On the evolution of social and organizational networks, Research in the
+Sociology of Organizations, 16: 3–30.
+
+Dodds, P., Muhamad, R., Watts, D. J. (2003) An experimental study of search in global social
+networks, Science, 301: 827–829.
+
+Doreian, P. and Woodard, K. L. (1999) Local and global institutional processes. In D. Knoke
+and S. Andrews (eds) Research in the Sociology of Organizations, pp. 59–83. Greenwich (CT):
+JAI Press.
+
+Essletzbichler, J. and Rigby, D. (2007) Exploring evolutionary economic geographies, Journal
+of Economic Geography, 7: 549–571.
+
+Fleming, L. and Sorenson, O. (2001) Technology as a complex adaptive system: evidence from
+patent data, Research Policy, 30: 1019–1039.
+
+Frankel, M. (1955) Obsolescence and technological change in a maturing economy, American
+Economic Review, 45: 296–319.
+
+Freeman, J. H. and Audia, P. G. (2006) Community ecology and the sociology of organizations,
+Annual Review of Sociology, 32: 145–169.
+
+Frenken, K. and Boschma, R. A. (2007) A theoretical framework for evolutionary economic
+geography: industrial dynamics and urban growth as a branching process, Journal of Economic
+Geography, 7: 635–649.
+
+Giuliani, E. (2006) The selective nature of knowledge networks in clusters: evidence from the wine
+industry, Journal of Economic Geography, 7: 139–168.
+
+Glaeser, E. L., Kallal, H. D., Scheinkman, J. A., Shleifer, A. (1992) Growth in cities, The Journal
+of Political Economy, 100: 1126–1152.
+
+Grabher, G. (2006) Trading routes, bypasses, and risky intersections: mapping the travels of
+‘networks’ between economic sociology and economic geography, Progress in Human
+Geography, 30: 163–189.
+
+Grabher, G. and Stark, D. (1997) Organizing diversity: evolutionary theory, network analysis
+and postsocialism, Regional Studies, 31: 533–544.
+
+Granovetter, M. (2005) The impact of social structure on economic outcomes, Journal of
+Economic Perspectives, 19: 33–50.
+
+Gulati, R. (1995) Does familiarity breed trust? The implications of repeated ties for contractual
+choice in alliances, Academy of Management Journal, 38: 85–112.
+
+Gulati, R. (1998) Alliances and networks, Strategic Management Journal, 19: 293–317.
+Gulati, R. (1999) Network location and learning: the influence of network resources and firm
+capabilities on alliance formation, Strategic Management Journal, 20: 397–420.
+
+Gulati, R. and Gargiulo, M. (1999) Where do interorganizational networks come from? American
+Journal of Sociology, 104: 1439–1493.
+
+Hannan, M. T., Polos, L., Carroll, G. R. (2004) The evolution of inertia, Industrial and Corporate
+Change, 13: 213–242.
+
+Hassink, R. (2005) How to unlock regional economies from path dependency? From learning
+region to learning cluster, European Planning Studies, 13: 521–535.
+
+Hite, J. M. and Hesterly, W. S. (2001) The evolution of firm networks: from emergence to early
+growth of the firm, Strategic Management Journal, 22: 275–286.
+
+Holme, P., Edling, C. R., Liljeros, F. (2004) Structure and time evolution of an internet dating
+community, Social Networks, 26: 155–174.
+
+Jacobs, J. (1969) The Economy of Cities. New York: Random House.
+Kenis, P. and Knoke, D. (2002) How organizational field networks shape interorganizational
+tie-formation rates, Academy of Management Review, 27: 275–293.
+
+Kilduff, M. and Tsai, W. (2003) Social Networks and Organizations. London: Sage.
+Knudsen, T. (2002) Economic selection theory, Journal of Evolutionary Economics, 12: 443–470.
+
+632 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+Kogut, B. and Walker, G. (2001) The small world of Germany and the durability of national
+networks, American Sociological Review, 3: 317–335.
+
+Koka, B. R., Madhavan, R., Prescott, J. (2006) The evolution of interfirm networks:
+environmental effects on patterns of network change, Academy of Management Review, 31:
+721–737.
+
+Krackhardt, D. (1994) Constraints on the interactive organization as an ideal type.
+In C. Heckscher and A. Donnellan (eds) The Post-Bureaucratic Organization, pp. 211–222.
+Beverly Hills, CA: Sage.
+
+Lavie, D. (2004) The evolution and strategy of interconnected firms: a study of the UNISYS
+alliance network, Academy of Management Proceedings, E1–E6.
+
+Li, S. X. and Rowley, T. J. (2002) Inertia and evaluation mechanisms in interorganizational
+partner selection. Syndicate formation among U.S. investment banks, Academy of Management
+Journal, 45: 1104–1119.
+
+Lomi, A., Larsen, E. R., Freeman, J. H. (2005) Things change: dynamic resource constraints and
+system-dependent selection in the evolution of organizational populations, Management
+Science, 51: 882–903.
+
+Markusen, A. (1996) Sticky places in slippery space: a typology of industrial districts, Economic
+Geography, 72: 293–313.
+
+Marquis, C. (2003) The pressure of the past: network imprinting in intercorporate communities,
+Administrative Science Quarterly, 48: 655–689.
+
+Marsden, P. V. (1990) Network data and measurement, Annual Review of Sociology, 16:
+435–463.
+
+Martin, R. and Sunley, P. (2006) Path dependence and regional economic evolution, Journal of
+Economic Geography, 6: 395–437.
+
+Maskell, P., Bathelt, H., Malmberg, A. (2004) Temporary Clusters and Knowledge Creation:
+The Effects of International Trade Fairs, Conventions and Other Professional Gatherings. Spaces
+2004–04. Marburg: University of Marburg.
+
+Maskell, P. and Malmberg, A. (2007) Myopia, knowledge evolution and cluster development,
+Journal of Economic Geography, 7.
+
+McGrath, C. and Krackhardt, D. (2003) Network conditions for organizational change, Journal
+of Applied Behavioral Science, 39: 324–336.
+
+McPherson, J. M., Popielarz, P. A., Drobnic, S. (1992) Social networks and organizational
+dynamics, American Sociological Review, 57: 153–170.
+
+McPherson, M., Smith-Lovin, L., Cook, J. (2001) Birds of a feather: homophily in social
+networks, Annual Review of Sociology, 27: 415–444.
+
+Mitchell, J. C. (1969) The concept and use of social networks. In J. C. Mitchell (ed.) Social
+Networks in Urban Situations. Analyses of Personal Relationships in Central African Towns,
+pp. 1–50. Manchester: Manchester University Press.
+
+Mizruchi, M. S. (1994) Social network analysis: recent achievements and current controversies,
+Acta Sociologica, 37: 329–343.
+
+Nachum, L. and Keeble, D. (2003) Neo-Marshallian clusters and global networks: the linkages of
+media firms in Central London, Long Range Planning, 36: 459–480.
+
+Nelson, R. (1995) Recent evolutionary theorizing about economic change, Journal of Economic
+Literature, 33: 48–90.
+
+Nelson, R. R. and Winter, S. G. (2002) Evolutionary theorizing in economics, Journal of
+Economic Perspectives, 16: 23–46.
+
+Nonaka, I. and Konno, N. (1998) The concept of ‘ba’: building a foundation for knowledge
+creation, California Management Review, 40: 40–54.
+
+Owen-Smith, J. and Powell, W. W. (2004) Knowledge networks as channels and conduits:
+the effects of spillovers in the Boston biotechnology community, Organization Science, 15:
+5–21.
+
+Penrose, E. T. (1959) The Theory of the Growth of the Firm. Oxford: Blackwell.
+Pfeffer, J. and Salancik, G. R. (1978) The External Control of Organizations. New York: Harper
+and Row.
+
+Powell, W. W., Koput, K. W., Bowie, J. I., Smith-Doerr, L. (2002) The spatial clustering of
+science and capital: accounting for biotech firm-venture capital relationships, Regional Studies,
+36: 291–306.
+
+Economic geography and the evolution of networks . 633
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+
+
+Powell, W. W., Koput, K. W., Smith-Doerr, L. (1996) Interorganizational collaboration and
+the locus of innovation: networks of learning in biotechnology, Administrative Science
+Quarterly, 41: 116–145.
+
+Powell, W. W., White, D., Koput, K. W., Owen-Smith, J. (2005) Network dynamics and field
+evolution: the growth of interorganizational collaboration in the life sciences, American Journal
+of Sociology, 110: 1132–1205.
+
+Rodrı´guez-Pose, A. and Storper, M. (2006) Better rules or stronger communities? On the social
+foundations of institutional change and its economic effects, Economic Geography, 82: 1–25.
+
+Romer, P. (1990) Endogenous technological change, Journal of Political Economy, 98: 71–102.
+Rowley, T. J., Greve, H. R., Rao, H., Baum, J. A. C., Shipilov, A. V. (2005) Time to break up:
+social and instrumental antecedents of firm exits from exchange cliques, Academy of
+Management Journal, 48: 499–520.
+
+Sayer, A. (1991) Behind the locality debate: deconstructing geography’s dualisms, Environment
+and Planning A, 23: 283–308.
+
+Sayer, A. (2000) Realism and Social Science. London: Sage.
+Schutjens, V. and Stam, E. (2003) The evolution and nature of young firm networks: a
+longitudinal perspective, Small Business Economics, 21: 114–134.
+
+Scott, A. J. (2006) Entrepreneurship, innovation and industrial development: geography and the
+creative field revisited, Small Business Economics, 26: 1–24.
+
+Sorenson, O. (2003) Social networks and industrial geography, Journal of Evolutionary
+Economics, 13: 513–527.
+
+Sorenson, O. (2005) Social networks, informational complexity and industrial geography.
+In D. B. Audretsch, D. Fornahl, C. Zellner (eds) The Role of Labour Mobility and Informal
+Networks for Knowledge Transfer, pp. 79–95. New York: Springer .
+
+Sorenson, O. and Stuart, T. E. (2001) Syndication networks and the spatial distribution of
+venture capital investments, American Journal of Sociology, 106: 1546–1588.
+
+Stinchcombe, A. L. (1965) Social structure and organization. In J. G. March (ed.) Handbook of
+Organizations, pp. 142–193. Chicago: Rad McNelly.
+
+Storper, M. and Venables, A. J. (2004) Buzz: face-to-face contact and the urban economy,
+Journal of Economic Geography, 4: 351–370.
+
+Storper, M. and Walker, R. (1989) The Capitalist Imperative: Territory, Technology, and
+Industrial Growth. New York: Basil Blackwell.
+
+Stuart, T. E. (1998) Network positions and propensities to collaborate: an investigation of
+strategic alliance formation in a high-technology industry, Administrative Science Quarterly,
+43: 668–698.
+
+UNCTAD (2004) World Investment Report 2004: The Shift Towards Services. New York,
+Geneva: United Nations.
+
+Venkatraman, N. and Lee, C.-H. (2004) Preferential linkage and network evolution: a conceptual
+model and empirical test in the US video game sector, Academy of Management Journal, 47:
+876–892.
+
+Walker, G., Kogut, B., Shan, W. (1997) Social capital, structural holes and the formation of an
+industry network, Organization Science, 8: 109–125.
+
+Watts, D. J. (1999) Networks, dynamics, and the small-world phenomenon, American Journal
+of Sociology, 105: 493–527.
+
+White, H. C. (1981) Where do markets come from? American Journal of Sociology, 87: 517–547.
+Zeller, C. (2004) North Atlantic innovative relations of Swiss pharmaceuticals and the proximities
+with regional biotech arenas, Economic Geography, 80: 83–111.
+
+634 . Glu¨ckler
+
+ at U
+LB Sachsen-A
+
+nhalt on A
+ugust 30, 2012
+
+http://joeg.oxfordjournals.org/
+D
+
+ow
+nloaded from
+
+ 
+
+
+

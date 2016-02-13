@@ -1,0 +1,1402 @@
+
+tion the concept of a ‘‘general pattern” of congested trafﬁc ﬂow. Finally, we discuss some
+open problems that call for the development of improved trafﬁc models and further empir-
+ical studies.
+
+� 2009 Elsevier Ltd. All rights reserved.
+
+the f
+n ev
+erstan
+
+2004; Nagel and Nelson, 2005; Schönhof and Helbing, 2007; Ossen and Hoogendoorn, 2005; NGSIM, 2006), on the other
+hand, criteria such as theoretical (in)consistency, simpleness, or robustness with respect to the choice of parameters are ap-
+plied (Daganzo, 1995; Helbing, 2001). One of the most famous papers calling for theoretical consistency is the ‘‘Requiem for
+
+0191-2615/$ - see front matter � 2009 Elsevier Ltd. All rights reserved.
+
+* Corresponding author. Address: ETH Zurich, UNO D11, Universitätstr. 41, 8092 Zurich, Switzerland. Tel.: +41 446328880; fax: +41 446321767.
+E-mail address: dhelbing@ethz.ch (D. Helbing).
+
+1 Nevertheless, recent theoretical progress (Helbing, forthcoming) should be mentioned.
+
+Transportation Research Part B 43 (2009) 784–797
+
+Contents lists available at ScienceDirect
+
+Transportation Research Part B
+
+journal homepage: www.elsevier .com/ locate / t rb
+doi:10.1016/j.trb.2009.02.004
+proach, however, shows that trafﬁc science has still not reached a generally accepted theoretical framework.1
+
+Modeling attempts go back to the ﬁfties of last century. It seems that Pipes (1953) came up with the ﬁrstmicroscopic traf-
+ﬁc model. Until today, similar car-following models have been intensively studied (Treiber et al., 2000, 2006; Kerner and Kle-
+nov, 2002). The ﬁrstmacroscopic trafﬁc model based on the ﬂuid-dynamic conservation equation dates back to the early days
+of trafﬁc modeling as well (Lighthill andWhitham,1955; Richards, 1956). It is still frequently used, and has been extended in
+many ways (Kühne, 1984; Kerner and Konhäuser, 1993; Hilliges et al., 1993; Daganzo, 1994; Treiber et al., 1999; Helbing,
+2003). Some of these macroscopic models have been derived from gas-kinetic trafﬁc models (Prigogine,1961; Paveri-Fontana,
+1975; Phillips, 1977; Hoogendoorn and Bovy, 1998; Helbing et al., 2001), others have been phenomenologically motivated.
+
+The ﬁeld of trafﬁc modeling is now in a stage where researchers are trying to identify the best of all models. On the one
+hand, this is done by testing models against empirical data (Damrath and Rose, 2002; Brockfeld et al., 2003; Knospe et al.,
+Keywords:
+Trafﬁc breakdowns and congestion
+Three-phase trafﬁc theory
+General pattern
+Synchronized ﬂow
+Pinch effect
+Wide scattering
+
+1. Introduction
+
+Efﬁcient transportation is one of
+Nevertheless, the world witnesses a
+has been tried to simulate and und
+undamental preconditions for a ﬂourishing economics and a high quality of life.
+er-growing level of congestion. Therefore, since the early days of computers, it
+d trafﬁc ﬂows. The on-going controversial debate about the right modeling ap-
+Criticism of three-phase trafﬁc theory
+
+Martin Schönhof a, Dirk Helbing a,b,c,*
+aDresden University of Technology, Andreas-Schubert-Str. 23, 01062 Dresden, Germany
+b ETH Zurich, UNO D11, Universitätstr. 41, 8092 Zurich, Switzerland
+cCollegium Budapest – Institute for Advanced Study, Szentháromság u. 2, 1014 Budapest, Hungary
+
+a r t i c l e i n f o
+
+Article history:
+Received 20 August 2007
+Received in revised form 9 February 2009
+Accepted 10 February 2009
+
+a b s t r a c t
+
+After introducing the history and main points of three-phase trafﬁc theory, we continue
+with a critical discussion based on its theoretical features and empirical trafﬁc data. Our
+data originate from the German freeway A5 close to Frankfurt, i.e. from the same freeway
+section that has been the basis for the development of three-phase trafﬁc theory. Despite of
+this, we end up with partially different interpretations of the observations. In particular, we
+highlight ﬁndings that are inconsistent with three-phase trafﬁc theory and facts that ques-
+
+
+
+
+
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 785
+second-order ﬂuid approximations of trafﬁc ﬂow” (Daganzo, 1995). It showed that the most common gas-kinetic and ﬂuid-
+dynamic trafﬁc models at that time had theoretical ﬂaws.
+
+In the meantime, this criticism could be overcome by improved models (Helbing, 1995,1996; Treiber et al., 1999; Helbing,
+2001, in print). Nevertheless, there are some surprising empirical observations that many trafﬁc models do not reproduce.
+This has triggered many empirical analyses and new theoretical explanation approaches, including
+
+� an extensive series of studies on empirical features of trafﬁc ﬂows (Kerner and Rehborn, 1996a,b, 1997; Kerner, 1998a,b,
+2000b, 2002a,b; Kerner et al., 2006),
+
+� a criticism of former trafﬁc simulation models (Kerner, 2002a), especially all trafﬁc models containing a fundamental
+diagram,
+
+� the interpretation of empirical observations in terms of a three-phase trafﬁc theory (Kerner and Rehborn, 1996b, 2002b,
+2004), which has been repeatedly adjusted to new empirical ﬁndings, and
+
+� the development of new, parameter-rich microscopic trafﬁc models that ﬁt the interpretations of three-phase trafﬁc theory
+(Kerner and Klenov, 2002; Kerner et al., 2002; Kerner and Klenov, 2003).
+
+These publications belong to the most inﬂuential and extensive bodies of work on trafﬁc ﬂows and have considerably
+stimulated their understanding and theoretical description.
+
+In our opinion, this also applies to the macroscopic, Navier–Stokes-like trafﬁc model (Kerner and Konhäuser, 1993) and its
+implications, although this model has been questioned and dropped during the development of three-phase trafﬁc theory.
+
+In Section 2, we will sketch the history and concept of three-phase trafﬁc theory. As this theory has become quite complex
+over the years (Kerner, 2004), such a summary can certainly not be done without simpliﬁcations, i.e. we will have to restrict
+ourselves to the main points of this theory. Nevertheless, we will have to spend some time on its evolution, in particular as
+the theory has been adapted to new empirical ﬁndings over time. Some explanation approaches can only be understood,
+when problems with previous assumptions or interpretations are taken into account (see, for example, Section 3.1.3).
+
+Section 3 will present theoretical inconsistencies and empirical results that question three-phase trafﬁc theory as de-
+scribed in the book ‘‘The Physics of Trafﬁc” (Kerner, 2004). Afterwards, in Section 4, we will X-ray the criticism of other trafﬁc
+models in order to assess, whether and how it could be overcome. Finally, Section 5 presents our summary and conclusions,
+including a discussion of future challenges for the theoretical modeling and empirical analysis of trafﬁc ﬂows.
+
+2. Historical development and main points of three-phase trafﬁc theory
+
+2.1. Modeling and simulation of jam formation before three-phase trafﬁc theory
+
+Many publications on trafﬁc ﬂows, including the very early ones, were driven by the desire to understand the fundamen-
+tal diagram (i.e. the empirical relationship between trafﬁc ﬂow and density) and the breakdown of free trafﬁc ﬂow, partic-
+ularly the emergence of trafﬁc jams (see, e.g., Helbing (2001), for an overview). Particular attention has been paid to the
+process of jam formation in a Navier–Stokes-like trafﬁc model (Kerner and Konhäuser, 1993). This second-order model,
+which is also known as the Kerner–Konhäuser model, is related to a similar model previously studied by Kühne (1984). A
+detailed investigation of the model was performed by computer simulations (Kerner and Konhäuser, 1994) and analytical
+calculations (Kerner et al., 1997). These computer-based and mathematical analyses were followed by a series of empirical
+studies, which started in 1996 (Kerner and Rehborn, 1996a,b, 1997; Kerner, 1998a).
+
+The Kerner–Konhäuser model has a unique ﬂow–density relationship in the stationary and homogeneous case. However,
+in a medium density range, trafﬁc ﬂow is unstable with respect to small perturbations due to a delayed adaptation of the
+vehicle speed to the respective local trafﬁc situation. This can lead to the formation of ‘‘phantom trafﬁc jams” (Kerner
+and Konhäuser, 1993, 1994). Vehicles in these jams have speeds close to zero and are densely packed. The jams themselves
+are travelling backwards, as vehicles are moving out at the front and joining at the end. While narrow jams tend to grow, the
+spatial extension of moving jams stabilizes in so-called ‘‘wide moving jams”, the spatial extension (low-velocity area) of
+which is signiﬁcantly larger than the extension of their jam fronts. Wide moving jams are characterized by ‘‘characteristic
+constants” such as their negative, typical propagation speed c0 and their outﬂow Qout (Kerner and Konhäuser, 1994; Kerner
+and Rehborn, 1996a). These constants are related to a self-organized, linear ﬂow–density relationship, the ‘‘jam line” (Kerner
+and Rehborn, 1996a; Kerner et al., 1997). According to the authors, models of wide moving jams ﬁt the related empirical
+observations well (Kerner, 2004, p. 80).
+
+2.2. Empirical classiﬁcation of trafﬁc phases and fundamental hypothesis of three-phase trafﬁc theory
+
+Within the framework of three-phase trafﬁc theory, the ﬁrst trafﬁc phase is given by ‘‘free trafﬁc”, characterized by high
+vehicle speeds which may differ among neighboring lanes. This phase is deﬁned by trafﬁc ﬂows with a monotonously
+increasing and almost linear ﬂow–density relationship, while all trafﬁc states showing points in the ﬂow–density plane right
+of this line are classiﬁed as congested (cf. Kerner, 2004, p. 23).
+
+Wide moving jams constitute the second trafﬁc phase. The criteria for the presence of a wide moving jam are as follows
+(Kerner and Rehborn, 1996a; Kerner, 2004): while the vehicles in the jam have very low speeds, sometimes as low as zero,
+
+
+
+trast to the ‘wide moving jam’ trafﬁc phase, the downstream front of the ‘synchronized ﬂow’ trafﬁc phase does notmaintain
+
+786 M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797
+the mean velocity of the downstream front. In particular, the downstream front of synchronized ﬂow is often ﬁxed at a free-
+way bottleneck” (see also Kerner and Rehborn (1996b)).
+
+The name ‘‘synchronized ﬂow” was chosen since the speeds in neighboring freeway lanes showed a tendency of synchro-
+nization and the ﬂow was ﬁnite, i.e. non-zero. (Note that ‘‘wide moving jams” are also characterized by speed synchroniza-
+tion among lanes, but their ﬂow drops to zero.) It seems to be natural to imagine ‘‘synchronized ﬂow” as queued trafﬁc
+upstream of bottlenecks of the freeway such as on-ramps, lane closures, or gradients, but this interpretation is not fully
+in accordance with three-phase trafﬁc theory, as it also states that the dynamics of the downstream congestion front may
+depend on details of the trafﬁc pattern upstream of the bottleneck (Kerner, 2000b). ‘‘Synchronized ﬂow” typically shows a
+wide scattering of ﬂow–density data. Therefore, it completely differs from free ﬂow and the jam line (the theoretically ex-
+pected, self-organized ﬂow–density relation for wide moving jams), and it establishes another trafﬁc phase. When the phe-
+nomenon of ‘‘synchronized ﬂow” was published for the ﬁrst time (Kerner and Rehborn, 1996b), trafﬁc models based on a
+unique ﬂow–density relationship did not convincingly reproduce the wide scattering of ‘‘synchronized ﬂow”. Within
+three-phase trafﬁc theory, this discrepancy is seen as a substantial, even constitutive problem: the ‘‘fundamental hypothesis
+of three-phase trafﬁc theory” postulates that each congested ﬂow–density point in synchronized ﬂow is metastable. This
+would imply the existence of a ‘‘multitude of steady states” covering a large area of the ﬂow–density plane (Kerner, 1999).
+
+2.3. Discussion
+
+The ‘‘fundamental hypothesis of three-phase trafﬁc theory” implies by deﬁnition that trafﬁc models within the ‘‘funda-
+mental diagram approach” (characterized by a one-dimensional and unique ﬂow–density relationship in the stationary
+and homogeneous case) could, for principal reasons, not provide a satisfactory understanding of trafﬁc phenomena. However,
+this hypothesis can not be tested. Due to the inherent wide scattering of synchronized ﬂow, the hypothetical steady states
+can not be proven empirically (cf. Kerner, 2004, p. 97). Nevertheless, it is an integral part of three-phase trafﬁc theory and has
+been the basis for the development of new trafﬁc models (Kerner and Klenov, 2002; Kerner et al., 2002).
+
+From our point of view, the empirical observations, in particular the widely scattered ﬂow–density data, can also be
+reproduced by simpler trafﬁc models (see Section 4.1). However, at the time when the concept of ‘‘synchronized ﬂow”
+was elaborated, computer simulations of trafﬁc ﬂows were not advanced enough for this, due to the following reasons:
+
+� First, many simulations of macroscopic trafﬁc models were restricted to periodic boundary conditions (i.e. circular trafﬁc).
+Although on- and off-ramps could be added to periodic systems (Kerner et al., 1995), people had various problems sim-
+ulating open systems. For example, the propagation direction of perturbations changes, when trafﬁc ﬂow breaks down,
+which requires to switch between different kinds of boundary conditions (Helbing and Treiber, 1999).
+
+� Second, most studies of macroscopic trafﬁc models were carried out with single-class models (which did not consider the
+heterogeneity of driver–vehicle behaviors) and with effective single-lane models (which did not take into account the
+impact of lane changes). The synchronization of ﬂows on neighboring lanes, however, is clearly a multi-lane effect involv-
+ing lane changes (Shvetsov and Helbing, 1999).
+
+� Third, the instability properties of the models were not sufﬁciently consistent with empirical data.
+� Forth, the measurement process of empirical data was not properly reﬂected in the generation and evaluation of simula-
+tion results.
+
+The resulting problems, when trying to reproduce empirical ﬁndings, triggered the development of ‘‘three-phase trafﬁc
+theory”, while the computer simulation of trafﬁc ﬂows was advanced in parallel, providing alternative interpretations within
+the framework of models with a fundamental diagram (Helbing et al., 1999; Helbing and Treiber, 1999). Nevertheless, such
+models are still criticized to contradict observed trafﬁc phenomena (Kerner, 2002a). Before we address these criticisms in
+Section 4, let us ﬁrst discuss inconsistencies in the classiﬁcation of congested trafﬁc ﬂows according to three-phase trafﬁc
+theory and emphasize empirical phenomena that are not well incorporated in it.
+
+3. Criticism of three-phase trafﬁc theory
+
+3.1. Conceptual problems
+
+The distinction of the three different trafﬁc phases is made in practice by the patented concept FOTO/ASDA (Kerner et al.,
+2004). While, theoretically, 3 rules should be sufﬁcient to classify the 3 trafﬁc phases, this concept uses 13 different quan-
+the downstream jam front propagates upstream with a constant average velocity. This holds for a wide moving jam ‘‘even as
+it propagates through other (possible very complex) trafﬁc states of freeway bottlenecks” (cf. Kerner, 2004, p. 27). The cita-
+tion refers to later empirical results (Kerner, 2000b) concerning the interaction with another congested trafﬁc phase that of-
+ten occurs upstream of bottlenecks. This constitutes the third trafﬁc phase, called ‘‘synchronized ﬂow” with signiﬁcant, non-
+zero vehicle speeds (Kerner and Rehborn, 1996b)—in contrast to wide moving jams (Kerner and Rehborn, 1996a). Synchro-
+nized ﬂows denote all congested trafﬁc states that cannot be classiﬁed as wide moving jam (cf. Kerner, 2004, p. 27): ‘‘In con-
+
+
+
+titative criteria. From our point of view, this indicates already that more than 3 trafﬁc phases are needed to appropriate
+reﬂect the complexity of trafﬁc ﬂow phenomena. In fact, as the following section will show, one must distinguish sever
+subclasses and special cases.
+
+3.1.1. Several different kinds of ‘‘synchronized ﬂow”
+In order to account for the empirical observations, ‘‘synchronized ﬂow” has been subdivided into a variety of differen
+
+kinds, which undermines the concept of summarizing all states as ‘‘synchronized ﬂow” that are not classiﬁed as free trafﬁ
+or wide moving jams.
+
+For example, ‘‘synchronized ﬂow” was subdivided into three different kinds, based on observations of one-minute ave
+ages measured at single cross-sections of the freeway (Kerner and Rehborn, 1996b):
+
+1. ‘‘stationary and homogeneous states”, where both the average speed and the ﬂow rate are stationary for a few minutes
+2. ‘‘homogeneous-in-speed states”, which look similar to the upper part of the free branch of the fundamental diagram (co
+
+responding to a stationary average vehicle speed), but with a lower desired velocity (see also Kerner (1998b, 2004)),
+3. ‘‘non-stationary and non-homogeneous states” (see also Kerner (1998b, 2004)).
+
+Furthermore, it was suggested that, upstream of a bottleneck, ‘‘synchronized ﬂow” would bread wide moving jams base
+on a ‘‘pinch effect” (Kerner, 1998a): upstream of a section with ‘‘synchronized” congested trafﬁc close to a bottleneck, a so
+called ‘‘pinch region” would spontaneously give birth to narrow jams (vehicle clusters). These perturbations would be grow
+ing while travelling further upstream. Eventually, wide moving jams would be formed by the merging or disappearance o
+
+F
+i
+s
+p
+4
+m
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 787
+narrow jams. Once formed, wide jams would suppress the occurence of new narrow jams in between. Instead of forming
+wide jams, however, narrow jams would be able to coexist, if their distance was larger than about 2.5 km (Kerner, 1998a).
+
+3.1.2. Complications and inconsistencies with regard to the general pattern and the moving synchronized pattern
+The congestion pattern related to the ‘‘pinch effect” is called ‘‘general pattern” (Kerner, 2002b). As the ‘‘general pattern”
+
+consists of a spatial sequence of differently appearing kinds of congested trafﬁc ﬂow, the chosen terminology masks that
+there may exist more than two congested trafﬁc states. It also makes it difﬁcult to decide when exactly a narrow jam born
+in the ‘‘general pattern” becomes a ‘‘wide moving jam”. Without a clear classiﬁcation criterion, however, a distinction of the
+two different congestion phases (‘‘wide moving jams” and ‘‘synchronized ﬂow”) becomes questionable.
+
+Three-phase trafﬁc theory states that congestion patterns at isolated bottlenecks have the form of a ‘‘general pattern”
+(Kerner, 2002a). Therefore, they should more or less look like the one displayed in Fig. 1. But the term ‘‘general pattern”
+is also used for a large variety of congestion patterns of different appearance, e.g. ‘‘dissolving general patterns” (DGP), single
+moving jams, and ‘‘AGP” (an alternation of free trafﬁc and ‘‘synchronized ﬂow”) (Kerner, 2002a,b). We doubt that such an
+approach is useful for explaining the fundamentals and particularities of trafﬁc ﬂows.
+
+Another congestion pattern that reveals serious classiﬁcation problems is the ‘‘moving synchronized pattern” (MSP). ‘‘Mov-
+ing synchronized patterns” look like wide moving jams, but they are not, as they stop propagating at a bottleneck and form a
+‘‘localized synchronized pattern”. ‘‘Moving synchronized patterns” often travel with the same speed as ‘‘wide moving jams”,
+however, ‘‘... in contrast with a wide moving jam, if an MSP reaches a bottleneck, the MSP is caught at the bottleneck: the
+MSP that propagates upstream can exist only for a ﬁnite time” (Kerner, 2005, p. 187). Furthermore, it is explicitly stated that
+‘‘moving jams, which are caught at the bottleneck, are related to the synchronized ﬂow phase rather than to the wide moving
+
+ig. 1. Representative example of the ‘‘pinch effect”. The underlying data are from the German freeway A5 in direction South. The solid arrow in this graph
+ndicates the driving direction of vehicles. Upstream of intersection Bad Homburg at kilometer 481 (see Fig. 2), one can clearly see the typical spatial
+equence characterizing a ‘‘general pattern”, i.e. an area of relatively stationary and homogeneous ‘‘synchronized ﬂow”, a ‘‘pinch region” in which
+erturbations (narrow jams) occur, and ‘‘wide moving jams”, travelling through another congestion pattern upstream of junction Friedberg at kilometer
+71. Note that the average vehicle speed in this diagram is displayed downwards for better illustration of the congestion pattern (see Section 3.2.1). For a
+ore detailed discussion of a similar ﬁgure see Schönhof and Helbing (2007).
+ly
+al
+
+t
+c
+
+r-
+
+,
+r-
+
+d
+-
+-
+f
+
+
+
+jam phase” (Kerner, 2007, p. 29). That is, the actual type of trafﬁc congestion indeed remains undeﬁned until it reaches the
+next upstream bottleneck.
+
+From our point of view, it is highly problematic to distinguish two identically looking states that cannot be told apart, if
+
+788 M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797
+there is no upstream bottleneck. Even if there were a bottleneck allowing one to differentiate between a MSP and a wide
+moving jam, the ‘‘catching” of the jam and, thus, the identity of the trafﬁc phenomenon would probably depend on the bot-
+tleneck strength, which leaves the classiﬁcation dissatisfactory. Thus, a clear identiﬁcation of a ‘‘wide moving jam” as op-
+posed to ‘‘synchronized ﬂow” is not possible, and three-phase trafﬁc theory is severely questioned by this shortcoming. A
+proposal to circumvent the problem is presented at the end of the next subsection.
+
+3.1.3. Jam generation at off-ramps
+Three-phase trafﬁc theory has particular problems explaining the observed transitions from free trafﬁc to moving jams,
+
+without an intermediate transition to ‘‘synchronized ﬂow”. In the course of time, various interpretations of such empirical
+ﬁndings have been suggested, but the formalization and critical testing of the proposed mechanisms is still not satisfactory:
+
+1. On the one hand, the occurence of wide moving jams at off-ramps is explained as follows (Kerner, 2000a, 2004): jams
+could only be generated in free trafﬁc, if ‘‘synchronized ﬂow” were suppressed by a suitable inhomogeneity of the free-
+way such as an off-ramp with a large amount of cars leaving the freeway. (It is argued that the critical amplitude of a
+density ﬂuctuation required for the generation of jams would be much bigger than for a transition to ‘‘synchronized
+ﬂow”.) This explanation, however, lacks consistency: despite the mentioned suppression of synchronized ﬂow, ‘‘moving
+synchronized patterns” (that are caught at the next bottleneck, see Section 3.1.2) are often generated at off-ramps, too.
+
+2. On the other hand, even single jams generated upstream of an off-ramp are interpreted as a very short form of the ‘‘gen-
+eral pattern” (Kerner, 2002b).
+
+3. Finally, in some computer simulations, ‘‘wide moving jams” result from a ‘‘self-compression” of ‘‘synchronized ﬂow” in a
+‘‘moving synchronized pattern” (Kerner and Klenov, 2002). This suggests a further, alternative interpretation of how wide
+moving jams are generated at off-ramps.
+
+In conclusion, there does not seem to be a consistent interpretation of transitions from free trafﬁc to wide moving jams. From
+our point of view, the complexity of three-phase trafﬁc theory would considerably decrease,
+
+� if one would drop the differentiation of moving jams into ‘‘moving synchronized patterns” and ‘‘wide moving jams”, and
+� if one would consider the possibility of transitions from moving jams to other congestion patterns.
+
+3.2. Empirical observations not sufﬁciently accounted for
+
+The empirical studies, on which three-phase trafﬁc theory is based, have been mainly carried out for one freeway, namely
+the German freeway A5 close to Frankfurt, and certain intersections of this freeway. However, observations from other sites
+and rare or untypical observations have not been paid enough attention to, at least for a long time. This section will give
+several examples of such other observations, as they have important implications for the interpretation of congestion pat-
+terns and the development of a consistent trafﬁc theory (Helbing, forthcoming).
+
+3.2.1. Remarks on trafﬁc data and analysis methods
+Three-phase trafﬁc theory is mainly based on the study of trafﬁc on the German freeway A5 between 1996 and 2001 (see
+
+Fig. 2). As these data were not provided to us, we have requested trafﬁc data for the same freeway stretch directly from the
+responsible trafﬁc authorities and obtained extensive data sets for six months in 2001, cf. Schönhof and Helbing (2007).
+Although the time period is different, it is unlikely that the driver behavior or trafﬁc dynamics has signiﬁcantly changed
+on this freeway stretch. In fact, our empirical observations are largely consistent with the ones in the time period between
+1996 and 2001, but some of our interpretations are different (see, for example, Section 3.2.2).
+
+Our data analysis uses the ‘‘adaptive smoothing method” (Treiber and Helbing, 2002; Schönhof and Helbing, 2007), which
+was applied in all three-dimensional representations throughout this paper. It averages out ﬂuctuations by means of a non-
+isotropic smoothing method, taking the propagation direction of perturbations into account. In free trafﬁc, we set this speed
+to the truck velocity of 80 km/h, while in congested trafﬁc, it was set to �16 km/h, i.e. the dissolution speed of congested
+trafﬁc. Note that, for better illustration, the average vehicle velocities as a function of space and time are displayed upside
+down in all three-dimensional diagrams of this paper, i.e. they increase in downward direction. This gives the velocity plots
+an appearance similar to density plots, but has the advantage that the velocity can be determined much more accurately by
+double loop detectors than the density. As a result, congested regions appear as ‘‘hills”, the size of which is indirectly related
+to delays in travel time.2
+
+2 A direct relation with travel time would be reached by displaying the inverse speed 1=V . However, this quantity can diverge, as V can go to zero within
+trafﬁc jams.
+
+
+
+S2S3S5 S4S6S7S8S9S1
+0
+
+S1
+1
+
+S1
+2
+
+S1
+3
+
+S1
+4
+
+S1
+5
+
+S1
+6
+
+S1
+7
+
+S1
+8
+
+S1
+9
+
+S2
+0
+
+S2
+1
+
+S2
+2
+
+S2
+3
+
+S2
+4
+
+S2
+5
+
+S2
+7
+
+S2
+8
+
+S2
+9
+
+S3
+0
+
+S3
+1
+
+S1
+
+S2
+6
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 789
+Note that the adaptive smoothing method allows one to distinguish small vehicle clusters from ﬂuctuations. While ﬂuc-
+tuations are averaged out, vehicle clusters cause perturbations that continue to exist while travelling forward, which makes
+it possible to identify them. In this way, one can, for example, see the ﬁngerprints of long-lasting overtaking maneuvers of
+trucks, which cause growing vehicle platoons behind them (Helbing and Tilch, submitted for publication). This will be dis-
+cussed in the next section.
+
+3.2.2. The ‘‘boomerang effect” as alternative jam generating mechanism
+The mechanisms generating wide moving jams and the laws governing transitions to other trafﬁc states constitute key
+
+elements of three-phase trafﬁc theory. According to the ‘‘pinch effect” (see Section 3.1.1), wide moving jams are born out
+of a pinch region with ‘‘synchronized ﬂow”. A direct transition from free trafﬁc to moving jams is questioned, while it is pre-
+dicted for large enough perturbations and suitable ﬂow conditions by the phase diagram of certain trafﬁc models with a fun-
+damental diagram (Helbing et al., 1999) (see Section 4.2). In the following, we will show that such transitions from free ﬂow
+to moving jams do actually exist, and that some of them result from overcritical perturbations generated by the heteroge-
+neity of trafﬁc ﬂows (the fact that cars and trucks are driving at different speeds).
+
+In our analysis of trafﬁc data of the German freeway A5, 18 out of 245 congestion patterns were initiated by a ‘‘boomerang
+effect”. This effect also triggered ‘‘wide moving jams” several times (see Fig. 3). The ‘‘boomerang effect” is characterized by a
+
+465470475480485490
+100
+150
+200
+250
+
+Location (km)
+
+Elevation (m)
+
+N
+1
+
+N
+2
+
+N
+3
+
+N
+4
+
+N
+5
+
+N
+6
+
+N
+7
+
+N
+8
+
+N
+9
+
+N
+10
+
+N
+11
+
+N
+12
+
+N
+13
+
+N
+14
+
+N
+15
+
+N
+16
+
+N
+17
+
+N
+18
+
+N
+19
+
+N
+20
+
+N
+21
+
+N
+22
+
+N
+23
+
+N
+24
+
+N
+25
+
+N
+26
+
+N
+27
+
+N
+28
+
+N
+29
+
+N
+30
+
+Frankfurt West Frankfurt North−West
+Intersection Intersection Intersection Bad Homburg Junction Friedberg N
+
+Fig. 2. Design of the German freeway A5 close to Frankfurt. Top: sketch of the investigated freeway section, showing the complexity of the German three-
+lane freeway A5 near Frankfurt/Main, with various gradients and multiple combinations of on- and off-ramps. Each measurement cross-section of the
+freeway is marked by a vertical line. It is named with the initial of the driving direction (‘‘N” for North or ‘‘S” for South), followed by a number increasing in
+driving direction. The geographical position is given in kilometers according to the ofﬁcial notation of the road authorities. Bottom: height proﬁle along the
+freeway. (After Schönhof and Helbing (2007).)
+small perturbation corresponding to a cluster of vehicles, which moves forward in downstream direction. In the course of
+time, this perturbation grows bigger. Eventually, it changes its propagation direction, which is reﬂected by the term ‘‘boo-
+merang effect”. The upstream propagation sets in when the perturbation exceeds a certain amplitude (in terms of a drop in
+the vehicle speed). This backward motion can be understood as follows: while inside of a trafﬁc jam vehicles are standing,
+vehicles are leaving it at its downstream front, but new vehicles are joining the jam at its upstream front. Altogether, this
+implies an upstream motion of the jam.
+
+A closer investigation of the underlying data suggests that the ‘‘boomerang effect” relates to overtaking maneuvers of
+trucks. These cause ‘‘moving bottlenecks” (Gazis and Herman, 1992; Munoz and Daganzo, 2002) at a speed of about
+80 km/h. The change in the propagation direction occurs slightly upstream of a freeway intersection, where obstructive
+interactions between the vehicle clusters and leaving vehicles occur. For an example of the triggering of congested trafﬁc
+patterns by perturbations in free trafﬁc ﬂow see Fig. 4. The proper explanation of these observations requires3
+
+1. to evaluate the truck fraction,
+2. to consider overtaking maneuvers of trucks, and
+3. to study the interaction of the resulting, growing vehicle platoon with a spatial inhomogeneity of the freeway (causing a
+
+growth of the perturbation amplitude and a ‘‘turning of the boomerang”).
+
+These factors have not been sufﬁciently accounted for in previous empirical studies of trafﬁc on the German freeway A5
+close to Frankfurt and in the development of trafﬁc theories based on these data. Therefore, alternative explanations have not
+been well enough considered.
+
+3 At least this holds, if cars and trucks have different speed limits, as on German freeways.
+
+
+
+790 M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797
+3.2.3. ‘‘General Patterns” are not general
+While the term ‘‘general pattern” is used in a very ﬂexible way, as it accounts for many differently appearing congestion
+
+patterns (see Section 3.1.2), there are still other trafﬁc patterns, that are not well covered by the concept of the ‘‘general
+pattern”. Fig. 5 shows two examples. From this ﬁgure it is obvious that congestion patterns at ﬂow-conserving bottlenecks
+look different from congestion patterns at freeway intersections (see Figs. 1 and 3a).
+
+Fig. 5a shows an example of an oscillatory congested trafﬁc pattern at an isolated and spatially conﬁned bottleneck. It
+is caused by an accident a kilometer 478.325 at 9:50am. In comparison with the ‘‘general pattern” in Fig. 1, the forma-
+tion of narrow jams starts directly upstream of the isolated bottleneck (the accident site), rather than after a region of
+stationary and homogeneous ‘‘synchronized ﬂow”.4 Moreover, the dissolution or merging of jams still continues seven
+kilometer upstream of the bottleneck. As the jams do not pass the intersection Friedberg at kilometer 471, one cannot clas-
+sify the pronounced stop-and-go waves as ‘‘wide moving jams”. Hence, the characteristic spatial structure of a ‘‘general
+pattern” (‘‘synchronized ﬂow”, ‘‘pinch region” with jam formation, and a region of ‘‘wide moving jams”) cannot be seen
+here.
+
+Fig. 5b shows that ‘‘wide moving jams” as well can be born at gradients without the previous transition to synchronized
+ﬂow. Interpreting them as a ‘‘moving synchronized patterns”, which transform into ‘‘wide moving jams” by ‘‘self-compres-
+sion” (Kerner and Klenov, 2002) would formally circumvent the problem. However, this is certainly not a satisfactory solu-
+
+Fig. 3. Formation of wide moving jams. The spatio-temporal trafﬁc patterns show the average velocity in downward direction for the sake of better
+illustration (see Section 3.2.1 for details). (a) Example of a wide moving jam triggered by a ‘‘boomerang effect” at kilometer 488 around 7am, without the
+previous existence of ‘‘synchronized ﬂow”. The solid arrows indicate the driving direction. For details of the observed section of the German freeway A5 see
+Fig. 2. (b) Another example of a wide moving jam born by a ‘‘boomerang” effect occurring at the same location. As in (a), ‘‘synchronized ﬂow” is triggered
+upstream of the intersection Bad Homburg at kilometer 481, when the wide moving jam passes the freeway intersection. In contrast to (a), no pinch effect is
+visible in (b) upstream of kilometer 481. According to three-phase trafﬁc theory, however, there should be a transition from free trafﬁc to ‘‘synchronized
+ﬂow” and then to ‘‘wide moving jams”. For the further discussion of similar trafﬁc patterns see Schönhof and Helbing (2007).
+tion, as this would fundamentally question the deﬁnition and existence of a separate trafﬁc phase of ‘‘wide moving jams”. A
+simpler interpretation would be based on the phase diagram (see Section 4.2), considering the instability of trafﬁc ﬂow in a
+certain density regime.
+
+We suggest that, in contrast to the congestion patterns at isolated bottlenecks (see Fig. 5), ‘‘general patterns” are actually
+speciﬁc patterns resulting at freeway sections with an on-ramp and an off-ramp further upstream. Then, it is natural to inter-
+pret a ‘‘general pattern” as a combination of different kinds of congestion along the freeway (Schönhof and Helbing, 2007):
+
+1. a spatially extended form of congested trafﬁc between the on-ramp and the off-ramp, which may be considered as ‘‘syn-
+chronized ﬂow”,
+
+2. less serious congestion such as stop-and-go waves upstream of the off-ramp, where the bottleneck strength is reduced (as
+vehicles leaving the freeway free up some capacity), and
+
+3. a special kind of congestion and dynamics in the vicinity of the off-ramp section (which relates to drivers who leave the
+freeway in response to congestion downstream of the off-ramp and, thereby, determine the particular features of the
+‘‘pinch region”).
+
+Certainly, we have to contradict the claim that ‘‘the effective bottleneck at (cross-section) D6 (here named S6, see Fig. 2) can
+indeed be considered as an isolated bottleneck at the on ramp” (Kerner, 2002b).
+
+4 A similar observation has been made at a factually isolated on-ramp, merging with an inner urban freeway next to the public observation tower in Kairo.
+The videos displayed at http://www.trafﬁcforum.org/stopandgo were recorded under free ﬂow conditions downstream of the on-ramp. Nevertheless, the on-
+ramp reproducibly triggered the breakdown of trafﬁc ﬂow and the emergence of upstream moving stop-and-go waves. Qualitatively very similar trafﬁc
+patterns are generated by the microscopic trafﬁc simulations available at http://www.trafﬁc-simulation.de/.
+
+
+
+
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 791
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+V(km/h)
+Q(veh/h/lane)
+Truck fraction
+
+A5 South, 04/04/2001 (Wed.)
+
+Km 482.2 (S16)
+
+Km 483.0 (S17)
+3.2.4. Existence of homogeneous congested trafﬁc
+According to three-phase trafﬁc theory, the area of congested ﬂow–density data is not further subdivided into areas of
+
+different stability. All feasible states are rather postulated to be metastable (Kerner, 1998b). In contrast to this, many trafﬁc
+models predict the existence of areas of unstable, metastable and stable congested trafﬁc ﬂows (Helbing, 2001), see Section
+4.2. Accordingly, there should be a stable trafﬁc regime at high density, implying the existence of ‘‘homogeneous congested
+trafﬁc” (Helbing et al., 1999). This, however, is incompatible with three-phase trafﬁc theory.
+
+Homogeneous congested trafﬁc is deﬁned as a form of congested trafﬁc with a considerable spatial extension (typically
+larger than that of a wide moving jam), which may grow or shrink. The downstream front is usually located at a bottleneck.
+Vehicles in homogeneous congested trafﬁc have a slow, but not necessarily zero speed. Applying some spatial and temporal
+smoothing, the average speed appears to be homogeneous, i.e. it is not of a pronounced oscillatory nature, in contrast, for
+example, to the ‘‘pinch effect”.
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+7:407:307:207:107:006:506:40
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+km
+/n
+
+ve
+h/
+
+h/
+la
+
+ne
+
+Time (h:mm)
+
+Km 484.1 (S18)
+
+Km 486.9 (S21)
+
+Km 488.0 (S22)
+
+Km 485.0 (S19)
+
+Km 486.0 (S20)Tr
+av
+
+el
+ d
+
+ire
+ct
+
+io
+n
+
+Fig. 4. Illustration of the ‘‘boomerang effect”. A detailed analysis of the trafﬁc scenario in Fig. 3b shows that the ‘‘boomerang effect” starts with a peak in the
+truck fraction, which moves in travel direction at a velocity of about 75 km/h, see also Schönhof and Helbing (2007). The movement of the peak is illustrated
+by the solid arrow. After the peak, high ﬂow values and a reduction in the average vehicle speed can be observed for some time period (see the part of the
+time series marked by the circles). This indicates a dense vehicle cluster queuing up behind overtaking trucks. While the cluster moves forward, its spatial
+extension grows: the time period, during which the vehicle velocity V is reduced, increases from one measurement cross-section to the next. Approximately
+one kilometer before the off-ramp at intersection Frankfurt North-West, which is characterized by many lane changing maneuvers due to a high off-ramp
+ﬂow, the velocity drops to values around 60 km/h. This causes a trafﬁc jam travelling against the driving direction (dashed arrow). The reduction in the
+average speed and ﬂow now increases with time, thereby causing a growth in the amplitude of perturbation.
+
+
+
+Fig. 5. Congestion patterns at isolated, ﬂow-conserving bottlenecks. For related information see the design of the German freeway A5 close to Frankfurt
+
+792 M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797
+When studying empirical data, we did not observe any widely extended homogeneous congested trafﬁc states upstream
+of freeway intersections. However, one would not expect to ﬁnd them over there, as the freeway would otherwise be inap-
+propriately dimensioned. In contrast, homogeneous congested trafﬁc states were observed after serious accidents with lane
+closures (see Fig. 6). Such states require large bottleneck strengths exceeding about 700 vehicles per hour and lane (Schönhof
+and Helbing, 2007). That is, if cases of accidents are excluded from the data set, it is unlikely to ﬁnd examples of homoge-
+neous congested trafﬁc.
+
+We are aware that some inhomogeneity in the trafﬁc ﬂows results from the following effects: (i) random variations in the
+time gaps of vehicles (see Section 4.1), (ii) entering or leaving vehicles at freeway junctions or ramps, or related lane-changes
+upstream or downstream of them, (iii) difﬁculties in smoothly controlling the gas pedal at low speeds. However, the authors
+of this paper do not think that these effects of ﬂuctuations and heterogeneities in driver–vehicle behavior would be funda-
+mental properties of trafﬁc ﬂows that require a detailed theoretical description. For this reason, the adaptive smoothing
+method (ASM) has been used to separate noise effects from the systematic dynamics, using the same parameters for all con-
+gestion patterns. Hence, the difference between oscillating and homogeneous congested trafﬁc is not a matter of differently
+chosen smoothing parameters, but it must be due to a different spatio-temporal dynamics.
+
+4. Revisiting the criticism of trafﬁc models that are not based on three-phase trafﬁc theory
+
+4.1. Wide scattering as effect of heterogeneous trafﬁc
+
+depicted in Fig. 2, the video at http://www.trafﬁcforum.org/stopandgo, and Schönhof and Helbing (2007). The driving direction is again indicated by solid
+arrows. (a) Moving jams triggered by an accident at kilometer 478.325 at 9:50am. (b) Wide moving jams appearing from 14:30 to 16:10 at the uphill
+gradient between kilometer 475 and kilometer 477 (see Fig. 2). The interruption of some jams at 16:20 is caused by an accident at kilometer 482.8. The
+‘‘wide moving jams” disappear at intersection Frankfurt West due to several off-ramps, but before they pass the congested trafﬁc upstream of the
+intersection Frankfurt North-West at kilometer 489. Note that the vehicle velocities in these diagrams increase in downward direction, see Section 3.2.1.
+Three-phase trafﬁc theory suggests that classical trafﬁc models with a fundamental diagram would not be able to repro-
+duce the wide scattering of congested ﬂow–density data. This, however, mainly applies to models assuming identical driver-
+vehicle units. Already the consideration of two kinds of vehicles, cars and trucks, allows one to reproduce empirical ﬂow–
+density diagrams semi-quantitatively, even with a simple macroscopic trafﬁc model (Treiber and Helbing, 1999).
+
+Fig. 6. Representative example of homogeneous congested trafﬁc. The trafﬁc pattern is caused by an accident with a blockage of freeway lanes, cf. Schönhof
+and Helbing (2007). The vehicle velocities in the diagram increase in downward direction for better illustration of the congestion pattern (cf. Section 3.2.1.).
+
+
+
+
+Moreover, empirical data are quantitatively compatible with the simple relationship
+
+Qðq; T;qmaxÞ ¼
+1
+T
+
+1� q
+qjam
+
+ !
+ð1Þ
+
+for the ﬂow Q, known as ‘‘jam line” (Kerner and Rehborn, 1996a), if not only the temporal variation of the density q is con-
+sidered, but also the temporal variation of the average time gap T and the jam density qjam (Nishinari et al., 2003). In such a
+case, the changes in the ﬂow according to Eq. (1) have a surprisingly high correlation of more than 90% with the changes in
+the empirical ﬂows. The scattering is mainly due to different behaviors of cars and trucks, with a large variation of the truck
+fraction. However, some amount of scattering also originates from inter-driver and intra-driver variability (Wagner et al.,
+1996; Hoogendoorn and Bovy, 1998), and from the aggregation by the measurement process (Treiber and Helbing, 2003).
+
+Note that the time gaps are widely distributed with a heavy tail. Therefore, they average poorly with the time interval of
+data aggregation or sampling size (Nishinari et al., 2003). This implies a large temporal variation of the average time gaps T,
+which is of particular importance, as it leads to a varying slope �1=ðqjamTÞ of the jam line (Banks, 1999). Hence, variations in
+the average time gap T and the density q lead to movements in the ﬂow–density-plane, which point into different directions,
+if trafﬁc ﬂow is congested. In free ﬂow, however, variations of q and T lead to collinear movements. Altogether this explains
+both, the area of widely scattered ﬂow–density data in the congested regime and the almost one-dimensional relationship
+for free trafﬁc ﬂow.
+
+In summary, the wide scattering of congested ﬂow–density data is not well compatible with models assuming identical
+vehicle behavior, but it is consistent with multi-class models assuming heterogeneous driver–vehicle units. This holds even
+for macroscopic multi-class models with a fundamental diagram for each vehicle class (Treiber and Helbing, 1999).
+
+/h
+/la
+
+ne
+)
+
+/h
+/la
+
+ne
+)
+
+= QΔ+
+
+Qmax
+Qc2
+
+ρmax
+
+= QΔ+
+2000
+
+1800
+
+1600
+
+2000
+
+1800
+
+1600
+
+unstable stable
+
+3c 4c
+
+Qc4
+c3Q
+
+Q
+
+outQ
+Qc1
+
+ρc1 ρ ρ
+
+st
+ab
+
+le
+
+ρc2 ρjam
+ρ
+
+V
+
+stable
+
+c4
+
+unstable
+
+c3ρc1 ρ ρ
+
+st
+ab
+
+le
+
+ρc2 ρjam
+ρ
+
+tot upQ Qtot upQ Q
+
+always congested
+
+traffic
+Extended congested
+
+traffic
+Extended congested
+
+WSP WSP
+d
+
+of ‘‘localized clusters”, while multiple ‘‘wide moving jams” emanating from ‘‘synchronized ﬂow” (stop-and-go waves) belong to the upper left area of
+extende
+(2007).
+clusters
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 793
+missing in previous versions of the phase diagram. This phase exists if the critical density qc2 is greater than the density qmax belonging to the maximum
+ﬂow (Helbing et al., submitted for publication), while qc2 6 qmax was assumed in previous publications (Helbing et al., 1999).
+d congested trafﬁc and do not require large perturbations. Both areas of congested trafﬁc states can be further subdivided, see Schönhof and Helbing
+Note the phase of ‘‘widening synchronized patterns” (WSP) in (c) and (d) (Kerner and Klenov, 2002), which also comprises ‘‘widening moving
+”, here. It was found in recent computer simulations (Treiber et al., submitted for publication; Helbing et al., submitted for publication), and was
+(v
+eh
+
+ic
+le
+
+s
+up
+
+Q
+
+ΔQ (vehicles/h/lane)
+
+(v
+eh
+
+ic
+le
+
+s
+up
+
+Q
+
+ΔQ (vehicles/h/lane)
+
+1400
+
+1200
+
+1000
+2000
+
+always
+free traffic
+
+1400
+
+1200
+
+1000
+400 600 800 1000 200 400 600 800 10000
+
+Localized
+
+Clusters
+
+always
+free traffic
+
+Free Traffic
+
+Fig. 7. Phase diagrams of ﬂow-dependent trafﬁc patterns and underlying instability diagrams for a model of freeway trafﬁc with a fundamental diagram.
+The stable, linearly unstable, and metastable (grey) density areas are illustrated (a) in the velocity–density diagram and (b) in the ﬂow–density diagram.
+While perturbations of any size are damped out in the stable areas and even small perturbations grow in the linearly unstable area, the outcome in the
+metastable regime (grey area) depends on whether the perturbation size is above or below a critical threshold (i.e. large perturbations grow, while small
+ones eventually disappear). The lower ﬁgures show a schematic representation of the idealized phase diagram of trafﬁc states assuming (c) negligible and
+(d) large perturbations of the trafﬁc ﬂow. The diagrams are for an on-ramp ﬂow merging into the freeway ﬂow, but an application to other kinds of
+bottlenecks is possible as well (Treiber et al., 2000). The different areas indicate, for which combinations of the upstream freeway ﬂow Qup and the ramp
+ﬂow DQ certain trafﬁc states can exist. The sum of both ﬂows determines the total trafﬁc demand Q tot. According to our understanding, ‘‘extended
+congested trafﬁc” can be classiﬁed as ‘‘synchronized ﬂow”. Single ‘‘wide moving jams” triggered by large perturbations fall into the upper triangular subarea
+
+
+
+1999, submitted for publication).
+
+794 M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797
+The concept of the phase diagram also helps to categorize microscopic (Kerner and Klenov, 2003) and macroscopic trafﬁc
+models (Lee et al., 1999) into different classes, depending on the number and kinds of congested trafﬁc states they imply
+(Helbing, 2001; Helbing et al., submitted for publication). From our point of view, the phase diagrams of models based on
+three-phase trafﬁc theory (Kerner and Klenov, 2003) differ from the original one found for the gas-kinetic-based trafﬁc mod-
+el (Helbing et al., 1999) mainly by the existence of an additional area, in which so-called ‘‘widening synchronized patterns”
+occur, and beyond this in the use of terminology: when identifying extended congested trafﬁc ﬂowwith ‘‘synchronized ﬂow”
+and moving localized clusters with moving synchronized patterns, the result is a high degree of qualitative similarity (Tre-
+iber et al., submitted for publication).
+
+An idealized phase diagram of the intelligent driver model for a particular choice of parameters (Helbing et al., submitted
+for publication) is presented in Fig. 7c and d. Given suitable instability properties, the corresponding phase diagram is well
+consistent with empirical observations (Schönhof and Helbing, 2007; Helbing et al., submitted for publication). It also con-
+tains an area, where ‘‘widening synchronized patterns” can appear (Helbing et al., submitted for publication).
+
+Due to the metastability of trafﬁc ﬂows, one needs to distinguish between a phase diagram for small perturbations in the
+trafﬁc ﬂow (see Fig. 7c) and one for large perturbations (see Fig. 7d). Apart from the area of WSP states, in which so-called
+widening synchronized patterns can occur, the latter corresponds essentially to the one presented in the original publication
+(Helbing et al., 1999). This distinction of perturbation sizes is important from a theoretical point of view, when transitions
+between different trafﬁc states are discussed. However, as the perturbation size is empirically hard to determine, it is advised
+to compare empirical observations with a superposition of the two phase diagrams Fig. 7c and d.
+
+The ﬁrst proposed phase diagram (Helbing et al., 1999), which corresponds to Fig. 7d, but without the WSP area, and the
+underlying ‘‘fundamental diagram approach” have been critisized to contradict basic empirical observations for the follow-
+ing reasons (Kerner, 2002a):
+
+1. Homogeneous congested trafﬁc would not exist for large bottleneck strengths.
+2. When the total trafﬁc demand is increased, a transition from free trafﬁc to moving jams should occur before the transition
+
+to extended forms of congested trafﬁc, while most moving jams have been observed after a previous transition to ‘‘syn-
+chronized ﬂow”.
+
+3. When the total trafﬁc demand goes down, the transition from extended congested trafﬁc to free trafﬁc would require the
+intermediate occurence of a localized cluster, which is normally not observed.
+
+In Section 3.2.4, it has been already shown that the ﬁrst criticism is wrong.
+The second and third claim are based on the phase diagram for large perturbations, which is depicted in Fig. 7d. Note,
+
+however, that the phase diagram looks different for small perturbations (see Fig. 7c). According to it, a direct transition from
+free ﬂow to an extended form of congested trafﬁc is expected, as soon as the total trafﬁc volume Qup þ DQ exceeds a certain
+threshold. That is, direct transitions from free trafﬁc to ‘‘synchronized ﬂow” should actually be common, in agreement with
+observations. While transitions to multiple moving jams are possible for small perturbations (Schönhof and Helbing, 2007),
+transitions to localized clusters (e.g. to single moving jams) require large perturbations (see Fig. 7c and d). Note that this
+holds for single, isolated bottlenecks, while congestion patterns reminding of localized clusters can also occur between
+on-ramps and upstream off-ramps (Schönhof and Helbing, 2007).
+
+Furthermore, during the transition from extended congested trafﬁc to free trafﬁc, an intermediate localized cluster state
+will normally not occur. This is, because the total trafﬁc demand has usually moved into the region of free trafﬁc already
+before the extended congested trafﬁc has melted down to the size of a localized cluster.
+
+In conclusion, the above criticisms of phase diagrams for trafﬁc models with a fundamental diagram are based on mis-
+understandings. The phase diagram is, in fact, very well consistent with empirical observations (Schönhof and Helbing,
+2007; Helbing et al., submitted for publication).
+
+5. Summary and outlook
+
+In this paper, we have questioned three-phase trafﬁc theory based on empirical data from the German freeway A5 close to
+Frankfurt. Most of the observations, which triggered the development of three-phase trafﬁc theory, stem from this freeway
+stretch. While we have a high opinion of many fundamental discoveries within the context of three-phase trafﬁc theory, we
+do not agree with a number of interpretations that went along with these discoveries, as will be summarized in the
+following:
+4.2. The phase diagram of trafﬁc models with a ‘‘fundamental diagram” and its misinterpretation
+
+The phase diagram of trafﬁc states is a general concept, which makes quantitative predictions: it offers a systematic cat-
+egorization of the variety of congested trafﬁc states and provides an explanation for them (Helbing et al., 1999). In addition,
+for models with a fundamental diagram (characterized by a one-dimensional and unique ﬂow–density relationship in the
+stationary and homogeneous case), it allows one to derive conditions for the possible existence of these states, based on
+the instability regimes of trafﬁc ﬂows and the self-organized, characteristic outﬂow from congested trafﬁc (Helbing et al.,
+
+
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 795
+fore, it is not always clear, which conclusions follow from models and which ones from empirical data.
+
+5.2. Challenges for trafﬁc modeling
+
+In our opinion, it causes theoretical problems to separate ‘‘wide moving jams” from ‘‘moving synchronized patterns” as
+deﬁned by three-phase trafﬁc theory. We propose to consider them both as moving jams or ‘‘moving localized clusters”. One
+1. Particularly with respect to the ‘‘moving synchronized pattern”, but also with respect to the transition from ‘‘synchro-
+nized ﬂow” to ‘‘wide moving jams” in the ‘‘general pattern”, the classiﬁcation of trafﬁc states in three-phase trafﬁc theory
+is not well deﬁned and remains qualitative, i.e. mostly non-predictive.
+
+2. The ‘‘general pattern” is most likely a consequence of the combination of one or several on-ramps with one or several off-
+ramps further upstream, i.e. a result of a particular freeway design. Congestion patterns at ﬂow-conserving bottlenecks
+have a different appearance.
+
+5.1. Methodological concerns
+
+We see the source of our disagreement with several interpretations of three-phase trafﬁc theory in some methodological
+shortcomings of previous empirical studies:
+
+� The impact of accident-induced bottlenecks on the kind of congestion has not been sufﬁciently discussed. In fact, within
+half a year, there were about 500 accidents or breakdowns of vehicles on the freeway stretch investigated by us. While
+most of them had a minor impact on the trafﬁc dynamics, some accidents caused major lane blockages. Together with
+a high trafﬁc volume, such blockages were the precondition for the observation of homogeneous congested trafﬁc states,
+which should not exist according to three-phase trafﬁc theory.
+
+� The impact of gradients (see Fig. 2), which can constitute ﬂow-conserving bottlenecks, has been neglected. At such bot-
+tlenecks, we have observed congested trafﬁc patterns that look different from ‘‘general patterns” (Schönhof and Helbing,
+2007). In fact, they often show direct transitions from free trafﬁc to moving jams.
+
+� Complex multi-ramp setups (see Fig. 2) have been generalized to arbitrary bottleneck situations and compared with mod-
+els for simple on-ramp scenarios. As these models were not developed for such scenarios, they could not reproduce ‘‘gen-
+eral patterns” well, but those can be easily be understood as effect of the particular freeway design (see Section 3.2.3).
+
+� The inﬂuence of the truck fraction has not been accounted for. It is actually one important factor for the wide scattering of
+ﬂow–density data in the congested trafﬁc regime (Treiber and Helbing, 1999). Moreover, overtaking maneuvers of trucks
+seem to be responsible for the boomerang effect, which can trigger direct transitions from free trafﬁc to moving jams (see
+Section 3.2.2).
+
+� The relevance of the perturbation size for the transition from free trafﬁc to particular kinds of congested trafﬁc has not
+been properly taken into account (see Section 3.2.2). This has important implications for the comparison between trafﬁc
+theories and empirical data (see Section 4.2), in particular with respect to the expected transitions between different traf-
+ﬁc states.
+
+� Empirical cross-sectional, time-averaged measurements for multi-class and multi-lane trafﬁc have been compared with
+effective one-lanemodels for identical vehicles andwithout consideration of themeasurementmethod. The resulting devi-
+ation between empirical and simulation results was interpreted as failure of models assuming a fundamental diagram of
+trafﬁc ﬂows. However, if the heterogeneity of trafﬁc ﬂows is adequately taken into account, observations like thewide scat-
+tering of congested ﬂow–density data can, in fact, be well reproduced by simulation models (Treiber and Helbing, 1999).
+
+� The impact of the adaptive speed control system along the studied freeway has not been discussed. This control system
+could, for example, be responsible for the existence of spatially extended ‘‘homogeneous-in-speed states” (cf. Kerner,
+2004, pp. 298 and356): these tend to occur when the overall ﬂow in the three freeway lanes reaches stable values around
+6000 vehicles per hour. Note that, in Germany, intelligent speed control systems usually display a speed limit of 80 km/h,
+when a value of 5400 vehicles per hour is exceeded (MARZ, 1999).
+
+� The inﬂuence of the weather conditions on the vehicle ﬂows, in particular the outﬂow from congested trafﬁc, has not been
+sufﬁciently studied. According to recent empirical results, however, the variability of the outﬂow Qout from congested traf-
+ﬁc can at least partially be explained by the weather conditions (Schönhof, in press; Helbing et al., submitted for publi-
+cation). Taking this variability into account, one ﬁnds a good agreement between theoretical and empirical phase
+diagrams (Schönhof and Helbing, 2007; Helbing et al., submitted for publication).
+
+Considering the mentioned shortcomings, we conclude that some of the interpretations of three-phase trafﬁc theory could
+be replaced by simpler interpretations (Helbing, forthcoming), as elaborated above. Nevertheless, there are attempts to
+reproduce the interpretations of three-phase trafﬁc theory by parameter-rich microsimulation models, namely a continuous
+microscopic model (Kerner and Klenov, 2002, 2003) and a stochastic cellular automaton (Kerner et al., 2002). These models
+explicitly implement the hypothesis regarding the existence of metastable stationary and homogeneous ‘‘synchronized
+ﬂows” in a wide area of the ﬂow–density diagram. Since the simulated congestion patterns were named after the empirical
+ones, statements about simulated congestion patterns are now hard to distinguish from empirically based statements. There-
+
+
+
+Until today, there is not only a lack of sufﬁciently detailed models of the trafﬁc dynamics at freeway intersections. There is
+
+796 M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797
+also a need of more detailed empirical data. In order to ﬁnally decide which trafﬁc model provides the best description and
+what is the true cause of the spatio-temporal organization of the ‘‘general pattern”, it is necessary to have spatio-temporal
+data of single vehicles and their lane-changing behavior. Such data require to determine trajectory data along freeway inter-
+sections by means of special, video-equipped helicopters. While studies of this kind are expensive and technologically
+demanding, they will be needed to shed more light on the oldest and most central question of trafﬁc theory, namely what
+are the real mechanisms and quantitative properties of trafﬁc breakdowns.
+
+Acknowledgements
+
+D.H. is grateful for the hospitality, excellent working conditions, and good collaboration at the Collegium Budapest, sup-
+ported by the ‘‘Cooperative Center for Communication Networks Data Analysis”, a NAP project sponsored by the Hungarian
+National Ofﬁce of Research and Technology under Grant No. KCKHA005. Moreover, the authors would like to thank for ﬁnan-
+cial support by the Volkswagen AG within the BMBF research initiative INVENT, the Hessisches Landesamt für Straßen- und
+Verkehrswesen for providing the freeway data, and Martin Treiber for valuable discussions.
+
+References
+
+Banks, J.H., 1999. An investigation of some characteristics of congested ﬂow. Transportation Research Record 1678, 128–134.
+Brockfeld, E., Kühne, R.D., Skabardonis, A., Wagner, P., 2003. Toward benchmarking of microscopic trafﬁc ﬂow models. Transportation Research Record
+
+1852, 124–129.
+Daganzo, C., 1994. The cell transmission model: a dynamic representation of highway trafﬁc consistent with the hydrodynamic theory. Transportation
+
+Research Part B 28 (4), 269–287.
+Daganzo, C.F., 1995. Requiem for second-order ﬂuid approximations of trafﬁc ﬂow. Transportation Research Part B 29 (4), 277–286.
+Damrath, R., Rose, M., 2002. Dynamische Verkehrsprognosen auf der Basis makroskopischer Modellansätze. In: Forschung Straßenbau und
+
+Straßenverkehrstechnik, Heft 854. Bundesministerium für Verkehr, Bau- und Wohnungswesen, Bonn.
+Gazis, D.C., Herman, R., 1992. The moving and ‘‘phantom” bottlenecks. Transportation Science 26 (3), 223–229.
+Helbing, D., 1995. Improved ﬂuid-dynamic model for vehicular trafﬁc. Physical Review E 51 (4), 3164–3169.
+Helbing, D., 1996. Gas-kinetic derivation of Navier–Stokes-like trafﬁc equations. Physical Review E 53 (3), 2366–2381.
+Helbing, D., 2001. Trafﬁc and related self-driven many-particle systems. Reviews of Modern Physics 73 (4), 1067–1141.
+Helbing, D., 2003. A section-based queueing-theoretical trafﬁc model for congestion and travel time analysis in networks. Journal of Physics A 36 (46),
+
+L593–L598.
+Helbing, D., in press. Derivation of non-local macroscopic trafﬁc equations and consistent trafﬁc pressures from microscopic car-following models.
+
+European Physical Journal B. Available from: <http://arxiv.org/abs/0805.3400>.
+Helbing, D., forthcoming. Trafﬁc Theory from First Principles. Springer, Berlin.
+Helbing, D., Tilch, B., in press. A power law for the duration of high-ﬂow states and its interpretation from a heterogeneous trafﬁc ﬂow perspective.
+
+European Physical Journal B. Available from: <http://arxiv.org/abs/0807.3710>.
+Helbing, D., Treiber, M., 1999. Numerical simulation of macroscopic trafﬁc equations. Computing in Science and Engineering (CiSE) 1 (5), 89–99.
+Helbing, D., Hennecke, A., Treiber, M., 1999. Phase diagram of trafﬁc states in the presence of inhomogeneities. Physical Review Letters 82 (21), 4360–4363.
+would then have to accept that the ‘‘characteristic constants” are actually only constants for ‘‘wide moving jams”, i.e. in a
+limiting case or, in other words, under idealized conditions. Generally, the propagation speed and other characteristic con-
+stants of ‘‘wide moving jams” could vary for moving localized clusters. Such an approach would remove some of the theo-
+retical inconsistencies of three-phase trafﬁc theory.
+
+However, our empirical observations do not only challenge three-phase trafﬁc theory, but also other theories. For example,
+it needs to be checked whether current multi-class simulation models reproduce the empirical features of the ‘‘boomerang
+effect”, i.e.
+
+� the growth of the spatial extension (width) of small perturbations, while they are travelling forward,
+� the turning of the propagation direction slightly upstream of the off-ramp of a freeway intersection, and
+� the subsequent growth of the perturbation amplitude.
+
+Furthermore, while the original phase diagram approach (Helbing et al., 1999; Helbing et al., submitted for publication) pro-
+vides a promising alternative to three-phase trafﬁc theory, in order to reach a quantitative agreement with empirical ﬁndings,
+the upstream ﬂows and ramp ﬂows must be scaled by the respective outﬂow Qout from congested trafﬁc (Schönhof and Hel-
+bing, 2007). In contrast to many trafﬁc models, the empirical outﬂows are varying considerably from day to day (Kerner,
+2000b; Schönhof and Helbing, 2007), but this does not seem to be a sheer consequence of the varying truck fraction. The
+variation is also not just an effect of the statistical variation of congested ﬂow–density data, as there is a systematic corre-
+lation of the outﬂow with the average vehicle speed in the congested area, and with the on- and off-ramp ﬂows (Schönhof
+and Helbing, 2007). We believe that this calls for suitable microscopic multi-class trafﬁc models considering the lane and
+route choice of driver–vehicle units. Moreover, the desired speed (or speed limit) is expected to have a systematic inﬂuence
+on the value of the outﬂow (Helbing et al., 2007). Therefore, the weather conditions should inﬂuence the outﬂow as well,
+which has recently been conﬁrmed by empirical data (Schönhof, in press; Helbing et al., submitted for publication).
+
+5.3. The need of further empirical studies
+
+
+
+
+
+Helbing, D., Hennecke, A., Shvetsov, V., Treiber, M., 2001. MASTER: macroscopic trafﬁc simulation based on a gas-kinetic, non-local trafﬁc model.
+Transportation Research Part B 35 (2), 183–211.
+
+Helbing, D., Siegmeier, J., Lämmer, S., 2007. Self-organized network ﬂows. Networks and Heterogeneous Media 2 (2), 193–210.
+
+M. Schönhof, D. Helbing / Transportation Research Part B 43 (2009) 784–797 797
+Helbing, D., Treiber, M., Kesting, A., Schönhof, M., in press. Theoretical vs. empirical classiﬁcation and prediction of congested trafﬁc states. European
+Physical Journal B. Available from: <http://arxiv.org/abs/0903.0929>.
+
+Hilliges, M., Reiner, R., Weidlich, W., 1993. A simulation model of dynamic trafﬁc ﬂow in networks. In: Pave, A. (Ed.), Proceedings of the 1993 European
+Simulation Multiconference, Lyon, pp. 503–510.
+
+Hoogendoorn, S., Bovy, P.H.L., 1998. Continuum Modelling of Multi-lane Heterogeneous Trafﬁc Flow Operations. TU Delft, Delft.
+Kerner, B.S., 1998a. Experimental features of self-organization in trafﬁc ﬂow. Physical Review Letters 81 (17), 3797–3800.
+Kerner, B.S., 1998b. A theory of congested trafﬁc ﬂow. In: Rysgaard, R. (Ed.), Proceedings of the Third International Symposium on Highway Capacity, vol. 2.
+
+Road Directorate, Denmark, pp. 621–642.
+Kerner, B.S., 1999. Congested trafﬁc ﬂow: observations and theory. Transportation Research Record 1678, 160–167.
+Kerner, B.S., 2000a. Experimental features of the emergence of moving jams in free trafﬁc ﬂow. Journal of Physics A 33 (26), L221–L228.
+Kerner, B.S., 2000b. Theory of breakdown phenomenon at highway bottlenecks. Transportation Research Record 1710, 136–144.
+Kerner, B.S., 2002a. Empirical features of congested patterns at highway bottlenecks. Transportation Research Record 1802, 145–154.
+Kerner, B.S., 2002b. Empirical macroscopic features of spatio-temporal trafﬁc patterns at highway bottlenecks. Physical Review E 65 (4), 046138.
+Kerner, B.S., 2004. The Physics of Trafﬁc. Springer, Heidelberg.
+Kerner, B.S., 2005. Microscopic three-phase trafﬁc theory and its applications for freeway trafﬁc control. In: Mahmassani, H.S. (Ed.), Proceedings of the 16th
+
+International Symposium on Transportation and Trafﬁc Theory. Elsevier, Amsterdam, pp. 181–203.
+Kerner, B., 2007. On-ramp metering based on three-phase trafﬁc theory. Trafﬁc Engineering and Control 48 (1), 28–35.
+Kerner, B.S., Klenov, S.L., 2002. A microscopic model for phase transitions in trafﬁc ﬂow. Journal of Physics A 35 (3), L31–L43.
+Kerner, B.S., Klenov, S.L., 2003. Microscopic theory of spatial–temporal congested trafﬁc patterns at highway bottlenecks. Physical Review E 68 (3), 036130.
+Kerner, B.S., Konhäuser, P., 1993. Cluster effect in initially homogeneous trafﬁc ﬂow. Physical Review E 48 (4), R2335–R2338.
+Kerner, B.S., Konhäuser, P., 1994. Structure and parameters of clusters in trafﬁc ﬂow. Physical Review E 50 (1), 54–83.
+Kerner, B.S., Rehborn, H., 1996a. Experimental features and characteristics of trafﬁc jams. Physical Review E 53 (2), R1297–R1300.
+Kerner, B.S., Rehborn, H., 1996b. Experimental properties of complexity in trafﬁc ﬂow. Physical Review E 53 (5), R4275–R4278.
+Kerner, B.S., Rehborn, H., 1997. Experimental properties of phase transitions in trafﬁc ﬂow. Physical Review Letters 79 (20), 4030–4033.
+Kerner, B.S., Konhäuser, P., Schilke, M., 1995. Deterministic spontaneous appearance of trafﬁc jams in slightly inhomogeneous trafﬁc ﬂow. Physical Review E
+
+51 (6), 6243–6246.
+Kerner, B.S., Klenov, S.L., Konhäuser, P., 1997. Asymptotic theory of trafﬁc jams. Physical Review E 56 (4), 4200–4216.
+Kerner, B.S., Klenov, S.L., Wolf, D.E., 2002. Cellular automata approach to three-phase trafﬁc theory. Journal of Physics A 35 (47), 9971–10013.
+Kerner, B.S., Rehborn, H., Aleksic, M., Haug, A., 2004. Recognition and tracking of spatial–temporal congested trafﬁc patterns on freeways. Transportation
+
+Research Part C 12 (5), 369–400.
+Kerner, B.S., Klenov, S.L., Hiller, A., Rehborn, H., 2006. Microscopic features of moving trafﬁc jams. Physical Review E 73 (4), 046107.
+Knospe, W., Santen, L., Schadschneider, A., Schreckenberg, M., 2004. Empirical test for cellular automaton models of trafﬁc ﬂow. Physical Review E 70 (1),
+
+016115.
+Kühne, R.D., 1984. Macroscopic freeway model for dense trafﬁc—stop–start waves and incident detection. In: Volmuller, I., Hamerslag, R. (Eds.), Proceedings
+
+of the Ninth International Symposium on Transportation and Trafﬁc Theory. VNU Science Press, Utrecht, The Netherlands, pp. 21–42.
+Lee, H., Lee, H., Kim, D., 1999. Dynamic states of a continuum trafﬁc equation with on-ramp. Physical Review E 59 (5), 5101–5111.
+Lighthill, M.J., Whitham, G.B., 1955. On kinematic waves: II. A theory of trafﬁc on long crowded roads. Proceedings of the Royal Society of London Series A,
+
+Mathematical and Physical Sciences 229 (1178), 317–345.
+MARZ, 1999. Merkblatt für die Ausstattung von Verkehrsrechnerzentralen und Unterzentralen (MARZ). Firma Kappich, Verkehrsinformationssysteme, für
+
+die Bundesanstalt für Straßenwesen, Bergisch Gladbach.
+Munoz, J.C., Daganzo, C.F., 2002. Moving bottlenecks: a theory grounded on experimental observation. In: Taylor, M.A.P. (Ed.), Proceedings of the 15th
+
+International Symposium of Trafﬁc and Transportation Theory. Pergamon, Oxford, pp. 441–462.
+Nagel, K., Nelson, P., 2005. A critical comparison of the kinematic-wave model with observational data. In: Mahmassani, H.S. (Ed.), Proceedings of the 16th
+
+International Symposium Transportation and Trafﬁc Flow Theory. Elsevier, Amsterdam, pp. 145–163.
+NGSIM, 2006. Next Generation Simulation. Department of Transportation. <http://www.ngsim.fhwa.dot.gov>.
+Nishinari, K., Treiber, M., Helbing, D., 2003. Interpreting the wide scattering of synchronized trafﬁc data by time gap statistics. Physical Review E 68 (6),
+
+067101.
+Ossen, S.J., Hoogendoorn, S.P., 2005. Car-following behavior analysis from microscopic trajectory data. Transportation Research Record 1934, 13–21.
+Paveri-Fontana, S.L., 1975. On Boltzmann-like treatments for trafﬁc ﬂow. A critical review of the basic model and an alternative proposal for dilute trafﬁc
+
+analysis. Transportation Research 9 (4), 225–235.
+Phillips, W.F., 1977. Kinetic Model for Trafﬁc Flow. Tech. Rep. DOT/RSPD/DPB/50-77/17, National Technical Information Service, Springﬁeld, VA 22161.
+Pipes, L., 1953. An operational analysis of trafﬁc dynamics. Journal of Applied Physics 24, 274.
+Prigogine, I., 1961. A Boltzmann-like approach to the statistical theory of trafﬁc ﬂow. In: Herman, R. (Ed.), Symposium on Theory of Trafﬁc Flow 1959,
+
+Warren, MI. Elsevier, New York, pp. 148–164.
+Richards, P.I., 1956. Shock waves on the highway. Operations Research 4 (1), 42–51.
+Schönhof, M., Helbing, D., 2007. Empirical features of congested trafﬁc states and their implications for trafﬁc modeling. Transportation Science 41 (2), 135–
+
+166.
+Schönhof, M., in press. Empirische Untersuchung von gestauten Verkehrszuständen auf Autobahnen. Dissertation, Technische Universität Dresden.
+Shvetsov, V., Helbing, D., 1999. Macroscopic dynamics of multi-lane trafﬁc. Physical Review E 59 (6), 6328–6339.
+Treiber, M., Helbing, D., 1999. Macroscopic simulation of widely scattered synchronized trafﬁc states. Journal of Physics A 32 (1), L17–L32.
+Treiber, M., Helbing, D., 2002. Reconstructing the spatio-temporal trafﬁc dynamics from stationary detector data. Cooper@tive Tr@nsport@tion Dyn@mics 1,
+
+3.1–3.24.
+Treiber, M., Helbing, D., 2003. Memory effects in microscopic trafﬁc models and wide scattering in ﬂow–density data. Physical Review E 68 (4), 046119.
+Treiber, M., Hennecke, A., Helbing, D., 1999. Derivation, properties, and simulation of a gas-kinetic-based, non-local trafﬁc model. Physical Review E 59 (1),
+
+239–253.
+Treiber, M., Hennecke, A., Helbing, D., 2000. Congested trafﬁc states in empirical observations and microscopic simulations. Physical Review E 62 (2), 1805–
+
+1824.
+Treiber, M., Kesting, A., Helbing, D., 2006. Delays, inaccuracies and anticipation in microscopic trafﬁc models. Physica A 360 (1), 71–88.
+Treiber, M., Kesting, A., Helbing, D., submitted for publication. Alternative models and interpretations of empirically observed trafﬁc phenomena.
+
+Transportation Research Part B.
+Wagner, C., Hoffmann, C., Sollacher, R., Wagenhuber, J., Schürmann, B., 1996. Second-order continuum trafﬁc ﬂow model. Physical Review E 54 (5), 5073–
+
+5085.
+
+
+
+
+	Criticism of three-phase traffic theory
+	Introduction
+	Historical development and main points of three-phase traffic theory
+	Modeling and simulation of jam formation before three-phase traffic theory
+	Empirical classification of traffic phases and fundamental hypothesis of three-phase traffic theory
+	Discussion
+
+	Criticism of three-phase traffic theory
+	Conceptual problems
+	Several different kinds of “synchronized flow”
+	Complications and inconsistencies with regard to the general pattern and the moving synchronized pattern
+	Jam generation at off-ramps
+
+	Empirical observations not sufficiently accounted for
+	Remarks on traffic data and analysis methods
+	The “boomerang effect” as alternative jam generating mechanism
+	“General Patterns” are not general
+	Existence of homogeneous congested traffic
+
+
+	Revisiting the criticism of traffic models that are not based on three-phase traffic theory
+	Wide scattering as effect of heterogeneous traffic
+	The phase diagram of traffic models with a “fundamental diagram” and its misinterpretation
+
+	Summary and outlook
+	Methodological concerns
+	Challenges for traffic modeling
+	The need of further empirical studies
+
+	Acknowledgements
+	References
+
+

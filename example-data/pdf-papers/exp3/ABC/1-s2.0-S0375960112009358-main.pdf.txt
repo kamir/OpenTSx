@@ -1,0 +1,1202 @@
+
+Physics Letters A 376 (2012) 2781–2787
+
+Contents lists available at SciVerse ScienceDirect
+
+et
+
+om
+
+C nt
+s s
+
+Ju Fa
+
+M Jiao
+
+a
+
+Ar
+Re
+Re
+Ac
+Av
+Co
+
+Ke
+Ce
+Ve
+Fu
+Th
+Sy
+
+elo
+A
+ee-p
+as
+the
+s ti
+
+1.
+
+qu
+ob
+an
+ic
+of
+di
+be
+po
+ap
+fe
+Tr
+fr
+in
+fr
+or
+do
+ﬂo
+ph
+no
+la
+ﬁx
+
+*
+
+03
+ht
+nchronized outﬂow
+
+Introduction
+
+The systematic and thorough investigation of traﬃc ﬂow has
+ite a long history [1–10]. Various traﬃc phenomena have been
+served, e.g. phantom jams, hysteresis effects, metastable states
+d stop-and-go traﬃc etc. Different explanations of these empir-
+al ﬁndings and traﬃc ﬂow models have been proposed. Most
+these models [11–20] can be classiﬁed into the fundamental
+
+agram approach, which postulates that the steady traﬃc ﬂow
+longs to a curve in the ﬂow-density plane. However, Kerner
+inted out that these models within the fundamental diagram
+proach cannot explain traﬃc breakdown and many signiﬁcant
+atures of congested patterns induced by bottlenecks (see [9,10]).
+aﬃc breakdown simulated by these models is the transition from
+ee ﬂow to wide moving jams. A wide moving jam is a mov-
+g jam that maintains the mean velocity of the downstream jam
+ont, even when the jam propagates through other traﬃc phases
+bottlenecks. While empirical ﬁndings show that traﬃc break-
+wn is the ﬁrst order transition from free ﬂow to synchronized
+w (F → S transition). In contrast with the wide moving jam
+ase, the downstream front of the synchronized ﬂow phase does
+t exhibit the wide moving jam characteristic feature. In particu-
+r, the downstream front of the synchronized ﬂow phase is often
+ed at a bottleneck.
+
+Corresponding author.
+E-mail address: tianhustbjtu@hotmail.com (J.-f. Tian).
+
+Based on the three phases, i.e. free ﬂow, synchronized ﬂow and
+wide moving jams, an alternative traﬃc ﬂow theory called three-
+phase traﬃc theory is introduced by Kerner et al. [9,10,21–25],
+which can predict and explain the empirical spatiotemporal fea-
+tures of traﬃc breakdown and the resulting traﬃc congestion at an
+isolated bottleneck successfully. Empirical observations reported by
+Kerner [9,10] show that there are two types of congested patterns
+at an isolated bottleneck:
+
+The General Patterns (GPs): After the synchronized ﬂow occurs
+upstream of the bottleneck, the wide moving jams continuously
+emerge in that synchronized ﬂow and propagate upstream, and
+then this congested pattern is often called as the General Pattern
+(GP). However, if the wide moving jams discontinuous emerge on
+the road, there will just be one or few wide moving jams appear-
+ing in that synchronized ﬂow, then this congested pattern is often
+called as the dissolving general pattern (DGP).
+
+The Synchronized Patterns (SPs): If there only exists synchro-
+nized ﬂow upstream of the bottleneck, no wide moving jams
+emerge in the synchronized ﬂow, and then this congested pattern
+is often called as the Synchronized Patterns. And as a result of
+the F → S transition, various synchronized ﬂow patterns can oc-
+cur at the bottleneck, such as the widening synchronized pattern
+(WSP), local synchronized pattern (LSP), moving synchronized pat-
+tern (MSP).
+
+The fundamental hypothesis of three-phase theory is that the
+hypothetical steady states of the synchronized ﬂow cover a two-
+dimensional region in the ﬂow-density plane, i.e. there is no fun-
+damental diagram of traﬃc ﬂow in this theory. Subsequently, many
+
+75-9601/$ – see front matter © 2012 Elsevier B.V. All rights reserved.
+tp://dx.doi.org/10.1016/j.physleta.2012.08.035
+Physics L
+
+www.elsevier.c
+
+ellular automaton model in the fundame
+ynchronized outﬂow of wide moving jam
+
+n-fang Tian ∗, Zhen-zhou Yuan, Bin Jia, Hong-qiang
+OE Key Laboratory for Urban Transportation Complex Systems Theory and Technology, Beijing
+
+r t i c l e i n f o a b s t r a c t
+
+ticle history:
+ceived 6 April 2012
+ceived in revised form 2 July 2012
+cepted 21 August 2012
+ailable online 25 August 2012
+mmunicated by A.R. Bishop
+
+ywords:
+llular automaton
+locity effect
+ndamental diagram
+ree-phase theory
+
+Velocity effect and critical v
+model [J.F. Tian, et al., Phys.
+dynamics reported by the thr
+physics of traﬃc breakdown h
+reproduced. It is shown that
+is closely related with driver
+velocity, respectively.
+ters A
+
+/locate/pla
+
+al diagram approach reproducing the
+
+n, Tao Wang
+
+tong University, Beijing 100044, People’s Republic of China
+
+city are incorporated into the average space gap cellular automaton
+391 (2012) 3129], which was able to reproduce many spatiotemporal
+hase theory except the synchronized outﬂow of wide moving jams. The
+been explained. Various congested patterns induced by the on-ramp are
+occurrence of synchronized outﬂow, free outﬂow of wide moving jams
+me delay in acceleration at the downstream jam front and the critical
+
+© 2012 Elsevier B.V. All rights reserved.
+
+
+
+
+
+
+
+
+2782 J.-f. Tian et al. / Physics Letters A 376 (2012) 2781–2787
+
+tr
+ph
+of
+an
+el
+ap
+ch
+to
+ti
+th
+in
+ev
+pa
+of
+ja
+dr
+st
+sa
+m
+Th
+pa
+ob
+
+ga
+w
+ph
+ti
+on
+ch
+AS
+th
+in
+th
+pr
+th
+of
+ﬂo
+im
+
+2.
+
+or
+pr
+
+(1
+
+(2
+
+(3
+
+(4
+
+(5
+
+(6
+
+den
+th
+n
+ac
+hi
+ef
+ti
+n
+of
+ca
+th
+th
+In
+su
+at
+ta
+ds
+sp
+th
+vi
+
+ﬁc
+th
+eq
+in
+sm
+tw
+ad
+m
+hi
+in
+as
+ti
+IA
+
+3.
+
+ﬁc
+th
+is
+tu
+ap
+Th
+(e
+is
+au
+
+a
+le
+as
+ie
+ta
+ev
+be
+ti
+aﬃc ﬂow models have been proposed in the framework of three-
+ase traﬃc theory [25–35]. In order to emphasize the signiﬁcance
+the two-dimensional steady states of synchronized ﬂow, Kerner
+d Klenov proposed the speed adaption three-phase traﬃc mod-
+s (SA models) [27] in the framework of fundamental diagram
+proach. The basic hypothesis of SA models is the double Z-
+aracteristic for the sequence of phase transitions from free ﬂow
+synchronized ﬂow to wide moving jams (F → S → J transi-
+
+ons). Based on this hypothesis, SA models can reproduce both
+e traﬃc breakdown and the emergence of wide moving jams
+synchronized ﬂow as found in empirical observations. How-
+er, SA models are not able to reproduce the local synchronized
+tterns (LSPs) consistent with empirical results as well as some
+empirical features of synchronized ﬂow between wide moving
+
+ms within general patterns (GPs). Kerner et al. attribute these
+awbacks of SA models to the lacking of the two-dimensional
+eady states of synchronized ﬂow. At the same time, it is worth
+ying that models in the three-phase theory, such as the KKW
+odel [28], could not reproduce some empirical ﬁndings as well.
+e KKW model cannot simulate a single moving synchronized
+ttern (MSP) as well as an LSP whose width changes over time
+served in real traﬃc [29].
+Recently, a simple cellular automaton named the average space
+p model (ASGM) [36] within the fundamental diagram approach
+as proposed to reproduce some empirical ﬁndings of the three-
+ase traﬃc theory. ASGM can reproduce the F → S → J transi-
+
+ons, the single MSP, and other congested patterns induced by an
+-ramp that are in line with empirical results. However, the syn-
+ronized outﬂow of wide moving jams cannot be reproduced by
+GM. Thus, ASGM needs to be improved since this defect leads to
+e absence of only synchronized ﬂow existing between wide mov-
+g jams in GP, which is one of the key aspects of the criticisms
+at three-phase theory is made on the fundamental diagram ap-
+oach. In this Letter, an improved ASGM is established by taking
+e velocity effect and critical velocity into account. The physics
+traﬃc breakdown and the mechanism of the synchronized out-
+w and free outﬂow of wide moving jams are explained by the
+proved model.
+
+The model
+
+The essential mechanisms to reproduce three-phase traﬃc the-
+y in the improved model are embodied in the randomization
+ocess of vehicles. The parallel update rules are as follows.
+
+) Deﬁnition of the average safe space gap davgn (t)
+
+davgn (t) =
+⌊ml+n∑
+
+i=n
+deffi (t)/(ml + 1)
+
+⌋
+
+) Determination of the randomization parameter pn(t + 1) and
+deceleration extent �v:
+
+pn(t + 1) =
+
+⎧⎪⎨
+⎪⎩
+
+pa: if vn(t) >max(d
+avg
+n (t), vc)
+
+pb: if vn(t) = 0 and tstn (t)� tc
+pc: otherwise
+
+(1)
+
+�v(t + 1) =
+{
+a: if vn(t) >max(d
+
+avg
+n (t), vc)
+
+b: otherwise
+(2)
+
+) Acceleration:
+
+vn(t + 1) = min
+(
+vn(t) + 1, vmax
+
+)
+) Deceleration:
+
+vn(t + 1) = min
+(
+deffn (t), vn(t + 1)
+
+)
+) Randomization with probability pn(t + 1):
+if
+(
+rand() < pn(t + 1)
+
+)
+then vn(t + 1) = max
+
+(
+vn(t + 1) − �v(t + 1),0
+
+)
+) Car motion:
+
+xn(t + 1) = xn(t) + vn(t + 1)
+�x� denotes the maximum integer that is not bigger than x.
+
+ff
+(t) = dn(t) + max(0,min(vn+1(t) + 1,dn+1(t), vmax) − dsafe) is
+
+e safe space gap between vehicle n and its preceding vehicle
++ 1, and dsafe is the safe factor to avoid accidents. dn(t) is the
+tual gap, dn(t) = xn+1(t)− xn(t)− Lcar . xn(t) is the position of ve-
+cle n (here vehicle n + 1 precedes vehicle n). This is the velocity
+fect that the velocity of vehicle n depends not only on the posi-
+ons of itself and vehicle n + 1, but also on the velocity of vehicle
++ 1. Lcar is the length of the vehicle, and vn(t) is the velocity
+the vehicle n. tstn (t) denotes the time that a car stops. When the
+r has stopped for a certain time that is larger than or equal to tc ,
+e driver will become less sensitive. davgn (t) is deﬁned to model
+e anticipation effect of taking ml vehicles in front into account.
+order to describe it, the value of ml should be large enough,
+ggesting ml � 2. vc is the critical velocity to simulate the situ-
+ion that when the speed is smaller enough, the driver will not
+ke ml − 1 vehicles in front of the leading vehicle into account. If
+afe and vc are set as min(vn+1(t) + 1,dn+1(t), vmax) and zero re-
+ectively, ASGM can be obtained. This improved model is named
+e improved averaged space gap cellular automaton model, abbre-
+ated as IASGM.
+The basic driver behaviors in IASGM are as follows: (i) for suf-
+iently large space gaps in free ﬂow, drivers will accelerate until
+e maximum speed vmax , since d
+
+avg
+n and d
+
+eff
+n is greater than or
+
+ual to vmax . Behaviors of this kind can be named as free driv-
+g effect, which is realized by rule (3) in IASGM. (ii) For relatively
+all space gaps in synchronized ﬂow, drivers have to trade be-
+een davgn and d
+
+eff
+n . If d
+
+avg
+n is higher than d
+
+eff
+n , the driver will
+
+just to deffn ; otherwise, the driver will turn up to d
+avg
+n . Further-
+
+ore, drivers become more defensive when the actual speed is
+gher than davgn . The actual behavioral change is characterized by
+creasing the randomization probability from pc to pa , and the
+sociated deceleration from b to a. This behavior is named as an-
+cipation driving effect, which is fulﬁlled by rules (4) and (5) in
+SGM.
+
+Fundamental diagram
+
+Fundamental diagram approach postulates that the steady traf-
+ﬂow forms a curve in the ﬂow-density plane. Correspondingly,
+
+is curve going through the origin with at least one maximum
+called the fundamental diagram for traﬃc ﬂow. In the unper-
+rbed, noiseless limit, models within the fundamental diagram
+proach will have a fundamental diagram of steady states [10].
+e fundamental diagram is either hypothesized in these models
+.g. the optimal velocity model [18]), or the fundamental diagram
+a result of these models (e.g. the Nagel–Schreckenberg cellular
+tomaton model (NaSch model) [17]).
+In what follows, we show that the steady states of IASGM have
+
+fundamental diagram of steady states in the unperturbed, noise-
+ss limit according to Kerner’s method [10]. Since the mechanisms
+sociated with the synchronized ﬂow in IASGM are all embod-
+d in the randomization process, the noiseless limit should be
+ken as pa = 1, pc = 0, pb = 0 or pa = 1, pc = 1, pb = 1. How-
+er, all vehicles will keep stationary no matter how far distance
+tween vehicles in the latter case, which is obviously unrealis-
+c. Thus, we just consider the former. Steady states of traﬃc ﬂow
+
+
+
+J.-f. Tian et al. / Physics Letters A 376 (2012) 2781–2787 2783
+
+Fi
+J
+
+fo
+
+ar
+ﬁc
+ve
+th
+co
+Th
+th
+di
+IA
+co
+m
+th
+di
+da
+
+4.
+
+50
+of
+on
+vm
+ra
+ot
+a
+la
+tim
+
+bo
+le
+ve
+tim
+be
+ity
+fo
+
+in
+is
+ea
+ga
+se
+ve
+in
+se
+
+4.
+
+be
+to
+to
+fe
+th
+ﬂo
+
+ex
+th
+fe
+ga
+de
+ef
+cr
+sa
+an
+
+tio
+21
+re
+th
+ve
+te
+an
+tw
+an
+w
+tu
+ve
+th
+sl
+ﬁr
+di
+in
+ef
+sp
+re
+
+tic
+bo
+or
+po
+tim
+w
+oc
+is
+
+p(F
+ha
+sh
+a
+w
+la
+
+4.
+
+co
+te
+di
+In
+ﬂo
+sp
+fr
+g. 1. Fundamental diagram of IASGM. The lines L, RU, and RD are determined by
+= K vmax , J = 2 − K Lcar − KKsafe and J = 1 − K Lcar , respectively. (See Appendix A
+r the derivation for the fundamental diagram and the meaning of the parameters.)
+
+e hypothetical states of homogeneous (in time and space) traf-
+ﬂow of identical vehicles (and identical drivers) in which all
+
+hicles move with the same time-independent speed and have
+e same space gaps [10]. Therefore, davgn should equal to d
+
+eff
+n . Ac-
+
+rding to model rule (4), vn will always be no more than d
+eff
+n .
+
+us, vn � davgn and pn = pc . On the basis of rules (2), (3) and (4),
+e steady states are given by the equality: vn = deffn . This con-
+tion together with vn � vmax deﬁned the steady state of the
+SGM: vn = min(deffn , vmax). This equation can be written as the
+nditions for the gap d and the vehicle speed v: v = min(d +
+ax(0,min(v + 1,d, vmax) − dsafe), vmax), which form a curve of
+e steady states in the ﬂow-density plane, i.e. the fundamental
+agram (see Fig. 1, see Appendix A for the derivation for the fun-
+mental diagram).
+
+Simulations and discussions
+
+Simulations are implemented on a road with length Lroad =
+00Lcell . Each cell has the length of Lcell = 1.5 m, and the length
+a vehicle is Lcar = 7.5 m, i.e. ﬁve cells could accommodate
+ly one vehicle (Lcar = 5). The maximum velocity vmax is set as
+ax = 20, and the velocity of each vehicle is an integer, which
+nges from 0 to vmax . One time step corresponds to 1 s. The
+her parameters are as follows: pa = 0.95, pb = 0.5, pc = 0.03,
+= 3, b = 1, tc = 4, ml = 3, dsafe = 7, vc = 3. During the simu-
+tions, ﬁrst 10 000 time steps are discarded to let the transient
+e die out.
+Simulations are carried out near an on-ramp under open
+undary condition. The vehicles move from left to right. The
+ft-most cell corresponds to x = 1. The position of the left-most
+hicle is xlast and that of the right-most vehicle is xlead . At each
+e step, if xlast > vmax , a new vehicle with velocity vmax will
+injected to the position min(xlast − vmax, vmax) with probabil-
+qin . If xlead > Lroad , the leading vehicle will be removed and the
+
+llowing vehicle becomes the leader.
+A simple method is adopted to model the on-ramp [34]. Assum-
+
+g the position of the on-ramp is xon , a region [xon, xon + Lon-ramp]
+selected as the inserting area of the vehicle from on-ramp. At
+ch time step, the longest gap in this region is found out. If the
+p is large enough for a vehicle, then a new vehicle will be in-
+rted at the cell in the middle of the gap with probability qon . The
+locity of the inserted vehicle is set as the velocity of its preced-
+g vehicle, and the stop time is set to zero. The parameters are
+t as xon = 0.8Lroad and Lon-ramp = 50.
+1. The physics of traﬃc breakdown
+
+According to the basic driver behaviors in IASGM, a competition
+tween two opposite tendencies can be found, i.e., the tendency
+wards to free ﬂow due to the free driving effect and the tendency
+wards to synchronized ﬂow owing to the anticipation driving ef-
+ct. This competition occurs within a local disturbance in which
+e speed is lower and density is higher than in the initial free
+w.
+Due to this competition, traﬃc breakdown phenomenon can be
+plained as follows: free ﬂow maintains on the road provided that
+e free driving effect is stronger than the anticipation driving ef-
+ct when the density is small enough on the road, i.e., the space
+ps between vehicles are large enough. However, the greater the
+nsity the smaller the space gaps, the weaker the free driving
+fect and the stronger the synchronized driving effect. After the
+itical point is exceeded, where the free driving effect works the
+me as the synchronized driving effect, traﬃc breakdown happens
+d synchronized ﬂow begins to emerge in free ﬂow.
+This competition is shown in Fig. 2, which exhibits the spa-
+temporal characteristic of MSP. At the time interval between
+800 s and 21850 s, vehicles 1, 2 are inserted in the on-ramp
+gion. The inserted vehicle 1 leads to the ﬁrst disturbance. Due to
+e small space gaps from vehicle 3 to vehicle 12, each following
+hicle moving in front of vehicle 11 must slow down when en-
+ring into the disturbance, which means the predominance of the
+ticipation driving effect. However, since the large distance be-
+een vehicle 5 and vehicle 6, vehicle 7 and vehicle 8, vehicle 9
+d vehicle 10, the anticipation effect become more and more
+eaker, the free driving effect is getting stronger when this dis-
+rbance propagates upstream. Due to the large distance between
+hicle 11 and vehicle 12, the anticipation effect is weaker than
+e free driving effect. As a result, the speed of vehicle 12 just
+ightly ﬂuctuates and reverts to the free speed quickly, i.e. the
+st disturbance diminishes. The inserted vehicle 2 causes another
+sturbance, and the speed of the following vehicles decrease. Ow-
+g to the small space gaps between them, the anticipation driving
+fect is stronger than the free driving effect. Consequently, the
+eed ﬂuctuations grow and propagate upstream, leading to occur-
+nce of MSP.
+Moreover, it is known that traﬃc breakdown has the probabilis-
+nature at a bottleneck, i.e., at a given upstream ﬂow rate of a
+ttleneck, traﬃc breakdown could occur or not [9,10,37–39]. In
+der to investigate this property at the on-ramp, the method pro-
+sed by Kerner et al. [28] is applied. Np simulations of the same
+e interval T0 are carried out for the given rates qsum and qon ,
+
+here qsum = qin + qon . For each simulation, whether breakdown
+curs within T0 has been checked. The result of Np simulations
+the number of realizations np where breakdown occurs. Then
+B)
+S = np/Np is the approximate probability the traﬃc breakdown
+ppens in an initial free ﬂow during the time interval T0. Fig. 3
+ows that the probability that traﬃc breakdown happens within
+given time interval increases exponentially with the ﬂux qsum ,
+hich is in accordance with the empirical ﬁndings and the simu-
+tions result of models in the three-phase theory.
+
+2. Spatiotemporal congested patterns
+
+When traﬃc breakdown happens near the on-ramp, various
+ngested patterns can occur. These congested patterns are plot-
+d in Fig. 4. Different values of qin and qon have induced six
+stinct congested patterns predicted by the three-phase theory.
+Fig. 4(a), the spatial-temporal features of moving synchronized
+w (MSP) are shown. In this pattern, synchronized traﬃc ﬂow
+ontaneously emerges in the free ﬂow. Both the downstream
+ont and upstream front of MSP propagate upstream. Fig. 4(b)
+
+
+
+2784 J.-f. Tian et al. / Physics Letters A 376 (2012) 2781–2787
+
+Fi
+of
+ho
+
+Fi
+in
+Th
+
+qs
+th
+
+ex
+fr
+W
+do
+ra
+ni
+in
+Th
+sh
+w
+th
+sh
+ca
+ni
+
+an
+ar
+g. 2. Trajectories of vehicles in MSP. (qin,qon) = (0.7,0.02). The lines marked by upstream front and downstream front represent the upstream front and downstream front
+MSP. The line marked by onramp means the region of the on-ramp on the road. The lines marked by numbers denote the trajectories of the numbered vehicles. The
+rizontal direction (from left to right) is space (unit: m) and the vertical direction (from down to up) is time (unit: s).
+
+g. 3. Probability of breakdown phenomenon at the on-ramp within T0 = 60 min, after the on-ramp ﬂow was switched on. The result is obtained when qin = 0.6 and qon
+creases gradually. The criterion to determine the occurrence of breakdown is that the vehicle speed upstream of the on-ramp drops below 80 km/h for more than 2 min.
+e curve is ﬁtted with the function p(B)FS = (1+ tanh(a(qsum −b)))/2, where a = 0.04876, b = 2292 and R-square equals 0.985. q(B)th is the minimum highway capacity. When
+um � q(B)th , no traﬃc breakdown will occur, since the probability equals zero. q
+
+(free B)
+max is the maximum highway capacity. When qsum � q(B)th , traﬃc breakdown occurs, since
+
+e probability equals one.
+
+hibits the widening synchronized ﬂow (WSP). The downstream
+ont of WSP is ﬁxed at the on-ramp and the upstream front of
+SP propagates upstream continuously over time. In Fig. 4(c), the
+wnstream front of synchronized ﬂow is also ﬁxed at the on-
+mp. However, differing with WSP, the upstream front of synchro-
+zed ﬂow is not continuously widening but ﬂuctuates as time go-
+g. The region of synchronized ﬂow is limited near the on-ramp.
+us, it belongs to the local synchronized pattern (LSP). Fig. 4(d)
+ows the dissolving general patterns (DGP) in which just one
+ide moving jam emerges in the synchronized ﬂow, which means
+e S → J transition could be reproduced by IASGM. Fig. 4(e)
+ows the spatial-temporal features of general pattern (GP). One
+n see that a sequence of wide moving jams occurs in synchro-
+zed ﬂow in GP.
+It is necessary to illustrate the difference among IASGM, ASGM
+d SA models, since IASGM is based on ASGM and all of which
+e in the framework of fundamental diagram approach. SA models
+
+have been criticized because they could not reproduce some em-
+pirical phenomena, i.e. LSPs and GPs consistent with empirical
+data. The LSPs reproduced by SA models are very narrow ones,
+which are localized within the merging regions of the on-ramp
+and consist of two narrow fronts only. And there is no synchro-
+nized ﬂow between the fronts within these LSPs. Fig. 4(c) shows
+that the width of LSP reproduced by IASGM in the longitudinal di-
+rection changes over time, which is in accordance with empirical
+observations. Moreover, only free ﬂow can be formed in the down-
+stream front of wide moving jams within the GP in SA models,
+which is also the truth for ASGM. However, Fig. 4(f) shows that
+the state that only synchronized ﬂow exists between wide mov-
+ing jams in GP could be simulated if one reduce the value of the
+slow-to-start probability pb . It is known to all that the slow-to-
+start probability pb is close with τ
+
+(a)
+del,jam , i.e., the driver time delay
+
+in acceleration at the downstream jam front. Reducing pb is equiv-
+alent to decreasing τ (a)del,jam , which means decreasing the average
+
+
+
+J.-f. Tian et al. / Physics Letters A 376 (2012) 2781–2787 2785
+
+Fi
+(e
+rig
+
+di
+av
+th
+Th
+m
+
+ve
+Co
+m
+ou
+g. 4. Trajectories of every 20th vehicle. (a) (qin,qon) = (0.7,0.03) (MSP), (b) (qin,qon) = (0.5,0.2) (WSP), (c) (qin,qon) = (0.3,0.24) (LSP), (d) (qin,qon) = (0.5,0.25) (DGP),
+) (qin,qon) = (0.5,0.4) (GP), (f) (qin,qon) = (0.5,0.4) (GP). In (a)–(e), the slow to start probability pb = 0.5, while in (f) pb = 0.425. The horizontal direction (from left to
+ht) is space and the vertical direction (from down to up) is time.
+
+stance between vehicles in the downstream jam front. When the
+erage distance between vehicles is small enough, it is possible
+at the free driving effect is weaker than the anticipation effect.
+us, synchronized ﬂow can be formed at the downstream of wide
+oving jams.
+Finally, the impact of the safe space gap dsafe and the critical
+locity vc on the outﬂow of wide moving jams is investigated.
+mparing Fig. 5(a) with (b), the following conclusions can be
+ade: (i) Both them have nothing to do with the synchronized
+tﬂow. (ii) Without the critical velocity vc , the free outﬂow could
+
+not be simulated. Actually, considering vc helps to enhance free
+driving effect. Thus, it is possible that the free driving effect is
+stronger than the anticipation effect, which means free outﬂow can
+be reproduced.
+
+5. Conclusion
+
+The improved average space gap cellular automaton model
+(IASGM) within the fundamental diagram approach has been
+proposed by taking the velocity effect and critical velocity into
+
+
+
+2786 J.-f. Tian et al. / Physics Letters A 376 (2012) 2781–2787
+
+Fi .3).
+in n (fr
+
+ac
+co
+w
+to
+ef
+Th
+sy
+sh
+ja
+w
+
+ar
+th
+ti
+th
+he
+im
+on
+be
+[2
+fe
+to
+la
+if
+fu
+oc
+on
+or
+
+Ac
+
+Th
+co
+ta
+20
+(G
+(N
+
+A
+
+m
+1,
+
+Ca
+v
+
+(1
+
+(2
+
+Ca
+
+(1
+
+(2
+
+Ca
+vm
+
+(1
+(2
+
+v
+mments. This work is partially supported by the Fundamen-
+l Research Funds for the Central Universities (2011YJS233,
+11YJS238), the National Natural Science Foundation of China
+rant Nos. 71071013, 71131001, 11001143), and 973 Program
+o. 2012CB725403).
+
+ppendix A
+
+Three possibilities need to be analyzed separately to deter-
+ine the value of v computed by v = min(d + max(0,min(v +
+d, vmax) − dsafe), vmax).
+
+se A. min(v + 1,d, vmax) = v + 1 implying d� v + 1 and vmax �
++ 1.
+) Given that v + 1 � dsafe , leading to v = min(d + v + 1 −
+dsafe, vmax), we have
+
+Substituting d = 1K − Lcar into Eq. (3), where K is the density,
+the velocity–density relationship is acquired:
+
+v =
+
+⎧⎪⎨
+⎪⎩
+
+vmax: if K � Kc
+2
+K − Lcar − 1Ksafe : if Kc < K � Ksafe
+1
+K − Lcar: if Ksafe < K � Kmax
+
+(4)
+
+Here, Kmax = 1Lcar , Kc = 2dsafe+vmax+2Lcar and Ksafe = 1dsafe+Lcar . Let
+J denote the ﬂux, accordingly, the ﬂux-density relationship (i.e.
+the fundamental diagram) is derived:
+
+J =
+
+⎧⎪⎨
+⎪⎩
+
+K vmax: if K � Kc
+2− K Lcar − KKsafe : if Kc < K � Ksafe
+1− K Lcar: if Ksafe < K � Kmax
+
+(5)
+g. 5. Trajectories of every 20th vehicle. (a) (qin,qon) = (0.8,0.8), (b) (qin,qon) = (0.4,0
+(a), (b). The horizontal direction (from left to right) is space and the vertical directio
+
+count. The physics of traﬃc breakdown is explained by the
+mpetition between two opposite tendencies, i.e. the tendency to-
+ards to free ﬂow due to the free driving effect and the tendency
+wards to synchronized ﬂow owing to the anticipation driving
+fect. The probabilistic nature of traﬃc breakdown is simulated.
+e signiﬁcant contribution is the discovery that the occurrence of
+nchronized outﬂow of wide moving jams has a close relation-
+ip with drivers time delay in acceleration at the downstream
+m front, and the emergence of free outﬂow is closely connected
+ith the critical velocity.
+Except for above investigations of IASGM in this Letter, there
+
+e still many other features worth studying in the future. Firstly,
+e microscopic properties, such as the time headway distribu-
+ons, the empirical optimal velocity functions. It has been reported
+at the time headway distribution has a cut off at the small time
+adway, which is less than one second [40,41]. Obviously, it is
+possible for the ASGM due to the lack of velocity effect. Sec-
+dly, the two-lane version of IASGM should be developed. It will
+very interesting to simulate and compare the results with [24].
+
+4] argues that macroscopic and microscopic spatiotemporal ef-
+cts of the entire complexity of traﬃc congestion observed up
+now in real measured traﬃc data can be explained by simu-
+
+tions of traﬃc ﬂow consisting of identical drivers and vehicles,
+a microscopic model used in these simulations incorporates the
+ndamental hypothesis of three-phase theory. Finally, whether the
+currence of synchronized outﬂow of wide moving jams depends
+drivers time delay in acceleration at the downstream jam front
+not should be surveyed in other traﬃc ﬂow models.
+
+knowledgements
+
+We sincerely thank referees for their helpful suggestions.
+e manuscript has been improved according to the referees’
+In (a) vc = 0, dsafe = 7, while in (b) vc = 3, dsafe = vmax . Lramp = 250, pb = 0.425
+om down to up) is time.
+
+• d� v for d + v + 1− dsafe � vmax , which exactly contradicts
+with d� v + 1, and
+
+• v = vmax for d + v + 1− dsafe > vmax , which still contradicts
+with vmax � v + 1.
+
+) Given that v + 1< dsafe , leading to v = min(d, vmax), we have
+• v = d for d� vmax , which exactly contradicts with d� v +1,
+and
+
+• v = vmax for d > vmax , which still contradicts with vmax �
+v + 1.
+
+se B. min(v + 1,d, vmax) = d implying v + 1� d and vmax � d.
+
+) Given that d � dsafe , leading to v = min(2d − dsafe, vmax), we
+have
+• v = 2d − dsafe and d < dc for 2d − dsafe � vmax , where dc =
+
+dsafe+vmax
+2 ,• v = vmax and d� dc for 2d − dsafe > vmax .
+
+) Given that d < dsafe , leading to v = d.
+
+se C. min(v + 1,d, vmax) = vmax , implying v + 1� vmax and d �
+ax . Then, we have
+
+) v = vmax and d� vmax for d + vmax − dsafe � vmax , and
+) d < dsafe for d + vmax − dsafe < vmax , which exactly contradicts
+with d� vmax .
+
+Based on Cases B and C(1), we derive
+
+=
+⎧⎨
+⎩
+
+d: if d < dsafe
+2d − dsafe: if dsafe � d < dc
+vmax: if dc � d
+
+(3)
+
+
+
+J.-f. Tian et al. / Physics Letters A 376 (2012) 2781–2787 2787
+
+Re
+
+[
+
+[
+[
+[
+[
+[
+[
+[
+
+[
+[1
+
+[1
+[1
+[1
+[1
+
+[1
+[1
+[1
+[1
+
+[1
+[2
+[2
+[2
+[2
+[2
+[2
+[2
+[2
+[2
+[2
+[3
+[3
+[3
+[3
+[3
+[3
+[3
+[3
+[3
+[3
+[4
+
+[4
+ferences
+
+1] F.A. Haight, Mathematical Theories of Traﬃc Flow, Academic Press, New York,
+1963.
+
+2] G.B. Whitham, Linear and Nonlinear Waves, Wiley, New York, 1974.
+3] W. Leutzbach, Introduction to the Theory of Traﬃc Flow, Springer, Berlin, 1988.
+4] A. Schadschneider, Traﬃc and Granular Flow 97, Springer, Singapore, 1998.
+5] D. Chowdhury, L. Santen, A. Schadschneider, Phys. Rep. 329 (2000) 199.
+6] D. Helbing, Rev. Mod. Phys. 73 (2001) 1067.
+7] T. Nagatani, Rep. Prog. Phys. 65 (2002) 1331.
+8] B. Jia, Z.Y. Gao, K.P. Li, X.G. Li, Models and Simulations of Traﬃc System Based
+
+on the Theory of Cellular Automaton, Science, Beijing, 2007.
+9] B.S. Kerner, The Physics of Traﬃc, Springer, Berlin, 2004.
+0] B.S. Kerner, Introduction to Modern Traﬃc Flow Theory and Control, Springer,
+
+Berlin, 2009.
+1] M.J. Lighthill, G.B. Whitham, Proc. Roy. Soc. A 229 (1955) 281.
+2] P.I. Richards, Oper. Res. 4 (1956) 42.
+3] H.J. Payne, Trans. Res. Rec. 772 (1979) 68.
+4] H.J. Payne, in: Mathematical Models of Public Systems, Simulation Council Pro-
+
+ceedings, 1971, pp. 51–61.
+5] G.F. Newell, Oper. Res. 9 (1961) 209.
+6] P.G. Gipps, Trans. Res. B 15 (1981) 105.
+7] K. Nagel, M. Schreckenberg, J. Phys. I 2 (1992) 2221.
+8] M. Bando, K. Hasebe, A. Nakayama, A. Shibata, Y. Sugiyama, Phys. Rev. E 51
+
+(1995) 1035.
+9] D. Helbing, M. Treiber, Phys. Rev. Lett. 81 (1998) 3042.
+0] M. Treiber, A. Hennecke, D. Helbing, Phys. Rev. E 62 (2000) 1805.
+1] B.S. Kerner, H. Rehborn, Phys. Rev. E 53 (1996) R1297.
+2] B.S. Kerner, H. Rehborn, Phys. Rev. E 53 (1996) R4275.
+3] B.S. Kerner, H. Rehborn, Phys. Rev. Lett. 79 (1997) 4030.
+4] B.S. Kerner, Phys. Rev. E 85 (2012) 036110.
+5] B.S. Kerner, Phys. Rev. Lett. 81 (1998) 3797.
+6] B.S. Kerner, S.L. Klenov, J. Phys. A: Math. Gen. 35 (2002) L31.
+7] B.S. Kerner, S.L. Klenov, J. Phys. A: Math. Gen. 39 (2006) 1775.
+8] B.S. Kerner, S.L. Klenov, D.E. Wolf, J. Phys. A: Math. Gen. 35 (2002) 9971.
+9] B.S. Kerner, S.L. Klenov, M. Schreckenberg, Phys. Rev. E 84 (2011) 046110.
+0] H.K. Lee, R. Barlovic, M. Schreckenberg, et al., Phys. Rev. Lett. 92 (2004) 238702.
+1] W. Knospe, L. Santen, A. Schadschneider, et al., J. Phys. A 33 (2000) L477.
+2] R. Jiang, Q.S. Wu, J. Phys. A: Math. Gen. 36 (2003) 381.
+3] J.F. Tian, B. Jia, X.G. Li, R. Jiang, X.M. Zhao, Z.Y. Gao, Phys. A 388 (2009) 4827.
+4] K. Gao, R. Jiang, S.X. Hu, B.H. Wang, Q.S. Wu, Phys. Rev. E 76 (2007) 026105.
+5] B. Jia, X.G. Li, T. Chen, R. Jiang, Z.Y. Gao, Transpormetrica 7 (2011) 127.
+6] J.F. Tian, Z.Z. Yuan, M. Treiber, B. Jia, W.Y. Zhang, Phys. A 391 (2012) 3129.
+7] B.N. Persaud, S. Yagar, R. Brownlee, Trans. Res. Rec. 1634 (1998) 64.
+8] M.R. Lorenz, L. Elefteriadou, Trans. Res. Rec. 1776 (2001) 43.
+9] L. Elefteriadou, R.P. Roess, W.R. McShane, Trans. Res. Rec. 1484 (1995) 80.
+0] L. Neubert, L. Santen, A. Schadschneider, M. Schreckenberg, Phys. Rev. E 60
+
+(1999) 6480.
+1] W. Knospe, L. Santen, A. Schadschneider, M. Schreckenberg, Phys. Rev. E 70
+
+(2004) 016115.
+
+
+	Cellular automaton model in the fundamental diagram approach reproducing the synchronized outﬂow of wide moving jams
+	1 Introduction
+	2 The model
+	3 Fundamental diagram
+	4 Simulations and discussions
+	4.1 The physics of trafﬁc breakdown
+	4.2 Spatiotemporal congested patterns
+
+	5 Conclusion
+	Acknowledgements
+	References
+
+

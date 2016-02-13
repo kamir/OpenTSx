@@ -1,0 +1,1579 @@
+
+Eur. Phys. J. B 68, 577–586 (2009)
+DOI: 10.1140/epjb/e2009-00092-8
+
+Regular Article
+
+THE EUROPEAN
+PHYSICAL JOURNAL B
+
+A power law for the duration of high-ﬂow states
+and its interpretation from a heterogeneous traﬃc
+ﬂow perspective
+
+D. Helbing1,a and B. Tilch2
+
+1 ETH Zurich, UNO D11, Universita¨tstr. 41, 8092 Zurich, Switzerland
+2 II. Institut fu¨r Theoretische Physik, Pfaﬀenwaldring 57, 70550 Stuttgart, Germany
+
+Received 19 June 2008 / Received in ﬁnal form 17 December 2008
+Published online 14 March 2009 – c© EDP Sciences, Societa` Italiana di Fisica, Springer-Verlag 2009
+
+Abstract. We study the duration of “high-ﬂow states” in freeway traﬃc, deﬁned as the time periods for
+which traﬃc ﬂows exceed a given ﬂow threshold. Our empirical data are surprisingly well represented by
+a power law. Moreover, the power law exponent for a two-lane freeway seems to be independent of the
+chosen ﬂow threshold. In order to interpret this discovery, we investigate a simple theoretical model of
+heterogeneous traﬃc with overtaking maneuvers, which is able to reproduce both, the empirical power law
+and its exponent.
+
+PACS. 89.40.Bb Land transportation – 89.75.Kd Patterns – 51.10.+y Kinetic and transport theory of
+gases
+
+1 Introduction
+
+Eﬃcient transport systems are needed to fulﬁl the re-
+quirements of industrialized societies. However, studies of
+traﬃc physicists have shown that the capacity of a free-
+way is reduced by the breakdown of traﬃc ﬂows [1–4], a
+phenomenon which is widely known as “capacity drop”.
+Moreover, when the vehicle density increases, the traﬃc
+ﬂow becomes metastable, i.e. a breakdown of traﬃc ﬂow
+can be triggered by perturbations, if they exceed a critical
+perturbation threshold [1,3,5,6]. At even higher densities,
+traﬃc ﬂow becomes linearly unstable, and a breakdown
+may be triggered by the slightest perturbation [3,7].
+
+Due to the dependence of traﬃc breakdowns on per-
+turbations of the traﬃc ﬂow, it is essential to know the
+characteristic properties of vehicle ﬂows. While much at-
+tention has been paid to the measurement and explanation
+of the wide scattering of vehicle ﬂows after the breakdown
+of free traﬃc (see e.g. Refs. [8–11] and citations therein),
+the features of ﬂows before the breakdown have not found
+the attention they deserve. For example, the time pe-
+riod immediately before the breakdown is characterized
+by “high-ﬂow states” [12–15] (see Fig. 1). These high-ﬂow
+states are produced by small time gaps between subse-
+quent vehicles, i.e. by vehicle clusters. Before we study
+these states, let us therefore shortly discuss some previ-
+ous literature on vehicle platoons (see Ref. [3]).
+
+a e-mail: dhelbing@ethz.ch
+
+The formation of platoons is typically a result of the
+fact that vehicles do not behave identically. Driver-vehicle
+behavior is rather heterogeneous, which is typically re-
+ﬂected by ﬂuctuation terms and distributed model pa-
+rameters. The simplest models of stochastic and het-
+erogeneous transport are particle hopping models with
+quenched disorder. For example, Evans [17], Krug and
+Ferrari [18], Karimipour [19,20], as well as Seppa¨la¨inen
+and Krug [21] study a simpliﬁed version of a model
+by Benjamini et al. [22]. It corresponds to the one-
+dimensional driven lattice gas known as TASEP, but with
+particle-speciﬁc, constant jump rates qα. If overtaking is
+not allowed, Krug and Ferrari [18] ﬁnd a sharp phase tran-
+sition between a low-density regime, where all particles are
+queueing behind the slowest particle, and a high-density
+regime, where the particles are equally distributed. Note
+that the slow particles “feel free traﬃc” until the critical
+density is reached, at which traﬃc ﬂow becomes unstable
+(cf. the truck curve in Fig. 2).
+
+Close to the critical density, where the traﬃc ﬂow be-
+comes unstable, the growth of vehicle platoons is charac-
+terized by a power-law coarsening. If particles move bal-
+listically with individual velocities vα and form a platoon
+when a faster particle reaches a slower one, the platoon
+size npl(t) grows according to
+
+npl(t) ∼ t(δ+1)/(δ+2), (1)
+where the exponent δ characterizes the distribution
+P0(v) ∼ (v − vmin)δ of free velocities in the neighborhood
+
+
+
+
+
+578 The European Physical Journal B
+
+01
+23
+
+45
+67
+
+89
+1011
+
+1213
+1415
+
+1617
+1819
+
+2021
+2223
+
+24
+
+35.89
+36.636.9
+
+37.6
+
+39.6
+40.8
+
+41.7542.25
+43.31
+
+0
+
+500
+
+1000
+
+1500
+
+2000
+
+2500
+
+Q(x↪ t) (veh/h)
+
+x (km)
+
+t (h)
+
+Fig. 1. Time-dependent traﬃc ﬂows Q(x, t) measured at diﬀer-
+ent cross sections x of a the Dutch freeway A9 on October 14,
+19941. Vehicles move from left to right. One can clearly see the
+large variability of high ﬂows. Complementary empirical analy-
+ses show that the truck fraction on the freeway changes consid-
+erably with time as well, between about 8 and 80% trucks [9].
+
+of the minimal desired velocity vmin [24–30]. Beyond it,
+the diﬀerences among fast and slow particles become ir-
+relevant, because there is so little space that all particles
+have to move slower than preferred.
+
+Platoon formation and power-law coarsening
+has also been found in microscopic models with
+parallel update [24–27,29–32]. An example is the
+Nagel-Schreckenberg model with vehicle-speciﬁc slow-
+down probabilities [33,34].
+
+An empirical measurement of platoon sizes has
+been performed by Neubert et al., based on velocity
+correlations between subsequent cars [35]. Our own ap-
+proach will rather be focused on time periods with small
+time gaps between vehicles. For a model for platoon size
+distributions see Islam and Consul [36]. Furthermore, we
+point to the nice analyses of vehicle clustering based on
+master and Fokker-Planck equations [37–39], and to the
+determination of gap distributions for free traﬃc with ve-
+hicle platoons [40].
+
+In the following, we will relate the distribution of pla-
+toon sizes with their growth dynamics, and study the
+importance of overtaking maneuvers for both. Before we
+start our theoretical considerations, however, Section 2
+will present data of “high-ﬂow states” and discuss their
+unexpected power-law statistics. Afterwards, Section 3
+will present a theoretical explanation, based on platoon
+
+1 For reasons of illustration, the ﬁgure displays ﬁve-minute
+averages, so that the curves belonging to diﬀerent cross sec-
+tions of the freeway can be well enough resolved. (Two-minute
+data would show a larger variability. The variability is expected
+to be inversely proportional to the square root of the number
+of vehicles averaged over, i.e. to the square root of the sam-
+pling time.) For the analysis of the high-ﬂow states, the sam-
+pling time should be chosen large enough to smoothen over
+statistical variations of the ﬂow, but small enough to keep sys-
+tematic features of the traﬃc dynamics. Two-minute averages,
+which are analyzed in the following, have been determined as
+an ideal compromise [41]. They also provide a suﬃcient number
+of data points for the analysis of high-ﬂow states.
+
+0
+20
+40
+60
+80
+
+100
+120
+140
+
+0 20 40 60 80A
+ve
+
+ra
+ge
+
+ V
+el
+
+oc
+ity
+
+ (k
+m/
+
+h)
+
+Density (veh/km)
+
+Left Lane
+
+Cars
+Trucks
+
+(a)
+0
+
+20
+40
+60
+80
+
+100
+120
+140
+
+0 20 40 60 80A
+ve
+
+ra
+ge
+
+ V
+el
+
+oc
+ity
+
+ (k
+m/
+
+h)
+
+Density (veh/km)
+
+Right Lane
+
+Cars
+Trucks
+
+(b)
+
+Fig. 2. (Color online) speed of vehicles as a function of the ve-
+hicle density in (a) the left lane and (b) the right (fast) lane (af-
+ter [23]). The curves have been determined from single vehicle
+data of the Dutch freeway A9 close to Amsterdam. Note that
+the average velocity of trucks stays constant up to the critical
+density, where the speed of cars and trucks drops simultane-
+ously. This incidates that trucks “feel” free traﬃc conditions
+at all vehicle densities upto the occurence of the transition to
+congested traﬃc.
+
+formation due to overtaking maneuvers by slow vehicles,
+speciﬁcally trucks. This does, of course, not exclude the
+theoretical possibility of other explanations, e.g. based on
+the vehicle dynamics in single lanes. This alternative ap-
+proach is discussed in Section 3.1. A summary of this pa-
+per is ﬁnally presented in Section 4.
+
+2 Power law distribution of high-ﬂow states
+
+As high ﬂows are unstable to medium-sized perturba-
+tions [3,5], it is important to learn more about their statis-
+tics. Here, we deﬁne “high-ﬂow states” by exceeding a
+given ﬂow threshold Qthr (which may be chosen much
+smaller than the maximum ﬂow Qmax or the dynamic
+capacity Qout, i.e. the outﬂow from seriously congested
+traﬃc)2.
+
+In the following, we study the duration of “high ﬂow
+states” by analyzing single-vehicle data of the Dutch free-
+way A9 from Haarlem to Amsterdam in the Netherlands
+(see Refs. [9,16,41] for details of the data). Speciﬁcally, we
+aggregated the data to obtain 2-min averages Q(x, t) of
+the ﬂow as a function of time t at a certain location x
+of the freeway. Afterwards, we determined the frequency
+of time periods ΔT over which the ﬂows Q(x, t) stayed
+above a certain threshold Qthr (see Fig. 3). A representa-
+tive example is shown in Figure 4.
+
+Similar pictures as for Qthr = 1400 vehicles/h are
+found for other threshold values Qthr, but the data tend
+to be more noisy for large values of Qthr, as the typical
+durations of high-ﬂow states become shorter. Generally,
+
+2 Qout is typically of the order of 1800 vehicles per kilometer
+and lane. In contrast, Qmax in the left (fast) lane reaches values
+upto Qmax = 3200 vehicles per hour. In the right (truck) lane,
+the maximum ﬂow does not exceed values of 2500 vehicles per
+hour. These values are for averages over 50 vehicles [16]. For
+further details about the studied data see references [9,16].
+
+
+
+D. Helbing and B. Tilch: A power law for the duration of high-ﬂow states 579
+
+Fig. 3. Illustration of how the duration ΔT of high-ﬂow states
+is determined. A given ﬂow threshold Qthr cuts the time-
+dependent curve Q(x, t) of measured ﬂows several time. The
+duration between two subsequent cutting points corresponds
+to a measurement of ΔT , if the Q(x, t) ≥ Qthr holds during
+this time period. These time periods are indicated by solid
+horizontal lines, while a dotted line was used if Q(x, t) < Qthr.
+
+1e-05
+
+1e-04
+
+0.001
+
+0.01
+
+0.1
+
+1
+
+1 6 10 50 100
+
+R
+el
+
+at
+iv
+
+e 
+Fr
+
+eq
+ue
+
+nc
+y
+
+Duration (min)
+
+left lane
+right lane
+fit: 4.15 x-2.12
+fit: 2.58 x-2.02
+
+Fig. 4. Typical scaling law for the distribution of durations, for
+which the vehicle ﬂow Q(x, t) at the cross section x of a freeway
+exceeds the threshold Qthr = 1400 vehicles/h. The distribution
+follows a power law and has been determined from two-minute
+averages of single vehicle data of the Dutch freeway A9 from
+Rottepolderplein to Badheuvedorp close to Amsterdam.
+
+however, the probability distribution P (ΔT ) of durations
+of high-ﬂow states can be surprisingly well approximated
+by the power law
+
+P (ΔT ) = FthrΔT−α , (2)
+
+where Fthr is a proportionality factor and α the power law
+exponent. As the distribution P (ΔT ) obviously depends
+on the chosen threshold value Qthr, it would be natural
+to assume that not only the proportionality factor Fthr,
+but also the respective power law exponent α depends on
+Qthr. However, Figure 5 suggests that we have α ≈ 2,
+irrespective of the value of Qthr. Therefore, we need to
+
+0
+1
+2
+3
+4
+5
+6
+7
+
+600 800 1000 1200 1400 1600 1800 2000
+
+Ex
+po
+
+ne
+nt
+
+Qthr (vehicles/h)
+
+left lane
+right lane
+
+Fig. 5. Exponents of the power law of high-ﬂow states, see
+equation (2), for diﬀerent ﬂow thresholds Qthr. One can see
+that the exponents, ﬁtted within the interval ΔT ∈ [6, 50] min,
+are of the order of 2 in both lanes. The exponents have been
+determined from two-minute averages of single vehicle data of
+the Dutch freeway A9 close to Amsterdam (after [43]).
+
+ﬁnd an explanation for both, the occurence of the power
+law and the value α ≈ 2 of its exponent. Note, however,
+that the results of Figure 5 are for a two-lane freeway with
+diﬀerent speed limits for cars and trucks. In fact, for the
+three-lane freeway A8 close to Munich, Germany, there
+is empirical evidence of power laws, but the exponents
+somewhat depend on the freeway lane [42]. This will be
+relevant for the interpretation of the power law.
+
+3 Interpretation of the power law
+
+3.1 Explanation of 1/f ﬂuctuations by single-lane
+models
+
+The empirical power law is quite intriguing, and its in-
+terpretation appears to be far from obvious. As the ﬂow
+is basically given by the inverse time gaps, however, pe-
+riods of high ﬂow must be characterized by short time
+gaps between vehicles. Therefore, rather than a homoge-
+neous ﬂow with uniform time gaps between vehicles, the
+explanation of the above power law (2) must be related
+to the occurence of vehicle clusters. Their statistics must
+be characterized by largely varying sizes, to generate a
+time-dependence of the ﬂow which shares features with a
+fractal curve [44,46].
+
+It is conceivable that such a dynamics could be pro-
+duced by single-lane traﬃc models implementing a com-
+plex vehicle dynamics. In fact, previous publications have
+revealed 1/fα ﬂuctuations of the ﬂow and other quan-
+tities in empirical data [45] and various traﬃc models.
+This includes cellular automata models [46–51], coupled
+maps [52], and ﬂuid-dynamics traﬃc models [45,53]. As
+none of the publications has studied the frequency dis-
+tribution of high-ﬂow states we are focusing on in this
+paper, it is hard to say whether it is reproduced by any
+of these models. However, since the respective power law
+
+
+
+580 The European Physical Journal B
+
+exponents depend on the choice of the model, it is con-
+ceivable that equation (2) could be reproduced by suitable
+speciﬁcations of one-lane models.
+
+A comparison with the models discussed in Section 1
+shows that, besides stochasticity, such a model would have
+to contain non-linear vehicle interactions. Otherwise all
+cars would ﬁnally queue up behind the slowest vehicle(s)
+with identical time gaps, which does not reproduce the
+empirical data. 1/f ﬂuctuations of traﬃc ﬂows can, for
+example, be explained by turbulent behavior of the noisy
+Burgers equation [45]. They can also be derived as result
+of self-organized criticality, if the traﬃc state with the
+largest throughput is critical and characterized by jams
+of all sizes [46,47]. As the dynamics of the underlying
+particle hopping models can be related to the stochastic
+Burgers equation [54], both approaches are mutually con-
+sistent. However, both of them are not so well compatible
+with some empirically observed features of congested traf-
+ﬁc ﬂows [55,56]. For this reason, the above traﬃc models
+have been continuously reﬁned.
+
+In recent models, noise is much less dominating as
+compared to the interactions between vehicles, and it is
+therefore questionable whether these models show 1/f
+ﬂuctuations in the ﬂow dynamics or the power-law (2) of
+high-ﬂow states. Furthermore, data for a three-lane free-
+way show power laws, but their exponents depend on the
+ﬂow threshold Qthr and somewhat on the lane. In particu-
+lar, they can be diﬀerent from 2. Therefore, modeling the
+high-ﬂow power law based on longitudinal vehicle dynam-
+ics may not be the best possible approach, as it cannot
+explain the diﬀerence between a freeway with 2 or more
+lanes. We rather think that one needs to take into ac-
+count the interactions between lanes, i.e. the transversal
+dynamics. The model suggested in the following is a ﬁrst
+modeling attempt in this direction.
+
+While the above one-lane models basically assume one
+vehicle type and ﬁnd 1/f ﬂuctuations primarily in the
+congested regime, the following proposal assumes two dis-
+tinctly diﬀerent vehicle types (cars and trucks) and implies
+a high-ﬂow power law already before the traﬃc ﬂow breaks
+down (i.e. before traﬃc becomes unstable and a capacity
+drop occurs).
+
+3.2 Multi-lane model of high-ﬂow states based
+on vehicle bunching behind overtaking cars
+
+While we do not exclude the possibility of other model-
+ing approaches, we will now focus on an interpretation of
+our empirical observations, assuming heterogeneous traf-
+ﬁc including overtaking maneuvers. As we will see, this
+predicts a power law for high-ﬂow states even for deter-
+ministic models of longitudinal vehicle interactions. Our
+analysis focuses on the case of a two-lane freeway, and it
+contains several steps:
+
+1. ﬁrst we will give a qualitative analysis of lane changing
+processes;
+
+2. we will argue that they can cause the formation of
+vehicle platoons, and that this process is dominated
+
+by overtaking maneuvers at low speed, i.e. primarily
+by overtaking maneuvers of trucks;
+
+3. we will determine the statistics of the duration of over-
+taking maneuvers by trucks from their speed distribu-
+tion;
+
+4. we will give reasons why they couple the dynamics on
+both freeway lanes and why the platoons forming on
+both lanes are expected to be comparable in size;
+
+5. we will analyze the length of forming vehicle platoons
+and the time period until they dissolve;
+
+6. we will show that high-ﬂow vehicle clusters persist for a
+very long time, even after the dissolution of the vehicle
+platoons;
+
+7. we will discuss, what will be the result, if such vehicle
+clusters are measured at a local cross section of the
+freeway.
+
+It will turn out that both, the lifetime of vehicle platoons
+and the local measurement of vehicle clusters scale with
+the duration of the overtaking maneuvers of trucks, and
+that the power law of high-ﬂow states results as a super-
+position of power laws with the same exponent α = 2.
+
+3.2.1 Qualitative analysis of overtaking maneuvers
+on two-lane freeways
+
+In the following, we will assume that the desired velocities
+of vehicles are heterogeneous (see Fig. 6). This is typical
+for many European countries including Germany and the
+Netherlands, where the use of automatic cruise control is
+not common. The heterogeneity of desired speeds typi-
+cally implies relative velocities among neighboring cars.
+The faster car will usually try to overtake a slower ve-
+hicle in front. We can distinguish two situations: either
+the traﬃc situation on the lane to the left will admit an
+overtaking maneuver3, or the vehicle will be obstructed by
+a slower vehicle and decelerate to its speed. During light
+traﬃc conditions, we may assume unobstructed overtak-
+ing most of the time, but already at moderate densities,
+long before the breakdown of traﬃc ﬂow, obstructions oc-
+cur. These obstructions persist for a certain time period
+Δt and lead to the formation of platoons of cars.
+
+Besides the duration of the overtaking maneuver, the
+size of the forming vehicle platoon depends primarily on
+two factors: (1) the absolute speed diﬀerence between the
+overtaking vehicle and the ones following it and (2) the
+surrounding vehicle density ρfr. As our high ﬂow power
+law concerns time periods from 2 min to 2 h, we are par-
+ticularly interested in large vehicle clusters and, therefore,
+in the overtaking maneuvers of trucks. These are charac-
+terized by particularly long durations Δt and by a large
+absolute speed diﬀerence with respect to following cars,
+so that a considerable number of vehicles can accumulate
+behind the overtaking trucks.
+
+On a two-lane freeway, the overtaking maneuver of
+trucks will create a moving bottleneck [57] on both lanes,
+while on a freeway with three or more lanes, passing of
+
+3 In Great Britain or Japan, for example, it will be the lane
+to the right.
+
+
+
+D. Helbing and B. Tilch: A power law for the duration of high-ﬂow states 581
+
+Cars, left lane
+
+Trucks, right lane
+
+Cars, right lane
+
+Velocity (km/h)
+
+P
+ro
+
+b
+a
+b
+
+il
+it
+
+y
+
+0
+
+0.01
+
+0.02
+
+0.03
+
+0.04
+
+0.05
+
+0.06
+
+0.07
+
+0.08
+
+0.09
+
+0.1
+
+80 100 120 140 160 180
+
+Fig. 6. Speed distributions of cars and trucks under free traﬃc
+conditions. Normal distributions ﬁt the data reasonably well,
+in agreement with theoretical results. The distributions have
+been determined from single vehicle data of the Dutch freeway
+A9 close to Amsterdam. Note that the left lane is the fast lane
+and that the speed limits for cars is 120 km/h on this freeway
+stretch, while it is 80 km/h for trucks.
+
+vehicles may still be possible4. The moving bottleneck
+propagates at the speed of trucks, i.e. at Vtr ≈ 80 km/h.
+Behind this moving bottleneck, more and more vehicles
+will accumulate, which generates growing vehicle platoons
+(see Fig. 7). Due to lane-changing maneuvers of impatient
+drivers, the vehicle platoons on both lanes are expected
+to grow approximately at the same speed. Such synchro-
+nized behavior of neighboring lanes under obstructed ﬂow
+conditions is well-known [59]. However, our calculations
+below would also work, if the platoon in one lane would
+grow faster by a certain proportionality factor.
+
+3.3 Duration of overtaking maneuvers of trucks
+
+Figure 6 shows the speed distributions of cars and trucks
+in free traﬃc of low vehicle density. It can be seen that the
+speed of trucks varies around the applicable speed limit
+for trucks of 80 km/h, and that the distribution is quite
+narrow (i.e. speed diﬀerences are small). Furthermore, the
+speed distributions of cars and trucks can be reasonably
+well approximated by Gaussian distributions [61,62], in
+agreement with theoretical predictions [63,64].
+
+Note that there is no distribution of desired speeds
+for trucks in the left lane, as they have to stay in the
+right lane according to applicable traﬃc law (when they
+do not overtake other vehicles). Overtaking maneuvers are
+started whenever two trucks in closeby locations move at
+
+4 How this can account for the diﬀerent exponents observed
+in reference [42] shall be studied in another paper.
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+ 0
+ 40
+ 80
+
+ 120
+
+7:407:307:207:107:006:506:40
+ 0
+ 600
+ 1200
+ 1800
+ 2400
+
+km
+/n
+
+ve
+h/
+
+h/
+la
+
+ne
+
+V(km/h)
+Q(veh/h/lane)
+Truck fraction
+
+Time (h:mm)
+
+A5 South, 04/04/2001 (Wed.)
+
+Km 482.2 (S16)
+
+Km 483.0 (S17)
+
+Km 484.1 (S18)
+
+Km 486.9 (S21)
+
+Km 488.0 (S22)
+
+Km 485.0 (S19)
+
+Km 486.0 (S20)Tr
+a
+ve
+
+l d
+ire
+
+ct
+io
+
+n
+
+Fig. 7. Illustration of a traﬃc breakdown detected on the Ger-
+man freeway A5 close to Frankfurt (after [56]). The measure-
+ment of a peak in the truck fraction (see solid arrow) is fol-
+lowed by a time period of lower speeds and higher ﬂows (see
+circles). The spatial extension of the high-ﬂow area is growing
+(symbolized by larger circles), while it propagates along the
+freeway with about 75 km/h, i.e. at about the truck speed.
+We interpret this as growing vehicle platoons behind overtak-
+ing trucks. Approximately at kilometer 487, shortly upstream
+of a freeway junction characterized by many disturbing lane
+changes, the perturbation in the traﬃc ﬂow starts to travel
+upstream. While we had a growing spatial extension before,
+we now ﬁnd a growing perturbation amplitude (see dashed ar-
+row). This eventually causes a breakdown of the traﬃc ﬂow.
+
+diﬀerent speeds, no matter how small the relative velocity
+is5. Trucks often enter the left lane relentlessly, without
+waiting for a gap, i.e. vehicles in the left lane basically
+have to break if a truck driver decides to move over to
+the left lane. Moreover, during the overtaking maneuver,
+the speed of the trucks usually stays the same6. There-
+fore, the distribution of speed diﬀerences Δv between an
+overtaking and an overtaken truck can be derived from
+the distribution of desired truck speeds in the right lane.
+
+5 Therefore, their frequency depends on the truck density.
+6 Trucks, particularly when fully loaded, can hardly acceler-
+
+ate and avoid decelerating.
+
+
+
+582 The European Physical Journal B
+
+From statistics, it is well-known that the diﬀerence of
+two identically, independently, Gaussian distributed vari-
+ables is Gaussian distributed as well. That is, the relative
+speeds Δv of trucks obey a Gaussian distribution
+
+N(Δv) dΔv =
+1√
+2πθ
+
+e−(Δv)
+2/(2θ) dΔv. (3)
+
+This will be relevant for the derivation of the high-ﬂow
+power law later on.
+
+We will now determine the distribution of the time
+period Δt required for the overtaking maneuver of trucks.
+If Δleﬀ denotes the typical eﬀective distance, over which
+an overtaking maneuver takes place (e.g. Δleﬀ = 20 m)
+and Δv is the relative speed between an overtaking vehicle
+and the slower one it overtakes, we ﬁnd the proportionality
+relation
+
+Δt =
+Δleﬀ
+Δv
+
+. (4)
+
+As a consequence, the distribution of Δt is given by the
+distribution of 1/Δv.
+
+We will now derive the distribution of the variable y =
+1/Δv from equation (3) by an appropriate transformation.
+Considering
+
+dy
+
+dΔv
+= − 1
+
+Δv2
+= −y2, (5)
+
+we ﬁnd
+N(Δv) dΔv = −N(Δv) 1
+
+y2
+dy, (6)
+
+where the minus sign is compensated for by integration
+from small to large values of y = 1/Δv rather than vice
+versa. Therefore, we get the distribution
+
+P (y) dy =
+1√
+2πθ
+
+1
+y2
+
+e−1/(2θy
+2) dy. (7)
+
+In the limit of small speed diﬀerences Δv, i.e. large values
+of y, we ﬁnally obtain the power law
+
+P (y) dy ∼ y−2 dy. (8)
+Furthermore, as y = 1/Δv ∼ Δt, see equation (4), this
+implies the power-law distribution
+
+P (Δt) dΔt ∼ (Δt)−2 dΔt. (9)
+As this power law results in the limit of small Δv, equa-
+tion (9) is also found, if the distribution of speed diﬀer-
+ences of trucks is approximately Gaussian. With this, we
+mean
+
+N(Δv) dΔv = N e−p(Δv) dΔv (10)
+with a normalization constant N and a Taylor expansion
+
+p(Δv) = a2(Δv)2 + a3(Δv)3 + a4(Δv)4 + . . . (11)
+
+Hence, our conclusions would stay the same, if the distri-
+bution would be approximately Gaussian around Δv = 0.
+This should be true under the assumptions made above,
+namely that an overtaking truck does not change its speed.
+According to the observations of the authors, this assump-
+tion appears to be quite realistic.
+
+We have now to study, how the distribution of time pe-
+riods Δt translates into vehicle platoons behind the trucks
+and into high-ﬂow states measured at local cross sections
+of the freeway. In particular, we have to explain why the
+distribution of high-ﬂow states extends up to 100 min,
+while overtaking maneuvers of trucks only take a few min-
+utes (in the worst case).
+
+3.3.1 Platoon formation during overtaking maneuvers
+
+As discussed above, it is natural that overtaking maneu-
+vers of slow vehicles, particularly trucks, constitute mov-
+ing bottlenecks for faster vehicles for some time. These
+faster vehicles will be queued up behind the slow ones
+(the trucks) and form a platoon. We will now determine
+the growth of the platoon length. Intuitively, the number
+of vehicles in the platoon grows proportionally with the
+time Δt required for the overtaking maneuver of the slow
+vehicles.
+
+To quantify this, we may apply the well-known for-
+mula for shock propagation (i.e. the propagation of fronts
+between areas of diﬀerent density) [65]. Let Ve(ρ) be the
+equilibrium speed-density relation and ρfr the density per
+lane upstream of the moving bottleneck and the forming
+vehicle platoon. Moreover, let ρpl > ρfr be the density
+per lane corresponding to the speed Vtr ≈ 80 km/h of
+trucks, i.e.
+
+Ve(ρpl) = Vtr. (12)
+
+Finally, let
+Qe(ρ) = ρVe(ρ) (13)
+
+represent the equilibrium ﬂow-density relation, which is
+sometimes called the “fundamental diagram”7. Then, the
+propagation speed of the upstream end of the vehicle pla-
+toon forming behind the moving bottleneck is expected
+to be
+
+C(ρfr) =
+Qe(ρpl)−Qe(ρfr)
+
+ρpl − ρfr =
+ρplVtr − ρfrVe(ρfr)
+
+ρpl − ρfr . (14)
+
+Relative to the truck speed Vtr, the propagation speed of
+the upstream platoon front can be calculated as
+
+c(ρfr) = C(ρfr)− Vtr = −Ve(ρfr)− Vtr
+ρpl/ρfr − 1 < 0. (15)
+
+The negative values imply that the platoon is growing
+backwards, as expected. Therefore, the platoon length
+lpl(t) grows linearly with the time t at the rate |c(ρfr)|.
+After an obstructed time period of duration Δt, the pla-
+toon is expected to have the length
+
+lpl(Δt) = |c|Δt. (16)
+Note that, in this paper, we assume that the vehicle den-
+sity ρpl in the platoon is (meta)stable, i.e.
+
+ρpl < ρc2, (17)
+7 While the ﬂow-density data scatter largely in the congested
+
+area, here we require the ﬂow-density relationship in the den-
+sity regime before the capacity drop, which is well deﬁned.
+
+
+
+D. Helbing and B. Tilch: A power law for the duration of high-ﬂow states 583
+
+see references [6,58]. This situation may be compared
+with a “widening synchronized pattern” [58,60], but with
+a moving rather than stationary downstream front. The
+density ρc2 represents the threshold to linearly unstable
+traﬃc.
+
+If relationship (17) is given, traﬃc ﬂow only desta-
+bilizes and suﬀers a breakdown of capacity8, if there are
+merging ﬂows or strong local perturbations (see the exam-
+ple in Fig. 7). Without such perturbations, the platoons
+will expand in space without a breakdown of the ﬂow.
+Therefore, the outﬂow from the vehicle clusters, after the
+trucks have ﬁnished their overtaking maneuver, is given
+by the free ﬂow capacity Qmax rather than the congested
+ﬂow capacity Qout [58].
+
+3.3.2 Dissolution of vehicle platoons
+
+After the overtaking maneuver is completed and the re-
+lated obstruction of the vehicle ﬂow has ended, the vehicle
+platoon dissolves linearly in time. Let us denote the maxi-
+mum ﬂow by Qmax and the related density by ρmax, where
+Qe(ρmax) = Qmax. According to the shock wave equation
+for the propagation of discontinuous density changes [65],
+the dissolution speed is then given by [58]
+
+C∗ =
+Qe(ρmax)/2−Qe(ρpl)
+
+ρmax − ρpl =
+ρmaxVe(ρmax)/2− ρplVtr
+
+ρmax − ρpl ,
+(18)
+
+where the factor 1/2 takes into account that only one of
+the two lanes, namely the left lane is free to dissolve the
+vehicle platoon, after the overtaking maneuver of trucks
+is ﬁnished. Relative to the truck velocity Vtr, the propa-
+gation speed is
+
+c∗ = C∗ − Vtr = −Ve(ρmax)/2− Vtr
+ρpl/ρmax − 1 . (19)
+
+The dissolution process takes a time period Δt∗. While
+the vehicle platoon dissolves at the front, further vehicles
+are joining it at its end. Therefore, we have the relation
+
+lpl(Δt) + |c|Δt∗ = |c∗|Δt∗. (20)
+This results in
+
+Δt∗ =
+|c|Δt
+|c∗| − |c| =
+
+Δt
+
+|c∗|/|c| − 1 . (21)
+
+Hence, the existence of a platoon is observed for an overall
+time period of
+
+ΔT∗ = Δt∗ + Δt =
+Δt
+
+1− |c|/|c∗| ≥ Δt. (22)
+
+The quotient in the denominator can be determined as
+
+|c|
+|c∗| =
+
+ρfr
+ρmax
+
+∣
+∣
+∣
+∣
+
+Ve(ρfr)− Vtr
+ρpl − ρfr
+
+∣
+∣
+∣
+∣
+
+∣
+∣
+∣
+∣
+
+Ve(ρmax)/2− Vtr
+ρpl − ρmax
+
+∣
+∣
+∣
+∣
+
+. (23)
+
+8 Namely, from the maximum ﬂow Qmax to the outﬂow Qout
+from seriously congested traﬃc.
+
+ρ
+ρ
+c2
+
+ρ
+pl
+
+ρ
+max
+
+ρ
+fr
+
+0
+
+Q (ρ)
+e
+
+Q
+max
+
+ρV ρV
+0
+
+tr
+
+Fig. 8. Illustration of the various densities and ﬂows deter-
+mining the formation and dissolution of vehicle platoons. We
+have ρfr ≤ ρmax and assume ρmax < ρpl < ρc2, which supports
+the (meta-)stability of vehicle platoons. Therefore, they may
+persist over a considerable time period without a breakdown
+of “high-ﬂow states”.
+
+Note the relationships
+
+ρfr ≤ ρmax < ρpl (24)
+and
+
+Ve(ρfr) ≥ Ve(ρmax) > Ve(ρpl) (25)
+(see Fig. 8). Therefore, equations (22) and (23) imply a
+platoon to exist for a time period ΔT∗ = Δt, if ρfr → 0,
+while it will exist for an extremely long time as Qe(ρfr)→
+Qmax/2. Consequently, at low vehicle densities, most pla-
+toons are expected to dissolve quickly. However, at mod-
+erate densities, the lifetime ΔT∗ = Δt + Δt∗ can be quite
+long and even diverge. This (and the persistence of high-
+ﬂow vehicle clusters after the dissolution of platoons, see
+next subsection) is the reason, why overtaking maneuvers
+on the scale of minutes can have eﬀects on much longer
+time scales.
+
+3.3.3 Measurement of high-flow states
+
+We will now have to relate the existence of vehicle platoons
+to the local measurement of high-ﬂow states. When a ve-
+hicle platoon passes a cross section of the road, the traﬃc
+ﬂow is particularly high due to the small time gaps be-
+tween its vehicles. In comparison with the situation before
+the overtaking maneuver of trucks, the time gaps between
+the freely ﬂowing cars are considerably reduced. That is,
+the ﬂow is still higher than Qe(ρfr), the ﬂow before pla-
+toon formation, even after the vehicle platoon has dis-
+solved. The related vehicle clusters are expected to exist
+for a long time, much longer than the previous vehicle
+platoon9. The corresponding ﬂows in both lanes qualify
+as high-ﬂow states, if they are larger than Qthr.
+
+9 There are basically two ways for them to disappear: 1) ve-
+hicles leave the cluster via oﬀ-ramps of the freeway; 2) clusters
+
+
+
+584 The European Physical Journal B
+
+Let us now estimate the ﬂow in both lanes after the
+overtaking maneuver of trucks is ﬁnished. Then, vehicles
+will pass the truck in the right lane at the maximum ﬂow
+rate Qmax. This ﬂow will be distributed over both free-
+way lanes. A fraction β = β(ρfr) will switch to the right
+lane, while a fraction (1− β) will stay on the left lane. In
+the right lane, in front of the overtaken truck, there will
+be some additional truck traﬃc. If γ denotes the average
+fraction of truck traﬃc on both freeway lanes, this corre-
+sponds to an average truck traﬃc ﬂow of Qtr ≈ γQe(ρfr).
+Considering that most of these trucks are in the right lane,
+the overall ﬂow on the right lane after a completed over-
+taking maneuver of trucks may be estimated as
+
+Qright(ρfr, t) ≈ β(ρfr)Qmax + 2γ(t)Qe(ρfr). (26)
+In the left lane, we approximately expect to ﬁnd the ﬂow
+
+Qleft(ρfr, t) ≈ [1− β(ρfr)]Qmax. (27)
+While the ﬂow Qleft is typically above 2000 vehicles per
+hour (we estimate that β ≈ 0.35), the ﬂow in the right lane
+exceeds high ﬂow thresholds Qthr as well, if the surround-
+ing density ρfr and the truck fraction γ are large enough.
+Therefore, after an overtaking maneuver of trucks, we ex-
+pect to ﬁnd high-ﬂow states in both lanes10. We will now
+have to determine the time period over which they are
+measured.
+
+Previously, we have studied vehicle clusters in a moving
+coordinate system, speciﬁcally in a system moving at the
+speed of trucks. Our empirical distribution of high-ﬂow
+states, however, has been measured at a local cross section
+of a two-lane freeway. In order to see how this aﬀects the
+measurement, it is useful to consult Figure 9.
+
+We see that the time period ΔT of high-ﬂow clusters
+is basically given by Δt∗, which is proportional to Δt, see
+equation (21). The proportionality factor
+
+A(ρfr) =
+1
+
+|c∗|/|c(ρfr)| − 1 (28)
+
+depends on the surrounding vehicle density ρfr. But given
+a certain density ρfr, we have the proportionality ΔT−2 ∼
+Δt−2. Together with the power law distribution (9) for
+Δt, this implies the power law distribution
+
+P (ΔT, ρfr) ∼ (ΔT )−2 ∼ (Δt)−2. (29)
+As only the proportionality factor, but not the exponent
+α = 2 depends on the density ρfr, the superposition of
+distributions for diﬀerent values of ρfr is again a power
+law with exponent α = 2:
+
+P (ΔT ) ∼ (ΔT )−2 ∼ Δt−2. (30)
+Therefore, we have shown that the measured duration ΔT
+of vehicle platoons is distributed according to a power law
+
+disperse due to a variation of the vehicle speeds, which can be
+approximated by continuity equations for cars and trucks with
+diﬀusion terms, see the appendix.
+10 At least if Qleft, Qright > Qthr and Qmax + 2γQe(ρfr) >
+2Qe(ρfr).
+
+Fig. 9. Schematic illustration of vehicle trajectories on the
+left lane before, during, and after an overtaking maneuver of
+trucks. The triangular area represents the growth and disso-
+lution of a vehicle cluster. When measuring the ﬂow after the
+dissolution of the platoon at some freeway cross section x, one
+expects to detect the free ﬂow Qe(ρfr), then a low-ﬂow period
+in front of the overtaking trucks, afterwards a high-ﬂow period,
+and ﬁnally again free ﬂow. The measured duration ΔT of the
+high-ﬂow state, which is expected to persist for a long time, is
+basically given by Δt∗.
+
+P (ΔT ) ∼ (ΔT )−α with α = 2, in agreement with the
+empirical measurement of high-ﬂow states represented by
+equation (2).
+
+4 Summary and outlook
+
+In this paper, we have revealed a power law for the dura-
+tion of high-ﬂow states, where “high ﬂow” means higher
+than some given threshold Qthr. Not only was it surpris-
+ing to ﬁnd that our empirical data could be approximated
+by a power law, but also that the power law exponents α
+for the lanes of a two-lane freeway were approximately 2,
+irrespective of the ﬂow threshold Qthr.
+
+Therefore, it was natural to look for an explanation of
+these surprising ﬁndings. As the dependence of the expo-
+nents on the number of freeway lanes does not support
+explanations based on the longitudinal vehicle dynamics,
+we have studied a model based on the transversal vehicle
+dynamics, i.e. lane changes11. Our hypothesis was that
+high-ﬂow states occured due to vehicle platoons, and that
+these vehicle platoons would be caused by lasting over-
+taking maneuvers of slow vehicles, particularly of trucks.
+11 An alternative modeling approach, however, may be based
+on modiﬁcations of the one-lane models for vehicle platoons
+discussed in Section 1, if the exponent is (made) dependent on
+the number of lanes.
+
+
+
+D. Helbing and B. Tilch: A power law for the duration of high-ﬂow states 585
+
+Based on an approximate Gaussian distribution of the
+speed diﬀerence of trucks, we could, in fact, derive the
+empirical power law and the exponent α = 2. For this, we
+have studied the duration of overtaking maneuvers, the re-
+sulting lifetime of forming vehicle platoons, and the mea-
+surement process at a cross section of the freeway. The
+lifetime ΔT∗ of a vehicle platoon and the measurement
+ΔT of the related high-ﬂow vehicle cluster are propor-
+tional to the duration Δt of overtaking maneuvers. This
+circumstance transfers the power law of the time periods
+Δt to the periods of the high-ﬂow states. The powerlaw
+itself results from the approximate Gaussian distribution
+of relative speeds Δv, the fact that the duration Δt of
+overtaking maneuvers is inversely proportional to Δv, and
+the domination of long-lasting overtaking maneuvers with
+Δv ≈ 0.
+
+Author contributions: B.T. performed the empirical data anal-
+ysis, while D.H. developed the theoretical model.
+
+The authors would like to thank Rudolf Sollacher for stimu-
+lating the empirical investigation of the characteristics of high-
+ﬂow states and the Dutch Ministry of Transport, Public Works
+and Water Management, in particular Henk Taale, for provid-
+ing the data of the Dutch freeway A9. The data of the German
+freeway A5 were provided by the Hessisches Landesamt fu¨r
+Straßen- und Verkehrswesen. Peter Felten and Mehdi Mous-
+said ﬁtted the Gauss curves to the data of Figure 5. We also
+thank Peter Felten for preparing the illustrations of Figures 5
+and 8.
+
+Appendix A: Dispersion of vehicle clusters
+
+For each vehicle class a (i.e. cars and trucks), the disper-
+sion of vehicle clusters is described by the traﬃc pressure
+Pa(x, t) = ρa(x, t)θa(x, t), which is proportional to the
+vehicle density ρa(x, t) of vehicle type a and its velocity
+variance θa(x, t) as a function of location x and time t [66].
+In the limit of small adaptation times τa for the velocity
+relaxation, the average speed Va of vehicle class a may be
+approximated by
+
+Va(x, t) = V ea
+( ∑
+
+b
+
+ρb(x, t)
+)
+
+− τa
+ρa
+
+∂Pa(x, t)
+∂x
+
+, (A.1)
+
+where V ea (
+∑
+
+b ρb(x, t)) is the equilibrium relationship be-
+tween speed Va and density ρ(x, t) =
+
+∑
+
+b ρb(x, t). Inserting
+equation (A.1) into the continuity equation for each vehi-
+cle class, the dispersion of vehicle clusters due to diﬀerent
+speeds can be reﬂected by diﬀusion terms Dab∂2ρb/∂x2
+(for details of the derivation see Ref. [67]):
+
+∂ρa(x, t)
+∂t
+
++ V ea
+( ∑
+
+b
+
+ρb(x, t)
+)∂ρa
+
+∂x
+≈
+
+∑
+
+b
+
+∂
+
+∂x
+
+(
+
+Dab
+∂ρb
+∂x
+
+)
+
+.
+
+(A.2)
+Herein, the diﬀusion parameters Dab are given by
+
+Dab(ρa, ρb) = τa
+∂Pa(ρa, ρb)
+
+∂ρb
+. (A.3)
+
+The diﬀusion terms on the right-hand side of equa-
+tion (A.2) imply a spatial dispersion of clusters in the
+course of time.
+
+References
+
+1. B.S. Kerner, P. Konha¨user, Phys. Rev. E 50, 54 (1994)
+2. D. Chowdhury, L. Santen, A. Schadschneider, Physics
+
+Reports 329, 199 (2000)
+3. D. Helbing, Rev. Modern Phys. 73, 1067 (2001)
+4. T. Nagatani, Reports on Progress in Physics 65, 1331
+
+(2002)
+5. B. Persaud, S. Yagar, R. Brownlee, Transpn. Res. Rec.
+
+1634, 64 (1998)
+6. D. Helbing, M. Moussaid, Eur. Phys. J. B, in press, see
+
+e-print http://arxiv.org/abs/0807.4006
+7. Y. Sugiyama, M. Fukui, M. Kikuchi, K. Hasebe, A.
+
+Nakayama, K. Nishinari, S.-I. Tadaki, S. Yukawa, New
+J. Phys. 10, 033001 (2008)
+
+8. B.S. Kerner, H. Rehborn, Phys. Rev. E 53, R4275 (1996)
+9. M. Treiber, D. Helbing, J. Phys. A: Math. Gen. 32, L17
+
+(1999)
+10. K. Nishinari, M. Treiber, D. Helbing, Phys. Rev. E 68,
+
+067101 (2003)
+11. M. Treiber, A. Kesting, D. Helbing, Phys. Rev. E 74,
+
+016123 (2006)
+12. J. Treiterer, J.A. Myers, in Proceedings of the 6th
+
+International Symposium on Transportation and Traﬃc
+Theory, edited by D. Buckley (Reed, London, 1974),
+pp. 13–38.
+
+13. B.S. Kerner, H. Rehborn, Phys. Rev. E 53, R1297 (1996)
+14. S. Krauss, P. Wagner, C. Gawron, Phys. Rev. E 55, 5597
+
+(1997)
+15. M. Cassidy, R.L. Bertini, Transportation Research B 33,
+
+25 (1999)
+16. B. Tilch, D. Helbing, in Traﬃc and Granular Flow ’99,
+
+edited by D. Helbing et al. (Springer, Berlin, 2000),
+pp. 333–338.
+
+17. M.R. Evans, Europhys. Lett. 36, 13 (1996)
+18. J. Krug, P.A. Ferrari, J. Phys. A: Math. Gen. 29, L465
+
+(1996)
+19. V. Karimipour, Europhys. Lett. 47, 304 (1999)
+20. V. Karimipour, Europhys. Lett. 47, 501 (1999)
+21. T. Seppa¨la¨inen, J. Krug, J. Stat. Phys. 95, 525 (1999)
+22. I. Benjamini, P.A. Ferrari, C. Landim, Stoch. Process.
+
+Appl. 61, 181 (1996)
+23. D. Helbing, B.A. Huberman, Nature 396, 738 (1998)
+24. E. Ben-Naim, P.L. Krapivsky, S. Redner, Phys. Rev. E
+
+50, 822 (1994)
+25. E. Ben-Naim, P.L. Krapivsky, Phys. Rev. E 56, 6680
+
+(1997)
+26. E. Ben-Naim, P.L. Krapivsky, J. Phys. A: Math. Gen. 31,
+
+8073 (1998)
+27. E. Ben-Naim, P.L. Krapivsky, Phys. Rev. E 59, 88 (1999)
+28. T. Nagatani, J. Phys. A: Math. Gen. 28, L119 (1995)
+29. T. Nagatani, J. Phys. Soc. Jpn 65, 3386 (1996)
+30. T. Nagatani, H. Emmerich, K. Nakanishi, Physica A 255,
+
+158 (1998)
+31. M. Fukui, Y. Ishibashi, J. Phys. Soc. Jpn 65, 1868 (1996)
+32. T. Nagatani, Physica A 284, 405 (2000)
+
+
+
+586 The European Physical Journal B
+
+33. D. Ktitarev, D. Chowdhury, D.E. Wolf, J. Phys. A: Math.
+Gen. 30, L221 (1997)
+
+34. W. Knospe, L. Santen, A. Schadschneider,
+M. Schreckenberg, Physica A 265, 614 (1999)
+
+35. L. Neubert, L. Santen, A. Schadschneider,
+M. Schreckenberg, Phys. Rev. E 60, 6480 (1999)
+
+36. M.N. Islam, P.C. Consul, Transpn. Res. B 25, 365 (1991)
+37. R. Mahnke, N. Pieret, Phys. Rev. E 56, 2666 (1997)
+38. R. Mahnke, J. Kaupuzs, Phys. Rev. E 59, 117 (1999)
+39. R. Ku¨hne, R. Mahnke, I. Lubashevsky, J. Kaupuzs, Phys.
+
+Rev. E 65, 066125 (2002)
+40. D. Helbing, R. Jiang, M. Treiber, Phys. Rev. E 72, 046130
+
+(2005)
+41. D. Helbing, Verkehrsdynamik (Springer, Berlin, 1997)
+42. R. Sollacher, Dynamical properties of highway traﬃc,
+
+Internal report of the BMBF project SANDY, grant
+No. 13N7092/2
+
+43. B. Tilch, Modellierung und Simulation selbst-
+getriebener Vielteilchensysteme mit Anwendung auf
+den Straßenverkehr (University of Stuttgart, 2000),
+unpublished
+
+44. M. Takayasu, H. Takayasu, Fractals 1, 860 (1993)
+45. T. Musha, H. Higuchi, Jpn J. Appl. Phys. 15, 1271 (1976)
+46. M. Paczuski, K. Nagel, in Traﬃc and Granular Flow,
+
+edited by D.E. Wolf, M. Schreckenberg, A. Bachem (World
+Scientiﬁc, Singapore, 1996)
+
+47. K. Nagel, M. Paczuski, Phys. Rev. E 51, 2909 (1995)
+48. T. Nagatani, Phys. Rev. E 51, 922 (1995)
+49. X. Zhang, G. Hu, Phys. Rev. E 52, 4664 (1995)
+
+50. D.V. Ktitarev, D. Chowdhury, D.E. Wolf, J. Phys. A:
+Math. Gen. 30, L221 (1997)
+
+51. L. Roters, S. Lu¨beck, K.D. Usadel, Phys. Rev. E 59, 2672
+(1999)
+
+52. S. Yukawa, M. Kikuchi, J. Phys. Soc. Jpn 65, 916 (1996)
+53. M.Y. Choi, H.Y. Lee, Phys. Rev. E 52, 5979 (1995)
+54. K. Nagel, Phys. Rev. E 53, 4655 (1996)
+55. B.S. Kerner, The Physics of Traﬃc (Springer, Berlin,
+
+2004)
+56. M. Scho¨nhof, D. Helbing, Transportation Science 41, 135
+
+(2007)
+57. D.C. Gazis, R. Herman, Transpn. Sci. 26, 223 (1992)
+58. D. Helbing, M. Treiber, A. Kesting, M. Scho¨nhof,
+
+Eur. Phys. J. B, accepted for publication, see e-print
+http://arxiv.org/abs/0903.0929
+
+59. B.S. Kerner, H. Rehborn, Phys. Rev. E 53, R4275 (1996)
+60. B.S. Kerner, Transpn. Res. Rec. 1802, 145 (2002)
+61. A.D. May, Traﬃc Flow Fundamentals (Prentice Hall,
+
+Englewood Cliﬀs, NJ, 1990)
+62. M. Krbalek, D. Helbing, Physica A 333, 370 (2004)
+63. M. Treiber, D. Helbing, Eur. Phys. J. B, submitted, see
+
+e-print http://arxiv.org/abs/0809.0426
+64. C. Wagner, J. Stat. Phys. 90, 1251(1998)
+65. M. Lighthill, G. Whitham, Proc. Roy. Soc. London A 229,
+
+317 (1955)
+66. D. Helbing, Eur. Phys. J. B, accepted for publication, see
+
+e-print http://arxiv.org/abs/0805.3400
+67. D. Helbing, A. Greiner, Phys. Rev. E 55, 5498 (1997)
+
+
+	Introduction
+	Power law distribution of high-flow states
+	Interpretation of the power law
+	Summary and outlook
+	 Appendix A: Dispersion of vehicle clusters
+	References
+

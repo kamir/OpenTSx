@@ -1,0 +1,2282 @@
+
+Eur. Phys. J. B 70, 229–241 (2009)
+DOI: 10.1140/epjb/e2009-00093-7
+
+Regular Article
+
+THE EUROPEAN
+PHYSICAL JOURNAL B
+
+Derivation of a fundamental diagram for urban traﬃc ﬂow
+
+D. Helbinga
+
+ETH Zurich, UNO D11, Universita¨tstr. 41, 8092 Zurich, Switzerland
+
+Received 11 July 2008 / Received in ﬁnal form 22 December 2008
+Published online 14 March 2009 – c© EDP Sciences, Societa` Italiana di Fisica, Springer-Verlag 2009
+
+Abstract. Despite the importance of urban traﬃc ﬂows, there are only a few theoretical approaches to
+determine fundamental relationships between macroscopic traﬃc variables such as the traﬃc density, the
+utilization, the average velocity, and the travel time. In the past, empirical measurements have primarily
+been described by ﬁt curves. Here, we derive expected fundamental relationships from a model of traﬃc
+ﬂows at intersections, which suggest that the recently measured fundamental diagrams for urban ﬂows
+can be systematically understood. In particular, this allows one to derive the average travel time and the
+average vehicle speed as a function of the utilization and/or the average number of delayed vehicles.
+
+PACS. 89.40.Bb Land transportation – 47.10.ab Conservation laws and constitutive relations – 51.10.+y
+Kinetic and transport theory of gases
+
+1 Introduction
+
+The study of urban traﬃc ﬂows has a long history (see
+Ref. [1] for an overview). For more than a decade now,
+physicists have contributed various interesting models,
+ranging from cellular automata [2–4] to ﬂuid-dynamic ap-
+proaches [5,6]. Complementary, one should mention, for
+example, reference [7,8] as representatives of publications
+by traﬃc engineers, and also continuous microscopic ﬂow
+models used in commercial software tools such as VISSIM.
+
+One research area in traﬃc physics is the transi-
+tion from free to congested traﬃc in urban road net-
+works [9,10], which started oﬀ with the paper by Biham
+et al. [11]. Interestingly enough, the spreading of conges-
+tion seems to share some features with cascading fail-
+ures [12].
+
+In the following, we will focus on the study of funda-
+mental relationships between ﬂow, utilization, and density
+on the one hand and the average velocity or travel time
+on the other hand. Such relationships were already stud-
+ied in the 60ies [13–23], but this work primarily took a
+phenomenological approach. Moreover, the recorded data
+in the regime of congested road networks scattered enor-
+mously. Thus, it was hard to ﬁt a curve. Consequently,
+many diﬀerent relationships were proposed. The probably
+most wide-spread formula is the one published by the Bu-
+reau of Public Roads [16]. Accordingly, the travel time Ti
+of an urban road section i with capacity Ci would follow
+the capacity constraint function
+
+Ti = T 0i
+[
+1 + αi
+
+(
+Ai
+Ci
+
+)βi]
+. (1)
+
+a e-mail: dhelbing@ethz.ch
+
+(see Fig. 5). Here, Ai is the arrival ﬂow in that road sec-
+tion and T 0i the travel time for light traﬃc conditions,
+while αi ≈ 0.5 and βi ≈ 4 are ﬁt parameters. It is obvious
+that this formula does not diverge when the capacity Ci is
+reached, as one may expect. This is just one of the many
+theoretical inconsistencies of the proposed phenomenolog-
+ical formulas. It is no wonder that the subject of funda-
+mental diagrams for urban traﬃc has recently been taken
+up again [24–31].
+
+The ﬁrst measurement of an urban fundamental dia-
+gram was presented by Godfrey [32]. Ten years later, even
+Robert Herman and nobel prize laureate Ilya Prigogine
+addressed traﬃc ﬂow in cities [33,34]. They tried to de-
+rive fundamental relationships via a statistical physics ap-
+proach, which however still contained phenomenological
+elements. Their “two-ﬂuid approach” considered moving
+and standing traﬃc and the mutual interdependencies be-
+tween them.
+
+Recently, the issue of urban gridlock was reanimated
+by Carlos Daganzo [28]. Together with Geroliminis, he
+presented convincing evidence for a fundamental diagram
+of urban traﬃc ﬂow [29,30]. Before, fundamental diagrams
+were mainly used for the study of freeway systems [36].
+There, they were very useful to understand capacity ef-
+fects [1], diﬀerent traﬃc states [37], and the traﬃc dynam-
+ics, in particularly the propagation of shock fronts [38]. It
+is, therefore, not surprising that people are eager to ﬁnd
+fundamental relationships for urban traﬃc as well.
+
+The most recent progress is an approximation of the
+urban fundamental diagram by Daganzo and Geroliminis,
+which is based on cutting away parts of the ﬂow-density
+plane [31]. It appears possible to construct a relation-
+ship with kinematic wave theory [35]. In contrast to the
+
+
+
+
+
+230 The European Physical Journal B
+
+density-based approach by Daganzo et al., we will pursue
+an alternative, utilization-based approach. This is com-
+mon in queueing theory [39] and transportation plan-
+ning, where formulas such as the capacity constraint func-
+tion (1) are used.
+
+After discussing elementary relationships for cyclically
+signalized intersections of urban road networks in Sec-
+tion 2, we will start in Section 3 with the discussion of
+undersaturated traﬃc conditions and derive a relationship
+for the average travel time as a function of the utilization
+or the number of delayed vehicles. Furthermore, we will
+determine a formula for the average speed. In Section 4,
+we will extend the analysis to congested road conditions,
+where the intersection capacity is exceeded. Afterwards,
+in Section 5, we will indicate how to deal with oversatu-
+rated networks, where the link capacity is insuﬃcient to
+take up all vehicles that would like to enter a road sec-
+tion. Finally, Section 6 provides a summary and discus-
+sion. In particularly, we will address issues regarding the
+transfer of link-based fundamental diagrams to urban ar-
+eas. We also try to connect the density-based fundamental
+diagram of Daganzo et al. with the utilization-based ap-
+proach developed here.
+
+2 Elementary relationships for cyclically
+operated intersections
+
+Let us study a single intersection with a periodically oper-
+ated traﬃc light. We shall have green phases j of duration
+ΔTj , during which one or several of the traﬃc streams i
+are served. βij shall be 1, if traﬃc stream i is served by
+green phase j, otherwise βij = 0. The setup time after
+phase j shall require a time period τj . It may be imagined
+to correspond to the time period of the amber light (al-
+though in practice, this has to be corrected for reaction
+times and intersection clearing times). The sum of setup
+times will be called the “lost service time”
+
+Tlos =
+∑
+
+j
+
+τj , (2)
+
+while the sum of all green time periods and setup times
+will be called the “cycle time”
+
+Tcyc =
+∑
+
+j
+
+(ΔTj + τj) = Tlos +
+∑
+
+j
+
+ΔTj . (3)
+
+The green times are also sometimes expressed as fractions
+fj ≥ 0 of the cycle time, i.e.
+
+ΔTj = fjTcyc (4)
+
+with
+∑
+
+j fj < 1. After inserting this into equation (3) and
+rearranging terms, we get
+
+Tcyc({fj}) = Tlos1−∑j fj , (5)
+
+i.e. the cycle time is proportional to the lost service time
+Tlos.
+
+Assuming average inﬂows Ai per lane, the number of
+vehicles belonging to traﬃc stream i, which must be served
+within one cycle time Tcyc, amounts to AiTcyc. In order
+to avoid the formation of growing queues (i.e. the onset of
+congestion), the number of served vehicles per cycle time
+and lane must reach this value. The number of vehicles of
+traﬃc stream i potentially served during the green phases
+ΔTj is given by
+
+∑
+j QijβijΔTj per lane, where Qij de-
+
+notes the outﬂow capacity (discharge ﬂow) per lane, when
+stream i is served by phase j. If we want to have a certain
+amount of excess capacity to cope with a variability of the
+inﬂows, we may demand
+
+(1 + δi)AiTcyc =
+∑
+
+j
+
+QijβijΔTj =
+∑
+
+j
+
+QijβijfjTcyc (6)
+
+with δi > 0. This linear set of equations may be solved
+for the green time fractions fj. In the following, we will
+assume the case, where not several traﬃc streams i are
+served in parallel by one and the same green phase, but
+where each phase j serves a single traﬃc stream i. Then,
+we may assume βij = 1, if j = i, and βij = 0 otherwise.
+Furthermore, Qij = Qii = Q̂i. With this, equation (6)
+implies
+
+fi(ui, δi) = (1 + δi)
+Ai
+
+Q̂i
+= (1 + δi)ui, (7)
+
+where
+ui =
+
+Ai
+
+Q̂i
+(8)
+
+is called the utilization of the service or outﬂow capacity
+Q̂i (see Fig. 1). δi ≥ 0 is a safety factor to cope with
+variations in the arrival ﬂow (inﬂow) Ai. According to
+equation (5) we must have
+
+0 < 1−
+∑
+
+i
+
+fi = 1−
+∑
+
+i
+
+(1 + δi)
+Ai
+
+Q̂i
+. (9)
+
+Otherwise, we will have growing vehicle queues from one
+signal cycle to the next, corresponding to the congested
+traﬃc regime.
+
+Note that, at time t, the number Ni(t) of vehicles per
+lane in the road section reserved for traﬃc stream i is
+given by the time integral of the arrival ﬂow Ai(t) minus
+the departure ﬂow γi(t)Oi(t):
+
+Ni(t) =
+
+t∫
+t0
+
+dt′
+[
+Ai(t′)− γi(t′)Oi(t′)
+
+]
+. (10)
+
+Here, the starting time t0 must be properly chosen to give
+the correct initial number of vehicles on road section i.
+During the amber and red time periods, we set the per-
+meability γi(t) = 0, as there is no outﬂow, while γi(t) = 1
+during green phases. The departure ﬂow Oi per lane is
+given by the service capacity Q̂i per lane, as long as there
+
+
+
+D. Helbing: Derivation of a fundamental diagram for urban traﬃc ﬂow 231
+
+Fig. 1. Schematic illustration of vehicle trajectories for a traf-
+ﬁc light, which has an amber and red time period of altogether
+(1 − fi)Tcyc and a green time period of fiTcyc. Vehicles move
+forward at the free speed V 0i or are stopped in a vehicle queue
+(horizontal lines), which forms during the amber and red time
+period behind the traﬃc light (located at the t-axis). The speed
+of the upstream moving congestion front is given by the ar-
+rival ﬂow [38] and denoted by ci ≤ 0. The dissolution speed
+c0 < 0 of congested traﬃc is a characteristic constant with
+|c0| ≥ |ci| [6,40]. The average delay time can be determined by
+averaging over the waiting times in the triangular areas. Note
+that for the case of an excess greentime (fi > ui), vehicles may
+pass the traﬃc light without any delay.
+
+is a positive number ΔNi(t) > 0 of delayed vehicles. If
+Qout represents the characteristic outﬂow from congested
+traﬃc per lane into an area of free ﬂow, the overall service
+capacity by all service lanes is given by the minimum of
+the number of lanes Ii used by vehicle stream i upstream
+the intersection, and the number I ′i of lanes downstream
+of it:
+
+IiQ̂i = min(Ii, I ′i)Qout, i.e. Q̂i = min
+(
+1,
+
+I ′i
+Ii
+
+)
+Qout.
+
+(11)
+When the vehicle queue forming behind a traﬃc light has
+completely resolved, the outﬂow from the road section
+used by vehicle stream i drops from Q̂i to a lower value.
+Then, if the greentime period continues, the outﬂow Oi(t)
+per lane corresponds to the arrival ﬂow Ai(t−T 0i ) per lane
+expected at the end of road section i under free ﬂow con-
+ditions [40]. Here, T 0i = Li/V 0i represents the travel time
+under free ﬂow conditions, which is obtained by division of
+the length Li of the road section reserved for stream i by
+the free speed V 0i . Considering also the above deﬁnition
+of the permeabilities γi(t) reﬂecting the time-dependent
+states of the traﬃc signal, we have
+
+γi(t)Oi(t) = γi(t)
+{
+
+Q̂i if ΔNi(t) > 0,
+Ai(t− T 0i ) otherwise.
+
+(12)
+
+The number ΔNi(t) of delayed vehicles per lane at time
+t on the road section reserved for vehicle stream i can be
+easily determined as well. In contrast to equation (10), we
+have to subtract the integral of the departure ﬂow from the
+
+integral of the arrival ﬂow Ai(t−T 0i ) expected at the end
+of road section i under free ﬂow conditions. Altogether,
+the number of delayed vehicles can be calculated as
+
+ΔNi(t) =
+
+t∫
+t0
+
+dt′
+[
+Ai(t′ − T 0i )− γi(t′)Oi(t′)
+
+]
+. (13)
+
+If the traﬃc ﬂow is organized as a vehicle platoon and the
+green phase is synchronized with its arrival at the traﬃc
+light, the number of delayed vehicles is zero. However, if
+the traﬃc ﬂow Ai is uniform, we ﬁnd
+
+ΔNi(t) = Ai · (t− t0)−
+t∫
+
+t0
+
+dt′ γi(t′)Oi(t′). (14)
+
+Let us assume that t0 denotes the time when the green
+phase for traﬃc stream i ended. Then, the next green
+phase for this traﬃc stream starts at time t′0 = t0 + (1 −
+fi)Tcyc, as fiTcyc is the green time period and (1− fi)Tcyc
+amounts to the sum of the amber and red time periods.
+Due to Oi(t) ≥ Ai(t) and Oi(t′0) > Ai(t′0), t′0 − t0 = (1 −
+fi)Tcyc is also the time period after which the maximum
+number ΔNmaxi of delayed vehicles is reached.
+
+In case of a uniform arrival of vehicles at the rate Ai =
+uiQ̂i per lane we have
+
+ΔNmaxi (ui, {fj}) = Ai(1− fi)Tcyc(fi)
+= uiQ̂i(1− fi)Tcyc({fj}) . (15)
+
+Since Q̂i−Ai is the rate at which this vehicle queue can be
+reduced (considering the further uniform arrival of vehicles
+at rate Ai), it takes a green time period of
+
+Ti(ui, {fj}) = Ai(1− fi)Tcyc
+Q̂i −Ai
+
+=
+ui(1 − fi)
+
+1− ui Tcyc({fj}),
+(16)
+
+until this vehicle queue is again fully resolved, and newly
+arriving vehicles can pass the traﬃc light without any de-
+lay.
+
+Finally, let us determine the average delay time of ve-
+hicles. If we have a platoon of vehicles which is served by
+a properly synchronized traﬃc light, the average delay is
+T avi = T mini = 0. However, if we have a constant arrival
+ﬂow Ai, the average delay T avi of queued vehicles is given
+by the arithmetic mean (T maxi +T mini )/2 of the maximum
+delay for the ﬁrst vehicle in the queue behind the traﬃc
+light, which corresponds to the amber plus red time period
+
+T maxi ({fj}) = (1− fi)Tcyc({fj}), (17)
+and the minimum delay T mini = 0 of a vehicle arriving just
+at the time when the queue is fully dissolved. To get the
+average delay, we have to weight this by the percentage
+of delayed vehicles. While the number of vehicles arriv-
+ing during the cycle time Tcyc is AiTcyc, the number of
+undelayed vehicles is given by Ai(ΔTi − Ti). Considering
+formulas (4) and (16), the excess green time is
+
+ΔTi − Ti = fiTcyc − ui(1− fi)Tcyc1− ui =
+fi − ui
+1− ui Tcyc. (18)
+
+
+
+232 The European Physical Journal B
+
+Fig. 2. Schematic illustration of vehicle trajectories and signal
+operation in the case fi = ui, where there are no excess green
+times so that the traﬃc light is turned red as soon as the vehicle
+queue has been fully resolved.
+
+Hence, the percentage of delayed vehicles is
+
+Ai[Tcyc − (ΔTi − Ti)]
+AiTcyc
+
+= 1− fi − ui
+1− ui =
+
+1− fi
+1− ui ≤ 1. (19)
+
+Altogether, the average delay of all vehicles is expected
+to be
+
+T avi (ui, {fj}) =
+(1− fi)
+(1− ui)
+
+T maxi ({fj})
+2
+
+=
+(1− fi)2
+1− ui
+
+Tcyc({fj})
+2
+
+. (20)
+
+Inserting equation (5) gives
+
+T avi (ui, {fj}) =
+(1− fi)2
+(1 − ui)
+
+Tlos
+2(1−∑j fj) , (21)
+
+while with equation (15) we obtain
+
+T avi (ui, {fj}) =
+1− fi
+1− ui
+
+ΔNmaxi (ui, {fj})
+2uiQ̂i
+
+. (22)
+
+Therefore, the average delay time is proportional to the
+maximum queue length ΔNmaxi , but the prefactor de-
+pends on fi = (1 + δi)ui (or the safety factor δi, re-
+spectively). In case of no excess green time (δi = 0 and
+fi = ui), we just have
+
+T avi ({uj}) = (1− ui)
+Tcyc({uj})
+
+2
+=
+
+ΔNmaxi ({uj})
+2Ai
+
+=
+ΔNmaxi ({uj})
+
+2uiQ̂i
+(23)
+
+(see Fig. 2).
+Similarly to the average travel time, we may deter-
+
+mine the average queue length. As the average num-
+ber of delayed vehicles is (ΔNmaxi + 0)/2 and a fraction
+
+(1− fi)/(1− ui) ≤ 1 of vehicles is delayed, together with
+equations (15) and (20) we ﬁnd
+
+ΔNavi (ui, {fj}) =
+(1− fi)
+(1− ui)
+
+ΔNmaxi (ui, {fj})
+2
+
+= uiQ̂i
+(1− fi)2
+(1 − ui)
+
+Tcyc({fj})
+2
+
+= uiQ̂iT avi (ui, {fj}). (24)
+This remarkably simple relationship is known in queuing
+theory as Little’s Law [39], which holds for time-averaged
+variables even in the case of non-uniform arrivals, if the
+system behaves stable (i.e. the queue length is not sys-
+tematically growing or shrinking). It also allows one to es-
+tablish a direct relationship between the “average vehicle
+density”
+
+ρavi =
+ΔNavi
+
+Li
+(25)
+
+on the road section used by stream i and the utilization
+ui = Ai/Q̂i, namely
+
+ρavi =
+uiQ̂iT avi
+
+Li
+. (26)
+
+Note that the average density ρavi has the same dependen-
+cies on other variables as ΔNavi or T avi , and an additional
+dependency on Li, i.e. the more natural quantity to use is
+the queue length ΔNavi .
+
+2.1 Eﬃciency of traﬃc operation
+
+In reality, the average delay time will depend on the time-
+dependence of the inﬂow Ai(t), and on how well the traﬃc
+light is coordinated with the arrival of vehicle platoons. In
+particular, this implies a dependence on the signal oﬀsets.
+In the best case, the average delay is zero, but in the worst
+case, it may also be larger than
+
+1− ui
+2
+
+Tcyc({uj}) = (1− ui)Tlos2(1−∑j uj) , (27)
+see equation (20) with fi = ui. We may, therefore, intro-
+duce an eﬃciency coeﬃcient 	i by the deﬁnition
+
+T avi ({uj}, 	i) = (1 − 	i)
+(1− ui)Tlos
+2(1−∑j uj) (28)
+
+or, considering equation (24), equivalently by
+
+ΔNavi ({uj}, 	i) = (1− 	i)uiQ̂i
+(1− ui)Tlos
+2(1−∑j uj) . (29)
+
+For 	i = 1, the traﬃc light is perfectly synchronized with
+platoons in traﬃc stream i, i.e. vehicles are served with-
+out any delay, while for 	i = 0, the delay corresponds to
+uniform arrivals of vehicles, when no excess green time
+is given. If the traﬃc light is not well synchronized with
+the arrival of vehicle platoons, we may even have 	i < 0.
+
+
+
+D. Helbing: Derivation of a fundamental diagram for urban traﬃc ﬂow 233
+
+It also makes sense to deﬁne an eﬃciencies not only for the
+traﬃc phases, but also for the operation of a traﬃc light
+(i.e. the full cycle). This can be done by averaging over
+all eﬃciencies 	i (and potentially weighting them by the
+number uiQ̂iTcyc of vehicles arriving in one cycle. There-
+fore, it makes sense to deﬁne the intersection eﬃciency as
+
+	 =
+∑
+
+i 	iuiQ̂i∑
+i uiQ̂i
+
+. (30)
+
+Note that, particularly in cases of pulsed rather than uni-
+form arrivals of vehicles, the eﬃciencies 	i depend on the
+cycle time Tcyc and, therefore, also on the utilizations ui.
+Increasing the eﬃciency 	i for one traﬃc stream i will of-
+ten (but not generally) reduce the eﬃciency 	j of another
+traﬃc stream j, which poses a great challenge to traﬃc
+optimization.
+
+The exact value of the eﬃciency 	i depends on many
+details such as the time-dependence of the arrival ﬂow
+Ai(t) and its average value Ai, the length Li of the road
+section, and the signal control scheme (ﬁxed cycle time
+or not, adaptive green phases or not, signal oﬀsets, etc.).
+These data and the exact signal settings are often not fully
+available and, therefore, it is reasonable to consider 	i as
+ﬁt parameters rather than deriving complicated formulas
+for them. Nevertheless, we will demonstrate the general
+dependence on the utilization ui in the following.
+
+For this, we will study the case of excess green times
+(δi > 0), which are usually chosen to cope with the
+stochasticity of vehicle arrivals, i.e. the fact that the num-
+ber of vehicles arriving during one cycle time is usually
+ﬂuctuating. The choice δi > 0, i.e. fi > ui, also implies
+
+AiTcyc
+Tcyc
+
+= uiQ̂i < fiQ̂i =
+ΔTi
+Tcyc
+
+Q̂i. (31)
+
+This reﬂects the well-known observation that the average
+departure ﬂow Ai = uiQ̂i usually does not reach the value
+given by the green time fraction fi times the saturation
+ﬂow Q̂i.
+
+The eﬃciency 	i related with a value δi > 0 may be
+derived from equations (21) and (28). We obtain
+
+1− 	i = (1 − fi)
+2
+
+(1− ui)2
+(1−∑j uj)
+(1−∑j fj) , (32)
+
+where fi(ui, δi) = (1 + δi)ui according to equation (7).
+The eﬃciency 	i is usually smaller than in the case, where
+the traﬃc light is turned red as soon as a vehicle queue
+has been dissolved (for exceptions see Ref. [41]). Then,
+	i < 0 for δi > 0. Formula (32) also allows one to treat the
+case where the green time fractions fi and the cycle time
+Tcyc are not adapted to the respective traﬃc situation,
+but where a ﬁxed cycle time Tcyc = T 0cyc and ﬁxed green
+time fractions f0i are implemented. This corresponds to
+constant green times
+
+f0i T
+0
+cyc({f0j }) =
+
+f0i Tlos
+1−∑j f0j . (33)
+
+In case of uniform vehicle arrivals, we just have to insert
+the corresponding value fi = f0i into equation (32) to
+obtain 	i. In the case of non-uniform arrivals, 	i can be
+understood as ﬁt parameter of our model, which allows us
+to adjust our formulas to empirical data and to quantify
+the eﬃciency of traﬃc light operation. In this way, we
+can also absorb eﬀects of stochastic vehicle arrivals into
+the eﬃciency coeﬃcients 	i, which simpliﬁes our treatment
+a lot.
+
+3 Fundamental relationships
+for undersaturated traﬃc
+
+The travel time is generally given by the sum of the free
+travel time T 0i = Li/V 0i and the average delay time T avi ,
+where Li denotes the length of the road section used by
+vehicle stream i and V 0i the free speed (or speed limit).
+With equation (24), we get
+
+Ti({uj}, 	i) = T 0i +T avi ({uj}, 	i) =
+Li
+V 0i
+
++
+ΔNavi ({uj}, 	i)
+
+uiQ̂i
+.
+
+(34)
+Inserting equation (29), we can express the travel time
+solely in terms of the utilization ui, and we have
+
+Ti({uj}, 	i) = Li
+V 0i
+
++ (1− 	i) (1− ui)Tlos2(1−∑j uj) . (35)
+The formula (35) constitutes a fundamental relationship
+between the average travel time T avi on the capacity uti-
+lization ui under the assumptions made (mainly cyclical
+operation with certain eﬃciencies 	i). Of course, one still
+needs to specify the factor (1− 	i). In case of constant ar-
+rival rates Ai, this factor is given by equation (32), which
+ﬁnally results in
+
+Ti(ui, {fj}) = Li
+V 0i
+
++
+(1 − fi)2
+(1− ui)
+
+Tlos
+2(1−∑j fj) . (36)
+
+After insertion of equation (7), we get
+
+Ti({uj}, {δj}) = Li
+V 0i
+
++
+[1− (1 + δi)ui]2Tlos
+
+(1− ui)2[1−
+∑
+
+j(1 + δj)uj]
+. (37)
+
+Sometimes, it is desireable to express the fundamental re-
+lationships in terms of the density rather than the util-
+ity. Inserting equation (35) into T avi (ui, 	i) = Ti(ui, 	i) −
+Li/V
+
+0
+i , and this into equation (26), we obtain the equation
+
+ρavi ({uj}, 	i, Li) =
+uiQ̂i
+Li
+
+(1− 	i) (1− ui)Tlos2(1−∑j uj) , (38)
+which can be numerically inverted to give the utilization ui
+as a function of the scaled densities ρavj Lj/(1−	j). The cal-
+culations are simpler in case of a ﬁxed cycle time T 0cyc and
+an uniform arrival of vehicles. By inserting equation (20)
+
+
+
+234 The European Physical Journal B
+
+into (26) [and with fi = f0i , Tcyc = T
+0
+cyc, see Eq. (33)],
+
+we get
+
+Liρ
+av
+i (ui, {f0j }) = ΔNavi (ui, {f0j })
+
+= uiQ̂i
+(1− f0i )2T 0cyc({f0j })
+
+2(1− ui) , (39)
+
+which ﬁnally yields
+
+ui(ρavi Li, {f0j }) =
+(
+
+1 + (1− f0i )2
+Q̂iT
+
+0
+cyc({f0j })
+2ρavi Li
+
+)−1
+.
+
+(40)
+This can be inserted into equation (26) to give
+
+T avi (ρavi Li, {f0j }) =
+ρavi Li
+
+ui(ρavi Li, {f0j })Q̂i
+
+=
+ρavi Li
+
+Q̂i
++ (1 − f0i )2
+
+T 0cyc({f0j })
+2
+
+. (41)
+
+3.1 Transition to congested traﬃc
+
+The utilizations ui increase proportionally to the arrival
+ﬂows Ai, i.e. they go up during the rush hour. Eventually,∑
+
+j
+
+fj =
+∑
+
+j
+
+(1 + δj)uj → 1, (42)
+
+which means that the intersection capacity is reached.
+Sooner or later, there will be no excess capacities any-
+more, which implies δi → 0 and fi → ui. In this case,
+we do not have any ﬁnite time periods ΔTi − Ti, during
+which there are no delayed vehicles and where the depar-
+ture ﬂow Oi(t) agrees with the arrival ﬂow Ai. Therefore,
+Oi(t) = γi(t)Q̂i according to equation (12), and certain re-
+lationships simplify. For example, the utilization is given
+as integral of the permeability over one cycle time Tcyc,
+divided by the cycle time itself:
+
+ui =
+1
+
+Tcyc
+
+ti0+Tcyc∫
+ti0
+
+dt′ γi(t′). (43)
+
+Moreover, in the case of constant in- and outﬂows, i.e. lin-
+ear increase and decrease of the queue length, the average
+number ΔNavi of delayed vehicles is just given by half of
+the maximum number of delayed vehicles1
+
+ΔNavi =
+ΔNmaxi
+
+2
+. (44)
+
+1 Note that the formulas derived in this paper are ex-
+act under the assumption of continuous ﬂows. The fact that
+vehicle ﬂows consist of discrete vehicles implies deviations
+from our formulas of upto 1 vehicle, which slightly aﬀects
+the average travel times as well. In Figure 2, for example,
+the number of vehicles in the queue is Nmaxi − 1 rather
+than Nmaxi . Therefore, the related maximum delay time is
+(1−ui)Tcyc(Nmaxi −1)/Nmaxi , which reduces the average delay
+time T avi by (1− ui)Tcyc/(2Nmaxi ).
+
+As a consequence, we have
+
+Ti({uj}) = Li
+V 0i
+
++
+(1− ui)Tlos
+
+2
+(
+1−∑j uj) . (45)
+
+The average speed V avi of traﬃc stream i is often deter-
+mined by dividing the length Li of the road section re-
+served for it by the average travel time Ti = T 0i + T avi ,
+which gives
+
+V avi ({uj}) =
+Li
+
+Ti({uj}) =
+(
+
+1
+V 0i
+
++
+(1− ui)Tlos
+
+2Li(1−
+∑
+
+j uj)
+
+)−1
+,
+
+(46)
+and can be generalized with equation (28) to cases with
+an eﬃciencies 	i �= 0:
+
+V avi ({uj}, 	i) =
+(
+
+1
+V 0i
+
++ (1 − 	i) (1 − ui)Tlos2Li(1−
+∑
+
+j uj)
+
+)−1
+.
+
+(47)
+Note, however, that the above formulas for the average
+speed are implicitly based on a harmonic rather than
+an arithmetic average. When correcting for this, equa-
+tion (46), for example, becomes
+
+V avi ({uj}) =
+LiuiQ̂i
+
+ΔNmaxi ({uj})
+ln
+
+∣∣∣∣∣1 + ΔN
+max
+i ({uj})
+uiQ̂iT 0i
+
+∣∣∣∣∣. (48)
+As is shown in Appendix A, this has a similar Taylor ap-
+proximation as the harmonic average (47). The latter is
+therefore reasonable to use, and it is simpler to calculate.
+
+As expected from queuing theory, the average travel
+time (45) diverges, when the sum of utilizations reaches
+the intersection capacity, i.e.
+
+∑
+j uj → 1. In this practi-
+
+cally relevant case, the traﬃc light would not switch any-
+more, which would frustrate drivers. For this reason, the
+cycle time is limited to a ﬁnite value
+
+Tmaxcyc ({u0j}) =
+Tlos
+
+1−∑j u0j , (49)
+where typically u0j ≤ uj. This implies that the sum of
+utilizations must fulﬁll∑
+
+j
+
+uj ≤
+∑
+
+j
+
+u0j = 1−
+Tlos
+Tmaxcyc
+
+. (50)
+
+As soon as this condition is violated, we will have an in-
+crease of the average number of delayed vehicles in time,
+which characterizes the congested regime discussed in the
+next section.
+
+4 Fundamental relationships for congested
+traﬃc conditions
+
+In the congested regime, the number of delayed vehi-
+cles does not reach zero anymore, and platoons cannot
+be served without delay. Vehicles will usually have to
+
+
+
+D. Helbing: Derivation of a fundamental diagram for urban traﬃc ﬂow 235
+
+wait several cycle times until they can ﬁnally pass the
+traﬃc light. This increases the average delay time enor-
+mously. It also implies that there are no excess green
+times, which means δi = 0. Consequently, we can also as-
+sume Oi(t) = Q̂i, as long as the outﬂow from road sections
+during the green phase is not (yet) obstructed (otherwise
+see Sect. 5). Formula (13) applies again and implies for
+time-independent arrival ﬂows Ai
+
+ΔNi(ti0 + kTmaxcyc ) = ΔNi(ti0) +
+
+ti0+kT
+max
+cyc∫
+
+ti0
+
+dt′
+[
+Ai − γi(t′)Q̂i
+
+]
+
+= ΔNi(ti0) + (Ai − u0i Q̂i)kTmaxcyc , (51)
+where
+
+u0i =
+1
+
+kTmaxcyc
+
+ti0+kT
+max
+cyc∫
+
+ti0
+
+dt′ γi(t′) < ui =
+Ai
+
+Q̂i
+(52)
+
+is the green time fraction of the cycle time Tmaxcyc re-
+served for vehicle stream i. Therefore, the number of de-
+layed vehicles grows by an amount (Ai − u0i Q̂i)Tmaxcyc =
+(ui−u0i )Q̂ikTmaxcyc in each cycle time Tmaxcyc . The minimum
+number during one cycle is
+
+ΔNmini (ui, k) = ΔNi(ti0) + (ui − u0i )Q̂ikTmaxcyc , (53)
+and considering equation (15), the maximum number of
+delayed vehicles is
+
+ΔNmaxi (ui, k) = ΔN
+min
+i (ui, k) + ui(1− u0i )Q̂iTmaxcyc . (54)
+
+Because of ΔNavi = (ΔN
+min
+i +ΔN
+
+max
+i )/2 and Ai = uiQ̂i,
+
+the average number of delayed vehicles is
+
+ΔNavi (ui, {u0j}, k) =
+(
+(ui − u0i )k
+
++
+ui(1 − u0i )
+
+2
+
+)
+Q̂iT
+
+max
+cyc ({u0j}). (55)
+
+Obviously, the average density
+
+ρavi (ui, {u0j}, Li, k) =
+(
+(ui − u0i )k
+
++
+ui(1 − u0i )
+
+2
+
+)
+Q̂iT
+
+max
+cyc ({u0j})
+
+Li
+(56)
+
+is obtained by dividing the previous formula by Li.
+It seems logical to use equation (55) to determine the
+
+average delay time as
+
+T avi (ui, {u0j}, k) =
+ΔNavi (ui, {u0j}, k)
+
+Ai
+
+=
+(
+1− u
+
+0
+i
+
+ui
+
+)
+kTmaxcyc ({u0j})
+
++
+(1− u0i )Tmaxcyc ({u0j})
+
+2
+. (57)
+
+Fig. 3. Schematic illustration of growing vehicle queues in the
+congested regime. Since not all vehicles can be served within
+one green time u0i T
+
+max
+cyc , vehicles are forced to make additional
+
+stops, which correspond to the rhomboidal parts of the queue in
+the above time-space diagram. The triangular part, in contrast,
+represents newly arriving vehicles.
+
+However, this turns out to be not correct, as some of this
+time is actually not lost, but used to move forward (see
+Fig. 3). After this ﬁrst simple analysis, we need to look at
+the problem more carefully, and perform the calculation
+without the use of equation (24), as Little’s Law is not
+applicable in case of non-stable, systematically growing
+queues.
+
+Again, we apply the fact that the number of vehicles
+arriving in one cycle is AiTmaxcyc , while the number of ve-
+hicles served during one green time period of duration
+u0iT
+
+max
+cyc is given by Q̂iu
+
+0
+iT
+
+max
+cyc . The diﬀerence of both num-
+
+bers is added to the growing vehicle queue. The quotient
+of the number kAiTmaxcyc of vehicles arriving in k cycles
+and the number Q̂iu0iT
+
+max
+cyc of vehicles served during one
+
+green time period, when rounded down, corresponds to the
+number ns of additional stops needed by newly arriving
+vehicles. Therefore, with Ai = uiQ̂i we have
+
+ns(ui, ({u0j}), k) =
+⌊
+
+AikT
+max
+cyc ({u0j})
+
+Q̂iu0i T
+max
+cyc ({u0j})
+
+⌋
+=
+
+⌊
+uik
+
+u0i
+
+⌋
+. (58)
+
+Here, �x� represents the ﬂoor function rounding to lower
+integers (i.e. cutting the digits after the period, if x > 0).
+Assuming that ti0 is the time at which congestion sets
+in, equation (58) can be generalized to continuous time t,
+allowing us to estimate the number of additional stops of
+a vehicle arriving at time t:
+
+ns(ui, {u0j}, t) =
+⌊
+
+Ai(t− ti0)
+Q̂iu0i T
+
+max
+cyc ({u0j})
+
+⌋
+=
+
+⌊
+ui(t− ti0)
+
+u0iT
+max
+cyc ({u0j})
+
+⌋
+.
+
+(59)
+
+
+
+236 The European Physical Journal B
+
+As Figure 3 shows, the delay time by each of the ns addi-
+tional stops is (1−u0i )Tmaxcyc . Moreover, we can see that the
+triangular part of the vehicle queue in the space-time plot
+gives a further contribution to the delay time of vehicles.
+Applying equation (20) with fi = ui = u0i , the average
+time delay in this triangular part is (1 − u0i )Tmaxcyc /2, i.e.
+the arithmetic average between zero and the sum of the
+red and amber time period (amounting to (1− u0i )Tmaxcyc ).
+In summary, the delay time of a newly arriving vehicle at
+time t (when averaging over the triangular part for the
+sake of simplicity), is
+
+T avi (ui, t) = (1 − u0i )
+Tmaxcyc
+
+2
++
+
+⌊
+ui(t− ti0)
+u0i T
+
+max
+cyc
+
+⌋
+(1− u0i )Tmaxcyc
+
+=
+(
+
+1
+2
+
++
+⌊
+ui(t− ti0)
+u0i T
+
+max
+cyc
+
+⌋)
+(1− u0i )Tmaxcyc . (60)
+
+Accordingly, the average travel time does not only grow
+with time t (or the number k of cycles passed), it also
+grows stepwise due to the ﬂoor function �x�.
+
+When we also average formula (60) over its steps, we
+obtain the approximate relationship
+
+T avi (ui, t) ≈
+(
+
+ui(t− ti0)
+u0i T
+
+max
+cyc
+
+)
+(1− u0i )Tmaxcyc
+
+= ui(t− ti0) (1 − u
+0
+i )
+
+u0i
+, (61)
+
+where it is important to consider that the ﬂoor function
+�x� is shifted by 0.5 with respect to the function round(x),
+which rounds to the closest integer: round(x) = �x+0.5�.
+Moreover, when averaging over the last (k + 1st) cycle
+we get
+
+T avi (ui, k) ≈ ui
+(
+
+k +
+1
+2
+
+)
+1− u0i
+
+u0i
+Tmaxcyc . (62)
+
+It is also possible to replace the dependence on the number
+k of cycles by a dependence on the average density of
+delayed vehicles by applying equation (55). In this way,
+we obtain
+
+k +
+1
+2
+
+=
+ΔNavi (ui, {u0j}, k)
+
+(ui − u0i )Q̂iTmaxcyc ({u0j})
+− u
+
+0
+i (1 − ui)
+
+2(ui − u0i )
+. (63)
+
+Therefore, while in Section 3 we could express the average
+travel time and the average velocity either in dependence
+of the average density ρavi or the utilization ui alone, we
+now have a dependence on both quantities.
+
+Finally note that equations (60) to (62) may be gen-
+eralized to the case where the arrival rate of vehicles is
+not time-independent. This changes the triangular part of
+Figure 3. In order to reﬂect this, the corresponding con-
+tribution (1 − u0i )Tmaxcyc /2 may, again, be multiplied with
+a prefactor (1 − 	i), which deﬁnes an eﬃciency 	i. While
+	i = 0 corresponds to the previously discussed case of an
+uniform arrival of vehicles, 	i = 1 reﬂects the case where a
+densely packed platoon of vehicles arrives at the moment
+when the last vehicle in the queue has started to move
+forward.
+
+5 Fundamental relationships
+for oversaturated traﬃc conditions
+
+We have seen that, under congested conditions, the num-
+ber of delayed vehicles is growing on average. Hence, the
+vehicle queue will eventually ﬁll the road section reserved
+for vehicle stream i completely. Its maximum storage ca-
+pacity per lane for delayed vehicles is
+
+ΔN jami (Li) = Liρ
+jam
+i , (64)
+
+where ρjami denotes the maximum density of vehicles per
+lane. The road section becomes completely congested at
+the time
+
+t = ti0 + kTmaxcyc + Δt, (65)
+
+when ΔNmini (ui, k) + AiΔt according to equation (53)
+reaches the value ΔN jami , which implies
+
+Δt =
+ΔN jami −ΔNmini (ui, k)
+
+Ai
+, (66)
+
+where
+
+k =
+
+⌊
+ΔN jami
+
+(ui − u0i )Tmaxcyc
+
+⌋
+, (67)
+
+see equation (53). The number ns + 1 of stops is given by
+equation (59). See Figure 4 for an illustration.
+
+Complete congestion causes spillover eﬀects and ob-
+structs the arrival of upstream vehicles, even though the
+green phase would, in principle, allow them to depart.
+When these spill-over eﬀects set in, we are in the over-
+saturated regime, and only a certain fraction σi of the
+green phase of duration u0iT
+
+max
+cyc can be used, where 0 ≤
+
+σi ≤ 1. Note that σi decreases in time as the number of
+blocked subsequent road sections grows. This may even-
+tually lead to gridlock in a large area of the urban traﬃc
+system.
+
+In the case σi < 1, fi = u0i must essentially be re-
+placed by fi = σiu0i in the fundamental relationships for
+congested traﬃc, and the lost service time becomes
+
+Tlos =
+∑
+
+i
+
+[
+τi + (1 − σi)u0i Tmaxcyc
+
+]
+. (68)
+
+That is, the reduced service time may be imagined like an
+extension of the amber time periods. Therefore, it would
+make sense to reduce the cycle time to a value Tcyc < Tmaxcyc
+in the oversaturated regime.
+
+Note, however, that the travel times on the road sec-
+tion reserved for stream i are not growing anymore, be-
+cause the road section is limited to a length Li. This allows
+us to determine the corresponding travel time on the link
+as follows: the number of vehicles served per cycle time is
+σiu
+
+0
+iT
+
+max
+cyc Q̂i. For this reason, the average travel time can
+
+be estimated as
+
+Ti(ui, σi, Li) = ΔN
+jam
+i (Li)
+
+σiu0i T
+max
+cyc
+
+Tmaxcyc =
+Liρ
+
+jam
+i
+
+σiu0i Q̂i
+, (69)
+
+
+
+D. Helbing: Derivation of a fundamental diagram for urban traﬃc ﬂow 237
+
+Fig. 4. Schematic illustration of the service of vehicle queues,
+when the road section is fully congested. The lower horizontal
+line indicates the location of the upstream end of the road sec-
+tion. It can be seen that vehicles are stopped several times, and
+that new vehicles can only enter when some vehicles have been
+served by the traﬃc light located at the t-axis, and the space
+freed up by this has reached the end of the vehicle queue. For
+similar considerations see reference [35]. Note that the char-
+acteristic speed c0 of the shock fronts (which corresponds to
+the slope of the congested ﬂow-density relationship for a road
+section without the consideration of traﬃc lights) is diﬀerent
+from the slope of the urban fundamental diagram, because of
+the eﬀect of signal oﬀsets and delays [31]. Therefore, c0 should
+be understood as ﬁt parameter, here.
+
+and the average delay time T avi = Ti − T 0i as
+
+T avi (ui, σi, Li) =
+Liρ
+
+jam
+i
+
+σiu0i Q̂i
+− Li
+
+V 0i
+. (70)
+
+Note that these values are now independent of both, the
+utilization and the average density, as soon as the latter
+assumes the value ρavi = ρ
+
+jam
+i , corresponding to a fully
+
+congested road section.
+
+5.1 Transition from oversaturated to undersaturated
+traﬃc conditions
+
+If the arrival ﬂow Ai after the rush hour drops below
+the value of σiu0i T
+
+max
+cyc , the vehicle queue will eventually
+
+shrink, and the road section used by vehicle stream i en-
+ters from the oversaturated into the congested regime.
+The formulas for the evolution of the number of de-
+layed vehicles are analogous to equations (53) and (54).
+The queue length starts with ΔN jami and is reduced by
+
+(ui−σiu0i )Q̂ikTcyc < 0 in each cycle of length Tcyc. Count-
+ing the number of cycles since the re-entering into the
+congested regime by k′, we have
+
+ΔNmini (ui, k
+′) = ΔN jami + (ui − σiu0i )Q̂ik′Tcyc, (71)
+
+and considering equation (15), the maximum number of
+delayed vehicles is
+
+ΔNmaxi (ui, k
+′) = ΔNmini (ui, k
+
+′) + ui(1− σiu0i )Q̂iTcyc.
+(72)
+
+As soon as ΔNmini (ui, k
+′) reaches zero, the road section
+
+used by vehicle stream i enters the undersaturated regime.
+Before, the number of stops of vehicles joining the end of
+the vehicle queue are expected to experience an number
+ns + 1 of stops with
+
+ns(k′) =
+⌊
+
+uik
+′
+
+σiu0i
+
+⌋
+, (73)
+
+compare equation (58).
+
+6 Summary and outlook
+
+Based on a few elementary assumptions, we were able to
+derive fundamental relationships for the average travel
+time T avi and average velocity V avi . These relationships
+are functions of the utilization ui of the service capacity
+of a cyclically signalized intersection and/or the average
+number ΔNavi of delayed vehicles (or the average density
+ρavi of vehicles in the road section of length Li reserved for
+traﬃc stream i). We found diﬀerent formulas, (1) for the
+undersaturated regime, (2) for the congested regime, and
+(3) for the oversaturated regime. While we also discussed
+situations, where ﬁxed cycle times T 0cyc are applied, we pri-
+marily focussed on situations, where the cycle time is ad-
+justed to the utilization ui (in the undersaturated regime)
+and to the eﬀectively usable green time fraction σi (in the
+oversaturated regime). Our results are summarized in Fig-
+ure 5, where also a comparison with the capacity restraint
+function (1) is made.
+
+The formulas for the non-congested regime can be ei-
+ther expressed as non-trivial functions of the utilization
+ui or the average queue length ΔNavi (or the average den-
+sity ρmaxi ). They contain a ﬁt parameter 	i, which reﬂects
+eﬀects of variations in the arrival ﬂow and relates to the
+eﬃciency of traﬃc signal operation in terms of synchro-
+nizing with vehicle platoons. In the best case, delay times
+are zero, which shows the great optimization potential for
+traﬃc control in this regime.
+
+In the congested regime, the number of delayed vehicles
+grows in time, and the majority of vehicles is stopped sev-
+eral times by the same traﬃc light. Therefore, the average
+travel time does not only depend on the utilization ui, but
+also on the average vehicle queue ΔNavi (or the average
+density ρavi ). Although the traﬃc light control can still im-
+prove the average travel times by synchronizing with the
+arrival of vehicles, the related eﬃciency eﬀect is rather
+limited.
+
+
+
+238 The European Physical Journal B
+
+ 0
+
+ 2
+
+ 4
+
+ 6
+
+ 8
+
+ 10
+
+ 0  0.2  0.4  0.6  0.8  1
+
+A
+ve
+
+ra
+ge
+
+ T
+ra
+
+ve
+l T
+
+im
+e 
+
+T i
+ 
+[T
+
+i0
+]
+
+Utilization ui
+Fig. 5. (Color Online) Schematic illustration of the capacity
+restraint function (1) that the Bureau of Public Roads recom-
+mends to use [16] (solid line), together with analytical results
+of this paper (dashed lines). Travel time Ti is measured in units
+of T 0i . The green long-dashed line shows that the travel time
+diverges at ui ≈ 0.45, if two green phases during one cycle
+and identical utilizations u1 = u2 of both associated road sec-
+tions are assumed, furthermore, if the parameters are set to
+Tlos = 0.1T 0i and δ = 0.1. (A generalization to traﬃc opera-
+tion with more than two green phases is easily possible.) When
+the cycle time is limited to a ﬁnite value T maxcyc to avoid inﬁnite
+delay times in one of the vehicle queues, one will have growing
+vehicle queues and increasing travel times in both road sec-
+tions. Therefore, the travel time can assume any value above
+the lower dashed horizontal line. The link travel time is only
+limited by the above dashed horizontal line, which corresponds
+to the situation where the vehicle queue ﬁlls the road section
+completely. Note that the capacity restraint function (solid
+line) averages over all travel time measurements for a given
+utilization ui. In the right part of the diagram this concerns
+measurements that depend on the duration of congestion and
+scatter between both horizontal dashed lines. Here, the curve
+is shown for αi = 0.5, βi = 4, and Ai/Ci = ui/0.45.
+
+In the oversaturated regime, the storage capacity of the
+road section is fully occupied by delayed vehicles, which
+obstructs the arrival ﬂow. Therefore, the average travel
+time of a road section reaches a constant maximum value.
+Nevertheless, the travel time of vehicles increases further
+in time due to spillover eﬀects, which trigger the spread-
+ing of congestion to upstream road sections. The actually
+usable fraction of the green time period is described by
+a parameter σi. Synchronization can still reach some im-
+provements. The most favorable control is oriented at a
+ﬂuent upstream propagation of the little remaining free
+space (the diﬀerence between ΔNmaxi and ΔN
+
+min
+i ). That
+
+is, rather than minimizing the delay of downstream mov-
+ing vehicle platoons, one should now minimize the delay
+in ﬁlling upstream moving gaps [42]. Furthermore, note
+that the free travel time T 0i = Li/V 0i and the delay time
+in the oversaturated regime are proportional to the length
+Li of the road section, while the delay times in the under-
+saturated and congested regimes are independent of Li.
+
+Based on the above results, it is obvious that it cannot
+be very successful to describe the travel time of a link by
+a capacity restraint function which depends on Ai/Ci =
+ui/u
+
+0
+i only. This basically means an averaging over data
+
+that, in principle, are also dependent on the average queue
+length ΔNavi (or on the time passed since the onset of
+congestion). It is, therefore, no wonder that empirical data
+of travel times as a function of the utilization scatter so
+enormously in the congested and oversaturated regimes
+(see e.g. Ref. [27]), that a ﬁtting of the data to functional
+dependencies of any kind does not make much sense.
+
+This has serious implications for transport modeling,
+as capacity restraint functions such as formula (1) are used
+for modeling route choice and, hence, for traﬃc assign-
+ment. Based on the necessary revision of this formula and
+comparable ones, all traﬃc scenarios based on these for-
+mulas should be critically questioned. Given the computer
+power of today, it would not constitute a problem to per-
+form a dynamic traﬃc assignment and routing based on
+the more diﬀerentiated formulas presented in this paper.
+
+6.1 Transferring the link-based urban fundamental
+diagrams to an area-based one
+
+We may ﬁnally ask ourselves, whether the above formu-
+las would also allow one to make predictions about the
+average travel times and speeds for a whole area of an ur-
+ban traﬃc network, rather than for single road sections
+(“links”) only. This would correspond to averaging over
+the link-based fundamental diagrams of that area. For
+the sake of simplicity, let us assume for a moment that
+the parameters of all links would be the same, and derive
+a velocity-density diagram from the relationship (A.9) be-
+tween average vehicle speed V avi and the capacity utiliza-
+tion ui. Taking into account V 0i = Li/T 0i and dropping
+the index i, we can write
+
+V av(u) =
+V 0 ln
+
+{
+1 + [1− f(u)]Tcyc/T 0
+
+}
+(1− u)Tcyc/T 0 + V
+
+0 f(u)− u
+1− u ,
+
+(74)
+with f(u) = (1 + δ)u. The cycle time
+
+Tcyc =
+Tlos
+
+1− sf(u) (75)
+
+follows from equation (5), assuming s signal phases with
+fi = f for simplicity. Note that the previous formulas for
+ρavi denote the average density of delayed vehicles, while
+the average density of all vehicles (i.e. delayed and freely
+moving ones) is given by
+
+ρ(u) =
+N(u)
+
+L
+=
+
+N(u)/T (u)
+L/T (u) =
+
+A(u)
+V av(u)
+
+=
+u Q̂
+
+V av(u)
+, (76)
+
+where N = AT = uQ̂T denotes the average number of
+vehicles on a road section of length L. Plotting V av(u)
+over ρ(u) ﬁnally gives a speed-density relationship V av(ρ).
+
+We have now to address the question of what happens,
+if we average over the diﬀerent road sections of an urban
+
+
+
+D. Helbing: Derivation of a fundamental diagram for urban traﬃc ﬂow 239
+
+area. Considering the heterogeneity of the link lengths Li,
+eﬃciencies 	i, utilizations ui, and densities ρavi , one could
+think that the spread in the data would be enormous.
+However, a considerable amount of smoothing results from
+the fact that in- and outﬂows of links within the studied
+urban area cancel out each other, and it does not mat-
+ter whether a vehicle is delayed in a particular link, or
+in the previous or subsequent one. Therefore, the result-
+ing fundamental diagrams for urban areas are surprisingly
+smooth [29,30]. The details of the curves, however, are ex-
+pected to depend not only on the average density, but also
+on the density distribution, the signal operation schemes,
+and potentially other factors as well.
+
+When averaging over diﬀerent links, we have to study
+the eﬀects of the averaging procedure on the density and
+the speed. The density just averages linearly: thanks to
+Little’s law [39], the formula (76) can also be applied to
+an urban area, as long as the average number of vehicles
+in it is stationary. However, as the link-based fundamental
+diagram between the ﬂow Q(ρ) = ρV av(ρ) and the density
+ρ is convex, evaluating the ﬂow at some average density
+overestimates the average ﬂow2. This also implies that,
+when the relationship V av(ρ) is transferred from single
+links to urban areas, the average speed is overestimated
+for a given density, as reference [31] has shown.
+
+Despite this expected deviation in heterogeneous and
+inhomogeneously used road networks, and despite the
+many other simpliﬁcations, the curve V av(ρ) ﬁts empir-
+ical data of the speed-density relation in an urban area
+quite well. Figure 6 displays empirical data obtained for
+the center of Yokohama [29] together with a ﬁt of the the-
+oretical speed-density relationship V av(ρ), where only the
+three parameters V0, δ, and V ∗ = L/Tlos were adjusted.
+Surprisingly, the eﬀects of network interactions could be
+suﬃciently well represented by a single parameter δ, which
+relates to the eﬃciency 	 of road sections according to
+equation (32). This approximation seems to work in situ-
+ations close enough to a statistical equilibrium (when the
+number of vehicles in the urban area does not change too
+quickly).
+
+In contrast, for an understanding of the spreading dy-
+namics of congestion patterns, we expect that one must
+study the interaction between the ﬂow dynamics and the
+network structure. This diﬃcult subject goes beyond the
+scope of this paper and beyond what is doable at the mo-
+ment, but it will be interesting to address it in the future.
+
+2 When averaging over speed values, they have to be
+weighted by the number of vehicles concerned, i.e. by the den-
+sity. This comes down to determining an arithmetic average
+of the ﬂow values and dividing the result by the arithmetic
+average of the related densities. Hence, an overestimation of
+the average ﬂow also implies an overestimation of the aver-
+age velocity. However, considering the curvature of Q(ρ) and
+knowing the variability of the density ρ allows one to estimate
+correction terms.
+
+3 This corresponds to 10% extra green time, an average dis-
+tance between successive traﬃc lights of roughly 100 m (de-
+pending on Tlos), and an average of 3 traﬃc phases (which ap-
+pears plausible, considering that there are many one-way roads,
+
+0 0.02 0.04 0.06 0.08 0.1
+0
+
+5
+
+10
+
+15
+
+20
+
+25
+
+30
+
+35
+
+Density (1/m)
+
+Sp
+ee
+
+d 
+(km
+
+/h)
+Fig. 6. (Color online) Fundamental velocity-density relation-
+ship for a central area of Yokohama. Small circles correspond
+to empirical data by Kuwahara as evaluated by Daganzo
+and Geroliminis [31]. The ﬁt curve corresponds to the the-
+oretically derived equations (74) to (76), where the outﬂow
+
+(discharge ﬂow) Q̂ = 1800 veh./h/lane and the free speed
+V 0 = 50 km/h have been ﬁxed. The only ﬁt parameters were
+δ = 0.1, Tlos/T0 = 1.4, and s = 33.
+
+The author thanks for an inspiring presentation by Carlos
+Daganzo, for useful comments by Stefan La¨mmer, and intrest-
+ing discussions with Nikolas Geroliminis, who was also kind
+enough to provide the empirical data from the center of Yoko-
+hama displayed in Figure 6, see Figure 7 in reference [29].
+He extracted these from original data of GPS-equipped taxis
+by Prof. Masao Kuwahara from the University of Tokyo. The
+ﬁt of the theoretically predicted relationship to the empiri-
+cal data was carried out by Anders Johansson. Furthermore,
+the author is grateful for partial support by the Daimler-
+Benz Foundation Project 25-01.1/07 on BioLogistics, the VW
+Foundation Project I/82 697, the NAP project KCKHA005
+“Complex Self-Organizing Networks of Interacting Machines:
+Principles of Design, Control, and Functional Optimization”,
+and the ETH Competence Center ‘Coping with Crises in Com-
+plex Socio-Economic Systems’ (CCSS) through ETH Research
+Grant CH1-01-08-2.
+
+Appendix A: Determination of average travel
+times and velocities
+
+Let f(x) be a function and w(x) a weight function. Then,
+the average of the function between x = x0 and x = x1 is
+
+which need less than 4 phases in one cycle time). Consequently,
+all parameters are quite reasonable (see also Ref. [31]). Note
+that eﬀects of oversaturation did not have to be considered in
+Figure 6. This is, in fact, consistent with pictures from Google
+Earth.
+
+
+
+240 The European Physical Journal B
+
+deﬁned as
+x1∫
+x0
+
+dx′ w(x′)f(x′)
+
+x1∫
+x0
+
+dx′ w(x′)
+. (A.1)
+
+In case of uniform arrivals of vehicles, we have a functional
+relationship of the form f(x) = a+ bx for the travel time,
+and the weigth function is constant, i.e. w(x) = w. Here,
+a = T 0i , x = ΔNi, and b = 1/Ai = 1/(uiQ̂i). With x0 = 0
+and x1 = ΔNmaxi , the formula for the average travel time
+becomes
+
+w[(ax1 + bx12/2)− (ax0 + bx02/2)]
+w(x1 − x0) = a + b
+
+x1 + x0
+2
+
+,
+
+(A.2)
+where we have used (x12 − x02) = (x1 − x0)(x1 + x0).
+Inserting the above parameters, we obtain the previously
+derived result
+
+Ti = T 0i +
+ΔNmaxi
+
+2uiQ̂i
+. (A.3)
+
+When determining the average velocity V avi , the function
+to average over is of the form f(x) = c/(a + bx), where
+c = Li and the other parameters are as deﬁned before. We
+use the relationship
+
+x1∫
+x0
+
+dx′
+wc
+
+a + bx′
+=
+
+wc
+
+b
+
+(
+ln |a + bx1| − ln |a + bx0|
+
+)
+
+=
+wc
+
+b
+ln
+
+∣∣∣∣a + bx1a + bx0
+∣∣∣∣ . (A.4)
+
+Dividing this again by the normalization factor w(x1−x0)
+and inserting the above parameters ﬁnally gives
+
+V avi =
+LiuiQ̂i
+ΔNmaxi
+
+ln
+
+∣∣∣∣∣1 + ΔN
+max
+i
+
+uiQ̂iT 0i
+
+∣∣∣∣∣ ≈ LiT 0i
+(
+
+1− ΔN
+max
+i
+
+2uiQ̂iT 0i
+
+)
+,
+
+(A.5)
+where we have used ln(1 + x) ≤ x − x2/2. This formula
+corrects the naive formula
+
+V avi ≈
+Li
+Ti =
+
+Li
+
+T 0i + ΔN
+max
+1
+
+2uiQ̂i
+
+≈ LiT 0i
+
+(
+1− ΔN
+
+max
+1
+
+2uiQ̂iT 0i
+
+)
+, (A.6)
+
+where we have used 1/(1 + x) ≈ 1 − x. Therefore, the
+above Taylor approximations of both formulas agree, but
+higher-order approximations would diﬀer. The formulas
+in the main part of the paper result for Navi = N
+
+max
+i /2,
+
+which corresponds to the case δi = 0 (i.e. fi − ui).
+Generalizing the above approach to the case δi > 0,
+
+we must split up the integrals into one over wc/(a + bx′)
+extending from x0 = 0 to x1 = ΔNmaxi and another one
+over wc/a from x1 = ΔNmaxi to x2 = (1 − ui)AiT cyc =
+(1−ui)uiQ̂iT cyc, where the speciﬁcations of a, b, and c are
+unchanged. Taking into account V 0i = Li/T 0i , this gives
+
+V avi =
+wLiuiQ̂i ln |1 + ΔNmaxi /(uiQ̂iT 0i )|+ Z
+
+w(1 − ui)uiQ̂iT cyc
+, (A.7)
+
+where
+
+Z = wV 0i [(1− ui)uiQ̂iT cyc −ΔNmaxi ]. (A.8)
+Considering equation (15), we get
+
+V avi =
+Li
+
+(1 − ui)Tcyc ln
+(
+1 + (1− fi)TcycT 0i
+
+)
++ V 0i
+
+fi − ui
+1− ui .
+
+(A.9)
+In second-order Taylor approximation, this results in
+
+V avi ≈ V 0i
+[
+1− fi
+1− ui
+
+(
+1− (1− fi)Tcyc
+
+2T 0i
+
+)
++
+
+fi − ui
+1− ui
+
+]
+,
+
+(A.10)
+which can also be derived from equation (A.6), consider-
+ing equation (15) and the percentage of delayed vehicles,
+which is given by equation (19). The same result follows
+from
+
+V avi =
+Li
+
+T 0i + T avi
+≈ V 0i
+
+(
+1− T
+
+av
+i
+
+T 0i
+
+)
+(A.11)
+
+together with equation (21).
+
+References
+
+1. D.C. Gazis, Traﬃc Theory (Kluwer Academic, Boston,
+2002)
+
+2. J. Esser, M. Schreckenberg, Int. J. Mod. Phys. B 8, 1025
+(1997)
+
+3. P.M. Simon, K. Nagel, Phys. Rev. E 58, 1286 (1998)
+4. K. Nagel, Multi-Agent Transportation Simulations, see
+
+http://www2.tu-berlin.de/fb10/ISS/FG4/archive/
+
+sim-archive/publications/book/
+
+5. M. Hilliges, W. Weidlich, Transpn. Res. B 29, 407 (1995)
+6. D. Helbing, J. Siegmeier, S. La¨mmer, Networks and
+
+Heterogeneous Media 2, (2007)
+7. M. Cremer, J. Ludwig, Math. Comput. Simul. 28, 297ﬀ
+
+(1986)
+8. C.F. Daganzo, Transpn. Res. B 29, 79 (1995)
+9. T. Nagatani, Phys. Rev. E 48, 3290 (1993)
+
+10. D. Chowdhury, A. Schadschneider, Phys. Rev. E 59,
+R1311 (1999)
+
+11. O. Biham, A.A. Middleton, D. Levine, Phys. Rev. A 46,
+R6124 (1992)
+
+12. J.-F. Zheng, Z.-Y. Gao, X.-M. Zhao, Phys. Stat. Mech.
+Appl. 385, 700 (2007)
+
+13. N.A. Irwin, M. Dodd, H.G. Von Cube, Highway Research
+Board Bulletin 347, 258 (1961)
+
+14. R.J. Smock, Highway Research Board Bulletin 347, 60
+(1962)
+
+15. W.W. Mosher, Highway Research Record 6, 41 (1963)
+16. Bureau of Public Roads, Traﬃc Assignment Manual
+
+(US Dept. of Commerce, Urban Planning Division,
+Washington, D.C., 1964)
+
+17. T.J. Soltmann, Highway Research Record 114, 122 (1965)
+18. K.B. Davidson, in Proceedings of the 3rd ARRB
+
+Conference, Part 1 (Australian Road Research Board,
+Melbourne, 1966), pp. 183–194
+
+
+
+
+
+D. Helbing: Derivation of a fundamental diagram for urban traﬃc ﬂow 241
+
+19. R.J. Smeed, Traﬃc Engineering and Control 8, 455 (1966)
+20. K.R. Overgaard, Traﬃc Quarterly, 197 (1967)
+21. J.M. Thomson, Traﬃc Engineering and Control 8, 721
+
+(1967)
+22. J.G. Wardrop, Traﬃc Engineering and Control 9, 528
+
+(1968)
+23. Y. Zahavi, Traﬃc Engineering and Control 14, (1972)
+24. R. Akcelik, Australian Road Research 21, 49 (1991)
+25. K.M. Lum, H.S.L. Fan, S.H. Lam, P. Olszewski,
+
+J. Transpn. Eng. 124, 213 (1998)
+26. H.M. Zhang, Transpn. Res. Rec. 1676, 109 (1999)
+27. H. Tu, Monitoring Travel Time Reliability on Freeways,
+
+Ph.D. thesis, Delft University of Technology, (2008)
+28. C.F. Daganzo, Transport. Res. B 41, 49 (2007)
+29. N. Geroliminis, C.F. Daganzo, Transpn. Res. B 42, 759
+
+(2008)
+30. N. Geroliminis, C.F. Daganzo, Macroscopic modeling of
+
+traﬃc in cities, TRB 86th Annual Meeting, Paper
+#07-0413, Washington D.C. (2007)
+
+31. C.F. Daganzo, N. Geroliminis, An analytical approxima-
+tion for the macroscopic fundamental diagram of urban
+traﬃc, accepted for publication (2008)
+
+32. J.W. Godfrey, Traﬃc Engineering and Control 11, 323
+(1969)
+
+33. R. Herman, I. Prigogine, Science 204, 148 (1979)
+34. R. Herman, S. Ardekani, Transportation Science 18, 101
+
+(1984)
+35. M. Eichler, C.F. Daganzo, Transportation Research B 40,
+
+731 (2006)
+36. D. Helbing, Rev. Mod. Phys. 73, 1067 (2001)
+37. D. Helbing, M. Treiber, A. Kesting, M. Scho¨nhof,
+
+Theoretical vs. empirical classiﬁcation and prediction of
+congested traﬃc states, Eur. Phys. J. B, accepted for pub-
+lication (2009), see e-print
+http://arxiv.org/abs/0903.0929
+
+38. G.B. Whitham, Linear and Nonlinear Waves (Wiley, New
+York, 1974)
+
+39. R. Hall, Queueing Methods for Service and Manufacturing
+(Prentice Hall, Upper Saddle River, NJ, 1991)
+
+40. D. Helbing, J. Phys. A: Math. Gen 36, L593 (2003)
+41. D. Helbing, A. Mazloumian, Operation regimes and slower-
+
+is-faster eﬀect in the control of traﬃc intersections, sub-
+mitted (2008), see e-print
+http://arxiv.org/abs/0903.0926
+
+42. D. Helbing, T. Seidel, S. La¨mmer, K. Peters, in
+Econophysics and Sociophysics, edited by B.K.
+Chakrabarti, A. Chakraborti, A. Chatterjee (Wiley,
+Weinheim, 2006), p. 552
+
+
+	Introduction
+	Elementary relationships for cyclically operated intersections
+	Fundamental relationships  for undersaturated traffic
+	Fundamental relationships for congested traffic conditions
+	Fundamental relationships  for oversaturated traffic conditions
+	Summary and outlook
+	Appendix A: Determination of average travel times and velocities
+	References
+

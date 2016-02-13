@@ -1,0 +1,1640 @@
+
+PHYSICAL REVIEW E 85, 021915 (2012)
+
+Multiscale multifractal analysis of heart rate variability recordings with a large number
+of occurrences of arrhythmia
+
+J. Gierałtowski,1,* J. J. ˙Zebrowski,1 and R. Baranowski2
+1Faculty of Physics, Warsaw University of Technology, Warsaw, Poland
+
+2The Cardinal Stefan Wyszyn´ski Institute of Cardiology, Warsaw, Poland
+(Received 13 June 2011; revised manuscript received 22 December 2011; published 17 February 2012)
+
+Human heart rate variability, in the form of time series of intervals between heart beats, shows complex, fractal
+properties. Recently, it was demonstrated many times that the fractal properties vary from point to point along
+the series, leading to multifractality. In this paper, we concentrate not only on the fact that the human heart rate
+has multifractal properties but also that these properties depend on the time scale in which the multifractality is
+measured. This time scale is related to the frequency band of the signal. We find that human heart rate variability
+appears to be far more complex than hitherto reported in the studies using a fixed time scale. We introduce a
+method called multiscale multifractal analysis (MMA), which allows us to extend the description of heart rate
+variability to include the dependence on the magnitude of the variability and time scale (or frequency band).
+MMA is relatively immune to additive noise and nonstationarity, including the nonstationarity due to inclusions
+into the time series of events of a different dynamics (e.g., arrhythmic events in sinus rhythm). The MMA method
+may provide new ways of measuring the nonlinearity of a signal, and it may help to develop new methods of
+medical diagnostics.
+
+DOI: 10.1103/PhysRevE.85.021915 PACS number(s): 87.19.Hh, 87.10.Ca
+
+I. INTRODUCTION
+
+One way of determining the nonlinear properties of phe-
+nomena such as human heart rate variability is to study its
+fractal properties [1–7]. In practice, we look for characteristic
+exponents that describe the scaling of the fluctuations of
+the signal [8]. In the case of a monofractal time series, the
+fluctuation scaling may be described by a single exponent H
+(the Hurst exponent) [9,10]. But there is a class of signals that
+are much more complex and whose fractal properties vary from
+point to point along the time series [11]. Such signals require
+not only one but a whole spectrum of local Hurst exponents
+h and are called multifractal. In a simple description, a time
+series is multifractal if its fluctuations of different magnitude
+have different scaling exponents, and such a wide range of
+scaling exponents is preserved for every reasonably long part
+of the time series.
+
+In the literature, one can find many examples of multi-
+fractal scaling of fluctuations in time series of very different
+phenomena: human gait [12], earthquake-related geoelectrical
+data [13], or even in the structure of music tracks [14]. Due
+to its universality and the not always clear reasons for the
+occurrence of multifractality, this seems to be a very promising
+area of research with great potential. For example, multifractal
+analysis indicates the loss of variability of the heart rate of
+subjects with congestive heart failure [5], and it allows to
+assess the antagonistic behavior of the branches of the heart
+rate controlling systems [4] and to demonstrate the differences
+between the heart rate variability of healthy persons and that
+of patients with hypertrophic cardiomyopathy [7]. In spite
+of the successes noted in the literature, multifractal analysis
+is in need of further study and refinement. This is because
+the comparison of different implementations of such analysis
+indicates serious limitations stemming from basic assumptions
+
+*gieraltowski@if.pw.edu.pl
+
+about, e.g., nonstationarity and the acceptable level of noise in
+the signal.
+
+For some time now, our group has been developing methods
+to assess the properties of heart rate variability for medical
+diagnostic purposes [15–21]. The main focus in such assess-
+ments is, usually, the properties of the sinus rhythm of the heart,
+i.e., heart rhythm that originates in the normal functioning
+of the electrical conduction system of the heart [22]. It is
+widely accepted that the properties of sinus rhythm are the
+result of the state of the systems controlling the heart rate
+variability—mainly the state of the autonomic nervous system,
+which is one of the main targets for medical diagnostics. The
+difficulty lies in the fact that clinical patients, who should
+be the target, have a sinus rhythm with many inclusions
+from heart beats originating outside the electrical conduction
+system (different forms of arrhythmia) interspersed between
+normal heart beats. In some cases, the variability of the sinus
+rhythm may be unusually low and the apparent large heart
+rate variability is mainly due to arrhythmia. Many linear and
+nonlinear signal analysis methods are vulnerable to such kinds
+of nonstationarities. Consequently, many studies—including
+those using monofractal and multifractal analysis—focus on
+heart rate variability that contains not more than 5% of
+arrhythmia, or they use algorithms to filter arrythmic heartbeats
+(compare the medical data description in Ref. [5]) ,rendering
+their use in a clinical setting doubtful.
+
+The starting point for our studies was curiosity: how
+sensitive indeed is multifractal analysis to nonstationarities
+in the heart rate time series, such as arrhythmia? We looked
+for a way that could provide a reliable analysis of a signal with
+a large number of occurrences of arrhythmia, without the need
+to filter it out or any interpolation.
+
+In Sec. II, we briefly discuss multifractal detrended fluctu-
+ation analysis. In Sec. III, we discuss the medical data used
+to develop our method and the artificial test series used in
+the paper. In Sec. IV, we describe the analysis of the standard
+
+021915-11539-3755/2012/85(2)/021915(16) ©2012 American Physical Society
+
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+multifractal detrended fluctuation analysis (MF-DFA) method.
+Section V describes the multiscale multifractal method in-
+troduced here and its advantages. Section VI contains a de-
+scription of the relation of the multiscale multifractal analysis
+(MMA) to earlier methods, including the effects of destroying
+correlations within the time series, the length of the analyzed
+time series, noise in the data, and the effect of nonstationarity
+in the form of inclusions of a dynamics different from the
+rest of the series. This part of the paper is focused on the
+analysis of natural (sinus) heart rhythm with many arrhythmic
+events included. We show that the new method is able to
+characterize monofractality or multifractality of time series
+in a wide range of frequencies (scales) simultaneously and is
+hence quite resistant to such nonstationarities.
+
+II. MULTIFRACTAL DETRENDED
+FLUCTUATION ANALYSIS
+
+Multifractal detrended fluctuation analysis, which was
+developed by Kantelhardt et al. [23], is an effective numerical
+method to examine the scaling properties of fluctuations by
+calculating a set of multifractal fluctuation functions Fq(s).
+First, we have to divide the time series of length N into series
+of contiguous windows of length s [the number of contiguous
+windows is Ns ≡ int(N/s)]. Since s in usually not a divisor of
+the length of the time series, there are parts at the end of the
+time series that would be omitted. To avoid such a situation,
+we prepare again a series of contiguous windows of length s,
+but this time starting from the end of the time series (together
+we obtain 2Ns windows). The fluctuations are measured as
+sums of squares of local differences between the time series
+integrated over the time and a detrending polynomial fit to the
+data within the given window. For ν ∈ 〈1,Ns〉, we have
+
+F 2(ν,s) ≡ 1
+s
+
+s∑
+i=1
+
+{Y [(ν − 1)s + i] − yν(i)}2 (1)
+
+and for ν ∈ 〈Ns + 1,2Ns〉,
+
+F 2(ν,s) ≡ 1
+s
+
+s∑
+i=1
+
+{Y [N − (ν − Ns)s + i] − yν(i)}2, (2)
+
+where s denotes scale (window width), Y (j ) is the data profile
+(the integrated series), ν is the current window number, and
+yν is the polynomial fit within the current window ν. The
+fluctuations F 2(ν,s) are used to determine the fluctuation
+functions Fq(s),
+
+Fq(s) ≡
+{
+
+1
+2Ns
+
+2Ns∑
+ν=1
+
+[F 2(ν,s)] q2
+} 1
+
+q
+
+, (3)
+
+where q is a parameter. The order of fluctuation parameter q
+allows us to focus the analysis on different magnitudes of the
+observed fluctuations, i.e., for q < 0, mainly small fluctuations
+are analyzed, while for q > 0, mainly large fluctuations are
+analyzed. The power-law scaling function in the form
+
+Fq(s) ∼ sh(q) (4)
+lets us easily determine the generalized Hurst exponent
+h(q) as a function of the magnitude of the fluctuations.
+Values of h are interpreted as follows [12,24]: h ∈ (0,0.5)
+
+indicates antipersistency of the time series, h = 0.5 indicates
+uncorrelated noise, h ∈ (0.5,1) indicates persistency of the
+time series, h = 1.5 indicates Brownian motion (integrated
+white noise), and h � 2 indicates black noise. In the next
+step, applying the Legendre transform to h(q), the singularity
+spectrum f (α) is usually obtained. The singularity spectrum
+is a very compact and popular way of presenting the fractal
+properties of a time series [5–7,13,14,25]. But because of
+the problems described below, we are not going to use the
+singularity spectrum f (α). It is important to remember that, as
+noted in Ref. [23], one does not study here the fractality (or,
+to be more precise, the self-similarity) of a two-dimensional
+plot of a time series (at least because the vertical and horizontal
+axis contents are not comparable) but rather a one-dimensional
+structure of points each with a value assigned.
+
+There seem to be two main sources of multifractality of a
+time series [23,26]: the occurrence of nonlinear correlations
+and fat-tailed probability distributions of the data (or incre-
+ments of the data) in the series. The two reasons may have a
+different share in generating the multifractality of a signal.
+
+There are many factors that may artificially increase the
+change of the calculated h as a function of q indicating
+an apparent multifractality, e.g., observational noise, strong
+trends, and the precision of the calculations. Consequently,
+we consider every time series for which �h � 0.2 to be
+monofractal and only the time series with �h > 0.2 as
+multifractal.
+
+III. DATA
+
+Heart rate variability data were extracted from 24-hour
+Holter ECG recordings using the 563 Strata Scan Del Mar
+Avionics system. The Holter recordings are all part of an
+anonymous Holter ECG database of the Institute of Cardiology
+(Warsaw, Poland) and were collected for medical purposes.
+They are currently used for the training of doctors and medical
+technicians at the Institute of Cardiology. In addition to the
+heart rate variability recording, the data include age, sex, and
+the medical state of the patient only. All data were checked by
+a qualified cardiologist: normal beats were detected, artifacts
+were deleted, and arrhythmias were recognized. No arrhythmia
+filtering was conducted.
+
+We analyzed 51 RR interval series, i.e., time series of
+intervals between consecutive heartbeats (an example of such
+a series is shown in Fig. 1). The RR interval time series were
+sampled at 128 Hz, i.e., with a resolution of 8 ms. Thus,
+observational errors are more than two orders of magnitude
+smaller than the measured signal. There were 42 time series
+recorded in healthy subjects and 9 obtained for subjects at risk
+of cardiac arrest, therein 5 had no organic heart disease, so
+that, in spite of previous cardiac arrest, no pathology could
+be recognized. The main effort in this paper is focused on the
+properties of the heart rate variability of healthy subjects. In
+addition, we were interested in checking what the multiscale
+multifractal properties are of cardiac arrest patients without
+organic heart disease (the recordings are difficult to obtain,
+hence the small number analyzed here). Such patients are
+particularly easy to miss using standard diagnostic methods
+in a clinical setting. The other four cardiac arrest cases (with
+organic heart disease) were included here because of the
+
+021915-2
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 1. Nighttime RR interval series of a healthy, 25-year-old
+man (subject code: CHM).
+
+characteristic properties of their heart rate variability, which
+are useful for demonstration purposes. We analyzed only
+the nighttime parts of the recordings when the subject was
+asleep to avoid the effect of daytime activities on heart rate
+variability. Because each subject had a different time of going
+to sleep, in each case the period of observation was defined
+based on the average RR interval value (it increases markedly
+during sleep). Only time series longer than 9000 intervals
+were analyzed. In several recordings, it was necessary to
+remove from the time series (without replacement) abnormally
+long intervals (>3 s) due to artifacts or technical problems
+with the recognition of the R peak. The number of such
+removals never exceeded three in a single recording. No
+data filtration or averaging was applied to the RR interval
+series.
+
+We generated also several artificial series: a uniformly
+distributed series of random numbers (range 〈0,2000〉) and a
+random number Cauchy distributed series (location 0, scale 1).
+We generated also a deterministic and a nondeterministic
+binomial cascade. To do this, we divided a line segment of
+length 1 into two parts of equal length. We multiplied both
+parts by the weights m1 and m2 (where m1 + m2 = 1). We
+repeated the procedure for every line segment created in the
+previous step. In the case of the nondeterministic cascade, the
+segments were multiplied by weights in random order. In this
+paper, we used also a deterministic cascade formed in 14 steps,
+thus of length 214, with weights m1 = 0.25 and m2 = 0.75.
+We used also a modified nondeterministic cascade. Because
+the initial cascade distribution is asymmetric, we added to it
+its reversed (multiplied by −1) version, obtaining a symmetric
+distribution. We created also a few more artificial time series
+by merging the series mentioned above as described later in
+the text.
+
+IV. PROPERTIES OF MF-DFA
+
+The final results of MF-DFA depend strongly on several
+decisions of the user. The first problem to be considered is
+the subtraction of the mean 〈x〉 while calculating the data
+profile. Because of the detrending procedure, this step is
+unnecessary [23].
+
+The second decision to be made is the choice of the order of
+the detrending polynomial applied within each data window
+to obtain Fq(s). We found only slight differences in the results
+while using the order 1 (DFA1) and the order 2 (DFA2)
+polynomials to analyze the RR interval time series. Below
+we show results only for the order 2.
+
+The third decision seems to be the appropriate choice of the
+range of scales s, for which the family of curves Fq(s) should
+be calculated. A too large s results in the division of the time
+series into a too small number of windows. We found that
+a division into fewer than 50 data windows often causes the
+Fq(s) curves to converge at the scale of saturation. In turn, too
+small scales s cause the detrending procedure to be executed
+on a set of only a few points. For very small scales s < 10,
+after the detrending procedure, the calculated variance often
+is of the order of the accuracy of the C++ data type double,
+which may result in an arithmetic underflow. In our tests using
+the RR interval series, the calculations were impossible for
+almost all cases for s < 10 because the maximal software
+precision was exceeded. Therefore, the often obtained drastic
+decrease of the values of Fq(s) for s < 10 is a result of an
+arithmetic underflow (if not for all, at least for the majority
+of the calculation windows). That is why we set the usable
+range of scales to be s ∈ 〈10, N50 〉, where N denotes the length
+of the time series. In the case of the nighttime RR interval
+series analyzed by us, N was usually about 30 000. Thus, all
+of our calculations were made and are presented for scales
+s ∈ 〈10,600〉.
+
+The slopes of the log-log fits to the family of Fq(s) curves
+determine the local Hurst exponents and hence the h(q)
+dependence. The details of the fitting procedure are crucial
+to the final results. Even small differences in realizations
+of this step may cause drastic changes in the outcome. The
+plots of Fq(s) often show substantial fluctuations. As a result,
+the choice of even a slightly wider fitting window can give
+a completely different local Hurst exponent, changing the
+h(q) curve importantly (animation 1 in Ref. [27]). We found
+that the effect occurs even when small changes in the fitting
+window size or positioning on the scale axis are made, in spite
+of the fact that the coefficient of determination R2 remains
+large—approximately 0,98–0,99. We found this to be one of
+the most important effects that we considered while suggesting
+our new solutions.
+
+Multifractal analysis of time series is conducted in a few
+steps, every one of which yields ever more highly processed
+results, requiring additional computations involving some
+subjective decisions. First of all, the plot of the fluctuation
+functions Fq(s) is constructed. Next, derived from the Fq(s)
+dependence, the dependence h(q) of the generalized Hurst
+exponents on the order of fluctuation q is found. And finally,
+the singularity spectrum f (α) is calculated from the Legendre
+transform.
+
+The only result in the MF-DFA method, which is only very
+slightly dependent on the individual decisions of the user, is the
+initial step, namely the computation of the family of the Fq(s)
+curves. Because of the rather subjective decisions of the user
+about the details of the fitting procedures and their effect on
+the resultant h(q) dependence, one should be careful about the
+way the quantitative analysis of the h(q) dependence is carried
+out. However, the general shape of the h(q) dependence is
+
+021915-3
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 2. (Color online) (a) Plot of the fluctuation functions Fq (s)
+(black points) calculated for the series presented in Fig. 1. The curves
+correspond to q between −5 and 5 in steps of 1. Vertical (blue) lines
+mark two examples of the fitting windows for the small s ∈ 〈10,50〉
+range and for the large s ∈ 〈120,600〉 range. Fits made within these
+two windows are shown by solid lines (red or dark gray in the left
+window and green or light gray in the right window). (b), (c) Two
+examples of the h(q) curves, obtained in the fitting windows of (a),
+for the small and the large scales s, respectively.
+
+qualitatively stable and remains the clearest way of detecting
+the monofractality or multifractality of the time series.
+
+The singularity spectrum f (α), on the other hand, is
+calculated from the h(q) dependence (vulnerable to all the
+procedure details described above) with the use of the
+Legendre transform, which amplifies some types of errors
+[mainly because of the presence in it of the derivative h′(q)].
+Consequently, the singularity spectrum f (α) may be an
+unstable result, often affected by very serious artifacts that may
+cause difficulties and ambiguities in interpretation [7]. There
+seems to be no effective way of removing such artifacts. This
+led us to the conclusion that a reliable singularity spectrum
+f (α) is very difficult to obtain and that it should be treated
+only as an additional, indicatory result.
+
+A problem that seems even more serious but also far more
+interesting is the presence of the crossover, i.e., the change of
+the average slope of the Fq(s) at some scale s, in the results
+obtained from the RR interval series (Fig. 2).
+
+A constant h(q) indicates monofractality, while multifrac-
+tality is associated with a wide range of values of h(q) [23].
+In the case of RR interval series studied here (Fig. 2, other
+examples shown below), the results of the procedure are
+complex, i.e., there is a different shape of the h(q) curve for
+small and large scales s, indicating different fractal properties
+for small and large scales s. It is thus possible to observe,
+e.g., monofractal properties in small scales and multifractal
+properties in large scales for the same time series.
+
+The crossover effect is sometimes interpreted as the result
+of the use in the analysis of a too narrow window of data
+
+FIG. 3. (Color online) (a) Family of curves Fq (s) calculated for
+the first test signal (multifractality visible for the small scales and
+monofractality for the larger scales). Vertical (blue) lines mark two
+examples of the fitting windows for the small s ∈ 〈10,50〉 range
+and for the large s ∈ 〈120,600〉 range. Fits made within these two
+windows are shown by solid lines (red or dark gray in the left window
+and green or light gray in the right window). (b) The h(q) dependence
+calculated for the small (red or dark gray points, upper curve) and for
+the large (green or light gray points, lower curve) scales s.
+
+(finite scale size effect) [28,29]. But it is also interpreted
+as a result of different correlation properties for small and
+large scales in the signal [30–32] (in the case of heart rate
+variability data, the latter phenomenon may be interpreted as
+an effect of respiration on the heart rate [33]). We agree with
+both interpretations: for the lowest possible scales s < 10,
+arithmetic underflow often occurs; for scales from the range
+s ∈ 〈10,50〉, the scaling properties are due to short-range
+correlations; and for scales s > 50, the scaling properties
+are due to long-range correlations (ranges approximate). These
+two concepts, together with the notion that multifractality is
+caused by long-range correlations, could be the reason for
+the rejection of the results obtained for low scales s by some
+authors [7,29]. The position of the crossover may depend on q
+[31,32], which also causes additional interpretation problems.
+
+We attempted to find out whether indeed the calculation
+of the multifractal properties at the lower end of scales
+(s ∈ 〈10,50〉) does not yield usable results. To illustrate where
+our doubts in this matter come from, we prepared two test
+series (Figs. 3 and 4). To generate the time series for both
+examples, we need to merge together two time series: a
+monofractal series of random numbers and the multifractal
+binomial cascade (Sec. III). In the first example (Fig. 3), we
+generated the binomial cascade. Then we removed from the
+series all values <0.000 01 (because the values in the binomial
+cascade series form characteristic discrete levels, this means
+we left only a few of the largest elements of the series). In their
+place, we substituted uniformly distributed random numbers
+from the range 〈0,0.006〉 (similar to the largest values in
+the binomial cascade). As a result, we obtained a binomial
+cascade embedded in noise. Analysis of such a signal shows
+its multifractal nature for small scales, but for larger scales
+the effect of noise becomes clearly visible and monofractality
+prevails. In the second example (Fig. 4), we used once more
+the binomial cascade replacing every point xi by 100 points
+generated using the formula xir , where r denotes a random
+
+021915-4
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 4. (Color online) (a) Family of curves Fq (s) calculated for
+the second test signal (monofractality visible in the small scales and
+multifractality in the large scales). (b) Theh(q) dependence calculated
+for the small (red or dark gray points, lower curve) and for the large
+(green or light gray points, upper curve) scales s.
+
+number (uniform distribution) from the range 〈0,2〉. Such a
+series has inverted properties with respect to the previous one,
+i.e., monofractality in the small scales and multifractality in
+the large scales.
+
+We summarize the results obtained for the test signals as
+follows:
+
+(i) We generated time series that have monofractal or
+multifractal properties depending on the scale of analysis s.
+We were able to easily detect this effect.
+
+(ii) We reconstructed the crossover phenomena and con-
+firmed that essential changes of fractal properties are possible
+within one time series, depending on the scale of analysis s
+(compare also [30–32]).
+
+(iii) We were able to recognize monofractality or multifrac-
+tality for small scales s ∈ 〈10,50〉 (contrary to the conclusions
+about the ranges of interest in Refs. [7,29]).
+
+Although the method does have lower accuracy for scales
+s < 50 [28], it is still able to easily distinguish monofractal
+from multifractal properties of the signal judging by the
+shape of h(q) (Figs. 3 and 4). We see no reason to reject
+results obtained for scales s ∈ 〈10,50〉. Consequently, we
+decided to analyze the multifractal properties of time series
+in the possibly widest range of scales, including s ∈ 〈10,50〉.
+Moreover, crossovers often occur for small scales s and are
+very interesting for our research, so that the proper analysis
+requires an effective way of studying all available scales
+simultaneously and assessing the properties of the signal
+within the crossover region.
+
+V. MULTISCALE MULTIFRACTAL ANALYSIS
+
+A. Description
+Castiglioni et al. [34] studied the effect of high altitude
+
+hypoxia on heart rate variability. The authors applied the well-
+known monofractal DFA method but, instead of defining fixed
+scale ranges, they varied continuously the scale for which they
+calculated the DFA exponent αDFA(s). Inspired by their work
+and encouraged by the results, we decided to go further and
+calculate a multifractal spectrum with a variable scale range.
+
+FIG. 5. (Color online) h(q,s) dependence (Hurst surface) calcu-
+lated for a multifractal nondeterministic binomial cascade of length
+32 768. The two red (dark gray) points correspond to α1 and α2
+calculated using the standard, monofractal DFA method. The green
+(light gray) line at the back of the plot corresponds to h(q) calculated
+with the standard MF-DFA method.
+
+We used a moving fitting window, sweeping through all the
+range of the scales s along the Fq(s) plot. This allows us to
+study quasicontinuous changes of the h(q) dependence versus
+the range of the scale s and as a result to obtain the generalized
+dependence h(q,s) (a Hurst surface, Fig. 5). Because the fluc-
+tuation functions Fq(s) are presented in log-log coordinates,
+the moving fitting window expands logarithmically, so that it
+seems to be of constant width (Animation 2 in Ref. [27]).
+
+The fit is made only for points currently inside the moving
+fitting window. The starting width of the window includes
+the scales s ∈ 〈10,50〉 [cf. Figs. 2(a) and 2(b)], and then
+the window is moved and expanded to reach the final width
+s ∈ 〈120,600〉 [cf. Figs. 2(a) and 2(c)]. If possible, at least
+the first and the last fitting window should not contain the
+crossover, otherwise the Hurst surface will not show all
+possible scalings (of course, in the case of extremely short
+time series or wide crossovers, that is impossible). The scale
+axis of the h(q,s) plot is calibrated so as to show the center
+of the fitting window—it starts from s = 30 (i.e., the center of
+the initial scale range 〈10,50〉) and ends at s = 360 (the center
+of the range 〈120,600〉). For clarity, the points of the h(q,s)
+graph are connected to form a colored surface. The fluctuation
+functions Fq(s) are plotted using a logarithmic axis for the
+scale s, but the Hurst surface is presented using a linear axis.
+This should be kept in mind while interpreting the results.
+
+As for the standard h(q) dependence obtained for fixed
+scale ranges, the h(q,s) plot for q < 0 corresponds to those
+fragments of the signal that have a low variance (small
+fluctuations), while for q > 0 the plot characterizes the signal
+fragments with a large variance (large fluctuations). Also, as
+for the standard h(q), the results for q > 0 are much more
+stable and encumbered by smaller errors. That is why the
+results for q < 0 should always be used with caution.
+
+During the calculation of h(q,s), the center of the window
+(the average scale) and the window itself (the scale range) are
+changed, so for many signals the scale range s (the window
+size) may be related to the frequency band of the signal.
+As the calculation progresses, lower and lower frequency
+components of the signal are analyzed. Thus, the dependence
+
+021915-5
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 6. (Color online) (a)–(c) The f (α,s) dependence for the RR
+interval series of the healthy subject CHM seen from three different
+viewing angles. Numerous artifacts make the plot difficult to read
+and interpret. Light gray points mark the artifacts recognized by the
+artifact removing procedure. (d) An example cross section of f (α,s)
+in (a)–(c) obtained for s = 360.
+
+h(q,s) yields information about the level of fluctuations at
+different frequency bands.
+
+Just as for all other calculations of a Hurst exponent, the
+results can be categorized into groups [12,24]: h ∈ (0,0.5)
+denotes antipersistency of the time series, h = 0.5 denotes
+uncorrelated noise, h ∈ (0.5,1) denotes persistency of the time
+series, h = 1.5 denotes Brownian motion (integrated white
+noise), and h � 2 denotes black noise. In other words, h(q,s)
+values correspond to types of correlations within the time
+series.
+
+The natural next step after creating the generalized h(q,s)
+dependence was to prepare also a corresponding f (α,s) depen-
+dence (Fig. 6). Every cross section of the h(q,s) dependence,
+made for a particular scale s, was transformed using the
+Legendre transform into a cross section of the f (α,s) plot.
+As mentioned in the Introduction, calculating f (α) involves
+often the interpretation of problems due to additional artifacts
+specific to this calculation [7].
+
+Although the construction of the relation f (α,s) is feasible
+in principle, we decided to analyze the properties of h(q,s)
+first, considering such analysis less ambiguous.
+
+B. Advantages of MMA
+The generalized h(q,s) dependence allows us to perform
+
+multifractal analysis without any initial assumptions about the
+time scale of the problem investigated, as we obtain results for
+many frequency bands simultaneously. The Hurst surface is
+also a far better way of analyzing time series with a crossover,
+as we do not have to avoid datasets with it or narrow the range
+of investigated scales only to large or only to small scales. The
+common practice of fixing a priori the scaling ranges in such
+
+methods as DFA and MF-DFA may lead to artifacts in some
+cases, i.e., if by mistake a crossover falls within the scaling
+range, the results will be biased. In the new approach described
+above, we obtain results for all scales present in the signal,
+including those for the small and large scales as well as the
+crossover properties. We thus avoid mistakes due to improperly
+predefined scaling ranges. Or, if the scaling range includes only
+large scales, then we miss all the information about the fractal
+properties in the small scales, while such properties may be
+dramatically different and very interesting (cf. Figs. 2–4). Even
+if we would try to use the standard MF-DFA method separately
+for the small and for the large scales, we would miss all the
+analysis of the properties within the crossover range, and these
+properties can also be very different from case to case.
+
+In Secs. VI E and VI F, we will also show that MMA is
+quite resistant to observational noise and nonstationarities. The
+detrending inherent in MF-DFA to a large extent takes care
+of the nonstationarity due to relatively slow processes (i.e.,
+trends). Another kind of nonstationarity is due to inclusions
+into the time series of a different dynamics (such as arrhythmic
+events). Because this particular kind of nonstationarity will
+usually affect the results only in a narrow region of the Hurst
+surface, leaving the other parts unaffected, the method allows
+us to study time series with such inclusions. This seems to be
+very good news for those who need to analyze RR interval
+series with a large number of arrhythmia episodes.
+
+VI. RESULTS AND DISCUSSION
+
+A. Correspondence with earlier multifractal analysis methods
+We tested the multiscale multifractal analysis method in
+
+several ways. First of all, we tested it on a time series of
+monofractal random numbers, obtaining satisfying results.
+For a uniformly distributed random number series, h(q) = 0.5
+[Fig. 7(a), [23]]. As expected, for every scale s, we obtained
+a flat Hurst surface [Fig. 7(b)], also situated at 0.5. For a
+multifractal time series of Cauchy distributed random numbers
+[Fig. 7(c)], also as expected, we obtained the standard shape
+of the multifractal h(q) dependence for all available scales
+[Fig. 7(d)]. These two basic results show that the MMA method
+reproduces well the results obtained from earlier multifractal
+analysis methods.
+
+B. Effect of randomization of the time series
+It seems that multifractality can have two sources: nonlinear
+
+correlations and a fat-tailed probability distribution [31,32].
+In the case of RR interval series, it was shown that the first
+source of multifractality applies and that the second one has
+no effect [11] as the distribution is approximately Gaussian.
+Thus, the characteristic shape of the Hurst surface calculated
+for RR interval series of a healthy man is due to correlations.
+In this sense, the Hurst surface is a generalized description of
+the correlation properties obtained from the MF-DFA method
+and, in general, different from that obtained by such methods
+as the autocorrelation function or mutual information.
+
+To demonstrate the effect of removing the autocorrelations
+from the signal on MMA results, we calculated h(q,s) for the
+nighttime RR interval series of subject CHM [Fig. 8(a)] and
+next for the shuffled version of this time series. In Fig. 8(b),
+
+021915-6
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 7. (Color online) (a) The standard h(q) dependence calcu-
+lated using MF-DFA for a monofractal series of random numbers
+(uniform distribution, range 〈0,2000〉, length of series 16 384).
+(b) The h(q,s) dependence calculated for the monofractal series in (a).
+(c) h(q) for a multifractal series of random numbers (Cauchy
+distribution, location 0, scale 1, length of series 65 536). (d) The
+h(q,s) dependence calculated for the series in (c).
+
+we can see that, in fact, the randomization destroyed the
+correlations—the results closely resemble those for white
+noise. Thus, we conclude that, in fact, multifractality of RR
+interval series is due to correlations.
+
+C. A measure of the generalized distance
+between two Hurst surfaces
+
+To reliably describe the differences between two MMA
+results in the next examples, we need to assess numerically a
+generalized, mean distance between the two h(q,s) surfaces.
+First, we calculate the mean 〈h(q,s)〉 for each surface. Next,
+we adjust the values of one of the h(q,s) surfaces so that the
+means of both surfaces are the same (by shifting the surface
+up or down). In this way, we were able to focus only on
+the differences in the shape of the surfaces independently
+of the change in the average Hurst exponent. We next
+subtracted the two surfaces from each other point by point,
+squared the differences, and calculated the mean. Then, we
+normalized the square root of the mean by dividing it by the
+average Hurst exponent of the first, the reference surface. This
+procedure may be written as follows:
+
+h2S(q,s) = h2(q,s) + [〈h1(q,s)〉 − 〈h2(q,s)〉], (5)
+d = {〈[h1(q,s) − h2S(q,s)]2〉} 12 [〈h1(q,s)〉]−1, (6)
+
+where d is a measure of the mean distance between two Hurst
+surfaces, h1(q,s) is the reference surface, h2(q,s) is the result
+for the test series, and 〈· · ·〉 denotes the mean.
+
+We set d = 0.065 as the threshold so that if d � 0.065, we
+consider two surfaces to be similar (i.e., indistinguishable),
+and if d > 0.065, we consider them to be different. In all
+
+FIG. 8. (Color online) (a) The h(q,s) surface calculated for the
+nighttime heart rate variability of a healthy 25-year-old man (CHM,
+length of series 29 700, cf. Fig. 1). (b) h(q,s) calculated for the
+shuffled version of the same series.
+
+the following examples, two reference surfaces will be used
+having the following mean Hurst exponents: for the healthy
+man, CHM 〈h(q,s)〉 = 0.867, and for the Cauchy distributed
+random series used in all the examples, 〈h(q,s)〉 = 0.747.
+
+D. Effect of the length of the time series
+Nighttime RR interval series, which are our main interest,
+
+can have very different lengths. Thus, it was important for us
+to find out what effect the length of the time series has on the
+results of MMA.
+
+We prepared the first group of test series by selecting
+fragments from the RR interval series of the healthy man
+CHM (length of series 29 700, cf. Fig. 1) recorded during
+the night. Initially, we calculated h(q,s) for the complete
+time series [Fig. 8(a)]. We prepared test time series obtained
+extracting 20 000, 15 000, 10 000, 7500, 5000, and 2000
+
+021915-7
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 9. (Color online) h(q,s) for the RR interval series of the
+healthy subject CHM, shortened to different lengths: (a) 20 000,
+(b) 15 000, (c) 10 000, (d) 7500, (e) 5000, and (f) 2000. Presented
+are results averaged over 1000 realizations of the test series.
+
+consecutive intervals from this series. The starting point for the
+shortened subseries was chosen randomly and all the distances
+d presented below are averaged over 1000 realizations of the
+extraction procedure and presented together with the standard
+deviation of the results.
+
+The results (Fig. 9) for the series of length 20 000 are very
+similar to these for the whole available series [length 29 700,
+Fig. 8(a)]. The results for 15 000 and 10 000 are still very
+similar, but the results for the series length 7500 are different.
+For even shorter time series, the changes were even more
+pronounced. In Table I, we can see the generalized distances
+between the h(q,s) surface for the full length time series and
+that for the short fragments (cf. Sec. VI C). The mean distances
+between the results (taking into account the standard deviation)
+for the original series and the series of lengths 20 000 and
+15 000 are less than 0.065, which is thus below the threshold we
+have assumed. The mean distance for the 10 000-interval-long
+series is also below the threshold, but the standard deviation
+σ for this case shows that some of the test series yielded
+h(q,s), exceeding the threshold criterion of 0.065. This is then
+a borderline case, and nighttime RR interval series shorter than
+15 000 should not, in general, be used.
+
+As mentioned above, multifractality can have two sources:
+long-range correlations and a fat-tailed probability distribution
+
+TABLE I. Mean values 〈h2(q,s)〉 and intersurface distances d
+(defined in Sec. VI C) between the results for the original time series
+(healthy subject CHM or Cauchy distribution) and their successive
+modifications (shortened series, see Sec. VI D for details). In every
+case, the mean value μ and the standard deviation σ of the results for
+the 1000 realizations of each test series are given.
+
+20 k 15 k 10 k 7.5 k 5 k 2 k
+
+CHM d μ 0.038 0.046 0.057 0.068 0.084 0.156
+σ 0.010 0.011 0.016 0.014 0.025 0.058
+
+〈h2(q,s)〉 μ 0.832 0.821 0.829 0.840 0.841 0.869
+σ 0.014 0.031 0.057 0.069 0.079 0.123
+
+Cauchy d μ 0.056 0.070 0.089 0.106 0.137 0.259
+σ 0.016 0.026 0.034 0.030 0.042 0.202
+
+〈h2(q,s)〉 μ 0.755 0.755 0.757 0.760 0.766 0.791
+σ 0.015 0.018 0.030 0.039 0.058 0.114
+
+[31,32]. In the case of non-Gaussian distributed time series,
+it is difficult to tell how much of the multifractal properties
+is due to correlations and how much is due to the properties
+of the distribution of the signal. In such a case, the analysis
+of the exact values of the Hurst surface [e.g., assessment of
+persistence or antipersistence by comparison of h(q,s) with
+0.5] does not seem to make sense. For the RR interval series,
+the distribution is approximately Gaussian. However, noise,
+seasonal trends, and other nonstationarities may affect h(q,s).
+Below, we thus discuss the shape and the span of the Hurst
+surface rather than keep track of its values.
+
+In the case of RR interval series, nonlinear correlations are
+the main source of multifractality. As a result, we wanted to
+check what impact the shortening of the series length has on
+our results in the case of a time series for which multifractal
+properties are only due to its fat-tailed distribution.
+
+We took 20 000, 15 000, 10 000, 7500, 5000, and 2000
+intervals, respectively, of the series of the Cauchy distributed
+random numbers used above [full length 65 536 data points,
+cf. Figs. 7(c) and 7(d)]. Once more the starting point of the
+shortened subseries was chosen randomly, and the results
+shown are averaged over 1000 realizations of the subseries
+preparation and presented together with the standard deviation
+of the results. Looking at the results for the series of length
+20 000 [Fig. 10(a)], they appear to be almost identical to those
+for the reference series [cf. Fig. 7(d)]. The results for series
+length 15 000 and 10 000 are visibly different and for 7500 they
+are very different. For the two shortest series of lengths 5000
+and 2000, the correct result is clearly destroyed. In Table I,
+only the mean distance d for the series of length 20 000 is
+lower than 0.065, which is thus lower than the threshold, but
+when combined with the standard deviation it become higher
+than the threshold. Therefore, for multifractality resulting from
+the properties of the probability distribution, series longer than
+20 000 should be used.
+
+Note that the standard deviations for both the distance d
+and the mean h2(q,s) are very high in the two examples.
+Each of the 1000 test series in these examples may have
+different correlation properties (the fragments of the RR series)
+or an insufficient statistical representation of the Cauchy
+distribution. This results in the large standard deviations in
+Table I. This is another point showing that series analyzed by
+
+021915-8
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 10. (Color online) h(q,s) calculated for the multifractal se-
+ries of random numbers [compare with Fig. 7(d), Cauchy distribution,
+location 0, scale 1] of different lengths: (a) 20 000, (b) 15 000, (c)
+10 000, (d) 7500, (e) 5000, (f) 2000. The presented results have been
+averaged over 1000 realizations of the test series.
+
+MMA (but also by any other multifractal method) should be
+sufficiently long.
+
+For both examples (Figs. 9 and 10), for the smallest time
+series lengths, the Hurst surface becomes exceptionally steep
+and ragged. This is because the calculations of Fq(s) are made
+using a small number of windows. Consequently, all results
+become much less smooth.
+
+E. Effect of noise
+Another practical matter, very important for heart rate
+
+variability analysis, is the effect of observational errors on
+the results of MMA. Above, we presented an example of
+a test series with monofractal properties at small scales and
+multifractal properties at large scales (Fig. 4). We suspected
+that it is possible to find a similar behavior, i.e., monofractality
+at small scales and multifractality at large scales in multifractal
+test signals with a high level of noise (a monofractal signal)
+added.
+
+We prepared time series with different levels of noise using
+the equation
+
+si = xi(1 + np), (7)
+
+FIG. 11. (Color online) h(q,s) for the RR interval series of the
+healthy subject CHM, with different levels of noise added: (a) 10%,
+(b) 20%, (c) 30%, (d) 40%, (e) 50%, and (f) 60%. The presented
+results have been averaged over 1000 realizations of the test series.
+
+where si is the time series with noise added, xi is the original
+time series, n is the level of noise (given below in percent),
+and p is a random number from the range [−1,1]. We added
+the simulated observation error noise at levels from 10% to
+60% in steps of 10% to two test series: the RR interval series
+of a healthy man (CHM) and the multifractal series of Cauchy
+distributed random numbers. Thus, once more, we have series
+representing two separate sources of multifractal properties:
+nonlinear correlations (the RR interval series) and a fat-tailed
+distribution series. All results presented are averaged over 1000
+realizations of series with the given level of noise and shown
+together with the standard deviation of the results.
+
+For the RR interval series, 10% of noise did not change
+the results considerably [Fig. 11(a)]; the distance is below
+threshold d = 0.059 for this case (Table II). However, 20%
+of noise changes the results visibly [Fig. 11(b)]. Clearly, the
+general properties of the results remain the same but the range
+of h is smaller and therefore the measure of the intersurface
+distance is larger than the threshold: d = 0.092 (Table II). Still
+higher levels of noise (30%–60%) make the results resemble
+those for the random number series [cf. Fig. 7(b)]. Thus, for
+those series for which nonlinear correlations are the main
+source of the multifractal properties, observational errors have
+
+021915-9
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+TABLE II. Table showing mean values 〈h2(q,s)〉 and intersurface
+distance d (defined in Sec. VI C) between the results for the original
+series (healthy subject CHM or Cauchy distribution) and these series
+with noise added, (cf. Sec. VI E for details). In every case, the
+mean value μ and the standard deviation σ of the results for 1000
+realizations of each test series are given.
+
+10% 20% 30% 40% 50% 60%
+
+CHM d μ 0.059 0.092 0.108 0.119 0.125 0.130
+σ 0.005 0.006 0.007 0.008 0.009 0.009
+
+〈h2(q,s)〉 μ 0.807 0.742 0.694 0.656 0.627 0.605
+σ 0.007 0.009 0.009 0.010 0.010 0.011
+
+Cauchy d μ 0.030
+σ 0.008
+
+〈h2(q,s)〉 μ 0.754
+σ 0.008
+
+a moderate impact on the results of MMA. We found also
+that observational noise, instead of changing the results in
+the smallest scales and generating a crossover effect, simply
+makes the results resemble those obtained for white noise at
+all scales.
+
+We found the multifractality of the Cauchy distributed
+random numbers series to be extremely resilient to additive
+noise (Fig. 12, Table II): even 100% of noise added leaves
+the results completely intact (d = 0.030). In this case then,
+observational errors have almost no impact on the results of
+MMA and did not cause a crossover in the fluctuation functions
+Fq(s) (cf. also [31]). We conclude from both examples that
+observational errors cannot be a source of crossover.
+
+Adding high levels of white noise to a time series with
+nonlinear correlations and a normal distribution acts like
+randomization. As the level of noise increases, the mean
+〈h2(q,s)〉 is considerably decreased and gradually approaches
+0.5, which is the result for white noise. Adding high levels
+of white noise to a multifractal Cauchy distributed random
+numbers series has no effect on the results. In both examples,
+the standard deviations of the intersurface distances d and the
+means h2(q,s) are small.
+
+F. Effect of arrhythmia
+To illustrate the effect of nonstationarity in the form of
+
+inclusions of a different dynamical behavior on MMA, we
+
+FIG. 12. (Color online) h(q,s) calculated for the multifractal se-
+ries of random numbers [compare with Fig. 7(d), Cauchy distribution,
+location 0, scale 1] with noise added: (a) 0% and (b) 100%. The results
+presented have been averaged over 1000 realizations of the test series.
+
+FIG. 13. (a) Nighttime RR interval series of the subject DWD,
+with many ectopic beats (arrhythmia). (b) The RR interval series
+of the subject CHM with 10% of the short arrhythmic segments
+incorporated. (c) Enlargement with three short, arrhythmic segments
+included randomly.
+
+prepared two special examples in which we incorporated
+different numbers of arrhythmic events into a RR interval series
+measured in a healthy man.
+
+To generate data with an adjustable number of arrhythmias,
+we took the RR interval time series of a 25-year-old healthy
+man (CHM, nighttime part 29 700 heartbeats long, cf. Fig. 1)
+and calculated h(q,s) [cf. Fig. 8(a)]. Next, we chose the
+RR interval time series of a person with a relatively large
+number of arrhythmias [DWD, Fig. 13(a)] and extracted from
+it a five-heartbeats-long sample containing a typical pair of
+ectopic beats including the compensatory pauses. We then
+duplicated and incorporated the arrhythmic segment into the
+time series of the healthy man, putting it at random locations
+within the series, replacing existing intervals, obtaining 10% of
+
+021915-10
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 14. (Color online) h(q,s) for the RR interval series of the
+healthy subject CHM, with five-interval-long arrhythmic segments
+included: (a) 10% of arrhythmic intervals, (b) 20%, (c) 30%,
+(d) 40%, (e) 50%, and (f) 60%. The presented results have been
+averaged over 1000 realizations of the test series.
+
+arrhythmic segments within the series [Figs. 13(b) and 13(c)].
+Because the average RR interval was different in the two cases,
+we rescaled the implanted segments using
+
+{x˜1, . . . ,x˜n} = {x1, . . . ,xn} 〈RRH 〉〈RRD〉 , (8)
+
+where {x˜1, . . . ,x˜n} is the rescaled arrhythmic segment,
+{x1, . . . ,xn} is the arrhythmic segment, RRH is the RR interval
+of a healthy subject averaged over the length of the replaced
+segment, and RRD is the RR interval of DWD averaged over
+the length of the incorporated arrhythmic segment. Finally, we
+increased the share of arrhythmic segments from 10% up to
+60% (Fig. 14). For each number of incorporated arrhythmic
+events we generated 1000 test series, and all the results
+presented below are based on this data set.
+
+We found the following:
+(i) In the example using short, duplicated arrhythmic
+
+segments, 10% of arrhythmic segments incorporated into
+the series [Fig. 14(a)] do not change the results of MMA
+considerably [cf. Fig. 8(a)]; the mean distance between Hurst
+surfaces is equal to the threshold d = 0.065.
+
+(ii) A higher incidence of arrhythmia [20% and 30%,
+Figs. 14(b) and 14(c)] changes the results visibly by expanding
+
+the range of h(q,s) for small scales s ∈ 〈30,90〉, but what is
+important is that at other scales, the Hurst surface is much less
+changed.
+
+(iii) For 40%, 50%, and 60% [Figs. 14(d)–14(f)] of
+arrhythmic segments included, not only are the results for the
+smallest scales changed, but also all of the h(q,s) dependence
+changes for q < 0.
+
+We also prepared a second type of nonstationary data con-
+taining longer sequences of arrhythmia. Again, we extracted
+segments containing arrhythmia from the RR interval time
+series of a person with a relatively large number of arrhythmias
+[DWD, cf. Fig. 13(a)], but this time there were 60 independent
+segments, each 300 heartbeats long and thus much longer than
+in the first example. Such sequences containing many ectopic
+beats in sequences often occur in some patients [20]. The use
+of such longer arrhythmic segments may allow us to take into
+account the possibility that repeated ectopic beats have their
+characteristic, strong correlation properties [20]. The segments
+contain not only ectopic beats but also normal RR intervals.
+An example of such segments can be seen in Fig. 15(a). We
+
+FIG. 15. (a) Example of a 300-interval-long arrhythmic segment
+extracted from the RR interval time series of the patient DWD,
+ending approximately 1 h before cardiac arrest. The arrhythmic
+segments were rescaled (see text) and incorporated into the RR
+interval series of a healthy man (CHM) at random locations.
+(b) RR interval series recorded for CHM with 10% of 300-interval-
+long arrhythmic segments incorporated (arrows).
+
+021915-11
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 16. (Color online) The h(q,s) surface for the RR interval
+series of the healthy subject CHM, with 300-intervals-long arrhyth-
+mic segments added at random locations: (a) 10% of arrhythmic
+intervals added, (b) 20%, (c) 30%, (d) 40%, (e) 50%, and (f) 60%.
+The presented results have been averaged over 1000 realizations of
+the test series.
+
+then incorporated 10 such arrhythmic segments into the heart
+rate variability time series for the healthy man CHM, obtaining
+approximately 10% [Fig. 15(b)] of beats within the arrhythmic
+segments. The segments were implanted at random times of the
+night into the time series. Because the average RR interval was
+different in the two medical cases, we rescaled the implanted
+segments, as described in the previous example Eq. (8). Finally,
+we increased the share of arrhythmic segments from 10% to
+60% (Fig. 16). For each assumed number of incorporated
+arrhythmic segments we generated 1000 test series, and all
+the results presented are based on this data set. We found the
+following:
+
+(i) 10% and 20% of long arrhythmic segments incorporated
+[Figs. 16(a) and 16(b)] does not change the results of MMA
+considerably [cf. Fig. 8(a)]: the mean distance between Hurst
+surfaces for these cases is under threshold: d = 0.033 and
+0.061, respectively.
+
+(ii) A large percentage of the arrhythmic segments [30%
+and higher, Figs. 16(c)–16(f)] causes two main changes in the
+shape of the Hurst surface: at small scales the surface moves
+downward, while it moves up for large scales and negative q.
+
+TABLE III. Mean values 〈h2(q,s)〉 and the intersurface distances
+d (see Sec. VI C for definition) between the results for the original
+time series (CHM) and its successive modifications (short and long
+arrhythmic segments included, cf. Sec. VI F). In every case, mean
+value μ and standard deviation σ are based on results for a group of
+1000 realizations of each test series.
+
+10% 20% 30% 40% 50% 60%
+
+Short d μ 0.065 0.109 0.142 0.169 0.194 0.216
+σ 0.004 0.003 0.003 0.002 0.002 0.002
+
+〈h2(q,s)〉 μ 0.810 0.764 0.725 0.692 0.665 0.644
+σ 0.003 0.003 0.003 0.002 0.002 0.001
+
+Long d μ 0.033 0.061 0.076 0.095 0.110 0.125
+σ 0.006 0.009 0.012 0.013 0.013 0.012
+
+〈h2(q,s)〉 μ 0.856 0.847 0.852 0.842 0.834 0.825
+σ 0.009 0.013 0.015 0.016 0.018 0.018
+
+We summarize both examples regarding the effect of
+arrhythmia as follows:
+
+(i) A large part of the Hurst surface remains relatively
+unaffected by the inclusions of arrhythmia events in both
+examples, even for a very large incidence of arrhythmia:
+s ∈ 〈90,300〉 for all values of q and s ∈ 〈300,360〉 for positive
+values of q. If, during the calculation of the intersurface
+distance, the unstable parts of the Hurst surface (outside the
+ranges defined above) are excluded, then for the case with 30%
+of long arrhythmic segments incorporated into the series, the
+mean distance to the reference h(q,s) decreases from 0.076
+(cf. Table III) to 0.054, and therefore it is below the threshold.
+
+(ii) There is a visible difference between the results obtained
+for the short arrhythmic inclusions and for the long ones at
+small scales for all values of q and for large scales and negative
+values of q (cf. Figs. 14 and 16). This indicates differences in
+correlation properties between the two examples.
+
+(iii) Short arrhythmic segments affect much more strongly
+the correlation properties of the series. This is so because
+the long segments introduce their own correlation properties
+into the series [20]. The number of inclusions is also much
+less compared to the other test series, and so the number of
+transitions from the original time series to an inclusion is also
+smaller. The mean 〈h2(q,s)〉 decreases significantly with the
+increase of the number of short segments incorporated. This
+effect is similar to that caused by noise or randomization.
+
+(iv) The threshold 0.065, which we assumed for the mean
+distance between cases to be non-negligible, leads to the
+conclusions described above. Note that this is a very simple
+criterion and that the human eye seems to be able to discern
+better a part of the Hurst surface that remains invariant to
+nonstationarity (as well as to noise) for a larger number of
+arrhythmia inclusions. Perhaps a more sophisticated criterion,
+e.g., using an artificial neural network, would perform better.
+Here, we provide the simple criterion based on the intersurface
+distance just to show the basic properties of our method and
+indicate its feasibility.
+
+G. Results for unaltered cardiological data
+In this paper, we present the main properties of a new
+
+multifractal analysis method, with the ultimate goal being
+
+021915-12
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+to develop a universal heart rate variability analysis tool.
+We believe that one of the first steps on the way to clinical
+applications of our method should be to determine the image
+for healthy individuals as a reference, i.e., to determine which
+multifractal, multiscale properties that we can find with MMA
+in healthy subjects are the most characteristic for them. We
+carefully examined the Hurst surfaces obtained for the group
+of healthy subjects studied here, and we found that there are
+several common, typical traits (a “template”). For the healthy
+subjects, it appears that there is a characteristic distribution of
+fluctuation scaling (i.e., distribution of properties of correla-
+tions, cf. Sec. II) versus fluctuation magnitude and frequency
+band. The typical distribution of h(q,s) values for a healthy
+subject (i.e., the most typical shape of the surface for such a
+case) can be seen in Fig. 8(a). The characteristic features are
+as follows:
+
+(i) h(q,s) in Fig. 8(a) varies from 0.56 to 1.16 (subject
+CHM, for all healthy subjects, from a minimum of 0.40–0.75
+to a maximum of 1.05–1.90).
+
+(ii) For q > 0 and s ∈ 〈30,90〉, there is a visible hill [for
+CHM, h(q,s) ≈ 1.16, and for all the group, 1.04–1.36].
+
+(iii) Around q = 0 and s ∈ 〈180,360〉 there is a ridge
+[h(q,s) ≈ 0.90; 0.76–1.07 for all the group].
+
+(iv) First characteristic depression for q < 0 and s ∈
+〈60,120〉 [h(q,s) ≈ 0.81; 0.52–0.92 for all the group].
+
+(v) Second characteristic depression for q > 0 and s ∈
+〈150,360〉 [h(q,s) ≈ 0.90; 0.73–1.04 for all the group].
+
+Any deviations from this template indicate abnormalities
+in the properties of heart rate variability of the recording
+analyzed. In particular, arrhythmic events result first of all
+in changes in the regions: s ∈ 〈30,90〉 for all values of q and
+s ∈ 〈300,360〉 for negative values of q.
+
+The above-described characteristic criteria allow us to
+distinguish patients from healthy persons and were first applied
+by hand in a blind test. Note that these criteria are related to the
+properties and the frequency of occurrence of arrhythmia in the
+recordings studied (i.e., arrhythmias cause certain, abnormal
+changes in the Hurst surface). We also converted the above-
+described quantitative criteria into a numerical algorithm,
+which allowed us to analyze the given h(q,s) automatically,
+and we obtained very promising statistical results. The nine
+cardiac arrest cases were recognized among the 49 healthy
+individuals with a sensitivity 78%, specificity 81%, positive
+predictive value 50%, and negative predictive value 94%. In
+particular, three of the five cardiac arrest cases without organic
+heart disease were properly recognized. Note that these five
+cases were unrecognizable by any linear method [21]. At this
+stage, no attempt was made to create a full-fledged assessment
+of the applicability for medical diagnostics with properly
+designed, balanced medical groups. The cardiac arrest cases
+were included here solely to demonstrate the properties of
+MMA. Thus, the sensitivity and specificity quoted here should
+be taken only as an indication of the potential use of our
+method. The method needs to be verified on a larger group
+of patients. In defining our “template” for healthy heart rate
+variability, we encountered some exceptions, usually related
+to the age of the subjects, especially for persons younger than
+16 (see, e.g., Fig. 17) and for those older than 60.
+
+When cross sections of the h(q,s) plot for the healthy
+25-year-old man CHM [Fig. 8(a)] for several constants
+
+FIG. 17. (Color online) (a) “Reversed” multifractality: h(q,s)
+calculated for the nighttime RR interval series shown below.
+(b) Nighttime RR interval series of a healthy 14-year-old girl (MKL).
+
+s were analyzed, three clearly visible scaling areas
+(〈30,50〉; 〈50,100〉; 〈100,360〉) were found. The cross sections
+for the midpoints of these scaling ranges are shown in Fig. 18.
+This means that the fluctuation function family Fq(s) for heart
+rate variability may exhibit a double crossover (in Fig. 18,
+we can see monofractality, multifractality, and “reversed”
+multifractality, respectively). Note that the case CHM is a
+typical example of heart rate variability of a healthy male in
+his mid-twenties.
+
+The cross sections of h(q,s) at constant s sometimes show
+a “reversed” multifractality, i.e., the cross section hs(q) is a
+monotonically increasing function [Fig. 18(b)]. This may be
+caused by seasonal trends in the time series or by significant
+changes of the fractal properties along the time series [31,32].
+It is even possible to observe such “reversed” multifractality
+for all available scales s (nighttime RR interval series of a
+14-year-old healthy girl; see Fig. 17).
+
+Comparing Figs. 8(a) and 19(a), we can see that substantial
+differences are clearly visible between the results obtained for
+a healthy subject (CHM) and a subject without an organic
+
+021915-13
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 18. (a) Cross section of the h(q,s) dependence for healthy
+subject CHM, taken for scale s = 30. (b) The cross section for s = 75
+and (c) for s = 360.
+
+heart disease at risk of cardiac arrest (BHD) who, before the
+recording analyzed here was made, had suffered two cardiac
+arrests and now wears an implantable cardioverter device.
+CHM is the sex, age, and disease matched control pair for
+BHD used in our earlier study [21].
+
+We also show that h(q,s) for the heart rate variability
+obtained after a successful, nine months pharmacological
+treatment after cardiac arrest of the post-myocardial infarct
+patient DWD [Fig. 20(b)], except for the small scale range,
+resembles that for the healthy subject CHM [cf. Fig. 8(a)].
+The difference visible in Fig. 20(b) between DWD and CHM at
+small scales is due to a certain number of arrhythmias that still
+occur [Fig. 20(c)] in spite of the pharmacological treatment
+and do not occur in the CHM case. Compare with the raw
+data in Fig. 13(a) recorded in DWD just before his cardiac
+arrest and subsequent resuscitation. Note that DWD is 64 years
+old. In spite of this—except for the well-localized effect of
+arrhythmia on the h(q,s) surface—the results obtained after
+pharmacological treatment [Fig. 20(b)] compare well with
+those for the 25-year-old healthy subject in Fig. 8(a). This
+indicates that the template that we have attempted to define in
+this paper is a useful concept.
+
+VII. CONCLUSIONS
+
+We present a generalization of the MF-DFA method called
+multiscale multifractal analysis (MMA). The method allows
+us to extend the description of the properties of the fluctuations
+of a signal depending on their magnitude and the time scale
+(frequency band) at which they occur, using the generalized
+dependence of the local Hurst exponent on the scale: the
+surface h(q,s). On this surface, the results of the standard
+DFA method are represented by one (or two) single points
+corresponding to the exponent α. The results of standard
+MF-DFA are represented by a single line: a cross section of
+h(q,s) at a constant s.
+
+FIG. 19. (Color online) (a) h(q,s) dependence for a 25-year-old
+man at risk of cardiac arrest (BHD) but without an organic heart
+disease [cf. Fig. 8(a)]. (b) RR interval series for BHD.
+
+MMA eliminates the need for initial assumptions about
+the presumed time scale of the investigated problem. The new
+method is able to characterize monofractality or multifractality
+of the time series in a wide range of frequencies (scales)
+simultaneously and may be easily applied to data with strong
+crossover properties. It may be used with data set lengths
+down to 15 000 data points in the case of multifractality
+stemming from correlations. In the case of multifractality due
+to the properties of the distribution of the series, this number
+rises to 20 000 data points, because rare events in fat tails of
+distribution do not have a sufficient representation, and, in
+fact, the distribution is different from the complete Cauchy
+distribution. In general, when analyzing data with unknown
+distribution properties, we have to use a time series of at least
+20 000 points. We found that the method is relatively resistant
+to observational noise and nonstationarities, including those
+in the form of inclusions into the time series of a different
+dynamics such as arrhythmic events. For heart rate variability
+analysis of clinical data, the latter feature of MMA allows us to
+analyze data with at least up to 15% of arrhythmia events—an
+improvement compared with the less than 5% usually assumed.
+
+021915-14
+
+
+
+MULTISCALE MULTIFRACTAL ANALYSIS OF HEART . . . PHYSICAL REVIEW E 85, 021915 (2012)
+
+FIG. 20. (Color online) (a) h(q,s) for a subject at risk of
+cardiac arrest (DWD); cardiac arrest occurred about 1 h after the
+time series analyzed. (b) h(q,s) for the same subject but after
+a very successful, nine-month pharmacological treatment. (c) The
+nighttime RR interval series of the subject DWD after successful
+pharmacological treatment, the fragment analyzed in (b).
+
+We show that MMA can correctly recognize fractal properties
+of time series even for relatively small scales, and that it is
+capable of properly recognizing different fractal properties in
+small and large scales simultaneously.
+
+To calculate the h(q,s) surface, we use the scale range s ∈
+〈30,360〉 while, usually, the mean RR interval in a nighttime
+series is approximately 1 s. Thus, the approximate range
+of the frequencies we are analyzing is 0.003–0.03 Hz. As
+defined in the standard guidelines for heart rate variability
+diagnostics [35], this frequency range corresponds to the
+very low frequencies band (VLF defined as 0.003–0.04 Hz).
+This clinically accepted guidelines document—based on linear
+
+signal analysis methods—stated in 1996 that, “although the
+ULF and VLF components account for the remaining 95% of
+total power, their physiological correlates are still unknown”
+and that their interpretation needs further development. In the
+literature, there is a wide discussion about the interpretation
+of this frequency range. There are some interpretations
+suggesting that in the VLF band, one can find the effect
+of thermoregulation [36], the renin-angiotensin-aldosterone
+system [37], baroreflex, chemoreflex, and abnormalities such
+as sleep apnea and Cheyne-Stokes respiration [38,39], or
+that parasympathetic mechanisms play the main role in this
+frequency range [37,40]. It is likely that all these interpretations
+are correct, and information about all these phenomena may
+be found within the VLF range. Up to now, a direct medical
+interpretation of any kind of results obtained in the VLF range
+(and also in the ULF band) was difficult as the only method
+used to assess properties of this band was a power spectrum,
+and in the power spectrum ULF and VLF merge into a single
+peak. In spite of this difficulty, VLF power is used in medical
+diagnostics. MMA is therefore a method that allows us to
+assess the correlation properties (cf. Sec. VI B) of heart rate
+variability as a function of the scale (frequency range) and of
+the magnitude of the fluctuations. We believe that this approach
+can be very useful in ascertaining the meaning of the VLF
+component of heart rate variability.
+
+We show that human heart rate variability not only has
+multifractal properties but also that these properties depend
+on the time scale, which is related to the frequency band of
+the signal. This dependence may be far more complex than
+it is usually assumed and, in general, differs very much from
+subject to subject. Since the method is relatively insensitive
+to nonstationarities in the signal, MMA does not require
+arrhythmia filtering to analyze RR interval series: the effects
+of arrhythmia are readily recognizable in the properties of the
+h(q,s) surface. This is, in our opinion, an important issue that is
+also of promising medical value—a lot of cases are eliminated
+from HRV analysis because of arrhythmias. Preliminary tests
+showed that the method may allow us to detect the risk of
+cardiac arrest also for subjects without any organic heart
+disease.
+
+ACKNOWLEDGMENTS
+
+The paper was supported by the Polish Ministry of Science,
+Grant No. 496/N-COST/2009/0 up to September 2011.
+
+[1] K. Kiyono, Z. R. Struzik, N. Aoyagi, F. Togo, and Y. Yamamoto,
+Phys. Rev. Lett. 95, 058101 (2005).
+
+[2] C.-K. Peng, J. Mietus, J. M. Hausdorff, S. Havlin, H. E. Stanley,
+and A. L. Goldberger, Phys. Rev. Lett. 70, 1343 (1993).
+
+[3] R. Fischer, M. Akay, P. Castiglioni, and M. Di Rienzo, Med.
+Biol. Eng. Comput. 41, 543 (2003).
+
+[4] Z. R. Struzik, J. Hayano, S. Sakata, S. Kwak, and Y. Yamamoto,
+Phys. Rev. E 70, 050901 (2004).
+
+[5] P. C. Ivanov, L. A. N. Amaral, A. L. Goldberger, S. Havlin, M. G.
+Rosenblum, Z. R. Struzik, and H. E. Stanley, Nature (London)
+399, 461 (1999).
+
+[6] L. A. Nunes Amaral, P. C. Ivanov, N. Aoyagi, I. Hidaka,
+S. Tomono, A. L. Goldberger, H. E. Stanley, and Y. Yamamoto,
+Phys. Rev. Lett. 86, 6026 (2001).
+
+[7] D. Makowiec, R. Gała˛ska, A. Dudkowska, A. Rynkiewicz, and
+M. Zwierz, Physica A 369, 632 (2006).
+
+[8] C.-K. Peng, S. V. Buldyrev, S. Havlin, M. Simons, H. E. Stanley,
+and A. L. Goldberger, Phys. Rev. E 49, 1685 (1994).
+
+[9] H. E. Hurst, Trans. Am. Soc. Civ. Eng. 116, 770 (1951).
+[10] J. Feder, Fractals (Plenum Press, New York, 1988).
+[11] H. E. Stanley and P. Meakin, Nature (London) 335, 405 (1988).
+[12] B. J. West and N. Scafetta, Phys. Rev. E 67, 051917 (2003).
+
+021915-15
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GIERAŁTOWSKI, ˙ZEBROWSKI, AND BARANOWSKI PHYSICAL REVIEW E 85, 021915 (2012)
+
+[13] L. Telesca, G. Colangelo, V. Lapenna, and M. Macchiato, Chaos
+Solitons Fractals 18, 385 (2003).
+
+[14] Z.-Y. Su and T. Wu, Physica D 221, 188 (2006).
+[15] M. Petelczyc, J. J. ˙Zebrowski, R. Baranowski, and
+
+L. Chojnowska, Physiol. Meas. 31, 1635 (2010).
+[16] M. Petelczyc, J. J. ˙Zebrowski, and R. Baranowski, Phys. Rev. E
+
+80, 031127 (2009).
+[17] K. Klimaszewska and J. J. ˙Zebrowski, Phys. Rev. E 80, 026214
+
+(2009).
+[18] T. Buchner, M. Petelczyc, J. J. ˙Zebrowski, A. Prejbisz, M. Kabat,
+
+A. Januszewicz, A. J. Piotrowska, and W. Szelenberger, Chaos
+19, 028504 (2009).
+
+[19] J. J. ˙Zebrowski, K. Grudzinski, T. Buchner, P. Kuklik, J. Gac,
+G. Gielerak, P. Sanders, and R. Baranowski, Chaos 17, 015121
+(2007).
+
+[20] J. J. ˙Zebrowski and R. Baranowski, Phys. Rev. E 67, 056216
+(2003).
+
+[21] J. J. ˙Zebrowski, W. Popławska, and R. Baranowski, Phys. Rev.
+E 50, 4187 (1994).
+
+[22] Mayo Clinic Cardiology: Concise Textbook, edited by J. G.
+Murphy and M. A. Lloyd (Mayo Clinic Scientific Press,
+Rochester, 2007).
+
+[23] J. W. Kantelhardt, S. A. Zschiegner, E. Koscielny-Bunde,
+S. Havlin, A. Bunde, and H. E. Stanley, Physica A 316, 87
+(2002).
+
+[24] M. Schroeder, Fractals, Chaos, Power Laws: Minutes from an
+Infinite Paradise (Freeman, New York, 1992).
+
+[25] J. F. Muzy, E. Bacry, and A. Arneodo, Phys. Rev. Lett. 67, 3515
+(1991).
+
+[26] A. Saichev and D. Sornette, Phys. Rev. E 74, 011111 (2006).
+[27] See Supplemental Material at http://link.aps.org/supplemental/
+
+10.1103/PhysRevE.85.021915 for two animations. The first
+animation shows how the fluctuations of Fq (s) can change h(q)
+and f (α). On the top panel, the Fq (s) curves family can be seen.
+Blue solid lines show the current window of fitting, and the fitting
+is shown as red dashed lines. The fitting window length starts
+always at a scale s = 10 and expands. Because of the substantial
+
+fluctuations of the Fq (s) values, even a slightly wider window
+of fitting can cause drastic changes in the resulting h(q) and
+f (α). The second animation depicts the emergence of h(q,s).
+On the top panel, a family of curves Fq (s) with the moving fitting
+window (blue solid lines) together with the straight line fits (red
+dashed lines) can be seen. On the bottom panel, the resulting
+h(q) is shown. Every h(q) shown is a cross section of the h(q,s)
+dependence at constant s.
+
+[28] J. W. Kantelhardt, E. Koscielny-Bunde, H. H. A. Rego, S. Havlin,
+and A. Bunde, Physica A 295, 441 (2001).
+
+[29] W.-X. Zhou and D. Sornette, Physica A 388, 2623
+(2009).
+
+[30] K. Hu, P. C. Ivanov, Z. Chen, P. Carpena, and H. E. Stanley,
+Phys. Rev. E 64, 011114 (2001).
+
+[31] J. Ludescher, M. I. Bogachev, J. W. Kantelhardt, A. Y.
+Schumann, and A. Bunde, Physica A 390, 2480 (2011).
+
+[32] A. Y. Schumann and J. W. Kantelhardt, Physica A 390, 2637
+(2011).
+
+[33] C.-K. Peng, S. Havlin, H. E. Stanley, and A. L. Goldberger,
+Chaos 5, 82 (1995).
+
+[34] P. Castiglioni, G. Parati, C. Lombardi, L. Quintin, and M. D.
+Rienzo, Biomed. Tech. 56, 175 (2011).
+
+[35] Task Force of The European Society of Cardiology and The
+North American Society of Pacing and Electrophysiology,
+Circulation 93, 1043 (1996).
+
+[36] R. I. Kitney, J. Physiol. 229, 40 (1973).
+[37] Practical Signal and Image Processing in Clinical Cardiology,
+
+edited by J. J. Goldberger and J. Ng (Springer, London,
+2010).
+
+[38] D. P. Francis, L. C. Davies, K. Willson, P. Ponikowski, A. J. S.
+Coats, and M. Piepoli, Clin. Sci. 99, 125 (2000).
+
+[39] P. Ponikowski, T. P. Chua, M. Piepoli, D. Ondusova, K. Webb-
+Peploe, D. Harrington, S. D. Anker, M. Volterrani, R. Colombo,
+G. Mazzuero, A. Giordano, and A. J. S. Coats, Circulation 96,
+2586 (1997).
+
+[40] J. A. Taylor, D. L. Carr, C. W. Myers, and D. L. Eckberg,
+Circulation 98, 547 (1998).
+
+021915-16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

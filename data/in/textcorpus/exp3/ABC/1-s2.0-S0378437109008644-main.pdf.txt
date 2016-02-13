@@ -1,0 +1,856 @@
+
+Physica A 389 (2010) 825–836
+
+Contents lists available at ScienceDirect
+
+Physica A
+
+journal homepage: www.elsevier.com/locate/physa
+
+Explaining traffic patterns at on-ramp vicinity by a driver perception
+model in the framework of three-phase traffic theory
+Shuyan He, Wei Guan ∗, Liying Song
+MOE Key Laboratory for Urban Transportation Complex System Theory and Technology, Beijing Jiaotong University, China
+
+a r t i c l e i n f o
+
+Article history:
+Received 18 March 2009
+Received in revised form 5 September 2009
+Available online 17 October 2009
+
+Keywords:
+Traffic flow model
+Driving behavior
+Driver perception
+Numerical simulation
+Urban freeway
+
+a b s t r a c t
+
+In traffic system, driving behaviors change with the surrounding traffic perceived by
+drivers, resulting in the complex spatio-temporal traffic patterns. Accordingly, in the
+majority of traffic models, vehicle accelerations are described by dynamic equations
+based on driving behavior, system dynamics and some underlying steady-state velocity-
+gap (bumper-to-bumper spacing) relation in order to guarantee the realistic human
+behavior. This paper proposes a deterministic car-followingmodel based on amulti-branch
+fundamental diagram with each branch representing a particular category of driving
+style. Furthermore, an additional dynamic perception equation is introduced to reflect
+the driving style adaptation in response to the change in surrounding traffic situations.
+With simulation based on the proposed ‘‘driver perception model’’ (DP model), empirical
+findings of traffic breakdown and observed spatio-temporal patterns at on-ramp vicinity
+are reproduced. Furthermore, comparison results show the consistency betweennumerical
+simulation and the real traffic data of Beijing urban freeway.
+
+© 2009 Elsevier B.V. All rights reserved.
+
+1. Introduction
+
+1.1. Literature review
+
+In traffic system, driver behaviors are generally generated from several driving motivations, including efficiency, safety,
+comfort, fuel economy etc. Competition among different desires, along with the physical restrictions and psychological
+factors, produces complex traffic phenomena. The fundamental feature of traffic flow is the velocity–density (velocity–gap)
+relationshipwhich reflects aggregatedhumanbehaviors. In themajority of traffic flowmodels, the steady-state solution, also
+named as ‘‘fundamental diagram’’, assumes a similar shape of averagemeasured data. To date, various forms of fundamental
+diagrams and their related dynamic equations have been proposed by means of various traffic models to reproduce the
+observed traffic phenomena.
+The functional form of fundamental diagram was firstly proposed as a deterministic function calibrated from empirical
+
+data [1,2]. However, most of the fundamental diagrams were derived from steady-state solutions of a microscopic model
+[3,4] or functions restricted to some critical constraints [5] based on some behavioral and theoretical foundation. These
+classical forms of fundamental diagrams are characterized by a quasi-linear free flow branch and amonotonically decreased
+branch representing congested flow in the flow-density plane. Thosemodels are capable of representing free flow and stop-
+and-go traffic to a certain extent. But some of them failed to reproduce the hysteresis effect or the ‘‘synchronized flow’’ with
+a finite velocity observed at a moderate density, which is characterized by the observed synchronized traffic states among
+lanes [6–8]. Thus further improvements on traffic modeling require more complicated descriptions of dynamic system
+behavior and more realistic forms of fundamental diagram or both of them.
+
+∗ Corresponding author.
+E-mail address:weig@center.njtu.edu.cn (W. Guan).
+
+0378-4371/$ – see front matter© 2009 Elsevier B.V. All rights reserved.
+doi:10.1016/j.physa.2009.10.014
+
+
+
+
+
+
+
+826 S. He et al. / Physica A 389 (2010) 825–836
+
+Dynamic system behaviors are improved by considering more sophisticated human behaviors in recent works. Such
+as anticipation, memory effect, heterogeneities of drivers/vehicles or multi-lane interactions. In Refs. [3,9], anticipation
+is related to velocity difference between two successive vehicles. In Ref. [10], driver reaction on breaking light of front
+vehicle is considered. In Ref. [11], instead of considering space gap to immediate preceding vehicle, weighted gap of several
+preceding vehicles is integrated in an optimal velocity function. Real driver behavior that reflects driver perception to past
+traffic situation is modeled as a memory effect in Refs. [12–14], where a critical time gap T is adjusted by the surrounding
+traffic situations such as velocity and velocity deviation. Heterogeneities and multi-lane vehicle interactions are realistic
+approximations to real traffic. In Ref. [15], different driver behaviors of ‘‘rabbit’’ and ‘‘slug’’ are modeled as main reason
+for capacity drop and synchronization among lanes. In Ref. [16], widely scattered flow-density data are reproduced by a
+relaxation of time headway through lane changes in multi-lane traffic.
+Apart from reproducing complex traffic patterns through modification on dynamic system behaviors, fundamental
+
+diagrams are supposed to incorporate multi-phase features in nature. In Ref. [17], the phase transition was explained as
+the change of time gap found on the proposed flow-density diagrams with multiple branches. A fundamental diagram with
+multiple turning points corresponding to multiple phases are introduced in Ref. [18]. The hysteresis effect is modeled in
+Ref. [19] through a phase-dependent time gap variation in a steady-state velocity–gap function. On a macroscopic level, the
+additional equilibrium velocities located at the high flow branch and the jam line are generated by the balanced vehicular
+traffic model(BVT model), reproducing traffic patterns observed in front of bottlenecks [20].
+Differently,models based on Kerner’s three-phase traffic theory [21,22] follow different behavior hypothesis that a driver
+
+accepts a range of different hypothetical steady states with space gaps at the same vehicle speed in synchronized flow, i.e.,
+steady states of synchronized flow cover a 2D region in the flow-density plane.Microscopicmodels proposed in Refs. [21,22]
+reproduce empirical phases of free flow, synchronized flow andwidemoving jam, as well as complex traffic patterns related
+to first-order phase transitions of free flow to synchronized flow (F⇒ S) and synchronized flow to wide moving jam (S⇒
+J), which are not supported in fundamental diagram approaches.
+
+1.2. Results and hypotheses of Kerner’s three-phase traffic theory used in the driver perception model
+
+In Kerner’s three-phase traffic theory, there are three traffic phases, free flow (F), synchronized flow (S), and wide
+moving jam (J). Thewidemoving jam and synchronized flow phases are defined through empirical criteria related to spatio-
+temporal features of these different traffic phases. A wide moving jam is a moving jam that maintains the mean velocity
+of the downstream jam front, even when the jam propagates through any other traffic states or freeway bottlenecks. In
+contrast, the downstream front of the ‘‘synchronized flow’’ phase is often fixed at a freeway bottleneck. Within this front
+vehicles accelerate from lower speeds in synchronized flow to higher speeds in free flow [21]. Wide moving jams emerge
+spontaneously due to a sequence of F⇒ S and S⇒ J transitions.
+This paper proposes a ‘‘driver perception model’’ (DP model) to describe the traffic at inhomogeneity vicinity in the
+
+framework of three-phase traffic theory. The model is a deterministic, time continuous car-following model of single-lane
+traffic with identical vehicles. The so-called ‘‘driver perception’’ is originated from a driving-behavior adaptation rule based
+on past traffic situation a driver has perceived. In this paper, a ‘‘perception distance’’ dc is introduced to characterize the
+driving styles. Similar to the critical time headway T in Refs. [12,13], dc is a character space gap to the preceding vehicle.
+As driving style changes with surrounding traffic, dc is adapted temporally. According to three-phase traffic theory, if a
+vehicle cannot pass the preceding vehicle driving at a synchronized flow speed, the driver behavior within the 2D region
+of synchronized flow states is determined by the speed adaptation effect in synchronized flow. The adaption of dc can be
+compared to the speed adaption rule implemented in models based on three-phase traffic theory [21].
+With the multi-valued dc, the main difference between DP model and models based on fundamental diagram approach
+
+is that the steady-state solution of DP model covers a 2D area in the flow-density plane. In term of the 2D region of steady
+states, the proposed DPmodel follows the hypothesis of three-phase traffic theory that the synchronized flow states cover a
+2D region. Furthermore, the open boundary simulations based onDPmodel showdifferent phases of free flow, synchronized
+flow and wide moving jam. Moreover, the sequenced phase transitions of F⇒ S and S⇒ J are also reproduced.
+
+2. Introduction to driver perception model
+
+2.1. Empirical evidence for multi-branch fundamental diagram
+
+Fundamental diagram (FD) is usually an approximation of empirical flow-density relations. However, at different
+locations at inhomogeneity vicinity, flow-density relations show great deviations from each other. To describe the variety
+of FDs, a popular method is to derive FDs of each location independently. In a different way, the multi-branch fundamental
+diagram proposed in the DP model is originated from an integrated view on a number of different locations. Here three
+sections are illustrated here as examples to explain the empirical evidence for the multi-branch fundamental diagram.
+Fig. 2 shows the flow-density relations atmedian lanes (solid circles) and shoulder lanes (white squares) at three sections
+
+during a morning peak. The road structure is in Fig. 1.
+The flow-density relations show some empirical characters related to road inhomogeneity:
+
+
+
+S. He et al. / Physica A 389 (2010) 825–836 827
+
+Fig. 1. Sketch diagram of a segment in Beijing 2nd ring road. D1–D6 are mainroad detectors and R1–R6 are ramp detectors.
+
+density (veh/km)
+
+flo
+w 
+
+ra
+te
+
+ (v
+eh
+
+/h)
+
+f(ρ) D1
+
+density (veh/km)
+
+flo
+w 
+
+ra
+te
+
+ (v
+eh
+
+/h)
+
+f(ρ) D2
+
+0 50 100 150
+density (veh/km)
+
+flo
+w 
+
+ra
+te
+
+ (v
+eh
+
+/h)
+
+f(ρ) D5
+
+C2
+C1
+
+ρc1 ρc20
+
+500
+
+1000
+
+1500
+
+2000
+
+2500
+
+0 50 100 150
+0
+
+500
+
+1000
+
+1500
+
+2000
+
+2500
+
+500 100 150
+0
+
+500
+
+1000
+
+1500
+
+2000
+
+2500a b c
+
+Fig. 2. Average two-min. flow-density data at three sections of Beijing urban freeway atmorning peak (•: median lane;�: shoulder lane) onMay 14, 2007.
+Dashed lines show the possible branches of fundamental diagram related to.
+
+1. Free flow speed is sometimes lower than driver desired speed at inhomogeneity vicinity, such as the low density
+(640 vpl/km) states of shoulder lanes in Fig. 2(b) and (c). In the researched urban freeway segment, with a speed limit
+of 80 km/h and identical lane using policy, lane free flow speeds are close to each other in most cases (see Fig. 2(a)).
+However, the balance will be destroyed at some location such as shoulder lane at on-ramp downstream where vehicles
+coming from on-ramp have not accelerated to a high speed within such a short distance yet.
+
+2. Generally, free flow and congested flow at homogeneous road are divided by a velocity–gap as a result of traffic
+breakdown. In Fig. 2(a), free flow states form a quasi-linear line with positive slope at low density range while congested
+flow states locate at high density range without a certain shape. But in fact, the ‘‘free flow’’ with lower slope on the flow-
+density plane at road inhomogeneity (e.g. shoulder lane in Fig. 2(c)) is no longer free when density increases to a high
+value. Such state can be seen as a ‘‘quasi-free’’ state, or a ‘‘coherent moving’’ state mentioned in Refs. [23–25]. Moreover,
+in Fig. 2(c), the congested flow at median lane and the ‘‘quasi-free’’ flow at shoulder lane are partly overlapped. At this
+point, free flow and congested flow are just relative concepts corresponding to particular traffic environment. There is
+no clear separation between free flow and congested flow for all locations on one flow-density plane.
+
+3. Two types of flow are observed. The first one is homogeneous flow. For example, in Fig. 2, all free flow states, ‘‘quasi-
+free’’ states and congested states except shoulder lane in (a) and (c) are homogeneous flow, which is characterized by
+stabilized and finite speed. The second type is stop-and-go traffic, such as congested flows in shoulder lanes in (a) and
+(c) where flows oscillate both on speed and flow rate. In Fig. 2(c), the states in jam is located close to the origin of the
+flow-density plane for the overestimated speed in the temporal averaged data.
+
+The above empirical features give some implications on traffic modeling.
+
+1. The first one is the derivation of fundamental diagram. In a fundamental diagram approach, there is a hypothetical
+equilibrium flow-density relation where free flow lies on low density with positive slope and congested flow on the
+part of negative slope. On the other hand, according to the above observation 2 and empirical data in Fig. 2(c), congested
+flow at D5 median lane could be treated as staying on a positive slope part of another equilibrium flow-density relation
+where free flow at D5 shoulder lane is realized. Analogously, all homogeneous flows can be represented in a similar form.
+In Fig. 2, dashed curves are approximated equilibrium flow-density relations, which is called a branch of fundamental
+diagram (FD branch for short) in DP model.
+
+2. Based on the approximated FD branches, breakdowns from free flow to homogeneous congested flow can be modeled
+as a jump from one FD branch to another one.
+
+3. Stop-and-go traffic is unstable where perturbation grows during propagation. In this case, positive and negative wave
+speeds coexist, indicating that flows reach negative slope part of FD branches. Shoulder lane in Fig. 2(c) is an example for
+stop-and-go traffic.
+
+To derive branches of fundamental diagrams intuitively, firstly an universal density-dependent function of maximum
+flow rate f (ρc) should be approximated in Fig. 2(b) and (c). Since f (ρc)means themaximum flow rate ever observed at the
+entire road, it is not always necessary that flows at all locations reach this maximum value. Consequently f (ρc) in Fig. 2(a) is
+higher than any flow-density points. Then dashed curves in Fig. 2 are drawn as approximated FD branches. Each FD branch
+can be characterized by a ‘‘perception density’’ ρc or a ‘‘perception distance’’ dc = 1/ρc − l (l is vehicle length), where
+
+
+
+828 S. He et al. / Physica A 389 (2010) 825–836
+
+equilibrium flow rate Qe reaches its maximum point. For example, with the constraint of maximum flow rate f (ρc), the FD
+branches C1 and C2 in Fig. 2(c) are uniquely determined by perception densities ρc1 and ρc2. As ρc is a continuous variable
+defines the domain of f (ρc), there is an infinity number of FD branches in the proposed fundamental diagram.
+The infinity number of fundamental diagram branches covers a 2D region of the flow-density plane, indicating that
+
+drivers accept a range of gaps at same speed. In the proposed driver perceptionmodel, gap at a certainmoment is determined
+by the surrounding traffic situation that drivers have perceived. From such behavioral consideration, in the proposed
+fundamental diagram, every branch of the proposed fundamental diagram serves as a type of driving style.
+
+2.2. Fundamental diagram of the driver perception model
+
+Mathematically, it is assumed that a FD branch characterized by perception distance dc is in the form of the widely used
+tanh function:
+
+Ve(s, dc) = m · [tanh(a · s− b)+ tanh(b)] (1)
+or
+
+Qe(s, dc) = ρ · Ve(s, dc) = 1s+ l · Ve(s, dc), (2)
+where Ve and Qe are equilibrium velocity and flow rate, s bumper-to-bumper gap, l the average vehicle length. Due to
+physical restriction, perception distance dc is constrained to lie within the interval [dmin, dmax]. To reproduce the realistic
+flow-density relation, parametersm, a, b are functions of dc which should be appropriately calibrated from empirical data.
+For unit consistency, m is in the unit same with Ve, i.e., m/s in this paper. Then b is in the unit of 1 while a in the unit of
+inverse of gap s, i.e., m−1 here.
+The above analysis has shown that the equilibrium flow rate Qe(s, dc) obtains its maximum value when s = dc. Thus
+
+∂Qe(s, dc)
+∂s
+
+∣∣∣∣
+s=dc
+= 0. (3)
+
+Substitute Eq. (2) into Eq. (3), it gives
+
+∂Ve(s, dc)
+∂s
+
+∣∣∣∣
+s=dc
+= 1
+dc + l · Ve(dc) = Qe(dc) = g(dc), (4)
+
+where g is an equivalent function to f with space gap s:
+
+g(s) := f
+(
+1
+s+ l
+
+)
+. (5)
+
+Substitute Eq. (1) into Eq. (4), the following two equations hold on:
+
+tanh(a · dc − b)+ tanh(b) = a(dc + l) · [1− tanh2(a · dc − b)], (6)
+g(dc) = mdc + l [tanh(a · dc − b)+ tanh(b)]. (7)
+
+It is found that m is uniquely determined by dc, a, b through Eq. (7) when the maximum flow rate g(dc) is provided.
+However, there is no unique solution for a, b according to Eqs. (6) and (7). Fig. 3(a) shows a solution surface for a and b as a
+function of dc when g(dc) is supposed as a constant of 2200 veh/h. To obtain the explicit a and b, in this model, b is assumed
+as constant. Fig. 3(b) shows a solution for awhen b = 2. Parameterm relates to the maximum velocity limit vp that
+
+vp = lim
+s→+∞ Ve(s, dc) = m · [1+ tanh(b)]. (8)
+
+Fig. 3(b) also shows numerical solution for vp when b = 2.
+To conclude, the proposed fundamental diagram in DP model consists of a series of FD branches. Each branch is
+
+determined by a perception distance dc and its correspondingmaximum flow rate g(dc). The functional form and parameters
+are determined by Eqs. (1), (6) and (7).
+
+2.3. Dynamic velocity equation
+
+The dynamic velocity equation follows the form of OV model with limited acceleration:
+
+v˙ = min {A, c · [Ve(s, dc)− v]} , (9)
+where A represents the maximum acceleration. In Eq. (9), if dc is a fixed, time-independent constant, the model behavior is
+the same as the well-known OVmodel. According to the previous research on OVmodel in Ref. [5], small perturbations will
+grow when dVe/ds > c/2. In DP model, dc is a time-dependent variable and the system stability is different with the OV
+model. However, the stability analysis with a fixed dc still present some implications on the dynamic system behavior.
+
+
+
+S. He et al. / Physica A 389 (2010) 825–836 829
+
+a b
+
+Fig. 3. (a) The numerical solution for a and b at different dc; (b) The numerical solution for a and vp at different dc when b = 2 and g(dc) = 2200 vpl/h.
+
+2.4. Dynamic perception equation
+
+The changes in driving style aremodeled by transition betweendifferent perception curves. Since perception curve is only
+dependent on dc, its evolution can be interpreted as a dynamic equation of dc. In DP model, dc changes without any explicit
+target value but only relate to the change rate of surrounding traffic situation. The empirical facts discussed in previous
+subsection show a decrease of dc when breakdown occurs (see Fig. 2). Similarly, dc will increase when traffic recovers. On
+the other hand, the phenomenon implies that a more cautious driving style will be adopted through a decrease of dc when
+traffic become congested. Therefore a quantitative relationship between traffic state changes and driving style adaption is
+modeled by a dynamic perception equation
+
+d˙c = λ(s, v) ·1v. (10)
+In Eq. (10),1v = vpre−vwherevpre is velocity of preceding vehicle.1v is velocity difference between successive vehicles.
+
+Moreover, from equation1v = s˙,1v is treated as a measurement for the change of the surrounding traffic situation. When
+1v < 0, the space gap is decrease and the traffic gets more congested. Similarly, 1v > 0 indicates traffic gets free. λ is a
+state-dependent sensitive factor which measures driver’s sensitiveness to the changes in the surrounding traffic situation.
+Normally, drivers are cautious when driving with low space gap to preceding vehicle or at high speed, indicating a more
+sensitive perception on the surrounding traffic. Consequently the amplitude of λ is supposed to decreasewith the increasing
+space gap s and increase with the increasing velocity v.
+Then the driver perception model will be solved by Eqs. (1), (9) and (10). However, the density-dependent maximum
+
+flow rate f (ρc) or g(sc), model parameter c in Eq. (9) and λ in Eq. (10) need to be validated from real traffic data.
+In accordance with the equilibrium velocity function equation (1), dynamic velocity function equation (9) and dynamic
+
+velocity equation (10), the steady states of DP model cover 2D region in flow-density plane. Indeed, as follows from Eq. (9),
+model steady states are given by formula v = Ve(s, dc), where Ve(s, dc) is a function of space gap s and also it depends on
+the parameter dc (the perception distance). The dynamics of the perception distance dc is described by Eq. (10). In steady
+state when speed difference1v = 0, the parameter of dc can take any values within the range [dmin, dmax]. As a result, the
+model steady states occupy the 2D region in speed-gap and flow-density planes. This 2D region is bounded by the curves
+v = Ve(s, dmin) and v = Ve(s, dmax) in speed-gap plane and the corresponding curves in flow-density plane. Moreover,
+the curve v = Ve(s, dmax) can be associated with the synchronization gap in Kerner’s three-phase traffic theory, whereas
+the curve v = Ve(s, dmin) can be associated with the safe speed in the three-phase traffic theory. i.e., in the DP model the
+fundamental hypothesis of Kerner’s theory has been incorporated.
+As in Kerner’s three-phase traffic theory, in the 2D region of synchronized flow states, a vehicle adapts its speed to the
+
+speed of the preceding vehicle — the speed adaptation effect. As in most other models based on three-phase traffic theory,
+the vehicle accelerates in DP model if it is slower than the preceding one and decelerates if it is faster than the preceding
+one (see, e.g., Ref. [22]). In DP model, there is the same speed adaptation effect at dc within the range [dmin, dmax]: if speed
+difference1v 6= 0, the value dc varies according to Eq. (10) proportionally to1v, this leads to the change in the parameter
+dc in function Ve(s, dc) in Eq. (9), and as a result vehicle accelerates or decelerates in accordance with Eq. (9) until speed
+difference1v becomes zero.
+
+3. Model validation
+
+In the field, the maximum flow rate appears at downstream of an on-ramp bottleneck as shown in Fig. 2(b). In shoulder
+lane, the maximum flow rate reaches 2200 vpl/h at high density because inserted vehicles from the on-ramp shortened
+time gap temporally. With thorough observations, the flow rates at other locations in the target area are not higher than the
+
+
+
+830 S. He et al. / Physica A 389 (2010) 825–836
+
+a b
+
+Fig. 4. Sample branches of fundamental diagram at (a) flow-density plane, (b) gap-speed plane.
+
+a b
+
+Fig. 5. (a) dcr as a function of dc under different c; (b) Sensitive factor λ as a function of v and s.
+
+maximum flow rate shown in Fig. 2(b). Thus in the DP model, the maximum flow rate is approximated as f (ρ) in Fig. 2(b)
+and (c), which could be assumed as a constant, i.e., f (ρc) = g(sc) = 2200 vpl/h. However, the domain of s should within a
+valid range [dmin, dmax]which can be approximated from empirical data. In this paper, dmin ≈ 3 m, dmax ≈ 25 m.
+Given that f (ρc) = 2200 vpl/h, the multi-branch fundamental diagram is completely determined. Fig. 3(b) shows max-
+
+imum speed vp of each FD branch which is monotonically increased with perception distance dc. Fig. 4 shows flow-density
+and speed-gap plane for several FD branches.
+Parameter c and λ have to be seriously determined to reproduce the observed spatio-temporal patterns.
+In DP model, the stability of a single FD branch is believed as the stability of the corresponding driving style. To
+
+analyze the stability of a particular driving style, dc is assumed as a time-independent constant hence the DP model is
+then equivalent to OV model. In this case, the sensitive factor c in Eq. (9) is critical to system stability that the system is
+linearly unstable when dVe(s, dc)/ds > c/2. Then the critical distance dcr is a function of perception distance dc and satisfies
+dVe(s, dc)/ds|s=dcr = c/2. According to Eq. (4), if c = 2 · g(dc), dVe(s, dc)/ds = c/2 = g(dc) is satisfied when s = dc, that to
+say, the critical distance dcr of FD branch dc is exactly the perception distance dc. It is also derived that when c < 2 · g(dc),
+the critical distance dcr is greater than dc. Similarly, when c > 2 · g(dc), dcr < dc. Fig. 5(a) shows the relationship between
+dcr and dc at different c when f (ρc) = g(sc) = 2200 vpl/h = 0.61 vpl/s. It is found that when c is constant, dcr increases
+with growing dc, indicating a decreasing stability with growing dc.
+Parameter λ in Eq. (10) relates to system dynamic behavior. If λ = 0, dc is constant and the DP model is identical to OV
+
+model. When λ 6= 0, complex system behavior is formed for the adaption of driving style through the change of dc. Here λ
+is derived from driving desires for smooth and fast driving.
+When traffic gets congested, i.e.,1v < 0 in Eq. (10), driverswill prefer to adopt amore stable driving style by a decreasing
+
+dcr to avoid frequently stop-and-go behavior. Such a tendency is a result of drivers’ desire for smooth moving. According to
+Fig. 5(a), the decreasing dcr is realized by a decreasing dc. However, when 1v > 0, drivers will prefer to a faster moving
+by a increasing vp. This is a result of drivers’ desire for fast moving. Fig. 3(b) shows numerical solutions for vp as a function
+of dc, it is found that the increasing vp is realized by increasing dc. With the form of d˙c as Eq. (10), it is suggest that λ is a
+non-negative variable.
+Previous discussion on Eq. (10) in Section 2 shows that λ(s, v) decreases with increasing space gap s and increases with
+
+increasing velocity v for all legal v and s. Moreover, dc should be constrained within a realistic range [dmin, dmax].
+Based on the above discussion, λ(v, s) can be approximated by various function forms. Here an exponential form is used:
+
+λ(v, s) =
+{0 dc > dmax and1v > 0
+0 dc 6 dmin and1v < 0
+exp(α · v − β · s) others.
+
+(11)
+
+
+
+S. He et al. / Physica A 389 (2010) 825–836 831
+
+Table 1
+Simulation parameters.
+
+Free flow Homogeneous congestion Stop-and-go traffic
+Fig. 6(a), (b) Fig. 6(c), (d) Fig. 6(e), (f)
+
+q(main) (vpl/h) 1422 1733 1657
+q(on) (vpl/h) 350 800 1300
+d(up)0 (m) 25 22 22
+d(down)0 (m) 25 22 22
+d(up)max (m) 25 25 25
+d(down)max (m) 25 25 25
+
+Model with appropriate values of c , α and β should be able to reproduce homogeneous flow and stop-and-go flow as
+shown in Fig. 2. Simulations show that c = 2.4 s−1, α = 0.04 s/m and β = 0.04 m−1 are suitable parameter sets. Fig. 5(b)
+shows λ at different v and swith the above α and β .
+
+4. Simulated traffic patterns
+
+Open boundary simulations are performed on a sufficient long one-lane road with an on-ramp of length Lr located at
+x = 0. Assume that the upstream boundary flow rate is q(main) and downstream boundary vehicles freely leave the road
+during whole simulation process. Upstream and downstream may have different maximum perception distance d(up)max and
+d(down)max , respectively. At t = 0, traffic flow at the whole road is initialized by q0 = q(main). At on-ramp upstream and down-
+stream, initial perception distances are set to d(up)0 and d
+
+(down)
+0 , respectively. On-ramp vehicles start entering mainroad at t0
+
+with a fixed flow rate q(on). The on-ramp flow is persistent till the simulation process ends.
+Vehicle from on-ramp will enter the mainroad between two successive vehicles with velocity vr if the gap between the
+
+two vehicles is not less than gr . vr and gr are given by
+
+vr = min(v0 · r, vpre), (12)
+gr = l. (13)
+
+In Eq. (12), the term v0 · r with r < 1 denotes the velocity limitation of the on-ramp. In Eq. (13), since l in the model already
+contains vehicle length and jam distance, the minimum gap gr is equal to l. In the following simulation, Lr is set to be 400 m
+and r = 0.8.
+At the bottleneck with one on-ramp, three typical spatio-temporal patterns, i.e., free flow (Fig. 6(a),(b)), synchronized
+
+flow (Fig. 6(c),(d)) and wide moving jam (Fig. 6(e),(f)), are shown in Fig. 6. The initial conditions for those three patterns are
+listed in Table 1.
+Free flow pattern is shown in Fig. 6(a) and (b), both upstream and downstream are homogeneous flow. After on-
+
+ramp vehicles was inserted,downstream flow stays at FD branches with lower dc and lower speed compared to the initial
+conditions. Although downstream speed slightly decreases, the congested state does not propagate upstream. Such pattern
+corresponds to the formation of high flow rate where speed is slightly lower than maximum speed and flow rate is close to
+maximum flow rate.
+Synchronized flow is shown in Fig. 6(c) and (d), where traffic breakdown occurs at on-ramp vicinity and propagated
+
+upstream, generating a low speed homogeneous congested area. After on-ramp vehicles are inserted, the downstream flow
+first reaches high flow rate then stays at FD branches with a lower dc compared to the initial state. Moreover, the congested
+flow propagates upstream, forming an area of synchronized flow. At on-ramp upstream, the corresponding perception
+distance almost reaches the minimum value, which is lower than downstream recovering flow.
+Wide moving jam is shown in Fig. 6(e) and (f), where synchronized flow forms and propagates upstream firstly, then
+
+some perturbations grow and moving jams emerge finally. In Fig. 6(f), moving jam emerges from synchronized flow where
+dc = dmin. When vehicles escapes from jam, perception distance increases rapidly and free flow recovers.
+As shown in Fig. 6, in accordancewithKerner’s three-phase traffic theory and thephase definitionsmade in this theory the
+
+driver perception (DP) model developed in the paper exhibits three traffic phases. The wide moving jam and synchronized
+flow phases comply with the empirical criteria of synchronized flow and wide moving jam [21], respectively.
+Moreover, the simulation results show two types of phase transitions. The phase transition from free flow to synchronized
+
+flow is realized through a breakdown of perception distance dc. While during transition from synchronized flow to wide
+moving jam as shown in Fig. 6(f), perception distance remains constant because it reaches its minimum value dmin. Thus
+when perturbation exceeds some critical density, it grows and forms jam finally. The reason for the sequence of F⇒ S and
+S⇒ J transitions is an ‘‘attraction’’ to boundaries of 2D region described in Ref. [22]. By doing this, the DP model describes
+the dynamics of F ⇒ S and S ⇒ J transitions postulated in three-phase traffic theory. This explains the result that wide
+moving jams emerge spontaneously due to a sequence of F ⇒ S and S ⇒ J transitions in accordance with three-phase
+traffic theory in the DP model.
+
+
+
+832 S. He et al. / Physica A 389 (2010) 825–836
+
+0
+
+–5
+
+–10
+
+0
+
+–5
+
+–10
+
+0
+
+–5
+
+–10
+
+di
+st
+
+an
+ce
+
+ (k
+m)
+
+di
+st
+
+a
+n
+ce
+
+ (k
+m
+
+)
+di
+
+st
+a
+
+n
+ce
+
+ (k
+m
+
+)
+80
+
+60
+
+40
+
+20
+
+80
+
+60
+
+40
+
+20
+
+80
+
+60
+
+40
+
+20
+
+a
+
+c
+
+e
+
+b
+
+d
+
+f
+
+0 20 40 60
+time (min)
+
+0 20 40 60
+time (min)
+
+0 20 40 60
+time (min)
+
+Fig. 6. Spatio-temporal speed diagram and time series of speed, flow rate and dc at upstream and downstream of an on-ramp. (a), (b): free flow; (c), (d):
+synchronized flow; (e), (f): wide moving jam. In (b), (d) and (f), solid lines correspond to upstream data and dashed lines downstream data.
+
+5. Explanation of empirical observations
+
+According to the previous empirical analysis and simulation results, it was found that at vicinity of a single on-ramp, there
+are two effects on the flow: One is the increased flow ratewith slightly decrease dcwhich is often observed at inhomogeneity
+downstream caused by lane changes, another is the decreased flow rate with dramatically decreased dc at inhomogeneity
+upstream caused by propagated congestion.
+In real traffic, flowmay be affected by superposition of the above two effects for the dense road inhomogeneities. In Fig. 2,
+
+flow-density relations at different sections, even at same section with different lanes, are different from each other. Fig. 7
+shows traffic states at 6 sections of a segment of Beijing urban freeway (see Fig. 1) in detail. It is observed that congestion is
+propagated from section D6 to D3, while congestion at D2 is formed after a spontaneously breakdown at arrow B. The high
+exit flow to off-ramp R2 is the reason for the separation of the two congestion areas. Then although D2 and D5 are both at
+immediate on-ramp downstream, their flow-density relations in Fig. 2(b) and (c) are different for the different upstream
+and downstream situation.
+In order to simulate traffic patterns at on-ramp vicinity with different upstream and downstream situations, additional
+
+‘‘virtual on-ramps’’ are settled to simulate merging vehicles at on-ramp upstream and downstream. The road structure used
+in the simulation is shown in Fig. 8. Besides a real on-ramp, two virtual on-ramps are located at upstream and downstream
+separately, generating merging vehicles from other lane which affect traffic dynamics at the targeted on-ramp vicinity. By
+carefully selecting simulation parameters labeled in Fig. 8, some empirical flow-density relations are reproduced well.
+
+
+
+S. He et al. / Physica A 389 (2010) 825–836 833
+
+Fig. 7. Empirical traffic 2-min. averaged flow rate and speed at a segment of Beijing urban freeway on a morning peak. Median lane data are indicated
+with a solid line while the shoulder lane data with a dashed line.
+
+Fig. 8. Simulated one-lane road structure with one on-ramp and two virtual on-ramps. qon are on-ramp flow rate, while qv1 and qv2 are supposed to be
+merging flow from other lanes. xon is the on-ramp location. The two virtual on-ramps are settled at xv1 and xv2 . Average flow rate and density are collected
+at the location xDi and xDj , where Di and Dj correspond to real detectors in Fig. 1. q(main) shows the boundary flows during simulation.
+
+As here only traffic patterns at on-ramp vicinity were considered, median lanes and shoulder lanes at on-ramp vicinities
+D1, D2, D4 and D5 are selected. The four sections are simulated in four pairs with simulation parameters listed in Table 2.
+The comparison between empirical data and simulation result are drawn in Fig. 9.
+In Fig. 9, most simulation results could represent the empirical data. But deviations are hardly ignored in Fig. 9(c),
+
+(g) and (h), where stop-and-go traffic shows different slopes in empirical data and simulated result. This is because the
+measured data are temporally averaged while simulated result are spatially averaged. The temporally averaged data tend
+to overestimate speed when vehicles are in frequent acceleration and deceleration. Such that there exist some empirical
+congested states located at left-bottom of the flow-density plane. In fact, these temporal averaged states correspond to
+spatio-averaged states located at right-bottom of the flow-density plane. From this point, the empirical data and simulation
+results are not contrary to each other but qualitatively consistent.
+Some simulation parameters in Table 2 are derived from the empirical data, while other parameters such as flow rate
+
+of virtual ramps, are derived by analysis. q(main), d
+(down)
+0 and d
+
+(up)
+0 are approximated from empirical data. The low d
+
+(down)
+0
+
+appeared at shoulder lane at D2 and D5 is the result of low speed of vehicles from the on-ramps. q(on) at the two shoulder
+lanes are approximated as real average on-ramp flows at R1 and R4. Since median lane is less affected by on-ramps, q(on)
+at the two median lanes are less than their corresponding shoulder lanes. q(v1) is used to generate appropriate downstream
+
+
+
+834 S. He et al. / Physica A 389 (2010) 825–836
+
+Fig. 9. Comparison between empirical (red circles) and simulated (white squares) 2-min averaged flow-density relations: (a) D1 median lane; (b) D2
+median lane; (c) D1 shoulder lane; (d) D2 shoulder lane; (e) D4 median lane; (f) D5 median lane; (g) D4 shoulder lane; (h) D5 shoulder lane. Values of
+simulation parameters are listed in Table 2.
+
+traffic situation. In pair 3 and pair 4, q(v1) sets to be sufficiently large to generate downstream congestion which follows real
+traffic situation according to Fig. 7. Since breakdown at D2 is spontaneously formed by local perturbation, q(v1) of pair 1 and
+pair 2 act as local perturbation which is larger at shoulder lane than at median lane for the high exit flow to off-ramp R2.
+Similarly, q(v2) is used to generate appropriate upstream traffic situation. In all pairs, q(v2) have no significant deviation.
+
+6. Conclusion
+
+This paper proposes a car-following model based on a multi-branch fundamental diagram in the framework of Kerner’s
+three-phase traffic theory. System features at on-ramp vicinity are investigated by means of computer simulations.
+
+
+
+S. He et al. / Physica A 389 (2010) 825–836 835
+
+Table 2
+Simulation parameters.
+
+Pair 1: D1/D2 Pair 2:D1/D2 Pair 3:D4/D5 Pair 4:D4/D5
+Median lane Shoulder lane Median lane Shoulder lane
+Fig. 9(a), (b) Fig. 9(c), (d) Fig. 9(e), (f) Fig. 9(g), (h)
+
+q(main) (vpl/h) 1694 1733 1179 1091
+q(on) (vpl/h) 420 560 300 780
+q(v1) (vpl/h) 120 560 600 520
+q(v2) (vpl/h) 60 280 100 0
+d(up)0 (m) 22 22 22 22
+d(down)0 (m) 22 9 22 9
+d(up)max (m) 25 25 25 25
+d(down)max (m) 25 9 25 9
+xon (m) 0 0 0 0
+xv1 (m) −225 −225 −350 −350
+xv2 (m) 225 225 450 450
+xD1 (m) 0 0 – –
+xD2 (m) 300 250 – –
+xD4 (m) – – 0 −100
+xD5 (m) – – 280 150
+
+Numerical results are consistent with empirical observation on urban freeway. Several conclusions are drawn based on
+this work:
+
+1. Driver perception to the change of surrounding traffic affects driving behavior, resulting in a non-unique equilibrium
+velocity at the same gap. The adaption of driving behavior is responsible both for the widely scattered congested traffic
+states on flow-density plane and the diversity of free flow velocities at different locations.
+
+2. When the surrounding traffic gets congested, drivers tend to drive more cautiously to keep a smooth moving. Such a
+behavior is simulated by a decreased dcr through a drop of perception distance dc, resulting in a stable flow at a high
+density with a finite speed, i.e., homogeneous congested flow.
+
+3. When the surrounding traffic has sufficient large changes, the decreased dcr cannot compensate the instability brought
+by the increasing density, leading to the emergence of moving jams finally.
+
+Acknowledgements
+
+This paper is sponsored by the National Natural Science Foundation (60874078), Program for New Century Excellent
+Talents in University (NCET-08-0718), Ph.D. Program Foundation of China Ministry of Education (20070004020), National
+High-Tech R&D Program (2006AA11Z212) and National Basic Research Program of China (2006CB70557).
+
+References
+
+[1] B. Greenshields, A study in highway capacity, in: Proceedings of the Highway Research Board (Highway Research Board), vol. 14, Washington DC,
+1935. p. 458.
+
+[2] L. Edie, Following and steady-state theory for non-congested traffic, Oper. Res. 9 (1961) 66–76.
+[3] M. Treiber, A. Hennecke, D. Helbing, Congested traffic states in empirical observations and microscopic simulations, Phys. Rev. E, 62 (2), 1805.
+[4] K. Nagel, M. Schreckenberg, A cellular automaton model for freeway traffic, J. Phys. I 2 (2) (1992) 2221–2229.
+[5] M. Bando, K. Hasebe, A. Nakayama, A. Shibata, Y. Sugiyama, Dynamical model of traffic congestion and numerical simulation, Phys. Rev. E 51 (2) (1995)
+1035.
+
+[6] M. Koshi, M. Iwasaki, I. Ohkura, Some findings and an overview on vehicular flow characteristics, in: V. Hurdle, D. Hauer, G. Steuart (Eds.),
+in: Proceedings of the 8th International Symposium on Transportation and Traffic Theory, Toronto Ontario, 1983, p. 403.
+
+[7] B.S. Kerner, H. Rehborn, Experimental properties of complexity in traffic flow, Phys. Rev. E 53 (5) (1996) R4275.
+[8] W. Guan, S. He, Statistical features of traffic flow on urban freeways, Physica A 387 (4) (2008) 944–954.
+[9] D. Helbing, D. Batic, M. Schönhof, M. Treiber, Modelling widely scattered states in ‘‘synchronized’’ traffic flow and possible relevance for stock market
+dynamics, Physica A 303 (1–2) (2002) 251–260.
+
+[10] W. Knospe, L. Santen, A. Schadschneider, M. Schreckenberg, Human behavior as origin of traffic phases, Phys. Rev. E 65 (1) (2001) 015101.
+[11] H. Lenz, C.K. Wagner, R. Sollacher, Multi-anticipative car-following model, Eur. Phys. J. B 7 (2) (1999) 331–335.
+[12] M. Treiber, D. Helbing, Memory effects in microscopic traffic models and wide scattering in flow-density data, Phys. Rev. E 68 (4) (2003) 046119.
+[13] M. Treiber, A. Kesting, D. Helbing, Understanding widely scattered traffic flows, the capacity drop, and platoons as effects of variance-driven time
+
+gaps, Phys. Rev. E 74 (1) (2006) 016123.
+[14] M.E. Fukui, Y. Sugiyama, M. Schreckenberg, D. Wolf (Eds.), Traffic and Granular Flow’01, Springer, 2003.
+[15] C.F. Daganzo, A behavioral theory of multi-lane traffic flow. part i: Long homogeneous freeway sections, Transp. Res., Part B: Methodol. 36 (2) (2002)
+
+131–158.
+[16] J.A. Laval, L. Leclercq, Microscopic modeling of the relaxation phenomenon using a macroscopic lane-changing model, Transp. Res., Part B: Methodol.
+
+42 (6) (2008) 511–522.
+[17] T. Forbes, Human factor considerations in traffic flow theory, Highway Res. Record 15 (1963) 60–66.
+[18] R. Nagai, T. Nagatani, A. Yamada, Phase diagram in multi-phase traffic model, Physica A 355 (2–4) (2005) 530–550.
+[19] H. Zhang, T. Kim, A car-following theory for multiphase vehicular traffic flow, Transp. Res., Part B: Methodol. 39 (2005) 385–399.
+[20] F. Siebel, W. Mauser, Synchronized flow and wide moving jams from balanced vehicular traffic, Phys. Rev. E 73 (6) (2006) 066108–066110.
+
+
+
+836 S. He et al. / Physica A 389 (2010) 825–836
+
+[21] B.S. Kerner, The Physics of Traffic: Empirical Freeway Pattern Features, Engineering Applications and Theory, Springer, 2004.
+[22] B.S. Kerner, S.L. Klenov, Deterministic microscopic three-phase traffic flow models, J. Phys. A: Math. General 39 (8) (2006) 1775–1809.
+[23] S. He, W. Guan, Empirical investigation on phase diagram at urban freeway with on-ramp, in: The 11th International IEEE Conference on Intelligent
+
+Transportation Systems, 2008, pp. 880–887.
+[24] D. Helbing, B.A. Huberman, Coherent moving states in highway traffic, Nature 396 (24) (1998) 738–740.
+[25] W. Guan, S. He, Phase transition of urban freeway traffic flow, in: Proceedings of IEEE International Conference on Intelligence Transportation System,
+
+Beijing, 2008, pp. 868–874.
+
+
+	Explaining traffic patterns at on-ramp vicinity by a driver perception model in the framework of three-phase traffic theory
+	Introduction
+	Literature review
+	Results and hypotheses of Kerner's three-phase traffic theory used in the driver perception model
+
+	Introduction to driver perception model
+	Empirical evidence for multi-branch fundamental diagram
+	Fundamental diagram of the driver perception model
+	Dynamic velocity equation
+	Dynamic perception equation
+
+	Model validation
+	Simulated traffic patterns
+	Explanation of empirical observations
+	Conclusion
+	Acknowledgements
+	References
+
+

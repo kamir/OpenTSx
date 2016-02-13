@@ -1,0 +1,2715 @@
+
+ar
+X
+
+iv
+:0
+
+90
+3.
+
+09
+29
+
+v1
+  [
+
+ph
+ys
+
+ics
+.so
+
+c-p
+h]
+
+  5
+ M
+
+ar 
+20
+
+09
+EPJ manuscript No.
+(will be inserted by the editor)
+
+Theoretical vs. Empirical Classification and Prediction of
+Congested Traffic States
+
+Dirk Helbing,1 Martin Treiber,2 Arne Kesting2 and Martin Scho¨nhof2
+
+1ETH Zurich, UNO D11, Universita¨tstr. 41, 8092 Zurich, Switzerland
+2 Institute for Transport & Economics, TU Dresden, Andreas-Schubert-Str. 23, 01062 Dresden, Germany
+
+Received: date / Revised version: date
+
+Abstract. Starting from the instability diagram of a traffic flow model, we derive conditions for the oc-
+currence of congested traffic states, their appearance, their spreading in space and time, and the related
+increase in travel times. We discuss the terminology of traffic phases and give empirical evidence for the
+existence of a phase diagram of traffic states. In contrast to previously presented phase diagrams, it is
+shown that “widening synchronized patterns” are possible, if the maximum flow is located inside of a
+metastable density regime. Moreover, for various kinds of traffic models with different instability diagrams
+it is discussed, how the related phase diagrams are expected to approximately look like. Apart from this,
+it is pointed out that combinations of on- and off-ramps create different patterns than a single, isolated
+on-ramp.
+
+PACS. 89.40.Bb Land transportation – 89.75.Kd Patterns – 47.10.ab Conservation laws and constitutive
+relations
+
+1 Introduction
+
+While traffic science makes a clear distinction between
+free and congested traffic, the empirical analysis of spa-
+tiotemporal congestion patterns has recently revealed an
+unexpected complexity of traffic states. Early contribu-
+tions in traffic physics focussed on the study of so-called
+“phantom traffic jams” [1], i.e. traffic jams resulting from
+minor perturbations in the traffic flow rather than from
+accidents, building sites, or other bottlenecks. This sub-
+ject has recently been revived due to new technologies
+facilitating experimental traffic research [2]. Related the-
+oretical and numerical stability analyses were – and still
+are – often carried out for setups with periodic boundary
+conditions. This is, of course, quite artificial, as compared
+to real traffic situations. Therefore, in response to em-
+pirical findings [3], physicists have pointed out that the
+occurrence of congested traffic on real freeways normally
+results from a combination of three ingredients [4,5]:
+
+1. a high traffic volume (defined as the freeway flow plus
+the actual on-ramp flow, see below),
+
+2. a spatial inhomogeneity of the freeway (such as a ramp,
+gradient, or change in the number of usable lanes), and
+
+3. a temporary perturbation of the traffic flow (e.g. due to
+lane changes [6] or long-lasting overtaking maneuvers
+of trucks [7,8]).
+
+The challenge of traffic modeling, however, goes consid-
+erably beyond this. It would be favorable, if the traffic
+dynamics could be understood on the basis of elementary
+
+traffic patterns [7] such as the ones depicted in Fig. 1, and
+if complex traffic patterns (see, e.g., Fig. 2) could be un-
+derstood as combinations of them, considering interaction
+effects.
+
+It was proposed that the occurrence of elementary con-
+gested traffic states could be classified and predicted by a
+phase diagram [4,10]. Furthermore, it was suggested that
+this phase diagram can be derived from the instability dia-
+gram of traffic flow and the outflow from congested traffic.
+This idea has been taken up in many other publications,
+also as a means of studying, visualizing, and classifying
+properties of traffic models [11,12,13,14]. However, it has
+been claimed that the phase diagram approach would be
+insufficient [15]. While some of the criticism is due to mis-
+understandings, as will be shown in Sec. 7.1, the classical
+phase diagrams lack, in fact, the possibility of “widening
+synchronized patterns” (WSP) proposed by Kerner and
+Klenov [16], see Fig. 1(d).
+
+In this paper, we will start in Sec. 2 with a discussion
+of the somewhat controversial notion of “traffic phases”
+and the clarification that we use it to distinguish conges-
+tion patterns with a qualitatively different spatiotemporal
+appearance. In Sec. 3 we will show that existing mod-
+els can produce all the empirically observed patterns of
+Fig. 1, when simulated in an open system with a bottle-
+neck. We will then present a derivation and explanation
+of the idealized, schematic phase diagram of traffic states
+in Sec. 4. In contrast to previous publications, we will
+assume that the critical density ρc2, at which traffic be-
+
+
+
+
+2 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+Fig. 1. Examples of elementary patterns of congested traffic measured on the German freeway A5 close to Frankfurt. For
+better illustration of the traffic patterns, speeds are displayed upside down. The driving direction is indicated by arrows.
+Top row: (a) Moving clusters (MC), (b) stop-and-go waves (SGW), (c) oscillating congested traffic (OCT). Bottom row: (d)
+Widening synchronized pattern (WSP), (e) pinned localized cluster (PLC), and (f) homogeneous congested traffic (HCT). The
+spatiotemporal velocity fields have been reconstructed from one-minute data of double-loop detector cross sections using the
+“adaptive smoothing method” protect[9].
+
+comes linearly unstable, is greater than the density ρmax,
+where the maximum flow is reached (see Appendix A for
+details). As a consequence, we will find that “widening
+synchronized pattern” do exist within the phase diagram
+approach, even for models with a fundamental diagram.
+While this analysis is carried out for single, isolated bot-
+tlenecks, Sec. 5 will introduce how to generalize it to the
+case of multi-ramp setups. In Sec. 6, we will discuss other
+possible types of phase diagrams, depending on the sta-
+bility properties of the considered model. Afterwards, in
+Sec. 7, we will present recent empirical data supporting
+our theoretical phase diagram. Sections 7.1 and 8 will fi-
+nally try to overcome some misunderstandings regarding
+the phase diagram concept and summarize our findings.
+
+2 On the Definition of Traffic Phases
+
+Before we present the phase diagram of traffic states, it
+must be emphasized that some confusion arises from the
+different use of the term “(traffic) phase”. In thermody-
+namics, a “phase” corresponds to an equilibrium state in a
+region of the parameter space of thermodynamic variables
+(such as pressure and temperature), in which the appro-
+priate free energy is analytic, i.e., all first and higher-order
+
+derivatives with respect to the thermodynamic variables
+exist. One speaks of a first-order phase transition, if a first
+derivative, or “order parameter”, is discontinuous, and of
+a “second-order” or “continuous” phase transition, if the
+first derivatives are continuous but a second derivative
+(the “susceptibility”) diverges. What consequences does
+this have for defining “traffic phases”?
+
+Although traffic flow is a self-driven nonequilibrium
+system, it has been shown [17] that much of the equi-
+librium concepts can be transferred to driven or self-
+driven non-equilibrium systems by appropriately redefin-
+ing them. Furthermore, concepts of classical thermody-
+namics have been successfully applied to nonequilibrium
+physical and nonphysical systems, yielding quantitatively
+correct results. This includes, for example, the application
+of the fluctuation-dissipation theorem [18] (originally re-
+ferring to equilibrium phenomena) to vehicular traffic [19].
+
+In contrast to classical thermodynamics, nonequilib-
+rium phase transitions are possible in one-dimensional sys-
+tems [20]. However, according to the definition of phase
+transitions, one needs to make sure that details of the
+boundary conditions or finite-size effects do not play a
+role for the characteristic properties of the phase. Fur-
+thermore, one must define suitable order parameters or
+susceptibilities. While the first propositions have been al-
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 3
+
+Fig. 2. Two examples of complex traffic states measured on the
+German freeway A5 close to Frankfurt. Top: On the A5 North,
+an accident occurs at x = 487.5 km at the time t = 17:13 h,
+which causes a HCT pattern that turns into an OCT pattern
+as the upstream traffic flow goes down. The capacity drop re-
+lated to the congestion pattern reduces the downstream flow
+and leads to a dissolution of the previous SGW pattern over
+there around t = 18:00 h. Bottom: On the freeway A5 South,
+the stop-and-go waves induced by a bottleneck at x = 480 km
+replace the OCT at the bottleneck near x = 470 km. At time
+t = 9:50 h, the waves induce an accident at x = 478.33 km,
+which triggers a new OCT pattern further upstream. The re-
+lated capacity drop, in turn, causes the previous OCT state at
+x ≈ 480 km to dissolve.
+
+ready made a decade ago [21], there is no general agree-
+ment regarding the quantity that should be chosen for
+the order parameter. Candidates include the density, the
+fraction of vehicles in the congested state [21], the aver-
+age velocity or flow, or the variance of density, velocity, or
+flow. Whenever one observes a discontinuous or hysteretic
+transition in a large enough system, there is no need to
+define an order parameter, as this already implies a first-
+order phase transition. For continuous, symmetry-braking
+phase transitions, the deviation from the more symmetric
+state (e.g. the amplitude of density variations as compared
+to the homogeneous state) seems to be an appropriate or-
+der parameter.
+
+To summarize the above points, it appears that ther-
+modynamic phases can, in fact, be defined for traffic flow.
+In connection with transitions between different traffic
+states at bottlenecks, we particularly mention the notion
+
+of boundary-induced phase transitions [22,23,24]. Here, the
+boundary conditions have been mainly used as a means to
+control the average density in the open system under con-
+sideration.
+
+In publications on traffic, a “phase” is often inter-
+preted as “traffic pattern” or “traffic state with a typical
+spatio-temporal appearance”. Such states depend on the
+respective boundary conditions. In this way, models with
+several phases can produce a multitude of spatiotempo-
+ral patterns. It should become clear from these consid-
+erations that the various proposed “phase diagrams” do
+not relate to thermodynamic phases, but classify spatio-
+temporal states, as is common in systems theory. In these
+non-thermodynamic phase diagrams, the “phase space” is
+spanned by certain control parameters, e.g. by suitably
+parameterized boundary conditions, by inhomogeneities
+(bottleneck strengths), or by model parameters [25]. For
+example, the phase diagrams discussed in Refs. [4,15] and
+this paper contain the axes “main inflow” (i.e., an up-
+stream boundary condition) and “on-ramp flow” (charac-
+terizing the bottleneck strength).
+
+In any case, empirical observations of the traffic dy-
+namics relate to the spatiotemporal traffic patterns, and
+not to the thermodynamic phases. Therefore, the quality
+of a traffic model should be assessed by asking whether it
+can produce all observed kinds of spatio-temporal traffic
+patterns, including the conditions for their appearance.
+
+3 Congested Traffic States
+
+When simulating traffic flow with the “microscopic” in-
+telligent driver model (IDM) [10], the optimal veloc-
+ity model (OVM) [26], the non-local, gas-kinetic-based
+traffic model (GKT) [27], or the “macroscopic” Kerner-
+Konha¨user model [28] (with the parameter set chosen by
+Lee et al. [29]), we find free traffic flow and different kinds
+of congestion patterns, when the ramp flow Qon and the
+upstream arrival flow Qup on the freeway are varied. The
+diversity of traffic patterns is
+
+1. due to the possibility of having either locally constraint
+or spatially extended congestion1 and
+
+2. due to the possibility of having stable, unstable or free
+traffic flows.
+
+Typical representatives of congested traffic patterns ob-
+tained by computer simulations with the intelligent driver
+model [10] are shown in Fig. 3. Notice that all empirical
+patterns displayed in Fig. 1 can be reproduced.
+
+One can distinguish the different traffic states (i.e. con-
+gestion patterns) by analyzing the temporal and spatial
+
+1 Note that traffic patterns which appear to be localized, but
+continue to grow in size, belong to the spatially extended cat-
+egory of traffic states. Therefore, “widening moving clusters”
+(WMC) are classified as extended congested traffic, while the
+similarly looking “moving localized clusters” (MLC) are not.
+According to Fig. 6, however, the phases of both states are lo-
+cated next to each other, so one could summarize both phases
+by one area representing “moving clusters” (MC).
+
+
+
+4 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+Fig. 3. Simulation of traffic on a freeway with an on-ramp at location x = 0 km using the intelligent driver model (IDM) [10]
+with parameters corresponding to an instability diagram as illustrated in Fig. 4(d). The macroscopic velocity field was extracted
+from the simulated trajectories by placing virtual detectors every 500m and determining the velocity with the same method [9]
+that has been used for the data. Depending on the respective traffic flows on the ramp and on the freeway, different kinds
+of congested traffic states emerge: a moving cluster (MC), a pinned localized cluster (PLC), (“triggered”) stop-and-go waves
+(SGW), oscillating congested traffic (OCT), or homogeneous congested traffic (HCT). During the first minutes of the simulation,
+the flows on the freeway and the on-ramp were increased from low values to their final values. Since the assumed flows fall into
+a metastable traffic regime, the actual breakdown was initiated by additional perturbations of the ramp flow.
+
+dependence of the average velocity V (x, t): If V (x, t) stays
+above a certain threshold Vcrit, where x is varied within
+a homogeneous freeway section upstream of a bottleneck,
+we call the traffic state free traffic (FT), otherwise con-
+gested traffic.2 If these speeds fall below Vcrit only over a
+short freeway subsection, and the length of this section is
+approximately stable or stabilizes over time, we talk about
+localized clusters (LC), otherwise of spatially extended con-
+gestion states (see also footnote 1).
+
+According to our simulations, there are two forms of
+localized clusters: Pinned localized clusters (PLC) stay
+at a fixed location over a longer period of time, while
+moving localized clusters (MLC) propagate upstream with
+the characteristic speed c0. These states have to be
+contrasted with extended congested traffic3: Stop-and-go
+waves (SGW) may be interpreted as a sequence of sev-
+eral moving localized clusters. Alternatively, they may
+be viewed as special case of oscillating congested traffic
+(OCT), but with free traffic flows of about Qout & 1800
+
+2 A typical threshold for German freeways would be Vcrit ≈
+80 km/h.
+3 which includes “widening moving clusters” (see Fig. 1(a)
+
+and footnote 1)
+
+vehicles/h/lane between the upstream propagating jams.
+Generally, however, OCT is just characterized by oscil-
+lating speeds in the congested range, i.e. unstable traffic
+flows. If the speeds are congested over a spatially extended
+area, but not oscillating,4 we call this homogeneous con-
+gested traffic (HCT). It is typically related with low vehicle
+velocities.
+
+In summary, besides free traffic, the above mentioned
+and some other traffic models predict five different, spatio-
+temporal patterns of congested traffic states at a sim-
+ple on-ramp bottleneck: PLC, MLC, SGW, OCT, and
+HCT. Similar traffic states have been identified for flow-
+conserving bottlenecks in car-following models [30,31], and
+for on-ramps and other types of bottlenecks in macro-
+scopic models [4,29].
+
+In contrast to this past work, we have also simulated
+an additional traffic pattern [Fig. 3(d)]. This pattern has
+a similarity to the widening synchronized pattern (WSP)
+proposed by Kerner in the framework of his three-phase
+traffic theory [32]. In the following section, we show how
+
+4 when averaging over spatial and temporal intervals that
+sufficiently eliminate effects of heterogeneity and pedal control
+in real vehicle traffic
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 5
+
+this pattern may be understood in the framework of mod-
+els with a fundamental diagram.
+
+4 Derivation and Explanation of the Phase
+Diagram of Traffic States
+
+It turns out that the possible traffic patterns in open sys-
+tems with bottlenecks are mainly determined by the in-
+stability diagram (see Fig. 4), no matter if the model is
+macroscopic or microscopic. This seems to apply at least
+for traffic models with a fundamental diagram, which we
+will focus on in the following sections. Due to the close re-
+lationship with the instability diagram, the preconditions
+for the possible occurrence of the different traffic states
+can be illustrated by a phase diagram. Figures 5 and 6
+show two examples. Each area of a phase diagram rep-
+resents the combinations of upstream freeway flows Qup
+and bottleneck strengths ∆Q, for which a certain kind of
+traffic state can exist.
+
+It is obvious that an on-ramp flow Qon(t), for example,
+causes a bottleneck, as it consumes some of the capacity
+of the freeway. Qon(t) represents the flow actually entering
+the freeway via the on-ramp, i.e. the flow leaving the on-
+ramp and not the flow entering the on-ramp.5 We assume
+that Qon(t) is known through a suitable measurement.
+Having clarified this, we define the bottleneck strength due
+to an on-ramp by the entering ramp flow, divided by the
+number Ifr of freeway lanes:
+
+∆Q(t) = ∆Qon(t) =
+Qon(t)
+
+Ifr
+. (1)
+
+This is done so, because the average flow ∆Q added to
+each freeway lane by the on-ramp flow corresponds to the
+capacity that is not available anymore for the traffic flow
+Qup coming from the upstream freeway section. As a con-
+sequence, congestion may form upstream of the ramp. In
+the following, we will have to determine the density inside
+the forming congestion pattern and where in the insta-
+bility diagram it is located. It will turn out that, given
+certain values of Qup and ∆Q, the different regions of the
+phase diagram can be related with the respectively ob-
+served or simulated spatiotemporal patterns. We distin-
+guish free traffic and different kinds of localized congested
+traffic as well as different kinds of extended congested traf-
+fic. When contrasting our classification of traffic states
+with Kerner’s one [15], we find the following comparison
+helpful:
+
+1. According to our understanding, what we call “ex-
+tended congested traffic” may be associated with
+Kerner’s “synchronized flow”. In particular, the area
+
+5 When the freeway is busy, it may happen that these two
+flows are different and that a queue of vehicles forms on the
+on-ramp. Of course, it is an interesting question to determine
+how the entering ramp flow depends on the freeway flow, but
+this is not the focus of attention here, as this formula is not
+required for the following considerations.
+
+where Kerner’s phase diagrams predict a “general pat-
+tern” matches well with the area, where we expect
+OCT and HCT states.
+
+2. “Moving clusters”6 may be associated with “wide
+moving jams” and/or “moving synchronized patterns”
+(MSP).
+
+3. “Stop-and-go waves” appear to be related with mul-
+tiple “wide moving jams” generated by the “pinch ef-
+fect”.
+
+4. “Pinned localized clusters” may related to Kerner’s
+“localized synchronized pattern” (LSP).
+
+5. Kerner’s “widening synchronized pattern” (WSP) and
+“dissolving general pattern” (DGP) did not have a cor-
+respondence with results of our own computer simula-
+tions so far. These states are predicted to appear for
+high freeway flows and low bottleneck strengths. In the
+following subsections, we report that, quite unexpect-
+edly, similar results are found for certain traffic models
+having a fundamental diagram.
+
+The phase diagram can not only be determined numeri-
+cally. It turns out that the borderlines between different
+areas (the so-called phase boundaries) can also be theoret-
+ically understood, based on the flows
+
+Qck = Qe(ρck) (2)
+
+at the instability thresholds ρck (k = 1, . . . , 4), the maxi-
+mum flow capacity Qmax under free flow conditions, and
+the dynamic flow capacity, i.e. the characteristic outflow
+Qout from congested traffic [33] (see Fig. 4). Qe(ρ) rep-
+resents the equilibrium flow-density relationship, which is
+also called the “fundamental diagram”.
+
+The exact shape and location of the separation lines
+between different kinds of traffic states depend on the
+traffic model and its parameter values.7 Furthermore, the
+characteristic outflow Qout typically depends on the type
+and strength of the bottleneck.8 For the sake of simplic-
+ity of our discussion, however, we will assume constant
+outflows Qout in the following.
+
+The meaning of the different critical density thresholds
+ρck and flow thresholds Qck = Qe(ρck), respectively, is de-
+scribed in the caption of Fig. 4. Note that the density ρc2
+may be smaller or larger than the density ρmax at capac-
+ity, where the maximum flow Qmax is reached. Previous
+computer simulations and phase diagrams mostly assumed
+parameters where traffic at capacity is linearly unstable
+(ρc2 < ρmax < ρc3), which is depicted in Figs. 4(a) and
+(b). However, in some traffic models such as the IDM [10],
+the stability thresholds can be controlled in a flexible way
+
+6 i.e. “moving localized clusters” (MLC) and “widening mov-
+ing clusters” (WMC), see footnote 1 and Sec. 4.2
+7 Since the model parameters characterize the prevailing
+
+driving style as well as external conditions such as weather con-
+ditions and speed limits, the separation lines (“phase bound-
+aries”) and even the existence of certain traffic patterns are
+subject to these factors, see Sec. 7.
+8 For example, in most models, the outflow Qout down-
+
+stream of an on-ramp bottleneck decreases with the bottleneck
+strength and increases with the length of the on-ramp [10,35].
+
+
+
+6 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+ 0
+
+ 500
+
+ 1000
+
+ 1500
+
+ 2000
+
+0  125
+
+Q e
+ 
+(1/
+
+h)
+
+Density (1/km)
+ρc1 ρc2 ρc3ρc4
+
+ 0
+
+ 500
+
+ 1000
+
+ 1500
+
+ 2000
+
+0  125
+
+Q e
+ 
+(1/
+
+h)
+
+Density (1/km)
+ρc1ρc2 ρc3 ρc4
+
+Qc1
+
+Qc4
+
+Qc1
+
+Qc3 Qc4
+Qc3
+
+Qc2 outQ, Qc2 outQ,
+
+ 0
+ 20
+ 40
+ 60
+ 80
+
+ 100
+ 120
+ 140
+
+0  125
+
+V e
+ 
+(km
+
+/h)
+
+Density (1/km)
+ρc1 ρc2 ρc3 ρc4
+
+ 0
+ 20
+ 40
+ 60
+ 80
+
+ 100
+ 120
+ 140
+
+0  125
+V e
+
+ 
+(km
+
+/h)
+Density (1/km)
+
+ρc1 ρc2 ρc3ρc4
+
+(a)
+
+(b) (d)
+
+(c)
+
+Fig. 4. Illustration of stable, linearly unstable, and metastable
+density regimes within velocity-density diagrams Ve(ρ) (top)
+and the flow-density diagrams Qe(ρ) (bottom). Traffic is sta-
+ble for ρ < ρc1 and ρ > ρc4 and linearly unstable for ρc2 <
+ρ < ρc3. These two regimes are separated by a low-density and
+a high-density region of metastable traffic given by the inter-
+vals ρc1 < ρ < ρc2 and ρc3 < ρ < ρc4, respectively. In the
+metastable regimes, perturbations in the traffic flow grow, if
+their size is larger than a certain critical amplitude [34], other-
+wise they fade away. The critical amplitude is largest towards
+the boundaries ρc1 and ρc4 of unconditionally stable traffic
+flow, while it goes to zero towards the boundaries ρc2 and ρc3
+of linearly unstable traffic. Note that the metastable and unsta-
+ble regimes may vanish for certain traffic models or parameter
+specifications. The possible types of congested traffic patterns
+depend on the existence of the different stability regimes and
+on the relative position of their boundaries with respect to the
+density ρmax at capacity Qmax (maximum flow). The left fig-
+ures show the situation for ρc2 < ρmax, the right figures the
+situation for ρc2 > ρmax.
+
+by varying their model parameters (see Appendix B). In
+the following, we will focus on the case where traffic at
+capacity is metastable (ρc2 > ρmax > ρc1), cf. Fig. 4(c)
+and (d).9 As will be shown in the next subsection, this
+appears to offer an alternative explanation of the “widen-
+ing synchronized pattern” (WSP) introduced in Ref. [32],
+see Fig. 3(d). Simpler cases will be addressed in Sec. 6
+below.
+
+4.1 Transition to Congested Traffic for Small
+Bottlenecks
+
+In the following, we restrict our considerations to situa-
+tions with one bottleneck only, namely a single on-ramp.
+Combinations of off- and on-ramps are not covered by this
+section. They will be treated later on (see Sec. 5).
+
+9 The IDM parameters for plots (a) and (b) are given by
+v0 = 128 km/h, T = 1 s, s0 = 2m, s1 = 10m, a = 0.8m/s
+
+2,
+and b = 1.3m/s2. To generate plots (c) and (d), the accelera-
+tion parameter was increased to a = 1.3m/s2, while the other
+parameters were left unchanged.
+
+OCT,
+SGW
+
+FT
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+HCT
+
+=Q
+m
+
+ax
+
+Q
+tot
+
+Δ
+Q
+
+=
+Q
+
+  
+  
+ -
+
+Q
+c
+3
+
+o
+u
+
+t
+
+Small Perturbation
+
+Fig. 5. Schematic (idealized) phase diagrams for the expected
+traffic patterns as a function of the upstream freeway flow Qup
+and the ramp flow ∆Q, as studied in Refs. [4,10]. The left
+figure is for negligible, the right figure for large perturbations.
+The situation for medium-sized perturbations can lie anywhere
+between these two extremes. For example, in the area marked
+as PLC, one may find free traffic or pinned localized clusters,
+or in some of the area attributed to HCT, one may find SGW
+or OCT states. The assumed instability diagram underlying
+the above schematic phase diagrams is depicted in Figs. 4(a)
+and (b). With ρc1 < ρc2 < ρmax < ρc3 < ρc4 < ρjam, it assumes
+no degeneration of the critical densities ρck and a stable flow
+at high densities. Note that, for illustrative reasons, we have
+set aside the exact correspondence of the flow values Qck.
+
+OCT,
+SGW
+
+FT
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+HCT
+
+=Q
+m
+
+ax
+
+Q
+tot Δ
+
+Q
+=
+
+Q
+  
+
+  
+ -
+
+Q
+c
+3
+
+o
+u
+
+t
+WSP
+
+Δ
+Q
+
+=
+  
+
+Q
+  
+
+  
+ -
+
+Q
+c
+2
+
+m
+a
+
+x
+
+Small Perturbation
+
+Fig. 6. Schematic phase diagram as in Fig. 5, but for the insta-
+bility diagram represented by Figs. 4(c) and (d). In contrast to
+Fig. 5, traffic flow at capacity is metastable (ρc1 < ρmax < ρc2),
+which leads to a greater variety of traffic states in the upper left
+corner of the phase diagram. In particularly, we find “widen-
+ing synchronized patterns” (WSP). “OCT, SGW” means that
+one expects to find oscillating congested traffic or stop-and-
+go waves, but not necessarily both. Together with “widening
+moving clusters” (WMC, see footnote 1) they form the area
+of extended oscillatory congestion. However, the WMC and
+MLC phases may also be summarized by one area represent-
+ing “moving clusters” (MC).
+
+For matters of illustration, we assume a typical rush
+hour scenario, in which the total traffic volume
+
+Qtot(t) = Qup(t) +∆Q(t) , (3)
+
+i.e. the sum of the flow Qup(t) sufficiently upstream of the
+ramp bottleneck and the on-ramp flow ∆Q(t) per freeway
+lane, is increasing with time t. As long as traffic flows
+freely, the flow downstream of the bottleneck corresponds
+to the total flowQtot(t), while the upstream flow is Qup(t).
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 7
+
+When the total flow Qtot(t) exceeds the critical density
+ρc1, it enters the metastable density regime. That is, large
+enough perturbations may potentially grow and cause a
+breakdown of the traffic flow. However, often the pertur-
+bations remain comparatively small, and the total traffic
+volume rises so quickly that it eventually exceeds the max-
+imum freeway capacity
+
+Qtot = Qup+∆Q > Qmax = max
+ρ
+
+Qe(ρ) = Qe(ρmax) . (4)
+
+This is reflected in the left phase diagram in Fig. 6 by
+the diagonal line separating the states “FT” and “WSP”.
+(Note that ρmax represents the density, for which the max-
+imum free traffic flow occurs, not the jam density ρjam.)
+
+When the total traffic volume Qtot exceeds the max-
+imum capacity Qmax, a platoon of vehicles will form up-
+stream of the bottleneck. Since, in this section, we as-
+sume metastable traffic at maximum capacity Qmax (see
+Fig. 7 in Ref. [8]), this will not instantaneously lead to a
+traffic breakdown with an associated capacity drop. Thus,
+the flow downstream of the bottleneck remains limited to
+Qmax (at least temporarily). As the on-ramp flow takes
+away an amount ∆Q of the maximum capacity Qmax, the
+(maximum) flow upstream of the bottleneck is given by
+
+Qbot = Qmax −∆Q . (5)
+
+When the actual upstream flow Qup exceeds this value, a
+mild form of congestion will result upstream of the ramp.
+The density of the forming vehicle platoon is predicted to
+be
+
+ρbot = ρcg(Qbot) = ρcg
+(
+Qmax −∆Q
+
+)
+> ρmax , (6)
+
+where ρcg(Q) is the density corresponding to a stationary
+and homogeneous congested flow of value Q (i.e. it is the
+inverse function of the “congested branch” of the funda-
+mental diagram).
+
+According to the equation for the propagation speed
+of shockwaves (see Ref. [36]), the upstream front of the
+forming vehicle platoon is expected to propagate upstream
+at the speed
+
+C1(t) =
+Qup −Qbot
+
+ρfr(Qup)− ρcg(Qbot)
+, (7)
+
+where ρfr(Q) is the density of stationary and homogeneous
+traffic at a given flow Q (i.e. the inverse function of the
+“free branch” of the fundamental diagram.)
+
+Note that this high-flow situation can persist for a sig-
+nificant time period only, if the flow Qbot in the platoon is
+stable or metastable. This is the case if one of the following
+applies:
+
+(i) The traffic flow is unconditionally stable for all densi-
+ties such as in the Lighthill-Whitham model [37]. This
+will be discussed in Sec. 6 below.
+
+(ii) Traffic flow at capacity is metastable and the bottle-
+neck is sufficiently weak. This gives rise to the widening
+synchronized pattern (WSP), as will be discussed in the
+rest of this subsection.
+
+By WSP, we mean a semi-congested extending traffic
+state without large-scale oscillations or significant velocity
+drops below, say, 30-40km/h [15]. Putting aside stochas-
+tic accelerations or heterogeneous driver-vehicle popula-
+tions, this corresponds to (meta-)stable vehicle platoons
+at densities greater than, but close to the density ρmax at
+capacity. This can occur when ρbot lies in the metastable
+density range, i.e. ρmax < ρbot < ρc2, corresponding to
+Qmax > Qbot = Qmax −∆Q > Qc2 or
+
+∆Q < Qmax −Qc2. (8)
+In Fig. 6, this condition belongs to the area left of the
+vertical line separating the WSP and OCT states. If the
+bottleneck strength∆Q becomes greater than Qmax−Qc2,
+or if ρcg(Qbot) lies in the metastable regime and pertur-
+bations in the traffic flow are large enough, traffic flow
+becomes unstable and breaks down. After the related ca-
+pacity drop by the amount
+
+∆Qdrop = Qmax −Qout , (9)
+the new, “dynamic” capacity will be given by the outflow
+Qout from congested traffic [10]. Obviously, the capacity
+drop causes the formation of more serious congestion10.
+This is illustrated in the right phase diagram of Fig. 6 by
+the offset between the diagonal lines separating free traffic
+fromWSP and the other extended congested states (OCT,
+SGW, and HCT). In the following, we will focus on the
+traffic states after the breakdown of freeway capacity from
+Qmax to Qout has taken place.
+
+4.2 Conditions for Different Kinds of Congested
+Traffic after the Breakdown of Traffic Flow
+
+For the sake of simplicity, we will assume the case
+
+Qc4 < Qc3 < Qc1 ≤ Qout ≤ Qc2 < Qmax , (10)
+which seems to be appropriate for real traffic (particularly
+in Germany). However, depending on the choice of model
+parameters, other cases are possible. The conclusions may
+be different, then, but the line of argumentation is the
+same. In the following, we will again assume ρc2 ≥ ρmax,
+so that the maximum flow Qmax is metastable. Therefore,
+it can persist for some time, until the maximum flow state
+is destabilized by perturbations or too high traffic vol-
+umes Qtot(t), which eventually cause a breakdown of the
+traffic flow. (For ρc2 < ρmax, the capacity drop happens
+automatically, whenever Qtot(t) > Qmax.)
+
+After the breakdown of traffic flow, the traffic situation
+downstream is given by the outflow Qout from (seriously)
+congested traffic. As the actually entering ramp flow re-
+quires the capacity ∆Q per lane, the flow upstream of the
+bottleneck is limited to
+
+Qcong = Qout −∆Q . (11)
+10 and the condition Qup + ∆Q < Qout for the gradual dis-
+solution of the resulting congestion pattern is harder to fulfil
+than the condition Qup +∆Q < Qmax implied by Eq. (4)
+
+
+
+8 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+Fig. 7. Examples of congestion patterns on the German freeway A5 close to Frankfurt, for which data have been provided
+to the authors between kilometers 465 and 492. The figures analyze the propagation of the upstream front of a region of
+congested traffic (white solid line) according to Eq. (12), for empirical HCT (left) and OCT (right). In both plots, the driving
+direction is upwards (as indicated by the arrows). The upstream flow Qup was determined from a detector cross section whose
+location is indicated by a dotted white line, while the bottleneck flow was determined from detectors of a nearby cross section
+(dashed white line). When determining the flows, the time delay caused by the finite propagation velocities dQe(ρ)/dρ from
+the detectors to the upstream front was taken care of. The congestion patterns were chosen such that there were no ramps at
+or between the two detector cross sections. Otherwise, the determination of Qup and Qcong would have been more complicated.
+The free and congested densities were calculated with a simple, triangular fundamental diagram. Therefore, ρfr(Q) = Q/V0 and
+ρcg(Q) = ρjam(1−QT ), where the following parameters were chosen: V0 = 120 km/h, ρjam = 100 veh/km/lane, and T = 2 s.
+
+In analogy to Eq. (7), the upstream front of this congested
+flow is expected to propagate with the velocity
+
+C2(t) =
+Qup −Qcong
+
+ρfr(Qup)− ρcg(Qcong)
+, (12)
+
+as the upstream freeway flow Qup is assumed to be free.
+The downstream end of the congested flow Qcong remains
+located at the bottleneck [38].
+
+Figure 7 shows that the propagation of the upstream
+front according to Eq. (12) agrees remarkably well with
+empirical observations, not only for homogeneous con-
+gested flow but also for the OCT pattern. Since the lo-
+cation of the congestion front is given by integration of
+Eq. (12) over time, oscillations of the input quantities of
+this equation are automatically averaged out.
+
+The resulting congestion pattern depends on the sta-
+bility properties of the vehicle density
+
+ρcong = ρcg(Qcong) = ρcg
+(
+Qout −∆Q
+
+)
+(13)
+
+in the congested area, where the outflow Qout from se-
+riously congested traffic represents the effective freeway
+capacity under congested conditions and ∆Q the capac-
+ity taken away by the bottleneck. In view of this stability
+dependence, let us now discuss the meaning of the critical
+densities ρck or associated flows Qck = Qe(ρck), respec-
+tively, for the phase diagram.
+
+If ρc2 < ρcong < ρc3, we expect unstable, oscillatory
+traffic flow (OCT or SGW). For ρc3 ≤ ρcong < ρc4, the
+congested flow is metastable, i.e. it depends on the per-
+turbation amplitude: One may either have oscillatory pat-
+terns (for large enough perturbations) or homogeneous
+
+ones (for small perturbations). Moreover, for ρcong ≥ ρc4
+(given that the critical density ρc4 is smaller than ρjam),
+we expect homogeneous, i.e. non-oscillatory traffic flows.
+
+Expressing this in terms of flows rather than den-
+sities, one would expect the following: Oscillatory con-
+gestion patterns (OCT or SGW) should be possible for
+Qc2 > Qcong = Qout −∆Q > Qc4, i.e. in the range
+
+Qout −Qc2 < ∆Q < Qout −Qc4 , (14)
+
+where we have considered Qc2 ≥ Qout.
+The assumption that the densities between ρout with
+
+Qe(ρout) = Qout and Qmax are metastable, as we as-
+sume here, has interesting implications: A linear instability
+would cause a single moving cluster to trigger further lo-
+cal clusters and, thereby, so-called “triggered stop-and-go
+waves” (TSG or SGW) [4]. A metastability, in contrast,
+can suppress the triggering of additional moving clusters,
+which allows the persistence of a single moving cluster, if
+the bottleneck strength ∆Q is small. As, for Qtot > Qout,
+the related flow conditions fall into the area of extended
+congested traffic, the spatial extension of such a cluster
+will grow. Therefore, one may use the term “widening
+moving cluster” (WMC).
+
+Furthermore, according to our computer simulations,
+the capacity downstream of a widening moving cluster
+may eventually revert from Qout to Qmax. This happens in
+the area, where “widening synchronized patterns” (WSP)
+can appear.11 Therefore, rather than by Eq. (14), the bot-
+
+11 In this connection, it is interesting to remember Kerner’s
+“dissolving general pattern” (DGP), which is predicted under
+similar flow conditions.
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 9
+
+tleneck strengths characterizing OCT or SGW states are
+actually given by
+
+Qmax −Qc2 < ∆Q < Qout −Qc4 , (15)
+where the lower boundary corresponds to the boundary of
+the WSP state, see Eq. (8). We point out that a capacity
+reversion despite congestion is a special feature of traffic
+models with ρc2 > ρmax.
+
+Homogeneous congested traffic (the definition of which
+does not cover the homogeneous WSP state) is expected
+to be possible for Qcong = Qout −∆Q < Qc3, i.e. (meta-)
+stable flows at high densities. This corresponds to
+
+∆Q > Qout −Qc3 . (16)
+The occurrence of extended congested traffic like HCT and
+OCT requires an additional condition: The total flow must
+exceed the freeway capacity Qout during serious conges-
+tion,12 i.e. we must have
+
+Qtot = Qup +∆Q > Qout . (17)
+
+Localized congestion patterns, in contrast, require Qtot ≤
+Qout and can be triggered for Qtot > Qc1, which implies
+
+Qc1 < Qtot = Qup +∆Q ≤ Qout . (18)
+We can distinguish at least two cases: On the one hand, if
+
+Qc1 < Qup < Qmax , (19)
+
+the flow upstream of the congested area is metastable,
+which allows jams (and large enough perturbations) to
+propagate upstream. In this case, we speak of moving
+localized clusters (MLC). Their propagation speed c0 =
+−15± 5 km/h is given by the slope of the jam line [39].
+
+On the other hand, if
+
+Qup ≤ Qc1 (20)
+or ρfr(Qup) < ρc1, traffic flow upstream of the bottle-
+neck is stable. Under such conditions, perturbations and,
+in particular, localized congestion patterns cannot propa-
+gate upstream, and they stay at the location of the bottle-
+neck. In this case, one speaks of pinned localized clusters
+(PLC).13
+
+12 One may also analyze the situation with the shock wave
+equation: Spatially expanding congested traffic results, if the
+speed of the downstream shock front of the congested area
+(which is usually zero) minus the speed of the upstream shock
+front (which is usually negative) gives a positive value.
+13 Since pinned localized clusters rarely constitute a max-
+imum perturbation, they can also occur at higher densities
+and flows, as long as Qup < Qc2. Therefore, MLC and PLC
+states can coexist in the range Qc1 < Qup < Qc2. For most
+traffic models and bottleneck types, congestion patterns with
+Qtot ≈ Qc1 do not exist, since localized congestion patterns do
+not correspond to maximum perturbations. The actual lower
+boundary Q˜c1 for the overall traffic volume Qtot that generates
+congestion is somewhat higher thanQc1, but usually lower than
+Qc2. Considering the metastability of traffic flow in this range
+and the decay of the critical perturbation amplitude from ρc1
+to ρc2 [34], this behavior is expected. However, for some models
+and parameters, one may even have Q˜c1 > Qout. In such cases,
+PLC states would not be possible under any circumstances.
+
+We underline that the actual outflow Q˜out from lo-
+calized clusters corresponds, of course, to their inflow
+Qup+∆Q (otherwise they would grow or shrink in space).
+
+Therefore, the actual outflow Q˜out of localized congestion
+patterns can be smaller than Qout, i.e. smaller than the
+outflow of serious congestion.
+
+5 Combinations of On- and Off-Ramps
+
+We see that the instability diagram implies a large variety
+of congestion patterns already in the simple simulation
+scenario of a homogeneous freeway with a single ramp.
+The possible congestion patterns are even richer in cases
+of complex freeway setups. All combinations of the previ-
+ously discussed, “elementary” traffic patterns are possible.
+Furthermore, we expect particular patterns due to inter-
+actions among patterns through spillover effects. For illus-
+tration, let us focus here on the combination of an on-ramp
+with an off-ramp further upstream. This freeway design is
+illustrated in Fig. 8 and often built to reduce the magni-
+tude of traffic breakdowns, since it is favorable when vehi-
+cles leave the freeway before new ones enter. Nevertheless,
+the on-ramp and the off-ramp bottleneck can get coupled,
+namely when congestion upstream of the on-ramp reaches
+the location of the off-ramp.
+
+What would a bottleneck analysis analogous to the one
+in Sec. 4 predict for this setup? In order to discuss this, let
+us again denote the outflow capacity downstream of the
+on-ramp by Qout, its bottleneck strength equivalent to the
+on-ramp flow Qrmp = Qon by ∆Qon = Qrmp/Ifr ≥ 0, the
+upstream flow by Qup, and the average congested flow re-
+sulting immediately upstream of the on-ramp by Qcong.
+In contrast, we will denote the same quantities relating
+to the area of the off-ramp by primes (′), but we will in-
+troduce the abbreviation −∆Qoff = Q′rmp/Ifr ≤ 0 for the
+effect of the off-ramp flow Q′rmp ≤ 0.
+
+According to Fig. 8, we observe the following dynam-
+ics: First, traffic breaks down at the strongest bottleneck,
+which is the on-ramp. If Qup > Qout − ∆Qon, congested
+flow of size Qcong = Qout−∆Qon expands, and eventually
+reaches the location of the off-ramp, see Fig. 8(a). After-
+wards, the freeway capacity downstream of the off-ramp
+suddenly drops from Q′out = Qout to the congested flow
+
+Q′out = Qcong = Qout −∆Qon (21)
+
+due to a spillover effect. This abrupt change in the bottle-
+neck capacity restricts the capacity for the flow upstream
+of the off-ramp to
+
+Q′cong = Qcong +∆Qoff ≥ Qcong . (22)
+
+This higher flow capacity implies either free flow or milder
+congestion upstream of the off-ramp. If Q′cong is smaller
+than the previous outflow capacity Qout, we have a bot-
+tleneck along the off-ramp, and its effective strength ∆Q
+is given by the difference of these values:
+
+∆Q = Qout − (Qcong +∆Qoff) = ∆Qon −∆Qoff . (23)
+
+
+
+10 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+Fig. 8. Combination of an on-ramp bottleneck with an up-
+stream off-ramp. (a) When the flow Qup = Q
+
+′
+
+up − ∆Qoff up-
+stream of the on-ramp exceeds Qcong, which is defined as the
+outflow Qout from congested traffic minus the on-ramp flow
+∆Qon = Qon/Ifr, congested traffic upstream of the on-ramp
+(dark grey area) is expected to grow. (b) As soon as the con-
+gested area extends up to the location of the off-ramp, the off-
+ramp bottleneck is activated. Its effective outflow Q′out is given
+by the congested flow Qcong upstream of the on-ramp, while
+congested flow Q′cong upstream of the off-ramp is higher by the
+amount ∆Qoff = Qoff/Ifr of the off-ramp flow. (c) Spatiotem-
+poral velocity field resulting from a computer simulation with
+the gas-kinetic-based traffic model (GKT) [27], which allows to
+treat ramps easily. The arrow indicates the driving direction.
+One can clearly see pronounced stop-and-go waves emanating
+from an area of oscillating congested traffic.
+
+That is, the bottleneck strength is defined as the amount
+of outflow from congested traffic which cannot be served
+by the off-ramp and the downstream freeway flow. For
+Qcong + ∆Qoff ≥ Qout, no bottleneck occurs, which cor-
+responds to a bottleneck strength ∆Q = 0. This finally
+results in the expression
+
+∆Q = max(∆Qon −∆Qoff , 0) ≤ ∆Qon (24)
+[38]. Whenever∆Qoff > ∆Qon, there is no effective bottle-
+neck upstream of the off-ramp, i.e. the off-ramp bottleneck
+is de-activated. For ∆Q = ∆Qon − ∆Qoff > 0, however,
+the resulting congested flow upstream of the off-ramp be-
+comes
+
+Q′cong = Q
+′
+
+out+∆Qoff = Qout−∆Qon+∆Qoff = Qout−∆Q .
+(25)
+
+In conclusion, if congested traffic upstream of an on-ramp
+reaches an upstream off-ramp, the off-ramp becomes a
+bottleneck of strength ∆Q, which is given by the differ-
+ence between the on-ramp and the off-ramp flows (or zero,
+if this difference would be negative).
+
+HCT
+
+FT
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+Small Perturbation
+
+=Q
+m
+
+ax
+
+Q
+tot
+
+Fig. 9. Schematic phase diagram for traffic flow without an
+extended linearly unstable density regime (ρc2 = ρc3), when
+the traffic flow at capacity (at the density ρmax corresponding
+to the maximum flow) is assumed to be metastable (ρc1 <
+ρmax < ρc4).
+
+OCT,
+SGW
+
+FT
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+HCT
+
+=Q
+m
+
+ax
+
+Q
+tot
+
+Δ
+Q
+
+=
+Q
+
+  
+  
+ -
+
+Q
+c
+3
+
+o
+u
+
+t
+
+Small Perturbation
+
+OCT,
+SGW
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+FT
+
+MLC
+
+Large Perturbation
+
+=Q
+out
+
+Q
+tot
+
+=Q
+c1
+
+Q
+up
+
+=Q
+c1
+
+Q
+tot
+
+PLC
+
+Fig. 10. Schematic phase diagram for the case of an in-
+complete restabilisation at high densities, ρc3 < ρc4 = ρjam,
+when traffic at capacity is assumed to be linearly unstable
+(ρc1 < ρc2 < ρmax).
+
+Since ∆Q ≤ ∆Qon according to Eq. (24) and Q′cong ≥
+Qcong according to Eq. (22), the congestion upstream of
+the off-ramp tends to be “milder” than the congestion
+upstream of the on-ramp. The resulting traffic pattern is
+often characterized by homeogeneous or oscillating con-
+gested traffic between the off-ramp and the on-ramp, and
+by stop-and-go waves upstream of the off-ramp, i.e. it
+has typically the appearance of a “pinch effect” [40] (see
+Fig. 8c). For this reason, Kerner also calls the “pinch ef-
+fect” a “general pattern” [15].14
+
+6 Other Phase Diagrams and Universality
+Classes of Models
+
+The phase diagram approach can also be used for a clas-
+sification of traffic models. By today, there are hundreds
+of traffic models, and many models have a similar good-
+ness of fit, when parameters are calibrated to empirical
+data [41,42,43,44,45,46]. It is, therefore, difficult, if not
+impossible, to determine “the best” traffic model. How-
+ever, one can classify models according to topologically
+
+14 Oscillatory congestion patterns upstream of off-ramps are
+further promoted by a behavioral feedback, since drivers may
+decide to leave the freeway in response to downstream traffic
+congestion.
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 11
+
+OCT,
+SGW
+
+FT
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+Small Perturbation
+
+=Q
+m
+
+ax
+
+Q
+tot
+
+OCT,
+SGW
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+FT
+
+MLC
+
+Large Perturbation
+
+=Q
+out
+
+Q
+tot
+
+=Q
+c1
+
+Q
+up
+
+=Q
+c1
+
+Q
+tot
+
+PLC
+
+Fig. 11. Schematic phase diagram for traffic flow exhibiting
+both, metastable and linearly unstable density regimes, with
+unstable flow at capacity (ρc1 < ρc2 < ρmax), but no restabili-
+sation for very high densities (ρc3 = ρc4 = ρjam).
+
+equivalent phase diagrams. Usually, there would be several
+models in the same universality class, producing qualita-
+tively the same set of traffic patterns under roughly sim-
+ilar conditions. Among the models belonging to the same
+universality class, one could basically select any model.
+According to the above, the differences in the goodness
+of fit are usually not dramatic. Models with many model
+parameters may even suffer from insignificant parameters
+or parameters, which are hard to calibrate, at the cost
+of predictive power. Therefore, it is most reasonable to
+choose the simplest representative of a universality class
+which, however, should fulfil minimum requirements re-
+garding theoretical consistency.
+
+Before we enter the comparison with empirical data,
+let us discuss a number of phase diagrams expected for cer-
+tain kinds of traffic models. Particular specifications of the
+optimal velocity model, for example, are linearly unstable
+for one density ρc2 = ρc3 only, but show unstable be-
+havior in an extended density regime for sufficiently large
+perturbations (i.e. extended metastable regimes) [34]. The
+schematic phase diagram expected in this case is shown
+in Fig. 9. Some other traffic models have linearly unstable
+and metastable regimes, but do not show a restabilisation
+at very high densities, i.e. ρc4 = ρjam (see Fig. 10), and
+sometimes one even has ρc3 = ρjam [47,48] (see Fig. 11). In
+the latter case, homogeneous congested traffic does not ex-
+ist. In models such as the IDM, the restabilisation depends
+on the chosen parameter values [35], see also Appendix B.
+
+In most of the currently studied traffic models, one
+has either both, linearly unstable and metastable density
+ranges, or unconditionally stable traffic. In principle, how-
+ever, models with linearly unstable but no metastable
+regimes are conceivable. For example, they may be es-
+tablished by taking a conventional model and introducing
+a dependence on the square of the velocity gradient (in
+macroscopic models) or the velocity difference (in micro-
+scopic models).
+
+A linearly unstable model without metastable ranges
+would correspond to ρc2 = ρc1 and ρc4 = ρc3. For such
+models, we do not expect any multi-stability (see Fig. 12),
+and localized congested traffic would only be possible un-
+der special conditions [12,7] (e.g. on freeway sections be-
+tween off- and on-ramps). If, in addition, there is no resta-
+
+HCT
+
+OCT,
+SGW
+
+FT
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+=Q
+m
+
+ax
+
+Q
+tot
+
+Δ
+Q
+
+=
+Q
+
+  
+  
+
+ -
+Q
+
+c
+3
+
+o
+u
+
+t
+
+ΔQ (vehicles/h/lane)
+
+Fig. 12. Schematic phase diagram, if there are only stable and
+linearly unstable, but no metastable density regimes (ρc1 =
+ρc2, ρc3 = ρc4). Furthermore, traffic at capacity is assumed to
+be unstable (ρc1 < ρmax < ρc4)
+
+Q
+  
+
+  
+(v
+
+e
+h
+
+ic
+le
+
+s
+/h
+
+/l
+a
+
+n
+e
+
+)
+u
+
+p
+
+ΔQ (vehicles/h/lane)
+
+=Q
+m
+
+ax
+
+Q
+tot
+
+congested
+traffic
+
+free traffic
+
+Fig. 13. Schematic phase diagram, if traffic is unconditionally
+stable (ρc1 = ρc2 = ρc3 = ρc4). The most prominent example
+is the Lighthill-Whitham model [37], but many other models
+(including the gas-kinetic-based traffic model (GKT) [27] and
+the IDM) can be parameterized to reproduce this case.
+
+bilisation (i.e. ρc3 = ρjam), only free traffic and oscillating
+congested traffic should exist. This seems to reflect the sit-
+uation for the classical Nagel-Schreckenbergmodel [49], al-
+though the situation is somewhat unclear, since this model
+is stochastic and an exact distinction between free and
+congested states is difficult in this model.
+
+Finally, we would like to discuss the fluid-dynamic
+model by Lighthill and Whitham [37], which does not dis-
+play any instabilities [30] and, consequently, has only ho-
+mogeneous patterns, namely free traffic for Qtot ≤ Qmax
+and (homogeneous) extended congested traffic for Qtot >
+Qmax (which corresponds to a vehicle platoon behind the
+bottleneck). This is illustrated in Fig. 13. The two phases
+can also be distinguished locally, if temporal correlations
+are considered: While perturbations in free traffic travel
+in forward direction, in the congested regime they travel
+backward.
+
+We underline again that, by changing model parame-
+ters (corresponding to different driving styles), the result-
+ing instability and phase diagrams of many traffic models
+change as well. For example, the IDM can be parameter-
+ized to generate most of the stability diagrams discussed
+in this contribution. Since different parameter values cor-
+respond to different driving styles or prevailing velocities,
+this may explain differences between empirical observa-
+tions in different countries. For example, oscillating con-
+gested traffic seems to occur less frequent in the United
+States [50,51].
+
+
+
+12 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+Finally, note that somewhat different phase diagrams
+result for models that are characterized by a complex ve-
+hicle dynamics and no existence of a fundamental dia-
+gram [48,52]. Nevertheless, similarities can be discovered
+(see Sec. 4).
+
+7 Empirical Phase Diagram
+
+ 1400
+
+ 1500
+
+ 1600
+
+ 1700
+
+ 1800
+
+ 1900
+
+ 2000
+
+ 0  10  20  30  40
+
+O
+ut
+
+flo
+w 
+
+Q o
+u
+t (v
+
+eh
+/h/
+
+lan
+e)
+
+Range of Visibility (km)
+
+D
+
+DD
+
+D
+D
+
+D D
+
+D
+
+D
+
+D
+D
+
+D
+
+D
+
+D
+D
+
+D
+
+D
+W
+
+W
+
+(w)
+W
+
+W
+
+W
+
+(w)
+(w)
+
+(w)(w)
+
+(w)
+
+W
+
+W
+
+W
+W
+
+W: wet road
+(w): affected by showers
+
+D: dry road
+
+Fig. 14. The outflowsQout of congestion patterns correlate sig-
+nificantly with the weather-dependent range of visibility (me-
+teorological optical range 3/σ). This was determined by mea-
+suring the extinction coefficient σ, using multiple laser reflec-
+tions. “W” denotes traffic breakdowns when the road surface
+was wet, while “D” stands for a dry road surface. Note that
+there are three cases of congestion marked with a lower-case
+“w”, which were related with a short and light shower only, so
+that the outflow values stayed comparatively high. For details
+see Ref. [53].
+
+The remaining challenge in this paper is to find the
+universality class that fits the stylized facts of traffic dy-
+namics well. Here, we will primarily demand that it fits the
+empirical phase diagram, i.e. reproduces all elementary
+congestion patterns observed, and not more. We have eval-
+uated empirical data from the German freeway A5 close to
+Frankfurt. Due to the weather-dependence of the outflows
+Qout (see Fig. 14), it is important to scale all flows by the
+respective measurements of Qout. This naturally collapses
+the area of localized congested traffic states to a line. As
+Fig. 15 shows, the phase diagram after scaling the flows is
+very well compatible with the theoretical phase diagrams
+of Figs. 5 and 6. Since the determination of the empirical
+phase diagram did not focus on the detection of “widen-
+ing synchronized patterns”, it does not allow us to clearly
+distinguish between the two phase diagrams, i.e. to decide
+whether ρc2 > ρmax or ρc2 < ρmax. However, the empirical
+WSP displayed in Fig. 1 suggests that Fig. 6 correspond-
+ing to ρc2 > ρmax would be the right choice. Another piece
+of evidence for this is the metastability of vehicle platoons
+forming behind overtaking trucks (see Ref. [8]).15
+
+15 The existence of “widening moving clusters”, see Sec. 4.2
+and Fig. 1(a), supports this view as well.
+
+ 0.7
+
+ 0.8
+
+ 0.9
+
+ 1
+
+ 0  0.1  0.2  0.3  0.4
+
+O
+u
+
+p 
+/ Q
+
+o
+u
+
+t
+
+∆Q / Qout
+
+A5 South: Junction Friedberg
+
+M
+
+M
+
+M
+
+M
+M
+
+M
+M
+
+M
+
+M
+
+M
+
+MM
+
+P P
+P
+
+P
+
+P
+P
+
+P
+
+P P
+
+O
+
+O O
+
+O
+
+O
+O
+
+O
+
+OS
+
+S
+
+S
+
+S
+
+S
+S
+
+S
+
+S
+
+S
+
+S
+
+S
+
+S
+S
+
+S
+
+S
+
+Fig. 15. Empirical phase diagram, where the flows have been
+scaled by the respective outflows Qout (after [7]). The data
+represent the congested traffic states observed on the German
+freeway A5 at Junction Friedberg in direction South (M =
+moving localized cluster, S = stop-and-go waves, O = oscil-
+lating congested traffic, P = pinned localized cluster). It can
+be clearly seen that the non-extended traffic states are scat-
+tered around the line Qtot/Qout = (Qup + ∆Q)/Qout = 1, as
+expected, while the extended traffic states are above this line.
+Moreover, pinned localized clusters, moving localized clusters,
+and stop-and-go waves/oscillating congested traffic are well
+separated from each other. Homogeneous congested traffic, but
+not other traffic states were observed for ∆Q/Qout & 0.5 (see
+Ref. [7]).
+
+7.1 Reply to Criticisms of Phase Diagrams for Traffic
+Models with a Fundamental Diagram
+
+In the following, we will face the criticism of the phase
+diagram approach by Kerner [54,15]:
+
+1. Models containing a fundamental diagram could not
+explain the wide scattering of flow-density data ob-
+served for “synchronized” congested traffic flow. This
+is definitely wrong, as a wide scattering is excellently
+reproduced by considering the wide distribution of ve-
+hicle gaps, partially due to different vehicle classes such
+as cars and trucks [55,56]. Note that, for a good repro-
+duction of empirical measurements, it is important to
+apply the same measurement procedure to empirical
+and simulated data, in particular the data aggregation
+over a finite time period.
+
+2. As the ramp flow or the overall traffic volume Qtot is
+increasing, the phase diagram approach would predict
+the transitions free traffic → moving or pinned local-
+ized cluster→ stop-and-go traffic/oscillating congested
+traffic→ homogeneous congested traffic. However, this
+would be wrong because (i) homogeneous congested
+traffic would not exist [57,58], and (ii) according to
+the “pinch effect”, wide moving jams (i.e. moving lo-
+calized clusters) should occur after the occurrence of
+“synchronized flow” (i.e. extended congested traffic)
+[39].
+We reply to (i) that it would be easy to build a car-
+following model with a fundamental diagram that pro-
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 13
+
+duces no HCT states,16 but according to empirical
+data, homogeneous congested traffic does exist (see
+Fig. 1f), but it occurs very rarely and only for ex-
+tremely large bottleneck strengths exceeding ∆Q ≈
+0.5Qout [7]. As freeways are dimensioned such that
+bottlenecks of this size are avoided, HCT occurs pri-
+marily when freeway lanes are closed after a serious
+accident. In other words, when excluding cases of acci-
+dents from the data set, HCT states will normally not
+be found.
+Moreover, addressing point (ii), Kerner is wrong in
+claiming that our theoretical phase diagramwould nec-
+essarily require moving localized clusters to occur be-
+fore the transition to stop-and-go waves or oscillating
+congested traffic. This misunderstanding might have
+occurred by ignoring the dependence of the resulting
+traffic state on the perturbation size. The OCT pat-
+tern of Fig. 3(c) clearly shows that a direct transition
+from free traffic flow to oscillating congested traffic is
+possible in cases of small perturbations. The same ap-
+plies to a fast increase in the traffic volume Qtot(t),
+which is typical during rush hours.
+
+3. The variability of the empirical outflow Qout would not
+be realistically accounted for by traffic models with a
+fundamental diagram. This variability, however, does
+not require an explanation based on complex vehicle
+dynamics. To a large extent, it can be understood by
+variations in the weather conditions (see Fig. 14) and
+in the flow conditions on the freeway lanes in the neigh-
+borhood of ramps [7], which is particularly affected by
+a largely varying truck fraction [55].
+
+In summary, the phase diagram approach for traffic mod-
+els with a fundamental diagram has been criticized with
+invalid arguments.
+
+7.2 On the Validity of Traffic Models
+
+In the past decades, researchers have proposed a large
+number of traffic models and it seems that there often
+exist several different explanations for the same observa-
+tion(s) [35]. As a consequence, it is conceivable that there
+are models which are macroscopically correct (in terms of
+reproducing the observed congestion patterns discussed
+above), but microscopically wrong. In order to judge the
+validity of competing traffic models, we consider it neces-
+sary to compare models in a quantitative way, based on
+empirical data. This should include
+
+– a definition of suitable performance measures (such as
+the deviation between simulated and measured travel
+times or velocity profiles),
+
+– the implementation and parameter calibration of the
+competing models with typical empirical data sets, and
+
+– the comparison of the performance of the competing
+models for different test data sets of representative
+traffic situations.
+
+16 An example would be the IDM with the parameter choice
+s1 = 0.
+
+Based on data sets of car-following experiments, such
+analyses have, for example, been performed with a num-
+ber of follow-the-leader models [41,42,43,44,45,46], with
+good results in particular for the intelligent driver model
+(IDM) [42,43,46]. If there is no statistically significant dif-
+ference in the performance of two models (based on an
+analysis of variance), preference should be given to the
+simpler one, according to Einstein’s principle that a model
+should be always as simple as possible, but not simpler.
+
+We would like to point out that over-fitting of a model
+must be avoided. This may easily happen for models with
+many parameters. Fitting such models to data will, of
+course, tend to yield smaller errors than fitting models
+with a few parameters only. Therefore, one needs to make
+a significance analysis of parameters that adjusts for the
+number of parameters, as it is commonly done in statis-
+tical analyses. Reproducing a certain calibration data set
+well does not necessarily mean that an independent test
+data set will be well reproduced. While the descriptive ca-
+pability of models with many parameters is often high,
+models with fewer parameters may have a higher predic-
+tive capability, as their parameters are often easier to cal-
+ibrate.
+
+This point is particularly important, since it is known
+that traffic flows fluctuate considerably, especially in the
+congested regime. So, one may pose the question whether
+these fluctuations are meaningful dynamical features of
+traffic flows or just noise. To some extent, this depends on
+the question to be addressed by the model, i.e. how fine-
+grained predictions the model shall be able to make. There
+are certainly systematic sources of fluctuations, such as
+lane-changes, in particular by vehicles entering or leav-
+ing the freeway via ramps, different types of vehicles, and
+different driver behaviors [45,46]. Such issues would most
+naturally be addressed by multi-lane models considering
+lane changes and heterogeneous driver-vehicle units [6].
+Details like this may, in particular, influence the outflow
+Qout of congested traffic flow (see Fig. 17 in Ref. [7]).
+When trying to understand the empirically observed vari-
+ability of the outflow, however, one also needs to take the
+variability of the weather conditions and the visibility into
+account (see Fig. 14). In order to show that car-following
+models with a fundamental diagram are inferior to other
+traffic models in terms of reproducing microscopic features
+of traffic flows (even when multi-lane multi-class features
+are considered), one would have to show with standard
+statistical procedures that these other models can explain
+a larger share of the empirically observed variance, and
+that the difference in the explanation power is significant,
+even when the number of model parameters is considered.
+To the knowledge of the authors, however, such a statis-
+tical analysis has not been presented so far.
+
+8 Summary, Conclusions, and Outlook
+
+After a careful discussion of the term “traffic phase”, we
+have extended the phase diagram concept to traffic mod-
+els with a fundamental diagram that are not only capable
+
+
+
+14 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+of reproducing congestion patterns such as localized clus-
+ters, stop-and-go waves, oscillatory congested traffic, or
+homogeneous congested traffic, but also “widening syn-
+chronized patterns” (WSP) and “widening moving clus-
+ters” (WMC). The discovery of these states for the case,
+where the maximum traffic flow lies in the metastable den-
+sity regime, was quite unexpected. It offers an alternative
+and – from our point of view – simpler interpretation of
+some of Kerner’s empirical findings. A particular advan-
+tage of starting from models with a fundamental diagram
+is the possibility of analytically deriving the schematic
+phase diagram of traffic states from the instability dia-
+gram, which makes the approach predictive.
+
+Furthermore, we have discussed how the phase dia-
+gram approach can be used to classify models into uni-
+versality classes. Models within one universality class are
+essentially equivalent, and one may choose any, preferably
+the simplest representative satisfying minimum require-
+ments regarding theoretical consistency. The universality
+class should be chosen in agreement with empirical data.
+These were well represented by the schematic phase dia-
+gram in Fig. 6. Furthermore, we have demonstrated that
+one needs to implement the full details of a freeway de-
+sign, in particularly all on- and off-ramps, as these details
+matter for the resulting congestion patterns. Multi-ramp
+designs lead to congestion patterns composed of several
+elementary congestion patterns, but spillover effects must
+be considered. In this way, a simple explanation of the
+“pinch effect” [39] and the so-called “general pattern” [15]
+results. We have also replied to misunderstandings of the
+phase diagram concept.
+
+In conclusion, the phase diagram approach is a simple
+and natural approach, which can explain empirical find-
+ings well, in particular the dependence of traffic patterns
+on the flow conditions. Note that the phase diagram ap-
+proach is a metatheory rather than a model. It can be
+theoretically derived from the instability diagram of traf-
+fic flows and the self-organized outflow from seriously con-
+gested traffic. This is not a triviality and, apart from this,
+the phase diagram approach is more powerful than the in-
+stability diagram itself: It does not only allow predictions
+regarding the possible appearance of traffic patterns and
+possible transitions between them. It also allows to pre-
+dict whether it is an extended or localized traffic pattern,
+or whether a localized cluster moves or not. Furthermore,
+it facilitates the prediction of the spreading dynamics of
+congestion in space, as reflected by Eqs. (7) and (12). This
+additionally requires formula (11), which determines how
+the bottleneck strength ∆Q determines the effective flow
+capacity Qcong of the upstream freeway section.
+
+DH and MT are grateful for the inspiring discussions with
+the participants of the Workshop on “Multiscale Problems and
+Models in Traffic Flow” organized by Michel Rascle and Chris-
+tian Schmeiser at the Wolfgang Pauli Institute in Vienna from
+May 5–9, 2008, with partial support by the CNRS. Further-
+more, the authors would like to thank for financial support by
+the Volkswagen AG within the BMBF research initiative IN-
+
+VENT and theHessisches Landesamt fu¨r Straßen und Verkehr-
+swesen for providing the freeway data.
+
+References
+
+1. J. Treiterer, J. Myers, in Proc. 6th Int. Symp. on Trans-
+portation and Traffic Theory, edited by D. Buckley (Else-
+vier, New York, 1974), p. 13
+
+2. Y. Sugiyama, M. Fukui, M. Kikuchi, K. Hasebe,
+A. Nakayama, K. Nishinari, S. Tadaki, S. Yukawa, New
+Journal of Physics 10, 033001 (2008)
+
+3. B. Kerner, H. Rehborn, Physical Review Letters 79, 4030
+(1997)
+
+4. D. Helbing, A. Hennecke, M. Treiber, Physical Review Let-
+ters 82, 4360 (1999)
+
+5. A. Kesting, M. Treiber, M. Scho¨nhof, D. Helbing, Trans-
+portation Research Part C: Emerging Technologies 16(6),
+668 (2008)
+
+6. A. Kesting, M. Treiber, D. Helbing, Transportation Re-
+search Record 1999, 86 (2007)
+
+7. M. Scho¨nhof, D. Helbing, Transportation Science 41, 1
+(2007)
+
+8. D. Helbing, B. Tilch, The European Physical Journal B,
+submitted (2008), preprint physics/0807.3710
+
+9. M. Treiber, D. Helbing, Cooper@tive Tr@nsport@tion
+Dyn@mics 1, 3.1 (2002), (Internet Journal,
+www.TrafficForum.org/journal)
+
+10. M. Treiber, A. Hennecke, D. Helbing, Physical Review E
+62, 1805 (2000)
+
+11. H.Y. Lee, H.W. Lee, D. Kim, Physical Review E 59, 5101
+(1999)
+
+12. H. Lee, H. Lee, D. Kim, Physical Review E 62, 4737 (2000)
+13. R. Barlovic, T. Huisinga, A. Schadschneider, M. Schreck-
+
+enberg, Phys. Rev. E 66(4), 046113 (2002)
+14. R. Jiang, Q. Wu, B. Wang, Physical Review E 66(3), 36104
+
+(2002)
+15. B.S. Kerner, The Physics of Traffic (Springer, Heidelberg,
+
+2004)
+16. B. Kerner, S. Klenov, Journal of Physics A: Mathematical
+
+and General 35, L31 (2002)
+17. P.F. Arndt, Physical Review Letters 84, 814 (2000)
+18. R. Kubo, Reports of Progress in Physics 29, 255 (1966)
+19. M. Treiber, D. Helbing, submitted to The European Phys-
+
+ical Journal B (2008), preprint physics/0809.0426
+20. M. Evans, Y. Kafri, H. Koduvely, D. Mukamel, Physical
+
+Review Letters 80, 425 (1998)
+21. S. Lu¨beck, M. Schreckenberg, K.D. Usadel, Physical Re-
+
+view E 57, 1171 (1998)
+22. J. Krug, Physical Review Letters 67, 1882 (1991)
+23. G. Schu¨tz, E. Domany, J. Stat. Phys. 72, 277 (1993)
+24. V. Popkov, L. Santen, A. Schadschneider, G.M. Schu¨tz,
+
+Journal of Physics A: Mathematical General 34, L45
+(2001)
+
+25. M. Treiber, A. Kesting, D. Helbing, Physica A 360, 71
+(2006)
+
+26. M. Bando, K. Hasebe, K. Nakanishi, A. Nakayama, Phys-
+ical Review E 58, 5429 (1998)
+
+27. M. Treiber, A. Hennecke, D. Helbing, Physical Review E
+59, 239 (1999)
+
+28. B. Kerner, P. Konha¨user, Physical Review E 48(4), 2335
+(1993)
+
+
+
+D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States 15
+
+29. H. Lee, H. Lee, D. Kim, Physical Review Letters 81, 1130
+(1998)
+
+30. D. Helbing, Reviews of Modern Physics 73, 1067 (2001)
+31. D. Helbing, A. Hennecke, V. Shvetsov, M. Treiber, Math-
+
+ematical and Computer Modelling 35, 517 (2002)
+32. B. Kerner, S. Klenov, Journal of Physics A 35, L31 (2002)
+33. B. Kerner, H. Rehborn, Physical Review E 53, R1297
+
+(1996)
+34. D. Helbing, M. Moussaid, The European Physical Journal
+
+B, submitted (2008), preprint physics/0807.4006
+35. M. Treiber, A. Kesting, D. Helbing, Transportation Re-
+
+search Part B: Methodology, submitted (2008)
+36. G.B. Whitham, Linear and Nonlinear Waves (Wiley-
+
+Interscience, New York, 1974), ISBN: 0471940909
+37. M. Lighthill, G. Whitham, Proc. Roy. Soc. of London A
+
+229, 317 (1955)
+38. D. Helbing, Journal of Physics A 36(46), L593 (2003)
+39. B. Kerner, Physical Review Letters 81(17), 3797 (1998)
+40. B. Kerner, H. Rehborn, Physical Review E 53, R4275
+
+(1996)
+41. D. Helbing, B. Tilch, Physical Review E 58, 133 (1998)
+42. E. Brockfeld, R.D. Ku¨hne, A. Skabardonis, P. Wagner,
+
+Transportation Research Record 1852, 124 (2003)
+43. E. Brockfeld, R.D. Ku¨hne, P. Wagner, Transportation Re-
+
+search Record 1876, 62 (2004)
+44. S. Ossen, S.P. Hoogendoorn, Transportation Research
+
+Record 1934, 13 (2005)
+45. S. Ossen, S.P. Hoogendoorn, B.G. Gorte, Transportation
+
+Research Record 1965, 121 (2007)
+46. A. Kesting, M. Treiber, Transportation Research Record
+
+2088, 148 (2008)
+47. F. Siebel, W. Mauser, Physical Review E 73(6), 66108
+
+(2006)
+48. B. Kerner, S. Klenov, D. Wolf, Journal of Physics A
+
+35(47), 9971 (2002)
+49. K. Nagel, M. Schreckenberg, J. Phys. I France 2, 2221
+
+(1992)
+50. M.J. Cassidy, R.L. Bertini, Transportation Research Part
+
+B: Methodological 33, 25 (1999)
+51. B. Zielke, R. Bertini, M. Treiber, Empirical Measurement
+
+of Freeway Oscillation Characteristics: An International
+
+Comparison (2008), Transportation Research Board An-
+nual Meeting, Paper #08-0300.
+
+52. B.S. Kerner, Physica A 399, 379 (2004)
+53. M. Scho¨nhof, Ph.D. thesis, Technische Universita¨t Dresden
+
+(to be published)
+54. B.S. Kerner, in Proc. of the Third International Sympo-
+
+sium on Highway Capacity, edited by R. Rysgaard (Road
+Directorate, Denmark, 1998), Vol. 2, pp. 621–641
+
+55. M. Treiber, D. Helbing, Journal of Physics A 32(1), L17
+(1999)
+
+56. K. Nishinari, M. Treiber, D. Helbing, Physical Review E
+68, 067101 (2003)
+
+57. B.S. Kerner, Transportation Research Record 1710, 136
+(2000)
+
+58. B. Kerner, Physical Review E 65, 046138 (2002)
+
+A Modeling of Source and Sink Terms (In-
+and Outflows)
+
+In this appendix, we will focus on the case of a freeway
+section with a single bottleneck such as an isolated on-
+ramp. Scenarios with several bottlenecks are discussed in
+Sec. 5.
+
+In order to derive the appropriate form of source and
+sink terms due to on- or off-ramps, we start from the conti-
+nuity equation, which reflects the conservation of the num-
+ber of vehicles. If ρ∗(x, t) represents the one-dimensional
+density of vehicles at time t and a location x along the free-
+way, and if Q∗(x, t) represents the vehicle flow measured
+at a cross section of the freeway, the continuity equation
+can be written as follows:
+
+∂ρ∗(x, t)
+
+∂t
++
+
+∂Q∗(x, t)
+
+∂x
+= 0 . (26)
+
+Now, assume that I(x) is the number of freeway lanes
+at location x. We are interested in the density ρ(x, t) =
+ρ∗(x, t)/I(x) and traffic flow Q(x, t) = Q∗(x, t)/I(x) per
+freeway lane. Inserting this into the continuity equation
+(26) and carrying out partial differentiation, applying the
+product rule of Calculus, we get
+
+∂
+
+∂t
+
+[
+I(x)ρ(x, t)
+
+]
+= I(x)
+
+∂ρ(x, t)
+
+∂t
+
+= − ∂
+∂x
+
+[
+I(x)Q(x, t)
+
+]
+= −Q(x, t)dI(x)
+
+dx
+− I(x)∂Q(x, t)
+
+∂x
+. (27)
+
+Rearranging the different terms, we find
+
+∂ρ(x, t)
+
+∂t
++
+
+∂Q(x, t)
+
+∂x
+= −Q(x, t)
+
+I(x)
+
+dI(x)
+
+dx
+. (28)
+
+The first term of this equation looks exactly like the con-
+tinuity equation for the density ρ∗(x, t) over the whole
+cross section at x. The term on the right-hand side of the
+equality sign describes an increase of the density ρ(x, t)
+per lane, whenever the number of freeway lanes is re-
+duced (∂I(x)/∂x < 0) and all vehicles have to squeeze
+into the remaining lanes. In contrast, the density per
+lane ρ(x, t) goes down, if the width of the road increases
+(∂I(x)/∂x > 0).
+
+It is natural to treat on- and off-ramps in a similar way
+by the continuity equation
+
+∂ρ(x, t)
+
+∂t
++
+
+∂Q(x, t)
+
+∂x
+= ν
+
++
+(x, t)− ν
+
+−
+
+(x, t) (29)
+
+with source terms ν
++
+(x, t) and sink terms −ν
+
+−
+
+(x, t). For
+example, if a one-lane on-ramp flow Qon(t) is entering the
+freeway uniformly over an effectively used ramp length of
+Leff , we have dI(x)/dx = 1/Leff, which together with (27)
+and (29) implies
+
+ν
++
+(x, t) =
+
+
+
+
+Qon(t)
+
+IfrLeff
+for xrmp − Leff2 < x < xrmp + Leff2 ,
+
+0 otherwise.
+
+(30)
+Ifr = I(xrmp±Leff/2) denotes the number of freeway lanes
+upstream and downstream of the ramp, which is assumed
+to be the same, here. The sink term due to off-ramp flows
+
+
+
+16 D. Helbing, M. Treiber, A. Kesting and M. Scho¨nhof: Classification and Prediction of Congested Traffic States
+
+Qoff(t) ≥ 0 has the form
+
+ν−(x, t) =
+
+
+
+
+Qoff(t)
+
+IfrLeff
+for xrmp − Leff2 < x < xrmp + Leff2 ,
+
+0 otherwise.
+
+(31)
+
+B Parameter Dependence of the Instability
+Thresholds in the Intelligent Driver Model
+
+The acceleration function aIDM(s, v,∆v) of the intelligent
+driver model (IDM) [10] depends on the gap s to the lead-
+ing vehicle, the velocity v, and the velocity difference ∆v
+(positive, when approaching). It is given by
+
+aIDM(s, v,∆v) = a
+
+[
+1−
+
+(
+v
+
+v0
+
+)4
+−
+(
+s∗(v,∆v)
+
+s
+
+)2]
+, (32)
+
+where
+
+s∗(v,∆v) = s0 + s1
+
+√
+v
+
+v0
++ Tv +
+
+v ∆v
+
+2
+√
+ab
+
+. (33)
+
+For identical driver-vehicle units, there exists a one-
+parameter class of homogeneous and stationary solutions
+defining the “microscopic” fundamental diagram ve(s) via
+aIDM(s, ve(s), 0) = 0. From a standard linear analysis
+around this solutions it follows that the IDM is linearly
+stable if the condition
+
+∂aIDM
+∂s
+
+≤ ∂aIDM
+∂v
+
+(
+∂aIDM
+∂∆v
+
++
+1
+
+2
+
+∂aIDM
+∂v
+
+)
+(34)
+
+is fulfilled. With the micro-macro relation
+
+s =
+1
+
+ρ
+− lveh, where lveh = 6m, (35)
+
+this defines the stability boundaries ρc2 and ρc3 as a func-
+tion of the model parameters v0 (desired velocity), T (de-
+sired time headway), a (desired acceleration), b (desired
+deceleration), s0 (minimum gap), and s1 (gap parame-
+ter; if nonzero, the fundamental diagram has an inflection
+point). The overall stability can be controlled most effec-
+tively by the acceleration a. Setting the other parameters
+to the values used in Fig. 4 [v0 = 128 km/h, T = 1 s,
+s0 = 2m, s1 = 10m, and b = 1.3m/s
+
+2], we obtain
+
+– unconditional linear stability for a ≥ 1.68m/s2,
+– linear instability in the density range ρc2 ≤ ρ ≤ ρc3
+for 0.95m/s2 ≤ a ≤ 1.68m/s2, where ρc2 > ρmax and
+ρc3 < ρjam. In this situation, corresponding to Figs.
+4(c) and (d), the instability range lies completely on
+the “congested” side of the fundamental diagram.
+
+– Finally, for a ≤ 0.95m/s2, the linear instability also
+extends to the “free branch” of the fundamental dia-
+gram (ρc2 < ρmax), corresponding to Figs. 4 (a) and
+(b).
+
+The upper instability threshold ρc3 can be controlled
+nearly independently from the lower instability thresh-
+old ρc2 by the gap parameters s0 and s1. Generally, ρc3
+increases with decreasing values of s1. In particular, if
+s1 = 0, one obtains the analytical result ρc3 = (lveh+s0)
+
+−1
+
+for any a < s0/T
+2, and unconditional linear stability for
+
+a > s0/T
+2. As can be seen from the last expression, the in-
+
+stability generally becomes more pronounced for decreas-
+ing values of the time headway parameter T , which is plau-
+sible.
+
+The additional influence of the parameter b according
+to computer simulations is plausible as well: With decreas-
+ing values of b, the sensitivity with respect to velocity dif-
+ferences increases, and the instability tends to decrease.
+Further simulations suggest that the IDM has metastable
+density areas only when linearly unstable densities ex-
+ist. Metastability at densities above the linear instability
+range additonally requires s1 > 0.
+
+
+	Introduction
+	On the Definition of Traffic Phases
+	Congested Traffic States
+	Derivation and Explanation of the Phase Diagram of Traffic States
+	Combinations of On- and Off-Ramps
+	Other Phase Diagrams and Universality Classes of Models
+	Empirical Phase Diagram
+	Summary, Conclusions, and Outlook
+	Modeling of Source and Sink Terms (In- and Outflows)
+	Parameter Dependence of the Instability Thresholds in the Intelligent Driver Model
+

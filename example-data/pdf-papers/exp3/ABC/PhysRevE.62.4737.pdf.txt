@@ -1,0 +1,528 @@
+
+ra
+
+L
+o
+
+3
+l
+1
+
+nt
+xp
+er
+tra
+gr
+
+5
+
+PHYSICAL REVIEW E OCTOBER 2000VOLUME 62, NUMBER 4
+their appearance conditions @6#.
+In this paper, we report empirical investigation of traffic
+
+congestion in a highway section containing one effective on-
+ramp. Details of the section are given in our preliminary
+report @13#, so we provide here only a brief description ~Fig.
+1!. All ramps are connected to the outermost lane ~lane 4!
+and a stretch of lane divider ~from x53.5 to 8.3 km, dashed
+line in Fig. 1! blocks lane change from the two outer lanes
+~lane 3 and 4! to the two inner ones ~lane 1 and 2! and vice
+versa. In a short road segment near the end of the lane di-
+vider ~from x58.3 km to the location of the detector D9
+approximately!, many vehicles in the outer lanes switch into
+the inner lanes, which is also enhanced by vehicle flux
+through the on-ramp ON3 at x58.6 km. As a result, this
+segment works as an effective on-ramp region for the traffic
+flow of the inner lanes and traffic congestion often occurs in
+
+FIG. 1. Schematic diagram of a road section in the Olympic
+Highway in Seoul. Locations of detectors (Dn), on-ramps (ONn),
+and off-ramps (En) are marked. The dashed line in the middle
+denotes the lane divider and the arrow indicates the driving
+direction.
+Phase diagram of congested t
+
+H. Y. Lee,1 H.-W.
+1Department of Physics, Massachusetts Institute
+
+2School of Physics, Korea Institute for Advanced Study, 207-4
+3School of Physics, Seoul Nationa
+
+~Received 1
+
+We analyze traffic data from a highway section co
+local velocity variation patterns and expansion ~or none
+traffic states are identified. These states appear at diff
+thereby generating a phase digram of the congested
+recent theoretical analyses and both agreeing and disa
+
+PACS number~s!: 89.40.1k, 05.70.Fh, 45.70.Vn, 47.5
+
+In the last decade, there has been growing interest in the
+traffic flow, which is partly motivated by the fact that the
+traffic flow is an easily perceivable realization of heavily
+studied driven nonequilibrium systems @1#. Another impor-
+tant motivation is the hope that complex traffic behaviors
+may be understood with the help of physical approaches.
+Such understanding can be used to optimize traffic and even
+to forecast traffic situations.
+
+A reasonable first step along this line of thinking will be
+the classification of distinct traffic states and separate inves-
+tigation of their properties. Various traffic models are pro-
+posed @2# and compared with real traffic data @3#. With the
+help of these models, free flow and so-called wide traffic
+jams are well understood. On the other hand, the nature of
+congested traffic flow ~or synchronized flow!, which appears
+near road inhomogeneities mostly, yet remains unclear de-
+spite various empirical @4–6# and theoretical @7–11# efforts.
+
+A recent theoretical study @9# proposed an intriguing pos-
+sibility that the congested traffic flow may not be a single
+dynamic phase but rather a collection of multiple phases,
+each of which is realized under different conditions. A simi-
+lar conclusion is also reported from the investigation of an-
+other theoretical model @10#. In the empirical investigations,
+however, although qualitatively distinct congested traffic
+states are reported @4,12#, no empirical evidence is found for
+the existence of any characteristic parameters that distinguish
+PRE 621063-651X/2000/62~4!/4737~5!/$15.00
+ffic flow: An empirical study
+
+ee,2 and D. Kim3
+f Technology, Cambridge, Massachusetts 02139
+Cheongryangri-dong, Dongdaemun-gu, Seoul 130-012, Korea
+University, Seoul 151-742, Korea
+May 2000!
+
+aining one effective on-ramp. Based on two criteria,
+ansion! of congested regions, three distinct congested
+
+ent levels of the upstream flux and the on-ramp flux,
+ffic flow. Observed traffic states are compared with
+eeing features are found.
+
+.Kf
+
+the road section with the lane divider, where the inner lanes
+are decoupled from the outer ones.
+
+We investigate the traffic congestion in the inner lanes
+using the 30 s averaged traffic data from June to September,
+1999 ~a total of 107 days, a much larger data set compared to
+14 days in Ref. @13#!. All quantities below are averaged over
+the two inner lanes. For each realization of a particular con-
+gested traffic state, which is stably maintained about 30 min
+or longer, the effective ramp flux f rmp @defined as the differ-
+ence between two flux values measured at the detectors D10
+and D7, q(D10)2q(D7)# and the upstream flux f up @q(Dn)
+is used when the congestion extends up to Dn11# are aver-
+aged over the time interval of its duration and the resulting
+average values ^ f rmp&, ^ f up& are marked in Fig. 2~a!. Note
+that three congested traffic states, which we call CT2, CT4,
+and CT5 states, respectively ~see below!, occupy distinct re-
+gions, providing a supporting evidence for the prediction
+@9,10# that f up and f rmp are characteristic parameters of con-
+gested traffic flow. Thus Fig. 2~a! becomes an empirical
+phase diagram of the congested traffic flow. Figure 2~b!
+shows an alternative phase diagram obtained from 10 min
+averaging of the flux values instead. Two phase diagrams are
+qualitatively the same.
+
+Three congested traffic states, CT2, CT4, and CT5, are
+classified according to the two criteria given below. It is
+4737 ©2000 The American Physical Society
+
+
+
+L
+previously reported @6# that the congested region may consist
+of backward ~towards upstream! traveling clusters and the
+size of the clusters grow spontaneously during their back-
+ward propagation. As a result, large amplitude oscillation of
+velocity develops spontaneously. On the other hand, recent
+theories @9,10# predict that large velocity oscillation may or
+may not develop. Thus our criterion ~i! is whether such spon-
+taneous growth of velocity oscillation appears ~CT5! or not
+~CT2, CT4!. This criterion can be examined by comparing
+temporal variation of velocity at different detectors.
+
+In the same theoretical works, both expanding and nonex-
+panding traffic states are predicted, and our criterion ~ii! is
+whether the congested region expands monotonically ~CT4,
+CT5! or not ~CT2!. Mathematically the expansion rate of the
+congested region is proportional to the degree of flux mis-
+match f up1 f rmp2 f down , where f down measures the outflow
+
+FIG. 2. ~a! Empirical phase diagram of the congested traffic
+flow. ^ f up& and ^ f rmp& represent the average upstream and on-ramp
+flux values over the time interval during which a particular con-
+gested traffic state is maintained ~also lane averaged!. The dashed
+line is an empirical estimation of the free flow phase boundary
+below which the free flow can remain linearly stable. ~b! Same
+diagram using 10 min averaged flux values.
+
+4738 H. Y. LEE, H.-W.
+from the congested region @q(D10) is used#. Thus the com-
+parison of ^ f up&1^ f rmp& and ^ f down& can be used as a more
+objective application of the criterion ~ii!.
+In all three states, the density-flow relations show fluctu-
+
+ating behavior @such as Fig. 2~c! in Ref. @4## and the velocity
+variations in the lane 1 and 2 are synchronized ~such as Fig.
+2 in Ref. @5#!. Since these properties are already reported in
+other publications, we do not present similar figures here.
+Below we discuss other properties of the congested traffic
+states.
+
+Figure 3~a! depicts the density profile r(x ,t) of the CT2
+state and its evolution with time, where r(x ,t) is evaluated
+by q(x ,t)/u(x ,t) and u(x ,t) is the harmonic mean velocity
+@14# over 30 s intervals. The spontaneous growth of the ve-
+locity oscillation mentioned in the criterion ~i! does not ap-
+pear. The flux mismatch ^ f rmp&1^ f up&2^ f down& is negligible
+and the congested region does not expand. Empirical data
+also show that the length of the congested region increases
+with ^ f rmp& and its dependence on ^ f up& is rather weak @15#.
+
+Figure 3~b! shows the CT4 state. The spontaneous growth
+of the velocity oscillation does not appear. Due to the large
+flux mismatch ~typical value of ^ f up&1^ f rmp&2^ f down& is
+500–600 vehicles/h!, the congested region expands with
+time. The expansion rate ranges from 3 to 9 km/h and in-
+creases with increasing flux mismatch. An interesting prop-
+erty is that the outflow ^ f down& is practically independent of
+^ f up& and ^ f up&, and remains almost universal. The average
+of ^ f down& over the 28 realizations of the CT4 state in Fig.
+2~a! is 2010 vehicles/h and its standard deviation is about 65
+vehicles/h, which is much smaller than the spread of ^ f up&
+and ^ f rmp&. To our knowledge, this is the first empirical in-
+dication of the universal outflow from the congested flow
+near an on-ramp @16#.
+
+Figure 3~c! portrays the CT5 state. An important feature
+of the CT5 state is the spontaneous growth of the velocity
+oscillation inside the congested region. Figure 4 shows the
+temporal variation of the velocity at D5 and D6. The graph
+for D6 is shifted to the right by 5 min for comparison. Note
+that the velocity evolutions at the two detectors are corre-
+lated after the time shift for D6, and that the velocity oscil-
+lates with larger amplitude at D5. These features imply that
+velocity wave propagates backward ~towards upstream! and
+its amplitude grows during its propagation.
+
+Regarding the criterion ~ii!, the congested region expands
+as shown in Fig. 3~c!. The upstream front of the congested
+region initially locates between D5 and D6 and later between
+D4 and D5. We mention that the flux at D4 remains quasi-
+stationary during the depicted time interval. Thus the expan-
+sion is not due to the increase of f up but due to the flux
+mismatch. Compared to the CT4 state, however, it turns out
+that the flux mismatch ~typically 200–250 vehicles/h! is con-
+siderably smaller, which implies a slower expansion of the
+congested region. We estimate the expansion rate by the flux
+mismatch divided by the density difference at the upstream
+front of the congested region, and find it ranges 2–4 km/h
+@17#. The outflow of this state is not universal.
+
+It is interesting to compare empirically identified states
+with theoretically predicted states @7–10#. Application of the
+criteria ~i,ii! to both empirical and theoretical states leads to
+the following pairing between empirical and theoretical
+
+PRE 62EE, AND D. KIM
+states: the CT2 state with the theoretically predicted pinned
+localized cluster ~PLC! state, the CT4 state with the homo-
+
+
+
+E
+geneous congested traffic ~HCT! state, and the CT5 state
+with the oscillating congested traffic ~OCT! state.
+
+The pairing motivates further comparison between the
+paired states. For the CT4-HCT pair, we note that the uni-
+versal outflow is predicted for the HCT state @9# and the
+same property is observed for the CT4 state, which strongly
+
+FIG. 3. The 3d density profile of the CT2 state ~a!, CT4 state
+~b!, and CT5 state ~c!.
+
+PRE 62 PHASE DIAGRAM OF CONG
+motivates the identification of the CT4 state with the HCT
+states. For the CT5-OCT pair, on other hand, while the out-
+flow is universal for the OCT state @9#, it is not for the CT5
+state. Thus properties of these two states are only in partial
+agreement. And for the CT2-PLC pair, we find one quanti-
+tative difference: the congested region of the CT2 state is
+considerably wider than that of the PLC state in Refs. @9# and
+@10#. The resolution of this discrepancy may require im-
+proved traffic theories.
+
+We also compare the theoretical and empirical phase dia-
+grams. It is predicted in Ref. @9# that when the upstream flux
+and the ramp flux are maintained at strictly constant values,
+f up and f rmp , respectively, the phase boundary between the
+flux matching and flux mismatching states is practically
+identical to the stability boundary of the free flow, below
+which the free flow can remain linearly stable, and given by
+the line f up1a f rmp5Q˜ out , where a51 and Q˜ out is a con-
+stant whose value is almost identical to the universal outflow
+of the HCT state (a is predicted to be a little larger than 1 in
+Ref. @10#!.
+
+Empirical determination of the free flow stability bound-
+ary is not an easy task since the free flow near the boundary
+is quite vulnerable to fluctuations. In the empirical phase
+diagram @Fig. 2~a!#, the dashed line (^ f up&1a^ f rmp&5Q˜ out ,
+where a’1.3 and Q˜ out’2100 vehicles/h) is an empirical
+estimation of the stability boundary. Here the values of a
+and Q˜ out are reliable up to their first significant digits and
+their second significant digits are rather uncertain. Within
+this accuracy, a is approximately one and the value of Q˜ out
+is close to the universal outflow of the CT4 state. It is also
+pleasing to note that this line divides ~except for a small
+number of data points! the flux matching and mismatching
+states, in agreement with the theoretical prediction @9#. This
+feature is robust and independent of details of the boundary
+estimation method although the values of a and Q˜ out depend
+on the details. We also note that in a later, more refined
+theory @12#, it is predicted that the PLC and OCT states
+overlap weakly in the phase diagram. Recalling the pairing
+CT2-PLC and CT5-OCT, the weak overlap of the CT2 and
+CT5 states in Fig. 2~a! is in agreement with this prediction.
+Also the locations of the empirical and theoretical overlap
+regions in the phase diagram are similar.
+
+Regarding the phase boundary between the two expand-
+ing traffic states ~CT4, CT5!, while the recent theory @9#
+
+FIG. 4. Spontaneous growth of the velocity oscillation inside the
+congested region of the CT5 state. The velocity evolution at D6 is
+shifted to the right by 5 min for clear comparison.
+
+4739STED TRAFFIC FLOW: . . .
+predicts the line f rmp5const as the phase boundary between
+the HCT and OCT states, Fig. 2~a! shows that the boundary
+
+
+
+L
+between the CT4 and CT5 states is better described by
+^ f up&5const. Thus as for the phase boundary between the
+expanding states, empirical results and the theoretical predic-
+tion do not agree.
+
+We next discuss an implicit but important conceptual im-
+plication of the recent theories @7–10#, where traffic phases
+are identified with resulting final states that traffic flow dy-
+namics lead to after sufficient transient time. In the language
+of nonlinear dynamics, all these states correspond to stable
+attractors @18# of traffic flow dynamics. An implication of
+this concept is that for a given external condition ~such as
+f rmp , f up , and ramp geometry!, the resulting traffic state is
+independent of details of the initial traffic state or its ‘‘evo-
+lution history’’ @19#.
+
+This idea can be tested empirically, for example, by com-
+paring realizations with the same external conditions but
+with different evolution histories. Figure 5 compares the
+~time-averaged! velocity profile of two realizations of the
+CT2 state, both with almost the same ^ f rmp& and ^ f up&. But
+their evolution histories are different: one has evolved from
+the free flow and the other from the CT5 state ~inset in Fig.
+5!. Note that two profiles almost overlap with each other
+despite qualitatively different evolution histories. This insen-
+sitivity to the evolution history confirms the conceptual im-
+plication of the recent theoretical works.
+
+Obviously there is a fundamental difference between the-
+oretical and empirical situations: while theories @7–10# as-
+sume strictly constant upstream and ramp fluxes, in real traf-
+fic the fluxes fluctuate all the time. Thus in order to make a
+rigorous comparison with theories, a good understanding of
+fluctuation effects is necessary. However such an under-
+standing is not available at present, so in this paper, the fluc-
+tuation effects are essentially ignored and the time-averaged
+values ^ f rmp& and ^ f up& are instead used in the analysis.
+Hence in a strict sense, the present investigation is only a
+correlation analysis between the time-averaged flux values
+and the traffic states that are maintained for a sufficiently
+
+FIG. 5. Time-averaged velocity profiles of two realizations of
+the CT2 state with almost identical ^ f up& and ^ f rmp& but with differ-
+ent evolution histories ~solid line for the realization 1 and dashed
+line for the realization 2!. Inset: While the realization 1 has devel-
+oped from the CT5 state via a phase transition, the realization 2 has
+evolved from the free flow.
+
+4740 H. Y. LEE, H.-W.
+long time. In retrospect, however, it turns out that many em-
+pirical results can be explained by the theories if one accepts
+that ^ f rmp& and ^ f up& play the roles of the constant ramp flux
+and upstream flux, respectively, assumed in the theories.
+Hence it appears that the neglect of the fluctuation effects
+can be justified at least a posteriori.
+
+Its justification can be partly understood from two argu-
+ments: first, while the fluctuation effects are usually crucial
+near the phase boundary, traffic states far from the phase
+boundary are relatively insensitive to fluctuations. Thus
+when a traffic state occupies a sufficiently wide region in the
+phase diagram, the use of the time-averaged flux values for
+the phase diagram can be justified. Second, dominant contri-
+butions to flux fluctuations come from short-time scale of
+order 1 min, and in the time scale of about 10 min or longer,
+flux variation is almost quasistationary. Thus, provided that
+the relevant time scale of a traffic state ~not very close to the
+phase boundary! is longer than 1 min, the short-time scale
+fluctuations will be effectively averaged out by the traffic
+dynamics itself and can be neglected indeed.
+
+In support of these arguments, we find that our results are
+not sensitive to the length of the averaging time interval as
+long as it is sufficiently longer than 1 min. When the same
+analysis is repeated with 10 min averaging, Fig. 2~b! is ob-
+tained. Note that this new phase diagram is qualitatively the
+same as the former one @Fig. 2~a!# and all discussions above
+remain unchanged. Changes occur only in a quantitative
+level. With the 10 min averaging, the standard deviation of
+the outflow ^ f down& from the CT4 state increases to about 85
+vehicles/h.
+
+We remark on a few details of the analysis. First, there
+exists another on-ramp ~ON4! at 2.3 km downstream from
+ON3. Sometimes vehicle flux through this on-ramp causes
+traffic congestion and the resulting congestion extends to the
+region studied in this paper. All such events are excluded
+from the present analysis to focus on one particular inhomo-
+geneity @20#. Second, in the analyzed road section, there are
+two spots ~one between D5 and D6 and the other near D7!,
+where the lane divider is imperfect. All time intervals with
+non-negligible vehicle fluxes through those spots are not in-
+cluded in the analysis.
+
+In summary, three congested traffic states are identified
+based on local velocity variation patterns and expansion ~or
+nonexpansion! of the congested region. It is found that the
+appearance of these congested traffic states is strongly cor-
+related with the time-averaged flux values, ^ f up& and ^ f rmp&,
+providing a strong supporting evidence to the prediction
+@9,10# that these flux values are characteristic parameters of
+the congested traffic flow. An empirical phase diagram is
+constructed and compared with theoretical predictions. The
+prediction on the phase boundary between the flux matching
+and mismatching states is consistent with the empirical phase
+diagram and the prediction of the universal outflow are con-
+firmed. However some deviations from theoretical predic-
+tions are also found. Finally we mention that there exist re-
+gions in the ^ f rmp&2^ f up& plane that are not probed. Thus it
+is possible that additional congested traffic states exist in
+those regions.
+
+We thank Young-Ihn Lee and Seung Jin Lee for provid-
+ing the traffic data, and Sung Yong Park for fruitful discus-
+
+PRE 62EE, AND D. KIM
+sions. This work was supported in part by the BK21 Project
+of the Korean Ministry of Education.
+
+
+
+@1# B. Shmittmann and R. K. Zia, in Phase Transitions and Criti-
+cal Phenomena, edited by C. Domb and J. Lebowitz ~Aca-
+demic, New York, 1995!, Vol. 17.
+
+@2# K. Nagel and M. Schreckenberg, J. Phys. I 2, 2221 ~1992!;
+B.S. Kerner and P. Konha¨user, Phys. Rev. E 48, R2335
+~1993!; M. Bando, K. Hasebe, A. Nakayama, A. Shibata, and
+Y. Sugiyama, ibid. 51, 1035 ~1995!; S. Krauss, P. Wagner, and
+C. Gawron, ibid. 55, 5597 ~1997!.
+
+@3# B.S. Kerner and H. Rehborn, Phys. Rev. E 53, R1297 ~1996!,
+and references cited therein.
+
+@4# B.S. Kerner and H. Rehborn, Phys. Rev. E 53, R4275 ~1996!.
+@5# B.S. Kerner and H. Rehborn, Phys. Rev. Lett. 79, 4030 ~1997!.
+@6# B.S. Kerner, Phys. Rev. Lett. 81, 3797 ~1998!.
+@7# H.Y. Lee, H.-W. Lee, and D. Kim, Phys. Rev. Lett. 81, 1130
+
+~1998!.
+@8# D. Helbing and M. Treiber, Phys. Rev. Lett. 81, 3042 ~1998!.
+@9# D. Helbing, A. Hennecke, and M. Treiber, Phys. Rev. Lett. 82,
+
+4360 ~1999!.
+@10# H.Y. Lee, H.-W. Lee, and D. Kim, Phys. Rev. E 59, 5101
+
+~1999!.
+
+dependence of the congested region size on ^ f rmp&, the bound-
+ary will locate at a particular detector when ^ f rmp& is close to a
+certain special value. In such a case, small fluctuations of the
+boundary can cause large amplitude fluctuations of velocity at
+that special detector since the velocity varies greatly across the
+boundary. Such large velocity fluctuations are indeed observed
+in narrow ranges of ^ f rmp& ~for example, at D6 when ^ f rmp&
+5330630 vehicles/h). We remark that these fluctuations
+should be distinguished from the velocity oscillations @6# in the
+criterion ~i!. While the former originates from the boundary
+fluctuations and is localized near the boundary, the latter grows
+continuously inside the congested region and is extended over
+relatively wide congested region.
+
+@16# At 30 s scale, f down @q(D10)# fluctuates within the
+range 20106140 vehicles/h, which is equivalent to
+16.861.2 vehicles/30 s. Here the inaccuracy of
+61.2 vehicles/30 s is quite a small number considering that
+the vehicle number counting by detectors always results
+in integer numbers and thus the inaccuracy of
+;61 vehicles/30 s is unavoidable in 30 s data.
+
+PRE 62 4741PHASE DIAGRAM OF CONGESTED TRAFFIC FLOW: . . .
+@11# E. Tomer, L. Safonov, and S. Havlin, Phys. Rev. Lett. 84, 382
+~2000!.
+
+@12# M. Treiber, A. Hennecke, and D. Helbing, e-print
+cond-mat/0002177 ~unpublished!.
+
+@13# H.Y. Lee, H.-W. Lee, and D. Kim, e-print cond-mat/9905292
+~unpublished!; Physica A 281, 78 ~2000!
+
+@14# The harmonic mean velocity u @1/u[(1/N)( j51N 1/v j# is used
+instead of v @v[(1/N)( j51N v j# since q/v systematically un-
+derestimates the density when the velocity fluctuations are sig-
+nificant; see, for example, L. Neubert, L. Santen, A. Schad-
+schneider, and M. Schreckenberg, Phys. Rev. E 60, 6480
+~1999! whereas q/u takes a better account of
+the fluctuation effects. Also it can be shown that when
+both density and flux are temporally averaged @for
+example, r(x ,t)5(1/T)*2T/2T/2 dt8( jd(x j(t1t8)2x), q(x ,t)
+5(1/T)*2T/2T/2 dt8( jv j(t1t8)d(x j(t1t8)2x)#, the ratio q/r is
+exactly equal to u.
+
+@15# Usually the boundary between the congested region and the
+upstream free region locates between detectors. But due to the
+@17# It may be hard to detect slow expansion from the 3d density
+plot due to the finite (;1 km) spatial resolution given by the
+average detector spacing. For this reason, this state is incor-
+rectly interpreted as a nonexpanding state in our preliminary
+report @13# ~using only 14 day traffic data!, where a different
+name, CT1, is used for the same state.
+
+@18# E.A. Jackson, Perspectives of Nonlinear Dynamics ~Cam-
+bridge University Press, Cambridge, 1989!, Vol. 1.
+
+@19# When there exist multiple ~locally! stable attractors for a given
+external condition, initial traffic state is not completely irrel-
+evant. But even in this case, the initial state affects only the
+choice of a particular attractor as a final state. Or in the lan-
+guage of nonlinear dynamics, details of the initial state are
+irrelevant as long as the initial state remains within the basin of
+attraction @18#.
+
+@20# It is found that the on-ramp flux through ON4 may generate
+still another type of congested traffic state ~called CT3 state in
+Ref. @13#!, which is not included in the present analysis since
+this state appears under different road geometry.
+
+

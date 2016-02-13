@@ -1,0 +1,4284 @@
+
+Available online at www.sciencedirect.com
+
+Physica A 333 (2004) 379–440
+www.elsevier.com/locate/physa
+
+Three-phase tra�c theory and highway capacity
+Boris S. Kerner
+
+Daimler Chrysler AG, RIC/TS, T729, 70546 Stuttgart, Germany
+
+Received 28 July 2003
+
+Abstract
+
+Hypotheses and some results of the three-phase tra�c theory by the author are compared with
+results of the fundamental diagram approach to tra�c -ow theory. A critical discussion of model
+results about congested pattern features which have been derived within the fundamental diagram
+approach to tra�c -ow theory and modeling is made. The empirical basis of the three-phase
+tra�c theory is discussed and some new spatial–temporal features of the tra�c phase “synchro-
+nized -ow” are considered. A probabilistic theory of highway capacity is presented which is
+based on the three-phase tra�c theory. In the frame of this theory, the probabilistic nature of
+highway capacity in free -ow is linked to an occurrence of the 4rst order local phase transition
+from the tra�c phase “free -ow” to the tra�c phase “synchronized -ow”. A numerical study
+of congested pattern highway capacity based on simulations of a KKW cellular automata model
+within the three-phase tra�c theory is presented. A congested pattern highway capacity which
+depends on features of congested spatial–temporal patterns upstream of a bottleneck is studied.
+c© 2003 Elsevier B.V. All rights reserved.
+
+1. Introduction
+
+Real tra�c is a dynamical process which occurs both in space and time. This spatial–
+temporal process shows very complex dynamical behavior. In particular, highway tra�c
+can be either free or congested. Congested tra�c states can be de4ned as the tra�c
+states where the average vehicle speed is lower than the minimum possible average
+speed in free -ow (e.g., Ref. [1]). It is well known that in contrast to free tra�c
+-ow, in congested tra�c a collective behavior of vehicles plays an important role
+(the collective -ow by Prigogine and Herman [2]), and a synchronization of vehicle
+speeds across di=erent highway lanes usually occurs [1]. In congested tra�c, complex
+spatial–temporal patterns are observed, in particular a sequence of moving tra�c jams,
+the so-called “stop-and-go” phenomenon (e.g., the classical works by Treiterer [3] and
+Koshi et al. [1]). Recall that a moving jam is a moving localized structure. The moving
+jam is spatially restricted by two upstream moving jam fronts where the vehicle speed
+
+0378-4371/$ - see front matter c© 2003 Elsevier B.V. All rights reserved.
+doi:10.1016/j.physa.2003.10.017
+
+
+
+380 B.S. Kerner / Physica A 333 (2004) 379–440
+
+and the density change sharply. The vehicle speed is low (sometimes as low as zero)
+and the density is high inside the moving jam.
+Congested tra�c usually occurs at a highway bottleneck, e.g., at the bottleneck due
+
+to an on-ramp. In empirical investigations, the onset of congested tra�c is accompanied
+by the breakdown phenomenon, i.e., by a sharp decrease in the vehicle speed at the
+bottleneck (see e.g., papers by Athol and Bullen [4], Banks [5,6], Hall et al. [7,8],
+Elefteriadou et al. [9], Kerner and Rehborn [10] and by Persaud et al. [11]). It has been
+found that the breakdown phenomenon has a probabilistic nature, i.e., the probability
+of the speed breakdown is an increasing function of the -ow rate in free -ow at the
+bottleneck [11]. Besides, it has been found that the capacity of congested bottleneck,
+i.e., highway capacity after the breakdown phenomenon at the bottleneck has occurred is
+often lower than the capacity in free -ow before—the so-called phenomenon “capacity
+drop” [5–8].
+Concerning the important role of highway bottlenecks it should be noted that al-
+
+though congested tra�c can occur away from bottlenecks [12], they have an important
+impact just like defects in physical systems which can play an important role for the
+phase transitions and for the formation of spatial–temporal patterns. The role of the
+bottlenecks in tra�c -ow is as follows: Congested tra�c occurs most frequently at
+highway bottlenecks (e.g., Refs. [13,14]). The bottlenecks can result from for example
+due to road works, on and o= ramps, a decrease in the number of highway lanes, road
+curves and road gradients.
+Although the complexity of tra�c is linked to the occurrence of spatial–temporal
+
+patterns, some of the tra�c features can be understood if average tra�c characteris-
+tics are considered. Thus, important empirical methods in tra�c science are empirical
+-ow–density and speed–density relationships which are related to measurements of
+some average tra�c variables at a highway location, in particular at a highway bottle-
+neck. The empirical relationship of the average vehicle speed on the vehicle density
+must be related to an obvious result observed in real tra�c -ow: the higher the ve-
+hicle density, the lower the average vehicle speed. When the -ow rate, which is the
+product of the vehicle density and the average vehicle speed, is plotted as a function
+of the vehicle density one gets what is known as the empirical fundamental diagram.
+It must be noted that the empirical fundamental diagram is successfully used for dif-
+ferent important applications where some average tra�c -ow characteristics should be
+determined (e.g., Refs. [14,15]).
+Recently dependencies of the empirical fundamental diagram on the type of the con-
+
+gested pattern at a freeway bottleneck and on the freeway location where the empirical
+fundamental diagram is measured have been found [16].
+Over the past 80 years scientists have developed a wide range of di=erent mathemat-
+
+ical models of tra�c -ow to understand these complex non-linear tra�c phenomena
+(see the classical papers by Lighthill and Whitham [17], Richards [18], Herman et al.
+[19], Gazis et al. [20], Kometani and Sasaki [21], Newell [22], Prigogine [23], Payne
+[24], Gipps [25], the books by Leuzbach [26], May [14], Daganzo [13], Prigogine and
+Herman [2], Wiedemann [27], Whitham [28], Cremer [29], Newell [30], the reviews
+by Chowdhury et al. [31], Helbing [32], Nagatani [33], Nagel et al. [34] and the
+conference proceedings [35–41]). Clearly these models must be based on the real
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 381
+
+behavior of drivers in tra�c, and their solutions should show phenomena observed
+in real tra�c.
+
+1.1. Fundamental diagram approach to tra/c 0ow theory and modeling
+
+Up to now by a development of a mathematical tra�c -ow model which should
+explain empirical spatial–temporal congested patterns, it has been self-evident that
+hypothetical steady-state solutions of the model should belong to a curve in the -ow–
+density plane (see, e.g., [17,20,22,23,2,38–40,42–57,28,29,26,58–70] and the recent
+reviews [31–34]). The above term steady state designates the hypothetical model
+solution where vehicles move at the same distances to one another with the same
+time-independent vehicle speed. Therefore, steady states are hypothetical spatially
+homogeneous and time-independent tra�c states (steady states are also often called
+“homogeneous” or “equilibrium” model solutions; we will use in the article for these
+hypothetical model tra�c states the term “steady” states or “steady speed” states). The
+curve in the -ow–density plane for steady-state model solutions goes through the ori-
+gin and has at least one maximum. This curve is called the fundamental diagram for
+tra�c -ow.
+The postulate about the fundamental diagram underlies almost all tra�c -ow mod-
+
+eling approaches up to now (see reviews [31–34]) in the sense that the models are
+constructed such that in the unperturbed, noiseless limit they have a fundamental dia-
+gram of steady states, i.e., the steady states form a curve in the -ow–density plane. The
+fundamental diagram is either a result of the model (e.g., for the models by Gazis et al.
+[20], Gipps [25] Nagel–Schreckenberg cellular automata (CA for short) [42–44,52,69],
+KrauM et al. [51], Helbing, Treiber and co-workers [56,66,71], Tomer, Halvin and
+co-worker [68,72]) or the fundamental diagram is hypothesized in a model (e.g., the op-
+timal velocity models by Newell [22], Whitham [45], Bando, Sugiyama and co-workers
+[47,48] and the macroscopic model by Payne [24]). Moving jams which are calculated
+from these models for a homogeneous road (i.e., a road without bottlenecks) are due to
+the instability of steady states of the fundamental diagram within some range of vehicle
+densities (see reviews [31–34]). This is one of the reasons why we 4nd it helpful to
+classify these models as belonging to what we call the ”fundamental diagram approach”.
+In 1955 Lighthill and Whitham [17] wrote in their classical work (see p. 319 in
+
+[17]): “... The fundamental hypothesis of the theory is that at any point of the road
+the -ow (vehicles per hour) is a function of the concentration (vehicles per mile)...”.
+Apparently the empirical fundamental diagram was the reason that the fundamental
+diagram approach has already been introduced in the 4rst tra�c -ow models derived
+by Lighthill and Whitham [17], by Gasis et al. [20], and by Newell [22].
+Concerning the theoretical fundamental diagram, it must be noted that in real con-
+
+gested tra�c complex spatial–temporal tra�c patterns are observed (e.g., Refs. [1,3]).
+These patterns are spatially non-homogeneous. This spatial behavior of congested pat-
+terns is a complex function of time. An averaging of tra�c variables related to
+congested patterns over long enough time intervals gives a relation between di=erent
+averaged vehicle speeds and densities. Thus, the empirical fundamental diagram is
+related to averaged characteristics of spatial–temporal congested patterns measured at a
+
+
+
+382 B.S. Kerner / Physica A 333 (2004) 379–440
+
+highway location rather than to features of the hypothetical steady states of congested
+tra�c on the theoretical fundamental diagram. For this reason, the existence of the
+theoretical fundamental diagram is only a hypothesis. This is also con4rmed by a re-
+cent empirical study where it has been found that the empirical fundamental diagram
+strongly depends on the congested pattern type and on the freeway location [16].
+It has recently been found that empirical features of the phase transitions in tra�c
+
+-ow and most of empirical spatial–temporal pattern features [74–76] are qualitatively
+di=erent from those which follow from mathematical tra�c -ow models in the funda-
+mental diagram approach which is considered in the reviews [31–34].
+
+1.2. Three-phase tra/c theory
+
+For this reason in 1996–2000 the author, based on an empirical tra�c -ow analysis,
+introduced a concept called “synchronized -ow” and the related three-phase tra�c
+theory [12,74,75,77–84].
+
+1.2.1. The concept “synchronized 0ow”
+In the concept “synchronized -ow”, there are two qualitatively di=erent phases, the
+
+tra�c phase called “synchronized -ow” and the tra�c phase called “wide moving jam”,
+which should be distinguished in congested tra�c [74,75,77–80]. This distinguishing
+is based on qualitatively di=erent empirical spatial–temporal features of these phases.
+Tra�c consists of free -ow and congested tra�c. Congested tra�c consists of two
+tra�c phases. Thus, there are three tra�c phases:
+
+(1) Free -ow.
+(2) Synchronized -ow.
+(3) Wide moving jam.
+
+In the three-phase tra�c theory, features of spatial–temporal congested patterns are
+explained based on the phase transitions between these three tra�c phases.
+Objective criteria to distinguish between the tra�c phase “synchronized -ow” and
+
+the tra�c phase “wide moving jam” are based on qualitative di=erent empirical spatial–
+temporal features of these two tra�c phases. A wide moving jam is a moving jam
+which possesses the following characteristic feature. Let us consider the downstream
+front of the wide moving jam where vehicles accelerate escaping from a standstill inside
+the wide moving jam. This downstream jam front propagates on a highway keeping
+the mean velocity of this front. As long as a moving jam is a wide moving jam
+this characteristic e=ect—the keeping of the velocity of the downstream jam front—
+remains even if the wide moving jam propagates through any complex tra�c states and
+through any highway bottlenecks. In contrast, the downstream front of the tra�c phase
+“synchronized -ow” (where vehicles accelerate escaping from synchronized -ow to free
+-ow) is usually 4xed at the bottleneck. Corresponding to the de4nition of the tra�c
+phase “wide moving jam” and to the concept “synchronized -ow” where there are only
+two tra�c phases in congested tra�c, any state of congested tra�c which does not
+possess the above characteristic feature of a wide moving jam is related to the tra�c
+state “synchronized -ow”. A more detailed consideration of the objective criteria of
+tra�c phases and empirical examples of the application of these objective criteria for
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 383
+
+the determination of the phase “synchronized -ow” and the phase “wide moving jam”
+in congested tra�c can be found in Ref. [76]. It must be noted that there are at least
+two well-known empirical e=ects in congested tra�c (e.g., [1]): (1) Synchronization
+of the average vehicle speed between di=erent freeway lanes. (2) A wide spreading of
+empirical data in the -ow-density plane. These e=ects can occur in both tra�c phases
+of congested tra�c, “synchronized -ow” and “wide moving jam”. The distinguishing
+between these tra�c phases is made only based on the above objective criteria for
+tra�c phases rather than on the speed synchronization e=ect or on the e=ect of the
+wide spreading of empirical data in the -ow-density plane.
+It should be stressed that the concept “synchronized -ow” and the related method-
+
+ology of the congested pattern study, which has been used for the de4nition of the
+three tra�c phases below, is based on an analysis of empirical spatial–temporal fea-
+tures of congested patterns [74,77,78] rather than on a dynamical analysis of data
+(e.g., in the -ow–density plane) only. First, a spatial–temporal study of tra�c must
+be made. Only after the tra�c phases “synchronized -ow” and “wide moving jam”
+have already been distinguished, based on the objective criteria for the tra�c phases
+discussed above some of the pattern features can further be studied, e.g., in the -ow–
+density plane. In particular, this procedure has already been used in Ref. [77]: At the
+4rst step, a spatial–temporal analysis of empirical data has been made and the phases
+“synchronized -ow” and “wide moving jam” have been identi4ed. At the next step, the
+tra�c phase “synchronized -ow” has been plotted in the -ow–density plane without
+any wide moving jams and some of the features of “synchronized -ow” have been
+studied. Measured data on sections of the highway A5 in Germany which have been
+used in Refs. [12,74–84] also comprise the information about vehicle types (number of
+vehicles and long vehicles) and individual vehicle speeds passing the detector during
+each one minute interval of averaging. Using the latter information in addition to the
+spatial–temporal data analysis of 1 min averaged data, the determination of the type
+of synchronized -ow in empirical studies of synchronized -ow (the type (i), or (ii)
+or else (iii) [77]) have been made. Besides, the individual vehicle speeds allow us to
+answer the question of whether there are narrow moving jams in synchronized -ow
+or not. All these steps of data analysis have been made in Refs. [12,74–84]. We will
+illustrate this in Section 2 where an empirical example of a synchronized -ow pattern
+will be studied.
+
+1.2.2. The fundamental hypothesis of the three-phase tra/c theory
+Another claim of the concept of “synchronized -ow” is the hypothesis about steady
+
+states of synchronized -ow. This is the fundamental hypothesis of the three-phase tra�c
+theory. The fundamental hypothesis of the three-phase tra�c theory reads as follows
+[74,78–80]:
+Hypothetical steady states of synchronized 0ow cover a two-dimensional region in
+
+the 0ow–density plane (Fig. 1). This means that in these hypothetical steady states of
+synchronized -ow, where all vehicles move at the same distance to one another and
+with the same time-independent speed, a given steady vehicle speed is related to an
+in4nite multitude of di=erent vehicle densities and a given vehicle density is related to
+an in4nite multitude of di=erent steady vehicle speeds. This hypothesis means that there
+
+
+
+384 B.S. Kerner / Physica A 333 (2004) 379–440
+
+(a) (b)
+Fig. 1. The fundamental hypotheses of the three-phase tra�c, theory [74,78]: States of free -ow
+(curve F) and spatially homogeneous and time-independent states (steady states) of synchronized -ow
+(dashed region) in the -ow density plane for a multi-lane (in one direction) homogeneous (without bottle-
+necks) road in the three-phase tra�c theory (a). For a comparison, in (b) steady states for a homogeneous
+(without bottlenecks) one-lane road are shown. The dotted line is related to a minimum possible speed in
+steady states of synchronized -ow v(syn)min [75,82].
+
+is no fundamental diagram for hypothetical steady speed states of synchronized -ow.
+This hypothesis has recently been used in a microscopic three-phase tra�c -ow theory
+[85–87]. It occurs that this theory, which is also based on other hypotheses of the
+three-phase tra�c theory (Section 4), explains and predicts main features of empirical
+phase transitions and spatial–temporal congested patterns found in Refs. [74,76].
+The fundamental hypothesis of the three-phase tra�c theory is therefore in contradic-
+
+tion with the hypothesis about the existence of the fundamental diagram for hypothetical
+steady states of mathematical models and theories in the fundamental diagram approach.
+An explanation of the fundamental hypothesis of the three-phase tra�c theory will be
+done in Section 4.1.1.
+
+1.2.3. Explanation of the terms “synchronized 0ow” and “wide moving jam”
+The term “synchronized -ow” should re-ect the following features of this tra�c
+
+phase: (i) It is a non-interrupted tra�c -ow rather than a long enough standstill as it
+usually occurs inside a wide moving jam. The word “-ow” should re-ect this feature.
+(ii) There is a tendency to a synchronization of vehicle speeds across di=erent lanes
+on a multi-lane road in this -ow. Besides, there is a tendency to a synchronization of
+vehicle speeds on each of the road lanes (a bunching of the vehicles) in synchronized
+-ow due to a relatively low mean probability of passing in synchronized -ow. The
+word “synchronized” should re-ect these speed synchronization e=ects.
+The term “wide moving jam” should re-ect the characteristic feature of the jam to
+
+propagate through any other states of tra�c -ow and through any bottlenecks keeping
+the velocity of the downstream jam front. The word combination “moving jam” should
+re-ect the feature of the jam propagation as a whole localized structure on a road. If
+the width of a moving jam is considerably higher than the widths of the jam fronts
+and the speed inside the jam is zero then the moving jam possesses this characteristic
+feature. The word “wide” (the jam width in the longitudinal direction) should re-ect
+this characteristic feature of the jam propagation keeping the velocity of the downstream
+jam front. However, the distinguishing between the tra�c phases “synchronized -ow”
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 385
+
+and “wide moving jam” is made only based on the objective criteria for tra�c phases
+which have been considered in Section 1.2.1.
+This article is organized as follows. In Section 2, 4rstly an overview of known
+
+features of synchronized -ow is made (Section 2.1) and then new empirical results
+about spatial–temporal features of synchronized -ow are presented. These empirical
+results should help to understand some of the hypotheses to the three-phase tra�c
+theory. A critical analysis of the application of the fundamental diagram approach for
+a description of phase transitions and of spatial–temporal features of congested patterns
+will be made in Section 3. In Section 4, a comparison of already known hypotheses to
+the author’s three-phase tra�c theory with results of the fundamental diagram approach
+to tra�c -ow theory will be considered. In this section, we will also consider some
+new hypotheses about a Z- and double Z-shaped characteristics of tra�c -ow. The
+double Z-characteristic should explain phase transitions which are responsible for the
+wide moving jam emergence in real tra�c -ow. Other new results are presented in
+Section 5 where a probabilistic theory of highway capacity which is based on the
+three-phase tra�c theory is considered. This general theory will be illustrated and
+con4rmed by new numerical results of a study of a KKW cellular automata model
+within the three-phase tra�c theory.
+
+2. Empirical features of synchronized �ow
+
+In this section some new empirical features of synchronized -ow will be considered.
+These features will be used below for an explanation of the three-phase tra�c theory.
+In particular, these results allow us to give the empirical basis for the hypothesis about
+a Z-shape of the probability of passing in tra�c -ow as a function of the density.
+However, 4rstly a brief overview of empirical features of synchronized -ow is made.
+
+2.1. Main empirical features of phase transitions, onset of congestion and congested
+patterns at bottlenecks (overview)
+
+Moving jams do not emerge in free -ow, if synchronized -ow is not hindered [75].
+Instead, the moving jams emerge due to a sequence of two 4rst-order phase transitions
+[74]: First the transition from free -ow to synchronized -ow occurs (it is called the
+F → S transition) and only later and usually at a di=erent highway location wide
+moving jams emerge in the synchronized -ow (the latter transition is called the S→ J
+transition and the sequence of both transitions is called the F→ S→ J transitions).
+In particular, the onset of congestion at a bottleneck, i.e., the well-known breakdown
+
+phenomenon in free -ow is linked to the F→ S transition in an initial free -ow rather
+than to the wide moving jam emergence (the F → J transition) [74,76]. This means
+that at the same density in free -ow at the bottleneck the probability of the F → S
+transition should be considerably higher than the probability of the F→ J transition.
+Empirical investigations show [76,103] that there are two main types of congested
+
+patterns at an isolated bottleneck: 1
+
+1 Note that an isolated bottleneck is a highway bottleneck which is far enough away from other bottlenecks
+where congested patterns can emerge.
+
+
+
+386 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Fig. 2. Empirical congested pattern classi4cation [76]. Examples of empirical congested patterns in space
+and time: (a) Synchronized -ow pattern (SP). (b) General pattern (GP). (c) Expanded congested pattern
+(EP). Infrastructure of the section of the freeway A5-South in Germany is shown in Fig. 3 in Ref. [76].
+The scheme of the section on the freeway A5-North is shown in Fig. 3(a). Highway bottlenecks B3 on
+A5-South and BNorth 1, BNorth 2, BNorth 3 on A5-North have been considered in Ref. [76]. “White”—free -ow,
+“gray”—synchronized -ow, “black”—moving jams.
+
+The synchronized 0ow pattern or SP for short (Fig. 2(a)): The SP consists of
+synchronized -ow upstream of the isolated bottleneck only, i.e., no wide moving jams
+emerge in that synchronized -ow.
+The general pattern or GP for short (Fig. 2(b)): The GP is the congested pattern
+
+at the isolated bottleneck where synchronized -ow occurs upstream of the bottleneck
+and wide moving jams spontaneously emerge in that synchronized -ow. Thus the GP
+consists of both tra�c phases in congested tra�c: “synchronized -ow” and “wide
+moving jam”.
+However, dependent on the bottleneck features and on tra�c demand, the GP and the
+
+SP show a diverse variety of special cases. In particular, there are three main di=erent
+types of synchronized -ow patterns (SP) at the isolated bottleneck: The localized SP
+(LSP), i.e., the SP whose width is spatially limited over time (Fig. 2(a)), 2 the widening
+
+2 LSP can also be called a “shortening” SP. In the article, following the empirical congested pattern study
+[76] we will use the term LSP.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 387
+
+SP (WSP), i.e., the SP whose width is continuously widening over time (see empirical
+example below) and the moving SP (MSP), i.e., the SP which propagates as a whole
+localized pattern on the road (see empirical example in Fig. 6(a) in Ref. [76]).
+The usual scenario of the GP emergence is the following [74,76]: First, the F→S
+
+transition occurs at a highway bottleneck. The downstream front of the synchronized
+-ow (the front where drivers escape from the synchronized -ow upstream to the free
+-ow downstream) is 4xed at the bottleneck. The upstream front of the synchron-
+ized -ow (this front separates free -ow upstream from the synchronized -ow down-
+stream) propagates upstream. Later in this synchronized -ow upstream of the bottleneck
+narrow moving jams spontaneously emerge. Narrow moving jams propagate upstream
+and self-grow. 3 Finally, the growing narrow moving jams (or only a part of them)
+transform into wide moving jams. This transformation is related to the S→ J transition.
+It must be noted that the well-known and very old term “stop-and-go” tra�c which
+
+is related to a sequence of moving tra�c jams will not be used in this article. This
+is linked to the following: For a tra�c observer, both a sequence of narrow moving
+jams and a sequence of wide moving jams is “stop-and-go” tra�c. However, as it has
+already been mentioned (see footnote 3) narrow moving jams belong to the tra�c phase
+“synchronized -ow” whereas wide moving jams belong to the qualitatively di=erent
+tra�c phase “wide moving jam”.
+It has been found that moving jams are most to emerge in dense synchronized -ow of
+
+lower average vehicle speed [74,76]. In other words, the average speed in synchronized
+-ow of a GP where a wide moving jam emerges is usually considerably lower than
+the speed in synchronized -ow of a SP. The dense synchronized -ow in GP appears
+due to the pinch e=ect in the synchronized -ow, i.e., due to a strong compression
+of the synchronized -ow upstream of the bottleneck. Besides, the lower the average
+speed in the pinch region of synchronized -ow in a GP the higher is the frequency
+of the moving jam emergence in this synchronized -ow. In particular, the average
+speed in the pinch region of synchronized -ow is decreasing upstream of an on-ramp
+if the -ow rate to the on-ramp is increasing. Consequently the frequency of the moving
+jam emergence increases when the -ow rate to the on-ramp increases. This is because
+the average speed in synchronized -ow upstream of the on-ramp decreases. Even at
+the highest observed -ow rate to the on-ramp moving jams emerge (with the highest
+frequency) in synchronized -ow upstream of the on-ramp.
+In contrast, empirical investigations of synchronized -ow allow us to suggest that
+
+in synchronized -ow of higher vehicle speed moving jams do not necessarily emerge
+[74,76]. In this case, a SP can occur where no wide moving jams emerge [76,85]. One
+of the SPs is a WSP. The WSP should occur when a bottleneck introduces a relatively
+small disturbance for tra�c -ow.
+
+3 A narrow moving jam is a moving jam which does not possess the characteristic feature of a wide
+moving jam to keep the downstream jam front velocity propagating through any state of tra�c and through
+any bottlenecks. Narrow moving jams belong to congested tra�c. Corresponding to the objective criteria of
+tra�c phases in congested tra�c any state of congested tra�c which does not possess this characteristic
+feature of a wide moving jam is related to the tra�c phase “synchronized -ow”. Thus, narrow moving jams
+are states of the tra�c phase “synchronized -ow” [76].
+
+
+
+388 B.S. Kerner / Physica A 333 (2004) 379–440
+
+This case which can be observed at a bottleneck due to o=-ramps will be considered
+below. It will be shown, that in this case synchronized -ow in a WSP can indeed
+exist upstream of the bottleneck on a long stretch of the highway (about 4:5 km)
+during a long time (more than 60 min) without wide moving jam emergence in that
+synchronized -ow. This con4rms the above suggestion made that in synchronized -ow
+of higher vehicle speed moving jams do not necessarily emerge.
+The GP and the SP which have brie-y been discussed above appear at an “iso-
+
+lated” bottleneck. An in-uence of the other possible freeway bottlenecks on the pattern
+formation at the isolated bottleneck should be negligible.
+On real highways there are a lot of bottlenecks where di=erent congested patterns
+
+almost simultaneously can emerge. If two such bottlenecks exist close to one another,
+then an expanded congested pattern (EP) can be formed. In the EP, synchronized -ow
+covers at least two bottlenecks. For example, let us consider two bottlenecks which are
+close to one another. The bottleneck downstream will be called “downstream bottle-
+neck” and the bottleneck upstream will be called “upstream bottleneck”. Let us assume
+that the F→S transition occurs at the downstream bottleneck, i.e., a synchronized
+-ow emerges at this bottleneck. Due to the upstream propagation of the synchronized
+-ow, this -ow can reach the upstream bottleneck. In this case, the synchronized -ow
+can propagate upstream of the upstream bottleneck covering both bottlenecks: an EP
+appears.
+Another empirical example which will be considered below is the following: If
+
+a WSP occurs at the downstream bottleneck, then due to the continuous upstream
+widening of synchronized -ow in the WSP the upstream front of the synchronized -ow
+always at some time reaches the upstream bottleneck. After the synchronized -ow is
+upstream of the upstream bottleneck, the synchronized -ow covers both bottlenecks,
+i.e., the initial WSP transforms into an EP. From this example we may conclude that
+the congested pattern at the downstream bottleneck can be considered as a WSP in
+only a 4nite time interval as long as the synchronized -ow of the WSP does not
+reach the upstream bottleneck. After the upstream front of synchronized -ow of the
+WSP has reached the upstream bottleneck, an EP appears. Synchronized -ow of this
+EP consists of the synchronized -ow of the initial WSP and the synchronized -ow
+at the upstream bottleneck. The upstream bottleneck may make a great in-uence on
+the synchronized -ow of the initial WSP, e.g., this bottleneck can lead to the wide
+moving jam formation in the synchronized -ow. This occurs in the example of this
+WSP which will be considered in Section 2.2.
+There can be a lot of di=erent types of EPs. As it has been shown in Ref. [76], EPs
+
+can be explained within the three-phase tra�c theory. This conclusion is linked to the
+empirical fact [76] that congested tra�c of all known EP types can consist of the tra�c
+phase “wide moving jam” and the tra�c phase “synchronized -ow” only. This result
+of the empirical study [76] is illustrated in Fig. 2 where an example of an EP is shown.
+Firstly, the synchronized -ow occurs at the downstream bottleneck. The upstream front
+of synchronized -ow propagates upstream and reaches the 4rst upstream bottleneck and
+later the second upstream bottleneck: The EP appears where synchronized -ow covers
+these three bottlenecks. The location of the downstream bottleneck is marked BNorth 1
+and the locations of two upstream bottlenecks are marked BNorth 2 and BNorth 3 in
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 389
+
+Fig. 2(c), respectively. These are e=ective bottlenecks on the freeway A5-North which
+have been considered in Ref. [76].
+We can see in Fig. 2(c) that congested tra�c in the EP consists of the tra�c phase
+
+“wide moving jam” and the tra�c phase “synchronized -ow”: Some of the moving
+jams, which have initially emerged upstream of the downstream bottleneck (BNorth 1),
+propagate through the 4rst upstream bottleneck (BNorth 2) keeping the velocity of the
+downstream jam front. These moving jams belong to the tra�c phase “wide moving
+jam”. Later on these wide moving jams propagate also through the second upstream
+bottleneck on this freeway section (BNorth 3). During the wide moving jam propagation
+the width of the jams increases over time (Fig. 2(c)). These empirical results are also
+con4rmed by a microscopic three-phase tra�c theory of EPs which has recently been
+developed in Ref. [87].
+
+2.2. Empirical example of WSP
+
+The empirical study made in Ref. [76] allows us to assume that WSP can occur at
+o=-ramps. The importance of the WSP analysis is linked to the possibility to show
+empirical features of synchronized -ow of a relatively high vehicle speed.
+An example of a WSP which occurs upstream of the o=-ramp D25-o= on the section
+
+of the highway A5-North in Germany (the State “Hessen”) is shown in Figs. 3–6. The
+section of the highway A5-North (Fig. 3(a)) has already been described in Ref. [76]
+(see Fig. 3(c) in this paper). A WSP occurs as a result of the F→S transition upstream
+of the o=-ramp (also discussed in Ref. [76]). It can be seen in Figs. 3(b) and 4 that
+the vehicle speeds slowly decrease within a WSP in the upstream direction whereas
+the -ow rate does not change considerably when a WSP occurs. This is a peculiarity
+of synchronized -ow.
+When the vehicle speed in a WSP decreases in the upstream direction, some narrow
+
+moving jams emerge in this synchronized -ow of low vehicle speed (D17 and D16,
+Fig. 4). However, D16 is already at the on-ramp (D15-on). For this reason, the syn-
+chronized -ow propagating upstream, covers this upstream bottleneck at the on-ramp.
+As a result, an EP occurs [76] (this is not shown in Fig. 4). Thus, WSP upstream of
+the o=-ramp at D25-o= and downstream of the on-ramp at D16 is only a part of this
+EP. Nevertheless, the consideration of this WSP allows us to come to some important
+conclusions about features of the tra�c phase “synchronized -ow”.
+
+2.3. Overlapping of states of free 0ow and synchronized 0ow in density
+
+In particular, when free -ow (black quadrates in Fig. 5) and synchronized -ow
+inside WSP (circles in Fig. 5) are shown in the -ow–density plane it can be seen, that
+at least at detectors D20–D18 states of synchronized -ow partially overlap with free
+-ow in the density.
+The same conclusion can be made if the vehicle speed as a function of the density
+
+is drawn (Fig. 6(a)). This means that at the same density either a state of synchronized
+-ow or a state of free -ow is possible.
+
+
+
+390 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Fig. 3. The widening synchronized -ow pattern (WSP): (a) Scheme of the highway infrastructure and local
+measurements at the section of the highway A5-North [76]; (b) the average speed and the -ow rate in WSP
+as functions of time and location [105].
+
+If now the average absolute values of the vehicle speed di=erence between the left
+lane and the middle lane Qv for free -ow (curve F in Fig. 6(b)) and for synchronized
+-ow (curve S in Fig. 6(b)) are shown, then we see that there is overlapping of the
+speed di=erence in density. This overlapping can lead to a hysteresis between the free
+-ow states and the synchronized -ow states. It can be assumed that this overlapping
+is related to a Z-shaped form of the dependence Qv of the density. 4 Such Z-shaped
+
+4 The assumption that the overlapping of the speed di=erence Qv in the density should be related to a
+Z-shaped characteristic Qv(�) is made in an analogy to a huge number of physical, chemical and biological
+systems where states of two di=erent phases overlap in a system parameter. Naturally, there is usually a
+hysteresis e=ect due to this overlapping. In the theory of these spatially distributed systems, dependent of the
+form of this overlapping it is usually assumed that there is one of the N-, S- or Z-shaped characteristics of
+the system [88–91]. The middle branch of these characteristics cannot usually be observed in experiments.
+This is because this branch should be related to unstable states of the system [88–91]. The assumption
+under consideration can be considered as correct if the theory predicts features of spatial–temporal patterns
+which are observed in experiments [88–91]. The three-phase tra�c theory (where the Z-shaped tra�c -ow
+characteristic is used [87]) predicts main features of empirical spatial–temporal congested tra�c patterns
+[85–87]. For this reason we will use the assumption about the Z-shaped tra�c -ow characteristic made
+above in the further consideration.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 391
+
+Fig. 4. The widening synchronized -ow pattern (WSP): Time series of the vehicle speed (left) and -ow
+rate (right) for di=erent highway lanes for detectors D22–D16. The F→ S transitions at the related detectors
+leading to the WSP formation are marked with up arrows.
+
+characteristic is in agreement with the hypothesis about the Z-shape of the mean prob-
+ability for passing [12,80,84] (see Section 4.3).
+The physical meaning of the result in Fig. 6(b) is the following: In free -ow
+
+the di=erence in the average vehicle speed on German highways between the left
+
+
+
+392 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Fig. 5. The measurement points in the -ow–density plane for WSP shown in Fig. 3 at the detectors D20–
+D17 (left line). Free tra�c is related to black quadrates, synchronized -ow is related to circles. Overlapping
+of states of free -ow and synchronized -ow at the detectors D19 is in the density range from about 18 to
+36 vehicles=km.
+
+(passing) highway lane and the middle lane due to the high mean probability of pass-
+ing is considerably higher than that in synchronized -ow. However, at the same density
+in a limited range (e.g., at D19 from 18 vehicles/km to 26 vehicles/km) either states
+of free -ow or synchronized -ow can exist. This may lead to a nearly Z-form of the
+dependency Qv on the vehicle density. The lower the vehicle speed in synchronized
+-ow is the less the density range of the overlapping of the curves F and S
+(Fig. 6(b), D18). This overlapping disappears fully if the vehicle speed in synchronized
+-ow further decreases.
+
+2.4. Analysis of individual vehicle speeds
+
+To see the di=erence between free -ow and synchronized -ow and features of
+synchronized -ow more clearly, distributions of the number of vehicles as a func-
+tion of the individual vehicle speed for synchronized -ow (Fig. 6(c)) and for free
+-ow (Fig. 6(d)) are shown. This is possible because the types of vehicles and their
+individual vehicle speed during each of the 1 min intervals are also available.
+Firstly, it can be seen that in synchronized -ow the mean vehicle speed of vehicles
+
+and long vehicles are almost the same for di=erent highway lanes whereas for free
+-ow these mean values are strongly shifted to one another.
+Secondly, we see that at the detectors D19 during 121 min of the observation
+
+individual vehicle speeds in synchronized -ow were not lower than 40 km=h (Fig.
+6(c), left). At the detectors D18 during 105 min of the observations individual speeds
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 393
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+Fig. 6. Empirical features of synchronized -ow at the detectors D19 (left) and D18 (right) in the WSP
+shown in Figs. 3(b) and 4: (a) Measurement points in the speed–density plane (free -ow–black quadrates,
+synchronized -ow—circles; left lane). (b) The average di=erence in the vehicle speeds between left and
+middle highway lanes as a function of the density, curve F for free -ow, curve S for synchronized -ow.
+The speed di=erences in (b) are averaged for density intervals of 2 vehicles/km. (c,d) Distribution of the
+number of vehicles as a function of the di=erent speed classes related to individual single vehicle data for
+synchronized -ow (c) and for free -ow (d) The curve 1 is related to vehicles on the left lane, 2—vehicles on
+the middle lane, 3—vehicles on the right lane, 4—long vehicles on the right lane, 5—long vehicles on the
+middle lane (long vehicles do not usually move on the left (passing) lane of a three-lane (in one direction)
+highway in Germany). In (c,d), measured single vehicle data are shown whereby the number of vehicles
+in each of 15 di=erent classes in regard to the vehicle speed is used separately for vehicles and for long
+vehicles.
+
+of 6181 vehicles which passed the detectors were measured (Fig. 6(c), right). Among
+these 6181 vehicles there were no vehicles which had the speed below 20 km=h,
+there were only 9 vehicles which had individual speeds between 20 and 30 km=h
+and 59 vehicles which had individual speeds between 30 and 40 km=h. All other
+
+
+
+394 B.S. Kerner / Physica A 333 (2004) 379–440
+
+6113 vehicles had individual speeds higher than 40 km=h. Thus, there were no narrow
+moving jams in synchronized -ow between D19 and D18. Nevertheless, these states
+of synchronized -ow cover 2D regions in the -ow–density plane (Fig. 5, D19-left,
+D18-left).
+
+3. Shortcoming of the fundamental diagram approach for description of tra�c
+congestion
+
+Di=erent explanations of empirical features of wide moving jams and synchronized
+-ow [77,74,12,80,79,81] are up to now being discussed between di=erent groups (e.g.,
+Refs. [60–70,97–99,112,71,100,72,85,92–94,102,86] and the reviews [32–34]).
+Due to the e=ort of di=erent scienti4c groups (see e.g., Refs. [38–40,42–44,46–
+
+70,92–94,108] and the reviews [31–34]) considerable progress has been made in the
+understanding of the theoretical spatial–temporal congested patterns in di=erent tra�c
+-ow models within the fundamental diagram approach. In particular, in this approach
+two main classes of tra�c -ow models may be distinguished which claim to show
+moving jams and other congested patterns upstream from an on-ramp:
+
+(i) Models were at a su�ciently high initial -ow rate on the main road, upstream from
+an on-ramp, moving jams spontaneously occur if the -ow rate at the on-ramp be-
+ginning from zero gradually is increasing. However, the range of the -ow rate
+to the on-ramp where moving jams spontaneously occur is limited. Beginning
+at a high enough -ow rate to the on-ramp spatial homogeneous states of tra�c
+-ow which have been called “homogeneous congested tra�c” (HCT) [62] oc-
+cur upstream of the on-ramp where no moving jams spontaneously emerge (e.g.,
+[59,62–65,32]).
+
+(ii) Models were, as well as in the models of item (i), beginning at some -ow rate
+to the on-ramp, moving jams spontaneously occurring upstream of the on-ramp.
+However, no HCT occurs in these models.
+
+How does the tra�c phase “synchronized -ow” and the tra�c phase “wide moving
+jam” emerge in an initially free tra�c -ow at an isolated bottleneck (i.e., the bottleneck
+is far away from other e=ective bottlenecks), e.g., at a bottleneck due to an on-ramp?
+Empirical observations in Refs. [74,76] allow us to conclude that the following sce-
+narios are responsible for the phase transitions and for the pattern evolution in tra�c
+-ow at the on-ramp:
+
+(1) Moving jams do not emerge in an initial free -ow at the on-ramp when the -ow
+rate at the on-ramp is gradually increasing. Rather than moving jams the phase
+transition from free -ow to synchronized -ow occurs at the on-ramp.
+
+(2) At a low enough -ow rate to the on-ramp the vehicle speed in synchronized -ow
+which has occurred upstream of the on-ramp is relatively high. Moving jams do
+not necessarily emerge in that synchronized -ow. If the -ow rate to the on-ramp
+is high, then the vehicle speed in the synchronized -ow is low and moving jams,
+in particular wide moving jams, emerge in that synchronized -ow.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 395
+
+(3) The lower the average vehicle speed in synchronized -ow upstream of the on-ramp,
+the higher the frequency of the moving jam emergence in that synchronized -ow.
+This means that the moving jam emergence goes on up to the highest possible
+values of the -ow rate to the on-ramp: Tra�c states of high density and low
+vehicle speed, where moving jams do not emerge, are not observed in synchronized
+-ow upstream of the on-ramp.
+
+The empirical results in item (1) and (2) are qualitatively in contradiction with both
+model classes (i) and (ii) in the fundamental diagram approach. In these models, at
+high enough initial -ow rates on the main road upstream of the on-ramp moving jams
+must emerge in an initial free -ow if the -ow rate to the on-ramp beginning from zero
+is gradually increased [32]. The last empirical result in item 3 means that on average
+the higher the vehicle density, the lower the stability of tra�c -ow with respect to
+the moving jam emergence in that -ow. This result of observations which seems to be
+intuitively obvious for each driver is in a qualitative contradiction with the models of
+class (i) in the fundamental diagram approach where HCT, i.e., homogeneous congested
+tra�c of high density and low vehicle speed must occur where moving jams do not
+emerge [32].
+The features of the theoretical diagram [62,63,66,32] given a high enough initial
+
+-ow rate on a highway upstream of the on-ramp may be illustrated with the following
+simple theoretical scheme 1:
+
+• A high -ow rate on the main road upstream of the on-ramp and a low -ow rate to
+the on-ramp → di=erent kinds of moving jams must emerge.
+
+• A high enough -ow rate to the on-ramp → HCT where the density is high and the
+speed is very low and no moving jams spontaneously emerge must occur.
+
+In contrast to this theoretical result [62,63,66,32], in empirical observations [76] the
+following empirical scheme 2 is observed:
+
+• A low -ow rate to the on-ramp → synchronized -ow where the density is relatively
+low and the speed is relatively high occurs where moving jams do not necessarily
+emerge.
+
+• A high enough -ow rate to the on-ramp → moving jams must spontaneously emerge
+in synchronized -ow upstream of the on-ramp at any high -ow rate to the on-ramp.
+
+Thus, these two schemas (the theoretical scheme 1 [62,63,66,32] and the empirical
+scheme 2 [76]) are in contradiction with one another.
+It should be noted that in models with the fundamental diagram for steady states
+
+which should explain empirical spatial–temporal congested tra�c patterns beyond the
+instability of some of these steady states, -uctuations and instabilities let the system
+evolve in time through a 2D region in the -ow–density plane as well. This 2D region is
+related to some “dynamical” model solutions. Examples of the 2D region in the -ow–
+density plane for the “dynamical” model states are the Nagel–Schreckenberg CA models
+(e.g., Ref. [69]), the models by Tomer et al. [72], Helbing, Treiber and co-workers
+[71,73], Nishinari and Takahashi [108], Fukui et al. [94]. However, in these tra�c -ow
+models, steady model states are related to a one-dimensional region in the -ow–density
+plane, i.e., to the fundamental diagram.
+
+
+
+396 B.S. Kerner / Physica A 333 (2004) 379–440
+
+If, in accordance with the three-phase tra�c theory, steady states of synchronized
+-ow form a 2D region in the -ow–density plane, the model dynamics is fundamentally
+di=erent [85–87]. This leads also to qualitative di=erences between the patterns of
+congested tra�c obtained in the three-phase tra�c theory or in the fundamental diagram
+approach, respectively.
+It must be noted that this critical consideration of the application of the funda-
+
+mental diagram approach for the description of congested tra�c does not concern
+some important mathematical ideas which have been introduced and developed in
+models and theories within the fundamental diagram approach with the aim to de-
+scribe the tra�c -ow dynamics, for example the ideas about the modelling of vehicle
+safety conditions, -uctuations, vehicle acceleration and deceleration, di=erent vehicle
+time delays and other important e=ects. In particular, the related pioneer mathematical
+ideas have been introduced in models and theories within the fundamental diagram ap-
+proach by Lighthill and Whitham [17], Richards [18], Prigogine [23], Gazis et al. [20],
+Komentani and Sasaki [21], Newell [22], Whitham [45], Bando et al. [47], Payne [24],
+Gipps [25], Wiedemann [27], Nagel and Schreckenberg and co-workers [42–44,52,69],
+Takayasu and Takayasu [109], KrauM et al. [51], Mahnke, KSuhne et al. [57,107,95],
+Helbing, Treiber and co-workers [56,66,73], Nishinari and Takahashi [108], Fukui et al.
+[94,106], Havlin, Tomer and co-workers [68,72], Nagatani and Nakanishi [111] and by
+many other groups (see references in the reviews by Chowdhury et al. [31], Helbing
+[32], Nagatani [33], Nagel et al. [34], Wolf [110]). These mathematical ideas are also
+very important elements of the three-phase tra�c theory [12,80,83] and of microscopic
+models within this theory [85–87]. The main feature of the three-phase tra�c theory
+is that this theory rejects the basic hypothesis about the fundamental diagram of ear-
+lier tra�c -ow theories and models. The three-phase tra�c theory introduces the new
+phase of tra�c -ow, synchronized -ow, whose steady states cover a 2D region in
+the -ow density plane. This allows us to overcome the above described problems of
+the fundamental diagram approach and to explain empirical spatial–temporal congested
+pattern features [74,76].
+
+4. Comparison of hypotheses to three-phase tra�c theory with some results of
+fundamental diagram approach
+
+4.1. Steady speed states [78,12,80]
+
+4.1.1. Explanation of fundamental hypothesis of the three-phase tra/c theory
+The fundamental hypothesis of the three-phase tra�c theory has already been for-
+
+mulated in Section 1.2.2 [74,78,79,81–83,103,104]: Hypothetical spatially homogeneous
+and time-independent (stationary) states of synchronized -ow, i.e., steady states of syn-
+chronized -ow where vehicles move at the same distance to one another with the same
+time-independent vehicle speed cover a 2D region in the -ow–density plane (Fig. 1).
+These steady states are the same for multi-lane and for one-lane roads. In other words,
+in the three-phase tra�c theory there is no fundamental diagram for steady states of
+synchronized -ow.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 397
+
+This is not excluded by the empirical fact mentioned above, that a given vehicle
+density determines the average vehicle speed. Indeed, from empirical observations it
+may be concluded that at the same distance between vehicles (at the same density)
+there may be a continuum of di=erent vehicle speeds within some 4nite range in
+synchronized -ow. Obviously the averaging of all these vehicle speeds leads to one
+average value at the given density.
+The 2D region of steady states of synchronized -ow (Fig. 1) is also not ruled out
+
+by car following experiments, where a driver has the task to follow a speci4c leading
+car and not lose contact with it (e.g., Ref. [1]). In such a situation, the gap between
+the cars will be biased towards the security gap depending on the speed of the leading
+car. In synchronized -ow the situation is di=erent: The gap between cars can be much
+larger than the security gap.
+The hypothesis about steady states of synchronized -ow which cover a 2D-region
+
+in the -ow–density plane makes the three-phase tra�c theory [74,78,83] almost
+incompatible with all classical tra�c -ow theories and present models (see, e.g.,
+Refs. [26,28,29,31,32,38–40,17,20,22,42,45–48,50–52,55–63,66,68–70]) which are
+based on the fundamental diagram approach.
+This follows from the diagram of congested patterns at bottlenecks which has recently
+
+been found by the author [76,103,114]. This diagram has been postulated on very
+general grounds within the three-phase tra�c theory [76,103] (see Section 4.6.3) and
+demonstrated for a microscopic tra�c model by Kerner and Klenov [85]. In this model,
+the upper boundary of a 2D-region of steady states of synchronized -ow in the -ow–
+density plane is related to the well-known dependence of the safe speed on the gap
+between vehicles. The low boundary of these steady states is related to the dependence
+of a synchronization distance D on the speed. These characteristics of steady states of
+synchronized -ow have been used by Kerner, Klenov and Wolf for the formulation of
+KKW cellular automata (CA) models to the three-phase tra�c theory which may show
+qualitatively the same diagram of congested patterns [86]. Recently Kerner and Klenov
+developed a microscopic non-linear theory of spatial–temporal congested patterns at
+highway bottlenecks [87]. This theory which is based on the three-phase tra�c theory
+allows us to explain and predict main empirical features of congested tra�c patterns
+[74,76].
+Note that the three-phase tra�c theory is a behavioral theory of tra�c -ow. This
+
+means that the hypotheses of this theory are based on common behavioral funda-
+mental characteristics of drivers observed on highways. In particular, the fundamental
+hypothesis of the three-phase tra�c theory (Section 2) is linked to a driver’s ability
+to recognize whether the distance to the vehicle ahead becomes higher or lower over
+time [78]. If gaps between vehicles are not very high, this driver’s ability is true even
+if the di=erence between vehicle speeds is negligible.
+It has been shown [76,85–87] that the main qualitative features of the congested
+
+pattern emergence observed in empirical investigations [74,76] can be shown in the
+three-phase tra�c theory where all drivers have the same characteristics and all vehi-
+cles have the same parameters. Obviously, in real tra�c there are di=erences in driver’s
+characteristics and in vehicle parameters (e.g., di=erent desired speeds and di=erent safe
+speeds, aggressive and timid driver’s behavior, vehicles and long vehicles) which may
+
+
+
+398 B.S. Kerner / Physica A 333 (2004) 379–440
+
+change some spatial–temporal congested pattern parameters and conditions of the pat-
+tern emergence. However, these di=erences in driver’s characteristics and in vehicle
+parameters may 4rst be neglected when fundamental congested tra�c pattern features
+are studied. This statement is con4rmed in the microscopic theory of congested traf-
+4c patterns [87] which is able to explain and to predict main fundamental empirical
+congested pattern features.
+
+4.1.2. Hypothesis about stability of steady states [12,78,80]
+In 1959 Herman, Montroll, Potts and Rothery have introduced the concept of a
+
+driver’s acceleration (deceleration) delay time in their car following microscopic traf-
+4c -ow model. They found an instability in some of the steady states of tra�c -ow
+[19]. The existence of the delay times in the vehicle acceleration and deceleration
+has been con4rmed in a lot of empirical observations (e.g., Ref. [26]). To study traf-
+4c phenomena beyond the instability, in 1961 Gazis, Herman and Rothery [20] and
+Newell [22] used the fundamental diagram for steady model states (for the review see
+Ref. [34]). Later the driver’s delay time and the fundamental diagram for steady model
+states have been used in a huge number of other tra�c -ow models and theories where
+the linear instability of steady states should occurs when the vehicle density exceeds
+some critical vehicle density (see references in the reviews [31–34]).
+In the three-phase tra�c theory, the driver’s delay time plays a very important role
+
+also, however a di=erent hypothesis is suggested [78,83,74,80,12,84]: Independent of
+the vehicle density in a steady state of synchronized 0ow inCnitesimal perturbations
+of any tra/c 0ow variables (e.g., the vehicle speed and/or the gap) do not grow:
+In the whole possible density range steady states of synchronized -ow can exist. In
+other words, in the whole possible density range (Fig. 1) there are no unstable steady
+states of synchronized -ow with respect to in4nitesimal perturbations of any tra�c
+-ow variables.
+To explain this hypothesis from the driver’s behavior, let us consider a small enough
+
+-uctuation in the braking of a vehicle in an initial synchronized -ow steady state which
+is related to one of the steady states inside a 2D region in the -ow–density plane
+(dashed region in Fig. 1). This small braking may lead to a transition from the initial
+synchronized -ow state to another state with a lower gap. This lower gap is equal to a
+gap in another state in a 2D region in the -ow–density plane. Thus, an occurrence of
+this -uctuation may cause a spatial–temporal transition to another state of synchronized
+-ow. Therefore drivers should not immediately react on this transition. For this reason
+even after a time delay, which is due to a 4nite reaction time of drivers, the drivers
+upstream should not brake stronger than drivers in front of them to avoid an accident.
+As a result, a local perturbation of tra�c variables (density or vehicle speed) of small
+enough amplitude does not grow.
+Already small amplitude -uctuations make real tra�c -ow always non-homogeneous
+
+and non-stationary. Thus, steady states are only hypothetical tra�c -ow states which
+cannot probably be found in measurements of real tra�c -ow on a freeway. The
+measurements of real tra�c -ow in which a broad spread of vehicle gaps at the same
+speed is observed (e.g. [1]) may be only a hint (but it is obviously not a proof) for the
+fundamental hypothesis about a 2D region of the steady states of synchronized -ow in
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 399
+
+the three-phase tra�c theory. As a proof of the three-phase tra�c theory mathematical
+results of this theory can be considered [85–87]. These results allow us to overcome
+the problems of the fundamental diagram approach for the description of empirical
+features of the phase transitions and spatial–temporal congested patterns.
+
+4.2. Phase transitions on homogeneous (without bottlenecks) roads
+
+4.2.1. The line J and hypothesis about emergence of moving jams [74]
+In contrast to the tra�c -ow theories in the fundamental diagram approach [31–34],
+
+in the three-phase tra�c theory, there is no critical density where tra�c -ow should
+become unstable with respect to the moving jam emergence [74,83,78]. How is the
+moving jam emergence explained in the three-phase tra�c theory?
+To understand this, we consider 4rst the process of the driver’s escaping from a
+
+standstill inside a wide moving jam. This process determines the velocity of the up-
+stream motion of the downstream front of the wide moving jam. In this process, each
+driver standing inside the wide moving jam can start to escape from the jam after
+(i) the vehicle in front of the driver has already escaped from the jam and (ii) the
+distance between these vehicles has exceeded some “safety distance”. Thus, the driver
+begins to escape after a delay time in the vehicle acceleration. The related mean delay
+time 
+(a)del determines the average time interval between two vehicles following one an-
+other escaping from the wide moving jam. Therefore, the velocity of the downstream
+jam front vg is:
+
+vg =− 1
+�max
+
+
+(a)
+del
+
+; (1)
+
+where �max is the mean vehicle density inside the wide moving jam.
+We propose that all vehicles are the same and all drivers have the same character-
+
+istics. Thus, we can suggest that the mean parameters �max and 
+
+(a)
+del do not depend
+
+on time. This means that the velocity of the downstream wide moving jam front vg
+(1) is also independent of time: The propagation of the downstream wide moving jam
+front is on average a stationary process. The stationary motion of the downstream jam
+front can be presented in the -ow–density plane by the characteristic line J (Fig. 7(a))
+which is called the line J [77]. The slope of the line J in the -ow–density plane is
+equal to the velocity of this downstream front vg. If free -ow is formed in the wide
+moving jam out-ow, the -ow rate in this jam out-ow is qout, the density is �min and
+the speed is vmax. As well as the velocity vg, the mean parameters of the jam out-ow
+qout, �min and vmax are characteristic parameters which do not depend on initial con-
+ditions. The stationary propagation of the downstream front of wide moving jams and
+the line J have been found in empirical studies of wide moving jams [77,113].
+The following hypothesis of the three-phase tra�c theory is related to the wide
+
+moving jam emergence in the 2D steady states of synchronized -ow [83,74]:
+All (an in4nite number!) steady states of tra/c 0ow which are related to the line
+
+J in the 0ow–density plane are threshold states with respect to the wide moving jam
+emergence.
+
+
+
+400 B.S. Kerner / Physica A 333 (2004) 379–440
+
+F
+qout
+
+(syn) (syn)ρmin 1 ρmin 2
+
+(2)SJ
+
+(1)
+
+(1)
+
+(2)
+
+SJ
+
+vsyn
+
+vsyn
+
+synchronized
+flow
+
+flo
+w
+
+ ra
+te
+
+, q
+
+density, ρ
+
+density, ρ
+
+(a)
+
+th
+e 
+
+cr
+iti
+
+ca
+l a
+
+m
+pl
+
+itu
+de
+
+ o
+f
+
+th
+e 
+
+de
+ns
+
+ity
+ p
+
+er
+tu
+
+rb
+at
+
+io
+n
+
+∆ρ
+c
+
+ρmin
+
+(free)qmax
+
+(free)
+ 
+
+(a)
+
+(b)
+
+ρmax
+ρmax
+
+Fig. 7. Explanation of the jam emergence in synchronized -ow in the three-phase tra�c theory [71]: (a) the
+line J . States of free (curve F) and steady states of synchronized -ow (hatched region) are the same as in
+Fig. 1(a). (b) Qualitative dependences (S(1)J ; S
+
+(2)
+J ) of the critical density amplitude of a local perturbation
+
+Q�c on the density in steady speed states. The curves S
+(1)
+J (�) and S
+
+(2)
+J (�) are related to two di=erent constant
+
+speeds v(1)syn and v
+(2)
+syn, respectively (v
+
+(1)
+syn ¿v
+
+(2)
+syn). The densities �
+
+(syn)
+min 1 and �
+
+(syn)
+min 2 are the threshold densities
+
+for the jam emergence for the vehicle speeds v(1)syn and v
+(2)
+syn, respectively.
+
+This means that the line J separates all steady states of tra�c -ow into two quali-
+tatively di=erent classes:
+
+(1) In states which are related to points in the -ow–density plane lying below (see
+axes in Fig. 7(a)) the line J no wide moving jams can either continue to exist or
+be excited.
+
+(2) States which are related to points in the -ow–density plane lying on and above the
+line J are metastable steady states with respect to the wide moving jam emergence
+(the F→ J transition) where the related nucleation e=ect can be realized. In a
+metastable steady state, a growth of an initial local perturbation can lead to the
+wide moving jam formation only if the amplitude of this perturbation exceeds a
+critical amplitude. In contrast, if the amplitude of the perturbation is lower than
+the critical amplitude the initial perturbation does not lead to the wide moving jam
+formation. In the latter case, a transition from one to another steady state in the
+2D region of steady states is however possible rather than the wide moving jam
+formation.
+
+This hypothesis has been con4rmed by numerical simulations of the model by Kerner
+and Klenov in the frame of the three-phase tra�c theory (see Fig. 1(f) in Ref. [85]).
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 401
+
+de
+ns
+
+ity
+, ρ
+ 
+
+distance
+
+direction of flow
+
+ρmin 
+
+ρmax 
+de
+
+ns
+ity
+
+, ρ
+ 
+
+distance
+
+direction of flow
+
+ρmin
+
+ρmax 
+
+gv
+
+gv
+(up)vg
+
+(up)
+vg
+
+synchronized
+flow
+
+F
+
+0 (free)ρmax 
+
+flo
+w
+
+ ra
+te
+
+density
+
+J
+
+ρmax 
+
+qout
+
+synchronized
+flow
+
+F
+
+(free)qmax
+
+(free)qmax
+
+0
+(free)ρmax 
+
+flo
+w
+
+ ra
+te
+
+density
+
+J
+ρmax
+
+qout
+
+k
+
+n
+
+ρmin 
+
+ρmin
+
+K
+
+N
+
+ 
+
+ 
+
+(syn)
+
+(a) (b)
+
+(c) (d)
+
+ρn
+
+(syn)ρk
+
+(syn)ρk
+
+(syn)ρn
+
+Fig. 8. (a–d) Explanation of the wide moving jam emergence in steady states of tra�c -ow in Ref. [71]. In
+(a,c) qout �min are the -ow rate and the density in the wide moving jam out-ow, respectively (see Fig. 7).
+
+To explain the hypothesis, note that wide moving jams cannot be formed in any
+steady states of tra�c -ow situated below the line J. Indeed, let the steady state of
+-ow directly upstream of a wide moving jam is related to a point k in the -ow–density
+plane which is below the line J (Fig. 8(a,b)). Because the velocity of the upstream
+front of the wide moving jam v(up)g equals the slope of a line from k to the point
+[�max; 0], the related absolute value |v(up)g | is always lower than that of the downstream
+front |vg| which is determined by the slope of the line J :
+
+|v(up)g |¡ |vg| : (2)
+Therefore, the width of the wide moving jam is gradually decreasing. Otherwise, let
+us consider the case when a steady -ow which is upstream from another wide moving
+jam is above the line J (see a point n in Fig. 8(d)). In this case, the velocity of
+the upstream front of the wide moving jam v(up)g equals the slope of a line from n to
+the point [�max; 0], i.e., the related absolute value |v(up)g | is always higher than that of
+the downstream front |vg|:
+
+|v(up)g |¿ |vg| : (3)
+Therefore, the width of the wide moving jam in Fig. 8(d) should be gradually increas-
+ing. For these reasons, wide moving jams can be formed in steady states of tra�c -ow
+which lie on and above the line J .
+
+
+
+402 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Recall that the line J has 4rst been introduced by Kerner and KonhSauser in 1994
+[46] in their theory of wide moving jams. The Kerner–KonhSauser theory of wide
+moving jams which has been derived within the fundamental diagram approach has
+been further applied and developed for a number of di=erent tra�c -ow models
+[48,51,52,56,57,62,63,66,69,70,31,32,95]. In this theory [46], the line J separates stable
+and metastable states of free -ow with respect to the wide moving jam emergence:
+States of free -ow which are on and above the line J (i.e., when the density and the
+-ow rate in free -ow are either equal to or higher than the density �min and the -ow
+rate qout in the out-ow from the wide moving jam when free -ow is formed down-
+stream of the jam, respectively) are metastable states with respect to the wide moving
+jam emergence (the F→ J transition). The line J and the characteristic wide moving
+jam parameters following from the theory [46] have indeed been found in empirical
+observations [113].
+However, in the fundamental diagram approach at the limit point of this metastable
+
+region of free -ow (�(free)max ; q
+(free)
+max ) (Fig. 7(a)) free -ow becomes unstable with re-
+
+spect to the moving jam emergence (the F→ J transition) [46–48,50,55,56,58–63,66,68
+31–34,95]. This common feature of all tra�c -ow models within the fundamental di-
+agram approach which claim to show moving jam emergence is in contradiction with
+empirical observations: Moving jams do not spontaneously emerge in real free -ow.
+In contrast, in the three-phase tra�c theory at this limit point of free -ow the F→S
+transition occurs rather than the F→ J transition [12,80]. This is in accordance with
+empirical results [74,76] (see for more detail Section 4.2.5).
+
+4.2.2. Hypothesis about continuous spatial–temporal transitions between states of
+synchronized 0ow on homogeneous roads [78]
+If in a metastable steady state on and above the line J in the -ow–density plane a
+
+local perturbation occurs whose amplitude is lower than the critical amplitude then this
+perturbation does not lead to the moving jam emergence. However, the perturbation can
+nevertheless cause a local transition to another state of synchronized -ow rather than
+tra�c -ow returning to the initial steady state. The same case can also occur for steady
+states below the line J , i.e., for steady states which are stable with respect to the moving
+jam emergence. Thus, when a lot of di=erent local perturbations appear in tra�c -ow,
+then very complex spatial–temporal transitions between states of synchronized -ow can
+occur. These synchronized -ow states can be close to steady states. This is the contents
+of the following hypothesis of the three-phase tra�c theory [78,83,74,80,12,84]:
+Local random perturbations in synchronized 0ow can cause continuous spatial–
+
+temporal transitions between diEerent states of synchronized 0ow (a random “walking”
+between di=erent 2D states in the -ow density plane).
+Complex transformation between small-amplitude spatial–temporal states which are
+
+close to model steady states is observed in microscopic models [85,86] where steady
+speed states of synchronized -ow cover a 2D-region in the -ow density plane.
+Strictly speaking, already small-amplitude random perturbations and deterministic dy-
+
+namical e=ects in synchronized -ow destroy steady states: Rather than steady states
+some complex spatial–temporal dynamical states of synchronized -ow can appear.
+However, if the perturbation amplitude is low enough these complex states can be
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 403
+
+very close to steady states. These small-amplitude spatial–temporal states should pos-
+sess the features of steady states discussed above and which will be considered in
+other hypotheses of the three-phase tra�c theory below. This behavior is observed in
+the recent models based on the three-phase tra�c theory [85–87].
+
+4.2.3. Two kinds of nucleation eEects and phase transitions in free 0ow
+How should the tra�c phase “synchronized -ow” and the tra�c phase “wide moving
+
+jam” emerge in an initial free tra�c -ow on a homogeneous multi-lane road (curve F
+in Fig. 1(a))? The following hypothesis of the three-phase tra�c theory answers these
+questions (Figs. 9 and 11) [80,12]:
+At the same density in free 0ow there may be two qualitatively diEerent nucleation
+
+eEects and the related two qualitative diEerent Crst-order phase transitions in free
+0ow:
+
+(1) The nucleation e=ect which is responsible for the moving jam’s emergence in free
+-ow, i.e., for the phase transition from free -ow to a wide moving jam (the F→ J
+transition).
+
+(2) The nucleation e=ect which is responsible for the F→S transition.
+The F→S transition is observed in real free -ow: This transition is responsible for
+
+the onset of congestion in free -ow [76]. The onset of congestion is accompanied by
+the speed breakdown. This is called the breakdown phenomenon in free -ow (e.g.,
+Ref. [8]). Thus, in the three-phase tra�c theory, the well-known breakdown phe-
+nomenon (the onset of congestion) is explained by the F→S transition [83,12]. The
+empirical breakdown phenomenon, i.e., the F→S transition is accompanied by a hys-
+teresis e=ect. The hysteresis e=ect is an attribute of the 4rst order phase transition.
+Although the spontaneous F→ J transition is not observed, nevertheless the F→ J
+
+transition can be induced in free -ow. This is con4rmed by two empirical facts: (i)
+The induced F→ J transition has been observed in Ref. [81]. (ii) Empirical maximum
+-ow rate in free -ow q(free)max satis4es the condition:
+
+q(free)max ¿qout : (4)
+
+This means that there are states of free -ow where the -ow rate q¿qout. These states
+are metastable with respect to the wide moving jam emergence.
+Thus, both phase transitions are con4rmed by empirical data. These both 4rst-order
+
+phase transitions are also found in a microscopic three-phase tra�c theory [85–87].
+
+4.2.4. Priority of F→ S transition in free 0ow [12,80]
+The following hypothesis answers the question whether the F→ J transition or the
+
+F→S transition is more probable in free -ow at the same density:
+At each given density in free 0ow the critical amplitude of a local perturbation in
+
+the free 0ow which is needed for the F→ S transition (the curve FS in Fig. 9(b)) is
+considerably lower than the critical amplitude of a local perturbation which is needed
+for the F→ J transition (the curve FJ in Fig. 9(b)).
+This hypothesis is con4rmed by empirical observations: The onset of congestion
+
+in real free -ow is linked to the F→S transition rather than to the F→ J transition
+
+
+
+404 B.S. Kerner / Physica A 333 (2004) 379–440
+
+flo
+w
+
+ ra
+te
+
+, q
+
+density, ρ
+
+density, ρ
+ρmax0
+
+FJ
+
+ρmin
+
+FS
+
+∆ρ(x)  
+
+x
+
+0
+
+synchronized
+flowF
+
+qmax
+
+J
+qout
+
+th
+e 
+
+cr
+iti
+
+ca
+l a
+
+m
+pl
+
+itu
+de
+
+ o
+f
+
+th
+e 
+
+de
+ns
+
+ity
+ p
+
+er
+tu
+
+rb
+at
+
+io
+n 
+∆ρ
+
+c
+ 
+
+density, ρ
+(free)ρmax
+
+(free)ρmax
+
+(free)ρmax
+
+(free)
+
+FJ
+
+ρth
+
+ρth
+
+FS
+
+0
+ρmin
+
+ρmin
+
+th
+e 
+
+pr
+ob
+
+ab
+ili
+
+ty
+ o
+
+f
+th
+
+e 
+ph
+
+as
+e 
+
+tra
+ns
+
+iti
+on
+
+1
+
+∆ρa 
+
+qth
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 9. Explanation of hypotheses to the three-phase tra�c theory [12,80]: (a) States of free (curve F) and
+synchronized -ow (hatched region) which are the same as in Fig. 1(a). (b) Qualitative dependencies of
+the amplitude of the critical density local perturbation on the density. (c) Qualitative dependencies of the
+probability of the phase transitions. In (b,c) the curve FS is related to the F→ S transition and the curve
+FJ is related to the F→ J transition. In (b), right, a form of a local density perturbation is schematically
+shown which grows if the amplitude of this perturbation, Q�a, exceeds the critical amplitude Q�c (links).
+Qualitative character of dependencies of the critical amplitude of the speed local perturbation on the density
+is the same as for the density perturbation shown in (b). This is because a change in the density inside a
+local perturbation in free -ow is accompanied by the related change in the speed.
+
+[74,76]. This is also a result of a mathematical three-phase tra�c theory of the phase
+transitions in free -ow (see Fig. 1(b) in Ref. [85]).
+Obviously, the higher the amplitude of a random local perturbation in a free -ow,
+
+the lower the mean probability (for a given time interval) of an occurrence of this
+perturbation. Thus, at each given density in free -ow the mean probability for a given
+time interval of an occurrence of the F→S transition, PFS (the curve FS in Fig. 9(c))
+should be considerably higher than the probability for the same time interval of the
+F→ J transition, PFJ (the curve FJ in Fig. 9(c)).
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 405
+
+4.2.5. The critical (limit) density in free 0ow [12,80]
+The following hypothesis explains the existence of the critical (limit) point of free
+
+-ow (�(free)max ; q
+(free)
+max ) (Figs. 1(a) and 9(a)):
+
+The existence of the critical (limit) point of free 0ow (�(free)max ; q
+(free)
+max ) is linked to
+
+the F→ S transition rather than with the moving jam emergence. This hypothesis is
+related to the empirical result that in each free -ow state, if the onset of congestion
+in this free -ow occurs then this is linked to the F→S transition rather than to the
+F→ J transition [74,76]. The following hypotheses also result from this empirical fact:
+At the limit point of free 0ow (�(free)max ; q
+
+(free)
+max ) the probability of the F→ S transition,
+
+PFS reaches one and the critical amplitude of the local perturbation for the F→ S
+transition reaches zero (the curves FS in Fig. 9(b,c)).
+At the limit point of free 0ow (�(free)max ; q
+
+(free)
+max ) the probability of the F→ J transition
+
+is very low and consequently the critical amplitude of a local perturbation which is
+needed for the F→ J transition is a relatively high Cnite value (the curves FJ in
+Fig. 9(b,c)).
+These hypotheses are also con4rmed by a microscopic three-phase tra�c theory [85–
+
+87] where the limit point of free -ow is linked to the F→S transition rather than to
+the F→ J transition.
+In contrast to these results of the three-phase tra�c theory and to results of empirical
+
+observations [76], in the fundamental diagram approach the breakdown phenomenon
+as well as the limit point of free -ow (�(free)max ; q
+
+(free)
+max ) are explained by the moving jam
+
+emergence in free -ow (see references in the reviews [31–34]).
+
+4.3. Physics of breakdown phenomenon
+
+4.3.1. Z-shaped speed–density characteristic
+Because corresponding to the hypothesis discussed in Sections 4.2.3–4.2.5 the empir-
+
+ical onset of congestion (the breakdown phenomenon) in an initial free -ow is linked
+to the F→S transition, we consider here the physics of this phase transition in more
+detail. To do this, let us designate the critical amplitude of the critical local perturba-
+tion needed for the F→S transition as Qv(FS)cr . For this critical amplitude we can write
+the formula
+
+Qv(FS)cr = v
+(free)
+initial − v(FS)cr ; (5)
+
+where v(free)initial is the speed in an initial free -ow and v
+(FS)
+cr is the vehicle speed inside
+
+the critical local perturbation. At the critical (limit) point of free -ow (�(free)max ; q
+(free)
+max )
+
+the critical amplitude
+
+Qv(FS)cr |�=�(free)max = 0 : (6)
+This means that at the limit point of free -ow the mean probability for the F→S
+transition, PFS is equal to
+
+PFS|�=�(free)max = 1 : (7)
+The critical (limit) density �(free)max (the critical -ow rate q
+
+(free)
+max ) is found from condi-
+
+tion (7). Thus, the critical (limit) point of free -ow (�(free)max ; q
+(free)
+max ) is determined by
+
+
+
+406 B.S. Kerner / Physica A 333 (2004) 379–440
+
+formula (7), i.e., through the calculation of the mean probability for the F→S transi-
+tion, PFS. For this reason, we consider the de4nition of this probability.
+This probability is de4ned as follows. We consider a large number of di=erent re-
+
+alizations, NFS, where the F→S transition in an initial free -ow are studied. Each of
+the realizations should be performed at the same -ow rate of free -ow, other initial
+conditions, and during the same time interval Tob of the observation of the spontaneous
+F→S transition on a chosen highway section of the length Lob. Let us assume that
+in nFS of these NFS realizations the F→S transition occurs. Then, the mean proba-
+bility of this transition for the time interval Tob and for the length of the road Lob is
+equal to 5
+
+PFS =
+nFS
+NFS
+
+: (8)
+
+When the density in free -ow decreases, the critical amplitude of the local perturbation
+for the F→S transition increases. There should be a threshold point (�th ; qth) for the
+F→S transition. This threshold point is de4ned as follows. If the density decreases then
+the threshold density �th is the minimum density in free -ow where the F→S transition
+can still occur. This means that below the threshold density, i.e., when �¡�th, for the
+mean probability PFS we have the condition:
+
+PFS|�¡�th = 0 : (9)
+In the threshold point �= �th (q= qth), the critical amplitude of the local perturbation
+for the F→S transition reaches a maximum value
+
+Qv(FS)cr |�=�th = Qv(FS)cr;max : (10)
+This behavior of the critical amplitude of the local perturbation and of the mean proba-
+bility of the F→S transition PFS is shown by the curves FS in Fig. 9(b,c), respectively.
+The curve F for states of free -ow, the critical branch v(FS)cr (�) (Fig. 10) which
+
+determines the critical amplitude (5) of local perturbation for the F→S transition as a
+function of the density, and the 2D region for steady states of synchronized -ow form
+together a Z-shaped function of the speed of the density (Fig. 10(b,c)). This hypoth-
+esis about the Z-shaped tra�c -ow characteristic for the breakdown phenomenon is
+con4rmed in the microscopic three-phase tra�c -ow theory (see Fig. 2(a) in Ref. [87]).
+
+4.3.2. Passing probability
+This Z-shaped speed–density relationship is qualitatively correlated with the hypoth-
+
+esis about the mean probability of passing P on a multi-lane road (Fig. 11). In the
+three-phase tra�c theory, the following hypothesis is valid [12,80,84]:
+The mean probability of passing, P, on a multi-lane road is a Z-shaped function
+
+of the density (Fig. 11(b)).
+At a very low vehicle density in free -ow vehicles can freely pass. Thus, the proba-
+
+bility of passing P in free -ow should reach one at the density �→ 0 (the curve PF in
+Fig. 11(b)). To determine the probability of passing P, a large number, NP, of di=er-
+ent realizations (runs) for passing should be performed at the same initial conditions
+
+5 Strictly speaking the exact mean probability of the spontaneous F→ S transition is determined when
+NFS→∞.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 407
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 10. Qualitative illustration of the F→ S transition (the breakdown phenomenon): The critical branch
+v(FS)cr (dashed curve) gives the speed inside the critical local perturbation, the threshold density �th and the
+threshold -ow rate qth in free -ow for the F→ S transition on a homogeneous road in the -ow–density
+plane (a) and in the speed–density plane (b,c). In (a) states of free and synchronized -ows are taken from
+Fig. 1(a). In (b) states of free and synchronized -ows are related to (a). In (c) a part of (b) for lower
+density range in a higher scale is shown. The black point in (a–c) on the curve F for free -ow shows the
+threshold point � = �th for the F→ S transition.
+
+and the same time interval for passing. In each of these realizations, there should be
+a driver who moves with a speed higher than the speed of the vehicle ahead. When
+approaching the vehicle ahead, the driver should try to pass using a passing freeway
+lane. It can occur that in some of the realizations the driver is able to pass, but in the
+other realization the driver is not able to pass. The latter is because the passing lane
+was occupied by other drivers. If the number of realizations where the driver was able
+
+
+
+408 B.S. Kerner / Physica A 333 (2004) 379–440
+
+0
+(free)ρmax
+
+(free)ρmax
+
+ρth
+
+Pcr
+
+PS
+
+1
+
+(free)ρmax
+
+PF
+
+density, ρ
+0
+
+synchronized
+flow
+
+F
+
+(free)qmax
+
+flo
+w
+
+ ra
+te
+
+, q
+
+density, ρ
+ρmin
+
+(syn)ρmin
+
+qth
+
+ρth
+
+0
+
+Pcr
+
+PS
+
+1
+PF
+
+density, ρ
+
+th
+e 
+
+m
+ea
+
+n 
+pr
+
+ob
+ab
+
+ili
+ty
+
+o
+f p
+
+as
+sin
+
+g,
+ P
+
+th
+e 
+
+m
+ea
+
+n 
+pr
+
+ob
+ab
+
+ili
+ty
+
+o
+f p
+
+as
+sin
+
+g,
+ P
+
+(syn)
+
+ρmin(syn)
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 11. Explanation of the hypothesis about the Z-shaped dependence of the mean probability of the passing
+P in the three-phase tra�c theory [12,80]: (a) States of free (curve F) and synchronized -ow (hatched region)
+which are the same as in Fig. 1(a). (b) Qualitative dependence of the mean probability of the passing P
+(which is averaged over all di=erent steady states of synchronized -ow at a given density) as a function
+of the density. (c) Qualitative dependence of the mean probability of the passing P as a function of the
+density without averaging of the mean probability for all di=erent steady states of synchronized -ow at a
+given density. The black point in (a, c) is related to the threshold point for the F→ S transition.
+
+to pass is nP, then the probability of passing is 6
+
+P =
+nP
+NP
+
+: (11)
+
+To explain the hypothesis about the Z-shaped form of the probability of passing, note
+that in accordance with the fundamental hypothesis of the three-phase tra�c theory
+
+6 Strictly speaking the exact probability of passing is determined when NP→∞.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 409
+
+steady states of synchronized -ow overlap states of free -ow in the vehicle density
+within a density range (Fig. 11(a))
+
+[�(syn)min ; �
+(free)
+max ] : (12)
+
+However, it is well-known that the mean probability of passing in congested tra�c
+(in our case, in one of the two tra�c phases in congested tra�c, “synchronized -ow”)
+P is considerably lower than in free -ow. Thus, in free -ow the mean probability of
+passing, P (the curve PF in Fig. 11(b)) should be higher than that in synchronized -ow
+(the curve PS). In the range of the density (12), at the same given density there can
+be either a state of free -ow where P = PF is high or a steady state of synchronized
+-ow where P=PS is low. This leads to the Z-shaped function of the mean probability
+of passing in the three-phase tra�c theory.
+The Z-form of the dependence of the mean probability of passing P of the density
+
+as well as the related Z-shape of the speed–density relationship allows us to explain
+the F→S transition on a multi-lane (in one direction) freeway. If the density in free
+-ow is gradually increasing then a drop in the mean probability of passing P must
+occur when the density reaches the limit density for free -ow �(free)max (Fig. 11(b)). As
+a result of this drop the mean probability of passing P decreases sharply to low values
+of P which are related to synchronized -ow. Thus, at the limit density for free -ow
+�(free)max the spontaneous F→S-transition must occur.
+The hypothesis about the Z-shaped mean probability of passing P as a function of the
+
+vehicle density can also be explained by the above empirical study of the WSP where
+it has been shown that states of synchronized -ow overlap with states of free -ow in
+the density (Figs. 5 and 6(a); see also Fig. 2 in Ref. [80]). This means that at the
+same density either a state of synchronized -ow or a state of free -ow is possible. It is
+obvious that the mean probability of passing is higher in free -ow than in synchronized
+-ow. Thus, the empirical fact that states of free -ow and synchronized -ow overlap
+in the vehicle density (Figs. 5 and 6(a)) means that the mean probability of passing
+should have a Z-shape. Indeed, the lower the mean rate of passing, the lower the mean
+probability of passing P is. The mean rate of the passing should decrease when the
+vehicle speed di=erence Qv becomes lower.
+However, it must be noted that this overlapping of states of free -ow and states
+
+of synchronized -ow occurs in a narrow range of the density in the vicinity of the
+limit density in free -ow �(free)max , i.e., when the average speed of synchronized -ow is
+relatively high (see Fig. 2 in Ref. [80] and Section 2.2). Therefore, if in some empirical
+data only synchronized -ows of a relatively low vehicle speed are observed then no
+overlapping of states of free and synchronized -ows could be found. As a result,
+some authors make a conclusion that there is no overlapping of states of free and
+synchronized -ows, and as a result a dependence of the mean probability of passing P
+as a function of the density should be a monotonous decreasing one (e.g., Ref. [102]).
+However, to make the correct conclusion about of whether an overlapping of states
+of free and synchronized -ows exists, a more precise empirical study is necessary
+(Section 2.2).
+
+
+
+410 B.S. Kerner / Physica A 333 (2004) 379–440
+
+4.3.3. Competition between over-acceleration and speed adaptation
+The 4rst-order F→S transition may be explained by a competition between two
+
+contradicting tendencies inside a local perturbation in an initial free -ow:
+
+(i) A tendency to the initial free -ow due to an “over-acceleration”.
+(ii) A tendency to a synchronized -ow due to the vehicle speed adaptation to the speed
+
+of the vehicle ahead.
+
+This hypothesis is con4rmed by the microscopic three-phase tra�c theory [87].
+The vehicle “over-acceleration” can occur due to passing: For passing the vehicle
+
+has usually to increase its speed. The tendency to synchronized -ow can occur due
+to the need in the adaptation of the vehicle speed to the speed of the leading vehicle
+when passing is not possible or is di�cult.
+The “over-acceleration” is stronger at a higher vehicle speed, exactly lower density.
+
+In this case, an initial local perturbation in free -ow decays (up-arrow in Fig. 10(c)).
+The over-acceleration is also responsible for the phase transition from synchronized
+-ow to free -ow (the S→F transition).
+In contrast, the tendency to the speed adaptation is stronger at a lower speed, i.e.,
+
+at a higher density. This causes a decrease in the average vehicle speed inside the
+initial perturbation (down-arrow in Fig. 10(c)) and a self-maintenance of the emerging
+synchronized -ow.
+The curve PS in Fig. 11(b) is related to some simpli4cations: These curves are
+
+an averaging of all di=erent synchronized -ow speeds at a given density to one av-
+erage speed. If we consider all these di=erent steady-state synchronized -ow speeds
+(as it has been made in Fig. 10(b,c)) we naturally come to Fig. 11(c) for the mean
+probability of passing which re-ects the 2D region of steady states of synchronized
+-ow.
+
+4.4. Why moving jams do not emerge in free 0ow
+
+In the three-phase tra�c theory, wide moving jams do not spontaneously emerge
+in free -ow (Section 4.2.3). This hypothesis is related to results of empirical obser-
+vations [74,81] and it is also con4rmed in the mathematical three-phase tra�c theory
+[85–87].
+To explain this hypothesis of the three-phase tra�c theory, we present the line
+
+J in the -ow–density plane together with states of free -ow and steady states of
+synchronized -ow as is now shown in Fig. 12(a). The line J in the -ow–density plane
+(Fig. 12(a)) is related to a parabolic function in the speed-density plane (curve J in
+Fig. 12(b)).
+We suggest that besides the critical point of the F→S transition, (�(free)max ; q(free)max ), there
+
+is another hypothetical critical point in free -ow, (�(free)max; FJ ; q
+(free)
+max; FJ), where the critical
+
+amplitude of the critical perturbation which is needed for the F→ J transition is zero
+(Fig. 12(b)). However, the density in free -ow which is related to this critical density
+�(free)max; FJ is much higher than the critical density �
+
+(free)
+max where the F→S transition
+
+must occur. This hypothesis is con4rmed by the microscopic three-phase tra�c theory
+[85,87].
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 411
+
+density
+
+0
+
+vmax
+
+sp
+ee
+
+d
+
+F
+
+ρth
+ρmax
+
+ρmax
+
+vmin
+
+(free)ρmax
+
+(free)ρmax
+
+ρmin
+
+J
+
+(syn)ρmin 
+
+(FJ)vcr
+
+(FS)vcr
+
+qth
+
+synchronized
+flow
+
+F
+
+qmax
+
+0
+ 
+
+flo
+w
+
+ ra
+te
+
+density
+
+J
+
+ 
+
+qout
+
+synchronized
+flow
+
+(free)
+ρmax,  FJ
+
+F
+
+vmin
+
+qmax
+
+(free)
+
+(free)
+
+(free)
+
+(syn)
+
+(a)
+
+(b)
+
+Fig. 12. Explanation of the question why moving jams do not emerge in free -ow in the three-phase tra�c
+theory [74]. (a) A qualitative concatenation of states of free -ow (curve F), steady states of synchro-
+nized -ow (hatched region), the critical branch v(FS)cr with Line J in the -ow–density plane. (b) states in
+speed–density plane related to (a). In (a,b) states of free -ow (curve F), steady states of synchronized
+-ow (hatched region) and the critical branch v(FS)cr are taken from Fig. 10(a) and (b), respectively.
+
+The density of free -ow �(free), which is related to these hypothetical free -ow states
+�(free)max ¡�(free)6 �
+
+(free)
+max; FJ, cannot be reached in reality (states F
+
+′, Fig. 12(b)). This is
+because at the density �(free) = �(free)max synchronized -ow must occur. There should be a
+critical branch v(FJ)cr in the speed–density plane (Fig. 12(b)). The critical branch v
+
+(FJ)
+cr
+
+gives the speed inside the critical perturbation, i.e., it determines the critical amplitude
+of the critical local perturbation Qv(FJ)cr for the F→ J transition: Qv(FJ)cr = v(free) − v(FJ)cr .
+Here v(free) is the speed in free -ow.
+At the critical density �(free)max; FJ the critical amplitude of the critical perturbation for
+
+the F→ J transition is zero: Qv(FJ)cr = 0. Thus, at the density �(free) = �(free)max; FJ the
+branch v(FJ)cr should merge with the branch of states of free -ow F ′. At lower density,
+�(free)¡�(free)max; FJ, the critical amplitude of the critical perturbation for the F→ J tran-
+sition should increase with the decrease in density. At the threshold point of free -ow
+for the F→ J transition, (�min ; qout), the critical local perturbation with the highest
+amplitude is needed where the speed is equal to the speed inside a wide moving jam
+vmin = 0 (Fig. 12(b)).
+
+
+
+412 B.S. Kerner / Physica A 333 (2004) 379–440
+
+(a)
+
+(b)
+
+Fig. 13. (a,b) Explanation of the critical branches v(SJ)cr; 1 and v
+(SJ)
+cr; 2 for the S→ J transition for two di=erent
+
+steady synchronized -ow speeds v(1)syn and v
+(2)
+syn, respectively. States for free -ow (curve F), steady states of
+
+synchronized -ow (dashed region) and the curve J are taken from Fig. 12(b).
+
+Therefore, we see that the critical amplitude of the local perturbation which is needed
+for the moving jam emergence in an initial free -ow Qv(FJ)cr at each density in free
+-ow is higher than the critical amplitude of the local perturbation which is needed for
+the synchronized emergence in free -ow Qv(FS)cr (5). This theoretical conclusion may
+explain why the spontaneous emergence of moving jams is not observed in free -ow
+[74,76].
+
+4.5. Explanation of F→ S→ J transitions: double Z-shaped tra/c 0ow
+characteristics
+
+Let us 4rst show that the S→ J transition considered in Section 4.2.1 is related to a
+Z-shaped function in the speed–density plane (Fig. 13(a)). To explain this hypothesis,
+we consider the speeds v(1)syn and v
+
+(2)
+syn from Fig. 7. The threshold densities �
+
+(syn)
+min J; 1
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 413
+
+and �(syn)min J; 2 for the S→ J transition (Fig. 7) correspond to the intersection points
+between the horizontal line of the speeds v(1)syn and v
+
+(2)
+syn with the curve J in the speed–
+
+density plane (Fig. 13(a)). Because there is an in4nite number of di=erent speeds in
+synchronized -ow, there is also an in4nite number of threshold densities for these
+di=erent synchronized -ow speeds. There is also an in4nite number of the related
+critical branches v(SJ)cr each of then gives the speed inside the critical local perturbation
+for S→ J transition (only two of them, v(SJ)cr; 1 and v(SJ)cr; 2, are shown in Fig. 13(a) for the
+speeds v(1)syn and v
+
+(2)
+syn, respectively). The critical amplitude of the critical perturbation in
+
+the speed for the S→ J transition is equal to Qv(SJ)cr = vsyn − v(SJ)cr , where vsyn is one of
+the in4nite possible synchronized -ow speeds.
+At the threshold density the critical branch v(SJ)cr (�) for the S→ J transition (v(SJ)cr (�)
+
+gives the speed inside the critical perturbation as a function of the density) should
+merge with the speed inside a wide moving jam vmin = 0 in the speed–density plane
+(points (�(syn)min J; 1; 0) and (�
+
+(syn)
+min J; 2; 0) in Fig. 13(a)). This means that at the threshold
+
+density the critical amplitude of the critical perturbation in the speed for the S→ J
+transition is a high value: Qv(SJ)cr = vsyn.
+At critical points for the S→ J transition, where the critical amplitude Qv(SJ)cr =0, the
+
+critical branch v(SJ)cr (�) merges with a horizontal line in the speed–density plane. This
+horizontal line is related to a given synchronized -ow speed vsyn (e.g., the horizontal
+lines are related to the speeds v(SJ)cr; 1 and v
+
+(SJ)
+cr; 2 in Fig. 13(a) for the critical branches v
+
+(SJ)
+cr; 1
+
+and v(SJ)cr; 2, respectively). The synchronized -ow states (dashed region in Fig. 13(a)),
+
+the critical branch v(SJ)cr , and the line vmin = 0 for the speed inside a wide moving
+jam give together a Z-shaped characteristic for the S→ J transition (Fig. 13(a)). This
+Z-characteristic is indeed found in the microscopic three-phase tra�c theory [87].
+If now we add the critical branch for the F→S transition v(FS)cr (�) which has been
+
+considered in Section 4.3.1 to Fig. 13(a), we get a double Z-shaped characteristic of the
+speed on the density (Fig. 13(b)). This explains the empirical result [74] that moving
+jam spontaneously emerge due to a sequence (cascade) of two phase transitions, 4rst
+the F→S transition, and later the S→ J transition (the F→S→ J-transitions). The
+double Z-shaped characteristic consists of states of free -ow F, the critical branch
+v(FS)cr (�) which gives the speed inside the critical perturbation for the F→S transition,
+the two-dimensional region of steady states of synchronized -ow, the in4nite number
+of critical branches v(SJ)cr (�) which give the speeds inside the critical perturbations for
+the S→ J transition for each of the synchronized -ow speeds, and the line vmin = 0
+which gives the speed inside wide moving jams. The double Z-characteristic is also
+con4rmed in the microscopic three-phase tra�c theory [87].
+
+4.6. Phase transitions and patterns at highway bottlenecks
+
+4.6.1. Deterministic perturbation and local breakdown at bottlenecks
+Both the phase transitions and spatial–temporal patterns which occur at highway
+
+bottlenecks possess important peculiarities in comparison with a homogeneous (without
+bottlenecks) road considered above. In particular, the following hypothesis is related
+to this case [79]:
+
+
+
+414 B.S. Kerner / Physica A 333 (2004) 379–440
+
+The density of the probability of the F→ S transition for a given time interval, pFS
+(the probability of the F→ S transition per km) depends on the highway location.
+The density of this probability has a maximum at the bottleneck (see Fig. 1(b) in
+Ref. [79]).
+This hypothesis is related to the empirical result that the onset of congestion (the
+
+F→S-transition) is usually observed at bottlenecks. This can also be explained from
+driver’s behavior. Let us consider a road where only one bottleneck exists. Upstream
+and downstream of the bottleneck the road has the same characteristics and it is homo-
+geneous. A feature of the bottleneck is that if the -ow rate in free -ow at the bottleneck
+is high enough, then in the vicinity of the bottleneck each driver should slow down,
+i.e., decrease the speed. Thus, a deterministic local perturbation in the average speed
+appears at the bottleneck. This perturbation is motionless and permanent because it is
+localized at the highway bottleneck: The bottleneck forces all drivers permanently to
+slow down at approximately the same road location.
+The deterministic perturbation is motionless. Thus, the whole -ow rate across the
+
+road (when taking into account all possible on- and o=-ramps) does not depend on the
+highway location, i.e., this whole -ow rate remains the same inside the perturbation
+at the bottleneck and downstream of the bottleneck. Because inside the deterministic
+perturbation in free -ow the speed is lower than the speed away from the bottleneck
+but the -ow rate does not change, the density must be higher inside the perturbation.
+This explains why the density of the probability of the F→S transition (the probability
+of the F→S transition per km) should have a maximum at the bottleneck [79]. This
+hypothesis is also con4rmed by results of numerical simulations made in Ref. [87].
+Further we consider a bottleneck due to an on-ramp where the -ow rate to the
+
+on-ramp is qon and the -ow rate on the main road downstream of the on-ramp is qon.
+Consequently, if free -ow is at the bottleneck then the -ow rate downstream of the
+bottleneck is equal to
+
+qsum = qin + qon : (13)
+
+The higher the vehicle density in free -ow, the higher the amplitude of the local
+deterministic perturbation. The growth of this deterministic perturbation should have
+a limit: There should be some critical amplitude of the deterministic perturbation in
+the speed. When this critical deterministic perturbation at the on-ramp is achieved the
+deterministic local speed breakdown (the F→S transition) spontaneously occurs: The
+speed decreases and the density increases avalanche-like at the location of the initial
+deterministic perturbation. This hypothesis is also con4rmed by results of numerical
+simulations [87]. This deterministic F→S transition is realized even if no random per-
+turbations (-uctuations) would be in free tra�c -ow (the deterministic F→S transition
+is symbolically marked by dotted arrows Kdeterm→Mdeterm in Fig. 14(a,b)). This phase
+transition together with the return S→F transition (arrow N→P in Fig. 14(a,b)) may
+explain the well-known hysteresis in tra�c at bottlenecks.
+It must be stressed that the deterministic F→S transition occurs at a lower -ow
+
+rate qsum = q
+(B)
+cr; FS downstream of the on-ramp than the critical tra�c variables on a
+
+homogeneous road:
+
+q(B)cr; FS¡q
+(free)
+max : (14)
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 415
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 14. Qualitative illustration of the deterministic breakdown phenomenon (the deterministic F→ S tran-
+sition) in an initial free -ow at a freeway bottleneck: (a) States free -ow (solid curves F in (a) and v(B)free
+in (b) related to the bottleneck; dashed branches show states of free -ow on a homogeneous road) and
+steady states of synchronized -ow (dashed region) in the -ow–density plane. (b) related to speed–density
+characteristics of (a). The steady states of synchronized -ow are taken from Fig. 1(a). (c) Qualitative illus-
+tration of a Z-shaped speed–-ow characteristic for the spontaneous breakdown phenomenon (the spontaneous
+F→ S transition) in an initial free -ow at a freeway bottleneck due to an on-ramp. States free -ow (curve
+v(B)free(qon)) and steady states of synchronized -ow (dashed region) in the -ow–density plane together with
+
+the critical branch v(B)cr; FS(qon) (dashed curve) which gives the speed inside the critical perturbation.
+
+
+
+416 B.S. Kerner / Physica A 333 (2004) 379–440
+
+This formula may explain the empirical result that the breakdown phenomenon (the
+F→S transition) is most frequently observed at freeway bottlenecks.
+
+4.6.2. Double Z-characteristics at bottlenecks
+Real random perturbations in free -ow in the bottleneck vicinity can lead to the
+
+occurrence of the spontaneous F→S transition even if the critical point of free -ow
+has not yet been achieved, i.e., at
+
+qsum ¡q
+(B)
+cr; FS (�
+
+(B)
+free(qsum)¡�
+
+(B)
+cr; FS) : (15)
+
+This spontaneous F→S transition is symbolically marked by dotted arrows K ′→M ′
+in Fig. 14(a). Thus, as well as in the case of a hypothetical homogeneous road (Sec-
+tion 4.3.1) we get a Z-shape characteristic of the speed on the density for the on-
+set of congestion, i.e., for the F→S transition at a bottleneck due to the on-ramp
+(Fig. 14(b)). In this case, however, the density at the bottleneck is a function of two
+-ow rates qon and qin.
+For this reason, it is more convenient to use another Z-characteristic which is related
+
+to the dependence of the speed at the bottleneck on the -ow rate to the on-ramp qon at
+a given -ow rate qin (Fig. 14(c)). In this Z-characteristic, the branch v
+
+(B)
+free(qon) gives the
+
+speed inside the deterministic perturbation in free -ow at the bottleneck as a function
+of the -ow rate qon whereas the branch v
+
+(B)
+cr; FS(qon) gives the speed inside the critical
+
+perturbation with the critical amplitude:
+
+Qv(B)cr; S = v
+(B)
+free − v(B)cr; FS : (16)
+
+These Z-characteristics at the on-ramp are con4rmed in numerical simulations [87].
+It is well-known that the breakdown phenomenon at the bottleneck possesses a prob-
+
+abilistic nature [9,11]. This also follows from the Z-characteristic for the F→S tran-
+sition (the breakdown phenomenon) at the bottleneck. Indeed, at the critical point
+qsum = q
+
+(B)
+cr; FS (Fig. 14(a)) the critical amplitude of the local perturbation needed for
+
+the F→S transition is zero. Thus, the probability of the F→S transition at the bottle-
+neck, P(B)FS |qsum=q(B)cr; FS =1. P
+
+(B)
+FS is de4ned similar to the probability PFS (8) (see Section
+
+5.2 below). However, rather than a highway section of length Lob which has been con-
+sidered for the de4nition of PFS on the homogeneous road, P
+
+(B)
+FS is the mean probability
+
+of the F→S transition for a given time interval Tob on the main road in the bottleneck
+vicinity. Because, the critical amplitude of the local perturbation Qv(B)cr; FS(qon) (16) in-
+creases when the -ow rate qon and consequently the -ow rate qsum (13) decrease
+(Fig. 14(c)), the probability P(B)FS should decrease. Such dependence of the mean
+probability of the F→S transition of the -ow rate is observed in empirical
+observations [11].
+After the F→S transition at a bottleneck has occurred, synchronized -ow appears
+
+at the bottleneck. The upstream front of this synchronized -ow propagates upstream,
+i.e., the region of synchronized -ow is widening. If the speed in the synchronized
+-ow becomes low enough, moving jams can emerge in this synchronized -ow. The
+moving jam emergence occurs away from the bottleneck and it is independent of
+the reason of the synchronized -ow occurrence. This hypothesis is con4rmed by
+empirical results [76]. The S→ J transition in this synchronized -ow should also
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 417
+
+sp
+ee
+
+d
+
+(b)
+
+vmax
+
+sp
+ee
+
+d
+
+vmin
+vth
+
+(1)vsyn
+
+(2)vsyn
+
+synchronized
+flow
+
+0
+
+flow rate, qon
+
+flow rate, qon
+
+  (cr, FS)qon
+
+  (cr, FS)qon
+
+  (th)qon
+
+  (th)qon
+
+  (th, SJ) (cr, SJ)qon
+
+  (th, SJ, 1)qon
+
+qon
+
+(cr, SJ, 2)qon
+
+  (B)
+vsyn, aver
+
+  (B)vcr, SJ, aver
+
+  (B)vcr, SJ, 2  (B)vcr, SJ, 1
+
+  
+
+vfree
+
+0
+
+  
+
+(a)
+
+  (B)(B)
+
+  
+
+vfree
+(B)
+
+vcr, FS
+
+  (B)
+vcr, FS
+
+qin = const
+
+qin = const
+(free)
+
+(free)
+
+Fig. 15. Qualitative illustration of all possible phase transitions and the double Z-shaped characteristic of
+tra�c -ow at the on-ramp. (a) States of free -ow v(B)free(qon), the critical branch v
+
+(B)
+cr; FS(qon) which gives the
+
+speed inside the critical local perturbation for the spontaneous F→ S transition, a two-dimensional region
+of steady states of synchronized -ow (dashed region), two critical branches v(B)cr; SJ; i(qon); i = 1; 2 which
+gives the speed inside the critical local perturbation for the spontaneous S→ J transitions for the related two
+speeds of synchronized -ow v(1)syn i ; i=1; 2, and the speed vmin=0 inside wide moving jams. (b) A simpli4ed
+double Z-shaped speed–-ow characteristic related to (a) where all di=erent synchronized -ow speeds at a
+given -ow rate qon are averaged. In (a) states of free -ow (the curve v
+
+(B)
+free(qon)), states of synchronized
+
+-ow (dashed region), and the critical branch v(B)cr; FS(qon) are taken from Fig. 14(c).
+
+possess the same Z-characteristic which has been considered for the homogeneous
+road in Section 4.5 (Fig. 13(a)). This hypothesis is also con4rmed by numerical
+simulations [87].
+This consideration allows us also to expect a relatively complex double Z-shaped
+
+tra�c -ow characteristic at the bottleneck (Fig. 15(a)). On this summarized 4gure
+critical branches for the F→S transition and the S→ J transition are shown. The
+double Z-characteristic at the bottleneck consists of
+
+(i) states of free -ow v(B)free(qon),
+
+
+
+418 B.S. Kerner / Physica A 333 (2004) 379–440
+
+(ii) the critical branch v(B)cr; FS(qon) which gives the speed inside the critical local
+perturbation for the spontaneous F→S transition as a function of the -ow rate qon,
+(iii) a 2D region of steady states of synchronized -ow (dashed region),
+(iv) an in4nite number of critical branches v(B)cr; SJ(qon) each of them gives the speed
+
+inside the critical local perturbation for the spontaneous S→ J transition as a function
+of the -ow rate qon for a given synchronized -ow speed (two of these critical branches
+v(B)cr; SJ; i(qon); i=1; 2 for the related two speeds of synchronized -ow v
+
+(i)
+syn ; i=1; 2 are
+
+shown in Fig. 15(a)) and
+(v) the speed vmin = 0 inside wide moving jams.
+
+If we simplify Fig. 15(a) by an averaging of all di=erent states of synchronized
+-ow at a given -ow rate qon to the one speed we can 4nd much more simple double
+Z-shaped tra�c -ow characteristic at the bottleneck (Fig. 15(b)).
+The hypothesis about the double Z-characteristic at the bottleneck explains the em-
+
+pirical F→S→ J transitions [76]. This hypothesis is also con4rmed by numerical sim-
+ulations in the frame of the three-phase tra�c theory [87]. In contrast, no tra�c -ow
+theories and models in the fundamental diagram approach [31–34] can show the empir-
+ical F→S→ J transitions and the theoretical double Z-characteristics for tra�c -ow.
+
+4.6.3. Diagram of congested patterns
+The qualitative di=erence of tra�c -ow theories and models in the fundamental
+
+diagram approach [31–34] and of the three-phase tra�c theory [12,74,78,80,84] can
+essentially clearly be seen if the diagrams of congested patterns at highway bottlenecks
+which should occur in these di=erent approaches are compared [76,85–88].
+Recall that in the diagram of congested patterns at the on-ramp in the fundamental
+
+diagram approach which has 4rst been found by Helbing et al. in Ref. [62] diverse
+congested patterns are possible depending on the initial -ow rate qin on a highway
+upstream of the bottleneck and on the -ow rate to the on-ramp qon.
+The diagram of the congested patterns at on-ramps within the three-phase tra�c the-
+
+ory has 4rst been postulated by the author [76,103] based on qualitative considerations
+and then derived by Kerner and Klenov based on their microscopic tra�c -ow model
+[85]. It has already been shown in [85,86] that this diagram is totally qualitatively dif-
+ferent from the diagram of congested patterns at on-ramps in the fundamental diagram
+approach [62,63,66,32–34].
+In particular, in contrast to the fundamental diagram approach [32,33], in the di-
+
+agram of congested patterns within the three-phase tra�c theory [76,85,103,114] at
+a high enough -ow rate to the on-ramp moving jams always spontaneously emerge
+in synchronized -ow upstream of the bottleneck rather than HCT. At a low enough
+-ow rate to the on-ramp rather than moving jams synchronized -ow of higher vehicle
+speed can occur without an occurrence of moving jams. These theoretical results are
+in agreement with the related results of empirical observations [76] (see the empirical
+scheme 2 and the related discussion in Section 3).
+A qualitative derivation of the diagram of congested patterns at on-ramps has already
+
+been made in Refs. [76,103]. Here a brief consideration of this diagram which is
+necessary for further consideration will be made.
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 419
+
+(B)
+
+(B)
+
+FS
+
+SJ
+
+LSP
+
+general
+
+pattern
+
+M G
+
+WSP
+
+MSP DGP
+
+free flow
+
+0
+
+flo
+w
+
+ ra
+te
+
+, q
+in
+
+0
+
+(a)
+
+(b)
+
+1
+
+2
+
+th
+e 
+
+m
+ax
+
+im
+al
+
+ c
+ap
+
+ac
+ity
+
+, q
+m
+
+ax
+
+W
+
+qmax, sat
+
+flow rate, qon
+
+flow rate, qon
+
+qmax, lim
+3
+
+(fr
+ee
+
+ B
+)
+
+(free B)
+
+qmax, lim
+(free B)
+
+(free B)
+
+Fig. 16. Diagram of congested patterns at highway bottlenecks on a multi-lane highway in the three-phase
+tra�c theory (a) [76,85,103,114] and possible dependencies of the maximum highway capacity in free -ow
+at the e=ective location of a bottleneck q(free B)max on the -ow rate to the on-ramp qon (b).
+
+There are two main boundaries in the diagram of congested patterns at highway
+bottlenecks: F (B)S and S
+
+(B)
+J [76,85,103]. Below and left of the boundary F
+
+(B)
+S free -ow
+
+is realized (Fig. 16(a)). Between the boundaries F (B)S and S
+(B)
+J di=erent SPs occur.
+
+Right of the boundary S(B)J wide moving jams spontaneously emerge in synchronized
+-ow upstream of the bottleneck, i.e., a GP occur [76,85,103].
+To explain the boundary F (B)S , let us 4rst consider the following hypothesis: Let
+
+us assume that the -ow rate qin is high enough but the -ow rate qon is extremely
+small, i.e.,
+
+qon→ 0 but qon �= 0 : (17)
+Under condition (17) the critical 0ow rate q(free B)max |qon→0 = q(free B)max; lim for the F→ S
+transition at the bottleneck is lower than the critical 0ow rate q(free)max for the F→ S
+
+
+
+420 B.S. Kerner / Physica A 333 (2004) 379–440
+
+transition on the homogeneous road:
+
+q(free B)max; lim ¡q
+(free)
+max : (18)
+
+Under condition (17), the in-uence of qon on the -ow rate qsum (13) can be neglected:
+qsum = qin. In the case (17), time intervals between single vehicles squeezing onto
+the main road from the on-ramp can be large enough. During these time intervals
+the main road can be considered as the homogeneous one, because it is non-disturbed
+by the on-ramp. However, when single vehicles squeeze onto the main road, they
+cause time-limited additional random disturbances in free -ow on the main road in the
+on-ramp vicinity. These additional random perturbations can obviously cause the F→S
+transition at the on-ramp at a lower -ow rate qin than would be the case at qon = 0,
+i.e., on the homogeneous road. This explains the hypothesis (18) which is con4rmed
+by numerical simulations [87].
+The boundary F (B)S can be found from the following qualitative consideration. The
+
+critical amplitude of the critical local perturbation for the F→S transition at the bot-
+tleneck tends to zero if the -ow rate approaches a critical point of free -ow. In the
+case of the bottleneck due to the on-ramp, there are an in4nite number of these crit-
+ical points of free -ow. These critical points are related to an in4nite number of
+the critical -ow rates downstream of the bottleneck qsum(qon ; qin)|F (B)S which corre-
+spond to the boundary F (B)S in the diagram of congested patterns. At qon→ 0 (17)
+the critical -ow rate qsum|F (B)S in the related critical point of free -ow is equal to
+qin = q
+
+(free B)
+max; lim . Thus, the F→S transition at the on-ramp must occur in this critical
+
+point. The higher qon, the higher the amplitude of the deterministic local perturba-
+tion caused by the on-ramp. Therefore, the higher qon, the lower the -ow rate in free
+-ow on the main road upstream of the bottleneck qin should be (in comparison with
+qin = q
+
+(free B)
+max; lim ) at which the F→S-transition at the on-ramp must occur. This explains
+
+the form of the boundary F (B)S for the spontaneous F→S transition at the bottleneck in
+Fig. 16(a).
+The boundary S(B)J is determined by the wide moving jam emergence in synchronized
+
+-ow (i.e., the S→ J transition) upstream of the on-ramp. On the one hand, between
+the boundaries F (B)S and S
+
+(B)
+J the vehicle speed in a SP should decrease when qon
+
+increases. On the other hand, the lower the vehicle speed in synchronized -ow, the
+more probability of the wide moving jam emergence in this synchronized -ow. Thus,
+in comparison with F (B)S , the boundary S
+
+(B)
+J should be shifted to the right in the -ow–
+
+-ow plane (Fig. 16(a)).
+Between the boundaries F (B)S and S
+
+(B)
+J , the higher qin is, the higher the probability
+
+that the -ow rate in synchronized -ow in the SP is lower than qin and the length of
+the SP is continuously increasing over time: At higher qin a widening SP (WSP) and
+at lower qin a localized SP (LSP) occurs (Fig. 16(a)). The -ow rate inside a WSP is
+lower than qin. Therefore, the upstream WSP front (boundary), which separates free
+-ow upstream and synchronized -ow downstream, is continuously widening upstream.
+The mean -ow rate inside the LSP is equal to qin. For this reason, the upstream LSP
+front is not continuously widening upstream: The width of the LSP is spatially limited.
+However, this LSP width can show oscillations over time [85,86].
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 421
+
+Right of the boundary F (B)S and left of the line M one or a sequence of moving SPs
+(MSP) emerge upstream of the on-ramp (the region marked “MSP” in Fig. 16(a)). In
+contrast to a wide moving jam, inside a MSP both the vehicle speed (40–70 km=h)
+and the -ow rate are high. Besides, the velocity of the downstream front of a MSP is
+not a characteristic parameter. This velocity can change in a wide range in the process
+of the MSP propagation or for di=erent MSPs. In some cases it has been found that
+after the MSP is far away from the on-ramp, the pinch e=ect (the self-compression
+of synchronized -ow) occurs inside the MSP and a wide moving jam can be formed
+there [85].
+Right of the boundary S(B)J and left of the line G the dissolving general pattern or
+
+DGP for short occurs (the region marked “DGP” in Fig. 16(a)). In the DGP, after a
+wide moving jam in synchronized -ow of the congested pattern has been formed, the
+forming GP dissolves over time. As a result of this GP dissolving process, the GP
+transforms into one of the SP, or free -ow occurs at the bottleneck [85,86].
+The following empirical results con4rm the diagram of congested patterns in the
+
+three-phase tra�c -ow theory (Fig. 16(a)):
+
+(i) All types of SPs and GPs are found in empirical observations (see Ref. [76] and
+Section 2.2).
+(ii) In the diagram (Fig. 16(a)), GP exists in the most part of the -ow rates qon
+
+and qin where congestion occurs. This is related to the empirical result that GP is the
+most frequent type of congested patterns at isolated highway bottlenecks [76].
+(iii) Corresponding to the diagram, in empirical investigations GP transforms into a
+
+SP when the -ow rate qon decreases [76].
+(iv) Corresponding to the diagram, in empirical investigations GP does not transform
+
+into another type of congested pattern when the -ow rate qon increases [76].
+
+The hypothesis about the diagram of congested patterns [76] is also con4rmed by
+the diagrams found in the microscopic three-phase tra�c -ow theories [85–87].
+In contrast to this, it has been shown in the empirical study [76] that no se-
+
+quences of the congested pattern transformation and no theoretical congested states
+which have been predicted in the pattern diagram in the fundamental diagram approach
+[62,66,32,33] have been observed at isolated bottlenecks.
+
+5. Probabilistic theory of highway capacity
+
+The determination of highway capacity is one of the most important applications of
+any tra�c theory. Empirical observations show that the speed breakdown at a bottleneck
+(the breakdown phenomenon) is in general accompanied by a drop in highway capacity
+(see e.g., Refs. [8,7]). Here we give a qualitative theory of highway capacity and of
+the capacity drop which follows from the three-phase tra�c theory.
+However, 4rstly recall, how the breakdown phenomenon looks like in the fundamen-
+
+tal diagram approach. From a numerical analysis of a macroscopic tra�c -ow model
+within the fundamental diagram approach Kerner and KonhSauser found in 1994 [46]
+
+
+
+422 B.S. Kerner / Physica A 333 (2004) 379–440
+
+that free -ow is metastable with respect to the formation of wide moving jams (F→ J
+transition), if the -ow rate is equal to or higher than the out-ow from a jam, qout. The
+critical amplitude of a local perturbation in an initial homogeneous free -ow, which
+is needed for the F→ J transition, decreases with increasing density: It is maximum at
+the threshold density �= �min, below which free -ow is stable. The critical amplitude
+becomes zero at some critical density �=�cr ¿�min, above which free -ow is linearly
+unstable. Obviously the higher the amplitude of a random local perturbation the less
+frequent it is. Hence, the likelihood that the F→ J transition occurs in a given time
+interval should increase with density (or -ow rate). The probability should tend to one
+at the critical density �cr.
+In 1997 Mahnke et al. [107,57] developed a master equation approach for calculating
+
+the probability of the F→ J transition on a homogeneous road (i.e., without bottleneck).
+Based on this approach KSuhne et al. [95] con4rmed that the probability of the F→ J
+transition in the metastable region is increasing with the -ow rate in free -ow. They
+applied this result to explain the breakdown phenomenon at a highway bottleneck. For
+a recent comprehensive discussion of the breakdown phenomenon in CA-models and
+in the KrauM et al. model in the fundamental diagram approach see also [96]. The
+theories in Refs. [46,32,107,57,95,96] belong to the fundamental diagram approach.
+In contrast to these results, in the three-phase tra�c theory [12,80,84] it is postulated
+
+that metastable states of free -ow decay into synchronized -ow (F→S transition) rather
+than wide moving jams (F→ J transition). In particular, even the upper limit of free
+-ow (q(free B)max; lim in Fig. 16) is related to the F→S transition: In this limit point the
+probability of the F→S transition should be equal to one whereas the probability of
+the emergence of a moving jam (F→ J transition) should be very small (Fig. 9(c),
+curve FJ). Thus, in this theory the breakdown phenomenon in free tra�c is related to
+the F→S transition rather than to an emergence of moving jams.
+Highway capacity depends on whether a homogeneous road (without bottlenecks) or
+
+a highway bottleneck is considered.
+
+5.1. Homogeneous road
+
+On a homogeneous (without bottlenecks) multi-lane road, highway capacity depends
+on which tra�c phase the tra�c is in [74]: (i) The maximum highway capacity in
+the tra�c phase “free -ow” is equal to the maximum possible -ow rate in free -ow,
+q(free)max . (ii) The maximum highway capacity in the tra�c phase “synchronized -ow”
+is equal to the maximum possible -ow rate in synchronized -ow, q(syn)max . (iii) The
+maximum highway capacity downstream of the tra�c phase “wide moving jam” is
+equal to the -ow rate in the wide moving jam out-ow, qout. Because of the 4rst order
+phase transitions between the tra�c phases each of these maximum highway capacities
+has a probabilistic nature.
+In particular, the probabilistic nature of the highway capacity in the tra�c phase
+
+“free -ow” means the following [12]:
+
+(1) At the -ow rate q=q(free)max the probability of the spontaneous F→S transition for
+a given time interval Tob and for a given highway section length Lob, PFS|q=q(free)max = 1
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 423
+
+(7). In other words, the maximum capacity q= q(free)max depends on Tob (at least in some
+range of Tob).
+(2) There is the threshold -ow rate qth (the threshold density �th) for the F→S
+
+transition. Below the threshold point (�th ; qth), i.e., at the -ow rate q¡qth (Fig. 9(a))
+the probability of the F→S transition PFS|q¡qth = 0 (9).
+(3) If the -ow rate in free -ow q is within the range [qth ; q
+
+(free)
+max ] then the higher the
+
+-ow rate q, the higher the probability the F→S transition PFS is. Thus, the attribute
+of this probabilistic highway capacity is the probability 1−PFS that free -ow remains
+on a road section of the length Lob during the time interval Tob of the observation of
+this capacity in free -ow.
+
+The hypotheses of the three-phase tra�c theory are con4rmed by empirical 4nd-
+ings of characteristics of the wide moving jam out-ow (e.g., Refs. [77,113]) and by
+numerical results of a microscopic three-phase tra�c -ow theory [85–87].
+However, if a bottleneck exist on the road, then a much more complicated non-linear
+
+phenomena determine highway capacity.
+
+5.2. Highway capacity in free 0ow at bottleneck
+
+In the three-phase tra�c theory, the breakdown phenomenon at a highway bottleneck
+is explained by the F→S transition at the bottleneck [79]. Due to the bottleneck the
+road is spatially non-homogeneous, i.e., highway capacity can depend on a highway
+location [14,15].
+The F→S transition occurs at the bottleneck during a given time interval Tob if the
+
+-ow rate qin and the -ow rate qon are related to the boundary F
+(B)
+S in the diagram
+
+of congested patterns (Fig. 16(a)). Thus, there is an inCnite multitude of maximum
+freeway capacities of free -ow at the bottleneck which are given by the points on the
+boundary F (B)S . We designate these capacities q
+
+(free B)
+max :
+
+q(free B)max = qsum|F(B)S ; (19)
+
+where qsum (13) is the -ow rate in free -ow downstream of the bottleneck.
+The capacities q(free B)max (19) depend on the -ow rate on the main road upstream of
+
+the on-ramp qin and the -ow rate to the on-ramp qon, exactly on the values qin and qon
+at the boundary F (B)S in the diagram of congested patterns at the on-ramp (Fig. 16(a)).
+The capacities (19) are the maximum capacities related to a given time interval Tob.
+These freeway capacities as well as the boundary F (B)S are functions of the time of the
+observation of the F→S transition, Tob.
+To 4nd the maximum capacities q(free B)max (19), the probability of the F→S transition
+
+at the bottleneck P(B)FS for a given time interval Tob should be studied.
+This probability P(B)FS is de4ned as follows. A large number of di=erent realizations,
+
+NFS, are performed where the F→S transition in an initial free -ow at the bottleneck
+is studied. Each of the realizations should be made at the same -ow rates qon and qin,
+other initial conditions, and during the same time interval Tob of the observation of the
+spontaneous F→S transition at the bottleneck. If in nFS of these NFS realizations the
+
+
+
+424 B.S. Kerner / Physica A 333 (2004) 379–440
+
+F→S transition occurs, then 7
+P(B)FS =
+
+nFS
+NFS
+
+: (21)
+
+Here the remark in footnote 5 is also valid.
+The maximum freeway capacities of free -ow at the bottleneck, q(free B)max , are found
+
+from the condition that the probability P(B)FS reaches one during the interval of the
+observation Tob: 8
+
+P(B)FS |qsum=q(free B)max = 1 : (22)
+Thus, condition (22) determines the critical -ow rates q(free B)max at the boundary F
+
+(B)
+S in
+
+the diagram of congested patterns.
+For tra�c demand (values qon and qin) which is related to points in some vicin-
+
+ity below and left of the boundary F (B)S in the diagram of congested patterns, i.e.,
+in the free -ow region of the diagram the F→S transition nevertheless occurs at
+the bottleneck during the time interval Tob with a probability P
+
+(B)
+FS ¡ 1. In this case,
+
+the more the distant a point (qon ; qin) in the diagram of congested patterns is from
+the boundary F (B)S (Fig. 16(a)), the lower the probability P
+
+(B)
+FS is.
+
+The region in the diagram of congested patterns where this probabilistic e=ect occurs
+is restricted by a threshold boundary F (B)th which is below and left of the boundary F
+
+(B)
+S
+
+(Fig. 17(b)): 9 This threshold boundary is related to the inCnite multitude of threshold
+-ow rates qsum which we designate q
+
+(B)
+th (qon ; qin). At the threshold boundary F
+
+(B)
+th the
+
+critical amplitudes of the local perturbation for the F→S transition reach maximum
+values. The limit point on the threshold boundary F (B)th at qon = 0, i.e., when qsum = qin
+is the threshold point for a homogeneous road: q(B)th (0; qin) = qth where the threshold
+-ow rate for the homogeneous road, qth, has been de4ned in Section 4.3.1.
+Other threshold points on the threshold boundary F (B)th for qon ¿ 0 are related to
+
+the -ow rate qin ¡qth. These threshold points are de4ned as follows. Let us consider
+
+7 In empirical observations, the -ow rate is averaged over a time-interval Tav. In free -ow, this averaged
+-ow rate cannot be considered as a time-independent function for usual time intervals Tav ≈ 0:5–10min.
+For this reason, another de4nition of the probability P(B)FS can be used [11]: Observed -ows are divided
+into groups in some small multiples. The frequency of -ows, Ni , in each group I in free -ow is studied
+before the F→ S transition occurs at the bottleneck. For each of -ow group, I , over a large number of days,
+the number of instances, ni is found, in which the -ow rate qi of the F→ S transition occurrence at the
+bottleneck falls within the range of -ow group, I . Thus, the probability P(B)FSi of the F→ S transition for the
+-ow group I is [11]:
+
+P(B)FSi =
+ni
+Ni
+
+: (20)
+
+If the -ow rate within each of the intervals Tav of the -ow rate averaging can be considered as
+time-independent and tra�c control parameters (weather, etc.) on di=erent days of the observations do
+not change, then the empirical (20) and the theoretical de4nitions (21) for the bottleneck due to the on-ramp
+are equivalent at qsum = qi , Tob = Tav, and the same empirical and theoretical -ow rates qon.
+
+8 Whereas condition (22) determines the theoretical maximum freeway capacities of free -ow at the
+bottleneck which depend on Tob, the condition P
+
+(B)
+FSi |qi=q(free B)max = 1 determines empirical maximum freeway
+
+capacities of free -ow at the bottleneck which depend on Tav (see footnote 7).
+9 A more detail consideration of stable and metastable free -ow states and of regions of metastability of
+
+di=erent congested patterns in the diagram of the patterns has recently been made in Ref. [87].
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 425
+
+(a)
+
+0
+
+1500
+
+0 50 100 150
+
+(b)
+
+density (veh./km)
+
+flo
+w
+
+ ra
+te
+
+ (v
+eh
+
+./h
+) q0 U
+
+L
+
+F
+
+ρmax 
+
+200
+
+1200
+
+2200
+
+0 500 1000
+
+general
+patterns
+
+free
+flow
+
+LSP
+
+WSP
+
+DGP
+
+qout
+
+Line 1
+
+Line 2
+
+Line 3
+
+G
+
+W
+
+FS
+(B) (B)
+
+(B)
+
+Fth
+
+SJ
+
+qon (veh. / h)
+
+q i
+n 
+
+(ve
+h. 
+
+/ h
+)
+
+Fig. 17. Steady states in the -ow–density plane (a) [86] and the diagram of congested patterns at the on-ramp
+(b) for the KKW CA-model within the three-phase tra�c theory. The model parameters are related to the
+KKW-1 CA model (parameter set I) in Ref. [86].
+
+a point (qon ; qin) in the diagram of congested patterns which is below and left of
+the boundary F (B)FS , however, the F→S transition occurs in this free -ow with the
+probability 0¡P(B)FS ¡ 1. If now the -ow rate qsum decreases (due to a gradual decrease
+in the -ow rate qon and/or the -ow rate qin) the distance of the point (qon ; qin) from
+the critical boundary F (B)FS increases and the mean probability of the F→S transition
+P(B)FS decreases. The threshold points q
+
+(B)
+th (qon ; qin) on the threshold boundary F
+
+(B)
+th are
+
+the minimum -ow rates qsum where the F→S transition during a given time Tob can
+still occur: If qsum ¡q
+
+(B)
+th , then the F→S transition cannot occur in free -ow at the
+
+bottleneck. This means that below and left of the threshold boundary Fw(B)th , i.e., when
+qsum ¡q
+
+(B)
+th the probability for the F→S transition P(B)FS is given by the formula:
+
+P(B)FS |qsum¡q(B)th = 0 : (23)
+This formula is analogous to the formula (9). 10
+
+10 In numerical simulations (Section 5.4), the threshold boundary F (B)th can be estimated on another way:
+
+The probability P(B)FS is calculated as it has above been de4ned. However we start calculations of P
+(B)
+FS
+
+beginning from low enough values qsum(qon ; qin) when in all NFS realizations no F→ S transitions occur at
+the on-ramp, i.e., P(B)FS =0. Then, the -ow rate qsum increases. The threshold -ow rates q
+
+(B)
+th at the threshold
+
+boundary F (B)th are approximately related to the maximum -ow rates qsum at which the condition
+
+P(B)FS |qsum=q(B)th = 0 (24)
+
+is still satis4ed.
+
+
+
+426 B.S. Kerner / Physica A 333 (2004) 379–440
+
+There can be a number of di=erent dependencies of the maximum freeway capacity
+in free -ow at the bottleneck q(free B)max on qon (e.g., curves 1, 2, 3 in Fig. 16(b)). In
+particular, it can be expected that the higher the -ow rate to the on-ramp qon, the lower
+the maximum freeway capacity in free -ow at the bottleneck q(free B)max . In this case, the
+maximum freeway capacity q(free B)max is a decreasing function of qon (curve 2 in Fig.
+16(b)). A decrease of the maximum freeway capacity q(free B)max at the on-ramp when the
+-ow rate qon increases can have saturation at a high enough -ow rate to the on-ramp
+qon (Fig. 16(b), dotted curve 3). In this case, the maximum freeway capacity q
+
+(free B)
+max
+
+does not reduce below some saturation value q(free B)max; sat, even at a very high qon.
+The highest is the capacity of free -ow at qon = 0. This case is obviously related to
+
+the maximum capacity on a homogeneous (without bottlenecks) road (Fig. 9(a)):
+
+q(free B)max |qon=0 = q(free)max : (25)
+However, at a very small -ow rate qon, exactly at the limit case (17) we have
+
+q(free B)max |qon → 0 = q(free B)max; lim ¡q(free)max at qon �= 0 : (26)
+Condition (26) is linked to the e=ect of random perturbations which occur at the
+on-ramp due to the single vehicles squeezing onto the main road from the on-ramp as
+has already been explained in Section 4.6.3. For this reason in Fig. 16(b) rather than
+the -ow rate q(free)max the -ow rate q
+
+(free B)
+max; lim is shown as the maximum freeway capacity
+
+at the bottleneck at the limit case qon→ 0.
+Corresponding to (22) and (23), if the -ow rate qsum (26) at the e=ective location
+
+of the bottleneck is within the range [q(B)th ; q
+(free B)
+max; lim ] then at a given qon the higher qsum,
+
+the higher the mean probability of the F→S transition P(B)FS .
+These hypotheses of the three-phase tra�c theory are con4rmed by empirical 4nd-
+
+ings where the probabilistic nature of freeway capacity has been studied [11] and by
+numerical results [86,87].
+
+5.3. Highway capacity in congested tra/c at bottleneck. Capacity drop
+
+In order to study the highway capacity downstream of the congested bottleneck one
+has to consider the out-ow from a congested bottleneck q(bottle)out (the discharge -ow
+rate), which is measured downstream of the bottleneck, where free -ow conditions are
+reached.
+In the three-phase tra�c theory, the discharge -ow rate q(bottle)out is not just a char-
+
+acteristic property of the type of bottleneck under consideration only. It also depends
+on the type of congested pattern which actually is formed upstream of the bottleneck
+[79]. Thus, in the three-phase tra�c theory, highway capacity in free -ow downstream
+of the congested bottleneck depends on the type of congested pattern upstream of the
+bottleneck, the pattern characteristics and on parameters of the bottleneck. We call this
+highway capacity a congested pattern capacity.
+In the case of an on-ramp, q(bottle)out is expected to vary with (qon ; qin). Obviously,
+
+q(bottle)out only limits the freeway capacity, if it is smaller than the tra�c demand upstream
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 427
+
+of the on-ramp, qsum = qin + qon, i.e., if the condition
+
+q(bottle)out (qon ; qin)¡qsum (27)
+
+is ful4lled. Note that in (27) in contrast to the discharge -ow rate q(bottle)out , the -ow rate
+qsum is related to free -ow conditions at the bottleneck, i.e., when no congested pattern
+exists upstream of the bottleneck. Under the condition (27), the congested pattern
+upstream from the on-ramp simply expands, while the throughput remains limited by
+q(bottle)out . For example, if the general pattern (GP) is formed at the bottleneck, an increase
+of qin does not in-uence the discharge -ow rate q
+
+(bottle)
+out . Instead, the width of the wide
+
+moving jam, which is mostly upstream in the GP, simply grows.
+Thus, in case (27) the congested pattern capacity q(B)cong is equal to q
+
+(bottle)
+out :
+
+q(B)cong = q
+(bottle)
+out : (28)
+
+It must be noted that q(bottle)out can strongly depend on the congested pattern type and
+congested pattern parameters. The congested pattern type and the pattern parameters
+depend on initial conditions and the -ow rates qon and qin (Fig. 16(a)). Thus, the
+congested pattern capacity q(B)cong implicitly depends on the -ow rates qon and qin.
+The capacity drop is the di=erence between freeway capacity in free -ow at a bot-
+
+tleneck and in a situation, where there is synchronized -ow upstream and free -ow
+downstream of the bottleneck (e.g., Ref. [8]).
+Assuming that (27) is ful4lled, the capacity drop can be given by
+
+�q= q(free)max − q(B)cong ; (29)
+
+where the congested pattern capacity q(B)cong is given by formula (28); q
+(free)
+max is the
+
+maximum freeway capacity in free -ow at qon = 0.
+If one considers all kinds of congested patterns upstream from a bottleneck then
+
+there should be the minimum discharge -ow rate which satis4es condition (27). This
+minimum discharge -ow rate should be the characteristic quantity for the type of
+bottleneck under consideration. We denote this quantity by q(bottle)min . The maximum of
+q(bottle)out (denoted by q
+
+(bottle)
+max ) is predicted to be the maximum -ow rate, which can
+
+be realized in synchronized -ow, q(bottle)max = q
+(syn)
+max . To explain the latter condition, re-
+
+call that the downstream front of a congested pattern at the bottleneck due to the
+on-ramp separates free -ow downstream of the front and synchronized -ow upstream
+of the front. This downstream front is 4xed at the bottleneck. Thus, within the front
+the total -ow rate across the road (together with the on-ramp) does not depend on the
+co-ordinates along the road. Just downstream of the front, i.e., in free -ow this -ow
+rate is equal to q(bottle)max . Just upstream of the front it is suggested that synchronized
+-ow occurs both on the main road and the on-ramp. The maximum possible total -ow
+rate in synchronized -ow is equal to q(syn)max (Fig. 1(a)). Hence, the capacity drop at a
+bottleneck cannot be smaller than
+
+�qmin = q(free)max − q(syn)max : (30)
+
+
+
+428 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Note that there may also be another de4nition of the capacity drop:
+
+�q= q(free B)max − q(B)cong ; (31)
+where the congested pattern capacity q(B)cong is given by formula (28) and q
+
+(free B)
+max is
+
+given by (19). However, there could be a di�culty in the application of the de4nition
+(31): There is an in4nite multitude of di=erent maximum freeway capacities in free
+-ow at a bottleneck, q(free B)max (see formula (19)).
+There may be one exception of condition (27): If a LSP occurs both on the main road
+
+and on the on-ramp upstream of the merge region of the on-ramp then the discharge
+-ow rate is equal to tra�c demand:
+
+q(bottle)out (qon ; qin) = qsum : (32)
+
+The congested pattern capacity which is related to this LSP should be determined by
+the maximum discharge -ow rate at which the LSP still exists upstream of the on-ramp.
+These hypotheses of the three-phase tra�c theory are con4rmed by empirical 4ndings
+
+where the discharge -ow rate from spatial–temporal congested patterns at bottlenecks
+has been studied [76] and by numerical results derived within the three-phase tra�c
+theory which will be presented below.
+
+5.4. Numerical study of congested pattern capacity at on-ramps
+
+Here we con4rm and illustrate the general theory of congested pattern capacity pre-
+sented above based on a numerical simulation of a one-lane KKW cellular automata
+microscopic tra�c -ow model within the three-phase tra�c theory which has recently
+been proposed by Kerner et al. [86].
+
+5.4.1. KKW cellular automata tra/c 0ow model
+We will use for simulations the KKW-1 CA-model with a linear dependence of the
+
+synchronization distance on the vehicle speed [86]. This KKW CA-model consists of
+a dynamic part
+
+v˜n+1 = max(0;min(vfree; vs; n; vc; n)) ; (33)
+
+vc; n =
+
+{
+vn + a
+ for gn ¿Dn − d;
+vn + a
+ sign(v‘;n − vn) for gn6Dn − d;
+
+(34)
+
+where sign(x) is 1 for x¿ 0, 0 for x=0 and −1 for x¡ 0, and a stochastic (-uctuation)
+part
+
+vn+1 = max(0;min(v˜n+1 + a
+%n; vn + a
+; vfree; vs; n)) ; (35)
+
+xn+1 = xn + vn+1
+ ; (36)
+
+%n =
+
+
+
+−1 if r ¡pb;
+1 if pb6 r ¡pb + pa ;
+
+0 otherwise;
+
+(37)
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 429
+
+pb(vn) =
+
+{
+p0 if vn = 0;
+
+p if vn ¿ 0;
+(38)
+
+pa(vn) =
+
+{
+pa1 if vn ¡vp;
+
+pa2 if vn¿ vp:
+(39)
+
+In this KKW CA-model, n = 0; 1; 2; : : : is number of time steps, 
+ is the time dis-
+cretization interval, v˜n is the vehicle speed at time step n without -uctuating part, vn
+is the vehicle speed at time step n, v‘;n is the speed of the leading vehicle at time step
+n, vs; n=gn=
+ is the safe speed at time step n, vfree is the maximal speed (free -ow), xn
+is the vehicle position at the time step n, x‘;n is the position of the leading vehicle at
+time step n; d is the vehicle length which is the same for all vehicles, gn=x‘;n−xn−d
+is the gap (front to end distance) at time step n, Dn = d+ kvn
+ is the synchronization
+distance at time step n, %n is the speed -uctuation at time step n, a is the vehicle ac-
+celeration, pa is the probability of vehicle acceleration, pb is the probability of vehicle
+deceleration, r is a random number uniformly distributed between 0 and 1, k, p0, p,
+pa1, pa2, vp are constant parameters.
+The steady states for the model are related to a 2D region in the -ow–density
+
+plane between the line F for free -ow (v = vfree), the line U determined by the safe
+speed vs; n and the line L determined by the synchronization distance D (Fig. 17(a)).
+The physics of the KKW CA-model has been considered in Ref. [86]. All numerical
+simulations below have been performed for a one-lane road with an on-ramp. Models
+of the road and of the on-ramp are the same and they have the same model parameters
+(in particular, the road length, the conditions for vehicle squeezing from the on-ramp
+to the main road, the time and the space discretization units, etc.) as it has been chosen
+in Ref. [86] for the KKW-1 CA-model, parameter-set I (see Table III in Ref. [86], the
+KKW-1 CA-model, parameter-set I).
+
+5.4.2. Transformations of congested patterns at on-ramps
+A diagram of congested pattern at the on-ramp for the KKW CA-model [86] is
+
+qualitatively related to the diagram in Fig. 16(a) 4rst predicted within the three-phase
+tra�c theory [76] and then found in the continuum model by Kerner and Klenov [85]
+(Fig. 17(b)). At the boundary F (B)S with the probability P
+
+(B)
+FS = 1 the F→S transition
+
+occurs during the time Tob=30 min [86]. Between the boundaries F
+(B)
+S and S
+
+(B)
+J di=erent
+
+SP occurs. Right of the boundary S(B)J wide moving jams emerge in synchronized -ow
+upstream of the on-ramp, i.e., di=erent GP occur.
+To study the congested pattern capacity, in the diagram three lines (Lines 1, 2 and
+
+3) are shown, in addition (Fig. 17(b)). Di=erent congested patterns have been studied
+when the -ow rates qon (Lines 1 and 2) or the -ow rate qin (Line 3) are increasing
+along the related lines.
+The transformation of congested patterns along Line 1 is related to a given high
+
+-ow rate in free -ow upstream of the on-ramp qin when the -ow rate to the on-ramp
+qon is increased from lower to higher values (Fig. 18). Right of the boundary F
+
+(B)
+S a
+
+WSP occurs (Fig. 18(a)). If the -ow rate to the on-ramp is only slightly increased
+
+
+
+430 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Fig. 18. Evolution of the vehicle speed in space and in time at the given qin = 2400 vehicles=h for di=erent
+qon related to Line 1 in Fig. 17(b): (a,b) widening synchronized -ow patterns WSP; (c) the dissolving
+general pattern (DGP); (d,e,f) general patterns (GP). The -ow rate qon is: (a) (40), (b) (60), (c) (105),
+(d) (150), (e) (200), (f) (500) vehicles/h. The on-ramp is at the location x = 16 km (see for more detail
+Ref. [86]).
+
+then a WSP remains (Fig. 18(b)); however, the vehicle speed in this WSP on average
+decreases in comparison with the speed in the WSP in Fig. 18(a).
+Right of the boundary S(B)J at the high -ow rate qin, which is related to Line 1, a
+
+DGP occurs (Fig. 18(c)): After the 4rst wide moving jam has emerged in synchronized
+-ow, the -ow rate upstream of the on-ramp decreases because it is now determined by
+the jam out-ow. The maximum -ow rate in the wide moving jam out-ow is reached
+when free -ow is formed downstream of the jam, qout = 1810 vehicles=h. When due
+to the jam upstream propagation the wide moving jam is far away from the on-ramp
+an e=ective -ow rate upstream of the on-ramp is determined by qout, i.e., the e=ective
+-ow rate q(e=)in = qout = 1810 vehicles=h. This -ow rate is however considerably lower
+than the initial -ow rate qin = 2400 vehicles=h. As a result, no wide moving jams can
+emerge upstream of the on-ramp any more: the DGP occurs which consists of the
+only one wide moving jam propagating upstream and a SP at the on-ramp. At the
+mentioned e=ective -ow rate q(e=)in = 1810 vehicles=h and the -ow rate to the on-ramp
+qon = 105 vehicles=h this SP at the on-ramp is a WSP (Figs. 17(b) and 18(c)). If the
+-ow rate qon is further increased then the pinch region in synchronized -ow upstream
+of the on-ramp appears where narrow moving jams continuously emerge (Fig. 18(d)).
+Some of these jams transform into wide moving jams leading to the GP formation.
+This occurs right of the boundary G where GPs are realized. When the -ow rate qon
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 431
+
+Fig. 19. Evolution of the vehicle speed in space and in time at the given qin = 1255 vehicles=h for di=erent
+qon related to Line 1 in Fig. 17(b): (a,b) localized synchronized -ow patterns LSP; (c–e) general patterns
+(GP). The -ow rate qon is: (a) (550), (b) (630), (c) (700), (d) (850), (e) (1000) vehicles/h.
+
+is further increased, the GP does not transform into another pattern: It remains to be
+a GP at any possible -ow rate qon (Fig. 18(e,f)).
+The transformation of congested patterns along Line 2 in Fig. 17(b) is related to a
+
+given low -ow rate in free -ow upstream of the on-ramp qin when the -ow rate to
+the on-ramp qon is increased beginning from a relative high initial value (Fig. 19). In
+this case, 4rst a LSP occurs (Fig. 19(a,b)). If the -ow rate qon increases then the LSP
+transforms into a GP (Fig. 19(c–e)). However, whereas for the GP related to Line 1
+(Fig. 18(d–f)) the condition qin ¿qout is ful4lled, in the case of Line 2 we have
+qin ¡qout (Fig. 17(b)). This case has already been considered in Ref. [86] where we
+could see that the most upstream wide moving jam in the GP dissolves over time. This
+indeed occurs for the GP related to Line 2. For this reason, the width of the GP in
+Fig. 19(c–e)) increases much slower over time in comparison with the width of the
+GP in Fig. 18(d–f).
+The transformation of congested patterns along Line 3 in Fig. 17(b) is related to
+
+a given -ow rate to the on-ramp qon when the -ow rate in free -ow upstream of
+the on-ramp qin is increased beginning from a relatively low initial value (Fig. 20).
+Because at this -ow rate the boundary F (B)S is intersected above the boundary W (which
+separates the WSP and the LSP in the diagram of congested patterns in Fig. 17(b)),
+a WSP occurs (Fig. 20(a)). The WSP remains in a wide range of the -ow rate qin
+when this -ow rate increases (Fig. 20(b,c)). However, the average speed in the WSP
+decreases whereas the -ow rate qin increases. Finally, if the -ow rate qin increases and
+
+
+
+432 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Fig. 20. Evolution of the vehicle speed in space and in time at the given qon = 200 vehicles=h for di=erent
+qin related to Line 3 in Fig. 17(b): (a–c) WSP; (d) GP. The -ow rate qin is: (a) (1660), (b) (1800),
+(c) (1960), (d) (2200) vehicles/h.
+
+the boundary S(B)J is intersected, a GP occurs (Fig. 20(d)). This GP transforms in a
+GP shown in Fig. 18(e) when the -ow rate qin is further increased.
+
+5.4.3. Time-evolution of discharge 0ow rate
+By the simulation of congested patterns considered above the -ow rate to the on-ramp
+
+qon has been switched on only after the time t = t0. Let us designate the -ow rate far
+enough downstream of the on-ramp where free -ow occurs as qdown. During the time
+06 t ¡ t0 free -ow occurs at the on-ramp and qdown = qsum = qin. At t ¿ t0, i.e.,
+after the on-ramp has been switched on, the -ow rate qdown should increase because
+qsum = qin + qon at t¿ t0. However, at t¿ t0 a congested pattern has begun to form
+upstream of the on-ramp. Thus, at t ¿ t0 the -ow rate qdown is determined by the
+discharge -ow rate q(bottle)out : qdown=q
+
+(bottle)
+out . The numerical simulation allows us to study
+
+the time-evolution of the -ow rate qdown by the formation of each of the congested
+patterns upstream of the on-ramp (Figs. 21–23).
+This evolution for congested patterns which appear along Line 1 is shown in Fig. 21.
+
+It can be seen that although at t = t0 the in-ow from the on-ramp is switched on, i.e.,
+as additional vehicles enter the main road from the on-ramp, the discharge -ow rate
+is lower than the -ow rate qsum = qin at 06 t ¡ t0. This is the result of the congested
+pattern formation: Each of the congested patterns along Line 1 leads to a decrease in
+the -ow rate on the main road just upstream of the on-ramp. This decrease is higher
+than the increase of the -ow rate due to the vehicles squeezing to the main road from
+the on-ramp.
+However, the -ow rate qdown is considerably lower than qsum when a GP occurs at
+
+the bottleneck. When the WSP shown in Fig. 18(a) occurs, then the -ow rate qdown
+is only slightly lower than the -ow rate qsum (Fig. 21(a)). This means that SPs can
+be more favorable than GPs in terms of the discharge volume from the congested
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 433
+
+0
+2000
+
+0
+
+2000
+
+0
+2000
+
+0
+
+2000
+
+Averaging: 1 min
+
+0
+2000
+
+0
+
+2000
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0
+2000
+
+0
+
+2000
+
+(a)
+
+Averaging: 10 min
+
+flo
+w
+
+ ra
+te
+
+ [v
+eh
+
+/h]
+
+flo
+w
+
+ ra
+te
+
+ [v
+eh
+
+/h]
+
+time [min]
+
+(b)
+
+0
+2000
+
+0
+
+2000
+
+0
+2000
+
+0
+
+2000
+
+(c)
+
+(d)
+
+time [min]
+
+(e)
+
+(f)
+
+Fig. 21. Time-evolution of the -ow rate downstream of the on-ramp qdown during the pattern formation
+at the on-ramp for di=erent congested patterns related to Line 1 in Figs. 17(b) and 18: The -ow rate
+qdown averaged during 1 min (left) and the -ow rate qdown averaged 10 min (right). (a–f) are related to
+the congested patterns with the same letters (a–f) in Fig. 18. The data from a virtual detector located at
+x = 17 km in free -ow downstream of the on-ramp (16 km).
+
+pattern, i.e., in terms of the discharge -ow rate q(bottle)out and of the vehicle delay time
+due to congestion. The latter is because the average vehicle speed inside the WSP is
+considerably higher than the average speed in the pinch region of the GP (Fig. 18(d–
+f)). These conclusions of the theory of congested patterns at bottlenecks are used in
+methods of congested pattern control at bottlenecks [123].
+A di=erent situation is realized for the congested patterns which appear along
+
+Line 2 (Fig. 22). In this case, the discharge -ow rate is higher than the -ow rate
+qsum = qin at 06 t ¡ t0: Each of the congested patterns along Line 2 leads also to a
+decrease in the -ow rate on the main road just upstream of the on-ramp. However,
+this decrease is lower than the increase of the -ow rate due to the vehicles squeezing
+onto the main road from the on-ramp.
+An intermediate case has been found for the congested patterns which appear along
+
+Line 3 (Fig. 23), i.e., when the initial -ow rate upstream of the on-ramp qin is changing.
+First, there is a slight increase in the -ow rate qdown = q
+
+(bottle)
+out due to the congested
+
+pattern formation in comparison with the initial -ow rate qdown = qin (Fig. 23(a)). For
+a higher -ow rate qin there is almost no change in the -ow rate qdown after congested
+patterns have been formed (Fig. 23(b,c)). When the -ow rate qin is further increased,
+the discharge -ow rate is lower than the initial -ow rate qdown = qin at 06 t ¡ t0 as
+it was for the congested patterns along Line 1 (Fig. 23(d)), i.e., the -ow rate qdown
+decreases during the congested pattern formation.
+
+
+
+434 B.S. Kerner / Physica A 333 (2004) 379–440
+
+0
+2000
+
+0
+2000
+
+0 30 60 90
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+(a)
+
+Averaging: 10 min
+
+flo
+w
+
+ ra
+te
+
+ [v
+eh
+
+/h]
+
+flo
+w
+
+ ra
+te
+
+ [v
+eh
+
+/h]
+
+Averaging:1 min
+
+time [min]
+0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+time [min]
+
+(b)
+
+(c)
+
+(d)
+
+(e)
+
+Fig. 22. Time-evolution of the -ow rate downstream of the on-ramp qdown during the pattern formation
+at the on-ramp for di=erent congested patterns related to Line 2 in Figs. 17(b) and 19: The -ow rate
+qdown averaged during 1 min (left) and the -ow rate qdown averaged 10 min (right). (a–e) are related to
+the congested patterns with the same letters (a–e) in Fig. 19. The data from a virtual detector located at
+x = 17 km in free -ow downstream of the on-ramp (16 km).
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0 30 60 90 0 30 60 90
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+0
+2000
+
+(a)
+
+Averaging: 10 min
+
+flo
+w
+
+ ra
+te
+
+ [v
+eh
+
+/h]
+
+flo
+w
+
+ ra
+te
+
+ [v
+eh
+
+/h]
+
+Averaging: 1 min
+
+(b)
+
+(c)
+
+(d)
+
+Fig. 23. Time-evolution of the -ow rate downstream of the on-ramp qdown during the pattern formation
+at the on-ramp for di=erent congested patterns related to the Line 3 in Figs. 17(b) and 20: The -ow rate
+qdown averaged during 1 min (left) and the -ow rate qdown averaged 10 min (right). (a–d) are related to
+the congested patterns with the same letters (a–d) in Fig. 20. The data from a virtual detector located at
+x = 17 km in free -ow downstream of the on-ramp (16 km).
+
+5.4.4. Congested pattern capacity
+The congested pattern capacity q(B)cong (28) has been calculated through the 60 min
+
+averaging of the discharge -ow rate q(bottle)out after the related congested pattern has been
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 435
+
+Fig. 24. Dependence of the average congested pattern capacity on the pattern type and pattern parameters:
+(a,b). The congested pattern capacity as function on the -ow rate qon related to Line 1 (a) and Line 2 (b) in
+Fig. 17(b). (c) The congested pattern capacity as function on the -ow rate qin related to Line 3 in Fig. 17(b).
+The black points correspond to the congested patterns in Figs. 18–20 for each of Lines 1–3, respectively.
+Dashed lines show the -ow rate in the wide moving jam out-ow, qout . The averaging of the discharge
+follow rate during 60 min beginning from the time moment t = 20 min (after congested patterns have been
+formed) is performed. The data from a virtual detector located at x=17 km in free -ow downstream of the
+on-ramp (16 km).
+
+formed. It has been found that the congested pattern capacity q(B)cong depends on the type
+of congested patterns and on the pattern parameters noticeably.
+Indeed, along Line 1 (Fig. 24(a)) the congested pattern capacity q(B)cong is a decreasing
+
+function of the -ow rate to the on-ramp qon. This is linked to the pinch e=ect in
+synchronized -ow which occurs when qon increases and a GP is formed. This leads
+to a decrease in the -ow rate in synchronized -ow upstream of the on-ramp. The
+decrease in the latter -ow rate is noticeably higher than an increase in the -ow rate to
+the on-ramp. For this reason, the congested pattern capacity q(B)cong decreases although
+qon increases. The more the decrease in the speed and in the -ow rate in synchronized
+-ow upstream of the on-ramp is the higher the -ow rate qon is. However, there is a
+saturation of the decrease in the congested pattern capacity q(B)cong when qon is further
+increased. The congested pattern capacity at lower qon is higher than the -ow rate
+in the wide moving jam out-ow, qout (dashed line in Fig. 24(a)). At higher qon the
+congested pattern capacity becomes lower than qout.
+By calculation of the congested pattern capacity condition (27) has been ful4lled. The
+
+only exception is the calculation of the capacity along Line 2: In this case, 4rst a LSP
+appears (Fig. 19(a,b)) and therefore the condition (32) has been used. The congested
+pattern capacity which is related to this LSP has been determined by the maximum
+discharge -ow rate at which the LSP still exists upstream of the on-ramp. It has been
+found that the latter condition is only ful4lled for the LSP at qon ≈ 650 vehicles=h.
+This has been taken into account in Fig. 24(b): The dashed curve is related to the
+discharge -ow rate from the LSP when the capacity is not reached and the solid curve
+corresponds to the congested pattern capacity. It can been seen that the congested
+pattern capacity decreases when the -ow rate qon increases. However, in comparison
+with Line 1 the decrease in the capacity along Line 2 is considerably lower at the
+same increase in the -ow rate qon.
+
+
+
+436 B.S. Kerner / Physica A 333 (2004) 379–440
+
+Along Line 3 (Fig. 24(c)) the congested pattern capacity q(B)cong is a non-monotonous
+function of the -ow rate to the on-ramp qon: There is a maximum point on this de-
+pendence. It occurs that at the same -ow rate to the on-ramp qon the -ow rate in
+synchronized -ow in the WSP upstream of the on-ramp increases during the evolu-
+tion of the WSP (from the WSP in Fig. 20(a) to the WSP in Fig. 20(c)) with the
+increase in the -ow rate qin. The -ow rate in synchronized -ow of the WSP in the
+maximum point in Fig. 24(c) (the WSP in Fig. 20(c)) is higher than the -ow rate in
+the wide moving jam out-ow qout (dashed line in Fig. 24(c)). When the -ow rate qin
+is further increased and therefore the boundary S(B)J is intersected, then wide moving
+jams begin to form in synchronized -ow of the initial WSP: a GP is forming. The
+-ow rate in the wide moving jam out-ow cannot exceed qout. As a result, the -ow rate
+through synchronized -ow of the GP occurs to be noticeably lower than in the WSP in
+Fig. 20(c) which is related to the maximum point of the congested pattern capacity in
+Fig. 24(c). Thus, the congested pattern capacity decreases when the WSP transforms
+into the GP. This explains the maximum point in the congested pattern capacity as
+function of the -ow rate qin.
+
+6. Conclusions
+
+The three-phase tra�c theory by the author describes phase transitions and a di-
+verse variety of spatial–temporal congested patterns both on homogeneous roads and
+at highway bottlenecks which are related to results of empirical observations [74,76].
+The features of these phase transitions and of the spatial–temporal congested patterns
+at bottlenecks in the three-phase tra�c theory [74,76,12,80,84,85,101,103] are quali-
+tatively di=erent in comparison with the related results which have been derived in
+the fundamental diagram approach [31–34]. An exception is only the propagation of
+wide moving jams whose characteristic parameters and features appear to play an im-
+portant role (in particular, the -ow rate in the out-ow from the jam, qout) in both
+the three-phase tra�c theory and tra�c -ow theories in the fundamental diagram
+approach.
+Recent empirical results of a study of the congested patterns at on- and o=-ramps
+
+and of their evolution when the bottleneck strength is gradually changing [76] con4rm
+the discussed results and conclusions of the three-phase-tra�c-theory [74,76,12,80,84,
+85,103] rather than the related results and conclusions of tra�c theories in the funda-
+mental diagram approach [31–34,62–66].
+The three-phase tra�c theory [78,74,80,84,85,103] has also been con4rmed by the
+
+on-line application in the tra�c center of the State Hessen of some recent mod-
+els “ASDA” (Automatische Staudynamikanalyse: Automatic Tracing of Moving Traf-
+4c Jams) and “FOTO” (Forecasting of Tra�c Objects) [115–122] which are based
+on this tra�c -ow theory. These models allow reconstruction, tracing and predic-
+tion of spatial–temporal tra�c dynamics based on local measurements of tra�c. The
+models ASDA and FOTO perform without validation of model parameters at di=er-
+ent tra�c conditions (see a recent review about the models ASDA and FOTO in
+Ref. [105]).
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 437
+
+Mathematical microscopic tra�c -ow models in the frame of the three-phase traf-
+4c theory which have recently been proposed by Kerner and Klenov [85,87] shows
+a considerable potential both for the development of qualitatively new mathematical
+tra�c models and for the tra�c -ow theory development on the basis of the discussed
+hypotheses of the three-phase tra�c theory. This is also con4rmed by results of a nu-
+merical study of several new cellular automata tra�c -ow models which have recently
+been developed by Kerner et al. [86].
+Based on the three-phase tra�c theory, a general probabilistic theory of highway
+
+capacity has been developed and presented in this paper. It is shown that already in
+free tra�c at the on-ramp there may be an in4nite multitude of highway capacities
+which depend on the -ow rate to the on-ramp. When a bottleneck is congested then a
+much more complicated picture of congested pattern highway capacity can be realized:
+Congested pattern highway capacity strongly depends on the type of the congested
+pattern and the pattern parameters. The theory of highway capacity and of the capacity
+drop presented in the paper is con4rmed by both results of empirical observations
+[10,11,79,76] and by the presented numerical results of the simulations of the KKW
+CA-model presented in the article and in Ref. [86].
+As it has recently been shown in Ref. [123], the microscopic three-phase tra�c -ow
+
+theory [85–87] is also the basis for a study of di=erent tra�c control strategies and
+for an analysis of driver assistance systems. A detailed consideration of the physics
+of tra�c (features of empirical spatial–temporal tra�c patterns, tra�c -ow theory and
+engineering applications) has been made in the book [124].
+
+Acknowledgements
+
+I would like to thank Hubert Rehborn and Sergey Klenov for their help and ac-
+knowledges funding by BMBF within project DAISY.
+
+References
+
+[1] M. Koshi, M. Iwasaki, I. Ohkura, in: V.F. Hurdle, et al., (Eds.), Proceedings of 8th International
+Symposium on Transportation and Tra�c Theory, University of Toronto Press, Toronto, Ontario,
+1983, p. 403.
+
+[2] I. Prigogine, R. Herman, Kinetic Theory of Vehicular Tra�c, American Elsevier, New York, 1971.
+[3] J. Treiterer, Investigation of tra�c dynamics by aerial photogrammetry techniques, Ohio State
+
+University Technical Report PB 246 094, Columbus, OH, 1975.
+[4] P. Athol, A. Bullen, Highway Research Record, Vol. 456, HRB, National Research Council,
+
+Washington, DC, 1973, pp. 50–54.
+[5] J.H. Banks, Transp. Res. Rec. 1287 (1990) 20–28.
+[6] J.H. Banks, Transp. Res. Rec. 1320 (1991) 83–90.
+[7] F.L. Hall, K. Agyemang-Duah, Transp. Res. Rec. 1320 (1991) 91–98.
+[8] F.L. Hall, V.F. Hurdle, J.H. Banks, Transp. Res. Rec. 1365 (1992) 12–18.
+[9] L. Elefteriadou, R. Roess, W. McShane, Transp. Res. Rec. 1484 (1995) 80–89.
+[10] B.S. Kerner, H. Rehborn, Phys. Rev. Lett. 79 (1997) 4030.
+[11] B. Persaud, S. Yagar, R. Brownlee, Transp. Res. Rec. 1634 (1998) 64.
+[12] B.S. Kerner, in: A. Ceder (Ed.), Transportation and Tra�c Theory, Elsevier, Amsterdam, 1999,
+
+pp. 147–171.
+
+
+
+438 B.S. Kerner / Physica A 333 (2004) 379–440
+
+[13] C.F. Daganzo, Fundamentals of Transportation and Tra�c Operations, Elsevier, New York, 1997.
+[14] A.D. May, Tra�c Flow Fundamental, Prentice-Hall, Englewood Cli=s, NJ, 1990.
+[15] Highway Capacity Manual, Transportation Research Boad, Washington, DC, 2000.
+[16] B.S. Kerner, Dependence of empirical fundamental diagram on spatial-temporal tra�c patterns features,
+
+cond-mat/0309018, e-print in http://arxiv.org/abs/cond-mat/0309018.
+[17] M.J. Lighthill, G.B. Whitham, Proc. R. Soc. A 229 (1955) 317.
+[18] P.I. Richards, Oper. Res. 4 (1956) 42.
+[19] R. Herman, E.W. Montroll, R.B. Potts, R. W. Rothery, Oper. Res. 7 (1959) 86–106.
+[20] D.C. Gazis, R. Herman, R.W. Rothery, Oper. Res. 9 (1961) 545–567.
+[21] E. Kometani T. Sasaki, J. Oper. Res. Soc. Jpn. 2 (1958) 11;
+
+E. Kometani T. Sasaki, Oper. Res. 7 (1959) 704;
+E. Kometani T. Sasaki, in: R. Herman (Ed.), Theory of Tra�c Flow, Elsevier, Amsterdam, 1961,
+p. 105.
+
+[22] G.F. Newell, Oper. Res. 9 (1961) 209.
+[23] I. Prigogine, in: R. Herman (Ed.), Theory of Tra�c Flow, Elsevier, Amsterdam, 1961, p. 158.
+[24] H.J. Payne, in: G.A. Bekey (Ed.), Mathematical Models of Public Systems, Vol. 1, Simulation Council,
+
+La Jolla, 1971.
+[25] P.G. Gipps, Trans. Res. B. 15 (1981) 105–111.
+[26] W. Leutzbach, Introduction to the Theory of Tra�c Flow, Springer, Berlin, 1988.
+[27] R. Wiedemann, Simulation des Verkehrs-usses, University of Karlsruhe, Karlsruhe, 1974.
+[28] G.B. Whitham, Linear and Nonlinear Waves, Wiley, New York, 1974.
+[29] M. Cremer, Der Verkehrs-uss auf Schnellstrassen, Springer, Berlin, 1979.
+[30] G.F. Newell, Applications of Queuing Theory, Chapman & Hall, London, 1982.
+[31] D. Chowdhury, L. Santen, A. Schadschneider, Phys. Rep. 329 (2000) 199.
+[32] D. Helbing, Rev. Mod. Phys. 73 (2001) 1067–1141.
+[33] T. Nagatani, Rep. Prog. Phys. 65 (2002) 1331–1386.
+[34] K. Nagel, P. Wagner, R. Woesler, Oper. Res. (2003)
+[35] J.-B. Lesort (Ed.), Transportation and tra�c theory, Proceedings of the 13th International Symposium
+
+on Transportation and Tra�c Theory, Elsevier, Oxford, 1996.
+[36] A. Ceder (Ed.), Transportation and tra�c theory, Proceedings of the 14th International Symposium on
+
+Transportation and Tra�c Theory, Elsevier, Oxford, 1999.
+[37] M.A.P. Taylor (Ed.), Transportation and tra�c theory in the 21st Century, Proceedings of the 15th
+
+International Symposium on Transportation and Tra�c Theory, Elsevier, Oxford, 2002.
+[38] D.E. Wolf, M. Schreckenberg, A. Bachem (Eds.), Tra�c and granular -ow, Proceedings of the
+
+International Workshop on Tra�c and Granular Flow, October 1995, World Scienti4c, Singapore,
+1995.
+
+[39] M. Schreckenberg, D.E. Wolf (Eds.), Tra�c and granular -ow’ 97, Proceedings of the International
+Workshop on Tra�c and Granular Flow, October 1997, Springer, Singapore, 1998.
+
+[40] D. Helbing, H.J. Herrmann, M. Schreckenberg, D.E. Wolf (Eds.), Tra�c and granular -ow’ 99,
+Proceedings of the International Workshop on Tra�c and Granular Flow, October 1999, Springer,
+Heidelberg, 2000.
+
+[41] M. Fukui M, Y. Sugiyama, M. Schreckenberg, D.E. Wolf (Eds.), Tra�c and granular -ow’ 01,
+Proceedings of the International Workshop on Tra�c and Granular Flow, October 2001, Springer,
+Heidelberg, 2003.
+
+[42] K. Nagel, M. Schreckenberg, J Phys. (France) I 2 (1992) 2221.
+[43] K. Nagel, M. Paczuski, Phys. Rev. E 51 (1995) 2909.
+[44] M. Schreckenberg, A. Schadschneider, K. Nagel, N. Ito, Phys. Rev. E 51 (1995) 2939.
+[45] G.B. Whitham, Proc. R. Soc. London A 428 (1990) 49.
+[46] B.S. Kerner, P. KonhSauser, Phys. Rev. E 50 (1994) 54–83.
+[47] M. Bando, K. Hasebe, A. Nakayama, A. Shibata, Y. Sugiyama, Phys. Rev. E 51 (1995) 1035–1042.
+[48] M. Bando, K. Hasebe, A. Nakayama, A. Shibata, Y. Sugiyama, J. Phys. I France 5 (1995) 1389.
+[49] Y. Sugiyama, H. Yamada, Phys. Rev. E 55 (1997) 7749.
+[50] M. Herrmann, B.S. Kerner, Physica A 255 (1998) 163–188.
+[51] S. KrauM, P. Wagner, C. Gawron, Phys. Rev. E 53 (1997) 5597.
+
+
+
+
+B.S. Kerner / Physica A 333 (2004) 379–440 439
+
+[52] R. Barlovic, L. Santen, A. Schadschneider, M. Schreckenberg, Eur. Phys. J. B. 5 (1998) 793.
+[53] T. Nagatani, Phys. Rev. E 58 (1998) 4271–4279;
+
+T. Nagatani, Phys. Rev. E 59 (1999) 4857–4864;
+T. Nagatani, Phys. Rev. E 60 (1999) 180–187;
+T. Nagatani, Phys. Rev. E 60 (1999) 6395–6401;
+T. Nagatani, Phys. Rev. E 61 (2000) 3564–3570;
+T. Nagatani, Phys. Rev. E 61 (2000) 3534–3540;
+T. Nagatani, Phys. Rev. E 64 (2001) 036 115;
+T. Nagatani, Phys. Rev. E 64 (2001) 016 106;
+T. Nagatani, Physica A 290 (2001) 501–511;
+T. Nagatani, Physica A 280 (2000) 602–613.
+
+[54] T. Nagatani, Physica A 258 (1998) 237.
+[55] D. Helbing, M. Schreckenberg, Phys. Rev. E 59 (1999) R2505.
+[56] M. Treiber, A. Hennecke, D. Helbing, Phys. Rev. E 59 (1999) 239.
+[57] R. Mahnke, J. Kaupu[zs, Phys. Rev. E 59 (1999) 117.
+[58] B.S. Kerner, S.L. Klenov, P. KonhSauser, Phys. Rev. E 56 (1997) 4200–4216.
+[59] B.S. Kerner, P. KonhSauser, M. Schilke, Phys. Rev. E 51 (1995) 6243–6246.
+[60] H.Y. Lee, H.-W. Lee, D. Kim, Phys. Rev. Lett. 81 (1998) 1130.
+[61] D. Helbing, M. Treiber, Phys. Rev. Lett. 81 (1998) 3042–3045.
+[62] D. Helbing, A. Hennecke, M. Treiber, Phys. Rev. Lett. 82 (1999) 4360.
+[63] H.Y. Lee, H.-W. Lee, D. Kim, Phys. Rev. E 59 (1999) 5101.
+[64] H.Y. Lee, H.-W. Lee, D. Kim, Physica A 281 (2000) 78.
+[65] H.Y. Lee, H.-W. Lee, D. Kim, Phys. Rev. E 62 (2000) 4737.
+[66] M. Treiber, A. Hennecke, D. Helbing, Phys. Rev. E 62 (2000) 1805.
+[67] M. Treiber, D. Helbing, J. Phys. A: Math. Gen. 32 (1999) L17.
+[68] E. Tomer, L. Safonov, S. Havlin, Phys. Rev. Lett. 84 (2000) 382.
+[69] W. Knospe, L. Santen, A. Schadschneider, M. Schreckenberg, J. Phys. A 33 (2000) L477.
+[70] W. Knospe, L. Santen, A. Schadschneider, M. Schreckenberg, Phys. Rev. E 65 (2002) 015101(R).
+[71] D. Helbing, D. Batic, M. SchSonhof, M. Treiber, cond-mat/0108548 (2001);
+
+D. Helbing, D. Batic, M. SchSonhof, M. Treiber, Physica A 303 (2002) 251–260.
+[72] E. Tomer, L. Safonov, N. Madar, S. Havlin, cond-mat/0105493 (2001);
+
+E. Tomer, L. Safonov, N. Madar, S. Havlin, Phys. Rev. E 65 (2002) 065101(R).
+[73] M. Treiber, D. Helbing, cond-mat/0304337 (2003);
+
+M. Treiber, D. Helbing, Phys. Rev. E 68 (2003).
+[74] B.S. Kerner, Phys. Rev. Lett. 81 (1998) 3797.
+[75] B.S. Kerner, J. Phys. A: Math. Gen. 33 (2000) L221.
+[76] B.S. Kerner, Phys. Rev. E 65 (2002) 046 138.
+[77] B.S. Kerner, H. Rehborn, Phys. Rev. E 53 (1996) R4275–R4278.
+[78] B.S. Kerner, in: R. Rysgaard (Ed.), Proceedings of the 3rd Symposium on Highway Capacity and
+
+Level of Service, Vol. 2, Road Directorate, Ministry of Transport, Denmark, 1998, pp. 621–642.
+[79] B.S. Kerner, Transp. Res. Rec. 1710 (2000) 136–144.
+[80] B.S. Kerner, Transp. Res. Rec. 1678 (1999) 160–167.
+[81] B.S. Kerner, in: D. Helbing, H.J. Herrmann, M. Schreckenberg, D.E. Wolf (Eds.), Tra�c and granular
+
+-ow’ 99, Proceedings of the International Workshop on Tra�c and Granular Flow, October 1999,
+Springer, Heidelberg, 2000, pp. 253–284.
+
+[82] B.S. Kerner, Networks and Spatial Econ. 1 (2001) 35.
+[83] B.S. Kerner, in: M. Schreckenberg, D.E. Wolf (Eds.), Tra�c and granular -ow’ 97, Proceedings of
+
+the International Workshop on Tra�c and Granular Flow, October 1997, Springer, Singapore, 1998,
+pp. 239–267.
+
+[84] B.S. Kerner, Phys. World 12 (8) (1999) 25–30.
+[85] B.S. Kerner, S.L. Klenov, J. Phys. A: Math. Gen. 35 (2002) L31.
+[86] B.S. Kerner, S.L. Klenov, D.E. Wolf, cond-mat/0206370 (2002);
+
+B.S. Kerner, S.L. Klenov, D.E. Wolf, J. Phys. A: Math. Gen. 35 (2002) 9971–10013.
+[87] B.S. Kerner, S.L. Klenov, Phys. Rev. E 68 (2003) 036 130.
+
+
+
+440 B.S. Kerner / Physica A 333 (2004) 379–440
+
+[88] E. SchSoll, Nonequilibrium Phase Transitions in Semiconductors, Reidel, Dordrecht, 1987.
+[89] V.A. Vasil’ev, Yu.M. Romanovskii, D.S. Chernavskii, V.G. Yakhno, Autowave Processes in Kinetic
+
+Systems, Springer, Berlin, 1990.
+[90] A.S. Mikhailov, Foundations of Synergetics, 2nd Edition, Vol. I, Springer, Berlin, 1994.
+[91] B.S. Kerner, V.V. Osipov, Autosolitons: A New Approach to Problems of Self-organization and
+
+Turbulence, Kluwer, Dordrecht, Boston, London, 1994.
+[92] K. Nishinari, D. Takahashi, J. Phys. A 31 (1998) 5439;
+
+K. Nishinari, D. Takahashi, J. Phys. A 32 (1999) 93;
+K. Nishinari, J. Phys. A 34 (2001) 10 723.
+
+[93] J. Matsukidaira, K. Nishinari, Phys. Rev. Lett. 980 (2003) 088 701.
+[94] M. Fukui, K. Nishinari, D. Takahashi, Y. Ishibashi, Physica A 303 (2002) 226–238.
+[95] R. KSuhne, R. Mahnke, I. Lubashevsky, J. Kaupu[zs, Phys. Rev. E 65 (2002) 066 125.
+[96] D. Jost, K. Nagel, 2002; cond-mat/0208082.
+[97] I. Lubashevsky, R. Mahnke, Phys. Rev. E 62 (2000) 6082.
+[98] I. Lubashevsky, R. Mahnke, P. Wagner, S. Kalenkov, Phys. Rev. E 66 (2002) 016 117.
+[99] P. Nelson, Phys. Rev. E 61 (2000) R6052.
+[100] S. Kriso, R. Friedrich, J. Peinke, P. Wagner, cond-mat/0110084 (2001).
+[101] B.S. Kerner, in: M. Fukui M, Y. Sugiyama, M. Schreckenberg, D.E. Wolf (Eds.), Tra�c and granular
+
+-ow’ 01, Proceedings of the International Workshop on Tra�c and Granular Flow, October 2001,
+Springer, Heidelberg, 2003.
+
+[102] D. Helbing, M. Treiber, tra�cforum/02031301 (2002)
+D. Helbing, M. Treiber, Cooperative Transportation Dynamics, Vol. 1, 2002, 2.1.–2.24.
+
+[103] B.S. Kerner, Transp. Res. Rec. 1802 (2002) 145–154.
+[104] B.S. Kerner, Math. Comput. Modelling 35 (2002) 481–508.
+[105] B.S. Kerner, H. Rehborn, M. Aleksic, A. Haug, in: M. Schreckenberg, R. Selten (Eds.), Human
+
+Behavior and Tra�c Networks, Springer, Berlin, 2004.
+[106] M. Fukui, Y. Ishibashi, J. Phys. Soc. Japan 65 (1996) 1868.
+[107] R. Mahnke, N. Pieret, Phys. Rev. E 56 (1997) 2666.
+[108] K. Nishinari, D. Takahashi, J. Phys. A 33 (2000) 7709.
+[109] M. Takayasu, H. Takayasu, Fractals 1 (1993) 860.
+[110] D.E. Wolf, Physica A 263 (1999) 438.
+[111] T. Nagatani, K. Nakanishi, Phys. Rev. E 57 (1998) 6415.
+[112] S. Rosswog, P. Wagner, Phys. Rev. E 65 (2002) 036 106.
+[113] B.S. Kerner, H. Rehborn, Phys. Rev. E 53 (1996) R1297–R1300.
+[114] B.S. Kerner, in: M.A.P. Taylor (Ed.), Transportation and Tra�c Theory in the 21th Century, Elsevier,
+
+Amsterdam, 2002, pp. 417–439.
+[115] B.S. Kerner, German Patent DE 199 44 075.
+[116] B.S. Kerner, in: 2001 IEEE Intelligent Transportation Systems Proceedings, IEEE, Oakland, USA,
+
+2001, pp. 88–93.
+[117] B.S. Kerner, H. Rehborn, H. Kirsch4nk, German Patent DE 196 47 127;
+
+B.S. Kerner, H. Rehborn, H. Kirsch4nk, US-Patent US 5861820 (1998).
+[118] B.S. Kerner, H. Rehborn, German Patent Publication DE 198 35 979.
+[119] B.S. Kerner, M. Aleksic, U. Denneler, German Patent DE 199 44 077.
+[120] B.S. Kerner, H. Rehborn, M. Aleksic, A. Haug, Tra�c Eng. Control 42 (2001) 282–287.
+[121] B.S. Kerner, H. Rehborn, M. Aleksic, A. Haug, R. Lange, Tra�c Eng. Control 42 (2001) 345–350.
+[122] B.S. Kerner, H. Rehborn, M. Aleksic, A. Haug, Transp. Res. C (2003), in press.
+[123] B.S. Kerner, Control of spatial-temporal congested tra�c patterns at highway bottlenecks,
+
+cond-mat/0309017, e-print in http//axriv.org/abs/cond-mat/0309017;
+B.S. Kerner, in: Proceedings of the 10th World Congress on Intelligent Transport Systems, Paper No.
+2043 T, Madrid, Spain, 2003;
+B.S. Kerner, in: Proceedings of the 83rd Annual Meeting of Transportation Research Board, TRB
+Paper No. 04-3062, January 11–15, 2004, Washington, D.C., 2004.
+
+[124] B.S. Kerner, The Physics of Tra�c, Springer, Berlin, 2004, in press.
+
+
+
+	Three-phase traffic theory and highway capacity
+	Introduction
+	Fundamental diagram approach to traffic flow theory and modeling
+	Three-phase traffic theory
+	The concept ``synchronized flow''
+	The fundamental hypothesis of the three-phase traffic theory
+	Explanation of the terms ``synchronized flow'' and ``wide moving jam''
+
+
+	Empirical features of synchronized flow
+	Main empirical features of phase transitions, onset of congestion and congested patterns at bottlenecks (overview)
+	Empirical example of WSP
+	Overlapping of states of free flow and synchronized flow in density
+	Analysis of individual vehicle speeds
+
+	Shortcoming of the fundamental diagram approach for description of traffic congestion
+	Comparison of hypotheses to three-phase traffic theory with some results of fundamental diagram approach
+	Steady speed states [78,12,80]
+	Explanation of fundamental hypothesis of the three-phase traffic theory
+	Hypothesis about stability of steady states [12,78,80]
+
+	Phase transitions on homogeneous (without bottlenecks) roads
+	The line J and hypothesis about emergence of moving jams [74]
+	Hypothesis about continuous spatial--temporal transitions between states of synchronized flow on homogeneous roads [78]
+	Two kinds of nucleation effects and phase transitions in free flow
+	Priority of F S transition in free flow [12,80]
+	The critical (limit) density in free flow [12,80]
+
+	Physics of breakdown phenomenon
+	Z-shaped speed--density characteristic
+	Passing probability
+	Competition between over-acceleration and speed adaptation
+
+	Why moving jams do not emerge in free flow
+	Explanation of F S J transitions: double Z-shaped traffic flow characteristics
+	Phase transitions and patterns at highway bottlenecks
+	Deterministic perturbation and local breakdown at bottlenecks
+	Double Z-characteristics at bottlenecks
+	Diagram of congested patterns
+
+
+	Probabilistic theory of highway capacity
+	Homogeneous road
+	Highway capacity in free flow at bottleneck
+	Highway capacity in congested traffic at bottleneck. Capacity drop
+	Numerical study of congested pattern capacity at on-ramps
+	KKW cellular automata traffic flow model
+	Transformations of congested patterns at on-ramps
+	Time-evolution of discharge flow rate
+	Congested pattern capacity
+
+
+	Conclusions
+	Acknowledgements
+	References
+
+

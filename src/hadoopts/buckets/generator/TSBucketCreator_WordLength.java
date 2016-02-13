@@ -35,7 +35,7 @@ import org.apache.hadoop.io.WritableComparable;
  */
 public class TSBucketCreator_WordLength {
     
-    public static String experiment = "ex1";
+    public static String experiment = "exp1"; 
         
     public static String baseOut = "./tsbucket/";
     public static String baseIn = "./data/in/textcorpus/";

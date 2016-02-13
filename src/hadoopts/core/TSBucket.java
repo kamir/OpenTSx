@@ -42,6 +42,10 @@ import org.apache.mahout.math.VectorWritable;
 import statphys.ris.experimental.TSPropertyTester;
 import app.thesis.LongTermCorrelationSeriesGenerator;
 import app.thesis.TSGenerator;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.Hashtable;
 
 /**
  * @author Mirko Kaempf
@@ -865,12 +869,12 @@ public class TSBucket {
         System.out.println("--> process bucket : GrayImageLine-Series-Generator ( z=" + ANZ + ")");
 
         Messreihe[] mrS = TSGenerator.getGrayImageSeries(imageFile);
-        
-        for( Messreihe mr : mrS ) {
+
+        for (Messreihe mr : mrS) {
 
             TSData data = TSData.convertMessreihe(mr);
 
-            System.out.print( data.label + "\n");
+            System.out.print(data.label + "\n");
 
             NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
 
@@ -888,6 +892,177 @@ public class TSBucket {
 
     public void createBucketFromGrayImageFile(File[] folder, String baseOut, String experiment) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public void createBucketFromFilesViaWordLengthRecursive(File[] folder, String s, String experiment) throws IOException {
+
+        int ANZ = folder.length;
+
+        DecimalFormat df = new DecimalFormat("0.000");
+
+        System.out.println("--> create bucket : from text by wordlength ");
+
+        Configuration config = initConfig();
+        FileSystem fs = initFileSystem();
+
+        Path path = new Path(s + "/" + experiment + "/bucket_wordLength_.tsb.vec.seq");
+
+        System.out.println("--> create bucket : " + path.toString());
+
+        // write a SequenceFile form a Vector
+        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+
+        System.out.println("--> process bucket : Word-Length-Series-Generator ( z=" + ANZ + ")");
+
+        for (int i = 0; i < ANZ; i++) {
+
+            File[] FOLDERS = folder[i].listFiles();
+
+            for (File f : FOLDERS) {
+
+                Messreihe mr = TSGenerator.getWordLengthSeries(f);
+
+                TSData data = TSData.convertMessreihe(mr);
+
+                System.out.print("   (" + i + ")\t" + data.label + "\n");
+
+                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
+
+                writer.append(new Text(nv.getName()), vec);
+
+                System.out.print("   (name: " + nv.getName() + ")\n");
+
+            }
+
+        }
+
+        writer.close();
+        System.out.println("### DONE : " + path.toString());
+    }
+
+    public void createBucketFromFilesViaTFIDFRecursive(File[] folder, String s, String experiment) throws IOException {
+
+        int ANZ = folder.length;
+
+        DecimalFormat df = new DecimalFormat("0.000");
+
+        System.out.println("--> create bucket : from text by wordlength ");
+
+        Configuration config = initConfig();
+        FileSystem fs = initFileSystem();
+
+        Path path = new Path(s + "/" + experiment + "/bucket_tfidf_.tsb.vec.seq");
+
+        System.out.println("--> create bucket : " + path.toString());
+
+        // write a SequenceFile form a Vector
+        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+
+        System.out.println("--> process bucket : Word-Length-Series-Generator ( z=" + ANZ + ")");
+
+        Hashtable<String, Integer> idfs = new Hashtable<String, Integer>();
+
+        for (int i = 0; i < ANZ; i++) {
+
+            File[] FOLDERS = folder[i].listFiles();
+
+            for (File f : FOLDERS) {
+
+                storeIDFCOntribs(f, idfs);
+
+            }
+
+            
+        }
+        
+//        for( String w : idfs.keySet() )
+//            System.out.println( "[" + w + "] " + " => " + idfs.get(w) );
+        
+        System.out.println(" DONE PART 1" );
+
+        for (int i = 0; i < ANZ; i++) {
+
+            File[] FOLDERS = folder[i].listFiles();
+
+            for (File f : FOLDERS) {
+
+                Messreihe mr = TSGenerator.getTFIDFSeries( f, idfs , getWC(f), getText(f) );
+
+                TSData data = TSData.convertMessreihe(mr);
+
+                System.out.print("   (" + i + ")\t" + data.label + "\n");
+
+                NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+
+                VectorWritable vec = new VectorWritable();
+                vec.set(nv);
+
+                writer.append(new Text(nv.getName()), vec);
+
+                System.out.print("   (name: " + nv.getName() + ")\n");
+
+            }
+
+        }
+
+        writer.close();
+        System.out.println("### DONE : " + path.toString());
+    }
+
+    private void storeIDFCOntribs(File f, Hashtable<String, Integer> idfs) throws FileNotFoundException, IOException {
+
+        Hashtable<String, Integer> wc = getWC(f);
+
+        for (String w : wc.keySet()) {
+            if (idfs.containsKey(w)) {
+                Integer c = idfs.get(w);
+                c++;
+                idfs.put(w, c);
+            } else {
+                idfs.put(w, 1);
+            };
+        }
+    }
+    
+    private String getText(File f) throws FileNotFoundException, IOException {
+
+        StringBuffer sb = new StringBuffer();
+        
+        BufferedReader br = new BufferedReader(new FileReader(f));
+        while (br.ready()) {
+            String l = br.readLine();
+            sb.append(l + "\n");
+        }
+        br.close();
+
+        return sb.toString();
+    }
+
+    private Hashtable<String, Integer> getWC(File f) throws FileNotFoundException, IOException {
+
+        Hashtable<String, Integer> wc = new Hashtable<String, Integer>();
+
+        BufferedReader br = new BufferedReader(new FileReader(f));
+        while (br.ready()) {
+            String l = br.readLine();
+            String[] ws = l.split( TSGenerator.PATTERN );
+            for (String w : ws) {
+                if (wc.containsKey(w)) {
+                    Integer c = wc.get(w);
+                    c++;
+                    wc.put(w, c);
+                }
+                else { 
+                    wc.put(w,1);
+                };
+            }
+        }
+        br.close();
+
+        return wc;
     }
 
 }

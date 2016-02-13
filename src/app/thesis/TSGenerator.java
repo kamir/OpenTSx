@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Hashtable;
 import javax.imageio.ImageIO;
 
 /**
@@ -30,6 +31,8 @@ public class TSGenerator {
     
     static Vector<Messreihe> testsA = null;
     static Vector<Messreihe> testsB = null;
+    
+    public static String PATTERN = "\\W+";
     
     /** 
      * 
@@ -176,7 +179,7 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         BufferedReader br = new BufferedReader( new FileReader( f ) );
         while( br.ready() ) {
             String line = br.readLine();
-            String[] words = line.split(" ");
+            String[] words = line.split( PATTERN );
             for( String w : words)
                 mr.addValue( w.length() );
         }
@@ -217,6 +220,27 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         Messreihe[] MRS = new Messreihe[vmr.size()];
         MRS = vmr.toArray(MRS); 
         return MRS;
+    }
+
+    public static Messreihe getTFIDFSeries(File f, Hashtable<String, Integer> idfs, Hashtable<String, Integer> wc, String text) {
+
+        Messreihe mr = new Messreihe();
+        mr.setLabel( f.getAbsolutePath() );
+ 
+        int i = 0;
+        for( String s : text.split( PATTERN ) ){
+
+            double tf = wc.get(s);
+            
+            /// System.out.println( "{" + s + "} " + tf );
+            
+            double idf = idfs.get(s);
+            
+            mr.addValuePair(i, tf / idf );
+            
+            i++;
+        }
+        return mr;
     }
     
 }
