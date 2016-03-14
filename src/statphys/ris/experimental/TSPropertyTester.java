@@ -27,7 +27,7 @@ import java.util.Enumeration;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 //import panels.MessreiheWindow3Frame;
 
 import statistics.HaeufigkeitsZaehler;

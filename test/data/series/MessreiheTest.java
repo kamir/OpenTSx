@@ -9,7 +9,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
 import junit.framework.TestCase;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.jfree.data.xy.XYSeries;
 
 /**

@@ -1,6 +1,6 @@
 /**
- * This functional test uses the OSZI class to produce the images and raw data
- * for a publishabel PIXNODE.
+ * This functional test uses the "OSZI" class to produce the images and raw data
+ * for a publishabel PIXNOD (used in chapter 5).
  *
  * PIXNODEs are introduced in the context of writing Mirko's thesis.
  *
@@ -40,8 +40,9 @@
  */
 package app.thesis;
 
-        // Requires the following imports before the class definition:
+// Requires the following imports before the class definition:
 import app.bucketanalyser.MacroTrackerFrame;
+import app.bucketanalyser.TSOperationControlerPanel;
 import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -56,7 +57,7 @@ import infodynamics.measures.mixed.gaussian.MutualInfoCalculatorMultiVariateWith
 import infodynamics.utils.ArrayFileReader;
 import java.text.DecimalFormat;
 import java.util.Vector;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 
@@ -65,39 +66,38 @@ import statphys.detrending.methods.IDetrendingMethod;
 import app.thesis.experimental.ContextRecorder;
 
 /**
- * Produce Images for chapter 7.
+ * Produce Images for chapter 5.
  *
  * @author kamir
  */
-public class FFMTest {
+public class SurrogatDataGeneration {
 
-    public static String label_of_EXPERIMENT = "EXP0";
+    public static String label_of_EXPERIMENT = "SurrogatData";
+    public static String subLabel = "EXP10";
+
     public static double samplingRate = 1000;
 
-    /**
-     * NO ARGUMENTS
-     *
-     * @param args the command line arguments
-     */
     public static void main(String[] args) throws Exception {
 
         // Paramters for test data generation ...
         double PI = Math.PI;
 
-        MacroTrackerFrame.init("FFM Test");
-
-        // EXP 1
-        label_of_EXPERIMENT = "FFM";
-        String subLabel = "EXP5";
-
-        double[] f = {2, 3};  // frequency
-        double[] a = {1, 1};                  // amplitude 
-        double[] phase = {0.0, 0.0};  // phase
-        double[] noise = {0.3, 0.3};  // noise level
+        double[] f     = {2  , 3  , 4  , 5  };  // frequency
+        double[] a     = {1  , 1  , 1  , 1  };                  // amplitude 
+        double[] phase = {0.0, 0.0, 0.0, 0.0};  // phase
+        double[] noise = {0.0, 0.0, 0.2, 0.2};  // noise level
+        
         boolean doShuffle = false;
 
-        ContextRecorder.setSubLabel(subLabel);
+        /**
+         *  Track parameters and prepare results ...
+         */
+        MacroTrackerFrame.init( label_of_EXPERIMENT );
 
+        ContextRecorder.setSubLabel(subLabel);
+        
+        TSOperationControlerPanel.label_of_EXPERIMENT = label_of_EXPERIMENT + "_" + subLabel;
+        
         ContextRecorder.recordParameters("f", f);
         ContextRecorder.recordParameters("a", a);
         ContextRecorder.recordParameters("phase", phase);
@@ -113,7 +113,8 @@ public class FFMTest {
 //        // EXP 3
 //        label_of_EXPERIMENT = "EXP3";
 //        samplingRate = 1.0 / (24 * 3600);
-        doDFA = false;
+        
+        doDFA = true;
         
         SCATTERPLOT = false;
         SCATTERPLOT_AUTO_SAVE = false;
@@ -146,6 +147,7 @@ public class FFMTest {
             mix.labelWithEntropy();
             components.add(mix); 
    
+        int N = mix.yValues.size();
 
         MultiChart.open(components, true, "Components");
 
@@ -156,30 +158,33 @@ public class FFMTest {
         int windowSize = 20;
         int shuffles = 1;
 
-//        // Here we calculate the Entropy for a sliding Window ...
-//        // in unshuffled data
-//        Vector<Messreihe> slidingWindowResults = new Vector<Messreihe>();
-//        for (Messreihe comp : components) {
-//
-//            Messreihe mm = comp.copy();
-//
-//            mm.shuffleYValues(shuffles);
-//            mm.labelWithEntropy();
-//
-//            shuffledComponents.add(mm);
-//
+        // Here we calculate the Entropy for a sliding Window ...
+        // in unshuffled data
+        Vector<Messreihe> slidingWindowResults = new Vector<Messreihe>();
+        for (Messreihe comp : components) {
+
+            Messreihe mm = comp.copy();
+
+            mm.shuffleYValues(shuffles);
+            mm.labelWithEntropy();
+
+            shuffledComponents.add(mm);
+
 //            slidingWindowResults.add(comp.calcEntropyForWindow(windowSize));
-//        }
+        }
 //        MultiChart.open(shuffledComponents, true, "Shuffeled (N=" + shuffles + ")");
 //        MultiChart.open(slidingWindowResults, true, "H for sliding window ("+windowSize+")");
+        
+
+
         // DFA ...
-        applyDFA(components, "RAW components  ");
-        applyDFA(shuffledComponents, "SHUFFLED components   ");
+//        applyDFA(components, "RAW components  ");
+//        applyDFA(shuffledComponents, "SHUFFLED components   ");
 
         int dig = 10;
 
         // Analyse the Transfer Entropy and Mutual Information
-        System.out.println("BINS;JIDT.TE (mr1,mr2,5);JavaMI.Entropy(mr1);JavaMI.Entropy(mr2);JIDT.MI(mr1,mr2);JavaMI.MI(mr1,mr2),ACM3.cc(mr1,mr2)");
+//        System.out.println("BINS;JIDT.TE (mr1,mr2,5);JavaMI.Entropy(mr1);JavaMI.Entropy(mr2);JIDT.MI(mr1,mr2);JavaMI.MI(mr1,mr2),ACM3.cc(mr1,mr2)");
 //        calcTEandMI(components.elementAt(0) , mix , dig);
 //        calcTEandMI(components.elementAt(1) , mix , dig);
 //        calcTEandMI(components.elementAt(2) , mix , dig);
@@ -217,7 +222,7 @@ public class FFMTest {
                 SCATTERPLOT = false;
             }
 
-            calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i);
+//            calcTEandMI(comp.elementAt(0), comp.elementAt(1), dig, "r0", "r1", mrPROBE1, mrPROBE2, i);
 //            calcTEandMI(comp.elementAt(1), comp.elementAt(0), dig, "r1", "r0");
 //            calcTEandMI(comp.elementAt(1), comp.elementAt(1), dig, "r1", "r1");
 //            calcTEandMI(comp.elementAt(0), comp.elementAt(0), dig, "r0", "r0");
@@ -252,7 +257,7 @@ public class FFMTest {
 //
 //        }
 
-        MultiChart.open(prob, subLabel, "length", "MI and CC", true, ContextRecorder.sb.toString());
+ //       MultiChart.open(prob, subLabel, "length", "MI and CC", true, ContextRecorder.sb.toString());
 
 //        calcTEandMI(components.elementAt(3) , mix , dig);
 //        calcTEandMI(components.elementAt(4) , mix , dig);
@@ -277,18 +282,30 @@ public class FFMTest {
         mrv3.add(mrTE_i_SIMPLE);
         mrv3.add(mrTE_i_PHASE_RANDOMISATION);
 
-        int i = 1;
+        int i = 10;
 //        for( int i = 0; i < 1000; i = i + 1 ) {
-//          
 
         // simple randomisation
         Messreihe m2 = mix.copy();
         m2.shuffleYValues(i);
 
         // phase manipulation
-        Messreihe m3 = FFTPhaseRandomizer.getPhaseRandomizedRow_MULTIPLY_PHASE_WITH_RANDOM(mix.copy(), false, false, 0);
-        Messreihe m4 = FFTPhaseRandomizer.getPhaseRandomizedRow_SHUFFLE_PHASE(mix.copy(), false, false, 0);
+//        Messreihe m3 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
+//        Messreihe m4 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
+        
+        Messreihe m5 = LongTermCorrelationSeriesGenerator.getRandomRow(mix.copy(), -2.0, doDFA, doDFA);
+        Messreihe m6 = LongTermCorrelationSeriesGenerator.getRandomRow(mix.copy(), -1.0, doDFA, doDFA);
+        Messreihe m7 = LongTermCorrelationSeriesGenerator.getRandomRow(mix.copy(), 1.0, doDFA, doDFA);
+        Messreihe m8 = LongTermCorrelationSeriesGenerator.getRandomRow(mix.copy(), 2.0, doDFA, doDFA);
 
+//        Messreihe m5 = LongTermCorrelationSeriesGenerator.getRandomRow(m2.copy(), -2.0, doDFA, doDFA);
+//        Messreihe m6 = LongTermCorrelationSeriesGenerator.getRandomRow(m2.copy(), -1.0, doDFA, doDFA);
+//        Messreihe m7 = LongTermCorrelationSeriesGenerator.getRandomRow(m2.copy(), 1.0, doDFA, doDFA);
+//        Messreihe m8 = LongTermCorrelationSeriesGenerator.getRandomRow(m2.copy(), 2.0, doDFA, doDFA);
+
+        Messreihe m3 = LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(mix.copy(), doDFA, doDFA);
+        Messreihe m4 = LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(mix.copy(), doDFA, doDFA);
+        
         m2.setLabel("shuffled_SIMPLE(" + i + ")");
         m3.setLabel("shuffled_PHASERANDOM_MULTIPLY(" + i + ")");
         m4.setLabel("shuffled_PHASERANDOM_SHUFFLE(" + i + ")");
@@ -297,14 +314,29 @@ public class FFMTest {
         m3.labelWithEntropy(" PHASERANDOM_MULTIPLY ");
         m4.labelWithEntropy(" PHASERANDOM_SHUFFLE");
 
-        mrv2.add(mix);
+
+
+//        mrv2.add(mix);
         mrv2.add(m2);
-        mrv2.add(m3);
-        mrv2.add(m4);
-
-        MultiChart.open(mrv2, true);
-        applyDFA(mrv2, "<<< RAW, Shuffled, PHRand.MULTIPLY, PHRand.SHUFFLE >>> ");
-
+        
+//        mrv2.add(m3);
+//        mrv2.add(m4);
+        
+        mrv2.add(m5);
+        mrv2.add(m6);
+        mrv2.add(m7);
+        mrv2.add(m8);
+        
+//        mrv2.add(m5.normalizeToStdevIsOne());
+//        mrv2.add(m6.normalizeToStdevIsOne());
+//        mrv2.add(m7.normalizeToStdevIsOne());
+//        mrv2.add(m8.normalizeToStdevIsOne());
+        
+       
+        applyDFA(mrv2, "DFA for all generated TS");
+ 
+        MultiChart.open(mrv2, "GENERATED DATA", "t", "f(t)", true, "");
+        
         System.out.println();
         System.out.println("mr and m2");
 
@@ -342,7 +374,7 @@ public class FFMTest {
 //            }
     }
 
-    static boolean doDFA = false;
+    static boolean doDFA = true;
     static boolean SCATTERPLOT = false;
     static boolean SCATTERPLOT_AUTO_SAVE = false;
 
@@ -359,10 +391,14 @@ public class FFMTest {
         int order = 0;
 
         Vector<Messreihe> v = new Vector<Messreihe>();
-
+        
+        int N = 0;
+        double xMax = 15;
+        double xMin = -15;
+                
         for (Messreihe d4 : mrv) {
 
-            int N = d4.yValues.size();
+            N = d4.yValues.size();
             double[] zr = new double[N];
 
             Vector<Messreihe> vr = new Vector<Messreihe>();
@@ -400,15 +436,35 @@ public class FFMTest {
             double alpha = alphaSR.getSlope();
 
             System.out.println(status);
-        }
+            
+            xMax = mr4.getMaxX();
+            xMin = mr4.getMinX();
 
-        if (true) {
+        }
+                
+        double m1 = 0.5;
+        double n1 = 0.0;
+        
+        double m2 = 1.0;
+        double n2 = 0.0;
+        
+        double dx = ( xMax - xMin ) / N;
+        
+        
+        Messreihe ref1 = Messreihe.getLinearFunction( m1, n1, dx, xMin, N);
+        Messreihe ref2 = Messreihe.getLinearFunction( m2, n2, dx, xMin, N);
+        
+        v.add( ref1 );
+        v.add( ref2 );
+        
+
+//        if (true) {
             DecimalFormat df = new DecimalFormat("0.000");
             MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???");
 
 //                System.out.println(" alpha = " + df.format(alpha));
 //                System.out.println("       = " + ((2 * alpha) - 1.0));
-        }
+//        }
     }
 
     public static double calcTransferEntropy(Messreihe mra, Messreihe mrb, int le) {

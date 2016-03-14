@@ -13,6 +13,7 @@ abstract public class DFACore implements IDetrendingMethod {
     public static double S_SCALE_FACTOR = 1.15;
     
     int[] s = null; // Stellen der Auswertung
+    
     double[] zr = null; // Zeitreihe der ROHDATEN
     double[] pr = null; // Profilreihe
     double[][] F = null; // Fluctuationsfunktion
@@ -128,6 +129,7 @@ abstract public class DFACore implements IDetrendingMethod {
     };
 
     public void initIntervalSlog() {
+        
         int steps = para.getzSValues();
 
         int s_start = Math.abs( para.getGradeOfPolynom() ) + 2;

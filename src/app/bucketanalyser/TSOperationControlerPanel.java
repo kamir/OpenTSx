@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.ChartUtilities;
@@ -407,6 +407,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         for (Messreihe r : this.rows) {
 
             MessreiheFFT rFFT = MessreiheFFT.convertToMessreiheFFT(r);
+            
             v.add(rFFT.getFFT(EntropieTest.samplingRate));
 
         }

@@ -59,7 +59,7 @@ import infodynamics.measures.mixed.gaussian.MutualInfoCalculatorMultiVariateWith
 import infodynamics.utils.ArrayFileReader;
 import java.text.DecimalFormat;
 import java.util.Vector;
-import org.apache.commons.math.stat.regression.SimpleRegression; 
+import org.apache.commons.math3.stat.regression.SimpleRegression; 
 
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation; 
 
@@ -228,8 +228,8 @@ public class MacroRecorder {
             m2.shuffleYValues(i);
             
             // phase manipulation
-            Messreihe m3 = FFTPhaseRandomizer.getPhaseRandomizedRow_MULTIPLY_PHASE_WITH_RANDOM(mix.copy(), false, false, 0);
-            Messreihe m4 = FFTPhaseRandomizer.getPhaseRandomizedRow_SHUFFLE_PHASE(mix.copy(), false, false, 0);
+            Messreihe m3 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value);
+            Messreihe m4 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
 
             m2.setLabel("shuffled_SIMPLE(" + i + ")");
             m3.setLabel("shuffled_PHASERANDOM_MULTIPLY(" + i + ")");

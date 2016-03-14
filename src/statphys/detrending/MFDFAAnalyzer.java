@@ -8,7 +8,7 @@ import data.series.MessreiheFFT;
 import data.export.MesswertTabelle;
 import data.export.OriginProject;
 import java.util.Vector;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import statphys.detrending.methods.DFACore;
 import statphys.detrending.methods.IDetrendingMethod;
 import statphys.detrending.methods.MFDFA;

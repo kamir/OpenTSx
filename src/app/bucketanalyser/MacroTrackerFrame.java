@@ -88,8 +88,13 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
 
     public static void addTransformation(TSBucketTransformation t) {
         System.out.println("ADDED A NEW TRANSFORMATION ... " + t.source + " ... " + t.target + " => " + t.operation + " Type: " + t.type);
-        frame.track.addTransformation(t);
-        frame.refresh();
+        if ( frame != null ) {
+            
+            frame.track.addTransformation(t);
+        
+            frame.refresh();
+        
+        }
     }
 
     public static void addSource(TSBucketSource t) {

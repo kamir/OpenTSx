@@ -4,6 +4,7 @@
  */
 package data.series;
 
+import chart.simple.MultiChart;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,9 +18,13 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math.complex.Complex;
-import org.apache.commons.math.stat.regression.SimpleRegression;
-import org.apache.commons.math.transform.FastFourierTransformer;
+
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
+
 import org.jfree.data.xy.XYSeries;
 import stdlib.StdRandom;
 import stdlib.StdStats;
@@ -28,17 +33,23 @@ public class MessreiheFFT extends Messreihe {
     
     public MessreiheFFT getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV( ) { 
 
+        System.out.println( ">>> phase_randomized_MULTIPLY_random" );
+
         MessreiheFFT aThis = this;
         
         MessreiheFFT rFFT = new MessreiheFFT();
-        rFFT.setLabel( aThis.getLabel() + " (pr)");
+        rFFT.setLabel( aThis.getLabel() + " (phase_randomized_MULTIPLY_random)");
         
         double[] data = aThis.getYData();
+        
+        int N_Original = data.length;
+        
         data = extendToPowerOf2(data);
-        FastFourierTransformer fft = new FastFourierTransformer();
+        
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
 
         // TRANSFORMED by FFT
-        Complex[] c = fft.transform(data);
+        Complex[] c = fft.transform(data, TransformType.FORWARD );
         
         // MODIFIED => for back transformation  by FFT
         Complex[] mod = new Complex[c.length];
@@ -60,32 +71,60 @@ public class MessreiheFFT extends Messreihe {
         double f0 = c0_R;
         double df = N / 6283.1853071795858D;
 
-        /**
-         * 
-         * Randomize by multipling with a random number
-         */
-        for (int i = 1; i < c.length; i++) {
-            
-            double f = i * df;
-            
-            double factor = Math.random();
-                    
-            mod[i] = new Complex( c[i].getReal(), c[i].getImaginary() * factor); ;
+        int MAX = (c.length / 2);
+        System.out.println( ">> LENGTH " + c.length);
+        System.out.println( ">>    MAX " + MAX );
+
         
+        // We have to handle symetrie here ...
+        
+        /**
+         * Randomize by multipling complex part with a random number
+         */
+        for (int i = 1; i <= MAX ; i++) {
+            
+            double factor = Math.random() * 1.0;
+            
+//            Complex c1 = new Complex( c[i].getReal(), c[i].getImaginary() * factor);
+//            Complex c2 = new Complex( c[(int)N-i].getReal(), c[i].getImaginary() * factor);
+//            
+            Complex c1 = c[i].multiply( factor );
+            Complex c2 = c[(int)N-i].multiply( factor );
+            
+            mod[i] = c1;
+            mod[c.length - i] = c2;
+        
+//            System.out.print( ">> " + (i+1) );
+//            System.out.println( "  >> " + (c.length - 1 - i) + " => " +coeff );
+//            
         }
 
         // NULLPUNKT SETZEN
         mod[0] = new Complex(0.0D, 0.0D);
+//        mod[c.length - 1] = new Complex(0.0D, 0.0D);
 
         
         // transform back to 
-        FastFourierTransformer fft2 = new FastFourierTransformer();
-        Complex[] modData = fft2.inversetransform(mod);
+        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD );
+        Complex[] modData = fft2.transform(mod, TransformType.INVERSE );
 
-        // take only the real - value to build the transformed time series.
-        for (int i = 0; i < c.length; i++) {
-            rFFT.addValuePair(i, modData[i].getReal());
+//                Messreihe check = new Messreihe( "COMPLEX part" );
+//        
+//        // take only the real - value to build the transformed time series.
+        for (int i = 0; i < N_Original; i++) {
+            rFFT.addValuePair( i, modData[i].getReal() );
+//            check.addValuePair( i, modData[i].getImaginary() );
         }
+//        
+//        Vector<Messreihe> mrv2 = new Vector<Messreihe>();
+//        mrv2.add( check );
+//        mrv2.add( rFFT );
+//        mrv2.add( this );
+//        
+//        MultiChart.open(mrv2, true);
+//        
+//        System.out.println(" null: " + rFFT );
+        
         
         // return the transformed ts build from shuffled phases.
         return rFFT;
@@ -94,91 +133,94 @@ public class MessreiheFFT extends Messreihe {
     
     public MessreiheFFT getPhaseRandomizedModifiedFFT_SHUFFLED_INV( ) { 
 
+        System.out.println( ">>> phase_randomized_SHUFFLE" );
+        
         MessreiheFFT aThis = this;
         
         MessreiheFFT rFFT = new MessreiheFFT();
-        rFFT.setLabel( aThis.getLabel() + " (pr)");
+        rFFT.setLabel( aThis.getLabel() + " (phase_randomized_SHUFFLE)");
         
         double[] data = aThis.getYData();
-        data = extendToPowerOf2(data);
-        FastFourierTransformer fft = new FastFourierTransformer();
 
-        // TRANSFORMED by FFT
-        Complex[] c = fft.transform(data);
+        int N_Original = data.length ;
+        
+        System.out.println( "N_original=" + data.length );
+        
+        data = extendToPowerOf2(data);
+
+        System.out.println( "N_extended=" + data.length );
+
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
+        Complex[] c = fft.transform(data, TransformType.FORWARD );
         
         // MODIFIED => for back transformation  by FFT
         Complex[] mod = new Complex[c.length];
 
         double N = c.length;
 
-        double c0_R = c[0].getReal();
-        double c0_I = c[0].getImaginary();
-
-        double cf_R = c[(data.length - 1)].getReal();
-        double cf_I = c[(data.length - 1)].getImaginary();
-
-//        double fmin = 0;
-//        double fmax = 0.5D * samplingRate;
+//        double c0_R = c[0].getReal();
+//        double c0_I = c[0].getImaginary();
 //
-//        double df = fmax / ( N * 0.5 );
-        
-        
-        double f0 = c0_R;
-        double df = N / 6283.1853071795858D;
-
-        /**
-         * 
-         * Randomize by multipling with a random number
-//         */
-//        for (int i = 1; i < c.length; i++) {
-//            
-//            double f = i * df;
-//            
-//            double faktor = Math.random();
-//                    
-//            mod[i] = c[i].multiply(faktor);
+//        double cf_R = c[(data.length - 1)].getReal();
+//        double cf_I = c[(data.length - 1)].getImaginary();
+//
 //        
-//        }
-
+//        
+////        double fmin = 0;
+////        double fmax = 0.5D * samplingRate;
+////
+//////        double df = fmax / ( N * 0.5 );
+////        
+//        
+//        double f0 = c0_R;
+//        double df = N / 6283.1853071795858D;
 
         Vector<Double> ph = new Vector<Double>();
+        
         /**
-         * 
          * Randomize by shuffeling the phases
          */
-        // take the phases 
-        for (int i = 1; i < c.length; i++) {
+        for (int i = 1; i <= c.length / 2; i++) {
             ph.add(c[i].getImaginary());
         }
+        
         // shuffle the ontainer...
         Collections.shuffle(ph);
-        System.out.println( "Nr of complex numbers: " + ph.size() );
+        
+        System.out.println( "Nr of complex numbers : " + ph.size() );
+        System.out.println( "Nr of coefficients    : " + c.length );
         
         // use the shuffeled phases ...
-        for (int i = 1; i < c.length; i++) {
-            mod[i] = new Complex( c[i].getReal(), ph.elementAt(i-1) ); ;
+        for (int i = 1; i <= c.length / 2 ; i++) {
+
+            mod[i] = new Complex( c[i].getReal(), ph.elementAt(i-1) ); 
+            mod[(int)N-i] = new Complex( c[(int)N-i].getReal(), ph.elementAt(i-1) ) ;
+        
         }
 
-
-
-
-
-
-
-
-
-        // NULLPUNKT SETZEN
+        // NULLPUNKT SETZEN => kein konstanter Anteil
         mod[0] = new Complex(0.0D, 0.0D);
 
-        
         // transform back to 
-        FastFourierTransformer fft2 = new FastFourierTransformer();
-        Complex[] modData = fft2.inversetransform(mod);
+        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD);
+        Complex[] modData = fft2.transform(mod, TransformType.INVERSE);
 
+//        Messreihe check = new Messreihe( "COMPLEX part" );
+        
         // take only the real - value to build the transformed time series.
-        for (int i = 0; i < c.length; i++) {
-            rFFT.addValuePair(i, modData[i].getReal());
+        for (int i = 0; i < N_Original; i++) {
+            rFFT.addValuePair( i, modData[i].getReal() );
+//            check.addValuePair( i, modData[i].getImaginary() );
         }
+        
+//        Vector<Messreihe> mrv2 = new Vector<Messreihe>();
+//        mrv2.add( check );
+//        mrv2.add( rFFT );
+//        mrv2.add( this );
+//        
+//        MultiChart.open(mrv2, true);
+//        
+//        System.out.println(" null: " + rFFT );
         
         // return the transformed ts build from shuffled phases.
         return rFFT;
@@ -716,6 +758,14 @@ public class MessreiheFFT extends Messreihe {
         return mr;
     }
     
+    /**
+     * This may break RESULTS since it is not handling the x-values correct !!!
+     * 
+     * Use this method only for REAL series not for COMPLEX !!! 
+     * 
+     * @param m
+     * @return 
+     */
     public static MessreiheFFT convertToMessreiheFFT( Messreihe m) {
 
         MessreiheFFT mr = new MessreiheFFT();
@@ -796,6 +846,12 @@ public class MessreiheFFT extends Messreihe {
         return mr;
     }
 
+    /**
+     * Multiply y-values by a factor f.
+     * 
+     * @param f
+     * @return 
+     */
     public Messreihe scaleY_2(double f) {
         Messreihe mr = new Messreihe();
         mr.setLabel("x" + f);
@@ -963,12 +1019,13 @@ public class MessreiheFFT extends Messreihe {
     }
 
     public MessreiheFFT getFFT( double samplingRate ) {
-        MessreiheFFT rFFT = new MessreiheFFT();
-        rFFT.setLabel("FFT : " + getLabel());
+         
 
-        calcFFT2(this, rFFT, samplingRate);
+        Messreihe mr = MessreiheFFT.calcFFT(this, samplingRate, TransformType.FORWARD);
+        mr.setLabel("FFT : " + getLabel());
 
-        return rFFT;
+        return MessreiheFFT.convertToMessreiheFFT( mr );
+    
     }
 
 //    public void calcFFT(MessreiheFFT aThis, Messreihe rFFT) {
@@ -1020,25 +1077,65 @@ public class MessreiheFFT extends Messreihe {
 //            rFFT.addValuePair(i * df, c[i].getReal());
 //        }
 //    }
+    
+    static public void debugComplexSeries( Complex[] c, String label ) {
+        
+        Messreihe real = new Messreihe( "Re" );
+        Messreihe imaginaer = new Messreihe( "Im" );
+        
+        // take only the real - value to build the transformed time series.
+        for (int i = 0; i < c.length; i++) {
+            real.addValuePair( i, c[i].getReal() );
+            imaginaer.addValuePair( i, c[i].getImaginary() );
+        }
+        
+        Vector<Messreihe> mrv2 = new Vector<Messreihe>();
+        mrv2.add( real );
+        mrv2.add( imaginaer );
+ 
+        MultiChart.open(mrv2, "COMPLEX data check : " + label , "x", "y", true);
 
-    public void calcFFT2(MessreiheFFT aThis, Messreihe rFFT, double samplingRate) {
+    }
 
-        FastFourierTransformer fft = new FastFourierTransformer();
+    /**
+     * The Transformtype must be provided ...
+     * 
+     * BE CAREFULL --- COMPLEX PART IS IGNORED. DO NOT CONCATENATE THIS
+     * FUNCTION !!!!
+     * 
+     * 
+     * @param aThis
+     * @param samplingRate
+     * @param tt
+     * @return 
+     */
+    static public Messreihe calcFFT(Messreihe aThis,  double samplingRate, TransformType tt ) {
+
+        Messreihe rFFT = new Messreihe();
+        
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD);
+        
         rFFT.setLabel( "FFT("+aThis.getLabel()+")" );
 
-        double[] data = aThis.getYData();
+        double[] data2 = aThis.getYData();
         
+     
         // REQUIREMENT for the FFT libs ...
-        data = extendToPowerOf2(data);
-        
+        double[] data = extendToPowerOf2(data2);
         
         // the coefficients
-        Complex[] c = fft.transform(data);
+        Complex[] c = fft.transform(data, tt );
+        
         double N = c.length;
+        
+        // debugComplexSeries( c , "initial transform" );
  
         double c0_R = c[0].getReal();
         double c0_I = c[0].getImaginary();
-        System.out.println("> N    = " + N + " (zahl werte)" );
+        
+        System.out.println("> L    = " + data2.length + " (Länge der Zeitreihe)" );
+        System.out.println("> L_exp= " + data.length + " (Expandiert)" );
+        System.out.println("> N    = " + N + " (Anzahl der Koeffizienten)" );
         
         System.out.println("> SR   = " + samplingRate + " werte/s; // sampling rate" );
         
@@ -1046,13 +1143,10 @@ public class MessreiheFFT extends Messreihe {
         
         System.out.println("> c[0]= ( " + c0_R + ", i*" + c0_I + ")");
 
-        double cN1_R = c[1].getReal();
-        double cN1_I = c[1].getImaginary();
-        System.out.println("> c[1]= ( " + cN1_R + ", i*" + cN1_I + ")");
-
-        double cN_R = c[(int) (N - 1.0D)].getReal();
-        double cN_I = c[(int) (N - 1.0D)].getImaginary();
-        System.out.println("> c[N-1]= ( " + cN_R + ", i*" + cN_I + ")");
+        double c1_R = c[1].getReal();
+        double c1_I = c[1].getImaginary();
+        
+        System.out.println("> c[1]= ( " + c1_R + ", i*" + c1_I + ")");
 
         double caNN_R = c[((int) (N / 2.0D) - 1)].getReal();
         double caNN_I = c[((int) (N / 2.0D) - 1)].getImaginary();
@@ -1066,6 +1160,15 @@ public class MessreiheFFT extends Messreihe {
         double cbNN_I = c[((int) (N / 2.0D) + 1)].getImaginary();
         System.out.println("> c[N/2  +  1]= ( " + cbNN_R + ", i*" + cbNN_I + ")  ");
 
+        double cbNNa_R = c[(int) (N - 2.0D)].getReal();
+        double cbNNa_I = c[(int) (N - 2.0D)].getImaginary();
+        System.out.println("> c[N-1]= ( " + cbNNa_R + ", i*" + cbNNa_I + ")  ");
+
+        double cN_R = c[(int) (N - 1.0D)].getReal();
+        double cN_I = c[(int) (N - 1.0D)].getImaginary();
+        System.out.println("> c[N]= ( " + cN_R + ", i*" + cN_I + ")");
+
+        
         double fmin = 0;
         double fmax = 0.5D * samplingRate;
 
@@ -1075,25 +1178,45 @@ public class MessreiheFFT extends Messreihe {
 
         System.out.println("\n>f_max=" + fmax + "; \n>f_min=" + fmin + "; \n>df=" + df);
 
-        for (int i = 1; i < (int) N / 2; i++) {
+        rFFT.addValuePair(0, c0_R );
+        
+        for (int i = 1; i < (int) N; i++) {
             
             double f = i * df;
             
             rFFT.addValuePair(f, c[i].getReal());
+            
         }
+         
+        /** 
+         * 
+         * AN DER STELLE IST DER KOMPLEXE TEIL NICHT NULL !!!
+         * 
+         * DER KOMPLEXE ANTEIL WIRD ABER IGNORIERT. DAHER FÜHRT DIE FOLGENDE
+         * RÜCKTRANSFORMATION NICHT ZUR IDENTITÄT. !!! 
+         *
+         */
+        return rFFT;
+        
     }
     
     /**
-     * Komplette Modifikation ...
+     * Modification of time series.
      * 
+     * Phase Randomization is moving the "imaginary part" by a randtom angle.
      */
-    public void calc_modified_FFT(MessreiheFFT aThis, Messreihe rFFT, double beta, double samplingRate) {
+    private void calc_modified_PR(MessreiheFFT aThis, Messreihe rFFT, double samplingRate) {
+        
         double[] data = aThis.getYData();
+        
+        int N_Original = data.length;
+        
         data = extendToPowerOf2(data);
-        FastFourierTransformer fft = new FastFourierTransformer();
+        
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
 
-        Complex[] c = fft.transform(data);
-        Complex[] mod = new Complex[c.length];
+        Complex[] c = fft.transform(data, TransformType.FORWARD );
+        Complex[] modCOMPLEX = new Complex[c.length];
 
         double N = c.length;
 
@@ -1103,33 +1226,104 @@ public class MessreiheFFT extends Messreihe {
         double cf_R = c[(data.length - 1)].getReal();
         double cf_I = c[(data.length - 1)].getImaginary();
 
-//        double fmin = 0;
-//        double fmax = 0.5D * samplingRate;
-//
-//        double df = fmax / ( N * 0.5 );
-        
-        
         double f0 = c0_R;
         double df = N / 6283.1853071795858D;
+ 
+        for (int i = 1; i <= c.length / 2; i++) {
+            
+            double randPhase = Math.random() * Math.PI * 2.0;
+            
+            Complex e = new Complex( Math.E , 0.0 );
+            
+            Complex faktor = e.pow( Complex.I.multiply( randPhase ) );
+            
+            modCOMPLEX[i] = c[i].multiply(faktor);
+            
+            if (i < c.length / 2)
+               modCOMPLEX[c.length - i] = c[c.length - i].multiply( faktor.conjugate() );
         
-        for (int i = 1; i < c.length; i++) {
-            double f = i * df;
-            double faktor = Math.pow(f, -0.5D * beta);
-            mod[i] = c[i].multiply(faktor);
         }
+        
+        modCOMPLEX[0] = new Complex(0.0D, 0.0D);
 
-        mod[0] = new Complex(0.0D, 0.0D);
+        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD);
+        Complex[] modData = fft2.transform(modCOMPLEX, TransformType.INVERSE );
 
-        FastFourierTransformer fft2 = new FastFourierTransformer();
-        Complex[] modData = fft2.inversetransform(mod);
-
-        for (int i = 0; i < c.length; i++) {
+        for (int i = 0; i < N_Original; i++) {
             rFFT.addValuePair(i, modData[i].getReal());
+        }
+        
+        MessreiheFFT.debugComplexSeries(modCOMPLEX, " <PR> : COMPLEX-Modifiziert" );
+        MessreiheFFT.debugComplexSeries(modData, " <PR> : Transformiert" );
+    }
+
+    
+    /**
+     * Modification of the imaginary part is changing the power Spectrum and 
+     * introduces controles long term correlations.
+     * 
+     */
+    private void calc_modified_FF(MessreiheFFT aThis, Messreihe rFFT, double beta, double samplingRate) {
+        
+        double[] data = aThis.getYData();
+        
+        int N_Original = data.length;
+        
+        data = extendToPowerOf2(data);
+        
+        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
+
+        Complex[] c = fft.transform(data, TransformType.FORWARD );
+        Complex[] modCOMPLEX = new Complex[c.length];
+
+        double N = c.length;
+
+        double c0_R = c[0].getReal();
+        double c0_I = c[0].getImaginary();
+
+        double cf_R = c[(data.length - 1)].getReal();
+        double cf_I = c[(data.length - 1)].getImaginary();
+       
+        double f0 = c0_R;
+        double df = N / 6283.1853071795858D;
+ 
+        for (int i = 1; i <= c.length / 2; i++) {
+            
+            double f = i * df;
+            
+            double faktor = Math.pow(f, -0.5D * beta);
+            
+            modCOMPLEX[i] = c[i].multiply(faktor);
+            
+            if (i < c.length / 2)
+                modCOMPLEX[c.length - i] = c[c.length - i].multiply(faktor);
+        }
+        
+        modCOMPLEX[0] = new Complex(0.0D, 0.0D);
+
+        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD);
+        Complex[] modData = fft2.transform(modCOMPLEX, TransformType.INVERSE );
+
+        for (int i = 0; i < N_Original; i++) {
+            rFFT.addValuePair(i, modData[i].getReal());
+        }
+        
+        if( debug ) {
+            MessreiheFFT.debugComplexSeries(modCOMPLEX, beta + " : COMPLEX-Modifiziert" );
+            MessreiheFFT.debugComplexSeries(modData, beta + " : Transformiert" );
         }
     }
 
     public static boolean debug = false;
-    private double[] extendToPowerOf2(double[] data) {
+    
+    /**
+     * To speed up FFT we need a length which is a power of 2.
+     * To achieve this we fill up with zero at the end of the series.
+     * 
+     * @param data
+     * @return 
+     */
+    static private double[] extendToPowerOf2(double[] data) {
         int z = data.length;
         int i = 0;
         while (Math.pow(2.0D, i * 1.0D) < z) {
@@ -1140,7 +1334,10 @@ public class MessreiheFFT extends Messreihe {
         i++;
         int z_max = (int) Math.pow(2.0D, i * 1.0D);
 
-        if ( debug ) System.out.println("l=" + i + " z_min=" + z_min + " z_max=" + z_max + " mit 0.0 aufgefüllt:" + (z_max - z));
+        //if ( debug ) 
+        
+        System.out.println("l=" + i + " z_min=" + z_min + " z_max=" + z_max + " mit 0.0 aufgefüllt:" + (z_max - z));
+        
         double[] back = new double[z_max];
         for (int a = 0; a < z_max; a++) {
             if (a >= z) {
@@ -1153,78 +1350,91 @@ public class MessreiheFFT extends Messreihe {
     }
 
     /**
+     * Modifies the row and gives back the result of the final FFT
+     * which is a time series of real values.
      * 
      * @param beta
      * @return 
      */
-    public MessreiheFFT getModifiedFFT_INV(double beta) {
+    public MessreiheFFT getModifiedTimeSeries_PhaseRandomized() {
+        
         MessreiheFFT rFFT = new MessreiheFFT();
-        rFFT.setLabel("LT_CORR beta=" + beta + ": " + getLabel());
+        rFFT.setLabel("PhaseRandomized {" + getLabel() + "}" );
+
+        // WAS GENAU BEDEUTED DENN nun die 
+        double band = 6283.1853071795858D; 
+        calc_modified_PR(this, rFFT, band);
+
+        return rFFT;
+        
+    }
+    /**
+     * Modifies the row and gives back the result of the final FFT
+     * which is a time series of real values.
+     * 
+     * @param beta
+     * @return 
+     */
+    public MessreiheFFT getModifiedTimeSeries_FourierFiltered(double beta) {
+        
+        MessreiheFFT rFFT = new MessreiheFFT();
+        rFFT.setLabel("FourierFilterd (beta=" + beta + "){" + getLabel() + "}" );
 
         // WAS GENAU BEDEUTED DENN nun die 
         double band = 6283.1853071795858D;
-        calc_modified_FFT(this, rFFT, beta, band);
+        calc_modified_FF(this, rFFT, beta, band);
 
         return rFFT;
+        
     }
 
-//    public MessreiheFFT getModifiedFFT_INV2(double beta) {
-//        MessreiheFFT rFFT = new MessreiheFFT();
-//        rFFT.setLabel("LT_CORR beta=" + beta + ": " + getLabel());
+//    /**
+//     * Hier wird ein KNICK eingefügt ...
+//     * 
+//     * @param aThis
+//     * @param rFFT
+//     * @param beta 
+//     */
+//    private void calc_modified_FFT2(MessreiheFFT aThis, Messreihe rFFT, double beta) {
+//        double[] data = aThis.getYData();
+//        data = extendToPowerOf2(data);
+//        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
 //
-//        calc_modified_FFT2(this, rFFT, beta);
+//        Complex[] c = fft.transform(data, TransformType.FORWARD );
+//        Complex[] mod = new Complex[c.length];
 //
-//        return rFFT;
+//        double N = c.length;
+//
+//        double c0_R = c[0].getReal();
+//        double c0_I = c[0].getImaginary();
+//
+//        double cf_R = c[(data.length - 1)].getReal();
+//        double cf_I = c[(data.length - 1)].getImaginary();
+//
+//        double f0 = c0_R;
+//        double df = N / 6283.1853071795858D;
+//
+//        System.out.println( "Anzahl der Koefizienten: " +  c.length ) ;
+//        
+//        
+//        for (int i = 1; i < c.length; i++) {
+//            double f = i * df;
+//            double faktor = Math.pow(f, -0.5D * beta);
+//            
+//            if ( i < 4000 ) 
+//                mod[i] = c[i].multiply(faktor);
+//            else 
+//                mod[i] = c[i];
+//        }
+//
+//        mod[0] = new Complex(0.0D, 0.0D);
+//
+//        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD );
+//        Complex[] modData = fft2.transform(mod, TransformType.INVERSE);
+//
+//        for (int i = 0; i < c.length; i++) {
+//            rFFT.addValuePair(i, modData[i].getReal());
+//        }
 //    }
-
-
-    /**
-     * Hier wird ein KNICK eingefügt ...
-     * 
-     * @param aThis
-     * @param rFFT
-     * @param beta 
-     */
-    private void calc_modified_FFT2(MessreiheFFT aThis, Messreihe rFFT, double beta) {
-        double[] data = aThis.getYData();
-        data = extendToPowerOf2(data);
-        FastFourierTransformer fft = new FastFourierTransformer();
-
-        Complex[] c = fft.transform(data);
-        Complex[] mod = new Complex[c.length];
-
-        double N = c.length;
-
-        double c0_R = c[0].getReal();
-        double c0_I = c[0].getImaginary();
-
-        double cf_R = c[(data.length - 1)].getReal();
-        double cf_I = c[(data.length - 1)].getImaginary();
-
-        double f0 = c0_R;
-        double df = N / 6283.1853071795858D;
-
-        System.out.println( "Anzahl der Koefizienten: " +  c.length ) ;
-        
-        
-        for (int i = 1; i < c.length; i++) {
-            double f = i * df;
-            double faktor = Math.pow(f, -0.5D * beta);
-            
-            if ( i < 4000 ) 
-                mod[i] = c[i].multiply(faktor);
-            else 
-                mod[i] = c[i];
-        }
-
-        mod[0] = new Complex(0.0D, 0.0D);
-
-        FastFourierTransformer fft2 = new FastFourierTransformer();
-        Complex[] modData = fft2.inversetransform(mod);
-
-        for (int i = 0; i < c.length; i++) {
-            rFFT.addValuePair(i, modData[i].getReal());
-        }
-    }
 
 }

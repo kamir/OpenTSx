@@ -5,7 +5,7 @@ import chart.simple.MultiChart;
 import data.series.Messreihe;
 import data.series.MessreiheFFT;
 import java.util.Vector;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import statphys.detrending.methods.IDetrendingMethod;
 import stdlib.StdDraw;
 import stdlib.StdStats;
@@ -104,7 +104,7 @@ public class DFATester {
          
         
         MessreiheFFT mr4_NEW = (MessreiheFFT)d4;
-        MessreiheFFT temp = mr4_NEW.getModifiedFFT_INV( 1.5 );
+        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( 1.5 );
         
         dfa.setZR(temp.getData()[1]);
         
@@ -130,7 +130,7 @@ public class DFATester {
         for( int i = -15; i < 25 ; i = i + 1 ) {
             System.out.println( "(" + i + ")" );
             MessreiheFFT mr5_NEW = (MessreiheFFT)d4;
-            MessreiheFFT temp5 = mr5_NEW.getModifiedFFT_INV( 0.05 * i );
+            MessreiheFFT temp5 = mr5_NEW.getModifiedTimeSeries_FourierFiltered( 0.05 * i );
 
             dfa.setZR(temp5.getData()[1]);
 

@@ -1,6 +1,7 @@
 package data.series;
 
 
+import chart.simple.MultiChart;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,8 +11,9 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.math3.complex.Complex;
 
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import org.jfree.data.xy.XYSeries;
 import statistics.DatasetNormalizationTool;
@@ -43,6 +45,37 @@ public class Messreihe implements IMessreihe, Serializable {
        
         return mr;
     
+    }
+
+    public static Vector<Messreihe> fromComplex(Complex[] d, String label, double offset) {
+        
+        Vector<Messreihe> v = new Vector<Messreihe>();
+
+        Messreihe real = new Messreihe( label + "_R" );
+        Messreihe im = new Messreihe( label + "_I" );
+        
+        for( int i = 0; i < d.length ; i++ ) {
+            real.addValue( d[i].getReal() + offset );
+            im.addValue( d[i].getImaginary() + offset);
+        }
+        
+        v.add( real );
+        v.add( im );
+        
+        return v;
+    }
+
+    public static Messreihe getLinearFunction(double m, double n, double dx, double xMin, int N) {
+        
+        Messreihe mr = new Messreihe();
+        
+        mr.setLabel("m="+m + " n=" + n );
+        
+        for( int i = 0; i < N; i++ ) {
+            mr.addValuePair( (xMin+i*dx), ( xMin + i * dx ) * m + n );
+        }
+        
+        return mr;
     }
     
     /** 
@@ -2034,6 +2067,7 @@ public class Messreihe implements IMessreihe, Serializable {
         return mr;
     }
 
+    
     public void mapDateHashedValuesToRow() {
         List<Date> l = getOrderedDateKeys();
         Iterator it = l.iterator();
@@ -2496,6 +2530,138 @@ public class Messreihe implements IMessreihe, Serializable {
     
         DistributionTester dt = DistributionTester.getDistributionTester();
         return dt.testDataset(this.getYData());
+    }
+
+    /**
+     * Für das Schreiber Schmitz-Verfahren muss ich hier die Werte dem Rang 
+     * nach überschreiben.
+     * 
+     * @param r2
+     * @return 
+     */
+    public Messreihe exchangeRankWise(Messreihe refSeries) {
+
+        // the series with amplitudes to be exchanged
+        Messreihe ranked = this.getRanks()[0];
+
+        // the series wit the right values
+        Messreihe[] r2Ranked = refSeries.getRanks();
+        
+        Hashtable rankTableRefValues = r2Ranked[1].getHashedByRank( r2Ranked[0] );
+        
+//        // the resultseries
+//        Vector<Messreihe> v = new Vector<Messreihe>();
+//        v.add( r2Ranked[0] );
+//        v.add( ranked );
+//        
+//        MultiChart.open(v, "RANK", 
+//                        "RANK(t)", "t", true, "");
+        
+        Messreihe rb = new Messreihe();
+        rb.setLabel( "ReRanked_" + this.getLabel() + " with ampl. from " + refSeries.getLabel() );
+        
+        int i = 0;
+        // go over the ranks ...
+        Iterator it = ranked.yValues.iterator();
+        
+        while( it.hasNext() ) { 
+            
+            double pos = i;
+            
+            // current value has rank ....
+            double rankOfValueOriginal = (double)it.next();
+            
+            // System.out.println( rankOfValueOriginal );
+            
+            // take value Y1 from referenz series with the same rank
+            Double Y1 = (Double)rankTableRefValues.get( rankOfValueOriginal );
+            
+            if ( Y1 != null )
+                rb.addValuePair( pos, Y1 );
+            
+            i++;
+        };
+        
+        return rb;
+        
+         
+    }
+    
+    public int getRank(ArrayList<Double> l, double z) {
+        int i = 0;
+        while( l.get(i) < z ) {
+            i++;
+        }
+        // System.out.println( i + ": " + z );
+        return i;
+    }
+    
+  
+    
+    public Messreihe[] getRanks() {
+        
+        Messreihe r = new Messreihe();
+        Messreihe rORIGINAL = new Messreihe();
+        
+        r.setLabel( "RANKs_" + this.getLabel() );
+        rORIGINAL.setLabel( "OriginalVaues_" + this.getLabel() );
+        
+        ArrayList l = new ArrayList();
+        l.addAll( this.yValues );
+        Collections.sort(l);
+        
+        int i = 0;
+        Iterator it = this.yValues.iterator();
+        while( it.hasNext() ) { 
+           // System.out.print( i + " # " );
+
+            double v = (double)it.next();
+            r.addValuePair( i, getRank( l, v ));
+            rORIGINAL.addValuePair( i, v );
+            i++;
+        };
+        
+        Messreihe[] RESULT= new Messreihe[2];
+        RESULT[0] = r;
+        RESULT[1] = rORIGINAL;
+        
+        return RESULT;
+    }
+    
+    
+
+    // for each value we store the value hashed by rank
+    public Hashtable getHashedByRank( Messreihe values) {
+        
+//        Messreihe check = new Messreihe();
+        
+        Hashtable t = new Hashtable();
+        
+        int i = 0;
+        
+        Iterator it = this.yValues.iterator();
+        
+        while( it.hasNext() ) { 
+            
+            double val = (double)it.next();
+            
+            double rank = (double)values.yValues.elementAt(i);
+            
+//            check.addValuePair(val,rank);
+            
+            t.put( rank , val );
+            // System.out.println("R:" + rank + "\tV:" + val );
+            i++;
+            
+        };
+        
+//        Vector<Messreihe> v = new Vector<Messreihe>();
+//        v.add( check );
+//        
+//        MultiChart.open(v, "RANK", 
+//                        "RANK", "VALUE_@_RANK", true, "");
+        
+        return t;
     }
 
  

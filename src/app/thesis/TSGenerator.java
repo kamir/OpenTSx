@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Hashtable;
 import javax.imageio.ImageIO;
+import org.apache.commons.math3.transform.TransformType;
 
 /**
  *
@@ -31,6 +32,7 @@ public class TSGenerator {
     
     static Vector<Messreihe> testsA = null;
     static Vector<Messreihe> testsB = null;
+    static Vector<Messreihe> testsC = null;
     
     public static String PATTERN = "\\W+";
     
@@ -39,13 +41,14 @@ public class TSGenerator {
      * Test some sinus waves with FFT 
      *
      */
-    public static void main( String[] args ) { 
+    public static void main( String[] args ) throws Exception { 
         
         // never forget !!!
         stdlib.StdRandom.initRandomGen(1);
         
         testsA = new Vector<Messreihe>();
-        testsB= new Vector<Messreihe>();
+        testsB = new Vector<Messreihe>();
+        testsC = new Vector<Messreihe>();
         
         log = new StringBuffer();
     
@@ -93,16 +96,42 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
             Messreihe mrFFT = new Messreihe(); 
             MessreiheFFT mrFFT2 = new MessreiheFFT(); 
 
-            mrFFT2.calcFFT2( mr, mrFFT, samplingRate);
+            mrFFT2.calcFFT( mr, samplingRate, TransformType.FORWARD);
             
             testsB.add( mrFFT );
+            
         }
         boolean showLegend = true;
 //        MultiChart.open(testsA, "raw data", 
 //                        "t [s]", "y(t)", showLegend, log.toString() );
-        MultiChart.open(testsB, "FFT tests", 
-                        "f [Hz]", "c", showLegend, log.toString() );
+        
+//        MultiChart.open(testsB, "FFT tests", 
+//                        "f [Hz]", "c", showLegend, log.toString() );
     
+        
+        
+        
+        
+        
+        
+                // simple randomisation
+        int N = (int)Math.pow(2,16);
+        
+        Messreihe m22 = FFTPhaseRandomizer.getRandomRow( N );
+ 
+        // phase manipulation
+        //Messreihe mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
+        Messreihe mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
+        
+
+        //testsC.add( mA );
+        testsC.add( mB );
+        
+        MultiChart.open(testsC, "Phase Randomization Tests", "t", "y", showLegend, log.toString() );
+    
+        
+        
+        
     };
     
     /**
@@ -129,7 +158,8 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         }
         return mr;
     }
-    public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a, double p ) {
+    
+        public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a, double p ) {
         MessreiheFFT mr = new MessreiheFFT();
         int steps = (int)(time * samplingRate);
                 

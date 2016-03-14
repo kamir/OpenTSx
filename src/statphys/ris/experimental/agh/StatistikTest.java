@@ -2,7 +2,7 @@ package statphys.ris.experimental.agh;
 
 import data.series.Messreihe;
 
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 public class StatistikTest {
 

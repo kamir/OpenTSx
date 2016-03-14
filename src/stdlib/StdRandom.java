@@ -282,7 +282,7 @@ public class StdRandom {
     }
 
     static public double random(){
-        return randomGen.nextDouble();
+    return randomGen.nextDouble();
     };
 
 

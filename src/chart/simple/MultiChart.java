@@ -54,7 +54,8 @@ import org.w3c.dom.Document;
 
 public class MultiChart extends javax.swing.JDialog {
 
-    public static Color bgCOLOR = Color.BLACK;
+    //public static Color bgCOLOR = Color.BLACK;
+    public static Color bgCOLOR = Color.LIGHT_GRAY;
 
     public static void open2(Vector<Messreihe> rows, boolean b) {
 
@@ -571,12 +572,19 @@ public class MultiChart extends javax.swing.JDialog {
             plot.getRenderer().setSeriesPaint(3, Color.RED);
             plot.getRenderer().setSeriesPaint(4, Color.gray);
 
-            plot.getRenderer().setSeriesPaint(5, Color.BLACK);
-            plot.getRenderer().setSeriesPaint(6, Color.blue);
-            plot.getRenderer().setSeriesPaint(7, Color.orange);
-            plot.getRenderer().setSeriesPaint(8, Color.RED);
-            plot.getRenderer().setSeriesPaint(9, Color.gray);
+//            plot.getRenderer().setSeriesPaint(5, Color.BLACK);
+//            plot.getRenderer().setSeriesPaint(6, Color.blue);
+//            plot.getRenderer().setSeriesPaint(7, Color.orange);
+//            plot.getRenderer().setSeriesPaint(8, Color.RED);
+//            plot.getRenderer().setSeriesPaint(9, Color.gray);
 
+            plot.getRenderer().setSeriesPaint(5, Color.GREEN);
+            plot.getRenderer().setSeriesPaint(6, Color.PINK);
+            plot.getRenderer().setSeriesPaint(7, Color.MAGENTA);
+            plot.getRenderer().setSeriesPaint(8, Color.CYAN);
+            plot.getRenderer().setSeriesPaint(9, Color.white);
+
+            
         } else {
 
             int i = 0;

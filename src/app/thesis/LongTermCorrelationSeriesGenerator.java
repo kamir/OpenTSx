@@ -29,7 +29,7 @@ import data.export.MesswertTabelle;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
-import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import statphys.detrending.methods.IDetrendingMethod;
 import stdlib.StdDraw;
 import stdlib.StdStats;
@@ -66,9 +66,11 @@ public class LongTermCorrelationSeriesGenerator {
      */
     static public int nrOfSValues = 250;
     
-    static int EXP = 16; // 2 ^ EXP = length of the row
+    static int EXP = 16; // 2 ^ EXP = length of the row                     //  <--------
 
     public static void main(String args[]) throws Exception {
+        
+        System.out.println( "*** LongTermCorrelationSeriesGenerator *** " );
         
         boolean showTest = true;
 
@@ -81,10 +83,13 @@ public class LongTermCorrelationSeriesGenerator {
                 
         log.append("fit range: [" + fitMIN + ", ..., " + fitMAX + " ]\n" );
         
-        int Z = 15;
-        double STRETCH = 4;
+//        int Z = 15;
+//        double STRETCH = 4;   // PRODUCT muss 60 sein ...
 
-        int LOOPS = 10;
+        int Z = 10;                                                         //  <--------
+        double STRETCH = 6;                                                 //  <--------
+        
+        int LOOPS = 10;                                                     //  <--------
         
         alphas = new double[Z][LOOPS];
         betas = new double[Z]; 
@@ -124,7 +129,7 @@ public class LongTermCorrelationSeriesGenerator {
         // check.add( alphasCALC );
         check.add( alphasTHEO );
         
-        _calcErrorChart( alphas, numberOfBeta, numberOfLoop );
+        _calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
         
 //        MultiChart.open(check, "alpha vs. beta", 
 //                        "beta", "alpha", showLegend );
@@ -167,43 +172,111 @@ public class LongTermCorrelationSeriesGenerator {
     
      
     
+  
+    
     /**
+     * A phase randomized time series is generated.
      * 
-     * @param length
+     * @param d4
      * @param beta
      * @param showTest
+     * @param runDFA
      * @return
      * @throws Exception 
-     */
-    public static Messreihe getRandomRow( int length, double beta, boolean showTest, boolean runDFA ) throws Exception {
-        // has toint N = length; by a multiple of 4 !!!
-        int N = length;
+     */    
+    
+    public static Messreihe getPhaseRandomizedRow( Messreihe d4, boolean showTest, boolean runDFA ) throws Exception {
         
-  
-
-        /**
-         * Vorbedingungen:
-         *
-         * Eine Zeitreihe mit bereinigten Werten, ohne Lücken, ausser
-         * es hat einen fahlichen Sinn, Lücken zu nutzen.
-         */
-        
-
-        Messreihe d4 = Messreihe.getGaussianDistribution(N);
-        
-        return getRandomRow(d4, beta, showTest, runDFA);
-    }    
-        
-        
-    public static Messreihe getRandomRow( Messreihe d4, double beta, boolean showTest, boolean runDFA ) throws Exception {
         DecimalFormat df = new DecimalFormat("0.000");
+        
         int N = d4.yValues.size();
+        
         double[] zr = new double[N];
 
         // nun wird das Array mit den Daten der ZR übergeben
         MessreiheFFT mr4_NEW = MessreiheFFT.convertToMessreiheFFT(d4);
         
-        MessreiheFFT temp = mr4_NEW.getModifiedFFT_INV( beta );
+        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_PhaseRandomized();
+
+        if ( runDFA ) {
+
+            Vector<Messreihe> vr = new Vector<Messreihe>();
+            Vector<Messreihe> v = new Vector<Messreihe>();
+            vr.add( d4 );
+
+            zr = d4.getData()[1];
+
+            IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
+            order = dfa.getPara().getGradeOfPolynom();
+            dfa.getPara().setzSValues( nrOfSValues );
+
+            System.out.println( "nrOfSValues="+nrOfSValues );
+            // Anzahl der Werte in der Zeitreihe
+            dfa.setNrOfValues(N);
+
+            // die Werte für die Fensterbreiten sind zu wählen ...
+//            dfa.initIntervalS();
+            dfa.initIntervalSlog();
+            
+            
+            if ( debug ) dfa.showS();
+
+
+            // http://stackoverflow.com/questions/12049407/build-sample-data-for-apache-commons-fast-fourier-transform-algorithm
+
+            dfa.setZR(temp.getData()[1]);
+
+            dfa.calc();
+
+            Messreihe mr4 = dfa.getResultsMRLogLog();
+            mr4.setLabel( d4.getLabel() + " ( PR )" );
+            v.add(mr4);
+
+            String status = dfa.getStatus();
+
+            SimpleRegression alphaSR = mr4.linFit(fitMIN, fitMAX);
+
+            double alpha = alphaSR.getSlope();
+
+
+            if ( log != null ) log.append( "PR:" + "\t" + df.format( alpha ) + "\n" );
+
+            if ( showTest ) {
+//                MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "alpha=" + alpha );
+                if ( firstInLoop ) tests.add(mr4);
+            }
+
+            System.out.println( " alpha = " + df.format( alpha ) );
+     
+        }
+        
+        System.out.println( temp.yValues.size() + " " + temp.getLabel() );
+        return temp;
+    }
+        
+    /**
+     * A time series with long term correlation (according to parameter BETA)
+     * is generated with Fourier Filtering.
+     * 
+     * @param d4
+     * @param beta
+     * @param showTest
+     * @param runDFA
+     * @return
+     * @throws Exception 
+     */    
+    public static Messreihe getRandomRow( Messreihe d4, double beta, boolean showTest, boolean runDFA ) throws Exception {
+        
+        DecimalFormat df = new DecimalFormat("0.000");
+        
+        int N = d4.yValues.size();
+        
+        double[] zr = new double[N];
+
+        // nun wird das Array mit den Daten der ZR übergeben
+        MessreiheFFT mr4_NEW = MessreiheFFT.convertToMessreiheFFT(d4);
+        
+        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( beta );
         
         if ( beta == 0 ) temp = mr4_NEW;
 
@@ -219,12 +292,15 @@ public class LongTermCorrelationSeriesGenerator {
             order = dfa.getPara().getGradeOfPolynom();
             dfa.getPara().setzSValues( nrOfSValues );
 
+            System.out.println( "nrOfSValues="+nrOfSValues );
             // Anzahl der Werte in der Zeitreihe
             dfa.setNrOfValues(N);
 
             // die Werte für die Fensterbreiten sind zu wählen ...
-            //dfa.initIntervalS();
+//            dfa.initIntervalS();
             dfa.initIntervalSlog();
+            
+            
             if ( debug ) dfa.showS();
 
 
@@ -272,12 +348,43 @@ public class LongTermCorrelationSeriesGenerator {
         return temp;
     }
 
+    /**
+     * 
+     * @param length
+     * @param beta
+     * @param showTest
+     * @return
+     * @throws Exception 
+     */
+    public static Messreihe getRandomRow( int length, double beta, boolean showTest, boolean runDFA ) throws Exception {
+        
+        // has to be of type int
+        // N = length; by a multiple of 4 !!!
+        int N = length;
+        
+        
+        System.out.println( "N=" + N );
+        /**
+         * Vorbedingungen:
+         *
+         * Eine Zeitreihe mit bereinigten Werten, ohne Lücken, ausser
+         * es hat einen fahlichen Sinn, Lücken zu nutzen.
+         */
+        
+        Messreihe d4 = Messreihe.getGaussianDistribution(N);
+        
+        return getRandomRow(d4, beta, showTest, runDFA);
+    }  
+    
     static Messreihe mrAV = new Messreihe();  // Mittelwerte
     static Messreihe mrSTD = new Messreihe();  // standardabweichung
     static Messreihe mrMAX = new Messreihe();  // ERROR
     static Messreihe mrMIN = new Messreihe();  // ERROR
         
-    private static void _calcErrorChart(double[][] d, int nrB, int nrLOOPS ) {
+    /**
+     * Helper function to produce a debugging chart.
+     */ 
+    private static void _calcErrorChart(double[][] d, int nrB, int nrLOOPS , double scaleSTDEV ) {
         
         mrAV = new Messreihe();  // Mittelwerte
         mrSTD = new Messreihe();  // standardabweichung
@@ -285,7 +392,7 @@ public class LongTermCorrelationSeriesGenerator {
         mrMIN = new Messreihe();  // ERROR
     
         mrAV.setLabel("mean");
-        mrSTD.setLabel("std");
+        mrSTD.setLabel("stddev * " + scaleSTDEV );
         mrMAX.setLabel("upper");
         mrMIN.setLabel("lower");
         
@@ -302,7 +409,7 @@ public class LongTermCorrelationSeriesGenerator {
                 double std = stdlib.StdStats.stddev(L);
 
                 mrAV.addValuePair(betas[iB] , mean );
-                mrSTD.addValuePair(betas[iB] , std );
+                mrSTD.addValuePair(betas[iB] , std * scaleSTDEV );
 
                 mrMAX.addValuePair( betas[iB] , mean+std );
                 mrMIN.addValuePair( betas[iB] , mean-std );
@@ -318,6 +425,47 @@ public class LongTermCorrelationSeriesGenerator {
         check.add( mrSTD );
         check.add( mrMAX );
         check.add( mrMIN );
+        
+    }
+
+    /**
+     * 
+     * @param copy
+     * @param d
+     * @param b
+     * @param b0
+     * @param i
+     * @return 
+     */
+    static Messreihe getRandomRowSchreiberSchmitz(Messreihe row, double beta, boolean f1, boolean f2, int rounds) throws Exception {
+
+                    System.out.println("\n\n\n\n" + rounds + "rounds" );
+                    System.out.println(      "-------------------------" );
+
+        Messreihe rowOriginal = row.copy();
+        
+        Vector<Messreihe> v = new Vector<Messreihe>();
+        
+        for( int i = 0; i < rounds; i++ ){
+            
+            Messreihe mr = LongTermCorrelationSeriesGenerator.getRandomRow(row, beta, false, false);
+            
+            row = mr.exchangeRankWise( rowOriginal );
+            
+            v.add( mr.copy() );
+            v.add( row.copy() );
+            
+            System.out.println("\nRound NR:" + i + "\n" );
+            
+        }
+        
+        MultiChart.open(v, "Schreiber Schmitz DEBUGGING", 
+                        "y(t)", "t", true, "");
+        
+        
+        
+        
+        return row;
         
     }
     
