@@ -1,8 +1,7 @@
 package org.apache.hadoopts.statphys.detrending;
 
 import org.apache.hadoopts.data.TestDataFactory;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.chart.simple.MultiChartDialog;
+import org.apache.hadoopts.chart.simple.MultiChart; 
 import org.apache.hadoopts.data.series.Messreihe;
 import java.io.File;
 import java.util.Enumeration;

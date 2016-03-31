@@ -249,6 +249,8 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.setVisible(true);
 //            }
 //        });
+        
+        
         TSOperationControlerPanel fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
         fcp.registerPanelHolder(dialog);
         

@@ -62,7 +62,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
     javax.swing.JDialog holderDialog = null;
 
-    public static String label_of_EXPERIMENT = "UVADistributions";
+    public static String label_of_EXPERIMENT = "default";
+    
+    public static String baseFolder = null;
     
     public TSOperationControlerPanel(Vector<Messreihe> r, JFreeChart c, String l, JTextArea jtf) {
 
@@ -70,10 +72,15 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         rows = r;
         chart = c;
         label = l;
+        
         statsAndComments = jtf;
 
-        this.jTextField3.setText(this.jTextField3.getText() + label_of_EXPERIMENT + "/");
-
+        if ( baseFolder == null)
+            this.jTextField3.setText( this.jTextField3.getText() + label_of_EXPERIMENT + "/");
+        else {
+            this.jTextField3.setText( baseFolder + "/" + label_of_EXPERIMENT + "/");
+        }
+        
         this.jTextField2.setText(label);
         this.jTextField2.setToolTipText(this.getPixNodeFolder().getAbsolutePath());
 
