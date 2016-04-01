@@ -61,35 +61,35 @@ public class TSInspection {
 
         for (double f : fs) {
 
-            double totaltime = 13.1072; // s
-
-            double ampl = 1.0;
-
-            MessreiheFFT mr = TSInspection.getSinusWave(f, totaltime, samplingRate, ampl);
-
-            if (total == null) {
-                total = mr;
-            } else {
-                total = total.add(mr);
-            }
+//            double totaltime = 13.1072; // s
+//
+//            double ampl = 1.0;
+//
+//            MessreiheFFT mr = TSInspection.getSinusWave(f, totaltime, samplingRate, ampl);
+//
+//            if (total == null) {
+//                total = mr;
+//            } else {
+//                total = total.add(mr);
+//            }
 
             /**
              * Handle individual components
              */
-            processMessreihe(mr);
+//            processMessreihe(mr);
 
         }
 
         // processMessreihe( MessreiheFFT.convertToMessreiheFFT(total) );
-        
-        boolean showLegend = true;
-
+//        
+//        boolean showLegend = true;
+//
 //      MultiChart.open(testsA, "raw data",
 //                "t [s]", "y(t)", showLegend, log.toString());
-//      [OK]
+////      [OK]
 //      MultiChart.open(testsB, "FFT ( raw data )",
 //              "f [Hz]", "c", showLegend, log.toString());
-
+//
 //        MultiChart.open(testsA1, "FFT_INV ( FFT ( raw data ))",
 //                "t [s]", "y(t)", showLegend, log.toString());
 //
@@ -308,10 +308,10 @@ public class TSInspection {
         Messreihe mr3 = LongTermCorrelationSeriesGenerator.getRandomRow( sinus.copy(), -2, true, true );
 
         vmr.add(gr);
-        vmr.add(sinus);
+//        vmr.add(sinus);
         
         vmr.add(mr2);
-        vmr.add(mr3);
+//        vmr.add(mr3);
         
         
         MultiChart.open(vmr, "Phase Manipulation", "t", "y", true, "beta=1.5");
