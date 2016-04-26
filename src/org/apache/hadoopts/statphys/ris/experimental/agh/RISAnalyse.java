@@ -203,7 +203,7 @@ public class RISAnalyse {
 
         }
         String title = "Binning="+binning+"; Scale="+scale;
-        MultiChart.open(vMR, title, "r/Rq", "P(r)*Rq" , false, "-");
+        MultiChart.open(vMR, title, "r/Rq", "P(r)*Rq" , false, "-", null);
         MultiChart.open(RQs, title, "i", "r" , true);
 
         String labelX = "r/Rq";
@@ -214,9 +214,9 @@ public class RISAnalyse {
             labelY = "P(r)";
         }
         MultiChart.open(vMR, label + " - binning="+binning+", scale="+scale,
-                labelX,  labelY, false, getParameterSet() );
+                labelX,  labelY, false, getParameterSet(), null );
         MultiChart.open(chart2Data, label + " - Rq(i)",
-                "Rq", "i", true, getParameterSet() );
+                "Rq", "i", true, getParameterSet(), null );
 
         MesswertTabelle tab1 = new MesswertTabelle();
         tab1.setLabel(label + "_P(r)");

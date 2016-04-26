@@ -37,7 +37,7 @@ public class StdTester {
 //        vmr.add( r2.getRanks() );
 //        vmr.add( c3 );
 
-        MultiChart.open(vmr, "GENERATED DATA", "t", "f(t)", true, "");
+        MultiChart.open(vmr, "GENERATED DATA", "t", "f(t)", true, "", null);
         
         
         

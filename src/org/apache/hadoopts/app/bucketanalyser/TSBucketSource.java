@@ -12,7 +12,7 @@ public class TSBucketSource {
 
     public String cacheFolder = ".sdl-cache/RDD-stockdata";
     
-    public String hint = "extract via SDL2";
+    public String hint = "extracted via SDL2";
     
     Properties parameters = new Properties();
     

@@ -159,6 +159,17 @@ public class OriginProject {
         this.header = header;
     }
 
+    /**
+     * 
+     * 
+     * 
+     * @param result
+     * @param legende
+     * @param title
+     * @param name
+     * @param xL
+     * @param yL 
+     */
     public void storeChart(Messreihe[] result, boolean legende, String title, String name, String xL, String yL) {
    
     

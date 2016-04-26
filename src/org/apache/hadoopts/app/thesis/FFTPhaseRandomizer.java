@@ -141,7 +141,7 @@ public class FFTPhaseRandomizer {
         
         boolean showLegend = true;
         MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
-                        "log(s)", "log(F(s))", false, log.toString() );
+                        "log(s)", "log(F(s))", false, log.toString(), null );
         
         
         alphasCALC.setLabel("CALC");
@@ -396,7 +396,7 @@ public class FFTPhaseRandomizer {
             alphasCALC.addValuePair( testZaehler, alpha );
 
             if ( showTest ) {
-                MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "alpha=" + alpha );
+                MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "alpha=" + alpha , null);
                 if ( firstInLoop ) tests.add(mr4);
 
                 try{

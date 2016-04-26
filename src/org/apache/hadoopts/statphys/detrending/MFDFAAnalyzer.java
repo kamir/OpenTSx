@@ -219,7 +219,7 @@ public class MFDFAAnalyzer {
         project.storeMesswertTabelle(mwtH);
 
         if ( showPlot )
-            MultiChart.open(v, rBMM1.getLabel() + " " + "F(s,q) " + randNrType, "log(s)", "log(F(s))", true, calcLog.toString());
+            MultiChart.open(v, rBMM1.getLabel() + " " + "F(s,q) " + randNrType, "log(s)", "log(F(s))", true, calcLog.toString(), null);
         
         //MultiChart.open(k, "Kontrolldaten", "t", "y(t)", false, "?");
 

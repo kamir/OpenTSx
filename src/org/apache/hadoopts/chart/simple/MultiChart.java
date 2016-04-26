@@ -32,6 +32,7 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.hadoopts.app.bucketanalyser.ICorrelator;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartRenderingInfo;
@@ -53,9 +54,28 @@ import org.w3c.dom.Document;
 //import util.LogFile;
 
 public class MultiChart extends javax.swing.JDialog {
-
+    
+    
     //public static Color bgCOLOR = Color.BLACK;
-    public static Color bgCOLOR = Color.LIGHT_GRAY;
+//    public static Color bgCOLOR = Color.LIGHT_GRAY;
+    public static Color bgCOLOR = Color.WHITE;
+    
+    boolean autoscale = false;
+
+    public static boolean setDefaultRange = true;
+    
+    public ChartPanel cp = null;
+
+    // AXIS FORMAT
+    static DecimalFormat df1 = new DecimalFormat("0");
+    static DecimalFormat df2 = new DecimalFormat("0");
+    
+    // LABEL
+    static Font fontL = new Font("Dialog", Font.PLAIN, 28);
+    
+    // Tick-Label
+    static Font fontTL = new Font("Dialog", Font.PLAIN, 18);
+
 
     public static void open2(Vector<Messreihe> rows, boolean b) {
         open(rows, b);
@@ -70,9 +90,15 @@ public class MultiChart extends javax.swing.JDialog {
         dt = _dt;
     }
 
+    public static double xRangDEFAULT_MIN = 0.0;
+    public static double xRangDEFAULT_MAX = 170.0;
+    public static double yRangDEFAULT_MAX = 6000.0;
+    public static double yRangDEFAULT_MIN = 0.0;
+
     public String chartTitle = "untitled";
     public String xLabel = "x";
     public String yLabel = "y";
+    
     public boolean useLegende = false;
 
     public boolean doStoreChart = true;
@@ -104,11 +130,7 @@ public class MultiChart extends javax.swing.JDialog {
         return cp;
     }
 
-    public static double xRangDEFAULT_MIN = 0.0;
-    public static double xRangDEFAULT_MAX = 170.0;
-    public static double yRangDEFAULT_MAX = 6000.0;
-    public static double yRangDEFAULT_MIN = 0.0;
-
+  
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -196,7 +218,7 @@ public class MultiChart extends javax.swing.JDialog {
         for (int i = 0; i < mrs.length; i++) {
             mr.add(mrs[i]);
         }
-        open(mr, title, x, y, b, "no comment");
+        open(mr, title, x, y, b, "no comment", null);
     }
 
     public static void open(Messreihe[] mrs) {
@@ -204,24 +226,74 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
     public static void open(Vector<Messreihe> mrs) {
-        open(mrs, "?", "x", "y", true, "");
+        open(mrs, "?", "x", "y", true, "", null);
     }
 
     public static void open(Vector<Messreihe> mrs, boolean legende) {
-        open(mrs, "?", "x", "y", legende, "");
+        open(mrs, "?", "x", "y", legende, "", null);
     }
 
     
     static boolean useL = false;
     
+    public static void openWithCorrelator(Vector<Messreihe> mrs, boolean legende, String label, ICorrelator c) {
+        useL = legende;
+        open(mrs, label, "t", "m", useL, "CAPTION", c);
+
+    }
     public static void open(Vector<Messreihe> mrs, boolean legende, String label) {
         useL = legende;
-        open(mrs, label, "t", "m", useL, "CAPTION");
+        open(mrs, label, "t", "m", useL, "CAPTION", null);
 
     }
 
+    public static MultiChart openWithCorrelator(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
+        final MultiChart dialog = new MultiChart(new javax.swing.JFrame(string), false);
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                dialog.setVisible(false);
+            }
+        });
+        Enumeration<Messreihe> en = mrs.elements();
+        while (en.hasMoreElements()) {
+            Messreihe mr = en.nextElement();
+            dialog.initMessreihe(mr);
+            //System.out.println( mr.getStatisticData("> ") );
+        }
+        dialog.chartTitle = string;
+        dialog.rows = mrs;
+        dialog.xLabel = x;
+        dialog.yLabel = y;
+        dialog.useLegende = b;
+        dialog.statisticTextField.setText(comment);
+        dialog.initChart();
+        dialog.setTitle(string);
+        dialog.setVisible(true);
+//            }
+//        });
+        
+        
+        TSOperationControlerPanel fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
+        fcp.registerPanelHolder(dialog);
+        
+        if ( c != null)
+            c.setTSOperationControlerPanel( fcp );
+        
+        MacroTrackerFrame._registerDialogToNode( string, dialog );
+        
+        dialog.chartPanel.add(fcp, BorderLayout.NORTH);
+        dialog.setSize( 1400, 900);
+        
+        RefineryUtilities.centerFrameOnScreen( dialog );
+        
+        return dialog;
+    
+    }
+
+    
     Vector<Messreihe> rows = null;
-    public static MultiChart open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
+    public static MultiChart open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -253,6 +325,9 @@ public class MultiChart extends javax.swing.JDialog {
         
         TSOperationControlerPanel fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
         fcp.registerPanelHolder(dialog);
+        
+        if (c != null)  
+            c.setTSOperationControlerPanel(fcp);
         
         MacroTrackerFrame._registerDialogToNode( string, dialog );
         
@@ -348,6 +423,8 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.xLabel = x;
         dialog.yLabel = y;
         dialog.useLegende = b;
+        
+        
 
         dialog.statisticTextField.setText(comment);
 
@@ -530,10 +607,7 @@ public class MultiChart extends javax.swing.JDialog {
 ////        }
     }
 
-    boolean autoscale = true;
 
-    public static boolean setDefaultRange = false;
-    public ChartPanel cp = null;
 
     void initChart() {
         
@@ -547,28 +621,27 @@ public class MultiChart extends javax.swing.JDialog {
         NumberAxis yAxis = (NumberAxis) chart.getXYPlot().getRangeAxis();
 
         if (setDefaultRange) {
+            
             xAxis.setRange(xRangDEFAULT_MIN, xRangDEFAULT_MAX);
             yAxis.setRange(yRangDEFAULT_MIN, yRangDEFAULT_MAX);
 
-        } else {
+        } 
+        else {
+            
             xAxis.setAutoRange(autoscale);
             yAxis.setAutoRange(autoscale);
+            
         }
 
         Locale deLocale = new Locale("en_US");
         Locale.setDefault(deLocale);
 
         TickUnits units = new TickUnits();
-        DecimalFormat df1 = new DecimalFormat("0.00");
-        DecimalFormat df2 = new DecimalFormat("0.00");
 
         XYPlot plot = (XYPlot) chart.getPlot();
 
         ((NumberAxis) plot.getRangeAxis()).setNumberFormatOverride(df2);
         ((NumberAxis) plot.getDomainAxis()).setNumberFormatOverride(df1);
-
-        Font fontL = new Font("Dialog", Font.PLAIN, 24);
-        Font fontTL = new Font("Dialog", Font.PLAIN, 14);
 
         plot.getRangeAxis().setTickLabelFont(fontTL);
         plot.getDomainAxis().setTickLabelFont(fontTL);

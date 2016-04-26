@@ -72,9 +72,12 @@ public class ESCalc2 {
     }
 
     /**
-     * Length is the number of maximal possible equidistant events.
+     * Length is the number of maximal possible bins to collect events.
      * 
      * Nr is the number of events to place.
+     * Each bin can handle multiple events.
+     * 
+     * Higher density leads finally to a continuous time series.
      * 
      * @param length
      * @param nr
@@ -104,9 +107,13 @@ public class ESCalc2 {
     }
     
     /**
-     * Length is the number of maximal possible equidistant events.
+     * Length is the number of maximal possible "rastered" 
+     * events.
      * 
      * Nr is the number of events to place.
+     * 
+     * Events are placed in individual bins of equal distance randomly.
+     * Multiple events per bin are collapsed to one event.
      * 
      * @param length
      * @param nr
@@ -123,6 +130,7 @@ public class ESCalc2 {
         // index of current event 
         int e = 0;
         while (e < nr) {
+            
             // At a random position in the full series we add an event 
             int pos = (int) (Math.random() * (double) (length));
             

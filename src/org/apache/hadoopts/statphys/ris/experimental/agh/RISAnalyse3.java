@@ -499,7 +499,7 @@ public class RISAnalyse3 {
 
 
             MultiChart.open(all, "ALL " + label + " - scale="+pScale+", binning="+pBinning,
-                    "x",  "y", false, getParameterSet());
+                    "x",  "y", false, getParameterSet(), null);
         }
 
         MesswertTabelle tab1 = new MesswertTabelle();

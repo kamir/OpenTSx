@@ -128,7 +128,7 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         //testsC.add( mA );
         testsC.add( mB );
         
-        MultiChart.open(testsC, "Phase Randomization Tests", "t", "y", showLegend, log.toString() );
+        MultiChart.open(testsC, "Phase Randomization Tests", "t", "y", showLegend, log.toString(), null );
     
         
         

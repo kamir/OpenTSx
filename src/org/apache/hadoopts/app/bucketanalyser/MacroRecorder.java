@@ -57,6 +57,7 @@ import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.mixed.gaussian.MutualInfoCalculatorMultiVariateWithDiscreteGaussian;
 import infodynamics.utils.ArrayFileReader;
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
 import org.apache.commons.math3.stat.regression.SimpleRegression; 
@@ -73,7 +74,7 @@ import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
  */
 public class MacroRecorder {
 
-    public static String label_of_TRACK = "EXP1";
+    public static String label_of_TRACK = "EXP4";
     public static String loadOp = "CACHE";
     
     public static double samplingRate = 1000;
@@ -96,14 +97,14 @@ public class MacroRecorder {
 //        double[] noise = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};  // noise level
 
         // EXP 2
-//        label_of_TRACK = "EXP2";
+        label_of_TRACK = "EXP2";
         double[] f = {2, 2, 2, 6, 12, 24};  // frequency
         double[] a = {5, 3, 8, 2, 1, 5};                  // amplitude 
         double[] phase = {0.0, 0.5, 0.25, 0.0, 0.0, 0.0};   // phase
         double[] noise = {1.0, 0.5, 20.0, 0.0, 0.0, 0.0};  // noise level
 
 //        // EXP 3
-        label_of_TRACK = "EXP3";
+//        label_of_TRACK = "EXP3";
         samplingRate = 1.0 / (24 * 3600);
         
         doDFA = true;
@@ -145,7 +146,13 @@ public class MacroRecorder {
             components = loadStockData(); 
             
         }
-        
+
+        if ( label_of_TRACK.equals( "EXP4") ) {
+            
+            components = loadStockDataFromBucket(); 
+            
+        }
+
         
         
         MacroTrackerFrame.init(label_of_TRACK);
@@ -353,7 +360,7 @@ public class MacroRecorder {
 
         if (true) {
             DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???");
+            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???", null);
 
 //                System.out.println(" alpha = " + df.format(alpha));
 //                System.out.println("       = " + ((2 * alpha) - 1.0));
@@ -493,14 +500,30 @@ public class MacroRecorder {
 
     }
 
+    /**
+     *  
+     */ 
     private static Vector<Messreihe> loadStockData() {
         
-        int [] YEARS = {2012,2013};
+        int [] YEARS = {2013,2014};
         
         return StockDataLoader2.concatRowsForYearsFromCache( YEARS );
         
+    }
+
+    private static Vector<Messreihe> loadStockDataFromBucket() {
+
+        String fn = "Components_IPC_Close__2003_2004_2005_2006_2007_2008_2009_2010_2011_2012_2013_2014.tsb.vec.seq";
+        File f = new File( fn );
+        if ( !f.exists() ) {
+            
+            
+        } 
+        else {
+            
+        }
         
-        
+        return null;
     }
 
 }

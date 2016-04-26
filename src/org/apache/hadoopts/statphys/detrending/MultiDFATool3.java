@@ -383,7 +383,7 @@ public class MultiDFATool3 {
         if (showCharts) {
 //            MultiChart.open(Fs, "[Phase " + phase + "] F(s) [DFA-order:" + order + "] {" + value + "}", label[0], label[1], true, "?");
 //            MultiChart.open(fsF2, "Anzahl Segmente je s [order:" + order + "] (all rows)", "s", "z", true, "?");
-            MultiChart.open(fsFMW, "<F(s)> order="+order, label[0], label[1], true, "*");
+            MultiChart.open(fsFMW, "<F(s)> order="+order, label[0], label[1], true, "*", null);
 
         }
         else {   // Fs, "[Phase " + phase + "] F(s) [DFA-order:" + order + "] {" + value + "}", "log(s)", "log(F(s))", false, "?");

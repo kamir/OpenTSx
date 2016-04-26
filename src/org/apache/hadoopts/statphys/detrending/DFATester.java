@@ -160,9 +160,9 @@ public class DFATester {
         
         System.out.println("> DFA-Status: " + "\n" + status + "\n#s=" + results[1].length);
 
-        MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", false, "?");
-        MultiChart.open(k, "Kontrolldaten", "t", "y(t)", true, "?");
-        MultiChart.open(vmr2, "alpha vs. beta", "beta", "alpha", true, "?");
+        MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", false, "?", null);
+        MultiChart.open(k, "Kontrolldaten", "t", "y(t)", true, "?", null);
+        MultiChart.open(vmr2, "alpha vs. beta", "beta", "alpha", true, "?", null);
         
     }
     

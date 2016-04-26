@@ -314,7 +314,7 @@ public class TSInspection {
 //        vmr.add(mr3);
         
         
-        MultiChart.open(vmr, "Phase Manipulation", "t", "y", true, "beta=1.5");
+        MultiChart.open(vmr, "Phase Manipulation", "t", "y", true, "beta=1.5", null);
         
     }
 

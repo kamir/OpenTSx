@@ -45,8 +45,9 @@ public class BucketLoader {
         TSBucket bucket = TSBucket.createEmptyBucketFull();
         bucket.inMEM = default_INMEM;
         
-        								 // no ID-vector, no TSOperation
+        // no ID-vector, no TSOperation
         bucket.loadFromSequenceFile( fn, null, null );
+        
         b = bucket;
     }  
     

@@ -218,15 +218,15 @@ public class MultiDFATool {
             finalZ.addValuePair( S[i] , anzw_[i] );
         }
 
-        MultiChart.open(Fs, "F(s) over s [order:" + order + "]", "log(s)", "log(F(s))", true, "?");
+        MultiChart.open(Fs, "F(s) over s [order:" + order + "]", "log(s)", "log(F(s))", true, "?", null);
 
         Vector<Messreihe> fsF = new Vector<Messreihe>();
         fsF.add(finalFS);
-        MultiChart.open(fsF, "F(s) over s [order:" + order + "] (all rows)", "log(s)", "log(F(s))", true, "?");
+        MultiChart.open(fsF, "F(s) over s [order:" + order + "] (all rows)", "log(s)", "log(F(s))", true, "?", null);
 
         Vector<Messreihe> fsF2 = new Vector<Messreihe>();
         fsF2.add(finalZ);
-        MultiChart.open(fsF2, "Anzahl Segmente je s [order:" + order + "] (all rows)", "s", "z", true, "?");
+        MultiChart.open(fsF2, "Anzahl Segmente je s [order:" + order + "] (all rows)", "s", "z", true, "?", null);
 
         System.out.println(info.toString());
 

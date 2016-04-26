@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -51,7 +52,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         initComponents();
     }
 
-    Vector<Messreihe> rows;
+    public Vector<Messreihe> rows;
 
     JFreeChart chart;
     String label = null;
@@ -134,7 +135,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         jButton6 = new javax.swing.JButton();
         jPanel5 = new javax.swing.JPanel();
         jButton16 = new javax.swing.JButton();
-        jButton17 = new javax.swing.JButton();
 
         jTextField1.setText("jTextField1");
 
@@ -367,14 +367,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         });
         jPanel5.add(jButton16);
 
-        jButton17.setText("Correlation Network");
-        jButton17.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton17ActionPerformed(evt);
-            }
-        });
-        jPanel5.add(jButton17);
-
         jTabbedPane1.addTab("Group Operations", jPanel5);
 
         add(jTabbedPane1);
@@ -497,7 +489,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         if (true) {
             DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString());
+            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString(), null);
 
             System.out.println(" alpha = " + df.format(alpha));
             System.out.println("       = " + ((2 * alpha) - 1.0));
@@ -677,6 +669,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
     }//GEN-LAST:event_jButton12ActionPerformed
 
+    
+    public static String correlatorClass = "experiments.Correlator";
+
+    
     private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
         String operationLabel = "Standardized of ";
         String operationPrefix = "Standardized_";
@@ -698,7 +694,23 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "NORM_STD=1,AVG=0 of " + this.label);
+        try {
+            
+            ICorrelator c = (ICorrelator) Class.forName(correlatorClass).newInstance();
+             
+            MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), "NORM_STD=1,AVG=0 of " + this.label, c );
+ 
+        
+        } 
+        catch (ClassNotFoundException ex) {
+            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
     }//GEN-LAST:event_jButton13ActionPerformed
 
     private void jButton14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton14ActionPerformed
@@ -985,12 +997,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         MultiChart.open(v, this.jRadioButton1.isSelected(), "Log of " + this.label);
     }//GEN-LAST:event_jButton22ActionPerformed
 
-    private void jButton17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton17ActionPerformed
-
-
-
-    }//GEN-LAST:event_jButton17ActionPerformed
-
     public void storeChartImageAsPNG(JFreeChart chart, File folder, String filename) {
 
         String fn = filename;
@@ -1048,7 +1054,6 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     private javax.swing.JButton jButton14;
     private javax.swing.JButton jButton15;
     private javax.swing.JButton jButton16;
-    private javax.swing.JButton jButton17;
     private javax.swing.JButton jButton18;
     private javax.swing.JButton jButton19;
     private javax.swing.JButton jButton2;
@@ -1113,4 +1118,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         }
 
     }
+    
+    
+    public void addCorrelationButton( JButton b ){
+        this.jPanel5.add( b );
+    };
 }

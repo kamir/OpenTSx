@@ -335,7 +335,7 @@ public class SurrogatDataGeneration {
        
         applyDFA(mrv2, "DFA for all generated TS");
  
-        MultiChart.open(mrv2, "GENERATED DATA", "t", "f(t)", true, "");
+        MultiChart.open(mrv2, "GENERATED DATA", "t", "f(t)", true, "", null);
         
         System.out.println();
         System.out.println("mr and m2");
@@ -460,7 +460,7 @@ public class SurrogatDataGeneration {
 
 //        if (true) {
             DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???");
+            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???", null);
 
 //                System.out.println(" alpha = " + df.format(alpha));
 //                System.out.println("       = " + ((2 * alpha) - 1.0));

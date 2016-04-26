@@ -258,7 +258,7 @@ public class EntropieTest {
 //
 //        }
 
-        MultiChart.open(prob, subLabel, "length", "MI and CC", true, ContextRecorder.sb.toString());
+        MultiChart.open(prob, subLabel, "length", "MI and CC", true, ContextRecorder.sb.toString(), null);
 
 //        calcTEandMI(components.elementAt(3) , mix , dig);
 //        calcTEandMI(components.elementAt(4) , mix , dig);
@@ -410,7 +410,7 @@ public class EntropieTest {
 
         if (true) {
             DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???");
+            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true, "???", null);
 
 //                System.out.println(" alpha = " + df.format(alpha));
 //                System.out.println("       = " + ((2 * alpha) - 1.0));

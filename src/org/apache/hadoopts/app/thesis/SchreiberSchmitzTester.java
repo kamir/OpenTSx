@@ -27,7 +27,7 @@ public class SchreiberSchmitzTester {
         
         Vector<Messreihe> vr = new Vector<Messreihe>(); 
         
-        int N = (int)Math.pow(2.0,19.0);
+        int N = (int)Math.pow(2.0,16.0);
         
         Messreihe m1 = Messreihe.getGaussianDistribution( N , 10.0, 1.0);
         Messreihe m10 = Messreihe.getExpDistribution(N, 5.0);
@@ -58,13 +58,9 @@ public class SchreiberSchmitzTester {
         vr.add( m51 );
         vr.add( m52 );
         vr.add( m53 );
- 
- 
-        
-        
         
         MultiChart.open(vr, "Surrogat Series Generator (Schreiber Schmitz) - VDF", 
-                        "value", "# value", true, "?" );
+                        "value", "# value", true, "?", null );
         
         
         

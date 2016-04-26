@@ -711,4 +711,11 @@ class ToolTipTreeCellRenderer implements TreeCellRenderer {
         }
         return renderer;
     }
+    
+    
+    ICorrelator corr = null;
+    
+    public void addCorrelationTool( ICorrelator correlator ) {
+        corr = correlator;
+    }
 }

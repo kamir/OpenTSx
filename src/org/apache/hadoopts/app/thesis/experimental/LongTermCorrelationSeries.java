@@ -74,7 +74,7 @@ public class LongTermCorrelationSeries {
         System.out.println( " alpha=" + alpha.getSlope() );
         System.out.println( "     i=" + i );
 
-        if ( showTest ) MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", false, "?");
+        if ( showTest ) MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", false, "?", null);
         
         return temp;
     }

@@ -1002,7 +1002,7 @@ public class Messreihe implements IMessreihe, Serializable {
         return mr;
     };
 
-        // berechnet die Summe der beiden Messreihen ... punktweise
+    // berechnet die Summe der beiden Messreihen ... punktweise
     public Messreihe add2( Messreihe mr2 , boolean concatLabels) {
 
         String label = this.getLabel();

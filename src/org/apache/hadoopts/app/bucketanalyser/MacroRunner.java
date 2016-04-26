@@ -14,6 +14,7 @@ public class MacroRunner {
         Object sc = null;
   
         TSBucket tsbCollection = TSBucket.loadViaContext( sc, "/TSBASE/EXP3/Collection.tsb.vec.seq" );
+        
         TSBucket tsbComponents = tsbCollection.processBucket( "CACHE", null );
         TSBucket tsbShuffled = tsbComponents.processBucket( "SHUFFLEYVALUES(1)", null );
         TSBucket tsbDFA_2Shuffled = tsbShuffled.processBucket( "DFA_OF_", null );
@@ -25,14 +26,8 @@ public class MacroRunner {
         TSBucket tsbStandardized_Components = tsbComponents.processBucket( "STANDARDIZED_OF_", null );
         TSBucket tsbH_Components = tsbComponents.processBucket( "H_OF_", null );
 
-
         // now we can apply this analysis procedure to other TSBuckets automatically.
-        // procedures runs locally on Workstation or on a Hadoop cluster.
-
-        
-        
-
-       
+        // procedures runs locally on Workstation or on a Hadoop cluster.       
 
     }
 

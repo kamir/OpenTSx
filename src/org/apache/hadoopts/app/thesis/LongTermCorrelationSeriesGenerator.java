@@ -37,8 +37,8 @@ public class LongTermCorrelationSeriesGenerator {
     
     private static boolean debug = false;
 
-    static double fitMIN = 1.2;
-    static double fitMAX = 3.5;
+    static double fitMIN = 0.8;
+    static double fitMAX = 2.25;
     
     static Messreihe alphasCALC = new Messreihe();
     static Messreihe alphasTHEO = new Messreihe();
@@ -120,7 +120,7 @@ public class LongTermCorrelationSeriesGenerator {
         
         boolean showLegend = true;
         MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
-                        "log(s)", "log(F(s))", false, log.toString() );
+                        "log(s)", "log(F(s))", false, log.toString(), null );
         
         
         alphasCALC.setLabel("CALC");
@@ -134,7 +134,7 @@ public class LongTermCorrelationSeriesGenerator {
 //                        "beta", "alpha", showLegend );
 
                 MultiChart.open(check, "alpha vs. beta", 
-                        "beta", "alpha", showLegend, log.toString() );
+                        "beta", "alpha", showLegend, log.toString() , null);
 
 
         
@@ -459,7 +459,7 @@ public class LongTermCorrelationSeriesGenerator {
         }
         
         MultiChart.open(v, "Schreiber Schmitz DEBUGGING", 
-                        "y(t)", "t", true, "");
+                        "y(t)", "t", true, "", null);
         
         
         
