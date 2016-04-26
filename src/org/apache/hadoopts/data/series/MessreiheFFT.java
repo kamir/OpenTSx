@@ -1265,6 +1265,8 @@ public class MessreiheFFT extends Messreihe {
      */
     private void calc_modified_FF(MessreiheFFT aThis, Messreihe rFFT, double beta, double samplingRate) {
         
+//        debug = true;
+        
         double[] data = aThis.getYData();
         
         int N_Original = data.length;
@@ -1291,7 +1293,7 @@ public class MessreiheFFT extends Messreihe {
             
             double f = i * df;
             
-            double faktor = Math.pow(f, -0.5D * beta);
+            double faktor = Math.pow(f, -0.500 * beta);
             
             modCOMPLEX[i] = c[i].multiply(faktor);
             
@@ -1307,11 +1309,11 @@ public class MessreiheFFT extends Messreihe {
         for (int i = 0; i < N_Original; i++) {
             rFFT.addValuePair(i, modData[i].getReal());
         }
-        
-        if( debug ) {
-            MessreiheFFT.debugComplexSeries(modCOMPLEX, beta + " : COMPLEX-Modifiziert" );
-            MessreiheFFT.debugComplexSeries(modData, beta + " : Transformiert" );
-        }
+//        
+//        if( debug ) {
+//            MessreiheFFT.debugComplexSeries(modCOMPLEX, beta + " : COMPLEX-Modifiziert" );
+//            MessreiheFFT.debugComplexSeries(modData, beta + " : Transformiert" );
+//        }
     }
 
     public static boolean debug = false;

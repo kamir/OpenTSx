@@ -438,6 +438,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         Vector<Messreihe> v = new Vector<Messreihe>();
 
+        StringBuffer alphas = new StringBuffer();
+        
         for (Messreihe d4 : this.rows) {
 
             try {
@@ -471,8 +473,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 dfa.calc();
 
                 Messreihe mr4 = dfa.getResultsMRLogLog();
+                
+                alphas.append( mr4.getLabel() + "\t" + alpha + "\n");
+
                 mr4.setLabel(d4.getLabel());
-                v.add(mr4);
 
                 String status = dfa.getStatus();
 
@@ -481,6 +485,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 alpha = alphaSR.getSlope();
 
                 System.out.println(status);
+
+                mr4.setLabel( mr4.getLabel() +  "_alpha=" + alpha);
+                v.add(mr4);
+
+                
             } catch (Exception ex) {
                 Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -488,7 +497,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         if (true) {
             DecimalFormat df = new DecimalFormat("0.000");
-            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), "???");
+            MultiChart.open(v, label + " fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", this.jRadioButton1.isSelected(), alphas.toString());
 
             System.out.println(" alpha = " + df.format(alpha));
             System.out.println("       = " + ((2 * alpha) - 1.0));

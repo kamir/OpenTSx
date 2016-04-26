@@ -65,7 +65,7 @@ public class LongTermCorrelationSeriesGenerator {
      */
     static public int nrOfSValues = 250;
     
-    static int EXP = 16; // 2 ^ EXP = length of the row                     //  <--------
+    static int EXP = 10; // 2 ^ EXP = length of the row                     //  <--------
 
     public static void main(String args[]) throws Exception {
         
@@ -85,7 +85,7 @@ public class LongTermCorrelationSeriesGenerator {
 //        int Z = 15;
 //        double STRETCH = 4;   // PRODUCT muss 60 sein ...
 
-        int Z = 10;                                                         //  <--------
+        int Z = 15;                                                         //  <--------
         double STRETCH = 6;                                                 //  <--------
         
         int LOOPS = 10;                                                     //  <--------
@@ -99,7 +99,7 @@ public class LongTermCorrelationSeriesGenerator {
             
             numberOfBeta = i;
             
-            double beta = 0.1 + ( i * STRETCH * 0.05 ); 
+            double beta = -1.0 + ( i * STRETCH * 0.05 ); 
             
             if ( showTest ) { 
                 System.out.println(">>> i=" +  i + "\t beta=" + beta + " Z=" + Z );
