@@ -126,7 +126,7 @@ public class LongTermCorrelationSeriesGenerator {
         alphasCALC.setLabel("CALC");
         alphasTHEO.setLabel("Theorie");
         // check.add( alphasCALC );
-        check.add( alphasTHEO );
+       // check.add( alphasTHEO );
         
         _calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
         
@@ -138,13 +138,13 @@ public class LongTermCorrelationSeriesGenerator {
 
 
         
-        String a = "/GITHUB/dissertation/main/FINAL/LATEX/semanpix/RandomNumbers/";
+        String a = "/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/RandomNumbers/";
         
         File f = new File( a );
         if ( !f.exists() ) f.mkdirs();
         
-        File f1 = new File( a + "random_numbers_CHECK" );
-        File f2 = new File( a + "random_numbers_FS" );
+        File f1 = new File( a + "random_numbers_CHECK.csv" );
+        File f2 = new File( a + "random_numbers_FS.csv" );
         
         MesswertTabelle mwt = new MesswertTabelle( "random_numbers_CHECK" );
        

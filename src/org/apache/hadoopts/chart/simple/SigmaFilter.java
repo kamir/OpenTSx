@@ -40,7 +40,9 @@ public class SigmaFilter extends Messreihe {
 //        sf.plotASOszi();
     }
 
-    MesswertTabelle mwt = new MesswertTabelle();
+    MesswertTabelle mwt1 = new MesswertTabelle();
+    MesswertTabelle mwt2 = new MesswertTabelle();
+    MesswertTabelle mwt3 = new MesswertTabelle();
     
     /**
      * @param args the command line arguments
@@ -73,15 +75,29 @@ public class SigmaFilter extends Messreihe {
 
         sf.aggregate();
 
-        sf.mwt = new MesswertTabelle();
-        sf.mwt.setLabel("rawDataDEMO2.csv");
-        sf.mwt.singleX = false;
+        sf.mwt1 = new MesswertTabelle();
+        sf.mwt1.setLabel("layer1.csv");
+        sf.mwt1.singleX = false;
 
+        
+        sf.mwt2 = new MesswertTabelle();
+        sf.mwt2.setLabel("layer2.csv");
+        sf.mwt2.singleX = false;
+
+        sf.mwt3 = new MesswertTabelle();
+        sf.mwt3.setLabel("layer3.csv");
+        sf.mwt3.singleX = false;
+
+        
         sf.compare(mr);
 
         sf.plot();
         
-        op.storeMesswertTabelle(sf.mwt);
+        op.storeMesswertTabelle(sf.mwt1);
+        op.storeMesswertTabelle(sf.mwt2); 
+        op.storeMesswertTabelle(sf.mwt3); 
+
+
         
         
 
@@ -98,6 +114,7 @@ public class SigmaFilter extends Messreihe {
 
     Messreihe mwBINNED = null;
     Messreihe sigmaBINNED = null;
+    
     Vector<Messreihe> rows = new Vector<Messreihe>();
     Vector<Messreihe> binned = new Vector<Messreihe>();
 
@@ -146,7 +163,7 @@ public class SigmaFilter extends Messreihe {
 
         if (compareWithBand != null) {
             plotRows.add(compareWithBand);
-            mwt.addMessreihe(compareWithBand);
+            mwt1.addMessreihe(compareWithBand);
         }
         
         plotRows.add(mwBINNED.setBinningX_sum(scale));
@@ -154,8 +171,9 @@ public class SigmaFilter extends Messreihe {
         Messreihe upper = mwBINNED.add(sigmaBINNED.scaleY_2(upperTS));
         Messreihe lower = mwBINNED.add(sigmaBINNED.scaleY_2(lowerTS));
 
-        mwt.addMessreihe(lower);
-        mwt.addMessreihe(upper);
+        mwt1.addMessreihe(lower);
+        mwt1.addMessreihe(upper);
+        mwt1.addMessreihe(mwBINNED.setBinningX_sum(scale));
         
         if ( calcMinEvents ) {
                
@@ -164,8 +182,8 @@ public class SigmaFilter extends Messreihe {
             plotRows.add( mrs[0] );
             plotRows.add( mrs[1].setBinningX_sum(scale2).scaleX_2(scale2) );
             
-            mwt.addMessreihe( mrs[0] );
-            mwt.addMessreihe( mrs[1].setBinningX_sum(scale2).scaleX_2(scale2) );
+            mwt2.addMessreihe( mrs[1] );
+            mwt3.addMessreihe( mrs[1].setBinningX_sum(scale2).scaleX_2(scale2) );
         
         }
         
@@ -176,8 +194,8 @@ public class SigmaFilter extends Messreihe {
             plotRows.add( mr[0] );
             plotRows.add( mr[1].setBinningX_sum(scale2).scaleX_2(scale2) );
             
-            mwt.addMessreihe( mr[0] );
-            mwt.addMessreihe( mr[1].setBinningX_sum(scale2).scaleX_2(scale2) );
+            mwt2.addMessreihe( mr[1] );
+            mwt3.addMessreihe( mr[1].setBinningX_sum(scale2).scaleX_2(scale2) );
         
         }
 
