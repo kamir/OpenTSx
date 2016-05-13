@@ -1672,7 +1672,7 @@ public class Messreihe implements IMessreihe, Serializable {
         
         Messreihe mr = new Messreihe();
         
-        mr.setLabel( getLabel() + "_RelDiff");
+        mr.setLabel( getLabel() + "_Log(RelDiff)");
 
         int len = this.xValues.size();
 
@@ -1687,14 +1687,11 @@ public class Messreihe implements IMessreihe, Serializable {
             
             now = (Double)this.yValues.elementAt(i);
             
-            delta = now - last;
-            
-            logDelta = delta / last;
+            delta = Math.log(now) - Math.log( last );
             
             last = now;
             
-            if ( logDelta > -1 )
-                mr.addValuePair(i, Math.log( logDelta + 1 ) );
+            mr.addValuePair(i, delta );
         
         }
 

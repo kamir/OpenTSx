@@ -756,17 +756,24 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
     }//GEN-LAST:event_jButton6ActionPerformed
 
-    private void jButton15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton15ActionPerformed
-
+    public void persistTSB() {
+        
         TSBucket tsb = new TSBucket();
 
         try {
 
             tsb.createBucketFromVectorOfSeries(this.track, this.label, this.rows);
 
-        } catch (IOException ex) {
+        } 
+        catch (IOException ex) {
             Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
+    
+    }
+    
+    private void jButton15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton15ActionPerformed
+
+       
 
     }//GEN-LAST:event_jButton15ActionPerformed
 

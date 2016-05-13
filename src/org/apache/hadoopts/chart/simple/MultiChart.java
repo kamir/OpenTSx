@@ -19,6 +19,7 @@ import java.awt.Font;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -55,26 +56,39 @@ import org.w3c.dom.Document;
 
 public class MultiChart extends javax.swing.JDialog {
     
+    /***
+     * 
+     * We expose some attributes for customizing the plot ...
+     *
+     **/
     
-    //public static Color bgCOLOR = Color.BLACK;
+//    public static Color bgCOLOR = Color.BLACK;
 //    public static Color bgCOLOR = Color.LIGHT_GRAY;
     public static Color bgCOLOR = Color.WHITE;
     
-    boolean autoscale = false;
+    public static boolean autoscale = true;
 
-    public static boolean setDefaultRange = true;
+    public static boolean setDefaultRange = false;
     
-    public ChartPanel cp = null;
-
     // AXIS FORMAT
-    static DecimalFormat df1 = new DecimalFormat("0");
-    static DecimalFormat df2 = new DecimalFormat("0");
+    public static DecimalFormat df1 = new DecimalFormat("0");
+    public static DecimalFormat df2 = new DecimalFormat("0");
     
     // LABEL
-    static Font fontL = new Font("Dialog", Font.PLAIN, 28);
+    public static Font fontL = new Font("Dialog", Font.PLAIN, 28);
     
     // Tick-Label
-    static Font fontTL = new Font("Dialog", Font.PLAIN, 18);
+    public static Font fontTL = new Font("Dialog", Font.PLAIN, 18);
+
+
+    
+    /**
+     * 
+     * Here we encapsule functionality 
+     *
+     */ 
+    public ChartPanel cp = null;
+    static TSOperationControlerPanel fcp = null;
 
 
     public static void open2(Vector<Messreihe> rows, boolean b) {
@@ -131,6 +145,13 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
   
+    public static void persistPixNode() throws IOException {
+        
+        fcp.save();
+//        fcp.persistTSB();
+    
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -274,7 +295,7 @@ public class MultiChart extends javax.swing.JDialog {
 //        });
         
         
-        TSOperationControlerPanel fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
+        fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
         fcp.registerPanelHolder(dialog);
         
         if ( c != null)
@@ -323,7 +344,7 @@ public class MultiChart extends javax.swing.JDialog {
 //        });
         
         
-        TSOperationControlerPanel fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
+        fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
         fcp.registerPanelHolder(dialog);
         
         if (c != null)  
