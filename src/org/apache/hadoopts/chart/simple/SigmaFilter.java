@@ -213,7 +213,9 @@ public class SigmaFilter extends Messreihe {
 
     private void aggregate() {
 
-        System.out.println(">   aggregate now ... ");
+        System.out.println(">   aggregate now ... " + rows.size() );
+        
+        
 
         mwRAW = Messreihe.averageForAll(rows);
         mwBINNED = Messreihe.averageForAll(binned);

@@ -130,20 +130,20 @@ public class TSPropertyTester {
         v.add( ref1 );
         v.add( ref2 );
         
-        MultiChart.open(v, "fluctuation function F(s) [order:" + order + "] ", "log(s)", "log(F(s))", true );
-        MultiChart.open(vr, "RAW data", "t", "y(t)", true );
+        MultiChart.open(v, "F(s) [order:" + order + "] ", "log(s)", "log( F(s) )", true );
+        MultiChart.open(vr, "RAW", "t", "y(t)", true );
         
         MesswertTabelle tab1 = new MesswertTabelle();
         tab1.singleX = false;
-        tab1.setHeader("# fluctuation function F(s) [order:" + order + "] , log(s), log(F(s))");
+        tab1.setHeader("# F(s) [order:" + order + "] , log(s), log(F(s))");
         tab1.setMessReihen(v);
-        tab1.writeToFile( new File("./hadoopts_image_b.dat") );
+        tab1.writeToFile( new File("./TSPropertyTester_hadoopts_image_b.dat") );
         
         MesswertTabelle tab2 = new MesswertTabelle();
         tab2.singleX = false;
         tab2.setHeader("# RAW data");
         tab2.setMessReihen(vr);
-        tab2.writeToFile( new File("./hadoopts_image_d.dat") );
+        tab2.writeToFile( new File("./TSPropertyTester_hadoopts_image_d.dat") );
             
         
     }
@@ -173,7 +173,7 @@ public class TSPropertyTester {
 
     private static Messreihe getRefStretchedExp(double a, double b,double gamme) {
         Messreihe mr = new Messreihe();
-        mr.setLabel("stretched_exp(x) (alphau=" + a +",beta="+b+",gamma="+gamme+")");
+        mr.setLabel("stretched_exp(x) (alpha=" + a +",beta="+b+",gamma="+gamme+")");
         int i = 0;
         while( i < 10 ) {
             double B = Math.pow( b*(double)i, gamme);
@@ -817,11 +817,11 @@ public class TSPropertyTester {
     
     static FileWriter fw;
     
-    static Vector<Messreihe> mrv2 = null;
-    static Vector<Messreihe> mrv = null;
+    static Vector<Messreihe> mrv2 = new Vector<Messreihe>();
+    static Vector<Messreihe> mrv = new Vector<Messreihe>();
 
     static Vector<Messreihe> mrv2B = null;
-    static Vector<Messreihe> mrvB = null;
+    static Vector<Messreihe> mrvB = new Vector<Messreihe>();
 
     static int maxB = 5; // anzahl der Input-Files
     static int maxROWS = -1; // default -1
@@ -953,7 +953,7 @@ public class TSPropertyTester {
         colors[5] = Color.darkGray;
         colors[6] = Color.lightGray;
         
-        
+        MultiChart.setSmallFont();
         MultiChart._initColors(colors);
       
   
@@ -1140,7 +1140,7 @@ public class TSPropertyTester {
         ref3.calcLog10_for_Y();
         mrvB.add( ref3);
         
-        MultiChart.open(mrv, "distribution (raw data)", "k/<k>", "P(X=k)", true);
+        MultiChart.open(mrv, "distribution (raw data)", "y/<y>", "P(X=y)", true);
 //        MultiChart.open(mrv2, true);
 
         MultiChart.open(mrvB, "RIS", "r/RQ", "RQ * P(r)",  true);
@@ -1148,16 +1148,16 @@ public class TSPropertyTester {
  
         MesswertTabelle tab1 = new MesswertTabelle();
         tab1.singleX = false;
-        tab1.setHeader("# distribution (raw data), k/<k>, P(X=k)");
+        tab1.setHeader("# distribution (raw data), y/<y>, P(X=k)");
         tab1.setMessReihen(mrv);
-        tab1.writeToFile( new File("./hadoopts_image_a.dat") );
+        tab1.writeToFile( new File("./TSPropertyTester_hadoopts_image_a.dat") );
         
         
         MesswertTabelle tab2 = new MesswertTabelle();
         tab2.singleX = false;
         tab2.setHeader("#RIS, r/RQ, RQ * P(r)");
         tab2.setMessReihen(mrvB);
-        tab2.writeToFile( new File("./hadoopts_image_c.dat") );
+        tab2.writeToFile( new File("./TSPropertyTester_hadoopts_image_c.dat") );
         
         
     }

@@ -82,7 +82,7 @@ public class SurrogatDataGeneration {
         // Paramters for test data generation ...
         double PI = Math.PI;
 
-        double[] f     = {2  , 3  , 4  , 5  };  // frequency
+        double[] f     = {2  , 30  , 40  , 150  };  // frequency
         double[] a     = {1  , 1  , 1  , 1  };                  // amplitude 
         double[] phase = {0.0, 0.0, 0.0, 0.0};  // phase
         double[] noise = {0.0, 0.0, 0.2, 0.2};  // noise level
@@ -120,7 +120,7 @@ public class SurrogatDataGeneration {
         SCATTERPLOT_AUTO_SAVE = false;
 
         double time = 10;
-        samplingRate = 2000;
+        samplingRate = 1000;
 
         //***********************************************************
         //

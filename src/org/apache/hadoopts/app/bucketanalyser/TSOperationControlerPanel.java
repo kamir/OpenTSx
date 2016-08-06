@@ -133,8 +133,16 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
+        jPanel7 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jButton16 = new javax.swing.JButton();
+        jPanel8 = new javax.swing.JPanel();
+        jButton17 = new javax.swing.JButton();
+        jButton23 = new javax.swing.JButton();
+        jButton24 = new javax.swing.JButton();
+        jButton25 = new javax.swing.JButton();
+        jButton26 = new javax.swing.JButton();
+        jButton27 = new javax.swing.JButton();
 
         jTextField1.setText("jTextField1");
 
@@ -354,7 +362,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         jPanel4.add(jPanel6);
 
-        jTabbedPane1.addTab("Univ. Analysis", jPanel4);
+        jTabbedPane1.addTab("Uni-variate. Analysis", jPanel4);
+
+        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder("Multi-variate analysis"));
+        jTabbedPane1.addTab("Multi-variate Analysis", jPanel7);
 
         jPanel5.setBackground(new java.awt.Color(255, 204, 204));
         jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder("Group Operations"));
@@ -368,6 +379,29 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         jPanel5.add(jButton16);
 
         jTabbedPane1.addTab("Group Operations", jPanel5);
+
+        jPanel8.setBackground(new java.awt.Color(204, 255, 204));
+        jPanel8.setBorder(javax.swing.BorderFactory.createTitledBorder("Models"));
+
+        jButton17.setText("AR");
+        jPanel8.add(jButton17);
+
+        jButton23.setText("MA");
+        jPanel8.add(jButton23);
+
+        jButton24.setText("ARMA");
+        jPanel8.add(jButton24);
+
+        jButton25.setText("ARIMA");
+        jPanel8.add(jButton25);
+
+        jButton26.setText("SARIMA");
+        jPanel8.add(jButton26);
+
+        jButton27.setText("CARIMA");
+        jPanel8.add(jButton27);
+
+        jTabbedPane1.addTab("TS-Model", jPanel8);
 
         add(jTabbedPane1);
     }// </editor-fold>//GEN-END:initComponents
@@ -1061,12 +1095,18 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     private javax.swing.JButton jButton14;
     private javax.swing.JButton jButton15;
     private javax.swing.JButton jButton16;
+    private javax.swing.JButton jButton17;
     private javax.swing.JButton jButton18;
     private javax.swing.JButton jButton19;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton20;
     private javax.swing.JButton jButton21;
     private javax.swing.JButton jButton22;
+    private javax.swing.JButton jButton23;
+    private javax.swing.JButton jButton24;
+    private javax.swing.JButton jButton25;
+    private javax.swing.JButton jButton26;
+    private javax.swing.JButton jButton27;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
@@ -1080,6 +1120,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
+    private javax.swing.JPanel jPanel8;
     private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextField jTextField1;

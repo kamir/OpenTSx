@@ -36,13 +36,13 @@ public class LoadStockIndexDataFromYahoo {
     // Used in (A)
     //
     // Which index is relevant for the study?
-    static String[] INDEX = { "STI"};
-    //static String[] INDEX = { "DAX2", "MDAX", "SDAX", "TECDAX", "IPC"};
+    //static String[] INDEX = { "STI"};
+    static String[] INDEX = { "DAX2", "MDAX", "SDAX", "TECDAX", "IPC"};
     
     //
     // needed in (B)
     //
-    static String[] INDEX_toLOAD = { "STI", "UK", "DAX2"};
+    static String[] INDEX_toLOAD = { "STI", "UK", "DAX"};
 
     static String[] LABELS = { "Close", "Volume" };
     
@@ -57,7 +57,7 @@ public class LoadStockIndexDataFromYahoo {
          * New STOCK MARKET DATA is loaded into a local cache.
          */
         if ( load )
-            StockDataLoader2.loadAndCacheStockTradingDataForYears(YEARS2, column, INDEX_toLOAD[1]);
+            StockDataLoader2.loadAndCacheStockTradingDataForYears(YEARS1, column, "MDAX");
         
         MacroTrackerFrame.addSource(TSBucketSource.getSource("Collection"));
 
@@ -66,12 +66,12 @@ public class LoadStockIndexDataFromYahoo {
          * do pre processing for shipping to a Spark cluster.
          */
 
-        if ( load ) 
-            loadStockDataForYearsALL(column,YEARS1,0);
-        
-
-        if ( !load )
-            loadStockDataForYearsALL(column,YEARS_done, 0);
+//        if ( load ) 
+//            loadStockDataForYearsALL(column,YEARS1,0);
+//        
+//
+//        if ( !load )
+//            loadStockDataForYearsALL(column,YEARS_done, 0);
 
         
 //        i = 0;

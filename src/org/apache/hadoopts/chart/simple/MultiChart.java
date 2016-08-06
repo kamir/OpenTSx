@@ -74,6 +74,18 @@ public class MultiChart extends javax.swing.JDialog {
     public static DecimalFormat df1 = new DecimalFormat("0");
     public static DecimalFormat df2 = new DecimalFormat("0");
     
+    public static void setSmallFont() {
+    // LABEL
+    fontL = new Font("Dialog", Font.PLAIN, 12);
+    
+    // Tick-Label
+    fontTL = new Font("Dialog", Font.PLAIN, 9);
+        // AXIS FORMAT
+  df1 = new DecimalFormat("0.0");
+ df2 = new DecimalFormat("0.0");
+        
+    }
+    
     // LABEL
     public static Font fontL = new Font("Dialog", Font.PLAIN, 28);
     
@@ -851,6 +863,8 @@ public class MultiChart extends javax.swing.JDialog {
             System.out.println(mrs.size() + " reihen ...");
             tab.writeToFile(f);
         }
+        
+        
 
     }
 

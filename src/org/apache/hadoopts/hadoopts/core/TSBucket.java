@@ -561,13 +561,15 @@ public class TSBucket {
              * Here we lose the METADATA of each row!!!
              *
              */
-            System.out.print("  (" + i + ")");
+            System.out.println("  (" + i + ")");
             Messreihe m = rows.elementAt(i);
             NamedVector nv = new NamedVector(new DenseVector(m.getYData()), m.label);
 
             VectorWritable vec = new VectorWritable();
             vec.set(nv);
 
+            
+            
             writer.append(new Text(nv.getName()), vec);
         }
 
