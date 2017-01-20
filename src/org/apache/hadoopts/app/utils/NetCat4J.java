@@ -44,6 +44,10 @@ import org.apache.commons.cli.PosixParser;
  * @author kamir
  */
 public class NetCat4J extends Generator {
+    
+    public String toString() {
+        return "mode: " + mode;
+    }
 
     // configuration arguments
     String[] a = null;
@@ -76,10 +80,13 @@ public class NetCat4J extends Generator {
      * @return 
      */
     static public NetCat4J getNCGClient(int port) {
+        
         String[] a = {"-p", ""+port, "127.0.0.1" };
         NetCat4J n = new NetCat4J(port);
+        
         n.a = a;
         n.mode = "client";
+        
         return n;
     }
 

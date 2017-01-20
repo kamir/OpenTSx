@@ -46,6 +46,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Hashtable;
+import org.apache.hadoopts.hadoopts.buckets.TSBASE;
 
 /**
  * @author Mirko Kaempf
@@ -349,9 +350,10 @@ public class TSBucket {
     }
 
     private Configuration initConfig() {
+        
         if (config == null) {
+            System.out.println( ">>> create new Configuration() ..." );
             config = new Configuration();
-
         }
 
         config.set("fs.hdfs.impl",
@@ -367,7 +369,9 @@ public class TSBucket {
     private FileSystem initFileSystem() throws IOException {
 
         FileSystem fs = null;
+        
         try {
+        
             fs = FileSystem.get(initConfig());
 
             if (initConfig() == null) {
@@ -377,8 +381,10 @@ public class TSBucket {
             if (fs == null) {
                 System.err.println("!!! ERROR !!! ");
             }
+            
             System.out.println(fs);
-        } catch (Exception ex) {
+        } 
+        catch (Exception ex) {
             ex.printStackTrace();
         }
 
@@ -541,10 +547,10 @@ public class TSBucket {
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
-        Path pathFolder = new Path("/TSBASE/" + track);
+        Path pathFolder = new Path( TSBASE.BASE_PATH + "/" + track);
         fs.mkdirs(pathFolder);
 
-        Path path = new Path("/TSBASE/" + track + "/" + label + ".tsb.vec.seq");
+        Path path = new Path(TSBASE.BASE_PATH + "/" + track + "/" + label + ".tsb.vec.seq");
 
         System.out.println("--> create bucket : " + path.toString());
 
@@ -567,8 +573,6 @@ public class TSBucket {
 
             VectorWritable vec = new VectorWritable();
             vec.set(nv);
-
-            
             
             writer.append(new Text(nv.getName()), vec);
         }

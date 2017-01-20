@@ -215,9 +215,11 @@ public class TSScanner extends javax.swing.JDialog {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         try {
+            
             // TODO add your handling code here:
 
             col1.stop();
+            
         } catch (IOException ex) {
             Logger.getLogger(TSScanner.class.getName()).log(Level.SEVERE, null, ex);
         }

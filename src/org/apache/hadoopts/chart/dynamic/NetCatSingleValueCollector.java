@@ -64,7 +64,7 @@ public class NetCatSingleValueCollector extends JFrame {
      */
     public static void main(String[] args) {
 
-        new NetCatSingleValueCollector("NCCollector", 22222, "TSb");
+        new NetCatSingleValueCollector("NC-Event-Collector", 22222, "TimeSeriesBuckets");
 
     }
 
@@ -96,14 +96,24 @@ class Collector extends SwingWorker<Boolean, File> {
         this.iterations = 100;
         this.dssp = dssp;
         this.lp = lp;
+        
     }
 
     protected Boolean doInBackground() {
+        
         boolean errorOccurred = readValuesFromStream(10);
         return Boolean.valueOf(errorOccurred);
+    
     }
 
     Socket socket = null;
+    
+    /**
+     * We connect to a server-port ...
+     * 
+     * @param z
+     * @return 
+     */
     public boolean readValuesFromStream(int z) {
 
         try {
@@ -114,21 +124,28 @@ class Collector extends SwingWorker<Boolean, File> {
 
             //Verbindung zu Port 13000 auf localhost aufbauen:
             socket = new Socket("localhost", port);
+            
             String serverResponse = "GO...";
+            
             while (serverResponse.length() > 0) {
+            
                 System.out.println(serverResponse);
+                
                 serverResponse = getResponse(socket);
 
                 lp.processString( serverResponse, this );
-                // 
+            
             }
 
             //Socket dichtmachen:
             socket.close();
 
             System.out.println("Close ... ");
+        
             return true;
-        } catch (IOException ex) {
+        
+        } 
+        catch (IOException ex) {
             Logger.getLogger(DynamicSingleSeriesPlot.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println( ">>> Not connected.");
             return false;
@@ -150,7 +167,7 @@ class Collector extends SwingWorker<Boolean, File> {
 
         process(f);
 
-        System.out.println("new value : " + f);
+        System.out.println(" >>> new value : " + f);
 
     }
 
