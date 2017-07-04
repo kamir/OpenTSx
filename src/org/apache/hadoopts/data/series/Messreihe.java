@@ -167,7 +167,38 @@ public class Messreihe implements IMessreihe, Serializable {
 
         }
     }
+    
+   
 
+    public Messreihe fillGapWithValue( double v, double length ) {
+        
+        Messreihe mr = new Messreihe();
+        mr.setLabel(label);
+        mr.setLabel_X(label_X);
+        mr.setLabel_Y(label_Y);
+
+        this.calcAverage();
+
+        double av = this.getAvarage();
+
+        for( int i = 0; i < yValues.size(); i++ ) {
+            
+            double vx = (Double)xValues.elementAt(i);
+            double vy = (Double)yValues.elementAt(i);
+            if (vy == 0.0) vy = av;
+            mr.addValuePair(vx, vy);
+            
+            
+            
+        };
+
+        return mr;
+    };
+
+    
+    
+    
+    
     public Messreihe replaceZeroWithAverage() {
         Messreihe mr = new Messreihe();
         mr.setLabel(label);

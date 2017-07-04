@@ -123,7 +123,7 @@ public class SigmaFilter extends Messreihe {
      * @param mr
      * @param aggregateNow
      */
-    private void addCollect(Messreihe mr, boolean aggregateNow) {
+    public void addCollect(Messreihe mr, boolean aggregateNow) {
 
         rows.add(mr);
 
@@ -159,7 +159,7 @@ public class SigmaFilter extends Messreihe {
 
     static Vector<Messreihe> plotRows = new Vector();
 
-    private void plot() {
+    public void plot() {
 
         if (compareWithBand != null) {
             plotRows.add(compareWithBand);
@@ -211,7 +211,7 @@ public class SigmaFilter extends Messreihe {
         MultiChart.open(plotRows, "random test data (1 year, hourly)", "t", "y(t) , sigma(t)", true);
     }
 
-    private void aggregate() {
+    public void aggregate() {
 
         System.out.println(">   aggregate now ... " + rows.size() );
         
@@ -241,7 +241,7 @@ public class SigmaFilter extends Messreihe {
 
     }
 
-    private Messreihe[] getPosExtremeEvents(Messreihe c, Messreihe upper) {
+    public Messreihe[] getPosExtremeEvents(Messreihe c, Messreihe upper) {
 
         Messreihe[] r = new Messreihe[2];
         Messreihe mrE = new Messreihe( );
@@ -275,7 +275,7 @@ public class SigmaFilter extends Messreihe {
         return r;
         
     }
-    private Messreihe[] getNegExtremeEvents(Messreihe c, Messreihe lower) {
+    public Messreihe[] getNegExtremeEvents(Messreihe c, Messreihe lower) {
 
         Messreihe[] r = new Messreihe[2];
         Messreihe mrE = new Messreihe( );
