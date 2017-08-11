@@ -1,8 +1,8 @@
 package org.apache.hadoopts.statphys.detrending.methods;
 
 import org.apache.hadoopts.data.series.Messreihe;
+
 import java.util.Vector;
-import polysolve.Pair;
 
 /**
  *
@@ -375,32 +375,39 @@ abstract public class DFACore implements IDetrendingMethod {
 // fit with polysolve for higher grades than 2
     public double[] fitn(int u, int o, int n) {
 
-        polysolve.MatrixFunctions mfunct = new polysolve.MatrixFunctions();
+        double[] fit = new double[3];
+        fit[0] = 0.0;
+        fit[1] = 0.0;
+        fit[2] = 0.0;
 
-        int N = (o - u) + 1;  //# of fitable values
-
-        polysolve.Pair[] pData = new polysolve.Pair[N];
-
-        for (int i = 0; i < N; i++) {
-            Pair paar = new polysolve.Pair();
-            paar.x = i;
-            paar.y = pr[u + i];
-            pData[i] = paar;
-        }
-        double[] fit = mfunct.polyregress(pData, n);
+//        polysolve.MatrixFunctions mfunct = new polysolve.MatrixFunctions();
 //
+//        int N = (o - u) + 1;  //# of fitable values
 //
-//         if ( Double.isNaN( fit[0] ) ||  Double.isNaN( fit[1] ) ||  Double.isNaN( fit[2]  ) ) {
-//            //System.out.println( delta + "\t" + S  + "\t" + Sx + "\t" + Sxx + "\t" + Sxxx + "\t" + Sxxxx + "\t" + Sy + "\t" + Sxy + "\t" + Sxxy + "\t" + Syy );
-//            fit[0] = 0;
-//            fit[1] = 5;
-//            fit[2] = 4;
+//        polysolve.Pair[] pData = new polysolve.Pair[N];
 //
+//        for (int i = 0; i < N; i++) {
+//            Pair paar = new polysolve.Pair();
+//            paar.x = i;
+//            paar.y = pr[u + i];
+//            pData[i] = paar;
 //        }
+//        double[] fit = mfunct.polyregress(pData, n);
+////
+////
+////         if ( Double.isNaN( fit[0] ) ||  Double.isNaN( fit[1] ) ||  Double.isNaN( fit[2]  ) ) {
+////            //System.out.println( delta + "\t" + S  + "\t" + Sx + "\t" + Sxx + "\t" + Sxxx + "\t" + Sxxxx + "\t" + Sy + "\t" + Sxy + "\t" + Sxxy + "\t" + Syy );
+////            fit[0] = 0;
+////            fit[1] = 5;
+////            fit[2] = 4;
+////
+////        }
 
+        System.out.println( ">>> no polynomialfit at this time. Please implement it via ACM libs. " + DFACore.class.getCanonicalName() );
 
         return fit;
     }
+
     double alphaFitMin, alphaFitMax;
 
     // linear fit of loglogplot of F(s) and s to get alpha

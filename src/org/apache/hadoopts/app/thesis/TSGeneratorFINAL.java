@@ -8,19 +8,19 @@
  */
 package org.apache.hadoopts.app.thesis;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import java.util.Vector;
 import org.apache.hadoopts.chart.simple.MultiChart;
+import org.apache.hadoopts.data.series.Messreihe;
 import org.apache.hadoopts.data.series.MessreiheFFT;
-import java.awt.Color;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Hashtable;
-import javax.imageio.ImageIO;
-import org.apache.commons.math3.transform.TransformType;
+import java.util.Vector;
 
 /**
  *
@@ -114,7 +114,7 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
     
         
         
-        KreuzKorreltion k1 = new KreuzKorrelation();
+ //       KreuzKorrelation k1 = new KreuzKorrelation();
         
         
         

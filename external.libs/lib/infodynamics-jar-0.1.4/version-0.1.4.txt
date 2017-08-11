@@ -1,7 +1,0 @@
-Java Information Dynamics Toolkit
-Copyright (C) 2012 Joseph T. Lizier
-
-Version 0.1.4
-
-11/09/2013
-

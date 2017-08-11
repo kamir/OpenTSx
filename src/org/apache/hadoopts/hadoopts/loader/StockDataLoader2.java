@@ -1,31 +1,6 @@
 package org.apache.hadoopts.hadoopts.loader;
 
-import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.series.Messreihe;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -33,9 +8,16 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-
-import org.json.simple.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import scala.Tuple2;
+
+import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author Mirko Kaempf
@@ -402,7 +384,7 @@ public class StockDataLoader2 {
      *
      * @param from
      * @param to
-     * @param label
+     * @param lab
      * @return
      * @throws FileNotFoundException
      * @throws IOException
@@ -422,7 +404,7 @@ public class StockDataLoader2 {
      * @param column
      * @param from
      * @param to
-     * @param label
+     * @param lab
      * @return
      * @throws FileNotFoundException
      * @throws IOException

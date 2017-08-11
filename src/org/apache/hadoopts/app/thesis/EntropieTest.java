@@ -41,28 +41,22 @@
 package org.apache.hadoopts.app.thesis;
 
         // Requires the following imports before the class definition:
-import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.RandomGenerator;
-
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
+import org.apache.hadoopts.app.thesis.experimental.ContextRecorder;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.chart.simple.MyXYPlot;
 import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
 import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
-import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
-import infodynamics.measures.mixed.gaussian.MutualInfoCalculatorMultiVariateWithDiscreteGaussian;
-import infodynamics.utils.ArrayFileReader;
-import java.text.DecimalFormat;
-import java.util.Vector;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-
 import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
 import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.thesis.experimental.ContextRecorder;
+
+import java.text.DecimalFormat;
+import java.util.Vector;
 
 /**
  * Produce Images for chapter 7.
@@ -511,7 +505,8 @@ public class EntropieTest {
             singleDebug = false;
         }
 
-        double v1 = JavaMI.MutualInformation.calculateMutualInformation(mr1.getYData(), mr2.getYData());
+        // double v1 = JavaMI.MutualInformation.calculateMutualInformation(mr1.getYData(), mr2.getYData());
+        double v1 = 0.0;
 
         /**
          * CALCULATE INFORMATION THEORETICAL MEASURES
@@ -565,5 +560,7 @@ public class EntropieTest {
         return StockDataLoader2.concatRowsForYearsFromCache(YEARS);
 
     }
+
+
 
 }

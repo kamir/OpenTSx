@@ -18,37 +18,22 @@
  */
  package org.apache.hadoopts.app.utils.sshclient;
   
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 import org.apache.sshd.ClientChannel;
 import org.apache.sshd.ClientSession;
 import org.apache.sshd.SshClient;
- 
 import org.apache.sshd.common.AbstractFactoryManager;
 import org.apache.sshd.common.util.NoCloseInputStream;
 import org.apache.sshd.common.util.NoCloseOutputStream;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
 /**
  * Entry point for the client side of the SSH protocol.
- *
- * The default configured client can be created using
- * the {@link #setUpDefaultClient()}.  The next step is to
- * start the client using the {@link #start()} method.
- *
- * Sessions can then be created using on of the
- * {@link #connect(String, int)} or {@link #connect(java.net.SocketAddress)}
- * methods.
- *
- * The client can be stopped at anytime using the {@link #stop()} method.
- *
+
+
  * Following is an example of using the SshClient:
  * <pre>
  *    SshClient client = SshClient.setUpDefaultClient();

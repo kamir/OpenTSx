@@ -41,29 +41,17 @@
 package org.apache.hadoopts.app.thesis;
 
 // Requires the following imports before the class definition:
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
 import org.apache.hadoopts.app.bucketanalyser.TSOperationControlerPanel;
-import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
-import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.RandomGenerator;
-
+import org.apache.hadoopts.app.thesis.experimental.ContextRecorder;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.chart.simple.MyXYPlot;
 import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
-import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
-import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
-import infodynamics.measures.mixed.gaussian.MutualInfoCalculatorMultiVariateWithDiscreteGaussian;
-import infodynamics.utils.ArrayFileReader;
-import java.text.DecimalFormat;
-import java.util.Vector;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-
 import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
 import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.thesis.experimental.ContextRecorder;
+
+import java.text.DecimalFormat;
+import java.util.Vector;
 
 /**
  * Produce Images for chapter 5.
@@ -467,6 +455,13 @@ public class SurrogatDataGeneration {
 //        }
     }
 
+
+
+
+
+
+    /**
+
     public static double calcTransferEntropy(Messreihe mra, Messreihe mrb, int le) {
 
 // Prepare to generate some random normalised data.
@@ -496,6 +491,14 @@ public class SurrogatDataGeneration {
         return result;
     }
 
+
+
+     */
+
+
+
+
+    /*
     public static double calcMI_JIDT(double[] univariateSeries1, double[] univariateSeries2) throws Exception {
 
 //                //  c. Pull out the columns from the data set which 
@@ -546,8 +549,12 @@ public class SurrogatDataGeneration {
         return miUnivariateValue;
     }
 
+    */
+
     static boolean singleDebug = true;
 
+
+    /*
     private static void calcTEandMI(Messreihe mr1, Messreihe mr2, int dig, String l1, String l2, Messreihe row1, Messreihe row2, int x) throws Exception {
 
         mr1.normalize();
@@ -563,10 +570,8 @@ public class SurrogatDataGeneration {
 
         double v1 = JavaMI.MutualInformation.calculateMutualInformation(mr1.getYData(), mr2.getYData());
 
-        /**
-         * CALCULATE INFORMATION THEORETICAL MEASURES
-         *
-         */
+
+
         String line = dig + "\t"
                 //                + calcTransferEntropy(mr1, mr2, dig) + "\t"
                 //                + JavaMI.Entropy.calculateEntropy(mr1.getYData()) + "\t"
@@ -574,9 +579,6 @@ public class SurrogatDataGeneration {
                 //                + calcMI_JIDT(mr1.getYData(), mr2.getYData()) + "\t"
                 + v1;
 
-        /**
-         * CALCULATE CROSSCORRELATION ...
-         */
         PearsonsCorrelation pc = new PearsonsCorrelation();
         double cc = pc.correlation(mr1.getYData(), mr2.getYData());   // no timelag
         line = line.concat("\t" + cc);
@@ -586,9 +588,7 @@ public class SurrogatDataGeneration {
 
         if (SCATTERPLOT) {
 
-            /**
-             * SHOW A SCATERPLOT
-             */
+
             Vector<Messreihe> v = new Vector<Messreihe>();
             v.add(mr1.zip(mr2));
 
@@ -607,6 +607,7 @@ public class SurrogatDataGeneration {
         System.out.println(line.replace('.', ','));
 
     }
- 
+
+    */
 
 }

@@ -70,7 +70,7 @@ public class DFATest {
         System.out.println();
                
         int grad = 1;
-        result = instance.fitn(0,5,grad);
+        result = instance.fit1(0,5);
         for ( int i = 0 ; i < result.length ; i++ ) {
             System.out.println( "[Order: " + i + "] " + result[i] );
             assertEquals(expected[i],result[i], 0e-12 );
@@ -110,7 +110,7 @@ public class DFATest {
         System.out.println();
 
         int grad = 2;
-        result = instance.fitn(0,8,grad);
+        result = instance.fit2(0,8);
         for ( int i = 0 ; i < result.length ; i++ ) {
             System.out.println( "[" + i + "] " + result[i] );
             assertEquals(expected[i],result[i], 0e-12 );

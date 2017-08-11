@@ -9,10 +9,7 @@ package org.apache.hadoopts.statphys.detrending.methods;
  * genügen, da dabei die kurzen Abschnitte zu hohen Einfluss hätten.
  *
  */
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
 import java.util.Vector;
-import polysolve.Pair;
 
 public class DFAmulti extends DFACore {
 

@@ -43,32 +43,21 @@
 package org.apache.hadoopts.app.bucketanalyser;
 
         // Requires the following imports before the class definition:
-import org.apache.hadoopts.app.thesis.FFTPhaseRandomizer;
-import org.apache.hadoopts.app.thesis.TSGenerator;
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.RandomGenerator;
-
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.chart.simple.MyXYPlot;
 import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
-import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
-import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
-import infodynamics.measures.mixed.gaussian.MutualInfoCalculatorMultiVariateWithDiscreteGaussian;
-import infodynamics.utils.ArrayFileReader;
+import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
+import org.apache.hadoopts.hadoopts.core.TSBucket;
+import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Vector;
-import org.apache.commons.math3.stat.regression.SimpleRegression; 
-
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation; 
-import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
-import org.apache.hadoopts.hadoopts.core.TSBucket;
-
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod; 
 
 /**
  * Produce Images for chapter 7. 
@@ -299,49 +288,49 @@ public class MacroRecorder2 {
                 return miUnivariateValue;
 	}
 
-    private static void calcTEandMI(Messreihe mr1, Messreihe mr2, int dig) throws Exception {
-        
-        /**
-         * CALCULATE INFORMATION THEORETICAL MEASURES
-         * 
-         */
-        String line = dig + "\t" + calcTransferEntropy( mr1 , mr2, dig ) + "\t" +
-                             JavaMI.Entropy.calculateEntropy(mr1.getYData()) + "\t" +
-                             JavaMI.Entropy.calculateEntropy(mr2.getYData()) + "\t" +
-                             calcMI_JIDT( mr1.getYData() , mr2.getYData() ) + "\t" + 
-                             JavaMI.MutualInformation.calculateMutualInformation( mr1.getYData() , mr2.getYData() );
-
-        /**
-         * CALCULATE CROSSCORRELATION ...
-         */
-        PearsonsCorrelation pc = new PearsonsCorrelation();
-        double cc = pc.correlation( mr1.getYData(), mr2.getYData() );   // no timelag
-        line = line.concat("\t" + cc);
-
-        
-        if ( SCATTERPLOT ) {
-        
-            /**
-             * SHOW A SCATERPLOT
-             */
-            Vector<Messreihe> v = new Vector<Messreihe>();
-            v.add( mr1.zip( mr2 ) );
-
-            // SET SCALES to MIN and MAX from Messreihe ...
-            MyXYPlot.setXRange( mr1 );
-            MyXYPlot.setYRange( mr2 );
-
-            MyXYPlot plot = MyXYPlot.openAndGet( v, mr1.getLabel() + "_vs_" + mr2.getLabel() ,mr1.getLabel(), mr2.getLabel(), true);
-        
-            if ( SCATTERPLOT_AUTO_SAVE ) {
-//                plot.fileControlerPanel.save();
-            }
-        }
-        
-        // CLEAN RESULTLINE
-        System.out.println( line.replace('.', ',') );
-
-    }
+//    private static void calcTEandMI(Messreihe mr1, Messreihe mr2, int dig) throws Exception {
+//
+//        /**
+//         * CALCULATE INFORMATION THEORETICAL MEASURES
+//         *
+//         */
+//        String line = dig + "\t" + calcTransferEntropy( mr1 , mr2, dig ) + "\t" +
+//                             JavaMI.Entropy.calculateEntropy(mr1.getYData()) + "\t" +
+//                             JavaMI.Entropy.calculateEntropy(mr2.getYData()) + "\t" +
+//                             calcMI_JIDT( mr1.getYData() , mr2.getYData() ) + "\t" +
+//                             JavaMI.MutualInformation.calculateMutualInformation( mr1.getYData() , mr2.getYData() );
+//
+//        /**
+//         * CALCULATE CROSSCORRELATION ...
+//         */
+//        PearsonsCorrelation pc = new PearsonsCorrelation();
+//        double cc = pc.correlation( mr1.getYData(), mr2.getYData() );   // no timelag
+//        line = line.concat("\t" + cc);
+//
+//
+//        if ( SCATTERPLOT ) {
+//
+//            /**
+//             * SHOW A SCATERPLOT
+//             */
+//            Vector<Messreihe> v = new Vector<Messreihe>();
+//            v.add( mr1.zip( mr2 ) );
+//
+//            // SET SCALES to MIN and MAX from Messreihe ...
+//            MyXYPlot.setXRange( mr1 );
+//            MyXYPlot.setYRange( mr2 );
+//
+//            MyXYPlot plot = MyXYPlot.openAndGet( v, mr1.getLabel() + "_vs_" + mr2.getLabel() ,mr1.getLabel(), mr2.getLabel(), true);
+//
+//            if ( SCATTERPLOT_AUTO_SAVE ) {
+////                plot.fileControlerPanel.save();
+//            }
+//        }
+//
+//        // CLEAN RESULTLINE
+//        System.out.println( line.replace('.', ',') );
+//
+//    }
 
  
     private static Vector<Messreihe> loadStockDataFromBucket(String market) throws IOException {
