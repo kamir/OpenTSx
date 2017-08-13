@@ -1,7 +1,7 @@
 package org.apache.hadoopts.app.gui;
 
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;

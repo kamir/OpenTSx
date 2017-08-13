@@ -5,7 +5,8 @@
 
 package org.apache.hadoopts.data.io;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -62,7 +63,7 @@ public class MessreihenLoader {
      * @param spalteY
      * @return
      */
-    public Messreihe _loadLogBinnedMessreihe( File fn , int _spalteX , int spalteY, double factor, double maxY  ) {
+    public TimeSeriesObject _loadLogBinnedMessreihe(File fn , int _spalteX , int spalteY, double factor, double maxY  ) {
 
         int logSkipped = 0;
         int logUsed = 0;
@@ -105,7 +106,7 @@ public class MessreihenLoader {
             c++;
         }
         
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         System.out.println("File: "+fn.getAbsolutePath());
 
@@ -248,7 +249,7 @@ public class MessreihenLoader {
      * @param spalteY
      * @return
      */
-    public Messreihe _loadLogBinnedMessreihe_DIV_BY_BINWIDTH( File fn , int _spalteX , int spalteY, double factor, double maxY  ) {
+    public TimeSeriesObject _loadLogBinnedMessreihe_DIV_BY_BINWIDTH(File fn , int _spalteX , int spalteY, double factor, double maxY  ) {
 
         int logSkipped = 0;
         int logUsed = 0;
@@ -291,7 +292,7 @@ public class MessreihenLoader {
             c++;
         }
         
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         System.out.println("File: "+fn.getAbsolutePath());
 //
@@ -439,7 +440,7 @@ public class MessreihenLoader {
      * @param spalteY
      * @return
      */
-    public Messreihe _loadLogBinnedMessreihe_DIV_BY_BINWIDTH( File fn , int spalteX , int spalteY, double factor, double maxY, String delim , LineFilter filter ) {
+    public TimeSeriesObject _loadLogBinnedMessreihe_DIV_BY_BINWIDTH(File fn , int spalteX , int spalteY, double factor, double maxY, String delim , LineFilter filter ) {
 
         int logSkipped = 0;
         int logUsed = 0;
@@ -499,7 +500,7 @@ public class MessreihenLoader {
         
        
         
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         System.out.println("File: "+fn.getAbsolutePath());
 //
@@ -678,9 +679,9 @@ public class MessreihenLoader {
      * @param spalteY
      * @return
      */
-    public Messreihe loadMessreihe_2( File fn , int spalteX , int spalteY ) {
+    public TimeSeriesObject loadMessreihe_2(File fn , int spalteX , int spalteY ) {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         System.out.println("File: "+fn.getAbsolutePath());
 
@@ -775,10 +776,10 @@ public class MessreihenLoader {
     /**
     * Es soll eine Datei eingelesen werden, in der lediglich die y Werte stehen (also nur eine Spalte)
      */
-    public Messreihe loadMessreihe_1( File fn ) {
+    public TimeSeriesObject loadMessreihe_1(File fn ) {
 
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
        if ( ! this.checkFileAccess( fn.getAbsolutePath() ) ) {
             mr = null;
@@ -858,9 +859,9 @@ public class MessreihenLoader {
      * @param fn
      * @return
      */
-    public Messreihe loadMessreihe( File fn ) {
+    public TimeSeriesObject loadMessreihe(File fn ) {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         mr.setLabel( fn.getName() );
         
@@ -903,20 +904,20 @@ public class MessreihenLoader {
         return mr;
     };
 
-    public Messreihe loadMessreihe_2(File f, int i, int i0, int _limit) {
+    public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, int _limit) {
         limit = _limit;
         System.out.println( ">>> WARNUNG >>>  LIMIT wird gesetzt auf limit=" + _limit);
         return loadMessreihe_2(f, i, i0);
     }
 
-    public Messreihe loadMessreihe_2(File f, int i, int i0, String theDelim) {
+    public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, String theDelim) {
         delim = theDelim;
         return loadMessreihe_2(f, i, i0);
     }
 
-    public Messreihe loadMessreihe_zr_SC( File fn, int spalteY , String del ) {
+    public TimeSeriesObject loadMessreihe_zr_SC(File fn, int spalteY , String del ) {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " lese in Spalte Nr:=" + spalteY );
 
@@ -1018,9 +1019,9 @@ public class MessreihenLoader {
         return mr;
     }
     
-    public Messreihe loadMessreihe_For_LinkStrength( File fn, int spalteLabel1,int spalteLabel2,int spalteValue , String del ) {
+    public TimeSeriesObject loadMessreihe_For_LinkStrength(File fn, int spalteLabel1, int spalteLabel2, int spalteValue , String del ) {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " lese in Spalte Nr:=" + spalteValue );
 
@@ -1114,8 +1115,8 @@ public class MessreihenLoader {
         return mr;
     }
 
-    public Messreihe loadMessreihe_For_LinkStrength(File fn, int spalteLabel1, int spalteLabel2, ColumnValueCalculator mapper, String del) {
-        Messreihe mr = new Messreihe();
+    public TimeSeriesObject loadMessreihe_For_LinkStrength(File fn, int spalteLabel1, int spalteLabel2, ColumnValueCalculator mapper, String del) {
+        TimeSeriesObject mr = new TimeSeriesObject();
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " lese mit mapper:=" + mapper.getName() );
 
@@ -1216,9 +1217,9 @@ public class MessreihenLoader {
         return mr;
     }
 
-    public Messreihe _loadMessreihe_For_FD(File fn, TSValueCalculator mapper, String del, boolean logreturn )  {
+    public TimeSeriesObject _loadMessreihe_For_FD(File fn, TSValueCalculator mapper, String del, boolean logreturn )  {
         
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         mr.dateHash = new Hashtable<Date,Double>();
         

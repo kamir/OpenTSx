@@ -5,13 +5,9 @@
  */
 package org.apache.hadoopts.app.bucketanalyser;
 
-import org.apache.hadoopts.app.bucketanalyser.MacroRecorder;
-import static org.apache.hadoopts.app.bucketanalyser.MacroRecorder.loadOp;
-import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
-import org.apache.hadoopts.app.bucketanalyser.TSBucketTransformation;
 import org.apache.hadoopts.data.export.MesswertTabelle;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import java.awt.Desktop;
 import java.io.File;
@@ -22,9 +18,8 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
+
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.jfree.chart.ChartRenderingInfo;
@@ -52,7 +47,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         initComponents();
     }
 
-    public Vector<Messreihe> rows;
+    public Vector<TimeSeriesObject> rows;
 
     JFreeChart chart;
     String label = null;
@@ -67,7 +62,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     
     public static String baseFolder = null;
     
-    public TSOperationControlerPanel(Vector<Messreihe> r, JFreeChart c, String l, JTextArea jtf) {
+    public TSOperationControlerPanel(Vector<TimeSeriesObject> r, JFreeChart c, String l, JTextArea jtf) {
 
         this();
         rows = r;
@@ -440,11 +435,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            MessreiheFFT rFFT = MessreiheFFT.convertToMessreiheFFT(r);
+            TimeSeriesObjectFFT rFFT = TimeSeriesObjectFFT.convertToMessreiheFFT(r);
             
             v.add(rFFT.getFFT(EntropieTest.samplingRate));
 
@@ -462,11 +457,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         int order = 0; // will be defined later
         int nrOfSValues = 250;
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         StringBuffer alphas = new StringBuffer();
         
-        for (Messreihe d4 : this.rows) {
+        for (TimeSeriesObject d4 : this.rows) {
 
             try {
 
@@ -474,7 +469,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 double[] zr = new double[N];
 
-                Vector<Messreihe> vr = new Vector<Messreihe>();
+                Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
 
                 vr.add(d4);
 
@@ -498,7 +493,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 dfa.calc();
 
-                Messreihe mr4 = dfa.getResultsMRLogLog();
+                TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
                 
                 alphas.append( mr4.getLabel() + "\t" + alpha + "\n");
 
@@ -550,10 +545,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
-            Messreihe ac = new Messreihe();
+        for (TimeSeriesObject r : this.rows) {
+            TimeSeriesObject ac = new TimeSeriesObject();
             ac.setLabel("AC_" + r.label);
 
             PearsonsCorrelation pc = new PearsonsCorrelation();
@@ -562,7 +557,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 try {
 
-                    Messreihe mr1 = r.shift(i);
+                    TimeSeriesObject mr1 = r.shift(i);
 
                     double ac_i = pc.correlation(mr1.getYData(), r.getYData());
 
@@ -595,11 +590,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe profile = r.getProfile();
+            TimeSeriesObject profile = r.getProfile();
             v.add(profile);
 
         }
@@ -617,11 +612,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe diffs = r.getNextDiffs();
+            TimeSeriesObject diffs = r.getNextDiffs();
             v.add(diffs);
 
         }
@@ -639,11 +634,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe diffs = r.getLogReturn();
+            TimeSeriesObject diffs = r.getLogReturn();
             v.add(diffs);
 
         }
@@ -661,15 +656,15 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         double minY = Integer.parseInt(this.jtMIN.getText());
         double maxY = Integer.parseInt(this.jtMAX.getText());
         int bins = Integer.parseInt(this.jtBINS.getText());
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe distr = r.distributionOfYValues((int) minY, (int) maxY, bins);
+            TimeSeriesObject distr = r.distributionOfYValues((int) minY, (int) maxY, bins);
             v.add(distr);
 
         }
@@ -688,11 +683,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe a = r.copy();
+            TimeSeriesObject a = r.copy();
             a.normalize();
 
             v.add(a);
@@ -716,11 +711,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe a = r.copy();
+            TimeSeriesObject a = r.copy();
 
             a = a.normalizeToStdevIsOne();
 
@@ -757,9 +752,9 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         int l = Integer.parseInt(javax.swing.JOptionPane.showInputDialog("Length: "));
 
-        Vector<Messreihe> slidingWindowResults = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
 
-        for (Messreihe comp : this.rows) {
+        for (TimeSeriesObject comp : this.rows) {
 
             slidingWindowResults.add(comp.calcEntropyForWindow(l));
         }
@@ -842,10 +837,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
             int l = Integer.parseInt(javax.swing.JOptionPane.showInputDialog("Nr fo shuffelings: "));
 
-            Vector<Messreihe> shuffled = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> shuffled = new Vector<TimeSeriesObject>();
 
-            for (Messreihe comp : this.rows) {
-                Messreihe m = comp.copy();
+            for (TimeSeriesObject comp : this.rows) {
+                TimeSeriesObject m = comp.copy();
                 m.shuffleYValues(l);
                 shuffled.add(m);
             }
@@ -868,11 +863,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe distr = r.cumulatedDistributionOfYValues(30);
+            TimeSeriesObject distr = r.cumulatedDistributionOfYValues(30);
             v.add(distr);
 
         }
@@ -900,7 +895,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         double maxY = Integer.parseInt(this.jtMAX.getText());
         int bins = Integer.parseInt(this.jtBINS.getText());
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         // create series of cuts ...
         while (pos < this.rows.elementAt(0).getXValues().size()) {
@@ -916,7 +911,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
             hz.intervalle = bins;
 
-            for (Messreihe r : this.rows) {
+            for (TimeSeriesObject r : this.rows) {
 
                 hz.addData(r.cutOut(pos, pos + l).getYValues());
 
@@ -953,8 +948,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         int bins = 100;
 
         // PDFS
-        Vector<Messreihe> v = new Vector<Messreihe>();
-        Vector<Messreihe> v2 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
+        Vector<TimeSeriesObject> v2 = new Vector<TimeSeriesObject>();
 
         // create series of cuts ...
         for (int l : L) {
@@ -974,10 +969,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
                 System.out.println(pos + " => " + (pos + l));
 
-                for (Messreihe r : this.rows) {
+                for (TimeSeriesObject r : this.rows) {
 
                     try {
-                        Messreihe cut = r.cutOut(pos, pos + l);
+                        TimeSeriesObject cut = r.cutOut(pos, pos + l);
                         
                         if ( cut.yValues.size() == l ){
                         
@@ -1025,11 +1020,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe r : this.rows) {
+        for (TimeSeriesObject r : this.rows) {
 
-            Messreihe diffs = r.calcMR_Log_for_Y();
+            TimeSeriesObject diffs = r.calcMR_Log_for_Y();
             
             v.add(diffs);
 

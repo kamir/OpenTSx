@@ -47,24 +47,19 @@ package org.apache.hadoopts.chart.statistic;
  *
  */
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.MesswertTabelle;
-import java.io.File;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Vector;
-
-import javax.swing.JFrame;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.ChartRenderingInfo;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.jfree.chart.*;
 import org.jfree.chart.entity.StandardEntityCollection;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.statistics.HistogramDataset;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Vector;
 
 /**
  * A demo of the {@link HistogramDataset} class.
@@ -94,9 +89,9 @@ public class HistogramChart extends ApplicationFrame {
 //    }
 
     HistogramDataset dataset = null;
-    Messreihe mr = null;
+    TimeSeriesObject mr = null;
 
-    public void addSerieWithBinning(Messreihe _mr, int bins, double min, double max) {
+    public void addSerieWithBinning(TimeSeriesObject _mr, int bins, double min, double max) {
 
 
         if ( mr == null ) dataset = new HistogramDataset();
@@ -110,7 +105,7 @@ public class HistogramChart extends ApplicationFrame {
 
     }
 
-    public void addSerie(Messreihe _mr) {
+    public void addSerie(TimeSeriesObject _mr) {
         
         if ( mr == null ) dataset = new HistogramDataset();
 
@@ -189,12 +184,13 @@ public class HistogramChart extends ApplicationFrame {
      */
     public static void main(String[] args) throws IOException {
 
-        stdlib.StdRandom.initRandomGen((long)1.0);
+        RNGWrapper.init();
+
         HistogramChart demo = new HistogramChart("Mein Histogram" );
 
-        Messreihe mr1 = Messreihe.getGaussianDistribution(150);
+        TimeSeriesObject mr1 = TimeSeriesObject.getGaussianDistribution(150);
 
-        Messreihe mr2 = Messreihe.getGaussianDistribution(550);
+        TimeSeriesObject mr2 = TimeSeriesObject.getGaussianDistribution(550);
 
         //System.out.println( mr );
 
@@ -281,7 +277,7 @@ public class HistogramChart extends ApplicationFrame {
 
         MesswertTabelle tab = new MesswertTabelle();
         File f = new File( folder + "/" + "TAB_" + filename + ".dat" );
-        Vector<Messreihe> mrs = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mrs = new Vector<TimeSeriesObject>();
         mrs.add( mr );
         tab.setMessReihen( mrs );
         tab.writeToFile( f );

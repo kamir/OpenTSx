@@ -16,10 +16,11 @@ package org.apache.hadoopts.statphys.detrending;
 
 import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
 import org.apache.hadoopts.analysistools.FluctuationFunktion;
-import org.apache.hadoopts.data.MultiRowContainer;
-import org.apache.hadoopts.data.TestDataFactory;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.MultiRowContainer;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.generator.TestDataFactory;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Vector;
 
 /**
@@ -30,8 +31,8 @@ public class MultiRowDFATool {
 
     static FitbereichLogScale defaultFit = new FitbereichLogScale( 1.25, 2.0 );
 
-    public static Vector<Messreihe> convertToMessreihe(Vector<FluctuationFunktion> vFs ) {
-        Vector<Messreihe> mr = new Vector<Messreihe>();
+    public static Vector<TimeSeriesObject> convertToMessreihe(Vector<FluctuationFunktion> vFs ) {
+        Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for( FluctuationFunktion m : vFs ) {
 
             mr.add( m.getFs() );
@@ -57,7 +58,7 @@ public class MultiRowDFATool {
             MultiDFATool2 tool = new MultiDFATool2();
             System.out.println( "Container-Label: [" + l +"]" );
 
-            Vector<Messreihe> r = cont.getRowSets().get(l);
+            Vector<TimeSeriesObject> r = cont.getRowSets().get(l);
             System.out.println( "Label des 1. Elements: [" + r.elementAt(0).getLabel() + "] size=" + r.size() );
             tool.runDFA( r, 2 );
 
@@ -71,30 +72,30 @@ public class MultiRowDFATool {
 
     public static void main( String[] args ) {
 
-        stdlib.StdRandom.initRandomGen(1);        
+        RNGWrapper.init();
 
-        Vector<Messreihe> mr1 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mr1 = new Vector<TimeSeriesObject>();
         for ( int a = 0; a < 10; a++ ) {
-            Messreihe m = TestDataFactory.getDataSeriesRandomValues_RW(500);
+            TimeSeriesObject m = TestDataFactory.getDataSeriesRandomValues_RW(500);
             mr1.add(m);
         }
 
-        Vector<Messreihe> mr2 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mr2 = new Vector<TimeSeriesObject>();
         for ( int a = 0; a < 10; a++ ) {
-            Messreihe m = TestDataFactory.getDataSeriesRandomValues2(500);
+            TimeSeriesObject m = TestDataFactory.getDataSeriesRandomValues2(500);
             mr2.add(m);
         }
 
-        Vector<Messreihe> mr3 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mr3 = new Vector<TimeSeriesObject>();
         for ( int a = 0; a < 10; a++ ) {
-            Messreihe m = TestDataFactory.getDataSeriesRandomValues3(500);
+            TimeSeriesObject m = TestDataFactory.getDataSeriesRandomValues3(500);
             mr3.add(m);
         }
 
 
-        Vector<Messreihe> mr4 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mr4 = new Vector<TimeSeriesObject>();
         for ( int a = 0; a < 10; a++ ) {
-            Messreihe m = TestDataFactory.getDataSeriesRandomValues_JAVA_CORE(500);
+            TimeSeriesObject m = TestDataFactory.getDataSeriesRandomValues_JAVA_CORE(500);
             mr4.add(m);
         }
 

@@ -1,12 +1,11 @@
 package org.apache.hadoopts.statphys.ris.experimental.agh;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ReturnIntervallStatistik {
 
@@ -21,12 +20,12 @@ public class ReturnIntervallStatistik {
     /*
      * einfach nur gezählte Werte
      */
-    public Messreihe mrHaeufigkeit = new Messreihe();
+    public TimeSeriesObject mrHaeufigkeit = new TimeSeriesObject();
     
     /*
      * normierte Häufigkeiten, somit ergibt die summe aller Werte 1
      */
-    public Messreihe mrVerteilung = new Messreihe();
+    public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
 
     private int binning = 5;   // anzahl der Werte pro Intervall
     private int scale = 10;    // größter Wert
@@ -153,7 +152,7 @@ public class ReturnIntervallStatistik {
              data[index]++;  // hochzählen ...
         }
         
-        // NUN sind die Werte der Messreihe mit Rq skaliert in das 
+        // NUN sind die Werte der TimeSeriesObject mit Rq skaliert in das
         // Array abgelegt worde.
     }
     
@@ -363,7 +362,7 @@ public class ReturnIntervallStatistik {
         ris3.add(ris2);
         ris3.calcMessreihen();
         
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
         
         mrv.add( ris1.mrVerteilung );
         mrv.add( ris2.mrVerteilung );

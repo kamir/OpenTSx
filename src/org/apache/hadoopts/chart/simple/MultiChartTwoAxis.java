@@ -6,47 +6,31 @@
  **/
 package org.apache.hadoopts.chart.simple;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.Rectangle;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.text.SimpleDateFormat;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
-import org.apache.batik.dom.GenericDOMImplementation;
-import org.apache.batik.svggen.SVGGraphics2D;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.entity.StandardEntityCollection;
-import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.category.LineAndShapeRenderer;
-import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
 //import simulation.datarecorder.GeneralResultRecorder;
 //import util.LogFile;
 
@@ -153,7 +137,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
 //    /**
 //     * @param args the command line arguments
 //     */
-//    public static void save(final Messreihe mr) {
+//    public static void save(final TimeSeriesObject mr) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -169,28 +153,28 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
 //        });
 //    }
 
-    public static void open(Messreihe[] mrs, final String title, final String x, final String y, final boolean b) {
-        Vector<Messreihe> mr = new Vector<Messreihe>();
+    public static void open(TimeSeriesObject[] mrs, final String title, final String x, final String y, final boolean b) {
+        Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for( int i = 0 ; i < mrs.length; i++ ) {
             mr.add( mrs[i] );
         }
         open(  mr, title ,x ,y ,b, "no comment" );
     }
 
-    public static void open(Messreihe[] mrs ) {
+    public static void open(TimeSeriesObject[] mrs ) {
         open(  mrs, "?" ,"x","y", true );
     }
-    public static void open(Vector<Messreihe> mrs ) {
+    public static void open(Vector<TimeSeriesObject> mrs ) {
          open(  mrs, "?" ,"x","y", true , "");
     }
-    public static void open(Vector<Messreihe> mrs, boolean legende ) {
+    public static void open(Vector<TimeSeriesObject> mrs, boolean legende ) {
          open(  mrs, "?" ,"x","y", legende ,"");
     }
-    public static void open(Vector<Messreihe> mrs, boolean legende, String label) {
+    public static void open(Vector<TimeSeriesObject> mrs, boolean legende, String label) {
          open(  mrs, label ,"RR","m", legende , "" );
     }
 
-    public static void open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
+    public static void open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -201,10 +185,10 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 int nr = 0;
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr, nr );
                     //System.out.println( mr.getStatisticData("> ") );
                     nr++;
@@ -221,7 +205,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
 //        });
     }
 
-    public static Container openAndStore(final Vector<Messreihe> mrs,
+    public static Container openAndStore(final Vector<TimeSeriesObject> mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -233,10 +217,10 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 int nr = 0;
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr, nr );
                     //System.out.println( mr.getStatisticData("> ") );
                     nr++;
@@ -266,7 +250,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
 
     }
 
-    public static void openNormalized(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+    public static void openNormalized(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -277,10 +261,10 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 int nr = 0;
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     mr.normalize();
                     
                     dialog.initMessreihe( mr , nr );
@@ -319,7 +303,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
     // End of variables declaration//GEN-END:variables
 
 
-    public void initMessreihe(Messreihe mr, int nr) {
+    public void initMessreihe(TimeSeriesObject mr, int nr) {
         // if ( this.normalizeY ) mr.normalizeY();
         XYSeries series = new XYSeries(mr.getLabel());
 
@@ -518,7 +502,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
         this.normalizeY = true;
     }
 
-        public static void open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+        public static void open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -529,10 +513,10 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 int nr =0;
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr , nr);
                     //System.out.println( mr.getStatisticData("> ") );
                     nr++;
@@ -549,11 +533,11 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
         });
     }
 
-    public static void store(final Messreihe[] mrs,
+    public static void store(final TimeSeriesObject[] mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
-        Vector<Messreihe> r = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> r = new Vector<TimeSeriesObject>();
         for( int i=0; i < mrs.length; i++) {
             r.add( mrs[i] );
         }
@@ -561,7 +545,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
     }
 
 
-    public static void store(final Vector<Messreihe> mrs,
+    public static void store(final Vector<TimeSeriesObject> mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -574,10 +558,10 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
                     }
                 });
 
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 int i = 0;
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr , i);
                     // System.out.println( "... init reihe="+i );
                     i++;

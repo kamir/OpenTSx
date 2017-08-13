@@ -25,7 +25,9 @@
 
 package org.apache.hadoopts.data.io;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -35,8 +37,8 @@ import java.util.Vector;
  */
 public class WochengangFilter {
 
-    public static Messreihe getWochenGang( Vector<Messreihe> liste, int fensterBreite, int vorschub ) {
-        Messreihe mr = new Messreihe();
+    public static TimeSeriesObject getWochenGang(Vector<TimeSeriesObject> liste, int fensterBreite, int vorschub ) {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel("Wochengang");
 
         // Anzahl von X-Werten
@@ -60,9 +62,9 @@ public class WochengangFilter {
 
                 System.out.println( "\t\t"+pos );
 
-                Enumeration<Messreihe> en = liste.elements();
+                Enumeration<TimeSeriesObject> en = liste.elements();
                 while( en.hasMoreElements() ) {
-                    Messreihe r = en.nextElement();
+                    TimeSeriesObject r = en.nextElement();
                     summe = summe + (Double)r.getYValues().elementAt( pos );
                 };
 
@@ -80,8 +82,8 @@ public class WochengangFilter {
 
 
 
-    public static Vector<Messreihe> entferneWochengang( Vector<Messreihe> liste, Messreihe wg ) {
-        Vector<Messreihe> v = new Vector<Messreihe>();
+    public static Vector<TimeSeriesObject> entferneWochengang(Vector<TimeSeriesObject> liste, TimeSeriesObject wg ) {
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
 
 
@@ -89,14 +91,14 @@ public class WochengangFilter {
     };
 
     public static void main( String[] args ) {
-        
-        stdlib.StdRandom.initRandomGen(8);
 
-        Messreihe a = Messreihe.getGaussianDistribution( 100 );
-        Messreihe b = Messreihe.getGaussianDistribution( 100 );
-        Messreihe c = Messreihe.getGaussianDistribution( 100 );
+        RNGWrapper.init();
 
-        Vector<Messreihe> liste = new Vector<Messreihe>();
+        TimeSeriesObject a = TimeSeriesObject.getGaussianDistribution( 100 );
+        TimeSeriesObject b = TimeSeriesObject.getGaussianDistribution( 100 );
+        TimeSeriesObject c = TimeSeriesObject.getGaussianDistribution( 100 );
+
+        Vector<TimeSeriesObject> liste = new Vector<TimeSeriesObject>();
         liste.add(a);
         liste.add(b);
         liste.add(c);

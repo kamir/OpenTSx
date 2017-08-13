@@ -1,14 +1,11 @@
 package org.apache.hadoopts.analysistools;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import java.awt.Color;
-import java.awt.Graphics;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
-import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.util.Vector;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -26,7 +23,7 @@ public class MultiSeriesSurface {
     public static int WIDTH = 500;
     public static int HEIGHT = 500;
 
-    Vector<Messreihe> rows = null;
+    Vector<TimeSeriesObject> rows = null;
 
     // we set the range of all possible values to 0 ... 2
     double vMin = 0.0;
@@ -41,7 +38,7 @@ public class MultiSeriesSurface {
      * @param label
      * @param scale 
      */
-    public MultiSeriesSurface(Vector<Messreihe> rowsSorted, String label, int scale) {
+    public MultiSeriesSurface(Vector<TimeSeriesObject> rowsSorted, String label, int scale) {
 
         sw = scale;
         sh = scale;
@@ -57,11 +54,11 @@ public class MultiSeriesSurface {
     public MultiSeriesSurface() {
         frame = new JFrame("MultiSeries-Surface : " + "DEMO");
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         for (int i = 0; i < 20; i++) {
 
-            Messreihe m = new Messreihe();
+            TimeSeriesObject m = new TimeSeriesObject();
             m.setLabel("row: " + i);
 
             for (int j = 0; j < 100; j++) {
@@ -93,7 +90,7 @@ public class MultiSeriesSurface {
 
             for (int y = 0; y < sy; y++) {
 
-                Messreihe r = rows.elementAt(y);
+                TimeSeriesObject r = rows.elementAt(y);
 
                 double v = (double) r.yValues.elementAt(x);
 

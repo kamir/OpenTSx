@@ -39,18 +39,20 @@ The inverse transform of these realizations are the desired target surrogates.
  * curve.
  */
 
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
+import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
 
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
-
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
 
 public class FFTPhaseRandomizer {
     
@@ -62,11 +64,11 @@ public class FFTPhaseRandomizer {
     static double fitMIN = 1.2;
     static double fitMAX = 3.5;
     
-    static Messreihe alphasCALC = new Messreihe();
-    static Messreihe alphasTHEO = new Messreihe();
-    static Vector<Messreihe> check = new Vector<Messreihe>();
+    static TimeSeriesObject alphasCALC = new TimeSeriesObject();
+    static TimeSeriesObject alphasTHEO = new TimeSeriesObject();
+    static Vector<TimeSeriesObject> check = new Vector<TimeSeriesObject>();
     
-    static Vector<Messreihe> tests = null;
+    static Vector<TimeSeriesObject> tests = null;
     static StringBuffer log = null;
     
     static double[][] alphas = null; 
@@ -92,10 +94,10 @@ public class FFTPhaseRandomizer {
         boolean showTest = true;
 
         // initilize the stdlib.StdRandom-Generator
-        stdlib.StdRandom.initRandomGen(1);
-        
+        RNGWrapper.init();
+
         // prepare some data structures
-        tests = new Vector<Messreihe>();
+        tests = new Vector<TimeSeriesObject>();
         log = new StringBuffer();
                 
         log.append("fit range: [" + fitMIN + ", ..., " + fitMAX + " ]\n" );
@@ -123,9 +125,9 @@ public class FFTPhaseRandomizer {
                 else firstInLoop = false;
                 numberOfLoop = j;
                 
-                Messreihe measure = getRandomRow( (int)Math.pow(2, EXP) );
+                TimeSeriesObject measure = getRandomRow( (int)Math.pow(2, EXP) );
                 
-                Messreihe mr = getPhaseRandomizedRow( measure, showTest, true, i, MODE_shuffle_phase  );
+                TimeSeriesObject mr = getPhaseRandomizedRow( measure, showTest, true, i, MODE_shuffle_phase  );
             
             }    
             
@@ -135,9 +137,9 @@ public class FFTPhaseRandomizer {
         c++;
         
         firstInLoop = true;
-        Messreihe mr2 = getRandomRow( (int)Math.pow(2, EXP) );
+        TimeSeriesObject mr2 = getRandomRow( (int)Math.pow(2, EXP) );
         
-        Messreihe mr = getPhaseRandomizedRow( mr2, showTest, true, c, MODE_shuffle_phase );
+        TimeSeriesObject mr = getPhaseRandomizedRow( mr2, showTest, true, c, MODE_shuffle_phase );
         
         boolean showLegend = true;
         MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
@@ -181,15 +183,14 @@ public class FFTPhaseRandomizer {
      * is generated.
      * 
      * see also:   stdlib.StdRandom.gaussian()
-     * 
-     * @param length
+     *
      * 
      * @return time series
      * 
      * @throws Exception 
      */
-    public static Messreihe getRandomRow( int N ) throws Exception {
-        return Messreihe.getGaussianDistribution(N);
+    public static TimeSeriesObject getRandomRow(int N ) throws Exception {
+        return TimeSeriesObject.getGaussianDistribution(N);
     }    
         
     /**
@@ -223,19 +224,18 @@ public class FFTPhaseRandomizer {
      * computed for the original data is significantly different than the 
      * ensemble of values computed for the surrogate data, then the null 
      * hypothesis is rejected and nonlinearity is detected.
-     * 
-     * @param d4
+     *
      * @param showTest
      * @param runDFA
      * @param testZaehler
      * @return
      * @throws Exception 
      */
-    public static Messreihe getPhaseRandomizedRow( Messreihe ts, 
-            boolean showTest, 
-            boolean runDFA, 
-            int testZaehler, 
-            int mode ) throws Exception {
+    public static TimeSeriesObject getPhaseRandomizedRow(TimeSeriesObject ts,
+                                                         boolean showTest,
+                                                         boolean runDFA,
+                                                         int testZaehler,
+                                                         int mode ) throws Exception {
 
         DecimalFormat df = new DecimalFormat("0.000");
         
@@ -243,12 +243,12 @@ public class FFTPhaseRandomizer {
         double[] zr = new double[N];
 
         // nun wird das Array mit den Daten der ZR übergeben
-        MessreiheFFT mrNEW = MessreiheFFT.convertToMessreiheFFT( ts );
+        TimeSeriesObjectFFT mrNEW = TimeSeriesObjectFFT.convertToMessreiheFFT( ts );
         
         //
         // MANIPULATION OF THE REAL Time Series 
         //
-        MessreiheFFT temp = null;
+        TimeSeriesObjectFFT temp = null;
         
         switch( mode )  {
           
@@ -286,8 +286,8 @@ public class FFTPhaseRandomizer {
 //     * @return
 //     * @throws Exception 
 //     */
-//    public static Messreihe getPhaseRandomizedRow_SHUFFLE_PHASE( 
-//            Messreihe row, boolean showTest, boolean runDFA, int testZaehler ) throws Exception {
+//    public static TimeSeriesObject getPhaseRandomizedRow_SHUFFLE_PHASE(
+//            TimeSeriesObject row, boolean showTest, boolean runDFA, int testZaehler ) throws Exception {
 //
 //        DecimalFormat df = new DecimalFormat("0.000");
 //        
@@ -295,12 +295,12 @@ public class FFTPhaseRandomizer {
 //
 //        double[] zr = new double[N];
 //
-//        MessreiheFFT fftROW = MessreiheFFT.convertToMessreiheFFT(row);
+//        TimeSeriesObjectFFT fftROW = TimeSeriesObjectFFT.convertToMessreiheFFT(row);
 //        
 //        //
 //        // The manipulation is done here ...
 //        //
-//        MessreiheFFT temp = fftROW.getPhaseRandomizedModifiedFFT_SHUFFLED_INV();
+//        TimeSeriesObjectFFT temp = fftROW.getPhaseRandomizedModifiedFFT_SHUFFLED_INV();
 //
 //        debugRows(runDFA, row, N, temp, testZaehler, showTest, df);
 //        
@@ -324,8 +324,8 @@ public class FFTPhaseRandomizer {
 //     * @return
 //     * @throws Exception 
 //     */
-//    public static Messreihe getPhaseRandomizedRow_MULTIPLY_PHASE_WITH_RANDOM( 
-//            Messreihe row, boolean showTest, boolean runDFA, int testZaehler ) throws Exception {
+//    public static TimeSeriesObject getPhaseRandomizedRow_MULTIPLY_PHASE_WITH_RANDOM(
+//            TimeSeriesObject row, boolean showTest, boolean runDFA, int testZaehler ) throws Exception {
 //
 //        DecimalFormat df = new DecimalFormat("0.000");
 //        
@@ -333,9 +333,9 @@ public class FFTPhaseRandomizer {
 //
 //        double[] zr = new double[N];
 //
-//        MessreiheFFT fftROW = MessreiheFFT.convertToMessreiheFFT(row);
+//        TimeSeriesObjectFFT fftROW = TimeSeriesObjectFFT.convertToMessreiheFFT(row);
 //        
-//        MessreiheFFT temp = fftROW.getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV();
+//        TimeSeriesObjectFFT temp = fftROW.getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV();
 //
 //        debugRows(runDFA, row, N, temp, testZaehler, showTest, df);
 //        
@@ -354,12 +354,12 @@ public class FFTPhaseRandomizer {
      * @param df
      * @throws Exception 
      */
-    private static void debugRows(boolean runDFA, Messreihe row, int N, MessreiheFFT temp, int testZaehler, boolean showTest, DecimalFormat df) throws Exception {
+    private static void debugRows(boolean runDFA, TimeSeriesObject row, int N, TimeSeriesObjectFFT temp, int testZaehler, boolean showTest, DecimalFormat df) throws Exception {
         double[] zr;
         if ( runDFA ) {
             
-            Vector<Messreihe> vr = new Vector<Messreihe>();
-            Vector<Messreihe> v = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
+            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
             vr.add(row );
 
             zr = row.getData()[1];
@@ -383,7 +383,7 @@ public class FFTPhaseRandomizer {
 
             dfa.calc();
 
-            Messreihe mr4 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
             mr4.setLabel(row.getLabel() );
             v.add(mr4);
 
@@ -415,10 +415,10 @@ public class FFTPhaseRandomizer {
     }
 
     
-    static Messreihe mrAV = new Messreihe();  // Mittelwerte
-    static Messreihe mrSTD = new Messreihe();  // standardabweichung
-    static Messreihe mrMAX = new Messreihe();  // ERROR
-    static Messreihe mrMIN = new Messreihe();  // ERROR
+    static TimeSeriesObject mrAV = new TimeSeriesObject();  // Mittelwerte
+    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standardabweichung
+    static TimeSeriesObject mrMAX = new TimeSeriesObject();  // ERROR
+    static TimeSeriesObject mrMIN = new TimeSeriesObject();  // ERROR
         
     /**
      * some more debugging code ...
@@ -429,10 +429,10 @@ public class FFTPhaseRandomizer {
      */
     private static void calcErrorChart(double[][] d, int nrB, int nrLOOPS, double scaleSTDDEV ) {
         
-        mrAV = new Messreihe();  // Mittelwerte
-        mrSTD = new Messreihe();  // standardabweichung
-        mrMAX = new Messreihe();  // ERROR
-        mrMIN = new Messreihe();  // ERROR
+        mrAV = new TimeSeriesObject();  // Mittelwerte
+        mrSTD = new TimeSeriesObject();  // standardabweichung
+        mrMAX = new TimeSeriesObject();  // ERROR
+        mrMIN = new TimeSeriesObject();  // ERROR
     
         mrAV.setLabel("mean");
         mrSTD.setLabel("stddev * " + scaleSTDDEV);
@@ -448,16 +448,21 @@ public class FFTPhaseRandomizer {
                 L[iL] = d[iB][iL];
             }
             try {
-                double mean = stdlib.StdStats.mean(L);
-                double std = stdlib.StdStats.stddev(L);
+
+                StandardDeviation stdev = new StandardDeviation();
+
+                double mean = StatUtils.mean(L);
+                double std = stdev.evaluate(L);
 
                 mrAV.addValuePair(betas[iB] , mean );
                 mrSTD.addValuePair(betas[iB] , std * scaleSTDDEV);
 
                 mrMAX.addValuePair( betas[iB] , mean+std );
                 mrMIN.addValuePair( betas[iB] , mean-std );
+
             }
-            catch(Exception ex) { 
+            catch(Exception ex) {
+
                 System.err.println( ex.getMessage() );
                 System.err.println( ex.getCause() );
                 

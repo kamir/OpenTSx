@@ -11,23 +11,22 @@ package org.apache.hadoopts.statphys.ris.experimental;
  * - Anzeige der Daten für einzelne Zeit-Reihen
  */
 
+import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.OriginProject;
-import org.apache.hadoopts.hadoopts.core.TSData;
+import org.apache.hadoopts.data.series.MRT;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
+import org.apache.hadoopts.statistics.HaeufigkeitsZaehler;
+import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-//import panels.MessreiheWindow3Frame;
 
-import org.apache.hadoopts.statistics.HaeufigkeitsZaehler;
-import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
-import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
+//import panels.MessreiheWindow3Frame;
 
 
 /**
@@ -68,12 +67,12 @@ public class ReturnIntervallStatistik2 {
     /*
      * einfach nur gezählte Werte
      */
-    public Messreihe mrHaeufigkeit = new Messreihe();
+    public TimeSeriesObject mrHaeufigkeit = new TimeSeriesObject();
     /*
      * normierte Häufigkeiten, somit ergibt die summe aller Werte 1
      */
-    public Messreihe mrVerteilung = new Messreihe();
-    public Messreihe mrVerteilungSkaliert = new Messreihe();
+    public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
+    public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
     public static int binning = 400;   // anzahl der Werte pro Intervall
     public static int scale = 8;    // größter Wert
@@ -164,7 +163,7 @@ public class ReturnIntervallStatistik2 {
      * 
      */
     Vector<Double> allRqs = new Vector<Double>();
-    Messreihe test = new Messreihe();
+    TimeSeriesObject test = new TimeSeriesObject();
     
     public void add( ReturnIntervallStatistik2 ris ) throws Exception {
 //        if (!_checkRIS( ris ) ) { 
@@ -425,7 +424,7 @@ public class ReturnIntervallStatistik2 {
     
     private void calcContainerMR() throws Exception {
         
-        mrVerteilungSkaliert = new Messreihe( name + " (res=" + ((double)scale/(double)binning) );
+        mrVerteilungSkaliert = new TimeSeriesObject( name + " (res=" + ((double)scale/(double)binning) );
         
         
         for (int i = 0; i < dataSKALIERT.length; i++) {
@@ -507,8 +506,8 @@ public class ReturnIntervallStatistik2 {
     
     public void showData() throws Exception {
         
-        v1 = new Vector<Messreihe>();
-        v2 = new Vector<Messreihe>();
+        v1 = new Vector<TimeSeriesObject>();
+        v2 = new Vector<TimeSeriesObject>();
 
         calcMessreihen();
         
@@ -522,8 +521,8 @@ public class ReturnIntervallStatistik2 {
                 this.name + " (RawData)");
     }
     
-    Vector<Messreihe> v1 = new Vector<Messreihe>();
-    Vector<Messreihe> v2 = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> v1 = new Vector<TimeSeriesObject>();
+    Vector<TimeSeriesObject> v2 = new Vector<TimeSeriesObject>();
     
     private void showVerteilungen() {
         // Verteilungen
@@ -534,7 +533,7 @@ public class ReturnIntervallStatistik2 {
 
     private void showRawData() {
         // Rohdaten (Intervalle)
-        Messreihe mr = new Messreihe( this.name + " (rawdata) " + dataRawFILTERED.size() );
+        TimeSeriesObject mr = new TimeSeriesObject( this.name + " (rawdata) " + dataRawFILTERED.size() );
         for( double y: this.dataRawFILTERED ) {
             mr.addValue(y);
         }
@@ -628,11 +627,11 @@ public class ReturnIntervallStatistik2 {
     
     static FileWriter fw;
     
-    static Vector<Messreihe> mrv2 = null;
-    static Vector<Messreihe> mrv = null;
+    static Vector<TimeSeriesObject> mrv2 = null;
+    static Vector<TimeSeriesObject> mrv = null;
 
-    static Vector<Messreihe> mrv2B = null;
-    static Vector<Messreihe> mrvB = null;
+    static Vector<TimeSeriesObject> mrv2B = null;
+    static Vector<TimeSeriesObject> mrvB = null;
 
     static int maxB = 5; // anzahl der Input-Files
     static int maxROWS = -1; // default -1
@@ -673,34 +672,34 @@ public class ReturnIntervallStatistik2 {
     
     public static void main( String[] args ) throws Exception {
         
-        stdlib.StdRandom.initRandomGen(1);
-        
+        RNGWrapper.init();
+
         binning = 200;
         scale = 4;   
         
 //        initRqMIN();
         initRqCollectors();
         
-        mrv = new Vector<Messreihe>();
-        mrv2 = new Vector<Messreihe>();
+        mrv = new Vector<TimeSeriesObject>();
+        mrv2 = new Vector<TimeSeriesObject>();
         
-        mrvB = new Vector<Messreihe>();
-        mrv2B = new Vector<Messreihe>();
+        mrvB = new Vector<TimeSeriesObject>();
+        mrv2B = new Vector<TimeSeriesObject>();
         debug = true;
         
         double min;
         // V1
-        Messreihe mr1 = Messreihe.getGaussianDistribution( (int)Math.pow(2, 20), 5.0, 0.5);
+        TimeSeriesObject mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, 20), 5.0, 0.5);
         addRow( mr1 );
 
-        mr1 = Messreihe.getGaussianDistribution( (int)Math.pow(2, 22), 5.0, 4.5);
+        mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, 22), 5.0, 4.5);
         min = mr1.getMinY();
         mr1.add_value_to_Y( -1.0 * min);
         addRow( mr1 ); 
         
         
         // V1
-        Messreihe mrx = Messreihe.getUniformDistribution( (int)Math.pow(2, 20), 0.0, 5.0);
+        TimeSeriesObject mrx = TimeSeriesObject.getUniformDistribution( (int)Math.pow(2, 20), 0.0, 5.0);
         addRow( mrx );
         
 //        int ex = 20;
@@ -708,13 +707,13 @@ public class ReturnIntervallStatistik2 {
 //            // V2
 //            double beta = 0.1 + ( (double)i / 5.0 );
 //            if ( i > 6 ) ex = 22;
-//            MessreiheFFT mr2 = (MessreiheFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, ex), beta, false, false);
+//            TimeSeriesObjectFFT mr2 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, ex), beta, false, false);
 //            min = mr2.getMinY();
 //            mr2.add_value_to_Y( -1.0 * min);
 //            addRow( mr2 );
 //        }  
         // V3
-        MessreiheFFT mr3 = (MessreiheFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.4, false, false);
+        TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.4, false, false);
         min = mr3.getMinY();
         System.out.println( min );
         mr3.add_value_to_Y( -1.0 * min);
@@ -723,7 +722,7 @@ public class ReturnIntervallStatistik2 {
         addRow( mr3 );
         
         // V3
-        mr3 = (MessreiheFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.2, false, false);
+        mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, 20), 1.2, false, false);
         min = mr3.getMinY();
         System.out.println( min );
         mr3.add_value_to_Y( -1.0 * min);
@@ -745,7 +744,7 @@ public class ReturnIntervallStatistik2 {
      * @param m
      * @throws Exception 
      */     
-    public static void addRowB( Messreihe m ) throws Exception {
+    public static void addRowB( TimeSeriesObject m ) throws Exception {
         
         Vector<Double> data1 = m.yValues;
         
@@ -778,7 +777,7 @@ public class ReturnIntervallStatistik2 {
         
     }
         
-    public static void addRow( Messreihe m ) throws Exception {
+    public static void addRow( TimeSeriesObject m ) throws Exception {
         
         addRowB(m);
         

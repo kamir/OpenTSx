@@ -9,30 +9,22 @@ package org.apache.hadoopts.chart.simple;
 
 import org.apache.hadoopts.app.bucketanalyser.TSOperationControlerPanel;
 import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Font;
-import java.awt.Rectangle;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
-import org.apache.batik.dom.GenericDOMImplementation;
-import org.apache.batik.svggen.SVGGraphics2D;
+
 import org.apache.hadoopts.app.bucketanalyser.ICorrelator;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -44,13 +36,10 @@ import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.entity.StandardEntityCollection;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RefineryUtilities;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
 //import simulation.datarecorder.GeneralResultRecorder;
 //import util.LogFile;
 
@@ -103,7 +92,7 @@ public class MultiChart extends javax.swing.JDialog {
     static TSOperationControlerPanel fcp = null;
 
 
-    public static void open2(Vector<Messreihe> rows, boolean b) {
+    public static void open2(Vector<TimeSeriesObject> rows, boolean b) {
         open(rows, b);
     }
 
@@ -231,7 +220,7 @@ public class MultiChart extends javax.swing.JDialog {
 //    /**
 //     * @param args the command line arguments
 //     */
-//    public static void save(final Messreihe mr) {
+//    public static void save(final TimeSeriesObject mr) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -246,41 +235,41 @@ public class MultiChart extends javax.swing.JDialog {
 //            }
 //        });
 //    }
-    public static void open(Messreihe[] mrs, final String title, final String x, final String y, final boolean b) {
-        Vector<Messreihe> mr = new Vector<Messreihe>();
+    public static void open(TimeSeriesObject[] mrs, final String title, final String x, final String y, final boolean b) {
+        Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for (int i = 0; i < mrs.length; i++) {
             mr.add(mrs[i]);
         }
         open(mr, title, x, y, b, "no comment", null);
     }
 
-    public static void open(Messreihe[] mrs) {
+    public static void open(TimeSeriesObject[] mrs) {
         open(mrs, "?", "x", "y", true);
     }
 
-    public static void open(Vector<Messreihe> mrs) {
+    public static void open(Vector<TimeSeriesObject> mrs) {
         open(mrs, "?", "x", "y", true, "", null);
     }
 
-    public static void open(Vector<Messreihe> mrs, boolean legende) {
+    public static void open(Vector<TimeSeriesObject> mrs, boolean legende) {
         open(mrs, "?", "x", "y", legende, "", null);
     }
 
     
     static boolean useL = false;
     
-    public static void openWithCorrelator(Vector<Messreihe> mrs, boolean legende, String label, ICorrelator c) {
+    public static void openWithCorrelator(Vector<TimeSeriesObject> mrs, boolean legende, String label, ICorrelator c) {
         useL = legende;
         open(mrs, label, "t", "m", useL, "CAPTION", c);
 
     }
-    public static void open(Vector<Messreihe> mrs, boolean legende, String label) {
+    public static void open(Vector<TimeSeriesObject> mrs, boolean legende, String label) {
         useL = legende;
         open(mrs, label, "t", "m", useL, "CAPTION", null);
 
     }
 
-    public static MultiChart openWithCorrelator(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
+    public static MultiChart openWithCorrelator(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
         final MultiChart dialog = new MultiChart(new javax.swing.JFrame(string), false);
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {
 
@@ -288,9 +277,9 @@ public class MultiChart extends javax.swing.JDialog {
                 dialog.setVisible(false);
             }
         });
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             //System.out.println( mr.getStatisticData("> ") );
         }
@@ -325,8 +314,8 @@ public class MultiChart extends javax.swing.JDialog {
     }
 
     
-    Vector<Messreihe> rows = null;
-    public static MultiChart open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
+    Vector<TimeSeriesObject> rows = null;
+    public static MultiChart open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment, ICorrelator c) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -337,9 +326,9 @@ public class MultiChart extends javax.swing.JDialog {
                 dialog.setVisible(false);
             }
         });
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             //System.out.println( mr.getStatisticData("> ") );
         }
@@ -373,7 +362,7 @@ public class MultiChart extends javax.swing.JDialog {
         
     }
     
-    public static JFreeChart createChart(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
+    public static JFreeChart createChart(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -384,9 +373,9 @@ public class MultiChart extends javax.swing.JDialog {
                 dialog.setVisible(false);
             }
         });
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             //System.out.println( mr.getStatisticData("> ") );
         }
@@ -403,7 +392,7 @@ public class MultiChart extends javax.swing.JDialog {
         
     }
 
-    public static MultiChart open2(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
+    public static MultiChart open2(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b, final String comment) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -414,9 +403,9 @@ public class MultiChart extends javax.swing.JDialog {
                 dialog.setVisible(false);
             }
         });
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             //System.out.println( mr.getStatisticData("> ") );
         }
@@ -434,7 +423,7 @@ public class MultiChart extends javax.swing.JDialog {
         return dialog;
     }
 
-    public static Container openAndStoreImage(final Vector<Messreihe> mrs,
+    public static Container openAndStoreImage(final Vector<TimeSeriesObject> mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -446,9 +435,9 @@ public class MultiChart extends javax.swing.JDialog {
                 dialog.setVisible(false);
             }
         });
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             //System.out.println( mr.getStatisticData("> ") );
         }
@@ -473,7 +462,7 @@ public class MultiChart extends javax.swing.JDialog {
 
     }
 
-    public static Container openAndStore(final Vector<Messreihe> mrs,
+    public static Container openAndStore(final Vector<TimeSeriesObject> mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -485,9 +474,9 @@ public class MultiChart extends javax.swing.JDialog {
                 dialog.setVisible(false);
             }
         });
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             //System.out.println( mr.getStatisticData("> ") );
         }
@@ -517,7 +506,7 @@ public class MultiChart extends javax.swing.JDialog {
 
     }
 
-    public static void openNormalized(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+    public static void openNormalized(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -528,9 +517,9 @@ public class MultiChart extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     mr.normalize();
                     dialog.initMessreihe(mr);
                     //System.out.println( mr.getStatisticData("> ") );
@@ -565,7 +554,7 @@ public class MultiChart extends javax.swing.JDialog {
     }
     // End of variables declaration//GEN-END:variables
 
-    public void initMessreihe(Messreihe mr) {
+    public void initMessreihe(TimeSeriesObject mr) {
         // if ( this.normalizeY ) mr.normalizeY();
         if (mr == null) {
             return;
@@ -776,7 +765,7 @@ public class MultiChart extends javax.swing.JDialog {
         this.normalizeY = true;
     }
 
-    public static void open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+    public static void open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -787,9 +776,9 @@ public class MultiChart extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe(mr);
                     //System.out.println( mr.getStatisticData("> ") );
                 }
@@ -807,18 +796,18 @@ public class MultiChart extends javax.swing.JDialog {
         });
     }
 
-    public static void store(final Messreihe[] mrs,
+    public static void store(final TimeSeriesObject[] mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
-        Vector<Messreihe> r = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> r = new Vector<TimeSeriesObject>();
         for (int i = 0; i < mrs.length; i++) {
             r.add(mrs[i]);
         }
         store(r, string, x, y, b, folder, filename, comment);
     }
 
-    public static void store(final Vector<Messreihe> mrs,
+    public static void store(final Vector<TimeSeriesObject> mrs,
             final String title, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -831,10 +820,10 @@ public class MultiChart extends javax.swing.JDialog {
             }
         });
 
-        Enumeration<Messreihe> en = mrs.elements();
+        Enumeration<TimeSeriesObject> en = mrs.elements();
         int i = 0;
         while (en.hasMoreElements()) {
-            Messreihe mr = en.nextElement();
+            TimeSeriesObject mr = en.nextElement();
             dialog.initMessreihe(mr);
             // System.out.println( "... init reihe="+i );
             i++;

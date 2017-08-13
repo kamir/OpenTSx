@@ -1,6 +1,7 @@
 package org.apache.hadoopts.statphys.detrending.methods;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 import java.util.Vector;
 
@@ -61,9 +62,9 @@ abstract public class DFACore implements IDetrendingMethod {
         initF();
     }
 
-    Vector<Messreihe> fitMR = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> fitMR = new Vector<TimeSeriesObject>();
 
-    public Vector<Messreihe> getMRFit() {
+    public Vector<TimeSeriesObject> getMRFit() {
         return fitMR;
     };
 
@@ -81,8 +82,8 @@ abstract public class DFACore implements IDetrendingMethod {
         System.out.println("----------");
     }
 
-    public Messreihe getResultsMRLogLog() {
-        Messreihe mr = new Messreihe();
+    public TimeSeriesObject getResultsMRLogLog() {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel_X( "s" );
         mr.setLabel_Y( "F(s)" );
         mr.setLabel( "F(s)" ); // para.toString() );
@@ -94,8 +95,8 @@ abstract public class DFACore implements IDetrendingMethod {
         return mr;
     };
 
-    public Messreihe getResultsMR() {
-        Messreihe mr = new Messreihe();
+    public TimeSeriesObject getResultsMR() {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel_X( "s" );
         mr.setLabel_Y( "F(s)" );
         mr.setLabel( "F(s)" ); // para.toString() );
@@ -105,8 +106,8 @@ abstract public class DFACore implements IDetrendingMethod {
         return mr;
     };
 
-    public Messreihe getZeitreiheMR() {
-        Messreihe mr = new Messreihe();
+    public TimeSeriesObject getZeitreiheMR() {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel_X( "t" );
         mr.setLabel_Y( "y(t)" );
         mr.setLabel( "Zeitreihe" );
@@ -117,8 +118,8 @@ abstract public class DFACore implements IDetrendingMethod {
     };
 
 
-    public Messreihe getProfilMR() {
-        Messreihe mr = new Messreihe();
+    public TimeSeriesObject getProfilMR() {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel_X( "t" );
         mr.setLabel_Y( "prof( y(t) )" );
         mr.setLabel( "Profil" );
@@ -227,7 +228,7 @@ abstract public class DFACore implements IDetrendingMethod {
         pr = new double[zr.length];
 
         // mean value of data
-        double mw = stdlib.StdStats.mean(zr);
+        double mw = StatUtils.mean(zr);
         
         // calc profile from data
         

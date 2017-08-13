@@ -1,6 +1,6 @@
 package org.apache.hadoopts.algorithms.univariate;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import java.io.BufferedReader;
@@ -77,13 +77,13 @@ public class TSCutTool4Buckets {
         
         TSBucket tsb = bl._processBucket( f.getAbsolutePath(), tool );
         
-//        Vector<Messreihe> vmr = tsb.getBucketData();
+//        Vector<TimeSeriesObject> vmr = tsb.getBucketData();
 //        
 //        MultiChart.open(vmr);
 //        
 //        System.out.println( vmr.size() + " rows." );
 //        
-        Vector<Messreihe> fs = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> fs = new Vector<TimeSeriesObject>();
         
         // nun wird die Berechnungen durchgeführt
         try {

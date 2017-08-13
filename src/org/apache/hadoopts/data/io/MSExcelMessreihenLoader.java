@@ -1,7 +1,8 @@
 package org.apache.hadoopts.data.io;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.QualifiedMessreihe;
+import org.apache.hadoopts.data.series.QualifiedTimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,6 +12,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -21,13 +23,13 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
  */
 public class MSExcelMessreihenLoader {
 
-    public static Messreihe loadMessreihe(
+    public static TimeSeriesObject loadMessreihe(
              File worksheetFile, String tableName,
              int xCol, int yCol,
              int firstRow, int lastRow ) 
              throws FileNotFoundException, IOException {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
 
         InputStream input = new FileInputStream(worksheetFile.getAbsolutePath());
         HSSFWorkbook wb = new HSSFWorkbook(input);
@@ -58,7 +60,7 @@ public class MSExcelMessreihenLoader {
         return mr;
     };
 
-    public static QualifiedMessreihe loadQualifiedMessreihe(
+    public static QualifiedTimeSeriesObject loadQualifiedMessreihe(
              File worksheetFile, String tableName,
              int xCol, int yCol,
              int firstRow, int lastRow )
@@ -66,7 +68,7 @@ public class MSExcelMessreihenLoader {
 
         Hashtable<Integer,Integer> types = new Hashtable<Integer,Integer>();
 
-        QualifiedMessreihe mr = new QualifiedMessreihe();
+        QualifiedTimeSeriesObject mr = new QualifiedTimeSeriesObject();
 
         InputStream input = new FileInputStream(worksheetFile.getAbsolutePath());
         HSSFWorkbook wb = new HSSFWorkbook(input);
@@ -135,7 +137,7 @@ public class MSExcelMessreihenLoader {
         File file = new File( "./data/in/sorted.xls" );
         String tableName = "alle";
         try {
-            Messreihe mr = MSExcelMessreihenLoader.loadMessreihe(file, tableName, 1, 2, 1, 100);
+            TimeSeriesObject mr = MSExcelMessreihenLoader.loadMessreihe(file, tableName, 1, 2, 1, 100);
             System.out.println(mr);
         }
         catch (FileNotFoundException ex) {

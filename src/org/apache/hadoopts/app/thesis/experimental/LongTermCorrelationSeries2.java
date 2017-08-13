@@ -1,27 +1,27 @@
 package org.apache.hadoopts.app.thesis.experimental;
 
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
-import java.util.Vector;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.chart.simple.MultiChart;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
+import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
 import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import stdlib.StdDraw;
-import stdlib.StdStats;
+
+import java.util.Vector;
 
 public class LongTermCorrelationSeries2 {
 
     public static void main(String args[]) throws Exception {
 
-        stdlib.StdRandom.initRandomGen(1);
-        
-        Messreihe mr1 = getRandomRow( 64000, 0.9, true );
-        Messreihe mr2 = getRandomRow( 64000, 1.2, false );
+        RNGWrapper.init();
+
+        TimeSeriesObject mr1 = getRandomRow( 64000, 0.9, true );
+        TimeSeriesObject mr2 = getRandomRow( 64000, 1.2, false );
         
     }
     
-    public static Messreihe getRandomRow( int length, double i, boolean showTest ) throws Exception {
+    public static TimeSeriesObject getRandomRow(int length, double i, boolean showTest ) throws Exception {
 
         // Durch 4 TEILBAR !!!
         int N = length;
@@ -34,10 +34,10 @@ public class LongTermCorrelationSeries2 {
          */
         double[] zr = new double[N];
 
-        MessreiheFFT d4 = (MessreiheFFT) MessreiheFFT.getGaussianDistribution(N);
+        TimeSeriesObjectFFT d4 = (TimeSeriesObjectFFT) TimeSeriesObjectFFT.getGaussianDistribution(N);
         
-        Vector<Messreihe> vr = new Vector<Messreihe>();
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
         vr.add( d4 );
         
         zr = d4.getData()[1];
@@ -54,14 +54,14 @@ public class LongTermCorrelationSeries2 {
         dfa.showS();
 
         // nun wird das Array mit den Daten der ZR übergeben
-        MessreiheFFT mr4_NEW = (MessreiheFFT)d4;
-        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( i );
+        TimeSeriesObjectFFT mr4_NEW = (TimeSeriesObjectFFT)d4;
+        TimeSeriesObjectFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( i );
         
         dfa.setZR(temp.getData()[1]);
         
         dfa.calc();
         
-        Messreihe mr4 = dfa.getResultsMRLogLog();
+        TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
         mr4.setLabel( d4.getLabel() + " (" + i + ")" );
         v.add(mr4);
 

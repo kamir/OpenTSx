@@ -9,20 +9,17 @@ package org.apache.hadoopts.algorithms.univariate;
  */
 
 
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.MultiDFATool4;
-import org.apache.hadoopts.statphys.detrending.SingleDFATool;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool;
 
 /**
  *
@@ -35,7 +32,7 @@ public class SingleTsIntervallCutTool extends SingleRowTSO {
     Hashtable<Integer, Integer> bis;
     
     @Override
-    public Messreihe processReihe( FileWriter fw, Messreihe reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
 
         int l = reihe.getLabel().length()-1;
         Integer id = Integer.parseInt( reihe.getLabel().substring(0, l)  );
@@ -45,18 +42,20 @@ public class SingleTsIntervallCutTool extends SingleRowTSO {
             int von1 = von.get(id);
             int bis1 = bis.get(id);
 
-            Messreihe binned = reihe.setBinningX_sum(24);
-            double sumAll = stdlib.StdStats.sum( binned.getYData() );
-            
-            
+            TimeSeriesObject binned = reihe.setBinningX_sum(24);
+            double sumAll = StatUtils.sum( binned.getYData() );
+
             int n = 60;
-            Messreihe a = binned.cutOut( von1, von1 + n );
-            Messreihe b = binned.cutOut( von1 + n, von1 + n + n );
-            
-            double sum1 = stdlib.StdStats.sum( a.getYData() );
-            double sum2 = stdlib.StdStats.sum( b.getYData() );
-            double std1 = stdlib.StdStats.stddev( a.getYData() );
-            double std2 = stdlib.StdStats.stddev( b.getYData() );
+            TimeSeriesObject a = binned.cutOut( von1, von1 + n );
+            TimeSeriesObject b = binned.cutOut( von1 + n, von1 + n + n );
+
+
+            StandardDeviation stdev = new StandardDeviation();
+
+            double sum1 = StatUtils.sum( a.getYData() );
+            double sum2 = StatUtils.sum( b.getYData() );
+            double std1 = stdev.evaluate( a.getYData() );
+            double std2 = stdev.evaluate( b.getYData() );
             
             
             String line = sumAll + "\t";

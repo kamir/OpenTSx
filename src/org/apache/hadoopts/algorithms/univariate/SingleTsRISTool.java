@@ -6,18 +6,15 @@ package org.apache.hadoopts.algorithms.univariate;
  *  schreibt in eine Datei ...
  * 
  */
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math.stat.regression.SimpleRegression;
-import org.apache.hadoopts.statphys.detrending.SingleDFATool;
+
 import org.apache.hadoopts.statphys.ris.experimental.ReturnIntervallStatistik2;
-import org.apache.hadoopts.statphys.ris.experimental.agh.RISAnalyse3;
 
 /**
  *
@@ -36,13 +33,13 @@ public class SingleTsRISTool extends SingleRowTSO {
          risCollector = new ReturnIntervallStatistik2("RISdata");
          risCollector.isContainerInstanz = true;
          
-         av11 = new Vector<Messreihe>(); 
-         av21 = new Vector<Messreihe>(); 
-         av31 = new Vector<Messreihe>(); 
+         av11 = new Vector<TimeSeriesObject>();
+         av21 = new Vector<TimeSeriesObject>();
+         av31 = new Vector<TimeSeriesObject>();
 
-         av12 = new Vector<Messreihe>(); 
-         av22 = new Vector<Messreihe>(); 
-         av32 = new Vector<Messreihe>(); 
+         av12 = new Vector<TimeSeriesObject>();
+         av22 = new Vector<TimeSeriesObject>();
+         av32 = new Vector<TimeSeriesObject>();
     }
     
     public static void finish() { 
@@ -54,13 +51,13 @@ public class SingleTsRISTool extends SingleRowTSO {
         }
     }
     
-    static public Vector<Messreihe> av11 = new Vector<Messreihe>(); 
-    static public Vector<Messreihe> av21 = new Vector<Messreihe>(); 
-    static public Vector<Messreihe> av31 = new Vector<Messreihe>(); 
+    static public Vector<TimeSeriesObject> av11 = new Vector<TimeSeriesObject>();
+    static public Vector<TimeSeriesObject> av21 = new Vector<TimeSeriesObject>();
+    static public Vector<TimeSeriesObject> av31 = new Vector<TimeSeriesObject>();
 
-    static public Vector<Messreihe> av12 = new Vector<Messreihe>(); 
-    static public Vector<Messreihe> av22 = new Vector<Messreihe>(); 
-    static public Vector<Messreihe> av32 = new Vector<Messreihe>(); 
+    static public Vector<TimeSeriesObject> av12 = new Vector<TimeSeriesObject>();
+    static public Vector<TimeSeriesObject> av22 = new Vector<TimeSeriesObject>();
+    static public Vector<TimeSeriesObject> av32 = new Vector<TimeSeriesObject>();
 
     public SingleTsRISTool(String[] args) {
     }
@@ -80,7 +77,7 @@ public class SingleTsRISTool extends SingleRowTSO {
      * OUTPUT is not collected, it is written directly to the FW
      */
     @Override
-    public Messreihe processReihe(FileWriter fw, Messreihe r, FileWriter explodeWriter) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject r, FileWriter explodeWriter) throws Exception {
 
         String line = "";
 
@@ -129,7 +126,7 @@ public class SingleTsRISTool extends SingleRowTSO {
          * bestimmen !!!
          *
          */
-//        Messreihe toFit = rr.mrHaeufigkeit.shrinkX(linFit_MIN, linFit_MAX);
+//        TimeSeriesObject toFit = rr.mrHaeufigkeit.shrinkX(linFit_MIN, linFit_MAX);
 //
 //        SimpleRegression reg;
 //        try {
@@ -169,7 +166,7 @@ public class SingleTsRISTool extends SingleRowTSO {
      * @return
      * @throws Exception
      */
-    public String processReihe(Messreihe reihe) throws Exception {
+    public String processReihe(TimeSeriesObject reihe) throws Exception {
         return "... (" + this.getClass().getName() + ") ";
     }
 

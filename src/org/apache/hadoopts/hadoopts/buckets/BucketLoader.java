@@ -1,7 +1,6 @@
 package org.apache.hadoopts.hadoopts.buckets;
 
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import org.apache.hadoopts.hadoopts.core.TSOperation;
@@ -98,7 +97,7 @@ public class BucketLoader {
     }  
 
     // get the bucketdata ...
-    public Vector<Messreihe> getBucketData() {
+    public Vector<TimeSeriesObject> getBucketData() {
       return b.getBucketData();
     }
 

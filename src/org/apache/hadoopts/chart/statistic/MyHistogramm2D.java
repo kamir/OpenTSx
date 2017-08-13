@@ -2,16 +2,11 @@ package org.apache.hadoopts.chart.statistic;
 
 import org.apache.hadoopts.data.io.IsNotZeroLineSelector;
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
+
 import java.io.*;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import org.apache.hadoopts.chart.panels.ChartPanel3;
 

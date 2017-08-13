@@ -1,9 +1,9 @@
 
 package org.apache.hadoopts.statphys.eventsynchronisation;
 
-import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.export.OriginProject;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Collections;
 import java.util.Vector;
 
@@ -273,12 +273,12 @@ public class ESCalc2 {
     /**
      *  Erzeuge Messreihen und zeige diese dann an. 
      */
-    public static Messreihe[] checkRowsInverse(int[] r1, int[] r2, String title) {
+    public static TimeSeriesObject[] checkRowsInverse(int[] r1, int[] r2, String title) {
         
-        Messreihe a1 = new Messreihe();
-        Messreihe a2 = new Messreihe();
+        TimeSeriesObject a1 = new TimeSeriesObject();
+        TimeSeriesObject a2 = new TimeSeriesObject();
 
-        Messreihe[] r = new Messreihe[2];
+        TimeSeriesObject[] r = new TimeSeriesObject[2];
         r[0] = a1;
         r[1] = a2;
 
@@ -309,12 +309,12 @@ public class ESCalc2 {
         /**
      *  Erzeuge Messreihen und zeige diese dann an. 
      */
-    public static Messreihe[] checkRows(int[] r1, int[] r2, String title) {
+    public static TimeSeriesObject[] checkRows(int[] r1, int[] r2, String title) {
         
-        Messreihe a1 = new Messreihe();
-        Messreihe a2 = new Messreihe();
+        TimeSeriesObject a1 = new TimeSeriesObject();
+        TimeSeriesObject a2 = new TimeSeriesObject();
 
-        Messreihe[] r = new Messreihe[2];
+        TimeSeriesObject[] r = new TimeSeriesObject[2];
         r[0] = a1;
         r[1] = a2;
 
@@ -401,7 +401,7 @@ public class ESCalc2 {
         return cij;
     }
 
-    private static double getDensity(Messreihe a1, double ts ) {
+    private static double getDensity(TimeSeriesObject a1, double ts ) {
         int i = 0;
         for( Object y : a1.getYValues() ) {
            if ( (Double)y > ts ) i++;

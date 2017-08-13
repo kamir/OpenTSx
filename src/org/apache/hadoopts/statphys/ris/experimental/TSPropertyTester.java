@@ -11,32 +11,30 @@ package org.apache.hadoopts.statphys.ris.experimental;
  * - Anzeige der Daten für einzelne Zeit-Reihen
  */
 
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
-import org.apache.hadoopts.hadoopts.core.TSData;
-import java.awt.Color;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
+import org.apache.hadoopts.statistics.HaeufigkeitsZaehler;
+import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
+import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
+
+import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-//import panels.MessreiheWindow3Frame;
 
-import org.apache.hadoopts.statistics.HaeufigkeitsZaehler;
-import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.MultiDFATool;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
 import static org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator.nrOfSValues;
+
+//import panels.MessreiheWindow3Frame;
 
 
 /**
@@ -61,31 +59,31 @@ public class TSPropertyTester {
     
     public static int zSAMPLES = 1;
 
-    static Vector<Messreihe> reihen = new Vector<Messreihe>();
-    static Vector<Messreihe> reihen2 = new Vector<Messreihe>();
+    static Vector<TimeSeriesObject> reihen = new Vector<TimeSeriesObject>();
+    static Vector<TimeSeriesObject> reihen2 = new Vector<TimeSeriesObject>();
     
-    public static void addSample(Messreihe mr) {    
+    public static void addSample(TimeSeriesObject mr) {
         reihen.add(mr);
     }
 
-    public static void addSampleAddNoCorrelations(Messreihe mr) {    
+    public static void addSampleAddNoCorrelations(TimeSeriesObject mr) {
         reihen2.add(mr);
     }
 
-    private static void runDFA(Vector<Messreihe> mrs, int i) throws Exception {
+    private static void runDFA(Vector<TimeSeriesObject> mrs, int i) throws Exception {
     
-         Vector<Messreihe> vr = new Vector<Messreihe>();
-         Vector<Messreihe> v = new Vector<Messreihe>();
+         Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
+         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
         
         int order = 0;
-        for( Messreihe d4 : mrs ) { 
+        for( TimeSeriesObject d4 : mrs ) {
         
             DecimalFormat df = new DecimalFormat("0.000");
             int N = d4.yValues.size();
             double[] zr = new double[N];
             
 
-            Messreihe rawN = d4.copy();
+            TimeSeriesObject rawN = d4.copy();
             rawN.normalize();
             vr.add( rawN );
 
@@ -110,7 +108,7 @@ public class TSPropertyTester {
 
             dfa.calc();
 
-            Messreihe mr4 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
             mr4.setLabel( d4.getLabel() );
             v.add(mr4);
 
@@ -124,8 +122,8 @@ public class TSPropertyTester {
         
         }
         
-        Messreihe ref1 = getRef( 0.5 , 2.5);
-        Messreihe ref2 = getRef( 0.9 , -5 );
+        TimeSeriesObject ref1 = getRef( 0.5 , 2.5);
+        TimeSeriesObject ref2 = getRef( 0.9 , -5 );
         
         v.add( ref1 );
         v.add( ref2 );
@@ -148,8 +146,8 @@ public class TSPropertyTester {
         
     }
 
-    private static Messreihe getRef(double d, double n) {
-        Messreihe mr = new Messreihe();
+    private static TimeSeriesObject getRef(double d, double n) {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel("m=" + d +")");
         int i = 0;
         while( i < 10 ) {
@@ -160,8 +158,8 @@ public class TSPropertyTester {
         
     }
 
-    private static Messreihe getRefExp(double d, double n) {
-        Messreihe mr = new Messreihe();
+    private static TimeSeriesObject getRefExp(double d, double n) {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel("exp(tau * x) (tau=" + d +")");
         int i = 0;
         while( i < 10 ) {
@@ -171,8 +169,8 @@ public class TSPropertyTester {
         return mr;    
     }
 
-    private static Messreihe getRefStretchedExp(double a, double b,double gamme) {
-        Messreihe mr = new Messreihe();
+    private static TimeSeriesObject getRefStretchedExp(double a, double b, double gamme) {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel("stretched_exp(x) (alpha=" + a +",beta="+b+",gamma="+gamme+")");
         int i = 0;
         while( i < 10 ) {
@@ -205,12 +203,12 @@ public class TSPropertyTester {
     /*
      * einfach nur gezählte Werte
      */
-    public Messreihe mrHaeufigkeit = new Messreihe();
+    public TimeSeriesObject mrHaeufigkeit = new TimeSeriesObject();
     /*
      * normierte Häufigkeiten, somit ergibt die summe aller Werte 1
      */
-    public Messreihe mrVerteilung = new Messreihe();
-    public Messreihe mrVerteilungSkaliert = new Messreihe();
+    public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
+    public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
     public int binning = 400;   // anzahl der Werte pro Intervall
     public int scale = 8;    // größter Wert
@@ -349,7 +347,7 @@ public class TSPropertyTester {
      * 
      */
     Vector<Double> allRqs = new Vector<Double>();
-    Messreihe test = new Messreihe();
+    TimeSeriesObject test = new TimeSeriesObject();
     
     public void add( TSPropertyTester ris ) throws Exception {
 //        if (!_checkRIS( ris ) ) { 
@@ -611,7 +609,7 @@ public class TSPropertyTester {
     
     private void calcContainerMR() throws Exception {
         
-        mrVerteilungSkaliert = new Messreihe( name + " (res=" + ((double)scale/(double)binning) + ")");
+        mrVerteilungSkaliert = new TimeSeriesObject( name + " (res=" + ((double)scale/(double)binning) + ")");
         
         
         for (int i = 0; i < dataSKALIERT.length; i++) {
@@ -696,8 +694,8 @@ public class TSPropertyTester {
     
     public void showData() throws Exception {
         
-        v1 = new Vector<Messreihe>();
-        v2 = new Vector<Messreihe>();
+        v1 = new Vector<TimeSeriesObject>();
+        v2 = new Vector<TimeSeriesObject>();
 
         calcMessreihen();
         
@@ -711,8 +709,8 @@ public class TSPropertyTester {
                 this.name + " (RawData)");
     }
     
-    Vector<Messreihe> v1 = new Vector<Messreihe>();
-    Vector<Messreihe> v2 = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> v1 = new Vector<TimeSeriesObject>();
+    Vector<TimeSeriesObject> v2 = new Vector<TimeSeriesObject>();
     
     private void showVerteilungen() {
         // Verteilungen
@@ -723,7 +721,7 @@ public class TSPropertyTester {
 
     private void showRawData() {
         // Rohdaten (Intervalle)
-        Messreihe mr = new Messreihe( this.name + " (rawdata) " + dataRawFILTERED.size() );
+        TimeSeriesObject mr = new TimeSeriesObject( this.name + " (rawdata) " + dataRawFILTERED.size() );
         for( double y: this.dataRawFILTERED ) {
             mr.addValue(y);
         }
@@ -817,11 +815,11 @@ public class TSPropertyTester {
     
     static FileWriter fw;
     
-    static Vector<Messreihe> mrv2 = new Vector<Messreihe>();
-    static Vector<Messreihe> mrv = new Vector<Messreihe>();
+    static Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
+    static Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-    static Vector<Messreihe> mrv2B = null;
-    static Vector<Messreihe> mrvB = new Vector<Messreihe>();
+    static Vector<TimeSeriesObject> mrv2B = null;
+    static Vector<TimeSeriesObject> mrvB = new Vector<TimeSeriesObject>();
 
     static int maxB = 5; // anzahl der Input-Files
     static int maxROWS = -1; // default -1
@@ -862,55 +860,55 @@ public class TSPropertyTester {
     
     public static void main( String[] args ) throws Exception {
         
-        stdlib.StdRandom.initRandomGen(1);
+        RNGWrapper.init();
+
+        mrv = new Vector<TimeSeriesObject>();
+        mrv2 = new Vector<TimeSeriesObject>();
         
-        mrv = new Vector<Messreihe>();
-        mrv2 = new Vector<Messreihe>();
-        
-        mrvB = new Vector<Messreihe>();
-        mrv2B = new Vector<Messreihe>();
+        mrvB = new Vector<TimeSeriesObject>();
+        mrv2B = new Vector<TimeSeriesObject>();
         debug = true;
         
         double min;
         
-        Messreihe mr1 = null;
+        TimeSeriesObject mr1 = null;
         
 
         
         // V1
-        mr1 = Messreihe.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 1.0);
+        mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 1.0);
         TSPropertyTester.addSample(mr1);
 
-//        mr1 = Messreihe.getGaussianDistribution( (int)Math.pow(2, N), 5.0, 2.5);
+//        mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, N), 5.0, 2.5);
 //        min = mr1.getMinY();
 //        mr1.add_value_to_Y( -1.0 * min);
 //        TSPropertyTester.addSample(mr1);
  
-        mr1 = Messreihe.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 0.5);
+        mr1 = TimeSeriesObject.getGaussianDistribution( (int)Math.pow(2, N), 1.0, 0.5);
         min = mr1.getMinY();
         mr1.add_value_to_Y( -1.0 * min);
         TSPropertyTester.addSample(mr1);
                 
         // V1
-        mr1 = Messreihe.getUniformDistribution( (int)Math.pow(2, N), 0.0, 2.0);
+        mr1 = TimeSeriesObject.getUniformDistribution( (int)Math.pow(2, N), 0.0, 2.0);
         TSPropertyTester.addSample(mr1);
  
         // V1
-//        mr1 = Messreihe.getExpDistribution((int)Math.pow(2, N), 0.1);
+//        mr1 = TimeSeriesObject.getExpDistribution((int)Math.pow(2, N), 0.1);
 //        TSPropertyTester.addSample(mr1);
-        mr1 = Messreihe.getExpDistribution((int)Math.pow(2, N), 5.0);
+        mr1 = TimeSeriesObject.getExpDistribution((int)Math.pow(2, N), 5.0);
         TSPropertyTester.addSample(mr1);
-//        mr1 = Messreihe.getExpDistribution((int)Math.pow(2, N), 3.0);
+//        mr1 = TimeSeriesObject.getExpDistribution((int)Math.pow(2, N), 3.0);
 //        TSPropertyTester.addSample(mr1);
-//        mr1 = Messreihe.getExpDistribution((int)Math.pow(2, N), 10.0);
+//        mr1 = TimeSeriesObject.getExpDistribution((int)Math.pow(2, N), 10.0);
 //        TSPropertyTester.addSample(mr1);
 
         // V1
-        mr1 = Messreihe.getParetoDistribution((int)Math.pow(2, N), 1.0);
+        mr1 = TimeSeriesObject.getParetoDistribution((int)Math.pow(2, N), 1.0);
         TSPropertyTester.addSample(mr1);
 
         // V1
-//        mr1 = Messreihe.getGeometricDistribution((int)Math.pow(2, N), 1.0);
+//        mr1 = TimeSeriesObject.getGeometricDistribution((int)Math.pow(2, N), 1.0);
 //        TSPropertyTester.addSample(mr1);
 
 //        int ex = 20;
@@ -918,14 +916,14 @@ public class TSPropertyTester {
 //            // V2
 //            double beta = 0.1 + ( (double)i / 5.0 );
 //            if ( i > 6 ) ex = 22;
-//            MessreiheFFT mr2 = (MessreiheFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, ex), beta, false, false);
+//            TimeSeriesObjectFFT mr2 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, ex), beta, false, false);
 //            min = mr2.getMinY();
 //            mr2.add_value_to_Y( -1.0 * min);
 //            TSPropertyTester.addSample(mr2);
 
 //        }  
         // V3
-        MessreiheFFT mr3 = (MessreiheFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.8, false, false);
+        TimeSeriesObjectFFT mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.8, false, false);
         mr3.normalize();
         min = mr3.getMinY();
         System.out.println( min );
@@ -935,7 +933,7 @@ public class TSPropertyTester {
         TSPropertyTester.addSample(mr3);
       
         // V3
-        mr3 = (MessreiheFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.9, false, false);
+        mr3 = (TimeSeriesObjectFFT) LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, N), 0.9, false, false);
         mr3.normalize();
         min = mr3.getMinY();
         System.out.println( min );
@@ -967,7 +965,7 @@ public class TSPropertyTester {
      * @param m
      * @throws Exception 
      */     
-    public static void addRowB( Messreihe m ) throws Exception {
+    public static void addRowB( TimeSeriesObject m ) throws Exception {
  
         int binA = 15;
         int scaleA = 6;
@@ -984,7 +982,7 @@ public class TSPropertyTester {
 //        hzd.addData(p);
 //        hzd.calcWS();
 //                
-//        Messreihe mr = hzd.getHistogramNORM();
+//        TimeSeriesObject mr = hzd.getHistogramNORM();
 //        mr = mr.log();
 //        mr.setLabel( m.label + " iet( " + ts + ")" );
         
@@ -1009,7 +1007,7 @@ public class TSPropertyTester {
 //        mrv2B.add( mr );         
     }
         
-    public static void addRow( Messreihe m ) throws Exception {
+    public static void addRow( TimeSeriesObject m ) throws Exception {
         
         int binA = 120;
         int scaleA = 4;
@@ -1115,9 +1113,9 @@ public class TSPropertyTester {
 
     static public void showTestResult() throws Exception {
         
-        Vector<Messreihe> mrs = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mrs = new Vector<TimeSeriesObject>();
         
-        for( Messreihe mr : reihen ) {
+        for( TimeSeriesObject mr : reihen ) {
             addRow( mr );
 //            addRowB(mr);  // RIS
             mrs.add(mr);  // DFA
@@ -1126,17 +1124,17 @@ public class TSPropertyTester {
         
         
 
-//        for( Messreihe mr : reihen2 ) {
+//        for( TimeSeriesObject mr : reihen2 ) {
 //            addRow( mr );
 //        }
 
          
         runDFA(mrs, 2);
       
-        Messreihe ref2 = getRefExp( -1.0, 0.0 );
+        TimeSeriesObject ref2 = getRefExp( -1.0, 0.0 );
         mrvB.add( ref2);
         
-        Messreihe ref3 = getRefStretchedExp( 126.0, 15120.0 , 0.2);
+        TimeSeriesObject ref3 = getRefStretchedExp( 126.0, 15120.0 , 0.2);
         ref3.calcLog10_for_Y();
         mrvB.add( ref3);
         

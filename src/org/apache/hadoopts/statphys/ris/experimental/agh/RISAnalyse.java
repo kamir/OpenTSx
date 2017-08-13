@@ -1,9 +1,10 @@
 package org.apache.hadoopts.statphys.ris.experimental.agh;
 
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.export.MesswertTabelle;
+
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
@@ -118,8 +119,8 @@ public class RISAnalyse {
 
         System.out.println( f2.getAbsolutePath() + " " + f2.exists() + " " +  f2.canRead() );
 
-        Messreihe[] RQs = new Messreihe[zINTERVALL];
-        Messreihe[] RISs = new Messreihe[zINTERVALL];
+        TimeSeriesObject[] RQs = new TimeSeriesObject[zINTERVALL];
+        TimeSeriesObject[] RISs = new TimeSeriesObject[zINTERVALL];
 
         ReturnIntervallStatistik[] ris = new ReturnIntervallStatistik[zINTERVALL];
 
@@ -129,8 +130,8 @@ public class RISAnalyse {
 //            ris[ii].scaleY_LN = sLN;
 //            ris[ii].scaleY_LOG = sLOG;
 
-            RQs[ii] = new Messreihe("RQ_" + ii);
-            RISs[ii] = new Messreihe("RIS_" + ii);
+            RQs[ii] = new TimeSeriesObject("RQ_" + ii);
+            RISs[ii] = new TimeSeriesObject("RIS_" + ii);
         }
 
         for (File f : files) {
@@ -141,14 +142,14 @@ public class RISAnalyse {
            
 
                 File f3 = new File(folder + f.getName());
-                Messreihe data = MessreihenLoader.getLoader().loadMessreihe( f3 );
+                TimeSeriesObject data = MessreihenLoader.getLoader().loadMessreihe( f3 );
                 System.out.println( f3 );
 
                 
-                Messreihe[] parts = data.split( zL , zINTERVALL );
+                TimeSeriesObject[] parts = data.split( zL , zINTERVALL );
                 
                 int j = 0;
-                for( Messreihe r : parts ) {
+                for( TimeSeriesObject r : parts ) {
                     //System.out.print( nf.format( r.getAvarage() ) + "\t" );
                     //System.out.print( r.toString() );
                     RQs[j].addValue( r.getAvarage() );
@@ -175,14 +176,14 @@ public class RISAnalyse {
         }
 
 
-        Messreihe rq = new Messreihe("Rq(i)");
-        Messreihe rqSIGMA = new Messreihe("sigma(Rq(i))");
-        Vector<Messreihe> chart2Data = new Vector<Messreihe>();
+        TimeSeriesObject rq = new TimeSeriesObject("Rq(i)");
+        TimeSeriesObject rqSIGMA = new TimeSeriesObject("sigma(Rq(i))");
+        Vector<TimeSeriesObject> chart2Data = new Vector<TimeSeriesObject>();
         chart2Data.add(rq);
         chart2Data.add(rqSIGMA);
 
 
-        Vector<Messreihe> vMR = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vMR = new Vector<TimeSeriesObject>();
         for ( int d=0; d < zINTER ; d++  ) {
             try {
                 ris[d].calcMessreihen();

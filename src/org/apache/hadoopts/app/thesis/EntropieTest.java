@@ -50,7 +50,7 @@ import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
 import org.apache.hadoopts.app.thesis.experimental.ContextRecorder;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.chart.simple.MyXYPlot;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
 import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
 import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
@@ -119,10 +119,10 @@ public class EntropieTest {
         // To build a time series with N components we need a container to hold 
         // components.
         //       int N = f.length;
-        Vector<Messreihe> components = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> components = new Vector<TimeSeriesObject>();
 
         // final series - additive superposition of components
-        Messreihe mix = new Messreihe();
+        TimeSeriesObject mix = new TimeSeriesObject();
         mix.setLabel("mix");
 
         if (!label_of_EXPERIMENT.equals("EXP3")) {
@@ -131,7 +131,7 @@ public class EntropieTest {
              * ENTROPY value.
              */
             for (int i = 0; i < f.length; i++) {
-                Messreihe m = TSGenerator.getSinusWave(f[i], time, samplingRate, a[i], phase[i] * PI, noise[i]);
+                TimeSeriesObject m = TSGenerator.getSinusWave(f[i], time, samplingRate, a[i], phase[i] * PI, noise[i]);
                 m.labelWithEntropy();
                 mix = mix.add(m);
 
@@ -151,17 +151,17 @@ public class EntropieTest {
 
         // Now we shuffle the values and calc the Entropy per row again.        
         // shuffeling should not change the Entropy
-        Vector<Messreihe> shuffledComponents = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> shuffledComponents = new Vector<TimeSeriesObject>();
 
         int windowSize = 20;
         int shuffles = 1;
 
 //        // Here we calculate the Entropy for a sliding Window ...
 //        // in unshuffled data
-//        Vector<Messreihe> slidingWindowResults = new Vector<Messreihe>();
-//        for (Messreihe comp : components) {
+//        Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
+//        for (TimeSeriesObject comp : components) {
 //
-//            Messreihe mm = comp.copy();
+//            TimeSeriesObject mm = comp.copy();
 //
 //            mm.shuffleYValues(shuffles);
 //            mm.labelWithEntropy();
@@ -184,11 +184,11 @@ public class EntropieTest {
 //        calcTEandMI(components.elementAt(1) , mix , dig);
 //        calcTEandMI(components.elementAt(2) , mix , dig);
 
-        Messreihe mrPROBE1 = new Messreihe();
-        Messreihe mrPROBE2 = new Messreihe();
+        TimeSeriesObject mrPROBE1 = new TimeSeriesObject();
+        TimeSeriesObject mrPROBE2 = new TimeSeriesObject();
         mrPROBE1.setLabel("MI as a function ot length");
         mrPROBE2.setLabel("CC as a function ot length");
-        Vector<Messreihe> prob = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> prob = new Vector<TimeSeriesObject>();
         prob.add(mrPROBE1);
         prob.add(mrPROBE2);
 
@@ -196,11 +196,11 @@ public class EntropieTest {
 
             System.out.print(i + "\t");
 
-            Vector<Messreihe> comp = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> comp = new Vector<TimeSeriesObject>();
 
-//            for (Messreihe m : components) {
-            Messreihe mm = components.elementAt(0).cutOut(0, i);
-            Messreihe mmm = components.elementAt(1).cutOut(0, i);
+//            for (TimeSeriesObject m : components) {
+            TimeSeriesObject mm = components.elementAt(0).cutOut(0, i);
+            TimeSeriesObject mmm = components.elementAt(1).cutOut(0, i);
 
             if (doShuffle) {
                 mm.shuffleYValues(1);
@@ -228,13 +228,13 @@ public class EntropieTest {
 //
 //            System.out.print( i + "\t" );
 //
-//            Vector<Messreihe> comp = new Vector<Messreihe>();
+//            Vector<TimeSeriesObject> comp = new Vector<TimeSeriesObject>();
 //
 //            
-////            for (Messreihe m : components) {
+////            for (TimeSeriesObject m : components) {
 //
-//                Messreihe mm = components.elementAt(0).cutFromStart(i);
-//                Messreihe mmm = components.elementAt(1).cutFromStart(i);
+//                TimeSeriesObject mm = components.elementAt(0).cutFromStart(i);
+//                TimeSeriesObject mmm = components.elementAt(1).cutFromStart(i);
 //
 //                comp.add(mm);
 //                comp.add(mmm);
@@ -268,11 +268,11 @@ public class EntropieTest {
         //      one particular series, but the pairs are changed by
         //      shuffeling, so we see a fluctuation of TE for the pairs.
         // 
-        Vector<Messreihe> mrv2 = new Vector<Messreihe>();
-        Vector<Messreihe> mrv3 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
+        Vector<TimeSeriesObject> mrv3 = new Vector<TimeSeriesObject>();
 
-        Messreihe mrTE_i_SIMPLE = new Messreihe();
-        Messreihe mrTE_i_PHASE_RANDOMISATION = new Messreihe();
+        TimeSeriesObject mrTE_i_SIMPLE = new TimeSeriesObject();
+        TimeSeriesObject mrTE_i_PHASE_RANDOMISATION = new TimeSeriesObject();
 
         mrv3.add(mrTE_i_SIMPLE);
         mrv3.add(mrTE_i_PHASE_RANDOMISATION);
@@ -282,12 +282,12 @@ public class EntropieTest {
 //          
 
         // simple randomisation
-        Messreihe m2 = mix.copy();
+        TimeSeriesObject m2 = mix.copy();
         m2.shuffleYValues(i);
 
         // phase manipulation
-        Messreihe m3 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value);
-        Messreihe m4 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
+        TimeSeriesObject m3 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value);
+        TimeSeriesObject m4 = FFTPhaseRandomizer.getPhaseRandomizedRow(mix.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
 
         m2.setLabel("shuffled_SIMPLE(" + i + ")");
         m3.setLabel("shuffled_PHASERANDOM_MULTIPLY(" + i + ")");
@@ -324,13 +324,13 @@ public class EntropieTest {
 //
 //                System.out.println("\n\n"+(i*1000)+"\n");
 //    
-//                Messreihe mA = mrv.elementAt(0).cutFromStart( i * 1000 );
-//                Messreihe mB = mrv.elementAt(1).cutFromStart( i * 1000 );
-//                Messreihe mC = mrv.elementAt(2).cutFromStart( i * 1000 );
-//                Messreihe mD = mrv.elementAt(3).cutFromStart( i * 1000 );
-//                Messreihe mE = mrv.elementAt(4).cutFromStart( i * 1000 );
-//                Messreihe mF = mrv.elementAt(5).cutFromStart( i * 1000 );
-//                Messreihe mG = mr.cutFromStart( i * 1000 );
+//                TimeSeriesObject mA = mrv.elementAt(0).cutFromStart( i * 1000 );
+//                TimeSeriesObject mB = mrv.elementAt(1).cutFromStart( i * 1000 );
+//                TimeSeriesObject mC = mrv.elementAt(2).cutFromStart( i * 1000 );
+//                TimeSeriesObject mD = mrv.elementAt(3).cutFromStart( i * 1000 );
+//                TimeSeriesObject mE = mrv.elementAt(4).cutFromStart( i * 1000 );
+//                TimeSeriesObject mF = mrv.elementAt(5).cutFromStart( i * 1000 );
+//                TimeSeriesObject mG = mr.cutFromStart( i * 1000 );
 //
 //                calcTEandMI( mA , mB , dig);
 //                calcTEandMI( mA , mC , dig);
@@ -349,7 +349,7 @@ public class EntropieTest {
     public static double fitMIN = 1.2;
     public static double fitMAX = 3.5;
 
-    private static void applyDFA(Vector<Messreihe> mrv, String label) throws Exception {
+    private static void applyDFA(Vector<TimeSeriesObject> mrv, String label) throws Exception {
 
         if (!doDFA) {
             return;
@@ -358,14 +358,14 @@ public class EntropieTest {
         int nrOfSValues = 250;
         int order = 0;
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe d4 : mrv) {
+        for (TimeSeriesObject d4 : mrv) {
 
             int N = d4.yValues.size();
             double[] zr = new double[N];
 
-            Vector<Messreihe> vr = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
 
             vr.add(d4);
 
@@ -389,7 +389,7 @@ public class EntropieTest {
 
             dfa.calc();
 
-            Messreihe mr4 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
             mr4.setLabel(d4.getLabel());
             v.add(mr4);
 
@@ -411,7 +411,7 @@ public class EntropieTest {
         }
     }
 
-    public static double calcTransferEntropy(Messreihe mra, Messreihe mrb, int le) {
+    public static double calcTransferEntropy(TimeSeriesObject mra, TimeSeriesObject mrb, int le) {
 
 // Prepare to generate some random normalised data.
         int numObservations = mra.getYData().length;
@@ -492,12 +492,12 @@ public class EntropieTest {
 
     static boolean singleDebug = true;
 
-    private static void calcTEandMI(Messreihe mr1, Messreihe mr2, int dig, String l1, String l2, Messreihe row1, Messreihe row2, int x) throws Exception {
+    private static void calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig, String l1, String l2, TimeSeriesObject row1, TimeSeriesObject row2, int x) throws Exception {
 
         mr1.normalize();
         mr2.normalize();
 
-        Vector<Messreihe> vv = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vv = new Vector<TimeSeriesObject>();
         vv.add(mr1);
         vv.add(mr2);
         if (singleDebug) {
@@ -534,10 +534,10 @@ public class EntropieTest {
             /**
              * SHOW A SCATERPLOT
              */
-            Vector<Messreihe> v = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
             v.add(mr1.zip(mr2));
 
-            // SET SCALES to MIN and MAX from Messreihe ...
+            // SET SCALES to MIN and MAX from TimeSeriesObject ...
             MyXYPlot.setXRange(mr1);
             MyXYPlot.setYRange(mr2);
 
@@ -553,7 +553,7 @@ public class EntropieTest {
 
     }
 
-    private static Vector<Messreihe> loadStockData() {
+    private static Vector<TimeSeriesObject> loadStockData() {
 
         int[] YEARS = {2011, 2012, 2013, 2014};
 

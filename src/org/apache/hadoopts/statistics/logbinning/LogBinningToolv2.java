@@ -3,13 +3,12 @@
  */
 package org.apache.hadoopts.statistics.logbinning;
 
-import org.apache.hadoopts.data.io.datafile.DataFileTool;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.io.LineFilter;
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.OriginProject;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
@@ -20,9 +19,9 @@ import java.util.Vector;
  */
 public class LogBinningToolv2 {
     
-    public static Messreihe getLogBinnedMessreihe( Messreihe mrOrig , int nrOfBins ) { 
+    public static TimeSeriesObject getLogBinnedMessreihe(TimeSeriesObject mrOrig , int nrOfBins ) {
         
-        Messreihe mr = new Messreihe();         
+        TimeSeriesObject mr = new TimeSeriesObject();
         double data[][] = new double[2][nrOfBins];
         mr.setLabel( mrOrig.getLabel() + "_logBin" );
         return mr;
@@ -31,8 +30,8 @@ public class LogBinningToolv2 {
     
     public static void main( String[] args ) throws IOException { 
            
-        Vector<Messreihe> rows = new Vector<Messreihe>();   // log 
-        Vector<Messreihe> rows2 = new Vector<Messreihe>();  // normal
+        Vector<TimeSeriesObject> rows = new Vector<TimeSeriesObject>();   // log
+        Vector<TimeSeriesObject> rows2 = new Vector<TimeSeriesObject>();  // normal
                 
         
         String locationOfData = "/Volumes/MyExternalDrive/CALCULATIONS/WIKIPEDIA.network/degreedistribution/";
@@ -70,19 +69,19 @@ public class LogBinningToolv2 {
         //MessreihenLoader.limit = 10000;
         
                
-        Messreihe mr1 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f1, 1, 2, f, maxValue, " ", new LineFilter());
-        Messreihe mr2 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f2, 1, 2, f, maxValue, " ", new LineFilter());
-        Messreihe mr3 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f0, 1, 2, f, maxValue, " ", new LineFilter());
-        Messreihe mr4 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f3, 1, 2, f, maxValue, " ", new LineFilter() );
-        Messreihe mr5 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f4, 1, 2, f, maxValue, " ", new LineFilter());
-        Messreihe mr6 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f5, 1, 2, f, maxValue, " ", new LineFilter() );
+        TimeSeriesObject mr1 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f1, 1, 2, f, maxValue, " ", new LineFilter());
+        TimeSeriesObject mr2 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f2, 1, 2, f, maxValue, " ", new LineFilter());
+        TimeSeriesObject mr3 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f0, 1, 2, f, maxValue, " ", new LineFilter());
+        TimeSeriesObject mr4 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f3, 1, 2, f, maxValue, " ", new LineFilter() );
+        TimeSeriesObject mr5 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f4, 1, 2, f, maxValue, " ", new LineFilter());
+        TimeSeriesObject mr6 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f5, 1, 2, f, maxValue, " ", new LineFilter() );
 
-        Messreihe mr6L = mr6.calcLogLog();
-        Messreihe mr5L = mr5.calcLogLog();
-        Messreihe mr4L = mr4.calcLogLog();
-        Messreihe mr3L = mr3.calcLogLog();
-        Messreihe mr2L = mr2.calcLogLog();
-        Messreihe mr1L = mr1.calcLogLog();
+        TimeSeriesObject mr6L = mr6.calcLogLog();
+        TimeSeriesObject mr5L = mr5.calcLogLog();
+        TimeSeriesObject mr4L = mr4.calcLogLog();
+        TimeSeriesObject mr3L = mr3.calcLogLog();
+        TimeSeriesObject mr2L = mr2.calcLogLog();
+        TimeSeriesObject mr1L = mr1.calcLogLog();
                 
         mr1L.setFileName( "mr1L" );
         mr2L.setFileName( "mr2L" );

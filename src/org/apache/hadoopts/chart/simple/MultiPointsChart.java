@@ -5,13 +5,14 @@
 
 package org.apache.hadoopts.chart.simple;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Container;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.swing.JFrame;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -26,7 +27,7 @@ import org.jfree.ui.RefineryUtilities;
  */
 public class MultiPointsChart extends MultiChart {
 
-    public static void open(JFrame f, Messreihe[] mrs, String string, String string0, String string1, boolean b) {
+    public static void open(JFrame f, TimeSeriesObject[] mrs, String string, String string0, String string1, boolean b) {
         cont = f;
         open(mrs, string, string0, string1, b);
     }
@@ -79,7 +80,7 @@ public class MultiPointsChart extends MultiChart {
 
     static Container cont = new JFrame();
 
-    public static MultiPointsChart open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
+    public static MultiPointsChart open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -90,9 +91,9 @@ public class MultiPointsChart extends MultiChart {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
                 }

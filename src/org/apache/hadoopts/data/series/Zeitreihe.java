@@ -1,7 +1,6 @@
 
 package org.apache.hadoopts.data.series;
 
-import org.apache.hadoopts.data.series.Messreihe;
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -23,7 +22,7 @@ import java.util.Vector;
  *
  * @author kamir
  */
-public class Zeitreihe extends Messreihe {
+public class Zeitreihe extends TimeSeriesObject {
 
     public static Zeitreihe getTestZeitreihe_X_RANDOM() {
         Zeitreihe zr = new Zeitreihe(); 
@@ -79,11 +78,11 @@ public class Zeitreihe extends Messreihe {
     int nrOfInterval;
     long beginOffirstInterval;
 
-    public Messreihe countedEvents = null;
-    public Messreihe nrOfEvents_over_t = null;
+    public TimeSeriesObject countedEvents = null;
+    public TimeSeriesObject nrOfEvents_over_t = null;
 
-    public Messreihe countedEvents_h = null;
-    public Messreihe nrOfEvents_over_t_h = null;
+    public TimeSeriesObject countedEvents_h = null;
+    public TimeSeriesObject nrOfEvents_over_t_h = null;
 
 
     public Zeitreihe() {
@@ -113,8 +112,8 @@ public class Zeitreihe extends Messreihe {
 
 
     public void countEventsPerDay() {
-        Messreihe mr = new Messreihe();
-        Messreihe mr2 = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
+        TimeSeriesObject mr2 = new TimeSeriesObject();
 
         int size = xValues.size();
         
@@ -168,7 +167,7 @@ public class Zeitreihe extends Messreihe {
     }
 
      public void countEventsPerHour() {
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
         int size = xValues.size();
 
         // relativ zum 1.1.2009 um 0:0
@@ -209,7 +208,7 @@ public class Zeitreihe extends Messreihe {
             }
         }
 
-//        Messreihe mr2 = new Messreihe();
+//        TimeSeriesObject mr2 = new TimeSeriesObject();
 //        // nun liegen die COUNTS per day vor ... aber ohne der Werte
 //        // an denen keine Counts waren ...
 //        for( int i = 0; i < mr.getMaxX() ; i++ ) {

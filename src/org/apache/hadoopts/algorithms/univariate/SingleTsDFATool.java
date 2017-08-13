@@ -1,18 +1,15 @@
 package org.apache.hadoopts.algorithms.univariate;
 
 import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.MultiDFATool4;
+
 import org.apache.hadoopts.statphys.detrending.SingleDFATool;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool;
 
 /**
  *
@@ -34,12 +31,12 @@ public class SingleTsDFATool extends SingleRowTSO {
      *   OUTPUT is not collected, it is written directly to the FW 
      */
     @Override
-    public Messreihe processReihe( FileWriter fw, Messreihe reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
 
         String line = "\t";
    
         // NORMALISIEREN
-        Messreihe normalized1 = MRT.normalizeByPeriodeTrend(reihe, 24*7 );
+        TimeSeriesObject normalized1 = MRT.normalizeByPeriodeTrend(reihe, 24*7 );
         
         /**
          * 
@@ -47,8 +44,8 @@ public class SingleTsDFATool extends SingleRowTSO {
          * 
          */
         
-        Vector<Messreihe> vmr_raw = new Vector<Messreihe>();
-        Vector<Messreihe> vmr_norm = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr_raw = new Vector<TimeSeriesObject>();
+        Vector<TimeSeriesObject> vmr_norm = new Vector<TimeSeriesObject>();
         
         //*********
         // TODO
@@ -69,7 +66,7 @@ public class SingleTsDFATool extends SingleRowTSO {
                     SingleDFATool tool1 = new SingleDFATool();
                     tool1.logLogResults = true;
 
-                    Vector<Messreihe> mFS = tool1.runDFA(vmr_norm, ord);       
+                    Vector<TimeSeriesObject> mFS = tool1.runDFA(vmr_norm, ord);
                     String trends1 = tool1.getAlphas();
 //                    MyBucketTool.cont_FS_NORMALIZED.add(mFS.elementAt(0));
                     line = line.concat(  "\t t1 :" + trends1 );
@@ -80,7 +77,7 @@ public class SingleTsDFATool extends SingleRowTSO {
                     SingleDFATool tool2 = new SingleDFATool();
                     tool2.logLogResults = true;
 
-                    Vector<Messreihe> mFS2 = tool2.runDFA(vmr_raw, ord);       
+                    Vector<TimeSeriesObject> mFS2 = tool2.runDFA(vmr_raw, ord);
                     String trends2 = tool2.getAlphas();
 //                    MyBucketTool.cont_FS_RAW.add(mFS2.elementAt(0));
                     

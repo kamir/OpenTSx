@@ -8,20 +8,12 @@ package org.apache.hadoopts.algorithms.univariate;
  */
 
 
-import org.apache.hadoopts.algorithms.univariate.SingleTsRISTool;
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.MultiDFATool4;
-import org.apache.hadoopts.statphys.detrending.SingleDFATool;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool;
 
 /**
  *
@@ -37,7 +29,7 @@ public class SingleTsMFDFATool extends SingleRowTSO {
      *   OUTPUT is not collected, it is written directly to the FW 
      */
     @Override
-    public Messreihe processReihe( FileWriter fw, Messreihe reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
 
         String line = "\t";
         
@@ -59,7 +51,7 @@ public class SingleTsMFDFATool extends SingleRowTSO {
      * @return
      * @throws Exception 
      */
-    public String processReihe(Messreihe reihe) throws Exception {
+    public String processReihe(TimeSeriesObject reihe) throws Exception {
         return "... (" + this.getClass().getName() + ") ";
     }
     

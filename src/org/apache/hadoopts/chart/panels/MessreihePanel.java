@@ -11,8 +11,7 @@
 
 package org.apache.hadoopts.chart.panels;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import java.awt.BorderLayout;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 /**
  *
@@ -20,14 +19,14 @@ import java.awt.BorderLayout;
  */
 public class MessreihePanel extends javax.swing.JPanel {
 
-    Messreihe mr = null;
+    TimeSeriesObject mr = null;
 
     /** Creates new form MessreihePanel */
     public MessreihePanel() {
         initComponents();
     }
 
-    public MessreihePanel(Messreihe mr ) {
+    public MessreihePanel(TimeSeriesObject mr ) {
         this();
         this.mr = mr;
         this.setMessreihe( mr );
@@ -65,7 +64,7 @@ public class MessreihePanel extends javax.swing.JPanel {
         jtaStatus = new javax.swing.JTextArea();
         chartPanel = new javax.swing.JPanel();
 
-        jLabel1.setText("Messreihe : ");
+        jLabel1.setText("TimeSeriesObject : ");
 
         jtMRLabel.setText("  ");
 
@@ -103,7 +102,7 @@ public class MessreihePanel extends javax.swing.JPanel {
         jTable1.setRowHeight(21);
         jScrollPane1.setViewportView(jTable1);
 
-        jScrollPane2.setBorder(javax.swing.BorderFactory.createTitledBorder("Messreihe"));
+        jScrollPane2.setBorder(javax.swing.BorderFactory.createTitledBorder("TimeSeriesObject"));
 
         jtMR.setColumns(20);
         jtMR.setRows(5);
@@ -249,7 +248,7 @@ public class MessreihePanel extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
 
-    public void setMessreihe(Messreihe mr) {
+    public void setMessreihe(TimeSeriesObject mr) {
         this.jtMRLabel.setText( mr.getLabel() );
         this.jtMR.setText( mr.toString() );
         this.jtXWLabel.setText( mr.getLabel_X() );

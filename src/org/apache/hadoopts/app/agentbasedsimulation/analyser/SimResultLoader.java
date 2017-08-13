@@ -7,7 +7,8 @@ package org.apache.hadoopts.app.agentbasedsimulation.analyser;
 
 import org.apache.hadoopts.data.io.MessreihenLoader;
 import java.io.*;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 /**
  *
  * @author napierala
@@ -23,14 +24,14 @@ public class SimResultLoader {
     /**
      * Liest eine bestimmte Datei
      * (bedeutet die Simulationsläufe einer bestimmten Systemkonfiguration)
-     * Gibt in einer Messreihe die Daten zurück
+     * Gibt in einer TimeSeriesObject die Daten zurück
      * Der erste Parameter ist die Spalte, deren Werte in die X-Werte der
-     * Messreihe geladen werden, der zweite Parameter sind die Y-Werte
+     * TimeSeriesObject geladen werden, der zweite Parameter sind die Y-Werte
      */
-    public Messreihe getDataFromFile(String filename, int XValues, int YValues) {
+    public TimeSeriesObject getDataFromFile(String filename, int XValues, int YValues) {
         String folder = mainpath + sim_name + "_UM=" + sim_UM + "_CFG=" + sim_CFG + "_RR=" + sim_RR +"_ZPERS=" + sim_ZPERS + '/';
         File f = new File(folder+filename);
-        Messreihe mrd = MessreihenLoader.getLoader().loadMessreihe_2(f, XValues, YValues);
+        TimeSeriesObject mrd = MessreihenLoader.getLoader().loadMessreihe_2(f, XValues, YValues);
         return mrd;
     }
 
@@ -42,8 +43,8 @@ public class SimResultLoader {
      * für alle möglich ZPERS.
      */
     public double[][] getEvacuationTimeByAgents(int Amin, int Ainc, int Amax) {
-        Messreihe mrd  = new Messreihe();
-        Messreihe mr1  = new Messreihe();
+        TimeSeriesObject mrd  = new TimeSeriesObject();
+        TimeSeriesObject mr1  = new TimeSeriesObject();
 
         if (Amax != 0) {
             for (int j=Amin; j<=Amax; j+=Ainc) {
@@ -85,8 +86,8 @@ public class SimResultLoader {
      * einer bestimmten Systemkonfiguration gemittelt
      */
     public double[][] getMeanEvacuationTimeByAgents(int Amin, int Ainc, int Amax) {
-        Messreihe mrd  = new Messreihe();
-        Messreihe mr1  = new Messreihe();
+        TimeSeriesObject mrd  = new TimeSeriesObject();
+        TimeSeriesObject mr1  = new TimeSeriesObject();
 
         for (int j=Amin; j<=Amax; j+=Ainc) {
             sim_ZPERS = j;
@@ -104,11 +105,11 @@ public class SimResultLoader {
      */
     public double[][] getRatioOfInfectedAgents(int NoA) {
         sim_ZPERS = NoA;
-        Messreihe mr1 = new Messreihe();
+        TimeSeriesObject mr1 = new TimeSeriesObject();
 
         // dummys
-        Messreihe mrd  = new Messreihe();
-        Messreihe mrd2 = new Messreihe();
+        TimeSeriesObject mrd  = new TimeSeriesObject();
+        TimeSeriesObject mrd2 = new TimeSeriesObject();
 
         // Ermitteln der Anzahl an Simulationsruns je Konfiguration
         // soll später durch Lesen eines Eintrags in cfg-file ersetzt werden
@@ -137,7 +138,7 @@ public class SimResultLoader {
             }
             mrd2.calcAverage();
             mr1.addValuePair(s, mrd2.getAvarage());
-            mrd2 = new Messreihe();
+            mrd2 = new TimeSeriesObject();
         }
         // Bereinigen
         mr1 = mr1.cut(maxs);
@@ -152,10 +153,10 @@ public class SimResultLoader {
      * Array mrd2[] zwischengespeichert
      */
     public double[][] getRatioOfInfectedAgents2() {
-        Messreihe mr1 = new Messreihe();
+        TimeSeriesObject mr1 = new TimeSeriesObject();
 
         // dummys
-        Messreihe mrd  = new Messreihe();
+        TimeSeriesObject mrd  = new TimeSeriesObject();
 
         // Ermitteln der Anzahl an Simulationsruns je Konfiguration
         // soll später durch Lesen eines Eintrags in cfg-file ersetzt werden
@@ -163,7 +164,7 @@ public class SimResultLoader {
 
         int anzSimRuns = mrd.getSize()[0];
 
-        Messreihe[] mrd2 = new Messreihe[anzSimRuns];
+        TimeSeriesObject[] mrd2 = new TimeSeriesObject[anzSimRuns];
 
         // Einlesen der Daten
         int maxs = 0; // Maximale Anzahl an Schritten in den verschiedenen Wdhl.

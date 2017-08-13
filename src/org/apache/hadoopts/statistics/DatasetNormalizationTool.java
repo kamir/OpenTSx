@@ -1,8 +1,6 @@
 package org.apache.hadoopts.statistics;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import java.util.Vector;
-import stdlib.StdRandom;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 /**
  *
@@ -10,9 +8,9 @@ import stdlib.StdRandom;
  */
 public class DatasetNormalizationTool {
 
-        public static Messreihe normalizeToMWZeroANDSTDevONE(Messreihe mrA) {
+        public static TimeSeriesObject normalizeToMWZeroANDSTDevONE(TimeSeriesObject mrA) {
             
-            Messreihe mrB = mrA.subtractAverage();
+            TimeSeriesObject mrB = mrA.subtractAverage();
             
             double stdev = mrA.getStddev();
             double stdevR = 1.0/stdev;

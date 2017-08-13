@@ -18,7 +18,7 @@ public class TestResultAvailability {
         SimResultLoader api = new SimResultLoader();
         api.setMainpath("/home/sim/DEV/");
         /*try {
-            Messreihe mr = api.getDataFromFile("Simulation.dat", 10, 2);
+            TimeSeriesObject mr = api.getDataFromFile("Simulation.dat", 10, 2);
             mr.calcAverage();
             System.out.println(mr.getAvarage());
         } catch (Exception ex) {

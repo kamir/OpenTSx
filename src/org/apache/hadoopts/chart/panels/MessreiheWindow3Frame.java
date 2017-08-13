@@ -4,10 +4,10 @@
  */
 package org.apache.hadoopts.chart.panels;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Vector;
 import javax.swing.JFrame;
-import javax.swing.JTextArea;
 
 /**
  *
@@ -28,9 +28,9 @@ public class MessreiheWindow3Frame extends javax.swing.JDialog {
         initComponents();
     }
     
-        Messreihe mr1 = new Messreihe();
-        Messreihe mr2 = new Messreihe();
-        Messreihe mr3 = new Messreihe();
+        TimeSeriesObject mr1 = new TimeSeriesObject();
+        TimeSeriesObject mr2 = new TimeSeriesObject();
+        TimeSeriesObject mr3 = new TimeSeriesObject();
 
     public MessreiheWindow3Frame() {
         super( new JFrame(), false );

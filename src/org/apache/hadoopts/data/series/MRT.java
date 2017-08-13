@@ -1,10 +1,7 @@
 package org.apache.hadoopts.data.series;
 
 import com.thoughtworks.xstream.XStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
+
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -15,7 +12,7 @@ import java.util.Vector;
  */
 public class MRT {
 
-    public static double[] calcPeriodeTrend(Messreihe mr, int d) {
+    public static double[] calcPeriodeTrend(TimeSeriesObject mr, int d) {
 
         double[] sum = new double[d];
         double[] count = new double[d];
@@ -38,9 +35,9 @@ public class MRT {
         return trend;
     }
 
-    public static Messreihe normalizeByPeriodeTrend(Messreihe mr, int d) {
+    public static TimeSeriesObject normalizeByPeriodeTrend(TimeSeriesObject mr, int d) {
 
-        Messreihe mr2 = new Messreihe();
+        TimeSeriesObject mr2 = new TimeSeriesObject();
         mr2.setLabel(mr.getLabel() + "_t" + d + "_removed");
 
         double[] trend = calcPeriodeTrend(mr, d);
@@ -58,7 +55,7 @@ public class MRT {
         return mr2;
     }
 
-    public static int getPeaksOverTS(int ts, Messreihe peaks) {
+    public static int getPeaksOverTS(int ts, TimeSeriesObject peaks) {
         int c = 0;
         for (double p : peaks.getYData()) {
             if (p >= ts) {
@@ -68,7 +65,7 @@ public class MRT {
         return c;
     }
     
-    public static Vector<Double> getPeaksDaysOverTSdouble(double ts, Messreihe row) {
+    public static Vector<Double> getPeaksDaysOverTSdouble(double ts, TimeSeriesObject row) {
         Vector<Double> peakINDEX = new Vector<Double>();
         int c = 0;
         double d = 0;
@@ -81,7 +78,7 @@ public class MRT {
         }
         return peakINDEX;   }
 
-    public static Vector<Integer> getPeaksDaysOverTS(int ts, Messreihe row) {
+    public static Vector<Integer> getPeaksDaysOverTS(int ts, TimeSeriesObject row) {
         Vector<Integer> peakINDEX = new Vector<Integer>();
         int c = 0;
         int d = 0;
@@ -102,7 +99,7 @@ public class MRT {
      * @param mr
      * @return 
      */
-    public static Vector<Long> getTimesOfPeaksDaysOverTS(double ts, Messreihe mr) {
+    public static Vector<Long> getTimesOfPeaksDaysOverTS(double ts, TimeSeriesObject mr) {
         
         Vector<Long> peaksDays = new Vector<Long>();
         long d = 0;
@@ -122,12 +119,12 @@ public class MRT {
         return peaksDays;
     }
 
-    public static Messreihe convertDates2Messreihe(Vector<Long> v, String label, String descr) {
+    public static TimeSeriesObject convertDates2Messreihe(Vector<Long> v, String label, String descr) {
 
 
         System.out.println(">> size => " + v.size());
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel(label);
         mr.setDescription(descr);
 
@@ -138,14 +135,14 @@ public class MRT {
         return mr;
     }
 
-    public static Messreihe expand(Messreihe mr, Calendar start, Calendar end, double sf, boolean MODE_ONE_PER_dt ) {
+    public static TimeSeriesObject expand(TimeSeriesObject mr, Calendar start, Calendar end, double sf, boolean MODE_ONE_PER_dt ) {
         
         if( !start.before( end ) ) { 
             System.err.println( "***** ENDE muss nach ANFANG liegen ... " );
             
         }
         
-        Messreihe m = new Messreihe();
+        TimeSeriesObject m = new TimeSeriesObject();
         m.setLabel( mr.getLabel() );
         m.setIdentifier( mr.getIdentifier() );
         m.setDescription( mr.getDescription() );
@@ -194,7 +191,7 @@ public class MRT {
         return m;
     }
 
-    public static Messreihe fromByteArray(byte[] get) {
+    public static TimeSeriesObject fromByteArray(byte[] get) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
@@ -206,16 +203,16 @@ public class MRT {
     public static final int String_convMode_XSTREAM = 0;
     // public static final int String_convMode_JSON = 1;
     
-    public static Messreihe deserializeFromXMLString(String m) {
+    public static TimeSeriesObject deserializeFromXMLString(String m) {
         XStream xstream = new XStream();
         // System.out.println(">>> mr.toString() ... " + m );
         Object o = xstream.fromXML( m ); 
-        Messreihe d = (Messreihe)o;
+        TimeSeriesObject d = (TimeSeriesObject)o;
         // System.out.println( d.getStatisticData( ">>> " ));
         return d;
     }
     
-    public static String getAsString( Messreihe mr ) {
+    public static String getAsString( TimeSeriesObject mr ) {
         String s1 = "";
         XStream xstream = new XStream();
         s1 = xstream.toXML( mr );
@@ -226,24 +223,3 @@ public class MRT {
 
 
 }
-
-
-/**
- 
- FileWriter os = new FileWriter( f );
-        
-        XStream xstream = new XStream();
-        String s = xstream.toXML( data );
-        os.write( s );
-        os.flush();
-        os.close(); 
-    }
-    
-    public static WikiStudieMetaData load( File f ) throws FileNotFoundException {  
-        FileInputStream os = new FileInputStream( f );
-        XStream xstream = new XStream();
-        Object o = xstream.fromXML(os); 
-        WikiStudieMetaData d = (WikiStudieMetaData)o;
-        return d;
-    }
- */

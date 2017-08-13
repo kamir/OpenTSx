@@ -6,28 +6,20 @@
  **/
 package org.apache.hadoopts.chart.simple;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
-import org.apache.batik.dom.GenericDOMImplementation;
-import org.apache.batik.svggen.SVGGraphics2D;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartRenderingInfo;
@@ -37,14 +29,11 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.entity.StandardEntityCollection;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RefineryUtilities;
 import org.jfree.util.ShapeUtilities;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
 //import simulation.datarecorder.GeneralResultRecorder;
 //import util.LogFile;
 
@@ -53,7 +42,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
     public static Color bgCOLOR = Color.lightGray;
     public static boolean autoClose = true;
 
-    public static void open2(Vector<Messreihe> rows, boolean b) {
+    public static void open2(Vector<TimeSeriesObject> rows, boolean b) {
        
         open( rows, b );
     }
@@ -239,7 +228,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
 //    /**
 //     * @param args the command line arguments
 //     */
-//    public static void save(final Messreihe mr) {
+//    public static void save(final TimeSeriesObject mr) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -255,28 +244,28 @@ public class MultiChartDistComp extends javax.swing.JDialog {
 //        });
 //    }
 
-    public static void open(Messreihe[] mrs, final String title, final String x, final String y, final boolean b) {
-        Vector<Messreihe> mr = new Vector<Messreihe>();
+    public static void open(TimeSeriesObject[] mrs, final String title, final String x, final String y, final boolean b) {
+        Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for( int i = 0 ; i < mrs.length; i++ ) {
             mr.add( mrs[i] );
         }
         open(  mr, title ,x ,y ,b, "no comment" );
     }
 
-    public static void open(Messreihe[] mrs ) {
+    public static void open(TimeSeriesObject[] mrs ) {
         open(  mrs, "?" ,"x","y", true );
     }
-    public static void open(Vector<Messreihe> mrs ) {
+    public static void open(Vector<TimeSeriesObject> mrs ) {
          open(  mrs, "?" ,"x","y", true , "");
     }
-    public static void open(Vector<Messreihe> mrs, boolean legende ) {
+    public static void open(Vector<TimeSeriesObject> mrs, boolean legende ) {
          open(  mrs, "?" ,"x","y", legende ,"");
     }
-    public static void open(Vector<Messreihe> mrs, boolean legende, String label) {
+    public static void open(Vector<TimeSeriesObject> mrs, boolean legende, String label) {
          open(  mrs, label ,"RR","m", legende , "" );
     }
 
-    public static void open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
+    public static void open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -287,9 +276,9 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
                 }
@@ -307,7 +296,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
 //        });
     }
     
-        public static MultiChartDistComp open2(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
+        public static MultiChartDistComp open2(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b , final String comment) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -318,9 +307,9 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
                 }
@@ -337,12 +326,12 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                 return dialog;
     }
 
-    public static Container openAndStore(final Messreihe[] mrs,
+    public static Container openAndStore(final TimeSeriesObject[] mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
 
-         Vector<Messreihe> mr = new Vector<Messreihe>();
+         Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for( int i = 0 ; i < mrs.length; i++ ) {
             mr.add( mrs[i] );
         }
@@ -351,7 +340,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
     }
 
 
-    public static Container openAndStore(final Vector<Messreihe> mrs,
+    public static Container openAndStore(final Vector<TimeSeriesObject> mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -363,9 +352,9 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
                 }
@@ -403,7 +392,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
 
     }
 
-    public static void openNormalized(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+    public static void openNormalized(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -414,9 +403,9 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     mr.normalize();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
@@ -452,7 +441,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
     // End of variables declaration//GEN-END:variables
 
 
-    public void initMessreihe(Messreihe mr) {
+    public void initMessreihe(TimeSeriesObject mr) {
         // if ( this.normalizeY ) mr.normalizeY();
         if ( mr == null ) return;
         
@@ -660,7 +649,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
         this.normalizeY = true;
     }
 
-        public static void open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+        public static void open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -671,9 +660,9 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
                 }
@@ -692,11 +681,11 @@ public class MultiChartDistComp extends javax.swing.JDialog {
         });
     }
 
-    public static void store(final Messreihe[] mrs,
+    public static void store(final TimeSeriesObject[] mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
-        Vector<Messreihe> r = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> r = new Vector<TimeSeriesObject>();
         for( int i=0; i < mrs.length; i++) {
             r.add( mrs[i] );
         }
@@ -704,7 +693,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
     }
 
 
-    public static void store(final Vector<Messreihe> mrs,
+    public static void store(final Vector<TimeSeriesObject> mrs,
             final String title, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -717,10 +706,10 @@ public class MultiChartDistComp extends javax.swing.JDialog {
                     }
                 });
 
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 int i = 0;
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     // System.out.println( "... init reihe="+i );
                     i++;

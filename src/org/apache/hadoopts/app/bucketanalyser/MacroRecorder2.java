@@ -48,7 +48,7 @@ import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
@@ -82,7 +82,7 @@ public class MacroRecorder2 {
         // To build a time series with N components we need a container to hold 
         // components.
         //       int N = f.length;
-        Vector<Messreihe> components = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> components = new Vector<TimeSeriesObject>();
             
         // DAX2, IPC, MDAX, SDAX, TECDAX  
         String market = "DAX2";
@@ -96,17 +96,17 @@ public class MacroRecorder2 {
         
         // Now we shuffle the values and calc the Entropy per row again.        
         // shuffeling should not change the Entropy
-        Vector<Messreihe> shuffledComponents = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> shuffledComponents = new Vector<TimeSeriesObject>();
         
         int windowSize = 20;
         int shuffles = 1;
         
         // Here we calculate the Entropy for a sliding Window ...
         // in unshuffled data
-        Vector<Messreihe> slidingWindowResults = new Vector<Messreihe>();
-        for( Messreihe comp : components ) {
+        Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
+        for( TimeSeriesObject comp : components ) {
               
-            Messreihe mm = comp.copy();
+            TimeSeriesObject mm = comp.copy();
             
             mm.shuffleYValues(shuffles);
             mm.labelWithEntropy();
@@ -139,21 +139,21 @@ public class MacroRecorder2 {
     public static double fitMIN = 1.2;
     public static double fitMAX = 3.5;
 
-    private static void applyDFA(Vector<Messreihe> mrv, String label) throws Exception {
+    private static void applyDFA(Vector<TimeSeriesObject> mrv, String label) throws Exception {
 
         if ( !doDFA ) return;
         
         int nrOfSValues = 250;
         int order = 0;
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
-        for (Messreihe d4 : mrv) {
+        for (TimeSeriesObject d4 : mrv) {
 
             int N = d4.yValues.size();
             double[] zr = new double[N];
 
-            Vector<Messreihe> vr = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
 
             vr.add(d4);
 
@@ -177,7 +177,7 @@ public class MacroRecorder2 {
 
             dfa.calc();
 
-            Messreihe mr4 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
             mr4.setLabel(d4.getLabel());
             v.add(mr4);
 
@@ -199,7 +199,7 @@ public class MacroRecorder2 {
         }
     }
 
-    public static double calcTransferEntropy(Messreihe mra, Messreihe mrb, int le) {
+    public static double calcTransferEntropy(TimeSeriesObject mra, TimeSeriesObject mrb, int le) {
 
 // Prepare to generate some random normalised data.
         int numObservations = mra.getYData().length;
@@ -288,7 +288,7 @@ public class MacroRecorder2 {
                 return miUnivariateValue;
 	}
 
-//    private static void calcTEandMI(Messreihe mr1, Messreihe mr2, int dig) throws Exception {
+//    private static void calcTEandMI(TimeSeriesObject mr1, TimeSeriesObject mr2, int dig) throws Exception {
 //
 //        /**
 //         * CALCULATE INFORMATION THEORETICAL MEASURES
@@ -313,10 +313,10 @@ public class MacroRecorder2 {
 //            /**
 //             * SHOW A SCATERPLOT
 //             */
-//            Vector<Messreihe> v = new Vector<Messreihe>();
+//            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 //            v.add( mr1.zip( mr2 ) );
 //
-//            // SET SCALES to MIN and MAX from Messreihe ...
+//            // SET SCALES to MIN and MAX from TimeSeriesObject ...
 //            MyXYPlot.setXRange( mr1 );
 //            MyXYPlot.setYRange( mr2 );
 //
@@ -333,7 +333,7 @@ public class MacroRecorder2 {
 //    }
 
  
-    private static Vector<Messreihe> loadStockDataFromBucket(String market) throws IOException {
+    private static Vector<TimeSeriesObject> loadStockDataFromBucket(String market) throws IOException {
 
         String folder = "/TSBASE/EXP1/";
         String fn = "Components_" + market + "_Close__2003_2004_2005_2006_2007_2008_2009_2010_2011_2012_2013_2014.tsb.vec.seq";

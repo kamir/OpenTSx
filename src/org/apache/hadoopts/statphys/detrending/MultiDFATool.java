@@ -1,16 +1,16 @@
 package org.apache.hadoopts.statphys.detrending;
 
-import org.apache.hadoopts.data.TestDataFactory;
-import org.apache.hadoopts.chart.simple.MultiChart; 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.chart.simple.MultiChart;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.generator.TestDataFactory;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
+
 import java.io.File;
-import java.util.Enumeration;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.hadoopts.statphys.detrending.methods.DFA;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
  * Das MultiDFA-Tool berechnet für eine Menge von Zeitreihen, die z.B. zu
@@ -26,21 +26,22 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  */
 public class MultiDFATool {
 
-    Messreihe finalFS = null;
+    TimeSeriesObject finalFS = null;
 
 
     public static void main(String[] main) {
 
         MultiDFATool tool = new MultiDFATool();
-        stdlib.StdRandom.initRandomGen(1);
+
+        RNGWrapper.init();
 
         int[] length = {500, 1500, 2500, 1000, 5000,
             2500, 3500, 1450, 2500, 7000,
             3000, 10000, 6000, 2000, 1000};
 
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
         for (int i = 0; i < 15; i++) {
-            Messreihe mr = TestDataFactory.getDataSeriesRandomValues_RW(length[i]);
+            TimeSeriesObject mr = TestDataFactory.getDataSeriesRandomValues_RW(length[i]);
             mr.setLabel("R" + i + " [" + length[i] + "]");
             vmr.add(mr);
         }  // nun liegen verschieden Lange Testreihen vor ...
@@ -58,19 +59,19 @@ public class MultiDFATool {
     IDetrendingMethod dfa;
             // Für alle s wird am Ende ein Fluctuationsfunktion Ã¼ber alle Reihen
         // bestimmt
-        Vector<Messreihe> Fs = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> Fs = new Vector<TimeSeriesObject>();
         Vector<Integer> s = new Vector<Integer>();
         
     // FÃ¼r eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
-    public void runDFA( Messreihe[] mr, int order) {     
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
-        for( Messreihe m : mr ) { 
+    public void runDFA(TimeSeriesObject[] mr, int order) {
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
+        for( TimeSeriesObject m : mr ) {
             vmr.add(m);
         }
         runDFA(vmr, order);
     }    
     // FÃ¼r eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
-    public void runDFA(Vector<Messreihe> vmr, int order) {
+    public void runDFA(Vector<TimeSeriesObject> vmr, int order) {
 
         dfa = DetrendingMethodFactory.getDetrendingMethod(order);
 
@@ -78,10 +79,10 @@ public class MultiDFATool {
         int zahlS = 0;
         
         // die laengste ZR bestimmt unsere EInteilung von s ...
-        Messreihe lang = null;
+        TimeSeriesObject lang = null;
         for (int z = 0; z < vmr.size(); z++) {
 
-            Messreihe mr = vmr.elementAt(z);
+            TimeSeriesObject mr = vmr.elementAt(z);
             if ( mr.xValues.size() > zahlS ) {
                 zahlS = mr.xValues.size(); 
                 lang = mr;
@@ -116,7 +117,7 @@ public class MultiDFATool {
         // Schleife über alle Zeitreihen dieser Klasse
         for (int z = 0; z < vmr.size(); z++) {
 
-            Messreihe mr = null;
+            TimeSeriesObject mr = null;
             double[][] dfa_results = null;
 
             mr = vmr.elementAt(z);
@@ -146,7 +147,7 @@ public class MultiDFATool {
 //                // get alpha
 //                double tmp_alpha = dfa.getAlpha(fit_min, fit_max);
 
-                Messreihe res_mr = new Messreihe();
+                TimeSeriesObject res_mr = new TimeSeriesObject();
                 String labelstr = mr.getLabel();
                 res_mr.setLabel(labelstr);
                 res_mr.setAddinfo(
@@ -174,7 +175,7 @@ public class MultiDFATool {
 
                 String dfaFilesPath = savePath + (z + 1) + "_dfa" + dfa.getPara().getGradeOfPolynom() + ".txt";
                 File dfaFile = new File(dfaFilesPath);
-                res_mr.writeToFile(dfaFile); // Messreihe schreiben
+                res_mr.writeToFile(dfaFile); // TimeSeriesObject schreiben
 
                 //save alphas to file
                 info.append("\n-----------------------------------------------------------------------------------");
@@ -211,8 +212,8 @@ public class MultiDFATool {
         
 
         // und nun sammeln wir die Werte ein und berechnen ein Fs
-        Messreihe finalFS = new Messreihe();
-        Messreihe finalZ = new Messreihe();
+        TimeSeriesObject finalFS = new TimeSeriesObject();
+        TimeSeriesObject finalZ = new TimeSeriesObject();
         for (int i = 0; i < zahlS; i++) {
             finalFS.addValuePair( Math.log10( S[i] ) , Math.log10( Math.sqrt( sum_xs_xs_[i] / anzw_[i] )));
             finalZ.addValuePair( S[i] , anzw_[i] );
@@ -220,11 +221,11 @@ public class MultiDFATool {
 
         MultiChart.open(Fs, "F(s) over s [order:" + order + "]", "log(s)", "log(F(s))", true, "?", null);
 
-        Vector<Messreihe> fsF = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> fsF = new Vector<TimeSeriesObject>();
         fsF.add(finalFS);
         MultiChart.open(fsF, "F(s) over s [order:" + order + "] (all rows)", "log(s)", "log(F(s))", true, "?", null);
 
-        Vector<Messreihe> fsF2 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> fsF2 = new Vector<TimeSeriesObject>();
         fsF2.add(finalZ);
         MultiChart.open(fsF2, "Anzahl Segmente je s [order:" + order + "] (all rows)", "s", "z", true, "?", null);
 
@@ -242,7 +243,7 @@ public class MultiDFATool {
 
     }
 
-    public int calcNrOf_s( Messreihe mr, int order) {
+    public int calcNrOf_s(TimeSeriesObject mr, int order) {
         int s_start = Math.abs( order ) + 2 ;
         int s_end = mr.xValues.size() / 4;
 

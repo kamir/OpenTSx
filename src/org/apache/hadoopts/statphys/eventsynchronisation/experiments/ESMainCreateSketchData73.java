@@ -11,7 +11,7 @@ package org.apache.hadoopts.statphys.eventsynchronisation.experiments;
 //import hadoopts.analysis.eventsynchronisation.ESCalc;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.io.IOException;
 import java.util.Vector;
 import org.apache.hadoopts.chart.simple.MultiChart;
@@ -35,8 +35,8 @@ public class ESMainCreateSketchData73 {
         op.initFolder( "data2" );
         
         // The final data export goes via two tables ...
-        Vector<Messreihe> topRow = new Vector<Messreihe>();
-        Vector<Messreihe> bottomRow = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> topRow = new Vector<TimeSeriesObject>();
+        Vector<TimeSeriesObject> bottomRow = new Vector<TimeSeriesObject>();
         
         // collect the logs
         StringBuffer sb = new StringBuffer();
@@ -72,12 +72,12 @@ public class ESMainCreateSketchData73 {
 
         MultiChart.yRangDEFAULT_MIN = 0;
         MultiChart.yRangDEFAULT_MAX = 3;
-        Messreihe[] rs4 = ESCalc2.checkRows(r1, r2, "Events - binary");
+        TimeSeriesObject[] rs4 = ESCalc2.checkRows(r1, r2, "Events - binary");
         
-        Messreihe[] rs5 = ESCalc2.checkRows(r3, r4, "Events - incremental (low density)");
+        TimeSeriesObject[] rs5 = ESCalc2.checkRows(r3, r4, "Events - incremental (low density)");
         
         MultiChart.yRangDEFAULT_MAX = 12;
-        Messreihe[] rs6 = ESCalc2.checkRows(r5, r6, "Events - incremental (high density)");
+        TimeSeriesObject[] rs6 = ESCalc2.checkRows(r5, r6, "Events - incremental (high density)");
         
         MesswertTabelle mwt1 = new MesswertTabelle();
         mwt1.setLabel("topRow.csv");
@@ -100,11 +100,11 @@ public class ESMainCreateSketchData73 {
         int[] r6ET = ESCalc2.getEventIndexSeries(r6); 
         
         MultiChart.yRangDEFAULT_MAX = 50;
-        Messreihe[] rs1 = ESCalc2.checkRowsInverse(r1ET, r2ET, "ETS - binary");            
+        TimeSeriesObject[] rs1 = ESCalc2.checkRowsInverse(r1ET, r2ET, "ETS - binary");
         MultiChart.yRangDEFAULT_MAX = 500;
-        Messreihe[] rs2 = ESCalc2.checkRowsInverse(r3ET, r4ET, "ETS - incremental (low density)");            
+        TimeSeriesObject[] rs2 = ESCalc2.checkRowsInverse(r3ET, r4ET, "ETS - incremental (low density)");
         MultiChart.yRangDEFAULT_MAX = length;
-        Messreihe[] rs3 = ESCalc2.checkRowsInverse(r5ET, r6ET, "ETS - incremental (high density)");            
+        TimeSeriesObject[] rs3 = ESCalc2.checkRowsInverse(r5ET, r6ET, "ETS - incremental (high density)");
         
         MesswertTabelle mwt = new MesswertTabelle();
         mwt.setLabel("bottomRow.csv");

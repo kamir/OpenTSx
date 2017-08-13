@@ -7,23 +7,15 @@
  */
 package org.apache.hadoopts.hadoopts.buckets.generator;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.hadoopts.topics.wikipedia.AccessFileFilter;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
+
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 
 /**
  *
@@ -42,9 +34,8 @@ public class TSBucketCreator_GrayImageColor {
      */
     public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
 
-        stdlib.StdRandom.initRandomGen(1);
+        RNGWrapper.init();
 
-        
         File f = new File( baseIn + "/" + experiment );
 
         System.out.println(">>> Text based TSBucketCreator (" + new Date(System.currentTimeMillis()) + ")");

@@ -1,6 +1,6 @@
 package org.apache.hadoopts.algorithms.univariate;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
@@ -79,13 +79,13 @@ public class TSGlobalTrendTool4Buckets2 {
         
         TSBucket tsb = bl._processBucket( f.getAbsolutePath(), tool );
         
-//        Vector<Messreihe> vmr = tsb.getBucketData();
+//        Vector<TimeSeriesObject> vmr = tsb.getBucketData();
 //        
 //        MultiChart.open(vmr);
 //        
 //        System.out.println( vmr.size() + " rows." );
 //        
-        Vector<Messreihe> fs = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> fs = new Vector<TimeSeriesObject>();
         
         //
         // Stage 1 : calculate Trends for the whole Group
@@ -98,7 +98,7 @@ public class TSGlobalTrendTool4Buckets2 {
             mwt.singleX = false;
             
             for( int i = 0; i < 3; i++ ) {
-                Messreihe logMr = tool.sum[i].getYLogData();
+                TimeSeriesObject logMr = tool.sum[i].getYLogData();
  
 //                SimpleRegression sr = logMr.linFit(1, 299);
 //                System.out.println( "slope=" + sr.getSlope() );

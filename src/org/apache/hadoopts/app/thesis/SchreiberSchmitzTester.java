@@ -5,11 +5,9 @@
  */
 package org.apache.hadoopts.app.thesis;
 
-import static org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator.tests;
-import static org.apache.hadoopts.app.thesis.SurrogatDataGeneration.doDFA;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 import java.util.Vector;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
@@ -45,28 +43,28 @@ public class SchreiberSchmitzTester {
         op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/Figure5.8");
         op.initFolder( "data" );
        
-        MessreiheFFT.debug = false;
+        TimeSeriesObjectFFT.debug = false;
         
-        Vector<Messreihe> vr = new Vector<Messreihe>(); 
+        Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
         
         int N = (int)Math.pow(2.0,16.0);
         
-        Messreihe m1 = Messreihe.getGaussianDistribution( N , 10.0, 1.0);
-        Messreihe m10 = Messreihe.getExpDistribution(N, 5.0);
-        Messreihe m100 = Messreihe.getParetoDistribution(N, 2.5);
+        TimeSeriesObject m1 = TimeSeriesObject.getGaussianDistribution( N , 10.0, 1.0);
+        TimeSeriesObject m10 = TimeSeriesObject.getExpDistribution(N, 5.0);
+        TimeSeriesObject m100 = TimeSeriesObject.getParetoDistribution(N, 2.5);
         
-        //Messreihe m2 = LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(m1.copy(), true, true);
-        //Messreihe m20 = LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(m10.copy(), true, true);
+        //TimeSeriesObject m2 = LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(m1.copy(), true, true);
+        //TimeSeriesObject m20 = LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(m10.copy(), true, true);
 //        
-//        Messreihe m31 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(), -2.0, true, true);
-//        Messreihe m32 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(), -1.0, true, true);
-//        Messreihe m33 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(),  0.0, true, true);
-//        Messreihe m34 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(),  1.0, true, true);
-        //Messreihe m35 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(),  1.0, true, true);
+//        TimeSeriesObject m31 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(), -2.0, true, true);
+//        TimeSeriesObject m32 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(), -1.0, true, true);
+//        TimeSeriesObject m33 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(),  0.0, true, true);
+//        TimeSeriesObject m34 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(),  1.0, true, true);
+        //TimeSeriesObject m35 = LongTermCorrelationSeriesGenerator.getRandomRow(m1.copy(),  1.0, true, true);
         
-        Messreihe m51 = LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz(m1.copy(), 1.5, false, false, 1);
-        Messreihe m52 = LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz(m10.copy(), 1.5, false, false, 1);
-        Messreihe m53 = LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz(m100.copy(), 1.5, false, false, 1);
+        TimeSeriesObject m51 = LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz(m1.copy(), 1.5, false, false, 1);
+        TimeSeriesObject m52 = LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz(m10.copy(), 1.5, false, false, 1);
+        TimeSeriesObject m53 = LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz(m100.copy(), 1.5, false, false, 1);
         
         vr.add( m1 );
 //        vr.add( m2 );

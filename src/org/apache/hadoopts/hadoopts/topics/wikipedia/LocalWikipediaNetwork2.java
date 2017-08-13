@@ -7,19 +7,17 @@
  */
 package org.apache.hadoopts.hadoopts.topics.wikipedia;
 
-import org.apache.hadoopts.data.series.Messreihe;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Vector;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.io.Text; 
+
+import org.apache.hadoop.io.Text;
 /**
  *
  * @author kamir

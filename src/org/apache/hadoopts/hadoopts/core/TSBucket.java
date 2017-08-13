@@ -18,35 +18,28 @@
  */
 package org.apache.hadoopts.hadoopts.core;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.hadoopts.topics.wikipedia.AccessFileFilter;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URI;
-import java.text.DecimalFormat;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
+import org.apache.hadoopts.app.thesis.TSGenerator;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.hadoopts.buckets.TSBASE;
+import org.apache.hadoopts.hadoopts.topics.wikipedia.AccessFileFilter;
+import org.apache.hadoopts.statphys.ris.experimental.TSPropertyTester;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.VectorWritable;
 
-import org.apache.hadoopts.statphys.ris.experimental.TSPropertyTester;
-import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
-import org.apache.hadoopts.app.thesis.TSGenerator;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
+import java.text.DecimalFormat;
 import java.util.Hashtable;
-import org.apache.hadoopts.hadoopts.buckets.TSBASE;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Mirko Kaempf
@@ -71,7 +64,7 @@ public class TSBucket {
     public boolean isProcessed = false;
 
     int[] ids = null;
-    java.util.Vector<Messreihe> bucketData = new java.util.Vector<Messreihe>();
+    java.util.Vector<TimeSeriesObject> bucketData = new java.util.Vector<TimeSeriesObject>();
 
     // record mode is a domain specific feature from WIKIPEDIA analysis.
     static String recoderIdMode = "counter";
@@ -302,7 +295,7 @@ public class TSBucket {
 
             reader.getCurrentValue(vec);
 
-            Messreihe mr = new Messreihe();
+            TimeSeriesObject mr = new TimeSeriesObject();
             mr.setDescription(i + " ) " + fn + "_[" + key.toString() + "]");
             mr.setLabel(seriesID);
 
@@ -319,7 +312,7 @@ public class TSBucket {
                 c++;
             }
             try {
-                Messreihe m = null;
+                TimeSeriesObject m = null;
                 if (tst != null) {
                     m = tst.processReihe(fw, mr, fwe);
                 }
@@ -391,7 +384,7 @@ public class TSBucket {
         return fs;
     }
 
-    public java.util.Vector<Messreihe> getBucketData() {
+    public java.util.Vector<TimeSeriesObject> getBucketData() {
         return bucketData;
     }
 
@@ -458,7 +451,7 @@ public class TSBucket {
 
             boolean showTESTS = true;
 
-            Messreihe mr = LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, EXP), BETA, showTESTS, false);
+            TimeSeriesObject mr = LongTermCorrelationSeriesGenerator.getRandomRow((int) Math.pow(2, EXP), BETA, showTESTS, false);
             if (SAMPLES < TSPropertyTester.zSAMPLES) {
                 TSPropertyTester.addSample(mr);
             }
@@ -508,7 +501,7 @@ public class TSBucket {
 
             TSData data = new TSData();
             data.dataset = rescaleRandomData(data.getRandomData((int) Math.pow(2, EXP)), 24.0);
-            Messreihe mr = data.getMessreihe();
+            TimeSeriesObject mr = data.getMessreihe();
             if (SAMPLES < TSPropertyTester.zSAMPLES) {
                 TSPropertyTester.addSample(mr);
             }
@@ -533,12 +526,10 @@ public class TSBucket {
     /**
      * Create Uncorrelated time series ...
      *
-     * @param s
-     * @param EXP
-     * @param ANZ
+     *
      * @throws IOException
      */
-    public void createBucketFromVectorOfSeries(String track, String label, Vector<Messreihe> rows) throws IOException {
+    public void createBucketFromVectorOfSeries(String track, String label, Vector<TimeSeriesObject> rows) throws IOException {
 
         DecimalFormat df = new DecimalFormat("0.000");
 
@@ -568,7 +559,7 @@ public class TSBucket {
              *
              */
             System.out.println("  (" + i + ")");
-            Messreihe m = rows.elementAt(i);
+            TimeSeriesObject m = rows.elementAt(i);
             NamedVector nv = new NamedVector(new DenseVector(m.getYData()), m.label);
 
             VectorWritable vec = new VectorWritable();
@@ -633,10 +624,10 @@ public class TSBucket {
 
         for (int i = 0; i < ANZ; i++) {
 
-            double fre = stdlib.StdRandom.uniform(fMIN, fMAX);
-            double ampl = stdlib.StdRandom.uniform(aMIN, aMAX);
+            double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);  //  stdlib.StdRandom.uniform(fMIN, fMAX);
+            double ampl = RNGWrapper.getStdRandomUniform(aMIN, aMAX); // stdlib.StdRandom.uniform(aMIN, aMAX);
 
-            Messreihe mr = TSGenerator.getSinusWave(fre, time, SR, ampl);
+            TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl);
             TSData data = TSData.convertMessreihe(mr);
 
             System.out.print("   (" + i + ")\t");
@@ -653,7 +644,7 @@ public class TSBucket {
 
     /**
      *
-     * The Messreihe is converted into a "VectorWritable". The NamedVectors
+     * The TimeSeriesObject is converted into a "VectorWritable". The NamedVectors
      * getName() method defines the key of the element stored in the
      * SequenceFile;
      *
@@ -661,7 +652,7 @@ public class TSBucket {
      */
     public static final String KEY_PREFIX_DELIMITER = "###";
 
-    public void putMessreihe(Messreihe mr, String keyPrefix) {
+    public void putMessreihe(TimeSeriesObject mr, String keyPrefix) {
         try {
 
             TSData data = TSData.convertMessreihe(mr);
@@ -679,13 +670,13 @@ public class TSBucket {
 
     /**
      *
-     * The Messreihe is converted into a "VectorWritable". The NamedVectors
+     * The TimeSeriesObject is converted into a "VectorWritable". The NamedVectors
      * getName() method defines the key of the element stored in the
      * SequenceFile;
      *
      * @param mr
      */
-    public void putMessreihe(Messreihe mr) {
+    public void putMessreihe(TimeSeriesObject mr) {
         try {
 
             if (mr == null) {
@@ -757,8 +748,7 @@ public class TSBucket {
      * Reload a TSBucket from a Sequence-File and do an implicit processing, if
      * the TSOperation object is not null.
      *
-     * @param fn
-     * @param ids
+     * @param f
      *
      * @throws IOException
      */
@@ -793,7 +783,7 @@ public class TSBucket {
 
             reader.getCurrentValue(vec);
 
-            Messreihe mr = new Messreihe();
+            TimeSeriesObject mr = new TimeSeriesObject();
             mr.setDescription(i + " ) " + f.getName() + "_[" + key.toString() + "]");
             mr.setLabel(i + " " + key.toString());
 
@@ -836,7 +826,7 @@ public class TSBucket {
 
         for (int i = 0; i < ANZ; i++) {
 
-            Messreihe mr = TSGenerator.getWordLengthSeries(folder[i]);
+            TimeSeriesObject mr = TSGenerator.getWordLengthSeries(folder[i]);
             TSData data = TSData.convertMessreihe(mr);
 
             System.out.print("   (" + i + ")\t" + data.label + "\n");
@@ -875,9 +865,9 @@ public class TSBucket {
 
         System.out.println("--> process bucket : GrayImageLine-Series-Generator ( z=" + ANZ + ")");
 
-        Messreihe[] mrS = TSGenerator.getGrayImageSeries(imageFile);
+        TimeSeriesObject[] mrS = TSGenerator.getGrayImageSeries(imageFile);
 
-        for (Messreihe mr : mrS) {
+        for (TimeSeriesObject mr : mrS) {
 
             TSData data = TSData.convertMessreihe(mr);
 
@@ -927,7 +917,7 @@ public class TSBucket {
 
             for (File f : FOLDERS) {
 
-                Messreihe mr = TSGenerator.getWordLengthSeries(f);
+                TimeSeriesObject mr = TSGenerator.getWordLengthSeries(f);
 
                 TSData data = TSData.convertMessreihe(mr);
 
@@ -996,7 +986,7 @@ public class TSBucket {
 
             for (File f : FOLDERS) {
 
-                Messreihe mr = TSGenerator.getTFIDFSeries( f, idfs , getWC(f), getText(f) );
+                TimeSeriesObject mr = TSGenerator.getTFIDFSeries( f, idfs , getWC(f), getText(f) );
 
                 TSData data = TSData.convertMessreihe(mr);
 

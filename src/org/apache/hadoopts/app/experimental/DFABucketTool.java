@@ -13,7 +13,7 @@ package org.apache.hadoopts.app.experimental;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.AbstractTSProcessor;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
@@ -61,19 +61,19 @@ public class DFABucketTool extends AbstractTSProcessor {
                     
                     System.out.println(">>>              : " + bl.getTSBucket());
 
-                    Vector<Messreihe> data = bl.getBucketData();
+                    Vector<TimeSeriesObject> data = bl.getBucketData();
 
-                    Vector<Messreihe> dataNorm = new Vector<Messreihe>();
+                    Vector<TimeSeriesObject> dataNorm = new Vector<TimeSeriesObject>();
 
                     int d = 7;
                     int t = 24 * d;
 
-                    for (Messreihe m : data) {
+                    for (TimeSeriesObject m : data) {
 
-//                        Messreihe mr = MRT.normalizeByPeriodeTrend(m, t);
+//                        TimeSeriesObject mr = MRT.normalizeByPeriodeTrend(m, t);
 //
 //                        double[] reihe = MRT.calcPeriodeTrend(m, t);
-//                        Messreihe mr3 = new Messreihe(reihe);
+//                        TimeSeriesObject mr3 = new TimeSeriesObject(reihe);
 
                         dataNorm.add(m);
                     }
@@ -192,12 +192,12 @@ public class DFABucketTool extends AbstractTSProcessor {
     }
 
     /**
-     * get the data as a Vector<Messreihe> ...
+     * get the data as a Vector<TimeSeriesObject> ...
      */
-    public static Vector<Messreihe> loadBucketData(String name) throws IOException {
+    public static Vector<TimeSeriesObject> loadBucketData(String name) throws IOException {
         BucketLoader bl = new BucketLoader();
         bl.loadBucket(name);
-        Vector<Messreihe> data = bl.getBucketData();
+        Vector<TimeSeriesObject> data = bl.getBucketData();
         return data;
     }
 
@@ -209,15 +209,15 @@ public class DFABucketTool extends AbstractTSProcessor {
      * @param days
      * @return
      */
-    public static Vector<Messreihe> removePeriodicTrend(TSBucket tsb, int days) {
-        Vector<Messreihe> dataNorm = new Vector<Messreihe>();
+    public static Vector<TimeSeriesObject> removePeriodicTrend(TSBucket tsb, int days) {
+        Vector<TimeSeriesObject> dataNorm = new Vector<TimeSeriesObject>();
 
         int d = days;
         int t = 24 * d;
 
         int c = 0;
-        for (Messreihe m : tsb.getBucketData()) {
-            Messreihe mr = MRT.normalizeByPeriodeTrend(m, t);
+        for (TimeSeriesObject m : tsb.getBucketData()) {
+            TimeSeriesObject mr = MRT.normalizeByPeriodeTrend(m, t);
             dataNorm.add(mr);
             c++;
         }

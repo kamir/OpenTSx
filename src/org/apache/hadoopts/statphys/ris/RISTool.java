@@ -13,14 +13,14 @@ package org.apache.hadoopts.statphys.ris;
 
 import org.apache.hadoopts.chart.panels.MessreiheWindow3Frame;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.OriginProject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.util.logging.Level;
-import java.util.logging.Logger; 
+import java.util.logging.Logger;
 
 import org.apache.hadoopts.statistics.HaeufigkeitsZaehler;
 import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
@@ -64,12 +64,12 @@ public class RISTool {
     /*
      * einfach nur gezählte Werte
      */
-    public Messreihe mrHaeufigkeit = new Messreihe();
+    public TimeSeriesObject mrHaeufigkeit = new TimeSeriesObject();
     /*
      * normierte Häufigkeiten, somit ergibt die summe aller Werte 1
      */
-    public Messreihe mrVerteilung = new Messreihe();
-    public Messreihe mrVerteilungSkaliert = new Messreihe();
+    public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
+    public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
     private int binning = 300;   // anzahl der Werte pro Intervall
     private int scale = 24;    // größter Wert
@@ -137,7 +137,7 @@ public class RISTool {
      * 
      */
     Vector<Double> allRqs = new Vector<Double>();
-    Messreihe test = new Messreihe();
+    TimeSeriesObject test = new TimeSeriesObject();
     public void add( RISTool ris ) throws Exception {
         if (!_checkRIS( ris ) ) { 
             throw new Exception( "[RIS] ist ungültig!");
@@ -392,7 +392,7 @@ public class RISTool {
     
     private void calcContainerMR() throws Exception {
         
-        mrVerteilungSkaliert = new Messreihe( "Vert_SK");
+        mrVerteilungSkaliert = new TimeSeriesObject( "Vert_SK");
         
         for (int i = 0; i < dataSKALIERT.length; i++) {
             if ( dataSKALIERT[i] != 0 ) {
@@ -473,7 +473,7 @@ public class RISTool {
     
     public void showData() throws Exception {
         calcMessreihen();
-        v1 = new Vector<Messreihe>();
+        v1 = new Vector<TimeSeriesObject>();
         showRawData();      
         showVerteilungen();
         MultiChart.open(v1,true, name);
@@ -481,8 +481,8 @@ public class RISTool {
                 this.name + "(RawData)");
     }
     
-    Vector<Messreihe> v1 = new Vector<Messreihe>();
-    Vector<Messreihe> v2 = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> v1 = new Vector<TimeSeriesObject>();
+    Vector<TimeSeriesObject> v2 = new Vector<TimeSeriesObject>();
     
     private void showVerteilungen() {
         // Verteilungen
@@ -493,7 +493,7 @@ public class RISTool {
 
     private void showRawData() {
         // Rohdaten (Intervalle)
-        Messreihe mr = new Messreihe( this.name + " (rawdata)");
+        TimeSeriesObject mr = new TimeSeriesObject( this.name + " (rawdata)");
         for( double y: this.dataRawFILTERED ) {
             mr.addValue(y);
         }
@@ -585,7 +585,7 @@ public class RISTool {
     
     static FileWriter fw;
     
-    static Vector<Messreihe> mrv = null;
+    static Vector<TimeSeriesObject> mrv = null;
     
     static int risBinning = 300*24;  // Auflösung in Stunden
     static int risScale = 1;
@@ -738,7 +738,7 @@ public class RISTool {
 //        ris3.add(ris2);
 //        ris3.calcMessreihen();
         
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
         
         ris1.toString_Haeufigkeit();
         ris2.toString_Haeufigkeit();

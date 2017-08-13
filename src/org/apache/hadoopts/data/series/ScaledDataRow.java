@@ -1,14 +1,14 @@
 package org.apache.hadoopts.data.series;
 
-import org.apache.hadoopts.data.series.IMessreihe;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+
+import javax.swing.*;
 import java.text.DecimalFormat;
 import java.util.Vector;
-import javax.swing.JFrame;
-import stdlib.StdStats;
 
 /**
- * Eine Messreihe wird hier "umskaliert" um ein
+ * Eine TimeSeriesObject wird hier "umskaliert" um ein
  * Skalenverhalten zu überprüfen.
  *
  * Diese allg. Klasse ist ein Vorlage und daher abstract.
@@ -18,7 +18,7 @@ import stdlib.StdStats;
  * 
  * @author kamir
  */
-abstract public class ScaledDataRow implements IMessreihe {
+abstract public class ScaledDataRow implements ITimeSeriesObject {
 
     public String label = null;
 
@@ -26,7 +26,7 @@ abstract public class ScaledDataRow implements IMessreihe {
     DecimalFormat decimalFormat_Y = null;
     DecimalFormat decimalFormat_STAT = new DecimalFormat("0.0000");
 
-    Messreihe mr = null;
+    TimeSeriesObject mr = null;
 
     public double scaleVar = 1.0;
     public double exponent = 1.0;
@@ -38,16 +38,15 @@ abstract public class ScaledDataRow implements IMessreihe {
     
     public String defaultLabel;
 
-
     public ScaledDataRow() {};
 
-    public ScaledDataRow( Messreihe mr ) {
+    public ScaledDataRow( TimeSeriesObject mr ) {
         this.mr = mr;
         sxValues = new Vector<Double>();
         syValues = new Vector<Double>();
     };
 
-    public void setMessreihe( Messreihe mr ) {
+    public void setMessreihe( TimeSeriesObject mr ) {
         this.mr = mr;
         sxValues = new Vector<Double>();
         syValues = new Vector<Double>();
@@ -61,13 +60,10 @@ abstract public class ScaledDataRow implements IMessreihe {
         return this.label;
     }
 
-
-
     public void addValuePair( double x, double y ) {
         sxValues.add(x);
         syValues.add(y);
     };
-
     
     public Vector<Double> getXValues() {
        return sxValues;
@@ -154,30 +150,31 @@ abstract public class ScaledDataRow implements IMessreihe {
         double[] dx = data[0];
         double[] dy = data[1];
 
+        StandardDeviation stdev = new StandardDeviation();
 
         sb.append(pre+"X:\n");
         sb.append(pre+"==\n");
 
-        sb.append(pre+"Max    \t max_X=" + decimalFormat_STAT.format( StdStats.max( dx ) ) + "\n" );
-        sb.append(pre+"Min    \t min_X=" + decimalFormat_STAT.format(StdStats.min( dx ) ) + "\n" );
-        sb.append(pre+"Mean   \t mw__X=" + decimalFormat_STAT.format(StdStats.mean( dx ) ) + "\n" );
-        sb.append(pre+"StdAbw \t std_X=" + decimalFormat_STAT.format(StdStats.stddev( dx ) ) + "\n" );
-        sb.append(pre+"Var    \t var_X=" + decimalFormat_STAT.format(StdStats.var( dx ) ) + "\n" );
-        sb.append(pre+"Sum    \t sum_X=" + decimalFormat_STAT.format(StdStats.sum( dx ) ) + "\n" ) ;
-        sb.append(pre+"Nr     \t nr__X=" +  dx.length + "\n" );
+        sb.append(pre+"Max    \t max_X=" + decimalFormat_STAT.format(StatUtils.max( dx ) ) + "\n" );
+        sb.append(pre+"Min    \t min_X=" + decimalFormat_STAT.format(StatUtils.min( dx ) ) + "\n" );
+        sb.append(pre+"Mean   \t avg_X=" + decimalFormat_STAT.format(StatUtils.mean( dx ) ) + "\n" );
+        sb.append(pre+"StdAbw \t std_X=" + decimalFormat_STAT.format(stdev.evaluate( dx ) ) + "\n" );
+        sb.append(pre+"Var    \t var_X=" + decimalFormat_STAT.format(StatUtils.variance( dx ) ) + "\n" );
+        sb.append(pre+"Sum    \t sum_X=" + decimalFormat_STAT.format(StatUtils.sum( dx ) ) + "\n" ) ;
+        sb.append(pre+"Len    \t len_X=" + dx.length + "\n" );
 
         sb.append(pre+"\n");
 
         sb.append(pre+"Y:\n");
         sb.append(pre+"==\n");
 
-        sb.append(pre+"Max    \t max_Y=" + decimalFormat_STAT.format(StdStats.max( dy ) )  + "\n" );
-        sb.append(pre+"Min    \t min_Y=" + decimalFormat_STAT.format(StdStats.min( dy ) )  + "\n" );
-        sb.append(pre+"Mean   \t mw__Y=" + decimalFormat_STAT.format(StdStats.mean( dy ) )  + "\n" );
-        sb.append(pre+"StdAbw \t std_Y=" + decimalFormat_STAT.format(StdStats.stddev( dy ) )  + "\n" );
-        sb.append(pre+"Var    \t var_Y=" + decimalFormat_STAT.format(StdStats.var( dy ) )+ "\n" );
-        sb.append(pre+"Sum    \t sum_Y=" + decimalFormat_STAT.format( StdStats.sum( dy ) ) + "\n" );
-        sb.append(pre+"Nr     \t nr__Y=" + dy.length + "\n#" );
+        sb.append(pre+"Max    \t max_Y=" + decimalFormat_STAT.format(StatUtils.max( dy ) )  + "\n" );
+        sb.append(pre+"Min    \t min_Y=" + decimalFormat_STAT.format(StatUtils.min( dy ) )  + "\n" );
+        sb.append(pre+"Mean   \t avg_Y=" + decimalFormat_STAT.format(StatUtils.mean( dy ) )  + "\n" );
+        sb.append(pre+"StdAbw \t std_Y=" + decimalFormat_STAT.format(stdev.evaluate( dy ) )  + "\n" );
+        sb.append(pre+"Var    \t var_Y=" + decimalFormat_STAT.format(StatUtils.variance( dy ) )+ "\n" );
+        sb.append(pre+"Sum    \t sum_Y=" + decimalFormat_STAT.format(StatUtils.sum( dy ) ) + "\n" );
+        sb.append(pre+"Len    \t len_Y=" + dy.length + "\n#" );
 
         return sb.toString();
     };

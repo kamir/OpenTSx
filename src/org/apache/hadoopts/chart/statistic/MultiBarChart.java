@@ -5,11 +5,12 @@
 package org.apache.hadoopts.chart.statistic;
 
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.awt.Color;
 import java.awt.Dimension;
 
 import java.util.Enumeration;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -57,7 +58,7 @@ public class MultiBarChart extends ApplicationFrame {
     }
 
     
-    public Messreihe[][] rows = null;
+    public TimeSeriesObject[][] rows = null;
     
     public String[] serie; // Was wurde gemessen ?
     
@@ -86,7 +87,7 @@ public class MultiBarChart extends ApplicationFrame {
         for( int i= 0; i < 5; i++ ) { 
             for( int j=0; j<3;j++) {
                 
-                Messreihe mr = rows[i][j];
+                TimeSeriesObject mr = rows[i][j];
                 
                 Enumeration en = mr.yValues.elements();
                 

@@ -1,6 +1,6 @@
 package org.apache.hadoopts.hadoopts.loader;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -112,12 +112,12 @@ public class StockDataLoader2 {
         }
     }
 
-    public static Vector<Messreihe> concatRowsForYearsFromCache_2(int[] YEARS, String column, String label) {
+    public static Vector<TimeSeriesObject> concatRowsForYearsFromCache_2(int[] YEARS, String column, String label) {
 
-        Vector<Messreihe> y1 = getRowsForYearFromCache(YEARS[0], column, label);
-        Vector<Messreihe> y2 = getRowsForYearFromCache(YEARS[1], column, label);
-//        Vector<Messreihe> y3 = getRowsForYearFromCache( YEARS[2] );
-//        Vector<Messreihe> y4 = getRowsForYearFromCache( YEARS[3] );
+        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(YEARS[0], column, label);
+        Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(YEARS[1], column, label);
+//        Vector<TimeSeriesObject> y3 = getRowsForYearFromCache( YEARS[2] );
+//        Vector<TimeSeriesObject> y4 = getRowsForYearFromCache( YEARS[3] );
 
         if (conf == null) {
 
@@ -126,36 +126,36 @@ public class StockDataLoader2 {
 
         }
 
-        List<Messreihe> d1 = y1.subList(0, y1.size() - 1);
-        List<Messreihe> d2 = y2.subList(0, y2.size() - 1);
-//        List<Messreihe> d3 = y3.subList(0, y3.size()-1);
-//        List<Messreihe> d4 = y4.subList(0, y4.size()-1);
+        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
+        List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
+//        List<TimeSeriesObject> d3 = y3.subList(0, y3.size()-1);
+//        List<TimeSeriesObject> d4 = y4.subList(0, y4.size()-1);
 
-        JavaRDD<Messreihe> distD1 = sc.parallelize(d1);
-        JavaRDD<Messreihe> distD2 = sc.parallelize(d2);
-//        JavaRDD<Messreihe> distD3 = sc.parallelize(d3);
-//        JavaRDD<Messreihe> distD4 = sc.parallelize(d4);
+        JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
+        JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
+//        JavaRDD<TimeSeriesObject> distD3 = sc.parallelize(d3);
+//        JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
 
-        // now I have to key the rdds by the Messreihe label (all 4)
-        JavaPairRDD<String, Messreihe> p1 = distD1.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-        JavaPairRDD<String, Messreihe> p2 = distD2.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-//        JavaPairRDD<String, Messreihe> p3 = distD3.mapToPair( w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-//        JavaPairRDD<String, Messreihe> p4 = distD4.mapToPair( w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
+        // now I have to key the rdds by the TimeSeriesObject label (all 4)
+        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 
         // let join them and concat the results (1/3 phases)
-        JavaPairRDD<String, Tuple2<Messreihe, Messreihe>> pA = p1.join(p2);
-//        JavaPairRDD<String, Tuple2<Messreihe,Messreihe>> pB = p3.join(p4);
+        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+//        JavaPairRDD<String, Tuple2<TimeSeriesObject,TimeSeriesObject>> pB = p3.join(p4);
 
-//        JavaPairRDD<String, Tuple2< Tuple2<Messreihe,Messreihe>,Tuple2<Messreihe,Messreihe>>> pALL = pA.join(pB);
-//        JavaPairRDD<String,Messreihe> rows = pALL.mapValues( w -> concatMR2( w ) ); 
-        JavaPairRDD<String, Messreihe> rows = pA.mapValues(w -> concatMR(w));
+//        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject,TimeSeriesObject>,Tuple2<TimeSeriesObject,TimeSeriesObject>>> pALL = pA.join(pB);
+//        JavaPairRDD<String,TimeSeriesObject> rows = pALL.mapValues( w -> concatMR2( w ) );
+        JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR(w));
 
         rows.count();
 
-        Map<String, Messreihe> all = rows.collectAsMap();
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
+        Map<String, TimeSeriesObject> all = rows.collectAsMap();
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-        for (Messreihe m : all.values()) {
+        for (TimeSeriesObject m : all.values()) {
             mrv.add(m);
         }
 
@@ -165,46 +165,46 @@ public class StockDataLoader2 {
     static SparkConf conf = null;
     static JavaSparkContext sc = null;
 
-    public static Vector<Messreihe> concatRowsForYearsFromCache_4(int[] YEARS, String column, String label) {
+    public static Vector<TimeSeriesObject> concatRowsForYearsFromCache_4(int[] YEARS, String column, String label) {
 
-        Vector<Messreihe> y1 = getRowsForYearFromCache(YEARS[0], column, label);
-        Vector<Messreihe> y2 = getRowsForYearFromCache(YEARS[1], column, label);
-        Vector<Messreihe> y3 = getRowsForYearFromCache(YEARS[2], column, label);
-        Vector<Messreihe> y4 = getRowsForYearFromCache(YEARS[3], column, label);
+        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(YEARS[0], column, label);
+        Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(YEARS[1], column, label);
+        Vector<TimeSeriesObject> y3 = getRowsForYearFromCache(YEARS[2], column, label);
+        Vector<TimeSeriesObject> y4 = getRowsForYearFromCache(YEARS[3], column, label);
         if (conf == null) {
             conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
             sc = new JavaSparkContext(conf);
         }
-        List<Messreihe> d1 = y1.subList(0, y1.size() - 1);
-        List<Messreihe> d2 = y2.subList(0, y2.size() - 1);
-        List<Messreihe> d3 = y3.subList(0, y3.size() - 1);
-        List<Messreihe> d4 = y4.subList(0, y4.size() - 1);
-        JavaRDD<Messreihe> distD1 = sc.parallelize(d1);
-        JavaRDD<Messreihe> distD2 = sc.parallelize(d2);
-        JavaRDD<Messreihe> distD3 = sc.parallelize(d3);
-        JavaRDD<Messreihe> distD4 = sc.parallelize(d4);
+        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
+        List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
+        List<TimeSeriesObject> d3 = y3.subList(0, y3.size() - 1);
+        List<TimeSeriesObject> d4 = y4.subList(0, y4.size() - 1);
+        JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
+        JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
+        JavaRDD<TimeSeriesObject> distD3 = sc.parallelize(d3);
+        JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
 
-        JavaPairRDD<String, Messreihe> p1 = distD1.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-        JavaPairRDD<String, Messreihe> p2 = distD2.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-        JavaPairRDD<String, Messreihe> p3 = distD3.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-        JavaPairRDD<String, Messreihe> p4 = distD4.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
+        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 
-        JavaPairRDD<String, Tuple2<Messreihe, Messreihe>> pA = p1.join(p2);
-        JavaPairRDD<String, Tuple2<Messreihe, Messreihe>> pB = p3.join(p4);
+        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pB = p3.join(p4);
 
-        JavaPairRDD<String, Tuple2< Tuple2<Messreihe, Messreihe>, Tuple2<Messreihe, Messreihe>>> pALL = pA.join(pB);
-        JavaPairRDD<String, Messreihe> rows = pALL.mapValues(w -> concatMR2(w));
+        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject, TimeSeriesObject>, Tuple2<TimeSeriesObject, TimeSeriesObject>>> pALL = pA.join(pB);
+        JavaPairRDD<String, TimeSeriesObject> rows = pALL.mapValues(w -> concatMR2(w));
 
-        Map<String, Messreihe> all = rows.collectAsMap();
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
+        Map<String, TimeSeriesObject> all = rows.collectAsMap();
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-        for (Messreihe m : all.values()) {
+        for (TimeSeriesObject m : all.values()) {
             mrv.add(m);
         }
         return mrv;
     }
 
-    public static Vector<Messreihe> concatRowsForYearsFromCache_ALL(int[] y, String column, String label) {
+    public static Vector<TimeSeriesObject> concatRowsForYearsFromCache_ALL(int[] y, String column, String label) {
 
         if (conf == null) {
             conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
@@ -213,29 +213,29 @@ public class StockDataLoader2 {
 
         int i = 0;
 
-        Vector<Messreihe> y1 = getRowsForYearFromCache(y[i], column, label);
+        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(y[i], column, label);
 
-        List<Messreihe> d1 = y1.subList(0, y1.size() - 1);
+        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
 
         for (int j = 1; j < y.length; j++) {
 
-            JavaRDD<Messreihe> distD1 = sc.parallelize(d1);
+            JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
         
-            JavaPairRDD<String, Messreihe> p1 = distD1.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
+            JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 
-            Vector<Messreihe> y2 = getRowsForYearFromCache(y[j], column, label);
+            Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(y[j], column, label);
 
 //            javax.swing.JOptionPane.showMessageDialog(null, y2.size() + " " + y[j]);
             if (y2 != null && y2.size() > 0) {
 
-                List<Messreihe> d2 = y2.subList(0, y2.size() - 1);
+                List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
 
-                JavaRDD<Messreihe> distD2 = sc.parallelize(d2);
-                JavaPairRDD<String, Messreihe> p2 = distD2.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
+                JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
+                JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 
-                JavaPairRDD<String, Tuple2<Messreihe, Messreihe>> pA = p1.join(p2);
+                JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
 
-                JavaPairRDD<String, Messreihe> rows = pA.mapValues(w -> concatMR_MANY(w));
+                JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR_MANY(w));
 
                 
                 distD1 = rows.values();
@@ -244,9 +244,9 @@ public class StockDataLoader2 {
                 d1 = distD1.collect();
                 
 
-//                Vector<Messreihe> mrv = new Vector<Messreihe>();
+//                Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 //
-//                for (Messreihe m : d1) {
+//                for (TimeSeriesObject m : d1) {
 //                    mrv.add(m);
 //                }
 //                
@@ -255,63 +255,63 @@ public class StockDataLoader2 {
             }
         }
 
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-        for (Messreihe m : d1) {
+        for (TimeSeriesObject m : d1) {
             mrv.add(m);
         }
         return mrv;
     }
 
-    public static Vector<Messreihe> concatRowsForYearsFromCache(int[] YEARS) {
+    public static Vector<TimeSeriesObject> concatRowsForYearsFromCache(int[] YEARS) {
 
-        Vector<Messreihe> y1 = getRowsForYearFromCache(YEARS[0]);
-        Vector<Messreihe> y2 = getRowsForYearFromCache(YEARS[1]);
-//        Vector<Messreihe> y3 = getRowsForYearFromCache( YEARS[2] );
-//        Vector<Messreihe> y4 = getRowsForYearFromCache( YEARS[3] );
+        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(YEARS[0]);
+        Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(YEARS[1]);
+//        Vector<TimeSeriesObject> y3 = getRowsForYearFromCache( YEARS[2] );
+//        Vector<TimeSeriesObject> y4 = getRowsForYearFromCache( YEARS[3] );
 
         SparkConf conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        List<Messreihe> d1 = y1.subList(0, y1.size() - 1);
-        List<Messreihe> d2 = y2.subList(0, y2.size() - 1);
-//        List<Messreihe> d3 = y3.subList(0, y3.size()-1);
-//        List<Messreihe> d4 = y4.subList(0, y4.size()-1);
+        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
+        List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
+//        List<TimeSeriesObject> d3 = y3.subList(0, y3.size()-1);
+//        List<TimeSeriesObject> d4 = y4.subList(0, y4.size()-1);
 
-        JavaRDD<Messreihe> distD1 = sc.parallelize(d1);
-        JavaRDD<Messreihe> distD2 = sc.parallelize(d2);
-//        JavaRDD<Messreihe> distD3 = sc.parallelize(d3);
-//        JavaRDD<Messreihe> distD4 = sc.parallelize(d4);
+        JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
+        JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
+//        JavaRDD<TimeSeriesObject> distD3 = sc.parallelize(d3);
+//        JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
 
-        // now I have to key the rdds by the Messreihe label (all 4)
-        JavaPairRDD<String, Messreihe> p1 = distD1.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-        JavaPairRDD<String, Messreihe> p2 = distD2.mapToPair(w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-//        JavaPairRDD<String, Messreihe> p3 = distD3.mapToPair( w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
-//        JavaPairRDD<String, Messreihe> p4 = distD4.mapToPair( w -> new Tuple2<String, Messreihe>(w.getLabel(), w));
+        // now I have to key the rdds by the TimeSeriesObject label (all 4)
+        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 
         // let join them and concat the results (1/3 phases)
-        JavaPairRDD<String, Tuple2<Messreihe, Messreihe>> pA = p1.join(p2);
-//        JavaPairRDD<String, Tuple2<Messreihe,Messreihe>> pB = p3.join(p4);
+        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+//        JavaPairRDD<String, Tuple2<TimeSeriesObject,TimeSeriesObject>> pB = p3.join(p4);
 
-//        JavaPairRDD<String, Tuple2< Tuple2<Messreihe,Messreihe>,Tuple2<Messreihe,Messreihe>>> pALL = pA.join(pB);
-//        JavaPairRDD<String,Messreihe> rows = pALL.mapValues( w -> concatMR2( w ) ); 
-        JavaPairRDD<String, Messreihe> rows = pA.mapValues(w -> concatMR(w));
+//        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject,TimeSeriesObject>,Tuple2<TimeSeriesObject,TimeSeriesObject>>> pALL = pA.join(pB);
+//        JavaPairRDD<String,TimeSeriesObject> rows = pALL.mapValues( w -> concatMR2( w ) );
+        JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR(w));
 
         rows.count();
 
-        Map<String, Messreihe> all = rows.collectAsMap();
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
+        Map<String, TimeSeriesObject> all = rows.collectAsMap();
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-        for (Messreihe m : all.values()) {
+        for (TimeSeriesObject m : all.values()) {
             mrv.add(m);
         }
 
         return mrv;
     }
 
-    private static Messreihe concatMR_MANY(Tuple2<Messreihe, Messreihe> w) {
+    private static TimeSeriesObject concatMR_MANY(Tuple2<TimeSeriesObject, TimeSeriesObject> w) {
 
-        Messreihe r = w._1;
+        TimeSeriesObject r = w._1;
 
         r.setLabel(w._1.getLabel() );
 
@@ -320,9 +320,9 @@ public class StockDataLoader2 {
         return r;
     }
 
-    private static Messreihe concatMR(Tuple2<Messreihe, Messreihe> w) {
+    private static TimeSeriesObject concatMR(Tuple2<TimeSeriesObject, TimeSeriesObject> w) {
 
-        Messreihe r = w._1;
+        TimeSeriesObject r = w._1;
 
         r.setLabel(w._1.getLabel() + "_" + w._2.getLabel());
 
@@ -331,9 +331,9 @@ public class StockDataLoader2 {
         return r;
     }
 
-    private static Messreihe concatMR2(Tuple2<Tuple2<Messreihe, Messreihe>, Tuple2<Messreihe, Messreihe>> w) {
+    private static TimeSeriesObject concatMR2(Tuple2<Tuple2<TimeSeriesObject, TimeSeriesObject>, Tuple2<TimeSeriesObject, TimeSeriesObject>> w) {
 
-        Messreihe r = w._1._1;
+        TimeSeriesObject r = w._1._1;
 
         r.setLabel(w._1._1.getLabel() + "_" + w._1._2.getLabel() + "_" + w._2._1.getLabel() + "_" + w._2._2.getLabel());
 
@@ -362,7 +362,7 @@ public class StockDataLoader2 {
 
     Vector<String> liste = new Vector<String>(); // name list ...
     Hashtable<String, String> hash = new Hashtable<String, String>();
-    Hashtable<String, Messreihe> hashMR = new Hashtable<String, Messreihe>();
+    Hashtable<String, TimeSeriesObject> hashMR = new Hashtable<String, TimeSeriesObject>();
 
     // name of the label listfile for which the stock-prices are loaded
     String label = "UK.tsv";
@@ -375,7 +375,7 @@ public class StockDataLoader2 {
     String column = "Close";
 
     // local time series container which becomes an RDD later on.
-    Vector<Messreihe> vmr = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
     int y1 = 2001;
     int y2 = 2001;
 
@@ -431,7 +431,7 @@ public class StockDataLoader2 {
         return l;
     }
 
-    public static Vector<Messreihe> getRowsForYearFromCache(int y1, int y2, String label, String column) {
+    public static Vector<TimeSeriesObject> getRowsForYearFromCache(int y1, int y2, String label, String column) {
 
         StockDataLoader2 sDL_2 = null;
 
@@ -451,7 +451,7 @@ public class StockDataLoader2 {
         }
     }
 
-    public static Vector<Messreihe> getRowsForYearFromCache(int year) {
+    public static Vector<TimeSeriesObject> getRowsForYearFromCache(int year) {
 
         StockDataLoader2 sDL_2 = null;
 
@@ -474,7 +474,7 @@ public class StockDataLoader2 {
         }
     }
 
-    public static Vector<Messreihe> getRowsForYearFromCache(int year, String column, String label) {
+    public static Vector<TimeSeriesObject> getRowsForYearFromCache(int year, String column, String label) {
 
         StockDataLoader2 sDL_2 = null;
 
@@ -627,7 +627,7 @@ public class StockDataLoader2 {
             int i = 0;
 
             // This is the time series we are working with
-            Messreihe mr = new Messreihe();
+            TimeSeriesObject mr = new TimeSeriesObject();
             mr.setLabel(symbol + "_" + selectedColumn);
 
             /**
@@ -797,7 +797,7 @@ public class StockDataLoader2 {
         System.out.println(">     " + getFilename());
 
         _temp = new Hashtable<String, String>();
-        vmr = new Vector<Messreihe>();
+        vmr = new Vector<TimeSeriesObject>();
 
         BufferedReader br = new BufferedReader(new FileReader(getFilename()));
         while (br.ready()) {
@@ -906,7 +906,7 @@ public class StockDataLoader2 {
                 String s2 = res.toJSONString();
                 int i = 0;
 
-                Messreihe mr = new Messreihe();
+                TimeSeriesObject mr = new TimeSeriesObject();
                 mr.setLabel(key + "_" + column);
 
                 Hashtable<Long, Double> data = new Hashtable<Long, Double>();

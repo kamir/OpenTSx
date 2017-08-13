@@ -2,7 +2,7 @@
 package org.apache.hadoopts.statistics;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
@@ -25,7 +25,7 @@ public class HaeufigkeitsZaehler {
     
     public String label = "HISTOGRAM";
 
-    public Messreihe mr = new Messreihe();
+    public TimeSeriesObject mr = new TimeSeriesObject();
     public String folder = "/Volumes/MyExternalDrive/CALCULATIONS/data/out/topic6/";
 
     public HaeufigkeitsZaehler( String lab ) { 
@@ -147,19 +147,19 @@ public class HaeufigkeitsZaehler {
             fw.close();
     };
     
-    static public void showDistribution(Vector<Messreihe> rows, String label) {
+    static public void showDistribution(Vector<TimeSeriesObject> rows, String label) {
         MultiChart.open(rows, "Distribution (" + label + ")","length of rows","anz", true );
     }  
 
     public void showDistribution() {
         this.calcWS();
-        Vector<Messreihe> rows = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> rows = new Vector<TimeSeriesObject>();
         rows.add(mr);
         String label = "length of rows";
         showDistribution(rows, label);
     }    
     
-    public Messreihe getDistributionMR() { 
+    public TimeSeriesObject getDistributionMR() {
         this.calcWS();
         return mr;
     };

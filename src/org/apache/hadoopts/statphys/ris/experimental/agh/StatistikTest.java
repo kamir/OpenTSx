@@ -1,22 +1,23 @@
 package org.apache.hadoopts.statphys.ris.experimental.agh;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 public class StatistikTest {
 
     public static void main( String[] args ) throws Exception {
-        
-        stdlib.StdRandom.initRandomGen((long) 1.0);
-        
-        Messreihe mr = Messreihe.getGaussianDistribution(25);
-        Messreihe test1 = new Messreihe();
-        Messreihe test2 = new Messreihe();
+
+        RNGWrapper.init();
+
+        TimeSeriesObject mr = TimeSeriesObject.getGaussianDistribution(25);
+        TimeSeriesObject test1 = new TimeSeriesObject();
+        TimeSeriesObject test2 = new TimeSeriesObject();
 
         for ( int i = 1; i < 20; i ++ ) {
 
-            Messreihe mr2 = mr.scaleY_2((double) i );
+            TimeSeriesObject mr2 = mr.scaleY_2((double) i );
             
             SimpleRegression reg1 = mr.linFit(5, 20);
             SimpleRegression reg2 = mr2.linFit(5, 20);

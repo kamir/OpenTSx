@@ -9,20 +9,9 @@ package org.apache.hadoopts.algorithms.univariate;
  */
 
 
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.MultiDFATool4;
-import org.apache.hadoopts.statphys.detrending.SingleDFATool;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool;
 
 /**
  *
@@ -30,13 +19,13 @@ import org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool;
  */
 public class SingleTsTrendCalculatorTool extends SingleRowTSO {
     
-    static Messreihe[] sum = null;
+    static TimeSeriesObject[] sum = null;
     
     public void init() { 
-        sum = new Messreihe[3];
-        sum[0] = new Messreihe();
-        sum[1] = new Messreihe();
-        sum[2] = new Messreihe();
+        sum = new TimeSeriesObject[3];
+        sum[0] = new TimeSeriesObject();
+        sum[1] = new TimeSeriesObject();
+        sum[2] = new TimeSeriesObject();
         for( int i=0; i < 300; i++ ) { 
             sum[0].addValuePair(i, 0);
             sum[1].addValuePair(i, 0);
@@ -51,15 +40,15 @@ public class SingleTsTrendCalculatorTool extends SingleRowTSO {
     }
     
     @Override
-    public Messreihe processReihe( FileWriter fw, Messreihe reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
 
-        Messreihe binned = reihe.setBinningX_sum(24);
+        TimeSeriesObject binned = reihe.setBinningX_sum(24);
         
         int z = (int)binned.summeY();
         int k = getKlasse( z );
 //        System.out.println( k );
         
-        Messreihe summe = sum[ k ];
+        TimeSeriesObject summe = sum[ k ];
         sum[k] = sum[k].add( binned );
                 
         return null;

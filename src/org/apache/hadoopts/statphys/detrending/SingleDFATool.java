@@ -1,13 +1,10 @@
 package org.apache.hadoopts.statphys.detrending;
 
-import org.apache.hadoopts.chart.simple.MultiBarChart;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import java.util.Vector;
-import java.io.File;
-import org.apache.hadoopts.statphys.detrending.methods.DFA;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.statphys.detrending.methods.DFAmulti;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
+
+import java.util.Vector;
 
 /**
  * Hier wird nun die Begrenzung der Segementlänge auf N/4 aufgehoben ...
@@ -33,7 +30,7 @@ public class SingleDFATool {
 
     static boolean doClear = true;
 
-    Messreihe finalFS = null;
+    TimeSeriesObject finalFS = null;
 
     static void resetPuffer() {
 
@@ -79,18 +76,18 @@ public class SingleDFATool {
     String value = "_";   // Welche Messgröße wird betrachtet?
 
     // Für jede Ordnung / PHASE wird hier eine Kurve erstellt.
-    static public Vector<Messreihe> kurven = new Vector<Messreihe>();
+    static public Vector<TimeSeriesObject> kurven = new Vector<TimeSeriesObject>();
 
     public static SingleDFATool tool = new SingleDFATool();
             
-    public static void calcMultiDFA(Vector<Messreihe> vmr , int phase, String v) throws Exception {
+    public static void calcMultiDFA(Vector<TimeSeriesObject> vmr , int phase, String v) throws Exception {
 //
 //        System.out.println( vmr.size() + " Reihen in Phase: " + phase );
 //        MultiChart.open(vmr, "Messwerte - [Phase " + phase + "] (all rows)", "t", "y(s)", false, "?");
 
         tool = new SingleDFATool();
 
-        kurven = new Vector<Messreihe>(); // für jede Ordnung eine ...
+        kurven = new Vector<TimeSeriesObject>(); // für jede Ordnung eine ...
 
         doClear = true;
         
@@ -116,17 +113,17 @@ public class SingleDFATool {
     }
 
     public static void main(String[] main) {
-        
-        stdlib.StdRandom.initRandomGen(1);
+
+        RNGWrapper.init();
 
         SingleDFATool tool = new SingleDFATool();
         tool.logLogResults = true;
         tool.showCharts = true;
 
         
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
-        vmr.add( Messreihe.getGaussianDistribution( 4000 ) );
-        vmr.add( Messreihe.getGaussianDistribution( 4000 ) );
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
+        vmr.add( TimeSeriesObject.getGaussianDistribution( 4000 ) );
+        vmr.add( TimeSeriesObject.getGaussianDistribution( 4000 ) );
 
         // nun werden die Berechnungen für verschiedene Ordnungen durchgeführt
         int[] orders = { 2 };
@@ -144,11 +141,11 @@ public class SingleDFATool {
     DFAmulti dfa;
 
     // alle Fluktuationsfunktionen...
-    public Vector<Messreihe> Fs = new Vector<Messreihe>();
-    public Vector<Messreihe> fsFMW = new Vector<Messreihe>();
+    public Vector<TimeSeriesObject> Fs = new Vector<TimeSeriesObject>();
+    public Vector<TimeSeriesObject> fsFMW = new Vector<TimeSeriesObject>();
 
     // Für alle s wird eine Mittler Fluctuationsfunktion bestimmt
-    Vector<Messreihe> Fs_MW = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> Fs_MW = new Vector<TimeSeriesObject>();
 
     // Die Fensterbreiten
     Vector<Integer> s = new Vector<Integer>();
@@ -156,24 +153,24 @@ public class SingleDFATool {
     public static boolean showCharts = false;
     public static boolean storeCharts = false;
 
-    Vector<Messreihe> fsF2 = null;
+    Vector<TimeSeriesObject> fsF2 = null;
 
     // Für eine Klasse von Messreiehn wird die DFA einer Ordnung berechnet.
-    public Vector<Messreihe> runDFA(Vector<Messreihe> vmr, int order) throws Exception  {
+    public Vector<TimeSeriesObject> runDFA(Vector<TimeSeriesObject> vmr, int order) throws Exception  {
 
         // s bestimmen ... anhand der längsten Reihe
         int zahlW = 0;
         int zahlT = 0;
         int zahlS = 0;
 
-        Messreihe laengsteReihe = vmr.elementAt(0);
+        TimeSeriesObject laengsteReihe = vmr.elementAt(0);
         
 //        int max = 10;
         int max = vmr.size();
         System.out.println( "zahlW=" + zahlW + " max=" + max + " " + laengsteReihe.getLabel() );
         
         for (int z = 0; z < max ; z++) {
-            Messreihe mr = vmr.elementAt(z);
+            TimeSeriesObject mr = vmr.elementAt(z);
             System.out.println( z+ " size x=" + mr.xValues.size() );
             
             if (mr.xValues.size() > zahlW) {
@@ -239,7 +236,7 @@ public class SingleDFATool {
             
             double[][] dfa_results = null;
 
-            Messreihe mr = vmr.elementAt(z);
+            TimeSeriesObject mr = vmr.elementAt(z);
             if (mr != null ) {
 
                 // set number of values

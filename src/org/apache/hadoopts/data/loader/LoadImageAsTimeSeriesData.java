@@ -8,14 +8,13 @@ package org.apache.hadoopts.data.loader;
 import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketSource;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketTransformation;
-import static org.apache.hadoopts.app.bucketanalyser.MacroRecorder.loadOp;
 import org.apache.hadoopts.app.experimental.SimpleBucketTool;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.buckets.generator.TSBucketCreator_GrayImageColor;
 import org.apache.hadoopts.hadoopts.buckets.generator.TSBucketCreator_WordLength;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
-import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
+
 import java.io.IOException;
 import java.util.Vector;
 
@@ -49,7 +48,7 @@ public class LoadImageAsTimeSeriesData {
 
         TSBucket.processSeriesLabelOnLoad = false;
         
-        Vector<Messreihe> r0 = SimpleBucketTool.loadBucketData( fn );
+        Vector<TimeSeriesObject> r0 = SimpleBucketTool.loadBucketData( fn );
         
         String windowName = "ImageLines (exp: " + experiment + ") ";
         

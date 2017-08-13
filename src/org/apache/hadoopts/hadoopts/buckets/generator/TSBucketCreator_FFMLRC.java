@@ -13,18 +13,18 @@
 
 package org.apache.hadoopts.hadoopts.buckets.generator;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 
 import java.io.File;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
@@ -39,7 +39,9 @@ public class TSBucketCreator_FFMLRC extends Configured implements Tool {
     public static void main(String[] args) throws Exception {    	
     	
     	int res = ToolRunner.run( new Configuration(), new TSBucketCreator_FFMLRC(), args);
+
         System.exit(res);
+
     }
 
 	@Override
@@ -66,7 +68,9 @@ public class TSBucketCreator_FFMLRC extends Configured implements Tool {
         conf.addResource(new Path("/etc/hadoop/conf/core-site.xml"));
 		
         System.out.println( ">>> FFMLRCBucketCreator : " + new Date( System.currentTimeMillis() ) );
-        stdlib.StdRandom.initRandomGen(1);
+
+        RNGWrapper.init();
+
         System.out.println( ">   fs.default.name     : " + getConf().get( "fs.default.name" ) );
         System.out.println( ">   baseOut             : " + baseOut );
              

@@ -1,14 +1,8 @@
 package org.apache.hadoopts.app.thesis.dataqualitytest;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.chart.statistic.HistogramChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
-import org.jfree.ui.RefineryUtilities;
-
-import java.awt.Container;
-import java.io.File;
 import java.util.Vector;
 import org.apache.hadoopts.statistics.DistributionTester;
 
@@ -47,12 +41,12 @@ public class InfluenceOfSinglePeakTester {
 //    public static int ID_TO_SELECT_CC_FROM = 21;
 //
 //    /**
-//     * Messreihe mr : the cross-correlation function for a pair of time series
+//     * TimeSeriesObject mr : the cross-correlation function for a pair of time series
 //     *
 //     * @param mr
 //     * @return
 //     */
-//    public static double _calcStrength(Messreihe mr) {
+//    public static double _calcStrength(TimeSeriesObject mr) {
 //        switch (_mode) {
 //            case 0: {
 //                return calcStrength_VERSION_A(mr);
@@ -78,7 +72,7 @@ public class InfluenceOfSinglePeakTester {
 //     * @param mr
 //     * @return
 //     */
-//    private static double calcStrength_VERSION_A(Messreihe mr) {
+//    private static double calcStrength_VERSION_A(TimeSeriesObject mr) {
 //
 //        if (debug) {
 //            System.out.println("Link Strength Version_A");
@@ -111,7 +105,7 @@ public class InfluenceOfSinglePeakTester {
 //     * @param mr
 //     * @return 
 //     */
-//    private static double calcStrength_VERSION_B(Messreihe mr) {
+//    private static double calcStrength_VERSION_B(TimeSeriesObject mr) {
 //        if (debug) {
 //            System.out.println("Version B");
 //        }
@@ -146,16 +140,16 @@ public class InfluenceOfSinglePeakTester {
 //     * Uses the method: 
 //     * 
 //     *    calcStrength_VERSION_C(
-//     *            Messreihe mr, double stdevA, double stdevB, double mwA, double mwB )
+//     *            TimeSeriesObject mr, double stdevA, double stdevB, double mwA, double mwB )
 //     *  
 //     * 
 //     * and check results....
 //     */ 
-//    private static double calcStrength_VERSION_C(Messreihe kr) {
+//    private static double calcStrength_VERSION_C(TimeSeriesObject kr) {
 //
 //        double maxYOriginal = kr.getMaxY();
 //
-//        Messreihe mr2 = kr.copy();
+//        TimeSeriesObject mr2 = kr.copy();
 //        System.out.println(mr2.getStatisticData("<<<"));
 //
 //        mr2 = removeMaximumValueFromRow(mr2, 1);
@@ -185,7 +179,7 @@ public class InfluenceOfSinglePeakTester {
 //     * @param mr
 //     * @return
 //     */
-//    private static double calcStrength_VERSION_D(Messreihe mr) {
+//    private static double calcStrength_VERSION_D(TimeSeriesObject mr) {
 //
 //        if (debug) {
 //            System.out.println("Link Strength Version_D");
@@ -217,7 +211,7 @@ public class InfluenceOfSinglePeakTester {
 //     * @param threshold
 //     * @return
 //     */
-//    public static boolean sIsGreaterThanTS(Messreihe mr, double threshold) {
+//    public static boolean sIsGreaterThanTS(TimeSeriesObject mr, double threshold) {
 //        boolean b = false;
 //        double v = _calcStrength(mr);
 //        if (v > threshold) {
@@ -264,44 +258,44 @@ public class InfluenceOfSinglePeakTester {
 //        // Wie groÃŸ ist die LINK-StÃ¤rke bei solch einem STÃ–R-Peak in 
 //        // der CC-Function?
 //
-//        Vector<Messreihe> reihen_strength = new Vector<Messreihe>();
+//        Vector<TimeSeriesObject> reihen_strength = new Vector<TimeSeriesObject>();
 //
-//        Vector<Messreihe> reihen = new Vector<Messreihe>();
+//        Vector<TimeSeriesObject> reihen = new Vector<TimeSeriesObject>();
 //
 //
 //        
 //        
 //        for (int j = 0; j < 5; j++) {
 //
-//            Vector<Messreihe> t1reihen = new Vector<Messreihe>();
-////            Vector<Messreihe> t2reihen = new Vector<Messreihe>();
-//            Vector<Messreihe> t3reihen = new Vector<Messreihe>();
-//            Vector<Messreihe> t4reihen = new Vector<Messreihe>();
+//            Vector<TimeSeriesObject> t1reihen = new Vector<TimeSeriesObject>();
+////            Vector<TimeSeriesObject> t2reihen = new Vector<TimeSeriesObject>();
+//            Vector<TimeSeriesObject> t3reihen = new Vector<TimeSeriesObject>();
+//            Vector<TimeSeriesObject> t4reihen = new Vector<TimeSeriesObject>();
 //
 //            double mw = j * 1.5;
 //
 //            for (int t = 0; t < NR_OF_ROWS; t++) {
 //
-//                Messreihe mr1 = Messreihe.getGaussianDistribution(41, mw, 1);
-//                Messreihe mr2 = null;
+//                TimeSeriesObject mr1 = TimeSeriesObject.getGaussianDistribution(41, mw, 1);
+//                TimeSeriesObject mr2 = null;
 //
 //                // MR1 ist eine Kreuzkorrelationsfunktion mit ausreisser ...
 //
 //                // store a result value
-//                Messreihe test = new Messreihe();
+//                TimeSeriesObject test = new TimeSeriesObject();
 //                test.setLabel("F_CC(tau)_1_mw=" + mw);
 //
-//                Messreihe test_2 = new Messreihe();
+//                TimeSeriesObject test_2 = new TimeSeriesObject();
 //                test_2.setLabel("F_CC(tau)_2_mw=" + mw);
 //
-//                Messreihe test_3 = new Messreihe();
+//                TimeSeriesObject test_3 = new TimeSeriesObject();
 //                test_3.setLabel("F_CC(tau)_3_mw=" + mw);
 //
-//                Messreihe test_4 = new Messreihe();
+//                TimeSeriesObject test_4 = new TimeSeriesObject();
 //                test_4.setLabel("F_CC(tau)_4_mw=" + mw);
 //
 //                // store more result values
-//                Messreihe test2 = new Messreihe();
+//                TimeSeriesObject test2 = new TimeSeriesObject();
 //                test2.setLabel("mw=" + mw);
 //
 //                int iMAX = 41;
@@ -310,7 +304,7 @@ public class InfluenceOfSinglePeakTester {
 //                // using the original row mr1
 //                for (int i = 0; i < iMAX; i = i + 1) {
 //
-//                    Messreihe p = mr1.copy();
+//                    TimeSeriesObject p = mr1.copy();
 //
 //                    double stdevA = p.getStddev();
 //                    double mwA = p.getAvarage2();
@@ -349,21 +343,21 @@ public class InfluenceOfSinglePeakTester {
 //            MultiChart.xRangDEFAULT_MAX = 41;
 //            MultiChart.setDefaultRange = true;
 //
-//            Messreihe avR1 = new Messreihe();
-//            avR1 = Messreihe.calcAveragOfRows(t1reihen);
+//            TimeSeriesObject avR1 = new TimeSeriesObject();
+//            avR1 = TimeSeriesObject.calcAveragOfRows(t1reihen);
 //            avR1.setLabel("<F_CC(tau)_1_mw=" + mw + ">");
 //
-//            Messreihe avR3 = new Messreihe();
-//            avR3 = Messreihe.calcAveragOfRows(t3reihen);
+//            TimeSeriesObject avR3 = new TimeSeriesObject();
+//            avR3 = TimeSeriesObject.calcAveragOfRows(t3reihen);
 //            avR3.setLabel("<F_CC(tau)_3_mw=" + mw + ">");
 //
-////            Messreihe avR2 = new Messreihe();
-////            avR3 = Messreihe.calcAveragOfRows(t2reihen);
+////            TimeSeriesObject avR2 = new TimeSeriesObject();
+////            avR3 = TimeSeriesObject.calcAveragOfRows(t2reihen);
 ////            avR3.setLabel("<F_CC(tau)_2_mw=" + mw + ">");
 //
 //            
-//            Messreihe avR4 = new Messreihe();
-//            avR4 = Messreihe.calcAveragOfRows( t4reihen );
+//            TimeSeriesObject avR4 = new TimeSeriesObject();
+//            avR4 = TimeSeriesObject.calcAveragOfRows( t4reihen );
 //            avR4.setLabel("<F_CC(tau)_4_mw=" + mw + ">");
 //
 //            reihen.add(avR1);
@@ -391,18 +385,18 @@ public class InfluenceOfSinglePeakTester {
         DistributionTester dst = new DistributionTester();
         dst.init();
 
-        Vector<Messreihe> reihen_strength = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> reihen_strength = new Vector<TimeSeriesObject>();
 
-        Vector<Messreihe> reihen = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> reihen = new Vector<TimeSeriesObject>();
         
         double sigma = 0;
                  
         for (int j = 1; j < 6; j++) {
 
-            Vector<Messreihe> t1reihen = new Vector<Messreihe>();
-            Vector<Messreihe> t2reihen = new Vector<Messreihe>();
-            Vector<Messreihe> t3reihen = new Vector<Messreihe>();
-            Vector<Messreihe> t4reihen = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> t1reihen = new Vector<TimeSeriesObject>();
+            Vector<TimeSeriesObject> t2reihen = new Vector<TimeSeriesObject>();
+            Vector<TimeSeriesObject> t3reihen = new Vector<TimeSeriesObject>();
+            Vector<TimeSeriesObject> t4reihen = new Vector<TimeSeriesObject>();
 
             sigma = 1.0*j;
 
@@ -410,19 +404,19 @@ public class InfluenceOfSinglePeakTester {
 
                 // simulate a time series with Gaussian distribution
                 // of length 41 variable average and sigma 1.
-                Messreihe mr1 = Messreihe.getGaussianDistribution(41, 0, sigma);
+                TimeSeriesObject mr1 = TimeSeriesObject.getGaussianDistribution(41, 0, sigma);
 
                 // store test result values
-                Messreihe test = new Messreihe();
+                TimeSeriesObject test = new TimeSeriesObject();
                 test.setLabel("Shapiro Wilk: (tau)_1_mw=" + 0);
 
-                Messreihe test_2 = new Messreihe();
+                TimeSeriesObject test_2 = new TimeSeriesObject();
                 test_2.setLabel("Shapiro-Wilk: log(tau)_2_mw=" + 0);
 
-//                Messreihe test_3 = new Messreihe();
+//                TimeSeriesObject test_3 = new TimeSeriesObject();
 //                test_3.setLabel("SWT (tau)_3_mw=" + mw);
 //
-//                Messreihe test_4 = new Messreihe();
+//                TimeSeriesObject test_4 = new TimeSeriesObject();
 //                test_4.setLabel("SWT log(tau)_4_mw=" + mw);
 
                 int iMAX = 41;
@@ -431,7 +425,7 @@ public class InfluenceOfSinglePeakTester {
                 // using the original row mr1
                 for (int i = 0; i < iMAX; i = i + 1) {
 
-                    Messreihe p = mr1.copy();
+                    TimeSeriesObject p = mr1.copy();
 
                     double stdevA = p.getStddev();
                     double mwA = p.getAvarage2();
@@ -475,23 +469,23 @@ public class InfluenceOfSinglePeakTester {
             
             MultiChart.setDefaultRange = true;
 
-            Messreihe avR1 = new Messreihe();
-            avR1 = Messreihe.calcAveragOfRows(t1reihen);
+            TimeSeriesObject avR1 = new TimeSeriesObject();
+            avR1 = TimeSeriesObject.calcAveragOfRows(t1reihen);
             avR1.setLabel("< SW pValue mw=" + 0 + ">");
 
-//            Messreihe avR3 = new Messreihe();
-//            avR3 = Messreihe.calcAveragOfRows(t3reihen);
+//            TimeSeriesObject avR3 = new TimeSeriesObject();
+//            avR3 = TimeSeriesObject.calcAveragOfRows(t3reihen);
 //            avR3.setLabel("< SW WSTAT mw=" + mw + ">");
 
             reihen.add(avR1);
 //            reihen.add(avR3);
             
-            Messreihe avR2 = new Messreihe();
-            avR2 = Messreihe.calcAveragOfRows(t2reihen);
+            TimeSeriesObject avR2 = new TimeSeriesObject();
+            avR2 = TimeSeriesObject.calcAveragOfRows(t2reihen);
             avR2.setLabel("< SW pValue log mw=" + 0 + ">");
 
-////            Messreihe avR4 = new Messreihe();
-////            avR4 = Messreihe.calcAveragOfRows(t4reihen);
+////            TimeSeriesObject avR4 = new TimeSeriesObject();
+////            avR4 = TimeSeriesObject.calcAveragOfRows(t4reihen);
 ////            avR4.setLabel("< SW WSTAT log mw=" + mw + ">");
 
             reihen.add(avR2);
@@ -522,18 +516,18 @@ public class InfluenceOfSinglePeakTester {
 //     */
 //    private static void calcTestForSimulatedTS() {
 //        
-//        Messreihe mr1;
-//        Messreihe mr2;
+//        TimeSeriesObject mr1;
+//        TimeSeriesObject mr2;
 //        
 //        double f = 0.0;
 //        
-//        Messreihe f_str = new Messreihe();
-//        Messreihe f_strH = new Messreihe();
+//        TimeSeriesObject f_str = new TimeSeriesObject();
+//        TimeSeriesObject f_strH = new TimeSeriesObject();
 //        f_str.setLabel("<strength>( mittlerer PeakhÃ¶he )");
 //        f_strH.setLabel("<strength>( mittlerer PeakhÃ¶he ) && strength > " + ts);
 //        
 //
-//        Vector<Messreihe> fv = new Vector<Messreihe>();
+//        Vector<TimeSeriesObject> fv = new Vector<TimeSeriesObject>();
 //        fv.add(f_str);
 //        fv.add(f_strH);
 //        for (int j = 1; j <= 10; j++) {
@@ -544,17 +538,17 @@ public class InfluenceOfSinglePeakTester {
 //            double devH = 5;
 //            double devW = 0.2;
 //
-//            mr1 = Messreihe.getGaussianDistribution(300, mw, 2);
-//            mr2 = Messreihe.getGaussianDistribution(300, mw, 2);
+//            mr1 = TimeSeriesObject.getGaussianDistribution(300, mw, 2);
+//            mr2 = TimeSeriesObject.getGaussianDistribution(300, mw, 2);
 //
-//            Vector<Messreihe> rr = new Vector<Messreihe>();
-//            Vector<Messreihe> kkrr = new Vector<Messreihe>();
+//            Vector<TimeSeriesObject> rr = new Vector<TimeSeriesObject>();
+//            Vector<TimeSeriesObject> kkrr = new Vector<TimeSeriesObject>();
 //
 //            KreuzKorrelation.defaultK = (int) tau;
 //
-//            Messreihe test2 = new Messreihe();
+//            TimeSeriesObject test2 = new TimeSeriesObject();
 //            test2.setLabel("<strength> zur mittleren PeakhÃ¶he f=" + f);
-//            Messreihe test3 = new Messreihe();
+//            TimeSeriesObject test3 = new TimeSeriesObject();
 //            test3.setLabel("<strength> zur mittleren PeakhÃ¶he f=" + f + " ( strength > " + ts + ")");
 //
 //            double avSTR = 0.0;
@@ -574,8 +568,8 @@ public class InfluenceOfSinglePeakTester {
 //                double y1 = stdlib.StdRandom.gaussian(mw * f, devH);
 //                double y2 = stdlib.StdRandom.gaussian(mw * f, devH);
 //
-//                Messreihe m1 = mr1.copy();
-//                Messreihe m2 = mr2.copy();
+//                TimeSeriesObject m1 = mr1.copy();
+//                TimeSeriesObject m2 = mr2.copy();
 //
 //                addPeak(m1, (int) (100 + r1), y1, 300);
 //                addPeak(m2, (int) (100 + r2), y2, 300);
@@ -627,7 +621,7 @@ public class InfluenceOfSinglePeakTester {
 //        MultiChart.open(fv, "f(str)", "f", "str", true);
 //    }
 //
-//    public static void addPeak(Messreihe mr, int x, double y, int l) {
+//    public static void addPeak(TimeSeriesObject mr, int x, double y, int l) {
 //        if (x > l - 1) {
 //            x = l - x;
 //        }
@@ -642,8 +636,8 @@ public class InfluenceOfSinglePeakTester {
 //    static String OUTPUT = "E:";
 //    static String run = "A";
 //
-//    public static Container createHistogramm(Messreihe mr,
-//            Messreihe r2,
+//    public static Container createHistogramm(TimeSeriesObject mr,
+//            TimeSeriesObject r2,
 //            int bins, int min, int max) {
 //
 //        File f = new File(OUTPUT + "/CIOSP");
@@ -678,7 +672,7 @@ public class InfluenceOfSinglePeakTester {
 //    
 //
 //    
-//    public static Messreihe createRandomSeries_A_INTERNAL(String sl, int length, double mw, double mw_peakHoeh, double tau, double devH, double devW) {
+//    public static TimeSeriesObject createRandomSeries_A_INTERNAL(String sl, int length, double mw, double mw_peakHoeh, double tau, double devH, double devW) {
 //
 //
 //        // double f = stdlib.StdRandom.gaussian( 1, 10 ) * 0.5;
@@ -691,7 +685,7 @@ public class InfluenceOfSinglePeakTester {
 //        // HÃ–HE des PEAKS
 //        double y1 = stdlib.StdRandom.gaussian(mw_peakHoeh, devH);
 //
-//        Messreihe m1 = Messreihe.getGaussianDistribution(length, mw, 1);
+//        TimeSeriesObject m1 = TimeSeriesObject.getGaussianDistribution(length, mw, 1);
 //        m1.setLabel(sl);
 //
 //        int pos_peak = (int) stdlib.StdRandom.gaussian(0, length);
@@ -727,7 +721,7 @@ public class InfluenceOfSinglePeakTester {
 //        return m1;
 //    }
 //
-//    public static Messreihe createRandomSeries_A_Peaks(String label) {
+//    public static TimeSeriesObject createRandomSeries_A_Peaks(String label) {
 //
 //        double mw = 0;
 //        double mw_peakHoeh = 0;// 20;  // 10
@@ -747,7 +741,7 @@ public class InfluenceOfSinglePeakTester {
 //     * @param athis
 //     * @return
 //     */
-//    static public Messreihe removeMaximumValueFromRow(Messreihe athis, int z) {
+//    static public TimeSeriesObject removeMaximumValueFromRow(TimeSeriesObject athis, int z) {
 //
 //        /**
 //         * z is ignored at the moment. We only remove one value.
@@ -756,7 +750,7 @@ public class InfluenceOfSinglePeakTester {
 //         */
 //        boolean removed = false;
 //
-//        Messreihe mr = new Messreihe();
+//        TimeSeriesObject mr = new TimeSeriesObject();
 //        mr.setLabel(athis.getLabel());
 //
 //        int max = athis.yValues.size();
@@ -797,7 +791,7 @@ public class InfluenceOfSinglePeakTester {
 //     * @param mr
 //     * @return
 //     */
-//    private static double calcRealMaxY(Messreihe mr) {
+//    private static double calcRealMaxY(TimeSeriesObject mr) {
 //        double extr = 0.0;
 //
 //        double maxY = mr.getMaxY();

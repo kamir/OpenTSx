@@ -5,7 +5,7 @@
 
 package org.apache.hadoopts.analysistools;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
@@ -16,16 +16,16 @@ import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
  */
 public class FluctuationFunktion {
 
-    Messreihe Fs = null;
+    TimeSeriesObject Fs = null;
 
     /**
-     * The Messreihe object is calculated by an DFA algorithm
+     * The TimeSeriesObject object is calculated by an DFA algorithm
      * We provide a label and wrap some specific functionality around it.
      * 
      * @param mr
      * @param label 
      */
-    public FluctuationFunktion( Messreihe mr, String label ) {
+    public FluctuationFunktion(TimeSeriesObject mr, String label ) {
         this.Fs = mr;
         this.label = label;
         Fs.setLabel( label + " " + Fs.getLabel() );
@@ -64,7 +64,7 @@ public class FluctuationFunktion {
         return label;
     }
     
-    public Messreihe getFs() {
+    public TimeSeriesObject getFs() {
         return Fs;
     }
 

@@ -3,9 +3,8 @@ package org.apache.hadoopts.data.loader;
 import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketSource;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketTransformation;
-import static org.apache.hadoopts.app.bucketanalyser.MacroRecorder.loadOp;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
 import java.util.Vector;
 
@@ -88,7 +87,7 @@ public class LoadStockIndexDataFromYahoo {
 
     private static void loadStockDataForYears(String col, int y1, int y2, String label) {
 
-        Vector<Messreihe> r0 = StockDataLoader2.getRowsForYearFromCache(y1, y2, col, label);
+        Vector<TimeSeriesObject> r0 = StockDataLoader2.getRowsForYearFromCache(y1, y2, col, label);
 
         String windowName = "Components_" + label + "_" + col + "_" + y1 + " to " + y2;
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("Collection", windowName, "LOAD"));
@@ -99,15 +98,15 @@ public class LoadStockIndexDataFromYahoo {
 
     private static void loadStockDataForYearsALL(String LABEL, int[] y, int i) {
 
-        Vector<Messreihe> r0 = StockDataLoader2.concatRowsForYearsFromCache_ALL(y, LABEL, INDEX[i]);
+        Vector<TimeSeriesObject> r0 = StockDataLoader2.concatRowsForYearsFromCache_ALL(y, LABEL, INDEX[i]);
         String windowName = "Components_" + INDEX[i] + "_" + LABEL + "_" + getYearLabel(y);
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("Collection", windowName, "LOAD"));
         MultiChart.open(r0, false, windowName);
 
         // are the indices really orderd correct order.
         int ii = 0;
-        Vector<Messreihe> r1 = new Vector<Messreihe>();
-        for (Messreihe r : r0) {
+        Vector<TimeSeriesObject> r1 = new Vector<TimeSeriesObject>();
+        for (TimeSeriesObject r : r0) {
             if (ii == 0) {
                 r1.add(r.getXValuesAsMessreihe());
             }
@@ -118,7 +117,7 @@ public class LoadStockIndexDataFromYahoo {
 
     private static void loadStockDataForYears(String LABEL, int[] y, int i) {
 
-        Vector<Messreihe> r0 = StockDataLoader2.concatRowsForYearsFromCache_4(y, LABEL, INDEX[i]);
+        Vector<TimeSeriesObject> r0 = StockDataLoader2.concatRowsForYearsFromCache_4(y, LABEL, INDEX[i]);
         String windowName = "Components_" + INDEX_toLOAD[i] + "_" + LABEL + "_" + getYearLabel(y);
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("Collection", windowName, "LOAD"));
         MultiChart.open(r0, false, windowName);

@@ -6,7 +6,7 @@
 package org.apache.hadoopts.app.bucketanalyser;
 
 import java.util.Vector;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 /**
  *
@@ -14,7 +14,7 @@ import org.apache.hadoopts.data.series.Messreihe;
  */
 public interface ICorrelator extends TSTool {
     
-    public void calcSingleBucketCorrelations( Vector<Messreihe> series, String label );
+    public void calcSingleBucketCorrelations(Vector<TimeSeriesObject> series, String label );
 
     public void setTSOperationControlerPanel(TSOperationControlerPanel fcp);
     

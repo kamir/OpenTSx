@@ -1,13 +1,14 @@
 package org.apache.hadoopts.statphys.detrending;
 
+import org.apache.hadoopts.app.experimental.SimpleBucketTool;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
+import org.apache.hadoopts.statphys.detrending.methods.DFACore;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
-import org.apache.hadoopts.statphys.detrending.methods.DFACore;
-import org.apache.hadoopts.app.experimental.SimpleBucketTool;
 
 /**
  * 
@@ -67,9 +68,9 @@ public class MultiDFA4Buckets {
         TSBucket tsb = SimpleBucketTool.loadBucket( f.getAbsolutePath() );
         
         
-        Vector<Messreihe> vmr = SimpleBucketTool.removePeriodicTrend( tsb, 7 );
+        Vector<TimeSeriesObject> vmr = SimpleBucketTool.removePeriodicTrend( tsb, 7 );
                 
-//        Vector<Messreihe> vmr = tsb.getBucketData();
+//        Vector<TimeSeriesObject> vmr = tsb.getBucketData();
         
         MultiChart.open(vmr);
         
@@ -93,7 +94,7 @@ public class MultiDFA4Buckets {
             o++;
         }
         
-        Vector<Messreihe> fs = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> fs = new Vector<TimeSeriesObject>();
         
         // nun werden die Berechnungen für verschiedene Ordnungen durchgeführt
         for ( int ord : orders) {
@@ -106,7 +107,7 @@ public class MultiDFA4Buckets {
                 tool.runDFA(vmr, ord);       
                 
                 if ( tool.fsFMW.size() != 0 ) {
-                    Messreihe mFS = tool.fsFMW.elementAt(0);
+                    TimeSeriesObject mFS = tool.fsFMW.elementAt(0);
                     fs.add( mFS );
                 }    
             }

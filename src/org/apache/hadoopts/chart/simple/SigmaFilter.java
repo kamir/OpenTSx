@@ -1,33 +1,29 @@
 package org.apache.hadoopts.chart.simple;
 
-import java.io.IOException;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import java.util.Vector;
+
+
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
-/**
- *
- * @author kamir
- */
-public class SigmaFilter extends Messreihe {
+import java.io.IOException;
+import java.util.Vector;
+
+
+
+public class SigmaFilter extends TimeSeriesObject {
 
     String label = null;
     boolean legend = true;
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void open(Vector<Messreihe> m, String label, boolean legend) {
-
-        stdlib.StdRandom.initRandomGen(1);
+    public static void open(Vector<TimeSeriesObject> m, String label, boolean legend) {
 
         SigmaFilter sf = new SigmaFilter();
         sf.label = label;
         sf.legend = legend;
 
-        for (Messreihe mr : m) {
+        for (TimeSeriesObject mr : m) {
 
             sf.addCollect(mr, false);
 
@@ -36,66 +32,93 @@ public class SigmaFilter extends Messreihe {
         sf.aggregate();
 
         MultiChart.open(plotRows, label, "t", "y(t) , sigma(t)", legend);
-        
-//        sf.plotASOszi();
+
     }
+
+
 
     MesswertTabelle mwt1 = new MesswertTabelle();
     MesswertTabelle mwt2 = new MesswertTabelle();
     MesswertTabelle mwt3 = new MesswertTabelle();
-    
+
+
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
 
-        stdlib.StdRandom.initRandomGen(1);
-        
+        RNGWrapper.init();
+
         /**
-         * Export location for OriginPro integration 
+         *
+         * Export location for OriginPro integration
+         *
          */
-        OriginProject op = new OriginProject();
-        op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/ContinuousAndEventTimeSeries");
-        op.initFolder( "data2" );
-        
-        // The final data export goes via two tables ...
-        Vector<Messreihe> topRow = new Vector<Messreihe>();
+         OriginProject op = new OriginProject();
+         op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/ContinuousAndEventTimeSeries");
+         op.initFolder( "data2" );
 
-        SigmaFilter sf = new SigmaFilter();
+         /**
+          * The final data export goes via two tables ...
+          */
+         Vector<TimeSeriesObject> topRow = new Vector<TimeSeriesObject>();
 
-        Messreihe mr = null;
 
-        for (int i = 0; i < 100; i++) {
+
+         SigmaFilter sf = new SigmaFilter();
+
+
+
+         TimeSeriesObject mr = null;
+
+
+
+         for (int i = 0; i < 100; i++) {
+
             // one year with one point per hour ...  
-            mr = Messreihe.getGaussianDistribution(sf.scale * 365, 10.0, 1.0);
-//            Messreihe mr = Messreihe.getExpDistribution( sf.scale * 365, 5.0 );
+            mr = TimeSeriesObject.getGaussianDistribution(sf.scale * 365, 10.0, 1.0);
 
+            // TimeSeriesObject mr = TimeSeriesObject.getExpDistribution( sf.scale * 365, 5.0 );
             sf.addCollect(mr, false);
-        }
 
-        sf.aggregate();
+         }
 
-        sf.mwt1 = new MesswertTabelle();
-        sf.mwt1.setLabel("layer1.csv");
-        sf.mwt1.singleX = false;
 
-        
-        sf.mwt2 = new MesswertTabelle();
-        sf.mwt2.setLabel("layer2.csv");
-        sf.mwt2.singleX = false;
 
-        sf.mwt3 = new MesswertTabelle();
-        sf.mwt3.setLabel("layer3.csv");
-        sf.mwt3.singleX = false;
+         sf.aggregate();
+
+
+
+         sf.mwt1 = new MesswertTabelle();
+         sf.mwt1.setLabel("layer1.csv");
+         sf.mwt1.singleX = false;
+
 
         
-        sf.compare(mr);
+         sf.mwt2 = new MesswertTabelle();
+         sf.mwt2.setLabel("layer2.csv");
+         sf.mwt2.singleX = false;
 
-        sf.plot();
+
+
+         sf.mwt3 = new MesswertTabelle();
+         sf.mwt3.setLabel("layer3.csv");
+         sf.mwt3.singleX = false;
+
+
         
-        op.storeMesswertTabelle(sf.mwt1);
-        op.storeMesswertTabelle(sf.mwt2); 
-        op.storeMesswertTabelle(sf.mwt3); 
+         sf.compare(mr);
+
+
+
+         sf.plot();
+
+
+
+         op.storeMesswertTabelle(sf.mwt1);
+         op.storeMesswertTabelle(sf.mwt2);
+         op.storeMesswertTabelle(sf.mwt3);
 
 
         
@@ -109,25 +132,25 @@ public class SigmaFilter extends Messreihe {
     double upperTS = 1.0;
     double lowerTS = -1.0;
 
-    Messreihe mwRAW = null;
-    Messreihe sigmaRAW = null;
+    TimeSeriesObject mwRAW = null;
+    TimeSeriesObject sigmaRAW = null;
 
-    Messreihe mwBINNED = null;
-    Messreihe sigmaBINNED = null;
+    TimeSeriesObject mwBINNED = null;
+    TimeSeriesObject sigmaBINNED = null;
     
-    Vector<Messreihe> rows = new Vector<Messreihe>();
-    Vector<Messreihe> binned = new Vector<Messreihe>();
+    Vector<TimeSeriesObject> rows = new Vector<TimeSeriesObject>();
+    Vector<TimeSeriesObject> binned = new Vector<TimeSeriesObject>();
 
     /**
      *
      * @param mr
      * @param aggregateNow
      */
-    public void addCollect(Messreihe mr, boolean aggregateNow) {
+    public void addCollect(TimeSeriesObject mr, boolean aggregateNow) {
 
         rows.add(mr);
 
-        Messreihe binnedRow = mr.setBinningX_sum(scale);
+        TimeSeriesObject binnedRow = mr.setBinningX_sum(scale);
         binned.add(binnedRow);
 
         if (aggregateNow) {
@@ -138,12 +161,12 @@ public class SigmaFilter extends Messreihe {
 
 //    private void plotASOszi() {
 //        
-//        Vector<Messreihe> plotRows = new Vector();
+//        Vector<TimeSeriesObject> plotRows = new Vector();
 //        
 //        plotRows.add(mwBINNED.setBinningX_sum( scale2 ));
 //        
-//        Messreihe upper = mwBINNED.add( sigmaBINNED.scaleY_2( upperTS ));
-//        Messreihe lower = mwBINNED.add( sigmaBINNED.scaleY_2( lowerTS ));
+//        TimeSeriesObject upper = mwBINNED.add( sigmaBINNED.scaleY_2( upperTS ));
+//        TimeSeriesObject lower = mwBINNED.add( sigmaBINNED.scaleY_2( lowerTS ));
 //         
 //        plotRows.add( upper.setBinningX_sum( scale2 ) );
 //        plotRows.add( lower.setBinningX_sum( scale2 ) );
@@ -155,9 +178,9 @@ public class SigmaFilter extends Messreihe {
 //                
 //        MultiChart.open(plotRows, label, "t", "y(t) , sigma(t)", legend);
 //    }
-    Messreihe compareWithBand = null;
+    TimeSeriesObject compareWithBand = null;
 
-    static Vector<Messreihe> plotRows = new Vector();
+    static Vector<TimeSeriesObject> plotRows = new Vector();
 
     public void plot() {
 
@@ -168,8 +191,8 @@ public class SigmaFilter extends Messreihe {
         
         plotRows.add(mwBINNED.setBinningX_sum(scale));
 
-        Messreihe upper = mwBINNED.add(sigmaBINNED.scaleY_2(upperTS));
-        Messreihe lower = mwBINNED.add(sigmaBINNED.scaleY_2(lowerTS));
+        TimeSeriesObject upper = mwBINNED.add(sigmaBINNED.scaleY_2(upperTS));
+        TimeSeriesObject lower = mwBINNED.add(sigmaBINNED.scaleY_2(lowerTS));
 
         mwt1.addMessreihe(lower);
         mwt1.addMessreihe(upper);
@@ -177,7 +200,7 @@ public class SigmaFilter extends Messreihe {
         
         if ( calcMinEvents ) {
                
-            Messreihe[] mrs = getNegExtremeEvents( compareWithBand , lower );
+            TimeSeriesObject[] mrs = getNegExtremeEvents( compareWithBand , lower );
             
             plotRows.add( mrs[0] );
             plotRows.add( mrs[1].setBinningX_sum(scale2).scaleX_2(scale2) );
@@ -189,7 +212,7 @@ public class SigmaFilter extends Messreihe {
         
         if ( calcMaxEvents ) {
             
-            Messreihe[] mr = getPosExtremeEvents( compareWithBand , upper );
+            TimeSeriesObject[] mr = getPosExtremeEvents( compareWithBand , upper );
             
             plotRows.add( mr[0] );
             plotRows.add( mr[1].setBinningX_sum(scale2).scaleX_2(scale2) );
@@ -217,11 +240,11 @@ public class SigmaFilter extends Messreihe {
         
         
 
-        mwRAW = Messreihe.averageForAll(rows);
-        mwBINNED = Messreihe.averageForAll(binned);
+        mwRAW = TimeSeriesObject.averageForAll(rows);
+        mwBINNED = TimeSeriesObject.averageForAll(binned);
 
-        sigmaRAW = Messreihe.sigmaForAll(rows);
-        sigmaBINNED = Messreihe.sigmaForAll(binned);
+        sigmaRAW = TimeSeriesObject.sigmaForAll(rows);
+        sigmaBINNED = TimeSeriesObject.sigmaForAll(binned);
 
         System.out.println(">   Sigma-Band calculation DONE!");
 
@@ -231,7 +254,7 @@ public class SigmaFilter extends Messreihe {
     boolean calcMaxEvents = false;
     boolean calcAggEvents = false;
 
-    private void compare(Messreihe mr) {
+    private void compare(TimeSeriesObject mr) {
 
         this.compareWithBand = mr;
 
@@ -241,11 +264,11 @@ public class SigmaFilter extends Messreihe {
 
     }
 
-    public Messreihe[] getPosExtremeEvents(Messreihe c, Messreihe upper) {
+    public TimeSeriesObject[] getPosExtremeEvents(TimeSeriesObject c, TimeSeriesObject upper) {
 
-        Messreihe[] r = new Messreihe[2];
-        Messreihe mrE = new Messreihe( );
-        Messreihe mrE1 = new Messreihe( );
+        TimeSeriesObject[] r = new TimeSeriesObject[2];
+        TimeSeriesObject mrE = new TimeSeriesObject( );
+        TimeSeriesObject mrE1 = new TimeSeriesObject( );
         r[0]=mrE;
         r[1]=mrE1;
         
@@ -275,11 +298,11 @@ public class SigmaFilter extends Messreihe {
         return r;
         
     }
-    public Messreihe[] getNegExtremeEvents(Messreihe c, Messreihe lower) {
+    public TimeSeriesObject[] getNegExtremeEvents(TimeSeriesObject c, TimeSeriesObject lower) {
 
-        Messreihe[] r = new Messreihe[2];
-        Messreihe mrE = new Messreihe( );
-        Messreihe mrE1 = new Messreihe( );
+        TimeSeriesObject[] r = new TimeSeriesObject[2];
+        TimeSeriesObject mrE = new TimeSeriesObject( );
+        TimeSeriesObject mrE1 = new TimeSeriesObject( );
         r[0]=mrE;
         r[1]=mrE1;
         
@@ -310,8 +333,8 @@ public class SigmaFilter extends Messreihe {
         
     }
 //
-//    private Messreihe getPosExtremeEvents(Messreihe c, Messreihe upper) {
-//        Messreihe mrE = new Messreihe( );
+//    private TimeSeriesObject getPosExtremeEvents(TimeSeriesObject c, TimeSeriesObject upper) {
+//        TimeSeriesObject mrE = new TimeSeriesObject( );
 //        mrE.setLabel( c.label + "_POS_EXTR");
 //        for( int i = 0; i < upper.yValues.size(); i++ ) {
 //        

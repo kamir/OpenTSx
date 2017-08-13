@@ -5,10 +5,9 @@ import org.apache.hadoopts.app.bucketanalyser.TSBucketSource;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketTransformation;
 import org.apache.hadoopts.app.experimental.SimpleBucketTool;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.buckets.generator.TSBucketCreator_TFIDFRecursive;
 import org.apache.hadoopts.hadoopts.buckets.generator.TSBucketCreator_WordLength;
-import org.apache.hadoopts.hadoopts.buckets.generator.TSBucketCreator_WordLengthRecursive;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import java.io.IOException;
 import java.util.Vector;
@@ -47,7 +46,7 @@ public class LoadCorpusData {
 
         TSBucket.processSeriesLabelOnLoad = false;
         
-        Vector<Messreihe> r0 = SimpleBucketTool.loadBucketData( fn );
+        Vector<TimeSeriesObject> r0 = SimpleBucketTool.loadBucketData( fn );
         
         String windowName = "Corpus (exp: " + experiment + ") ";
         

@@ -5,6 +5,8 @@
  */
 package org.apache.hadoopts.statistics;
 
+import org.apache.hadoopts.data.RNGWrapper;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Vector;
@@ -70,10 +72,10 @@ public class DistributionTester {
         return v;
     }
         
-    public static void main( String[] args ) throws IOException { 
-        
-        stdlib.StdRandom.initRandomGen(1);
-        
+    public static void main( String[] args ) throws IOException {
+
+        RNGWrapper.init();
+
         double[] dataA = new double[150];
         double[] dataB = new double[150];
         double[] dataC = new double[150];
@@ -87,10 +89,10 @@ public class DistributionTester {
         35.0, 48.0, 59.0, 70.0, 97.0};
         
         for( int i = 0; i < 150; i++) { 
-            dataA[i] = stdlib.StdRandom.gaussian();
-            dataB[i] = stdlib.StdRandom.poisson( 0.2 );
-            dataC[i] = stdlib.StdRandom.pareto( 0.2 );
-            dataD[i] = stdlib.StdRandom.geometric( 0.5 );
+            dataA[i] = RNGWrapper.getStdRandomGaussian();
+            dataB[i] = RNGWrapper.getStdPoisson( 0.2 );
+            dataC[i] = RNGWrapper.getStdRandomPareto( 0.2 );
+            dataD[i] = RNGWrapper.getStdRandomGeometric( 0.5 );
         }
         
         DistributionTester dt = DistributionTester.getDistributionTester();

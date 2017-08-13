@@ -2,7 +2,8 @@ package org.apache.hadoopts.statistics.logbinning;
 
 
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class LogBinnedLoaderTest {
             System.exit(0);
         }
                 
-        Messreihe mr42 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe(  f , 1, 2, 1.2, 200);
+        TimeSeriesObject mr42 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe(  f , 1, 2, 1.2, 200);
         
         System.out.println( mr42 );
 

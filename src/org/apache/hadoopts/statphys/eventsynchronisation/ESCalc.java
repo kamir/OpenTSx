@@ -2,7 +2,8 @@
 package org.apache.hadoopts.statphys.eventsynchronisation;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Collections;
 import java.util.Vector;
 
@@ -155,10 +156,10 @@ public class ESCalc {
     }
 
     public static void checkRows(int[] r1, int[] r2, String title) {
-        Messreihe a1 = new Messreihe();
-        Messreihe a2 = new Messreihe();
+        TimeSeriesObject a1 = new TimeSeriesObject();
+        TimeSeriesObject a2 = new TimeSeriesObject();
 
-        Messreihe[] r = new Messreihe[2];
+        TimeSeriesObject[] r = new TimeSeriesObject[2];
         r[0] = a1;
         r[1] = a2;
 

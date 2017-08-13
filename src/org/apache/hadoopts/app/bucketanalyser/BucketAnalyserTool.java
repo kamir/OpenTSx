@@ -8,16 +8,12 @@
  **/
 package org.apache.hadoopts.app.bucketanalyser;
 
-import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe; 
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import org.apache.hadoopts.hadoopts.filter.TSBucketFileFilter;
 import java.io.File;
-import java.io.IOException;
-import java.util.Vector;
+
 import org.apache.hadoopts.app.experimental.SimpleFilteredBucketTool;
-import static org.apache.hadoopts.app.experimental.SimpleFilteredBucketTool.procm_RECORD_STREAM;
 import org.apache.hadoopts.statphys.ris.experimental.ReturnIntervallStatistik2;
 import org.apache.hadoopts.algorithms.univariate.SingleTsDFATool;
 import org.apache.hadoopts.algorithms.univariate.SingleTsRISTool;
@@ -31,9 +27,9 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
     /**
      * containers are accessed directly ...
      */
-//    public static Vector<Messreihe> cont_PEAKS = new Vector<Messreihe>();
-//    public static Vector<Messreihe> cont_FS_NORMALIZED = new Vector<Messreihe>();
-//    public static Vector<Messreihe> cont_FS_RAW = new Vector<Messreihe>();
+//    public static Vector<TimeSeriesObject> cont_PEAKS = new Vector<TimeSeriesObject>();
+//    public static Vector<TimeSeriesObject> cont_FS_NORMALIZED = new Vector<TimeSeriesObject>();
+//    public static Vector<TimeSeriesObject> cont_FS_RAW = new Vector<TimeSeriesObject>();
     
     
     public static final int mode_PEAKS = 0;

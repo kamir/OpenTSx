@@ -1,19 +1,16 @@
 package org.apache.hadoopts.statphys.ris.experimental.agh;
 
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.text.html.HTML;
 
 import org.apache.poi.hssf.usermodel.*;
 
@@ -268,10 +265,10 @@ public class RISAnalyse3 {
         File[] files = new File(folderIN).listFiles();
         int i = 0;
 
-        Messreihe[] RQs = new Messreihe[zINTER];
-        Messreihe[] RISs = new Messreihe[zINTER];
-        Vector<Messreihe>[] vRISs = new Vector[zINTER];
-        Vector<Messreihe>[] vFITDATA = new Vector[zINTER];
+        TimeSeriesObject[] RQs = new TimeSeriesObject[zINTER];
+        TimeSeriesObject[] RISs = new TimeSeriesObject[zINTER];
+        Vector<TimeSeriesObject>[] vRISs = new Vector[zINTER];
+        Vector<TimeSeriesObject>[] vFITDATA = new Vector[zINTER];
 
         ReturnIntervallStatistik[] ris = new ReturnIntervallStatistik[zINTER];
 
@@ -285,15 +282,15 @@ public class RISAnalyse3 {
 //            ris[ii].scaleY_LN = sLN;
 //            ris[ii].scaleY_LOG = sLOG;
 
-            RQs[ii] = new Messreihe("RQ_" + ii);
+            RQs[ii] = new TimeSeriesObject("RQ_" + ii);
 
-            RISs[ii] = new Messreihe("RIS_" + ii);
-            vRISs[ii] = new Vector<Messreihe>();
-            vFITDATA[ii] = new Vector<Messreihe>();
+            RISs[ii] = new TimeSeriesObject("RIS_" + ii);
+            vRISs[ii] = new Vector<TimeSeriesObject>();
+            vFITDATA[ii] = new Vector<TimeSeriesObject>();
         }
 
 
-        Vector<Messreihe> all = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> all = new Vector<TimeSeriesObject>();
         
         double linFitMIN;
         double linFitMAX;
@@ -305,15 +302,15 @@ public class RISAnalyse3 {
 
                 DecimalFormat nf = new DecimalFormat("0.0000000");
 
-                Messreihe data = MessreihenLoader.getLoader().loadMessreihe(
+                TimeSeriesObject data = MessreihenLoader.getLoader().loadMessreihe(
                         new File(folderIN + f.getName()));
 
-                Messreihe[] parts = data.split( zL , zINTER );
+                TimeSeriesObject[] parts = data.split( zL , zINTER );
 
                 int j = 0;
 
-                // r ist die Messreihe mit den normalen Daten
-                for( Messreihe r : parts ) {
+                // r ist die TimeSeriesObject mit den normalen Daten
+                for( TimeSeriesObject r : parts ) {
 
                     double vRQ = r.getAvarage();
                     //System.out.print(  "file -> " + i + " part -> " + j + "\t" + nf.format( vRQ ) + "\t" );
@@ -354,7 +351,7 @@ public class RISAnalyse3 {
                      * den Anstieg bestimmen !!!
                      *
                      */
-                    Messreihe toFit = rr.mrHaeufigkeit.shrinkX( linFit_MIN, linFit_MAX);
+                    TimeSeriesObject toFit = rr.mrHaeufigkeit.shrinkX( linFit_MIN, linFit_MAX);
 
                     SimpleRegression reg;
                     try {
@@ -397,13 +394,13 @@ public class RISAnalyse3 {
         }
 
         System.out.print( folderOUT );
-        Messreihe rq = new Messreihe("Rq(i)");
-        Messreihe rqSIGMA = new Messreihe("sigma(Rq(i))");
-        Vector<Messreihe> chart2Data = new Vector<Messreihe>();
+        TimeSeriesObject rq = new TimeSeriesObject("Rq(i)");
+        TimeSeriesObject rqSIGMA = new TimeSeriesObject("sigma(Rq(i))");
+        Vector<TimeSeriesObject> chart2Data = new Vector<TimeSeriesObject>();
         chart2Data.add(rq);
         chart2Data.add(rqSIGMA);
 
-        Vector<Messreihe> vMR = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vMR = new Vector<TimeSeriesObject>();
         // für alle Intervalle des Files ...
         for ( int d=0; d < zINTER ; d++  ) {
             try {
@@ -430,17 +427,17 @@ public class RISAnalyse3 {
         rqSIGMA.normalize();
 
         // auf VMR nun den Fit ANWENDEN ...
-        Messreihe fitData1 = new Messreihe();
+        TimeSeriesObject fitData1 = new TimeSeriesObject();
         fitData1.setLabel("m");
         
-        Messreihe fitData2 = new Messreihe();
+        TimeSeriesObject fitData2 = new TimeSeriesObject();
         fitData2.setLabel("RR");
         
-        Vector<Messreihe> vFITS = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vFITS = new Vector<TimeSeriesObject>();
         
         SimpleRegression reg2;
         int c = 0;
-        for( Messreihe mr : vMR ) {
+        for( TimeSeriesObject mr : vMR ) {
         try {
             reg2 = mr.linFit(linFit_MIN, linFit_MAX);
 
@@ -566,18 +563,18 @@ public class RISAnalyse3 {
             sheets[2] =  wb.createSheet("RR");
         }
 
-        Messreihe[] mrRESULTS = new Messreihe[5];
+        TimeSeriesObject[] mrRESULTS = new TimeSeriesObject[5];
         try {
             sheets[0] =  wb.getSheet("R_q");
             sheets[1] =  wb.getSheet("m");
             sheets[2] =  wb.getSheet("RR");
 
             // zur Sammlung der Mittelwerte für die Resultate ...
-            mrRESULTS[0] =  new Messreihe( "<R_q>");
-            mrRESULTS[1] =  new Messreihe( "<m>");
-            mrRESULTS[2] =  new Messreihe( "<RR>");
-            mrRESULTS[3] =  new Messreihe( "{m}");
-            mrRESULTS[4] =  new Messreihe( "{RR}");
+            mrRESULTS[0] =  new TimeSeriesObject( "<R_q>");
+            mrRESULTS[1] =  new TimeSeriesObject( "<m>");
+            mrRESULTS[2] =  new TimeSeriesObject( "<RR>");
+            mrRESULTS[3] =  new TimeSeriesObject( "{m}");
+            mrRESULTS[4] =  new TimeSeriesObject( "{RR}");
 
             // SCHRANKE für auszulassende Werte
             double epsilon = 1e-6;
@@ -650,7 +647,7 @@ public class RISAnalyse3 {
             mrRESULTS[3].normalize();
             mrRESULTS[4].normalize();
 
-            Vector<Messreihe> v = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
             v.add( mrRESULTS[0] );
             v.add( mrRESULTS[1] );
             v.add( mrRESULTS[2] );

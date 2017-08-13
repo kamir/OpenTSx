@@ -5,58 +5,37 @@
 package org.apache.hadoopts.chart.simple;
 
 import org.apache.hadoopts.app.bucketanalyser.TSOperationControlerPanel;
-import org.apache.hadoopts.data.series.Messreihe;
-import java.awt.PaintContext;
-import java.awt.RenderingHints;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.ColorModel;
-import java.util.Vector;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import java.awt.Paint;
-import java.awt.Color;
-import java.awt.BasicStroke;
-import java.awt.Font;
-import java.awt.Rectangle;
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Locale;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.ChartRenderingInfo;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.CategoryAxis;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.StandardEntityCollection;
-import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.plot.Plot;
-import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.Range;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.text.DecimalFormat;
+import java.util.Locale;
+import java.util.Vector;
 
 public class MyXYPlot extends javax.swing.JDialog {
 
     public static String path = "./MyXYPlot.jpg";
 
-    public static void setXRange(Messreihe mr2) {
+    public static void setXRange(TimeSeriesObject mr2) {
          xRangDEFAULT_MAX = mr2.getMaxY();
         xRangDEFAULT_MIN = mr2.getMinY();
     }
 
-    public static void setYRange(Messreihe mr2) {
+    public static void setYRange(TimeSeriesObject mr2) {
         yRangDEFAULT_MAX = mr2.getMaxY();
         yRangDEFAULT_MIN = mr2.getMinY();
     }
@@ -65,10 +44,10 @@ public class MyXYPlot extends javax.swing.JDialog {
     
     public TSOperationControlerPanel fileControlerPanel = null;
             
-    public static MyXYPlot openAndGet(Vector<Messreihe> phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
-        Messreihe[] r = new Messreihe[ phasenDiagramm.size() ];
+    public static MyXYPlot openAndGet(Vector<TimeSeriesObject> phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
+        TimeSeriesObject[] r = new TimeSeriesObject[ phasenDiagramm.size() ];
         int i = 0;
-        for( Messreihe ri : phasenDiagramm ) {
+        for( TimeSeriesObject ri : phasenDiagramm ) {
             r[i] = ri;
             i++;
             if ( debug ) System.out.println( ri.toString() );
@@ -92,10 +71,10 @@ public class MyXYPlot extends javax.swing.JDialog {
         
     }
     
-    public static void open(Vector<Messreihe> phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
-        Messreihe[] r = new Messreihe[ phasenDiagramm.size() ];
+    public static void open(Vector<TimeSeriesObject> phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
+        TimeSeriesObject[] r = new TimeSeriesObject[ phasenDiagramm.size() ];
         int i = 0;
-        for( Messreihe ri : phasenDiagramm ) {
+        for( TimeSeriesObject ri : phasenDiagramm ) {
             r[i] = ri;
             i++;
             if ( debug ) System.out.println( ri.toString() );
@@ -111,10 +90,10 @@ public class MyXYPlot extends javax.swing.JDialog {
         
     }
     
-    public static void open(Vector<Messreihe> phasenDiagramm, String title, String labelX, String labelY, boolean legende, File folder, String name) {
-        Messreihe[] r = new Messreihe[ phasenDiagramm.size() ];
+    public static void open(Vector<TimeSeriesObject> phasenDiagramm, String title, String labelX, String labelY, boolean legende, File folder, String name) {
+        TimeSeriesObject[] r = new TimeSeriesObject[ phasenDiagramm.size() ];
         int i = 0;
-        for( Messreihe ri : phasenDiagramm ) {
+        for( TimeSeriesObject ri : phasenDiagramm ) {
             r[i] = ri;
             i++;
             if ( debug ) System.out.println( ri.toString() );
@@ -192,10 +171,10 @@ public class MyXYPlot extends javax.swing.JDialog {
         }
     }
     
-    public static void open(Messreihe[] phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
-        Messreihe[] r = phasenDiagramm;
+    public static void open(TimeSeriesObject[] phasenDiagramm, String title, String labelX, String labelY, boolean legende) {
+        TimeSeriesObject[] r = phasenDiagramm;
         int i = 0;
-        for( Messreihe ri : phasenDiagramm ) {
+        for( TimeSeriesObject ri : phasenDiagramm ) {
             r[i] = ri;
             i++;
         }
@@ -210,10 +189,10 @@ public class MyXYPlot extends javax.swing.JDialog {
 
     }
         
-    public static void open(Messreihe[] phasenDiagramm, String title, String labelX, String labelY, boolean legende, File folder, String name) {
-        Messreihe[] r = phasenDiagramm;
+    public static void open(TimeSeriesObject[] phasenDiagramm, String title, String labelX, String labelY, boolean legende, File folder, String name) {
+        TimeSeriesObject[] r = phasenDiagramm;
         int i = 0;
-        for( Messreihe ri : phasenDiagramm ) {
+        for( TimeSeriesObject ri : phasenDiagramm ) {
             r[i] = ri;
             i++;
         }
@@ -232,12 +211,12 @@ public class MyXYPlot extends javax.swing.JDialog {
     String ylabel = "y";
     String title = "scatterplot";
     boolean legende = false;
-    Messreihe mr = null;
+    TimeSeriesObject mr = null;
 
     XYSeriesCollection dataset = new XYSeriesCollection();
     static boolean debug = false;
 
-    void addDataSerie( Messreihe mr ) {
+    void addDataSerie( TimeSeriesObject mr ) {
         if ( mr != null ) {
             if ( debug ) System.out.println("~ " + mr.getLabel() );
             XYSeries series = mr.getXYSeries();
@@ -246,7 +225,7 @@ public class MyXYPlot extends javax.swing.JDialog {
     };
 
 
-    public MyXYPlot(Messreihe mr, String title, String labelX, String labelY) {
+    public MyXYPlot(TimeSeriesObject mr, String title, String labelX, String labelY) {
         super( new JFrame(), mr.getLabel() );
 
         this.title = title;
@@ -257,7 +236,7 @@ public class MyXYPlot extends javax.swing.JDialog {
         addDataSerie(mr);
     }
 
-    public MyXYPlot(Messreihe mr, String labelX, String labelY) {
+    public MyXYPlot(TimeSeriesObject mr, String labelX, String labelY) {
         super( new JFrame() , mr.getLabel());
 
         this.xlabel = labelX;
@@ -267,7 +246,7 @@ public class MyXYPlot extends javax.swing.JDialog {
         addDataSerie(mr);
     }
 
-    public MyXYPlot(Messreihe mr, String title, String labelX, String labelY, boolean legende) {
+    public MyXYPlot(TimeSeriesObject mr, String title, String labelX, String labelY, boolean legende) {
         this(mr, title, labelX, labelY);
         this.legende = legende;
         init();
@@ -275,7 +254,7 @@ public class MyXYPlot extends javax.swing.JDialog {
     }
     
     
-    public MyXYPlot(Messreihe[] mr, String title, String labelX, String labelY, boolean legende) {
+    public MyXYPlot(TimeSeriesObject[] mr, String title, String labelX, String labelY, boolean legende) {
         
         super( new JFrame(), title);
         
@@ -334,9 +313,11 @@ public class MyXYPlot extends javax.swing.JDialog {
 
 
     public static void main(String[] args) {
-        stdlib.StdRandom.initRandomGen((long) 1.0);
+
+        RNGWrapper.init();
+
         int i = 1500;
-        Messreihe r = Messreihe.getGaussianDistribution(i);
+        TimeSeriesObject r = TimeSeriesObject.getGaussianDistribution(i);
         System.err.println( r.toString() );
         MyXYPlot p = new MyXYPlot(r, i + " Zufallszahlen", "nr", "rand(x)");
         p.setYIntervall( -1 , 1);

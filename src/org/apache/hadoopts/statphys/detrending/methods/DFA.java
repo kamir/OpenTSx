@@ -1,6 +1,6 @@
 package org.apache.hadoopts.statphys.detrending.methods;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 public class DFA extends DFACore {
 
@@ -50,9 +50,9 @@ public class DFA extends DFACore {
                             para.getGradeOfPolynom());
                 }
                 int z = 0;
-                Messreihe mrFitN = null;
+                TimeSeriesObject mrFitN = null;
                 if (currentS == 8) {
-                    mrFitN = new Messreihe();
+                    mrFitN = new TimeSeriesObject();
                     mrFitN.setLabel(pr_pos + " - " + (pr_pos + valueofS));
                 }
                 //  System.out.print("\t\t(" + fit[0] + " " + fit[1] );

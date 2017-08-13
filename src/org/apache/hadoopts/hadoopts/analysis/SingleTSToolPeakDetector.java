@@ -1,9 +1,9 @@
 package org.apache.hadoopts.hadoopts.analysis;
 
 import org.apache.hadoopts.data.series.MRT;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
-import org.apache.hadoopts.hadoopts.core.TSOperation;
+
 import java.io.FileWriter;
 import java.util.Vector;
 
@@ -16,16 +16,16 @@ import java.util.Vector;
  */
 public class SingleTSToolPeakDetector extends SingleRowTSO {
     
-    public String processReihe( Messreihe reihe ) throws Exception {
+    public String processReihe( TimeSeriesObject reihe ) throws Exception {
 
         double sum = reihe.summeY(); 
         
         String line = "";
         
         // Detrending
-        Messreihe normalized1 = MRT.normalizeByPeriodeTrend(reihe, 24*7);
+        TimeSeriesObject normalized1 = MRT.normalizeByPeriodeTrend(reihe, 24*7);
         
-        Messreihe peaks = normalized1.setBinningX_sum(24);
+        TimeSeriesObject peaks = normalized1.setBinningX_sum(24);
         peaks.add_to_Y( -24.0 );
            
         int[] tss = { 2, 4, 6, 8, 10 };
@@ -46,12 +46,12 @@ public class SingleTSToolPeakDetector extends SingleRowTSO {
     }
 
     @Override
-    public Messreihe processReihe(FileWriter fw, Messreihe reihe, FileWriter exploder) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter exploder) throws Exception {
         return null;
     }
 
     @Override
-    public Messreihe processReihe(FileWriter fw, Messreihe reihe, Object para, FileWriter exploder) throws Exception {
+    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, Object para, FileWriter exploder) throws Exception {
         return null;
     }
     

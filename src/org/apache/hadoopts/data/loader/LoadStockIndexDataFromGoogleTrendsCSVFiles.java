@@ -8,12 +8,10 @@ package org.apache.hadoopts.data.loader;
 import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketSource;
 import org.apache.hadoopts.app.bucketanalyser.TSBucketTransformation;
-import static org.apache.hadoopts.app.bucketanalyser.MacroRecorder.loadOp;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import static org.apache.hadoopts.data.io.MessreihenLoader.limit;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.hadoopts.loader.StockDataLoader2;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -40,7 +38,7 @@ public class LoadStockIndexDataFromGoogleTrendsCSVFiles {
         File f = new File(folderName);
         File[] l = f.listFiles();
 
-        Vector<Messreihe> rows = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> rows = new Vector<TimeSeriesObject>();
 
         for (File fi : l) {
 
@@ -59,9 +57,9 @@ public class LoadStockIndexDataFromGoogleTrendsCSVFiles {
 
     }
 
-    private static Vector<Messreihe> loadStockDataForOneFile(File f) {
+    private static Vector<TimeSeriesObject> loadStockDataForOneFile(File f) {
 
-        Vector<Messreihe> r0 = GTDataLoader.getRows(f);
+        Vector<TimeSeriesObject> r0 = GTDataLoader.getRows(f);
 
         return r0;
 
@@ -69,7 +67,7 @@ public class LoadStockIndexDataFromGoogleTrendsCSVFiles {
 
     private static class GTDataLoader {
 
-        private static Vector<Messreihe> getRows(File f) {
+        private static Vector<TimeSeriesObject> getRows(File f) {
 
             /**
              * lade x aus Spalte 1 und y aus Spalte 2
@@ -77,15 +75,15 @@ public class LoadStockIndexDataFromGoogleTrendsCSVFiles {
              * @param fn
              * @return
              */
-            Vector<Messreihe> vmr = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
 
-            Messreihe mr1 = new Messreihe();
-            Messreihe mr2 = new Messreihe();
-            Messreihe mr3 = new Messreihe();
-            Messreihe mr4 = new Messreihe();
-            Messreihe mr5 = new Messreihe();
+            TimeSeriesObject mr1 = new TimeSeriesObject();
+            TimeSeriesObject mr2 = new TimeSeriesObject();
+            TimeSeriesObject mr3 = new TimeSeriesObject();
+            TimeSeriesObject mr4 = new TimeSeriesObject();
+            TimeSeriesObject mr5 = new TimeSeriesObject();
 
-            Messreihe[] ms = new Messreihe[5];
+            TimeSeriesObject[] ms = new TimeSeriesObject[5];
             ms[0] = mr1;
             ms[1] = mr2;
             ms[2] = mr3;

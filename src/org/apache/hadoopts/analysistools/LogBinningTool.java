@@ -5,9 +5,9 @@ package org.apache.hadoopts.analysistools;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.io.MessreihenLoader;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
-import org.apache.hadoopts.data.export.OriginProject;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
@@ -18,8 +18,8 @@ import java.util.Vector;
  */
 public class LogBinningTool {
     
-    public static Messreihe getLogBinnedMessreihe( Messreihe mrOrig , int nrOfBins ) { 
-        Messreihe mr = new Messreihe();
+    public static TimeSeriesObject getLogBinnedMessreihe(TimeSeriesObject mrOrig , int nrOfBins ) {
+        TimeSeriesObject mr = new TimeSeriesObject();
          
         double data[][] = new double[2][nrOfBins];
                 
@@ -30,7 +30,7 @@ public class LogBinningTool {
     
     public static void main( String[] args ) throws IOException { 
                 
-        Vector<Messreihe> rows = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> rows = new Vector<TimeSeriesObject>();
         
         // String fn = "D:\\WIKI\\outdegree_all_1.dat";
         
@@ -43,10 +43,10 @@ public class LogBinningTool {
         File f2 = new File( fn2 );
         File f3 = new File( fn3 );
         
-        Messreihe mr1 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f1, 1, 2, 1.2, 1000000);
+        TimeSeriesObject mr1 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f1, 1, 2, 1.2, 1000000);
         mr1 = mr1.calcLogLog();
 
-        Messreihe mr2 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f2, 1, 2, 1.2, 1000000);
+        TimeSeriesObject mr2 = MessreihenLoader.getLoader()._loadLogBinnedMessreihe_DIV_BY_BINWIDTH( f2, 1, 2, 1.2, 1000000);
         mr2 = mr2.calcLogLog();
 
         rows.add( mr1 );

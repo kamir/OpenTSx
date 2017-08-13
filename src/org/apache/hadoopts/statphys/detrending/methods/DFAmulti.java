@@ -72,9 +72,9 @@ public class DFAmulti extends DFACore {
                 int sCheck = 5; // für welches s soll denn die Fitkurve
                                 // gezeigt werden?
 
-//                Messreihe mrFitN = null;
+//                TimeSeriesObject mrFitN = null;
 //                if (currentS == sCheck) {
-//                    mrFitN = new Messreihe();
+//                    mrFitN = new TimeSeriesObject();
 //                    mrFitN.setLabel(pr_pos + " [" + (pr_pos +","+ valueofS)+"]");
 //                }
 

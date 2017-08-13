@@ -2,7 +2,7 @@ package org.apache.hadoopts.algorithms.numericalrecipies.distributions;
 
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -100,8 +100,8 @@ public class KSTestData {
         op.initBaseFolder( folder );
         op.initFolder("dump-raw");
 
-        Messreihe mr1 = new Messreihe( "s1" );
-        Messreihe mr2 = new Messreihe( "s2" );
+        TimeSeriesObject mr1 = new TimeSeriesObject( "s1" );
+        TimeSeriesObject mr2 = new TimeSeriesObject( "s2" );
         mr1.addValues(vec1);
         mr2.addValues(vec2);
         
@@ -110,7 +110,7 @@ public class KSTestData {
         mwt.addMessreihe( mr1 );
         mwt.addMessreihe( mr2 );
         
-        Vector<Messreihe> vec = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vec = new Vector<TimeSeriesObject>();
         vec.add(mr1);
         vec.add(mr2);
         
@@ -141,15 +141,15 @@ public class KSTestData {
         z2.calcWS();
         
 
-        Messreihe mr1 = z1.getHistogram();
-        Messreihe mr2 = z2.getHistogram();
+        TimeSeriesObject mr1 = z1.getHistogram();
+        TimeSeriesObject mr2 = z2.getHistogram();
                 
         MesswertTabelle mwt = new MesswertTabelle();
         mwt.setLabel(name);
         mwt.addMessreihe( mr1 );
         mwt.addMessreihe( mr2 );
         
-        Vector<Messreihe> vec = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vec = new Vector<TimeSeriesObject>();
         vec.add(mr1);
         vec.add(mr2);
         

@@ -7,7 +7,8 @@ package org.apache.hadoopts.data.export;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.chart.simple.MyXYPlot;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -56,12 +57,12 @@ public class OriginProject {
                            "    Folder: " + folderName );
     }
 
-    public void addMessreihen( Messreihe[][] mrv2, String pre) {
+    public void addMessreihen(TimeSeriesObject[][] mrv2, String pre) {
         int i = mrv2[0].length;
         int j = mrv2.length;
         
         for( int a=0; a<j; a++ ) { 
-            Vector<Messreihe> r = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> r = new Vector<TimeSeriesObject>();
             for( int b=0; b<i; b++ ) {
                 r.add( mrv2[a][b]);
             }    
@@ -70,15 +71,15 @@ public class OriginProject {
     }
 
         
-    public void addMessreihen( Messreihe[] mrv2, String pre) {
-        Vector<Messreihe> rows = new Vector<Messreihe>();
-        for( Messreihe mr : mrv2) {
+    public void addMessreihen(TimeSeriesObject[] mrv2, String pre) {
+        Vector<TimeSeriesObject> rows = new Vector<TimeSeriesObject>();
+        for( TimeSeriesObject mr : mrv2) {
             rows.add(mr);
         }
         addMessreihen(rows, pre, true);
      }
     
-     public void addMessreihen(Vector<Messreihe> mrv2, String prefix, boolean writeTab ) {
+     public void addMessreihen(Vector<TimeSeriesObject> mrv2, String prefix, boolean writeTab ) {
          
         System.err.println( ">>> write to folder: " + folderName + File.separator + "tab_"+prefix+".dat" );
         if ( writeTab) { 
@@ -94,7 +95,7 @@ public class OriginProject {
         File f = new File( folderName + File.separator + "tab_"+prefix+".rows" );
         f.mkdirs();
         
-        for( Messreihe mr : mrv2) {
+        for( TimeSeriesObject mr : mrv2) {
             File ff = new File( f.getAbsolutePath() + File.separator + prefix + "_" + mr.getFileName() );
             mr.writeToFile( ff , '.' );            
         }
@@ -170,11 +171,11 @@ public class OriginProject {
      * @param xL
      * @param yL 
      */
-    public void storeChart(Messreihe[] result, boolean legende, String title, String name, String xL, String yL) {
+    public void storeChart(TimeSeriesObject[] result, boolean legende, String title, String name, String xL, String yL) {
    
     
-        Vector<Messreihe> v = new Vector<Messreihe>( result.length );
-        for( Messreihe m : result ) {
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>( result.length );
+        for( TimeSeriesObject m : result ) {
             v.add(m);
         }
         
@@ -186,7 +187,7 @@ public class OriginProject {
         
     }
     
-    public void storeChart(Vector<Messreihe> result, boolean legende, String title, String name) {
+    public void storeChart(Vector<TimeSeriesObject> result, boolean legende, String title, String name) {
         
 //        MultiChart.open(result, legende, title);
   

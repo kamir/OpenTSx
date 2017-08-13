@@ -20,18 +20,20 @@ package org.apache.hadoopts.app.thesis;
  * 
  */
 
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
+import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
+
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import stdlib.StdDraw;
-import stdlib.StdStats;
 
 public class LongTermCorrelationSeriesGenerator {
     
@@ -40,11 +42,11 @@ public class LongTermCorrelationSeriesGenerator {
     static double fitMIN = 0.8;
     static double fitMAX = 2.25;
     
-    static Messreihe alphasCALC = new Messreihe();
-    static Messreihe alphasTHEO = new Messreihe();
-    static Vector<Messreihe> check = new Vector<Messreihe>();
+    static TimeSeriesObject alphasCALC = new TimeSeriesObject();
+    static TimeSeriesObject alphasTHEO = new TimeSeriesObject();
+    static Vector<TimeSeriesObject> check = new Vector<TimeSeriesObject>();
     
-    static Vector<Messreihe> tests = null;
+    static Vector<TimeSeriesObject> tests = null;
     static StringBuffer log = null;
     
     static double[][] alphas = null; 
@@ -73,11 +75,10 @@ public class LongTermCorrelationSeriesGenerator {
         
         boolean showTest = true;
 
-        // initilize the stdlib.StdRandom-Generator
-        stdlib.StdRandom.initRandomGen(1);
-        
+        RNGWrapper.init();
+
         // prepare some data structures
-        tests = new Vector<Messreihe>();
+        tests = new Vector<TimeSeriesObject>();
         log = new StringBuffer();
                 
         log.append("fit range: [" + fitMIN + ", ..., " + fitMAX + " ]\n" );
@@ -111,12 +112,12 @@ public class LongTermCorrelationSeriesGenerator {
                 else firstInLoop = false;
                 numberOfLoop = j;
                 
-                Messreihe mr = getRandomRow( (int)Math.pow(2, EXP), beta , showTest, true );
+                TimeSeriesObject mr = getRandomRow( (int)Math.pow(2, EXP), beta , showTest, true );
             }    
         }
         
         firstInLoop = true;
-        Messreihe mr = getRandomRow( (int)Math.pow(2, EXP), 0 , showTest, true );
+        TimeSeriesObject mr = getRandomRow( (int)Math.pow(2, EXP), 0 , showTest, true );
         
         boolean showLegend = true;
         MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
@@ -177,14 +178,13 @@ public class LongTermCorrelationSeriesGenerator {
      * A phase randomized time series is generated.
      * 
      * @param d4
-     * @param beta
      * @param showTest
      * @param runDFA
      * @return
      * @throws Exception 
      */    
     
-    public static Messreihe getPhaseRandomizedRow( Messreihe d4, boolean showTest, boolean runDFA ) throws Exception {
+    public static TimeSeriesObject getPhaseRandomizedRow(TimeSeriesObject d4, boolean showTest, boolean runDFA ) throws Exception {
         
         DecimalFormat df = new DecimalFormat("0.000");
         
@@ -193,14 +193,14 @@ public class LongTermCorrelationSeriesGenerator {
         double[] zr = new double[N];
 
         // nun wird das Array mit den Daten der ZR übergeben
-        MessreiheFFT mr4_NEW = MessreiheFFT.convertToMessreiheFFT(d4);
+        TimeSeriesObjectFFT mr4_NEW = TimeSeriesObjectFFT.convertToMessreiheFFT(d4);
         
-        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_PhaseRandomized();
+        TimeSeriesObjectFFT temp = mr4_NEW.getModifiedTimeSeries_PhaseRandomized();
 
         if ( runDFA ) {
 
-            Vector<Messreihe> vr = new Vector<Messreihe>();
-            Vector<Messreihe> v = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
+            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
             vr.add( d4 );
 
             zr = d4.getData()[1];
@@ -227,7 +227,7 @@ public class LongTermCorrelationSeriesGenerator {
 
             dfa.calc();
 
-            Messreihe mr4 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
             mr4.setLabel( d4.getLabel() + " ( PR )" );
             v.add(mr4);
 
@@ -264,7 +264,7 @@ public class LongTermCorrelationSeriesGenerator {
      * @return
      * @throws Exception 
      */    
-    public static Messreihe getRandomRow( Messreihe d4, double beta, boolean showTest, boolean runDFA ) throws Exception {
+    public static TimeSeriesObject getRandomRow(TimeSeriesObject d4, double beta, boolean showTest, boolean runDFA ) throws Exception {
         
         DecimalFormat df = new DecimalFormat("0.000");
         
@@ -273,16 +273,16 @@ public class LongTermCorrelationSeriesGenerator {
         double[] zr = new double[N];
 
         // nun wird das Array mit den Daten der ZR übergeben
-        MessreiheFFT mr4_NEW = MessreiheFFT.convertToMessreiheFFT(d4);
+        TimeSeriesObjectFFT mr4_NEW = TimeSeriesObjectFFT.convertToMessreiheFFT(d4);
         
-        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( beta );
+        TimeSeriesObjectFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( beta );
         
         if ( beta == 0 ) temp = mr4_NEW;
 
         if ( runDFA ) {
 
-            Vector<Messreihe> vr = new Vector<Messreihe>();
-            Vector<Messreihe> v = new Vector<Messreihe>();
+            Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
+            Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
             vr.add( d4 );
 
             zr = d4.getData()[1];
@@ -309,7 +309,7 @@ public class LongTermCorrelationSeriesGenerator {
 
             dfa.calc();
 
-            Messreihe mr4 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
             mr4.setLabel( d4.getLabel() + " (" + beta + ")" );
             v.add(mr4);
 
@@ -355,7 +355,7 @@ public class LongTermCorrelationSeriesGenerator {
      * @return
      * @throws Exception 
      */
-    public static Messreihe getRandomRow( int length, double beta, boolean showTest, boolean runDFA ) throws Exception {
+    public static TimeSeriesObject getRandomRow(int length, double beta, boolean showTest, boolean runDFA ) throws Exception {
         
         // has to be of type int
         // N = length; by a multiple of 4 !!!
@@ -370,25 +370,25 @@ public class LongTermCorrelationSeriesGenerator {
          * es hat einen fahlichen Sinn, Lücken zu nutzen.
          */
         
-        Messreihe d4 = Messreihe.getGaussianDistribution(N);
+        TimeSeriesObject d4 = TimeSeriesObject.getGaussianDistribution(N);
         
         return getRandomRow(d4, beta, showTest, runDFA);
     }  
     
-    static Messreihe mrAV = new Messreihe();  // Mittelwerte
-    static Messreihe mrSTD = new Messreihe();  // standardabweichung
-    static Messreihe mrMAX = new Messreihe();  // ERROR
-    static Messreihe mrMIN = new Messreihe();  // ERROR
+    static TimeSeriesObject mrAV = new TimeSeriesObject();  // Mittelwerte
+    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standardabweichung
+    static TimeSeriesObject mrMAX = new TimeSeriesObject();  // ERROR
+    static TimeSeriesObject mrMIN = new TimeSeriesObject();  // ERROR
         
     /**
      * Helper function to produce a debugging chart.
      */ 
     private static void _calcErrorChart(double[][] d, int nrB, int nrLOOPS , double scaleSTDEV ) {
         
-        mrAV = new Messreihe();  // Mittelwerte
-        mrSTD = new Messreihe();  // standardabweichung
-        mrMAX = new Messreihe();  // ERROR
-        mrMIN = new Messreihe();  // ERROR
+        mrAV = new TimeSeriesObject();  // Mittelwerte
+        mrSTD = new TimeSeriesObject();  // standardabweichung
+        mrMAX = new TimeSeriesObject();  // ERROR
+        mrMIN = new TimeSeriesObject();  // ERROR
     
         mrAV.setLabel("mean");
         mrSTD.setLabel("stddev * " + scaleSTDEV );
@@ -404,8 +404,11 @@ public class LongTermCorrelationSeriesGenerator {
                 L[iL] = d[iB][iL];
             }
             try {
-                double mean = stdlib.StdStats.mean(L);
-                double std = stdlib.StdStats.stddev(L);
+
+                StandardDeviation stdev = new StandardDeviation();
+
+                double mean = StatUtils.mean( L );
+                double std = stdev.evaluate( L );
 
                 mrAV.addValuePair(betas[iB] , mean );
                 mrSTD.addValuePair(betas[iB] , std * scaleSTDEV );
@@ -428,26 +431,21 @@ public class LongTermCorrelationSeriesGenerator {
     }
 
     /**
-     * 
-     * @param copy
-     * @param d
-     * @param b
-     * @param b0
-     * @param i
+     *
      * @return 
      */
-    static Messreihe getRandomRowSchreiberSchmitz(Messreihe row, double beta, boolean f1, boolean f2, int rounds) throws Exception {
+    static TimeSeriesObject getRandomRowSchreiberSchmitz(TimeSeriesObject row, double beta, boolean f1, boolean f2, int rounds) throws Exception {
 
                     System.out.println("\n\n\n\n" + rounds + "rounds" );
                     System.out.println(      "-------------------------" );
 
-        Messreihe rowOriginal = row.copy();
+        TimeSeriesObject rowOriginal = row.copy();
         
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
         
         for( int i = 0; i < rounds; i++ ){
             
-            Messreihe mr = LongTermCorrelationSeriesGenerator.getRandomRow(row, beta, false, false);
+            TimeSeriesObject mr = LongTermCorrelationSeriesGenerator.getRandomRow(row, beta, false, false);
             
             row = mr.exchangeRankWise( rowOriginal );
             

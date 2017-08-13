@@ -4,8 +4,8 @@
  */
 package org.apache.hadoopts.data.export;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -44,19 +44,19 @@ public class MesswertTabelle {
     public void setLabel(String label) {
         this.label = label;
     }
-    Vector<Messreihe> messReihen = null;
+    Vector<TimeSeriesObject> messReihen = null;
 
-    public Vector<Messreihe> getMessReihen() {
+    public Vector<TimeSeriesObject> getMessReihen() {
         return messReihen;
     }
 
-    public void setMessReihen(Vector<Messreihe> _messReihen) {
+    public void setMessReihen(Vector<TimeSeriesObject> _messReihen) {
         this.messReihen = _messReihen;
     }
 
-    public void setMessReihen(Messreihe[] rows) {
-        Vector<Messreihe> mrv = new Vector<Messreihe>();
-        for (Messreihe r : rows) {
+    public void setMessReihen(TimeSeriesObject[] rows) {
+        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+        for (TimeSeriesObject r : rows) {
             mrv.add(r);
         }
         this.setMessReihen(mrv);
@@ -100,12 +100,12 @@ public class MesswertTabelle {
             fw.close();
             
         } catch (IOException ex) {
-            Logger.getLogger(Messreihe.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
                 fw.close();
             } catch (IOException ex) {
-                Logger.getLogger(Messreihe.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -122,18 +122,18 @@ public class MesswertTabelle {
      */
     public String toSignificanzString() {
 
-        Hashtable keyedHash = new Hashtable<String, Messreihe>();
-        for (Messreihe m : this.messReihen) {
+        Hashtable keyedHash = new Hashtable<String, TimeSeriesObject>();
+        for (TimeSeriesObject m : this.messReihen) {
             if (m == null) {
-                m = new Messreihe("empty");
+                m = new TimeSeriesObject("empty");
             }
             keyedHash.put(new Integer(m.getLabel()), m);
         }
 
-        Enumeration<Messreihe> en1 = this.messReihen.elements();
+        Enumeration<TimeSeriesObject> en1 = this.messReihen.elements();
         int maxLength = 0;
         while (en1.hasMoreElements()) {
-            Messreihe mr = en1.nextElement();
+            TimeSeriesObject mr = en1.nextElement();
             int l = mr.yValues.size();
             if (l > maxLength) {
                 maxLength = l;
@@ -143,11 +143,11 @@ public class MesswertTabelle {
         StringBuffer sb = new StringBuffer();
 
         int size = this.messReihen.size();
-        Enumeration<Messreihe> en = this.messReihen.elements();
+        Enumeration<TimeSeriesObject> en = this.messReihen.elements();
 
         String headline = "#X" + "\t";
 
-        Messreihe mr = en.nextElement();
+        TimeSeriesObject mr = en.nextElement();
         // sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() +","+ mr.yValues.size() +"] Werte" );
         //headline = headline.concat( mr.getLabel_X() +"\t" + mr.getLabel_Y() +"\t" );
 
@@ -166,7 +166,7 @@ public class MesswertTabelle {
         while (it.hasNext()) {
             
             Integer key = (Integer) it.next();
-            mr = (Messreihe) keyedHash.get(key);
+            mr = (TimeSeriesObject) keyedHash.get(key);
             System.err.println("k=" + key);
             sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() + "," + mr.yValues.size() + "] Werte");
             
@@ -186,12 +186,12 @@ public class MesswertTabelle {
         // DecimalFormat df = new DecimalFormat("0.00000E00");
         DecimalFormat df = new DecimalFormat("0,00");
 
-        Messreihe longest = getLogestRow(this.messReihen);
+        TimeSeriesObject longest = getLogestRow(this.messReihen);
         int j = 0;
         for (int i = 0; i < maxLength; i++) {
             it = l.iterator();
             while (it.hasNext()) {
-                mr = (Messreihe) keyedHash.get((Integer) it.next());
+                mr = (TimeSeriesObject) keyedHash.get((Integer) it.next());
                 double x = 0.0;
                 double y = 0.0;
 
@@ -232,11 +232,11 @@ public class MesswertTabelle {
      */
     public String toString() {
 
-        Hashtable keyedHash = new Hashtable<Integer, Messreihe>();
+        Hashtable keyedHash = new Hashtable<Integer, TimeSeriesObject>();
         int zi = 1;
-        for (Messreihe m : this.messReihen) {
+        for (TimeSeriesObject m : this.messReihen) {
             if (m == null) {
-                m = new Messreihe("empty");
+                m = new TimeSeriesObject("empty");
             }
             Integer key = calcKey(m, zi);
             zi++;
@@ -246,9 +246,9 @@ public class MesswertTabelle {
         int maxLength = 0;
 
         // max length ermitteln zum auffüllen ...
-        Enumeration<Messreihe> en1 = this.messReihen.elements();
+        Enumeration<TimeSeriesObject> en1 = this.messReihen.elements();
         while (en1.hasMoreElements()) {
-            Messreihe mr = en1.nextElement();
+            TimeSeriesObject mr = en1.nextElement();
             int l = mr.yValues.size();
             if (l > maxLength) {
                 maxLength = l;
@@ -261,13 +261,13 @@ public class MesswertTabelle {
         sb.append("#\n# M e s s w e r t t a b e l l e  der Reihen:\n#");
 
         int size = this.messReihen.size();
-        Enumeration<Messreihe> en = this.messReihen.elements();
+        Enumeration<TimeSeriesObject> en = this.messReihen.elements();
 
         if ( en == null ) return "EMPTY Row";
         
         String headline = "";
 
-        Messreihe mr = en.nextElement();
+        TimeSeriesObject mr = en.nextElement();
         //sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() +","+ mr.yValues.size() +"] Werte" );
         //headline = headline.concat( mr.getLabel_X() +"\t" + mr.getLabel_Y() +"\t" );
 
@@ -289,7 +289,7 @@ public class MesswertTabelle {
                 headline = headline.concat(mr.getLabel_X() + "\t");
             }
             
-            mr = (Messreihe) keyedHash.get((Integer) it.next());
+            mr = (TimeSeriesObject) keyedHash.get((Integer) it.next());
             sb.append("\n# " + mr.getLabel() + " [" + mr.xValues.size() + "," + mr.yValues.size() + "] Werte");
 
             if (singleX ) {
@@ -304,7 +304,7 @@ public class MesswertTabelle {
         sb.append("\n#\n#\n#");
         sb.append(headline + "\n");
 
-        Messreihe longest = getLogestRow(this.messReihen);
+        TimeSeriesObject longest = getLogestRow(this.messReihen);
 
         DecimalFormat dfX = new DecimalFormat("0.00000");
         DecimalFormat dfY = new DecimalFormat("0.00000");
@@ -313,7 +313,7 @@ public class MesswertTabelle {
         for (int i = 0; i < maxLength; i++) {
             it = l.iterator();
             while (it.hasNext()) {
-                mr = (Messreihe) keyedHash.get((Integer) it.next());
+                mr = (TimeSeriesObject) keyedHash.get((Integer) it.next());
                 double x = 0.0;
                 double y = 0.0;
 
@@ -354,12 +354,12 @@ public class MesswertTabelle {
         this.header = header +"\n#\t" + h; 
     }
 
-    private Messreihe getLogestRow(Vector<Messreihe> messReihen) {
-        Messreihe l = null;
+    private TimeSeriesObject getLogestRow(Vector<TimeSeriesObject> messReihen) {
+        TimeSeriesObject l = null;
         int max = 0;
         int c = 0;
         int index = 0;
-        for (Messreihe m : messReihen) {
+        for (TimeSeriesObject m : messReihen) {
             int s = m.getSize()[0];
             if (s > max) {
                 max = s;
@@ -371,9 +371,9 @@ public class MesswertTabelle {
         return l;
     }
 
-    public void addMessreihe(Messreihe mr) {
+    public void addMessreihe(TimeSeriesObject mr) {
         if (messReihen == null) {
-            messReihen = new Vector<Messreihe>();
+            messReihen = new Vector<TimeSeriesObject>();
         }
         messReihen.add(mr);
     }
@@ -408,7 +408,7 @@ public class MesswertTabelle {
         return 7;
     }
 
-    private Integer calcKey(Messreihe m, int lastKey) {
+    private Integer calcKey(TimeSeriesObject m, int lastKey) {
         Integer key = lastKey;
 //        try {
 //            Integer i = new Integer( m.getLabel() );

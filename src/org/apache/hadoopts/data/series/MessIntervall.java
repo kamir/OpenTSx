@@ -1,18 +1,18 @@
 package org.apache.hadoopts.data.series;
 
 /**
- * Eine Klasse zur Einschränkung des Bereiches einer Messreihe.
+ * Eine Klasse zur Einschränkung des Bereiches einer TimeSeriesObject.
  * Mit u und o wird die Untere und die Obere Grenze des Bereichs
  * der zulässigen X-Werte angegeben.
  *
- * In der Variabel mr wird eine Referenz auf die "originale" Messreihe
+ * In der Variabel mr wird eine Referenz auf die "originale" TimeSeriesObject
  * vorgehalten.
  */
-public class MessIntervall extends Messreihe {
+public class MessIntervall extends TimeSeriesObject {
 
-    Messreihe mr = null;
+    TimeSeriesObject mr = null;
 
-    public MessIntervall( Messreihe mr , double u, double o ) {
+    public MessIntervall(TimeSeriesObject mr , double u, double o ) {
         super();
         this.mr = mr;
         this.init(u,o);

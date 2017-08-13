@@ -1,15 +1,12 @@
 package org.apache.hadoopts.analysistools;
 
 import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
-import org.apache.hadoopts.data.series.Messreihe;
-import java.awt.Color;
-import java.awt.Graphics;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
-import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.util.Vector;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -26,7 +23,7 @@ public class HurstSurface {
     public static int WIDTH = 500;
     public static int HEIGHT = 500;
 
-    Vector<Messreihe> rows = null;
+    Vector<TimeSeriesObject> rows = null;
 
     // we set the range of all possible values to 0 ... 2
     double vMin = 0.0;
@@ -41,7 +38,7 @@ public class HurstSurface {
      * @param label
      * @param scale 
      */
-    public HurstSurface(Vector<Messreihe> rowsSorted, String label, int scale) {
+    public HurstSurface(Vector<TimeSeriesObject> rowsSorted, String label, int scale) {
 
         sw = scale;
         sh = scale;
@@ -57,11 +54,11 @@ public class HurstSurface {
     public HurstSurface() {
         frame = new JFrame("Hurst-Surface : " + "DEMO");
 
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
 
         for (int i = 0; i < 20; i++) {
 
-            Messreihe m = new Messreihe();
+            TimeSeriesObject m = new TimeSeriesObject();
             m.setLabel("row: " + i);
 
             for (int j = 0; j < 100; j++) {
@@ -93,7 +90,7 @@ public class HurstSurface {
 
             for (int y = 0; y < sy; y++) {
 
-                Messreihe r = rows.elementAt(y);
+                TimeSeriesObject r = rows.elementAt(y);
 
                 double v = (double) r.yValues.elementAt(x);
 
@@ -154,12 +151,12 @@ public class HurstSurface {
     double shift = 0.2;
     double width = 0.5;
     
-    private Vector<Messreihe> getAlphaAsFunctionOfS(Vector<Messreihe> r) {
-        Vector<Messreihe> hRows = new Vector<Messreihe>();
+    private Vector<TimeSeriesObject> getAlphaAsFunctionOfS(Vector<TimeSeriesObject> r) {
+        Vector<TimeSeriesObject> hRows = new Vector<TimeSeriesObject>();
         
-        for( Messreihe m: r) {
+        for( TimeSeriesObject m: r) {
         
-            Messreihe h = new Messreihe();
+            TimeSeriesObject h = new TimeSeriesObject();
             h.setLabel( "hurst(" + m.getLabel() + ")");
             FluctuationFunktion ff = new FluctuationFunktion( m, m.label );
             

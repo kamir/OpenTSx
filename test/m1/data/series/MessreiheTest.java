@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package m1.data.series;
 
 import org.apache.hadoopts.data.series.Messreihe;
@@ -24,7 +19,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of isNotEmpty method, of class Messreihe.
+     * Test of isNotEmpty method, of class TimeSeriesObject.
      */
     public void testIsNotEmpty() {
         System.out.println("isNotEmpty");
@@ -37,7 +32,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getDecimalFormat_STAT method, of class Messreihe.
+     * Test of getDecimalFormat_STAT method, of class TimeSeriesObject.
      */
     public void testGetDecimalFormat_STAT() {
         System.out.println("getDecimalFormat_STAT");
@@ -50,7 +45,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getDecimalFormat_X method, of class Messreihe.
+     * Test of getDecimalFormat_X method, of class TimeSeriesObject.
      */
     public void testGetDecimalFormat_X() {
         System.out.println("getDecimalFormat_X");
@@ -63,7 +58,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getDecimalFormat_Y method, of class Messreihe.
+     * Test of getDecimalFormat_Y method, of class TimeSeriesObject.
      */
     public void testGetDecimalFormat_Y() {
         System.out.println("getDecimalFormat_Y");
@@ -76,7 +71,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getStatus method, of class Messreihe.
+     * Test of getStatus method, of class TimeSeriesObject.
      */
     public void testGetStatus() {
         System.out.println("getStatus");
@@ -89,7 +84,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getGaussianDistribution method, of class Messreihe.
+     * Test of getGaussianDistribution method, of class TimeSeriesObject.
      */
     public void testGetGaussianDistribution() {
         System.out.println("getGaussianDistribution");
@@ -102,7 +97,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getSize method, of class Messreihe.
+     * Test of getSize method, of class TimeSeriesObject.
      */
     public void testGetSize() {
         System.out.println("getSize");
@@ -115,7 +110,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of addValuePair method, of class Messreihe.
+     * Test of addValuePair method, of class TimeSeriesObject.
      */
     public void testAddValuePair() {
         System.out.println("addValuePair");
@@ -128,7 +123,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getXValues method, of class Messreihe.
+     * Test of getXValues method, of class TimeSeriesObject.
      */
     public void testGetXValues() {
         System.out.println("getXValues");
@@ -141,7 +136,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getYValues method, of class Messreihe.
+     * Test of getYValues method, of class TimeSeriesObject.
      */
     public void testGetYValues() {
         System.out.println("getYValues");
@@ -154,7 +149,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of toString method, of class Messreihe.
+     * Test of toString method, of class TimeSeriesObject.
      */
     public void testToString() {
         System.out.println("toString");
@@ -167,7 +162,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setLabel method, of class Messreihe.
+     * Test of setLabel method, of class TimeSeriesObject.
      */
     public void testSetLabel() {
         System.out.println("setLabel");
@@ -179,7 +174,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setAddinfo method, of class Messreihe.
+     * Test of setAddinfo method, of class TimeSeriesObject.
      */
     public void testSetAddinfo() {
         System.out.println("setAddinfo");
@@ -191,7 +186,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getAddinfo method, of class Messreihe.
+     * Test of getAddinfo method, of class TimeSeriesObject.
      */
     public void testGetAddinfo() {
         System.out.println("getAddinfo");
@@ -204,7 +199,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getLabel method, of class Messreihe.
+     * Test of getLabel method, of class TimeSeriesObject.
      */
     public void testGetLabel() {
         System.out.println("getLabel");
@@ -217,7 +212,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getData method, of class Messreihe.
+     * Test of getData method, of class TimeSeriesObject.
      */
     public void testGetData() {
         System.out.println("getData");
@@ -230,7 +225,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of calcAverage method, of class Messreihe.
+     * Test of calcAverage method, of class TimeSeriesObject.
      */
     public void testCalcAverage() {
         System.out.println("calcAverage");
@@ -241,7 +236,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getAvarage method, of class Messreihe.
+     * Test of getAvarage method, of class TimeSeriesObject.
      */
     public void testGetAvarage() {
         System.out.println("getAvarage");
@@ -254,7 +249,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setDecimalFomrmatX method, of class Messreihe.
+     * Test of setDecimalFomrmatX method, of class TimeSeriesObject.
      */
     public void testSetDecimalFomrmatX() {
         System.out.println("setDecimalFomrmatX");
@@ -266,7 +261,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setDecimalFomrmatY method, of class Messreihe.
+     * Test of setDecimalFomrmatY method, of class TimeSeriesObject.
      */
     public void testSetDecimalFomrmatY() {
         System.out.println("setDecimalFomrmatY");
@@ -278,7 +273,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getMaxX method, of class Messreihe.
+     * Test of getMaxX method, of class TimeSeriesObject.
      */
     public void testGetMaxX() {
         System.out.println("getMaxX");
@@ -291,7 +286,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getMaxY method, of class Messreihe.
+     * Test of getMaxY method, of class TimeSeriesObject.
      */
     public void testGetMaxY() {
         System.out.println("getMaxY");
@@ -304,7 +299,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getStatisticData method, of class Messreihe.
+     * Test of getStatisticData method, of class TimeSeriesObject.
      */
     public void testGetStatisticData() {
         System.out.println("getStatisticData");
@@ -318,7 +313,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getYData method, of class Messreihe.
+     * Test of getYData method, of class TimeSeriesObject.
      */
     public void testGetYData() {
         System.out.println("getYData");
@@ -331,7 +326,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getXYSeries method, of class Messreihe.
+     * Test of getXYSeries method, of class TimeSeriesObject.
      */
     public void testGetXYSeries() {
         System.out.println("getXYSeries");
@@ -344,7 +339,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of writeToFile method, of class Messreihe.
+     * Test of writeToFile method, of class TimeSeriesObject.
      */
     public void testWriteToFile() {
         System.out.println("writeToFile");
@@ -356,7 +351,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of addValue method, of class Messreihe.
+     * Test of addValue method, of class TimeSeriesObject.
      */
     public void testAddValue() {
         System.out.println("addValue");
@@ -368,7 +363,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getLabel_X method, of class Messreihe.
+     * Test of getLabel_X method, of class TimeSeriesObject.
      */
     public void testGetLabel_X() {
         System.out.println("getLabel_X");
@@ -381,7 +376,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setLabel_X method, of class Messreihe.
+     * Test of setLabel_X method, of class TimeSeriesObject.
      */
     public void testSetLabel_X() {
         System.out.println("setLabel_X");
@@ -393,7 +388,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setLabel_Y method, of class Messreihe.
+     * Test of setLabel_Y method, of class TimeSeriesObject.
      */
     public void testSetLabel_Y() {
         System.out.println("setLabel_Y");
@@ -405,7 +400,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getLabel_Y method, of class Messreihe.
+     * Test of getLabel_Y method, of class TimeSeriesObject.
      */
     public void testGetLabel_Y() {
         System.out.println("getLabel_Y");
@@ -418,7 +413,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getStddev method, of class Messreihe.
+     * Test of getStddev method, of class TimeSeriesObject.
      */
     public void testGetStddev() {
         System.out.println("getStddev");
@@ -431,7 +426,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of normalize method, of class Messreihe.
+     * Test of normalize method, of class TimeSeriesObject.
      */
     public void testNormalize() {
         System.out.println("normalize");
@@ -442,7 +437,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getYValueForX method, of class Messreihe.
+     * Test of getYValueForX method, of class TimeSeriesObject.
      */
     public void testGetYValueForX() {
         System.out.println("getYValueForX");
@@ -456,7 +451,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setBinningX_sum method, of class Messreihe.
+     * Test of setBinningX_sum method, of class TimeSeriesObject.
      */
     public void testSetBinningX_sum() {
         System.out.println("setBinningX_sum");
@@ -470,7 +465,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setBinningX_average method, of class Messreihe.
+     * Test of setBinningX_average method, of class TimeSeriesObject.
      */
     public void testSetBinningX_average() {
         System.out.println("setBinningX_average");
@@ -484,7 +479,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of divY method, of class Messreihe.
+     * Test of divY method, of class TimeSeriesObject.
      */
     public void testDivY() {
         System.out.println("divY");
@@ -496,7 +491,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of summeY method, of class Messreihe.
+     * Test of summeY method, of class TimeSeriesObject.
      */
     public void testSummeY() {
         System.out.println("summeY");
@@ -509,7 +504,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of diff method, of class Messreihe.
+     * Test of diff method, of class TimeSeriesObject.
      */
     public void testDiff() {
         System.out.println("diff");
@@ -523,7 +518,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of add method, of class Messreihe.
+     * Test of add method, of class TimeSeriesObject.
      */
     public void testAdd() {
         System.out.println("add");
@@ -537,7 +532,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of addValues method, of class Messreihe.
+     * Test of addValues method, of class TimeSeriesObject.
      */
     public void testAddValues() {
         System.out.println("addValues");
@@ -549,7 +544,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of scaleX method, of class Messreihe.
+     * Test of scaleX method, of class TimeSeriesObject.
      */
     public void testScaleX() {
         System.out.println("scaleX");
@@ -563,7 +558,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of addStatusInfo method, of class Messreihe.
+     * Test of addStatusInfo method, of class TimeSeriesObject.
      */
     public void testAddStatusInfo() {
         System.out.println("addStatusInfo");
@@ -575,7 +570,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getStatusInfo method, of class Messreihe.
+     * Test of getStatusInfo method, of class TimeSeriesObject.
      */
     public void testGetStatusInfo() {
         System.out.println("getStatusInfo");
@@ -588,7 +583,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of cut method, of class Messreihe.
+     * Test of cut method, of class TimeSeriesObject.
      */
     public void testCut() {
         System.out.println("cut");
@@ -602,7 +597,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of shift method, of class Messreihe.
+     * Test of shift method, of class TimeSeriesObject.
      */
     public void testShift() throws Exception {
         System.out.println("shift");
@@ -616,7 +611,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of copy method, of class Messreihe.
+     * Test of copy method, of class TimeSeriesObject.
      */
     public void testCopy() {
         System.out.println("copy");
@@ -629,7 +624,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of scaleX_2 method, of class Messreihe.
+     * Test of scaleX_2 method, of class TimeSeriesObject.
      */
     public void testScaleX_2() {
         System.out.println("scaleX_2");
@@ -643,7 +638,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of scaleY_2 method, of class Messreihe.
+     * Test of scaleY_2 method, of class TimeSeriesObject.
      */
     public void testScaleY_2() {
         System.out.println("scaleY_2");
@@ -657,7 +652,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of setLabels method, of class Messreihe.
+     * Test of setLabels method, of class TimeSeriesObject.
      */
     public void testSetLabels() {
         System.out.println("setLabels");
@@ -671,7 +666,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of averageForAll method, of class Messreihe.
+     * Test of averageForAll method, of class TimeSeriesObject.
      */
     public void testAverageForAll() {
         System.out.println("averageForAll");
@@ -684,7 +679,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of getX_for_Y method, of class Messreihe.
+     * Test of getX_for_Y method, of class TimeSeriesObject.
      */
     public void testGetX_for_Y() {
         System.out.println("getX_for_Y");
@@ -698,7 +693,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of linFit method, of class Messreihe.
+     * Test of linFit method, of class TimeSeriesObject.
      */
     public void testLinFit() throws Exception {
         System.out.println("linFit");
@@ -713,7 +708,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of split method, of class Messreihe.
+     * Test of split method, of class TimeSeriesObject.
      */
     public void testSplit() {
         System.out.println("split");
@@ -728,7 +723,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of shrinkX method, of class Messreihe.
+     * Test of shrinkX method, of class TimeSeriesObject.
      */
     public void testShrinkX() {
         System.out.println("shrinkX");
@@ -743,7 +738,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of addComment method, of class Messreihe.
+     * Test of addComment method, of class TimeSeriesObject.
      */
     public void testAddComment() {
         System.out.println("addComment");
@@ -755,7 +750,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of scaleXto method, of class Messreihe.
+     * Test of scaleXto method, of class TimeSeriesObject.
      */
     public void testScaleXto() {
         System.out.println("scaleXto");
@@ -767,7 +762,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of checkKonsistenz method, of class Messreihe.
+     * Test of checkKonsistenz method, of class TimeSeriesObject.
      */
     public void testCheckKonsistenz() {
         System.out.println("checkKonsistenz");
@@ -778,7 +773,7 @@ public class MessreiheTest extends TestCase {
     }
 
     /**
-     * Test of show method, of class Messreihe.
+     * Test of show method, of class TimeSeriesObject.
      */
     public void testShow() {
         System.out.println("show");

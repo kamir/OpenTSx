@@ -1,7 +1,7 @@
 package org.apache.hadoopts.statistics.experiments;
 
 import org.apache.hadoopts.app.thesis.dataqualitytest.InfluenceOfSinglePeakTester;
-import stdlib.StdRandom;
+import org.apache.hadoopts.data.RNGWrapper;
 
 /**
  *
@@ -10,9 +10,9 @@ import stdlib.StdRandom;
 public class PeaksAndShapiroWilkTest {
 
     public static void main(String[] args) throws Exception {
-        
-        StdRandom.initRandomGen((long) 1.0);
-        
+
+        RNGWrapper.init();
+
         InfluenceOfSinglePeakTester.NR_OF_ROWS = 100;
    
         InfluenceOfSinglePeakTester.calcShapiroValuesForPeaks(  );

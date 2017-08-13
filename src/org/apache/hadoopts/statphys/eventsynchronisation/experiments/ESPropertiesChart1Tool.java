@@ -10,10 +10,11 @@
 package org.apache.hadoopts.statphys.eventsynchronisation.experiments;
 
 import org.apache.hadoopts.chart.simple.MyXYPlot;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
 import java.io.IOException;
+
 import org.apache.hadoopts.statphys.eventsynchronisation.ESCalc2;
 import java.util.Vector;
 
@@ -64,21 +65,21 @@ public class ESPropertiesChart1Tool {
         int dt_MAX = 100;
 
         // Here we collect the sereis
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
 
         int rho = 0;
 
         // for this experiment we create a series which is shown later in a plot
-        Messreihe mr_Q_SHIFT_fixed_rho = new Messreihe();
+        TimeSeriesObject mr_Q_SHIFT_fixed_rho = new TimeSeriesObject();
         mr_Q_SHIFT_fixed_rho.setLabel("Q_" + n1 + "_" + dt_MAX + "_" + rho + "_" + k_MAX);
 
-        Messreihe mr_q_SHIFT_fixed_rho = new Messreihe();
+        TimeSeriesObject mr_q_SHIFT_fixed_rho = new TimeSeriesObject();
         mr_q_SHIFT_fixed_rho.setLabel("q_" + n1 + "_" + dt_MAX + "_" + rho + "_" + k_MAX);
 
-        Messreihe mr_Q_t = new Messreihe();
+        TimeSeriesObject mr_Q_t = new TimeSeriesObject();
         mr_Q_t.setLabel("Q_t");
 
-        Messreihe mr_q_t = new Messreihe();
+        TimeSeriesObject mr_q_t = new TimeSeriesObject();
         mr_q_t.setLabel("q_t");
         
         op.initFolder( "experiment_ES1___length_" + n1 );
@@ -96,10 +97,10 @@ public class ESPropertiesChart1Tool {
         for (rho = 100; rho < rhoMAX; rho = rho + 100) {
 
 //            // for this experiment we create a series which is shown later in a plot
-//            Messreihe mr_Q_SHIFT_fixed_rho = new Messreihe();
+//            TimeSeriesObject mr_Q_SHIFT_fixed_rho = new TimeSeriesObject();
 //            mr_Q_SHIFT_fixed_rho.setLabel("Q_" + n1 + "_" + dt_MAX + "_" + rho + "_" + k_MAX);
 //
-//            Messreihe mr_q_SHIFT_fixed_rho = new Messreihe();
+//            TimeSeriesObject mr_q_SHIFT_fixed_rho = new TimeSeriesObject();
 //            mr_q_SHIFT_fixed_rho.setLabel("q_" + n1 + "_" + dt_MAX + "_" + rho + "_" + k_MAX);
             /**
              * Now we iterate through time. The second series is shifted against

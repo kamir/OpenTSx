@@ -1,23 +1,16 @@
 package org.apache.hadoopts.hadoopts.core;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
-import java.io.BufferedReader;
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Date;
+import java.io.*;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.hadoop.io.Writable;
-
 /**
- * The data, used in Messreihe ...
+ * The data, used in TimeSeriesObject ...
  * 
  * @author Mirko Kämpf
  */
@@ -33,7 +26,7 @@ public class TSData implements Writable {
      * @param mr
      * @return 
      */
-    static TSData convertMessreihe(Messreihe mr) {
+    static TSData convertMessreihe(TimeSeriesObject mr) {
         
         TSData data = new TSData();
         
@@ -116,7 +109,7 @@ public class TSData implements Writable {
 //            d[i] = Math.random();
             // gaussian
 //            d[i] = stdlib.StdRandom.gaussian();
-            d[i] = stdlib.StdRandom.poisson(1.0);
+            d[i] = RNGWrapper.getStdPoisson( 1.0 ); //
         }
         return d;
     }
@@ -157,8 +150,8 @@ public class TSData implements Writable {
 
     }
 
-    Messreihe getMessreihe() {
-        Messreihe mr = new Messreihe();
+    TimeSeriesObject getMessreihe() {
+        TimeSeriesObject mr = new TimeSeriesObject();
         for( double y : dataset) { 
             mr.addValue(y);
         }    

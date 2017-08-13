@@ -10,10 +10,11 @@
 package org.apache.hadoopts.statphys.eventsynchronisation.experiments;
 
 import org.apache.hadoopts.chart.simple.MyXYPlot;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
 import java.io.IOException;
+
 import org.apache.hadoopts.statphys.eventsynchronisation.ESCalc2;
 import java.util.Vector;
 
@@ -35,7 +36,7 @@ public class ESPropertiesChart2Tool {
 
         // log the results later
         StringBuffer sb = new StringBuffer();
-        Vector<Messreihe> vmr = null;
+        Vector<TimeSeriesObject> vmr = null;
 
         ESCalc2.debug = false;
 
@@ -68,21 +69,21 @@ public class ESPropertiesChart2Tool {
             double F = 1;
 
             for (int i = 10; i < 1100; i = (int) (i * F) + N2) {
-        vmr = new Vector<Messreihe>();
+        vmr = new Vector<TimeSeriesObject>();
 
                                     // Here we collect the sereis
 //            op.logLine(runLabel + ".log", ">>> init new vector ... ");
                 // for this experiment we create a series which is shown later in a plot
-                Messreihe mr_Q_SHIFT_fixed_rho = new Messreihe();
+                TimeSeriesObject mr_Q_SHIFT_fixed_rho = new TimeSeriesObject();
                 mr_Q_SHIFT_fixed_rho.setLabel("Q_" + i);
 
-                Messreihe mr_q_SHIFT_fixed_rho = new Messreihe();
+                TimeSeriesObject mr_q_SHIFT_fixed_rho = new TimeSeriesObject();
                 mr_q_SHIFT_fixed_rho.setLabel("q_" + i);
 
-                Messreihe mr_q_t = new Messreihe();
+                TimeSeriesObject mr_q_t = new TimeSeriesObject();
                 mr_q_t.setLabel("q_t_" + n1);
 
-                Messreihe mr_q_t2 = new Messreihe();
+                TimeSeriesObject mr_q_t2 = new TimeSeriesObject();
                 mr_q_t2.setLabel("q/Q_" + n1);
 
                 for (int j = 10; j < 1000; j = (int) (j * F) + N) {

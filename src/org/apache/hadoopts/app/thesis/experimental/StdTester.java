@@ -6,7 +6,9 @@
 package org.apache.hadoopts.app.thesis.experimental;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Vector;
 
 /**
@@ -17,20 +19,20 @@ public class StdTester {
     
     
     public static void main( String[] args ) {
+
+        RNGWrapper.init();
+
+        TimeSeriesObject r1 = TimeSeriesObject.getGaussianDistribution( 500, 10, 2);
+        TimeSeriesObject r2 = TimeSeriesObject.getGaussianDistribution( 500, -10, 2);
         
-        stdlib.StdRandom.initRandomGen(1);
+        TimeSeriesObject r3 = r1.exchangeRankWise( r2 );
         
-        Messreihe r1 = Messreihe.getGaussianDistribution( 500, 10, 2);
-        Messreihe r2 = Messreihe.getGaussianDistribution( 500, -10, 2);
-        
-        Messreihe r3 = r1.exchangeRankWise( r2 );
-        
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
         vmr.add( r1);
         vmr.add( r2);
         vmr.add( r3 );
         
-//        Messreihe c3 = r3.getRanks()[0];
+//        TimeSeriesObject c3 = r3.getRanks()[0];
 //        c3.add_to_Y(-10.0);
         
 //        vmr.add( r1.getRanks() );
@@ -38,8 +40,6 @@ public class StdTester {
 //        vmr.add( c3 );
 
         MultiChart.open(vmr, "GENERATED DATA", "t", "f(t)", true, "", null);
-        
-        
-        
+
     }
 }

@@ -1,10 +1,8 @@
 package org.apache.hadoopts.hadoopts.core;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.FileWriter;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -12,8 +10,8 @@ import java.util.logging.Logger;
  */
 public abstract class TSOperation {
     
-    abstract public String processReihe( Messreihe reihe ) throws Exception;
-    abstract public Messreihe processReihe( FileWriter fw, Messreihe reihe, FileWriter exploder ) throws Exception;
-    abstract public Messreihe processReihe( FileWriter fw, Messreihe reihe, Object para, FileWriter exploder ) throws Exception;
+    abstract public String processReihe( TimeSeriesObject reihe ) throws Exception;
+    abstract public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter exploder ) throws Exception;
+    abstract public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, Object para, FileWriter exploder ) throws Exception;
     
 }

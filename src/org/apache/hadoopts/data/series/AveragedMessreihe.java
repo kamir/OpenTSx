@@ -8,7 +8,7 @@
  * 
  * es gibt dann die Messreihen: 
  *  
- *     - Originaldaten-Messreihe mr
+ *     - Originaldaten-TimeSeriesObject mr
  * (    - X-Errors  )
  * (    - Y-Errors. )
  *  
@@ -26,10 +26,10 @@ import java.util.Enumeration;
  */
 public class AveragedMessreihe {
     
-    public Messreihe mrLAST = null;
-    public Messreihe mrOriginal = null;
+    public TimeSeriesObject mrLAST = null;
+    public TimeSeriesObject mrOriginal = null;
     
-    public Messreihe mrBinned[] = new Messreihe[3];
+    public TimeSeriesObject mrBinned[] = new TimeSeriesObject[3];
     
     double xMin = 0.0;
     double xMax = 5000.0;
@@ -48,19 +48,19 @@ public class AveragedMessreihe {
     
 
         
-    public AveragedMessreihe( Messreihe mr ) { 
+    public AveragedMessreihe( TimeSeriesObject mr ) {
         
         mrOriginal = mr; // darauf bezieht sich auch immer die TRENNUNG Oben / Unten
         
-        mrBinned = new Messreihe[3];   
+        mrBinned = new TimeSeriesObject[3];
         
         String l = mr.getLabel();
-        mrBinned[0] = new Messreihe( l + " all");        
-        mrBinned[1] = new Messreihe( l + " o");
-        mrBinned[2] = new Messreihe( l + " u");
+        mrBinned[0] = new TimeSeriesObject( l + " all");
+        mrBinned[1] = new TimeSeriesObject( l + " o");
+        mrBinned[2] = new TimeSeriesObject( l + " u");
     };
     
-    public void initSegements( int anz , Messreihe toSplit ) { 
+    public void initSegements( int anz , TimeSeriesObject toSplit ) {
                         
 //        this.xMin = 0; // mrOriginal.getMinX();
 //        this.xMax = 200; // mrOriginal.getMaxX();
@@ -181,7 +181,7 @@ public class AveragedMessreihe {
 //         
 //    }
 //    
-//    public void ___initSegementsO(int anz, Messreihe flowDens ) {
+//    public void ___initSegementsO(int anz, TimeSeriesObject flowDens ) {
 //        
 ////        this.xMin = mrOriginal.getMinX();
 ////        this.xMax = mrOriginal.getMaxX();
@@ -269,7 +269,7 @@ public class AveragedMessreihe {
 //         
 //    }
 //    
-//    public void ___initSegementsU(int anz, Messreihe flowDens ) {
+//    public void ___initSegementsU(int anz, TimeSeriesObject flowDens ) {
 //        
 ////        this.xMin = mrOriginal.getMinX();
 ////        this.xMax = mrOriginal.getMaxX();
@@ -339,13 +339,13 @@ public class AveragedMessreihe {
         return (int) (m * X + n);
     }
 
-    public Messreihe[] getNrOfValuesPerBin() {
+    public TimeSeriesObject[] getNrOfValuesPerBin() {
         
-        Messreihe[] mr = new Messreihe[3];
+        TimeSeriesObject[] mr = new TimeSeriesObject[3];
         
-        mr[0] = new Messreihe();
-        mr[1] = new Messreihe();
-        mr[2] = new Messreihe();
+        mr[0] = new TimeSeriesObject();
+        mr[1] = new TimeSeriesObject();
+        mr[2] = new TimeSeriesObject();
         
         for( int k = 0; k < steps;k++ ) { 
             for( int k1 = 0; k1 < 3; k1++ ) {

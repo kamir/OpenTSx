@@ -1,7 +1,7 @@
 
 package org.apache.hadoopts.analysistools;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
@@ -43,12 +43,12 @@ public class HZDouble {
 
     public String label = "HISTOGRAM";
 
-    public Messreihe mr = null;
-    public Messreihe mr2 = null;
+    public TimeSeriesObject mr = null;
+    public TimeSeriesObject mr2 = null;
     public String folder = ".";
 
-    Messreihe mrCUMUL = new Messreihe();
-    Messreihe mrCONF = new Messreihe();
+    TimeSeriesObject mrCUMUL = new TimeSeriesObject();
+    TimeSeriesObject mrCONF = new TimeSeriesObject();
 
 
     public double SUMME = 0.0;
@@ -107,11 +107,11 @@ public class HZDouble {
 
     public void calcWS() {
 
-        mr = new Messreihe( label );
+        mr = new TimeSeriesObject( label );
         int st = intervalle;
         
         int anz = dists.size();
-        mr2 = new Messreihe( label + "/"+anz );
+        mr2 = new TimeSeriesObject( label + "/"+anz );
 
         Vector<Long> steps = new Vector<Long>();
         for (int i = 0; i < dists.size(); ++i) {
@@ -187,8 +187,8 @@ public class HZDouble {
             fw.close();
     };
 
-    public Messreihe getConfidence() {
-        mrCONF = new Messreihe("CONFIDENC Check");
+    public TimeSeriesObject getConfidence() {
+        mrCONF = new TimeSeriesObject("CONFIDENC Check");
 
         for( int i = 0; i < mrCUMUL.yValues.size(); i++ ) {
             Double perc = (Double)mrCUMUL.yValues.elementAt(i) / SUMME;
@@ -200,15 +200,15 @@ public class HZDouble {
         return mrCONF;
     };
 
-    public Messreihe getHistogram() {
+    public TimeSeriesObject getHistogram() {
         return mr;
     }
     
-    public Messreihe getHistogramNORM() {
+    public TimeSeriesObject getHistogramNORM() {
         return mr2;
     }
 
-    public Messreihe getHistogram(double NR_OF_SHUFFLINGS) {
+    public TimeSeriesObject getHistogram(double NR_OF_SHUFFLINGS) {
         return mr.scaleY_2( NR_OF_SHUFFLINGS );
     }
 }

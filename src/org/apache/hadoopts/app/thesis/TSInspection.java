@@ -1,21 +1,23 @@
 package org.apache.hadoopts.app.thesis;
 
-import org.apache.hadoopts.data.series.Messreihe;
-import java.util.Vector;
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.MessreiheFFT;
-import java.awt.Color;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Hashtable;
-import javax.imageio.ImageIO;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.TransformType;
+import java.util.Vector;
 
 /**
  *
@@ -25,11 +27,11 @@ public class TSInspection {
 
     static StringBuffer log = null;
 
-    static Vector<Messreihe> testsA = null;
-    static Vector<Messreihe> testsB = null;
-    static Vector<Messreihe> testsA1 = null;
-    static Vector<Messreihe> testsB1 = null;
-    static Vector<Messreihe> testsC = null;
+    static Vector<TimeSeriesObject> testsA = null;
+    static Vector<TimeSeriesObject> testsB = null;
+    static Vector<TimeSeriesObject> testsA1 = null;
+    static Vector<TimeSeriesObject> testsB1 = null;
+    static Vector<TimeSeriesObject> testsC = null;
 
     public static String PATTERN = "\\W+";
 
@@ -42,22 +44,24 @@ public class TSInspection {
 
     public static void main(String[] args) throws Exception {
 
-        stdlib.StdRandom.initRandomGen(1);
 
-        testsA = new Vector<Messreihe>();
-        testsB = new Vector<Messreihe>();
+        RNGWrapper.init();
 
-        testsA1 = new Vector<Messreihe>();
-        testsB1 = new Vector<Messreihe>();
 
-        testsC = new Vector<Messreihe>();
+        testsA = new Vector<TimeSeriesObject>();
+        testsB = new Vector<TimeSeriesObject>();
+
+        testsA1 = new Vector<TimeSeriesObject>();
+        testsB1 = new Vector<TimeSeriesObject>();
+
+        testsC = new Vector<TimeSeriesObject>();
 
         log = new StringBuffer();
 
         // some sample frequencies ...
         double[] fs = {10.0, 20.0, 50.0, 117.0, 1000}; //, 2000, 5000 };  
 
-        Messreihe total = null;
+        TimeSeriesObject total = null;
 
         for (double f : fs) {
 
@@ -65,7 +69,7 @@ public class TSInspection {
 //
 //            double ampl = 1.0;
 //
-//            MessreiheFFT mr = TSInspection.getSinusWave(f, totaltime, samplingRate, ampl);
+//            TimeSeriesObjectFFT mr = TSInspection.getSinusWave(f, totaltime, samplingRate, ampl);
 //
 //            if (total == null) {
 //                total = mr;
@@ -80,7 +84,7 @@ public class TSInspection {
 
         }
 
-        // processMessreihe( MessreiheFFT.convertToMessreiheFFT(total) );
+        // processMessreihe( TimeSeriesObjectFFT.convertToMessreiheFFT(total) );
 //        
 //        boolean showLegend = true;
 //
@@ -98,11 +102,11 @@ public class TSInspection {
 
 //        // simple randomisation
 //        int N = (int)Math.pow(2,16);
-//        Messreihe m3 = FFTPhaseRandomizer.getRandomRow( N );
+//        TimeSeriesObject m3 = FFTPhaseRandomizer.getRandomRow( N );
 // 
 //        // phase manipulation
-//        Messreihe mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m3.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
-//        Messreihe mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m3.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
+//        TimeSeriesObject mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m3.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
+//        TimeSeriesObject mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m3.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
 //
 //        testsC.add( mA );
 //        testsC.add( mB );
@@ -125,8 +129,8 @@ public class TSInspection {
      * f            = Frequenz
      * a            = Amplitude
      */
-        public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a) {
-        MessreiheFFT mr = new MessreiheFFT();
+        public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a) {
+        TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int) (time * samplingRate);
 
         mr.setLabel("N=" + steps + " (SR=" + samplingRate + " Hz, f=" + f + " Hz)");
@@ -142,8 +146,8 @@ public class TSInspection {
         return mr;
     }
 
-    public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a, double p) {
-        MessreiheFFT mr = new MessreiheFFT();
+    public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, double p) {
+        TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int) (time * samplingRate);
 
         mr.setLabel("N=" + steps + " (SR=" + samplingRate + " Hz, f=" + f + " Hz)");
@@ -159,8 +163,8 @@ public class TSInspection {
         return mr;
     }
 
-    public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a, double p, double noice) {
-        MessreiheFFT mr = new MessreiheFFT();
+    public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, double p, double noice) {
+        TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int) (time * samplingRate);
 
         mr.setLabel("N=" + steps + " (SR=" + samplingRate + " Hz, f=" + f + " Hz)");
@@ -182,12 +186,12 @@ public class TSInspection {
         return mr;
     }
 
-    static Messreihe getSinusWave(Messreihe mr, Messreihe mr0, Messreihe mr1, Messreihe mr2) {
+    static TimeSeriesObject getSinusWave(TimeSeriesObject mr, TimeSeriesObject mr0, TimeSeriesObject mr1, TimeSeriesObject mr2) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public static Messreihe getWordLengthSeries(File f) throws IOException {
-        Messreihe mr = new Messreihe();
+    public static TimeSeriesObject getWordLengthSeries(File f) throws IOException {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel(f.getAbsolutePath());
         BufferedReader br = new BufferedReader(new FileReader(f));
         while (br.ready()) {
@@ -200,9 +204,9 @@ public class TSInspection {
         return mr;
     }
 
-    public static Messreihe[] getGrayImageSeries(File imageFile) throws IOException {
+    public static TimeSeriesObject[] getGrayImageSeries(File imageFile) throws IOException {
 
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
 
         BufferedImage image = ImageIO.read(imageFile);
 
@@ -211,7 +215,7 @@ public class TSInspection {
         int lSeries = image.getWidth();
 
         for (int z = 0; z < zSeries; z++) {
-            Messreihe mr = new Messreihe();
+            TimeSeriesObject mr = new TimeSeriesObject();
 
             mr.setLabel(imageFile.getAbsolutePath() + "_line_" + z);
 
@@ -231,14 +235,14 @@ public class TSInspection {
             vmr.add(mr);
         }
 
-        Messreihe[] MRS = new Messreihe[vmr.size()];
+        TimeSeriesObject[] MRS = new TimeSeriesObject[vmr.size()];
         MRS = vmr.toArray(MRS);
         return MRS;
     }
 
-    public static Messreihe getTFIDFSeries(File f, Hashtable<String, Integer> idfs, Hashtable<String, Integer> wc, String text) {
+    public static TimeSeriesObject getTFIDFSeries(File f, Hashtable<String, Integer> idfs, Hashtable<String, Integer> wc, String text) {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel(f.getAbsolutePath());
 
         int i = 0;
@@ -256,23 +260,23 @@ public class TSInspection {
         return mr;
     }
 
-    private static void processMessreihe(MessreiheFFT mr) {
+    private static void processMessreihe(TimeSeriesObjectFFT mr) {
         
         // raw data
         testsA.add(mr);
 
         // FFT( raw data )
-        Messreihe mrFFT = MessreiheFFT.calcFFT(mr, samplingRate, TransformType.FORWARD );
+        TimeSeriesObject mrFFT = TimeSeriesObjectFFT.calcFFT(mr, samplingRate, TransformType.FORWARD );
         testsB.add(mrFFT);
 
         // FFT_INV( FFT( raw data )) => OBWOHL DAS RESULTAT NICHT IDENTISCH IST, IS
         // DIE FUNKTION KORREKT, MAN DARF SIE NUR NICHT ALS KETTE AUSFÜHREN.
         // 
-        Messreihe mrBACK = MessreiheFFT.calcFFT( mrFFT, samplingRate, TransformType.INVERSE);
+        TimeSeriesObject mrBACK = TimeSeriesObjectFFT.calcFFT( mrFFT, samplingRate, TransformType.INVERSE);
         testsA1.add(mrBACK);
 
         // FFT( FFT_INV( FFT( raw data )))
-        testsB1.add(MessreiheFFT.calcFFT( mrBACK, samplingRate, TransformType.FORWARD));
+        testsB1.add(TimeSeriesObjectFFT.calcFFT( mrBACK, samplingRate, TransformType.FORWARD));
         
         /**
          * 
@@ -288,7 +292,7 @@ public class TSInspection {
         
         Complex[] d3a = fft2.transform( d2 , TransformType.INVERSE );
         
-        Vector<Messreihe> vmr1 = Messreihe.fromComplex( d3a, "INV-TRANS( FFT (raw data))", 0 );
+        Vector<TimeSeriesObject> vmr1 = TimeSeriesObject.fromComplex( d3a, "INV-TRANS( FFT (raw data))", 0 );
 
         // FFT_INV( FFT ( COMPLEX(raw data) ))
         testsC.addAll(vmr1); 
@@ -297,15 +301,15 @@ public class TSInspection {
 
     private static void testPhaseManipulationTransformA() throws Exception {
 
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
         
         int N = (int)Math.pow(2, 16);
         
-        Messreihe gr = Messreihe.getGaussianDistribution(N);
-        Messreihe sinus = testsA.elementAt(3).copy().cut(N);
+        TimeSeriesObject gr = TimeSeriesObject.getGaussianDistribution(N);
+        TimeSeriesObject sinus = testsA.elementAt(3).copy().cut(N);
         
-        Messreihe mr2 = LongTermCorrelationSeriesGenerator.getRandomRow( gr.copy(), -2, true, true );
-        Messreihe mr3 = LongTermCorrelationSeriesGenerator.getRandomRow( sinus.copy(), -2, true, true );
+        TimeSeriesObject mr2 = LongTermCorrelationSeriesGenerator.getRandomRow( gr.copy(), -2, true, true );
+        TimeSeriesObject mr3 = LongTermCorrelationSeriesGenerator.getRandomRow( sinus.copy(), -2, true, true );
 
         vmr.add(gr);
 //        vmr.add(sinus);

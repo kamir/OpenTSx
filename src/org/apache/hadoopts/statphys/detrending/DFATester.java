@@ -1,20 +1,20 @@
 package org.apache.hadoopts.statphys.detrending;
 
-import org.apache.hadoopts.data.TestDataFactory;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
-import java.util.Vector;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.chart.simple.MultiChart;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.generator.TestDataFactory;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import stdlib.StdDraw;
-import stdlib.StdStats;
+
+import java.util.Vector;
 
 public class DFATester {
 
     public static void main(String args[]) throws Exception {
 
-        stdlib.StdRandom.initRandomGen(1);
+        RNGWrapper.init();
 
         // Durch 4 TEILBAR !!!
         int N = 150000;
@@ -32,12 +32,12 @@ public class DFATester {
         double[] zr3 = new double[N];
         double[] zr4 = new double[N];
 
-        Messreihe d1 = TestDataFactory.getDataSeriesRandomValues_RW(N/100);
-        Messreihe d2 = TestDataFactory.getDataSeriesRandomValues2(N/100);
-        Messreihe d3 = TestDataFactory.getDataSeriesRandomValues3(N/100);
-        MessreiheFFT d4 = (MessreiheFFT) MessreiheFFT.getGaussianDistribution(N);
+        TimeSeriesObject d1 = TestDataFactory.getDataSeriesRandomValues_RW(N/100);
+        TimeSeriesObject d2 = TestDataFactory.getDataSeriesRandomValues2(N/100);
+        TimeSeriesObject d3 = TestDataFactory.getDataSeriesRandomValues3(N/100);
+        TimeSeriesObjectFFT d4 = (TimeSeriesObjectFFT) TimeSeriesObjectFFT.getGaussianDistribution(N);
         
-        Vector<Messreihe> vr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vr = new Vector<TimeSeriesObject>();
         vr.add( d1 );
         vr.add( d2 );
         vr.add( d3 );
@@ -73,21 +73,21 @@ public class DFATester {
 
 
         // Kontrolle
-        Vector<Messreihe> k = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> k = new Vector<TimeSeriesObject>();
         k.add(dfa.getZeitreiheMR());
         k.add(dfa.getProfilMR());
         //k.addAll(dfa.getMRFit());
 
         // Übergabe der Ergebnisse ...
         double[][] results = dfa.getResults();
-        Vector<Messreihe> v = new Vector<Messreihe>();
-        Messreihe mr1 = dfa.getResultsMRLogLog();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
+        TimeSeriesObject mr1 = dfa.getResultsMRLogLog();
         mr1.setLabel( d1.getLabel() );
         //v.add(mr1);
 
         dfa.setZR(zr2);
         dfa.calc();
-        Messreihe mr2 = dfa.getResultsMRLogLog();
+        TimeSeriesObject mr2 = dfa.getResultsMRLogLog();
         
         //v.add(mr2);
         mr2.setLabel( d2.getLabel() );
@@ -96,32 +96,32 @@ public class DFATester {
         
         dfa.setZR(zr3);
         dfa.calc();
-         Messreihe mr3 = dfa.getResultsMRLogLog();
+         TimeSeriesObject mr3 = dfa.getResultsMRLogLog();
         mr3.setLabel( d3.getLabel() );
         // v.add(mr3);
         k.add(dfa.getZeitreiheMR());
         k.add(dfa.getProfilMR());
          
         
-        MessreiheFFT mr4_NEW = (MessreiheFFT)d4;
-        MessreiheFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( 1.5 );
+        TimeSeriesObjectFFT mr4_NEW = (TimeSeriesObjectFFT)d4;
+        TimeSeriesObjectFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( 1.5 );
         
         dfa.setZR(temp.getData()[1]);
         
         dfa.calc();
-        Messreihe mr4 = dfa.getResultsMRLogLog();
+        TimeSeriesObject mr4 = dfa.getResultsMRLogLog();
         mr4.setLabel( d4.getLabel() + " ("+1.5+")" );
         v.add(mr4);
         k.add(dfa.getZeitreiheMR());
         k.add(dfa.getProfilMR());
         String status = dfa.getStatus();
 
-        Vector<Messreihe> vmr2 = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr2 = new Vector<TimeSeriesObject>();
 
-        Messreihe alphaVonI = new Messreihe();
+        TimeSeriesObject alphaVonI = new TimeSeriesObject();
         alphaVonI.setLabel( "alpha( beta )" );
         
-        Messreihe theorie = new Messreihe();
+        TimeSeriesObject theorie = new TimeSeriesObject();
         theorie.setLabel( "alpha = (1+beta)/2" );
 
 
@@ -129,13 +129,13 @@ public class DFATester {
         
         for( int i = -15; i < 25 ; i = i + 1 ) {
             System.out.println( "(" + i + ")" );
-            MessreiheFFT mr5_NEW = (MessreiheFFT)d4;
-            MessreiheFFT temp5 = mr5_NEW.getModifiedTimeSeries_FourierFiltered( 0.05 * i );
+            TimeSeriesObjectFFT mr5_NEW = (TimeSeriesObjectFFT)d4;
+            TimeSeriesObjectFFT temp5 = mr5_NEW.getModifiedTimeSeries_FourierFiltered( 0.05 * i );
 
             dfa.setZR(temp5.getData()[1]);
 
             dfa.calc();
-            Messreihe mr5 = dfa.getResultsMRLogLog();
+            TimeSeriesObject mr5 = dfa.getResultsMRLogLog();
             mr5.setLabel( d4.getLabel() + " beta="+(0.05 * i)+"" );
             v.add(mr5);
             
@@ -166,7 +166,7 @@ public class DFATester {
         
     }
     
-    public static void _test2( Vector<Messreihe> mr ) { 
+    public static void _test2( Vector<TimeSeriesObject> mr ) {
         MultiDFATool dfaTool = new MultiDFATool();
         dfaTool.runDFA(mr, 2);
         System.out.println( "done... ");

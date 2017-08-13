@@ -1,6 +1,7 @@
 package org.apache.hadoopts.statphys.detrending.methods;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.Vector;
 
 /**
@@ -57,9 +58,9 @@ public interface IDetrendingMethod {
      * das Array mit den Daten wird nun zum ProfilArray umgerechnet ...
      */
     public void calcProfile();
-    public Messreihe getProfilMR();
+    public TimeSeriesObject getProfilMR();
 
-    public Messreihe getZeitreiheMR();
+    public TimeSeriesObject getZeitreiheMR();
     /**
      * korrelationskoeffizient ...
      */
@@ -85,12 +86,12 @@ public interface IDetrendingMethod {
     public double[][] getResults();
 
     /**
-     * Rückgabe der werte s und F(s) in einer Messreihe
+     * Rückgabe der werte s und F(s) in einer TimeSeriesObject
      */
-    public Messreihe getResultsMR();
-    public Messreihe getResultsMRLogLog();
+    public TimeSeriesObject getResultsMR();
+    public TimeSeriesObject getResultsMRLogLog();
 
-    public Vector<Messreihe> getMRFit();
+    public Vector<TimeSeriesObject> getMRFit();
 
 
 

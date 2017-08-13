@@ -9,8 +9,9 @@
 package org.apache.hadoopts.app.thesis;
 
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.RNGWrapper;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -30,9 +31,9 @@ public class TSGeneratorFINAL {
     
     static StringBuffer log = null;
     
-    static Vector<Messreihe> testsA = null;
-    static Vector<Messreihe> testsB = null;
-    static Vector<Messreihe> testsC = null;
+    static Vector<TimeSeriesObject> testsA = null;
+    static Vector<TimeSeriesObject> testsB = null;
+    static Vector<TimeSeriesObject> testsC = null;
     
     public static String PATTERN = "\\W+";
     
@@ -43,12 +44,11 @@ public class TSGeneratorFINAL {
      */
     public static void main( String[] args ) throws Exception { 
         
-        // never forget !!!
-        stdlib.StdRandom.initRandomGen(1);
-        
-        testsA = new Vector<Messreihe>();
-        testsB = new Vector<Messreihe>();
-        testsC = new Vector<Messreihe>();
+        RNGWrapper.init();
+
+        testsA = new Vector<TimeSeriesObject>();
+        testsB = new Vector<TimeSeriesObject>();
+        testsC = new Vector<TimeSeriesObject>();
         
         log = new StringBuffer();
     
@@ -68,7 +68,7 @@ public class TSGeneratorFINAL {
             double totaltime = 16.384; // s
             double ampl = 1.0;
                         
-            MessreiheFFT mr = TSGeneratorFINAL.getSinusWave(f, totaltime, samplingRate, ampl / i, 1, 0.1);
+            TimeSeriesObjectFFT mr = TSGeneratorFINAL.getSinusWave(f, totaltime, samplingRate, ampl / i, 1, 0.1);
             testsA.add(mr);
             
             /**
@@ -94,8 +94,8 @@ in Sekunden dividiert durch n. Die Wellenlänge ist dann c durch die
 Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
              **/
             
-//            Messreihe mrFFT = new Messreihe(); 
-//            MessreiheFFT mrFFT2 = new MessreiheFFT(); 
+//            TimeSeriesObject mrFFT = new TimeSeriesObject();
+//            TimeSeriesObjectFFT mrFFT2 = new TimeSeriesObjectFFT();
 //
 //            mrFFT2.calcFFT( mr, samplingRate, TransformType.FORWARD);
 //            
@@ -121,11 +121,11 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
                 // simple randomisation
 //        int N = (int)Math.pow(2,16);
 //        
-//        Messreihe m22 = FFTPhaseRandomizer.getRandomRow( N );
+//        TimeSeriesObject m22 = FFTPhaseRandomizer.getRandomRow( N );
 // 
 //        // phase manipulation
-//        //Messreihe mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
-//        Messreihe mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
+//        //TimeSeriesObject mA = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_shuffle_phase);
+//        TimeSeriesObject mB = FFTPhaseRandomizer.getPhaseRandomizedRow(m22.copy(), false, false, 0, FFTPhaseRandomizer.MODE_multiply_phase_with_random_value );
 //        
 //
 //        //testsC.add( mA );
@@ -147,8 +147,8 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
      * f            = Frequenz
      * a            = Amplitude
      */
-        public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a ) {
-        MessreiheFFT mr = new MessreiheFFT();
+        public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a ) {
+        TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int)(time * samplingRate);
                 
         mr.setLabel("N="+ steps + " (SR="+ samplingRate +" Hz, f="+ f +" Hz)");
@@ -164,8 +164,8 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         return mr;
     }
     
-        public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a, double p ) {
-        MessreiheFFT mr = new MessreiheFFT();
+        public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, double p ) {
+        TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int)(time * samplingRate);
                 
         mr.setLabel("N="+ steps + " (SR="+ samplingRate +" Hz, f="+ f +" Hz)");
@@ -181,8 +181,8 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         return mr;
     }
     
-    public static MessreiheFFT getSinusWave(double f, double time, double samplingRate, double a, double p, double noice ) {
-        MessreiheFFT mr = new MessreiheFFT();
+    public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, double p, double noice ) {
+        TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int)(time * samplingRate);
                 
         mr.setLabel("N="+ steps + " (SR="+ samplingRate +" Hz, f="+ f +" Hz)");
@@ -204,12 +204,12 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         return mr;
     }
 
-    static Messreihe getSinusWave(Messreihe mr, Messreihe mr0, Messreihe mr1, Messreihe mr2) {
+    static TimeSeriesObject getSinusWave(TimeSeriesObject mr, TimeSeriesObject mr0, TimeSeriesObject mr1, TimeSeriesObject mr2) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public static Messreihe getWordLengthSeries(File f) throws IOException {
-        Messreihe mr = new Messreihe();
+    public static TimeSeriesObject getWordLengthSeries(File f) throws IOException {
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel(f.getAbsolutePath());
         BufferedReader br = new BufferedReader( new FileReader( f ) );
         while( br.ready() ) {
@@ -221,9 +221,9 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         return mr;
     }
 
-    public static Messreihe[] getGrayImageSeries(File imageFile) throws IOException {
+    public static TimeSeriesObject[] getGrayImageSeries(File imageFile) throws IOException {
         
-        Vector<Messreihe> vmr = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();
 
         BufferedImage image = ImageIO.read(imageFile);
         
@@ -232,7 +232,7 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         int lSeries = image.getWidth();
         
         for( int z = 0; z < zSeries; z++ ) {
-            Messreihe mr = new Messreihe();
+            TimeSeriesObject mr = new TimeSeriesObject();
             
             mr.setLabel( imageFile.getAbsolutePath() + "_line_" + z );
             
@@ -252,14 +252,14 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
             vmr.add(mr);
         }
     
-        Messreihe[] MRS = new Messreihe[vmr.size()];
+        TimeSeriesObject[] MRS = new TimeSeriesObject[vmr.size()];
         MRS = vmr.toArray(MRS); 
         return MRS;
     }
 
-    public static Messreihe getTFIDFSeries(File f, Hashtable<String, Integer> idfs, Hashtable<String, Integer> wc, String text) {
+    public static TimeSeriesObject getTFIDFSeries(File f, Hashtable<String, Integer> idfs, Hashtable<String, Integer> wc, String text) {
 
-        Messreihe mr = new Messreihe();
+        TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel( f.getAbsolutePath() );
  
         int i = 0;

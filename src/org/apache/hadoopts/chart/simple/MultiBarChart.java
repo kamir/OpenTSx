@@ -5,7 +5,7 @@
  **/
 package org.apache.hadoopts.chart.simple;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import java.awt.BorderLayout;
 import java.awt.Rectangle;
@@ -125,7 +125,7 @@ public class MultiBarChart extends javax.swing.JDialog {
 //    /**
 //     * @param args the command line arguments
 //     */
-//    public static void save(final Messreihe mr) {
+//    public static void save(final TimeSeriesObject mr) {
 //        java.awt.EventQueue.invokeLater(new Runnable() {
 //
 //            public void run() {
@@ -141,19 +141,19 @@ public class MultiBarChart extends javax.swing.JDialog {
 //        });
 //    }
 
-    public static void open(Messreihe[] mrs ) {
-        Vector<Messreihe> mr = new Vector<Messreihe>();
+    public static void open(TimeSeriesObject[] mrs ) {
+        Vector<TimeSeriesObject> mr = new Vector<TimeSeriesObject>();
         for( int i = 0 ; i < mrs.length; i++ ) {
             mr.add( mrs[i] );
         };
         open(  mr, "?" ,"x","y", true );
     }
 
-    public static void open(Vector<Messreihe> mrs ) {
+    public static void open(Vector<TimeSeriesObject> mrs ) {
          open(  mrs, "?" ,"x","y", true );
     }
 
-    public static void openNormalized(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+    public static void openNormalized(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
     java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -164,9 +164,9 @@ public class MultiBarChart extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     mr.normalize();
                     dialog.initMessreihe( mr );
                     System.out.println( mr.getStatisticData("> ") );
@@ -186,7 +186,7 @@ public class MultiBarChart extends javax.swing.JDialog {
     
     static boolean debug = false;
 
-    public static void open(final Vector<Messreihe> mrs, final String string, final String x, final String y, final boolean b) {
+    public static void open(final Vector<TimeSeriesObject> mrs, final String string, final String x, final String y, final boolean b) {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
@@ -197,9 +197,9 @@ public class MultiBarChart extends javax.swing.JDialog {
                         dialog.setVisible(false);
                     }
                 });
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     if ( debug ) System.out.println( mr.getStatisticData("> ") );
                 }
@@ -226,7 +226,7 @@ public class MultiBarChart extends javax.swing.JDialog {
     // End of variables declaration//GEN-END:variables
 
 
-    private void initMessreihe(Messreihe mr) {
+    private void initMessreihe(TimeSeriesObject mr) {
         XYSeries series = new XYSeries(mr.getLabel());
 
         Vector<Double> x = mr.getXValues();
@@ -243,7 +243,7 @@ public class MultiBarChart extends javax.swing.JDialog {
     }
 
 
-    public void store(Messreihe mr, JFreeChart cp, File folder, String fileName ) {
+    public void store(TimeSeriesObject mr, JFreeChart cp, File folder, String fileName ) {
         if (doStoreChart) {
 
             String fn = folder.getAbsolutePath() + File.separator + fileName;
@@ -367,7 +367,7 @@ public class MultiBarChart extends javax.swing.JDialog {
 
 
 
-        public static void store(final Vector<Messreihe> mrs,
+        public static void store(final Vector<TimeSeriesObject> mrs,
             final String string, final String x, final String y,
             final boolean b, final String folder, final String filename,
             String comment) {
@@ -381,9 +381,9 @@ public class MultiBarChart extends javax.swing.JDialog {
                 });
 
                 System.out.println( "### TS-Originale: " + folder + "/" + "TAB_" + filename + ".dat" );
-                Enumeration<Messreihe> en = mrs.elements();
+                Enumeration<TimeSeriesObject> en = mrs.elements();
                 while (en.hasMoreElements()) {
-                    Messreihe mr = en.nextElement();
+                    TimeSeriesObject mr = en.nextElement();
                     dialog.initMessreihe( mr );
                     //System.out.println( mr.getStatisticData("> ") );
                 }

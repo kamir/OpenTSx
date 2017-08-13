@@ -1,23 +1,20 @@
 package org.apache.hadoopts.statphys.detrending;
 
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.analysistools.HurstSurface;
-import org.apache.hadoopts.data.TestDataFactory;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.series.Messreihe;
-import org.apache.hadoopts.data.series.MessreiheFFT;
+import org.apache.hadoopts.data.RNGWrapper;
 import org.apache.hadoopts.data.export.MesswertTabelle;
 import org.apache.hadoopts.data.export.OriginProject;
-import java.util.Vector;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.hadoopts.statphys.detrending.methods.DFACore;
+import org.apache.hadoopts.data.generator.TestDataFactory;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.statphys.detrending.methods.MFDFA;
-import stdlib.StdDraw;
-import stdlib.StdStats;
+
+import java.util.Vector;
 
 public class MFDFAAnalyzer {
     
-    public static void process(Vector<Messreihe> rows, String runid ) throws Exception {
+    public static void process(Vector<TimeSeriesObject> rows, String runid ) throws Exception {
         
         // MultiChart.open(rows, true );
         
@@ -26,18 +23,18 @@ public class MFDFAAnalyzer {
         OriginProject project = new OriginProject();
         project.folderName = "databuffer/MFDFA/"+folder;
         project.initBaseFolder( project.folderName );
-        
-        stdlib.StdRandom.initRandomGen(1);
 
-       /**
-        * prepare a MFDFA2 Instance
-        */
+        RNGWrapper.init();
+
+        /**
+         * prepare a MFDFA2 Instance
+         */
         IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(
                     DetrendingMethodFactory.MFDFA2);
         
         
         int z = 0;
-        for( Messreihe m : rows ) {
+        for( TimeSeriesObject m : rows ) {
 
             z++;
 //            
@@ -61,9 +58,9 @@ public class MFDFAAnalyzer {
             StringBuffer calcLog1 = new StringBuffer();
             StringBuffer calcLog2 = new StringBuffer();
 
-            Vector<Messreihe> vNonShuffled = processMFDFA(m, dfa, calcLog1, "_raw", project, false, true);  
+            Vector<TimeSeriesObject> vNonShuffled = processMFDFA(m, dfa, calcLog1, "_raw", project, false, true);
             
-            Vector<Messreihe> vShuffled = processMFDFA(m, dfa, calcLog2, "_shuffled", project, true, true);   
+            Vector<TimeSeriesObject> vShuffled = processMFDFA(m, dfa, calcLog2, "_shuffled", project, true, true);
             
             /**
              * Here I can plot a Hurst-Surface.
@@ -91,8 +88,8 @@ public class MFDFAAnalyzer {
         OriginProject project = new OriginProject();
         project.folderName = "databuffer/MFDFA/"+folder;
         project.initBaseFolder( project.folderName );
-        
-        stdlib.StdRandom.initRandomGen(1);
+
+        RNGWrapper.init();
 
         /**
          * prepare a MFDFA2 Instance
@@ -121,11 +118,11 @@ public class MFDFAAnalyzer {
         String randNrType = "RandomWalk";
 //        String randNrType = "Uniform";
 //        
-        Messreihe rBMM1 = getTestDataToWorkWith( randNrType, N );
+        TimeSeriesObject rBMM1 = getTestDataToWorkWith( randNrType, N );
  
         boolean showLines = false;
-        Vector<Messreihe> vNonShuffled = processMFDFA(rBMM1, dfa, calcLog, randNrType, project, false, showLines);            
-        Vector<Messreihe> vShuffled = processMFDFA(rBMM1, dfa, calcLog, randNrType, project, true, showLines);            
+        Vector<TimeSeriesObject> vNonShuffled = processMFDFA(rBMM1, dfa, calcLog, randNrType, project, false, showLines);
+        Vector<TimeSeriesObject> vShuffled = processMFDFA(rBMM1, dfa, calcLog, randNrType, project, true, showLines);
       
         HurstSurface hs1 = new HurstSurface(vNonShuffled , "original data", 5);
         HurstSurface hs2 = new HurstSurface(vShuffled, "shuffled data", 5 );
@@ -134,14 +131,14 @@ public class MFDFAAnalyzer {
     
 
 
-    public static Vector<Messreihe> processMFDFA(
-            Messreihe rBMM1, 
+    public static Vector<TimeSeriesObject> processMFDFA(
+            TimeSeriesObject rBMM1,
             IDetrendingMethod dfa, 
             StringBuffer calcLog, 
             String randNrType, 
             OriginProject project, boolean doShuffle, boolean showPlot) throws Exception {
         
-        Vector<Messreihe> v = new Vector<Messreihe>();
+        Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
         
         MesswertTabelle mwtH = new MesswertTabelle();
         MesswertTabelle mwt = new MesswertTabelle();
@@ -179,9 +176,9 @@ public class MFDFAAnalyzer {
                 dfa.getPara().setQ(q);
                 dfa.calc();
 
-                Messreihe mr5 = dfa.getResultsMRLogLog();
+                TimeSeriesObject mr5 = dfa.getResultsMRLogLog();
 
-                Messreihe mr_q = new Messreihe();
+                TimeSeriesObject mr_q = new TimeSeriesObject();
                 mr_q.setLabel("q=" + q);
                 for (int j = 0; j < 20; j++) {
                     double s = 1.0 + (double) j * 0.1;
@@ -227,23 +224,23 @@ public class MFDFAAnalyzer {
         return v;
     }
     
-        public static void _test2( Vector<Messreihe> mr ) { 
+        public static void _test2( Vector<TimeSeriesObject> mr ) {
         MultiDFATool dfaTool = new MultiDFATool();
         dfaTool.runDFA(mr, 2);
         System.out.println( "done... ");
     };
 
         
-    private static Messreihe getTestDataToWorkWith(String randNrType, int N) {
+    private static TimeSeriesObject getTestDataToWorkWith(String randNrType, int N) {
  
             // (a) - monofractal series of random numbers
-            Messreihe rBMM1 = (Messreihe) TestDataFactory.getDataSeriesRandomValues_RW( N );   // RANDOM WALK
-//            Messreihe rBMM1 = (Messreihe) TestDataFactory.getDataSeriesRandomValues2( N );     // Gleichverteil
+            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesRandomValues_RW( N );   // RANDOM WALK
+//            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesRandomValues2( N );     // Gleichverteil
 
             
             // (b) - multifractal series of random numbers
-//            Messreihe rBMM1 = (Messreihe) TestDataFactory.getDataSeriesBinomialMultifractalValues( N , 0.75 );
-//            Messreihe rBMM1 = (Messreihe) TestDataFactory.getDataSeriesRandomValues_Cauchy( N ); // Cacuhy Verteilung
+//            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesBinomialMultifractalValues( N , 0.75 );
+//            TimeSeriesObject rBMM1 = (TimeSeriesObject) TestDataFactory.getDataSeriesRandomValues_Cauchy( N ); // Cacuhy Verteilung
             
             return rBMM1;
             
