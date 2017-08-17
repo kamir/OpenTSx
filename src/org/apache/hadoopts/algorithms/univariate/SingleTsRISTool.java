@@ -8,13 +8,13 @@ package org.apache.hadoopts.algorithms.univariate;
  */
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
+import org.apache.hadoopts.statphys.ris.experimental.ReturnIntervallStatistik2;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.hadoopts.statphys.ris.experimental.ReturnIntervallStatistik2;
 
 /**
  *
@@ -162,8 +162,8 @@ public class SingleTsRISTool extends SingleRowTSO {
 
     /**
      *
-     * @param reihe
-     * @return
+     * @param reihe ..
+     * @return ...
      * @throws Exception
      */
     public String processReihe(TimeSeriesObject reihe) throws Exception {

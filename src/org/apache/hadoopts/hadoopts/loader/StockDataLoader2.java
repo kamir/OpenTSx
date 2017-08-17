@@ -5,7 +5,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.json.simple.JSONArray;
@@ -137,29 +136,29 @@ public class StockDataLoader2 {
 //        JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
 
         // now I have to key the rdds by the TimeSeriesObject label (all 4)
-        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 //        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 //        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
 
         // let join them and concat the results (1/3 phases)
-        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+//        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
 //        JavaPairRDD<String, Tuple2<TimeSeriesObject,TimeSeriesObject>> pB = p3.join(p4);
 
 //        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject,TimeSeriesObject>,Tuple2<TimeSeriesObject,TimeSeriesObject>>> pALL = pA.join(pB);
 //        JavaPairRDD<String,TimeSeriesObject> rows = pALL.mapValues( w -> concatMR2( w ) );
-        JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR(w));
+//        JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR(w));
 
-        rows.count();
+//        rows.count();
 
-        Map<String, TimeSeriesObject> all = rows.collectAsMap();
-        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+//        Map<String, TimeSeriesObject> all = rows.collectAsMap();
+//        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
 
-        for (TimeSeriesObject m : all.values()) {
-            mrv.add(m);
-        }
+//        for (TimeSeriesObject m : all.values()) {
+//            mrv.add(m);
+//        }
 
-        return mrv;
+        return null;
     }
 
     static SparkConf conf = null;
@@ -184,129 +183,131 @@ public class StockDataLoader2 {
         JavaRDD<TimeSeriesObject> distD3 = sc.parallelize(d3);
         JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
 
-        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//
+//        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+//        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pB = p3.join(p4);
+//
+//        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject, TimeSeriesObject>, Tuple2<TimeSeriesObject, TimeSeriesObject>>> pALL = pA.join(pB);
+//        JavaPairRDD<String, TimeSeriesObject> rows = pALL.mapValues(w -> concatMR2(w));
+//
+//        Map<String, TimeSeriesObject> all = rows.collectAsMap();
+//        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+//
+//        for (TimeSeriesObject m : all.values()) {
+//            mrv.add(m);
+//        }
 
-        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
-        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pB = p3.join(p4);
 
-        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject, TimeSeriesObject>, Tuple2<TimeSeriesObject, TimeSeriesObject>>> pALL = pA.join(pB);
-        JavaPairRDD<String, TimeSeriesObject> rows = pALL.mapValues(w -> concatMR2(w));
-
-        Map<String, TimeSeriesObject> all = rows.collectAsMap();
-        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject m : all.values()) {
-            mrv.add(m);
-        }
-        return mrv;
+        return null;
     }
 
     public static Vector<TimeSeriesObject> concatRowsForYearsFromCache_ALL(int[] y, String column, String label) {
 
-        if (conf == null) {
-            conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
-            sc = new JavaSparkContext(conf);
-        }
-
-        int i = 0;
-
-        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(y[i], column, label);
-
-        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
-
-        for (int j = 1; j < y.length; j++) {
-
-            JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
-        
-            JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-
-            Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(y[j], column, label);
-
-//            javax.swing.JOptionPane.showMessageDialog(null, y2.size() + " " + y[j]);
-            if (y2 != null && y2.size() > 0) {
-
-                List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
-
-                JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
-                JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-
-                JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
-
-                JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR_MANY(w));
-
-                
-                distD1 = rows.values();
-//                javax.swing.JOptionPane.showMessageDialog(null,"*** " + distD1.count() + " *** " + y[j]);
-
-                d1 = distD1.collect();
-                
-
-//                Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+//        if (conf == null) {
+//            conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
+//            sc = new JavaSparkContext(conf);
+//        }
 //
-//                for (TimeSeriesObject m : d1) {
-//                    mrv.add(m);
-//                }
-//                
-//                MultiChart.open(mrv, true, y[j] + " " + d1.size() + " ...");
-
-            }
-        }
-
-        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject m : d1) {
-            mrv.add(m);
-        }
-        return mrv;
+//        int i = 0;
+//
+//        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(y[i], column, label);
+//
+//        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
+//
+//        for (int j = 1; j < y.length; j++) {
+//
+//            JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
+//
+//            JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//
+//            Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(y[j], column, label);
+//
+////            javax.swing.JOptionPane.showMessageDialog(null, y2.size() + " " + y[j]);
+//            if (y2 != null && y2.size() > 0) {
+//
+//                List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
+//
+//                JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
+//                JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//
+//                JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+//
+//                JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR_MANY(w));
+//
+//
+//                distD1 = rows.values();
+////                javax.swing.JOptionPane.showMessageDialog(null,"*** " + distD1.count() + " *** " + y[j]);
+//
+//                d1 = distD1.collect();
+//
+//
+////                Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+////
+////                for (TimeSeriesObject m : d1) {
+////                    mrv.add(m);
+////                }
+////
+////                MultiChart.open(mrv, true, y[j] + " " + d1.size() + " ...");
+//
+//            }
+//        }
+//
+//        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+//
+//        for (TimeSeriesObject m : d1) {
+//            mrv.add(m);
+//        }
+        return null;
     }
 
     public static Vector<TimeSeriesObject> concatRowsForYearsFromCache(int[] YEARS) {
 
-        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(YEARS[0]);
-        Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(YEARS[1]);
-//        Vector<TimeSeriesObject> y3 = getRowsForYearFromCache( YEARS[2] );
-//        Vector<TimeSeriesObject> y4 = getRowsForYearFromCache( YEARS[3] );
+//        Vector<TimeSeriesObject> y1 = getRowsForYearFromCache(YEARS[0]);
+//        Vector<TimeSeriesObject> y2 = getRowsForYearFromCache(YEARS[1]);
+////        Vector<TimeSeriesObject> y3 = getRowsForYearFromCache( YEARS[2] );
+////        Vector<TimeSeriesObject> y4 = getRowsForYearFromCache( YEARS[3] );
+//
+//        SparkConf conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
+//        JavaSparkContext sc = new JavaSparkContext(conf);
+//
+//        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
+//        List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
+////        List<TimeSeriesObject> d3 = y3.subList(0, y3.size()-1);
+////        List<TimeSeriesObject> d4 = y4.subList(0, y4.size()-1);
+//
+//        JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
+//        JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
+////        JavaRDD<TimeSeriesObject> distD3 = sc.parallelize(d3);
+////        JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
+//
+//        // now I have to key the rdds by the TimeSeriesObject label (all 4)
+//        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+////        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+////        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
+//
+//        // let join them and concat the results (1/3 phases)
+//        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
+////        JavaPairRDD<String, Tuple2<TimeSeriesObject,TimeSeriesObject>> pB = p3.join(p4);
+//
+////        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject,TimeSeriesObject>,Tuple2<TimeSeriesObject,TimeSeriesObject>>> pALL = pA.join(pB);
+////        JavaPairRDD<String,TimeSeriesObject> rows = pALL.mapValues( w -> concatMR2( w ) );
+//        JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR(w));
+//
+//        rows.count();
+//
+//        Map<String, TimeSeriesObject> all = rows.collectAsMap();
+//        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
+//
+//        for (TimeSeriesObject m : all.values()) {
+//            mrv.add(m);
+//        }
 
-        SparkConf conf = new SparkConf().setAppName("StockData-TOOL").setMaster("local[3]");
-        JavaSparkContext sc = new JavaSparkContext(conf);
-
-        List<TimeSeriesObject> d1 = y1.subList(0, y1.size() - 1);
-        List<TimeSeriesObject> d2 = y2.subList(0, y2.size() - 1);
-//        List<TimeSeriesObject> d3 = y3.subList(0, y3.size()-1);
-//        List<TimeSeriesObject> d4 = y4.subList(0, y4.size()-1);
-
-        JavaRDD<TimeSeriesObject> distD1 = sc.parallelize(d1);
-        JavaRDD<TimeSeriesObject> distD2 = sc.parallelize(d2);
-//        JavaRDD<TimeSeriesObject> distD3 = sc.parallelize(d3);
-//        JavaRDD<TimeSeriesObject> distD4 = sc.parallelize(d4);
-
-        // now I have to key the rdds by the TimeSeriesObject label (all 4)
-        JavaPairRDD<String, TimeSeriesObject> p1 = distD1.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-        JavaPairRDD<String, TimeSeriesObject> p2 = distD2.mapToPair(w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-//        JavaPairRDD<String, TimeSeriesObject> p3 = distD3.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-//        JavaPairRDD<String, TimeSeriesObject> p4 = distD4.mapToPair( w -> new Tuple2<String, TimeSeriesObject>(w.getLabel(), w));
-
-        // let join them and concat the results (1/3 phases)
-        JavaPairRDD<String, Tuple2<TimeSeriesObject, TimeSeriesObject>> pA = p1.join(p2);
-//        JavaPairRDD<String, Tuple2<TimeSeriesObject,TimeSeriesObject>> pB = p3.join(p4);
-
-//        JavaPairRDD<String, Tuple2< Tuple2<TimeSeriesObject,TimeSeriesObject>,Tuple2<TimeSeriesObject,TimeSeriesObject>>> pALL = pA.join(pB);
-//        JavaPairRDD<String,TimeSeriesObject> rows = pALL.mapValues( w -> concatMR2( w ) );
-        JavaPairRDD<String, TimeSeriesObject> rows = pA.mapValues(w -> concatMR(w));
-
-        rows.count();
-
-        Map<String, TimeSeriesObject> all = rows.collectAsMap();
-        Vector<TimeSeriesObject> mrv = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject m : all.values()) {
-            mrv.add(m);
-        }
-
-        return mrv;
+        return null;
     }
 
     private static TimeSeriesObject concatMR_MANY(Tuple2<TimeSeriesObject, TimeSeriesObject> w) {

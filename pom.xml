@@ -12,6 +12,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jcuda.jcudaVersion>0.8.0</jcuda.jcudaVersion>
 
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+
     </properties>
 
     <name>Hadoop.TS.NG</name>
@@ -354,6 +357,31 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            
+
+      
+      <!--plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.0.0-M1</version>
+        <executions>
+          <execution>
+            <id>javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <includeDependencySources>false</includeDependencySources>
+              
+              <dependencySourceExcludes>
+                <dependencySourceExclude>commons-cli:*</dependencySourceExclude>
+                <dependencySourceExclude>infodynamics:*</dependencySourceExclude>
+              </dependencySourceExcludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin-->
 
 
             <!--plugin>

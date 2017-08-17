@@ -3,14 +3,12 @@ package org.apache.hadoopts.analysistools;
 import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 
-import java.awt.Image;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.Vector;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 /**
  *
@@ -35,8 +33,8 @@ public class HurstSurface {
      * 
      * @param rowsSorted - Fluctuation Functions from DFA
      * 
-     * @param label
-     * @param scale 
+     * @param label ...
+     * @param scale ...
      */
     public HurstSurface(Vector<TimeSeriesObject> rowsSorted, String label, int scale) {
 

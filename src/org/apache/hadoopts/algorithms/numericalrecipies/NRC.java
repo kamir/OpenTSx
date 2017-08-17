@@ -10,7 +10,7 @@
 package org.apache.hadoopts.algorithms.numericalrecipies;
 
 import org.apache.hadoopts.algorithms.numericalrecipies.distributions.KSTest;
-import java.io.FileWriter;
+
 import java.io.IOException;
 
 /**
@@ -21,6 +21,8 @@ public class NRC {
 
     /**
      * @param args the command line arguments
+     *
+     * @throws IOException
      */
     public static void main(String[] args) throws IOException {
        

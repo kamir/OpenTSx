@@ -1,11 +1,12 @@
 
 package org.apache.hadoopts.analysistools;
 
+import org.apache.commons.math.stat.Frequency;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
-import org.apache.commons.math.stat.Frequency;
 
 /**
  *
@@ -59,7 +60,7 @@ public class HZDouble {
     /**
      * Einfügen eines Wertes in die Haeufigkeitszählung ...
      * 
-     * @param dates
+     * @param value ...
      */
     public void addData(Double value) {
          dists.add(value);
@@ -69,7 +70,7 @@ public class HZDouble {
      * Einfügen einer Reihe von Zeitpunkten und
      * Berechnung aller Abstände aller Zeitpunkte dieser Reihe.
      *
-     * @param dates
+     * @param dates ...
      */
     public void addData(Vector<Double> dates) {
 

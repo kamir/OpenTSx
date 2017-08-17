@@ -5,27 +5,16 @@
  */
 package org.apache.hadoopts.algorithms.numericalrecipies.distributions;
 
-import java.awt.Toolkit;
+import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest;
+import org.apache.hadoopts.app.utils.Executor;
+
+import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest;
-import org.apache.hadoopts.statistics.DistributionTester;
-import org.apache.hadoopts.app.utils.Executor;
-import org.apache.hadoopts.app.utils.ProcessWatcher;
 
 /**
  *
@@ -39,8 +28,11 @@ public class KSTest {
      * @param F2 - a second set double values
      * 
      * @param fw - a writer to log intermediate results.
-     * 
-     * @return
+     * @param min - ...
+     * @param max - ...
+     *
+     * @return a double value
+     *
      * @throws IOException 
      */
     private static double twoSideKSTest( Vector<Double> F1, 
@@ -57,9 +49,15 @@ public class KSTest {
      * Returns the p value of the two sided test and writes the analysis results
      * into an Output-Collector. 
      * 
-     * @param F1
-     * @param F2
-     * @return 
+     * @param F1 ...
+     * @param F2 ...
+     * @param sides ...
+     * @param typ ...
+     * @param min ...
+     * @param max ...
+     *
+     * @return ...
+     *
      */
     public static double twoSideKSTest( Vector<Double> F1, 
                                          Vector<Double> F2, 

@@ -1224,8 +1224,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     /**
      * verschiebe die Werte der Reihe im "offset" stellen.
      *
-     *   offset > 0 rechts
-     *   offset < 0 links
+     *   offset greater than  0 rechts
+     *   offset smaller than 0 links
      *
      * @param offset
      *
@@ -1242,8 +1242,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         /**
      * verschiebe die Werte der Reihe im "offset" stellen.
      *
-     *   offset > 0 rechts
-     *   offset < 0 links
+     *   offset greater 0 rechts
+     *   offset smaller 0 links
      *
      * @param offset
      *

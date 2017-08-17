@@ -47,9 +47,9 @@ public class SingleTsMFDFATool extends SingleRowTSO {
     
     /**
      * 
-     * @param reihe
-     * @return
-     * @throws Exception 
+     * @param reihe ..
+     * @return ...
+     * @throws Exception
      */
     public String processReihe(TimeSeriesObject reihe) throws Exception {
         return "... (" + this.getClass().getName() + ") ";

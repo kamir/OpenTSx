@@ -192,7 +192,7 @@ public class DFABucketTool extends AbstractTSProcessor {
     }
 
     /**
-     * get the data as a Vector<TimeSeriesObject> ...
+     * get the data as a Vector TimeSeriesObject  ...
      */
     public static Vector<TimeSeriesObject> loadBucketData(String name) throws IOException {
         BucketLoader bl = new BucketLoader();

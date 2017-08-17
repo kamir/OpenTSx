@@ -2,14 +2,12 @@ package org.apache.hadoopts.analysistools;
 
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 
-import java.awt.Image;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.Vector;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 /**
  * A set of time series is plotted in a 2D area. Y-values are color coded.
@@ -34,9 +32,9 @@ public class MultiSeriesSurface {
      * The MultiSeries-Surface shows some time series (usually dependent on a 
      * a variable parameter in 2D area.
      * 
-     * @param rowsSorted
-     * @param label
-     * @param scale 
+     * @param rowsSorted ...
+     * @param label ...
+     * @param scale ...
      */
     public MultiSeriesSurface(Vector<TimeSeriesObject> rowsSorted, String label, int scale) {
 

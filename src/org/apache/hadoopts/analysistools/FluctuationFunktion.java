@@ -5,10 +5,11 @@
 
 package org.apache.hadoopts.analysistools;
 
+import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.hadoopts.analysistools.utils.FitbereichLogScale;
 
 /**
  *
@@ -22,8 +23,8 @@ public class FluctuationFunktion {
      * The TimeSeriesObject object is calculated by an DFA algorithm
      * We provide a label and wrap some specific functionality around it.
      * 
-     * @param mr
-     * @param label 
+     * @param mr ...
+     * @param label  ....
      */
     public FluctuationFunktion(TimeSeriesObject mr, String label ) {
         this.Fs = mr;
