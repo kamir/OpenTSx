@@ -3,7 +3,7 @@ package org.apache.hadoopts.hadoopts.analysis;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 
-import java.io.FileWriter;
+import java.io.Writer;
 
 /**
  * Just to show an example of a TSTool
@@ -14,7 +14,7 @@ import java.io.FileWriter;
  */
 public class SingleTSToolSum extends SingleRowTSO {
     
-    public String processReihe( TimeSeriesObject reihe ) throws Exception {
+    public String processReihe(Writer resultWriter, TimeSeriesObject reihe) throws Exception {
 
         double sum = reihe.summeY(); 
         
@@ -25,12 +25,12 @@ public class SingleTSToolSum extends SingleRowTSO {
     }
 
     @Override
-    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter exploder) throws Exception {
+    public TimeSeriesObject processReihe(Writer fw, TimeSeriesObject reihe, Writer exploder) throws Exception {
         return null;
     }
 
     @Override
-    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, Object para, FileWriter exploder) throws Exception {
+    public TimeSeriesObject processReihe(Writer fw, TimeSeriesObject reihe, Object para, Writer exploder) throws Exception {
         return null;
     }
     

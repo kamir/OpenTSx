@@ -6,7 +6,7 @@ package org.apache.hadoopts.analysistools;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.io.MessreihenLoader;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class LogBinningTool {
         rows.add( mr1 );
         rows.add( mr2 );
         
-        MesswertTabelle tab = new MesswertTabelle();
+        MeasurementTable tab = new MeasurementTable();
         tab.addMessreihe(mr1);
         tab.addMessreihe(mr2);
         tab.writeToFile( new File( fn3 ) );

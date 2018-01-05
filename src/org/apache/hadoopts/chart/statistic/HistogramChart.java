@@ -48,7 +48,7 @@ package org.apache.hadoopts.chart.statistic;
  */
 
 import org.apache.hadoopts.data.RNGWrapper;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.jfree.chart.*;
 import org.jfree.chart.entity.StandardEntityCollection;
@@ -275,7 +275,7 @@ public class HistogramChart extends ApplicationFrame {
     public void store( String folder, String filename ) {
         store( chart, new File(folder), filename);
 
-        MesswertTabelle tab = new MesswertTabelle();
+        MeasurementTable tab = new MeasurementTable();
         File f = new File( folder + "/" + "TAB_" + filename + ".dat" );
         Vector<TimeSeriesObject> mrs = new Vector<TimeSeriesObject>();
         mrs.add( mr );

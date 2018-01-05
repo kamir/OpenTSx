@@ -7,7 +7,7 @@
 package org.apache.hadoopts.chart.simple;
 
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -239,7 +239,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
 
                 dialog.store( dialog.chart, f2, filename);
 
-                MesswertTabelle tab = new MesswertTabelle();
+                MeasurementTable tab = new MeasurementTable();
 
                 File f = new File( "/Volumes/MyExternalDrive/CALCULATIONS/data/out/FS_" + filename + ".dat" );
                 tab.setMessReihen( mrs );
@@ -580,7 +580,7 @@ public class MultiChartTwoAxis extends javax.swing.JDialog {
 
                 dialog.store( dialog.chart, f2, filename);
 
-                MesswertTabelle tab = new MesswertTabelle();
+                MeasurementTable tab = new MeasurementTable();
                 if ( mrs.size() > 0 ) {
                     File f = new File( folder + "/" + "TAB_" + filename + ".dat" );
                     tab.setMessReihen( mrs );

@@ -3,13 +3,13 @@ package org.apache.hadoopts.algorithms.univariate;
 import org.apache.hadoopts.data.series.MRT;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
-import java.io.FileWriter;
+import org.apache.hadoopts.statphys.detrending.SingleDFATool;
+
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.hadoopts.statphys.detrending.SingleDFATool;
 
 /**
  *
@@ -31,7 +31,7 @@ public class SingleTsDFATool extends SingleRowTSO {
      *   OUTPUT is not collected, it is written directly to the FW 
      */
     @Override
-    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(Writer fw, TimeSeriesObject reihe, Writer explodeWriter ) throws Exception {
 
         String line = "\t";
    

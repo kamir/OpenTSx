@@ -6,13 +6,13 @@
 package org.apache.hadoopts.statphys.eventsynchronisation.experiments;
 
 //import hadoopts.analysis.eventsynchronisation.ESCalc;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.apache.hadoopts.statphys.eventsynchronisation.ESCalc2;
+
 import java.io.IOException;
 import java.util.Vector;
-
-import org.apache.hadoopts.statphys.eventsynchronisation.ESCalc2;
 
 /**
  *
@@ -27,7 +27,7 @@ public class ESMain {
         
         OriginProject op = new OriginProject();
         op.initBaseFolder("/Users/kamir/Documents/Cloudera/github/dissertation/main/FINAL/LATEX/semanpix/ESIllustration");
-        op.initFolder( "data" );
+        op.initSubFolder( "data" );
         
         Vector<TimeSeriesObject> topRow = new Vector<TimeSeriesObject>();
         Vector<TimeSeriesObject> bottomRow = new Vector<TimeSeriesObject>();
@@ -58,7 +58,7 @@ public class ESMain {
         TimeSeriesObject[] rs5 = ESCalc2.checkRows(r3, r4, "Events - incremental (low density)");
         TimeSeriesObject[] rs6 = ESCalc2.checkRows(r5, r6, "Events - incremental (high density)");
         
-        MesswertTabelle mwt1 = new MesswertTabelle();
+        MeasurementTable mwt1 = new MeasurementTable();
         mwt1.setLabel("topRow.csv");
         mwt1.singleX = false;
         
@@ -83,7 +83,7 @@ public class ESMain {
         TimeSeriesObject[] rs2 = ESCalc2.checkRowsInverse(r3ET, r4ET, "ETS - incremental (low density)");
         TimeSeriesObject[] rs3 = ESCalc2.checkRowsInverse(r5ET, r6ET, "ETS - incremental (high density)");
         
-        MesswertTabelle mwt = new MesswertTabelle();
+        MeasurementTable mwt = new MeasurementTable();
         mwt.setLabel("bottomRow.csv");
         mwt.singleX = false;
 
@@ -121,10 +121,10 @@ public class ESMain {
         System.out.println( sb.toString() );
         
         
-        op.storeMesswertTabelle( mwt1 );
-        op.storeMesswertTabelle( mwt );
+        op.storeMeasurementTable( mwt1 );
+        op.storeMeasurementTable( mwt );
         
-        op.closeAllWriter();
+        op.closeAllWriters();
         
         System.exit(0);
     }

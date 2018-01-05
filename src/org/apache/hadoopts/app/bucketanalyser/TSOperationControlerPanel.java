@@ -5,11 +5,26 @@
  */
 package org.apache.hadoopts.app.bucketanalyser;
 
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.app.thesis.EntropieTest;
+import org.apache.hadoopts.chart.simple.MultiChart;
+import org.apache.hadoopts.chart.simple.SigmaFilter;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
-import java.awt.Desktop;
+import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
+import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
+import org.apache.hadoopts.statphys.detrending.MFDFAAnalyzer;
+import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
+import org.jfree.chart.ChartRenderingInfo;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.entity.StandardEntityCollection;
+
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,22 +32,6 @@ import java.text.DecimalFormat;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
-
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.jfree.chart.ChartRenderingInfo;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.entity.StandardEntityCollection;
-import org.apache.hadoopts.statistics.HaeufigkeitsZaehlerDouble;
-import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
-import org.apache.hadoopts.statphys.detrending.MFDFAAnalyzer;
-import org.apache.hadoopts.statphys.detrending.methods.IDetrendingMethod;
-import org.apache.hadoopts.app.thesis.EntropieTest;
-import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.chart.simple.SigmaFilter;
 
 /**
  *
@@ -728,8 +727,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             ICorrelator c = (ICorrelator) Class.forName(correlatorClass).newInstance();
              
             MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), "NORM_STD=1,AVG=0 of " + this.label, c );
- 
-        
+
         } 
         catch (ClassNotFoundException ex) {
             Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -1140,7 +1138,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         String fn = this.jTextField2.getText().replaceAll("[^a-zA-Z0-9.-/]", "_");
 
-        MesswertTabelle tab = new MesswertTabelle();
+        MeasurementTable tab = new MeasurementTable();
 
         String mwtData = folder.getAbsolutePath() + "/" + fn + ".mwt.tsv";
 

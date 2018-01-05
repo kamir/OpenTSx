@@ -9,6 +9,7 @@ import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.chart.simple.MyXYPlot;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,19 +17,22 @@ import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JFileChooser;
 
-/**
- *
- * @author kamir
- */
 public class OriginProject {
-    
-    /**
-     * absoluter Name im File-System
-     */
+
     public String folderName = null;
-    
+
+    // default on Mirko's Mac
+    String header = "./out/";
+
+    public void setHeader(String header) {
+        this.header = header;
+    }
+    public void addToHeader(String header2) {
+        header = header + "\n#\t" + header2 + "\n#\n#";
+    }
+
+
     /**
      * Select a folder to store all results of an experiment in this 
      * location, including log-data.
@@ -57,6 +61,26 @@ public class OriginProject {
                            "    Folder: " + folderName );
     }
 
+    public void initNewProjectFolder(String f) throws IOException {
+        String fn = this.folderName + File.separator + f;
+        this.folderName = fn;
+        this.createProjectFile();
+    }
+    /**
+     * Select a folder to store all results of an experiment in this
+     * location, including log-data.
+     *
+     * Creates a folder within the current project folder and steps into it.
+     *
+     * @param f
+     * @throws IOException
+     */
+    public void initSubFolder(String f) throws IOException {
+        String fn = this.folderName + File.separator + f;
+        this.folderName = fn;
+        this.createProjectFile();
+    }
+
     public void addMessreihen(TimeSeriesObject[][] mrv2, String pre) {
         int i = mrv2[0].length;
         int j = mrv2.length;
@@ -83,7 +107,7 @@ public class OriginProject {
          
         System.err.println( ">>> write to folder: " + folderName + File.separator + "tab_"+prefix+".dat" );
         if ( writeTab) { 
-            MesswertTabelle tab = new MesswertTabelle();
+            MeasurementTable tab = new MeasurementTable();
             tab.singleX = false;
             tab.setHeader( header );
             
@@ -102,6 +126,13 @@ public class OriginProject {
     }
 
     Hashtable<String, FileWriter> logger = new Hashtable<String, FileWriter>();
+
+    /**
+     * We collect processing logs in a project-log file.
+     *
+     * @param s
+     * @throws IOException
+     */
     public void createLogFile(String s) throws IOException {
         File f = new File(this.folderName + File.separator + s);
         
@@ -110,6 +141,7 @@ public class OriginProject {
         }
         FileWriter fw = new FileWriter( f.getAbsolutePath() );
         logger.put(s, fw);
+
     }
     
     /**
@@ -124,6 +156,13 @@ public class OriginProject {
             f.mkdirs();
         }
     }
+
+    public File getNewFile( String fn ) {
+
+        File f = new File( this.folderName + "/" + fn );
+        return f;
+
+    };
     
     /**
      * We can log into several different files. 
@@ -137,28 +176,42 @@ public class OriginProject {
         FileWriter fw = logger.get(s);
         fw.write(line + "\n");
     };
-    
-    public void closeAllWriter() throws IOException { 
+
+
+    public void close() throws IOException {
+        System.out.println(">>> Close all writers now: " );
+        for( String fn : logger.keySet() ){
+            System.out.println(">>> " + fn  );
+            FileWriter fw = logger.get( fn );
+            fw.flush();
+            fw.close();
+        }
+    }
+
+    public void closeAllWriters() throws IOException {
         for( FileWriter fw: logger.values() ) {
             fw.flush();
             fw.close();
         } 
     }
 
-    public void storeMesswertTabelle(MesswertTabelle mwt) {
+    /**
+     *
+     * A measurement table is written into the folder named foldeName.
+     * @param mwt
+     */
+    public void storeMeasurementTable(MeasurementTable mwt) {
+        System.out.println("> store measurement table into folder : " + this.folderName );
         File f = new File(this.folderName + File.separator + mwt.getLabel() );
+        System.out.println("> table filename : " + f.getAbsolutePath() );
         mwt.writeToFile( f );
     }
 
     @Override
     public String toString() {
-        return "OriginProject{" + "folderName=" + folderName + ", logger=" + logger + '}';
+        return "Origin-Project{" + "folderName=" + folderName + ", logger=" + logger + '}';
     }
 
-    String header = "";
-    public void setHeader(String header) {
-        this.header = header;
-    }
 
     /**
      * 
@@ -172,8 +225,7 @@ public class OriginProject {
      * @param yL 
      */
     public void storeChart(TimeSeriesObject[] result, boolean legende, String title, String name, String xL, String yL) {
-   
-    
+
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>( result.length );
         for( TimeSeriesObject m : result ) {
             v.add(m);
@@ -186,11 +238,17 @@ public class OriginProject {
         MultiChart.openAndStoreImage(v, title, xL, yL, legende, folder, fileName, comment);
         
     }
-    
+
+    /**
+     * Store a simple line chart from a set of TimeSeriesObject.
+     *
+     * @param result
+     * @param legende
+     * @param title
+     * @param name
+     */
     public void storeChart(Vector<TimeSeriesObject> result, boolean legende, String title, String name) {
-        
-//        MultiChart.open(result, legende, title);
-  
+
         String folder = this.folderName + File.separator; 
         String fileName = name;
         String comment = "";
@@ -199,20 +257,13 @@ public class OriginProject {
         
     }
 
-    public void addToHeader(String header2) {
-        header = header + "\n#\t" + header2 + "\n#\n#";
-    }
 
     public void storePlotMyXYPlot(MyXYPlot plot, String filename) {
         plot.doStoreChart = true;
         plot.store(plot.chart, new File( this.folderName ), filename);
     }
 
-    public void initFolder(String f) throws IOException {
-        String fn = this.folderName + File.separator + f;
-        this.folderName = fn;
-        this.createProjectFile();
-    }
+
  
     
     

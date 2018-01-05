@@ -1,6 +1,6 @@
 package org.apache.hadoopts.algorithms.numericalrecipies.distributions;
 
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.io.FileWriter;
@@ -98,14 +98,14 @@ public class KSTestData {
         
         OriginProject op = new OriginProject();
         op.initBaseFolder( folder );
-        op.initFolder("dump-raw");
+        op.initSubFolder("dump-raw");
 
         TimeSeriesObject mr1 = new TimeSeriesObject( "s1" );
         TimeSeriesObject mr2 = new TimeSeriesObject( "s2" );
         mr1.addValues(vec1);
         mr2.addValues(vec2);
         
-        MesswertTabelle mwt = new MesswertTabelle();
+        MeasurementTable mwt = new MeasurementTable();
         mwt.setLabel(name);
         mwt.addMessreihe( mr1 );
         mwt.addMessreihe( mr2 );
@@ -114,7 +114,7 @@ public class KSTestData {
         vec.add(mr1);
         vec.add(mr2);
         
-        op.storeMesswertTabelle(mwt);
+        op.storeMeasurementTable(mwt);
         op.storeChart(vec, true, name, name);
     }
 
@@ -123,7 +123,7 @@ public class KSTestData {
         OriginProject op = new OriginProject();
 
         op.initBaseFolder( folder );
-        op.initFolder("dump-distribution");
+        op.initSubFolder("dump-distribution");
 
         HaeufigkeitsZaehlerDouble z1 = new HaeufigkeitsZaehlerDouble();
         HaeufigkeitsZaehlerDouble z2 = new HaeufigkeitsZaehlerDouble();
@@ -144,7 +144,7 @@ public class KSTestData {
         TimeSeriesObject mr1 = z1.getHistogram();
         TimeSeriesObject mr2 = z2.getHistogram();
                 
-        MesswertTabelle mwt = new MesswertTabelle();
+        MeasurementTable mwt = new MeasurementTable();
         mwt.setLabel(name);
         mwt.addMessreihe( mr1 );
         mwt.addMessreihe( mr2 );
@@ -153,7 +153,7 @@ public class KSTestData {
         vec.add(mr1);
         vec.add(mr2);
         
-        op.storeMesswertTabelle(mwt);
+        op.storeMeasurementTable(mwt);
         op.storeChart(vec, true, name, name);
     
     }

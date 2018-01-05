@@ -6,7 +6,7 @@
 package org.apache.hadoopts.chart.simple;
 
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import java.awt.BorderLayout;
 import java.awt.Rectangle;
 import java.io.File;
@@ -402,7 +402,7 @@ public class MultiBarChart extends javax.swing.JDialog {
 
                 dialog.store( dialog.chart, f2, filename);
 
-                MesswertTabelle tab = new MesswertTabelle();
+                MeasurementTable tab = new MeasurementTable();
 
                 if ( mrs.size() > 0 ) {
                     File f = new File( folder + "/" + "TAB_" + filename + ".dat" );

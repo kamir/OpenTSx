@@ -15,7 +15,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.app.thesis.LongTermCorrelationSeriesGenerator;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.RNGWrapper;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
@@ -131,13 +131,13 @@ public class TSPropertyTester {
         MultiChart.open(v, "F(s) [order:" + order + "] ", "log(s)", "log( F(s) )", true );
         MultiChart.open(vr, "RAW", "t", "y(t)", true );
         
-        MesswertTabelle tab1 = new MesswertTabelle();
+        MeasurementTable tab1 = new MeasurementTable();
         tab1.singleX = false;
         tab1.setHeader("# F(s) [order:" + order + "] , log(s), log(F(s))");
         tab1.setMessReihen(v);
         tab1.writeToFile( new File("./TSPropertyTester_hadoopts_image_b.dat") );
         
-        MesswertTabelle tab2 = new MesswertTabelle();
+        MeasurementTable tab2 = new MeasurementTable();
         tab2.singleX = false;
         tab2.setHeader("# RAW data");
         tab2.setMessReihen(vr);
@@ -1144,14 +1144,14 @@ public class TSPropertyTester {
         MultiChart.open(mrvB, "RIS", "r/RQ", "RQ * P(r)",  true);
         //MultiChart.open(mrv2B, "raw inter event times" , "index", "iet", true);
  
-        MesswertTabelle tab1 = new MesswertTabelle();
+        MeasurementTable tab1 = new MeasurementTable();
         tab1.singleX = false;
         tab1.setHeader("# distribution (raw data), y/<y>, P(X=k)");
         tab1.setMessReihen(mrv);
         tab1.writeToFile( new File("./TSPropertyTester_hadoopts_image_a.dat") );
         
         
-        MesswertTabelle tab2 = new MesswertTabelle();
+        MeasurementTable tab2 = new MeasurementTable();
         tab2.singleX = false;
         tab2.setHeader("#RIS, r/RQ, RQ * P(r)");
         tab2.setMessReihen(mrvB);

@@ -3,7 +3,7 @@ package org.apache.hadoopts.statphys.ris.experimental.agh;
 import org.apache.hadoopts.data.io.MessreihenLoader;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.chart.simple.MultiChart;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -219,14 +219,14 @@ public class RISAnalyse {
         MultiChart.open(chart2Data, label + " - Rq(i)",
                 "Rq", "i", true, getParameterSet(), null );
 
-        MesswertTabelle tab1 = new MesswertTabelle();
+        MeasurementTable tab1 = new MeasurementTable();
         tab1.setLabel(label + "_P(r)");
         tab1.setMessReihen(vMR);
         tab1.writeToFile( 
                 new File( folder + File.separator + "out" +
                           File.separator + tab1.getLabel() + ".dat" ) );
 
-        MesswertTabelle tab2 = new MesswertTabelle();
+        MeasurementTable tab2 = new MeasurementTable();
         tab2.setLabel(label + "_Rq(i)");
         tab2.setMessReihen(chart2Data);
         tab2.writeToFile( 

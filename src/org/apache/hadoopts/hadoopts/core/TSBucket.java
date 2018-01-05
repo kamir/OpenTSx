@@ -663,7 +663,8 @@ public class TSBucket {
 
             writer.append(new Text(keyPrefix + KEY_PREFIX_DELIMITER + nv.getName()), vec);
 
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -695,6 +696,7 @@ public class TSBucket {
             Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
 
     SequenceFile.Writer writer = null;
     File writerFile = null;

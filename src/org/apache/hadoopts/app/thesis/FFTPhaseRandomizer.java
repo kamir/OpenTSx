@@ -44,7 +44,7 @@ import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.RNGWrapper;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 import org.apache.hadoopts.statphys.detrending.DetrendingMethodFactory;
@@ -158,7 +158,7 @@ public class FFTPhaseRandomizer {
         
         File f = new File( "./TESTDATA_PhaseRandom" );
         
-        MesswertTabelle mwt = new MesswertTabelle( "random_numbers_CHECK" );
+        MeasurementTable mwt = new MeasurementTable( "random_numbers_CHECK" );
         
         mwt.createParrentFile( f );
         mwt.singleX = false;
@@ -166,7 +166,7 @@ public class FFTPhaseRandomizer {
         mwt.setHeader("# random_numbers_CHECK");
         mwt.writeToFile();
         
-        mwt = new MesswertTabelle( "random_numbers_FS" );
+        mwt = new MeasurementTable( "random_numbers_FS" );
         
         mwt.createParrentFile( f );
         mwt.singleX = false;

@@ -1,7 +1,7 @@
 package org.apache.hadoopts.app.demo;
 
 import org.apache.hadoopts.data.RNGWrapper;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 
@@ -25,17 +25,17 @@ public class Demo1 {
         
         OriginProject op = new OriginProject();
         op.initBaseFolder("./DEMO/TS-TEST/");
-        op.initFolder("dump");
+        op.initSubFolder("dump");
   
         
-        MesswertTabelle mwt = new MesswertTabelle();
+        MeasurementTable mwt = new MeasurementTable();
         mwt.setLabel("name");
         mwt.addMessreihe( mr );
         
         Vector<TimeSeriesObject> vec = new Vector<TimeSeriesObject>();
         vec.add(mr);
         
-        op.storeMesswertTabelle(mwt);
+        op.storeMeasurementTable(mwt);
         op.storeChart(vec, true, "name", "name");
             
     };

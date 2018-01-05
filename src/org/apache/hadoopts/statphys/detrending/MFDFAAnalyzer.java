@@ -4,7 +4,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.analysistools.HurstSurface;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.RNGWrapper;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import org.apache.hadoopts.data.generator.TestDataFactory;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
@@ -140,8 +140,8 @@ public class MFDFAAnalyzer {
         
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
         
-        MesswertTabelle mwtH = new MesswertTabelle();
-        MesswertTabelle mwt = new MesswertTabelle();
+        MeasurementTable mwtH = new MeasurementTable();
+        MeasurementTable mwt = new MeasurementTable();
                
         
         // --- Begin of PROZESSING ---
@@ -212,8 +212,8 @@ public class MFDFAAnalyzer {
 
         }
 
-        project.storeMesswertTabelle(mwt);
-        project.storeMesswertTabelle(mwtH);
+        project.storeMeasurementTable(mwt);
+        project.storeMeasurementTable(mwtH);
 
         if ( showPlot )
             MultiChart.open(v, rBMM1.getLabel() + " " + "F(s,q) " + randNrType, "log(s)", "log(F(s))", true, calcLog.toString(), null);

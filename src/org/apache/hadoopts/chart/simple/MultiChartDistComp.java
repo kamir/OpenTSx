@@ -7,7 +7,7 @@
 package org.apache.hadoopts.chart.simple;
 
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -373,7 +373,7 @@ public class MultiChartDistComp extends javax.swing.JDialog {
 
                 dialog.store( dialog.chart, f2, filename);
 
-                MesswertTabelle tab = new MesswertTabelle();
+                MeasurementTable tab = new MeasurementTable();
                 tab.fill_UP_VALUE = 0.0;
                 tab.singleX = false;
 

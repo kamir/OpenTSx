@@ -3,7 +3,7 @@ package org.apache.hadoopts.chart.simple;
 
 
 import org.apache.hadoopts.data.RNGWrapper;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 
@@ -37,9 +37,9 @@ public class SigmaFilter extends TimeSeriesObject {
 
 
 
-    MesswertTabelle mwt1 = new MesswertTabelle();
-    MesswertTabelle mwt2 = new MesswertTabelle();
-    MesswertTabelle mwt3 = new MesswertTabelle();
+    MeasurementTable mwt1 = new MeasurementTable();
+    MeasurementTable mwt2 = new MeasurementTable();
+    MeasurementTable mwt3 = new MeasurementTable();
 
 
 
@@ -57,7 +57,7 @@ public class SigmaFilter extends TimeSeriesObject {
          */
          OriginProject op = new OriginProject();
          op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/ContinuousAndEventTimeSeries");
-         op.initFolder( "data2" );
+         op.initSubFolder( "data2" );
 
          /**
           * The final data export goes via two tables ...
@@ -90,19 +90,19 @@ public class SigmaFilter extends TimeSeriesObject {
 
 
 
-         sf.mwt1 = new MesswertTabelle();
+         sf.mwt1 = new MeasurementTable();
          sf.mwt1.setLabel("layer1.csv");
          sf.mwt1.singleX = false;
 
 
         
-         sf.mwt2 = new MesswertTabelle();
+         sf.mwt2 = new MeasurementTable();
          sf.mwt2.setLabel("layer2.csv");
          sf.mwt2.singleX = false;
 
 
 
-         sf.mwt3 = new MesswertTabelle();
+         sf.mwt3 = new MeasurementTable();
          sf.mwt3.setLabel("layer3.csv");
          sf.mwt3.singleX = false;
 
@@ -116,9 +116,9 @@ public class SigmaFilter extends TimeSeriesObject {
 
 
 
-         op.storeMesswertTabelle(sf.mwt1);
-         op.storeMesswertTabelle(sf.mwt2);
-         op.storeMesswertTabelle(sf.mwt3);
+         op.storeMeasurementTable(sf.mwt1);
+         op.storeMeasurementTable(sf.mwt2);
+         op.storeMeasurementTable(sf.mwt3);
 
 
         

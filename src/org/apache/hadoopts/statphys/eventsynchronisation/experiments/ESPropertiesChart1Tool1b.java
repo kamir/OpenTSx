@@ -11,7 +11,7 @@ package org.apache.hadoopts.statphys.eventsynchronisation.experiments;
 
 import org.apache.hadoopts.chart.simple.MyXYPlot;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import java.io.IOException;
 
@@ -68,7 +68,7 @@ public class ESPropertiesChart1Tool1b {
 
         int shift = 0;
 
-        op.initFolder("experiment_ES.1b___length_" + n1 + "_" + zEvents );
+        op.initSubFolder("experiment_ES.1b___length_" + n1 + "_" + zEvents );
 
         op.createLogFile("global_experiment_ES.1b.log");
 
@@ -199,18 +199,18 @@ public class ESPropertiesChart1Tool1b {
             MyXYPlot plot = MyXYPlot.openAndGet(vmr, label, "dt / <iet>", "Q and q", true);
             op.storePlotMyXYPlot(plot, label + "_sketch");
 
-            MesswertTabelle mwt = new MesswertTabelle(
+            MeasurementTable mwt = new MeasurementTable(
                     "ESPropertiesChart1Tool_" + label + ".csv",
                     "ESPropertiesChart1Tool_" + label + "_data_table.csv");
             mwt.setMessReihen(vmr);
 
-            op.storeMesswertTabelle(mwt);
+            op.storeMeasurementTable(mwt);
 
             vmr.clear();
 
 //        }
 
-        op.closeAllWriter();
+        op.closeAllWriters();
 
     }
 

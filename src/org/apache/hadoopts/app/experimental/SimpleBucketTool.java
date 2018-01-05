@@ -14,13 +14,16 @@ package org.apache.hadoopts.app.experimental;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.series.MRT;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.hadoopts.core.AbstractTSProcessor;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
+import org.apache.hadoopts.hadoopts.core.AbstractTSProcessor;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import org.apache.hadoopts.hadoopts.filter.TSBucketFileFilter;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,10 +77,33 @@ public class SimpleBucketTool extends AbstractTSProcessor {
             switch (procm) {
                 
                 case procm_BULK: {
-                    
+
+                    // Result Writer
+                    StringWriter resultWriter = new StringWriter();
+                    StringWriter explodeWriter = new StringWriter();
+
                     System.out.println("[BULK-MODE] => true");
                     bl.loadBucket(file.getAbsolutePath());
                     System.out.println(">>>              : " + bl.getTSBucket());
+
+                    Class c = null;
+                    SingleRowTSO srtso = null;
+
+                    try {
+                        // we instantiate a series processor
+                        c = Class.forName(toolname);
+                        srtso = (SingleRowTSO) c.newInstance();
+                        srtso.init();
+
+                    } catch (ClassNotFoundException ex) {
+                        Logger.getLogger(SimpleBucketTool.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InstantiationException ex) {
+                        Logger.getLogger(SimpleBucketTool.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IllegalAccessException ex) {
+                        Logger.getLogger(SimpleBucketTool.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+
 
                     Vector<TimeSeriesObject> data = bl.getBucketData();
 
@@ -93,6 +119,17 @@ public class SimpleBucketTool extends AbstractTSProcessor {
 //                        double[] reihe = MRT.calcPeriodeTrend(m, t);
 //                        TimeSeriesObject mr3 = new TimeSeriesObject(reihe);
 
+                        try {
+
+
+                            TimeSeriesObject result = srtso.processReihe( (Writer)resultWriter , m , explodeWriter);
+                            dataNorm.add( result );
+
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
                         dataNorm.add(m.normalizeToStdevIsOne());
                     }
 
@@ -102,7 +139,10 @@ public class SimpleBucketTool extends AbstractTSProcessor {
                     
                     if( data.size() < 10 ) legend = true;
                     
-                    MultiChart.open(data, file.getName(), "", "", legend);
+                    MultiChart.open(data, file.getName(), "t", "raw", legend);
+                    MultiChart.open(dataNorm, file.getName(), "t", srtso.getSymbol() + "(" + "raw" + ")", legend);
+
+                    System.out.println( resultWriter.toString() );
 
                     break;
                 }

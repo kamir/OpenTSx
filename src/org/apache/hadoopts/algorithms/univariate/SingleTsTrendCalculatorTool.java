@@ -11,7 +11,8 @@ package org.apache.hadoopts.algorithms.univariate;
 
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
-import java.io.FileWriter;
+
+import java.io.Writer;
 
 /**
  *
@@ -40,12 +41,13 @@ public class SingleTsTrendCalculatorTool extends SingleRowTSO {
     }
     
     @Override
-    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(Writer fw, TimeSeriesObject reihe, Writer explodeWriter ) throws Exception {
 
         TimeSeriesObject binned = reihe.setBinningX_sum(24);
         
         int z = (int)binned.summeY();
         int k = getKlasse( z );
+
 //        System.out.println( k );
         
         TimeSeriesObject summe = sum[ k ];

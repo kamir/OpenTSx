@@ -1,7 +1,7 @@
 package org.apache.hadoopts.algorithms.univariate;
 
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
 import org.apache.hadoopts.hadoopts.core.TSBucket;
 import java.io.BufferedReader;
@@ -93,7 +93,7 @@ public class TSGlobalTrendTool4Buckets2 {
         try {
 
             File f2 = new File( "./SW_WIKI_2009_trends_v4.tab" );
-            MesswertTabelle mwt = new MesswertTabelle();
+            MeasurementTable mwt = new MeasurementTable();
             mwt.setHeader( "SV wikipedia pages");
             mwt.singleX = false;
             

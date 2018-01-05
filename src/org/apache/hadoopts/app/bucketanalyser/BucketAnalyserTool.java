@@ -68,6 +68,8 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
         System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
         
         BucketAnalyserTool tool = null;
+
+        SingleRowTSO t = null;
         
         //
         // What analysis should be done?
@@ -87,7 +89,7 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
 
                 //  (b) - OK
                 TSBucket.FN_EXT = "(DFA)";
-                SingleTsDFATool t = new  SingleTsDFATool( args );
+                t = new  SingleTsDFATool( args );
                 
                 tool = new BucketAnalyserTool( t );
                
@@ -108,7 +110,7 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
                 
                 //  (d) - ??? RIS
                 TSBucket.FN_EXT = "(RIS)";
-                SingleTsRISTool t = new SingleTsRISTool( args );
+                t = new SingleTsRISTool( args );
 
                 ReturnIntervallStatistik2.debug = true;
                 ReturnIntervallStatistik2.binning = 15;
@@ -155,7 +157,7 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
                 
             case mode_RIS : { 
 
-                SingleTsRISTool.finish();
+                t.finish();
                 
                 break;
             }

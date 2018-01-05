@@ -9,7 +9,7 @@ import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.data.series.TimeSeriesObjectFFT;
 import java.util.Vector;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 
 /**
@@ -24,9 +24,9 @@ public class SchreiberSchmitzTester {
         stdlib.StdRandom.initRandomGen(1);
         
         
-        MesswertTabelle mwt1 = new MesswertTabelle();
-        MesswertTabelle mwt2 = new MesswertTabelle();
-        MesswertTabelle mwt3 = new MesswertTabelle();
+        MeasurementTable mwt1 = new MeasurementTable();
+        MeasurementTable mwt2 = new MeasurementTable();
+        MeasurementTable mwt3 = new MeasurementTable();
         
         mwt1.singleX = false;
         mwt2.singleX = false;
@@ -41,7 +41,7 @@ public class SchreiberSchmitzTester {
          */
         OriginProject op = new OriginProject();
         op.initBaseFolder("/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/Figure5.8");
-        op.initFolder( "data" );
+        op.initSubFolder( "data" );
        
         TimeSeriesObjectFFT.debug = false;
         

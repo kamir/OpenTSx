@@ -325,7 +325,7 @@ public class SSHClientTool extends AbstractFactoryManager {
 //                System.out.print("Password:");
 //                BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
 //                String password = r.readLine();
-        return "cloudera";
+        return "$%secure";
                 
     }
        

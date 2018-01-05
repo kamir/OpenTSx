@@ -14,8 +14,8 @@ import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.core.SingleRowTSO;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -32,7 +32,7 @@ public class SingleTsIntervallCutTool extends SingleRowTSO {
     Hashtable<Integer, Integer> bis;
     
     @Override
-    public TimeSeriesObject processReihe(FileWriter fw, TimeSeriesObject reihe, FileWriter explodeWriter ) throws Exception {
+    public TimeSeriesObject processReihe(Writer fw, TimeSeriesObject reihe, Writer explodeWriter ) throws Exception {
 
         int l = reihe.getLabel().length()-1;
         Integer id = Integer.parseInt( reihe.getLabel().substring(0, l)  );

@@ -11,7 +11,7 @@ package org.apache.hadoopts.statphys.eventsynchronisation.experiments;
 
 import org.apache.hadoopts.chart.simple.MyXYPlot;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MesswertTabelle;
+import org.apache.hadoopts.data.export.MeasurementTable;
 import org.apache.hadoopts.data.export.OriginProject;
 import java.io.IOException;
 
@@ -53,7 +53,7 @@ public class ESPropertiesChart2Tool {
         int z1 = 0;
         double ratioRho = 1;
 
-        op.initFolder("experiment_ES2.M3___length_" + n1);
+        op.initSubFolder("experiment_ES2.M3___length_" + n1);
 
         op.createLogFile("global_experiment_ES2.log");
 
@@ -152,13 +152,13 @@ public class ESPropertiesChart2Tool {
                 MyXYPlot plot = MyXYPlot.openAndGet(vmr, label, "rho1 / rho2", "Q, q, and Q/q", true);
                 op.storePlotMyXYPlot(plot, label + "_sketch");
 
-                MesswertTabelle mwt = new MesswertTabelle(
+                MeasurementTable mwt = new MeasurementTable(
                         "ESPropertiesChart2Tool_" + label + ".csv",
                         "ESPropertiesChart2Tool_" + label + "_data_table.csv");
 
                 mwt.setMessReihen(vmr);
 
-                op.storeMesswertTabelle(mwt);
+                op.storeMeasurementTable(mwt);
 
                 //  vmr.add(mr_q_SHIFT_fixed_rho);
             }
@@ -167,7 +167,7 @@ public class ESPropertiesChart2Tool {
 //            vmr.add(mr_q_t2);
         }
 
-        op.closeAllWriter();
+        op.closeAllWriters();
 
     }
 

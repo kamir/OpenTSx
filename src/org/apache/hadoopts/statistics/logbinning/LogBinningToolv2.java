@@ -111,7 +111,7 @@ public class LogBinningToolv2 {
         pro.addMessreihen(rows, "log_log_binned", true );
 //        pro.addMessreihen(rows2, "normal_log_binned", true );
         
-        pro.closeAllWriter();
+        pro.closeAllWriters();
         
         MultiChart.open( rows , "degree distribution (Master Join) rows", "log(# of links per page)", "log(# of pages)", true);
 //        MultiChart.open( rows2 , "degree distribution (Master Join) rows2", "# of links per page", "log(# of pages)", true);

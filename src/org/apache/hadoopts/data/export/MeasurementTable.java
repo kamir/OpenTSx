@@ -18,21 +18,20 @@ import java.util.logging.Logger;
  *
  * @author kamir
  */
-public class MesswertTabelle {
+public class MeasurementTable {
 
-    String headerNULL = "#\n# unknown PARAMETER set \n#\n";
+    String headerNULL = "#\n# unknown parameter set \n#\n";
     
     String label = null;
     public boolean singleX = true;
 
-    public MesswertTabelle() {
-    }
+    public MeasurementTable() {}
 
-    public MesswertTabelle(String l) {
+    public MeasurementTable(String l) {
         label = l;
     }
         
-    public MesswertTabelle(String l, String header) {
+    public MeasurementTable(String l, String header) {
         label = l;
         headerNULL = header;
     }
@@ -68,15 +67,15 @@ public class MesswertTabelle {
     }
 
     public void createParrentFile(File f) {
-        System.out.println(">   MWT : file   * " + f);
+        System.out.println("> MT : file ===> " + f);
         File p = f.getParentFile();
-        System.out.println(">   MWT : parent * " + p);
+        System.out.println("> MT : parent => " + p);
 
         if (p == null || !p.exists()) {
             p.mkdirs();
-            System.out.println( f.getAbsolutePath() + " was created ... " );
+            System.out.println( f.getAbsolutePath() + " was created. " );
         } else {
-            System.out.println(">   MWT : Nothing to create. ");
+            System.out.println("> MT : Nothing to create. ");
         }
     }
 
