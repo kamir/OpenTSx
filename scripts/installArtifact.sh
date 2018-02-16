@@ -27,6 +27,6 @@ export VERSION=2.3.0
 
 
 
-mvn install:install-file -Dfile=lib/hadoop-ts-ng-$VERSION.jar -DgroupId=com.cloudera -DartifactId=hadoop-ts-ng -Dversion=$VERSION -Dpackaging=jar -DskipTests
+mvn install:install-file -Dfile=target/hadoop-ts-ng-$VERSION.jar -DgroupId=com.cloudera -DartifactId=hadoop-ts-ng -Dversion=$VERSION -Dpackaging=jar -DskipTests
 
 

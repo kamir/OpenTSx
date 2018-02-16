@@ -579,6 +579,7 @@ public class StockDataLoader2 {
 
         System.out.println(callUrl);
 
+        
         bw.write(symbol + "\t");
         bw.write(callUrl + "\t");
 

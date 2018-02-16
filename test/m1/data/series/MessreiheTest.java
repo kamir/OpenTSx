@@ -1,6 +1,6 @@
 package m1.data.series;
 
-import org.apache.hadoopts.data.series.Messreihe;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -24,7 +24,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testIsNotEmpty() {
         System.out.println("isNotEmpty");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         boolean expResult = false;
         boolean result = instance.isNotEmpty();
         assertEquals(expResult, result);
@@ -37,7 +37,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetDecimalFormat_STAT() {
         System.out.println("getDecimalFormat_STAT");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         DecimalFormat expResult = null;
         DecimalFormat result = instance.getDecimalFormat_STAT();
         assertEquals(expResult, result);
@@ -50,7 +50,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetDecimalFormat_X() {
         System.out.println("getDecimalFormat_X");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         DecimalFormat expResult = null;
         DecimalFormat result = instance.getDecimalFormat_X();
         assertEquals(expResult, result);
@@ -63,7 +63,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetDecimalFormat_Y() {
         System.out.println("getDecimalFormat_Y");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         DecimalFormat expResult = null;
         DecimalFormat result = instance.getDecimalFormat_Y();
         assertEquals(expResult, result);
@@ -76,7 +76,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetStatus() {
         System.out.println("getStatus");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         StringBuffer expResult = null;
         StringBuffer result = instance.getStatus();
         assertEquals(expResult, result);
@@ -90,8 +90,8 @@ public class MessreiheTest extends TestCase {
     public void testGetGaussianDistribution() {
         System.out.println("getGaussianDistribution");
         int i = 0;
-        Messreihe expResult = null;
-        Messreihe result = Messreihe.getGaussianDistribution(i);
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = TimeSeriesObject.getGaussianDistribution(i);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -102,7 +102,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetSize() {
         System.out.println("getSize");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         int[] expResult = null;
         int[] result = instance.getSize();
         assertEquals(expResult, result);
@@ -117,7 +117,7 @@ public class MessreiheTest extends TestCase {
         System.out.println("addValuePair");
         double x = 0.0;
         double y = 0.0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.addValuePair(x, y);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -128,7 +128,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetXValues() {
         System.out.println("getXValues");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         Vector expResult = null;
         Vector result = instance.getXValues();
         assertEquals(expResult, result);
@@ -141,7 +141,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetYValues() {
         System.out.println("getYValues");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         Vector expResult = null;
         Vector result = instance.getYValues();
         assertEquals(expResult, result);
@@ -154,7 +154,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testToString() {
         System.out.println("toString");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.toString();
         assertEquals(expResult, result);
@@ -168,7 +168,7 @@ public class MessreiheTest extends TestCase {
     public void testSetLabel() {
         System.out.println("setLabel");
         String label = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setLabel(label);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -180,7 +180,7 @@ public class MessreiheTest extends TestCase {
     public void testSetAddinfo() {
         System.out.println("setAddinfo");
         String addinfo = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setAddinfo(addinfo);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -191,7 +191,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetAddinfo() {
         System.out.println("getAddinfo");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.getAddinfo();
         assertEquals(expResult, result);
@@ -204,7 +204,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetLabel() {
         System.out.println("getLabel");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.getLabel();
         assertEquals(expResult, result);
@@ -217,7 +217,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetData() {
         System.out.println("getData");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double[][] expResult = null;
         double[][] result = instance.getData();
         assertEquals(expResult, result);
@@ -230,7 +230,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testCalcAverage() {
         System.out.println("calcAverage");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.calcAverage();
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -241,7 +241,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetAvarage() {
         System.out.println("getAvarage");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.getAvarage();
         assertEquals(expResult, result, 0.0);
@@ -255,7 +255,7 @@ public class MessreiheTest extends TestCase {
     public void testSetDecimalFomrmatX() {
         System.out.println("setDecimalFomrmatX");
         String format = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setDecimalFomrmatX(format);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -267,7 +267,7 @@ public class MessreiheTest extends TestCase {
     public void testSetDecimalFomrmatY() {
         System.out.println("setDecimalFomrmatY");
         String format = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setDecimalFomrmatY(format);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -278,7 +278,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetMaxX() {
         System.out.println("getMaxX");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.getMaxX();
         assertEquals(expResult, result, 0.0);
@@ -291,7 +291,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetMaxY() {
         System.out.println("getMaxY");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.getMaxY();
         assertEquals(expResult, result, 0.0);
@@ -305,7 +305,7 @@ public class MessreiheTest extends TestCase {
     public void testGetStatisticData() {
         System.out.println("getStatisticData");
         String pre = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.getStatisticData(pre);
         assertEquals(expResult, result);
@@ -318,7 +318,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetYData() {
         System.out.println("getYData");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double[] expResult = null;
         double[] result = instance.getYData();
         assertEquals(expResult, result);
@@ -331,7 +331,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetXYSeries() {
         System.out.println("getXYSeries");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         XYSeries expResult = null;
         XYSeries result = instance.getXYSeries();
         assertEquals(expResult, result);
@@ -345,7 +345,7 @@ public class MessreiheTest extends TestCase {
     public void testWriteToFile() {
         System.out.println("writeToFile");
         File f = null;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.writeToFile(f);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -357,7 +357,7 @@ public class MessreiheTest extends TestCase {
     public void testAddValue() {
         System.out.println("addValue");
         double y = 0.0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.addValue(y);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -368,7 +368,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetLabel_X() {
         System.out.println("getLabel_X");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.getLabel_X();
         assertEquals(expResult, result);
@@ -382,7 +382,7 @@ public class MessreiheTest extends TestCase {
     public void testSetLabel_X() {
         System.out.println("setLabel_X");
         String label_X = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setLabel_X(label_X);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -394,7 +394,7 @@ public class MessreiheTest extends TestCase {
     public void testSetLabel_Y() {
         System.out.println("setLabel_Y");
         String label_Y = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setLabel_Y(label_Y);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -405,7 +405,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetLabel_Y() {
         System.out.println("getLabel_Y");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.getLabel_Y();
         assertEquals(expResult, result);
@@ -418,7 +418,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetStddev() {
         System.out.println("getStddev");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.getStddev();
         assertEquals(expResult, result, 0.0);
@@ -431,7 +431,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testNormalize() {
         System.out.println("normalize");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.normalize();
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -443,7 +443,7 @@ public class MessreiheTest extends TestCase {
     public void testGetYValueForX() {
         System.out.println("getYValueForX");
         int i = 0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.getYValueForX(i);
         assertEquals(expResult, result, 0.0);
@@ -457,9 +457,9 @@ public class MessreiheTest extends TestCase {
     public void testSetBinningX_sum() {
         System.out.println("setBinningX_sum");
         int bin = 0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.setBinningX_sum(bin);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.setBinningX_sum(bin);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -471,9 +471,9 @@ public class MessreiheTest extends TestCase {
     public void testSetBinningX_average() {
         System.out.println("setBinningX_average");
         int bin = 0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.setBinningX_average(bin);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.setBinningX_average(bin);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -485,7 +485,7 @@ public class MessreiheTest extends TestCase {
     public void testDivY() {
         System.out.println("divY");
         double divBy = 0.0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.divide_Y_by(divBy);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -496,7 +496,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testSummeY() {
         System.out.println("summeY");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.summeY();
         assertEquals(expResult, result, 0.0);
@@ -509,10 +509,10 @@ public class MessreiheTest extends TestCase {
      */
     public void testDiff() {
         System.out.println("diff");
-        Messreihe mr2 = null;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.diff(mr2);
+        TimeSeriesObject mr2 = null;
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.diff(mr2);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -523,10 +523,10 @@ public class MessreiheTest extends TestCase {
      */
     public void testAdd() {
         System.out.println("add");
-        Messreihe mr2 = null;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.add(mr2);
+        TimeSeriesObject mr2 = null;
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.add(mr2);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -537,8 +537,8 @@ public class MessreiheTest extends TestCase {
      */
     public void testAddValues() {
         System.out.println("addValues");
-        Messreihe mr = null;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject mr = null;
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.addValues(mr);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -550,9 +550,9 @@ public class MessreiheTest extends TestCase {
     public void testScaleX() {
         System.out.println("scaleX");
         int maxX = 0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.scaleX(maxX);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.scaleX(maxX);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -564,7 +564,7 @@ public class MessreiheTest extends TestCase {
     public void testAddStatusInfo() {
         System.out.println("addStatusInfo");
         String string = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.addStatusInfo(string);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -575,7 +575,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testGetStatusInfo() {
         System.out.println("getStatusInfo");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         String expResult = "";
         String result = instance.getStatusInfo();
         assertEquals(expResult, result);
@@ -589,9 +589,9 @@ public class MessreiheTest extends TestCase {
     public void testCut() {
         System.out.println("cut");
         int nrOfValues = 0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.cut(nrOfValues);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.cut(nrOfValues);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -603,9 +603,9 @@ public class MessreiheTest extends TestCase {
     public void testShift() throws Exception {
         System.out.println("shift");
         int offset = 0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.shift(offset);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.shift(offset);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -616,9 +616,9 @@ public class MessreiheTest extends TestCase {
      */
     public void testCopy() {
         System.out.println("copy");
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.copy();
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.copy();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -630,9 +630,9 @@ public class MessreiheTest extends TestCase {
     public void testScaleX_2() {
         System.out.println("scaleX_2");
         double f = 0.0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.scaleX_2(f);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.scaleX_2(f);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -644,9 +644,9 @@ public class MessreiheTest extends TestCase {
     public void testScaleY_2() {
         System.out.println("scaleY_2");
         double f = 0.0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.scaleY_2(f);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.scaleY_2(f);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -660,7 +660,7 @@ public class MessreiheTest extends TestCase {
         String label = "";
         String xL = "";
         String yL = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.setLabels(label, xL, yL);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -671,9 +671,9 @@ public class MessreiheTest extends TestCase {
      */
     public void testAverageForAll() {
         System.out.println("averageForAll");
-        Messreihe[] mrs = null;
-        Messreihe expResult = null;
-        Messreihe result = Messreihe.averageForAll(mrs);
+        TimeSeriesObject[] mrs = null;
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = TimeSeriesObject.averageForAll(mrs);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -685,7 +685,7 @@ public class MessreiheTest extends TestCase {
     public void testGetX_for_Y() {
         System.out.println("getX_for_Y");
         double y = 0.0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         double expResult = 0.0;
         double result = instance.getX_for_Y(y);
         assertEquals(expResult, result, 0.0);
@@ -700,7 +700,7 @@ public class MessreiheTest extends TestCase {
         System.out.println("linFit");
         double x_min = 0.0;
         double x_max = 0.0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         SimpleRegression expResult = null;
         SimpleRegression result = instance.linFit(x_min, x_max);
         assertEquals(expResult, result);
@@ -715,9 +715,9 @@ public class MessreiheTest extends TestCase {
         System.out.println("split");
         int length = 0;
         int anzahl = 0;
-        Messreihe instance = new Messreihe();
-        Messreihe[] expResult = null;
-        Messreihe[] result = instance.split(length, anzahl);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject[] expResult = null;
+        TimeSeriesObject[] result = instance.split(length, anzahl);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -730,9 +730,9 @@ public class MessreiheTest extends TestCase {
         System.out.println("shrinkX");
         double min = 0.0;
         double max = 0.0;
-        Messreihe instance = new Messreihe();
-        Messreihe expResult = null;
-        Messreihe result = instance.shrinkX(min, max);
+        TimeSeriesObject instance = new TimeSeriesObject();
+        TimeSeriesObject expResult = null;
+        TimeSeriesObject result = instance.shrinkX(min, max);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -744,7 +744,7 @@ public class MessreiheTest extends TestCase {
     public void testAddComment() {
         System.out.println("addComment");
         String string = "";
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.addComment(string);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -756,7 +756,7 @@ public class MessreiheTest extends TestCase {
     public void testScaleXto() {
         System.out.println("scaleXto");
         int i = 0;
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.scaleXto(i);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -767,7 +767,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testCheckKonsistenz() {
         System.out.println("checkKonsistenz");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.checkKonsistenz();
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -778,7 +778,7 @@ public class MessreiheTest extends TestCase {
      */
     public void testShow() {
         System.out.println("show");
-        Messreihe instance = new Messreihe();
+        TimeSeriesObject instance = new TimeSeriesObject();
         instance.show();
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");

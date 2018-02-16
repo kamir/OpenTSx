@@ -6,14 +6,15 @@
 
     <groupId>com.cloudera</groupId>
     <artifactId>hadoop-ts-ng</artifactId>
-    <version>2.3.0</version>
+    <version>2.5.0</version>
 
     <properties>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jcuda.jcudaVersion>0.8.0</jcuda.jcudaVersion>
 
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
 
     </properties>
 
@@ -40,7 +41,6 @@
 
     <repositories>
 
-
         <repository>
             <id>cdh.repo</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
@@ -62,7 +62,6 @@
             </releases>
         </repository>
 
-
     </repositories>
 
     <dependencies>
@@ -83,6 +82,19 @@
                    <groupId>infodynamics</groupId>
                    <artifactId>corelib</artifactId>
                    <version>1.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kudu</groupId>
+            <artifactId>kudu-client</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+        <!-- for logging messages -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.12</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.sshd/sshd-core -->
@@ -204,23 +216,13 @@
             <version>0.0.2</version>
         </dependency>
 
-        <!--dependency>
-            <groupId>de.javagl</groupId>
-            <artifactId>matrixmarketreader</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcuda-matrix-utils</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency-->
-
         <dependency>
             <groupId>com.github.wendykierp</groupId>
             <artifactId>JTransforms</artifactId>
             <version>3.1</version>
             <classifier>with-dependencies</classifier>
         </dependency>
+
         <dependency>
             <groupId>org.jogamp.gluegen</groupId>
             <artifactId>gluegen-rt-main</artifactId>
@@ -258,11 +260,13 @@
             <artifactId>httpclient</artifactId>
             <version>4.5</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.7</version>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
@@ -276,7 +280,6 @@
             <type>jar</type>
         </dependency>
 
-
         <dependency>
             <groupId>org.apache.mahout</groupId>
             <artifactId>mahout-math</artifactId>
@@ -288,6 +291,8 @@
             <artifactId>mahout-core</artifactId>
             <version>0.9</version>
         </dependency>
+
+
 
 
     </dependencies>
