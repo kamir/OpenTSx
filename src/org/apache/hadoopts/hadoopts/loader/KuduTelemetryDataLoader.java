@@ -16,6 +16,22 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
+ * In some IoT applications we collect metrics in a data-point stage.
+ *
+ * The schema looks like this: (id,time,metric,value)
+ *
+ * Such a simple schema allows to be very agnostic regarding any kind of meaning of the data.
+ * The id and metric habe to provide the reference to the semantic meaning of the measured property.
+ * This includes :
+ *
+ * - object identity via ID
+ * - property and unit of measurement via METRIC
+ *
+ * This connector loads all available metrics from the staging table.
+ *
+ * Then it loads the values from KUDU and provides a Vector of TimeSeriesObjects.
+ * This Vector is the input data for the "Oscillosope-like TimeSeries Workbench".
+ *
  * @author Mirko Kaempf
  */
 public class KuduTelemetryDataLoader {
