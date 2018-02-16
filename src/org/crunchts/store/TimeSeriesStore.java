@@ -11,7 +11,7 @@ import java.io.File;
  *
  * @author kamir
  */
-public class TSB {
+public class TimeSeriesStore {
     
     /**
      * This is a GLOBAL directory for all studies, managed on one 

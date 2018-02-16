@@ -1,5 +1,4 @@
-#Hadoop.TS.NG
-============
+# Hadoop.TS.NG
 
 This project provides a collection of tools and algorithms for advanced time series 
 statistics on Apache Spark including GPU support (JCuda). 
@@ -35,5 +34,5 @@ As it is Spark-based, the Hadoop.TS project benefits from all of Hadoops's and S
 nice features like fault-tolerance and scalability. 
 
 ##Links
-WIKI : https://github.com/kamir/Hadoop.TS/wiki
+WIKI : https://github.com/kamir/Hadoop.TS.NG/wiki
 
