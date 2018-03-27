@@ -94,6 +94,7 @@ public class KuduTelemetryDataLoader {
 
         Vector<TimeSeriesObject> tso = readAllSeriesFromKudu();
 
+
         MultiChart.open(tso,true);
 
     }

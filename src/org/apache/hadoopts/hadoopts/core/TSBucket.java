@@ -727,6 +727,12 @@ public class TSBucket {
 
     }
 
+    public void _open(String s) {
+        File f = new File( s );
+        _open( f );
+    }
+
+
     public void flush() {
         try {
             writer.hflush();

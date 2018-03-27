@@ -18,7 +18,7 @@
 
     </properties>
 
-    <name>Hadoop.TS.NG</name>
+    <name>hadoop-ts-ng</name>
     <description>Time Series Analysis on Hadoop.</description>
 
     <url>http://www.hadoop-ts-ng.semanpix.de</url>

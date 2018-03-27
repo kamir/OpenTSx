@@ -7,30 +7,12 @@
  */
 package org.apache.hadoopts.chart.simple;
 
-import org.apache.hadoopts.app.bucketanalyser.TSOperationControlerPanel;
-import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
-import org.apache.hadoopts.data.series.TimeSeriesObject;
-import org.apache.hadoopts.data.export.MeasurementTable;
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Font;
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Vector;
-import javax.swing.JFrame;
-import javax.swing.JTextArea;
-
 import org.apache.hadoopts.app.bucketanalyser.ICorrelator;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.ChartRenderingInfo;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
+import org.apache.hadoopts.app.bucketanalyser.MacroTrackerFrame;
+import org.apache.hadoopts.app.bucketanalyser.TSOperationControlerPanel;
+import org.apache.hadoopts.data.export.MeasurementTable;
+import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.entity.StandardEntityCollection;
@@ -40,6 +22,15 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RefineryUtilities;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Vector;
 //import simulation.datarecorder.GeneralResultRecorder;
 //import util.LogFile;
 
@@ -555,6 +546,7 @@ public class MultiChart extends javax.swing.JDialog {
     // End of variables declaration//GEN-END:variables
 
     public void initMessreihe(TimeSeriesObject mr) {
+
         // if ( this.normalizeY ) mr.normalizeY();
         if (mr == null) {
             return;
@@ -568,8 +560,13 @@ public class MultiChart extends javax.swing.JDialog {
         for (int i = 0; i < x.size(); i++) {
             series.add(x.elementAt(i), y.elementAt(i));
         }
+
         series.setDescription(mr.getLabel());
+
+        statisticTextField.setText( mr.getDescription() );
+
         this.addSerie(series);
+
     }
 
     public void addSerie(XYSeries serie) {
@@ -903,4 +900,9 @@ public class MultiChart extends javax.swing.JDialog {
 
     }
 
+    public static void open(TimeSeriesObject tso) {
+        Vector<TimeSeriesObject> vtso = new Vector<>();
+        vtso.add(tso);
+        MultiChart.open( vtso, true );
+    }
 }

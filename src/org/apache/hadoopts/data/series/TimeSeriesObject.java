@@ -2698,7 +2698,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return t;
     }
 
- 
+    public void appendToLabel(String l, String s) {
+        this.label = this.label + s + l;
+    }
 
-    
 }

@@ -5,7 +5,7 @@ import org.apache.hadoopts.data.series.TimeSeriesObject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
-import org.apache.commons.math.stat.Frequency;
+import org.apache.commons.math3.stat.Frequency;
 
 /**
  *
