@@ -2,7 +2,7 @@
 # deploy the Hadoop.TS.NG artifact into a local Maven repository
 #
 
-export VERSION=2.3.0
+export VERSION=2.5.0
 
 # :: Changelog ::
 # ===============
