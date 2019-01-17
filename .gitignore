@@ -3,3 +3,9 @@
 /build/
 /tstests/
 /nbproject/private/
+target/
+out/
+.classpath
+.project
+.settings/
+.idea

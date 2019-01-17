@@ -229,7 +229,6 @@
     <orderEntry type="library" name="Maven: org.glassfish.hk2.external:aopalliance-repackaged:2.4.0-b34" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.hk2.external:javax.inject:2.4.0-b34" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.hk2:hk2-locator:2.4.0-b34" level="project" />
-    <orderEntry type="library" name="Maven: org.javassist:javassist:3.18.1-GA" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jersey.core:jersey-common:2.22.2" level="project" />
     <orderEntry type="library" name="Maven: javax.annotation:javax.annotation-api:1.2" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jersey.bundles.repackaged:jersey-guava:2.22.2" level="project" />
@@ -319,5 +318,19 @@
     <orderEntry type="library" name="Maven: org.apache.lucene:lucene-analyzers-common:4.6.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.mahout.commons:commons-cli:2.0-mahout" level="project" />
     <orderEntry type="library" name="Maven: org.apache.solr:solr-commons-csv:3.5.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.crunch:crunch-core:0.15.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-avro:1.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-column:1.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-common:1.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-encoding:1.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-hadoop:1.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-jackson:1.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.parquet:parquet-format:2.3.0-incubating" level="project" />
+    <orderEntry type="library" name="Maven: it.unimi.dsi:fastutil:6.5.7" level="project" />
+    <orderEntry type="library" name="Maven: org.javassist:javassist:3.16.1-GA" level="project" />
+    <orderEntry type="library" name="Maven: org.tensorflow:tensorflow:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: org.tensorflow:libtensorflow:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: org.tensorflow:libtensorflow_jni:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: org.tensorflow:libtensorflow_jni_gpu:1.12.0" level="project" />
   </component>
 </module>

@@ -23,8 +23,6 @@
     <name>hadoop-ts-ng</name>
     <description>Distributed Time Series Analysis on Hadoop.</description>
 
-    <url>http://www.hadoop-ts-ng.semanpix.de</url>
-
     <licenses>
         <license>
             <name>Apache Commons 2.0</name>
@@ -312,6 +310,27 @@
             <groupId>org.apache.mahout</groupId>
             <artifactId>mahout-core</artifactId>
             <version>0.9</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.crunch/crunch-core -->
+        <dependency>
+            <groupId>org.apache.crunch</groupId>
+            <artifactId>crunch-core</artifactId>
+            <version>0.15.0</version>
+        </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/org.tensorflow/tensorflow -->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow</artifactId>
+            <version>1.12.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>libtensorflow_jni_gpu</artifactId>
+            <version>1.12.0</version>
         </dependency>
 
     </dependencies>
