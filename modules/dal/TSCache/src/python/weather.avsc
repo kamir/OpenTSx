@@ -1,0 +1,16 @@
+{
+    "namespace": "net.sandipb.avro.example.weather",
+    "type": "record",
+    "name": "Reading",
+    "doc": "Weather reading at a point in time",
+    "fields": [
+        {"name": "time", "type": "int", "doc": "Seconds since epoch"},
+        {"name": "temp", "type": "float", "doc": "Temperature in Celsius"},
+        {"name": "dew_point_temp", "type": "float", "doc": "Dew point temperature in Celsius"},
+        {"name": "humidity", "type": "int", "doc": "Relative humidity %"},
+        {"name": "wind_speed", "type": "float", "doc": "Wind speed in km/h"},
+        {"name": "visibility", "type": "float", "doc": "Visibility in km"},
+        {"name": "pressure", "type": "float", "doc": "Atmospheric pressure in kPa"},
+        {"name": "weather", "type": "string", "doc": "Weather summary"}
+    ]
+}

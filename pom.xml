@@ -4,11 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.cloudera</groupId>
+    <groupId>org.cloudera</groupId>
     <artifactId>hadoop-ts-ng</artifactId>
     <version>2.5.0</version>
 
     <properties>
+
+        <avro.version>1.8.2</avro.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jcuda.jcudaVersion>0.8.0</jcuda.jcudaVersion>
@@ -19,7 +21,7 @@
     </properties>
 
     <name>hadoop-ts-ng</name>
-    <description>Time Series Analysis on Hadoop.</description>
+    <description>Distributed Time Series Analysis on Hadoop.</description>
 
     <url>http://www.hadoop-ts-ng.semanpix.de</url>
 
@@ -66,6 +68,89 @@
 
     <dependencies>
 
+		<!-- This library come with a different license. Need to work on this to get
+    		 the code clean. -->
+        <dependency>
+            <groupId>infodynamics</groupId>
+            <artifactId>corelib</artifactId>
+            <version>1.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flume</groupId>
+            <artifactId>flume-ng-core</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flume</groupId>
+            <artifactId>flume-ng-sdk</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+        <!--
+            Access CM via Java API
+            * TimeSeriesResource is available in API v6
+        -->
+        <dependency>
+            <groupId>com.cloudera.api</groupId>
+            <artifactId>cloudera-manager-api</artifactId>
+            <version>5.11.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-common</artifactId>
+            <version>1.1.0-cdh5.11.1</version>
+        </dependency>
+
+        <!-- Hadoop -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+            <version>2.6.0-mr1-cdh5.11.1</version>
+        </dependency>
+        <!-- Hive -->
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-exec</artifactId>
+            <version>1.1.0-cdh5.11.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-metastore</artifactId>
+            <version>1.1.0-cdh5.11.1</version>
+        </dependency>
+
+
+
+
+        <!-- https://mvnrepository.com/artifact/net.opentsdb/opentsdb -->
+        <dependency>
+            <groupId>net.opentsdb</groupId>
+            <artifactId>opentsdb</artifactId>
+            <version>2.4.0RC1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoofinance-api</groupId>
+            <artifactId>YahooFinanceAPI</artifactId>
+            <version>3.9.0</version>
+        </dependency>
+
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-core</artifactId>
@@ -79,15 +164,9 @@
         </dependency>
 
         <dependency>
-                   <groupId>infodynamics</groupId>
-                   <artifactId>corelib</artifactId>
-                   <version>1.3.1</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kudu</groupId>
             <artifactId>kudu-client</artifactId>
-            <version>1.1.0</version>
+            <version>1.4.0</version>
         </dependency>
 
         <!-- for logging messages -->
@@ -122,6 +201,13 @@
             <artifactId>hbase-client</artifactId>
             <version>1.2.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.hbase</groupId>
+            <artifactId>asynchbase</artifactId>
+            <version>1.8.0</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -171,74 +257,10 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcuda</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcublas</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcufft</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcurand</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcusparse</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcusolver</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcudnn</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jnvgraph</artifactId>
-            <version>${jcuda.jcudaVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jcuda</groupId>
-            <artifactId>jcuda-vec</artifactId>
-            <version>0.0.2</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.github.wendykierp</groupId>
             <artifactId>JTransforms</artifactId>
             <version>3.1</version>
             <classifier>with-dependencies</classifier>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jogamp.gluegen</groupId>
-            <artifactId>gluegen-rt-main</artifactId>
-            <version>2.3.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jogamp.jogl</groupId>
-            <artifactId>jogl-all-main</artifactId>
-            <version>2.3.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.lwjgl.lwjgl</groupId>
-            <artifactId>lwjgl</artifactId>
-            <version>2.9.3</version>
         </dependency>
 
         <dependency>
@@ -292,17 +314,27 @@
             <version>0.9</version>
         </dependency>
 
-
-
-
     </dependencies>
 
     <build>
 
-        <sourceDirectory>src</sourceDirectory>
-
         <plugins>
 
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                            <goal>protocol</goal>
+                            <goal>idl-protocol</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -317,18 +349,16 @@
                     </descriptorRefs>
                 </configuration>
             </plugin>
-
+            
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
-
-
-
 
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -374,14 +404,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
+            
 
 
             <!--plugin>

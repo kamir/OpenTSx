@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.bouncycastle:bcpg-jdk15on:1.57">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/bouncycastle/bcpg-jdk15on/1.57/bcpg-jdk15on-1.57.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/bouncycastle/bcpg-jdk15on/1.57/bcpg-jdk15on-1.57-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/bouncycastle/bcpg-jdk15on/1.57/bcpg-jdk15on-1.57-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

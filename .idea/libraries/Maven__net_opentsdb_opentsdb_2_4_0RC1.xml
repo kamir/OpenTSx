@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: net.opentsdb:opentsdb:2.4.0RC1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/opentsdb/opentsdb/2.4.0RC1/opentsdb-2.4.0RC1.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/net/opentsdb/opentsdb/2.4.0RC1/opentsdb-2.4.0RC1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/opentsdb/opentsdb/2.4.0RC1/opentsdb-2.4.0RC1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

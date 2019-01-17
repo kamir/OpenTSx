@@ -1,0 +1,211 @@
+{
+  "outputs": [
+    {
+      "id": "Mega expression",
+      "dps": [
+        [
+          1431561600000,
+          1010,
+          1030
+        ],
+        [
+          1431561660000,
+          "NaN",
+          "NaN"
+        ],
+        [
+          1431561720000,
+          "NaN",
+          "NaN"
+        ],
+        [
+          1431561780000,
+          1120,
+          1140
+        ]
+      ],
+      "dpsMeta": {
+        "firstTimestamp": 1431561600000,
+        "lastTimestamp": 1431561780000,
+        "setCount": 4,
+        "series": 2
+      },
+      "meta": [
+        {
+          "index": 0,
+          "metrics": [
+            "timestamp"
+          ]
+        },
+        {
+          "index": 1,
+          "metrics": [
+            "sys.cpu",
+            "sys.iowait"
+          ],
+          "commonTags": {
+            "host": "web01"
+          },
+          "aggregatedTags": []
+        },
+        {
+          "index": 2,
+          "metrics": [
+            "sys.cpu",
+            "sys.iowait"
+          ],
+          "commonTags": {
+            "host": "web02"
+          },
+          "aggregatedTags": []
+        }
+      ]
+    },
+    {
+      "id": "sys.cpu",
+      "dps": [
+        [
+          1431561600000,
+          1,
+          2
+        ],
+        [
+          1431561660000,
+          3,
+          0
+        ],
+        [
+          1431561720000,
+          5,
+          0
+        ],
+        [
+          1431561780000,
+          7,
+          8
+        ]
+      ],
+      "dpsMeta": {
+        "firstTimestamp": 1431561600000,
+        "lastTimestamp": 1431561780000,
+        "setCount": 4,
+        "series": 2
+      },
+      "meta": [
+        {
+          "index": 0,
+          "metrics": [
+            "timestamp"
+          ]
+        },
+        {
+          "index": 1,
+          "metrics": [
+            "sys.cpu"
+          ],
+          "commonTags": {
+            "host": "web01"
+          },
+          "aggregatedTags": []
+        },
+        {
+          "index": 2,
+          "metrics": [
+            "sys.cpu"
+          ],
+          "commonTags": {
+            "host": "web02"
+          },
+          "aggregatedTags": []
+        }
+      ]
+    }
+  ],
+  "statsSummary": {
+    "datapoints": 0,
+    "rawDatapoints": 0,
+    "aggregationTime": 0,
+    "serializationTime": 33,
+    "storageTime": 77,
+    "timeTotal": 148.63
+  },
+  "query": {
+    "name": null,
+    "time": {
+      "start": "1y-ago",
+      "end": null,
+      "timezone": null,
+      "downsampler": null,
+      "aggregator": "sum"
+    },
+    "filters": [
+      {
+        "id": "f1",
+        "tags": [
+          {
+            "tagk": "host",
+            "filter": "web*",
+            "group_by": true,
+            "type": "wildcard"
+          }
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "metric": "sys.cpu",
+        "id": "a",
+        "filter": "f1",
+        "aggregator": null,
+        "fillPolicy": {
+          "policy": "nan",
+          "value": "NaN"
+        },
+        "timeOffset": null
+      },
+      {
+        "metric": "sys.iowait",
+        "id": "b",
+        "filter": "f1",
+        "aggregator": null,
+        "fillPolicy": {
+          "policy": "nan",
+          "value": "NaN"
+        },
+        "timeOffset": null
+      }
+    ],
+    "expressions": [
+      {
+        "id": "e",
+        "expr": "a + b"
+      },
+      {
+        "id": "e2",
+        "expr": "e * 2"
+      },
+      {
+        "id": "e3",
+        "expr": "e2 * 2"
+      },
+      {
+        "id": "e4",
+        "expr": "e3 * 2"
+      },
+      {
+        "id": "e5",
+        "expr": "e4 + e2"
+      }
+    ],
+    "outputs": [
+      {
+        "id": "e5",
+        "alias": "Woot!"
+      },
+      {
+        "id": "a",
+        "alias": "Woot!2"
+      }
+    ]
+  }
+}
