@@ -5,6 +5,7 @@
 /nbproject/private/
 target/
 out/
+/data/out
 .classpath
 .project
 .settings/
