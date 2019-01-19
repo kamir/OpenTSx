@@ -5,4 +5,5 @@ export JAVA_HOME=/Volumes/Macintosh\ HD/Library/Java/JavaVirtualMachines/jdk1.8.
 java -version
 
 cd ..
-mvn compile package install
+
+mvn clean generate-sources compile package install -DskipTests=true

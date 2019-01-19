@@ -1,1 +1,0 @@
-spark-shell --master local[2] --packages org.apache.kudu:kudu-spark2_2.11:1.4.0 --jars /Users/kamir/.m2/repository/com/cloudera/hadoop-ts-ng/2.5.0/hadoop-ts-ng-2.5.0-jar-with-dependencies.jar,/Users/kamir/GitHub_TMP/Hadoop.TS.NG.Cuda/target/cuda-tsa-0.2.0-SNAPSHOT-jar-with-dependencies.jar

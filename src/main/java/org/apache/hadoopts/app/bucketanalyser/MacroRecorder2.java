@@ -47,6 +47,7 @@ import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.hadoopts.app.thesis.TSGeneratorFINAL;
 import org.apache.hadoopts.chart.simple.MultiChart;
 import org.apache.hadoopts.data.series.TimeSeriesObject;
 import org.apache.hadoopts.hadoopts.buckets.BucketLoader;
@@ -86,8 +87,11 @@ public class MacroRecorder2 {
             
         // DAX2, IPC, MDAX, SDAX, TECDAX  
         String market = "DAX2";
-        components = loadStockDataFromBucket( market ); 
-        
+        // components = loadStockDataFromBucket( market );
+
+        components = TSGeneratorFINAL.getSampleA();
+
+
         MacroTrackerFrame.init(label_of_TRACK);
         MacroTrackerFrame.addTransformation( 
                 TSBucketTransformation.getTransformation("Collection", "Components", loadOp));

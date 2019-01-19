@@ -62,6 +62,7 @@ public class SampleBucketViewer {
         a[1] = "";
         a[2] = ""+SimpleBucketTool.procm_BULK;
         SimpleBucketTool.main( a );
+
         System.out.println("Done (3)\n\n");
         
        

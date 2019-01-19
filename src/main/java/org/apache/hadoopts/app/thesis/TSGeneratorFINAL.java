@@ -53,7 +53,7 @@ public class TSGeneratorFINAL {
         log = new StringBuffer();
     
         // some sample frequencies ...
-        double[] fs = { 1.0, 1.0,1.0 }; // , 20.0, 50.0, 117.0, 1000 }; //, 2000, 5000 };  
+        double[] fs = { 1.0, 1.0, 1.0 }; // , 20.0, 50.0, 117.0, 1000 }; //, 2000, 5000 };
         
         /**
          * SamplingRate SR;
@@ -180,7 +180,37 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         }
         return mr;
     }
-    
+
+    public static Vector<TimeSeriesObject> getSampleA() {
+
+        testsA = new Vector<TimeSeriesObject>();
+
+        /**
+         * Frequency
+         *
+         *          f [HZ]
+         */
+        double fs = 1.0;
+
+        /**
+         * SamplingRate SR;
+         *
+         *         defines the number of samples per unit of time (usually seconds)
+         */
+        double samplingRate = 44000;
+
+        double totaltime = 1.0; //
+
+        double ampl = 1.0;
+
+        testsA.add( TSGeneratorFINAL.getSinusWave(fs, totaltime, samplingRate, ampl ) );
+        testsA.add( TSGeneratorFINAL.getSinusWave(fs * 1000, totaltime, samplingRate, ampl* 2 ) );
+        testsA.add( TSGeneratorFINAL.getSinusWave(fs * 5000, totaltime, samplingRate, ampl*0.5 ) );
+
+        return testsA;
+
+    }
+
     public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, double p, double noice ) {
         TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int)(time * samplingRate);
@@ -204,23 +234,24 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
         return mr;
     }
 
-    static TimeSeriesObject getSinusWave(TimeSeriesObject mr, TimeSeriesObject mr0, TimeSeriesObject mr1, TimeSeriesObject mr2) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    /**
+     * TODO: PRIO 1
+     * CLEAN
+     */
+     //    static TimeSeriesObject getSinusWave(TimeSeriesObject mr, TimeSeriesObject mr0, TimeSeriesObject mr1, TimeSeriesObject mr2) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
 
-    public static TimeSeriesObject getWordLengthSeries(File f) throws IOException {
-        TimeSeriesObject mr = new TimeSeriesObject();
-        mr.setLabel(f.getAbsolutePath());
-        BufferedReader br = new BufferedReader( new FileReader( f ) );
-        while( br.ready() ) {
-            String line = br.readLine();
-            String[] words = line.split( PATTERN );
-            for( String w : words)
-                mr.addValue( w.length() );
-        }
-        return mr;
-    }
 
+    /**
+     * TODO: PRIO 1
+     *
+     * EXTRACT INTO NEW Module, in order to clean up this generator component.
+     *
+     * @param imageFile
+     * @return
+     * @throws IOException
+     */
     public static TimeSeriesObject[] getGrayImageSeries(File imageFile) throws IOException {
         
         Vector<TimeSeriesObject> vmr = new Vector<TimeSeriesObject>();

@@ -2,103 +2,33 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="11342547-5ca6-40e3-8934-219215b28f7e" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/bin/110_run_demo_services.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bin/120_run_demo.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bin/130_run_demo_in_spark_shell_locally.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-DUMP-DATA-all-awk.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-DUMP-DATA-all.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-DUMP-DATA-range_A.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-DUMP-DATA-range_B.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-LOG-all.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-LOG-range_A.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/algorithm.nrc.distributions.KSTest-LOG-range_B.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-distribution/1000_-100.0_100.0_histogramdata.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-distribution/1000_-100.0_100.0_histogramdata.tsv.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-distribution/1000_-100.0_2.5_histogramdata.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-distribution/1000_-100.0_2.5_histogramdata.tsv.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-distribution/1000_2.5_100.0_histogramdata.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-distribution/1000_2.5_100.0_histogramdata.tsv.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-raw/1000_-100.0_100.0_testdata.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-raw/1000_-100.0_100.0_testdata.tsv.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-raw/1000_-100.0_2.5_testdata.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-raw/1000_-100.0_2.5_testdata.tsv.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-raw/1000_2.5_100.0_testdata.tsv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/NRCTESTS/dump-raw/1000_2.5_100.0_testdata.tsv.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp1/.bucket_wordLength_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp2/.bucket_grayImage.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp2/bucket_grayImage.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp3/.bucket_wordLength_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp4/.bucket_tfidf_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp4/.bucket_wordLength_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp4/bucket_tfidf_.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/out/tsbucket/exp4/bucket_wordLength_.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_0.100.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_0.300.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_0.500.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_0.700.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_0.900.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_1.100.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_1.300.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_1.500.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_1.700.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_1.900.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_2.100.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_2.300.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_2.500.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_2.700.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_LRC_beta_2.900.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_alpha_0.5_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/.abucket.ts.seq_sinus_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_0.100.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_0.300.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_0.500.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_0.700.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_0.900.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_1.100.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_1.300.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_1.500.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_1.700.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_1.900.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_2.100.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_2.300.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_2.500.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_2.700.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_LRC_beta_2.900.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_alpha_0.5_.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/abucket.ts.seq_sinus_.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_0.100.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_0.300.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_0.500.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_0.700.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_0.900.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_1.100.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_1.300.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_1.500.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_1.700.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_1.900.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_2.100.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_2.300.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_2.500.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_2.700.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_LRC_beta_2.900.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/.abucket.ts.seq_alpha_0.5_.tsb.vec.seq.crc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.100.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.300.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.500.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.700.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.900.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.900.tsb.vec.seq.proc.(DFA).csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_0.900.tsb.vec.seq.proc.explode.(DFA).csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_1.100.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_1.300.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_1.500.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_1.700.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_1.900.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_2.100.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_2.300.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_2.500.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_2.700.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_LRC_beta_2.900.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/tstest/sample/abucket.ts.seq_alpha_0.5_.tsb.vec.seq" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/build.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/create_kudu_on_docker.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/015_create_kudu_on_docker.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/run_spark_shell_locally.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/010_build.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/deploy.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/020_deploy_to_cc_cluster.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/deploy_hive_UDF.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/installArtifact.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/050_installArtifacts_in_local_mvn_repo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/avro/eventts.avsc" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/avro/eventts.avsc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/EventTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/SampleBucketViewer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/SampleBucketViewer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/SampleBucketViewer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/SampleBucketViewer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/hadoop-ts-ng-2.5.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/hadoop-ts-ng-2.5.0.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-archiver/pom.properties" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -110,16 +40,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/avro/eventts.avsc">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/README.md">
-          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-            <state split_layout="SPLIT">
-              <first_editor />
-              <second_editor />
+        <entry file="file://$PROJECT_DIR$/bin/120_run_demo.sh">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -127,82 +51,74 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/.gitignore">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="7" column="9" selection-start-line="7" selection-start-column="9" selection-end-line="7" selection-end-column="9" />
+            <state>
+              <caret column="10" selection-start-column="10" selection-end-column="10" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/TSBASE.java">
+        <entry file="file://$PROJECT_DIR$/bin/110_run_demo_services.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="285">
-              <caret line="23" selection-start-line="23" selection-end-line="23" />
+            <state relative-caret-position="135">
+              <caret line="9" selection-start-line="9" selection-end-line="9" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/TSInspection.java">
+        <entry file="file://$PROJECT_DIR$/bin/010_build.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4830">
-              <caret line="322" column="15" selection-start-line="322" selection-start-column="15" selection-end-line="322" selection-end-column="15" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
+            <state relative-caret-position="120">
+              <caret line="8" column="67" selection-start-line="8" selection-start-column="67" selection-end-line="8" selection-end-column="67" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/EventGenerationExperiment.java">
+        <entry file="file://$PROJECT_DIR$/bin/015_create_kudu_on_docker.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
+            <state relative-caret-position="15">
+              <caret line="1" selection-start-line="1" selection-end-line="1" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/CombineTimeSeriesTriplesFromTSBucket.java">
+        <entry file="file://$PROJECT_DIR$/bin/020_deploy_to_cc_cluster.sh">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/bin/050_installArtifacts_in_local_mvn_repo.sh">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="75">
-              <caret line="5" column="22" selection-start-line="5" selection-start-column="22" selection-end-line="5" selection-end-column="22" />
+              <caret line="5" selection-start-line="5" selection-end-line="5" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pom.xml">
+        <entry file="file://$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
-              <caret line="24" selection-start-line="24" selection-end-line="24" />
+            <state relative-caret-position="30">
+              <caret line="2" selection-start-line="2" selection-end-line="2" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/statistics/GrangerCausality.java">
+        <entry file="file://$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="600">
-              <caret line="40" column="46" selection-start-line="40" selection-start-column="46" selection-end-line="40" selection-end-column="46" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
+            <state>
+              <caret column="9" selection-start-column="9" selection-end-column="9" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/BrainSignalCorrelator.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="24" column="16" selection-start-line="24" selection-start-column="16" selection-end-line="24" selection-end-column="16" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
+        <entry file="file://$PROJECT_DIR$/bin/130_run_demo_in_spark_shell_locally.sh">
+          <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
     </leaf>
@@ -220,7 +136,6 @@
         <option value="$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java" />
         <option value="$PROJECT_DIR$/src/main/java/tsa/dfa/DFAExperiments.java" />
         <option value="$PROJECT_DIR$/bin/build.sh" />
-        <option value="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" />
         <option value="$PROJECT_DIR$/modules/dal/TSCache/pom.xml" />
         <option value="$PROJECT_DIR$/src/main/java/org/ctsa/app/bucketanalyser/MacroRecorder2.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/ctsa/app/experimental/LongTermCorrelationSeries2.java" />
@@ -232,7 +147,25 @@
         <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo_01_OriginProject.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/ModelTesterCortanaDBS.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/cloudera/ds/comnet/Correlator.java" />
+        <option value="$PROJECT_DIR$/src/main/avro/eventts.avsc" />
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTS.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/EventTS.java" />
+        <option value="$PROJECT_DIR$/scripts/installArtifacts_in_local_mvn_repo.sh" />
+        <option value="$PROJECT_DIR$/scripts/build.sh" />
+        <option value="$PROJECT_DIR$/scripts/deploy_hive_UDF.sh" />
+        <option value="$PROJECT_DIR$/scripts/10_run_demo.sh" />
+        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/SampleBucketViewer.java" />
+        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" />
+        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.java" />
+        <option value="$PROJECT_DIR$/bin/010_build.sh" />
+        <option value="$PROJECT_DIR$/bin/100_run_demo.sh" />
+        <option value="$PROJECT_DIR$/bin/110_run_demo_services.sh" />
+        <option value="$PROJECT_DIR$/bin/120_run_demo.sh" />
+        <option value="$PROJECT_DIR$/bin/015_create_kudu_on_docker.sh" />
+        <option value="$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh" />
+        <option value="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" />
+        <option value="$PROJECT_DIR$/bin/run_spark_shell_locally.sh" />
         <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
@@ -256,6 +189,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="PackagesPane" />
       <pane id="ProjectPane" />
       <pane id="Scope">
         <subPane subId="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope">
@@ -267,25 +201,18 @@
             <path>
               <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
               <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="data" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="data" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="in" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+              <item name="bin" type="9f88c78c:ScopeViewTreeModel$FileNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1547758762098" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1547896654605" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
@@ -295,20 +222,21 @@
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/src/main/resources" />
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/bin" />
       <recent name="$PROJECT_DIR$/scripts" />
-      <recent name="$PROJECT_DIR$/modules/stats" />
+      <recent name="$PROJECT_DIR$/src/main/avro" />
+      <recent name="$PROJECT_DIR$/src/main/java/com/cloudera/ds" />
+      <recent name="$PROJECT_DIR$" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.apache.hadoopts.app.experimental" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/src/main/avro" />
-      <recent name="$PROJECT_DIR$/src/main/java/com/cloudera/ds" />
+    <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/bin" />
-      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/src/main/resources" />
       <recent name="$PROJECT_DIR$/scripts" />
+      <recent name="$PROJECT_DIR$/modules/stats" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -323,13 +251,65 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
-    <configuration name="RNGExperiments" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="tsa.rng.RNGExperiments" />
+  <component name="RunManager" selected="Application.MacroRecorder2">
+    <configuration name="BucketAnalyserTool" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool" />
       <module name="hadoop-ts-ng" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="tsa.rng.*" />
+          <option name="PATTERN" value="org.apache.hadoopts.app.bucketanalyser.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Demo1" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.demo.Demo1" />
+      <module name="hadoop-ts-ng" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.apache.hadoopts.app.demo.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MacroRecorder2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.bucketanalyser.MacroRecorder2" />
+      <module name="hadoop-ts-ng" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.apache.hadoopts.app.bucketanalyser.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SampleBucketViewer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.SampleBucketViewer" />
+      <module name="hadoop-ts-ng" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.apache.hadoopts.app.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SimpleBucketTool" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.experimental.SimpleBucketTool" />
+      <module name="hadoop-ts-ng" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.apache.hadoopts.app.experimental.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -339,7 +319,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.RNGExperiments" />
+        <item itemvalue="Application.MacroRecorder2" />
+        <item itemvalue="Application.BucketAnalyserTool" />
+        <item itemvalue="Application.Demo1" />
+        <item itemvalue="Application.SimpleBucketTool" />
+        <item itemvalue="Application.SampleBucketViewer" />
       </list>
     </recent_temporary>
   </component>
@@ -356,7 +340,8 @@
       <workItem from="1547659454167" duration="346000" />
       <workItem from="1547668671652" duration="566000" />
       <workItem from="1547733930186" duration="9499000" />
-      <workItem from="1547758123493" duration="638000" />
+      <workItem from="1547758123493" duration="1255000" />
+      <workItem from="1547892542653" duration="4081000" />
     </task>
     <task id="LOCAL-00001" summary="prepare release">
       <created>1547758265529</created>
@@ -369,13 +354,12 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="11049000" />
+    <option name="totallyTimeSpent" value="15747000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="85" y="69" width="1400" height="921" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.4234168" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.36450663" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -385,18 +369,18 @@
       <window_info id="Learn" order="7" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.3293124" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.3293124" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4992636" visible="true" weight="0.3293124" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50073636" side_tool="true" visible="true" weight="0.3293124" />
       <window_info anchor="bottom" id="Java Enterprise" order="10" />
       <window_info anchor="bottom" id="Database Changes" order="11" />
       <window_info anchor="bottom" id="Version Control" order="12" />
-      <window_info anchor="bottom" id="Messages" order="13" visible="true" weight="0.3293124" />
+      <window_info anchor="bottom" id="Messages" order="13" sideWeight="0.49852726" weight="0.3293124" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -420,141 +404,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="prepare release" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/ws/cache2/TSCacheV3.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="58">
-          <caret line="23" column="17" selection-start-line="23" selection-start-column="17" selection-end-line="23" selection-end-column="17" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/jcurand/samples/JCurandSample.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/ws/cache3/TSCacheV3.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-496">
-          <caret line="23" column="17" selection-start-line="23" selection-start-column="17" selection-end-line="23" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="325">
-          <caret line="105" lean-forward="true" selection-start-line="105" selection-end-line="105" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/tsa/dfa/DFAExperiments.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1245">
-          <caret line="87" column="23" selection-start-line="87" selection-start-column="23" selection-end-line="87" selection-end-column="23" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/build.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="1" column="26" selection-start-line="1" selection-start-column="26" selection-end-line="1" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/create_kudu_on_docker.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="13" column="8" selection-start-line="13" selection-start-column="8" selection-end-line="13" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/run_spark_shell_locally.sh">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/pom.xml" />
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/src/python/extractBagMD.py" />
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/src/python/bucketWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-174" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/src/conf/MANIFEST.MF">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/.gitignore">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/build.xml">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/Dockerfile">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="40" selection-start-column="40" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tsa4tf.iml" />
-    <entry file="file://$PROJECT_DIR$/modules/dal/TSCache/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor />
-          <second_editor />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Hadoop.TS.iml" />
-    <entry file="file://$PROJECT_DIR$/hadoop-ts-ng.iml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="12" column="12" selection-start-line="12" selection-start-column="12" selection-end-line="12" selection-end-column="12" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/bucketanalyser/BucketAnalyserTool.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/bucketanalyser/TSBucketSource.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MyXYPlot.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-911">
-          <caret line="28" column="13" selection-start-line="28" selection-start-column="13" selection-end-line="28" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/bucketanalyser/MacroRecorder2.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/bucketanalyser/MacroRecorder.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/DemoTF.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="19" column="13" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo1.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="65">
-          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/experimental/dataqualitytest/InfluenceOfSinglePeakTester.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/experimental/DFABucketTool.java" />
     <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/app/experimental/EntropieTest.java" />
     <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/LongTermCorrelationSeries2.java">
       <provider selected="true" editor-type-id="text-editor">
@@ -573,16 +422,6 @@
     <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/repos/CollectionAdminTool.java" />
     <entry file="file://$PROJECT_DIR$/src/main/java/org/ctsa/metadata/ExperimentDescriptor.java" />
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/ds/comnet/Correlator.java" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo_01_OriginProject.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="30" column="17" selection-start-line="30" selection-start-column="17" selection-end-line="30" selection-end-column="17" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/ModelTesterCortanaDBS.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3345">
@@ -590,6 +429,14 @@
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
         </state>
       </provider>
     </entry>
@@ -644,28 +491,240 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/tsa/data/ClickCount.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="24" selection-start-line="24" selection-end-line="24" />
+        <state relative-caret-position="75">
+          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/tsa/data/EventTSRecord.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="8" column="13" selection-start-line="8" selection-start-column="13" selection-end-line="8" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/tsa/data/WebResource.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="8" column="13" selection-start-line="8" selection-start-column="13" selection-end-line="8" selection-end-column="13" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/avro/eventts.avsc">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor />
-          <second_editor />
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="12" selection-start-line="4" selection-start-column="12" selection-end-line="4" selection-end-column="12" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="351" column="54" selection-start-line="351" selection-start-column="54" selection-end-line="351" selection-end-column="54" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/ImportClickCountData.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="50">
+          <caret line="31" column="13" selection-start-line="31" selection-start-column="13" selection-end-line="31" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/tsa/data/Event.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTS.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" selection-start-line="11" selection-end-line="11" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#1514#1521#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/EventTS.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
-          <caret line="7" column="9" selection-start-line="7" selection-start-column="9" selection-end-line="7" selection-end-column="9" />
+          <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
+          <folding>
+            <element signature="e#1417#1424#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/deploy_hive_UDF.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" lean-forward="true" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/run_rng_demo.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#36#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/build.sh">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/SampleBucketViewer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="341">
+          <caret line="64" selection-start-line="64" selection-end-line="64" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/Executor.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-52">
+          <caret line="8" column="13" selection-start-line="8" selection-start-column="13" selection-end-line="8" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/NetCat4J.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1165">
+          <caret line="59" column="7" selection-start-line="59" selection-start-column="7" selection-end-line="59" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo1.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="65">
+          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo_01_OriginProject.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="236">
+          <caret line="30" column="17" selection-start-line="30" selection-start-column="17" selection-end-line="30" selection-end-column="17" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSTool.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="13" column="10" selection-start-line="13" selection-start-column="10" selection-end-line="13" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/apache/hadoop/hadoop-common/2.5.1/hadoop-common-2.5.1.jar!/org/apache/hadoop/fs/RawLocalFileSystem.class">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSBucket.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="354">
+          <caret line="259" selection-start-line="259" selection-end-line="259" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGenerator.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="47" column="26" lean-forward="true" selection-start-line="47" selection-start-column="26" selection-end-line="47" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/BucketAnalyserTool.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="168">
+          <caret line="135" selection-start-line="135" selection-end-line="135" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="295">
+          <caret line="197" column="18" selection-start-line="197" selection-start-column="18" selection-end-line="197" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="67" column="27" selection-start-line="67" selection-start-column="13" selection-end-line="67" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/010_build.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="120">
+          <caret line="8" column="67" selection-start-line="8" selection-start-column="67" selection-end-line="8" selection-end-column="67" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/015_create_kudu_on_docker.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" selection-start-line="1" selection-end-line="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/020_deploy_to_cc_cluster.sh">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/050_installArtifacts_in_local_mvn_repo.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" selection-start-line="5" selection-end-line="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/110_run_demo_services.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" selection-start-line="9" selection-end-line="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/120_run_demo.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="30">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="9" selection-start-column="9" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/130_run_demo_in_spark_shell_locally.sh">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="10" selection-start-column="10" selection-end-column="10" />
         </state>
       </provider>
     </entry>

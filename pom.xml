@@ -348,9 +348,22 @@
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>schema</goal>
-                            <goal>protocol</goal>
-                            <goal>idl-protocol</goal>
+                            <!--goal>protocol</goal>
+                            <goal>idl-protocol</goal-->
                         </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+                            <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+                            <testSourceDirectory>${project.basedir}/test/main/avro/</testSourceDirectory>
+                            <testOutputDirectory>${project.basedir}/test/main/java/</testOutputDirectory>
+                            <fieldVisibility>PRIVATE</fieldVisibility>
+                            <includes>
+                                <include>**/*.avsc</include>
+                            </includes>
+                            <testIncludes>
+                                <testInclude>**/*.test</testInclude>
+                            </testIncludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -5,8 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 
-import com.cloudera.tsa.data.Event;
-import com.cloudera.tsa.data.EventTSRecord;
+import com.cloudera.tsa.data.*;
 
 public class EventTS extends AbstractTS {
 	
