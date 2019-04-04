@@ -100,7 +100,7 @@ public class RNGExperiments
             // we need a classloader to load the class lazy, since it is implemented in
             // a different package.
 
-            RNGModuleCUDA rng1 = null;
+            // RNGModuleCUDA rng1 = null;
 
 /*
 

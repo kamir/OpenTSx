@@ -51,21 +51,40 @@ public class MultiChart extends javax.swing.JDialog {
     public static boolean setDefaultRange = false;
     
     // AXIS FORMAT
-    public static DecimalFormat df1 = new DecimalFormat("0");
-    public static DecimalFormat df2 = new DecimalFormat("0");
-    
+    public static DecimalFormat df1 = new DecimalFormat("0.0");
+    public static DecimalFormat df2 = new DecimalFormat("0.0");
+
+
     public static void setSmallFont() {
-    // LABEL
-    fontL = new Font("Dialog", Font.PLAIN, 12);
-    
-    // Tick-Label
-    fontTL = new Font("Dialog", Font.PLAIN, 9);
+        // LABEL
+        fontL = new Font("Dialog", Font.PLAIN, 12);
+
+        // Tick-Label
+        fontTL = new Font("Dialog", Font.PLAIN, 9);
+
         // AXIS FORMAT
-  df1 = new DecimalFormat("0.0");
- df2 = new DecimalFormat("0.0");
+
+        df1 = new DecimalFormat("0.0");
+
+        df2 = new DecimalFormat("0.0");
         
     }
-    
+
+    public static void setLargeFont() {
+        // LABEL
+        fontL = new Font("Dialog", Font.PLAIN, 24);
+
+        // Tick-Label
+        fontTL = new Font("Dialog", Font.PLAIN, 18);
+
+        // AXIS FORMAT
+
+        df1 = new DecimalFormat("0.0");
+
+        df2 = new DecimalFormat("0.0");
+
+    }
+
     // LABEL
     public static Font fontL = new Font("Dialog", Font.PLAIN, 28);
     
@@ -101,7 +120,12 @@ public class MultiChart extends javax.swing.JDialog {
     public static double yRangDEFAULT_MAX = 6000.0;
     public static double yRangDEFAULT_MIN = 0.0;
 
+    public void setTitle( String title ) {
+        chartTitle = title;
+    }
+
     public String chartTitle = "untitled";
+
     public String xLabel = "x";
     public String yLabel = "y";
     

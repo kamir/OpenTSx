@@ -43,7 +43,7 @@ import org.apache.commons.cli.PosixParser;
  * 
  * @author kamir
  */
-public class NetCat4J extends Generator {
+public class NetCat4JDataStreamRecorder extends Generator {
     
     public String toString() {
         return "mode: " + mode;
@@ -60,13 +60,13 @@ public class NetCat4J extends Generator {
      * 
      * @param port 
      */
-    public NetCat4J(int port) {
+    public NetCat4JDataStreamRecorder(int port) {
         String[] a = {"-p", ""+port};
     }
 
-    static public NetCat4J getNCGServer(int port) {
+    static public NetCat4JDataStreamRecorder getNCGServer(int port) {
         String[] a = {"-l", ""+port };
-        NetCat4J n = new NetCat4J(port);
+        NetCat4JDataStreamRecorder n = new NetCat4JDataStreamRecorder(port);
         n.a = a;
         n.mode = "server";
         return n;
@@ -79,10 +79,10 @@ public class NetCat4J extends Generator {
      * @param port
      * @return 
      */
-    static public NetCat4J getNCGClient(int port) {
+    static public NetCat4JDataStreamRecorder getNCGClient(int port) {
         
         String[] a = {"-p", ""+port, "127.0.0.1" };
-        NetCat4J n = new NetCat4J(port);
+        NetCat4JDataStreamRecorder n = new NetCat4JDataStreamRecorder(port);
         
         n.a = a;
         n.mode = "client";
@@ -120,9 +120,9 @@ public class NetCat4J extends Generator {
                 }
             }
         } catch (ParseException ex) {
-            Logger.getLogger(NetCat4J.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NetCat4JDataStreamRecorder.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
-            Logger.getLogger(NetCat4J.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NetCat4JDataStreamRecorder.class.getName()).log(Level.SEVERE, null, ex);
         }
         
     
@@ -139,7 +139,7 @@ public class NetCat4J extends Generator {
            */  
             
           // to test this we need to run "nc -l 1234" on the local machine   
-          NetCat4J ncgC = NetCat4J.getNCGClient(1234);
+          NetCat4JDataStreamRecorder ncgC = NetCat4JDataStreamRecorder.getNCGClient(1234);
           ncgC.run();
           // all things entered in the nc tool will be printed by the ncgC tool.
           

@@ -5,6 +5,7 @@
  */
 package org.apache.hadoopts.app.bucketanalyser;
 
+import metadata.TSStoreDescriptor;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.hadoopts.app.thesis.EntropieTest;
@@ -179,7 +180,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         jPanel2.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 1, 1));
 
         jTextField3.setColumns(45);
-        jTextField3.setText("/GITHUB/dissertation/main/FINAL/LATEX/semanpix/");
+        jTextField3.setText( TSStoreDescriptor.getPathFor_TSCharts() );
         jTextField3.setMinimumSize(new java.awt.Dimension(40, 28));
         jTextField3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

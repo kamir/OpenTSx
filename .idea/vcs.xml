@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bin/temp/kudu-docker-all-in-one" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bin/temp/docker-opentsdb" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bin/temp/opentsdb-docker" vcs="Git" />
   </component>
 </project>

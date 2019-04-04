@@ -5,12 +5,19 @@ package tsa.rng;
  */
 abstract public class RNGModule {
 
-    float[] hostData = null;
+    public float[] hostData = null;
 
     public float[] getRandomSeries() {
         return hostData;
     }
 
+    /**
+     * Defines the size of the time series which have to be created.
+     *
+     * This array will contain the random numbers.
+     *
+     * @param n
+     */
     public void init(int n) {
         // Allocate n floats on host
         hostData = new float[n];

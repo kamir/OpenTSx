@@ -91,7 +91,6 @@ public class MacroRecorder2 {
 
         components = TSGeneratorFINAL.getSampleA();
 
-
         MacroTrackerFrame.init(label_of_TRACK);
         MacroTrackerFrame.addTransformation( 
                 TSBucketTransformation.getTransformation("Collection", "Components", loadOp));

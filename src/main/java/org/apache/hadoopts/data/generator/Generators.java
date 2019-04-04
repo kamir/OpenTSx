@@ -3,7 +3,7 @@
  */
 package org.apache.hadoopts.data.generator;
 
-import org.apache.hadoopts.app.utils.NetCat4J;
+import org.apache.hadoopts.app.utils.NetCat4JDataStreamRecorder;
 
 /**
  *
@@ -12,7 +12,7 @@ import org.apache.hadoopts.app.utils.NetCat4J;
 public class Generators {
 
     static Generator getNetCatGenerator(int port) {
-        NetCat4J ncg = new NetCat4J( port );
+        NetCat4JDataStreamRecorder ncg = new NetCat4JDataStreamRecorder( port );
         return ncg;
     }
     

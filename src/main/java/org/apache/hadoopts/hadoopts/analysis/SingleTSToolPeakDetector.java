@@ -29,6 +29,7 @@ public class SingleTSToolPeakDetector extends SingleRowTSO {
         peaks.add_to_Y( -24.0 );
            
         int[] tss = { 2, 4, 6, 8, 10 };
+
         line = line.concat( "{Peaks:\t"  );
         for( int ts : tss ) {
             Vector<Integer> p = MRT.getPeaksDaysOverTS( ts , peaks );

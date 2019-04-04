@@ -213,11 +213,11 @@
             <version>2.1.0</version>
         </dependency>
 
-        <dependency>
+        <!--dependency>
             <groupId>com.cloudera.api</groupId>
             <artifactId>cloudera-manager-api</artifactId>
             <version>5.11.0</version>
-        </dependency>
+        </dependency-->
 
         <!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
         <dependency>

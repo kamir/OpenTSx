@@ -438,19 +438,27 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
      */
     @Override
     public String toString() {
+
         StringBuffer sb = new StringBuffer();
 
         int size = xValues.size();
 
-        sb.append("#\n# M e s s r e i h e \n# Klasse : " + this.getClass() + " \n# Label  : " + this.label + "\n#\n# Anzahl Wertepaare = " + size + "\n#\n");
+        sb.append("#\n# TimeSeriesObject \n# Class : " + this.getClass() + " \n# Label  : " + this.label + "\n# Nr of data points => " + size );
         sb.append("#\n#" + this.addinfo + "\n#");
+        sb.append("#\n" + status.toString() );
         sb.append( getStatisticData("# ") +"\n" );
-        for (int i = 0 ; i < size; i++  ) {
+
+        int MAX = 5;
+
+        for (int i = 0 ; i < MAX; i++  ) {
+
             double x = (Double)getXValues().elementAt(i);
             double y = (Double)getYValues().elementAt(i);
 
             sb.append(  decimalFormat_X.format(x) + " " + decimalFormat_Y.format(y) + "\n");
+
         }
+        sb.append( " ... ");
         sb.append("#\n" + sbComments.toString() );
         return sb.toString();
     };
@@ -519,7 +527,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
     };
 
-    double av = 1.0;
+    double av = 0.0;
+    double sum = 0.0;
 
     /**
      * Wird an dieser Stelle nich neu berechnet - enthält also die
@@ -612,7 +621,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         sb.append(pre+"Max    \t max_X=" + decimalFormat_STAT.format(NumberUtils.max( dx ) ) + "\n" );
         sb.append(pre+"Min    \t min_X=" + decimalFormat_STAT.format(NumberUtils.min( dx ) ) + "\n" );
         sb.append(pre+"Mean   \t avg_X=" + decimalFormat_STAT.format(StatUtils.mean( dx ) ) + "\n" );
-        sb.append(pre+"StdDev \t std_X=" + decimalFormat_STAT.format(stdev.evaluate( dx ) + "\n" ) );
+        sb.append(pre+"StdDev \t std_X=" + decimalFormat_STAT.format(stdev.evaluate( dx ) ) + "\n" );
         sb.append(pre+"Var    \t var_X=" + decimalFormat_STAT.format(StatUtils.variance( dx ) ) + "\n" );
         sb.append(pre+"Sum    \t sum_X=" + decimalFormat_STAT.format(StatUtils.sum( dx ) ) + "\n" ) ;
         sb.append(pre+"Len    \t len_X=" +  dx.length + "\n" );
@@ -625,13 +634,13 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         sb.append(pre+"Max    \t max_Y=" + decimalFormat_STAT.format(NumberUtils.max( dy ) )  + "\n" );
         sb.append(pre+"Min    \t min_Y=" + decimalFormat_STAT.format(NumberUtils.min( dy ) )  + "\n" );
         sb.append(pre+"Mean   \t mw__Y=" + decimalFormat_STAT.format(StatUtils.mean( dy ) )  + "\n" );
-        sb.append(pre+"StdDev \t std_Y=" + decimalFormat_STAT.format(stdev.evaluate( dy ) + "\n" ) );
+        sb.append(pre+"StdDev \t std_Y=" + decimalFormat_STAT.format(stdev.evaluate( dy ) ) + "\n" );
         sb.append(pre+"Var    \t var_Y=" + decimalFormat_STAT.format(StatUtils.variance( dy ) )+ "\n" );
         sb.append(pre+"Sum    \t sum_Y=" + decimalFormat_STAT.format(StatUtils.sum( dy ) ) + "\n" );
         sb.append(pre+"Len    \t nr__Y=" + dy.length + "\n#" );
         }
         catch(Exception ex) {
-            sb.append(( pre + "!!! NO STATISTICS for time series !!! -> \n " + ex.getMessage() ));
+            sb.append(( pre + "!!! NO STATISTICS for time series !!! -> " + ex.getMessage() ));
         }
 
         return sb.toString();
@@ -1700,7 +1709,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     public void show() {
-        
+
 
 
         
@@ -2570,7 +2579,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
      * Für das Schreiber Schmitz-Verfahren muss ich hier die Werte dem Rang 
      * nach überschreiben.
      * 
-     * @param r2
+     * @param refSeries
      * @return 
      */
     public TimeSeriesObject exchangeRankWise(TimeSeriesObject refSeries) {

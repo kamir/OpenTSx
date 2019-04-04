@@ -17,7 +17,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * Created by kamir on 20.11.18.
  */
-public class DemoTF {
+public class DemoTensorFlow {
 
     public static void main(String[] ARGS) throws UnsupportedEncodingException {
 
@@ -34,8 +34,9 @@ public class DemoTF {
             // Execute the "MyConst" operation in a Session.
             try (Session s = new Session(g);
                  Tensor output = s.runner().fetch("MyConst").run().get(0)) {
-                System.out.println(new String(output.bytesValue(), "UTF-8"));
+                 System.out.println(new String(output.bytesValue(), "UTF-8"));
             }
+
         }
 
         System.out.println("Done.");
