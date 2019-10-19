@@ -1,6 +1,6 @@
 # data
 
-This folder contains data used by the demo programs of Hadoop.TS.NG.
+This folder contains data used by the demo programs of OpenTSx.
 
 ##Example:
 

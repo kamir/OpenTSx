@@ -1,5 +1,5 @@
 import jcurand.samples.JCurandSample
-import tsa.rng.RNGExperiments
+import org.opentsx.tsa.rng.RNGExperiments
 val args = Array("5")
 JCurandSample.main( args )
 

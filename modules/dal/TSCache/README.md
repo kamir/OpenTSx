@@ -13,7 +13,7 @@ We simply start with a tool which allows us to create time series buckets. A tim
 
 The purpose of the TSB is to save time. In cases, where some time series data is needed more often, we have to find an efficient way of representing the data. But flexibility in terms of combining multiple of such buckets in a meaningful and consistent way has to be manintained as well.
 
-Managing the time series metadata and transformation of time series data in multiple formats from multiple source systems into each other is the focus of this software library.
+Managing the time series org.opentsx.tsbucket.metadata and transformation of time series data in multiple formats from multiple source systems into each other is the focus of this software library.
 
 Features
 ========

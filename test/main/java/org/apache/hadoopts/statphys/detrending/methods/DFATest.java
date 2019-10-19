@@ -3,9 +3,9 @@
  * and open the template in the editor.
  */
 
-package org.apache.hadoopts.statphys.detrending.methods;
+package org.opentsx.algorithms.detrending.methods;
 
-import org.apache.hadoopts.statphys.detrending.methods.DFA;
+import org.opentsx.algorithms.detrending.methods.DFA;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

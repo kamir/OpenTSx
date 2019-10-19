@@ -1,5 +1,5 @@
-import connectors.opentsdb.OpenTSDBConnector
-import org.apache.hadoopts.data.series.{Messreihe, TimeSeriesObject}
+import org.opentsx.connectors.opentsdb.OpenTSDBConnector
+import org.opentsx.data.series.{Messreihe, TimeSeriesObject}
 import sun.security.util.SignatureFileVerifier
 
 val data = Array(1, 2, 3, 4, 5)
@@ -39,7 +39,7 @@ val mr1 = TimeSeriesObject.getGaussianDistribution( 10000, 10, 1)
 #
 #
 #scala> OpenTSDBConnector.storeMessreiheAsStream( mr30 , connector, System.currentTimeMillis )
-#java.lang.IllegalAccessError: tried to access method connectors.opentsdb.OpenTSDBConnector.storeMessreiheAsStream(Lorg/apache/hadoopts/data/series/TimeSeriesObject;Lconnectors/opentsdb/OpenTSDBConnector;J)V from class $iw
+#java.lang.IllegalAccessError: tried to access method org.opentsx.connectors.opentsdb.OpenTSDBConnector.storeMessreiheAsStream(Lorg/apache/hadoopts/data/series/TimeSeriesObject;Lconnectors/opentsdb/OpenTSDBConnector;J)V from class $iw
 #... 48 elided
 #
 #

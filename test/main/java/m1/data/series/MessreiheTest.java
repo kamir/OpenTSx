@@ -1,6 +1,6 @@
 package m1.data.series;
 
-import org.apache.hadoopts.data.series.TimeSeriesObject;
+import org.opentsx.data.series.TimeSeriesObject;
 
 import java.io.File;
 import java.text.DecimalFormat;

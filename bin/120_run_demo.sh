@@ -9,4 +9,4 @@ export JAVA_HOME=/Volumes/Macintosh\ HD/Library/Java/JavaVirtualMachines/jdk1.8.
 echo $JAVA_HOME
 
 cd ..
-mvn exec:java -Dexec.mainClass="org.apache.hadoopts.app.bucketanalyser.MacroRecorder2"
+mvn exec:java -Dexec.mainClass="org.opentsx.app.bucketanalyser.MacroRecorder2"

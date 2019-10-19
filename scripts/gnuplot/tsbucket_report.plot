@@ -1,14 +1,14 @@
 TIME_STAMP="20_1501326857966"
 
-OUTPUT_FILE="/GITHUB/cuda-tsa/out/tsbucket_report"
+OUTPUT_FILE="/GITHUB/cuda-org.opentsx.tsa/out/tsbucket_report"
 
 INPUT_FOLDER="out/rng_report_".TIME_STAMP
 INPUT_FOLDER_LABEL="out/rng-report-".TIME_STAMP
 
 
-#OUTPUT_FILE="/GITHUB/cuda-tsa/".INPUT_FOLDER."/out/rng_report_".TIME_STAMP
+#OUTPUT_FILE="/GITHUB/cuda-org.opentsx.tsa/".INPUT_FOLDER."/out/rng_report_".TIME_STAMP
 
-DATA_FILE="/GITHUB/cuda-tsa/".INPUT_FOLDER."/tab_rng.dat"
+DATA_FILE="/GITHUB/cuda-org.opentsx.tsa/".INPUT_FOLDER."/tab_rng.dat"
 
 print OUTPUT_FILE
 

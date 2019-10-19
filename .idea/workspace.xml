@@ -1,153 +1,679 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="11342547-5ca6-40e3-8934-219215b28f7e" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/bin/015_create_opentsdb_on_docker.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/metadata/TSStoreDescriptor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder3.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cassandra/CassandraConnector.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cassandra/CassandraTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGExperiments2.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGExperiments3.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSBucketStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSOReader.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSOWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__antlr_antlr_2_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__aopalliance_aopalliance_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__asm_asm_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__asm_asm_commons_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__asm_asm_tree_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__bouncycastle_bcmail_jdk14_138.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__bouncycastle_bcprov_jdk14_138.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__ch_qos_logback_logback_classic_1_0_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__ch_qos_logback_logback_core_1_0_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_clearspring_analytics_stream_2_7_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_cloudera_api_cloudera_manager_api_5_11_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_codahale_metrics_metrics_core_3_0_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_codahale_metrics_metrics_json_3_0_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_codahale_metrics_metrics_jvm_3_0_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_esotericsoftware_kryo_kryo_2_21_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_esotericsoftware_kryo_shaded_3_0_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_esotericsoftware_minlog_1_3_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_esotericsoftware_minlog_minlog_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_esotericsoftware_reflectasm_reflectasm_shaded_1_07.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_core_jackson_annotations_2_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_core_jackson_core_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_core_jackson_databind_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_jaxrs_jackson_jaxrs_json_provider_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_module_jackson_module_jaxb_annotations_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_module_jackson_module_paranamer_2_6_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_module_jackson_module_scala_2_10_2_6_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_haifengl_smile_core_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_haifengl_smile_data_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_haifengl_smile_graph_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_haifengl_smile_math_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_jrachiele_math_0_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_jrachiele_timeseries_0_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_stephenc_findbugs_findbugs_annotations_1_3_9_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_wendykierp_JTransforms_with_dependencies_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_code_findbugs_jsr305_1_3_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_code_gson_gson_2_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_guava_guava_11_0_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_gwt_gwt_user_2_6_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_inject_extensions_guice_servlet_3_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_inject_guice_3_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_protobuf_protobuf_java_2_5_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_googlecode_json_simple_json_simple_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_jayway_jsonpath_json_path_2_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_jcraft_jsch_0_1_42.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_jolbox_bonecp_0_8_0_RELEASE.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_lowagie_itext_2_1_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_ning_compress_lzf_1_0_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_stumbleupon_async_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_jersey_contribs_jersey_guice_1_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_jersey_jersey_client_1_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_jersey_jersey_core_1_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_jersey_jersey_json_1_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_jersey_jersey_server_1_14.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_jersey_jersey_servlet_1_14.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_xml_bind_jaxb_impl_2_1_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_thoughtworks_paranamer_paranamer_2_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_thoughtworks_xstream_xstream_1_2_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_twitter_chill_2_10_0_8_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_twitter_chill_java_0_8_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_twitter_parquet_hadoop_bundle_1_5_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_yahoofinance_api_YahooFinanceAPI_3_9_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__com_yammer_metrics_metrics_core_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_beanutils_commons_beanutils_1_7_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_beanutils_commons_beanutils_core_1_8_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_cli_commons_cli_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_codec_commons_codec_1_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_collections_commons_collections_3_2_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_configuration_commons_configuration_1_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_dbcp_commons_dbcp_1_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_digester_commons_digester_1_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_el_commons_el_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_httpclient_commons_httpclient_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_io_commons_io_2_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_lang_commons_lang_2_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_logging_commons_logging_1_1_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_net_commons_net_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__commons_pool_commons_pool_1_5_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__de_erichseifert_vectorgraphics2d_VectorGraphics2D_0_11.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__eigenbase_eigenbase_properties_1_1_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__hsqldb_hsqldb_1_8_0_10.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__infodynamics_corelib_1_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__io_dropwizard_metrics_metrics_core_3_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__io_dropwizard_metrics_metrics_graphite_3_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__io_dropwizard_metrics_metrics_json_3_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__io_dropwizard_metrics_metrics_jvm_3_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_3_9_4_Final.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_all_4_0_42_Final.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__it_unimi_dsi_fastutil_6_5_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_activation_activation_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_annotation_javax_annotation_api_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_inject_javax_inject_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_jdo_jdo_api_3_0_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_mail_mail_1_4_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_servlet_javax_servlet_api_3_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_servlet_jsp_jsp_api_2_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_servlet_servlet_api_2_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_transaction_jta_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_validation_validation_api_1_0_0_GA.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_validation_validation_api_sources_1_0_0_GA.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_ws_rs_javax_ws_rs_api_2_0_m10.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_xml_bind_jaxb_api_2_2_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__javax_xml_stream_stax_api_1_0_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__jline_jline_2_12.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__joda_time_joda_time_2_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__junit_junit_4_12.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__log4j_apache_log4j_extras_1_2_17.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__log4j_log4j_1_2_17.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_java_dev_jets3t_jets3t_0_6_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_jpountz_lz4_lz4_1_3_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_minidev_accessors_smart_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_minidev_json_smart_2_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_opentsdb_opentsdb_2_4_0RC1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_opentsdb_opentsdb_gwt_theme_1_0_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_razorvine_pyrolite_4_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_sf_opencsv_opencsv_2_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__net_sf_py4j_py4j_0_10_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_antlr_ST4_4_0_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_antlr_antlr_runtime_3_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_antlr_stringtemplate_3_2_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_ant_ant_1_9_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_ant_ant_launcher_1_9_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_avro_avro_1_8_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_avro_avro_ipc_1_7_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_avro_avro_ipc_tests_1_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_avro_avro_mapred_hadoop2_1_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_calcite_calcite_avatica_1_0_0_incubating.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_calcite_calcite_core_1_0_0_incubating.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_calcite_calcite_linq4j_1_0_0_incubating.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_compress_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_crypto_1_0_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_csv_1_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_jexl_2_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_lang3_3_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_math3_3_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_crunch_crunch_core_0_15_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_curator_curator_client_2_6_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_curator_curator_framework_2_6_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_curator_curator_recipes_2_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_cxf_cxf_api_2_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_cxf_cxf_rt_bindings_xml_2_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_cxf_cxf_rt_core_2_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_cxf_cxf_rt_frontend_jaxrs_2_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_cxf_cxf_rt_transports_http_2_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_derby_derby_10_11_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_directory_api_api_asn1_api_1_0_0_M20.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_directory_api_api_util_1_0_0_M20.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_directory_server_apacheds_i18n_2_0_0_M15.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_directory_server_apacheds_kerberos_codec_2_0_0_M15.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_flume_flume_ng_auth_1_7_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_flume_flume_ng_configuration_1_7_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_flume_flume_ng_core_1_7_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_flume_flume_ng_sdk_1_7_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_geronimo_specs_geronimo_annotation_1_0_spec_1_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_geronimo_specs_geronimo_jaspic_1_0_spec_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_geronimo_specs_geronimo_javamail_1_4_spec_1_7_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_geronimo_specs_geronimo_jta_1_1_spec_1_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_annotations_2_6_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_auth_2_5_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_client_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_common_2_5_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_core_2_6_0_mr1_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_hdfs_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_mapreduce_client_app_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_mapreduce_client_common_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_mapreduce_client_core_2_5_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_mapreduce_client_jobclient_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_mapreduce_client_shuffle_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_api_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_client_2_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_common_2_5_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_server_applicationhistoryservice_2_6_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_server_common_2_6_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_server_resourcemanager_2_6_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hadoop_hadoop_yarn_server_web_proxy_2_6_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hbase_hbase_annotations_1_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hbase_hbase_client_1_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hbase_hbase_common_1_2_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hbase_hbase_protocol_1_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_hive_ant_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_hive_common_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_hive_exec_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_hive_metastore_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_hive_serde_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_hive_shims_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_shims_hive_shims_0_23_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_shims_hive_shims_common_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_hive_shims_hive_shims_scheduler_1_1_0_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_htrace_htrace_core_3_1_0_incubating.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_httpcomponents_httpclient_4_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_httpcomponents_httpcore_4_4_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_ivy_ivy_2_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_kudu_interface_annotations_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_kudu_kudu_client_1_4_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_lucene_lucene_analyzers_common_4_6_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_lucene_lucene_core_4_6_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_mahout_commons_commons_cli_2_0_mahout.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_mahout_mahout_core_0_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_mahout_mahout_math_0_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_mina_mina_core_2_0_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_avro_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_column_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_common_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_encoding_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_format_2_3_0_incubating.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_hadoop_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_parquet_parquet_jackson_1_8_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_poi_poi_3_14.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_solr_solr_commons_csv_3_5_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_core_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_launcher_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_network_common_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_network_shuffle_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_streaming_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_tags_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_spark_spark_unsafe_2_10_2_1_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_sshd_sshd_core_0_8_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_sshd_sshd_sftp_0_11_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_thrift_libfb303_0_9_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_thrift_libthrift_0_9_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_velocity_velocity_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_ws_xmlschema_xmlschema_core_2_0_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xbean_xbean_asm5_shaded_4_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_awt_util_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_css_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_dom_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_ext_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_svggen_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_util_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_xmlgraphics_batik_xml_1_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_zookeeper_zookeeper_3_4_5_cdh5_11_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_bouncycastle_bcpg_jdk15on_1_57.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_bouncycastle_bcpkix_jdk15on_1_57.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_bouncycastle_bcprov_jdk15on_1_57.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_cloudera_logredactor_logredactor_1_0_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_groovy_groovy_all_2_4_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_jackson_jackson_core_asl_1_9_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_jackson_jackson_jaxrs_1_8_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_jackson_jackson_mapper_asl_1_9_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_jackson_jackson_xc_1_8_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_janino_commons_compiler_2_7_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_janino_janino_2_7_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_jettison_jettison_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_woodstox_stax2_api_3_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_codehaus_woodstox_woodstox_core_asl_4_2_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_datanucleus_datanucleus_api_jdo_3_2_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_datanucleus_datanucleus_core_3_2_10.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_datanucleus_datanucleus_rdbms_3_2_9.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_eclipse_jdt_core_3_1_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_eclipse_jetty_aggregate_jetty_all_7_6_0_v20120127.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ejml_all_0_30.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ejml_core_0_30.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ejml_dense64_0_30.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ejml_denseC64_0_30.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ejml_equation_0_30.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ejml_simple_0_30.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_fusesource_leveldbjni_leveldbjni_all_1_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_hk2_external_aopalliance_repackaged_2_4_0_b34.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_hk2_external_javax_inject_2_4_0_b34.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_hk2_hk2_api_2_4_0_b34.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_hk2_hk2_locator_2_4_0_b34.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_hk2_hk2_utils_2_4_0_b34.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_hk2_osgi_resource_locator_1_0_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_bundles_repackaged_jersey_guava_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_containers_jersey_container_servlet_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_containers_jersey_container_servlet_core_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_core_jersey_client_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_core_jersey_common_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_core_jersey_server_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_glassfish_jersey_media_jersey_media_jaxb_2_22_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_hamcrest_hamcrest_core_1_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_hbase_asynchbase_1_8_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_javassist_javassist_3_16_1_GA.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_jboss_netty_netty_3_2_2_Final.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_jfree_jcommon_1_0_17.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_jfree_jfreechart_1_0_14.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_jgrapht_jgrapht_core_0_9_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_jruby_jcodings_jcodings_1_0_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_jruby_joni_joni_2_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_json4s_json4s_ast_2_10_3_2_11.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_json4s_json4s_core_2_10_3_2_11.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_json4s_json4s_jackson_2_10_3_2_11.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_json_json_20090211.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_knowm_xchart_xchart_3_2_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_mockito_mockito_all_1_9_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_mortbay_jetty_jetty_6_1_26.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_mortbay_jetty_jetty_util_6_1_26.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_mortbay_jetty_servlet_api_2_5_20110124.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_objenesis_objenesis_1_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_ow2_asm_asm_5_0_4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_pentaho_pentaho_aggdesigner_algorithm_5_1_5_jhyde.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_roaringbitmap_RoaringBitmap_0_5_11.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scala_lang_scala_compiler_2_10_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scala_lang_scala_library_2_10_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scala_lang_scala_reflect_2_10_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scala_lang_scalap_2_10_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_scalatest_scalatest_2_10_2_2_6.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_jcl_over_slf4j_1_7_16.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_jul_to_slf4j_1_7_16.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_log4j_over_slf4j_1_7_7.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_api_1_6_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_jdk14_1_7_25.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_log4j12_1_6_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_simple_1_7_12.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_spark_project_spark_unused_1_0_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_tensorflow_libtensorflow_1_12_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_tensorflow_libtensorflow_jni_1_12_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_tensorflow_libtensorflow_jni_gpu_1_12_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_tensorflow_tensorflow_1_12_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_tukaani_xz_1_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_xerial_snappy_snappy_java_1_1_1_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__oro_oro_2_0_8.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__pl_edu_icm_JLargeArrays_1_5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__stax_stax_api_1_0_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__tomcat_jasper_compiler_5_5_23.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__tomcat_jasper_runtime_5_5_23.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__tomcat_tomcat_apr_5_5_23.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__wsdl4j_wsdl4j_1_6_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__xalan_xalan_2_6_0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__xml_apis_xml_apis_1_3_04.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__xml_apis_xml_apis_ext_1_3_04.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__xmlenc_xmlenc_0_52.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__xpp3_xpp3_min_1_1_3_4_O.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bin/010_build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/010_build.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bin/110_run_demo_services.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/110_run_demo_services.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/120_run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/bin/120_run_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/dal/TSCache/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/modules/dal/TSCache/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/DemoTF.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/DemoTensorFlow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/NetCat4JDataStreamRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/NetCat4JDataStreamRecorder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generators.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generators.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/TimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/TimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/dfa/DFAModuleCUDA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModule.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModule.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModuleCUDA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/NetCat4J.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$10.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$2.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$3.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$4.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$5.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$6.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$7.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$8$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$8$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$8.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$9$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$9$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$9.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/generator/Generators.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/generator/Generators.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/TimeSeriesObject.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/TimeSeriesObject.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/tsa/dfa/DFAModuleCUDA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGExperiments.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/tsa/rng/RNGExperiments.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModule.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModule.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModuleCUDA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/hadoop-ts-ng-2.5.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/hadoop-ts-ng-2.5.0.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-archiver/pom.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/gnuplot/tsbucket_report.plot" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/gnuplot/tsbucket_report.plot" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/gnuplot/tsbucket_simple.plot" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/gnuplot/tsbucket_simple.plot" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/run_opentsdb_streaming_demo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/run_opentsdb_streaming_demo.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/run_rng_demo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/run_rng_demo.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/avro/eventts.avsc" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/avro/eventts.avsc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/DemoTensorFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/DemoTensorFlow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/META-INF/MANIFEST.MF" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/CrunchTSApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/CrunchTSApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/data/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/data/TSData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/AbstractTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/AbstractTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/ContEquidistTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/ContEquidistTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/EventTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/PropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/PropertiesVector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/ptypes/EventTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTSWritable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/ptypes/EventTSWritable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/CalcTSBProfile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CalcTSBProfile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/CombineTimeSeriesPairsAndTriplesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsAndTriplesFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/CombineTimeSeriesPairsFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/CombineTimeSeriesTriplesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesTriplesFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/ConvertTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/ConvertTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/ExtractEventTimeSeriesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/ExtractEventTimeSeriesFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/simple/SimpleClickCountFn.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/SimpleClickCountFn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/statistics/EntropyTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/EntropyTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/statistics/GrangerCausality.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/GrangerCausality.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/BrainSignalCorrelator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/brainwave/BrainSignalCorrelator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/ModelTesterCortanaDBS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/brainwave/ModelTesterCortanaDBS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/annotatedvectors/IPropHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/IPropHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/annotatedvectors/PropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/PropertiesVector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/annotatedvectors/StringPropHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/StringPropHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/annotatedvectors/TestPropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/TestPropertiesVector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/math/FunctionFitTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/math/FunctionFitTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/math/PolyFit.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/math/PolyFit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/tsa/data/Event.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/model/Event.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudera/tsa/data/EventTSRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/model/EventTSRecord.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/cmtsq/ClouderaManagerTSQClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cmtsq/ClouderaManagerTSQClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/cmtsq/TSDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cmtsq/TSDashboard.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/cmtsq/TSQ.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cmtsq/TSQ.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/flume/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/flume/Constants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/flume/MessagePreprocessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/flume/MessagePreprocessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/flume/OpenTSDBSink.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/flume/OpenTSDBSink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBBackdoor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBBackdoor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBConnector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBContainerStarter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBContainerStarter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBEvent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBResponseTransformer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBResponseTransformer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBSeries.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/opentsdb/OpenTSDBWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/yahoofin/StockBucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockBucketLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/yahoofin/StockBucketRetriever.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockBucketRetriever.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/yahoofin/StockDataLoader_Demo1.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/connectors/yahoofin/StockDataLoader_Demo2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dsp/DSProjectHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/dsp/DSProjectHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/hive/PersistTimeSeriesUDF.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/udf/hive/PersistTimeSeriesUDF.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/hive/UDFTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/udf/hive/UDFTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/metadata/ExperimentDescriptor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/ExperimentDescriptor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/metadata/TSStoreDescriptor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/TSStoreDescriptor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/numericalrecipies/NRC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/numericalrecipies/NRC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/numericalrecipies/distributions/KSTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/numericalrecipies/distributions/KSTestData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTestData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsARIMATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsARIMATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsDFATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsIntervallCutDetrendetTool2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsIntervallCutDetrendetTool2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsIntervallCutTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsIntervallCutTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsMFDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsMFDFATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsPeakEntropyTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsPeakEntropyTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsPeakFilterTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsPeakFilterTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsRISTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsRISTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/SingleTsTrendCalculatorTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsTrendCalculatorTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/TSCutTool4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/TSCutTool4Buckets.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/TSCutToolDetrendet4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/TSCutToolDetrendet4Buckets.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/algorithms/univariate/TSGlobalTrendTool4Buckets2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/TSGlobalTrendTool4Buckets2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/analysistools/FluctuationFunktion.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/FluctuationFunktion.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/analysistools/HZDouble.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/HZDouble.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/analysistools/HurstSurface.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/HurstSurface.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/analysistools/LogBinningTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/LogBinningTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/analysistools/MultiSeriesSurface.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/MultiSeriesSurface.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/analysistools/utils/FitbereichLogScale.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/utils/FitbereichLogScale.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/SampleBucketViewer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/SampleBucketViewer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/agentbasedsimulation/analyser/SimResultLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/agentbasedsimulation/analyser/SimResultLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/agentbasedsimulation/analyser/TestResultAvailability.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/agentbasedsimulation/analyser/TestResultAvailability.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/BucketAnalyserTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/BucketAnalyserTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/ICorrelator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/ICorrelator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRunner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRunner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroTrackerFrame.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroTrackerFrame.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroTrackerFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroTrackerFrame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSBucketSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSBucketSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSBucketTransformation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSBucketTransformation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/dataseries/MessreiheTestApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/MessreiheTestApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo1.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/Demo1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo_01_OriginProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/Demo_01_OriginProject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/DFABucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/DFABucketTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/EventGenerationExperiment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/EventGenerationExperiment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/SimpleBucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/SimpleBucketTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/SimpleFilteredBucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/SimpleFilteredBucketTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/TSInspection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/gui/Histogramm2D.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/Histogramm2D.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/gui/ScreenUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/ScreenUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/gui/SixTileChartFrame.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/SixTileChartFrame.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/gui/SixTileChartFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/SixTileChartFrame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/EntropieTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/EntropieTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/FFTPhaseRandomizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/FFTPhaseRandomizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/LongTermCorrelationSeriesGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/LongTermCorrelationSeriesGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/SchreiberSchmitzTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/SchreiberSchmitzTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/SurrogatDataGeneration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/SurrogatDataGeneration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/TSGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/TSGeneratorFINAL.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/TSInspection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/dataqualitytest/InfluenceOfSinglePeakTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/dataqualitytest/InfluenceOfSinglePeakTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/degreestatistics/DegreeForLinksAndRedirects.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/degreestatistics/DegreeForLinksAndRedirects.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/experimental/ContextRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/ContextRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/experimental/LongTermCorrelationSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/experimental/StdTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/StdTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/Executor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/Executor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/NetCat4JDataStreamRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/NetCat4JDataStreamRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/ProcessWatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/ProcessWatcher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/ProjectContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/dsp/ProjectContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/StreamTransfer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/StreamTransfer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/clusterscan/ClusterCheck.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/clusterscan/ClusterCheck.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/clusterscan/ScanIPS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/clusterscan/ScanIPS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/sshclient/SSHClientTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHClientTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/sshclient/SSHConsole.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHConsole.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/sshclient/SSHConsole.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHConsole.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/sshclient/SSHCrawlServerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHCrawlServerClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/dynamic/DynamicSingleSeriesPlot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/DynamicSingleSeriesPlot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/dynamic/FloatLineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/FloatLineProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/dynamic/LineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/LineProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/dynamic/NetCatSingleValueCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/NetCatSingleValueCollector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/gnuplot/GnuPlotChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/gnuplot/GnuPlotChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/panels/ChartPanel3.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/ChartPanel3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/panels/MessreihePanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreihePanel.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/panels/MessreihePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreihePanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/panels/MessreiheWindow3Frame.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/panels/MessreiheWindow3Frame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/FileControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/FileControlerPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiBarChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiBarChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChartDistComp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChartDistComp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChartManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChartManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChartTwoAxis.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChartTwoAxis.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiPointsChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiPointsChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MyXYPlot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MyXYPlot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/SigmaFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/SigmaFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/statistic/HistogramChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/statistic/HistogramChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/statistic/MultiBarChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/statistic/MultiBarChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/statistic/MyHistogramm2D.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/statistic/MyHistogramm2D.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/RNGWrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/RNGWrapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/export/MeasurementTable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/exporter/MeasurementTable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/export/OriginProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/exporter/OriginProject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/export/SemanpixProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/exporter/SemanpixProject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/Generator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generators.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/Generators.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/SampleDataGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/SampleDataGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/TestDataFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/TestDataFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/ColumnValueCalculator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/ColumnValueCalculator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/IsNotZeroLineSelector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/IsNotZeroLineSelector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/LineFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/LineFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/MSExcelMessreihenLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/MSExcelMessreihenLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/MessreihenLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/MessreihenLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/TSValueCalculator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/TSValueCalculator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/WochengangFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/WochengangFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/io/datafile/DataFileTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/DataFileTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/loader/LoadCorpusData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadCorpusData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/loader/LoadImageAsTimeSeriesData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadImageAsTimeSeriesData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/loader/LoadStockIndexDataFromYahoo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromYahoo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/loader/TSScanner.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/TSScanner.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/loader/TSScanner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/TSScanner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/AveragedMessreihe.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/AveragedMessreihe.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/CombinedMessreihe.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/CombinedMessreihe.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/ITimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/ITimeSeriesObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/MRT.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MRT.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/MarkableTimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MarkableTimeSeriesObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/MessIntervall.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MessIntervall.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/MultiRowContainer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MultiRowContainer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/QualifiedTimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/QualifiedTimeSeriesObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/ScaledDataRow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/ScaledDataRow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/TimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/TimeSeriesObjectFFT.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/ValuePair.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/ValuePair.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/Zeitreihe.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/Zeitreihe.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/analysis/SingleTSToolPeakDetector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolSum.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/analysis/SingleTSToolSum.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/BucketCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/BucketCreator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/BucketCreator2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/BucketCreator2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/BucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/BucketLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/TSBASE.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSBASE.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_FFMLRC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_FFMLRC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_GrayImageColor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_GrayImageColor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_Sinus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Sinus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_TFIDFRecursive.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_TFIDFRecursive.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_Uncorrelated.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Uncorrelated.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_WordLength.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_WordLength.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_WordLengthRecursive.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_WordLengthRecursive.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/AbstractTSProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/core/AbstractTSProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/SingleRowTSO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/core/SingleRowTSO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSOperation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSOperation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/filter/TSBucketFileFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/filter/TSBucketFileFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/loader/KuduTelemetryDataLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/kudu/KuduTelemetryDataLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/loader/StockDataCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataCollector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/loader/StockDataLoader2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/topics/wikipedia/AccessFileFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/wikipedia/AccessFileFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/topics/wikipedia/LocalWikipediaNetwork2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/wikipedia/LocalWikipediaNetwork2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/report/HTMLReport.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/report/HTMLReport.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/DatasetNormalizationTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/DatasetNormalizationTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/DistributionTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/DistributionTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/HaeufigkeitsZaehler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/HaeufigkeitsZaehlerDouble.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehlerDouble.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/ShapiroTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/ShapiroTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/Statistical.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/Statistical.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/experiments/PeaksAndShapiroWilkTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/experiments/PeaksAndShapiroWilkTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/logbinning/LogBinnedLoaderTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinnedLoaderTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statistics/logbinning/LogBinningToolv2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinningToolv2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/DFATester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/DFATester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/DetrendingMethodFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/DetrendingMethodFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/DetrendingMethodFactory2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/DetrendingMethodFactory2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MFDFAAnalyzer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MFDFAAnalyzer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MultiDFA4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFA4Buckets.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MultiDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MultiDFATool2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MultiDFATool3.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MultiDFATool4.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool4.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/MultiRowDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiRowDFATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/SingleDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/SingleDFATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/DFA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/DFACore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFACore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/DFAParameter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFAParameter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/DFAmulti.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFAmulti.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/FitTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/FitTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/IDetrendingMethod.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/IDetrendingMethod.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/detrending/methods/MFDFA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/MFDFA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/ESCalc.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/ESCalc2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMain.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESMainCreateSketchData73.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMainCreateSketchData73.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESPropertiesChart1Tool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESPropertiesChart2Tool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart2Tool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/RISTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/RISTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/experimental/ReturnIntervallStatistik2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/experimental/TSPropertyTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/experimental/agh/RISAnalyse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/experimental/agh/RISAnalyse3.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/experimental/agh/ReturnIntervallStatistik.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/ReturnIntervallStatistik.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/statphys/ris/experimental/agh/StatistikTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/StatistikTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/tstool4mr/mr/TSCFromWikiRawPageCount.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/mr/TSCFromWikiRawPageCount.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/tstool4mr/mr/TSCMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/mr/TSCMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/tstool4mr/mr/TSCReduce.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/mr/TSCReduce.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/crunchts/store/TimeSeriesStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSBucketStoreFolderLocations.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/etosha/tsstore/HBasePrefixStreamLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/hbase/HBasePrefixStreamLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/dfa/DFAExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/dfa/DFAExperiments.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/dfa/DFAModule.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/dfa/DFAModule.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/dfa/DFAModuleHTSA1.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/dfa/DFAModuleHTSA1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGExperiments.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModule.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModule.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModuleACMR.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModuleACMR.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModuleACMS.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModuleACMS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModuleJUR.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModuleJUR.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tswb/tsa/examples/ExampleBucketCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/ExampleBucketCreator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tswb/tsa/examples/ExampleBucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/ExampleBucketLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tswb/tsa/examples/ExampleBucketViewer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/ExampleBucketViewer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tswb/tsa/examples/OpenTSDBStreamer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/OpenTSDBStreamer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/tswb/tsa/examples/OpenTSDBWorkbenchDemo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/OpenTSDBWorkbenchDemo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/cmtsq/ClouderaManagerTSQClient.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/cmtsq/TSDashboard.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/cmtsq/TSQ.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/flume/Constants.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/flume/MessagePreprocessor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/flume/OpenTSDBSink.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBBackdoor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBClient.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBConnector.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBContainerStarter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBEvent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBResponseTransformer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBSeries.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/OpenTSDBWriter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/opentsdb/TSReaderRunnable.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockBucketLoader$TSOMapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockBucketLoader.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockBucketRetriever$TSOMapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockBucketRetriever.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockDataLoader_Demo1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockDataLoader_Demo2$TSOMapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/connectors/yahoofin/StockDataLoader_Demo2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/dsp/DSProjectHelper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/hive/PersistTimeSeriesUDF.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/hive/UDFTester.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/metadata/ExperimentDescriptor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/SampleBucketViewer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSBucket.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSBucket.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSData.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSData.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/crunchts/store/TimeSeriesStore.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/org/etosha/tsstore/HBasePrefixStreamLoader.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/dfa/DFAExperiments.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/dfa/DFAModule.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/dfa/DFAModuleHTSA1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGExperiments.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModule.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModuleACMR.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModuleACMS.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tsa/rng/RNGModuleJUR.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tswb/tsa/examples/ExampleBucketCreator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tswb/tsa/examples/ExampleBucketLoader.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tswb/tsa/examples/ExampleBucketViewer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tswb/tsa/examples/OpenTSDBStreamer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/tswb/tsa/examples/OpenTSDBWorkbenchDemo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/main/java/m1/data/series/MessreiheTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/test/main/java/m1/data/series/MessreiheTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/main/java/org/apache/hadoopts/statphys/detrending/methods/DFATest.java" beforeDir="false" afterPath="$PROJECT_DIR$/test/main/java/org/apache/hadoopts/statphys/detrending/methods/DFATest.java" afterDir="false" />
     </list>
-    <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="291">
-              <caret line="182" column="52" lean-forward="true" selection-start-line="182" selection-start-column="52" selection-end-line="182" selection-end-column="52" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/metadata/TSStoreDescriptor.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="15" lean-forward="true" selection-start-line="15" selection-end-line="15" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generator.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generators.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="11" column="13" selection-start-line="11" selection-start-column="13" selection-end-line="11" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/SampleDataGenerator.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="384">
-              <caret line="47" column="23" selection-start-line="47" selection-start-column="12" selection-end-line="47" selection-end-column="40" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_Uncorrelated.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="26" column="13" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_FFMLRC.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="363">
-              <caret line="95" column="39" selection-start-line="95" selection-start-column="39" selection-end-line="95" selection-end-column="39" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSBucket.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-68">
-              <caret line="432" column="16" selection-start-line="432" selection-start-column="16" selection-end-line="432" selection-end-column="16" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/LongTermCorrelationSeriesGenerator.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-540">
-              <caret column="35" lean-forward="true" selection-start-column="35" selection-end-column="35" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/TestDataFactory.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="40" lean-forward="true" selection-start-column="8" selection-end-column="43" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -156,443 +682,45 @@
       </list>
     </option>
   </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>/GITHUB/dissertation/main/FINAL/LATEX/semanpix/default/</find>
-      <find>/GITHUB</find>
-    </findStrings>
-    <dirStrings>
-      <dir>$PROJECT_DIR$/src/main/java/com</dir>
-      <dir>$PROJECT_DIR$</dir>
-      <dir>$PROJECT_DIR$/src</dir>
-    </dirStrings>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="IdeDocumentHistory">
-    <option name="CHANGED_PATHS">
-      <list>
-        <option value="$PROJECT_DIR$/src/main/java/org/ctsa/app/bucketanalyser/MacroRecorder2.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/ctsa/app/experimental/LongTermCorrelationSeries2.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/LongTermCorrelationSeries2.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/TSInspection.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/experimental/EventGenerationExperiment.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/BrainSignalCorrelator.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/statistics/GrangerCausality.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/demo/Demo_01_OriginProject.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/ds/brainwave/ModelTesterCortanaDBS.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/ds/comnet/Correlator.java" />
-        <option value="$PROJECT_DIR$/src/main/avro/eventts.avsc" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/ptypes/EventTS.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/cloudera/crunchts/pojo/EventTS.java" />
-        <option value="$PROJECT_DIR$/scripts/installArtifacts_in_local_mvn_repo.sh" />
-        <option value="$PROJECT_DIR$/scripts/build.sh" />
-        <option value="$PROJECT_DIR$/scripts/deploy_hive_UDF.sh" />
-        <option value="$PROJECT_DIR$/scripts/10_run_demo.sh" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/SampleBucketViewer.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.java" />
-        <option value="$PROJECT_DIR$/bin/100_run_demo.sh" />
-        <option value="$PROJECT_DIR$/bin/120_run_demo.sh" />
-        <option value="$PROJECT_DIR$/bin/015_create_kudu_on_docker.sh" />
-        <option value="$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh" />
-        <option value="$PROJECT_DIR$/bin/run_spark_shell_locally.sh" />
-        <option value="$PROJECT_DIR$/.gitignore" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/utils/NetCat4JDataStreamRecorder.java" />
-        <option value="$PROJECT_DIR$/src/main/java/tsa/dfa/DFAModuleCUDA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModuleCUDA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java" />
-        <option value="$PROJECT_DIR$/bin/110_run_demo_services.sh" />
-        <option value="$PROJECT_DIR$/bin/temp/kudu-docker-all-in-one/Makefile" />
-        <option value="$PROJECT_DIR$/bin/temp/docker-opentsdb/start_services.sh" />
-        <option value="$PROJECT_DIR$/bin/temp/docker-opentsdb/Dockerfile" />
-        <option value="$PROJECT_DIR$/bin/temp/docker-opentsdb/opentsdb-service.sh" />
-        <option value="$PROJECT_DIR$/bin/temp/docker-opentsdb/hbase-service.sh" />
-        <option value="$PROJECT_DIR$/bin/temp/docker-opentsdb/supervisor.conf" />
-        <option value="$PROJECT_DIR$/bin/temp/opentsdb-docker/Dockerfile" />
-        <option value="$PROJECT_DIR$/bin/temp/opentsdb-docker/docker-compose.yml" />
-        <option value="$PROJECT_DIR$/bin/015_create_opentsdb_on_docker.sh" />
-        <option value="$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh" />
-        <option value="$PROJECT_DIR$/src/main/java/DemoTF.java" />
-        <option value="$PROJECT_DIR$/src/main/java/DemoTensorFlow.java" />
-        <option value="$PROJECT_DIR$/pom.xml" />
-        <option value="$PROJECT_DIR$/src/main/java/tsa/rng/RNGModule.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java" />
-        <option value="$PROJECT_DIR$/bin/010_build.sh" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/TimeSeriesObject.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChart.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.java" />
-        <option value="$PROJECT_DIR$/src/main/java/metadata/TSStoreDescriptor.java" />
-      </list>
-    </option>
   </component>
   <component name="MavenImportPreferences">
     <option name="importingSettings">
       <MavenImportingSettings>
+        <option name="createModuleGroups" value="true" />
+        <option name="downloadDocsAutomatically" value="true" />
+        <option name="downloadSourcesAutomatically" value="true" />
         <option name="importAutomatically" value="true" />
+        <option name="lookForNested" value="true" />
       </MavenImportingSettings>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="23" />
-    <option name="y" value="62" />
-    <option name="width" value="1657" />
-    <option name="height" value="921" />
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="1" />
   </component>
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
-  <component name="ProjectView">
-    <navigator currentView="Scope" currentSubView="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope" proportions="" version="1">
-      <foldersAlwaysOnTop value="true" />
-    </navigator>
-    <panes>
-      <pane id="Scope">
-        <subPane subId="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope">
-          <expand>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="crunchts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="crunchts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="data" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="crunchts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="pojo" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="crunchts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="ptypes" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="crunchts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="simple" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="crunchts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="statistics" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="ds" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="ds" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="brainwave" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="utils" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="utils" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="annotatedvectors" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="utils" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="math" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="tsa" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="com" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="cloudera" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="tsa" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="data" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="metadata" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="app" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="app" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="thesis" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="data" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="data" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="generator" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="buckets" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-            <path>
-              <item name="hadoop-ts-ng" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="hadoop-ts-ng" type="2674bda8:ScopeViewTreeModel$GroupNode" />
-              <item name="src" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="main" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="java" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="org" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="apache" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="hadoopts" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="buckets" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-              <item name="generator" type="9f88c78c:ScopeViewTreeModel$FileNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-      <pane id="PackagesPane" />
-      <pane id="ProjectPane" />
-    </panes>
-  </component>
+  <component name="ProjectId" id="1PF6t0LFHzpCGreu4Ef8Xkvsvpi" />
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="add_unversioned_files" value="$PROJECT_DIR$/data/out/tsb/TAB_ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/Hadoop.TS.NG/data/out/tsb/ts_bucket.dat" />
+    <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553871123293" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
-    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="project.structure.last.edited" value="Modules" />
-    <property name="project.structure.proportion" value="0.0" />
-    <property name="project.structure.side.proportion" value="0.0" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/bin" />
-      <recent name="$PROJECT_DIR$/src/main/resources" />
-      <recent name="$PROJECT_DIR$/scripts" />
-      <recent name="$PROJECT_DIR$/modules/stats" />
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="org.apache.hadoopts" />
+      <recent name="org.opentsx" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="org.apache.hadoopts.app.experimental" />
-    </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/bin" />
-      <recent name="$PROJECT_DIR$/scripts" />
-      <recent name="$PROJECT_DIR$/src/main/avro" />
-      <recent name="$PROJECT_DIR$/src/main/java/com/cloudera/ds" />
-      <recent name="$PROJECT_DIR$" />
+      <recent name="org.apache.hadoopts.app.bucketanalyser" />
+      <recent name="tsa.rng" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -607,33 +735,26 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.RNGExperiments">
-    <configuration name="BucketAnalyserTool" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.bucketanalyser.BucketAnalyserTool" />
-      <module name="hadoop-ts-ng" />
+  <component name="RunManager" selected="Application.MacroRecorder3">
+    <configuration name="CassandraTool" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.connectors.cassandra.CassandraTool" />
+      <module name="OpenTSx" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.apache.hadoopts.app.bucketanalyser.*" />
+          <option name="PATTERN" value="org.opentsx.connectors.cassandra.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="DemoTensorFlow" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="DemoTensorFlow" />
-      <module name="hadoop-ts-ng" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <configuration name="MacroRecorder2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.bucketanalyser.MacroRecorder2" />
-      <module name="hadoop-ts-ng" />
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.app.bucketanalyser.MacroRecorder2" />
+      <module name="OpenTSx" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.apache.hadoopts.app.bucketanalyser.*" />
+          <option name="PATTERN" value="org.opentsx.app.bucketanalyser.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -641,12 +762,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NetCat4JDataStreamRecorder" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.apache.hadoopts.app.utils.NetCat4JDataStreamRecorder" />
-      <module name="hadoop-ts-ng" />
+    <configuration name="MacroRecorder3" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.app.bucketanalyser.MacroRecorder3" />
+      <module name="OpenTSx" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.apache.hadoopts.app.utils.*" />
+          <option name="PATTERN" value="org.opentsx.app.bucketanalyser.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -654,12 +775,25 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="RNGExperiments" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="tsa.rng.RNGExperiments" />
-      <module name="hadoop-ts-ng" />
+    <configuration name="RNGExperiments2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.tsa.rng.RNGExperiments2" />
+      <module name="OpenTSx" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="tsa.rng.*" />
+          <option name="PATTERN" value="org.opentsx.tsbucket.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="RNGExperiments3" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.tsa.rng.RNGExperiments3" />
+      <module name="OpenTSx" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.opentsx.tsbucket.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -669,520 +803,68 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.RNGExperiments" />
-        <item itemvalue="Application.DemoTensorFlow" />
-        <item itemvalue="Application.NetCat4JDataStreamRecorder" />
+        <item itemvalue="Application.MacroRecorder3" />
         <item itemvalue="Application.MacroRecorder2" />
-        <item itemvalue="Application.BucketAnalyserTool" />
+        <item itemvalue="Application.RNGExperiments3" />
+        <item itemvalue="Application.RNGExperiments2" />
+        <item itemvalue="Application.CassandraTool" />
       </list>
     </recent_temporary>
-  </component>
-  <component name="StructureViewFactory">
-    <option name="ACTIVE_ACTIONS" value=",ALPHA_COMPARATOR" />
   </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="11342547-5ca6-40e3-8934-219215b28f7e" name="Default Changelist" comment="" />
-      <created>1547659450865</created>
+      <changelist id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="" />
+      <created>1565457707560</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1547659450865</updated>
-      <workItem from="1547659454167" duration="346000" />
-      <workItem from="1547668671652" duration="566000" />
-      <workItem from="1547733930186" duration="9499000" />
-      <workItem from="1547758123493" duration="1255000" />
-      <workItem from="1547892542653" duration="4510000" />
-      <workItem from="1547897835601" duration="2646000" />
-      <workItem from="1547994633377" duration="9503000" />
-      <workItem from="1548168977091" duration="691000" />
-      <workItem from="1553506617942" duration="5392000" />
-      <workItem from="1553516740917" duration="3764000" />
-      <workItem from="1553690693260" duration="1007000" />
-      <workItem from="1553708665371" duration="3599000" />
+      <updated>1565457707560</updated>
+      <workItem from="1565457711079" duration="522000" />
+      <workItem from="1565518359663" duration="1785000" />
+      <workItem from="1568359797519" duration="2429000" />
+      <workItem from="1568407238855" duration="1063000" />
+      <workItem from="1571208834390" duration="9391000" />
+      <workItem from="1571225442018" duration="123000" />
+      <workItem from="1571225649159" duration="1045000" />
+      <workItem from="1571226960804" duration="5841000" />
+      <workItem from="1571300138855" duration="8590000" />
+      <workItem from="1571464898764" duration="6456000" />
+      <workItem from="1571493364690" duration="2412000" />
+      <workItem from="1571497843996" duration="338000" />
+      <workItem from="1571498186545" duration="304000" />
     </task>
-    <task id="LOCAL-00001" summary="prepare release">
-      <created>1547758265529</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1547758265529</updated>
-    </task>
-    <task id="LOCAL-00002" summary="prepare release">
-      <created>1547896687911</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1547896687911</updated>
-    </task>
-    <option name="localTasksCounter" value="3" />
     <servers />
-  </component>
-  <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="42778000" />
-  </component>
-  <component name="ToolWindowManager">
-    <frame x="117" y="250" width="1657" height="921" extended-state="0" />
-    <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4631579" visible="true" weight="0.24829721" />
-      <window_info id="Structure" order="1" sideWeight="0.5368421" side_tool="true" visible="true" weight="0.24829721" />
-      <window_info id="Designer" order="2" />
-      <window_info id="Image Layers" order="3" />
-      <window_info id="Capture Tool" order="4" />
-      <window_info id="UI Designer" order="5" />
-      <window_info id="Favorites" order="6" side_tool="true" />
-      <window_info id="Learn" order="7" weight="0.3298969" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" sideWeight="0.4992636" weight="0.3293124" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49852726" weight="0.11097708" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Terminal" order="7" sideWeight="0.49349844" visible="true" weight="0.3124246" />
-      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50650156" side_tool="true" visible="true" weight="0.3124246" />
-      <window_info anchor="bottom" id="Java Enterprise" order="10" />
-      <window_info anchor="bottom" id="Database Changes" order="11" />
-      <window_info anchor="bottom" id="Version Control" order="12" />
-      <window_info anchor="bottom" id="Messages" order="13" sideWeight="0.4963181" weight="0.3293124" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Maven" order="3" />
-      <window_info anchor="right" id="Palette" order="4" />
-      <window_info anchor="right" id="Capture Analysis" order="5" />
-      <window_info anchor="right" id="Database" order="6" />
-      <window_info anchor="right" id="Palette&#9;" order="7" />
-      <window_info anchor="right" id="Theme Preview" order="8" />
-      <window_info anchor="right" id="Bean Validation" order="9" visible="true" weight="0.12012384" />
-      <window_info anchor="right" id="SciView" order="10" />
-    </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
   </component>
-  <component name="VcsManagerConfiguration">
-    <ignored-roots>
-      <path value="$PROJECT_DIR$/modules/dal/TSCache" />
-      <path value="$PROJECT_DIR$/bin/temp/kudu-docker-all-in-one" />
-    </ignored-roots>
-    <MESSAGE value="prepare release" />
-    <option name="LAST_COMMIT_MESSAGE" value="prepare release" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
-  <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/bin/temp/kudu-docker-all-in-one/Makefile" />
-    <entry file="file://$PROJECT_DIR$/bin/run_kudu_on_docker_locally.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" selection-start-line="2" selection-end-line="2" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/docker-opentsdb/start_services.sh" />
-    <entry file="file://$PROJECT_DIR$/bin/temp/docker-opentsdb/Dockerfile" />
-    <entry file="file://$PROJECT_DIR$/bin/temp/docker-opentsdb/opentsdb-service.sh" />
-    <entry file="file://$PROJECT_DIR$/bin/temp/docker-opentsdb/hbase-service.sh" />
-    <entry file="file://$PROJECT_DIR$/bin/temp/docker-opentsdb/supervisor.conf" />
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/files/start_hbase.sh">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/files/start_opentsdb.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/files/opentsdb.conf">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/files/hbase-site.xml">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/files/entrypoint.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-327" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/files/create_tsdb_tables.sh">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/Dockerfile">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="916">
-          <caret line="87" column="22" selection-start-line="87" selection-start-column="22" selection-end-line="87" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/temp/opentsdb-docker/docker-compose.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="3" selection-start-line="3" selection-start-column="3" selection-end-line="3" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/run_opentsdb_on_docker_locally.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" selection-start-line="11" selection-end-line="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/015_create_kudu_on_docker.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" lean-forward="true" selection-start-line="7" selection-end-line="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/015_create_opentsdb_on_docker.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" selection-start-line="11" selection-end-line="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/110_run_demo_services.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" column="9" selection-start-line="8" selection-start-column="9" selection-end-line="8" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/050_installArtifacts_in_local_mvn_repo.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" column="20" lean-forward="true" selection-start-line="6" selection-start-column="20" selection-end-line="6" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/run_opentsdb_streaming_demo.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="382">
-          <caret line="31" column="23" selection-start-line="31" selection-start-column="23" selection-end-line="31" selection-end-column="23" />
-          <folding>
-            <element signature="e#0#44#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/run_rng_demo.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="21" column="12" lean-forward="true" selection-start-line="21" selection-start-column="12" selection-end-line="21" selection-end-column="12" />
-          <folding>
-            <element signature="e#0#36#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/tsa/rng/RNGModule.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="17" column="6" selection-start-line="17" selection-start-column="6" selection-end-line="17" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/DemoTensorFlow.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="33" column="55" selection-start-line="33" selection-start-column="55" selection-end-line="33" selection-end-column="55" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudera/hts/utils/math/PolyFit.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="17" column="13" selection-start-line="17" selection-start-column="13" selection-end-line="17" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/tsa/dfa/DFAExperiments.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="735">
-          <caret line="61" column="56" selection-start-line="61" selection-start-column="8" selection-end-line="61" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3165">
-          <caret line="211" column="27" selection-start-line="211" selection-start-column="27" selection-end-line="211" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/tsa/rng/RNGExperiments.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1965">
-          <caret line="141" column="24" selection-start-line="141" selection-start-column="24" selection-end-line="141" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/120_run_demo.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="12" selection-start-line="12" selection-end-line="12" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="990">
-          <caret line="122" column="8" selection-start-line="122" selection-start-column="8" selection-end-line="122" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/series/TimeSeriesObject.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7935">
-          <caret line="568" column="25" selection-start-line="568" selection-start-column="18" selection-end-line="568" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSOperation.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="10" column="22" selection-start-line="10" selection-start-column="22" selection-end-line="10" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/SingleRowTSO.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="19" column="13" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSProcessor.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="27" column="4" selection-start-line="27" selection-start-column="4" selection-end-line="27" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolSum.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/apache/commons/commons-math3/3.5/commons-math3-3.5.jar!/org/apache/commons/math3/stat/descriptive/moment/StandardDeviation.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="480">
-          <caret line="54" column="18" selection-start-line="54" selection-start-column="18" selection-end-line="54" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/010_build.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="17" selection-start-line="16" selection-start-column="1" selection-end-line="17" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="16" column="58" selection-start-line="16" selection-start-column="46" selection-end-line="16" selection-end-column="58" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/chart/simple/MultiChart.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-874">
-          <caret line="280" column="23" selection-start-line="280" selection-start-column="23" selection-end-line="280" selection-end-column="23" />
-          <folding>
-            <element signature="e#3315#3316#0" expanded="true" />
-            <element signature="e#3349#3350#0" expanded="true" />
-            <element signature="e#5859#5860#0" expanded="true" />
-            <element signature="e#5919#5920#0" expanded="true" />
-            <element signature="e#17454#17659#0" expanded="true" />
-            <element signature="e#17658#17659#0" expanded="true" />
-            <element signature="e#26614#26819#0" expanded="true" />
-            <element signature="e#26818#26819#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/hive/PersistTimeSeriesUDF.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="17" column="2" lean-forward="true" selection-start-line="17" selection-start-column="2" selection-end-line="17" selection-end-column="2" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/hive/UDFTester.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="371">
-          <caret line="55" lean-forward="true" selection-start-line="55" selection-end-line="55" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="291">
-          <caret line="182" column="52" lean-forward="true" selection-start-line="182" selection-start-column="52" selection-end-line="182" selection-end-column="52" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/metadata/TSStoreDescriptor.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" lean-forward="true" selection-start-line="15" selection-end-line="15" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generator.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/Generators.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="11" column="13" selection-start-line="11" selection-start-column="13" selection-end-line="11" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/TestDataFactory.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="40" lean-forward="true" selection-start-column="8" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/data/generator/SampleDataGenerator.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="384">
-          <caret line="47" column="23" selection-start-line="47" selection-start-column="12" selection-end-line="47" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_Uncorrelated.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="26" column="13" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/app/thesis/LongTermCorrelationSeriesGenerator.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-540">
-          <caret column="35" lean-forward="true" selection-start-column="35" selection-end-column="35" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_FFMLRC.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="363">
-          <caret line="95" column="39" selection-start-line="95" selection-start-column="39" selection-end-line="95" selection-end-column="39" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/hadoopts/hadoopts/core/TSBucket.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-68">
-          <caret line="432" column="16" selection-start-line="432" selection-start-column="16" selection-end-line="432" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-  </component>
-  <component name="masterDetails">
-    <states>
-      <state key="ArtifactsStructureConfigurable.UI">
-        <settings>
-          <artifact-editor />
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="FacetStructureConfigurable.UI">
-        <settings>
-          <last-edited>No facets are configured</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="GlobalLibrariesConfigurable.UI">
-        <settings>
-          <last-edited>scala-sdk-2.11.0</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="JdkListConfigurable.UI">
-        <settings>
-          <last-edited>1.8</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="ModuleStructureConfigurable.UI">
-        <settings>
-          <last-edited>hadoop-ts-ng</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-                <option value="0.6" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="ProjectJDKs.UI">
-        <settings>
-          <last-edited>1.8</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="ProjectLibrariesConfigurable.UI">
-        <settings>
-          <last-edited>Maven: aopalliance:aopalliance:1.0</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-    </states>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/src/main/java/org/opentsx/core/TSBucket.java</url>
+          <line>609</line>
+          <properties class="org.apache.hadoopts.core.TSBucket" method="createBucketWithRandomTS_sinus">
+            <option name="EMULATED" value="true" />
+          </properties>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
