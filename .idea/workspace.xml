@@ -2,747 +2,160 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/data/in/kafka-connect-source-folder/sensordata-demo-2_in.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/in/kafka-connect-source-folder/sensordata.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/offset_storage.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/path_01a.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/path_01b.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/path_02.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/path_03.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/path_04a.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/bin/path_04b.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path1/connect-file-sink-1a.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path1/connect-file-sink-1b.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path1/connect-file-source.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path1/connect-standalone.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path1/spooldir.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path2/connect-cassandra-sink.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path2/connect-file-source.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path2/connect-standalone.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path3/connect-cassandra-source.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path3/connect-file-sink.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path3/connect-standalone.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path4/connect-standalone.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path4/dse-source-standalone.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/ingest-2-cassandra/data/sensordata.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/opentsx-core.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/tsb_store.cql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/tsb_store_kafka.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGReferenceDSCreator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGRefernceDSLoader.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RefDS.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/KafkaConnector.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/opentsx-kstreams.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample1.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample3.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample4.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample5.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassandraStateStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassandraStateStoreWrapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassandraStoreBuilder.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraChangeLogger.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraReadableStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraStoreType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraWritableStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/StateDocument.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/processors/CountingProcessor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/serdes/JsonPOJODeserializer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/serdes/JsonPOJOSerializer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/serdes/SerdesFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/resources/log4j.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams/src/test/java/LoadDataCassandra.cql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/DEMO_ApacheCon_Berlin_2019.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.example_bucket.tsb.vec.seq.crc" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/doc/manual/Quickstart.adoc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-data/opentsx-data.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-data/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-data/src/main/avro/event-series.avsc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-predict/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-predict/opentsx-predict.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-predict/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-processors/opentsx-processors.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-processors/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-udf-ksql/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-udf-ksql/opentsx-udf-ksql.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-udf-ksql/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java/Multiply.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java/SumUdaf.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/data.plist" beforeDir="false" afterPath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/data.plist" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image5.tiff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image6.tiff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image7.tiff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/example_bucket.tsb.vec.seq" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hadoop-ts-ng.iml" beforeDir="false" afterPath="$PROJECT_DIR$/open-tsx.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/dal/TSCache/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/modules/dal/TSCache/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/dal/TSCache/docs/TSCache.docx" beforeDir="false" afterPath="$PROJECT_DIR$/modules/dal/TSCache/docs/TSCache.docx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbbuild.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/build-impl.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/build-native.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/configs/CFG1.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/configs/StockDATACollector.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/genfiles.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/project.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nbproject/project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/CM2019215 B - DataStax Enterprise and Apache Kafka-TM-for Modern Architectures_US-Version-4.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/CM2019215 B - DataStax Enterprise and Apache Kafka-TM-for Modern Architectures_US-Version-4.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra.graffle" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra.graffle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/HDGS3-Context-High-Level-Design.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/HDGS3-Context-High-Level-Design.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path 1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path 1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path4.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path4.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path6.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path6.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path7.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path7.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path2.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path3.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path3.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path5.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path5.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/DataFlowModels.graffle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/FOLLOW UP MODIFICATION - AP4-From Events to Networks-Time Series Analysis - Cloudera_FCE_Summit_LV_2016-08-02_v9.pptx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Financial Data Analysis in CDSW.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Generic TSA Use Case.graffle/data.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Generic TSA Use Case.graffle/image1.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/data.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image1.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image10.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image11.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image12.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image13.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image14.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image15.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image16.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image17.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image18.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image19.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image2.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image20.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image21.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image22.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image23.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image24.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image25.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image26.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image27.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image28.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image29.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image3.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image4.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image8.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HDGS3-Context-High-Level-Design.graffle/image9.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/HiveQL to OpenTSDB.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/ROADMAP.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/data.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image1.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image10.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image11.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image13.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image14.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image2.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image5.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image6.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image7.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image8.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Scalable Graph Anaylsis on EDH.graffle/image9.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Sketch - TSA-DATAPRODUCT.graffle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Sketch - TSA-DATAPRODUCT.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Sketch - TSA-WORKBENCH.graffle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/data.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/image13.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/image14.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/image2.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/image3.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/image5.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 1.graffle/image6.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/data.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image1.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image2.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image3.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image4.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image5.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image6.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Slide 2.graffle/image7.tiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/StateEvolution in TSBA.graffle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/TSA-for-Streams.graffle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Table - TimeRangeConversion.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Time Series Processing in JCuda.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/e1.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/e2.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/e3.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/nachTrafo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/original.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/total0.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/total1.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/z0.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/z1.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/z3.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with Hadoop.TS.NG/Überprüfung der FFT Implementierung in Hadoop.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - Functional Network Creation with Hadoop.TS.NG/Canvas 1.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - Functional Network Creation with Hadoop.TS.NG/Canvas 2.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/avro/eventts.avsc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-data/src/main/avro/episode.avsc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/experiments/PeaksAndShapiroWilkTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/experiments/PeaksAndShapiroWilkTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cmtsq/ClouderaManagerTSQClient.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cmtsq/TSDashboard.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cmtsq/TSQ.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/CrunchTSApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/CrunchTSApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/data/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/data/TSData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/ptypes/EventTS.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/ptypes/EventTSWritable.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CalcTSBProfile.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/CalcTSBProfile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsAndTriplesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/CombineTimeSeriesPairsAndTriplesFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/CombineTimeSeriesPairsFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesTriplesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/CombineTimeSeriesTriplesFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/ConvertTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/ConvertTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/ExtractEventTimeSeriesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/ExtractEventTimeSeriesFromTSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/SimpleClickCountFn.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/crunch/simple/SimpleClickCountFn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/model/Event.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/model/EventTSRecord.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/TSInspection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/EventTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/PropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/PropertiesVector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/EntropieTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/EntropieTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/FFTPhaseRandomizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/FFTPhaseRandomizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/LongTermCorrelationSeriesGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/LongTermCorrelationSeriesGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/SchreiberSchmitzTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/SchreiberSchmitzTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/SurrogatDataGeneration.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/SurrogatDataGeneration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/TSGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/TSGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/TSGeneratorFINAL.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/TSGeneratorFINAL.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/TSInspection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/dataqualitytest/InfluenceOfSinglePeakTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/dataqualitytest/InfluenceOfSinglePeakTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/degreestatistics/DegreeForLinksAndRedirects.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/degreestatistics/DegreeForLinksAndRedirects.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/ContextRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/ContextRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/experimental/LongTermCorrelationSeries.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/StdTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/experimental/StdTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/DemoTensorFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-predict/src/main/java/DemoTensorFlow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/avro/eventts.avsc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/avro/eventts.avsc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/Bundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/Bundle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/analysis/SingleTSToolPeakDetector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/analysis/SingleTSToolPeakDetector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/analysis/SingleTSToolSum.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/analysis/SingleTSToolSum.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/DFATester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/DFATester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/DetrendingMethodFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/DetrendingMethodFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/DetrendingMethodFactory2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/DetrendingMethodFactory2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MFDFAAnalyzer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MFDFAAnalyzer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFA4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFA4Buckets.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool4.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool4.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/MultiRowDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiRowDFATool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/SingleDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/SingleDFATool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFA.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFACore.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFACore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFAParameter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFAParameter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/DFAmulti.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFAmulti.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/FitTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/FitTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/IDetrendingMethod.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/IDetrendingMethod.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/detrending/methods/MFDFA.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/MFDFA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMainCreateSketchData73.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMainCreateSketchData73.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart2Tool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart2Tool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/numericalrecipies/NRC.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/numericalrecipies/NRC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTestData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTestData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/RISTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/RISTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/ReturnIntervallStatistik.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/ReturnIntervallStatistik.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/ris/experimental/agh/StatistikTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/StatistikTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/DatasetNormalizationTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/DatasetNormalizationTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/DistributionTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/DistributionTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/EntropyTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/EntropyTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/GrangerCausality.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/GrangerCausality.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehler.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehlerDouble.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehlerDouble.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/ShapiroTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/ShapiroTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/Statistical.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/Statistical.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/experiments/PeaksAndShapiroWilkTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/experiments/PeaksAndShapiroWilkTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinnedLoaderTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinnedLoaderTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinningToolv2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinningToolv2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsARIMATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsARIMATool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsDFATool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsIntervallCutDetrendetTool2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsIntervallCutDetrendetTool2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsIntervallCutTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsIntervallCutTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsMFDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsMFDFATool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsPeakEntropyTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsPeakEntropyTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsPeakFilterTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsPeakFilterTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsRISTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsRISTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/SingleTsTrendCalculatorTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/SingleTsTrendCalculatorTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/TSCutTool4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/TSCutTool4Buckets.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/TSCutToolDetrendet4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/TSCutToolDetrendet4Buckets.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/algorithms/univariate/TSGlobalTrendTool4Buckets2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/univariate/TSGlobalTrendTool4Buckets2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/FluctuationFunktion.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/FluctuationFunktion.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/HZDouble.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/HZDouble.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/HurstSurface.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/HurstSurface.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/LogBinningTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/LogBinningTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/MultiSeriesSurface.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/MultiSeriesSurface.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/analysistools/utils/FitbereichLogScale.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/utils/FitbereichLogScale.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/agentbasedsimulation/analyser/SimResultLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/agentbasedsimulation/analyser/SimResultLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/agentbasedsimulation/analyser/TestResultAvailability.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/agentbasedsimulation/analyser/TestResultAvailability.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/BucketAnalyserTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/BucketAnalyserTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/ICorrelator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/ICorrelator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroRunner.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRunner.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroTrackerFrame.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroTrackerFrame.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/MacroTrackerFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroTrackerFrame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSBucketSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSBucketSource.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSBucketTransformation.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSBucketTransformation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/bucketanalyser/TSTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/Histogramm2D.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/gui/Histogramm2D.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/ScreenUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/gui/ScreenUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/SixTileChartFrame.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/gui/SixTileChartFrame.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/app/gui/SixTileChartFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/gui/SixTileChartFrame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cassandra/CassandraConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/CassandraConnector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cassandra/CassandraTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/CassandraTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cmtsq/ClouderaManagerTSQClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cmtsq/ClouderaManagerTSQClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cmtsq/TSDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cmtsq/TSDashboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/cmtsq/TSQ.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cmtsq/TSQ.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/flume/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/flume/Constants.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/flume/MessagePreprocessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/flume/MessagePreprocessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/flume/OpenTSDBSink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/flume/OpenTSDBSink.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/hbase/HBasePrefixStreamLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/hbase/HBasePrefixStreamLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/kudu/KuduTelemetryDataLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kudu/KuduTelemetryDataLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBBackdoor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBBackdoor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBConnector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBContainerStarter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBContainerStarter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBEvent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBResponseTransformer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBResponseTransformer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBSeries.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBWriter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/wikipedia/AccessFileFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/wikipedia/AccessFileFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/wikipedia/LocalWikipediaNetwork2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/wikipedia/LocalWikipediaNetwork2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockBucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockBucketLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockBucketRetriever.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockBucketRetriever.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataCollector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/core/AbstractTSProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/AbstractTSProcessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/core/SingleRowTSO.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/SingleRowTSO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSOperation.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSOperation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/core/TSProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSProcessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/CrunchTSApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/CrunchTSApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/data/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/data/TSData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/ptypes/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/ptypes/EventTS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/ptypes/EventTSWritable.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/ptypes/EventTSWritable.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CalcTSBProfile.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CalcTSBProfile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsAndTriplesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsAndTriplesFromTSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesPairsFromTSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesTriplesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/CombineTimeSeriesTriplesFromTSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/ConvertTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/ConvertTSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/ExtractEventTimeSeriesFromTSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/ExtractEventTimeSeriesFromTSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/crunch/simple/SimpleClickCountFn.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/crunch/simple/SimpleClickCountFn.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/exporter/MeasurementTable.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/exporter/MeasurementTable.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/exporter/OriginProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/exporter/OriginProject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/exporter/SemanpixProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/exporter/SemanpixProject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/Generator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/Generator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/Generators.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/Generators.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/RNGWrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/RNGWrapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/SampleDataGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/SampleDataGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/generator/TestDataFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/TestDataFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/DataFileTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/DataFileTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadCorpusData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadCorpusData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadImageAsTimeSeriesData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadImageAsTimeSeriesData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromYahoo.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromYahoo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/MSExcelMessreihenLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/MSExcelMessreihenLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/MessreihenLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/MessreihenLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/TSScanner.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/TSScanner.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/TSScanner.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/TSScanner.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/ColumnValueCalculator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/util/ColumnValueCalculator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/IsNotZeroLineSelector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/util/IsNotZeroLineSelector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/LineFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/util/LineFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/TSValueCalculator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/util/TSValueCalculator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/loader/util/WochengangFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/util/WochengangFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/model/Event.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/model/Event.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/model/EventTSRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/model/EventTSRecord.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/AveragedMessreihe.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/AveragedMessreihe.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/CombinedMessreihe.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/CombinedMessreihe.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/ITimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/ITimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MRT.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/MRT.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MarkableTimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/MarkableTimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MessIntervall.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/MessIntervall.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/MultiRowContainer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/MultiRowContainer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/QualifiedTimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/QualifiedTimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/ScaledDataRow.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/ScaledDataRow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/ValuePair.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/ValuePair.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/data/series/Zeitreihe.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/Zeitreihe.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/Demo1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/Demo1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/Demo_01_OriginProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/Demo_01_OriginProject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/ExampleBucketCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/ExampleBucketCreator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/ExampleBucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/ExampleBucketLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/ExampleBucketViewer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/ExampleBucketViewer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/MessreiheTestApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/MessreiheTestApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/OpenTSDBStreamer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/OpenTSDBStreamer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/OpenTSDBWorkbenchDemo.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/OpenTSDBWorkbenchDemo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/SampleBucketViewer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/SampleBucketViewer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/brainwave/BrainSignalCorrelator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/brainwave/BrainSignalCorrelator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/demo/brainwave/ModelTesterCortanaDBS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/brainwave/ModelTesterCortanaDBS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/dsp/DSProjectHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/dsp/DSProjectHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/dsp/ProjectContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/dsp/ProjectContext.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/DFABucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/DFABucketTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/EventGenerationExperiment.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/EventGenerationExperiment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/SimpleBucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/SimpleBucketTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/SimpleFilteredBucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/SimpleFilteredBucketTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/experimental/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/TSInspection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/filter/TSBucketFileFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/filter/TSBucketFileFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/mr/TSCFromWikiRawPageCount.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/mr/TSCFromWikiRawPageCount.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/mr/TSCMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/mr/TSCMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/mr/TSCReduce.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/mr/TSCReduce.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/AbstractTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/AbstractTS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/ContEquidistTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/ContEquidistTS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/EventTS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/pojo/PropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/PropertiesVector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/report/HTMLReport.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/report/HTMLReport.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/EntropieTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/EntropieTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/FFTPhaseRandomizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/FFTPhaseRandomizer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/LongTermCorrelationSeriesGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/LongTermCorrelationSeriesGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/SchreiberSchmitzTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/SchreiberSchmitzTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/SurrogatDataGeneration.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/SurrogatDataGeneration.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/TSGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/TSGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/TSGeneratorFINAL.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/TSGeneratorFINAL.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/TSInspection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/dataqualitytest/InfluenceOfSinglePeakTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/dataqualitytest/InfluenceOfSinglePeakTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/degreestatistics/DegreeForLinksAndRedirects.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/degreestatistics/DegreeForLinksAndRedirects.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/ContextRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/ContextRecorder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/thesis/experimental/StdTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/thesis/experimental/StdTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/DemoTensorFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/DemoTensorFlow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/dfa/DFAExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/dfa/DFAExperiments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/dfa/DFAModule.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/dfa/DFAModule.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/dfa/DFAModuleHTSA1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/dfa/DFAModuleHTSA1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGExperiments2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGExperiments3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModule.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGModule.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModuleACMR.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGModuleACMR.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModuleACMS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGModuleACMS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsa/rng/RNGModuleJUR.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGModuleJUR.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/BucketCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/BucketCreator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/BucketCreator2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/BucketCreator2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/BucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/BucketLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSBASE.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBASE.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSBucketStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBucketStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSBucketStoreFolderLocations.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBucketStoreFolderLocations.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSOReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOReader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/TSOWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOWriter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_FFMLRC.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_FFMLRC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_GrayImageColor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_GrayImageColor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Sinus.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Sinus.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_TFIDFRecursive.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_TFIDFRecursive.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Uncorrelated.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Uncorrelated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_WordLength.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_WordLength.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_WordLengthRecursive.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_WordLengthRecursive.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/ExperimentDescriptor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/metadata/ExperimentDescriptor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/TSStoreDescriptor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/metadata/TSStoreDescriptor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/IPropHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/IPropHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/PropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/PropertiesVector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/StringPropHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/StringPropHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/TestPropertiesVector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/metadata/annotatedvectors/TestPropertiesVector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/udf/hive/PersistTimeSeriesUDF.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/udf/hive/PersistTimeSeriesUDF.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/udf/hive/UDFTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/udf/hive/UDFTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/Executor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/Executor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/NetCat4JDataStreamRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/NetCat4JDataStreamRecorder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/ProcessWatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/ProcessWatcher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/StreamTransfer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/StreamTransfer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/clusterscan/ScanIPS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/clusterscan/ScanIPS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/math/FunctionFitTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/math/FunctionFitTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/math/PolyFit.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/math/PolyFit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHClientTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHClientTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHConsole.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHConsole.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHConsole.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHConsole.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/opentsx/utils/sshclient/SSHCrawlServerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHCrawlServerClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/DynamicSingleSeriesPlot.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/DynamicSingleSeriesPlot.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/FloatLineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/FloatLineProcessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/LineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/LineProcessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/dynamic/NetCatSingleValueCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/NetCatSingleValueCollector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/gnuplot/GnuPlotChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/gnuplot/GnuPlotChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/ChartPanel3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/ChartPanel3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreihePanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreihePanel.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreihePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreihePanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/FileControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/FileControlerPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiBarChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiBarChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChartDistComp.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChartDistComp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChartManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChartManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiChartTwoAxis.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChartTwoAxis.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MultiPointsChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiPointsChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/MyXYPlot.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MyXYPlot.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/simple/SigmaFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/SigmaFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/statistic/HistogramChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/statistic/HistogramChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/statistic/MultiBarChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/statistic/MultiBarChart.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/semanpix/chart/statistic/MyHistogramm2D.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/statistic/MyHistogramm2D.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryDump.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryDump.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryIn.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryIn.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryOut.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryOut.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryStdIn.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryStdIn.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryStdInTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryStdInTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryStdOut.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryStdOut.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/BinaryStdOutTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/BinaryStdOutTester.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/Copy.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/Copy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/Draw.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/Draw.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/HexDump.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/HexDump.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/In.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/In.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/Out.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/Out.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/Picture.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/Picture.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdArrayIO.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdArrayIO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdAudio.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdAudio.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdDraw.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdDraw.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdIn.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdIn.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdOut.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdOut.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdRandom.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdRandom.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/StdStats.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/StdStats.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/stdlib/Stopwatch.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/stdlib/Stopwatch.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/Add.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Add.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/AddResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/AddResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/Get.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Get.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/GetResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/GetResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/HBaseCacheService.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/HBaseCacheService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/HasKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/HasKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/HasKeyResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/HasKeyResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/Init.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Init.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/InitResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/InitResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/ObjectFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/ObjectFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/Put.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Put.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/PutResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/PutResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/TSCacheV3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/TSCacheV3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache2/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/package-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/Add.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Add.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/AddResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/AddResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/Get.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Get.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/GetResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/GetResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/HBaseCacheService.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/HBaseCacheService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/HasKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/HasKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/HasKeyResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/HasKeyResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/Init.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Init.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/InitResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/InitResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/ObjectFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/ObjectFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/Put.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Put.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/PutResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/PutResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/TSCacheV3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/TSCacheV3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/ws/cache3/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/package-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/QueryResult-sources.zip" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/resources/QueryResult-sources.zip" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/datapoint" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/resources/datapoint" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/datapoints" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/resources/datapoints" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/json_response_query.json" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/resources/json_response_query.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/log4j.properties" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/resources/log4j.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/QueryResult-sources.zip" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/datapoint" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/datapoints" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/json_response_query.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/numericalrecipies/NRC.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/numericalrecipies/distributions/KSTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/numericalrecipies/distributions/KSTestData.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsARIMATool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsDFATool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsIntervallCutDetrendetTool2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsIntervallCutTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsMFDFATool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsPeakEntropyTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsPeakFilterTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsRISTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/SingleTsTrendCalculatorTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/TSCutTool4Buckets.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/TSCutToolDetrendet4Buckets.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/algorithms/univariate/TSGlobalTrendTool4Buckets2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/analysistools/FluctuationFunktion.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/analysistools/HZDouble.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/analysistools/HurstSurface.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/analysistools/LogBinningTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/analysistools/MultiSeriesSurface.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/analysistools/utils/FitbereichLogScale.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/agentbasedsimulation/analyser/SimResultLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/agentbasedsimulation/analyser/TestResultAvailability.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/BucketAnalyserTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/ICorrelator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRecorder.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRecorder2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroRunner.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroTrackerFrame$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroTrackerFrame$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroTrackerFrame$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/MacroTrackerFrame.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/ProcessComponent.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/SourceTSB.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSBucketSource.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSBucketTransformation.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$11.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$12.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$13.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$14.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$15.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$16.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$17.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$18.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$19.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$20.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$21.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$22.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSOperationControlerPanel.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/TSTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/ToolTipTreeCellRenderer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/Track.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/bucketanalyser/Transform.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/dataseries/MessreiheTestApp.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/demo/Demo1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/experimental/DFABucketTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/experimental/SimpleBucketTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/experimental/SimpleFilteredBucketTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/gui/ColorCodePanel.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/gui/Histogramm2D.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/gui/ScreenUtils.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/gui/SixTileChartFrame.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/EntropieTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/FFTPhaseRandomizer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/LongTermCorrelationSeriesGenerator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/SchreiberSchmitzTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/SurrogatDataGeneration.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/TSGenerator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/TSGeneratorFINAL.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/TSInspection.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/dataqualitytest/InfluenceOfSinglePeakTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/degreestatistics/DegreeForLinksAndRedirects.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/experimental/ContextRecorder.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/experimental/LongTermCorrelationSeries.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/experimental/LongTermCorrelationSeries2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/thesis/experimental/StdTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/Executor.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/ProcessWatcher.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/ProjectContext.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/StreamTransfer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/clusterscan/ClusterCheck$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/clusterscan/ClusterCheck$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/clusterscan/ClusterCheck.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/clusterscan/ScanIPS$InetRange.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/clusterscan/ScanIPS.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/sshclient/SSHClientTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/sshclient/SSHConsole$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/sshclient/SSHConsole$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/sshclient/SSHConsole.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/app/utils/sshclient/SSHCrawlServerClient.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/Collector.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/DynamicSingleSeriesPlot$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/DynamicSingleSeriesPlot.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/FloatLineProcessor.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/LineProcessor.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/MyProgressBarChanger.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/dynamic/NetCatSingleValueCollector.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/gnuplot/GnuPlotChart.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/panels/ChartPanel3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/panels/MessreihePanel$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/panels/MessreihePanel.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/panels/MessreiheWindow3Frame$1$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/panels/MessreiheWindow3Frame$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/panels/MessreiheWindow3Frame.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/FileControlerPanel.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart$2$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart$3$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiBarChart.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$8$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$9$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChart.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$4$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$5$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartDistComp.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartManager.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$4$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$5$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiChartTwoAxis.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiPointsChart$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MultiPointsChart.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/MyXYPlot.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/simple/SigmaFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/statistic/HistogramChart.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/statistic/MultiBarChart.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/chart/statistic/MyHistogramm2D.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/RNGWrapper.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/export/MeasurementTable.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/export/OriginProject.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/export/SemanpixProject.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/generator/Generator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/generator/Generators.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/generator/SampleDataGenerator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/generator/TestDataFactory.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/ColumnValueCalculator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/IsNotZeroLineSelector.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/LineFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/MSExcelMessreihenLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/MessreihenLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/TSValueCalculator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/WochengangFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/io/datafile/DataFileTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/LoadCorpusData.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/LoadImageAsTimeSeriesData.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles$GTDataLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/LoadStockIndexDataFromYahoo.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/TSScanner$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/TSScanner$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/TSScanner$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/TSScanner$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/TSScanner$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/loader/TSScanner.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/AveragedMessreihe.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/CombinedMessreihe.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/ITimeSeriesObject.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/MRT.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/MarkableTimeSeriesObject.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/MessIntervall.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/MultiRowContainer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/QualifiedTimeSeriesObject.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/ScaledDataRow.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/TimeSeriesObject.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/TimeSeriesObjectFFT.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/ValuePair.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/data/series/Zeitreihe.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/analysis/SingleTSToolPeakDetector.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/analysis/SingleTSToolSum.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/BucketCreator.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/BucketCreator2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/BucketLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/TSBASE.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_FFMLRC.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_GrayImageColor.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_Sinus.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_TFIDFRecursive.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_Uncorrelated.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_WordLength.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/buckets/generator/TSBucketCreator_WordLengthRecursive.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/AbstractTSProcessor.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/SingleRowTSO.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSBucket.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSData.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSOperation.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/core/TSProcessor.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/filter/TSBucketFileFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/loader/KuduTelemetryDataLoader.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/loader/StockDataCollector.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/loader/StockDataLoader2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/topics/wikipedia/AccessFileFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/hadoopts/topics/wikipedia/LocalWikipediaNetwork2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/report/HTMLReport.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/DatasetNormalizationTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/DistributionTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/HaeufigkeitsZaehler.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/HaeufigkeitsZaehlerDouble.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/ShapiroTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/Statistical$SWilk.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/Statistical.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/experiments/PeaksAndShapiroWilkTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/logbinning/LogBinnedLoaderTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statistics/logbinning/LogBinningToolv2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/DFATester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/DetrendingMethodFactory.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/DetrendingMethodFactory2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MFDFAAnalyzer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MultiDFA4Buckets.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MultiDFATool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MultiDFATool2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MultiDFATool3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MultiDFATool4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/MultiRowDFATool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/SingleDFATool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/DFA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/DFACore.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/DFAParameter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/DFAmulti.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/FitTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/IDetrendingMethod.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/detrending/methods/MFDFA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/ESCalc.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/ESCalc2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESMain.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESMainCreateSketchData73.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESPropertiesChart1Tool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/eventsynchronisation/experiments/ESPropertiesChart2Tool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/RISTool.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/experimental/ReturnIntervallStatistik2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/experimental/TSPropertyTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/experimental/agh/RISAnalyse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/experimental/agh/RISAnalyse3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/experimental/agh/ReturnIntervallStatistik.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/statphys/ris/experimental/agh/StatistikTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/tstool4mr/mr/TSCFromWikiRawPageCount.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/tstool4mr/mr/TSCMapper.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/org/apache/hadoopts/tstool4mr/mr/TSCReduce.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryDump.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryIn.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryOut.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryStdIn.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryStdInTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryStdOut.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/BinaryStdOutTester.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/Copy.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/Draw.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/HexDump.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/In.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/Out.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/Picture.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdArrayIO.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdAudio.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdDraw.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdIn.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdOut.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdRandom.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/StdStats.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/stdlib/Stopwatch.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/Add.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/AddResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/Get.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/GetResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/HBaseCacheService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/HasKey.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/HasKeyResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/Init.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/InitResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/ObjectFactory.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/Put.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/PutResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/TSCacheV3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache2/package-info.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/Add.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/AddResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/Get.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/GetResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/HBaseCacheService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/HasKey.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/HasKeyResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/Init.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/InitResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/ObjectFactory.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/Put.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/PutResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/TSCacheV3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ws/cache3/package-info.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/hadoop-ts-ng-2.5.0.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/main/java/org/apache/hadoopts/statphys/detrending/methods/DFATest.java" beforeDir="false" afterPath="$PROJECT_DIR$/test/main/java/org/opentsx/algorithms/statphys/detrending/methods/DFATest.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -829,7 +242,7 @@
     <property name="add_unversioned_files" value="$PROJECT_DIR$/data/out/tsb/TAB_ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/Hadoop.TS.NG/data/out/tsb/ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1b/sensordata.csv&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1a/sensordata.csv" />
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/modules/ingest-2-cassandra/bin" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-data/src/main/avro" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -843,32 +256,33 @@
     <property name="settings.editor.selected.configurable" value="database.main" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/opentsx-core/src" />
-      <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/data/spool/in" />
-      <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path4" />
-      <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/data" />
-      <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/data/spool" />
-    </key>
-    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
-      <recent name="org.apache.hadoopts" />
-      <recent name="org.opentsx" />
-    </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
-    </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.tsa.rng" />
       <recent name="org.apache.hadoopts.app.bucketanalyser" />
       <recent name="tsa.rng" />
     </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
+      <recent name="org.apache.hadoopts" />
+      <recent name="org.opentsx" />
+    </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-data/src/main/avro" />
+      <recent name="$PROJECT_DIR$/opentsx-data/src/main" />
       <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/bin" />
       <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path4" />
       <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path3" />
-      <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/config/path2" />
-      <recent name="$PROJECT_DIR$/modules/ingest-2-cassandra/data/spool/finished" />
+    </key>
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/doc/conferences" />
+      <recent name="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms" />
+      <recent name="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app" />
+      <recent name="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators" />
+      <recent name="$PROJECT_DIR$/archive/old_src" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -883,7 +297,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.RNGRefernceDSLoader (1)">
+  <component name="RunManager" selected="Application.TSPropertyTester">
     <configuration name="RNGReferenceDSCreator (1)" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.tsa.rng.RNGReferenceDSCreator" />
       <module name="opentsx-core" />
@@ -900,19 +314,6 @@
     <configuration name="RNGRefernceDSLoader (1)" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.tsa.rng.RNGRefernceDSLoader" />
       <module name="opentsx-core" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.opentsx.tsa.rng.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="RNGRefernceDSLoader" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.opentsx.tsa.rng.RNGRefernceDSLoader" />
-      <module name="opentsx" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="org.opentsx.tsa.rng.*" />
@@ -942,6 +343,19 @@
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="org.semanpix.kstreams.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TSPropertyTester" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.algorithms.ris.experimental.TSPropertyTester" />
+      <module name="opentsx-core" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.opentsx.algorithms.ris.experimental.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -1124,19 +538,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Application.RNGRefernceDSLoader" />
       <item itemvalue="Application.RNGRefernceDSLoader (1)" />
       <item itemvalue="Application.RNGReferenceDSCreator (1)" />
       <item itemvalue="Application.StateStoreExample4" />
       <item itemvalue="Application.StateStoreExample1" />
+      <item itemvalue="Application.TSPropertyTester" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.TSPropertyTester" />
         <item itemvalue="Application.RNGRefernceDSLoader (1)" />
         <item itemvalue="Application.StateStoreExample1" />
         <item itemvalue="Application.RNGReferenceDSCreator (1)" />
         <item itemvalue="Application.StateStoreExample4" />
-        <item itemvalue="Application.RNGRefernceDSLoader" />
       </list>
     </recent_temporary>
   </component>
@@ -1187,6 +601,7 @@
       <workItem from="1571500701181" duration="30884000" />
       <workItem from="1571651401282" duration="35939000" />
       <workItem from="1571866825798" duration="158000" />
+      <workItem from="1571910660241" duration="5768000" />
     </task>
     <servers />
   </component>
@@ -1211,15 +626,15 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java</url>
-          <line>613</line>
-          <properties class="org.opentsx.core.TSBucket">
+          <line>614</line>
+          <properties class="org.opentsx.core.TSBucket" method="createBucketWithRandomTS_sinus">
             <option name="EMULATED" value="true" />
           </properties>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java</url>
-          <line>1214</line>
+          <line>1215</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>

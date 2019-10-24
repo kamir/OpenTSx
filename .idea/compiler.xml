@@ -6,9 +6,12 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="opentsx-core" />
-        <module name="opentsx-kstreams" />
+        <module name="opentsx-udf-ksql" />
+        <module name="opentsx-predict" />
+        <module name="opentsx-processors" />
+        <module name="opentsx-data" />
         <module name="OpenTSx" />
+        <module name="opentsx-core" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

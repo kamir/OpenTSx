@@ -1,6 +1,6 @@
 package org.opentsx.pojo;
 
-import org.opentsx.crunch.data.TSData;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +12,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
+import org.opentsx.core.TSData;
 
 /**
  *
@@ -59,7 +60,7 @@ public class PropertiesVector {
 
         stdlib.StdRandom.initRandomGen(1);
         TSData data = new TSData();
-        data.dataset = data.getRandomData((int) Math.pow(2, 10));
+        data.setDataset( data.getRandomData((int) Math.pow(2, 10)) );
 
         NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
         VectorWritable vec = new VectorWritable();

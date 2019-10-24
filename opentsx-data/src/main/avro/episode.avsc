@@ -1,0 +1,44 @@
+
+   {
+    "type"      : "record",
+    "namespace" : "org.opentsx.data.model",
+    "name"      : "EpisodesRecord",
+    "fields": [
+         {
+   	      "name": "observationArray",
+   		  "type": {
+   		    "type": "array",
+   		    "items": {
+   		      "name": "Observation",
+   		      "type": "record",
+   		      "fields": [
+   	              {"name": "timestamp", "type": "long"},
+   	              {"name": "uri", "type": "string", "doc" : "The URI for additional information about unit of measurement."},
+   	              {"name": "value", "type": "double"}
+   	          ]
+   	        }
+             }
+         },
+         {
+   	      "name" : "label",
+   	      "type" : "string"
+   	  },
+   	  {
+   	      "name" : "tStart",
+   	      "type" : "long"
+   	  },
+   	  {
+   	      "name" : "tEnd",
+   	      "type" : "long"
+   	  },
+      {
+          "name" : "zObservations",
+          "type" : "long"
+      },
+      {
+          "name" : "increment",
+          "type" : "int",
+          "doc"  : "Time increment in ms."
+      }
+    ]
+   }

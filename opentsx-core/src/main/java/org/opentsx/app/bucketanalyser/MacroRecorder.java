@@ -47,8 +47,9 @@ import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.opentsx.thesis.FFTPhaseRandomizer;
-import org.opentsx.thesis.TSGenerator;
+
+import org.opentsx.generators.FFTPhaseRandomizer;
+import org.opentsx.generators.TSGenerator;
 import org.semanpix.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.connectors.yahoofin.StockDataLoader2;

@@ -165,4 +165,7 @@ public class TSData implements Writable {
         return mr;
     }
 
+    public void setDataset(double[] randomData) {
+        this.dataset = randomData;
+    }
 }

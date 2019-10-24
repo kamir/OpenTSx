@@ -12,7 +12,8 @@ package org.opentsx.algorithms.ris.experimental;
  */
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.opentsx.thesis.LongTermCorrelationSeriesGenerator;
+
+import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
 import org.semanpix.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.MeasurementTable;
@@ -32,9 +33,7 @@ import java.text.DecimalFormat;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import static org.opentsx.thesis.LongTermCorrelationSeriesGenerator.nrOfSValues;
-
-//import panels.MessreiheWindow3Frame;
+import static org.opentsx.generators.LongTermCorrelationSeriesGenerator.nrOfSValues;
 
 
 /**
@@ -91,6 +90,7 @@ public class TSPropertyTester {
 
             IDetrendingMethod dfa = DetrendingMethodFactory.getDetrendingMethod(DetrendingMethodFactory.DFA2);
             order = dfa.getPara().getGradeOfPolynom();
+
             dfa.getPara().setzSValues( nrOfSValues );
 
             // Anzahl der Werte in der Zeitreihe

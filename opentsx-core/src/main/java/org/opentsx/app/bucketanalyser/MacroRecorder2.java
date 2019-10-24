@@ -47,7 +47,8 @@ import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.MatrixUtils;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.opentsx.thesis.TSGeneratorFINAL;
+
+import org.opentsx.generators.TSGeneratorFINAL;
 import org.semanpix.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.tsbucket.BucketLoader;

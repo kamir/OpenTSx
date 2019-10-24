@@ -1,12 +1,12 @@
 package org.opentsx.pojo;
 
+import org.opentsx.data.model.Event;
+import org.opentsx.data.model.EventSeriesRecord;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
-
-import org.opentsx.data.model.Event;
-import org.opentsx.data.model.EventTSRecord;
 
 public class EventTS extends AbstractTS {
 	
@@ -35,7 +35,7 @@ public class EventTS extends AbstractTS {
 	 * 
 	 * @param v
 	 */
-	public void setData( EventTSRecord record ) {
+	public void setData( EventSeriesRecord record ) {
 				
 	};
 
@@ -45,7 +45,7 @@ public class EventTS extends AbstractTS {
 	 * 
 	 * @return EventTSRecord
 	 */
-	public EventTSRecord getRecord() {
+	public EventSeriesRecord getRecord() {
 		if (values == null) return getDefaultRandomRecord( 10 );
 		else return createRecord();
 	}
@@ -56,7 +56,7 @@ public class EventTS extends AbstractTS {
 	 * 
 	 * @return EventTSRecord
 	 */
-	private EventTSRecord createRecord() {
+	private EventSeriesRecord createRecord() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -68,7 +68,7 @@ public class EventTS extends AbstractTS {
 	 * 
 	 * @return
 	 */
-	private EventTSRecord getDefaultRandomRecord(int z) {
+	private EventSeriesRecord getDefaultRandomRecord(int z) {
 		
 		ArrayList<Event> eventArray = new ArrayList<Event>();
 		for(int i = 0; i < z; i++ ) {
@@ -77,8 +77,7 @@ public class EventTS extends AbstractTS {
 		}
 		
 		label = "randomRecord " + System.currentTimeMillis();
-		EventTSRecord rec = new EventTSRecord(eventArray, label, tStart, tEnd);
-		
+		EventSeriesRecord rec = new EventSeriesRecord(eventArray, label, tStart, tEnd);
 		return rec;
 	}
 	

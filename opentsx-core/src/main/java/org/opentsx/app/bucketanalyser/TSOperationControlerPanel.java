@@ -5,10 +5,11 @@
  */
 package org.opentsx.app.bucketanalyser;
 
+import org.opentsx.algorithms.EntropieTest;
 import org.opentsx.tsbucket.metadata.TSStoreDescriptor;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.opentsx.thesis.EntropieTest;
+
 import org.semanpix.chart.simple.MultiChart;
 import org.semanpix.chart.simple.SigmaFilter;
 import org.opentsx.data.exporter.MeasurementTable;

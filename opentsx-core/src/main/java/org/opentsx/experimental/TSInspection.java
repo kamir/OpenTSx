@@ -4,7 +4,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
-import org.opentsx.thesis.LongTermCorrelationSeriesGenerator;
+import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
 import org.semanpix.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;

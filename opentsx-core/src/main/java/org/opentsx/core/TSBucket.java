@@ -26,11 +26,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.opentsx.thesis.LongTermCorrelationSeriesGenerator;
-import org.opentsx.thesis.TSGenerator;
+
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsa.rng.RefDS;
+
+import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
+import org.opentsx.generators.TSGenerator;
 import org.opentsx.tsbucket.KafkaConnector;
 import org.opentsx.tsbucket.TSBASE;
 import org.opentsx.connectors.wikipedia.AccessFileFilter;

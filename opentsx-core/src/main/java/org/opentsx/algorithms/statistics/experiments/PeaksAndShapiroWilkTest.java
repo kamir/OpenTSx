@@ -1,6 +1,7 @@
 package org.opentsx.algorithms.statistics.experiments;
 
-import org.opentsx.thesis.dataqualitytest.InfluenceOfSinglePeakTester;
+import org.opentsx.algorithms.dataqualitytest.InfluenceOfSinglePeakTester;
+
 import org.opentsx.data.generator.RNGWrapper;
 
 /**

@@ -12,6 +12,10 @@
     <modules>
         <module>opentsx-kstreams</module>
         <module>opentsx-core</module>
+        <module>opentsx-predict</module>
+        <module>opentsx-processors</module>
+        <module>opentsx-udf-ksql</module>
+        <module>opentsx-data</module>
     </modules>
 
     <properties>
@@ -69,18 +73,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-
-        <!--repository>
-            <id>cdh.snapshots.repo</id>
-            <url>https://repository.cloudera.com/artifactory/libs-snapshot-local</url>
-            <name>Cloudera Snapshots Repository</name>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository-->
 
     </repositories>
 
@@ -232,16 +224,6 @@
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
             <version>2.4.0</version>
-        </dependency>
-
-        <!--
-            Access CM via Java API
-            * TimeSeriesResource is available in API v6
-        -->
-        <dependency>
-            <groupId>com.cloudera.api</groupId>
-            <artifactId>cloudera-manager-api</artifactId>
-            <version>5.11.0</version>
         </dependency>
 
         <dependency>
@@ -459,54 +441,11 @@
             <version>0.15.0</version>
         </dependency>
 
-
-        <!-- https://mvnrepository.com/artifact/org.tensorflow/tensorflow -->
-        <dependency>
-            <groupId>org.tensorflow</groupId>
-            <artifactId>tensorflow</artifactId>
-            <version>1.12.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.tensorflow</groupId>
-            <artifactId>libtensorflow_jni_gpu</artifactId>
-            <version>1.12.0</version>
-        </dependency>
-
     </dependencies>
 
     <build>
 
         <plugins>
-
-            <plugin>
-                <groupId>org.apache.avro</groupId>
-                <artifactId>avro-maven-plugin</artifactId>
-                <version>${avro.version}</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>schema</goal>
-                            <!--goal>protocol</goal>
-                            <goal>idl-protocol</goal-->
-                        </goals>
-                        <configuration>
-                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
-                            <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
-                            <testSourceDirectory>${project.basedir}/test/main/avro/</testSourceDirectory>
-                            <testOutputDirectory>${project.basedir}/test/main/java/</testOutputDirectory>
-                            <fieldVisibility>PRIVATE</fieldVisibility>
-                            <includes>
-                                <include>**/*.avsc</include>
-                            </includes>
-                            <testIncludes>
-                                <testInclude>**/*.test</testInclude>
-                            </testIncludes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
 
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
