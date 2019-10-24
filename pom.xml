@@ -5,8 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.opentsx</groupId>
-    <artifactId>opentsx-córe</artifactId>
+    <artifactId>opentsx</artifactId>
+    <packaging>pom</packaging>
     <version>3.0.0</version>
+
+    <modules>
+        <module>opentsx-kstreams</module>
+        <module>opentsx-core</module>
+    </modules>
 
     <properties>
 
@@ -21,7 +27,7 @@
     </properties>
 
     <name>OpenTSx</name>
-    <description>Distributed Time Series Analysis for Cloud native applications.</description>
+    <description>Distributed Time Series Analysis for dloud native applications.</description>
 
     <licenses>
         <license>
@@ -40,6 +46,20 @@
     </developers>
 
     <repositories>
+
+        <repository>
+            <id>confluent</id>
+            <url>http://packages.confluent.io/maven/</url>
+        </repository>
+
+        <repository>
+            <id>mvn.repo</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <name>Maven Repositories</name>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
 
         <repository>
             <id>cdh.repo</id>
@@ -71,16 +91,43 @@
             <artifactId>common-config</artifactId>
             <version>3.0.0</version>
         </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>common-utils</artifactId>
             <version>3.0.0</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+
         </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client</artifactId>
             <version>3.0.0</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+
         </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
@@ -122,6 +169,18 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>2.3.0</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+
         </dependency>
 
 
@@ -470,30 +529,6 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>org.opentsx.connectors.cmts.ClouderaManageTSQClient</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
                 </configuration>
             </plugin>
 

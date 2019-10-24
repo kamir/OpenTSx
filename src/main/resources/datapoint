@@ -1,8 +1,0 @@
-{
-        "metric": "___METRIC___",
-        "timestamp": "___TS___",
-        "value": "___VALUE___",
-        "tags": {
-           "__TAG_KEY___": "___TAG_VALUE___",
-        }
-}
