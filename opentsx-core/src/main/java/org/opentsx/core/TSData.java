@@ -157,7 +157,7 @@ public class TSData implements Writable {
 
     }
 
-    TimeSeriesObject getMessreihe() {
+    public TimeSeriesObject getMessreihe() {
         TimeSeriesObject mr = new TimeSeriesObject();
         for( double y : dataset) { 
             mr.addValue(y);

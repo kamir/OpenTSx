@@ -20,7 +20,7 @@
              }
          },
          {
-   	      "name" : "label",
+   	      "name" : "labels",
    	      "type" : "string"
    	  },
    	  {

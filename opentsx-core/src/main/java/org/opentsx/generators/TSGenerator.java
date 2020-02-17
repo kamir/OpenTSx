@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.UUID;
 import java.util.Vector;
 
 /**
@@ -68,7 +69,7 @@ public class TSGenerator {
             double totaltime = 16.384; // s
             double ampl = 1.0;
                         
-            TimeSeriesObjectFFT mr = TSGenerator.getSinusWave(f, totaltime, samplingRate, ampl);
+            TimeSeriesObjectFFT mr = TSGenerator.getSinusWave(f, totaltime, samplingRate, ampl, null, null);
             testsA.add(mr);
             
             /**
@@ -144,13 +145,21 @@ Samplingfrequenz, oder eingesetzt n/k mal Samplingrate mal c.
      * f            = Frequenz
      * a            = Amplitude
      */
-        public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a ) {
+        public static TimeSeriesObjectFFT getSinusWave(double f, double time, double samplingRate, double a, String uuiid, String unit ) {
+
         TimeSeriesObjectFFT mr = new TimeSeriesObjectFFT();
         int steps = (int)(time * samplingRate);
-                
-        mr.setLabel("N="+ steps + " (SR="+ samplingRate +" Hz, f="+ f +" Hz)");
-        mr.setDecimalFomrmatX( "0.00000" );
-        mr.setDecimalFomrmatY( "0.00000" );
+
+        if ( uuiid == null )
+            uuiid = UUID.randomUUID().toString();
+
+        if ( unit == null )
+            unit = "1";
+
+        mr.setLabel( "{ \"uuid\": \"" + uuiid + "\", \"unit\": \"" + unit + "\", \"N\": \"" + steps + "\", \"SR_Hz\": \"" + samplingRate + "\", \"f_Hz\": \"" + f + "\" }");
+
+        mr.setDecimalFomrmatX( "0.000" );
+        mr.setDecimalFomrmatY( "0.000" );
         
         double dt = 1.0 / samplingRate; // s
         

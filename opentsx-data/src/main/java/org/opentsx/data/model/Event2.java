@@ -12,23 +12,23 @@ import org.apache.avro.message.SchemaStore;
 
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
-public class Observation extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 7090220287571169894L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Observation\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"doc\":\"The URI for additional information about unit of measurement.\",\"default\":null},{\"name\":\"value\",\"type\":[\"null\",\"double\"],\"default\":null}]}");
+public class Event2 extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  private static final long serialVersionUID = 7232076023971534926L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Event2\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":\"null\"},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"default\":\"null\"},{\"name\":\"value\",\"type\":[\"null\",\"double\"],\"default\":\"null\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
 
-  private static final BinaryMessageEncoder<Observation> ENCODER =
-      new BinaryMessageEncoder<Observation>(MODEL$, SCHEMA$);
+  private static final BinaryMessageEncoder<Event2> ENCODER =
+      new BinaryMessageEncoder<Event2>(MODEL$, SCHEMA$);
 
-  private static final BinaryMessageDecoder<Observation> DECODER =
-      new BinaryMessageDecoder<Observation>(MODEL$, SCHEMA$);
+  private static final BinaryMessageDecoder<Event2> DECODER =
+      new BinaryMessageDecoder<Event2>(MODEL$, SCHEMA$);
 
   /**
    * Return the BinaryMessageDecoder instance used by this class.
    */
-  public static BinaryMessageDecoder<Observation> getDecoder() {
+  public static BinaryMessageDecoder<Event2> getDecoder() {
     return DECODER;
   }
 
@@ -36,23 +36,22 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
    * Create a new BinaryMessageDecoder instance for this class that uses the specified {@link SchemaStore}.
    * @param resolver a {@link SchemaStore} used to find schemas by fingerprint
    */
-  public static BinaryMessageDecoder<Observation> createDecoder(SchemaStore resolver) {
-    return new BinaryMessageDecoder<Observation>(MODEL$, SCHEMA$, resolver);
+  public static BinaryMessageDecoder<Event2> createDecoder(SchemaStore resolver) {
+    return new BinaryMessageDecoder<Event2>(MODEL$, SCHEMA$, resolver);
   }
 
-  /** Serializes this Observation to a ByteBuffer. */
+  /** Serializes this Event2 to a ByteBuffer. */
   public java.nio.ByteBuffer toByteBuffer() throws java.io.IOException {
     return ENCODER.encode(this);
   }
 
-  /** Deserializes a Observation from a ByteBuffer. */
-  public static Observation fromByteBuffer(
+  /** Deserializes a Event2 from a ByteBuffer. */
+  public static Event2 fromByteBuffer(
       java.nio.ByteBuffer b) throws java.io.IOException {
     return DECODER.decode(b);
   }
 
    private java.lang.Long timestamp;
-  /** The URI for additional information about unit of measurement. */
    private java.lang.CharSequence uri;
    private java.lang.Double value;
 
@@ -61,15 +60,15 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
    * to their default values from the schema.  If that is desired then
    * one should use <code>newBuilder()</code>.
    */
-  public Observation() {}
+  public Event2() {}
 
   /**
    * All-args constructor.
    * @param timestamp The new value for timestamp
-   * @param uri The URI for additional information about unit of measurement.
+   * @param uri The new value for uri
    * @param value The new value for value
    */
-  public Observation(java.lang.Long timestamp, java.lang.CharSequence uri, java.lang.Double value) {
+  public Event2(java.lang.Long timestamp, java.lang.CharSequence uri, java.lang.Double value) {
     this.timestamp = timestamp;
     this.uri = uri;
     this.value = value;
@@ -115,7 +114,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
   /**
    * Gets the value of the 'uri' field.
-   * @return The URI for additional information about unit of measurement.
+   * @return The value of the 'uri' field.
    */
   public java.lang.CharSequence getUri() {
     return uri;
@@ -123,7 +122,6 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
   /**
    * Sets the value of the 'uri' field.
-   * The URI for additional information about unit of measurement.
    * @param value the value to set.
    */
   public void setUri(java.lang.CharSequence value) {
@@ -147,39 +145,38 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
   }
 
   /**
-   * Creates a new Observation RecordBuilder.
-   * @return A new Observation RecordBuilder
+   * Creates a new Event2 RecordBuilder.
+   * @return A new Event2 RecordBuilder
    */
-  public static org.opentsx.data.model.Observation.Builder newBuilder() {
-    return new org.opentsx.data.model.Observation.Builder();
+  public static org.opentsx.data.model.Event2.Builder newBuilder() {
+    return new org.opentsx.data.model.Event2.Builder();
   }
 
   /**
-   * Creates a new Observation RecordBuilder by copying an existing Builder.
+   * Creates a new Event2 RecordBuilder by copying an existing Builder.
    * @param other The existing builder to copy.
-   * @return A new Observation RecordBuilder
+   * @return A new Event2 RecordBuilder
    */
-  public static org.opentsx.data.model.Observation.Builder newBuilder(org.opentsx.data.model.Observation.Builder other) {
-    return new org.opentsx.data.model.Observation.Builder(other);
+  public static org.opentsx.data.model.Event2.Builder newBuilder(org.opentsx.data.model.Event2.Builder other) {
+    return new org.opentsx.data.model.Event2.Builder(other);
   }
 
   /**
-   * Creates a new Observation RecordBuilder by copying an existing Observation instance.
+   * Creates a new Event2 RecordBuilder by copying an existing Event2 instance.
    * @param other The existing instance to copy.
-   * @return A new Observation RecordBuilder
+   * @return A new Event2 RecordBuilder
    */
-  public static org.opentsx.data.model.Observation.Builder newBuilder(org.opentsx.data.model.Observation other) {
-    return new org.opentsx.data.model.Observation.Builder(other);
+  public static org.opentsx.data.model.Event2.Builder newBuilder(org.opentsx.data.model.Event2 other) {
+    return new org.opentsx.data.model.Event2.Builder(other);
   }
 
   /**
-   * RecordBuilder for Observation instances.
+   * RecordBuilder for Event2 instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<Observation>
-    implements org.apache.avro.data.RecordBuilder<Observation> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<Event2>
+    implements org.apache.avro.data.RecordBuilder<Event2> {
 
     private java.lang.Long timestamp;
-    /** The URI for additional information about unit of measurement. */
     private java.lang.CharSequence uri;
     private java.lang.Double value;
 
@@ -192,7 +189,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(org.opentsx.data.model.Observation.Builder other) {
+    private Builder(org.opentsx.data.model.Event2.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.timestamp)) {
         this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
@@ -209,10 +206,10 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
     }
 
     /**
-     * Creates a Builder by copying an existing Observation instance
+     * Creates a Builder by copying an existing Event2 instance
      * @param other The existing instance to copy.
      */
-    private Builder(org.opentsx.data.model.Observation other) {
+    private Builder(org.opentsx.data.model.Event2 other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.timestamp)) {
         this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
@@ -241,7 +238,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'timestamp'.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder setTimestamp(java.lang.Long value) {
+    public org.opentsx.data.model.Event2.Builder setTimestamp(java.lang.Long value) {
       validate(fields()[0], value);
       this.timestamp = value;
       fieldSetFlags()[0] = true;
@@ -261,7 +258,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'timestamp' field.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder clearTimestamp() {
+    public org.opentsx.data.model.Event2.Builder clearTimestamp() {
       timestamp = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -269,7 +266,6 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
     /**
       * Gets the value of the 'uri' field.
-      * The URI for additional information about unit of measurement.
       * @return The value.
       */
     public java.lang.CharSequence getUri() {
@@ -278,11 +274,10 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
     /**
       * Sets the value of the 'uri' field.
-      * The URI for additional information about unit of measurement.
       * @param value The value of 'uri'.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder setUri(java.lang.CharSequence value) {
+    public org.opentsx.data.model.Event2.Builder setUri(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.uri = value;
       fieldSetFlags()[1] = true;
@@ -291,7 +286,6 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
     /**
       * Checks whether the 'uri' field has been set.
-      * The URI for additional information about unit of measurement.
       * @return True if the 'uri' field has been set, false otherwise.
       */
     public boolean hasUri() {
@@ -301,10 +295,9 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
     /**
       * Clears the value of the 'uri' field.
-      * The URI for additional information about unit of measurement.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder clearUri() {
+    public org.opentsx.data.model.Event2.Builder clearUri() {
       uri = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -323,7 +316,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'value'.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder setValue(java.lang.Double value) {
+    public org.opentsx.data.model.Event2.Builder setValue(java.lang.Double value) {
       validate(fields()[2], value);
       this.value = value;
       fieldSetFlags()[2] = true;
@@ -343,7 +336,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'value' field.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder clearValue() {
+    public org.opentsx.data.model.Event2.Builder clearValue() {
       value = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -351,9 +344,9 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
 
     @Override
     @SuppressWarnings("unchecked")
-    public Observation build() {
+    public Event2 build() {
       try {
-        Observation record = new Observation();
+        Event2 record = new Event2();
         record.timestamp = fieldSetFlags()[0] ? this.timestamp : (java.lang.Long) defaultValue(fields()[0]);
         record.uri = fieldSetFlags()[1] ? this.uri : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.value = fieldSetFlags()[2] ? this.value : (java.lang.Double) defaultValue(fields()[2]);
@@ -365,8 +358,8 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
   }
 
   @SuppressWarnings("unchecked")
-  private static final org.apache.avro.io.DatumWriter<Observation>
-    WRITER$ = (org.apache.avro.io.DatumWriter<Observation>)MODEL$.createDatumWriter(SCHEMA$);
+  private static final org.apache.avro.io.DatumWriter<Event2>
+    WRITER$ = (org.apache.avro.io.DatumWriter<Event2>)MODEL$.createDatumWriter(SCHEMA$);
 
   @Override public void writeExternal(java.io.ObjectOutput out)
     throws java.io.IOException {
@@ -374,8 +367,8 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
   }
 
   @SuppressWarnings("unchecked")
-  private static final org.apache.avro.io.DatumReader<Observation>
-    READER$ = (org.apache.avro.io.DatumReader<Observation>)MODEL$.createDatumReader(SCHEMA$);
+  private static final org.apache.avro.io.DatumReader<Event2>
+    READER$ = (org.apache.avro.io.DatumReader<Event2>)MODEL$.createDatumReader(SCHEMA$);
 
   @Override public void readExternal(java.io.ObjectInput in)
     throws java.io.IOException {

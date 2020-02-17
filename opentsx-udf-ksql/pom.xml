@@ -9,9 +9,20 @@
         <version>3.0.0</version>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
-
     <artifactId>opentsx-udf-ksql</artifactId>
+    <groupId>org.opentsx</groupId>
+    <version>3.0.0</version>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <kafka.version>2.3.0</kafka.version>
+        <kafka.scala.version>2.11</kafka.scala.version>
+        <scala.version>${kafka.scala.version}.8</scala.version>
+        <confluent.version>5.4.0</confluent.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <modelVersion>4.0.0</modelVersion>
 
     <repositories>
         <repository>
@@ -22,11 +33,65 @@
 
     <!-- Specify the ksql-udf dependency -->
     <dependencies>
+
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-data</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-core</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
         <dependency>
             <groupId>io.confluent.ksql</groupId>
             <artifactId>ksql-udf</artifactId>
-            <version>5.3.1</version>
+            <version>${confluent.version}</version>
         </dependency>
+
     </dependencies>
 
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+
+            <!--package as one fat jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.2</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>assemble-all</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

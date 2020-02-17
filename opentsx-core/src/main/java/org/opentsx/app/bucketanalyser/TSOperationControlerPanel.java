@@ -181,7 +181,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         jPanel2.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 1, 1));
 
         jTextField3.setColumns(45);
-        jTextField3.setText( TSStoreDescriptor.getPathFor_TSCharts() );
+        jTextField3.setText( TSStoreDescriptor._getPathFor_TSCharts() );
         jTextField3.setMinimumSize(new java.awt.Dimension(40, 28));
         jTextField3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

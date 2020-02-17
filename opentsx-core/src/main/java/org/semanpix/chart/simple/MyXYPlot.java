@@ -4,9 +4,6 @@
  */
 package org.semanpix.chart.simple;
 
-import org.opentsx.app.bucketanalyser.TSOperationControlerPanel;
-import org.opentsx.data.generator.RNGWrapper;
-import org.opentsx.data.series.TimeSeriesObject;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.TickUnits;
@@ -18,6 +15,9 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RefineryUtilities;
+import org.opentsx.app.bucketanalyser.TSOperationControlerPanel;
+import org.opentsx.data.generator.RNGWrapper;
+import org.opentsx.data.series.TimeSeriesObject;
 
 import javax.swing.*;
 import java.awt.*;

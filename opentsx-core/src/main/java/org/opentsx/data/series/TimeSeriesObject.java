@@ -11,6 +11,8 @@ import org.opentsx.algorithms.statistics.DatasetNormalizationTool;
 import org.opentsx.algorithms.statistics.DistributionTester;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
 import org.jfree.data.xy.XYSeries;
+import org.opentsx.data.model.EpisodesRecord;
+import org.opentsx.data.model.Observation;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -145,7 +147,35 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         }
         return mr2;
     }
-    
+
+    public static TimeSeriesObject getFromEpisode(EpisodesRecord episode) {
+
+        TimeSeriesObject mr = new TimeSeriesObject();
+        mr.setLabel( episode.getLabel().toString() );
+
+        double[][] data = mr.getData();
+
+        int z = episode.getObservationArray().size();
+
+        long t0 = episode.getTStart();
+
+        for( int i = 0; i < z; i++ ) {
+
+            Observation obs = episode.getObservationArray().get(i);
+
+//            double t = t0 + ( i  * episode.setIncrement() );
+            double t = obs.getTimestamp();
+
+            double v = obs.getValue();
+
+            mr.addValuePair(t, v);
+
+        }
+
+        return mr;
+
+    }
+
     public boolean isNotEmpty() {
         boolean v = true;
         if ( this.xValues == null ) {
@@ -603,6 +633,43 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         }
 
         return sb.toString();
+    };
+
+    public double[] getStatisticData() {
+
+        double[] r = new double[14];
+
+        try {
+
+            double[][] data = this.getData();
+            double[] dx = data[0];
+            double[] dy = data[1];
+
+            StandardDeviation stdev = new StandardDeviation();
+
+            r[0] = NumberUtils.max( dx );
+            r[1] = NumberUtils.min( dx );
+            r[2] = StatUtils.mean( dx );
+            r[3] = stdev.evaluate( dx );
+            r[4] = StatUtils.variance( dx );
+            r[5] = StatUtils.sum( dx );
+            r[6] = dx.length;
+
+            r[7] = NumberUtils.max( dy );
+            r[8] = NumberUtils.min( dy );
+            r[9] = StatUtils.mean( dy );
+            r[10] = stdev.evaluate( dy );
+            r[11] = StatUtils.variance( dy );
+            r[12] = StatUtils.sum( dy );
+            r[13] = dy.length;
+
+        }
+        catch(Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return r;
+
     };
 
 

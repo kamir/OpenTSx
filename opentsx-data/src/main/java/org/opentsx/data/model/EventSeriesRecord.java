@@ -13,8 +13,8 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -785153144415357337L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EventSeriesRecord\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"eventArray\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Event\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"uri\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"double\"}]}}},{\"name\":\"label\",\"type\":\"string\"},{\"name\":\"tStart\",\"type\":\"long\"},{\"name\":\"tEnd\",\"type\":\"long\"}]}");
+  private static final long serialVersionUID = 2072106958858245680L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EventSeriesRecord\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"eventArray\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Event\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"uri\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"double\"}]}}},{\"name\":\"labels\",\"type\":\"string\"},{\"name\":\"tStart\",\"type\":\"long\"},{\"name\":\"tEnd\",\"type\":\"long\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -52,7 +52,7 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
   }
 
    private java.util.List<org.opentsx.data.model.Event> eventArray;
-   private java.lang.CharSequence label;
+   private java.lang.CharSequence labels;
    private long tStart;
    private long tEnd;
 
@@ -66,13 +66,13 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
   /**
    * All-args constructor.
    * @param eventArray The new value for eventArray
-   * @param label The new value for label
+   * @param labels The new value for labels
    * @param tStart The new value for tStart
    * @param tEnd The new value for tEnd
    */
-  public EventSeriesRecord(java.util.List<org.opentsx.data.model.Event> eventArray, java.lang.CharSequence label, java.lang.Long tStart, java.lang.Long tEnd) {
+  public EventSeriesRecord(java.util.List<org.opentsx.data.model.Event> eventArray, java.lang.CharSequence labels, java.lang.Long tStart, java.lang.Long tEnd) {
     this.eventArray = eventArray;
-    this.label = label;
+    this.labels = labels;
     this.tStart = tStart;
     this.tEnd = tEnd;
   }
@@ -82,7 +82,7 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
   public java.lang.Object get(int field$) {
     switch (field$) {
     case 0: return eventArray;
-    case 1: return label;
+    case 1: return labels;
     case 2: return tStart;
     case 3: return tEnd;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
@@ -94,7 +94,7 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
     case 0: eventArray = (java.util.List<org.opentsx.data.model.Event>)value$; break;
-    case 1: label = (java.lang.CharSequence)value$; break;
+    case 1: labels = (java.lang.CharSequence)value$; break;
     case 2: tStart = (java.lang.Long)value$; break;
     case 3: tEnd = (java.lang.Long)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
@@ -118,19 +118,19 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
   }
 
   /**
-   * Gets the value of the 'label' field.
-   * @return The value of the 'label' field.
+   * Gets the value of the 'labels' field.
+   * @return The value of the 'labels' field.
    */
-  public java.lang.CharSequence getLabel() {
-    return label;
+  public java.lang.CharSequence getLabels() {
+    return labels;
   }
 
   /**
-   * Sets the value of the 'label' field.
+   * Sets the value of the 'labels' field.
    * @param value the value to set.
    */
-  public void setLabel(java.lang.CharSequence value) {
-    this.label = value;
+  public void setLabels(java.lang.CharSequence value) {
+    this.labels = value;
   }
 
   /**
@@ -198,7 +198,7 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
     implements org.apache.avro.data.RecordBuilder<EventSeriesRecord> {
 
     private java.util.List<org.opentsx.data.model.Event> eventArray;
-    private java.lang.CharSequence label;
+    private java.lang.CharSequence labels;
     private long tStart;
     private long tEnd;
 
@@ -217,8 +217,8 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
         this.eventArray = data().deepCopy(fields()[0].schema(), other.eventArray);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.label)) {
-        this.label = data().deepCopy(fields()[1].schema(), other.label);
+      if (isValidValue(fields()[1], other.labels)) {
+        this.labels = data().deepCopy(fields()[1].schema(), other.labels);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.tStart)) {
@@ -241,8 +241,8 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
         this.eventArray = data().deepCopy(fields()[0].schema(), other.eventArray);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.label)) {
-        this.label = data().deepCopy(fields()[1].schema(), other.label);
+      if (isValidValue(fields()[1], other.labels)) {
+        this.labels = data().deepCopy(fields()[1].schema(), other.labels);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.tStart)) {
@@ -295,40 +295,40 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
     }
 
     /**
-      * Gets the value of the 'label' field.
+      * Gets the value of the 'labels' field.
       * @return The value.
       */
-    public java.lang.CharSequence getLabel() {
-      return label;
+    public java.lang.CharSequence getLabels() {
+      return labels;
     }
 
     /**
-      * Sets the value of the 'label' field.
-      * @param value The value of 'label'.
+      * Sets the value of the 'labels' field.
+      * @param value The value of 'labels'.
       * @return This builder.
       */
-    public org.opentsx.data.model.EventSeriesRecord.Builder setLabel(java.lang.CharSequence value) {
+    public org.opentsx.data.model.EventSeriesRecord.Builder setLabels(java.lang.CharSequence value) {
       validate(fields()[1], value);
-      this.label = value;
+      this.labels = value;
       fieldSetFlags()[1] = true;
       return this;
     }
 
     /**
-      * Checks whether the 'label' field has been set.
-      * @return True if the 'label' field has been set, false otherwise.
+      * Checks whether the 'labels' field has been set.
+      * @return True if the 'labels' field has been set, false otherwise.
       */
-    public boolean hasLabel() {
+    public boolean hasLabels() {
       return fieldSetFlags()[1];
     }
 
 
     /**
-      * Clears the value of the 'label' field.
+      * Clears the value of the 'labels' field.
       * @return This builder.
       */
-    public org.opentsx.data.model.EventSeriesRecord.Builder clearLabel() {
-      label = null;
+    public org.opentsx.data.model.EventSeriesRecord.Builder clearLabels() {
+      labels = null;
       fieldSetFlags()[1] = false;
       return this;
     }
@@ -415,7 +415,7 @@ public class EventSeriesRecord extends org.apache.avro.specific.SpecificRecordBa
       try {
         EventSeriesRecord record = new EventSeriesRecord();
         record.eventArray = fieldSetFlags()[0] ? this.eventArray : (java.util.List<org.opentsx.data.model.Event>) defaultValue(fields()[0]);
-        record.label = fieldSetFlags()[1] ? this.label : (java.lang.CharSequence) defaultValue(fields()[1]);
+        record.labels = fieldSetFlags()[1] ? this.labels : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.tStart = fieldSetFlags()[2] ? this.tStart : (java.lang.Long) defaultValue(fields()[2]);
         record.tEnd = fieldSetFlags()[3] ? this.tEnd : (java.lang.Long) defaultValue(fields()[3]);
         return record;

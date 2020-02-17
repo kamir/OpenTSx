@@ -9,6 +9,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <properties>
+        <tf.version>1.15.0</tf.version>
+    </properties>
+
     <artifactId>opentsx-predict</artifactId>
 
     <dependencies>
@@ -16,14 +20,28 @@
         <!-- https://mvnrepository.com/artifact/org.tensorflow/tensorflow -->
         <dependency>
             <groupId>org.tensorflow</groupId>
-            <artifactId>tensorflow</artifactId>
-            <version>1.14.0</version>
+            <artifactId>libtensorflow</artifactId>
+            <version>${tf.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>proto</artifactId>
+            <version>${tf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>libtensorflow_jni</artifactId>
+            <version>${tf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow</artifactId>
+            <version>${tf.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.tensorflow</groupId>
             <artifactId>libtensorflow_jni_gpu</artifactId>
-            <version>1.14.0</version>
+            <version>${tf.version}</version>
         </dependency>
 
     </dependencies>

@@ -2,7 +2,7 @@ package org.opentsx.tsa.rng;
 
 public class RefDS {
 
-    public static String EXP_OFFSET = "A";
+    public static String EXP_OFFSET = "XYZ";
 
     public static String CASSANDRA_KS = "ks1";
     public static String CASSANDRA_TN = "refds_small_bucket_table_" + EXP_OFFSET;

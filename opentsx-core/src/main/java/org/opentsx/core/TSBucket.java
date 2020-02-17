@@ -18,6 +18,7 @@
  */
 package org.opentsx.core;
 
+import ch.qos.logback.core.db.dialect.SybaseSqlAnywhereDialect;
 import com.datastax.driver.core.*;
 import com.google.gson.Gson;
 import org.opentsx.connectors.cassandra.CassandraConnector;
@@ -137,6 +138,13 @@ public class TSBucket {
 
     public TSBucket() {
         initConfig();
+    }
+
+    public boolean SKIP_WRITES = true;
+
+    public TSBucket(boolean skipWrites) {
+        initConfig();
+        SKIP_WRITES = skipWrites;
     }
 
     public TSBucket(Configuration conf) {
@@ -599,55 +607,84 @@ public class TSBucket {
         return randomData;
     }
 
+
     /**
      * Generate a sinus wave.
      *
-     * @param s
-     * @param ANZ
-     * @param fMIN
-     * @param fMAX
-     * @param aMIN
-     * @param aMAX
-     * @param SR
-     * @param time
+     * @param filename_core - PATH-PREFIX for TSBucket file
+     * @param ANZ - NR of TSOs in TSB
+     * @param fMIN - min Freq
+     * @param fMAX - max Freq
+     * @param aMIN - min Ampl
+     * @param aMAX - max Ampl
+     * @param SR - Sampling Rate
+     * @param time - duration of episode
+     *
+     *    TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl);
+     *
+     *    With SKIP_WRITES=TRUE we generate in MEMORY and return the TSB for
+     *    further processing.
+     *
+     *             This allows a simulation of "Data point dump from measurement devices".
+     *
+     *
      * @throws IOException
      */
-    public void createBucketWithRandomTS_sinus(String s, int ANZ,
-            double fMIN, double fMAX, double aMIN, double aMAX, double SR, double time) throws IOException {
-
-        DecimalFormat df = new DecimalFormat("0.000");
-
-        System.out.println("--> create bucket : uncorrelated TS f=[ " + fMIN + ", " + fMAX + "]");
+    public Vector<TSData> createBucketWithRandomTS_sinus(String filename_core, int ANZ,
+            double fMIN, double fMAX, double aMIN, double aMAX, double SR, double time, String uuid, String unit) throws Exception {
 
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
-        Path path = new Path(s + "_sinus_.tsb.vec.seq");
-        System.out.println("--> create bucket : " + path.toString());
+        Path path = new Path(filename_core + ".tsb.vec.seq");
+        System.out.println("--> create bucket with filename : " + path.toString());
+
+        Vector<TSData> tsbd = new Vector<TSData>();
+
+        DecimalFormat df = new DecimalFormat("0.000");
+
+        System.out.println("--> create bucket : uncorrelated Time Series with frequency range : f=[ " + fMIN + ", " + fMAX + "]");
 
         // write a SequenceFile form a Vector
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
 
         System.out.println("--> process bucket : Sinus-Generator ( z=" + ANZ + ", length=" + (time * SR) + ")");
+        System.out.println("--> zDP : " + ( ANZ * (time * SR) ) + " " );
 
         for (int i = 0; i < ANZ; i++) {
 
-            double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);  //  stdlib.StdRandom.uniform(fMIN, fMAX);
+            double fre = RNGWrapper.getStdRandomUniform(fMIN, fMAX);  // stdlib.StdRandom.uniform(fMIN, fMAX);
             double ampl = RNGWrapper.getStdRandomUniform(aMIN, aMAX); // stdlib.StdRandom.uniform(aMIN, aMAX);
 
-            TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl);
+            TimeSeriesObject mr = TSGenerator.getSinusWave(fre, time, SR, ampl, ""+i, unit );
+
+            if( i==0 ) {
+                System.out.println( "LENGTH : " + mr.getYValues().size() );
+                System.out.println( "LABEL  : " + mr.getLabel() );
+            }
+
             TSData data = TSData.convertMessreihe(mr);
 
-            System.out.print("   (" + i + ")\t");
             NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
             VectorWritable vec = new VectorWritable();
             vec.set(nv);
 
-            writer.append(new Text(nv.getName()), vec);
+            tsbd.add( data );
+
+            // to speed up the generator, we do not persist the bucket.
+            if ( !SKIP_WRITES ) {
+                writer.append(new Text(nv.getName()), vec);
+            }
+            else
+                System.out.println("!!! SKIP-WRITE:"+SKIP_WRITES+"] : no data written to disc. " );
+
         }
 
         writer.close();
-        System.out.println("### DONE : " + path.toString());
+
+        System.out.println("### DONE [SKIP-WRITE:"+SKIP_WRITES+"] : PATH:" + path.toString());
+
+        return tsbd;
     }
 
     /**

@@ -13,8 +13,8 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -5885420025214881068L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EpisodesRecord\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"observationArray\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Observation\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"uri\",\"type\":\"string\",\"doc\":\"The URI for additional information about unit of measurement.\"},{\"name\":\"value\",\"type\":\"double\"}]}}},{\"name\":\"label\",\"type\":\"string\"},{\"name\":\"tStart\",\"type\":\"long\"},{\"name\":\"tEnd\",\"type\":\"long\"},{\"name\":\"zObservations\",\"type\":\"long\"},{\"name\":\"increment\",\"type\":\"int\",\"doc\":\"Time increment in ms.\"}]}");
+  private static final long serialVersionUID = -746561352155228443L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EpisodesRecord\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"observationArray\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Observation\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"doc\":\"The URI for additional information about unit of measurement.\",\"default\":null},{\"name\":\"value\",\"type\":[\"null\",\"double\"],\"default\":null}]}}},{\"name\":\"label\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"tStart\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"tEnd\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"zObservations\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"increment\",\"type\":[\"null\",\"int\"],\"doc\":\"Time increment in ms.\",\"default\":null},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"default\":null}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -53,11 +53,12 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
 
    private java.util.List<org.opentsx.data.model.Observation> observationArray;
    private java.lang.CharSequence label;
-   private long tStart;
-   private long tEnd;
-   private long zObservations;
+   private java.lang.Long tStart;
+   private java.lang.Long tEnd;
+   private java.lang.Long zObservations;
   /** Time increment in ms. */
-   private int increment;
+   private java.lang.Integer increment;
+   private java.lang.CharSequence uri;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -74,14 +75,16 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
    * @param tEnd The new value for tEnd
    * @param zObservations The new value for zObservations
    * @param increment Time increment in ms.
+   * @param uri The new value for uri
    */
-  public EpisodesRecord(java.util.List<org.opentsx.data.model.Observation> observationArray, java.lang.CharSequence label, java.lang.Long tStart, java.lang.Long tEnd, java.lang.Long zObservations, java.lang.Integer increment) {
+  public EpisodesRecord(java.util.List<org.opentsx.data.model.Observation> observationArray, java.lang.CharSequence label, java.lang.Long tStart, java.lang.Long tEnd, java.lang.Long zObservations, java.lang.Integer increment, java.lang.CharSequence uri) {
     this.observationArray = observationArray;
     this.label = label;
     this.tStart = tStart;
     this.tEnd = tEnd;
     this.zObservations = zObservations;
     this.increment = increment;
+    this.uri = uri;
   }
 
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -94,6 +97,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
     case 3: return tEnd;
     case 4: return zObservations;
     case 5: return increment;
+    case 6: return uri;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -108,6 +112,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
     case 3: tEnd = (java.lang.Long)value$; break;
     case 4: zObservations = (java.lang.Long)value$; break;
     case 5: increment = (java.lang.Integer)value$; break;
+    case 6: uri = (java.lang.CharSequence)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -210,6 +215,22 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
   }
 
   /**
+   * Gets the value of the 'uri' field.
+   * @return The value of the 'uri' field.
+   */
+  public java.lang.CharSequence getUri() {
+    return uri;
+  }
+
+  /**
+   * Sets the value of the 'uri' field.
+   * @param value the value to set.
+   */
+  public void setUri(java.lang.CharSequence value) {
+    this.uri = value;
+  }
+
+  /**
    * Creates a new EpisodesRecord RecordBuilder.
    * @return A new EpisodesRecord RecordBuilder
    */
@@ -243,11 +264,12 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
 
     private java.util.List<org.opentsx.data.model.Observation> observationArray;
     private java.lang.CharSequence label;
-    private long tStart;
-    private long tEnd;
-    private long zObservations;
+    private java.lang.Long tStart;
+    private java.lang.Long tEnd;
+    private java.lang.Long zObservations;
     /** Time increment in ms. */
-    private int increment;
+    private java.lang.Integer increment;
+    private java.lang.CharSequence uri;
 
     /** Creates a new Builder */
     private Builder() {
@@ -284,6 +306,10 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
         this.increment = data().deepCopy(fields()[5].schema(), other.increment);
         fieldSetFlags()[5] = true;
       }
+      if (isValidValue(fields()[6], other.uri)) {
+        this.uri = data().deepCopy(fields()[6].schema(), other.uri);
+        fieldSetFlags()[6] = true;
+      }
     }
 
     /**
@@ -315,6 +341,10 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       if (isValidValue(fields()[5], other.increment)) {
         this.increment = data().deepCopy(fields()[5].schema(), other.increment);
         fieldSetFlags()[5] = true;
+      }
+      if (isValidValue(fields()[6], other.uri)) {
+        this.uri = data().deepCopy(fields()[6].schema(), other.uri);
+        fieldSetFlags()[6] = true;
       }
     }
 
@@ -409,7 +439,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @param value The value of 'tStart'.
       * @return This builder.
       */
-    public org.opentsx.data.model.EpisodesRecord.Builder setTStart(long value) {
+    public org.opentsx.data.model.EpisodesRecord.Builder setTStart(java.lang.Long value) {
       validate(fields()[2], value);
       this.tStart = value;
       fieldSetFlags()[2] = true;
@@ -430,6 +460,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @return This builder.
       */
     public org.opentsx.data.model.EpisodesRecord.Builder clearTStart() {
+      tStart = null;
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -447,7 +478,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @param value The value of 'tEnd'.
       * @return This builder.
       */
-    public org.opentsx.data.model.EpisodesRecord.Builder setTEnd(long value) {
+    public org.opentsx.data.model.EpisodesRecord.Builder setTEnd(java.lang.Long value) {
       validate(fields()[3], value);
       this.tEnd = value;
       fieldSetFlags()[3] = true;
@@ -468,6 +499,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @return This builder.
       */
     public org.opentsx.data.model.EpisodesRecord.Builder clearTEnd() {
+      tEnd = null;
       fieldSetFlags()[3] = false;
       return this;
     }
@@ -485,7 +517,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @param value The value of 'zObservations'.
       * @return This builder.
       */
-    public org.opentsx.data.model.EpisodesRecord.Builder setZObservations(long value) {
+    public org.opentsx.data.model.EpisodesRecord.Builder setZObservations(java.lang.Long value) {
       validate(fields()[4], value);
       this.zObservations = value;
       fieldSetFlags()[4] = true;
@@ -506,6 +538,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @return This builder.
       */
     public org.opentsx.data.model.EpisodesRecord.Builder clearZObservations() {
+      zObservations = null;
       fieldSetFlags()[4] = false;
       return this;
     }
@@ -525,7 +558,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @param value The value of 'increment'.
       * @return This builder.
       */
-    public org.opentsx.data.model.EpisodesRecord.Builder setIncrement(int value) {
+    public org.opentsx.data.model.EpisodesRecord.Builder setIncrement(java.lang.Integer value) {
       validate(fields()[5], value);
       this.increment = value;
       fieldSetFlags()[5] = true;
@@ -548,7 +581,47 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
       * @return This builder.
       */
     public org.opentsx.data.model.EpisodesRecord.Builder clearIncrement() {
+      increment = null;
       fieldSetFlags()[5] = false;
+      return this;
+    }
+
+    /**
+      * Gets the value of the 'uri' field.
+      * @return The value.
+      */
+    public java.lang.CharSequence getUri() {
+      return uri;
+    }
+
+    /**
+      * Sets the value of the 'uri' field.
+      * @param value The value of 'uri'.
+      * @return This builder.
+      */
+    public org.opentsx.data.model.EpisodesRecord.Builder setUri(java.lang.CharSequence value) {
+      validate(fields()[6], value);
+      this.uri = value;
+      fieldSetFlags()[6] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'uri' field has been set.
+      * @return True if the 'uri' field has been set, false otherwise.
+      */
+    public boolean hasUri() {
+      return fieldSetFlags()[6];
+    }
+
+
+    /**
+      * Clears the value of the 'uri' field.
+      * @return This builder.
+      */
+    public org.opentsx.data.model.EpisodesRecord.Builder clearUri() {
+      uri = null;
+      fieldSetFlags()[6] = false;
       return this;
     }
 
@@ -563,6 +636,7 @@ public class EpisodesRecord extends org.apache.avro.specific.SpecificRecordBase 
         record.tEnd = fieldSetFlags()[3] ? this.tEnd : (java.lang.Long) defaultValue(fields()[3]);
         record.zObservations = fieldSetFlags()[4] ? this.zObservations : (java.lang.Long) defaultValue(fields()[4]);
         record.increment = fieldSetFlags()[5] ? this.increment : (java.lang.Integer) defaultValue(fields()[5]);
+        record.uri = fieldSetFlags()[6] ? this.uri : (java.lang.CharSequence) defaultValue(fields()[6]);
         return record;
       } catch (java.lang.Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

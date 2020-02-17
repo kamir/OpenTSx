@@ -1,0 +1,39 @@
+
+   {
+    "type"      : "record",
+    "namespace" : "org.opentsx.data.model",
+    "name"      : "Episodes",
+    "fields": [
+
+      {
+   	      "name" : "taglabel",
+          "default": "-",
+          "type": "string"
+      },
+   	  {
+   	      "name" : "tStart",
+          "default": 0,
+          "type": "long"
+   	  },
+   	  {
+   	      "name" : "tEnd",
+          "default": 1000,
+          "type": "long"
+   	  },
+      {
+          "name" : "zObservations",
+          "default": 1,
+          "type": "long"
+      },
+      {
+          "name" : "increment",
+          "default": 1000,
+          "type": "int",
+          "doc"  : "Time increment in ms."
+      },
+      {   "name": "uri",
+          "default": "-",
+          "type": "string"
+      }
+    ]
+   }

@@ -5,6 +5,7 @@
     <file url="file://$PROJECT_DIR$/opentsx-core" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-data" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-kstreams" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-lg" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-predict" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-processors" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-udf-ksql" charset="UTF-8" />

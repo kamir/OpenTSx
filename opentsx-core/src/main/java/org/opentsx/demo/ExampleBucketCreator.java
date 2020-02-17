@@ -88,7 +88,7 @@ public class ExampleBucketCreator {
 
             try {
 
-                tsb.createBucketWithRandomTS_sinus(baseOut + s, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time );
+                tsb.createBucketWithRandomTS_sinus(baseOut + s, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, null );
 
             }
             catch (Exception ex) {

@@ -42,7 +42,6 @@ public class CountingProcessor implements Processor<String, String> {
   }
 
   @Override
-  public void close() {
+  public void close() {  }
 
-  }
 }

@@ -16,6 +16,7 @@
         <module>opentsx-processors</module>
         <module>opentsx-udf-ksql</module>
         <module>opentsx-data</module>
+        <module>opentsx-lg</module>
     </modules>
 
     <properties>

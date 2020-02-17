@@ -289,6 +289,7 @@ public class MultiChart extends javax.swing.JDialog {
 
     }
     public static void open(Vector<TimeSeriesObject> mrs, boolean legende, String label) {
+
         useL = legende;
 
         open(mrs, label, "t", "m", useL, "CAPTION", null);
@@ -373,8 +374,9 @@ public class MultiChart extends javax.swing.JDialog {
         
         fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
         fcp.registerPanelHolder(dialog);
-        
-        if (c != null)  
+
+        // is a correlator module provided?
+        if (c != null)
             c.setTSOperationControlerPanel(fcp);
         
         MacroTrackerFrame._registerDialogToNode( string, dialog );
@@ -413,7 +415,22 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.statisticTextField.setText(comment);
         dialog.initChart();
         dialog.setTitle(string);
-        
+
+        fcp = new TSOperationControlerPanel( mrs, dialog.chart , string, dialog.statisticTextField );
+        fcp.registerPanelHolder(dialog);
+
+
+//        if (c != null)
+//            c.setTSOperationControlerPanel(fcp);
+
+        MacroTrackerFrame._registerDialogToNode( string, dialog );
+
+        dialog.chartPanel.add(fcp, BorderLayout.NORTH);
+        dialog.setSize( 1400, 900);
+
+        RefineryUtilities.centerFrameOnScreen( dialog );
+
+
         return dialog.chart;
         
     }
@@ -442,7 +459,7 @@ public class MultiChart extends javax.swing.JDialog {
         dialog.statisticTextField.setText(comment);
         dialog.initChart();
         dialog.setTitle(string);
-        // dialog.setVisible(true);
+        dialog.setVisible(true);
         dialog.setSize( 1024, 768);
 //            }
 //        });

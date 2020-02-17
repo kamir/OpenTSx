@@ -11,9 +11,8 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>opentsx-core</artifactId>
-
-    <name>OpenTSx - core</name>
+    <name>opentsx-lg</name>
+    <artifactId>opentsx-lg</artifactId>
 
     <dependencies>
 
@@ -23,18 +22,16 @@
             <version>3.0.0</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/javax.xml.ws/jaxws-api -->
         <dependency>
-            <groupId>javax.xml.ws</groupId>
-            <artifactId>jaxws-api</artifactId>
-            <version>2.3.1</version>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-core</artifactId>
+            <version>3.0.0</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/javax.jws/javax.jws-api -->
         <dependency>
-            <groupId>javax.jws</groupId>
-            <artifactId>javax.jws-api</artifactId>
-            <version>1.1</version>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-core</artifactId>
+            <version>3.0.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.jfree/jfreechart -->
@@ -42,12 +39,6 @@
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
             <version>1.0.19</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-json</artifactId>
-            <version>5.3.0-ccs</version>
         </dependency>
 
     </dependencies>

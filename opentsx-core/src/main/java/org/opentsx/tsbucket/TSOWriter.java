@@ -93,10 +93,10 @@ public class TSOWriter{
         System.out.println("--> populate Kafka TSO topic : TSBucket -> " + topicname);
 
         TSOProducer tsop = new TSOProducer();
-
+/*
         tsop.pushTSOItemsToKafka(show);
-
-        System.out.println("### DONE: Pushed " + show.size() + " TSOs to topic: " + tsop.TOPIC + " ###");
+*/
+        System.out.println("### !!! NOT YET DONE: Pushed " + show.size() + " TSOs to topic: ????" ); // + tsop.TOPIC + " ###");
 
     }
 

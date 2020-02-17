@@ -1,10 +1,10 @@
+
 import io.confluent.ksql.function.udf.Udf;
 import io.confluent.ksql.function.udf.UdfDescription;
 import io.confluent.ksql.function.udf.UdfParameter;
-import java.util.Arrays;
 
-@UdfDescription(name = "multiply", description = "multiplies 2 numbers")
-public class Multiply {
+@UdfDescription(name = "z_multiply", description = "multiplies 2 numbers")
+public class MyUDF {
 
     @Udf(description = "multiply two non-nullable INTs.")
     public long multiply(
@@ -30,8 +30,4 @@ public class Multiply {
         return v1 * v2;
     }
 
-    @Udf(description = "multiply N non-nullable DOUBLEs.")
-    public double multiply(final double... values) {
-        return Arrays.stream(values).reduce((a, b) -> a * b).getAsDouble();
-    }
 }
