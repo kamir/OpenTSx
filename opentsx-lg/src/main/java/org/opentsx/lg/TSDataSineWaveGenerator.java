@@ -86,6 +86,9 @@ public class TSDataSineWaveGenerator {
 
         Vector<TSData> tsbd = null;
 
+        //
+        // SIMULATE SOME MEASURED DATA from a set of machines  ...
+        //
         // zMachines
         int zMachines = 4;
         int zSensorsPerMachine = 2;
@@ -95,17 +98,17 @@ public class TSDataSineWaveGenerator {
 
         // Frequency range to select one from per series
         double fMIN = 1.0; 
-        double fMAX = 100.0;
+        double fMAX = 10.0;
 
         // Amplitude range to select one from per series
         double aMIN = 1.0;
         double aMAX = 10.0;
 
         // Sampling Rate
-        double SR = 5.0 * fMAX;    // data points per second
+        double SR = 10.0 * fMAX;    // data points per second
 
         // length of each episode
-        double time = 1;           // episode length in seconds
+        double time = 1.0;           // episode length in seconds
 
 
 
