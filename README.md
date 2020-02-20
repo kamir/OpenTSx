@@ -5,7 +5,7 @@ OpenTSx is a Java based software library, and a collection of tools for *cloud n
 The project provides a collection of *data models*, *data generators*, and *algorithms* for advanced time series statistics.
 The central starage and processing framework is build around Apache Kafka, KStreams and ksqlDB. 
 
-![alt text](https://raw.githubusercontent.com/kamir/OpenTSx/doc/sketches/Generic TSA Use Case/Simplified Architecture Overview.png "title")
+![alt text](https://github.com/kamir/OpenTSx/blob/master/doc/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
 
 In the context of renaming the old project from *Hadoop.TS.NG* to *OpenTSx* we also shiftet from Apache Spark to Apache Kafka.
 
