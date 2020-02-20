@@ -3,7 +3,21 @@
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/CM2019215 B - DataStax Enterprise and Apache Kafka-TM-for Modern Architectures_US-Version-4.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/CM2019215 B - DataStax Enterprise and Apache Kafka-TM-for Modern Architectures_US-Version-4.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra.graffle" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra.graffle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/HDGS3-Context-High-Level-Design.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/HDGS3-Context-High-Level-Design.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path 1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/Path 1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path4.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/Path4.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path6.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/Path6.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/Path7.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/Path7.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path2.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/__Path2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path3.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/__Path3.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/Dataflows-Kafka-Cassandra/__Path5.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/Dataflows-Kafka-Cassandra/__Path5.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/ApacheCon-Europe-2019/TALK - Kafka-meets-Cassandra.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2019 - ApacheCon-Europe-Berlin/TALK - Kafka-meets-Cassandra.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/FOLLOW UP MODIFICATION - AP4-From Events to Networks-Time Series Analysis - Cloudera_FCE_Summit_LV_2016-08-02_v9.pptx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/conferences/2016 - SKO - Las Vegas/FOLLOW UP MODIFICATION - AP4-From Events to Networks-Time Series Analysis - Cloudera_FCE_Summit_LV_2016-08-02_v9.pptx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/manual/HiveQL to OpenTSDB.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/manual/Quickstart.adoc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/sketches/Table - TimeRangeConversion.xls" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/Table - TimeRangeConversion.xls" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -105,8 +119,12 @@
     <property name="settings.editor.selected.configurable" value="database.main" />
   </component>
   <component name="RecentsManager">
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/doc/manuals" />
+      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
+      <recent name="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
@@ -127,12 +145,8 @@
       <recent name="org.opentsx.tsa.rng" />
       <recent name="org.apache.hadoopts.app.bucketanalyser" />
     </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
-      <recent name="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx" />
-      <recent name="$PROJECT_DIR$/doc/conferences" />
-      <recent name="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -291,7 +305,8 @@
       <workItem from="1581844156357" duration="7905000" />
       <workItem from="1581869015347" duration="68000" />
       <workItem from="1581869085716" duration="8030000" />
-      <workItem from="1582130612292" duration="2139000" />
+      <workItem from="1582130612292" duration="2189000" />
+      <workItem from="1582205316498" duration="1016000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -300,7 +315,14 @@
       <option name="project" value="LOCAL" />
       <updated>1581926690703</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Prepare for Meetup in Leipzig.">
+      <created>1582201349027</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1582201349027</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
