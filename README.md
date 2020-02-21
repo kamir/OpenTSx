@@ -3,7 +3,8 @@
 OpenTSx is a Java based software library, and a collection of tools for *cloud native time series analysis projects*.  
 
 The project provides a collection of *data models*, *data generators*, and *algorithms* for advanced time series statistics.
-The central starage and processing framework is build around Apache Kafka, KStreams and ksqlDB. 
+The central storage and processing framework is build around Apache Kafka, KStreams and ksqlDB. 
+An integration with cloud native long term storage solutions is available for: delta lake, data lake, S3, object stores, search indexes, key-value stores and many others.   
 
 ![alt text](https://github.com/kamir/OpenTSx/blob/master/doc/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
 
