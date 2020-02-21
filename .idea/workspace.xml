@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="" />
+    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/Financial Data Analysis with OpenTSx.docx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/Financial Data Analysis with OpenTSx.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/e1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/e1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/e2.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/e2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/e3.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/e3.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/nachTrafo.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/nachTrafo.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/original.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/original.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/total0.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/total0.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/total1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/total1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/z0.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/z0.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/z1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/z1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/z3.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/z3.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/Überprüfung der FFT Implementierung in Hadoop.docx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/Überprüfung der FFT Implementierung in Hadoop.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - Functional Network Creation with OpenTSx/Canvas 1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - Functional Network Creation with OpenTSx/Canvas 1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - Functional Network Creation with OpenTSx/Canvas 2.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - Functional Network Creation with OpenTSx/Canvas 2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/Tutorial - TimeSeriesModelling with JCuda/Time Series Processing in JCuda.docx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - TimeSeriesModelling with JCuda/Time Series Processing in JCuda.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/conferences/2020 - Meetup - Leipzig/SHARED - Time-Series-Analysis-using-an-Event-Streaming-Platform___v2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/manuals/Capacity-Planning-for-TimeSeriesBuckets.pptx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Capacity-Planning-for-TimeSeriesBuckets.pptx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/manuals/HiveQL to OpenTSDB.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/How To - HiveQL to OpenTSDB.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/manuals/Message Sizing for Episodes and Events.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Message Sizing for Episodes and Events.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/manuals/Signal Generation Estimates.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Signal Generation Estimates.xlsx" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -103,11 +125,11 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
       <recent name="$PROJECT_DIR$/doc/manuals" />
       <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
       <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
       <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
-      <recent name="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
@@ -289,7 +311,7 @@
       <workItem from="1581869015347" duration="68000" />
       <workItem from="1581869085716" duration="8030000" />
       <workItem from="1582130612292" duration="2189000" />
-      <workItem from="1582205316498" duration="1634000" />
+      <workItem from="1582205316498" duration="2978000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
