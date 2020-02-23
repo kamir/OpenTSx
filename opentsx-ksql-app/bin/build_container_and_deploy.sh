@@ -11,7 +11,7 @@ export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
 
 
 
-#confluent local destroy
+confluent local destroy
 
 
 
@@ -34,7 +34,7 @@ docker build . -t $CONTAINER_NAME:$CONTAINER_VERSION
 #
 # Rebuild CP environment
 #
-#confluent local start
+confluent local start
 
 #
 # Generate SAMPLE Data
@@ -47,10 +47,10 @@ cd ../opentsx-ksql-app
 #
 # Stop KSQL-Server
 #
-# confluent local stop ksql-server
+confluent local stop ksql-server
 
 docker run -d \
-  -p 8089:8088 \
+  -p 8088:8088 \
   -e KSQL_BOOTSTRAP_SERVERS=$HOST_NAME_OF_HOST:9092 \
   -e KSQL_LISTENERS=http://0.0.0.0:8088/ \
   -e KSQL_KSQL_SERVICE_ID=$KSQL_SERVICE_ID \
@@ -60,15 +60,15 @@ docker run -d \
   -e KSQL_KSQL_SCHEMA_REGISTRY_URL=http://$HOST_NAME_OF_HOST:8081 \
   $CONTAINER_NAME:$CONTAINER_VERSION
 
-curl -X "POST" "http://localhost:8089/ksql" \
+curl -X "POST" "http://localhost:8088/ksql" \
      -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
      -d $'{
   "ksql": "LIST STREAMS;",
   "streamsProperties": {}
 }'
 
-curl -sX GET "http://localhost:8089/info" | jq '.'
+curl -sX GET "http://localhost:8088/info" | jq '.'
 
-curl -sX GET "http://localhost:8089/healthcheck" | jq '.'
+curl -sX GET "http://localhost:8088/healthcheck" | jq '.'
 
 echo $CONFLUENT_HOME/bin/ksql
