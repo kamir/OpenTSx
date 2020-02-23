@@ -2,27 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1_webui.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_2_webui_define.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_2_webui_query.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/build_container_and_deploy.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/deploy_query_via_rest.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/run_container.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/opentsx-ksql-app.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -312,7 +293,7 @@
       <workItem from="1581869085716" duration="8030000" />
       <workItem from="1582130612292" duration="2189000" />
       <workItem from="1582205316498" duration="2978000" />
-      <workItem from="1582309366976" duration="19848000" />
+      <workItem from="1582309366976" duration="20252000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
