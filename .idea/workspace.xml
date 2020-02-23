@@ -3,9 +3,14 @@
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1.sql" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/bin/build_container_and_deploy.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/build_container_and_deploy.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/bin/run_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/run_container.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/bin/deploy_query_via_rest.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/deploy_query_via_rest.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -185,7 +190,7 @@
     </configuration>
     <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
-      <module name="opentsx-lg" />
+      <module name="opentsx-load-generators" />
       <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
         <option name="ENABLED" value="false" />
         <entries />
@@ -295,7 +300,7 @@
       <workItem from="1581869085716" duration="8030000" />
       <workItem from="1582130612292" duration="2189000" />
       <workItem from="1582205316498" duration="2978000" />
-      <workItem from="1582309366976" duration="20581000" />
+      <workItem from="1582309366976" duration="22010000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
