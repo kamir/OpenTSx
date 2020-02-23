@@ -17,6 +17,7 @@
         <module>opentsx-udf-ksql</module>
         <module>opentsx-data</module>
         <module>opentsx-lg</module>
+        <module>opentsx-ksql-app</module>
     </modules>
 
     <properties>

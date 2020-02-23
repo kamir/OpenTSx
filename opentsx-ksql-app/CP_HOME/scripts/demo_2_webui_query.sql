@@ -1,0 +1,1 @@
+select timestamp, value from OpenTSx_Events_Stream_Outliers EMIT CHANGES;

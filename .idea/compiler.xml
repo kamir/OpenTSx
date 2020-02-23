@@ -12,6 +12,7 @@
         <module name="opentsx-data" />
         <module name="opentsx-load-generators" />
         <module name="OpenTSx" />
+        <module name="opentsx-ksql-app" />
         <module name="opentsx-core" />
       </profile>
     </annotationProcessing>

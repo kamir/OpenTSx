@@ -2,27 +2,27 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1_webui.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_2_webui_define.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_2_webui_query.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/build_container_and_deploy.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/deploy_query_via_rest.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/run_container.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/opentsx-ksql-app.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/Financial Data Analysis with OpenTSx.docx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/Financial Data Analysis with OpenTSx.docx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/e1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/e1.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/e2.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/e2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/e3.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/e3.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/nachTrafo.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/nachTrafo.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/original.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/original.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/total0.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/total0.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/total1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/total1.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/z0.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/z0.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/z1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/z1.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/z3.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/z3.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - FFT with OpenTSx/Überprüfung der FFT Implementierung in Hadoop.docx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - FFT with OpenTSx/Überprüfung der FFT Implementierung in Hadoop.docx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - Functional Network Creation with OpenTSx/Canvas 1.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - Functional Network Creation with OpenTSx/Canvas 1.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - Functional Network Creation with OpenTSx/Canvas 2.png" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - Functional Network Creation with OpenTSx/Canvas 2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/Tutorial - TimeSeriesModelling with JCuda/Time Series Processing in JCuda.docx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Tutorial - TimeSeriesModelling with JCuda/Time Series Processing in JCuda.docx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/conferences/2020 - Meetup - Leipzig/SHARED - Time-Series-Analysis-using-an-Event-Streaming-Platform___v2.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/manuals/Capacity-Planning-for-TimeSeriesBuckets.pptx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Capacity-Planning-for-TimeSeriesBuckets.pptx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/manuals/HiveQL to OpenTSDB.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/How To - HiveQL to OpenTSDB.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/manuals/Message Sizing for Episodes and Events.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Message Sizing for Episodes and Events.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/manuals/Signal Generation Estimates.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/doc/manuals/drafts/Signal Generation Estimates.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -110,7 +110,7 @@
     <property name="add_unversioned_files" value="$PROJECT_DIR$/data/out/tsb/TAB_ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/Hadoop.TS.NG/data/out/tsb/ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1b/sensordata.csv&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1a/sensordata.csv" />
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-data/src/main/avro" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -124,12 +124,8 @@
     <property name="settings.editor.selected.configurable" value="database.main" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
-      <recent name="$PROJECT_DIR$/doc/manuals" />
-      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
@@ -137,11 +133,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts" />
+      <recent name="$PROJECT_DIR$/opentsx-ksql-app/bin" />
+      <recent name="$PROJECT_DIR$/opentsx-ksql-app" />
       <recent name="$PROJECT_DIR$/opentsx-data/src/main/avro" />
       <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/temp" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/target" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
-      <recent name="$PROJECT_DIR$/opentsx-data/src/main" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.kstreams.tsa" />
@@ -150,8 +146,12 @@
       <recent name="org.opentsx.tsa.rng" />
       <recent name="org.apache.hadoopts.app.bucketanalyser" />
     </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
+      <recent name="$PROJECT_DIR$/doc/manuals" />
+      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -312,6 +312,7 @@
       <workItem from="1581869085716" duration="8030000" />
       <workItem from="1582130612292" duration="2189000" />
       <workItem from="1582205316498" duration="2978000" />
+      <workItem from="1582309366976" duration="19848000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
