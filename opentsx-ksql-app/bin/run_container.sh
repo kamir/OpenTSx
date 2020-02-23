@@ -19,7 +19,7 @@ mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator" -Dexec.a
 cd ../opentsx-ksql-app
 
 docker run -d \
-  -p 127.0.0.1:8088:8088 \
+  -p 8088:8088 \
   -e KSQL_BOOTSTRAP_SERVERS=$HOST_NAME_OF_HOST:9092 \
   -e KSQL_LISTENERS=http://0.0.0.0:8088/ \
   -e KSQL_KSQL_SERVICE_ID=$KSQL_SERVICE_ID \

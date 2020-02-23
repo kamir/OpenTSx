@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1.sql" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts/demo_1.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/bin/build_container_and_deploy.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/build_container_and_deploy.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/bin/run_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/run_container.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -293,7 +295,7 @@
       <workItem from="1581869085716" duration="8030000" />
       <workItem from="1582130612292" duration="2189000" />
       <workItem from="1582205316498" duration="2978000" />
-      <workItem from="1582309366976" duration="20252000" />
+      <workItem from="1582309366976" duration="20581000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
