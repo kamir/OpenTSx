@@ -2,14 +2,14 @@
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
 export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
 
-confluent local destroy
-confluent local start
+#confluent local destroy
+#confluent local start
 
 #
 # Generate SAMPLE Data
 #
 cd ../../opentsx-lg/
-mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator" -Dexec.args="off" -Dexec.cleanupDaemonThreads=false
+mvn clean compile install exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator" -Dexec.args="off" -Dexec.cleanupDaemonThreads=false
 
 cd ../opentsx-ksql-app
 

@@ -10,6 +10,14 @@ The scripts:
 
 is used for local demos of the OpenTSx processing pipeline.
 
+### Run the local demo: 
+
+Executing the script:
+
+'''bash'''
+  deploy_query_via_rest.sh
+'''
+
 ## Distributed Testing with KSQL-Docker Images
 The two scripts:
 - run_container.sh 
