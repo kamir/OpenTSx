@@ -27,7 +27,7 @@ mvn clean generate-sources compile package install
 #
 # Show the time series in an TSA-Panel ...
 #
-mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
+mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
 
 # inspect the JSON data : https://codebeautify.org/
 

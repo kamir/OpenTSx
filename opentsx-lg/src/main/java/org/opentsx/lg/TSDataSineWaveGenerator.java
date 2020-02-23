@@ -118,7 +118,7 @@ public class TSDataSineWaveGenerator {
 
         int i = 0;
 
-        while( i < 1) {
+        // while( i < 1) {
 
             long t0 = System.currentTimeMillis();
 
@@ -203,15 +203,23 @@ public class TSDataSineWaveGenerator {
 
                     MultiChart.open(tsos, "DEMO1", "time [s]", "temperature [°C]", true, "no comment", null);
 
+                    System.out.println(">>> READY." );
+
                 }
+
+            }
+            else {
+
+                System.out.println(">>> DONE." );
+
+                System.exit(0);
 
             }
 
             tsbd = null;
 
-        }
+        // }
 
-        System.out.println(">>> DONE." );
 
     }
 
