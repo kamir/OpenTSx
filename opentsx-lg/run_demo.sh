@@ -1,5 +1,5 @@
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
+  export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
+  export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
 
 confluent local status
 
@@ -28,7 +28,13 @@ mvn clean generate-sources compile package install
 # Show the time series in an TSA-Panel ...
 #
 mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
+#mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
 
 # inspect the JSON data : https://codebeautify.org/
 
-# open the C3 panel     : http://localhost:9021/
+
+
+#
+# inspection of LOG-File size
+#
+$CONFLUENT_HOME/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe --topic-list OpenTSx_Episodes,OpenTSx_Events | python -mjson.tool
