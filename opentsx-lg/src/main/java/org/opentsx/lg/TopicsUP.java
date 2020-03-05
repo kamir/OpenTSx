@@ -37,9 +37,9 @@ public class TopicsUP {
         TopicsManagerTool.initTopicDefinitions( TOPICS_DEF_FN );
         TopicsManagerTool.createTopics();
 
-        System.out.println("> All topics created ! ");
-
         TopicsManagerTool.listTopics();
+
+        System.out.println("> All topics created ! ");
 
         System.exit(0);
 
