@@ -15,7 +15,9 @@ public class TopicsManagerTool {
      */
     public static String TOPICS_DEF_FN = "/Users/mkampf/GITHUB.public/OpenTSx/config/topiclist.def";
 
-    public static void listTopics() {
+    public static Vector<String> getTopicList() {
+
+        Vector<String> liste = new Vector<>();
 
         Properties properties = new Properties();
         try {
@@ -43,7 +45,7 @@ public class TopicsManagerTool {
             for ( TopicListing tl : col ) {
                 if ( !tl.isInternal() )
                     if ( !tl.name().startsWith("_") )
-                        System.out.println( tl.toString() );
+                        liste.add( tl.name() );
             }
         }
         catch (InterruptedException e) {
@@ -54,6 +56,13 @@ public class TopicsManagerTool {
 
         adminClient.close();
 
+        return liste;
+    }
+
+    public static void listTopics() {
+        Vector<String> l = getTopicList();
+        for( String n : l )
+            System.out.println( n );
     }
 
     public static void createTopic(String tn, int partitions, int repl, int min_isr) {
@@ -244,5 +253,34 @@ public class TopicsManagerTool {
             System.out.println(" DONE ");
         }
 
+    }
+
+
+    public static boolean checkAllTopicsAvailable() {
+
+        Vector<String> listOfKnownTopics = TopicsManagerTool.getTopicList();
+        Vector<String> listOfExpectedTopics = null;
+        try {
+            listOfExpectedTopics = TopicsManagerTool.getTopicNames();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Vector<String> missingTopics = new Vector<String>();
+
+        for( String expectedName : listOfExpectedTopics ) {
+            boolean isAvailable = listOfKnownTopics.contains( expectedName );
+            System.out.println( "TOPIC : " + expectedName + " => " + isAvailable );
+            listOfKnownTopics.remove( expectedName );
+            if ( !isAvailable )
+                missingTopics.add( expectedName );
+        }
+
+        System.out.println( "[MISSING TOPICS]: => " + missingTopics.size() );
+        for( String m : missingTopics ) {
+            System.out.println  ( "  - " + m );
+        }
+
+        return missingTopics.size() == 0;
     }
 }

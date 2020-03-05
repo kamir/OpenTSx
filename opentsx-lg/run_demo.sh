@@ -1,5 +1,5 @@
-  export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-  export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
+export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
 
 confluent local status
 
@@ -17,7 +17,7 @@ cd ..
 mvn clean generate-sources compile package install
 
 cd opentsx-lg
-mvn clean generate-sources compile package install
+mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker
 
 #
 # Silent Mode ...
@@ -27,12 +27,14 @@ mvn clean generate-sources compile package install
 #
 # Show the time series in an TSA-Panel ...
 #
+export OPENTSX_TOPIC_MAP_FILE_NAME=/opentsx-lg/config/topiclist.def
+export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=/opentsx-lg/config/cpl.props
+export OPENTSX_SHOW_GUI=false
+
 mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
 #mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
 
 # inspect the JSON data : https://codebeautify.org/
-
-
 
 #
 # inspection of LOG-File size
