@@ -28,11 +28,45 @@
             <version>3.0.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/io.confluent/kafka-streams-avro-serde -->
         <dependency>
-            <groupId>org.opentsx</groupId>
-            <artifactId>opentsx-core</artifactId>
-            <version>3.0.0</version>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-streams-avro-serde</artifactId>
+            <version>5.4.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams</artifactId>
+            <version>${kafka.version}</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams-test-utils</artifactId>
+            <version>${kafka.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.confluent/kafka-streams-avro-serde -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-streams-avro-serde</artifactId>
+            <version>5.4.0</version>
+        </dependency>
+
 
         <!-- https://mvnrepository.com/artifact/org.jfree/jfreechart -->
         <dependency>
@@ -42,5 +76,127 @@
         </dependency>
 
     </dependencies>
+
+
+
+    <profiles>
+        <profile>
+            <id>SimpleTimeSeriesProducer</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>3.2.1</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <transformers>
+                                        <transformer
+                                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                            <mainClass>org.opentsx.lg.TSDataSineWaveGenerator</mainClass>
+                                        </transformer>
+                                    </transformers>
+
+                                        <filters>
+                                            <filter>
+                                                <artifact>*:*</artifact>
+                                                <excludes>
+                                                    <exclude>META-INF/*.SF</exclude>
+                                                    <exclude>META-INF/*.DSA</exclude>
+                                                    <exclude>META-INF/*.RSA</exclude>
+                                                </excludes>
+                                            </filter>
+                                        </filters>
+
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>Docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.33.0</version>
+                        <executions>
+                            <execution>
+                                <id>start</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <!-- "build" should be used to create the images with the artifact -->
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+
+                            <images>
+
+                                <image>
+
+                                    <alias>OpenTSx-DataGenerator</alias>
+                                    <name>opentsx/time-series-generator:${project.version}</name>
+                                    <build>
+                                        <from>confluentinc/cp-base</from>
+                                        <assembly>
+                                            <name>opentsx-lg</name>
+                                            <descriptorRef>artifact</descriptorRef>
+                                            <inline>
+                                            <files>
+                                                <file>
+                                                    <source>${project.basedir}/target/${project.build.finalName}.jar</source>
+                                                    <outputDirectory>./</outputDirectory>
+                                                    <destName>${project.build.finalName}.jar</destName>
+                                                </file>
+                                                <file>
+                                                    <source>${project.basedir}/src/main/resources/config/topiclist.def</source>
+                                                    <outputDirectory>./</outputDirectory>
+                                                    <destName>config/topiclist.def</destName>
+                                                </file>
+                                                <file>
+                                                    <source>${project.basedir}/src/main/resources/config/ccloud.props</source>
+                                                    <outputDirectory>./</outputDirectory>
+                                                    <destName>config/ccloud.props</destName>
+                                                </file>
+                                                <file>
+                                                    <source>${project.basedir}/src/main/resources/config/cpl.props</source>
+                                                    <outputDirectory>./</outputDirectory>
+                                                    <destName>config/cpl.props</destName>
+                                                </file>
+                                                <file>
+                                                    <source>${project.basedir}/src/main/resources/config/mdc_c1.props</source>
+                                                    <outputDirectory>./</outputDirectory>
+                                                    <destName>config/mdc_c1.props</destName>
+                                                </file>
+                                            </files>
+                                            </inline>
+                                        </assembly>
+                                        <cmd>
+                                            <shell>java -jar /opentsx-lg/${project.build.finalName}.jar</shell>
+                                        </cmd>
+                                        <env>
+                                            <OPENTSX_TOPIC_MAP_FILE_NAME>/opentsx-lg/config/topiclist.def</OPENTSX_TOPIC_MAP_FILE_NAME>
+                                            <OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>/opentsx-lg/config/mdc_c1.props</OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>
+                                            <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
+                                        </env>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

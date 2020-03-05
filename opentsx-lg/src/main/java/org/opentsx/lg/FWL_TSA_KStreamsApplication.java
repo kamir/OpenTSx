@@ -1,4 +1,4 @@
-package org.opentsx.kstreams.tsa;
+package org.opentsx.lg;
 
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
@@ -7,21 +7,17 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Printed;
-import org.opentsx.data.model.EpisodesRecord;
-import org.opentsx.kstreams.StateStoreExample2;
-import org.opentsx.kstreams.cks.CassandraStoreBuilder;
-import org.opentsx.kstreams.processors.CountingProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.opentsx.data.model.EpisodesRecord;
 
 import java.util.Properties;
 
-public class TSAExample1 {
+public class FWL_TSA_KStreamsApplication {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TSAExample1.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FWL_TSA_KStreamsApplication.class);
 
     public static void main(String[] args) throws Exception {
 

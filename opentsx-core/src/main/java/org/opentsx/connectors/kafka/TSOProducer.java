@@ -11,6 +11,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.opentsx.data.model.Observation;
 
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -18,12 +21,36 @@ import java.util.Vector;
 
 public class TSOProducer {
 
+
+    public static void init_PROPS_FN(String fn){
+        File f = new File(fn);
+        System.out.println( "> PROPS_FN Path: " + f.getAbsolutePath() + " -> (r:" + f.canRead()+ ")" );
+
+        if ( f.canRead() )
+            PROPS_FN = fn;
+        else {
+            System.out.println("> Attempt to overwrite PROPS_FN in org.opentsx.connectors.kafka.TSOProducer failed.");
+        }
+        System.out.println("> PROPS_FN=" + PROPS_FN);
+    };
+    private static String PROPS_FN = "config/cpl.props";
+    public static String get_PROPS_FN() {
+        return  PROPS_FN;
+    };
+
+
+
+
+
+
     public final static String TOPIC_for_events_string = "TSOData_Events_string";
 
     public final static String TOPIC_for_events = "OpenTSx_Events";
     public final static String TOPIC_for_episodes = "OpenTSx_Episodes";
 
-    private final static String BOOTSTRAP_SERVERS = "localhost:9092";
+
+    // private final static String BOOTSTRAP_SERVERS = "localhost:9092";
+    // private final static String BOOTSTRAP_SERVERS = "pkc-43n10.us-central1.gcp.confluent.cloud:9092";
 
     public static void runProducer( int sendMessageCount ) throws Exception {
 
@@ -107,20 +134,12 @@ public class TSOProducer {
      */
     private static Producer<String, Event> createProducer_Avro(Properties props) {
 
-        if( props.get( ProducerConfig.BOOTSTRAP_SERVERS_CONFIG ) == null )
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
 
         if( props.get( ProducerConfig.CLIENT_ID_CONFIG ) == null )
             props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOEventProducer_AVRO");
 
-        if( props.get( ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG ) == null )
-            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-        //props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class.getName());
 
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
-
-        props.put("schema.registry.url", "http://localhost:8081");
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
@@ -130,20 +149,16 @@ public class TSOProducer {
 
     private static Producer<String, EpisodesRecord> createProducer_Avro_Episodes(Properties props) {
 
-        if( props.get( ProducerConfig.BOOTSTRAP_SERVERS_CONFIG ) == null )
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOEpisodeProducer_AVRO");
 
-        if( props.get( ProducerConfig.CLIENT_ID_CONFIG ) == null )
-            props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOEpisodeProducer_AVRO");
 
-        if( props.get( ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG ) == null )
-            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
 
-        props.put("schema.registry.url", "http://localhost:8081");
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        props.list(System.out);
 
         return new KafkaProducer<>(props);
 
@@ -161,10 +176,24 @@ public class TSOProducer {
 
         Properties props = new Properties();
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        try {
+            props.load(new FileReader( new File( "/Users/mkampf/GITHUB.public/OpenTSx/config.props" ) ));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        //props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
+
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+
+
+
+
 
         return new KafkaProducer<>(props);
 
@@ -183,7 +212,15 @@ public class TSOProducer {
 
         Properties props = new Properties();
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        try {
+            props.load(new FileReader( new File( PROPS_FN ) ));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        // props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
 
 
@@ -287,7 +324,15 @@ public class TSOProducer {
 
         Properties props = new Properties();
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        try {
+            props.load(new FileReader( new File( PROPS_FN ) ));
+            props.list(System.out);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "TSOItemProducer");
 
         final Producer<String, Event> producer = createProducer_Avro( props );
