@@ -2,7 +2,41 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/config/ccloud.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/cpl.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/mdc_c1.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/topiclist.def" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/ccloud.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/cpl.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/mdc_c1.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/topiclist.def" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/opentsx-core.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/tsa/TSAExample1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/FWL_TSA_KStreamsApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/opentsx-lg.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-processors/opentsx-processors.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/run_deployment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-udf-ksql/run_deployment.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -82,7 +116,11 @@
     <option name="version" value="1" />
   </component>
   <component name="ProjectId" id="1PF6t0LFHzpCGreu4Ef8Xkvsvpi" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="DatabaseDriversLRU" value="cassandra" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="TF_FMT" value="false" />
@@ -90,7 +128,8 @@
     <property name="add_unversioned_files" value="$PROJECT_DIR$/data/out/tsb/TAB_ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/Hadoop.TS.NG/data/out/tsb/ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1b/sensordata.csv&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1a/sensordata.csv" />
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -101,37 +140,38 @@
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="restartRequiresConfirmation" value="false" />
-    <property name="settings.editor.selected.configurable" value="database.main" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
+      <recent name="$PROJECT_DIR$/doc/manuals" />
+      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="udf" />
       <recent name="" />
       <recent name="org.apache.hadoopts" />
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
+      <recent name="$PROJECT_DIR$/config" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources" />
+      <recent name="$PROJECT_DIR$/opentsx-tip" />
       <recent name="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts" />
-      <recent name="$PROJECT_DIR$/opentsx-ksql-app/bin" />
-      <recent name="$PROJECT_DIR$/opentsx-ksql-app" />
-      <recent name="$PROJECT_DIR$/opentsx-data/src/main/avro" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/temp" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="org.opentsx.kstreams.tsa" />
       <recent name="org.opentsx.lg" />
+      <recent name="" />
+      <recent name="org.opentsx.kstreams.tsa" />
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.tsa.rng" />
-      <recent name="org.apache.hadoopts.app.bucketanalyser" />
     </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
-      <recent name="$PROJECT_DIR$/doc/manuals" />
-      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -146,50 +186,17 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.TSDataSineWaveGenerator">
-    <configuration name="DemoTensorFlow" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="DemoTensorFlow" />
-      <module name="opentsx-predict" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TSAExample1" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.opentsx.kstreams.tsa.TSAExample1" />
-      <module name="opentsx-kstreams" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.opentsx.kstreams.tsa.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TSBucketCreator_Sinus" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.opentsx.tsbucket.generator.TSBucketCreator_Sinus" />
-      <module name="opentsx-core" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.opentsx.tsbucket.generator.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Application.TopicsUP">
     <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
-      <module name="opentsx-load-generators" />
+      <module name="opentsx-lg" />
       <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
         <option name="ENABLED" value="false" />
         <entries />
       </extension>
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.opentsx.lg.*" />
+          <option name="PATTERN" value="org.opentsx.connectors.kafka.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -197,12 +204,39 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TSPropertyTester" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.opentsx.algorithms.ris.experimental.TSPropertyTester" />
-      <module name="opentsx-core" />
+    <configuration name="TopicsDOWN" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <envs>
+        <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/cpl.props " />
+      </envs>
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TopicsDOWN" />
+      <module name="opentsx-lg" />
+      <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
+        <option name="ENABLED" value="false" />
+        <entries />
+      </extension>
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.opentsx.algorithms.ris.experimental.*" />
+          <option name="PATTERN" value="org.opentsx.connectors.kafka.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TopicsUP" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <envs>
+        <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/cpl.props " />
+      </envs>
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TopicsUP" />
+      <module name="opentsx-lg" />
+      <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
+        <option name="ENABLED" value="false" />
+        <entries />
+      </extension>
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.opentsx.connectors.kafka.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -211,19 +245,15 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Application.TSPropertyTester" />
-      <item itemvalue="Application.DemoTensorFlow" />
-      <item itemvalue="Application.TSBucketCreator_Sinus" />
       <item itemvalue="Application.TSDataSineWaveGenerator" />
-      <item itemvalue="Application.TSAExample1" />
+      <item itemvalue="Application.TopicsDOWN" />
+      <item itemvalue="Application.TopicsUP" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.TopicsUP" />
+        <item itemvalue="Application.TopicsDOWN" />
         <item itemvalue="Application.TSDataSineWaveGenerator" />
-        <item itemvalue="Application.TSAExample1" />
-        <item itemvalue="Application.TSBucketCreator_Sinus" />
-        <item itemvalue="Application.DemoTensorFlow" />
-        <item itemvalue="Application.TSPropertyTester" />
       </list>
     </recent_temporary>
   </component>
@@ -292,7 +322,20 @@
       <workItem from="1581869085716" duration="8030000" />
       <workItem from="1582130612292" duration="2189000" />
       <workItem from="1582205316498" duration="2978000" />
-      <workItem from="1582309366976" duration="22731000" />
+      <workItem from="1582309366976" duration="30724000" />
+      <workItem from="1582621686220" duration="448000" />
+      <workItem from="1582893840028" duration="274000" />
+      <workItem from="1582908393774" duration="665000" />
+      <workItem from="1582984187134" duration="11425000" />
+      <workItem from="1583136495332" duration="1078000" />
+      <workItem from="1583137805364" duration="133000" />
+      <workItem from="1583142243157" duration="2533000" />
+      <workItem from="1583158993247" duration="1241000" />
+      <workItem from="1583392622970" duration="1730000" />
+      <workItem from="1583394404109" duration="1878000" />
+      <workItem from="1583396593460" duration="353000" />
+      <workItem from="1583397349237" duration="5231000" />
+      <workItem from="1583403163127" duration="9751000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -328,6 +371,7 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Prepare for Meetup in Leipzig." />
     <option name="LAST_COMMIT_MESSAGE" value="Prepare for Meetup in Leipzig." />
   </component>
@@ -336,8 +380,28 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java</url>
-          <line>1252</line>
+          <line>1264</line>
           <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
+          <line>111</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
+          <line>109</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
+          <line>113</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
+          <line>117</line>
+          <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

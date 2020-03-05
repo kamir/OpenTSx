@@ -365,12 +365,16 @@ public class TSBucket {
             config = new Configuration();
         }
 
+        /*
+
         config.set("fs.hdfs.impl",
                 org.apache.hadoop.hdfs.DistributedFileSystem.class.getName()
         );
         config.set("fs.file.impl",
                 org.apache.hadoop.fs.LocalFileSystem.class.getName()
         );
+
+        */
 
         return config;
     }
@@ -392,7 +396,11 @@ public class TSBucket {
             }
             
             System.out.println(fs);
-        } 
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println(">>> IOException: " + ex.getMessage() );
+        }
         catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -634,7 +642,7 @@ public class TSBucket {
             double fMIN, double fMAX, double aMIN, double aMAX, double SR, double time, String uuid, String unit) throws Exception {
 
         Configuration config = initConfig();
-        FileSystem fs = initFileSystem();
+        // FileSystem fs = initFileSystem();
 
         Path path = new Path(filename_core + ".tsb.vec.seq");
         System.out.println("--> create bucket with filename : " + path.toString());
@@ -646,8 +654,9 @@ public class TSBucket {
         System.out.println("--> create bucket : uncorrelated Time Series with frequency range : f=[ " + fMIN + ", " + fMAX + "]");
 
         // write a SequenceFile form a Vector
+/**
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-
+**/
         System.out.println("--> process bucket : Sinus-Generator ( z=" + ANZ + ", length=" + (time * SR) + ")");
         System.out.println("--> zDP : " + ( ANZ * (time * SR) ) + " " );
 
@@ -680,12 +689,15 @@ public class TSBucket {
 
         }
 
-        writer.close();
+        if ( !SKIP_WRITES )
+            writer.close();
 
         System.out.println("### DONE [SKIP-WRITE:"+SKIP_WRITES+"] : PATH:" + path.toString());
 
         return tsbd;
     }
+
+
 
     /**
      *
