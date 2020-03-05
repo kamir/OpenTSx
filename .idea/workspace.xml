@@ -2,41 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/config/ccloud.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/config/cpl.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/config/mdc_c1.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/config/topiclist.def" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/ccloud.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/cpl.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/mdc_c1.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/config/topiclist.def" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/opentsx-core.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/tsa/TSAExample1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/FWL_TSA_KStreamsApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/opentsx-lg.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-processors/opentsx-processors.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/run_deployment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-udf-ksql/run_deployment.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" afterPath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -122,6 +95,7 @@
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="DatabaseDriversLRU" value="cassandra" />
+    <property name="GO_FMT" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="TF_FMT" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -129,7 +103,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -157,11 +131,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
       <recent name="$PROJECT_DIR$/config" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources" />
       <recent name="$PROJECT_DIR$/opentsx-tip" />
-      <recent name="$PROJECT_DIR$/opentsx-ksql-app/CP_HOME/scripts" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -186,9 +160,29 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.TopicsUP">
+  <component name="RunManager" selected="Application.TopicsCHECK">
     <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
+      <module name="opentsx-lg" />
+      <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
+        <option name="ENABLED" value="false" />
+        <entries />
+      </extension>
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.opentsx.connectors.kafka.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TopicsCHECK" type="Application" factoryName="Application">
+      <envs>
+        <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/cpl.props " />
+      </envs>
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TopicsCHECK" />
       <module name="opentsx-lg" />
       <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
         <option name="ENABLED" value="false" />
@@ -245,6 +239,7 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.TopicsCHECK" />
       <item itemvalue="Application.TSDataSineWaveGenerator" />
       <item itemvalue="Application.TopicsDOWN" />
       <item itemvalue="Application.TopicsUP" />
@@ -335,7 +330,7 @@
       <workItem from="1583394404109" duration="1878000" />
       <workItem from="1583396593460" duration="353000" />
       <workItem from="1583397349237" duration="5231000" />
-      <workItem from="1583403163127" duration="9751000" />
+      <workItem from="1583403163127" duration="13415000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -351,7 +346,14 @@
       <option name="project" value="LOCAL" />
       <updated>1582201349027</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Prepare for Packaged TSG in docker container.">
+      <created>1583416463467</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1583416463467</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -373,7 +375,8 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Prepare for Meetup in Leipzig." />
-    <option name="LAST_COMMIT_MESSAGE" value="Prepare for Meetup in Leipzig." />
+    <MESSAGE value="Prepare for Packaged TSG in docker container." />
+    <option name="LAST_COMMIT_MESSAGE" value="Prepare for Packaged TSG in docker container." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -385,22 +388,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>111</line>
+          <line>120</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>109</line>
+          <line>118</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>113</line>
+          <line>122</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>117</line>
+          <line>126</line>
           <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>
