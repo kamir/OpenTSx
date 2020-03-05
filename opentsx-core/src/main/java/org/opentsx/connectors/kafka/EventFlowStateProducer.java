@@ -6,14 +6,15 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.opentsx.core.TSData;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Properties;
 import java.util.Vector;
 
 public class EventFlowStateProducer {
 
-    public final static String TOPIC = "opentsx_event_flow_state";
-    private final static String BOOTSTRAP_SERVERS = "localhost:9092";
-
+    public final static String TOPIC = "OpenTSx_Event_Flow_State";
 
     /**
      * Creates a Producer with custom settings, and in case some cutsom settings are missing,
@@ -30,8 +31,14 @@ public class EventFlowStateProducer {
      */
     private static Producer<String, String> createProducer(Properties props) {
 
-        if( props.get( ProducerConfig.BOOTSTRAP_SERVERS_CONFIG ) == null )
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        try {
+            props.load(new FileReader( new File( TSOProducer.get_PROPS_FN() ) ));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
 
         if( props.get( ProducerConfig.CLIENT_ID_CONFIG ) == null )
             props.put(ProducerConfig.CLIENT_ID_CONFIG, "EventFlowStateProducer");
@@ -39,8 +46,8 @@ public class EventFlowStateProducer {
         if( props.get( ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG ) == null )
             props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
-        if( props.get( ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG ) == null )
-            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
         return new KafkaProducer<>(props);
 
@@ -57,7 +64,14 @@ public class EventFlowStateProducer {
 
         Properties props = new Properties();
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        try {
+            props.load(new FileReader( new File( TSOProducer.get_PROPS_FN() ) ));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "EventFlowStateProducer");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());

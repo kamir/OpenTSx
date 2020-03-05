@@ -10,15 +10,17 @@
         <module name="opentsx-predict" />
         <module name="opentsx-processors" />
         <module name="opentsx-data" />
-        <module name="opentsx-load-generators" />
+        <module name="opentsx-lg" />
         <module name="OpenTSx" />
-        <module name="opentsx-ksql-app" />
+        <module name="ksql-app" />
         <module name="opentsx-core" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="maven-archiver" target="1.5" />
-      <module name="opentsx-lg" target="1.8" />
+      <module name="opentsx-ksql-app" target="1.8" />
+      <module name="opentsx-kstreams" target="1.8" />
+      <module name="opentsx-load-generators" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

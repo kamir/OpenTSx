@@ -60,12 +60,35 @@ public class TSDataSineWaveGenerator {
 
         boolean showChart = true;
 
+        /**
+         * the argument "off" turns off the GUI.
+         */
         if ( args != null ) {
             if ( args.length > 0 ) {
                 if( args[0].equals( "off") )
                     showChart = false;
             }
         }
+
+        /**
+         * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
+         */
+        String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
+        System.out.println(">>> OPENTSX_SHOW_GUI=" + gui_prop);
+        if( gui_prop != null ) {
+            if (gui_prop.equals("false")) {
+                System.out.println("*** turn the GUI off. ");
+                showChart = false;
+            }
+            else
+                showChart = true;
+        }
+        System.out.println(">>> showChart=" + showChart );
+
+        /**
+         * Read environment variables to configure the tool ...
+         */
+        OpenTSxClusterLink.init();
 
         // which aspect should be demonstrated ?
         boolean persistEpisodes = true;
@@ -184,7 +207,6 @@ public class TSDataSineWaveGenerator {
             efsp.pushFlowState( stateProps, "TSDataSineWaveGenerator_" + t0);
 
             Logger.getLogger(TSDataSineWaveGenerator.class.getName()).log(Level.SEVERE, "DURATION 2 : " + ((t2 - t1)/1000.0));
-
 
             /**
              * Step 5: Convert raw data into "TimeSeriesObject" and show a chart.

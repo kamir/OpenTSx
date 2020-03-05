@@ -3,8 +3,6 @@ package org.opentsx.kstreams.cks;
 import java.util.Date;
 
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.google.gson.Gson;
 
 /**
  * Simple Java client test to connect to a local 1 node cluster,
