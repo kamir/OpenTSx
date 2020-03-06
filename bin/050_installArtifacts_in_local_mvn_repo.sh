@@ -20,6 +20,6 @@ mvn install:install-file -Dfile=./../scripts/infodynamics.jar -DgroupId=infodyna
 # Deploy binary release to local MVN repository
 #-------------------------------------------------------------------------------
 
-mvn install:install-file -Dfile=./../target/hadoop-ts-ng-$VERSION.jar -DgroupId=com.cloudera -DartifactId=hadoop-ts-ng -Dversion=$VERSION -Dpackaging=jar -DskipTests
+# mvn install:install-file -Dfile=./../target/hadoop-ts-ng-$VERSION.jar -DgroupId=com.cloudera -DartifactId=hadoop-ts-ng -Dversion=$VERSION -Dpackaging=jar -DskipTests
 
 
