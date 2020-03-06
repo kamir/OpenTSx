@@ -2,14 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mdc1/docker-compose-ORIGINAL.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mdc1/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mdc1/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-app/pom.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -103,7 +100,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mdc1" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -117,12 +114,8 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
-      <recent name="$PROJECT_DIR$/doc/manuals" />
-      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="udf" />
@@ -131,11 +124,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-lg" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
       <recent name="$PROJECT_DIR$/config" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources" />
-      <recent name="$PROJECT_DIR$/opentsx-tip" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -144,8 +137,12 @@
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.tsa.rng" />
     </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
+      <recent name="$PROJECT_DIR$/doc/manuals" />
+      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -330,7 +327,8 @@
       <workItem from="1583394404109" duration="1878000" />
       <workItem from="1583396593460" duration="353000" />
       <workItem from="1583397349237" duration="5231000" />
-      <workItem from="1583403163127" duration="13415000" />
+      <workItem from="1583403163127" duration="17607000" />
+      <workItem from="1583481325947" duration="338000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>

@@ -13,7 +13,7 @@
 
     <artifactId>opentsx-core</artifactId>
 
-    <name>OpenTSx - core</name>
+    <name>opentsx-core</name>
 
     <dependencies>
 
