@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose-ORIGINAL.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/STRETCHED_PART/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc2/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt/STRETCHED_PART/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose-ORIGINAL.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/manage-confluent-local.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -28,37 +28,7 @@
     <option name="HIDDEN_KINDS">
       <set />
     </option>
-    <expand>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-      </path>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
-      </path>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
-        <item name="ks1: schema" type="16f33254:CassImplModel$Schema" />
-      </path>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
-        <item name="ks1: schema" type="16f33254:CassImplModel$Schema" />
-        <item name="sensordata: table" type="e12c2b20:CassImplModel$Table" />
-      </path>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
-        <item name="ks1: schema" type="16f33254:CassImplModel$Schema" />
-        <item name="state_store: table" type="e12c2b20:CassImplModel$Table" />
-      </path>
-    </expand>
+    <expand />
     <select />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -100,7 +70,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -114,12 +84,8 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
-      <recent name="$PROJECT_DIR$/doc/manuals" />
-      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="udf" />
@@ -128,11 +94,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-lg" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
-      <recent name="$PROJECT_DIR$/config" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -141,8 +107,12 @@
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.tsa.rng" />
     </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
+      <recent name="$PROJECT_DIR$/doc/manuals" />
+      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
+      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -329,7 +299,11 @@
       <workItem from="1583397349237" duration="5231000" />
       <workItem from="1583403163127" duration="17607000" />
       <workItem from="1583481325947" duration="338000" />
-      <workItem from="1583482128766" duration="1596000" />
+      <workItem from="1583482128766" duration="3489000" />
+      <workItem from="1583923361360" duration="3317000" />
+      <workItem from="1584449639584" duration="623000" />
+      <workItem from="1584459737329" duration="1000" />
+      <workItem from="1584462749862" duration="1410000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
