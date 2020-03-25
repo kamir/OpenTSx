@@ -18,6 +18,8 @@
         <module>opentsx-data</module>
         <module>opentsx-lg</module>
         <module>opentsx-ksql-app</module>
+        <module>opentsx-spring-example</module>
+
     </modules>
 
     <properties>

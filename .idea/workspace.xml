@@ -2,11 +2,38 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt/STRETCHED_PART/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose-ORIGINAL.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/manage-confluent-local.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/broker-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/broker-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/connect-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/connect-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/control-center-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/control-center-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-cli-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-datagen-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-server-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-server-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/rest-proxy-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/rest-proxy-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/schema-registry-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/schema-registry-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/zookeeper-deployment.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/zookeeper-service.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc3/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-demo2.zip" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/java/src/demo1/KafkaConsumerConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/java/src/demo1/KafkaDemoApp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/java/src/demo1/KafkaProducerConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/opentsx-spring-example.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -63,6 +90,12 @@
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="DatabaseDriversLRU" value="cassandra" />
     <property name="GO_FMT" value="true" />
+    <property name="RequestMappingsPanelOrder0" value="0" />
+    <property name="RequestMappingsPanelOrder1" value="1" />
+    <property name="RequestMappingsPanelOrder2" value="2" />
+    <property name="RequestMappingsPanelWidth0" value="75" />
+    <property name="RequestMappingsPanelWidth1" value="75" />
+    <property name="RequestMappingsPanelWidth2" value="75" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="TF_FMT" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -70,7 +103,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-cluster-demo1/mdc3" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -94,11 +127,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-cluster-demo1/mdc3" />
       <recent name="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-lg" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -108,14 +141,19 @@
       <recent name="org.opentsx.tsa.rng" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-spring-example/main" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example/main/java" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/doc/manuals/drafts" />
-      <recent name="$PROJECT_DIR$/doc/manuals" />
-      <recent name="$PROJECT_DIR$/doc/conferences/Las Vegas - 2016" />
-      <recent name="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java" />
     </key>
   </component>
   <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="SpringBootApplicationConfigurationType" />
+      </set>
+    </option>
     <option name="ruleStates">
       <list>
         <RuleState>
@@ -127,7 +165,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.TopicsCHECK">
+  <component name="RunManager" selected="Spring Boot.KafkaDemoApp">
     <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
       <module name="opentsx-lg" />
@@ -205,14 +243,37 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="KafkaDemoApp" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="opentsx-spring-example" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="demo1.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SPRING_BOOT_MAIN_CLASS" value="demo1.KafkaDemoApp" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="KafkaDemoApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="opentsx-spring-example" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="KafkaDemoApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Application.TopicsCHECK" />
       <item itemvalue="Application.TSDataSineWaveGenerator" />
       <item itemvalue="Application.TopicsDOWN" />
       <item itemvalue="Application.TopicsUP" />
+      <item itemvalue="Spring Boot.KafkaDemoApplication" />
+      <item itemvalue="Spring Boot.KafkaDemoApp" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Spring Boot.KafkaDemoApp" />
         <item itemvalue="Application.TopicsUP" />
         <item itemvalue="Application.TopicsDOWN" />
         <item itemvalue="Application.TSDataSineWaveGenerator" />
@@ -222,18 +283,9 @@
   <component name="ServiceViewManager">
     <option name="allServicesViewState">
       <serviceView>
+        <option name="contentProportion" value="0.1665433" />
         <treeState>
-          <expand>
-            <path>
-              <item name="services root" type="e789fda9:ObjectUtils$Sentinel" />
-              <item name="com.intellij.execution.services.ServiceModel$ServiceGroupNode@d051d500" type="7427dc5b:ServiceModel$ServiceGroupNode" />
-            </path>
-            <path>
-              <item name="services root" type="e789fda9:ObjectUtils$Sentinel" />
-              <item name="com.intellij.execution.services.ServiceModel$ServiceGroupNode@d051d500" type="7427dc5b:ServiceModel$ServiceGroupNode" />
-              <item name="com.intellij.execution.services.ServiceModel$ServiceNode@26be634e" type="9fbbdea:ServiceModel$ServiceNode" />
-            </path>
-          </expand>
+          <expand />
           <select />
         </treeState>
       </serviceView>
@@ -303,7 +355,13 @@
       <workItem from="1583923361360" duration="3317000" />
       <workItem from="1584449639584" duration="623000" />
       <workItem from="1584459737329" duration="1000" />
-      <workItem from="1584462749862" duration="1410000" />
+      <workItem from="1584462749862" duration="5821000" />
+      <workItem from="1584528625035" duration="9113000" />
+      <workItem from="1584637553139" duration="2074000" />
+      <workItem from="1584799609716" duration="1143000" />
+      <workItem from="1584806877215" duration="1805000" />
+      <workItem from="1584875918862" duration="31000" />
+      <workItem from="1585155201150" duration="1234000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -326,7 +384,14 @@
       <option name="project" value="LOCAL" />
       <updated>1583416463467</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Prepare the stretched cluster setup at home.">
+      <created>1584464437701</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1584464437702</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -349,7 +414,8 @@
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Prepare for Meetup in Leipzig." />
     <MESSAGE value="Prepare for Packaged TSG in docker container." />
-    <option name="LAST_COMMIT_MESSAGE" value="Prepare for Packaged TSG in docker container." />
+    <MESSAGE value="Prepare the stretched cluster setup at home." />
+    <option name="LAST_COMMIT_MESSAGE" value="Prepare the stretched cluster setup at home." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

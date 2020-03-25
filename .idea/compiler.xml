@@ -12,8 +12,9 @@
         <module name="opentsx-data" />
         <module name="opentsx-lg" />
         <module name="OpenTSx" />
-        <module name="ksql-app" />
         <module name="opentsx-core" />
+        <module name="ksql-app" />
+        <module name="opentsx-spring-example" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -22,5 +23,10 @@
       <module name="opentsx-kstreams" target="1.8" />
       <module name="opentsx-load-generators" target="1.8" />
     </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="opentsx-spring-example" options="-parameters" />
+    </option>
   </component>
 </project>
