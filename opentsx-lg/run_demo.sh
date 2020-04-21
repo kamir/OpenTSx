@@ -27,8 +27,8 @@ mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Do
 #
 # Show the time series in an TSA-Panel ...
 #
-export OPENTSX_TOPIC_MAP_FILE_NAME=/opentsx-lg/config/topiclist.def
-export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=/opentsx-lg/config/cpl.props
+export OPENTSX_TOPIC_MAP_FILE_NAME=./../config/topiclist.def
+export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/cpl.props
 export OPENTSX_SHOW_GUI=false
 
 mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
@@ -40,3 +40,39 @@ mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGener
 # inspection of LOG-File size
 #
 $CONFLUENT_HOME/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe --topic-list OpenTSx_Episodes,OpenTSx_Events | python -mjson.tool
+
+
+
+CREATE STREAM OpenTSx_Event_Flow_State_stream (
+  persistEvents VARCHAR,
+  persistEpisodes VARCHAR,
+  l BIGINT,
+  t2 BIGINT,
+  t1 BIGINT,
+  t0 BIGINT,
+  generator VARCHAR,
+  z BIGINT,
+  sendDuration DOUBLE,
+  generateDuration DOUBLE
+) WITH (KAFKA_TOPIC = 'OpenTSx_Event_Flow_State', VALUE_FORMAT='JSON');
+
+CREATE STREAM OpenTSx_Episodes_stream WITH (KAFKA_TOPIC = 'OpenTSx_Episodes', VALUE_FORMAT='AVRO');
+
+CREATE STREAM OpenTSx_Events_stream WITH (KAFKA_TOPIC = 'OpenTSx_Events', VALUE_FORMAT='AVRO');
+
+SELECT LABEL, TSTART, TEND, ZOBSERVATIONS, INCREMENT, URI
+FROM OPENTSX_EPISODES_STREAM EMIT CHANGES;
+
+Create stream OPENTSX_EPISODES_MD_STREAM
+AS SELECT LABEL, TSTART, TEND, ZOBSERVATIONS, INCREMENT, URI
+FROM OPENTSX_EPISODES_STREAM EMIT CHANGES;
+
+/**
+
+CREATE TABLE OpenTSx_Events_tab AS SELECT FROM OpenTSx_Events_stream;
+
+CREATE TABLE OpenTSx_Episodes_tab AS SELECT FROM OpenTSx_Episodes_stream;
+
+CREATE TABLE OpenTSx_Event_Flow_State_tab AS SELECT FROM OpenTSx_Event_Flow_State_stream;
+
+**/

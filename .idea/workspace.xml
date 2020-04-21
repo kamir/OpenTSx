@@ -2,37 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/broker-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/broker-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/connect-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/connect-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/control-center-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/control-center-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-cli-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-datagen-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-server-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-server-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/rest-proxy-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/rest-proxy-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/schema-registry-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/schema-registry-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/zookeeper-deployment.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/zookeeper-service.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc3/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-demo2.zip" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/java/src/demo1/KafkaConsumerConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/java/src/demo1/KafkaDemoApp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/java/src/demo1/KafkaProducerConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/main/resources/application.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/opentsx-spring-example.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-spring-example/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/cpl.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-spring-example/opentsx-spring-example.iml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-spring-example/opentsx-spring-example.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -361,7 +336,12 @@
       <workItem from="1584799609716" duration="1143000" />
       <workItem from="1584806877215" duration="1805000" />
       <workItem from="1584875918862" duration="31000" />
-      <workItem from="1585155201150" duration="1234000" />
+      <workItem from="1585155201150" duration="2429000" />
+      <workItem from="1585670615491" duration="44000" />
+      <workItem from="1585671111182" duration="1534000" />
+      <workItem from="1585679304749" duration="3952000" />
+      <workItem from="1585740437389" duration="111000" />
+      <workItem from="1585759224365" duration="2075000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -391,7 +371,14 @@
       <option name="project" value="LOCAL" />
       <updated>1584464437702</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Prepare the stretched cluster setup at home.">
+      <created>1585156660646</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1585156660646</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
