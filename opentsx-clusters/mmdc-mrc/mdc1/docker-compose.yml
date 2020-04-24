@@ -1,0 +1,132 @@
+version: '3'
+
+services:
+
+  broker-west-5:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-west-5
+    container_name: broker-west-5
+    networks:
+      - n1
+    ports:
+      - "9091:9091"
+      - "8091:8091"
+    volumes:
+      - ./config:/etc/kafka/demo
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+    environment:
+      KAFKA_BROKER_ID: 5
+      KAFKA_BROKER_RACK: 'west'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-west-5:19091,LISTENER_DOCKER_EXTERNAL://broker-west-5:9091
+      KAFKA_ADVERTISED_HOSTNAME: broker-west-5
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: '192.168.0.6:2181,192.168.0.6:2182,192.168.0.6:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 192.168.0.6:9091,192.168.0.6:9091
+      KAFKA_JMX_PORT: 8091
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+
+  broker-west-6:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-west-6
+    container_name: broker-west-6
+    networks:
+      - n1
+    ports:
+      - "9092:9092"
+      - "8092:8092"
+    volumes:
+      - ./config:/etc/kafka/demo
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+    environment:
+      KAFKA_BROKER_ID: 6
+      KAFKA_BROKER_RACK: 'west'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-west-6:19091,LISTENER_DOCKER_EXTERNAL://broker-west-6:9091
+      KAFKA_ADVERTISED_HOSTNAME: broker-west-6
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: '192.168.0.6:2181,192.168.0.6:2182,192.168.0.6:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 192.168.0.6:9091,192.168.0.6:9091
+      KAFKA_JMX_PORT: 8092
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+
+  broker-west-7:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-west-7
+    container_name: broker-west-7
+    networks:
+      - n1
+    ports:
+      - "9093:9093"
+      - "8093:8093"
+    volumes:
+      - ./config:/etc/kafka/demo
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+    environment:
+      KAFKA_BROKER_ID: 7
+      KAFKA_BROKER_RACK: 'west'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-west-7:19091,LISTENER_DOCKER_EXTERNAL://broker-west-7:9091
+      KAFKA_ADVERTISED_HOSTNAME: broker-west-7
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: '192.168.0.6:2181,192.168.0.6:2182,192.168.0.6:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 192.168.0.6:9091,192.168.0.6:9091
+      KAFKA_JMX_PORT: 8092
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+
+networks:
+  n1:
