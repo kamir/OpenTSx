@@ -1,9 +1,9 @@
 #!/bin/bash
-cd ~/Demos
+#cd ~/Demos
 # Install examples
-git clone https://github.com/confluentinc/examples
+#git clone https://github.com/confluentinc/examples
 # MRC demo
-cd ~/Demos/examples/multiregion/
+#cd ~/Demos/examples/multiregion/
 # Demo see https://github.com/confluentinc/examples/tree/5.4.1-post/multiregion
 
 # Start MRC demos
