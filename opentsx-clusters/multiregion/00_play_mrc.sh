@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ~/Demos/examples/multiregion/
+#cd ~/Demos/examples/multiregion/
 
 # Showcase to customer beginning from here
 # Describe Topics
