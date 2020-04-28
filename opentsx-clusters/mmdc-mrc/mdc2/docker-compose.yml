@@ -263,5 +263,23 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
 
+  ksqldb-server-west-1:
+    image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
+    hostname: ksqldb-server-west-1
+    container_name: ksqldb-server-west-1
+    depends_on:
+      - broker-west-1
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_BOOTSTRAP_SERVERS: "broker-west-1:9091"
+      KSQL_HOST_NAME: ksqldb-server-west-1
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry-west-1:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+
 networks:
   n1:
