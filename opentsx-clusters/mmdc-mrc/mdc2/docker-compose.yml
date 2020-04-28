@@ -214,7 +214,7 @@ services:
       - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry-west-1
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper-west:2181'
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeeper-east:2183'
     extra_hosts:
       - "zookeeper-east:192.168.0.9"
       - "zookeeper-central:192.168.0.9"
