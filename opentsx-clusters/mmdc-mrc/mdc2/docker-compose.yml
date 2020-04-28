@@ -298,7 +298,7 @@ services:
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
 
-  connect:
+  connect-west-1:
     image: cnfldemos/kafka-connect-datagen:0.2.0-5.4.0
     hostname: connect-west-1
     container_name: connect-west-1
