@@ -2,13 +2,21 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/cpl.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-spring-example/opentsx-spring-example.iml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-spring-example/opentsx-spring-example.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/manage-confluent-local.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cluster-demo0/manage-confluent-local.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose-ORIGINAL.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/FULL_STACK/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc1/STRETCHED_PART/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc2/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo1/mdc3/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mdc1/FULL_STACK/docker-compose-ORIGINAL.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mdc1/FULL_STACK/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mdc1/STRETCHED_PART/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mdc2/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/multiregion/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/stop.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/stop.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -342,6 +350,7 @@
       <workItem from="1585679304749" duration="3952000" />
       <workItem from="1585740437389" duration="111000" />
       <workItem from="1585759224365" duration="2075000" />
+      <workItem from="1587633373415" duration="7662000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
