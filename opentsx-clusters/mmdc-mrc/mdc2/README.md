@@ -1,5 +1,35 @@
 ![image](../images/confluent-logo-300-2.png)
 
+
+
+  rest-proxy-west-1:
+    image: ${REPOSITORY}/cp-kafka-rest:${CONFLUENT_DOCKER_TAG}
+    depends_on:
+      - zookeeper-west
+      - broker-west-1
+      - schema-registry-west-1
+    ports:
+      - 8082:8082
+    hostname: rest-proxy-west-1
+    container_name: rest-proxy-west-1
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy-west-1
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'broker-west-1:9091'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry-west-1:8081'
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      
+      
+      
 # Overview
 
 This demo showcases Confluent Platform's Multi-Region Replication capability built directly into Confluent Server starting with release 5.4.
