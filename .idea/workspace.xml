@@ -336,7 +336,7 @@
       <workItem from="1585679304749" duration="3952000" />
       <workItem from="1585740437389" duration="111000" />
       <workItem from="1585759224365" duration="2075000" />
-      <workItem from="1587633373415" duration="24786000" />
+      <workItem from="1587633373415" duration="25429000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -499,7 +499,14 @@
       <option name="project" value="LOCAL" />
       <updated>1588087010600</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="Prepare the stretched cluster setup at home.">
+      <created>1588087184751</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1588087184751</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

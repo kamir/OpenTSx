@@ -269,6 +269,7 @@ services:
     container_name: ksqldb-server-west-1
     depends_on:
       - broker-west-1
+      - schema-registry-west-1
     ports:
       - "8088:8088"
     environment:
