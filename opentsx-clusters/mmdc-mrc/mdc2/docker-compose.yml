@@ -232,7 +232,7 @@ services:
       - schema-registry-west-1
     ports:
       - 8082:8082
-    hostname: rest-proxy-east-1
+    hostname: rest-proxy-west-1
     container_name: rest-proxy-west-1
     environment:
       KAFKA_REST_HOST_NAME: rest-proxy-west-1
