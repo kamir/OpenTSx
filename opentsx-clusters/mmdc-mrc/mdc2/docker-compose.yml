@@ -216,9 +216,9 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry-west-1
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeeper-east:2183'
     extra_hosts:
-      - "zookeeper-east:192.168.0.9"
-      - "zookeeper-central:192.168.0.9"
-      - "zookeeper-west:192.168.0.9"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
       - "broker-west-5:192.168.0.9"
       - "broker-west-6:192.168.0.9"
       - "broker-west-7:192.168.0.9"
@@ -243,9 +243,9 @@ services:
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry-west-1:8081'
     extra_hosts:
-      - "zookeeper-east:192.168.0.9"
-      - "zookeeper-central:192.168.0.9"
-      - "zookeeper-west:192.168.0.9"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
       - "broker-west-5:192.168.0.9"
       - "broker-west-6:192.168.0.9"
       - "broker-west-7:192.168.0.9"
