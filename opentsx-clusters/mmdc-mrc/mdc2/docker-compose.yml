@@ -232,6 +232,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "control-center:192.168.0.6"
 
   rest-proxy-west-1:
     image: ${REPOSITORY}/cp-kafka-rest:${CONFLUENT_DOCKER_TAG}
@@ -262,6 +263,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "control-center:192.168.0.6"
 
   ksqldb-server-west-1:
     image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
@@ -297,6 +299,7 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
 
   connect-west-1:
     image: cnfldemos/kafka-connect-datagen:0.2.0-5.4.0
@@ -343,6 +346,7 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
 
   ksqldb-cli:
     image: ${REPOSITORY}/cp-ksqldb-cli:${CONFLUENT_DOCKER_TAG}
@@ -368,6 +372,53 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+  control-center:
+    image: ${REPOSITORY}/cp-enterprise-control-center:${CONFLUENT_DOCKER_TAG}
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - zookeeper-west
+      - zookeeper-east
+      - zookeeper-central
+      - broker-west-1
+      - broker-west-2
+      - broker-east-3
+      - broker-east-4
+      - schema-registry-west-1
+      - connect-west-1
+      - ksqldb-server-west-1
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-west-2:9092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper-west:2181'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'connect-west-1:8083'
+      CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server-west-1:8088"
+      CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: "http://ksqldb-server-west-1:8088"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry-west-1:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 3
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 3
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 3
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 3
+      PORT: 9021
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
 
 networks:
   n1:
