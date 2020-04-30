@@ -2,7 +2,7 @@
 
 #sudo docker-compose exec cli-west-2 kafka-topics --create --topic test-szenario-01 --replication-factor 3 --partitions 108 --bootstrap-server broker-west-1:9091
 
-echo "bootstrap-server=broker-west-1:9091" >> prod.config
+echo "bootstrap.servers=broker-west-1:9091" >> prod.config
 
 sudo docker cp prod.config cli-west-2:config
 
