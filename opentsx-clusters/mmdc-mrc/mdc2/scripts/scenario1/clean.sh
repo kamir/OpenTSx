@@ -1,4 +1,4 @@
-export TN=T2.4
+export TN=T2.5
 export ZM=1000000
 
 
