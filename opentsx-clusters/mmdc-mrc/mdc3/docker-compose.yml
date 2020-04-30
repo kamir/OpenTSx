@@ -130,8 +130,8 @@ services:
 
   cli-east-1:
     image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}
-    hostname: cli-east-1:
-    container_name: cli-east-1:
+    hostname: cli-east-1
+    container_name: cli-east-1
     networks:
       - n1
     extra_hosts:
