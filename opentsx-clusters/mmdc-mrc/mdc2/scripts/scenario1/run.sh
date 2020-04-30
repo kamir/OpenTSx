@@ -1,5 +1,5 @@
 export TN=T2.4
-export ZM=100000
+export ZM=1000000
 
 echo "*******************"
 echo "Topicname: $TN"
@@ -25,6 +25,6 @@ rm -rf tmp_producer
 sudo docker-compose exec cli-west-2 kafka-producer-perf-test --topic $TN --record-size 512 --throughput 60000 --num-records $ZM --producer-props acks=all linger.ms=10 --producer.config /config > tmp_producer
 echo "- done!"
 
-cat tmp_producer
-
 sudo docker-compose exec cli-west-2 kafka-topics --describe --topic $TN --bootstrap-server broker-west-1:9091
+
+cat tmp_producer
