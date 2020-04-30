@@ -128,5 +128,29 @@ services:
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
 
+  cli-east-1:
+    image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}
+    hostname: cli-east-1:
+    container_name: cli-east-1:
+    networks:
+      - n1
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+
+
+
+
 networks:
   n1:
