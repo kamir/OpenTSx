@@ -1,4 +1,4 @@
-export TN=T2.3
+export TN=T2.4
 export ZM=1000
 
 echo "*******************"
