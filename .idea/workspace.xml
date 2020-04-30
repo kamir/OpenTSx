@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/clean.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/clean.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/scenario1/clean.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/run.sh" afterDir="false" />
     </list>
@@ -73,7 +76,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/scenario1" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -101,11 +104,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/scenario1" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts" />
-      <recent name="$PROJECT_DIR$/opentsx-cluster-demo1/mdc3" />
-      <recent name="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt" />
-      <recent name="$PROJECT_DIR$" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -339,7 +342,7 @@
       <workItem from="1585759224365" duration="2075000" />
       <workItem from="1587633373415" duration="27131000" />
       <workItem from="1588147015677" duration="5596000" />
-      <workItem from="1588249484541" duration="1625000" />
+      <workItem from="1588249484541" duration="1993000" />
     </task>
     <task id="LOCAL-00001" summary="Prepare for Meetup in Leipzig.">
       <created>1581926690703</created>
@@ -586,7 +589,14 @@
       <option name="project" value="LOCAL" />
       <updated>1588251647702</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="Prepare the stretched cluster setup at home.">
+      <created>1588251740322</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1588251740322</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
