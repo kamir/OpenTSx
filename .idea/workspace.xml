@@ -338,21 +338,7 @@
       <workItem from="1585759224365" duration="2075000" />
       <workItem from="1587633373415" duration="27131000" />
       <workItem from="1588147015677" duration="5596000" />
-      <workItem from="1588249484541" duration="5783000" />
-    </task>
-    <task id="LOCAL-00003" summary="Prepare for Packaged TSG in docker container.">
-      <created>1583416463467</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1583416463467</updated>
-    </task>
-    <task id="LOCAL-00004" summary="Prepare the stretched cluster setup at home.">
-      <created>1584464437701</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1584464437702</updated>
+      <workItem from="1588249484541" duration="6185000" />
     </task>
     <task id="LOCAL-00005" summary="Prepare the stretched cluster setup at home.">
       <created>1585156660646</created>
@@ -683,7 +669,21 @@
       <option name="project" value="LOCAL" />
       <updated>1588255647083</updated>
     </task>
-    <option name="localTasksCounter" value="52" />
+    <task id="LOCAL-00052" summary="Prepare the stretched cluster setup at home.">
+      <created>1588257279168</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1588257279168</updated>
+    </task>
+    <task id="LOCAL-00053" summary="Prepare the stretched cluster setup at home.">
+      <created>1588257331588</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1588257331588</updated>
+    </task>
+    <option name="localTasksCounter" value="54" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
