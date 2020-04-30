@@ -1,3 +1,5 @@
+cd ./scripts/scenario1
+
 source .env
 
 echo "*******************"
