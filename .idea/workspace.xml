@@ -4,7 +4,6 @@
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/clean.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/clean.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1/run.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -341,21 +340,7 @@
       <workItem from="1585759224365" duration="2075000" />
       <workItem from="1587633373415" duration="27131000" />
       <workItem from="1588147015677" duration="5596000" />
-      <workItem from="1588249484541" duration="7482000" />
-    </task>
-    <task id="LOCAL-00010" summary="Prepare the stretched cluster setup at home.">
-      <created>1588081787730</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1588081787730</updated>
-    </task>
-    <task id="LOCAL-00011" summary="Prepare the stretched cluster setup at home.">
-      <created>1588082131968</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1588082131968</updated>
+      <workItem from="1588249484541" duration="7897000" />
     </task>
     <task id="LOCAL-00012" summary="Prepare the stretched cluster setup at home.">
       <created>1588082504458</created>
@@ -686,7 +671,21 @@
       <option name="project" value="LOCAL" />
       <updated>1588258653077</updated>
     </task>
-    <option name="localTasksCounter" value="59" />
+    <task id="LOCAL-00059" summary="Prepare the stretched cluster setup at home.">
+      <created>1588258983366</created>
+      <option name="number" value="00059" />
+      <option name="presentableId" value="LOCAL-00059" />
+      <option name="project" value="LOCAL" />
+      <updated>1588258983366</updated>
+    </task>
+    <task id="LOCAL-00060" summary="Prepare the stretched cluster setup at home.">
+      <created>1588259030024</created>
+      <option name="number" value="00060" />
+      <option name="presentableId" value="LOCAL-00060" />
+      <option name="project" value="LOCAL" />
+      <updated>1588259030024</updated>
+    </task>
+    <option name="localTasksCounter" value="61" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

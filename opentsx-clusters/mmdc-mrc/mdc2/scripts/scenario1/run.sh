@@ -28,3 +28,6 @@ echo "- done!"
 sudo docker-compose exec cli-west-2 kafka-topics --describe --topic $TN --bootstrap-server broker-west-1:9091
 
 cat tmp_producer
+
+echo "Test Results:"
+tail -n 1 /tmp/producer | sed 's|.*(\(.*\))|Producer: \1|g'
