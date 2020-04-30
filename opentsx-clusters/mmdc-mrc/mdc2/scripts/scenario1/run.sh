@@ -1,5 +1,4 @@
-export TN=T2
-
+source .env
 
 sudo docker-compose exec cli-west-2 kafka-topics --list --bootstrap-server broker-west-1:9091
 
@@ -15,3 +14,5 @@ sudo docker-compose exec cli-west-2 kafka-producer-perf-test --topic $TN --recor
 #| tee /tmp/producer &
 
 #sudo docker-compose exec cli-west-2 kafka-topics --list --bootstrap-server broker-west-1:9091
+
+sudo docker-compose exec cli-west-2 kafka-topics --describe --topic $TN
