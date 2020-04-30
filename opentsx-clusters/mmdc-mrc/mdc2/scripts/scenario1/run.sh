@@ -1,6 +1,4 @@
-cd ./scripts/scenario1
-
-source .env
+export TN=T2.1
 
 echo "*******************"
 echo "Topicname: $TN"
