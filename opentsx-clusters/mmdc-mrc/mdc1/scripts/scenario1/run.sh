@@ -1,5 +1,5 @@
-export TN=T2.7
-export ZM=3000000
+export TN=T2.8
+export ZM=5000000
 
 echo "*******************"
 echo "Topicname: $TN"

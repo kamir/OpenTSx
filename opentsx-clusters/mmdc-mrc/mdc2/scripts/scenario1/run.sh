@@ -1,5 +1,5 @@
-export TN=T2.7
-export ZM=3000000
+export TN=T2.8
+export ZM=5000000
 
 echo "*******************"
 echo "Topicname: $TN"
@@ -30,4 +30,4 @@ sudo docker-compose exec cli-west-2 kafka-topics --describe --topic $TN --bootst
 cat tmp_producer
 
 echo "Test Results:"
-tail -n 1 /tmp/producer | sed 's|.*(\(.*\))|Producer: \1|g'
+tail -n 1 tmp_producer | sed 's|.*(\(.*\))|Producer: \1|g'
