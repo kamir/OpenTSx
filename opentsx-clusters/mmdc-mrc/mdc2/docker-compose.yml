@@ -15,8 +15,8 @@ services:
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
       EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
-  volumes:
-    - ./jmx-exporter:/usr/share/jmx_exporter/
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
 
   zookeeper-central:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}

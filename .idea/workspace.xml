@@ -2,70 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/dashboards/consumer.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/dashboards/dashboard.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/dashboards/kafka-lag-exporter.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/dashboards/kafka-overview.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/dashboards/producer.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/dashboards/zookeeper-overview.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/grafana/provisioning/datasources/datasource.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/jmx-exporter/kafka-broker.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/jmx-exporter/kafka-consumer.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/jmx-exporter/kafka-producer.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/jmx-exporter/zookeeper.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/kafka-lag-exporter/application.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/kafka-lag-exporter/logback.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-alt/STRETCHED_PART/docker-compose.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/broker-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/broker-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/connect-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/connect-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/control-center-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/control-center-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose-ORIGINAL.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/docker-compose.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-cli-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-datagen-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-server-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/ksql-server-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/rest-proxy-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/rest-proxy-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/schema-registry-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/schema-registry-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/zookeeper-deployment.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/mac-book-pro-neu/FULL_STACK/zookeeper-service.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cluster-demo0/manage-confluent-local.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/manage-confluent-local.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/00_play_mrc.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/00_play_mrc.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/config/consumer-east.config" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/config/consumer-east.config" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/config/consumer-west.config" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/config/consumer-west.config" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/config/placement-multi-region-async.json" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/config/placement-multi-region-async.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/config/placement-multi-region-sync.json" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/config/placement-multi-region-sync.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/config/placement-single-region.json" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/config/placement-single-region.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/docker-compose.yml.orig" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/docker-compose.yml.orig" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/examples" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/Follower_Fetching.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/Follower_Fetching.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region-base-v2.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region-base-v2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region-base.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region-base.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region-latencies-v2.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region-latencies-v2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region-latencies.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region-latencies.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region-topic-replicas-v2.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region-topic-replicas-v2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region-topic-replicas.png" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region-topic-replicas.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/images/multi-region.graffle" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/images/multi-region.graffle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/create-topics.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/create-topics.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/describe-topics.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/describe-topics.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/jmx_metrics.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/jmx_metrics.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/latency_docker.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/latency_docker.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/run-consumer-sync-failover.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/run-consumer-sync-failover.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/run-consumer.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/run-consumer.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/run-producer-after-stopwest.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/run-producer-after-stopwest.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/run-producer.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/run-producer.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/start.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/start.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/stop.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/stop.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/scripts/validate_connectivity.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/cp-multiregion/scripts/validate_connectivity.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -401,21 +338,7 @@
       <workItem from="1585759224365" duration="2075000" />
       <workItem from="1587633373415" duration="27131000" />
       <workItem from="1588147015677" duration="5596000" />
-      <workItem from="1588249484541" duration="13361000" />
-    </task>
-    <task id="LOCAL-00019" summary="Prepare the stretched cluster setup at home.">
-      <created>1588085229211</created>
-      <option name="number" value="00019" />
-      <option name="presentableId" value="LOCAL-00019" />
-      <option name="project" value="LOCAL" />
-      <updated>1588085229211</updated>
-    </task>
-    <task id="LOCAL-00020" summary="Prepare the stretched cluster setup at home.">
-      <created>1588085742109</created>
-      <option name="number" value="00020" />
-      <option name="presentableId" value="LOCAL-00020" />
-      <option name="project" value="LOCAL" />
-      <updated>1588085742109</updated>
+      <workItem from="1588249484541" duration="13567000" />
     </task>
     <task id="LOCAL-00021" summary="Prepare the stretched cluster setup at home.">
       <created>1588086578788</created>
@@ -746,7 +669,21 @@
       <option name="project" value="LOCAL" />
       <updated>1588265720300</updated>
     </task>
-    <option name="localTasksCounter" value="68" />
+    <task id="LOCAL-00068" summary="Prepare the stretched cluster setup at home.">
+      <created>1588315295643</created>
+      <option name="number" value="00068" />
+      <option name="presentableId" value="LOCAL-00068" />
+      <option name="project" value="LOCAL" />
+      <updated>1588315295643</updated>
+    </task>
+    <task id="LOCAL-00069" summary="Prepare the stretched cluster setup at home.">
+      <created>1588315387731</created>
+      <option name="number" value="00069" />
+      <option name="presentableId" value="LOCAL-00069" />
+      <option name="project" value="LOCAL" />
+      <updated>1588315387731</updated>
+    </task>
+    <option name="localTasksCounter" value="70" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
