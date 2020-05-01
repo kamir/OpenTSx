@@ -13,6 +13,10 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+  volumes:
+    - ./jmx-exporter:/usr/share/jmx_exporter/
 
   zookeeper-central:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
@@ -26,8 +30,12 @@ services:
       ZOOKEEPER_SERVER_ID: 2
       ZOOKEEPER_CLIENT_PORT: 2182
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
 
   zookeeper-east:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
@@ -41,9 +49,13 @@ services:
       ZOOKEEPER_SERVER_ID: 3
       ZOOKEEPER_CLIENT_PORT: 2183
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
 
   broker-west-1:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -447,3 +459,46 @@ services:
 
 networks:
   n1:
+
+
+  prometheus:
+    image: prom/prometheus:v2.11.1
+    ports:
+      - 9190:9190
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+
+  alertmanager:
+    image: prom/alertmanager:v0.18.0
+    ports:
+      - 9193:9193
+
+  node-exporter:
+    image: prom/node-exporter:v0.18.1
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points'
+      - '^(aufs|proc|nsfs|shm|cgroup|tmpfs|binfmt_misc|debugfs|devpts|fusectl|hugetlbfs|fuse.lxcfs|mqueue|pstore|securityfs|sysfs|autofs|devtmpfs|configfs)'
+
+  kafka-lag-exporter:
+    image: lightbend/kafka-lag-exporter:0.5.5
+    hostname: kafka-lag-exporter
+    restart: always
+    ports:
+      - 9999:9999
+    volumes:
+      - ./kafka-lag-exporter/:/opt/docker/conf/
+
+  grafana:
+    image: grafana/grafana:6.6.2
+    environment:
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
