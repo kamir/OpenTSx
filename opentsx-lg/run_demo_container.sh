@@ -29,7 +29,15 @@ mvn exec:java -Dexec.mainClass="org.opentsx.lg.TopicsDOWN"
 mvn exec:java -Dexec.mainClass="org.opentsx.lg.TopicsUP"
 mvn exec:java -Dexec.mainClass="org.opentsx.lg.TopicsCHECK"
 
-
+#
+# Main class: org.opentsx.lg.TSDataSineWaveGenerator
+#
+# PROPERTIES:
+#
+### <OPENTSX_TOPIC_MAP_FILE_NAME>/opentsx-lg/config/topiclist.def</OPENTSX_TOPIC_MAP_FILE_NAME>
+### <OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>/opentsx-lg/config/mdc_c1.props</OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>
+### <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
+#
 docker run opentsx/time-series-generator:3.0.0
 
 #
