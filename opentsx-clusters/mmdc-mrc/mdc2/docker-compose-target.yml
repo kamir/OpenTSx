@@ -463,6 +463,11 @@ services:
     volumes:
       - ./prometheus/:/etc/prometheus/
 
+  alertmanager:
+    image: prom/alertmanager:v0.18.0
+    ports:
+      - 9193:9193
+
   node-exporter:
     image: prom/node-exporter:v0.18.1
     volumes:
@@ -474,6 +479,15 @@ services:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points'
       - '^(aufs|proc|nsfs|shm|cgroup|tmpfs|binfmt_misc|debugfs|devpts|fusectl|hugetlbfs|fuse.lxcfs|mqueue|pstore|securityfs|sysfs|autofs|devtmpfs|configfs)'
+
+  kafka-lag-exporter:
+    image: lightbend/kafka-lag-exporter:0.5.5
+    hostname: kafka-lag-exporter
+    restart: always
+    ports:
+      - 9999:9999
+    volumes:
+      - ./kafka-lag-exporter/:/opt/docker/conf/
 
   grafana:
     image: grafana/grafana:6.6.2
