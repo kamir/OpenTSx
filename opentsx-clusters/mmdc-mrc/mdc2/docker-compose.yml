@@ -456,11 +456,6 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-
-networks:
-  n1:
-
-
   prometheus:
     image: prom/prometheus:v2.11.1
     ports:
@@ -502,3 +497,10 @@ networks:
       - 3000:3000
     volumes:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
+
+networks:
+  n1:
+
+
+
+
