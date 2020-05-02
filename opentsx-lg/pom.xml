@@ -77,8 +77,6 @@
 
     </dependencies>
 
-
-
     <profiles>
         <profile>
             <id>SimpleTimeSeriesProducer</id>

@@ -73,27 +73,27 @@
                           <inline>
                             <files>
                               <file>
-                                <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/target/opentsx-lg-3.0.0.jar</source>
+                                <source>/home/ubuntu/OpenTSx/opentsx-lg/target/opentsx-lg-3.0.0.jar</source>
                                 <outputDirectory>./</outputDirectory>
                                 <destName>opentsx-lg-3.0.0.jar</destName>
                               </file>
                               <file>
-                                <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/topiclist.def</source>
+                                <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/topiclist.def</source>
                                 <outputDirectory>./</outputDirectory>
                                 <destName>config/topiclist.def</destName>
                               </file>
                               <file>
-                                <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/ccloud.props</source>
+                                <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/ccloud.props</source>
                                 <outputDirectory>./</outputDirectory>
                                 <destName>config/ccloud.props</destName>
                               </file>
                               <file>
-                                <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/cpl.props</source>
+                                <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/cpl.props</source>
                                 <outputDirectory>./</outputDirectory>
                                 <destName>config/cpl.props</destName>
                               </file>
                               <file>
-                                <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/mdc_c1.props</source>
+                                <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/mdc_c1.props</source>
                                 <outputDirectory>./</outputDirectory>
                                 <destName>config/mdc_c1.props</destName>
                               </file>
@@ -127,27 +127,27 @@
                       <inline>
                         <files>
                           <file>
-                            <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/target/opentsx-lg-3.0.0.jar</source>
+                            <source>/home/ubuntu/OpenTSx/opentsx-lg/target/opentsx-lg-3.0.0.jar</source>
                             <outputDirectory>./</outputDirectory>
                             <destName>opentsx-lg-3.0.0.jar</destName>
                           </file>
                           <file>
-                            <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/topiclist.def</source>
+                            <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/topiclist.def</source>
                             <outputDirectory>./</outputDirectory>
                             <destName>config/topiclist.def</destName>
                           </file>
                           <file>
-                            <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/ccloud.props</source>
+                            <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/ccloud.props</source>
                             <outputDirectory>./</outputDirectory>
                             <destName>config/ccloud.props</destName>
                           </file>
                           <file>
-                            <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/cpl.props</source>
+                            <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/cpl.props</source>
                             <outputDirectory>./</outputDirectory>
                             <destName>config/cpl.props</destName>
                           </file>
                           <file>
-                            <source>/Users/mkampf/GITHUB.public/OpenTSx/opentsx-lg/src/main/resources/config/mdc_c1.props</source>
+                            <source>/home/ubuntu/OpenTSx/opentsx-lg/src/main/resources/config/mdc_c1.props</source>
                             <outputDirectory>./</outputDirectory>
                             <destName>config/mdc_c1.props</destName>
                           </file>
