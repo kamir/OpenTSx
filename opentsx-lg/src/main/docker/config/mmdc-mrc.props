@@ -1,0 +1,10 @@
+request.timeout.ms=20000
+bootstrap.servers=broker-west-2:9092
+retry.backoff.ms=500
+
+# key.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+key.serializer=org.apache.kafka.common.serialization.StringSerializer
+value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+
+# Schema Registry specific settings
+schema.registry.url=http://schema-registry-west-1:8081
