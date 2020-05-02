@@ -2,9 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/run_ddc.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/bin/executor-script.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/config/cpl.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/config/topiclist.def" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -74,7 +83,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -102,11 +111,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker/config" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/scenario1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/scenario1" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -340,14 +349,7 @@
       <workItem from="1585759224365" duration="2075000" />
       <workItem from="1587633373415" duration="27131000" />
       <workItem from="1588147015677" duration="5596000" />
-      <workItem from="1588249484541" duration="14107000" />
-    </task>
-    <task id="LOCAL-00024" summary="Prepare the stretched cluster setup at home.">
-      <created>1588087184751</created>
-      <option name="number" value="00024" />
-      <option name="presentableId" value="LOCAL-00024" />
-      <option name="project" value="LOCAL" />
-      <updated>1588087184751</updated>
+      <workItem from="1588249484541" duration="18722000" />
     </task>
     <task id="LOCAL-00025" summary="Prepare the stretched cluster setup at home.">
       <created>1588087875590</created>
@@ -685,7 +687,14 @@
       <option name="project" value="LOCAL" />
       <updated>1588315643485</updated>
     </task>
-    <option name="localTasksCounter" value="73" />
+    <task id="LOCAL-00073" summary="Prepare the stretched cluster setup at home.">
+      <created>1588316066925</created>
+      <option name="number" value="00073" />
+      <option name="presentableId" value="LOCAL-00073" />
+      <option name="project" value="LOCAL" />
+      <updated>1588316066925</updated>
+    </task>
+    <option name="localTasksCounter" value="74" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
