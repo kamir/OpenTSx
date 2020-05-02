@@ -1,9 +1,6 @@
 package org.opentsx.lg;
 
-import org.bouncycastle.math.ec.ScaleYPointMap;
 import org.opentsx.connectors.kafka.TopicsManagerTool;
-
-import java.util.Vector;
 
 public class TopicsDOWN {
 
@@ -18,4 +15,5 @@ public class TopicsDOWN {
         System.exit(0);
 
     }
+
 }

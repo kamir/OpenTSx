@@ -1,7 +1,6 @@
 package org.opentsx.lg;
 
 import org.opentsx.connectors.kafka.TopicsManagerTool;
-
 import java.io.File;
 
 /**
@@ -44,4 +43,5 @@ public class TopicsUP {
         System.exit(0);
 
     }
+
 }

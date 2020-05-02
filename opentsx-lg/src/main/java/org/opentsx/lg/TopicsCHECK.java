@@ -2,8 +2,6 @@ package org.opentsx.lg;
 
 import org.opentsx.connectors.kafka.TopicsManagerTool;
 
-import java.util.Vector;
-
 public class TopicsCHECK {
 
     public static void main(String[] ARGS) throws Exception {
@@ -14,15 +12,15 @@ public class TopicsCHECK {
 
         boolean allAvailable = TopicsManagerTool.checkAllTopicsAvailable();
 
-        if( allAvailable )
+        if( allAvailable ) {
             System.out.println(">>> PASS CHECK. All topics available.");
-        else
+            System.exit(0);
+        }
+        else {
             System.out.println("!!! ERROR !!! >>> Missing topics. Can't execute demo.");
-
-        System.exit(0);
-
+            System.exit(-1);
+        }
 
     }
-
 
 }

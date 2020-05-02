@@ -42,6 +42,14 @@ mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGener
 $CONFLUENT_HOME/bin/kafka-log-dirs --bootstrap-server 127.0.0.1:9092 --describe --topic-list OpenTSx_Episodes,OpenTSx_Events | python -mjson.tool
 
 
+#
+# FROM HERE WE HAVE KSQL CODE !!!
+#
+
+#
+# TODO WRITE INTO FILE AND RUN VIA KSQL-CLI
+#
+
 
 CREATE STREAM OpenTSx_Event_Flow_State_stream (
   persistEvents VARCHAR,

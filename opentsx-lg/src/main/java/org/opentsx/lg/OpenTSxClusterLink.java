@@ -33,7 +33,5 @@ public class OpenTSxClusterLink {
             System.out.println("--- OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=" + TSOProducer.get_PROPS_FN() );
         }
 
-
-
     }
 }
