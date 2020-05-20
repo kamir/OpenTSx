@@ -29,4 +29,8 @@ mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Do
 ### <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
 #
 cd src/main/docker
-docker-compose up -d
+docker-compose up
+
+#
+# This setup is used for execution of the refernece workload in the CuH stack ... or locally on my Mac.
+#

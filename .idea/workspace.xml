@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/admin/check.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/admin/check.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/config/cuh.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -72,7 +75,7 @@
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/admin" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/docker/config" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -96,11 +99,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker/config" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/admin" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/admin" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/admin" />
       <recent name="$PROJECT_DIR$/opentsx-lg" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker/config" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -340,7 +343,7 @@
       <workItem from="1588147015677" duration="5596000" />
       <workItem from="1588249484541" duration="20434000" />
       <workItem from="1588938251221" duration="481000" />
-      <workItem from="1589968115951" duration="4261000" />
+      <workItem from="1589968115951" duration="10110000" />
     </task>
     <task id="LOCAL-00026" summary="Prepare the stretched cluster setup at home.">
       <created>1588088491178</created>
