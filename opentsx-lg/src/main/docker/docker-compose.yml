@@ -12,7 +12,8 @@ services:
       - ./bin/:/opentsx-lg/bin/
     environment:
       OPENTSX_TOPIC_MAP_FILE_NAME: "/etc/opentsx/config/topiclist.def"
-      OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: "/etc/opentsx/config/cpl.props"
+      #OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: "/etc/opentsx/config/cpl.props"
+      OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME: "/etc/opentsx/config/cuh.props"
       OPENTSX_SHOW_GUI: "false"
     extra_hosts:
       - "broker-west-5:192.168.0.9"
