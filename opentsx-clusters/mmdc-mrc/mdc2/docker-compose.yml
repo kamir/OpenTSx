@@ -456,25 +456,6 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  prometheus:
-    image: prom/prometheus:v2.11.1
-    ports:
-      - 9190:9190
-    volumes:
-      - ./prometheus/:/etc/prometheus/
-
-  node-exporter:
-    image: prom/node-exporter:v0.18.1
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.ignored-mount-points'
-      - '^(aufs|proc|nsfs|shm|cgroup|tmpfs|binfmt_misc|debugfs|devpts|fusectl|hugetlbfs|fuse.lxcfs|mqueue|pstore|securityfs|sysfs|autofs|devtmpfs|configfs)'
-
 networks:
   n1:
 
