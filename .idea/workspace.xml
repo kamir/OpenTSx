@@ -2,18 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/run_ddc.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/bin/executor-script.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/config/cpl.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/config/topiclist.def" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -349,14 +340,9 @@
       <workItem from="1585759224365" duration="2075000" />
       <workItem from="1587633373415" duration="27131000" />
       <workItem from="1588147015677" duration="5596000" />
-      <workItem from="1588249484541" duration="18722000" />
-    </task>
-    <task id="LOCAL-00025" summary="Prepare the stretched cluster setup at home.">
-      <created>1588087875590</created>
-      <option name="number" value="00025" />
-      <option name="presentableId" value="LOCAL-00025" />
-      <option name="project" value="LOCAL" />
-      <updated>1588087875590</updated>
+      <workItem from="1588249484541" duration="20434000" />
+      <workItem from="1588938251221" duration="481000" />
+      <workItem from="1589968115951" duration="1035000" />
     </task>
     <task id="LOCAL-00026" summary="Prepare the stretched cluster setup at home.">
       <created>1588088491178</created>
@@ -694,7 +680,14 @@
       <option name="project" value="LOCAL" />
       <updated>1588316066925</updated>
     </task>
-    <option name="localTasksCounter" value="74" />
+    <task id="LOCAL-00074" summary="Added the load-generator DEMO for DOCKER-COMPOSE">
+      <created>1588415624193</created>
+      <option name="number" value="00074" />
+      <option name="presentableId" value="LOCAL-00074" />
+      <option name="project" value="LOCAL" />
+      <updated>1588415624193</updated>
+    </task>
+    <option name="localTasksCounter" value="75" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -718,7 +711,8 @@
     <MESSAGE value="Prepare for Meetup in Leipzig." />
     <MESSAGE value="Prepare for Packaged TSG in docker container." />
     <MESSAGE value="Prepare the stretched cluster setup at home." />
-    <option name="LAST_COMMIT_MESSAGE" value="Prepare the stretched cluster setup at home." />
+    <MESSAGE value="Added the load-generator DEMO for DOCKER-COMPOSE" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added the load-generator DEMO for DOCKER-COMPOSE" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
