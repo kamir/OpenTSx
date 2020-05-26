@@ -487,7 +487,7 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.18.0
     ports:
-      - 9093:9093
+      - 9193:9193
     networks:
       - n1
     extra_hosts:
