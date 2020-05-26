@@ -3,9 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/admin/update.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/admin/update.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/admin/update.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts/admin/update.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/admin/update.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/admin/update.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -362,14 +361,7 @@
       <workItem from="1589968115951" duration="12144000" />
       <workItem from="1590409585107" duration="2154000" />
       <workItem from="1590482705322" duration="1232000" />
-      <workItem from="1590510591021" duration="2632000" />
-    </task>
-    <task id="LOCAL-00028" summary="Prepare the stretched cluster setup at home.">
-      <created>1588165800619</created>
-      <option name="number" value="00028" />
-      <option name="presentableId" value="LOCAL-00028" />
-      <option name="project" value="LOCAL" />
-      <updated>1588165800619</updated>
+      <workItem from="1590510591021" duration="3070000" />
     </task>
     <task id="LOCAL-00029" summary="Prepare the stretched cluster setup at home.">
       <created>1588167477876</created>
@@ -707,7 +699,14 @@
       <option name="project" value="LOCAL" />
       <updated>1590514725620</updated>
     </task>
-    <option name="localTasksCounter" value="77" />
+    <task id="LOCAL-00077" summary="Added the load-generator DEMO for DOCKER-COMPOSE">
+      <created>1590515101831</created>
+      <option name="number" value="00077" />
+      <option name="presentableId" value="LOCAL-00077" />
+      <option name="project" value="LOCAL" />
+      <updated>1590515101832</updated>
+    </task>
+    <option name="localTasksCounter" value="78" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
