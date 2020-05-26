@@ -20,9 +20,9 @@ scrape_configs:
   - job_name: 'zookeeper'
     static_configs:
     - targets:
-      - 'zookeeper-central:1234'
+      - 'zookeeper-central:1235'
       - 'zookeeper-east:1234'
-      - 'zookeeper-west:1234'
+      - 'zookeeper-west:1236'
       labels:
         env: 'dev'
 

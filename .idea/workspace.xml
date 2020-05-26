@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -359,21 +360,7 @@
       <workItem from="1589968115951" duration="12144000" />
       <workItem from="1590409585107" duration="2154000" />
       <workItem from="1590482705322" duration="1232000" />
-      <workItem from="1590510591021" duration="6925000" />
-    </task>
-    <task id="LOCAL-00038" summary="Prepare the stretched cluster setup at home.">
-      <created>1588252443327</created>
-      <option name="number" value="00038" />
-      <option name="presentableId" value="LOCAL-00038" />
-      <option name="project" value="LOCAL" />
-      <updated>1588252443327</updated>
-    </task>
-    <task id="LOCAL-00039" summary="Prepare the stretched cluster setup at home.">
-      <created>1588252465694</created>
-      <option name="number" value="00039" />
-      <option name="presentableId" value="LOCAL-00039" />
-      <option name="project" value="LOCAL" />
-      <updated>1588252465694</updated>
+      <workItem from="1590510591021" duration="7496000" />
     </task>
     <task id="LOCAL-00040" summary="Prepare the stretched cluster setup at home.">
       <created>1588252530076</created>
@@ -704,7 +691,21 @@
       <option name="project" value="LOCAL" />
       <updated>1590519307697</updated>
     </task>
-    <option name="localTasksCounter" value="87" />
+    <task id="LOCAL-00087" summary="workaround for JAR in gitignore">
+      <created>1590519403653</created>
+      <option name="number" value="00087" />
+      <option name="presentableId" value="LOCAL-00087" />
+      <option name="project" value="LOCAL" />
+      <updated>1590519403653</updated>
+    </task>
+    <task id="LOCAL-00088" summary="workaround for JAR in gitignore">
+      <created>1590519539141</created>
+      <option name="number" value="00088" />
+      <option name="presentableId" value="LOCAL-00088" />
+      <option name="project" value="LOCAL" />
+      <updated>1590519539141</updated>
+    </task>
+    <option name="localTasksCounter" value="89" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

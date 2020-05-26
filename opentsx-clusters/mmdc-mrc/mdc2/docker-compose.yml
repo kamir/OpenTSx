@@ -9,16 +9,16 @@ services:
       - n1
     ports:
       - "2181:2181"
+      - "1236:1236"
     environment:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1236:/usr/share/jmx_exporter/zookeeper.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
-    expose:
-      - "1234"
+
 
   zookeeper-central:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
@@ -28,18 +28,17 @@ services:
       - n1
     ports:
       - "2182:2182"
+      - "1235:1235"
     environment:
       ZOOKEEPER_SERVER_ID: 2
       ZOOKEEPER_CLIENT_PORT: 2182
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1235:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
-    expose:
-      - "1234"
 
   zookeeper-east:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
@@ -49,6 +48,7 @@ services:
       - n1
     ports:
       - "2183:2183"
+      - "1234:1234"
     environment:
       ZOOKEEPER_SERVER_ID: 3
       ZOOKEEPER_CLIENT_PORT: 2183
@@ -60,8 +60,7 @@ services:
       - zookeeper-central
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
-    expose:
-      - "1234"
+
 
   broker-west-1:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
