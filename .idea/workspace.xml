@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -361,14 +359,7 @@
       <workItem from="1589968115951" duration="12144000" />
       <workItem from="1590409585107" duration="2154000" />
       <workItem from="1590482705322" duration="1232000" />
-      <workItem from="1590510591021" duration="4875000" />
-    </task>
-    <task id="LOCAL-00031" summary="Prepare the stretched cluster setup at home.">
-      <created>1588250500373</created>
-      <option name="number" value="00031" />
-      <option name="presentableId" value="LOCAL-00031" />
-      <option name="project" value="LOCAL" />
-      <updated>1588250500373</updated>
+      <workItem from="1590510591021" duration="5162000" />
     </task>
     <task id="LOCAL-00032" summary="Prepare the stretched cluster setup at home.">
       <created>1588250628645</created>
@@ -706,7 +697,14 @@
       <option name="project" value="LOCAL" />
       <updated>1590515874410</updated>
     </task>
-    <option name="localTasksCounter" value="80" />
+    <task id="LOCAL-00080" summary="Added the load-generator DEMO for DOCKER-COMPOSE">
+      <created>1590517352963</created>
+      <option name="number" value="00080" />
+      <option name="presentableId" value="LOCAL-00080" />
+      <option name="project" value="LOCAL" />
+      <updated>1590517352963</updated>
+    </task>
+    <option name="localTasksCounter" value="81" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
