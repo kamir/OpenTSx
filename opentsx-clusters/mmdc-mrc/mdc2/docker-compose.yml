@@ -105,6 +105,8 @@ services:
     ports:
       - "9092:9092"
       - "8092:8092"
+    volumes:
+      - ./config:/etc/kafka/demo
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_BROKER_RACK: 'west'
@@ -184,6 +186,8 @@ services:
     ports:
       - "9094:9094"
       - "8094:8094"
+    volumes:
+      - ./config:/etc/kafka/demo
     environment:
       KAFKA_BROKER_ID: 4
       KAFKA_BROKER_RACK: 'east'
