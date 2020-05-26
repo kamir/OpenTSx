@@ -484,26 +484,16 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
 
-  alertmanager:
-    image: prom/alertmanager:v0.18.0
+  grafana:
+    image: grafana/grafana:6.6.2
+    environment:
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
     ports:
-      - 9193:9193
-    networks:
-      - n1
+      - 3000:3000
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
     extra_hosts:
-      - "broker-west-5:192.168.0.9"
-      - "broker-west-6:192.168.0.9"
-      - "broker-west-7:192.168.0.9"
-      - "broker-west-1:192.168.0.6"
-      - "broker-west-2:192.168.0.6"
-      - "broker-east-3:192.168.0.6"
-      - "broker-east-4:192.168.0.6"
-      - "zookeeper-central:192.168.0.6"
-      - "zookeeper-east:192.168.0.6"
-      - "zookeeper-west:192.168.0.6"
-      - "broker-east-8:192.169.0.11"
-      - "broker-east-9:192.169.0.11"
-      - "broker-east-10:192.169.0.11"
+      - "prometheus-mdc-2:192.168.0.6"
 
 networks:
   n1:
