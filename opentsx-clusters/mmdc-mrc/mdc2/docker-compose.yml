@@ -27,13 +27,13 @@ services:
       - n1
     ports:
       - "2182:2182"
-      - "1234:1235"
+      - "1235:1235"
     environment:
       ZOOKEEPER_SERVER_ID: 2
       ZOOKEEPER_CLIENT_PORT: 2182
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1235:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
     volumes:
@@ -47,13 +47,13 @@ services:
       - n1
     ports:
       - "2183:2183"
-      - "1234:1236"
+      - "1236:1236"
     environment:
       ZOOKEEPER_SERVER_ID: 3
       ZOOKEEPER_CLIENT_PORT: 2183
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1236:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
