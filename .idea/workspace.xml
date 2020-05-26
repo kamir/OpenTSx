@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="workaround for JAR in gitignore">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -360,35 +361,7 @@
       <workItem from="1589968115951" duration="12144000" />
       <workItem from="1590409585107" duration="2154000" />
       <workItem from="1590482705322" duration="1232000" />
-      <workItem from="1590510591021" duration="5653000" />
-    </task>
-    <task id="LOCAL-00033" summary="Prepare the stretched cluster setup at home.">
-      <created>1588250694654</created>
-      <option name="number" value="00033" />
-      <option name="presentableId" value="LOCAL-00033" />
-      <option name="project" value="LOCAL" />
-      <updated>1588250694654</updated>
-    </task>
-    <task id="LOCAL-00034" summary="Prepare the stretched cluster setup at home.">
-      <created>1588251339139</created>
-      <option name="number" value="00034" />
-      <option name="presentableId" value="LOCAL-00034" />
-      <option name="project" value="LOCAL" />
-      <updated>1588251339139</updated>
-    </task>
-    <task id="LOCAL-00035" summary="Prepare the stretched cluster setup at home.">
-      <created>1588251647702</created>
-      <option name="number" value="00035" />
-      <option name="presentableId" value="LOCAL-00035" />
-      <option name="project" value="LOCAL" />
-      <updated>1588251647702</updated>
-    </task>
-    <task id="LOCAL-00036" summary="Prepare the stretched cluster setup at home.">
-      <created>1588251740322</created>
-      <option name="number" value="00036" />
-      <option name="presentableId" value="LOCAL-00036" />
-      <option name="project" value="LOCAL" />
-      <updated>1588251740322</updated>
+      <workItem from="1590510591021" duration="6831000" />
     </task>
     <task id="LOCAL-00037" summary="Prepare the stretched cluster setup at home.">
       <created>1588252106962</created>
@@ -705,7 +678,35 @@
       <option name="project" value="LOCAL" />
       <updated>1590517638437</updated>
     </task>
-    <option name="localTasksCounter" value="82" />
+    <task id="LOCAL-00082" summary="workaround for JAR in gitignore">
+      <created>1590518348373</created>
+      <option name="number" value="00082" />
+      <option name="presentableId" value="LOCAL-00082" />
+      <option name="project" value="LOCAL" />
+      <updated>1590518348373</updated>
+    </task>
+    <task id="LOCAL-00083" summary="workaround for JAR in gitignore">
+      <created>1590518373104</created>
+      <option name="number" value="00083" />
+      <option name="presentableId" value="LOCAL-00083" />
+      <option name="project" value="LOCAL" />
+      <updated>1590518373104</updated>
+    </task>
+    <task id="LOCAL-00084" summary="workaround for JAR in gitignore">
+      <created>1590518846125</created>
+      <option name="number" value="00084" />
+      <option name="presentableId" value="LOCAL-00084" />
+      <option name="project" value="LOCAL" />
+      <updated>1590518846125</updated>
+    </task>
+    <task id="LOCAL-00085" summary="workaround for JAR in gitignore">
+      <created>1590519181988</created>
+      <option name="number" value="00085" />
+      <option name="presentableId" value="LOCAL-00085" />
+      <option name="project" value="LOCAL" />
+      <updated>1590519181989</updated>
+    </task>
+    <option name="localTasksCounter" value="86" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -730,7 +731,8 @@
     <MESSAGE value="Prepare for Packaged TSG in docker container." />
     <MESSAGE value="Prepare the stretched cluster setup at home." />
     <MESSAGE value="Added the load-generator DEMO for DOCKER-COMPOSE" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added the load-generator DEMO for DOCKER-COMPOSE" />
+    <MESSAGE value="workaround for JAR in gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="workaround for JAR in gitignore" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
