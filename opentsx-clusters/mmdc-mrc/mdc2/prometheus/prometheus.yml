@@ -10,18 +10,18 @@ scrape_configs:
   - job_name: 'kafka'
     static_configs:
     - targets:
-      - 'broker-west-1:1234'
-      - 'broker-west-2:1234'
-      - 'broker-east-3:1234'
-      - 'broker-east-4:1234'
+      - 'broker-west-1:1237'
+      - 'broker-west-2:1238'
+      - 'broker-east-3:1239'
+      - 'broker-east-4:1240'
       labels:
         env: 'dev'
 
   - job_name: 'zookeeper'
     static_configs:
     - targets:
-      - 'zookeeper-central:1234'
-      - 'zookeeper-east:1234'
+      - 'zookeeper-central:1235'
+      - 'zookeeper-east:1236'
       - 'zookeeper-west:1234'
       labels:
         env: 'dev'
