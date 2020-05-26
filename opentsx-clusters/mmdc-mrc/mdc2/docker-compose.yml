@@ -9,6 +9,7 @@ services:
       - n1
     ports:
       - "2181:2181"
+      - "1234:1234"
     environment:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -26,6 +27,7 @@ services:
       - n1
     ports:
       - "2182:2182"
+      - "1234:1234"
     environment:
       ZOOKEEPER_SERVER_ID: 2
       ZOOKEEPER_CLIENT_PORT: 2182
@@ -45,6 +47,7 @@ services:
       - n1
     ports:
       - "2183:2183"
+      - "1234:1234"
     environment:
       ZOOKEEPER_SERVER_ID: 3
       ZOOKEEPER_CLIENT_PORT: 2183
