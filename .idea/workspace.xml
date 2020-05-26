@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/config/cuh.props" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -27,7 +25,23 @@
     <option name="HIDDEN_KINDS">
       <set />
     </option>
-    <expand />
+    <expand>
+      <path>
+        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
+        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
+      </path>
+      <path>
+        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
+        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
+        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
+      </path>
+      <path>
+        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
+        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
+        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
+        <item name="ks1: schema" type="16f33254:CassImplModel$Schema" />
+      </path>
+    </expand>
     <select />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -343,7 +357,10 @@
       <workItem from="1588147015677" duration="5596000" />
       <workItem from="1588249484541" duration="20434000" />
       <workItem from="1588938251221" duration="481000" />
-      <workItem from="1589968115951" duration="10110000" />
+      <workItem from="1589968115951" duration="12144000" />
+      <workItem from="1590409585107" duration="2154000" />
+      <workItem from="1590482705322" duration="1232000" />
+      <workItem from="1590510591021" duration="768000" />
     </task>
     <task id="LOCAL-00026" summary="Prepare the stretched cluster setup at home.">
       <created>1588088491178</created>
