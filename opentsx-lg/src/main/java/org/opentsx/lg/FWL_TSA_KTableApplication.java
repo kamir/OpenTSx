@@ -2,26 +2,21 @@ package org.opentsx.lg;
 
 
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
-import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
-
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Printed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.opentsx.data.model.EpisodesRecord;
 
 import java.util.Properties;
-import java.util.Vector;
 
-public class FWL_TSA_KStreamsApplication {
+public class FWL_TSA_KTableApplication {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FWL_TSA_KStreamsApplication.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FWL_TSA_KTableApplication.class);
 
     public static void main(String[] args) throws Exception {
 
@@ -29,24 +24,21 @@ public class FWL_TSA_KStreamsApplication {
 
       StreamsBuilder builder = new StreamsBuilder();
 
-      Vector<String> topics = new Vector<>();
-      topics.add( "OpenTSx_Episodes_A" );
-      topics.add( "OpenTSx_Episodes_B" );
+      KTable<String, GenericRecord> episodesTable = builder.table("OpenTSx_Episodes");
 
-      KStream<String, GenericRecord> episodesStream = builder.stream( topics );
+      episodesTable.toStream().print(Printed.<String, GenericRecord>toSysOut().withLabel("Episodes-KTable"));
 
-      episodesStream.print(Printed.<String, GenericRecord>toSysOut().withLabel("both-streams"));
 
       KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), streamsConfig);
 
-      LOG.info(">>> KStreams processing started");
+      LOG.info("KTable processing started");
 
       kafkaStreams.cleanUp();
       kafkaStreams.start();
 
       Thread.sleep(15000);
 
-      LOG.info(">>> Shutting down KStreams processing Application now");
+      LOG.info("Shutting down KTable processing Application now");
 
       // kafkaStreams.close();
 
@@ -58,7 +50,7 @@ public class FWL_TSA_KStreamsApplication {
 
         Properties props = new Properties();
 
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample2");
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample1");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.3.104:9092");
 
 //        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());

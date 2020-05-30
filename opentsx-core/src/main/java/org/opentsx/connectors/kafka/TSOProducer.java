@@ -21,7 +21,6 @@ import java.util.Vector;
 
 public class TSOProducer {
 
-
     public static void init_PROPS_FN(String fn){
         File f = new File(fn);
         System.out.println( "> PROPS_FN Path: " + f.getAbsolutePath() + " -> (r:" + f.canRead()+ ")" );
@@ -33,6 +32,7 @@ public class TSOProducer {
         }
         System.out.println("> PROPS_FN=" + PROPS_FN);
     };
+
     private static String PROPS_FN = "config/cpl.props";
     public static String get_PROPS_FN() {
         return  PROPS_FN;
@@ -208,7 +208,7 @@ public class TSOProducer {
         }
     }
 
-    public void pushTSDataAsEpisodesToKafka_String_Avro(Vector<TSData> data, String URI ) {
+    public void pushTSDataAsEpisodesToKafka_String_Avro(Vector<TSData> data, String URI, String topic_suffix ) {
 
         Properties props = new Properties();
 
@@ -257,7 +257,7 @@ public class TSOProducer {
                     t = t0 + ( i * dt );
                     Observation obs = new Observation();
                     obs.setValue( v );
-                    obs.setUri("-");
+                    obs.setUri( URI );
                     obs.setTimestamp( t );
                     oarray.add(obs);
                     i++;
@@ -285,11 +285,14 @@ public class TSOProducer {
 
                 er.setObservationArray( oarray );
 
+                String tn = TOPIC_for_episodes;
+                if ( topic_suffix != null )
+                    tn = tn.concat( "_" + topic_suffix );
                 /**
                  *  Create RECORD ...
                  */
                 final ProducerRecord<String, EpisodesRecord> record =
-                        new ProducerRecord<>(TOPIC_for_episodes, mrd.label,
+                        new ProducerRecord<>(tn, mrd.label,
                                 er);
 
                 RecordMetadata metadata = producer.send(record).get();
@@ -313,8 +316,6 @@ public class TSOProducer {
             producer.flush();
             producer.close();
         }
-
-
 
     }
 

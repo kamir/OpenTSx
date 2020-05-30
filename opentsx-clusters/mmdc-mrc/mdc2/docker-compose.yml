@@ -71,6 +71,7 @@ services:
     ports:
       - "9091:9091"
       - "8091:8091"
+      - "1237:1237"
     volumes:
       - ./config:/etc/kafka/demo
     environment:
@@ -89,6 +90,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1237:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -110,6 +112,7 @@ services:
     ports:
       - "9092:9092"
       - "8092:8092"
+      - "1238:1238"
     volumes:
       - ./config:/etc/kafka/demo
     environment:
@@ -128,6 +131,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1238:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -150,6 +154,7 @@ services:
     ports:
       - "9093:9093"
       - "8093:8093"
+      - "1239:1239"
     volumes:
       - ./config:/etc/kafka/demo
     environment:
@@ -168,7 +173,8 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-    depends_on:
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1239:/usr/share/jmx_exporter/kafka-broker.yml
+  depends_on:
       - zookeeper-west
       - zookeeper-central
       - zookeeper-east
@@ -191,6 +197,7 @@ services:
     ports:
       - "9094:9094"
       - "8094:8094"
+      - "1240:1240"
     volumes:
       - ./config:/etc/kafka/demo
     environment:
@@ -209,6 +216,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1240:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central

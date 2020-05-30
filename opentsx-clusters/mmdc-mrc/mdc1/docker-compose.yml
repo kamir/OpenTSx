@@ -27,6 +27,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     environment:
       KAFKA_BROKER_ID: 5
       KAFKA_BROKER_RACK: 'west'
@@ -69,6 +70,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     environment:
       KAFKA_BROKER_ID: 6
       KAFKA_BROKER_RACK: 'west'
@@ -111,6 +113,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     environment:
       KAFKA_BROKER_ID: 7
       KAFKA_BROKER_RACK: 'west'
@@ -148,6 +151,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     entrypoint: /bin/sh
     tty: true
 
@@ -171,6 +175,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     entrypoint: /bin/sh
     tty: true
 
@@ -194,6 +199,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     entrypoint: /bin/sh
     tty: true
 
