@@ -10,10 +10,16 @@ scrape_configs:
   - job_name: 'kafka'
     static_configs:
     - targets:
-      - 'broker-west-1:1234'
-      - 'broker-west-2:1234'
-      - 'broker-east-3:1234'
-      - 'broker-east-4:1234'
+      - 'broker-west-1:1237'
+      - 'broker-west-2:1238'
+      - 'broker-east-3:1239'
+      - 'broker-east-4:1240'
+      - "broker-west-5:1234"
+      - "broker-west-6:1235"
+      - "broker-west-7:1236"
+      - "broker-east-8:1234"
+      - "broker-east-9:1235"
+      - "broker-east-10:1236"
       labels:
         env: 'dev'
 

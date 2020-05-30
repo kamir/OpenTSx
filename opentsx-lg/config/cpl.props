@@ -1,0 +1,10 @@
+request.timeout.ms=20000
+bootstrap.servers=MirkoKampfMBP15:9092
+retry.backoff.ms=500
+
+# key.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+key.serializer=org.apache.kafka.common.serialization.StringSerializer
+value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+
+# Schema Registry specific settings
+schema.registry.url=http://MirkoKampfMBP15:8081

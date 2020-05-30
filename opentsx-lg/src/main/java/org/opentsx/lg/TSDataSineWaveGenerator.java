@@ -107,7 +107,8 @@ public class TSDataSineWaveGenerator {
         //boolean SKIP_WRITES = true;
         TSBucket tsb = new TSBucket();
 
-        Vector<TSData> tsbd = null;
+        Vector<TSData> tsbd_a = null;
+        Vector<TSData> tsbd_b = null;
 
         //
         // SIMULATE SOME MEASURED DATA from a set of machines  ...
@@ -137,7 +138,9 @@ public class TSDataSineWaveGenerator {
 
 
 
-        TSOProducer prod = new TSOProducer();
+        TSOProducer prod_A = new TSOProducer();
+
+        TSOProducer prod_B = new TSOProducer();
 
         int i = 0;
 
@@ -147,14 +150,16 @@ public class TSDataSineWaveGenerator {
 
             i++;
 
-            String URI = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#0815a";
+            String URI_A = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#0815a";
+            String URI_B = "http://www.w3.org/TR/2004/metrics-owl-20200210/deviceID#17u4";
 
             /**
              * Step 1: creation of the series ...
              */
             try {
 
-                tsbd = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
+                tsbd_a = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
+                tsbd_b = tsb.createBucketWithRandomTS_sinus(baseOut + filename, ANZ, fMIN, fMAX, aMIN, aMAX, SR, time, null, "°C" );
 
             }
             catch (Exception ex) {
@@ -171,18 +176,26 @@ public class TSDataSineWaveGenerator {
              * Step 2: persist data in Kafka ... as full episodes.
              */
             if( persistEpisodes ) {
-                prod.pushTSDataAsEpisodesToKafka_String_Avro(tsbd, URI);
-                System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro]");
-                System.out.println(">>> [t: " + i + "] -> size:" + tsbd.size());
+                prod_A.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_a, URI_A, "A");
+                System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro] {A}");
+                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_a.size());
+
+                prod_B.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_b, URI_B, "B");
+                System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro] {B}");
+                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_b.size());
             }
 
             /**
              * Step 3: persist data in Kafka ... as full single events.
              */
             if( persistEvents ) {
-                prod.pushTSDataAsEventsToKafka_String_Avro(tsbd, URI );
-                System.out.println("[pushTSDataAsEventsToKafka_String_Avro]");
-                System.out.println(">>> [t: " + i + "] -> size:" + tsbd.size());
+                prod_A.pushTSDataAsEventsToKafka_String_Avro(tsbd_a, URI_A );
+                System.out.println("[pushTSDataAsEventsToKafka_String_Avro] {A}");
+                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_a.size());
+
+                prod_B.pushTSDataAsEventsToKafka_String_Avro(tsbd_b, URI_B );
+                System.out.println("[pushTSDataAsEventsToKafka_String_Avro] {B}");
+                System.out.println(">>> [t: " + i + "] -> size:" + tsbd_b.size());
             }
 
             /**
@@ -217,7 +230,7 @@ public class TSDataSineWaveGenerator {
 
                     int j = 0;
                     Vector<TimeSeriesObject> tsos = new Vector<TimeSeriesObject>();
-                    for (TSData tsd : tsbd) {
+                    for (TSData tsd : tsbd_a) {
                         TimeSeriesObject tso = tsd.getMessreihe();
                         tso.setLabel(tsd.label);
                         tsos.add(tso);
@@ -238,7 +251,8 @@ public class TSDataSineWaveGenerator {
 
             }
 
-            tsbd = null;
+            tsbd_a = null;
+            tsbd_b = null;
 
         // }
 
