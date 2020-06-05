@@ -2,83 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/Inhouse-MRC.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/scripts/admin/check.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/scripts/admin/stop.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/scripts/admin/update.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/scripts/scenario1/clean.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/scripts/scenario1/run.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/config/consumer-east.config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/config/consumer-west.config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/config/placement-multi-region-async.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/config/placement-multi-region-default-reverse.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/config/placement-multi-region-sync.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/config/placement-single-region.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose-target.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/dashboards/consumer.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/dashboards/dashboard.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/dashboards/kafka-lag-exporter.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/dashboards/kafka-overview.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/dashboards/producer.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/dashboards/zookeeper-overview.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/grafana/provisioning/datasources/datasource.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter/jmx_prometheus_javaagent-0.12.0_jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter/kafka-broker.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter/kafka-consumer.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter/kafka-producer.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter/zookeeper.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/kafka-lag-exporter/application.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/kafka-lag-exporter/logback.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/prometheus/alert.rules" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/prometheus/prometheus.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scriptFile.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/admin/check.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/admin/stop.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/admin/update.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/create-topics.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/describe-topics.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/jmx_metrics.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/latency_docker.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/permanent-fallback.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/run-consumer.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/run-producer.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/clean.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/run.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/start.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/stop.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/validate_connectivity.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/scripts/admin/check.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/scripts/admin/stop.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/scripts/admin/update.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/scripts/scenario1/clean.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/scripts/scenario1/run.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/~$Inhouse-MRC.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/MDC-MRC(AutoRecovered).xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/bin/prometheus_config.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/metrics/TSGBeanImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/metrics/TSGMBean.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/check.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/down.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/up.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/examples" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/manage-confluent-local.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/confluent_local/manage-confluent-local.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/multiregion/examples" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/run_TSG_01.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_TSG_01.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/dependency-reduced-pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/FWL_TSA_KStreamsApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/analyser/FWL_TSA_KStreamsApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/FWL_TSA_KTableApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/analyser/FWL_TSA_KTableApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/OpenTSxClusterLink.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsCHECK.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/topicmanager/TopicsCHECK.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/topicmanager/TopicsDOWN.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/topicmanager/TopicsUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/r.sh" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -167,7 +97,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/confluent_local" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -196,11 +126,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/confluent_local" />
       <recent name="$PROJECT_DIR$/opentsx-clusters" />
       <recent name="$PROJECT_DIR$/opentsx-lg/bin" />
       <recent name="$PROJECT_DIR$/opentsx-lg" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources/config" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -444,21 +374,7 @@
       <workItem from="1590565825199" duration="22794000" />
       <workItem from="1591090925414" duration="7553000" />
       <workItem from="1591168881585" duration="4684000" />
-      <workItem from="1591360832053" duration="2403000" />
-    </task>
-    <task id="LOCAL-00041" summary="Prepare the stretched cluster setup at home.">
-      <created>1588253048917</created>
-      <option name="number" value="00041" />
-      <option name="presentableId" value="LOCAL-00041" />
-      <option name="project" value="LOCAL" />
-      <updated>1588253048917</updated>
-    </task>
-    <task id="LOCAL-00042" summary="Prepare the stretched cluster setup at home.">
-      <created>1588253185559</created>
-      <option name="number" value="00042" />
-      <option name="presentableId" value="LOCAL-00042" />
-      <option name="project" value="LOCAL" />
-      <updated>1588253185559</updated>
+      <workItem from="1591360832053" duration="9388000" />
     </task>
     <task id="LOCAL-00043" summary="Prepare the stretched cluster setup at home.">
       <created>1588253396486</created>
@@ -789,7 +705,21 @@
       <option name="project" value="LOCAL" />
       <updated>1590841772672</updated>
     </task>
-    <option name="localTasksCounter" value="90" />
+    <task id="LOCAL-00090" summary="workaround for JAR in gitignore">
+      <created>1591364992812</created>
+      <option name="number" value="00090" />
+      <option name="presentableId" value="LOCAL-00090" />
+      <option name="project" value="LOCAL" />
+      <updated>1591364992813</updated>
+    </task>
+    <task id="LOCAL-00091" summary="workaround for JAR in gitignore">
+      <created>1591374123421</created>
+      <option name="number" value="00091" />
+      <option name="presentableId" value="LOCAL-00091" />
+      <option name="project" value="LOCAL" />
+      <updated>1591374123421</updated>
+    </task>
+    <option name="localTasksCounter" value="92" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
