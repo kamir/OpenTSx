@@ -1,6 +1,8 @@
-package org.opentsx.lg;
+package org.opentsx.util.topicmanager;
 
 import org.opentsx.connectors.kafka.TopicsManagerTool;
+import org.opentsx.util.OpenTSxClusterLink;
+
 import java.io.File;
 
 /**

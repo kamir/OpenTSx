@@ -16,6 +16,9 @@ import org.opentsx.core.TSBucket;
 import org.opentsx.core.TSData;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.opentsx.lg.metrics.TSGBeanImpl;
+import org.opentsx.lg.metrics.TSGMBean;
+import org.opentsx.util.OpenTSxClusterLink;
 import org.semanpix.chart.simple.MultiChart;
 
 import java.io.IOException;
@@ -24,6 +27,9 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.management.*;
+import java.lang.management.*;
 
 /**
  * This application generates a set of sine-waves.
@@ -53,12 +59,24 @@ import java.util.logging.Logger;
  */
 public class TSDataSineWaveGenerator {
 
+    private static MBeanServer mbs = null;
+
+    private static TSGMBean tsgBean = null;
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
 
         boolean showChart = true;
+
+        try {
+            registerMBean();
+        }
+        catch (NotCompliantMBeanException e) {
+            e.printStackTrace();
+            System.exit( -1 );
+        }
 
         /**
          * the argument "off" turns off the GUI.
@@ -144,7 +162,9 @@ public class TSDataSineWaveGenerator {
 
         int i = 0;
 
-        // while( i < 1) {
+        long tS = System.currentTimeMillis();
+
+        while( i < 1000) {
 
             long t0 = System.currentTimeMillis();
 
@@ -172,6 +192,8 @@ public class TSDataSineWaveGenerator {
             System.out.println( "DURATION 1 : " + ((t1 - t0)/1000.0) );
             double generateDuration = ((t1 - t0)/1000.0);
 
+            ((TSGBeanImpl)tsgBean).trackRoundDuration( generateDuration );
+
             /**
              * Step 2: persist data in Kafka ... as full episodes.
              */
@@ -183,6 +205,10 @@ public class TSDataSineWaveGenerator {
                 prod_B.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_b, URI_B, "B");
                 System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro] {B}");
                 System.out.println(">>> [t: " + i + "] -> size:" + tsbd_b.size());
+
+
+                ((TSGBeanImpl)tsgBean).trackNumberOfTS( tsbd_a.size() + tsbd_b.size() );
+
             }
 
             /**
@@ -221,6 +247,8 @@ public class TSDataSineWaveGenerator {
 
             Logger.getLogger(TSDataSineWaveGenerator.class.getName()).log(Level.SEVERE, "DURATION 2 : " + ((t2 - t1)/1000.0));
 
+
+
             /**
              * Step 5: Convert raw data into "TimeSeriesObject" and show a chart.
              */
@@ -243,20 +271,36 @@ public class TSDataSineWaveGenerator {
                 }
 
             }
-            else {
 
-                System.out.println(">>> DONE." );
-
-                System.exit(0);
-
-            }
+            System.out.println(">>> Round : " + i + " DONE." );
 
             tsbd_a = null;
             tsbd_b = null;
 
-        // }
+        }
 
 
+    }
+
+    private static void registerMBean() throws NotCompliantMBeanException {
+        // Get the platform MBeanServer
+        mbs = ManagementFactory.getPlatformMBeanServer();
+
+        // Unique identification of MBeans
+        tsgBean = (TSGMBean)new TSGBeanImpl();
+
+        ObjectName beanName = null;
+
+        try {
+            // Uniquely identify the MBeans and register them with the platform MBeanServer
+            beanName = new ObjectName("org.opentsx.lg.TSGMBean:name=TSGMBean");
+            mbs.registerMBean(tsgBean, beanName);
+            System.out.println( "### Register MBean: " + beanName );
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
     }
 
 }

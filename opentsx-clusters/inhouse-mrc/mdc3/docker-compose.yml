@@ -1,0 +1,207 @@
+version: '3'
+
+services:
+
+  broker-east-8:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-east-8
+    container_name: broker-east-8
+    networks:
+      - n1
+    ports:
+      - "9091:9091"
+      - "8091:8091"
+    volumes:
+      - ./config:/etc/kafka/demo
+    extra_hosts:
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "schema-registry-west-1:${MDC2}"
+    environment:
+      KAFKA_BROKER_ID: 8
+      KAFKA_BROKER_RACK: 'east'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-east-8:19091,PLAINTEXT://broker-east-8:9091
+      KAFKA_ADVERTISED_HOSTNAME: broker-east-8
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: '${MDC2}:2181,${MDC2}:2182,${MDC2}:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-east-3:9093,broker-west-1:9091,broker-west-2:9092,broker-east-4:9094
+      KAFKA_JMX_PORT: 8091
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+
+  broker-east-9:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-east-9
+    container_name: broker-east-9
+    networks:
+      - n1
+    ports:
+      - "9092:9092"
+      - "8092:8092"
+    volumes:
+      - ./config:/etc/kafka/demo
+    extra_hosts:
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "schema-registry-west-1:${MDC2}"
+    environment:
+      KAFKA_BROKER_ID: 9
+      KAFKA_BROKER_RACK: 'east'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-east-9:19092,PLAINTEXT://broker-east-9:9092
+      KAFKA_ADVERTISED_HOSTNAME: broker-east-9
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: '${MDC2}:2181,${MDC2}:2182,${MDC2}:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-east-3:9093,broker-west-1:9091,broker-west-2:9092,broker-east-4:9094
+      KAFKA_JMX_PORT: 8092
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+
+  broker-east-10:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-east-10
+    container_name: broker-east-10
+    networks:
+      - n1
+    ports:
+      - "9093:9093"
+      - "8093:8093"
+    volumes:
+      - ./config:/etc/kafka/demo
+    extra_hosts:
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "schema-registry-west-1:${MDC2}"
+    environment:
+      KAFKA_BROKER_ID: 10
+      KAFKA_BROKER_RACK: 'east'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-east-10:19093,PLAINTEXT://broker-east-10:9093
+      KAFKA_ADVERTISED_HOSTNAME: broker-east-10
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: '${MDC2}:2181,${MDC2}:2182,${MDC2}:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-east-3:9093,broker-west-1:9091,broker-west-2:9092,broker-east-4:9094
+      KAFKA_JMX_PORT: 8093
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+
+  cli-east-1:
+    image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}
+    hostname: cli-east-1
+    container_name: cli-east-1
+    networks:
+      - n1
+    extra_hosts:
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "schema-registry-west-1:${MDC2}"
+    entrypoint: /bin/sh
+    tty: true
+
+  cli-east-2:
+    image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}
+    hostname: cli-east-2
+    container_name: cli-east-2
+    networks:
+      - n1
+    extra_hosts:
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "schema-registry-west-1:${MDC2}"
+    entrypoint: /bin/sh
+    tty: true
+
+  cli-east-3:
+    image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}
+    hostname: cli-east-3
+    container_name: cli-east-3
+    networks:
+      - n1
+    extra_hosts:
+      - "broker-west-5:${MDC1}"
+      - "broker-west-6:${MDC1}"
+      - "broker-west-7:${MDC1}"
+      - "broker-west-1:${MDC2}"
+      - "broker-west-2:${MDC2}"
+      - "broker-east-3:${MDC2}"
+      - "broker-east-4:${MDC2}"
+      - "zookeeper-central:${MDC2}"
+      - "zookeeper-east:${MDC2}"
+      - "zookeeper-west:${MDC2}"
+      - "broker-east-8:${MDC3}"
+      - "broker-east-9:${MDC3}"
+      - "broker-east-10:${MDC3}"
+      - "schema-registry-west-1:${MDC2}"
+    entrypoint: /bin/sh
+    tty: true
+
+networks:
+  n1:

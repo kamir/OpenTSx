@@ -1,0 +1,506 @@
+version: '3'
+
+services:
+  zookeeper-west:
+    image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
+    hostname: zookeeper-west
+    container_name: zookeeper-west
+    networks:
+      - n1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+
+  zookeeper-central:
+    image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
+    hostname: zookeeper-central
+    container_name: zookeeper-central
+    networks:
+      - n1
+    ports:
+      - "2182:2182"
+    environment:
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+    depends_on:
+      - zookeeper-west
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+
+  zookeeper-east:
+    image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
+    hostname: zookeeper-east
+    container_name: zookeeper-east
+    networks:
+      - n1
+    ports:
+      - "2183:2183"
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_CLIENT_PORT: 2183
+      ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+    depends_on:
+      - zookeeper-west
+      - zookeeper-central
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+
+  broker-west-1:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-west-1
+    container_name: broker-west-1
+    networks:
+      - n1
+    ports:
+      - "9091:9091"
+      - "8091:8091"
+    volumes:
+      - ./config:/etc/kafka/demo
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_RACK: 'west'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-west-1:19091,PLAINTEXT://broker-west-1:9091
+      KAFKA_ADVERTISED_HOSTNAME: broker-west-1
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-west:2181,zookeeper-central:2182,zookeeper-east:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-west-2:19091,broker-east-3:19093
+      KAFKA_JMX_PORT: 8091
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper-west
+      - zookeeper-central
+      - zookeeper-east
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+
+  broker-west-2:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-west-2
+    container_name: broker-west-2
+    networks:
+      - n1
+    ports:
+      - "9092:9092"
+      - "8092:8092"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_BROKER_RACK: 'west'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-west-2:19092,PLAINTEXT://broker-west-2:9092
+      KAFKA_ADVERTISED_HOSTNAME: broker-west-2
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-west:2181,zookeeper-central:2182,zookeeper-east:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-west-1:19091,broker-east-3:19093
+      KAFKA_JMX_PORT: 8092
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper-west
+      - zookeeper-central
+      - zookeeper-east
+      - broker-west-1
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+
+  broker-east-3:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-east-3
+    container_name: broker-east-3
+    networks:
+      - n1
+    ports:
+      - "9093:9093"
+      - "8093:8093"
+    volumes:
+      - ./config:/etc/kafka/demo
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_BROKER_RACK: 'east'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-east-3:19093,PLAINTEXT://192.168.0.6:9093
+      KAFKA_ADVERTISED_HOSTNAME: broker-east-3
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-west:2181,zookeeper-central:2182,zookeeper-east:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-west-1:19091,broker-west-2:19092
+      KAFKA_JMX_PORT: 8093
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper-west
+      - zookeeper-central
+      - zookeeper-east
+      - broker-west-1
+      - broker-west-2
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+
+  broker-east-4:
+    image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
+    hostname: broker-east-4
+    container_name: broker-east-4
+    networks:
+      - n1
+    ports:
+      - "9094:9094"
+      - "8094:8094"
+    environment:
+      KAFKA_BROKER_ID: 4
+      KAFKA_BROKER_RACK: 'east'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-east-4:19094,PLAINTEXT://broker-east-4:9094
+      KAFKA_ADVERTISED_HOSTNAME: broker-east-4
+      KAFKA_REPLICA_SELECTOR_CLASS: org.apache.kafka.common.replica.RackAwareReplicaSelector
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-west:2181,zookeeper-central:2182,zookeeper-east:2183'
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-west-1:19091,broker-east-3:19093
+      KAFKA_JMX_PORT: 8094
+      KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper-west
+      - zookeeper-central
+      - zookeeper-east
+      - broker-west-1
+      - broker-west-2
+      - broker-east-3
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+
+  schema-registry-west-1:
+    image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
+    hostname: schema-registry-west-1
+    container_name: schema-registry-west-1
+    depends_on:
+      - zookeeper-west
+      - zookeeper-east
+      - zookeeper-central
+      - broker-west-1
+      - broker-west-2
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-west-1
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker-west-1:9091'
+    extra_hosts:
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "control-center:192.168.0.6"
+
+  rest-proxy-west-1:
+    image: ${REPOSITORY}/cp-kafka-rest:${CONFLUENT_DOCKER_TAG}
+    depends_on:
+      - zookeeper-west
+      - broker-west-1
+      - schema-registry-west-1
+    ports:
+      - 8082:8082
+    hostname: rest-proxy-west-1
+    container_name: rest-proxy-west-1
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy-west-1
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'broker-west-1:9091'
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry-west-1:8081'
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "control-center:192.168.0.6"
+
+  ksqldb-server-west-1:
+    image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
+    hostname: ksqldb-server-west-1
+    container_name: ksqldb-server-west-1
+    depends_on:
+      - broker-west-1
+      - schema-registry-west-1
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_BOOTSTRAP_SERVERS: "broker-west-1:9091"
+      KSQL_HOST_NAME: ksqldb-server-west-1
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry-west-1:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      KSQL_KSQL_CONNECT_URL: "http://connect-west-1:8083"
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+  connect-west-1:
+    image: cnfldemos/kafka-connect-datagen:0.2.0-5.4.0
+    hostname: connect-west-1
+    container_name: connect-west-1
+    depends_on:
+      - zookeeper-west
+      - broker-west-1
+      - schema-registry-west-1
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'broker-west-1:9091'
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect-west-1
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: compose-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry-west-1:8081
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_ZOOKEEPER_CONNECT: 'zookeeper-west:2181'
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+  ksqldb-cli:
+    image: ${REPOSITORY}/cp-ksqldb-cli:${CONFLUENT_DOCKER_TAG}
+    container_name: ksqldb-cli
+    depends_on:
+      - broker-west-1
+      - connect-west-1
+      - ksqldb-server-west-1
+    entrypoint: /bin/sh
+    tty: true
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+  control-center:
+    image: ${REPOSITORY}/cp-enterprise-control-center:${CONFLUENT_DOCKER_TAG}
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - zookeeper-west
+      - zookeeper-east
+      - zookeeper-central
+      - broker-west-1
+      - broker-west-2
+      - broker-east-3
+      - broker-east-4
+      - schema-registry-west-1
+      - connect-west-1
+      - ksqldb-server-west-1
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-west-2:9092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper-west:2181'
+      CONTROL_CENTER_CONNECT_CLUSTER: 'connect-west-1:8083'
+      CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server-west-1:8088"
+      CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: "http://ksqldb-server-west-1:8088"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry-west-1:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 3
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 3
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 3
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 3
+      PORT: 9021
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+
+  cli-west-2:
+    image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}
+    hostname: cli-west-2
+    container_name: cli-west-2
+    networks:
+      - n1
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+    entrypoint: /bin/sh
+    tty: true
+
+  prometheus:
+    image: prom/prometheus:v2.11.1
+    ports:
+      - 9190:9190
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+
+  alertmanager:
+    image: prom/alertmanager:v0.18.0
+    ports:
+      - 9193:9193
+
+  node-exporter:
+    image: prom/node-exporter:v0.18.1
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points'
+      - '^(aufs|proc|nsfs|shm|cgroup|tmpfs|binfmt_misc|debugfs|devpts|fusectl|hugetlbfs|fuse.lxcfs|mqueue|pstore|securityfs|sysfs|autofs|devtmpfs|configfs)'
+
+  kafka-lag-exporter:
+    image: lightbend/kafka-lag-exporter:0.5.5
+    hostname: kafka-lag-exporter
+    restart: always
+    ports:
+      - 9999:9999
+    volumes:
+      - ./kafka-lag-exporter/:/opt/docker/conf/
+
+  grafana:
+    image: grafana/grafana:6.6.2
+    environment:
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+
+networks:
+  n1:
+
+
+
+

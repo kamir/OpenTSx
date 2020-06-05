@@ -1,4 +1,4 @@
-package org.opentsx.lg;
+package org.opentsx.lg.analyser;
 
 
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;

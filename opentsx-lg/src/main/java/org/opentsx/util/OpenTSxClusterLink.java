@@ -1,6 +1,7 @@
-package org.opentsx.lg;
+package org.opentsx.util;
 
 import org.opentsx.connectors.kafka.TSOProducer;
+import org.opentsx.util.topicmanager.TopicsUP;
 
 public class OpenTSxClusterLink {
 
