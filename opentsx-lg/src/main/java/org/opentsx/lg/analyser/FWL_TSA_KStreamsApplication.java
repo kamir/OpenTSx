@@ -1,8 +1,7 @@
-package org.opentsx.lg;
+package org.opentsx.lg.analyser;
 
 
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
-import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.common.serialization.Serdes;
@@ -10,11 +9,9 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Printed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.opentsx.data.model.EpisodesRecord;
 
 import java.util.Properties;
 import java.util.Vector;
