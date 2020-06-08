@@ -19,7 +19,6 @@ services:
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
 
-
   zookeeper-central:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
     hostname: zookeeper-central
