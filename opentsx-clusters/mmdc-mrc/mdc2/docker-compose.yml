@@ -176,7 +176,7 @@ services:
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1239:/usr/share/jmx_exporter/kafka-broker.yml
-  depends_on:
+    depends_on:
       - zookeeper-west
       - zookeeper-central
       - zookeeper-east
