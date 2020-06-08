@@ -74,6 +74,7 @@ services:
       - "1237:1237"
     volumes:
       - ./config:/etc/kafka/demo
+      - ./jmx-exporter:/usr/share/jmx_exporter
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_BROKER_RACK: 'west'
@@ -115,6 +116,7 @@ services:
       - "1238:1238"
     volumes:
       - ./config:/etc/kafka/demo
+      - ./jmx-exporter:/usr/share/jmx_exporter
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_BROKER_RACK: 'west'
@@ -157,6 +159,7 @@ services:
       - "1239:1239"
     volumes:
       - ./config:/etc/kafka/demo
+      - ./jmx-exporter:/usr/share/jmx_exporter
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_BROKER_RACK: 'east'
@@ -200,6 +203,7 @@ services:
       - "1240:1240"
     volumes:
       - ./config:/etc/kafka/demo
+      - ./jmx-exporter:/usr/share/jmx_exporter
     environment:
       KAFKA_BROKER_ID: 4
       KAFKA_BROKER_RACK: 'east'
