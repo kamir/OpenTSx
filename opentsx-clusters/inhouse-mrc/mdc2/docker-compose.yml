@@ -15,7 +15,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      #EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1236:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1236:/usr/share/jmx_exporter/zookeeper.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
 
@@ -34,7 +34,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2182
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      #EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1235:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1235:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
     volumes:
@@ -54,7 +54,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2183
       ZOOKEEPER_SERVERS: zookeeper-west:2888:3888;zookeeper-central:2888:3888;zookeeper-east:2888:3888
       ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
-      #EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/zookeeper.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -72,8 +72,6 @@ services:
       - "9091:9091"
       - "8091:8091"
       - "1237:1237"
-    volumes:
-      - ./config:/etc/kafka/demo
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_BROKER_RACK: 'west'
@@ -90,7 +88,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      #KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1237:/usr/share/jmx_exporter/kafka-broker.yml
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1237:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -102,6 +100,9 @@ services:
       - "broker-east-8:${MDC3}"
       - "broker-east-9:${MDC3}"
       - "broker-east-10:${MDC3}"
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
 
   broker-west-2:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -113,8 +114,6 @@ services:
       - "9092:9092"
       - "8092:8092"
       - "1238:1238"
-    volumes:
-      - ./config:/etc/kafka/demo
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_BROKER_RACK: 'west'
@@ -131,7 +130,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      #KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1238:/usr/share/jmx_exporter/kafka-broker.yml
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1238:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -144,6 +143,9 @@ services:
       - "broker-east-8:${MDC3}"
       - "broker-east-9:${MDC3}"
       - "broker-east-10:${MDC3}"
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
 
   broker-east-3:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -155,8 +157,6 @@ services:
       - "9093:9093"
       - "8093:8093"
       - "1239:1239"
-    volumes:
-      - ./config:/etc/kafka/demo
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_BROKER_RACK: 'east'
@@ -173,7 +173,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      #KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1239:/usr/share/jmx_exporter/kafka-broker.yml
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1239:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -187,6 +187,9 @@ services:
       - "broker-east-8:${MDC3}"
       - "broker-east-9:${MDC3}"
       - "broker-east-10:${MDC3}"
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
 
   broker-east-4:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -198,8 +201,6 @@ services:
       - "9094:9094"
       - "8094:8094"
       - "1240:1240"
-    volumes:
-      - ./config:/etc/kafka/demo
     environment:
       KAFKA_BROKER_ID: 4
       KAFKA_BROKER_RACK: 'east'
@@ -216,7 +217,7 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      #KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1240:/usr/share/jmx_exporter/kafka-broker.yml
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1240:/usr/share/jmx_exporter/kafka-broker.yml
     depends_on:
       - zookeeper-west
       - zookeeper-central
@@ -231,7 +232,9 @@ services:
       - "broker-east-8:${MDC3}"
       - "broker-east-9:${MDC3}"
       - "broker-east-10:${MDC3}"
-
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
   schema-registry-west-1:
     image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
     hostname: schema-registry-west-1

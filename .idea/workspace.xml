@@ -2,13 +2,44 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/check.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/down.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/up.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc1" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/hostname" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/hosts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/api.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/garbage_collector.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/kubernetes.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/magnum.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/scheduler.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/resolv.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/create_kube_clusters.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/echo-demo.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/snap/db" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/wal/0.tmp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/wal/0000000000000000-0000000000000000.wal" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/generate_krake_config.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/get_krake_config_files.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_etcd_container.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_container.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_container_with_service.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_services.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/$PRODUCT_WORKSPACE_FILE$" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/aws.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/emacs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/mdc2.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/sbt.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/r.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -97,7 +128,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/Krake-container" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -111,12 +142,8 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters" />
-      <recent name="$PROJECT_DIR$/opentsx-spring-example/main" />
-      <recent name="$PROJECT_DIR$/opentsx-spring-example/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-spring-example" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="org.opentsx.util" />
@@ -126,11 +153,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/Krake-container" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/confluent_local" />
       <recent name="$PROJECT_DIR$/opentsx-clusters" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/bin" />
-      <recent name="$PROJECT_DIR$/opentsx-lg" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -139,8 +166,12 @@
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.tsa.rng" />
     </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example/main" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example/main/java" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -160,7 +191,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.KafkaDemoApp">
+  <component name="RunManager" selected="Docker.Krake-container/Dockerfile">
     <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
       <module name="opentsx-lg" />
@@ -258,6 +289,20 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Krake-container/Dockerfile" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+      <deployment type="dockerfile">
+        <settings>
+          <option name="buildCliOptions" value="" />
+          <option name="command" value="" />
+          <option name="containerName" value="krake-master" />
+          <option name="entrypoint" value="" />
+          <option name="imageTag" value="krake-latest" />
+          <option name="commandLineOptions" value="" />
+          <option name="sourceFilePath" value="opentsx-clusters/Krake-container/Dockerfile" />
+        </settings>
+      </deployment>
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Application.TopicsCHECK" />
       <item itemvalue="Application.TSDataSineWaveGenerator" />
@@ -265,6 +310,7 @@
       <item itemvalue="Application.TopicsUP" />
       <item itemvalue="Spring Boot.KafkaDemoApplication" />
       <item itemvalue="Spring Boot.KafkaDemoApp" />
+      <item itemvalue="Docker.Krake-container/Dockerfile" />
     </list>
     <recent_temporary>
       <list>
@@ -374,14 +420,8 @@
       <workItem from="1590565825199" duration="22794000" />
       <workItem from="1591090925414" duration="7553000" />
       <workItem from="1591168881585" duration="4684000" />
-      <workItem from="1591360832053" duration="9388000" />
-    </task>
-    <task id="LOCAL-00043" summary="Prepare the stretched cluster setup at home.">
-      <created>1588253396486</created>
-      <option name="number" value="00043" />
-      <option name="presentableId" value="LOCAL-00043" />
-      <option name="project" value="LOCAL" />
-      <updated>1588253396486</updated>
+      <workItem from="1591360832053" duration="10971000" />
+      <workItem from="1591427188101" duration="22990000" />
     </task>
     <task id="LOCAL-00044" summary="Prepare the stretched cluster setup at home.">
       <created>1588254017867</created>
@@ -719,7 +759,14 @@
       <option name="project" value="LOCAL" />
       <updated>1591374123421</updated>
     </task>
-    <option name="localTasksCounter" value="92" />
+    <task id="LOCAL-00092" summary="workaround for JAR in gitignore">
+      <created>1591380422987</created>
+      <option name="number" value="00092" />
+      <option name="presentableId" value="LOCAL-00092" />
+      <option name="project" value="LOCAL" />
+      <updated>1591380422987</updated>
+    </task>
+    <option name="localTasksCounter" value="93" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
