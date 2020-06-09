@@ -2,44 +2,20 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc1" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc2" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/hostname" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/hosts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/api.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/garbage_collector.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/kubernetes.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/magnum.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/scheduler.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/resolv.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/create_kube_clusters.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/echo-demo.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/snap/db" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/wal/0.tmp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/wal/0000000000000000-0000000000000000.wal" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/generate_krake_config.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/get_krake_config_files.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_etcd_container.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_container.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_container_with_service.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_services.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/$PRODUCT_WORKSPACE_FILE$" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/aws.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/emacs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/mdc2.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/sbt.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/jmx-exporter/jmx_prometheus_javaagent-0.12.0_jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/jmx-exporter/kafka-broker.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/jmx-exporter/kafka-consumer.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/jmx-exporter/kafka-producer.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/jmx-exporter/zookeeper.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/jmx-exporter/jmx_prometheus_javaagent-0.12.0_jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/jmx-exporter/kafka-broker.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/jmx-exporter/kafka-consumer.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/jmx-exporter/kafka-producer.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/jmx-exporter/zookeeper.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -128,7 +104,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/Krake-container" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -153,11 +129,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/Krake-container" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/confluent_local" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -421,28 +397,7 @@
       <workItem from="1591090925414" duration="7553000" />
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
-      <workItem from="1591427188101" duration="22990000" />
-    </task>
-    <task id="LOCAL-00044" summary="Prepare the stretched cluster setup at home.">
-      <created>1588254017867</created>
-      <option name="number" value="00044" />
-      <option name="presentableId" value="LOCAL-00044" />
-      <option name="project" value="LOCAL" />
-      <updated>1588254017867</updated>
-    </task>
-    <task id="LOCAL-00045" summary="Prepare the stretched cluster setup at home.">
-      <created>1588254213727</created>
-      <option name="number" value="00045" />
-      <option name="presentableId" value="LOCAL-00045" />
-      <option name="project" value="LOCAL" />
-      <updated>1588254213727</updated>
-    </task>
-    <task id="LOCAL-00046" summary="Prepare the stretched cluster setup at home.">
-      <created>1588254277989</created>
-      <option name="number" value="00046" />
-      <option name="presentableId" value="LOCAL-00046" />
-      <option name="project" value="LOCAL" />
-      <updated>1588254277989</updated>
+      <workItem from="1591427188101" duration="26779000" />
     </task>
     <task id="LOCAL-00047" summary="Prepare the stretched cluster setup at home.">
       <created>1588254390341</created>
@@ -766,7 +721,28 @@
       <option name="project" value="LOCAL" />
       <updated>1591380422987</updated>
     </task>
-    <option name="localTasksCounter" value="93" />
+    <task id="LOCAL-00093" summary="workaround for JAR in gitignore">
+      <created>1591629670970</created>
+      <option name="number" value="00093" />
+      <option name="presentableId" value="LOCAL-00093" />
+      <option name="project" value="LOCAL" />
+      <updated>1591629670971</updated>
+    </task>
+    <task id="LOCAL-00094" summary="workaround for JAR in gitignore">
+      <created>1591629806027</created>
+      <option name="number" value="00094" />
+      <option name="presentableId" value="LOCAL-00094" />
+      <option name="project" value="LOCAL" />
+      <updated>1591629806028</updated>
+    </task>
+    <task id="LOCAL-00095" summary="workaround for JAR in gitignore">
+      <created>1591629864282</created>
+      <option name="number" value="00095" />
+      <option name="presentableId" value="LOCAL-00095" />
+      <option name="project" value="LOCAL" />
+      <updated>1591629864282</updated>
+    </task>
+    <option name="localTasksCounter" value="96" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
