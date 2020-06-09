@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/port_check.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -384,14 +385,7 @@
       <workItem from="1591090925414" duration="7553000" />
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
-      <workItem from="1591427188101" duration="27998000" />
-    </task>
-    <task id="LOCAL-00049" summary="Prepare the stretched cluster setup at home.">
-      <created>1588255320321</created>
-      <option name="number" value="00049" />
-      <option name="presentableId" value="LOCAL-00049" />
-      <option name="project" value="LOCAL" />
-      <updated>1588255320321</updated>
+      <workItem from="1591427188101" duration="30821000" />
     </task>
     <task id="LOCAL-00050" summary="Prepare the stretched cluster setup at home.">
       <created>1588255474877</created>
@@ -729,7 +723,14 @@
       <option name="project" value="LOCAL" />
       <updated>1591688428883</updated>
     </task>
-    <option name="localTasksCounter" value="98" />
+    <task id="LOCAL-00098" summary="workaround for JAR in gitignore">
+      <created>1591688670407</created>
+      <option name="number" value="00098" />
+      <option name="presentableId" value="LOCAL-00098" />
+      <option name="project" value="LOCAL" />
+      <updated>1591688670407</updated>
+    </task>
+    <option name="localTasksCounter" value="99" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
