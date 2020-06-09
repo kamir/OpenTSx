@@ -424,7 +424,7 @@ services:
     ports:
       - "9021:9021"
     environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-west-2:9092'
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-west-2:9092,broker-west-1:9091'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper-west:2181'
       CONTROL_CENTER_CONNECT_CLUSTER: 'connect-west-1:8083'
       CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server-west-1:8088"
