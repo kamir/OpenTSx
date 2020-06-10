@@ -1,6 +1,6 @@
 export mdc1=192.168.0.9
-export mdc1=192.168.0.6
-export mdc1=192.169.0.11
+export mdc2=192.168.0.6
+export mdc3=192.169.0.11
 
 
 
