@@ -2,40 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc3" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/resolv.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/add-hosts.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/config/cpl.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/config/cuh.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/config/topiclist.def" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bin/001_build_containers.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc1" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config-mdc1" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config-mdc2" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config-mdc2" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/hostname" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/hosts" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/hostname" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/api.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/krake/api.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/garbage_collector.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/krake/garbage_collector.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/kubernetes.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/krake/kubernetes.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/magnum.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/krake/magnum.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/krake/scheduler.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/krake/scheduler.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/config/resolv.conf" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/config/hosts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/create_kube_clusters.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/create_kube_clusters.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/echo-demo.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/echo-demo.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/snap/db" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/etcd-data.tmp/member/snap/db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/wal/0.tmp" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/etcd-data.tmp/member/wal/0.tmp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/etcd-data.tmp/member/wal/0000000000000000-0000000000000000.wal" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/etcd-data.tmp/member/wal/0000000000000000-0000000000000000.wal" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/generate_krake_config.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/generate_krake_config.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/get_krake_config_files.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/get_krake_config_files.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_etcd_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/run_etcd_container.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/run_krake_container.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_container_with_service.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/run_krake_container_with_service.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/run_krake_services.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/krake-container/run_krake_services.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/MDC-MRC.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/MDC-MRC.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/krake-app/echo-demo.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-app/echo-demo.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/krake-app/lg-demo.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-app/lg-demo.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/admin/stop.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/admin/stop.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/admin/stop.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts/admin/stop.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/build_docker.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/build_docker.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -418,14 +390,7 @@
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
       <workItem from="1591427188101" duration="47367000" />
-      <workItem from="1591788922557" duration="2095000" />
-    </task>
-    <task id="LOCAL-00054" summary="Prepare the stretched cluster setup at home.">
-      <created>1588257784860</created>
-      <option name="number" value="00054" />
-      <option name="presentableId" value="LOCAL-00054" />
-      <option name="project" value="LOCAL" />
-      <updated>1588257784860</updated>
+      <workItem from="1591788922557" duration="3191000" />
     </task>
     <task id="LOCAL-00055" summary="Prepare the stretched cluster setup at home.">
       <created>1588258111773</created>
@@ -763,7 +728,14 @@
       <option name="project" value="LOCAL" />
       <updated>1591780645865</updated>
     </task>
-    <option name="localTasksCounter" value="103" />
+    <task id="LOCAL-00103" summary="workaround for JAR in gitignore">
+      <created>1591791109070</created>
+      <option name="number" value="00103" />
+      <option name="presentableId" value="LOCAL-00103" />
+      <option name="project" value="LOCAL" />
+      <updated>1591791109070</updated>
+    </task>
+    <option name="localTasksCounter" value="104" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
