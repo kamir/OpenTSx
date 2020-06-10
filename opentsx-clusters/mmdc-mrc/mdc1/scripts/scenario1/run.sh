@@ -1,11 +1,13 @@
 export TN=T2.8
 export ZM=5000000
 
-source ./../../env.sh
+./../../env.sh
 
 echo "*******************"
 echo "Topicname: $TN"
 echo "*******************"
+echo $REPOSITOIRY
+echo $CONFLUENT_DOCKER_TAG
 
 rm -rf tmp_consumer1
 rm -rf tmp_consumer2
