@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" afterDir="false" />
+    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="workaround for JAR in gitignore">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/up.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/up.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -91,7 +92,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -120,11 +121,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/krake-app" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -385,98 +386,7 @@
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
       <workItem from="1591427188101" duration="47367000" />
-      <workItem from="1591788922557" duration="3909000" />
-    </task>
-    <task id="LOCAL-00062" summary="Prepare the stretched cluster setup at home.">
-      <created>1588259890070</created>
-      <option name="number" value="00062" />
-      <option name="presentableId" value="LOCAL-00062" />
-      <option name="project" value="LOCAL" />
-      <updated>1588259890070</updated>
-    </task>
-    <task id="LOCAL-00063" summary="Prepare the stretched cluster setup at home.">
-      <created>1588260011279</created>
-      <option name="number" value="00063" />
-      <option name="presentableId" value="LOCAL-00063" />
-      <option name="project" value="LOCAL" />
-      <updated>1588260011279</updated>
-    </task>
-    <task id="LOCAL-00064" summary="Prepare the stretched cluster setup at home.">
-      <created>1588260213158</created>
-      <option name="number" value="00064" />
-      <option name="presentableId" value="LOCAL-00064" />
-      <option name="project" value="LOCAL" />
-      <updated>1588260213158</updated>
-    </task>
-    <task id="LOCAL-00065" summary="Prepare the stretched cluster setup at home.">
-      <created>1588260845202</created>
-      <option name="number" value="00065" />
-      <option name="presentableId" value="LOCAL-00065" />
-      <option name="project" value="LOCAL" />
-      <updated>1588260845203</updated>
-    </task>
-    <task id="LOCAL-00066" summary="Prepare the stretched cluster setup at home.">
-      <created>1588261284819</created>
-      <option name="number" value="00066" />
-      <option name="presentableId" value="LOCAL-00066" />
-      <option name="project" value="LOCAL" />
-      <updated>1588261284819</updated>
-    </task>
-    <task id="LOCAL-00067" summary="Prepare the stretched cluster setup at home.">
-      <created>1588265720300</created>
-      <option name="number" value="00067" />
-      <option name="presentableId" value="LOCAL-00067" />
-      <option name="project" value="LOCAL" />
-      <updated>1588265720300</updated>
-    </task>
-    <task id="LOCAL-00068" summary="Prepare the stretched cluster setup at home.">
-      <created>1588315295643</created>
-      <option name="number" value="00068" />
-      <option name="presentableId" value="LOCAL-00068" />
-      <option name="project" value="LOCAL" />
-      <updated>1588315295643</updated>
-    </task>
-    <task id="LOCAL-00069" summary="Prepare the stretched cluster setup at home.">
-      <created>1588315387731</created>
-      <option name="number" value="00069" />
-      <option name="presentableId" value="LOCAL-00069" />
-      <option name="project" value="LOCAL" />
-      <updated>1588315387731</updated>
-    </task>
-    <task id="LOCAL-00070" summary="Prepare the stretched cluster setup at home.">
-      <created>1588315443997</created>
-      <option name="number" value="00070" />
-      <option name="presentableId" value="LOCAL-00070" />
-      <option name="project" value="LOCAL" />
-      <updated>1588315443997</updated>
-    </task>
-    <task id="LOCAL-00071" summary="Prepare the stretched cluster setup at home.">
-      <created>1588315527207</created>
-      <option name="number" value="00071" />
-      <option name="presentableId" value="LOCAL-00071" />
-      <option name="project" value="LOCAL" />
-      <updated>1588315527207</updated>
-    </task>
-    <task id="LOCAL-00072" summary="Prepare the stretched cluster setup at home.">
-      <created>1588315643485</created>
-      <option name="number" value="00072" />
-      <option name="presentableId" value="LOCAL-00072" />
-      <option name="project" value="LOCAL" />
-      <updated>1588315643485</updated>
-    </task>
-    <task id="LOCAL-00073" summary="Prepare the stretched cluster setup at home.">
-      <created>1588316066925</created>
-      <option name="number" value="00073" />
-      <option name="presentableId" value="LOCAL-00073" />
-      <option name="project" value="LOCAL" />
-      <updated>1588316066925</updated>
-    </task>
-    <task id="LOCAL-00074" summary="Added the load-generator DEMO for DOCKER-COMPOSE">
-      <created>1588415624193</created>
-      <option name="number" value="00074" />
-      <option name="presentableId" value="LOCAL-00074" />
-      <option name="project" value="LOCAL" />
-      <updated>1588415624193</updated>
+      <workItem from="1591788922557" duration="6655000" />
     </task>
     <task id="LOCAL-00075" summary="Added the load-generator DEMO for DOCKER-COMPOSE">
       <created>1590511474814</created>
@@ -730,7 +640,98 @@
       <option name="project" value="LOCAL" />
       <updated>1591792778706</updated>
     </task>
-    <option name="localTasksCounter" value="111" />
+    <task id="LOCAL-00111" summary="workaround for JAR in gitignore">
+      <created>1591793014153</created>
+      <option name="number" value="00111" />
+      <option name="presentableId" value="LOCAL-00111" />
+      <option name="project" value="LOCAL" />
+      <updated>1591793014153</updated>
+    </task>
+    <task id="LOCAL-00112" summary="workaround for JAR in gitignore">
+      <created>1591793126794</created>
+      <option name="number" value="00112" />
+      <option name="presentableId" value="LOCAL-00112" />
+      <option name="project" value="LOCAL" />
+      <updated>1591793126794</updated>
+    </task>
+    <task id="LOCAL-00113" summary="workaround for JAR in gitignore">
+      <created>1591793296386</created>
+      <option name="number" value="00113" />
+      <option name="presentableId" value="LOCAL-00113" />
+      <option name="project" value="LOCAL" />
+      <updated>1591793296386</updated>
+    </task>
+    <task id="LOCAL-00114" summary="workaround for JAR in gitignore">
+      <created>1591793381371</created>
+      <option name="number" value="00114" />
+      <option name="presentableId" value="LOCAL-00114" />
+      <option name="project" value="LOCAL" />
+      <updated>1591793381371</updated>
+    </task>
+    <task id="LOCAL-00115" summary="workaround for JAR in gitignore">
+      <created>1591793966005</created>
+      <option name="number" value="00115" />
+      <option name="presentableId" value="LOCAL-00115" />
+      <option name="project" value="LOCAL" />
+      <updated>1591793966005</updated>
+    </task>
+    <task id="LOCAL-00116" summary="workaround for JAR in gitignore">
+      <created>1591794028028</created>
+      <option name="number" value="00116" />
+      <option name="presentableId" value="LOCAL-00116" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794028028</updated>
+    </task>
+    <task id="LOCAL-00117" summary="workaround for JAR in gitignore">
+      <created>1591794071529</created>
+      <option name="number" value="00117" />
+      <option name="presentableId" value="LOCAL-00117" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794071529</updated>
+    </task>
+    <task id="LOCAL-00118" summary="workaround for JAR in gitignore">
+      <created>1591794433258</created>
+      <option name="number" value="00118" />
+      <option name="presentableId" value="LOCAL-00118" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794433258</updated>
+    </task>
+    <task id="LOCAL-00119" summary="workaround for JAR in gitignore">
+      <created>1591794632435</created>
+      <option name="number" value="00119" />
+      <option name="presentableId" value="LOCAL-00119" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794632435</updated>
+    </task>
+    <task id="LOCAL-00120" summary="workaround for JAR in gitignore">
+      <created>1591794718252</created>
+      <option name="number" value="00120" />
+      <option name="presentableId" value="LOCAL-00120" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794718252</updated>
+    </task>
+    <task id="LOCAL-00121" summary="workaround for JAR in gitignore">
+      <created>1591794786852</created>
+      <option name="number" value="00121" />
+      <option name="presentableId" value="LOCAL-00121" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794786852</updated>
+    </task>
+    <task id="LOCAL-00122" summary="workaround for JAR in gitignore">
+      <created>1591794872079</created>
+      <option name="number" value="00122" />
+      <option name="presentableId" value="LOCAL-00122" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794872080</updated>
+    </task>
+    <task id="LOCAL-00123" summary="workaround for JAR in gitignore">
+      <created>1591794989043</created>
+      <option name="number" value="00123" />
+      <option name="presentableId" value="LOCAL-00123" />
+      <option name="project" value="LOCAL" />
+      <updated>1591794989043</updated>
+    </task>
+    <option name="localTasksCounter" value="124" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
