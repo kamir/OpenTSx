@@ -3,7 +3,7 @@ export ZM=5000000
 
 cd ..
 
-source ./../env.sh
+source ./env.sh
 
 echo "*******************"
 echo "Topicname: $TN"
