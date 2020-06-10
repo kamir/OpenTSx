@@ -1,6 +1,5 @@
 export TN=test-szenario-01
-export ZM=5000
-export D=$(time)
+export ZM=1000000
 
 cd ../..
 
