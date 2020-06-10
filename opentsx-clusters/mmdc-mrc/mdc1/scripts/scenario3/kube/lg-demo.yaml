@@ -43,8 +43,20 @@ spec:
             value: "/etc/opentsx/config/cuh.props"
           - name: OPENTSX_SHOW_GUI
             value: "false"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/opentsx/config/
+        - name: scripts
+          mountPath: /opentsx-lg/bin/
         ports:
         - containerPort: 8080
+      volumes:
+        - name: config
+          hostPath:
+            path: ./config
+        - name: scripts
+          hostPath:
+            path: ./bin
 ---
 apiVersion: v1
 kind: Service
