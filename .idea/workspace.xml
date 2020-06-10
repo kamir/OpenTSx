@@ -2,8 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/port_check.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-app/echo-demo.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-app/lg-demo.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/prometheus/prometheus.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/port_check.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/port_check.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/run_TSG_01.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_TSG_01.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -92,7 +97,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/krake-app" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -117,11 +122,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/krake-app" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/Krake-container" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/jmx-exporter" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -385,14 +390,7 @@
       <workItem from="1591090925414" duration="7553000" />
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
-      <workItem from="1591427188101" duration="30821000" />
-    </task>
-    <task id="LOCAL-00050" summary="Prepare the stretched cluster setup at home.">
-      <created>1588255474877</created>
-      <option name="number" value="00050" />
-      <option name="presentableId" value="LOCAL-00050" />
-      <option name="project" value="LOCAL" />
-      <updated>1588255474877</updated>
+      <workItem from="1591427188101" duration="40235000" />
     </task>
     <task id="LOCAL-00051" summary="Prepare the stretched cluster setup at home.">
       <created>1588255647083</created>
@@ -730,7 +728,14 @@
       <option name="project" value="LOCAL" />
       <updated>1591688670407</updated>
     </task>
-    <option name="localTasksCounter" value="99" />
+    <task id="LOCAL-00099" summary="workaround for JAR in gitignore">
+      <created>1591694278661</created>
+      <option name="number" value="00099" />
+      <option name="presentableId" value="LOCAL-00099" />
+      <option name="project" value="LOCAL" />
+      <updated>1591694278661</updated>
+    </task>
+    <option name="localTasksCounter" value="100" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
