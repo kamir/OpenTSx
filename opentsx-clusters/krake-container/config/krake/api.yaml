@@ -1,0 +1,64 @@
+## Configuration file for the Krake API
+
+etcd:
+  host: Mirko-Kampf-MBP15.local
+  port: 2379
+  retry_transactions: 1
+
+# TLS configuration of API server
+tls:
+  enabled: false
+  cert: tmp/pki/system:api-server.pem
+  key: tmp/pki/system:api-server-key.pem
+
+  # Enable client certificate authentication by setting this option to a file
+  # containing one or more certificate authorities that should be used to
+  # validate client certificates.
+  client_ca: tmp/pki/ca.pem
+
+authentication:
+  # If enabled, every request not rejected and not authenticated by any
+  # authentication method is treated as anonymous request.
+  allow_anonymous: true
+
+  # Keystone authentication
+  strategy:
+    keystone:
+      enabled: false
+      endpoint: http://Mirko-Kampf-MBP15.local:5000/v3
+  # Static authentication (every request is authenticated as this user-name)
+    static:
+      enabled: true
+      name: system:admin
+
+# Authorization mode
+#
+#  - RBAC (Role-based access control)
+#  - always-allow (Allow all requests. No authorization is performed.)
+#  - always-deny (Deny all requests. Only for testing purposes.)
+#
+authorization: always-allow
+
+
+log:
+  version: 1
+  level: INFO
+  disable_existing_loggers: false
+  formatters:
+    krake:
+      format: "%(asctime)s - [%(name)s] - [%(levelname)-5s] - %(message)s"
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: krake
+      stream: ext://sys.stdout
+    file:
+      class: logging.handlers.WatchedFileHandler
+      formatter: krake
+      filename: krake.log
+  root: # Configuring the default (root) logger is highly recommended
+    handlers: [console]
+  loggers:
+    krake:
+      handlers: [console]
+      propagate: no
