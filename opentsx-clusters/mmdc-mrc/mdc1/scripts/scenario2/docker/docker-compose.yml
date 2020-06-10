@@ -1,10 +1,10 @@
 version: '3'
 
 services:
-  lg-west-1:
+  lg-west-2:
     image: opentsx/time-series-generator:3.0.0
     hostname: lg-west-1
-    container_name: lg-west-1
+    container_name: lg-west-2
     networks:
       - n1
     volumes:
