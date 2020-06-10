@@ -385,14 +385,7 @@
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
       <workItem from="1591427188101" duration="47367000" />
-      <workItem from="1591788922557" duration="3760000" />
-    </task>
-    <task id="LOCAL-00061" summary="Prepare the stretched cluster setup at home.">
-      <created>1588259401156</created>
-      <option name="number" value="00061" />
-      <option name="presentableId" value="LOCAL-00061" />
-      <option name="project" value="LOCAL" />
-      <updated>1588259401156</updated>
+      <workItem from="1591788922557" duration="3909000" />
     </task>
     <task id="LOCAL-00062" summary="Prepare the stretched cluster setup at home.">
       <created>1588259890070</created>
@@ -730,7 +723,14 @@
       <option name="project" value="LOCAL" />
       <updated>1591792686273</updated>
     </task>
-    <option name="localTasksCounter" value="110" />
+    <task id="LOCAL-00110" summary="workaround for JAR in gitignore">
+      <created>1591792778706</created>
+      <option name="number" value="00110" />
+      <option name="presentableId" value="LOCAL-00110" />
+      <option name="project" value="LOCAL" />
+      <updated>1591792778706</updated>
+    </task>
+    <option name="localTasksCounter" value="111" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
