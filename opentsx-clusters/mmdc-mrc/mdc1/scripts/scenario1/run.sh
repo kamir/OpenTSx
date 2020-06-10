@@ -1,6 +1,8 @@
 export TN=T2.8
 export ZM=5000000
 
+source ./../.env
+
 echo "*******************"
 echo "Topicname: $TN"
 echo "*******************"
