@@ -385,28 +385,7 @@
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
       <workItem from="1591427188101" duration="47367000" />
-      <workItem from="1591788922557" duration="3517000" />
-    </task>
-    <task id="LOCAL-00058" summary="Prepare the stretched cluster setup at home.">
-      <created>1588258653077</created>
-      <option name="number" value="00058" />
-      <option name="presentableId" value="LOCAL-00058" />
-      <option name="project" value="LOCAL" />
-      <updated>1588258653077</updated>
-    </task>
-    <task id="LOCAL-00059" summary="Prepare the stretched cluster setup at home.">
-      <created>1588258983366</created>
-      <option name="number" value="00059" />
-      <option name="presentableId" value="LOCAL-00059" />
-      <option name="project" value="LOCAL" />
-      <updated>1588258983366</updated>
-    </task>
-    <task id="LOCAL-00060" summary="Prepare the stretched cluster setup at home.">
-      <created>1588259030024</created>
-      <option name="number" value="00060" />
-      <option name="presentableId" value="LOCAL-00060" />
-      <option name="project" value="LOCAL" />
-      <updated>1588259030024</updated>
+      <workItem from="1591788922557" duration="3760000" />
     </task>
     <task id="LOCAL-00061" summary="Prepare the stretched cluster setup at home.">
       <created>1588259401156</created>
@@ -730,7 +709,28 @@
       <option name="project" value="LOCAL" />
       <updated>1591792475483</updated>
     </task>
-    <option name="localTasksCounter" value="107" />
+    <task id="LOCAL-00107" summary="workaround for JAR in gitignore">
+      <created>1591792571010</created>
+      <option name="number" value="00107" />
+      <option name="presentableId" value="LOCAL-00107" />
+      <option name="project" value="LOCAL" />
+      <updated>1591792571010</updated>
+    </task>
+    <task id="LOCAL-00108" summary="workaround for JAR in gitignore">
+      <created>1591792629012</created>
+      <option name="number" value="00108" />
+      <option name="presentableId" value="LOCAL-00108" />
+      <option name="project" value="LOCAL" />
+      <updated>1591792629012</updated>
+    </task>
+    <task id="LOCAL-00109" summary="workaround for JAR in gitignore">
+      <created>1591792686273</created>
+      <option name="number" value="00109" />
+      <option name="presentableId" value="LOCAL-00109" />
+      <option name="project" value="LOCAL" />
+      <updated>1591792686273</updated>
+    </task>
+    <option name="localTasksCounter" value="110" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
