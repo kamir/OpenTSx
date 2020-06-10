@@ -53,10 +53,10 @@ spec:
       volumes:
         - name: config
           hostPath:
-            path: ./config
+            path: /home/ubuntu/OpenTSx/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario3/kube/config
         - name: scripts
           hostPath:
-            path: ./bin
+            path: /home/ubuntu/OpenTSx/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario3/kube/bin
 ---
 apiVersion: v1
 kind: Service
