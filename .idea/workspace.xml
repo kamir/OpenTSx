@@ -2,10 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/env.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/env.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1/run.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -389,14 +385,7 @@
       <workItem from="1591168881585" duration="4684000" />
       <workItem from="1591360832053" duration="10971000" />
       <workItem from="1591427188101" duration="47367000" />
-      <workItem from="1591788922557" duration="3402000" />
-    </task>
-    <task id="LOCAL-00056" summary="Prepare the stretched cluster setup at home.">
-      <created>1588258353724</created>
-      <option name="number" value="00056" />
-      <option name="presentableId" value="LOCAL-00056" />
-      <option name="project" value="LOCAL" />
-      <updated>1588258353724</updated>
+      <workItem from="1591788922557" duration="3464000" />
     </task>
     <task id="LOCAL-00057" summary="Prepare the stretched cluster setup at home.">
       <created>1588258498703</created>
@@ -734,7 +723,14 @@
       <option name="project" value="LOCAL" />
       <updated>1591792201188</updated>
     </task>
-    <option name="localTasksCounter" value="105" />
+    <task id="LOCAL-00105" summary="workaround for JAR in gitignore">
+      <created>1591792411039</created>
+      <option name="number" value="00105" />
+      <option name="presentableId" value="LOCAL-00105" />
+      <option name="project" value="LOCAL" />
+      <updated>1591792411039</updated>
+    </task>
+    <option name="localTasksCounter" value="106" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
