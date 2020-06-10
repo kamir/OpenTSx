@@ -3,6 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/opentsx-cloud-bridge/cp-all-in-one" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/opentsx-clusters/krake-container/tmp" vcs="Git" />
   </component>
 </project>

@@ -2,30 +2,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: echo-demo
+  name: opentsx-lg-demo
 spec:
   selector:
     matchLabels:
-      app: echo
+      app: tsa-generator
   template:
     metadata:
       labels:
-        app: echo
+        app: tsa-generator
     spec:
+      hostAliases:
+        - ip: "192.168.0.6"
+          hostnames:
+            - "broker-west-1"
+            - "broker-west-2"
+            - "broker-east-3"
+            - "broker-east-4"
+            - "zookeeper-central"
+            - "zookeeper-east"
+            - "zookeeper-west"
+            - "schema-registry-west-1"
+        - ip: "192.168.0.9"
+          hostnames:
+            - "broker-west-5"
+            - "broker-west-6"
+            - "broker-west-7"
+        - ip: "192.169.0.11"
+          hostnames:
+            - "broker-east-8"
+            - "broker-east-9"
+            - "broker-east-10"
       containers:
-      - name: echo
-        image: k8s.gcr.io/echoserver:1.10
+      - name: tsa-generator
+        image: opentsx/time-series-generator:3.0.0
+        env:
+          - name: OPENTSX_TOPIC_MAP_FILE_NAME
+            value: "/etc/opentsx/config/topiclist.def"
+          - name: OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME
+            value: "/etc/opentsx/config/cuh.props"
+          - name: OPENTSX_SHOW_GUI
+            value: "false"
         ports:
         - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: echo-demo
+  name: opentsx-lg-demo-service
 spec:
   type: NodePort
   selector:
-    app: echo
+    app: tsa-generator
   ports:
   - port: 8080
     protocol: TCP
