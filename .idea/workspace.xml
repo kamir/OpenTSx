@@ -2,10 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/connect-cfg/connector_Generator-001_config.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/jmx-exporter/jmx_prometheus_javaagent-0.12.0_jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/jmx-exporter/kafka-broker.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/jmx-exporter/kafka-consumer.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/jmx-exporter/kafka-producer.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/jmx-exporter/zookeeper.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/prometheus/alert.rules" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/prometheus/prometheus.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/build_docker.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/build_docker.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -94,7 +99,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -119,11 +124,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario1" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/scripts/scenario3/kube" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -390,14 +395,7 @@
       <workItem from="1591427188101" duration="47367000" />
       <workItem from="1591788922557" duration="15248000" />
       <workItem from="1592467372999" duration="758000" />
-      <workItem from="1592573958575" duration="1852000" />
-    </task>
-    <task id="LOCAL-00092" summary="workaround for JAR in gitignore">
-      <created>1591380422987</created>
-      <option name="number" value="00092" />
-      <option name="presentableId" value="LOCAL-00092" />
-      <option name="project" value="LOCAL" />
-      <updated>1591380422987</updated>
+      <workItem from="1592573958575" duration="2743000" />
     </task>
     <task id="LOCAL-00093" summary="workaround for JAR in gitignore">
       <created>1591629670970</created>
@@ -735,7 +733,14 @@
       <option name="project" value="LOCAL" />
       <updated>1592574830401</updated>
     </task>
-    <option name="localTasksCounter" value="141" />
+    <task id="LOCAL-00141" summary="workaround for JAR in gitignore">
+      <created>1592576845531</created>
+      <option name="number" value="00141" />
+      <option name="presentableId" value="LOCAL-00141" />
+      <option name="project" value="LOCAL" />
+      <updated>1592576845531</updated>
+    </task>
+    <option name="localTasksCounter" value="142" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
