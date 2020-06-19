@@ -40,6 +40,6 @@ echo ">>>  CONFLUENT_DOCKER_TAG : $CONFLUENT_DOCKER_TAG"
 echo ""
 
 cd $1
-ls
-docker-compose up
+#ls
+docker-compose up -d
 
