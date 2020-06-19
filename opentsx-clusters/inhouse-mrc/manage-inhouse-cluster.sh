@@ -12,7 +12,7 @@ hostname
 
 export MDC1=192.168.3.172
 export MDC2=192.168.3.5
-export MDC3=192.168.3.105
+export MDC3=192.168.3.173
 export CONFLUENT_DOCKER_TAG=5.5.0
 export REPOSITORY=confluentinc
 
