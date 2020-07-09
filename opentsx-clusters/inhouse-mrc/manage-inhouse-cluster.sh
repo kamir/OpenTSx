@@ -4,6 +4,39 @@ export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
 #$CONFLUENT_HOME/bin/confluent local status
 #$CONFLUENT_HOME/bin/confluent local stop
 
+if [ -z "$1" ]
+  then
+    echo "No MDC ID provided."
+fi
+
+if [ -z "$2" ]
+  then
+    echo "No command for docker compose provided."
+fi
+
+if [ -z "$3" ]
+  then
+    echo "Will run controle script in foreground."
+fi
+
+echo "********************************************"
+echo "* Commands to start a MDC ...              *"
+echo "********************************************"
+echo " cd $1"
+echo " docker-compose $2 $3"
+echo "********************************************"
+
+while true; do
+    read -p "Are you ready to continue? " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "********************************************"
+
 ifconfig
 
 ping -c 5 127.0.0.1
@@ -40,6 +73,9 @@ echo ">>>  CONFLUENT_DOCKER_TAG : $CONFLUENT_DOCKER_TAG"
 echo ""
 
 cd $1
-#ls
-docker-compose up -d
+
+#docker-compose up -d
+
+docker-compose $2 $3
+
 

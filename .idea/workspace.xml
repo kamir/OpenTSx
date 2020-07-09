@@ -2,15 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/jmx-exporter/jmx_prometheus_javaagent-0.12.0_jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/jmx-exporter/kafka-broker.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/jmx-exporter/kafka-consumer.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/jmx-exporter/kafka-producer.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/jmx-exporter/zookeeper.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/prometheus/alert.rules" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/prometheus/prometheus.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/prod.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/tmp_producer" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/clean.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/clean.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/scripts/scenario1/run.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -56,6 +56,7 @@
       <list>
         <option value="Interface" />
         <option value="Class" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -99,7 +100,7 @@
     <property name="aspect.path.notification.shown" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -113,8 +114,12 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example/main" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example/main/java" />
+      <recent name="$PROJECT_DIR$/opentsx-spring-example" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="org.opentsx.util" />
@@ -124,11 +129,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/connect-cfg" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker/config" />
       <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc3" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/scripts" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/scripts" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg" />
@@ -137,12 +142,8 @@
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.tsa.rng" />
     </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc" />
-      <recent name="$PROJECT_DIR$/opentsx-clusters" />
-      <recent name="$PROJECT_DIR$/opentsx-spring-example/main" />
-      <recent name="$PROJECT_DIR$/opentsx-spring-example/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-spring-example" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -395,21 +396,15 @@
       <workItem from="1591427188101" duration="47367000" />
       <workItem from="1591788922557" duration="15248000" />
       <workItem from="1592467372999" duration="758000" />
-      <workItem from="1592573958575" duration="3965000" />
-    </task>
-    <task id="LOCAL-00094" summary="workaround for JAR in gitignore">
-      <created>1591629806027</created>
-      <option name="number" value="00094" />
-      <option name="presentableId" value="LOCAL-00094" />
-      <option name="project" value="LOCAL" />
-      <updated>1591629806028</updated>
-    </task>
-    <task id="LOCAL-00095" summary="workaround for JAR in gitignore">
-      <created>1591629864282</created>
-      <option name="number" value="00095" />
-      <option name="presentableId" value="LOCAL-00095" />
-      <option name="project" value="LOCAL" />
-      <updated>1591629864282</updated>
+      <workItem from="1592573958575" duration="9080000" />
+      <workItem from="1592820237296" duration="3296000" />
+      <workItem from="1593170413816" duration="598000" />
+      <workItem from="1593446052371" duration="17410000" />
+      <workItem from="1593583765545" duration="5948000" />
+      <workItem from="1593685741843" duration="725000" />
+      <workItem from="1593765133417" duration="599000" />
+      <workItem from="1594209394926" duration="791000" />
+      <workItem from="1594295982179" duration="1485000" />
     </task>
     <task id="LOCAL-00096" summary="workaround for JAR in gitignore">
       <created>1591685796475</created>
@@ -740,7 +735,21 @@
       <option name="project" value="LOCAL" />
       <updated>1592577827378</updated>
     </task>
-    <option name="localTasksCounter" value="143" />
+    <task id="LOCAL-00143" summary="workaround for JAR in gitignore">
+      <created>1592578956786</created>
+      <option name="number" value="00143" />
+      <option name="presentableId" value="LOCAL-00143" />
+      <option name="project" value="LOCAL" />
+      <updated>1592578956786</updated>
+    </task>
+    <task id="LOCAL-00144" summary="workaround for JAR in gitignore">
+      <created>1594296524179</created>
+      <option name="number" value="00144" />
+      <option name="presentableId" value="LOCAL-00144" />
+      <option name="project" value="LOCAL" />
+      <updated>1594296524179</updated>
+    </task>
+    <option name="localTasksCounter" value="145" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -775,26 +784,6 @@
           <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java</url>
           <line>1264</line>
           <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>120</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>118</line>
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>122</line>
-          <option name="timeStamp" value="6" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java</url>
-          <line>126</line>
-          <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

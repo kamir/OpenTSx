@@ -54,6 +54,11 @@ public class TopicsManagerTool {
             e.printStackTrace();
         }
 
+        for( String tn : listOfKnownTopics ) {
+            System.println("TOPIC: --> " + tn);
+        }
+
+
         adminClient.close();
 
         return liste;
@@ -62,7 +67,7 @@ public class TopicsManagerTool {
     public static void listTopics() {
         Vector<String> l = getTopicList();
         for( String n : l )
-            System.out.println( n );
+            System.out.println( "> TOPIC --> {" + n + "}" );
     }
 
     public static void createTopic(String tn, int partitions, int repl, int min_isr) {
@@ -108,6 +113,8 @@ public class TopicsManagerTool {
 
     public static void createTopics(List<NewTopic> newTopics) {
 
+        System.out.println("*********> CREATE TOPICS : " + newTopics.size());
+
         Properties properties = new Properties();
         try {
             properties.load(new FileReader(new File(TSOProducer.get_PROPS_FN() )));
@@ -121,7 +128,6 @@ public class TopicsManagerTool {
         CreateTopicsResult ctr = adminClient.createTopics(newTopics);
 
         System.out.println( ctr );
-        System.out.println(" >>> Task is not completed yet....");
 
         while (!ctr.all().isDone()) {
 
@@ -133,7 +139,7 @@ public class TopicsManagerTool {
             }
         }
 
-        System.out.println(" >>> Task is done.");
+        System.out.println("*********> Task is done.");
 
         adminClient.close();
 
@@ -261,8 +267,11 @@ public class TopicsManagerTool {
         Vector<String> listOfKnownTopics = TopicsManagerTool.getTopicList();
         Vector<String> listOfExpectedTopics = null;
         try {
+
             listOfExpectedTopics = TopicsManagerTool.getTopicNames();
-        } catch (IOException e) {
+
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
 
