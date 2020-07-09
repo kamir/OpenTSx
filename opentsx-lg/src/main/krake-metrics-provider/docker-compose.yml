@@ -1,12 +1,11 @@
 version: '3'
+  
+services:
 
   ksqldb-server-west-km:
     image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
     hostname: ksqldb-server-west-km
     container_name: ksqldb-server-west-km
-    depends_on:
-      - broker-west-1
-      - schema-registry-west-1
     ports:
       - "8088:8088"
     environment:
@@ -19,7 +18,8 @@ version: '3'
       KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       KSQL_KSQL_CONNECT_URL: "http://connect-west-1:8083"
-    extra_hosts:
+      KSQL_QUERIES_FILE=/ksql/scripts/queries.sql
+      extra_hosts:
       - "zookeeper-east:192.168.0.6"
       - "zookeeper-central:192.168.0.6"
       - "zookeeper-west:192.168.0.6"
@@ -35,7 +35,9 @@ version: '3'
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
       - "control-center:192.168.0.6"
-
+      - "schema-registry-west-1:192.168.0.6"
+    volumes:
+      - ./scripts:/ksql/scripts
   ksqldb-cli:
     image: ${REPOSITORY}/cp-ksqldb-cli:${CONFLUENT_DOCKER_TAG}
     container_name: ksqldb-cli-km
@@ -59,6 +61,7 @@ version: '3'
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
 networks:
   n1:
