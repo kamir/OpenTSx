@@ -1,0 +1,8 @@
+{
+  "name": "c1",
+  "config" : {
+    "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+    "topics":"t2",
+    "file": "f1"
+  }
+}

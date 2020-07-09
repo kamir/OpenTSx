@@ -1,6 +1,6 @@
-export TN=T2.5
+export TN=RUN1
 
-sudo docker-compose exec cli-west-2 kafka-topics --delete --topic $TN --bootstrap-server 192.168.0.9:9091
+docker-compose exec cli-west-2 kafka-topics --delete --topic $TN --bootstrap-server 192.168.3.5:9092
 
-sudo docker-compose exec cli-west-2 kafka-topics --list --bootstrap-server 192.168.0.9:9091
+docker-compose exec cli-west-2 kafka-topics --list --bootstrap-server 192.168.3.5:9092
 

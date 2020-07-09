@@ -11,8 +11,7 @@ services:
     ports:
       - "9091:9091"
       - "8091:8091"
-    volumes:
-      - ./config:/etc/kafka/demo
+      - "1234:1234"
     extra_hosts:
       - "broker-west-5:${MDC1}"
       - "broker-west-6:${MDC1}"
@@ -44,6 +43,10 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1234:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
 
   broker-east-9:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -54,8 +57,7 @@ services:
     ports:
       - "9092:9092"
       - "8092:8092"
-    volumes:
-      - ./config:/etc/kafka/demo
+      - "1235:1235"
     extra_hosts:
       - "broker-west-5:${MDC1}"
       - "broker-west-6:${MDC1}"
@@ -87,6 +89,10 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1235:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
 
   broker-east-10:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -97,8 +103,7 @@ services:
     ports:
       - "9093:9093"
       - "8093:8093"
-    volumes:
-      - ./config:/etc/kafka/demo
+      - "1236:1236"
     extra_hosts:
       - "broker-west-5:${MDC1}"
       - "broker-west-6:${MDC1}"
@@ -130,6 +135,10 @@ services:
       KAFKA_CONFLUENT_LOG_PLACEMENT_CONSTRAINTS: '{"version": 1,"replicas": [{"count": 2, "constraints": {"rack": "west"}}], "observers": [{"count": 2, "constraints": {"rack": "east"}}]}'
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 4
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.12.0.jar=1236:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
+      - ./config:/etc/kafka/demo
 
   cli-east-1:
     image: ${REPOSITORY}/cp-kafka:${CONFLUENT_DOCKER_TAG}

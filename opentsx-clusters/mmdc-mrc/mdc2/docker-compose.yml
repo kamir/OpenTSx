@@ -102,6 +102,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
 
   broker-west-2:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -145,6 +146,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
 
   broker-east-3:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -189,6 +191,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
 
   broker-east-4:
     image: ${REPOSITORY}/cp-server:${CONFLUENT_DOCKER_TAG}
@@ -234,6 +237,8 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
+
 
   schema-registry-west-1:
     image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
@@ -267,6 +272,7 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
   rest-proxy-west-1:
     image: ${REPOSITORY}/cp-kafka-rest:${CONFLUENT_DOCKER_TAG}
@@ -298,6 +304,7 @@ services:
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
   ksqldb-server-west-1:
     image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
@@ -334,6 +341,7 @@ services:
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
   connect-west-1:
     image: cnfldemos/kafka-connect-datagen:0.2.0-5.4.0
@@ -383,6 +391,7 @@ services:
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
   ksqldb-cli:
     image: ${REPOSITORY}/cp-ksqldb-cli:${CONFLUENT_DOCKER_TAG}
@@ -409,6 +418,7 @@ services:
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
   control-center:
     image: ${REPOSITORY}/cp-enterprise-control-center:${CONFLUENT_DOCKER_TAG}
@@ -455,6 +465,7 @@ services:
       - "broker-east-10:192.169.0.11"
       - "connect-west-1:192.168.0.6"
       - "control-center:192.168.0.6"
+      - "schema-registry-west-1:192.168.0.6"
 
 
   cli-west-2:
@@ -477,6 +488,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
     entrypoint: /bin/sh
     tty: true
 
@@ -503,6 +515,7 @@ services:
       - "broker-east-8:192.169.0.11"
       - "broker-east-9:192.169.0.11"
       - "broker-east-10:192.169.0.11"
+      - "schema-registry-west-1:192.168.0.6"
 
   grafana:
     image: grafana/grafana:6.6.2
