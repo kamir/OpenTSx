@@ -13,6 +13,7 @@
 
     <name>opentsx-lg</name>
     <artifactId>opentsx-lg</artifactId>
+    <version>3.0.1</version>
 
     <dependencies>
 
@@ -186,7 +187,7 @@
                                         </cmd>
                                         <env>
                                             <OPENTSX_TOPIC_MAP_FILE_NAME>/opentsx-lg/config/topiclist.def</OPENTSX_TOPIC_MAP_FILE_NAME>
-                                            <OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>/opentsx-lg/config/mdc_c1.props</OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>
+                                            <OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>/opentsx-lg/config/ccloud.props</OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>
                                             <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
                                         </env>
                                     </build>
