@@ -1,0 +1,88 @@
+
+#
+# SQL Statements for our Key-Value-Lookup service, using CURL.
+#
+create table krake_metrics ( rowkey STRING KEY, metric VARCHAR, dc VARCHAR, m VARCHAR, value BIGINT ) WITH ( KAFKA_TOPIC=\'topic_\2', VALUE_FORMAT=\'DELIMITED\', KEY=\'metric\');
+CREATE TABLE kmt WITH (KAFKA_TOPIC=\'topic_kmt2\', VALUE_FORMAT=\'AVRO\') as select * from krake_metrics;
+create table kvt with (KAFKA_TOPIC=\'topic_kvt2\', VALUE_FORMAT=\'AVRO\') as select metric, COLLECT_LIST(value)[1] AS value from kmt group by metric;
+
+
+#
+# SQL Statements for our Key-Value-Lookup service, using WEBUI.
+#
+create table krake_metrics ( 
+  rowkey STRING KEY, 
+  metric VARCHAR, 
+  dc VARCHAR, 
+  m VARCHAR, 
+  value BIGINT 
+) 
+WITH ( 
+  KAFKA_TOPIC='topic_2', 
+  VALUE_FORMAT='DELIMITED', 
+  KEY='metric'
+);
+
+
+CREATE TABLE kmt3 
+WITH (
+  KAFKA_TOPIC='topic_kmt3', 
+  VALUE_FORMAT='AVRO'
+) 
+AS SELECT * FROM krake_metrics;
+
+
+create table kvt3
+with (
+  KAFKA_TOPIC='topic_kvt3', 
+  VALUE_FORMAT='AVRO'
+) 
+AS SELECT 
+metric, COLLECT_LIST(value)[0] AS value 
+from kmt3 
+group by metric;
+
+
+
+#
+# Execute statements on CLI because headless mode does not expose the REST API.
+#
+
+### wrap a table around the incoming data using the delimited format ###
+curl -X "POST" "http://192.168.0.9:8088/ksql" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "create table krake_metrics ( rowkey STRING KEY, metric VARCHAR, dc VARCHAR, m VARCHAR, value BIGINT ) WITH ( KAFKA_TOPIC=\'topic_2\', VALUE_FORMAT=\'DELIMITED\', KEY=\'metric\');", "streamsProperties": {} }'
+
+### convert delimited data from topic_2 into a new topic using AVRO ###
+curl -X "POST" "http://192.168.0.9:8088/ksql" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "CREATE TABLE kmt WITH (KAFKA_TOPIC=\'topic_kmt2\', VALUE_FORMAT=\'AVRO\') as select * from krake_metrics;", "streamsProperties": {} }'
+
+## materialize the view of the data 
+
+### get the one element from the array :: index starts with 1 !!! ###
+curl -X "POST" "http://192.168.0.9:8088/ksql" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "create table kvt with (KAFKA_TOPIC=\'topic_kvt2\', VALUE_FORMAT=\'AVRO\') as select metric, COLLECT_LIST(value)[1] AS colV from kmt group by metric;", "streamsProperties": {} }'
+
+### heep the array with only one element ###
+curl -X "POST" "http://192.168.0.9:8088/ksql" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "create table kvt_a with (KAFKA_TOPIC=\'topic_kvt_a\', VALUE_FORMAT=\'AVRO\') as select metric, COLLECT_LIST(value) AS colV from kmt group by metric;", "streamsProperties": {} }'
+
+
+
+#
+# Verify the tables
+#
+curl -X "POST" "http://localhost:8088/ksql" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "LIST TABLES;", "streamsProperties": {} }' | python -m json.tool
+
+# 
+# Query a particular metric
+#
+
+########
+# PUSH #
+########
+curl -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "SELECT * FROM krake_metrics emit changes;", "streamsProperties": {} }'  
+curl -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "SELECT * FROM kmt emit changes;", "streamsProperties": {} }'  
+curl -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "SELECT * FROM kvt emit changes;", "streamsProperties": {} }'  
+curl -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "SELECT * FROM kvt_a emit changes;", "streamsProperties": {} }'  
+
+
+########
+# PULL #
+########
+curl -X "POST" "http://localhost:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" -d $'{ "ksql": "SELECT metric, colV as value FROM kvt_a WHERE metric=\'DC2_m1\';", "streamsProperties": {} }'  
