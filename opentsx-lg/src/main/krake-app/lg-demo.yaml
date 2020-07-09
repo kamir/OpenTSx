@@ -45,6 +45,18 @@ spec:
             value: "false"
         ports:
         - containerPort: 8080
+        volumeMounts:
+        - mountPath: /etc/opentsx/config/
+          name: configdir
+
+      volumes:
+      - name: configdir
+        hostPath:
+          # directory location on host
+          path: /home/ubuntu/OpenTSx/opentsx-lg/src/main/krake-app/config
+          # this field is optional
+          type: Directory 
+
 ---
 apiVersion: v1
 kind: Service

@@ -176,7 +176,7 @@
                                                 <file>
                                                     <source>${project.basedir}/src/main/resources/config/mdc_c1.props</source>
                                                     <outputDirectory>./</outputDirectory>
-                                                    <destName>config/mdc_c1.props</destName>
+                                                    <destName>config/cuh.props</destName>
                                                 </file>
                                             </files>
                                             </inline>

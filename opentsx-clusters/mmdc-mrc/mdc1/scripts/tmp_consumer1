@@ -1,0 +1,8 @@
+Exception in thread "main" joptsimple.UnrecognizedOptionException: bootstrap-server is not a recognized option
+	at joptsimple.OptionException.unrecognizedOption(OptionException.java:108)
+	at joptsimple.OptionParser.handleLongOptionToken(OptionParser.java:510)
+	at joptsimple.OptionParserState$2.handleArgument(OptionParserState.java:56)
+	at joptsimple.OptionParser.parse(OptionParser.java:396)
+	at kafka.tools.ConsumerPerformance$ConsumerPerfConfig.<init>(ConsumerPerformance.scala:253)
+	at kafka.tools.ConsumerPerformance$.main(ConsumerPerformance.scala:43)
+	at kafka.tools.ConsumerPerformance.main(ConsumerPerformance.scala)
