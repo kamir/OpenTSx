@@ -7,6 +7,8 @@ public class TopicsDOWN {
 
     public static void main(String[] ARGS) throws Exception {
 
+        System.out.println("[TopicsDOWN]");
+
         OpenTSxClusterLink.init();
 
         TopicsManagerTool.initTopicDefinitions( TopicsUP.get_TOPICS_DEF_FN() );

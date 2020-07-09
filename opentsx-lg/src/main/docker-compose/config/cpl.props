@@ -1,0 +1,13 @@
+#
+# This configuration is used for connecting to a locally running CP cluster.
+#
+request.timeout.ms=20000
+bootstrap.servers=192.168.3.5:9092
+retry.backoff.ms=500
+
+# key.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+key.serializer=org.apache.kafka.common.serialization.StringSerializer
+value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+
+# Schema Registry specific settings
+schema.registry.url=http://192.168.3.5:8081

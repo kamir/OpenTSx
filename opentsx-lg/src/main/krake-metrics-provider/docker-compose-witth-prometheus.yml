@@ -1,0 +1,103 @@
+version: '3'
+
+  ksqldb-server-west-1:
+    image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
+    hostname: ksqldb-server-west-1
+    container_name: ksqldb-server-west-1
+    depends_on:
+      - broker-west-1
+      - schema-registry-west-1
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_BOOTSTRAP_SERVERS: 'broker-west-1:9091,broker-west-2:9092,broker-east-3:9093'
+      KSQL_HOST_NAME: ksqldb-server-west-1
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry-west-1:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      KSQL_KSQL_CONNECT_URL: "http://connect-west-1:8083"
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+  ksqldb-cli:
+    image: ${REPOSITORY}/cp-ksqldb-cli:${CONFLUENT_DOCKER_TAG}
+    container_name: ksqldb-cli
+    depends_on:
+      - ksqldb-server-west-1
+    entrypoint: /bin/sh
+    tty: true
+    extra_hosts:
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+      - "connect-west-1:192.168.0.6"
+      - "control-center:192.168.0.6"
+
+  prometheus:
+    image: prom/prometheus:v2.11.1
+    hostname: prometheus-mdc-1
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    networks:
+      - n1
+    extra_hosts:
+      - "broker-west-5:192.168.0.9"
+      - "broker-west-6:192.168.0.9"
+      - "broker-west-7:192.168.0.9"
+      - "broker-west-1:192.168.0.6"
+      - "broker-west-2:192.168.0.6"
+      - "broker-east-3:192.168.0.6"
+      - "broker-east-4:192.168.0.6"
+      - "zookeeper-central:192.168.0.6"
+      - "zookeeper-east:192.168.0.6"
+      - "zookeeper-west:192.168.0.6"
+      - "broker-east-8:192.169.0.11"
+      - "broker-east-9:192.169.0.11"
+      - "broker-east-10:192.169.0.11"
+
+  grafana:
+    image: grafana/grafana:6.6.2
+    environment:
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    extra_hosts:
+      - "prometheus-mdc-1:192.168.0.9"
+
+networks:
+  n1:
+
+
+
+

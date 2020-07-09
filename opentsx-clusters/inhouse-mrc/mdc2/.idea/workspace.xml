@@ -2,21 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d110bf0a-5630-46f4-afee-992ff54add5e" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/get_krake_config_files.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/run_etcd_container.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/run_krake_container.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/run_krake_container_with_service.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/run_krake_services.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../Krake-container/tmp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/$PRODUCT_WORKSPACE_FILE$" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/aws.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/emacs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/sbt.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../opentsx-lg/src/main/connect-cfg/connector_Generator-001_config.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../opentsx-lg/bin/build_docker.sh" beforeDir="false" afterPath="$PROJECT_DIR$/../../../opentsx-lg/bin/build_docker.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -81,6 +69,7 @@
       <option name="presentableId" value="Default" />
       <updated>1591519486061</updated>
       <workItem from="1591519488366" duration="13000" />
+      <workItem from="1592574057611" duration="223000" />
     </task>
     <servers />
   </component>
@@ -92,7 +81,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>

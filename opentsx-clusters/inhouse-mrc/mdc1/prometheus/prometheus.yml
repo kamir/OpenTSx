@@ -1,0 +1,34 @@
+global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s # By default, scrape targets every 15 seconds.
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['localhost:9090']
+
+  - job_name: 'kafka'
+    static_configs:
+    - targets:
+      - 'broker-west-1:1237'
+      - 'broker-west-2:1238'
+      - 'broker-east-3:1239'
+      - 'broker-east-4:1240'
+      - "broker-west-5:1234"
+      - "broker-west-6:1235"
+      - "broker-west-7:1236"
+      - "broker-east-8:1234"
+      - "broker-east-9:1235"
+      - "broker-east-10:1236"
+      labels:
+        env: 'dev'
+
+  - job_name: 'zookeeper'
+    static_configs:
+    - targets:
+      - 'zookeeper-central:1235'
+      - 'zookeeper-east:1234'
+      - 'zookeeper-west:1236'
+      labels:
+        env: 'dev'
+
