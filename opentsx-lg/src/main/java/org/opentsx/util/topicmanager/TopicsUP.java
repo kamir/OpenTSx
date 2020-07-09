@@ -26,16 +26,21 @@ public class TopicsUP {
         }
         System.out.println("> TOPICS_DEF_FN=" + TOPICS_DEF_FN);
     };
+
     private static String TOPICS_DEF_FN = "config/topiclist.def";
+
     public static String get_TOPICS_DEF_FN() {
         return  TOPICS_DEF_FN;
     };
 
     public static void main(String[] ARGS) throws Exception{
 
+        System.out.println("[TopicsUP]");
+
         OpenTSxClusterLink.init();
 
         TopicsManagerTool.initTopicDefinitions( TOPICS_DEF_FN );
+
         TopicsManagerTool.createTopics();
 
         TopicsManagerTool.listTopics();
