@@ -8,7 +8,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.opentsx.tsa.rng.RefDS;
+import org.opentsx.tsa.rng.ReferenceDataset;
 import org.semanpix.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.core.TSData;
@@ -23,7 +23,7 @@ import java.util.Vector;
 public class TSOWriter{
 
     public static void persistBucket_CSV(Vector<TimeSeriesObject> mrs, String title, String tx, String ty, String fn, String csv) {
-        MultiChart.store(mrs, title, tx, ty, false, RefDS.FILE_PATH, fn, "no comment");
+        MultiChart.store(mrs, title, tx, ty, false, ReferenceDataset.FILE_PATH, fn, "no comment");
     }
 
     public static void persistBucket_SequenceFile(Vector<TimeSeriesObject> show, String title, String fn, String seq) throws Exception {
@@ -37,7 +37,7 @@ public class TSOWriter{
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
 
-        Path path = new Path(RefDS.FILE_PATH + fn + ".tsb.vec." + seq);
+        Path path = new Path(ReferenceDataset.FILE_PATH + fn + ".tsb.vec." + seq);
         System.out.println("--> create bucket : " + path.toString());
 
         // write a SequenceFile form a Vector

@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/opentsx-cloud-bridge/opentsx-cloud-bridge.iml" filepath="$PROJECT_DIR$/opentsx-cloud-bridge/opentsx-cloud-bridge.iml" />
       <module fileurl="file://$PROJECT_DIR$/opentsx-cv/opentsx-cv.iml" filepath="$PROJECT_DIR$/opentsx-cv/opentsx-cv.iml" />
       <module fileurl="file://$PROJECT_DIR$/opentsx-jetson-nano/opentsx-jetson-nano.iml" filepath="$PROJECT_DIR$/opentsx-jetson-nano/opentsx-jetson-nano.iml" />
+      <module fileurl="file://$PROJECT_DIR$/opentsx-kafkastreams-tsa/opentsx-kafkastreams-tsa.iml" filepath="$PROJECT_DIR$/opentsx-kafkastreams-tsa/opentsx-kafkastreams-tsa.iml" />
     </modules>
   </component>
 </project>

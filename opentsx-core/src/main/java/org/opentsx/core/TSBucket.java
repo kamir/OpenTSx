@@ -685,14 +685,14 @@ public class TSBucket {
                 writer.append(new Text(nv.getName()), vec);
             }
             else
-                System.out.println("!!! SKIP-WRITE:"+SKIP_WRITES+"] : no data written to disc. " );
+                System.out.println("!!! SKIP-WRITE: ["+SKIP_WRITES+"] : no data written to TIME SERIES BUCKET ON disc!" );
 
         }
 
         if ( !SKIP_WRITES )
             writer.close();
 
-        System.out.println("### DONE [SKIP-WRITE:"+SKIP_WRITES+"] : PATH:" + path.toString());
+            System.out.println("### DONE {SKIP-WRITE:="+SKIP_WRITES+"} : TIME SERIES BUCKET IN PATH: " + path.toString());
 
         return tsbd;
     }

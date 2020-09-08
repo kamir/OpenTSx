@@ -10,7 +10,7 @@ import org.opentsx.core.TSData;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.VectorWritable;
-import org.opentsx.tsa.rng.RefDS;
+import org.opentsx.tsa.rng.ReferenceDataset;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,8 +70,8 @@ public class CassandraConnector {
     }
 
 
-    public static final String TABLE_NAME = RefDS.CASSANDRA_TN;
-    public static final String KS_NAME = RefDS.CASSANDRA_KS;
+    public static final String TABLE_NAME = ReferenceDataset.CASSANDRA_TN;
+    public static final String KS_NAME = ReferenceDataset.CASSANDRA_KS;
 
 
     public void createTable() {

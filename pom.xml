@@ -10,13 +10,14 @@
     <version>3.0.0</version>
 
     <modules>
-        <!--module>opentsx-kstreams</module-->
+        <module>opentsx-data</module>
         <module>opentsx-core</module>
+        <module>opentsx-lg</module>
+        <module>opentsx-ksql-udf/demo-udf</module>
+
+        <module>opentsx-kafka-streams-tsa</module>
         <module>opentsx-predict</module>
         <module>opentsx-processors</module>
-        <module>opentsx-udf-ksql</module>
-        <module>opentsx-data</module>
-        <module>opentsx-lg</module>
         <module>opentsx-ksql-app</module>
         <!--module>opentsx-spring-example</module-->
 
@@ -447,6 +448,7 @@
             <artifactId>crunch-core</artifactId>
             <version>0.15.0</version>
         </dependency>
+
 
     </dependencies>
 
