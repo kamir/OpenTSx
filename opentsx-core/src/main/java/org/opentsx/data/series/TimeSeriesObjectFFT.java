@@ -809,6 +809,8 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         for (int i = 0; i < max; i++) {
             mr.addValuePair(((Double) this.xValues.elementAt(i)).doubleValue() * f, ((Double) this.yValues.elementAt(i)).doubleValue());
         }
+
+
         return mr;
     }
 
@@ -1355,6 +1357,8 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         return rFFT;
         
     }
+
+
 
 //    /**
 //     * Hier wird ein KNICK eingefügt ...

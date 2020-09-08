@@ -6,7 +6,6 @@
 package org.opentsx.tsa.rng;
 
 import org.opentsx.connectors.cassandra.CassandraTool;
-import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.tsbucket.TSBucketStore;
 import org.semanpix.chart.simple.MultiChart;
@@ -230,7 +229,7 @@ public class RNGReferenceDSCreator
                 }
 
                 try {
-                    TSBucketStore.getWriter().persistBucket_Cassandra(tsos, title, RefDS.CASSANDRA_TN );
+                    TSBucketStore.getWriter().persistBucket_Cassandra(tsos, title, ReferenceDataset.CASSANDRA_TN );
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -238,9 +237,9 @@ public class RNGReferenceDSCreator
 
                 try {
 
-                    TSBucketStore.getWriter().persistBucket_Kafka(tsos, title, RefDS.topicname );
+                    TSBucketStore.getWriter().persistBucket_Kafka(tsos, title, ReferenceDataset.topicname );
 
-                    TSBucketStore.getWriter().persistEvents_Kafka(tsos, title, RefDS.topicname );
+                    TSBucketStore.getWriter().persistEvents_Kafka(tsos, title, ReferenceDataset.topicname );
 
                 }
                 catch (Exception e) {

@@ -12,6 +12,7 @@ import org.opentsx.algorithms.statistics.DistributionTester;
 import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
 import org.jfree.data.xy.XYSeries;
 import org.opentsx.data.model.EpisodesRecord;
+import org.opentsx.data.model.Event;
 import org.opentsx.data.model.Observation;
 
 import java.io.File;
@@ -28,6 +29,31 @@ import java.util.logging.Logger;
 public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     
     static final long serialVersionUID = 3519446562958441036L;
+
+    public Hashtable getTopFrequencies(int i) {
+
+        Hashtable f = new Hashtable();
+
+        Vector<Double> y = this.getYValues();
+
+        Collections.sort(y, Collections.reverseOrder());
+        double threshold = y.elementAt( i-1 );
+
+        System.out.println( " *** THRESHOLD *** {" + threshold + "}" );
+        for( int t = 0; t < y.size(); t++ ) {
+
+            if ( this.getData()[1][t] >= threshold ) {
+
+                System.out.println( " +++ collect frequency +++  {" +  this.getData()[0][t] + " : " + this.getData()[1][t] + "}" );
+
+                f.put( "topFrequency" , this.getData()[0][t] );
+                f.put( "topFrequency_real" , this.getData()[1][t] );
+
+            }
+
+        }
+        return f;
+    }
 
     public static TimeSeriesObject sigmaForAll(Vector<TimeSeriesObject> rows) {
         
@@ -672,6 +698,40 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
     };
 
+
+    public Hashtable<String, String> getStatisticData( Hashtable<String, String> table ) {
+
+        try {
+
+            double[][] data = this.getData();
+            double[] dx = data[0];
+            double[] dy = data[1];
+
+            StandardDeviation stdev = new StandardDeviation();
+            table.put( "max_T" , decimalFormat_STAT.format(NumberUtils.max( dx ) ) );
+            table.put( "min_T" , decimalFormat_STAT.format(NumberUtils.min( dx ) ) );
+            table.put( "nr_T" ,  dx.length + "" );
+            /*
+            table.put( "avg_X" , decimalFormat_STAT.format(StatUtils.mean( dx ) ) );
+            table.put( "std_X" , decimalFormat_STAT.format(stdev.evaluate( dx ) ) );
+            table.put( "var_X" , decimalFormat_STAT.format(StatUtils.variance( dx ) ) );
+            table.put( "sum_X" , decimalFormat_STAT.format(StatUtils.sum( dx ) ) ) ;
+            */
+
+            table.put( "max_Y" , decimalFormat_STAT.format(NumberUtils.max( dy ) ) );
+            table.put( "min_Y" , decimalFormat_STAT.format(NumberUtils.min( dy ) ) );
+            table.put( "mw__Y" , decimalFormat_STAT.format(StatUtils.mean( dy ) ) );
+            table.put( "std_Y" , decimalFormat_STAT.format(stdev.evaluate( dy ) ) );
+            table.put( "var_Y" , decimalFormat_STAT.format(StatUtils.variance( dy ) ) );
+            table.put( "sum_Y" , decimalFormat_STAT.format(StatUtils.sum( dy ) ) );
+            table.put( "nr__Y" , dy.length +"" );
+        }
+        catch(Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return table;
+    }
 
     public String getStatisticData( String pre ) {
         StringBuffer sb = new StringBuffer();
@@ -2778,4 +2838,9 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         this.label = this.label + s + l;
     }
 
+
+    public TimeSeriesObject concat(Event value) {
+       this.addValuePair( value.getTimestamp() , value.getValue() );
+       return this;
+    }
 }

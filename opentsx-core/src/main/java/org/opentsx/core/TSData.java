@@ -15,41 +15,60 @@ import java.util.logging.Logger;
  * @author Mirko Kämpf
  */
 public class TSData implements Writable {
-    
-    long t0 = -1;
-    double dt = 1000.0;  // seconds 
+
+    public void setT0(long t0) {
+        this.t0 = t0;
+    }
+
+    public void setDt(double dt) {
+        this.dt = dt;
+    }
+
+    long t0 = 0;
+
+    public void settE(long tE) {
+        this.tE = tE;
+    }
+
+    long tE = 0;
+
+    double dt = 1000.0;  // in ms
+
     double[] dataset = null;
+
     public String label = null;
 
     /**
-     * 
+     * We take the label and the value array from the TSO.
+     *
+     * Timing metadata is ignored.
+     *
      * @param mr
      * @return 
      */
     public static TSData convertMessreihe(TimeSeriesObject mr) {
         
         TSData data = new TSData();
-        
-        data.t0 = mr.getTime_t0();
         data.label = mr.getLabel();
-        data.dt = mr.getSamplingRate();
-        // we assume to have äquidistant values ...
+
         data.dataset = mr.getYData();
         
         return data;
+
     }
 
     public TSData(String id, String label) {
-        t0 = System.currentTimeMillis();
-        dt = 1000.0;
-        dataset = new double[1];
-        dataset[0] = 0.0;
+        this.t0 = System.currentTimeMillis();
+        this.dt = 1000.0;
+        this.dataset = new double[1];
+        this.dataset[0] = 0.0;
+        this.label = label;
     };
 
     public TSData() {
-        t0 = System.currentTimeMillis();
-        label = "empty series";
-        dt = 1000.0;
+        this.t0 = System.currentTimeMillis();
+        this.label = "empty_series";
+        this.dt = 1000.0;
         dataset = new double[1];
         dataset[0] = 0.0;
     };
@@ -168,4 +187,5 @@ public class TSData implements Writable {
     public void setDataset(double[] randomData) {
         this.dataset = randomData;
     }
+
 }

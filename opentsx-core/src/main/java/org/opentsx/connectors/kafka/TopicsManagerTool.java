@@ -54,8 +54,8 @@ public class TopicsManagerTool {
             e.printStackTrace();
         }
 
-        for( String tn : listOfKnownTopics ) {
-            System.println("TOPIC: --> " + tn);
+        for( String tn : liste ) {
+            System.out.println("TOPIC: --> " + tn);
         }
 
 

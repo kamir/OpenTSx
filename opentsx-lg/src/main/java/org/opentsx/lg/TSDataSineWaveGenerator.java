@@ -92,7 +92,22 @@ public class TSDataSineWaveGenerator {
          * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
          */
         String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
-        System.out.println(">>> OPENTSX_SHOW_GUI=" + gui_prop);
+
+        /*
+         *  by default we use 1000 iterations for episode generation.
+         */
+        int zIterations = 1000;
+
+        String zIterations_tmp = System.getenv("OPENTSX_NUMBER_OF_ITERATIONS");
+        System.out.println( "*** USE CUSTOM NR OF ITERATIONS *** (" + zIterations_tmp + ")");
+
+        if( zIterations_tmp != null ) {
+            zIterations = Integer.parseInt( zIterations_tmp );
+            System.out.println( "["+zIterations+"]");
+        }
+
+        System.out.println(">>> OPENTSX_NUMBER_OF_ITERATIONS = " + zIterations );
+        System.out.println(">>> OPENTSX_SHOW_GUI             = " + gui_prop);
         if( gui_prop != null ) {
             if (gui_prop.equals("false")) {
                 System.out.println("*** turn the GUI off. ");
@@ -164,7 +179,7 @@ public class TSDataSineWaveGenerator {
 
         long tS = System.currentTimeMillis();
 
-        while( i < 1000) {
+        while( i < zIterations ) {
 
             long t0 = System.currentTimeMillis();
 
@@ -195,7 +210,7 @@ public class TSDataSineWaveGenerator {
             ((TSGBeanImpl)tsgBean).trackRoundDuration( generateDuration );
 
             /**
-             * Step 2: persist data in Kafka ... as full episodes.
+             * Step 2: persist data in Kafka ... as pre-aggregated full episodes.
              */
             if( persistEpisodes ) {
                 prod_A.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_a, URI_A, "A");
@@ -250,7 +265,7 @@ public class TSDataSineWaveGenerator {
 
 
             /**
-             * Step 5: Convert raw data into "TimeSeriesObject" and show a chart.
+             * Step 5: Convert raw data into "TimeSeriesObject" and show a chart (only in 1-st iteration if not turned off).
              */
             if ( showChart ) {
 
@@ -279,10 +294,10 @@ public class TSDataSineWaveGenerator {
 
         }
 
-
     }
 
     private static void registerMBean() throws NotCompliantMBeanException {
+
         // Get the platform MBeanServer
         mbs = ManagementFactory.getPlatformMBeanServer();
 

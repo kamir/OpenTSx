@@ -1,11 +1,9 @@
 package org.opentsx.connectors.kafka;
 
 import org.apache.kafka.clients.consumer.*;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opentsx.core.TSBucket;
-import org.opentsx.tsa.rng.RefDS;
+import org.opentsx.tsa.rng.ReferenceDataset;
 
 import java.util.*;
 
@@ -22,7 +20,7 @@ public class TSOConsumer {
         c = TSOConsumer.createConsumer( tn );
     }
 
-    private final static String TOPIC = RefDS.topicname;
+    private final static String TOPIC = ReferenceDataset.topicname;
 
     private final static String BOOTSTRAP_SERVERS = "localhost:9092";
 

@@ -4,19 +4,16 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.NamedVector;
-import org.apache.mahout.math.VectorWritable;
 import org.opentsx.core.TSData;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsa.rng.RefDS;
+import org.opentsx.tsa.rng.ReferenceDataset;
 
 import java.util.Properties;
 import java.util.Vector;
 
 public class TSOEventProducer {
 
-    public final static String TOPIC = RefDS.event_topicname;
+    public final static String TOPIC = ReferenceDataset.event_topicname;
     private final static String BOOTSTRAP_SERVERS = "localhost:9092";
 
     /**

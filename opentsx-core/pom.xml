@@ -44,11 +44,11 @@
             <version>1.0.19</version>
         </dependency>
 
-        <dependency>
+        <!--dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
-            <version>5.4.0-ccs</version>
-        </dependency>
+            <version>5.5.0-ccs-SNAPSHOT</version>
+        </dependency-->
 
     </dependencies>
 

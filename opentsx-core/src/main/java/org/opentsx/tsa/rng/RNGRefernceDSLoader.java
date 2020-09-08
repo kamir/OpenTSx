@@ -16,9 +16,9 @@ public class RNGRefernceDSLoader {
 
     public static void main(String args[]) {
 
-        TSBucket tsb1 = TSBucketStore.getReader().loadBucket_Cassandra( RefDS.CASSANDRA_KS, RefDS.CASSANDRA_TN );
+        TSBucket tsb1 = TSBucketStore.getReader().loadBucket_Cassandra( ReferenceDataset.CASSANDRA_KS, ReferenceDataset.CASSANDRA_TN );
 
-        TSBucket tsb2 = TSBucketStore.getReader().loadBucket_Kafka( "TSO-collection-" + RefDS.EXP_OFFSET, 20 );
+        TSBucket tsb2 = TSBucketStore.getReader().loadBucket_Kafka( "TSO-collection-" + ReferenceDataset.EXPERIMENT__TAG, 20 );
 
         String title = "Referenc Dataset for OpenSTx Demos ";
         String tx = "t";
