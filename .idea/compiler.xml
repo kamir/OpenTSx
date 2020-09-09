@@ -11,10 +11,10 @@
         <module name="opentsx-data" />
         <module name="opentsx-kafka-streams-tsa" />
         <module name="opentsx-lg" />
-        <module name="opentsx-ksql-app" />
+        <module name="opentsx-core" />
         <module name="OpenTSx" />
         <module name="demo-udf" />
-        <module name="opentsx-core" />
+        <module name="opentsx-ksql-app" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

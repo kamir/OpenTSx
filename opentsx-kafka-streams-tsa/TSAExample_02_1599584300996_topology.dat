@@ -1,0 +1,13 @@
+Topologies:
+   Sub-topology: 0
+    Source: KSTREAM-SOURCE-0000000000 (topics: [OpenTSx_Events])
+      --> KSTREAM-FILTER-0000000001
+    Processor: KSTREAM-FILTER-0000000001 (stores: [])
+      --> KSTREAM-PRINTER-0000000003, KSTREAM-SINK-0000000002
+      <-- KSTREAM-SOURCE-0000000000
+    Processor: KSTREAM-PRINTER-0000000003 (stores: [])
+      --> none
+      <-- KSTREAM-FILTER-0000000001
+    Sink: KSTREAM-SINK-0000000002 (topic: EVENT_DATA_ALERTS_meetup_09_2020)
+      <-- KSTREAM-FILTER-0000000001
+
