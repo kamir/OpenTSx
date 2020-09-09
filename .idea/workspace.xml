@@ -2,116 +2,21 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/archive/opentsx-kstreams/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/archive/opentsx-kstreams/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/archive/opentsx-kstreams/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/archive/opentsx-kstreams/src/main/resources/log4j.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/archive/opentsx-kstreams/src/test/java/LoadDataCassandra.cql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/demo/Prepare a Kafka DEMO for OpenTSx.docx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/00_prep-cp-local.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/10_demo.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/20_ksql-scripts.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/Prepare a Kafka DEMO for OpenTSx.docx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/~$epare a Kafka DEMO for OpenTSx.docx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599566125723_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599566125795_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599566125345_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599566126354_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/bin/run.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/opentsx-kafka-streams-tsa.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/quickstart/LineSplit.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/quickstart/Pipe.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/quickstart/WordCount.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample10.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample11.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample3.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/resources/log4j.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/latest_ksqldb_server/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-app/bin/latest_ksqldb_server/run.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf/EpisodesMetadataExtractor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf/ReverseUdf.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf/SummaryStatsUdaf.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/test/java/org/opentsx/udf/ReverseUdfTests.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/test/java/org/opentsx/udf/SummaryStatsUdafTests.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql/src/main/java/udf/EpisodesProcessor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-ksql/src/test/java/udf/EpisodesProcessorTests.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/resources/log4j.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/test/java/LoadDataCassandra.cql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/Prepare a Kafka DEMO for OpenTSx.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599584101587_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599584299807_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599584405753_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599584101905_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599584300996_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599584406531_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599584101962_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599584300446_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599584406614_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599584102487_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599584300387_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599584406207_topology.dat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PULL_REQUEST_TEMPLATE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/CassandraConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/CassandraConnector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGReferenceDSCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGReferenceDSCreator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGRefernceDSLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGRefernceDSLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RefDS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/ReferenceDataset.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOWriter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cv/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cv/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-jetson-nano/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-jetson-nano/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-ksql-app/opentsx-ksql-app.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/opentsx-kstreams.iml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/opentsx-kstreams.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/StateStoreExample1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/StateStoreExample2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/StateStoreExample3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample4.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/StateStoreExample4.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/StateStoreExample5.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/StateStoreExample5.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/CassTest1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassandraStateStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/CassandraStateStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassandraStateStoreWrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/CassandraStateStoreWrapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/CassandraStoreBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/CassandraStoreBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraChangeLogger.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/internals/CassandraChangeLogger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraReadableStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/internals/CassandraReadableStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraStoreType.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/internals/CassandraStoreType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/CassandraWritableStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/internals/CassandraWritableStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/cks/internals/StateDocument.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/cks/internals/StateDocument.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/processors/CountingProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/processors/CountingProcessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/serdes/JsonPOJODeserializer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/serdes/JsonPOJODeserializer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/serdes/JsonPOJOSerializer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/serdes/JsonPOJOSerializer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/java/org/opentsx/kstreams/serdes/SerdesFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kstreams-cassandra-state-store/src/main/java/org/opentsx/kstreams/serdes/SerdesFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/main/resources/log4j.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kstreams/src/test/java/LoadDataCassandra.cql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-spring-demo2.zip" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/run_build_and_deployment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql/run_build_and_deployment.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/run_deployment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql/run_deployment.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/sql_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql/sql_demo.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java/udf/EpisodesMetadata.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java/udf/EpisodesProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf/EpisodesProcessor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/src/main/java/udf/MyUDF.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-udf-ksql/src/test/java/udf/EpisodesProcessorTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/DEMO_ApacheCon_Berlin_2019.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-app-demos/2019-apache-con-berlin/DEMO_ApacheCon_Berlin_2019.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/gnuplot/tsbucket_report.plot" beforeDir="false" afterPath="$PROJECT_DIR$/scala-scripts/gnuplot/tsbucket_report.plot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/gnuplot/tsbucket_simple.plot" beforeDir="false" afterPath="$PROJECT_DIR$/scala-scripts/gnuplot/tsbucket_simple.plot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/infodynamics.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/run_opentsdb_streaming_demo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/scala-scripts/run_opentsdb_streaming_demo.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/run_rng_demo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/scala-scripts/run_rng_demo.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/~$epare a Kafka DEMO for OpenTSx.docx" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -163,7 +68,15 @@
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.14/libexec" />
   <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Mirko Kämpf &lt;mirko@confluent.io&gt;" />
+      </list>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
   </component>
   <component name="MavenImportPreferences">
     <option name="importingSettings">
@@ -378,11 +291,11 @@
       <item itemvalue="Application.TopicsCHECK" />
       <item itemvalue="Application.TSAExample5" />
       <item itemvalue="Application.TSAExample1" />
+      <item itemvalue="Application.TSAExample1 (1)" />
       <item itemvalue="Docker.Krake-container/Dockerfile" />
       <item itemvalue="JUnit.EpisodesProcessorTests" />
       <item itemvalue="Spring Boot.KafkaDemoApplication" />
       <item itemvalue="Spring Boot.KafkaDemoApp" />
-      <item itemvalue="Application.TSAExample1 (1)" />
     </list>
     <recent_temporary>
       <list>
@@ -511,14 +424,7 @@
       <workItem from="1598958618579" duration="610000" />
       <workItem from="1598966398213" duration="39128000" />
       <workItem from="1599380750609" duration="2109000" />
-      <workItem from="1599384046852" duration="34648000" />
-    </task>
-    <task id="LOCAL-00097" summary="workaround for JAR in gitignore">
-      <created>1591688428883</created>
-      <option name="number" value="00097" />
-      <option name="presentableId" value="LOCAL-00097" />
-      <option name="project" value="LOCAL" />
-      <updated>1591688428883</updated>
+      <workItem from="1599384046852" duration="37901000" />
     </task>
     <task id="LOCAL-00098" summary="workaround for JAR in gitignore">
       <created>1591688670407</created>
@@ -856,7 +762,14 @@
       <option name="project" value="LOCAL" />
       <updated>1594298656334</updated>
     </task>
-    <option name="localTasksCounter" value="146" />
+    <task id="LOCAL-00146" summary="workaround for JAR in gitignore">
+      <created>1599577753253</created>
+      <option name="number" value="00146" />
+      <option name="presentableId" value="LOCAL-00146" />
+      <option name="project" value="LOCAL" />
+      <updated>1599577753254</updated>
+    </task>
+    <option name="localTasksCounter" value="147" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -876,6 +789,8 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Prepare for Meetup in Leipzig." />
     <MESSAGE value="Prepare for Packaged TSG in docker container." />
