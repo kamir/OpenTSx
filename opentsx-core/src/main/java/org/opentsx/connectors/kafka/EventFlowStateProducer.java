@@ -5,6 +5,7 @@ import org.apache.commons.collections.KeyValue;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.opentsx.core.TSData;
+import org.opentsx.util.OpenTSxClusterLink;
 
 import java.io.File;
 import java.io.FileReader;
@@ -32,7 +33,7 @@ public class EventFlowStateProducer {
     private static Producer<String, String> createProducer(Properties props) {
 
         try {
-            props.load(new FileReader( new File( TSOProducer.get_PROPS_FN() ) ));
+            props.load(new FileReader( new File( OpenTSxClusterLink.get_PROPS_FN() ) ));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -62,15 +63,7 @@ public class EventFlowStateProducer {
      */
     public static Producer<String, String> createProducer() {
 
-        Properties props = new Properties();
-
-        try {
-            props.load(new FileReader( new File( TSOProducer.get_PROPS_FN() ) ));
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        Properties props = OpenTSxClusterLink.getClientProperties();
 
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "EventFlowStateProducer");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());

@@ -5,6 +5,9 @@
 .cvsignore
 */.cvsignore
 
+### This is a save place for personal configuration files, used with the Conflue
+**/config/private/**
+
 ### macOS template
 # General
 .DS_Store

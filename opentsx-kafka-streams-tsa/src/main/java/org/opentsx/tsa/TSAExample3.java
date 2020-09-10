@@ -26,13 +26,13 @@ public class TSAExample3 {
 
   private static long   experiment_duration = 30000; // ms (-1 no limit)
   private static String EXPERIMENT_TAG = ReferenceDataset.EXPERIMENT__TAG;
-  static MessageDigest md = null;
+
 
   private static final Logger LOG = LoggerFactory.getLogger(TSAExample3.class);
 
-  public static Properties getProperties() {
+  public static Properties getFlowSpecificProperties() {
 
-    Properties props = new Properties();
+    Properties props = TSxStreamingAppHelper.getKafkaClientProperties();
 
     //props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample_03_" + System.currentTimeMillis() );
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample_03_" + System.currentTimeMillis() );
@@ -52,7 +52,7 @@ public class TSAExample3 {
 
   public static void main(String[] args) throws Exception {
 
-    Properties props = getProperties();
+    Properties props = getFlowSpecificProperties();
 
     StreamsConfig streamsConfig = new StreamsConfig( props );
 

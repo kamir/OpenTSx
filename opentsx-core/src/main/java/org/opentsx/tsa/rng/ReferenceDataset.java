@@ -2,7 +2,11 @@ package org.opentsx.tsa.rng;
 
 public class ReferenceDataset {
 
-    public static String EXPERIMENT__TAG = "meetup_09_2020";
+    // public static String EXPERIMENT__TAG = "meetup_09_2020";
+    public static String EXPERIMENT__TAG = "ccloud_demo_09_2020";
+
+
+
 
     public static String CASSANDRA_KS = "cks1";
     public static String CASSANDRA_TN = "refds_small_bucket_table_" + EXPERIMENT__TAG;

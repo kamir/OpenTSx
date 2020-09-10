@@ -1,6 +1,9 @@
 package org.opentsx.tsa;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -12,15 +15,14 @@ import org.apache.kafka.streams.kstream.*;
 import org.opentsx.data.model.Event;
 
 import org.opentsx.tsa.rng.ReferenceDataset;
+import org.opentsx.util.OpenTSxClusterLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class TSAExample1 {
@@ -28,24 +30,55 @@ public class TSAExample1 {
   private static long   experiment_duration = 30000; // ms (-1 no limit)
   private static String EXPERIMENT_TAG = ReferenceDataset.EXPERIMENT__TAG;
   static MessageDigest md = null;
-  static Properties props = getProperties();
+
+  static Properties props = null;
 
   private static final Logger LOG = LoggerFactory.getLogger(TSAExample1.class);
 
-  public static Properties getProperties() {
+  static Map<String, String> serdeConfig = null;
 
-    Properties props = new Properties();
+  /**
+   *
+   * We have to overwrite some properties in the app, but basic cluster client settings come from
+   * a file which name is configured in environment variable OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME.
+   */
+  public static Properties getFlowSpecificProperties() {
+
+    Properties props = TSxStreamingAppHelper.getKafkaClientProperties();
+
+    // Comma-separated list of the the Confluent Cloud broker endpoints. For example:
+    // r0.great-app.confluent.aws.prod.cloud:9092,r1.great-app.confluent.aws.prod.cloud:9093,r2.great-app.confluent.aws.prod.cloud:9094
+
+    props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 1);
+    props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+    props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+
+    // Recommended performance/resilience settings
+    props.put(StreamsConfig.producerPrefix(ProducerConfig.RETRIES_CONFIG), 2147483647);
+    props.put("producer.confluent.batch.expiry.ms", "9223372036854775807");
+    props.put(StreamsConfig.producerPrefix(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG), 300000);
+    //props.put(StreamsConfig.producerPrefix(ProducerConfig.MAX_BLOCK_MS_CONFIG), "9223372036854775807");
 
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample_01_" + System.currentTimeMillis() );
 
-    props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "PC192-168-3-5:9092");
-
-    props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+    props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName() );
     //props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
     //props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
-    props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
-    props.put("schema.registry.url", "http://PC192-168-3-5:8081");
+    props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class.getName() );
+
+    serdeConfig = new HashMap<String, String>();
+
+    System.out.println( "================================================" );
+
+    Enumeration en = props.propertyNames();
+    while( en.hasMoreElements() ) {
+      String key = (String)en.nextElement();
+      System.out.println( key + " = {" + props.getProperty(key) + "}" );
+      serdeConfig.put( key, props.getProperty(key)  );
+    }
+
+    System.out.println( "================================================" );
 
     return props;
 
@@ -54,6 +87,10 @@ public class TSAExample1 {
 
   public static void main(String[] args) throws Exception {
 
+    OpenTSxClusterLink.init();
+
+    props = getFlowSpecificProperties();
+
     md = MessageDigest.getInstance("MD5");
 
     StreamsConfig streamsConfig = new StreamsConfig( props );
@@ -61,8 +98,6 @@ public class TSAExample1 {
 
     Serde<String> stringSerde1 = Serdes.String();
     Serde<String> stringSerde2 = Serdes.String();
-    final Map<String, String> serdeConfig = Collections.singletonMap("schema.registry.url",
-            props.getProperty( "schema.registry.url" ));
 
     final Serde<Event> valueSpecificAvroSerde = new SpecificAvroSerde<>();
     valueSpecificAvroSerde.configure(serdeConfig, false); // `false` for record values
@@ -115,6 +150,7 @@ public class TSAExample1 {
     }
 
     e.setUri( hashtext );
+
     return e;
 
   }

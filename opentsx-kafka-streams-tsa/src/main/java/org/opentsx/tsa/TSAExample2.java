@@ -12,38 +12,51 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Printed;
 import org.opentsx.data.model.Event;
 import org.opentsx.tsa.rng.ReferenceDataset;
+import org.opentsx.util.OpenTSxClusterLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class TSAExample2 {
 
   private static long   experiment_duration = 30000; // ms (-1 no limit)
   private static String EXPERIMENT_TAG = ReferenceDataset.EXPERIMENT__TAG;
-  static MessageDigest md = null;
 
   private static final Logger LOG = LoggerFactory.getLogger(TSAExample2.class);
 
-  public static Properties getProperties() {
+  static Map<String, String> serdeConfig = null;
 
-    Properties props = new Properties();
+  public static Properties getFlowSpecificProperties() {
+
+    Properties props = TSxStreamingAppHelper.getKafkaClientProperties();
 
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample_02_" + System.currentTimeMillis() );
-
-    props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "PC192-168-3-5:9092");
 
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
     //props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
     //props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
-    props.put("schema.registry.url", "http://PC192-168-3-5:8081");
+
+
+    serdeConfig = new HashMap<String, String>();
+
+    System.out.println( "================================================" );
+
+    Enumeration en = props.propertyNames();
+    while( en.hasMoreElements() ) {
+      String key = (String)en.nextElement();
+      System.out.println( key + " = {" + props.getProperty(key) + "}" );
+      serdeConfig.put( key, props.getProperty(key)  );
+    }
+
+    System.out.println( "================================================" );
+
+
 
     return props;
 
@@ -51,16 +64,15 @@ public class TSAExample2 {
 
   public static void main(String[] args) throws Exception {
 
-    Properties props = getProperties();
+    OpenTSxClusterLink.init();
+
+    Properties props = getFlowSpecificProperties();
 
     StreamsConfig streamsConfig = new StreamsConfig( props );
 
     StreamsBuilder builder = new StreamsBuilder();
 
     Serde<String> stringSerde1 = Serdes.String();
-
-    final Map<String, String> serdeConfig = Collections.singletonMap("schema.registry.url",
-            props.getProperty( "schema.registry.url" ));
 
     final Serde<Event> valueSpecificAvroSerde = new SpecificAvroSerde<>();
     valueSpecificAvroSerde.configure(serdeConfig, false); // `false` for record values

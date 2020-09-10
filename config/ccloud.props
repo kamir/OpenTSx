@@ -14,3 +14,5 @@ value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 basic.auth.credentials.source=USER_INFO
 schema.registry.basic.auth.user.info=USER:SECRET
 schema.registry.url=https://psrc-4v1qj.eu-central-1.aws.confluent.cloud
+
+
