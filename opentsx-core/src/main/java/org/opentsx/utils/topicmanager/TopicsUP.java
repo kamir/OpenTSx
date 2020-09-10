@@ -1,4 +1,4 @@
-package org.opentsx.util.topicmanager;
+package org.opentsx.utils.topicmanager;
 
 import org.opentsx.connectors.kafka.TopicsManagerTool;
 import org.opentsx.util.OpenTSxClusterLink;
@@ -42,6 +42,8 @@ public class TopicsUP {
         TopicsManagerTool.initTopicDefinitions( TOPICS_DEF_FN );
 
         TopicsManagerTool.createTopics();
+
+        System.out.println("> Read topic list ! ");
 
         TopicsManagerTool.listTopics();
 

@@ -1,6 +1,7 @@
 package org.opentsx.connectors.kafka;
 
 import org.apache.kafka.clients.admin.*;
+import org.opentsx.util.OpenTSxClusterLink;
 
 import java.io.*;
 import java.util.*;
@@ -8,10 +9,8 @@ import java.util.concurrent.ExecutionException;
 
 public class TopicsManagerTool {
 
-
-
     /**
-     * This is the TOPIC-DEFINITION-File
+     * This is the default TOPIC-DEFINITION-File
      */
     public static String TOPICS_DEF_FN = "/Users/mkampf/GITHUB.public/OpenTSx/config/topiclist.def";
 
@@ -21,7 +20,7 @@ public class TopicsManagerTool {
 
         Properties properties = new Properties();
         try {
-            properties.load(new FileReader(new File(TSOProducer.get_PROPS_FN() )));
+            properties.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN() )));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -74,7 +73,7 @@ public class TopicsManagerTool {
 
         Properties properties = new Properties();
         try {
-            properties.load(new FileReader(new File(TSOProducer.get_PROPS_FN() )));
+            properties.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN() )));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -95,7 +94,7 @@ public class TopicsManagerTool {
 
         Properties properties = new Properties();
         try {
-            properties.load(new FileReader(new File(TSOProducer.get_PROPS_FN() )));
+            properties.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN() )));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -117,7 +116,7 @@ public class TopicsManagerTool {
 
         Properties properties = new Properties();
         try {
-            properties.load(new FileReader(new File(TSOProducer.get_PROPS_FN() )));
+            properties.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN() )));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -149,7 +148,7 @@ public class TopicsManagerTool {
 
         Properties properties = new Properties();
         try {
-            properties.load(new FileReader(new File(TSOProducer.get_PROPS_FN() )));
+            properties.load(new FileReader(new File(OpenTSxClusterLink.get_PROPS_FN() )));
             System.out.println(">>> DELETE TOPIC : " + tn);
         }
         catch (IOException e) {

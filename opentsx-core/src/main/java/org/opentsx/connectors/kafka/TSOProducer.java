@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.*;
 
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.opentsx.data.model.Observation;
+import org.opentsx.util.OpenTSxClusterLink;
 
 
 import java.io.File;
@@ -21,22 +22,7 @@ import java.util.Vector;
 
 public class TSOProducer {
 
-    public static void init_PROPS_FN(String fn){
-        File f = new File(fn);
-        System.out.println( "> PROPS_FN Path: " + f.getAbsolutePath() + " -> (r:" + f.canRead()+ ")" );
 
-        if ( f.canRead() )
-            PROPS_FN = fn;
-        else {
-            System.out.println("> Attempt to overwrite PROPS_FN in org.opentsx.connectors.kafka.TSOProducer failed.");
-        }
-        System.out.println("> PROPS_FN=" + PROPS_FN);
-    };
-
-    private static String PROPS_FN = "config/cpl.props";
-    public static String get_PROPS_FN() {
-        return  PROPS_FN;
-    };
 
 
 
@@ -213,7 +199,7 @@ public class TSOProducer {
         Properties props = new Properties();
 
         try {
-            props.load(new FileReader( new File( PROPS_FN ) ));
+            props.load(new FileReader( new File(OpenTSxClusterLink.get_PROPS_FN() ) ));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -326,7 +312,7 @@ public class TSOProducer {
         Properties props = new Properties();
 
         try {
-            props.load(new FileReader( new File( PROPS_FN ) ));
+            props.load(new FileReader( new File( OpenTSxClusterLink.get_PROPS_FN() ) ));
             props.list(System.out);
         }
         catch (IOException e) {
