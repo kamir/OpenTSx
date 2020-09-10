@@ -6,7 +6,7 @@ The project provides a collection of *data models*, *data generators*, and *algo
 The central storage and processing framework is build around Apache Kafka, KStreams and ksqlDB. 
 An integration with cloud native long term storage solutions is available for: delta lake, data lake, S3, object stores, search indexes, key-value stores and many others.   
 
-![alt text](https://github.com/kamir/OpenTSx/blob/master/doc/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
+![alt text](https://github.com/kamir/OpenTSx/blob/master/docs/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
 
 In the context of renaming the old project from *Hadoop.TS.NG* to *OpenTSx* we also shiftet from Apache Spark to Apache Kafka.
 
