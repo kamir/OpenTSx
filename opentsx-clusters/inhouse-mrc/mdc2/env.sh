@@ -1,2 +1,2 @@
-export CONFLUENT_DOCKER_TAG=5.5.0
+export CONFLUENT_DOCKER_TAG=5.5.1
 export REPOSITORY=confluentinc

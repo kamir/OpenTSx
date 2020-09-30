@@ -2,73 +2,22 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/config/private/ccloud.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-demo-09-2020/01_prep_link_to_ccloud_for_local_components.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-demo-09-2020/10_demo.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-demo-09-2020/20_ksql-scripts.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-demo-09-2020/Prepare a Kafka DEMO for OpenTSx.docx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-demo-09-2020/Prepare a Kafka DEMO for OpenTSx.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599739253859_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599739827929_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599740611978_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599740714343_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599740900867_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599741120109_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599741231731_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599741581622_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599742278128_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599742397087_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSxStreamingAppHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1600775668575_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1600775769646_topology.dat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1600775937047_topology.dat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/ccloud.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/ccloud.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/cpl.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/topiclist.def" beforeDir="false" afterPath="$PROJECT_DIR$/config/topiclist.def" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.mvn/wrapper/MavenWrapperDownloader.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.mvn/wrapper/maven-wrapper.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/Prepare a Kafka DEMO for OpenTSx.docx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/src/main/java/my/example/demo/DemoApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/src/test/java/my/example/demo/DemoApplicationTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/etc/opentsdb.conf" beforeDir="false" afterPath="$PROJECT_DIR$/etc/opentsdb.conf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/ReferenceDataset.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/ReferenceDataset.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599566125723_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599738570084_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599584101587_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599738650724_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599584299807_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599739070515_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599584405753_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_01_1599739103198_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599566125795_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599738569873_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599584101905_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599584300996_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1599584406531_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599566125345_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599738570073_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599584101962_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599584300446_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_03_1599584406614_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599566126354_topology.dat" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599738569940_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599584102487_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599584300387_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_10_1599584406207_topology.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/bin/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/bin/run.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample10.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample10.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample11.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample11.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-cloud-bridge/cp-all-in-one" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cloud-bridge/cp-all-in-one" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/down.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/down.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/up.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/up.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/util/OpenTSxClusterLink.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/topicmanager/TopicsCHECK.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsCHECK.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/topicmanager/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsDOWN.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/util/topicmanager/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/run_cluster.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_cluster.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -94,17 +43,6 @@
       <path>
         <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
         <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-      </path>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
-      </path>
-      <path>
-        <item name="Database" type="3277223f:DatabaseStructure$DbRootGroup" />
-        <item name="@localhost" type="feb32156:DbDataSourceImpl" />
-        <item name="keyspaces" type="d4e8921:DatabaseStructure$FamilyGroup" />
-        <item name="ks1: schema" type="16f33254:CassImplModel$Schema" />
       </path>
     </expand>
     <select />
@@ -165,7 +103,7 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-app-demos" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -179,12 +117,8 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/docs" />
-      <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main" />
-      <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx" />
-      <recent name="$PROJECT_DIR$/archive" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="org.opentsx.util" />
@@ -194,11 +128,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-clusters" />
       <recent name="$PROJECT_DIR$/opentsx-app-demos" />
       <recent name="$PROJECT_DIR$/config/private" />
       <recent name="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf" />
       <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/opentsx-ksql/src/main/java/udf" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.tsa" />
@@ -207,8 +141,12 @@
       <recent name="org.opentsx.kstreams.tsa" />
       <recent name="org.opentsx.connectors.kafka" />
     </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs" />
+      <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java" />
+      <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main" />
+      <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx" />
+      <recent name="$PROJECT_DIR$/archive" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -476,14 +414,13 @@
       <workItem from="1599380750609" duration="2109000" />
       <workItem from="1599384046852" duration="37901000" />
       <workItem from="1599652329048" duration="665000" />
-      <workItem from="1599730856061" duration="10893000" />
-    </task>
-    <task id="LOCAL-00099" summary="workaround for JAR in gitignore">
-      <created>1591694278661</created>
-      <option name="number" value="00099" />
-      <option name="presentableId" value="LOCAL-00099" />
-      <option name="project" value="LOCAL" />
-      <updated>1591694278661</updated>
+      <workItem from="1599730856061" duration="11242000" />
+      <workItem from="1600326859108" duration="3553000" />
+      <workItem from="1600775479135" duration="560000" />
+      <workItem from="1600778060264" duration="363000" />
+      <workItem from="1600781236038" duration="2495000" />
+      <workItem from="1601310894315" duration="3256000" />
+      <workItem from="1601363489484" duration="270000" />
     </task>
     <task id="LOCAL-00100" summary="workaround for JAR in gitignore">
       <created>1591770259317</created>
@@ -821,7 +758,14 @@
       <option name="project" value="LOCAL" />
       <updated>1599660462810</updated>
     </task>
-    <option name="localTasksCounter" value="148" />
+    <task id="LOCAL-00148" summary="Prepared a demo for Confluent cloud. Security settings have been added to KStreams application templates.">
+      <created>1599743312740</created>
+      <option name="number" value="00148" />
+      <option name="presentableId" value="LOCAL-00148" />
+      <option name="project" value="LOCAL" />
+      <updated>1599743312740</updated>
+    </task>
+    <option name="localTasksCounter" value="149" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -850,7 +794,8 @@
     <MESSAGE value="Added the load-generator DEMO for DOCKER-COMPOSE" />
     <MESSAGE value="workaround for JAR in gitignore" />
     <MESSAGE value="Added" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added" />
+    <MESSAGE value="Prepared a demo for Confluent cloud. Security settings have been added to KStreams application templates." />
+    <option name="LAST_COMMIT_MESSAGE" value="Prepared a demo for Confluent cloud. Security settings have been added to KStreams application templates." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

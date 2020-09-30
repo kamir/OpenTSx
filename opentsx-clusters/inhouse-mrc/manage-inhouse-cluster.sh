@@ -1,5 +1,5 @@
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.4.0
+export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.1
 
 #$CONFLUENT_HOME/bin/confluent local status
 #$CONFLUENT_HOME/bin/confluent local stop
@@ -43,10 +43,11 @@ ping -c 5 127.0.0.1
 
 hostname
 
-export MDC1=192.168.3.172
-export MDC2=192.168.3.5
-export MDC3=192.168.3.173
-export CONFLUENT_DOCKER_TAG=5.5.0
+export MDC1=192.168.3.104
+export MDC2=192.168.3.104
+export MDC3=192.168.3.104
+
+export CONFLUENT_DOCKER_TAG=5.5.1
 export REPOSITORY=confluentinc
 
 echo "> ping to local machine"
@@ -74,8 +75,8 @@ echo ""
 
 cd $1
 
-#docker-compose up -d
+docker-compose up -d
 
-docker-compose $2 $3
+#docker-compose $2 $3
 
 

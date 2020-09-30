@@ -23,7 +23,7 @@ import java.util.*;
 
 public class TSAExample2 {
 
-  private static long   experiment_duration = 30000; // ms (-1 no limit)
+  private static long   experiment_duration = -1; //  30000; // ms (-1 no limit)
   private static String EXPERIMENT_TAG = ReferenceDataset.EXPERIMENT__TAG;
 
   private static final Logger LOG = LoggerFactory.getLogger(TSAExample2.class);
