@@ -2,22 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1600775668575_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1600775769646_topology.dat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/TSAExample_02_1600775937047_topology.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-cloud-bridge/cp-all-in-one" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-cloud-bridge/cp-all-in-one" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/Krake-container/tmp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/down.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/down.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/manage-inhouse-cluster.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc1/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/mdc2/env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/up.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/up.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/run_cluster.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_cluster.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -421,13 +407,7 @@
       <workItem from="1600781236038" duration="2495000" />
       <workItem from="1601310894315" duration="3256000" />
       <workItem from="1601363489484" duration="270000" />
-    </task>
-    <task id="LOCAL-00100" summary="workaround for JAR in gitignore">
-      <created>1591770259317</created>
-      <option name="number" value="00100" />
-      <option name="presentableId" value="LOCAL-00100" />
-      <option name="project" value="LOCAL" />
-      <updated>1591770259317</updated>
+      <workItem from="1601448811510" duration="1771000" />
     </task>
     <task id="LOCAL-00101" summary="workaround for JAR in gitignore">
       <created>1591772232078</created>
@@ -765,7 +745,14 @@
       <option name="project" value="LOCAL" />
       <updated>1599743312740</updated>
     </task>
-    <option name="localTasksCounter" value="149" />
+    <task id="LOCAL-00149" summary="Synch 3 machines for internal demo.">
+      <created>1601449016828</created>
+      <option name="number" value="00149" />
+      <option name="presentableId" value="LOCAL-00149" />
+      <option name="project" value="LOCAL" />
+      <updated>1601449016829</updated>
+    </task>
+    <option name="localTasksCounter" value="150" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -795,7 +782,8 @@
     <MESSAGE value="workaround for JAR in gitignore" />
     <MESSAGE value="Added" />
     <MESSAGE value="Prepared a demo for Confluent cloud. Security settings have been added to KStreams application templates." />
-    <option name="LAST_COMMIT_MESSAGE" value="Prepared a demo for Confluent cloud. Security settings have been added to KStreams application templates." />
+    <MESSAGE value="Synch 3 machines for internal demo." />
+    <option name="LAST_COMMIT_MESSAGE" value="Synch 3 machines for internal demo." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
