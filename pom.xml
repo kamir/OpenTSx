@@ -25,7 +25,7 @@
 
     <properties>
 
-        <avro.version>1.8.2</avro.version>
+        <avro.version>1.9.2</avro.version>
 
         <influxdbClient.version>2.20</influxdbClient.version>
 
