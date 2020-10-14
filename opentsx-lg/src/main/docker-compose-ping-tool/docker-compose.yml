@@ -29,7 +29,7 @@ services:
       - "broker-east-9:${MDC3}"
       - "broker-east-10:${MDC3}"
       - "schema-registry-west-1:${MDC2}"
-    entrypoint: /opentsx-lg/bin/run_LatencyProbe_CHECK.sh
+    entrypoint: /opentsx-lg/bin/run_LatencyProbe_SETUP.sh
     tty: false
 
   lg-west-PROD:
