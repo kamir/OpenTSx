@@ -11,7 +11,7 @@ echo " SETUP TOPICS for DEMO"
 echo "*****************************"
 #java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsDOWN
 java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsUP
-#java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsCHECK
+java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.util.topicmanager.TopicsCHECK
 
 echo "*****************************"
 echo " RUN DEMO "

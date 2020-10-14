@@ -2,7 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/config/cuh.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/config/cuh.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin/run_LatencyProbe_CHECK.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin/run_LatencyProbe_CONS.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin/run_LatencyProbe_PROD.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin/executor-script.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin/executor-script.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/cuh.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/cuh.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +95,7 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -113,11 +120,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-connector" />
       <recent name="$PROJECT_DIR$/opentsx-lg/config" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/config/private" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/bin" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg.kping" />
@@ -409,14 +416,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="10683000" />
-    </task>
-    <task id="LOCAL-00114" summary="workaround for JAR in gitignore">
-      <created>1591793381371</created>
-      <option name="number" value="00114" />
-      <option name="presentableId" value="LOCAL-00114" />
-      <option name="project" value="LOCAL" />
-      <updated>1591793381371</updated>
+      <workItem from="1602611628980" duration="12197000" />
     </task>
     <task id="LOCAL-00115" summary="workaround for JAR in gitignore">
       <created>1591793966005</created>
@@ -754,7 +754,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602688122111</updated>
     </task>
-    <option name="localTasksCounter" value="163" />
+    <task id="LOCAL-00163" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602688186945</created>
+      <option name="number" value="00163" />
+      <option name="presentableId" value="LOCAL-00163" />
+      <option name="project" value="LOCAL" />
+      <updated>1602688186945</updated>
+    </task>
+    <option name="localTasksCounter" value="164" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
