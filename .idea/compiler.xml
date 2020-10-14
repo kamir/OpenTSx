@@ -6,12 +6,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="opentsx-predict" />
-        <module name="opentsx-processors" />
         <module name="opentsx-data" />
-        <module name="opentsx-kafka-streams-tsa" />
         <module name="opentsx-lg" />
-        <module name="opentsx-ksql-app" />
         <module name="OpenTSx" />
         <module name="demo-udf" />
         <module name="opentsx-core" />
@@ -19,9 +15,13 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="maven-archiver" target="1.5" />
+      <module name="opentsx-kafka-streams-tsa" target="1.8" />
       <module name="opentsx-ksql" target="1.8" />
+      <module name="opentsx-ksql-app" target="1.8" />
       <module name="opentsx-kstreams" target="1.8" />
       <module name="opentsx-load-generators" target="1.8" />
+      <module name="opentsx-predict" target="1.8" />
+      <module name="opentsx-processors" target="1.8" />
       <module name="opentsx-spring-example" target="8" />
     </bytecodeTargetLevel>
   </component>
