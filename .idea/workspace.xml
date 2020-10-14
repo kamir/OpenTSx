@@ -2,7 +2,37 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/.env" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/config/cpl.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/bin/executor-script.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/bin/run_LatencyProbe_CHECK.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/bin/run_LatencyProbe_CONS.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/bin/run_LatencyProbe_PROD.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/bin/run_LatencyProbe_SETUP.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/config/ccloud.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/config/cpl.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/config/cuh.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/config/topiclist.def" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/config/topiclist_kping.def" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/cpl_local.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl_local.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/config/cpl_local.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/config/cpl_local.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin/executor-script.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/bin/executor-script.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin/run_LatencyProbe_CHECK.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/bin/run_LatencyProbe_CHECK.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin/run_LatencyProbe_CONS.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/bin/run_LatencyProbe_CONS.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin/run_LatencyProbe_PROD.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/bin/run_LatencyProbe_PROD.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin/run_LatencyProbe_SETUP.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/bin/run_LatencyProbe_SETUP.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/config/ccloud.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/config/ccloud.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/config/cpl.props" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/config/cuh.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/config/cuh.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/config/topiclist.def" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/config/topiclist.def" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/config/topiclist_kping.def" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-cons/config/topiclist_kping.def" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/ping-tool-prod/docker-compose.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +118,7 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/config" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -113,11 +143,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/config" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-connector" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.opentsx.lg.kping" />
@@ -409,14 +439,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="13831000" />
-    </task>
-    <task id="LOCAL-00122" summary="workaround for JAR in gitignore">
-      <created>1591794872079</created>
-      <option name="number" value="00122" />
-      <option name="presentableId" value="LOCAL-00122" />
-      <option name="project" value="LOCAL" />
-      <updated>1591794872080</updated>
+      <workItem from="1602611628980" duration="16444000" />
     </task>
     <task id="LOCAL-00123" summary="workaround for JAR in gitignore">
       <created>1591794989043</created>
@@ -754,7 +777,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602691926725</updated>
     </task>
-    <option name="localTasksCounter" value="171" />
+    <task id="LOCAL-00171" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602692240986</created>
+      <option name="number" value="00171" />
+      <option name="presentableId" value="LOCAL-00171" />
+      <option name="project" value="LOCAL" />
+      <updated>1602692240986</updated>
+    </task>
+    <option name="localTasksCounter" value="172" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
