@@ -25,7 +25,8 @@
 
     <properties>
 
-        <avro.version>1.9.2</avro.version>
+        <avro.version>1.8.2</avro.version>
+        <kafka.avro.serializer.version>5.3.1</kafka.avro.serializer.version>
 
         <influxdbClient.version>2.20</influxdbClient.version>
 
@@ -139,7 +140,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
-            <version>${confluent.version}</version>
+            <version>${kafka.avro.serializer.version}</version>
         </dependency>
 
         <dependency>
