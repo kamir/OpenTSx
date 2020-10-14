@@ -1,0 +1,11 @@
+{
+  "name": "t2",
+  "config": {
+    "connector.class": "io.confluent.connect.mqtt.MqttSourceConnector",
+    "tasks.max": "1",
+    "mqtt.server.uri": "tcp://127.0.0.1:1883",
+    "confluent.topic.bootstrap.servers": "127.0.0.1:9092",
+    "kafka.topic": "mqtt-sensors",
+    "mqtt.topics": "sensors"
+  }
+}

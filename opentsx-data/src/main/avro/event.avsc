@@ -6,7 +6,9 @@
             "fields": [
                           {"name": "timestamp", "type": "long"},
                           {"name": "uri", "type": "string"},
-                          {"name": "value", "type": "double"}
+                          {"name": "value", "type": "double"},
+                          {"name": "producer_timestamp", "type": "long"},
+                          {"name": "consumer_timestamp", "type": "long"}
                       ]
            }
 

@@ -5,7 +5,6 @@ request.timeout.ms=20000
 bootstrap.servers=192.168.0.6:9092
 retry.backoff.ms=500
 
-# key.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 key.serializer=org.apache.kafka.common.serialization.StringSerializer
 value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 

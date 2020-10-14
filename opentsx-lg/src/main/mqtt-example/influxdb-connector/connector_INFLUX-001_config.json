@@ -1,0 +1,11 @@
+{
+  "name": "influx2",
+  "config": {
+    "connector.class": "io.confluent.influxdb.InfluxDBSinkConnector",
+    "topics": "kpi",
+    "influxdb.url": "http://127.0.0.1:8086",
+    "influxdb.username": "admin",
+    "influxdb.password": "admin",
+    "influxdb.db": "db0"
+  }
+},

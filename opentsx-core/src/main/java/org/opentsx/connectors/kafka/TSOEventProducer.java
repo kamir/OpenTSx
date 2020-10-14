@@ -17,7 +17,10 @@ public class TSOEventProducer {
     private final static String BOOTSTRAP_SERVERS = "localhost:9092";
 
     /**
-     * Creates a Producer with custom settings, and in case some cutsom settings are missing,
+     * Creates a Producer with custom settings.
+     * The settings are provided in a Properties object.
+     *
+     * In case some cutsom settings are missing,
      * we use the default settings.
      *
      * Minimal required settings are:
@@ -67,6 +70,11 @@ public class TSOEventProducer {
 
     }
 
+    /**
+     * This is our standard way for pushing TSOOEvent to a Kafka cluster.
+     *
+     * @param show
+     */
     public void pushTSOItemsToKafka(Vector<TimeSeriesObject> show) {
 
         Gson gson = new Gson();

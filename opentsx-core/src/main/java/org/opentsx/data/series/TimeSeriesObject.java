@@ -5,6 +5,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.algorithms.statistics.DatasetNormalizationTool;
@@ -2843,4 +2844,64 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
        this.addValuePair( value.getTimestamp() , value.getValue() );
        return this;
     }
+
+    public Vector<TimeSeriesObject> getSeriesWithPercentiles() {
+
+        return getSeriesWithPercentiles( 0 );
+
+    }
+
+
+    /**
+     * We skipp some values in the beginning.
+     *
+     * @param offset
+     * @return
+     */
+    public Vector<TimeSeriesObject> getSeriesWithPercentiles(int offset) {
+
+        Vector<TimeSeriesObject> result = new Vector<TimeSeriesObject>();
+        result.add( this );
+
+        TimeSeriesObject tsoP1 = new TimeSeriesObject();
+        TimeSeriesObject tsoP2 = new TimeSeriesObject();
+        TimeSeriesObject tsoP3 = new TimeSeriesObject();
+
+        tsoP1.setLabel( this.getLabel() + " p75" );
+        tsoP2.setLabel( this.getLabel() + " p95" );
+        tsoP3.setLabel( this.getLabel() + " p99" );
+
+        Percentile p75 = new Percentile( 75.0 );
+        Percentile p95 = new Percentile( 95.0 );
+        Percentile p99 = new Percentile( 99.0 );
+
+        double[] values = this.getYData();
+
+        for( int i = 0; i < offset; i++ ) {
+            tsoP1.addValue(0);
+            tsoP2.addValue(0);
+            tsoP3.addValue(0);
+        }
+
+        for( int i = 1; i < (this.getYData().length - offset - 1); i++ ) {
+
+            System.out.println( i + " " + offset + " " + (offset + i ) + " " + this.getYData().length + " " + (this.getYData().length - offset - 1) );
+
+            p75.setData( values , offset, i );
+            p95.setData( values , offset, i );
+            p99.setData( values , offset, i );
+
+            tsoP1.addValue( p75.evaluate() );
+            tsoP2.addValue( p95.evaluate() );
+            tsoP3.addValue( p99.evaluate() );
+        }
+
+        result.add( tsoP1 );
+        result.add( tsoP2 );
+        result.add( tsoP3 );
+
+        return result;
+
+    }
+
 }
