@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/.env" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -411,14 +412,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="5968000" />
-    </task>
-    <task id="LOCAL-00101" summary="workaround for JAR in gitignore">
-      <created>1591772232078</created>
-      <option name="number" value="00101" />
-      <option name="presentableId" value="LOCAL-00101" />
-      <option name="project" value="LOCAL" />
-      <updated>1591772232078</updated>
+      <workItem from="1602611628980" duration="6598000" />
     </task>
     <task id="LOCAL-00102" summary="workaround for JAR in gitignore">
       <created>1591780645865</created>
@@ -756,7 +750,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601449016829</updated>
     </task>
-    <option name="localTasksCounter" value="150" />
+    <task id="LOCAL-00150" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602682440793</created>
+      <option name="number" value="00150" />
+      <option name="presentableId" value="LOCAL-00150" />
+      <option name="project" value="LOCAL" />
+      <updated>1602682440794</updated>
+    </task>
+    <option name="localTasksCounter" value="151" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -787,7 +788,8 @@
     <MESSAGE value="Added" />
     <MESSAGE value="Prepared a demo for Confluent cloud. Security settings have been added to KStreams application templates." />
     <MESSAGE value="Synch 3 machines for internal demo." />
-    <option name="LAST_COMMIT_MESSAGE" value="Synch 3 machines for internal demo." />
+    <MESSAGE value="Updated CP 5.5.0 to 6.0.0." />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated CP 5.5.0 to 6.0.0." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
