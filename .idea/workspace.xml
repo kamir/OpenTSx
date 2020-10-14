@@ -2,78 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/config/cpl_local.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/influxdb/InfluxDBTSOStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/kping/TSOEventAnalysisConsumer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/kping/TSOEventAnalysisProducer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/bin/bootstrap_LatencyProbe_CHECK.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_LatencyProbe_CHECK.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_LatencyProbe_CONS.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_LatencyProbe_PROD.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_LatencyProbe_SETUP.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/config/cpl_iMac.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/config/cpl_local.props" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/config/topiclist_kping.def" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/config/topiclist_kping_cloud.def" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/topiclist_kping.def" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisConsumer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisPrecheck.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisProducer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisSetup.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/01_bootstrap.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/02_run_mqtt_broker.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/03_run_mqtt_kafka_connector.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/04_run_tsdb.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/05_run_generator.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/influxdb-connector/connector_INFLUX-001_config.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/influxdb-connector/deploy_connector.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/influxdb-grafana/__run_container_01.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/influxdb-grafana/docker-compose-influxdb-grafana" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/influxdb-grafana/run_container_02.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-connector/connector_MQTT-001_config.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-connector/deploy_connector.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-generator-gist/README.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-generator-gist/config.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/mqtt-generator-gist/mqttgen.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/mosquitto.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/ccloud.props" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/cpl.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl_iMac.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/flume/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/flume/Constants.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/EventTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/pojo/EventTS.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/util/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/util/OpenTSxClusterLink.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsCHECK.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsCHECK.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsUP.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-data/src/main/avro/event.avsc" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-data/src/main/avro/event.avsc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-data/src/main/java/org/opentsx/data/model/Event.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-data/src/main/java/org/opentsx/data/model/Event.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/build_all.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/config/cpl.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/config/mdc_c1.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/config/cuh.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/config/cuh.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/config/topiclist.def" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/config/topiclist.def" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_ddc.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_ddc.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/connect-cfg/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example/env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/ccloud.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/ccloud.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/cuh.props" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/cuh.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/topiclist.def" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config/topiclist.def" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/f1" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/krake-metrics-provider/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/env.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -480,7 +411,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="5492000" />
+      <workItem from="1602611628980" duration="5968000" />
     </task>
     <task id="LOCAL-00101" summary="workaround for JAR in gitignore">
       <created>1591772232078</created>
