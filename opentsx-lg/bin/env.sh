@@ -1,3 +1,6 @@
+
+#!/bin/bash
+
 cd ..
 
 #export CLUSTER_CONFIG_FILE=./config/private/ccloud_defaultMK_c3.props
