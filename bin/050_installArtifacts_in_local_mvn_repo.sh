@@ -14,7 +14,7 @@ export VERSION=2.5.0
 #
 # https://github.com/jlizier/jidt/releases/tag/v1.3.1
 #
-mvn install:install-file -Dfile=./../scripts/infodynamics.jar -DgroupId=infodynamics -DartifactId=corelib -Dversion=1.3.1 -Dpackaging=jar -DskipTests
+mvn install:install-file -Dfile=./../scala-scripts/infodynamics.jar -DgroupId=infodynamics -DartifactId=corelib -Dversion=1.3.1 -Dpackaging=jar -DskipTests
 
 #-------------------------------------------------------------------------------
 # Deploy binary release to local MVN repository
