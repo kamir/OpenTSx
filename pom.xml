@@ -14,11 +14,11 @@
         <module>opentsx-core</module>
         <module>opentsx-lg</module>
         <module>opentsx-ksql-udf/demo-udf</module>
-
-        <module>opentsx-kafka-streams-tsa</module>
-        <module>opentsx-predict</module>
-        <module>opentsx-processors</module>
         <module>opentsx-ksql-app</module>
+
+        <!--module>opentsx-kafka-streams-tsa</module-->
+        <!--module>opentsx-predict</module-->
+        <!--module>opentsx-processors</module-->
         <!--module>opentsx-spring-example</module-->
 
     </modules>
