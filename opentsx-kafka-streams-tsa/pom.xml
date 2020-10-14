@@ -35,6 +35,9 @@
     </properties>
 
     <repositories>
+
+
+
         <repository>
             <id>apache.snapshots</id>
             <name>Apache Development Snapshot Repository</name>
@@ -160,7 +163,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-streams-avro-serde</artifactId>
-            <version>5.5.1</version>
+            <version>5.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.opentsx</groupId>
