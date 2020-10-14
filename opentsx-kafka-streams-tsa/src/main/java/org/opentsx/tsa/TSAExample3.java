@@ -37,14 +37,14 @@ public class TSAExample3 {
     //props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample_03_" + System.currentTimeMillis() );
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, "TSAExample_03_" + System.currentTimeMillis() );
 
-    props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "PC192-168-3-5:9092");
+    //props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "PC192-168-3-5:9092");
 
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
     //props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
     //props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
-    props.put("schema.registry.url", "http://PC192-168-3-5:8081");
+    //props.put("schema.registry.url", "http://PC192-168-3-5:8081");
 
     return props;
 

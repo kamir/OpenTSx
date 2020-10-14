@@ -1,6 +1,8 @@
 package org.opentsx.connectors.kafka;
 
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.internals.Topic;
 import org.opentsx.util.OpenTSxClusterLink;
 
 import java.io.*;
@@ -64,9 +66,12 @@ public class TopicsManagerTool {
     }
 
     public static void listTopics() {
+
         Vector<String> l = getTopicList();
+
         for( String n : l )
             System.out.println( "> TOPIC --> {" + n + "}" );
+
     }
 
     public static void createTopic(String tn, int partitions, int repl, int min_isr) {
@@ -112,7 +117,11 @@ public class TopicsManagerTool {
 
     public static void createTopics(List<NewTopic> newTopics) {
 
+        System.out.println(" ");
+        System.out.println(" ");
         System.out.println("*********> CREATE TOPICS : " + newTopics.size());
+        System.out.println(" ");
+        System.out.println(" ");
 
         Properties properties = new Properties();
         try {
@@ -124,21 +133,59 @@ public class TopicsManagerTool {
 
         AdminClient adminClient = AdminClient.create(properties);
 
-        CreateTopicsResult ctr = adminClient.createTopics(newTopics);
 
-        System.out.println( ctr );
+        for( NewTopic nt : newTopics ) {
 
-        while (!ctr.all().isDone()) {
+            System.out.println("--->>>" + nt.toString() );
 
-            try {
-                Thread.sleep(1000); //sleep for 1 millisecond before checking again
+            Vector<NewTopic> vnt = new Vector<NewTopic>();
+            vnt.add( nt );
+
+            Map<String, KafkaFuture<Void>> createFutures = adminClient.createTopics(vnt).values();
+
+            System.out.println(" ");
+            for( String s : createFutures.keySet() ) {
+                System.out.println(">>>>>>>>>>" + s );
+                KafkaFuture<Void> a = createFutures.get(s);
+                while( !a.isDone() ) {
+
+                    try {
+                        System.out.println(" . ");
+                        Thread.sleep(1000); //sleep for 1 second before checking again
+                    }
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+                System.out.println( a.toString() );
             }
-            catch (InterruptedException e) {
-                e.printStackTrace();
+            System.out.println(" ");
+
+            int z = 0;
+          /*  while (!ctr.all().isDone()) {
+
+                System.out.println( "---------> " + z );
+                z++;
+
+                try {
+                    Thread.sleep(1000); //sleep for 1 second before checking again
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
             }
+*/
+
+
         }
 
         System.out.println("*********> Task is done.");
+
+        System.out.println("*********> List topics ...");
+
+        TopicsManagerTool.listTopics();
 
         adminClient.close();
 

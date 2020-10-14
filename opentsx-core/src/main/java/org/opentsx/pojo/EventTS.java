@@ -72,7 +72,7 @@ public class EventTS extends AbstractTS {
 		
 		ArrayList<Event> eventArray = new ArrayList<Event>();
 		for(int i = 0; i < z; i++ ) {
-			Event e = new Event( System.currentTimeMillis() , "URI", Math.random() );
+			Event e = new Event( System.currentTimeMillis() , "URI", Math.random(), (long)0, (long)0 );
 			eventArray.add(e);
 		}
 		

@@ -20,14 +20,18 @@ public class TSOConsumer {
         c = TSOConsumer.createConsumer( tn );
     }
 
-    private final static String TOPIC = ReferenceDataset.topicname;
+    private static String TOPIC = ReferenceDataset.topicname;
 
     private final static String BOOTSTRAP_SERVERS = "localhost:9092";
 
-    private static Consumer<String, String> createConsumer(String tn) {
+    /*
+
+           We create a simple consumer which can consume String messages.
+
+     */
+    private static Consumer<String, String> createConsumer(String TOPIC_NAME) {
 
         final Properties props = new Properties();
-
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 BOOTSTRAP_SERVERS);
@@ -43,10 +47,10 @@ public class TSOConsumer {
         final Consumer<String, String> consumer = new KafkaConsumer<>(props);
 
         // Subscribe to the topic.
-        if ( tn != null )
-            consumer.subscribe(Collections.singletonList(tn));
-        else
-            consumer.subscribe(Collections.singletonList(TOPIC));
+        if ( TOPIC_NAME != null )
+            TOPIC = TOPIC_NAME;
+
+        consumer.subscribe(Collections.singletonList(TOPIC));
 
         return consumer;
     }

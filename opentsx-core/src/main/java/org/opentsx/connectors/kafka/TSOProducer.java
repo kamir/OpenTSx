@@ -307,6 +307,13 @@ public class TSOProducer {
 
     Gson gson = new Gson();
 
+
+    /**
+     * We take a time series and create a set of events which are shipped in sequence.
+     *
+     * @param data
+     * @param URI
+     */
     public void pushTSDataAsEventsToKafka_String_Avro(Vector<TSData> data, String URI) {
 
         Properties props = new Properties();
@@ -324,7 +331,7 @@ public class TSOProducer {
 
         final Producer<String, Event> producer = createProducer_Avro( props );
 
-        long time = System.currentTimeMillis();
+        long time0 = System.currentTimeMillis();
 
         try {
 
@@ -340,10 +347,13 @@ public class TSOProducer {
                 String key = mrd.label;
 
                 long t0 = System.currentTimeMillis();
+
                 long t = t0;
 
                 long i = 0;
                 for( double v : values ) {
+
+                    long tP = System.currentTimeMillis();
 
                     t = t + ( i * 200 );
 
@@ -354,6 +364,7 @@ public class TSOProducer {
                     e.setTimestamp( t );
                     e.setUri(URI);
                     e.setValue( v );
+                    e.setProducerTimestamp( tP );
 
                     /**
                      *  Create RECORD ...
@@ -365,8 +376,6 @@ public class TSOProducer {
                             new ProducerRecord<>(TOPIC_for_events, key, e );
 
                     RecordMetadata metadata = producer.send(record).get();
-
-                    long elapsedTime = System.currentTimeMillis() - time;
 
                 }
 

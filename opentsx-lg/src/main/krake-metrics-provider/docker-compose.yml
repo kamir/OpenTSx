@@ -40,7 +40,6 @@ services:
     volumes:
       - ./scripts:/ksql/scripts
 
-
 networks:
   n1:
 

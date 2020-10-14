@@ -53,4 +53,22 @@ public class TopicsUP {
 
     }
 
+    public static void execute() throws Exception{
+
+        System.out.println("[TopicsUP]");
+
+        OpenTSxClusterLink.init();
+
+        TopicsManagerTool.initTopicDefinitions( TOPICS_DEF_FN );
+
+        TopicsManagerTool.createTopics();
+
+        System.out.println("> Read topic list ! ");
+
+        TopicsManagerTool.listTopics();
+
+        System.out.println("> All relevant topics created ! ");
+
+    }
+
 }

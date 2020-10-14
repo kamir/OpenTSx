@@ -14,5 +14,6 @@ public class Constants {
         public static final String PREPROCESSOR = "";
 
         public static final String TAGS = "collectedBy=flume";
+
     }
 
