@@ -19,7 +19,7 @@ key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer
 
 # Schema Registry specific settings
-schema.registry.url=http://MirkoKapfMBP152:8081
+schema.registry.url=http://192.168.3.104:8081
 
 # Bootstrap server
-bootstrap.servers=MirkoKapfMBP152:9092
+bootstrap.servers=192.168.3.104:9092
