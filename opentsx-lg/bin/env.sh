@@ -2,7 +2,9 @@ cd ..
 
 #export CLUSTER_CONFIG_FILE=./config/private/ccloud_defaultMK_c3.props
 #export CLUSTER_CONFIG_FILE=./config/private/ccloud_defaultMK_c2.props
-export CLUSTER_CONFIG_FILE=./config/private/ccloud_defaultMK_c1.props
+#export CLUSTER_CONFIG_FILE=./config/private/ccloud_defaultMK_c1.props
+
+export CLUSTER_CONFIG_FILE=./config/cuh.props
 export OPENTSX_TOPIC_MAP_FILE_NAME=./config/topiclist_kping_cloud.def
 
 #export CLUSTER_CONFIG_FILE=./../config/cpl_iMac.props

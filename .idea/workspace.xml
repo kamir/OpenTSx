@@ -3,9 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc1/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc2/env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/mmdc-mrc/mdc3/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/env.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -412,14 +410,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="6598000" />
-    </task>
-    <task id="LOCAL-00102" summary="workaround for JAR in gitignore">
-      <created>1591780645865</created>
-      <option name="number" value="00102" />
-      <option name="presentableId" value="LOCAL-00102" />
-      <option name="project" value="LOCAL" />
-      <updated>1591780645865</updated>
+      <workItem from="1602611628980" duration="7658000" />
     </task>
     <task id="LOCAL-00103" summary="workaround for JAR in gitignore">
       <created>1591791109070</created>
@@ -757,7 +748,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602682440794</updated>
     </task>
-    <option name="localTasksCounter" value="151" />
+    <task id="LOCAL-00151" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602683082954</created>
+      <option name="number" value="00151" />
+      <option name="presentableId" value="LOCAL-00151" />
+      <option name="project" value="LOCAL" />
+      <updated>1602683082955</updated>
+    </task>
+    <option name="localTasksCounter" value="152" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
