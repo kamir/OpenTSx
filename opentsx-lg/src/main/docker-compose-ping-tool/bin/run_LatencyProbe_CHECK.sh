@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo
+echo "------------------------------------------"
+echo " Start the LATENCY analysis ... PRECHECK "
+echo "------------------------------------------"
+
+ls
+
+java -cp /opentsx-lg/opentsx-lg-3.0.1.jar org.opentsx.lg.kping.EventFlowAnalysisPrecheck

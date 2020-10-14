@@ -15,3 +15,7 @@ This example scenario is using our multi data center setup.
 - 1 KSQL server for metrics collection
 - 1 KPING container
 
+### Workload 
+Ping-DEMO.
+
+
