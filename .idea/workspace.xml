@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod/.env" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -409,14 +412,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="33932000" />
-    </task>
-    <task id="LOCAL-00126" summary="workaround for JAR in gitignore">
-      <created>1591795977262</created>
-      <option name="number" value="00126" />
-      <option name="presentableId" value="LOCAL-00126" />
-      <option name="project" value="LOCAL" />
-      <updated>1591795977263</updated>
+      <workItem from="1602611628980" duration="34551000" />
     </task>
     <task id="LOCAL-00127" summary="workaround for JAR in gitignore">
       <created>1591796020825</created>
@@ -754,7 +750,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602774650763</updated>
     </task>
-    <option name="localTasksCounter" value="175" />
+    <task id="LOCAL-00175" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602774745769</created>
+      <option name="number" value="00175" />
+      <option name="presentableId" value="LOCAL-00175" />
+      <option name="project" value="LOCAL" />
+      <updated>1602774745769</updated>
+    </task>
+    <option name="localTasksCounter" value="176" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
