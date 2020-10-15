@@ -409,14 +409,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="33851000" />
-    </task>
-    <task id="LOCAL-00125" summary="workaround for JAR in gitignore">
-      <created>1591795756973</created>
-      <option name="number" value="00125" />
-      <option name="presentableId" value="LOCAL-00125" />
-      <option name="project" value="LOCAL" />
-      <updated>1591795756973</updated>
+      <workItem from="1602611628980" duration="33932000" />
     </task>
     <task id="LOCAL-00126" summary="workaround for JAR in gitignore">
       <created>1591795977262</created>
@@ -754,7 +747,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602774383414</updated>
     </task>
-    <option name="localTasksCounter" value="174" />
+    <task id="LOCAL-00174" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602774650763</created>
+      <option name="number" value="00174" />
+      <option name="presentableId" value="LOCAL-00174" />
+      <option name="project" value="LOCAL" />
+      <updated>1602774650763</updated>
+    </task>
+    <option name="localTasksCounter" value="175" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

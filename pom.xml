@@ -13,8 +13,8 @@
         <module>opentsx-data</module>
         <module>opentsx-core</module>
         <module>opentsx-lg</module>
-        <module>opentsx-kstreams-cassandra-state-store</module>
         <module>opentsx-ksql-udf/demo-udf</module>
+        <!--module>opentsx-kstreams-cassandra-state-store</module-->
         <!--module>opentsx-ksql-app</module-->
 
         <!--module>opentsx-ext-connectors</module-->
