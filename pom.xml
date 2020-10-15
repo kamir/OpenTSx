@@ -15,7 +15,7 @@
         <module>opentsx-lg</module>
         <module>opentsx-kstreams-cassandra-state-store</module>
         <module>opentsx-ksql-udf/demo-udf</module>
-        <module>opentsx-ksql-app</module>
+        <!--module>opentsx-ksql-app</module-->
 
         <!--module>opentsx-ext-connectors</module-->
         <!--module>opentsx-predict</module-->
