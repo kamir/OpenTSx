@@ -9,7 +9,6 @@
         <module name="opentsx-kstreams" />
         <module name="opentsx-data" />
         <module name="opentsx-lg" />
-        <module name="opentsx-ksql-app" />
         <module name="OpenTSx" />
         <module name="demo-udf" />
         <module name="opentsx-core" />
@@ -20,6 +19,7 @@
       <module name="maven-archiver" target="1.5" />
       <module name="opentsx-kafka-streams-tsa" target="1.8" />
       <module name="opentsx-ksql" target="1.8" />
+      <module name="opentsx-ksql-app" target="1.8" />
       <module name="opentsx-load-generators" target="1.8" />
       <module name="opentsx-predict" target="1.8" />
       <module name="opentsx-processors" target="1.8" />
