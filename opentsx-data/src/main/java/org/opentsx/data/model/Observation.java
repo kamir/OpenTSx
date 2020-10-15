@@ -13,8 +13,8 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class Observation extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 7090220287571169894L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Observation\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"doc\":\"The URI for additional information about unit of measurement.\",\"default\":null},{\"name\":\"value\",\"type\":[\"null\",\"double\"],\"default\":null}]}");
+  private static final long serialVersionUID = 3282645508419134467L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Observation\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"uri\",\"type\":\"string\",\"doc\":\"The URI for additional information about unit of measurement.\"},{\"name\":\"value\",\"type\":\"double\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -51,10 +51,10 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
     return DECODER.decode(b);
   }
 
-   private java.lang.Long timestamp;
+   private long timestamp;
   /** The URI for additional information about unit of measurement. */
    private java.lang.CharSequence uri;
-   private java.lang.Double value;
+   private double value;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -178,10 +178,10 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<Observation>
     implements org.apache.avro.data.RecordBuilder<Observation> {
 
-    private java.lang.Long timestamp;
+    private long timestamp;
     /** The URI for additional information about unit of measurement. */
     private java.lang.CharSequence uri;
-    private java.lang.Double value;
+    private double value;
 
     /** Creates a new Builder */
     private Builder() {
@@ -241,7 +241,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'timestamp'.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder setTimestamp(java.lang.Long value) {
+    public org.opentsx.data.model.Observation.Builder setTimestamp(long value) {
       validate(fields()[0], value);
       this.timestamp = value;
       fieldSetFlags()[0] = true;
@@ -262,7 +262,6 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * @return This builder.
       */
     public org.opentsx.data.model.Observation.Builder clearTimestamp() {
-      timestamp = null;
       fieldSetFlags()[0] = false;
       return this;
     }
@@ -323,7 +322,7 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'value'.
       * @return This builder.
       */
-    public org.opentsx.data.model.Observation.Builder setValue(java.lang.Double value) {
+    public org.opentsx.data.model.Observation.Builder setValue(double value) {
       validate(fields()[2], value);
       this.value = value;
       fieldSetFlags()[2] = true;
@@ -344,7 +343,6 @@ public class Observation extends org.apache.avro.specific.SpecificRecordBase imp
       * @return This builder.
       */
     public org.opentsx.data.model.Observation.Builder clearValue() {
-      value = null;
       fieldSetFlags()[2] = false;
       return this;
     }

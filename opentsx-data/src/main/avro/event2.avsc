@@ -5,8 +5,8 @@
             "namespace" : "org.opentsx.data.model",
             "name"      : "Event2",
             "fields": [
-                          {"name": "timestamp", "default": "null", "type": ["null","long"]},
-                          {"name": "uri", "default": "null", "type": ["null","string"]},
-                          {"name": "value", "default": "null", "type": ["null","double"]}
+                          {"name": "timestamp", "default": null, "type": ["null","long"]},
+                          {"name": "uri", "default": null, "type": ["null","string"]},
+                          {"name": "value", "default": null, "type": ["null","double"]}
                       ]
            }

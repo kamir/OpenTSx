@@ -13,10 +13,11 @@
         <module>opentsx-data</module>
         <module>opentsx-core</module>
         <module>opentsx-lg</module>
+        <module>opentsx-kstreams-cassandra-state-store</module>
         <module>opentsx-ksql-udf/demo-udf</module>
         <module>opentsx-ksql-app</module>
 
-        <!--module>opentsx-kafka-streams-tsa</module-->
+        <!--module>opentsx-ext-connectors</module-->
         <!--module>opentsx-predict</module-->
         <!--module>opentsx-processors</module-->
         <!--module>opentsx-spring-example</module-->
@@ -25,7 +26,7 @@
 
     <properties>
 
-        <avro.version>1.8.2</avro.version>
+        <avro.version>1.10.0</avro.version>
         <kafka.avro.serializer.version>5.3.1</kafka.avro.serializer.version>
 
         <influxdbClient.version>2.20</influxdbClient.version>
@@ -96,9 +97,33 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+
+        </dependency>
+
+        <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>common-config</artifactId>
-            <version>5.3.1</version>
+            <version>${confluent.version}</version>
         </dependency>
 
         <dependency>
@@ -174,26 +199,6 @@
             <version>2.6</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>${kafka.version}</version>
-
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-
-        </dependency>
-
-
-
         <!-- https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core -->
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
@@ -215,25 +220,12 @@
             <version>3.9</version>
         </dependency>
 
-
         <!-- This library come with a different license. Need to work on this to get
              the code clean. -->
         <dependency>
             <groupId>infodynamics</groupId>
             <artifactId>corelib</artifactId>
             <version>1.3.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flume</groupId>
-            <artifactId>flume-ng-core</artifactId>
-            <version>1.7.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flume</groupId>
-            <artifactId>flume-ng-sdk</artifactId>
-            <version>1.7.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
@@ -243,38 +235,18 @@
             <version>2.4.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>1.8.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-common</artifactId>
-            <version>1.1.0-cdh5.11.1</version>
-        </dependency>
-
-        <!-- Hadoop -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-core</artifactId>
-            <version>2.6.0-mr1-cdh5.11.1</version>
-        </dependency>
-        <!-- Hive -->
+        <!-- TODO: Extract HIVE UDF in extra package -->
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>2.3.4</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
             <version>1.1.0-cdh5.11.1</version>
         </dependency>
-
-
-
 
         <!-- https://mvnrepository.com/artifact/net.opentsdb/opentsdb -->
         <dependency>
@@ -289,42 +261,11 @@
             <version>3.9.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-core</artifactId>
-            <version>1.4.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.jrachiele</groupId>
-            <artifactId>timeseries</artifactId>
-            <version>0.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kudu</groupId>
-            <artifactId>kudu-client</artifactId>
-            <version>1.4.0</version>
-        </dependency>
-
         <!-- for logging messages -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.12</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.sshd/sshd-core -->
-        <dependency>
-            <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-core</artifactId>
-            <version>0.8.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-sftp</artifactId>
-            <version>0.11.0</version>
         </dependency>
 
         <dependency>
@@ -333,30 +274,7 @@
             <version>2.2.2</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.hbase/hbase-server -->
-        <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-client</artifactId>
-            <version>1.2.0</version>
-        </dependency>
 
-        <dependency>
-            <groupId>org.hbase</groupId>
-            <artifactId>asynchbase</artifactId>
-            <version>1.8.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming_2.10</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
-        <!--dependency>
-            <groupId>com.cloudera.api</groupId>
-            <artifactId>cloudera-manager-api</artifactId>
-            <version>5.11.0</version>
-        </dependency-->
 
         <!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
         <dependency>
@@ -387,6 +305,19 @@
             <type>pom</type>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.apache.sshd/sshd-core -->
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-core</artifactId>
+            <version>0.8.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-sftp</artifactId>
+            <version>0.11.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
@@ -410,7 +341,7 @@
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
-            <version>1.0.14</version>
+            <version>1.0.19</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
@@ -450,14 +381,6 @@
             <artifactId>mahout-core</artifactId>
             <version>0.9</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.crunch/crunch-core -->
-        <dependency>
-            <groupId>org.apache.crunch</groupId>
-            <artifactId>crunch-core</artifactId>
-            <version>0.15.0</version>
-        </dependency>
-
 
     </dependencies>
 
