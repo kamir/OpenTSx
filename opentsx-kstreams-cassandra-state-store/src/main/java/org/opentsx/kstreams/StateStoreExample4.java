@@ -9,7 +9,7 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.*;
 import org.opentsx.core.TSData;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsa.rng.RefDS;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ public class StateStoreExample4 {
 
   public static void main(String[] args) throws Exception {
 
-    String EXP_OFFSET = RefDS.EXP_OFFSET;
+    String EXP_OFFSET = "RefDS.EXP_OFFSET";
 
 
 

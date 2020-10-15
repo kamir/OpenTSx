@@ -35,7 +35,6 @@ import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
 import org.opentsx.generators.TSGenerator;
 import org.opentsx.tsbucket.KafkaConnector;
 import org.opentsx.tsbucket.TSBASE;
-import org.opentsx.connectors.wikipedia.AccessFileFilter;
 import org.opentsx.algorithms.ris.experimental.TSPropertyTester;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
@@ -225,7 +224,7 @@ public class TSBucket {
         // write a SequenceFile form a Vector
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
 
-        File[] liste = f.listFiles(new AccessFileFilter());
+        File[] liste = f.listFiles();
         System.out.println(liste.length);
         System.out.println("--> process bucket : " + f.getAbsolutePath() + " (" + liste.length + ")");
 

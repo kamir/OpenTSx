@@ -4,8 +4,10 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.kafka.clients.consumer.*;
 
+import org.apache.xpath.operations.Mult;
 import org.bouncycastle.math.ec.ScaleYPointMap;
 import org.opentsx.connectors.kafka.kping.TSOEventAnalysisConsumer;
+import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.util.OpenTSxClusterLink;
 import org.semanpix.chart.simple.MultiChart;
@@ -103,6 +105,12 @@ public class EventFlowAnalysisConsumer {
 
         String comment = OpenTSxClusterLink.getPropsAsString_NO_SECURITY_PROPS();
 
+        /**
+         * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
+         */
+        String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
+
+
         System.out.println( comment );
 
         String title = "latency per message";
@@ -110,9 +118,10 @@ public class EventFlowAnalysisConsumer {
         String y = "latency [ms]";
 
         boolean b = true;
-        String folder = "./kping-out/";
+        String folder = "/root/opentsx/plots";
 
-        String filename = "lateny-by-message";
+        long t0 = System.currentTimeMillis();
+        String filename = "latency-by-message-" + t0;
 
         Percentile p75 = new Percentile( 75.0 );
         Percentile p95 = new Percentile( 95.0 );
@@ -138,9 +147,20 @@ public class EventFlowAnalysisConsumer {
 
         vtso = tso.getSeriesWithPercentiles(100);
 
-        //MultiChart.openAndStore( vtso, title, x, y, b, folder, filename, comment );
-        MultiChart.open( vtso, title, x, y, b, comment, null );
+        if ( gui_prop.equals( "false" ) ) {
 
+            File f = new File( folder + "/" + filename );
+            MeasurementTable t = new MeasurementTable();
+            t.setMessReihen( vtso );
+            t.writeToFile( f );
+
+        }
+        else {
+
+            MultiChart.openAndStore(vtso, title, x, y, b, folder, filename, comment);
+            MultiChart.open(vtso, title, x, y, b, comment, null);
+
+        }
         System.out.println("DONE");
 
     }
