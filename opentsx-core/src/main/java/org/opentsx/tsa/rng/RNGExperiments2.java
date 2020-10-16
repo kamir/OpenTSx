@@ -5,11 +5,10 @@
  */
 package org.opentsx.tsa.rng;
 
-import org.semanpix.chart.simple.MultiChart;
-import org.semanpix.chart.simple.SigmaFilter;
+import org.opentsx.chart.simple.MultiChart;
+import org.opentsx.chart.simple.SigmaFilter;
 import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsbucket.TSBucketStore;
 
 import java.util.Locale;
 import java.util.Vector;
@@ -199,18 +198,18 @@ public class RNGExperiments2
                 String tablename = "ts_bucket_tab";
                 String topicname = "ts_bucket_topic";
 
-                TSBucketStore.getWriter().persistBucket_CSV(tsos, title, tx,ty, fn, "csv");
+                //TSBucketStore.getWriter().persistBucket_CSV(tsos, title, tx,ty, fn, "csv");
 
                 try {
-                    TSBucketStore.getWriter().persistBucket_SequenceFile(tsos, title, fn, "seq");
+                    //TSBucketStore.getWriter().persistBucket_SequenceFile(tsos, title, fn, "seq");
                 }
                 catch (Exception e) {
                     //e.printStackTrace();
                 }
 
-                TSBucketStore.getWriter().persistBucket_Cassandra(tsos, title, tablename );
+                //TSBucketStore.getWriter().persistBucket_Cassandra(tsos, title, tablename );
 
-                TSBucketStore.getWriter().persistBucket_Kafka(tsos, title, topicname );
+                //TSBucketStore.getWriter().persistBucket_Kafka(tsos, title, topicname );
 
         }
 
@@ -228,18 +227,18 @@ public class RNGExperiments2
             String tablename = "example_bucket_tab";
             String topicname = "example_bucket_topic";
 
-            TSBucketStore.getWriter().persistBucket_CSV(show, title, tx,ty, fn, "csv");
+            //TSBucketStore.getWriter().persistBucket_CSV(show, title, tx,ty, fn, "csv");
 
             try {
-                TSBucketStore.getWriter().persistBucket_SequenceFile(show, title, fn, "seq");
+                //TSBucketStore.getWriter().persistBucket_SequenceFile(show, title, fn, "seq");
             }
             catch (Exception e) {
                 e.printStackTrace();
             }
 
-            TSBucketStore.getWriter().persistBucket_Cassandra(show, title, tablename );
+            //TSBucketStore.getWriter().persistBucket_Cassandra(show, title, tablename );
 
-            TSBucketStore.getWriter().persistBucket_Kafka(show, title, topicname );
+            //TSBucketStore.getWriter().persistBucket_Kafka(show, title, topicname );
 
         }
 

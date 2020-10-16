@@ -1,6 +1,6 @@
 package org.opentsx.algorithms.dataqualitytest;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import java.util.Vector;

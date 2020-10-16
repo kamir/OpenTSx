@@ -15,7 +15,7 @@ import org.apache.kafka.streams.kstream.*;
 import org.opentsx.data.model.Event;
 
 import org.opentsx.tsa.rng.ReferenceDataset;
-import org.opentsx.util.OpenTSxClusterLink;
+import org.opentsx.kafkautil.OpenTSxClusterLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

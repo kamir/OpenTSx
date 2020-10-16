@@ -9,7 +9,7 @@
 package org.opentsx.algorithms.eventsynchronisation.experiments;
 
 //import hadoopts.analysis.eventsynchronisation.ESCalc;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.TimeSeriesObject;

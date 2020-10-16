@@ -4,18 +4,19 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.kafka.clients.consumer.*;
 
-import org.apache.xpath.operations.Mult;
-import org.bouncycastle.math.ec.ScaleYPointMap;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.kping.TSOEventAnalysisConsumer;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.util.OpenTSxClusterLink;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 
 import java.io.File;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 public class EventFlowAnalysisConsumer {
+
+    static Logger log = Logger.getLogger(EventFlowAnalysisProducer.class.getName());
 
     private final static String TOPIC = "OpenTSx_Events";
 
@@ -23,6 +24,8 @@ public class EventFlowAnalysisConsumer {
     static int NR_OF_SAMPLES = 1000;
 
     public static void main(String[] args) throws InterruptedException {
+
+        log.info( "Start EventFlowAnalysisConsumer ..." );
 
         /**
          * Read environment variables to configure the tool ...

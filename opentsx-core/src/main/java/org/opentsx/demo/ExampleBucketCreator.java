@@ -1,6 +1,6 @@
 package org.opentsx.demo;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.tsbucket.BucketLoader;
 import org.opentsx.tsbucket.generator.TSBucketCreator_Sinus;

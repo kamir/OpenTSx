@@ -11,14 +11,14 @@
  */
 package org.opentsx.experimental;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.MRT;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.core.AbstractTSProcessor;
 import org.opentsx.tsbucket.BucketLoader;
 import org.opentsx.core.SingleRowTSO;
 import org.opentsx.core.TSBucket;
-import org.opentsx.filter.TSBucketFileFilter;
+import org.opentsx.tsbucket.TSBucketFileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;

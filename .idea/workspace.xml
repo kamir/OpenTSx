@@ -2,10 +2,230 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/artifacts/opentsx_webui_ear_exploded.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/application-tools/application-tools.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/application-tools/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ext-algorithms/ext-algorithms.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ext-algorithms/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ext-algorithms/src/main/java/InfoDynamicsFunctionWrapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-connectors/opentsx-connectors.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-connectors/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TSOReader.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TSOWriter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/topicmanager/TSBucket4Kafka.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOReaderInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOWriterInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-hive-udf/opentsx-hive-udf.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-hive-udf/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/build_demo.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/output/latency-by-message-1602860282194" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons/.env-inhouse" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod/.env-inhouse" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/log4j2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-store-cassandra/opentsx-store-cassandra.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-store-cassandra/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-store-cassandra/src/main/java/TSBucketLoader4Cassandra.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/SchreiberSchmitzTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/SchreiberSchmitzTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/SurrogatDataGeneration.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/SurrogatDataGeneration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/TSInspection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/degreestatistics/DegreeForLinksAndRedirects.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/degreestatistics/DegreeForLinksAndRedirects.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/experimental/LongTermCorrelationSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/experimental/LongTermCorrelationSeries.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/old_src/thesis/experimental/StdTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/archive/old_src/thesis/experimental/StdTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/050_installArtifacts_in_local_mvn_repo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/ext-algorithms/bin/050_installArtifacts_in_local_mvn_repo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/EntropieTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/EntropieTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/dataqualitytest/InfluenceOfSinglePeakTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/dataqualitytest/InfluenceOfSinglePeakTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/DFATester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/DFATester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MFDFAAnalyzer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MFDFAAnalyzer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFA4Buckets.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFA4Buckets.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool4.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/detrending/MultiDFATool4.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMainCreateSketchData73.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESMainCreateSketchData73.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart1Tool1b.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart2Tool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/experiments/ESPropertiesChart2Tool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/numericalrecipies/NRC.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/numericalrecipies/distributions/KSTestData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/RISTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/RISTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/ReturnIntervallStatistik2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/TSPropertyTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/ris/experimental/agh/RISAnalyse3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehler.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/HaeufigkeitsZaehler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinningToolv2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/algorithms/statistics/logbinning/LogBinningToolv2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/LogBinningTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/analysistools/LogBinningTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/BucketAnalyserTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/BucketAnalyserTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/MacroRecorder3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/CassandraConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-cassandra/src/main/java/cassandra/CassandraConnector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/CassandraTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-cassandra/src/main/java/cassandra/CassandraTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/cassandra/tsb_store.cql" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-cassandra/src/main/java/cassandra/tsb_store.cql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/influxdb/InfluxDBTSOStore.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/EventFlowStateProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TSOConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TSOEventProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TSOProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/kping/TSOEventAnalysisConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/kping/TSOEventAnalysisConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/kping/TSOEventAnalysisProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/kping/TSOEventAnalysisProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/kafka/tsb_store_kafka.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/scripts/tsb_store_kafka.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBBackdoor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBBackdoor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBConnector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBContainerStarter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBContainerStarter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBEvent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBResponseTransformer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBResponseTransformer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBSeries.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBSeries.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/opentsdb/OpenTSDBWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockBucketLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/yahoofin/StockBucketLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockBucketRetriever.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/yahoofin/StockBucketRetriever.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/yahoofin/StockDataCollector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/yahoofin/StockDataLoader2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/yahoofin/StockDataLoader_Demo1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/connectors/yahoofin/StockDataLoader_Demo2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/yahoofin/StockDataLoader_Demo2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/exporter/OriginProject.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/exporter/OriginProject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/Generator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/generator/Generators.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadCorpusData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadCorpusData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadImageAsTimeSeriesData.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadImageAsTimeSeriesData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromGoogleTrendsCSVFiles.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromYahoo.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/LoadStockIndexDataFromYahoo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/TSScanner.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/loader/TSScanner.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/ExampleBucketCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/ExampleBucketCreator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/OpenTSDBWorkbenchDemo.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-opentsdb/src/main/java/opentsdb/OpenTSDBWorkbenchDemo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/brainwave/ModelTesterCortanaDBS.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/demo/brainwave/ModelTesterCortanaDBS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/DFABucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/DFABucketTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/LongTermCorrelationSeries2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/LongTermCorrelationSeries2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/SimpleBucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/SimpleBucketTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/SimpleFilteredBucketTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/SimpleFilteredBucketTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/TSInspection.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/experimental/TSInspection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/filter/TSBucketFileFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBucketFileFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/FFTPhaseRandomizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/FFTPhaseRandomizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/LongTermCorrelationSeriesGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/LongTermCorrelationSeriesGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/TSGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/TSGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/TSGeneratorFINAL.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/generators/TSGeneratorFINAL.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/mr/TSCFromWikiRawPageCount.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/mr/TSCMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/mr/TSCReduce.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/dfa/DFAExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/dfa/DFAExperiments.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGExperiments3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGReferenceDSCreator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGReferenceDSCreator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGRefernceDSLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsa/rng/RNGRefernceDSLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/KafkaConnector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/KafkaConnector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBASE.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/folderStore/TSBASE.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBucketStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBucketStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSBucketStoreFolderLocations.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/folderStore/TSBucketStoreFolderLocations.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-cassandra/src/main/java/TSOReader4Cassandra.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/TSOWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-store-cassandra/src/main/java/TSOWriter4Cassandra.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Sinus.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/tsbucket/generator/TSBucketCreator_Sinus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/udf/hive/PersistTimeSeriesUDF.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-hive-udf/src/main/java/org/opentsx/udf/hive/PersistTimeSeriesUDF.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/udf/hive/UDFTester.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-hive-udf/src/main/java/org/opentsx/udf/hive/UDFTester.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/util/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/OpenTSxClusterLink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/Executor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/NetCat4JDataStreamRecorder.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/netcat/NetCat4JDataStreamRecorder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/ProcessWatcher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/StreamTransfer.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/netcat/StreamTransfer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.form" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/clusterscan/ClusterCheck.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/clusterscan/ClusterCheck.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/clusterscan/ClusterCheck.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/clusterscan/ScanIPS.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/clusterscan/ScanIPS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/math/FunctionFitTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/math/FunctionFitTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/math/PolyFit.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/math/PolyFit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHClientTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/sshclient/SSHClientTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHConsole.form" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/sshclient/SSHConsole.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHConsole.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/sshclient/SSHConsole.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/sshclient/SSHCrawlServerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/src/main/java/net/sshclient/SSHCrawlServerClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsCHECK.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/topicmanager/TopicsCHECK.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsDOWN.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/topicmanager/TopicsDOWN.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/utils/topicmanager/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/topicmanager/TopicsUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/DynamicSingleSeriesPlot.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/dynamic/DynamicSingleSeriesPlot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/FloatLineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/dynamic/FloatLineProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/LineProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/dynamic/LineProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/dynamic/NetCatSingleValueCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/dynamic/NetCatSingleValueCollector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/gnuplot/GnuPlotChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/gnuplot/GnuPlotChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/ChartPanel3.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/panels/ChartPanel3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreihePanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/panels/MessreihePanel.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreihePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/panels/MessreihePanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.form" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/panels/MessreiheWindow3Frame.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/panels/MessreiheWindow3Frame.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/panels/MessreiheWindow3Frame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/FileControlerPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/FileControlerPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiBarChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MultiBarChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MultiChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChartDistComp.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MultiChartDistComp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChartManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MultiChartManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiChartTwoAxis.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MultiChartTwoAxis.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MultiPointsChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MultiPointsChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/MyXYPlot.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/MyXYPlot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/simple/SigmaFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/simple/SigmaFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/statistic/HistogramChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/statistic/HistogramChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/statistic/MultiBarChart.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/statistic/MultiBarChart.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/semanpix/chart/statistic/MyHistogramm2D.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/chart/statistic/MyHistogramm2D.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Add.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/AddResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Get.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/GetResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/HBaseCacheService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/HasKey.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/HasKeyResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Init.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/InitResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/ObjectFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/Put.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/PutResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/TSCacheV3.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache2/package-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Add.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/AddResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Get.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/GetResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/HBaseCacheService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/HasKey.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/HasKeyResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Init.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/InitResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/ObjectFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/Put.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/PutResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/TSCacheV3.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/ws/cache3/package-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ext-connectors/opentsx-ext-connectors.iml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/opentsx-ext-connectors.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ext-connectors/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/flume/OpenTSDBSink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/flume/OpenTSDBSink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/kudu/KuduTelemetryDataLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java/kudu/KuduTelemetryDataLoader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSxStreamingAppHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSxStreamingAppHelper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_container.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/run_demo_docker_compose.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisPrecheck.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisPrecheck.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisSetup.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisSetup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/.sine-waves.tsb.vec.seq.crc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-opentsx-lg/sine-waves.tsb.vec.seq" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -38,8 +258,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Interface" />
         <option value="Python Script" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -90,8 +310,8 @@
     <property name="extract.method.default.visibility" value="private" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
-    <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/config" />
+    <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-hive-udf/src/main/java" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -109,32 +329,32 @@
       <recent name="org.opentsx.tsbucket" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
       <recent name="org.opentsx.util" />
       <recent name="udf" />
-      <recent name="" />
       <recent name="org.apache.hadoopts" />
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-lg" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources" />
       <recent name="$PROJECT_DIR$/config" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose-ping-tool/bin" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/bin" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/config" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="" />
       <recent name="org.opentsx.lg.kping" />
       <recent name="org.opentsx.connectors.kafka" />
       <recent name="org.opentsx.lg" />
       <recent name="org.opentsx.tsa" />
-      <recent name="" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/k8s" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker/core-tool-image" />
-      <recent name="$PROJECT_DIR$/opentsx-ext-connectors/src/main/java" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/mqtt-example" />
+      <recent name="$PROJECT_DIR$/application-tools/src/main/java" />
+      <recent name="$PROJECT_DIR$/ext-algorithms/lib" />
+      <recent name="$PROJECT_DIR$/ext-algorithms" />
+      <recent name="$PROJECT_DIR$/opentsx-core" />
+      <recent name="$PROJECT_DIR$/ext-algorithms/bin" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -154,7 +374,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.EventFlowAnalysisConsumer">
+  <component name="RunManager" selected="Tomcat Server.Tomcat 8.5.59">
     <configuration name="EventFlowAnalysisConsumer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.kping.EventFlowAnalysisConsumer" />
       <module name="opentsx-lg" />
@@ -224,7 +444,7 @@
       <envs>
         <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/cpl.props " />
       </envs>
-      <option name="MAIN_CLASS_NAME" value="org.opentsx.util.topicmanager.TopicsCHECK" />
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.connectors.kafka.util.topicmanager.TopicsCHECK" />
       <module name="opentsx-lg" />
       <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
         <option name="ENABLED" value="false" />
@@ -245,6 +465,27 @@
       <option name="SPRING_BOOT_MAIN_CLASS" value="KafkaDemoApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Tomcat 8.5.59" type="#com.intellij.j2ee.web.tomcat.TomcatRunConfigurationFactory" factoryName="Local" APPLICATION_SERVER_NAME="Tomcat 8.5.59" ALTERNATIVE_JRE_ENABLED="false">
+      <deployment>
+        <artifact name="opentsx-webui:ear exploded">
+          <settings>
+            <option name="CONTEXT_PATH" value="/" />
+          </settings>
+        </artifact>
+      </deployment>
+      <server-settings />
+      <predefined_log_file enabled="true" id="Tomcat" />
+      <predefined_log_file enabled="true" id="Tomcat Catalina" />
+      <predefined_log_file id="Tomcat Manager" />
+      <predefined_log_file id="Tomcat Host Manager" />
+      <predefined_log_file id="Tomcat Localhost Access" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+        <option name="BuildArtifacts" enabled="true">
+          <artifact name="opentsx-webui:ear exploded" />
+        </option>
       </method>
     </configuration>
     <configuration name="Krake-container/Dockerfile" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
@@ -270,6 +511,7 @@
       <item itemvalue="Application.EventFlowAnalysisProducer" />
       <item itemvalue="Docker.Krake-container/Dockerfile" />
       <item itemvalue="Spring Boot.KafkaDemoApplication" />
+      <item itemvalue="Tomcat Server.Tomcat 8.5.59" />
     </list>
     <recent_temporary>
       <list>
@@ -412,14 +654,7 @@
       <workItem from="1602406570348" duration="4721000" />
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
-      <workItem from="1602611628980" duration="34551000" />
-    </task>
-    <task id="LOCAL-00127" summary="workaround for JAR in gitignore">
-      <created>1591796020825</created>
-      <option name="number" value="00127" />
-      <option name="presentableId" value="LOCAL-00127" />
-      <option name="project" value="LOCAL" />
-      <updated>1591796020825</updated>
+      <workItem from="1602611628980" duration="58991000" />
     </task>
     <task id="LOCAL-00128" summary="workaround for JAR in gitignore">
       <created>1591796253454</created>
@@ -757,7 +992,14 @@
       <option name="project" value="LOCAL" />
       <updated>1602774745769</updated>
     </task>
-    <option name="localTasksCounter" value="176" />
+    <task id="LOCAL-00176" summary="Updated CP 5.5.0 to 6.0.0.">
+      <created>1602775348059</created>
+      <option name="number" value="00176" />
+      <option name="presentableId" value="LOCAL-00176" />
+      <option name="project" value="LOCAL" />
+      <updated>1602775348059</updated>
+    </task>
+    <option name="localTasksCounter" value="177" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -790,17 +1032,6 @@
     <MESSAGE value="Synch 3 machines for internal demo." />
     <MESSAGE value="Updated CP 5.5.0 to 6.0.0." />
     <option name="LAST_COMMIT_MESSAGE" value="Updated CP 5.5.0 to 6.0.0." />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/core/TSBucket.java</url>
-          <line>1263</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/OpenTSx$RNGRefernceDSLoader.ic" NAME="RNGRefernceDSLoader Coverage Results" MODIFIED="1571651561626" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">

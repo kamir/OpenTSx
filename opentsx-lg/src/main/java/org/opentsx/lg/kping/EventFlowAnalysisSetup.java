@@ -1,11 +1,18 @@
 package org.opentsx.lg.kping;
 
-import org.opentsx.util.OpenTSxClusterLink;
-import org.opentsx.utils.topicmanager.TopicsUP;
+
+
 
 import java.io.IOException;
 
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
+
 public class EventFlowAnalysisSetup {
+
+    static final Logger logger = LogManager.getLogger(EventFlowAnalysisSetup.class.getName());
 
     public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
 
@@ -20,12 +27,21 @@ public class EventFlowAnalysisSetup {
 
         try {
 
-            TopicsUP.execute();
+            logger.info( "Start TopicSetup ..." );
+
+//            TopicsUP.execute();
+
+            logger.info( "TopicSetup done." );
 
         }
         catch (Exception e) {
             e.printStackTrace();
+
+            logger.error( "EXCEPTION: " + e.getMessage() );
+
         }
+
+        System.exit( 0 );
 
     }
 

@@ -1,7 +1,7 @@
 package org.opentsx.algorithms.detrending;
 
 import org.opentsx.experimental.SimpleBucketTool;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.core.TSBucket;
 import org.opentsx.algorithms.detrending.methods.DFACore;

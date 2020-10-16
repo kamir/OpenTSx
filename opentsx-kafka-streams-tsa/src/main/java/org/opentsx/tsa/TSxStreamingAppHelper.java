@@ -1,6 +1,6 @@
 package org.opentsx.tsa;
 
-import org.opentsx.util.OpenTSxClusterLink;
+import org.opentsx.kafkautil.OpenTSxClusterLink;
 
 import java.util.Properties;
 
