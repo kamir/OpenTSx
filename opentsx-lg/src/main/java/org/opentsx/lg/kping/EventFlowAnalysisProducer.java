@@ -10,17 +10,18 @@
  */
 package org.opentsx.lg.kping;
 
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.kping.TSOEventAnalysisProducer;
+import org.opentsx.connectors.kafka.topicmanager.TopicsCHECK;
+import org.opentsx.connectors.kafka.topicmanager.TopicsUP;
 import org.opentsx.core.TSBucket;
 import org.opentsx.core.TSData;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.lg.metrics.TSGBeanImpl;
 import org.opentsx.lg.metrics.TSGMBean;
-import org.opentsx.util.OpenTSxClusterLink;
-import org.opentsx.utils.topicmanager.TopicsCHECK;
-import org.opentsx.utils.topicmanager.TopicsUP;
-import org.semanpix.chart.simple.MultiChart;
+
+import org.opentsx.chart.simple.MultiChart;
 
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
@@ -60,6 +61,8 @@ import java.util.logging.Logger;
  */
 public class EventFlowAnalysisProducer {
 
+    static Logger log = Logger.getLogger(EventFlowAnalysisProducer.class.getName());
+
     private static MBeanServer mbs = null;
 
     private static TSGMBean tsgBean = null;
@@ -68,6 +71,9 @@ public class EventFlowAnalysisProducer {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
+
+        log.info( "Start EventFlowAnalysisProducer ..." );
+
 
         /**
          * Read environment variables to configure the tool ...

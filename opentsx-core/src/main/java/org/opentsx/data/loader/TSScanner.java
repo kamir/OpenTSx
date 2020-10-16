@@ -5,7 +5,7 @@
  */
 package org.opentsx.data.loader;
 
-import org.semanpix.chart.dynamic.NetCatSingleValueCollector;
+import org.opentsx.chart.dynamic.NetCatSingleValueCollector;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;

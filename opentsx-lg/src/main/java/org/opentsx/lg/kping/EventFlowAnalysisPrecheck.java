@@ -1,9 +1,7 @@
 package org.opentsx.lg.kping;
 
-import ch.qos.logback.core.db.dialect.SybaseSqlAnywhereDialect;
-import org.opentsx.util.OpenTSxClusterLink;
-import org.opentsx.utils.topicmanager.TopicsCHECK;
-import org.opentsx.utils.topicmanager.TopicsUP;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
+import org.opentsx.connectors.kafka.topicmanager.*;
 
 import java.io.IOException;
 

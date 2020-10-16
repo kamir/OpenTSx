@@ -1,7 +1,7 @@
 
 package org.opentsx.algorithms.eventsynchronisation;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import java.util.Collections;

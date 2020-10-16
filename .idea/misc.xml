@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/target/maven-archiver/pom.properties" />
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/opentsx-kstreams/pom.xml" />
+        <option value="$PROJECT_DIR$/opentsx-store-cassandra/pom.xml" />
       </list>
     </option>
   </component>

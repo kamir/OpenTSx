@@ -2,7 +2,7 @@ package org.opentsx.algorithms.detrending;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opentsx.analysistools.HurstSurface;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.exporter.OriginProject;

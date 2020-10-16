@@ -1,6 +1,6 @@
 package org.opentsx.connectors.kudu;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Schema;

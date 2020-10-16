@@ -14,7 +14,6 @@ import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.Properties;
 
-
 public class OpenTSDBSink extends AbstractSink implements Configurable {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenTSDBSink.class);

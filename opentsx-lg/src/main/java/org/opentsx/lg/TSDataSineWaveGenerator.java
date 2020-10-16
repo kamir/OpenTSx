@@ -11,6 +11,7 @@
 package org.opentsx.lg;
 
 import org.opentsx.connectors.kafka.EventFlowStateProducer;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.TSOProducer;
 import org.opentsx.core.TSBucket;
 import org.opentsx.core.TSData;
@@ -18,8 +19,7 @@ import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.lg.metrics.TSGBeanImpl;
 import org.opentsx.lg.metrics.TSGMBean;
-import org.opentsx.util.OpenTSxClusterLink;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 
 import java.io.IOException;
 import java.util.Date;

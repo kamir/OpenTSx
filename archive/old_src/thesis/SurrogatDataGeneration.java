@@ -45,7 +45,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opentsx.app.bucketanalyser.MacroTrackerFrame;
 import org.opentsx.app.bucketanalyser.TSOperationControlerPanel;
 import org.opentsx.thesis.experimental.ContextRecorder;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
