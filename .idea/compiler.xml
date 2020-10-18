@@ -7,16 +7,16 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="opentsx-connectors" />
-        <module name="application-tools" />
+        <module name="OpenTSx" />
         <module name="opentsx-store-cassandra" />
-        <module name="opentsx-hive-udf" />
         <module name="opentsx-data" />
         <module name="ext-algorithms" />
         <module name="opentsx-lg" />
-        <module name="OpenTSx" />
+        <module name="opentsx-core" />
+        <module name="opentsx-hive-udf" />
         <module name="demo-udf" />
         <module name="opentsx-store-opentsdb" />
-        <module name="opentsx-core" />
+        <module name="application-tools" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
