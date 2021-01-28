@@ -4,8 +4,11 @@ import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.topicmanager.*;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 public class EventFlowAnalysisPrecheck {
+
+    static Logger log = Logger.getLogger(EventFlowAnalysisPrecheck.class.getName());
 
     public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
 

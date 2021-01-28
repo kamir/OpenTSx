@@ -3,7 +3,11 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-
+    <parent>
+        <artifactId>opentsx</artifactId>
+        <groupId>org.opentsx</groupId>
+        <version>3.0.0</version>
+    </parent>
 
 
     <modelVersion>4.0.0</modelVersion>
@@ -16,7 +20,7 @@
     <properties>
 
         <avro.version>1.10.0</avro.version>
-        <kafka.avro.serializer.version>5.3.1</kafka.avro.serializer.version>
+        <kafka.avro.serializer.version>5.3.3</kafka.avro.serializer.version>
         <kafka.version>2.5.0</kafka.version>
 
         <influxdbClient.version>2.20</influxdbClient.version>
@@ -81,7 +85,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
-            <version>5.3.1</version>
+            <version>5.5.1</version>
         </dependency>
 
         <dependency>

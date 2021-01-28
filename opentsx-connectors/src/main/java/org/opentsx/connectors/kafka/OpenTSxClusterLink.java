@@ -8,8 +8,8 @@ import java.util.Vector;
 
 public class OpenTSxClusterLink {
 
-    public static String OPENTSX_TOPIC_MAP_FILE_NAME = null;
-    public static String OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = null;
+    public static final String OPENTSX_TOPIC_MAP_FILE_NAME = "./config/topiclist.def";;
+    public static final String OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/cpl.props";;
 
     public static Properties getClientProperties() {
 
@@ -47,13 +47,16 @@ public class OpenTSxClusterLink {
         System.out.println("> PROPS_FN = " + PROPS_FN);
     };
 
-    public static String PROPS_FN = "config/cpl.props";
+    public static String PROPS_FN = "./config/cpl.props";
 
     public static String get_PROPS_FN() {
         return  PROPS_FN;
     };
 
     public static void init() {
+
+        File f = new File( "." );
+        System.out.println( "WP: " + f.getAbsolutePath() );
 
         /**
          * The ENV VARIABLE OPENTSX_TOPIC_MAP CONTAINS A FILENAME OF A FILE WITH ALL REQUIRED TOPICS.

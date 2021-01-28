@@ -12,7 +12,7 @@ confluent local start
 rm -rf /Users/mkampf/.m2/repository/org/opentsx
 
 cd ..
-mvn clean generate-sources compile package install
+mvn clean generate-sources compile package install -U
 
 cd opentsx-lg
-mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker
+mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker -U

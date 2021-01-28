@@ -37,7 +37,7 @@
     <properties>
 
         <avro.version>1.10.0</avro.version>
-        <kafka.avro.serializer.version>5.3.1</kafka.avro.serializer.version>
+        <kafka.avro.serializer.version>5.3.3</kafka.avro.serializer.version>
         <kafka.version>2.5.0</kafka.version>
 
         <influxdbClient.version>2.20</influxdbClient.version>
@@ -102,6 +102,15 @@
             </snapshots>
         </repository>
 
+        <repository>
+            <id>cp.repo</id>
+            <url> https://packages.confluent.io/maven/</url>
+            <name>Confluent Repositories</name>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+
     </repositories>
 
     <dependencies>
@@ -111,7 +120,6 @@
             <artifactId>avro</artifactId>
             <version>${avro.version}</version>
         </dependency>
-
 
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>
