@@ -63,12 +63,14 @@ public class TopicsManagerTool {
         return liste;
     }
 
-    public static void listTopics() {
+    public static Vector<String> listTopics() {
 
         Vector<String> l = getTopicList();
 
         for( String n : l )
             System.out.println( "> TOPIC --> {" + n + "}" );
+
+        return l;
 
     }
 
@@ -277,12 +279,20 @@ public class TopicsManagerTool {
         return topics;
     }
 
-    public static void initTopicDefinitions(String topicsDefFn) {
+    public static Vector<String> initTopicDefinitions(String topicsDefFn) {
+
         System.out.println( ">>> Overwrite topicsDefFN ... ");
         System.out.println( ">>> OLD: " + TOPICS_DEF_FN );
         TOPICS_DEF_FN = topicsDefFn;
         System.out.println( ">>> NEW: " + TOPICS_DEF_FN );
         System.out.println( " " );
+
+        return getExpectedTopicList();
+
+    }
+
+    private static Vector<String> getExpectedTopicList() {
+        return null;
     }
 
     public static void createTopics() throws IOException {

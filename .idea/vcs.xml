@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/opentsx-cloud-bridge/cp-all-in-one" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/opentsx-clusters/krake-container/tmp" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/opentsx-generator-webui/java-tomcat-maven-example" vcs="Git" />

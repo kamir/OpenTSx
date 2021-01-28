@@ -2,10 +2,27 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config/cpl.props" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset/Tiller.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/config/cpl.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/application-tools/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/cpl_local.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl_local.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset/superset-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-Q4-2020/incubator-superset/superset-frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/OpenTSxClusterLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/OpenTSxClusterLink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/TopicsManagerTool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/topicmanager/TopicsUP.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/topicmanager/TopicsUP.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx/tsa/TSAExample1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/build_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/build_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/config/topiclist_kping.def" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/config/topiclist_kping.def" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisPrecheck.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisPrecheck.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisSetup.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/kping/EventFlowAnalysisSetup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -91,7 +108,7 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-hive-udf/src/main/java" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-lg" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/config" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -105,8 +122,12 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.opentsx.tsbucket" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/application-tools/src/main/java" />
+      <recent name="$PROJECT_DIR$/ext-algorithms/lib" />
+      <recent name="$PROJECT_DIR$/ext-algorithms" />
+      <recent name="$PROJECT_DIR$/opentsx-core" />
+      <recent name="$PROJECT_DIR$/ext-algorithms/bin" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
@@ -116,11 +137,11 @@
       <recent name="org.opentsx" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/config" />
+      <recent name="$PROJECT_DIR$/opentsx-lg/config" />
       <recent name="$PROJECT_DIR$/opentsx-lg" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-prod" />
       <recent name="$PROJECT_DIR$/opentsx-lg/src/main/docker-compose/ping-tool-cons" />
-      <recent name="$PROJECT_DIR$/opentsx-lg/src/main/resources" />
-      <recent name="$PROJECT_DIR$/config" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="" />
@@ -129,12 +150,8 @@
       <recent name="org.opentsx.lg" />
       <recent name="org.opentsx.tsa" />
     </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/application-tools/src/main/java" />
-      <recent name="$PROJECT_DIR$/ext-algorithms/lib" />
-      <recent name="$PROJECT_DIR$/ext-algorithms" />
-      <recent name="$PROJECT_DIR$/opentsx-core" />
-      <recent name="$PROJECT_DIR$/ext-algorithms/bin" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="org.opentsx.tsbucket" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -207,12 +224,16 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TSAExample5" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.opentsx.kstreams.tsa.TSAExample5" />
-      <module name="opentsx" />
+    <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
+      <module name="opentsx-lg" />
+      <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
+        <option name="ENABLED" value="false" />
+        <entries />
+      </extension>
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.opentsx.kstreams.tsa.*" />
+          <option name="PATTERN" value="org.opentsx.lg.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -248,6 +269,7 @@
       </method>
     </configuration>
     <configuration name="Tomcat 8.5.59" type="#com.intellij.j2ee.web.tomcat.TomcatRunConfigurationFactory" factoryName="Local" APPLICATION_SERVER_NAME="Tomcat 8.5.59" ALTERNATIVE_JRE_ENABLED="false">
+      <option name="START_JAVASCRIPT_DEBUGGER" value="true" />
       <deployment>
         <artifact name="opentsx-webui:ear exploded">
           <settings>
@@ -255,12 +277,66 @@
           </settings>
         </artifact>
       </deployment>
-      <server-settings />
+      <server-settings>
+        <option name="BASE_DIRECTORY_NAME" value="Tomcat_8_5_59_OpenTSx" />
+      </server-settings>
       <predefined_log_file enabled="true" id="Tomcat" />
       <predefined_log_file enabled="true" id="Tomcat Catalina" />
       <predefined_log_file id="Tomcat Manager" />
       <predefined_log_file id="Tomcat Host Manager" />
       <predefined_log_file id="Tomcat Localhost Access" />
+      <extension name="com.egoshard.intellij.k8s-runtime-config-plugin">
+        <option name="ENABLED" value="false" />
+        <entries />
+      </extension>
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="51435" />
+      </RunnerSettings>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Cover">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Debug">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
+      <ConfigurationWrapper VM_VAR="JAVA_OPTS" RunnerId="Run">
+        <option name="USE_ENV_VARIABLES" value="true" />
+        <STARTUP>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </STARTUP>
+        <SHUTDOWN>
+          <option name="USE_DEFAULT" value="true" />
+          <option name="SCRIPT" value="" />
+          <option name="VM_PARAMETERS" value="" />
+          <option name="PROGRAM_PARAMETERS" value="" />
+        </SHUTDOWN>
+      </ConfigurationWrapper>
       <method v="2">
         <option name="Make" enabled="true" />
         <option name="BuildArtifacts" enabled="true">
@@ -284,22 +360,22 @@
     </configuration>
     <list>
       <item itemvalue="Application.TopicsCHECK" />
-      <item itemvalue="Application.TSAExample5" />
       <item itemvalue="Application.TSAExample1" />
       <item itemvalue="Application.TSAExample1 (1)" />
       <item itemvalue="Application.EventFlowAnalysisConsumer" />
       <item itemvalue="Application.EventFlowAnalysisProducer" />
+      <item itemvalue="Application.TSDataSineWaveGenerator" />
       <item itemvalue="Docker.Krake-container/Dockerfile" />
       <item itemvalue="Spring Boot.KafkaDemoApplication" />
       <item itemvalue="Tomcat Server.Tomcat 8.5.59" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.TSDataSineWaveGenerator" />
         <item itemvalue="Application.EventFlowAnalysisConsumer" />
         <item itemvalue="Application.EventFlowAnalysisProducer" />
         <item itemvalue="Application.TSAExample1 (1)" />
         <item itemvalue="Application.TSAExample1" />
-        <item itemvalue="Application.TSAExample5" />
       </list>
     </recent_temporary>
   </component>
@@ -435,7 +511,17 @@
       <workItem from="1602486064797" duration="26886000" />
       <workItem from="1602581396106" duration="11195000" />
       <workItem from="1602611628980" duration="59032000" />
-      <workItem from="1603026163197" duration="231000" />
+      <workItem from="1603026163197" duration="880000" />
+      <workItem from="1603028759093" duration="7695000" />
+      <workItem from="1603111796907" duration="2026000" />
+      <workItem from="1603719874822" duration="1360000" />
+      <workItem from="1603890682176" duration="4384000" />
+      <workItem from="1604414576391" duration="1321000" />
+      <workItem from="1605084420653" duration="2478000" />
+      <workItem from="1605606790652" duration="814000" />
+      <workItem from="1607957656522" duration="731000" />
+      <workItem from="1608036931545" duration="1141000" />
+      <workItem from="1610955343864" duration="5067000" />
     </task>
     <task id="LOCAL-00129" summary="workaround for JAR in gitignore">
       <created>1591796414078</created>

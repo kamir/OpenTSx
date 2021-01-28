@@ -4,6 +4,7 @@ import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.TopicsManagerTool;
 
 import java.io.File;
+import java.util.Vector;
 
 /**
  * An experiment with a floating-workload comes with a:
@@ -39,17 +40,13 @@ public class TopicsUP {
 
         OpenTSxClusterLink.init();
 
-        TopicsManagerTool.initTopicDefinitions( TOPICS_DEF_FN );
+        Vector<String> topicNamesNeeded = TopicsManagerTool.initTopicDefinitions( TOPICS_DEF_FN );
 
         TopicsManagerTool.createTopics();
 
         System.out.println("> Read topic list ! ");
 
-        TopicsManagerTool.listTopics();
-
-        System.out.println("> All topics created ! ");
-
-        System.exit(0);
+        Vector<String> topicsAvailable = TopicsManagerTool.listTopics();
 
     }
 

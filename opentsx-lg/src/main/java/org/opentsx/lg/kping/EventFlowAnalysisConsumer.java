@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 public class EventFlowAnalysisConsumer {
 
-    static Logger log = Logger.getLogger(EventFlowAnalysisProducer.class.getName());
+    static Logger log = Logger.getLogger(EventFlowAnalysisConsumer.class.getName());
 
     private final static String TOPIC = "OpenTSx_Events";
 
@@ -36,6 +36,7 @@ public class EventFlowAnalysisConsumer {
         NR_OF_SAMPLES = Integer.parseInt( OpenTSxClusterLink.getClientProperties().getProperty( "kping.consumer.nrOfSamples") );
 
         runConsumer();
+
     }
 
     static void runConsumer() throws InterruptedException {
