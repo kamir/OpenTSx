@@ -33,11 +33,6 @@ rm -rf /Users/mkampf/.m2/repository/org/opentsx
 cd /Users/mkampf/GITHUB.public/OpenTSx
 mvn clean generate-sources compile package install
 
-#
-# in case the infodynamics:corelib:jar:1.3.1 is missing:
-#
-bin/050_installArtifacts_in_local_mvn_repo.sh
-
 cd opentsx-lg
 mvn clean generate-sources compile package install -PSimpleTimeSeriesProducer,Docker
 
@@ -52,38 +47,34 @@ export OPENTSX_TOPIC_MAP_FILE_NAME=./../config/topiclist.def
 #
 # Client configuration for a particular Kafka cluster (CP local or Confluent cloud)
 #
-export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/cpl.props
+#export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/cpl.props
+export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/cpl_iMac.props
 
 
 
+##############################################
+# The load generator tool has a GUI switch.
 #
-# GUI switch
+# We run it in headless mode on servers, or with a UI in
+# workstations.
 #
 #export OPENTSX_SHOW_GUI=false
 export OPENTSX_SHOW_GUI=true
 
+#
+# How much data should be generated?
+#
 export OPENTSX_NUMBER_OF_ITERATIONS=100
 
 #
-# Setup the topics in ccloud
+# Setup the topics in cluster
 #
-mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsUP"
+mvn exec:java -Dexec.mainClass="org.opentsx.connectors.kafka.topicmanager.TopicsUP"
 
-mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
-
-
-cd /Users/mkampf/GITHUB.public/OpenTSx/opentsx-ksql-udf/demo-udf
-mvn clean compile package
-
-cp /Users/mkampf/GITHUB.public/OpenTSx/opentsx-ksql-udf/demo-udf/target/demo-udf-3.0.1.jar /Users/mkampf/GITHUB.public/OpenTSx/opentsx-ksql-app/ksql-server-extension/demo-udf-3.0.1.jar
-
-cd /Users/mkampf/GITHUB.public/OpenTSx/opentsx-app-demos/meetup-09-2020
-
-
+mvn exec:java -Dexec.mainClass="org.opentsx.connectors.kafka.topicmanager.TopicsCHECK"
 
 echo "=============================="
 echo " DEMO Setup done."
-echo " Initital data has been loaded."
 echo "=============================="
 echo " "
 echo " "

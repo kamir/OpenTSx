@@ -1,3 +1,5 @@
+package org.opentsx.data.model;
+
 import com.google.gson.Gson;
 
 import org.apache.commons.text.CharacterPredicates;
@@ -5,16 +7,16 @@ import org.apache.commons.text.RandomStringGenerator;
 
 public class LatencyTesterEvent {
 
-    long creationTS = 0;
-    long sendTS = 0;
-    long receivedTS = 0;
-    long processStartedTS = 0;
-    long processFinishedTS = 0;
-    long resultShippedTS = 0;
-    long resultReceivedTS = 0;
-    String targetAgentID = "agent2";
-    String targetAgentDC = "DC2";
-    String PL = "1234567890";
+    public long creationTS = 0;
+    public long sendTS = 0;
+    public long receivedTS = 0;
+    public long processStartedTS = 0;
+    public long processFinishedTS = 0;
+    public long resultShippedTS = 0;
+    public long resultReceivedTS = 0;
+    public String targetAgentID = "agent2";
+    public String targetAgentDC = "DC2";
+    public String PL = "1234567890";
 
     public static LatencyTesterEvent getTestEvent(String targetAgentDC, String targetAgentID, int size  ) {
         LatencyTesterEvent e = new LatencyTesterEvent();
@@ -36,6 +38,10 @@ public class LatencyTesterEvent {
                     .filteredBy(CharacterPredicates.LETTERS, CharacterPredicates.DIGITS)
                     .build();
 
+    public static LatencyTesterEvent fromJson(String value) {
+        return gson.fromJson( value, LatencyTesterEvent.class );
+    }
+
     public void trackSendTS() { this.sendTS = System.currentTimeMillis(); };
     public void trackReceivedTS() { this.receivedTS = System.currentTimeMillis(); };
     public void trackProcessStartedTS() { this.processStartedTS = System.currentTimeMillis(); };
@@ -43,7 +49,7 @@ public class LatencyTesterEvent {
     public void trackResultShippedTS() { this.resultShippedTS = System.currentTimeMillis(); };
     public void trackResultReceivedTS() { this.resultReceivedTS = System.currentTimeMillis(); };
 
-    public String showStats() {
+    public String getStats() {
         StringBuffer sb = new StringBuffer();
         long requestTravelTime = this.receivedTS - this.sendTS;
         long processingTime = this.processFinishedTS - this.processStartedTS;
@@ -53,4 +59,8 @@ public class LatencyTesterEvent {
         sb.append( "Processing  :" + processingTime + " ms; " );
         return sb.toString();
     }
+
+    public long getEnd2EndLatency() {
+        return this.resultReceivedTS - this.sendTS;
+    };
 }

@@ -2,6 +2,10 @@ kping.producer.ziterations=10
 kping.consumer.giveUp=1000
 kping.consumer.nrOfSamples=1000000
 
+klatency.producer.ziterations=1000
+klatency.consumer.giveUp=1000
+klatency.consumer.nrOfSamples=1000
+
 request.timeout.ms=2000
 
 retry.backoff.ms=500
@@ -13,14 +17,14 @@ acks=1
 
 ###############################################################################
 
-key.serializer=org.apache.kafka.common.serialization.StringSerializer
-value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+#key.serializer=org.apache.kafka.common.serialization.StringSerializer
+#value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 
 key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
-value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer
+value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 
 # Schema Registry specific settings
-schema.registry.url=http://192.168.3.172:8081
+schema.registry.url=http://127.0.0.1:8081
 
 # Bootstrap server
-bootstrap.servers=192.168.3.172:9092
+bootstrap.servers=127.0.0.1:9092

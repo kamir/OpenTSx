@@ -8,8 +8,8 @@ import java.util.Vector;
 
 public class OpenTSxClusterLink {
 
-    public static final String OPENTSX_TOPIC_MAP_FILE_NAME = "./config/topiclist.def";;
-    public static final String OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/cpl.props";;
+    public static String OPENTSX_TOPIC_MAP_FILE_NAME = "./config/topiclist.def";;
+    public static String OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/cpl.props";;
 
     public static Properties getClientProperties() {
 
