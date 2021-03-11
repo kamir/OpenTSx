@@ -10,16 +10,18 @@
  */
 package org.opentsx.lg;
 
+import org.apache.logging.log4j.LogManager;
 import org.opentsx.connectors.kafka.EventFlowStateProducer;
+import org.opentsx.connectors.kafka.OpenTSxClusterLink;
 import org.opentsx.connectors.kafka.TSOProducer;
 import org.opentsx.core.TSBucket;
 import org.opentsx.core.TSData;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
+import org.opentsx.lg.kping.EventFlowAnalysisSetup;
 import org.opentsx.lg.metrics.TSGBeanImpl;
 import org.opentsx.lg.metrics.TSGMBean;
-import org.opentsx.util.OpenTSxClusterLink;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 
 import java.io.IOException;
 import java.util.Date;
@@ -59,6 +61,8 @@ import java.lang.management.*;
  */
 public class TSDataSineWaveGenerator {
 
+    static final org.apache.logging.log4j.Logger logger = LogManager.getLogger(TSDataSineWaveGenerator.class.getName());
+
     private static MBeanServer mbs = null;
 
     private static TSGMBean tsgBean = null;
@@ -69,6 +73,7 @@ public class TSDataSineWaveGenerator {
     public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException {
 
         boolean showChart = true;
+        logger.info( "showChart = true");
 
         try {
             registerMBean();
@@ -121,6 +126,7 @@ public class TSDataSineWaveGenerator {
         /**
          * Read environment variables to configure the tool ...
          */
+        OpenTSxClusterLink.OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/cpl.props";
         OpenTSxClusterLink.init();
 
         // which aspect should be demonstrated ?

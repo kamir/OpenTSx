@@ -5,16 +5,17 @@
  */
 package org.opentsx.data.model;
 
+import org.apache.avro.generic.GenericArray;
 import org.apache.avro.specific.SpecificData;
+import org.apache.avro.util.Utf8;
 import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.message.BinaryMessageDecoder;
 import org.apache.avro.message.SchemaStore;
 
-@SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class Event2 extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
   private static final long serialVersionUID = 7232076023971534926L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Event2\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":\"null\"},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"default\":\"null\"},{\"name\":\"value\",\"type\":[\"null\",\"double\"],\"default\":\"null\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Event2\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"uri\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"value\",\"type\":[\"null\",\"double\"],\"default\":null}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -26,7 +27,16 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
       new BinaryMessageDecoder<Event2>(MODEL$, SCHEMA$);
 
   /**
+   * Return the BinaryMessageEncoder instance used by this class.
+   * @return the message encoder used by this class
+   */
+  public static BinaryMessageEncoder<Event2> getEncoder() {
+    return ENCODER;
+  }
+
+  /**
    * Return the BinaryMessageDecoder instance used by this class.
+   * @return the message decoder used by this class
    */
   public static BinaryMessageDecoder<Event2> getDecoder() {
     return DECODER;
@@ -35,17 +45,27 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
   /**
    * Create a new BinaryMessageDecoder instance for this class that uses the specified {@link SchemaStore}.
    * @param resolver a {@link SchemaStore} used to find schemas by fingerprint
+   * @return a BinaryMessageDecoder instance for this class backed by the given SchemaStore
    */
   public static BinaryMessageDecoder<Event2> createDecoder(SchemaStore resolver) {
     return new BinaryMessageDecoder<Event2>(MODEL$, SCHEMA$, resolver);
   }
 
-  /** Serializes this Event2 to a ByteBuffer. */
+  /**
+   * Serializes this Event2 to a ByteBuffer.
+   * @return a buffer holding the serialized data for this instance
+   * @throws java.io.IOException if this instance could not be serialized
+   */
   public java.nio.ByteBuffer toByteBuffer() throws java.io.IOException {
     return ENCODER.encode(this);
   }
 
-  /** Deserializes a Event2 from a ByteBuffer. */
+  /**
+   * Deserializes a Event2 from a ByteBuffer.
+   * @param b a byte buffer holding serialized data for an instance of this class
+   * @return a Event2 instance decoded from the given buffer
+   * @throws java.io.IOException if the given bytes could not be deserialized into an instance of this class
+   */
   public static Event2 fromByteBuffer(
       java.nio.ByteBuffer b) throws java.io.IOException {
     return DECODER.decode(b);
@@ -74,6 +94,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     this.value = value;
   }
 
+  public org.apache.avro.specific.SpecificData getSpecificData() { return MODEL$; }
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call.
   public java.lang.Object get(int field$) {
@@ -81,7 +102,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     case 0: return timestamp;
     case 1: return uri;
     case 2: return value;
-    default: throw new org.apache.avro.AvroRuntimeException("Bad index");
+    default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
 
@@ -92,7 +113,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     case 0: timestamp = (java.lang.Long)value$; break;
     case 1: uri = (java.lang.CharSequence)value$; break;
     case 2: value = (java.lang.Double)value$; break;
-    default: throw new org.apache.avro.AvroRuntimeException("Bad index");
+    default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
 
@@ -103,6 +124,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
   public java.lang.Long getTimestamp() {
     return timestamp;
   }
+
 
   /**
    * Sets the value of the 'timestamp' field.
@@ -120,6 +142,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     return uri;
   }
 
+
   /**
    * Sets the value of the 'uri' field.
    * @param value the value to set.
@@ -135,6 +158,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
   public java.lang.Double getValue() {
     return value;
   }
+
 
   /**
    * Sets the value of the 'value' field.
@@ -158,7 +182,11 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
    * @return A new Event2 RecordBuilder
    */
   public static org.opentsx.data.model.Event2.Builder newBuilder(org.opentsx.data.model.Event2.Builder other) {
-    return new org.opentsx.data.model.Event2.Builder(other);
+    if (other == null) {
+      return new org.opentsx.data.model.Event2.Builder();
+    } else {
+      return new org.opentsx.data.model.Event2.Builder(other);
+    }
   }
 
   /**
@@ -167,12 +195,17 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
    * @return A new Event2 RecordBuilder
    */
   public static org.opentsx.data.model.Event2.Builder newBuilder(org.opentsx.data.model.Event2 other) {
-    return new org.opentsx.data.model.Event2.Builder(other);
+    if (other == null) {
+      return new org.opentsx.data.model.Event2.Builder();
+    } else {
+      return new org.opentsx.data.model.Event2.Builder(other);
+    }
   }
 
   /**
    * RecordBuilder for Event2 instances.
    */
+  @org.apache.avro.specific.AvroGenerated
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<Event2>
     implements org.apache.avro.data.RecordBuilder<Event2> {
 
@@ -193,15 +226,15 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
       super(other);
       if (isValidValue(fields()[0], other.timestamp)) {
         this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
-        fieldSetFlags()[0] = true;
+        fieldSetFlags()[0] = other.fieldSetFlags()[0];
       }
       if (isValidValue(fields()[1], other.uri)) {
         this.uri = data().deepCopy(fields()[1].schema(), other.uri);
-        fieldSetFlags()[1] = true;
+        fieldSetFlags()[1] = other.fieldSetFlags()[1];
       }
       if (isValidValue(fields()[2], other.value)) {
         this.value = data().deepCopy(fields()[2].schema(), other.value);
-        fieldSetFlags()[2] = true;
+        fieldSetFlags()[2] = other.fieldSetFlags()[2];
       }
     }
 
@@ -210,7 +243,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
      * @param other The existing instance to copy.
      */
     private Builder(org.opentsx.data.model.Event2 other) {
-            super(SCHEMA$);
+      super(SCHEMA$);
       if (isValidValue(fields()[0], other.timestamp)) {
         this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
         fieldSetFlags()[0] = true;
@@ -232,6 +265,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     public java.lang.Long getTimestamp() {
       return timestamp;
     }
+
 
     /**
       * Sets the value of the 'timestamp' field.
@@ -272,6 +306,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
       return uri;
     }
 
+
     /**
       * Sets the value of the 'uri' field.
       * @param value The value of 'uri'.
@@ -310,6 +345,7 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     public java.lang.Double getValue() {
       return value;
     }
+
 
     /**
       * Sets the value of the 'value' field.
@@ -351,6 +387,8 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
         record.uri = fieldSetFlags()[1] ? this.uri : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.value = fieldSetFlags()[2] ? this.value : (java.lang.Double) defaultValue(fields()[2]);
         return record;
+      } catch (org.apache.avro.AvroMissingFieldException e) {
+        throw e;
       } catch (java.lang.Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);
       }
@@ -375,4 +413,107 @@ public class Event2 extends org.apache.avro.specific.SpecificRecordBase implemen
     READER$.read(this, SpecificData.getDecoder(in));
   }
 
+  @Override protected boolean hasCustomCoders() { return true; }
+
+  @Override public void customEncode(org.apache.avro.io.Encoder out)
+    throws java.io.IOException
+  {
+    if (this.timestamp == null) {
+      out.writeIndex(0);
+      out.writeNull();
+    } else {
+      out.writeIndex(1);
+      out.writeLong(this.timestamp);
+    }
+
+    if (this.uri == null) {
+      out.writeIndex(0);
+      out.writeNull();
+    } else {
+      out.writeIndex(1);
+      out.writeString(this.uri);
+    }
+
+    if (this.value == null) {
+      out.writeIndex(0);
+      out.writeNull();
+    } else {
+      out.writeIndex(1);
+      out.writeDouble(this.value);
+    }
+
+  }
+
+  @Override public void customDecode(org.apache.avro.io.ResolvingDecoder in)
+    throws java.io.IOException
+  {
+    org.apache.avro.Schema.Field[] fieldOrder = in.readFieldOrderIfDiff();
+    if (fieldOrder == null) {
+      if (in.readIndex() != 1) {
+        in.readNull();
+        this.timestamp = null;
+      } else {
+        this.timestamp = in.readLong();
+      }
+
+      if (in.readIndex() != 1) {
+        in.readNull();
+        this.uri = null;
+      } else {
+        this.uri = in.readString(this.uri instanceof Utf8 ? (Utf8)this.uri : null);
+      }
+
+      if (in.readIndex() != 1) {
+        in.readNull();
+        this.value = null;
+      } else {
+        this.value = in.readDouble();
+      }
+
+    } else {
+      for (int i = 0; i < 3; i++) {
+        switch (fieldOrder[i].pos()) {
+        case 0:
+          if (in.readIndex() != 1) {
+            in.readNull();
+            this.timestamp = null;
+          } else {
+            this.timestamp = in.readLong();
+          }
+          break;
+
+        case 1:
+          if (in.readIndex() != 1) {
+            in.readNull();
+            this.uri = null;
+          } else {
+            this.uri = in.readString(this.uri instanceof Utf8 ? (Utf8)this.uri : null);
+          }
+          break;
+
+        case 2:
+          if (in.readIndex() != 1) {
+            in.readNull();
+            this.value = null;
+          } else {
+            this.value = in.readDouble();
+          }
+          break;
+
+        default:
+          throw new java.io.IOException("Corrupt ResolvingDecoder.");
+        }
+      }
+    }
+  }
 }
+
+
+
+
+
+
+
+
+
+

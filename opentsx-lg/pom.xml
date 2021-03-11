@@ -9,13 +9,40 @@
         <version>3.0.0</version>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
 
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.opentsx</groupId>
     <name>opentsx-lg</name>
     <artifactId>opentsx-lg</artifactId>
     <version>3.0.1</version>
 
+
+    <properties>
+
+        <avro.version>1.10.0</avro.version>
+        <kafka.avro.serializer.version>5.3.3</kafka.avro.serializer.version>
+        <kafka.version>2.5.0</kafka.version>
+
+        <influxdbClient.version>2.20</influxdbClient.version>
+
+        <confluent.version>5.5.1</confluent.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jcuda.jcudaVersion>0.8.0</jcuda.jcudaVersion>
+
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+    </properties>
+
     <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-log4j-appender -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-log4j-appender</artifactId>
+            <version>2.6.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.opentsx</groupId>
@@ -24,8 +51,27 @@
         </dependency>
 
         <dependency>
+
             <groupId>org.opentsx</groupId>
             <artifactId>opentsx-core</artifactId>
+            <version>3.0.0</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+
+        </dependency>
+
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-connectors</artifactId>
             <version>3.0.0</version>
         </dependency>
 
@@ -33,6 +79,12 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-streams-avro-serde</artifactId>
+            <version>5.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
             <version>5.5.1</version>
         </dependency>
 
@@ -60,15 +112,45 @@
             <version>${kafka.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.jfree/jfreechart -->
         <dependency>
-            <groupId>org.jfree</groupId>
-            <artifactId>jfreechart</artifactId>
-            <version>1.0.19</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.12.1</version>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!--mainClass>org.opentsx.lg.EventFlowAnalysisConsumer</mainClass-->
+                    <arguments>
+                        <argument>argument1</argument>
+                    </arguments>
+                    <systemProperties>
+                        <systemProperty>
+                            <key>myproperty</key>
+                            <value>myvalue</value>
+                        </systemProperty>
+
+                    </systemProperties>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 
 
@@ -80,7 +162,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.2.4</version>
                         <executions>
                             <execution>
                                 <phase>package</phase>
@@ -113,6 +195,8 @@
                 </plugins>
             </build>
         </profile>
+
+
         <profile>
             <id>Docker</id>
             <build>
@@ -120,7 +204,7 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <version>0.33.0</version>
+                        <version>0.34.1</version>
                         <executions>
                             <execution>
                                 <id>start</id>
@@ -136,10 +220,14 @@
                             <images>
 
                                 <image>
-
                                     <alias>OpenTSx-DataGenerator</alias>
                                     <name>opentsx/time-series-generator:${project.version}</name>
                                     <build>
+                                        <tags>
+                                            <tag>latest</tag>
+                                            <tag>${project.version}</tag>
+                                        </tags>
+                                        <dockerFileDir>core-tool-image</dockerFileDir>
                                         <from>confluentinc/cp-base</from>
                                         <assembly>
                                             <name>opentsx-lg</name>
@@ -181,6 +269,7 @@
                                             <OPENTSX_TOPIC_MAP_FILE_NAME>/opentsx-lg/config/topiclist.def</OPENTSX_TOPIC_MAP_FILE_NAME>
                                             <OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>/opentsx-lg/config/ccloud.props</OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>
                                             <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
+                                            <DISPLAY>:99</DISPLAY>
                                         </env>
                                     </build>
                                 </image>

@@ -12,7 +12,7 @@ package org.opentsx.algorithms.ris.experimental;
  */
 
 import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.MRT;

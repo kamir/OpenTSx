@@ -29,12 +29,24 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kafka.version>2.3.0</kafka.version>
+        <kafka.version>2.5.0</kafka.version>
         <slf4j.version>1.7.7</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
     </properties>
 
     <repositories>
+
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+
         <repository>
             <id>apache.snapshots</id>
             <name>Apache Development Snapshot Repository</name>
@@ -46,6 +58,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+
     </repositories>
 
     <!--
@@ -157,17 +170,17 @@
             </exclusions>
 
         </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-streams-avro-serde</artifactId>
-            <version>5.5.0</version>
-            <scope>compile</scope>
+            <version>5.3.1</version>
         </dependency>
+
         <dependency>
             <groupId>org.opentsx</groupId>
             <artifactId>opentsx-lg</artifactId>
             <version>3.0.1</version>
-            <scope>compile</scope>
         </dependency>
 
     </dependencies>

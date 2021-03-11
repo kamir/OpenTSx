@@ -3,7 +3,7 @@
  */
 package org.opentsx.algorithms.statistics.logbinning;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.loader.util.LineFilter;
 import org.opentsx.data.loader.MessreihenLoader;
 import org.opentsx.data.series.TimeSeriesObject;

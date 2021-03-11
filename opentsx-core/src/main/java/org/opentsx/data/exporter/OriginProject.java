@@ -5,8 +5,8 @@
  */
 package org.opentsx.data.exporter;
 
-import org.semanpix.chart.simple.MultiChart;
-import org.semanpix.chart.simple.MyXYPlot;
+import org.opentsx.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MyXYPlot;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import javax.swing.*;

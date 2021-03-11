@@ -15,7 +15,7 @@ import org.apache.kafka.streams.kstream.*;
 import org.opentsx.data.model.Event;
 
 import org.opentsx.tsa.rng.ReferenceDataset;
-import org.opentsx.util.OpenTSxClusterLink;
+import org.opentsx.kafkautil.OpenTSxClusterLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +29,7 @@ public class TSAExample1 {
 
   private static long   experiment_duration = 30000; // ms (-1 no limit)
   private static String EXPERIMENT_TAG = ReferenceDataset.EXPERIMENT__TAG;
+
   static MessageDigest md = null;
 
   static Properties props = null;
@@ -104,8 +105,11 @@ public class TSAExample1 {
 
     KStream<String, Event> my_events = builder.stream("OpenTSx_Events", Consumed.with( stringSerde1, valueSpecificAvroSerde));
 
-    my_events = my_events.mapValues( (v) -> getCompactedEvent(v) );
+    // this is a simple masking transformation
+    KStream<String, Event> my_events2 = my_events.mapValues( (v) -> getCompactedEvent(v) );
+
     my_events.to("EVENT_DATA_TRAFO_" + EXPERIMENT_TAG, Produced.with( stringSerde2, valueSpecificAvroSerde) ) ;
+
     my_events.print(Printed.<String, Event>toSysOut().withLabel("[EVENT_DATA]"));
 
     Topology topology = builder.build();
@@ -133,6 +137,7 @@ public class TSAExample1 {
   }
 
 
+  // the URI is replaced by a HASH
   private static Event getCompactedEvent(Event e) {
 
     String plaintext = e.getUri().toString();

@@ -4,17 +4,17 @@
 request.timeout.ms=20000
 retry.backoff.ms=500
 
-# key.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 key.serializer=org.apache.kafka.common.serialization.StringSerializer
 value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 
 # Kafka
 bootstrap.servers=pkc-41wq6.eu-west-2.aws.confluent.cloud:9092
 security.protocol=SASL_SSL
-sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule   required username="T77JLNXPKR4CAYRI"   password="/KyBgeX33TeTCGMXNfwWfD1sEsPUJb352tVjgtQllqOf7MvUvb7rnjNH9JIVxg/I";
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule   required username="USER"   password="SECRET";
 ssl.endpoint.identification.algorithm=https
 sasl.mechanism=PLAIN
+
 # Confluent Cloud Schema Registry
 schema.registry.url=https://psrc-4v1qj.eu-central-1.aws.confluent.cloud
 basic.auth.credentials.source=USER_INFO
-schema.registry.basic.auth.user.info=RQUHDT5URAP3LDVJ:kI9hFVGvJcZ5r5tPj28JMjkCIcAGYWXcUdWaHoZxFfccgZ0z3FDDO3vjkx3+xGkm
+schema.registry.basic.auth.user.info=USER:SECRET

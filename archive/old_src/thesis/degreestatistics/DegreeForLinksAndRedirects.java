@@ -3,13 +3,13 @@ package org.opentsx.thesis.degreestatistics;
 
 
 
-import org.semanpix.chart.statistic.MyHistogramm2D;
+import org.opentsx.chart.statistic.MyHistogramm2D;
 import org.opentsx.data.loader.util.IsNotZeroLineSelector;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.JFrame;
-import org.semanpix.chart.panels.ChartPanel3;
+import org.opentsx.chart.panels.ChartPanel3;
 import org.opentsx.data.loader.DataFileTool;
 
 

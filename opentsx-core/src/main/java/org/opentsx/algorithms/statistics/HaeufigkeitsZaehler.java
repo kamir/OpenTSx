@@ -2,7 +2,7 @@
 package org.opentsx.algorithms.statistics;
 
 import org.apache.commons.math3.stat.Frequency;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import java.io.FileWriter;
 import java.io.IOException;

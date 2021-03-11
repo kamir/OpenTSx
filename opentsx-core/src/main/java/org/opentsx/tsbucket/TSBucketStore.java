@@ -1,17 +1,20 @@
 package org.opentsx.tsbucket;
 
-public class TSBucketStore {
+abstract public class TSBucketStore {
 
-    static TSOWriter tsow = new TSOWriter();
-    static TSOReader tsor = new TSOReader();
+    static TSOWriterInterface tsow = null;
 
-    public static TSOWriter getWriter(){
+
+    static TSOReaderInterface tsor = null;
+
+    public static TSOWriterInterface getWriter(){
         return tsow;
     };
 
-    public static TSOReader getReader() {
+    public static TSOReaderInterface getReader() {
         return tsor;
     }
+
 
 }
 

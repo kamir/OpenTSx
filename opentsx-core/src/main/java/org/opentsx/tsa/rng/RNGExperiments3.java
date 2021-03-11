@@ -5,9 +5,7 @@
  */
 package org.opentsx.tsa.rng;
 
-import org.semanpix.chart.simple.MultiChart;
-import org.opentsx.core.TSBucket;
-import org.opentsx.tsbucket.TSBucketStore;
+import org.opentsx.chart.simple.MultiChart;
 
 /**
  * This application reads a time series bucket from a TSBucketStore.<br/>
@@ -18,7 +16,7 @@ public class RNGExperiments3
     public static void main(String args[])
     {
 
-        TSBucket tsb = TSBucketStore.getReader().loadBucket_Cassandra("ks1", "tsb");
+        //TSBucket tsb = TSBucketStore.getReader().loadBucket_Cassandra("ks1", "tsb");
 
         String title = "RNGComparison TSB";
         String tx = "t";
@@ -26,7 +24,7 @@ public class RNGExperiments3
 
         MultiChart.setSmallFont();
 
-        MultiChart.open(tsb.getBucketData(), title, tx, ty, false);
+        //MultiChart.open(tsb.getBucketData(), title, tx, ty, false);
 
 
     }

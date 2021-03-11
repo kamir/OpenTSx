@@ -11,8 +11,8 @@ package org.opentsx.algorithms.ris;
  * - Anzeige der Daten für einzelne Zeit-Reihen
  */
 
-import org.semanpix.chart.panels.MessreiheWindow3Frame;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.panels.MessreiheWindow3Frame;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.exporter.OriginProject;
 import java.io.FileWriter;

@@ -23,7 +23,7 @@ package org.opentsx.generators;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;

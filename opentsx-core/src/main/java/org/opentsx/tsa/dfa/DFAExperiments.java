@@ -5,8 +5,8 @@
  */
 package org.opentsx.tsa.dfa;
 
-import org.semanpix.chart.simple.MultiChart;
-import org.semanpix.chart.simple.SigmaFilter;
+import org.opentsx.chart.simple.MultiChart;
+import org.opentsx.chart.simple.SigmaFilter;
 import org.opentsx.data.generator.TestDataFactory;
 import org.opentsx.data.exporter.OriginProject;
 import org.opentsx.data.series.TimeSeriesObject;

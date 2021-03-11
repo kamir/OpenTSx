@@ -12,9 +12,9 @@
    		      "name": "Observation",
    		      "type": "record",
    		      "fields": [
-   	              {"name": "timestamp", "default": null, "type": ["null","long"]},
-   	              {"name": "uri", "default": null, "type": ["null","string"], "doc" : "The URI for additional information about unit of measurement."},
-   	              {"name": "value", "default": null, "type": ["null","double"]}
+   	              {"name": "timestamp", "type": "long"},
+   	              {"name": "uri", "type": "string", "doc" : "The URI for additional information about unit of measurement."},
+   	              {"name": "value", "type": "double"}
    	          ]
    	        }
              }
