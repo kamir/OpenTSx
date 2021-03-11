@@ -6,6 +6,10 @@ klatency.producer.ziterations=1000
 klatency.consumer.giveUp=1000
 klatency.consumer.nrOfSamples=1000
 
+klatency.request_topic=latency_benchmark_request
+klatency.response_topic=latency_benchmark_response
+klatency.processing.delay.ms=50
+
 request.timeout.ms=2000
 
 retry.backoff.ms=500
