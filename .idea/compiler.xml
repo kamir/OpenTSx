@@ -16,6 +16,7 @@
         <module name="opentsx-ksql-app" />
         <module name="opentsx-processors" />
         <module name="opentsx-connectors" />
+        <module name="opentsx-hive-udf" />
         <module name="opentsx-store-cassandra" />
         <module name="opentsx-store-opentsdb" />
         <module name="kafka-streams-tsa" />
