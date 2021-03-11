@@ -10,7 +10,7 @@ package org.opentsx.app.bucketanalyser;
 
 import org.opentsx.core.SingleRowTSO;
 import org.opentsx.core.TSBucket;
-import org.opentsx.filter.TSBucketFileFilter;
+import org.opentsx.tsbucket.TSBucketFileFilter;
 import java.io.File;
 
 import org.opentsx.experimental.SimpleFilteredBucketTool;

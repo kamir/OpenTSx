@@ -1,7 +1,7 @@
 package org.opentsx.experimental;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;

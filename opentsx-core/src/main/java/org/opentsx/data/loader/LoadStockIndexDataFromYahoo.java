@@ -2,11 +2,6 @@ package org.opentsx.data.loader;
 
 import org.opentsx.app.bucketanalyser.MacroTrackerFrame;
 import org.opentsx.app.bucketanalyser.TSBucketSource;
-import org.opentsx.app.bucketanalyser.TSBucketTransformation;
-import org.semanpix.chart.simple.MultiChart;
-import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.connectors.yahoofin.StockDataLoader2;
-import java.util.Vector;
 
 /**
  *
@@ -56,7 +51,7 @@ public class LoadStockIndexDataFromYahoo {
          * New STOCK MARKET DATA is loaded into a local cache.
          */
         if ( load )
-            StockDataLoader2.loadAndCacheStockTradingDataForYears(YEARS1, column, "MDAX");
+            //StockDataLoader2.loadAndCacheStockTradingDataForYears(YEARS1, column, "MDAX");
         
         MacroTrackerFrame.addSource(TSBucketSource.getSource("Collection"));
 
@@ -86,18 +81,19 @@ public class LoadStockIndexDataFromYahoo {
     }
 
     private static void loadStockDataForYears(String col, int y1, int y2, String label) {
-
+/*
         Vector<TimeSeriesObject> r0 = StockDataLoader2.getRowsForYearFromCache(y1, y2, col, label);
 
         String windowName = "Components_" + label + "_" + col + "_" + y1 + " to " + y2;
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("Collection", windowName, "LOAD"));
 
         MultiChart.open(r0, false, windowName);
+        */
 
     }
 
     private static void loadStockDataForYearsALL(String LABEL, int[] y, int i) {
-
+/*
         Vector<TimeSeriesObject> r0 = StockDataLoader2.concatRowsForYearsFromCache_ALL(y, LABEL, INDEX[i]);
         String windowName = "Components_" + INDEX[i] + "_" + LABEL + "_" + getYearLabel(y);
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("Collection", windowName, "LOAD"));
@@ -112,16 +108,18 @@ public class LoadStockIndexDataFromYahoo {
             }
             ii++;
         }
+        */
+
          
     }
 
     private static void loadStockDataForYears(String LABEL, int[] y, int i) {
-
+/*
         Vector<TimeSeriesObject> r0 = StockDataLoader2.concatRowsForYearsFromCache_4(y, LABEL, INDEX[i]);
         String windowName = "Components_" + INDEX_toLOAD[i] + "_" + LABEL + "_" + getYearLabel(y);
         MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation("Collection", windowName, "LOAD"));
         MultiChart.open(r0, false, windowName);
-
+*/
     }
 
     private static String getYearLabel(int[] ys) {

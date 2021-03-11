@@ -25,26 +25,26 @@ export OPENTSX_SHOW_GUI=false
 #
 # in container: use absolut path
 #
-export OPENTSX_TOPIC_MAP_FILE_NAME=/opentsx-lg/config/topiclist.def
-export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=/opentsx-lg/config/cpl.props
+#export OPENTSX_TOPIC_MAP_FILE_NAME=/opentsx-lg/config/topiclist.def
+#export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=/opentsx-lg/config/cpl.props
 
 #
 # locally with Confluent platform: use relative path
 #
-export OPENTSX_TOPIC_MAP_FILE_NAME=/opentsx-lg/config/topiclist.def
-export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=/opentsx-lg/config/cpl.props
+#export OPENTSX_TOPIC_MAP_FILE_NAME=/opentsx-lg/config/topiclist.def
+#export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=/opentsx-lg/config/cpl.props
 
 #
 # via Maven on MDC: use relative path
 #
-export OPENTSX_TOPIC_MAP_FILE_NAME=config/topiclist.def
-export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=config/cuh.props
+#export OPENTSX_TOPIC_MAP_FILE_NAME=config/topiclist.def
+#export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=config/cuh.props
 
 
 
-mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsDOWN"
-mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsUP"
-mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsCHECK"
+#mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsDOWN"
+#mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsUP"
+#mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsCHECK"
 
 #
 # Main class: org.opentsx.lg.TSDataSineWaveGenerator
@@ -55,10 +55,11 @@ mvn exec:java -Dexec.mainClass="org.opentsx.util.topicmanager.TopicsCHECK"
 ### <OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>/opentsx-lg/config/mdc_c1.props</OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME>
 ### <OPENTSX_SHOW_GUI>false</OPENTSX_SHOW_GUI>
 #
-docker run opentsx/time-series-generator:3.0.0
+#docker run opentsx/time-series-generator:3.0.0
 #
 # !!! Warning !!! this needs also additional iformation for networking with remote hosts
 #
+
 
 
 

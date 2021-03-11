@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+
+        <Console name="STDOUT">
+            <PatternLayout pattern="%C{1.} %m %level MDC%X%n"/>
+        </Console>
+
+        <Kafka name="KAFKA" topic="kping_logs">
+            <PatternLayout pattern="%date %message"/>
+            <Property name="bootstrap.servers">localhost:9092</Property>
+        </Kafka>
+
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="KAFKA"/>
+        </Root>
+        <Logger name="org.opentsx" level="TRACE" />
+    </Loggers>
+</Configuration>

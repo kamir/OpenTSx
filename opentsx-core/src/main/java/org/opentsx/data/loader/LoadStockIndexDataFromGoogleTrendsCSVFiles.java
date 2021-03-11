@@ -8,7 +8,7 @@ package org.opentsx.data.loader;
 import org.opentsx.app.bucketanalyser.MacroTrackerFrame;
 import org.opentsx.app.bucketanalyser.TSBucketSource;
 import org.opentsx.app.bucketanalyser.TSBucketTransformation;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import java.io.BufferedReader;

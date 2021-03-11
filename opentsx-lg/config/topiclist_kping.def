@@ -1,0 +1,4 @@
+#topic_name,nr_partittions,replication_factor,min_isr
+OpenTSx_Events,1,1,1
+OpenTSx_Episodes,1,1,1
+kping_logs,1,1,1

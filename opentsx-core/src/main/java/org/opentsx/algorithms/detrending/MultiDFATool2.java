@@ -1,6 +1,6 @@
 package org.opentsx.algorithms.detrending;
 
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.generator.TestDataFactory;
 import org.opentsx.data.series.TimeSeriesObject;

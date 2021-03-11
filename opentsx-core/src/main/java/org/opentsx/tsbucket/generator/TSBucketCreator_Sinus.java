@@ -10,7 +10,6 @@
  */
 package org.opentsx.tsbucket.generator;
 
-import org.opentsx.connectors.kafka.TSOProducer;
 import org.opentsx.core.TSData;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.core.TSBucket;

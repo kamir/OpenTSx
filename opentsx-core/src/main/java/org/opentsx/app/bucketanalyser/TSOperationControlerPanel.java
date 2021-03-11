@@ -10,8 +10,8 @@ import org.opentsx.tsbucket.metadata.TSStoreDescriptor;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
-import org.semanpix.chart.simple.MultiChart;
-import org.semanpix.chart.simple.SigmaFilter;
+import org.opentsx.chart.simple.MultiChart;
+import org.opentsx.chart.simple.SigmaFilter;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;

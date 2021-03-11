@@ -13,8 +13,8 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class Event extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 1995178655191232423L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Event\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"uri\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"double\"}]}");
+  private static final long serialVersionUID = 3036419788307895622L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Event\",\"namespace\":\"org.opentsx.data.model\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"uri\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"double\"},{\"name\":\"producer_timestamp\",\"type\":\"long\"},{\"name\":\"consumer_timestamp\",\"type\":\"long\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -54,6 +54,8 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
    private long timestamp;
    private java.lang.CharSequence uri;
    private double value;
+   private long producer_timestamp;
+   private long consumer_timestamp;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -67,11 +69,15 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
    * @param timestamp The new value for timestamp
    * @param uri The new value for uri
    * @param value The new value for value
+   * @param producer_timestamp The new value for producer_timestamp
+   * @param consumer_timestamp The new value for consumer_timestamp
    */
-  public Event(java.lang.Long timestamp, java.lang.CharSequence uri, java.lang.Double value) {
+  public Event(java.lang.Long timestamp, java.lang.CharSequence uri, java.lang.Double value, java.lang.Long producer_timestamp, java.lang.Long consumer_timestamp) {
     this.timestamp = timestamp;
     this.uri = uri;
     this.value = value;
+    this.producer_timestamp = producer_timestamp;
+    this.consumer_timestamp = consumer_timestamp;
   }
 
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -81,6 +87,8 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
     case 0: return timestamp;
     case 1: return uri;
     case 2: return value;
+    case 3: return producer_timestamp;
+    case 4: return consumer_timestamp;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -92,6 +100,8 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
     case 0: timestamp = (java.lang.Long)value$; break;
     case 1: uri = (java.lang.CharSequence)value$; break;
     case 2: value = (java.lang.Double)value$; break;
+    case 3: producer_timestamp = (java.lang.Long)value$; break;
+    case 4: consumer_timestamp = (java.lang.Long)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -145,6 +155,38 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
   }
 
   /**
+   * Gets the value of the 'producer_timestamp' field.
+   * @return The value of the 'producer_timestamp' field.
+   */
+  public java.lang.Long getProducerTimestamp() {
+    return producer_timestamp;
+  }
+
+  /**
+   * Sets the value of the 'producer_timestamp' field.
+   * @param value the value to set.
+   */
+  public void setProducerTimestamp(java.lang.Long value) {
+    this.producer_timestamp = value;
+  }
+
+  /**
+   * Gets the value of the 'consumer_timestamp' field.
+   * @return The value of the 'consumer_timestamp' field.
+   */
+  public java.lang.Long getConsumerTimestamp() {
+    return consumer_timestamp;
+  }
+
+  /**
+   * Sets the value of the 'consumer_timestamp' field.
+   * @param value the value to set.
+   */
+  public void setConsumerTimestamp(java.lang.Long value) {
+    this.consumer_timestamp = value;
+  }
+
+  /**
    * Creates a new Event RecordBuilder.
    * @return A new Event RecordBuilder
    */
@@ -179,6 +221,8 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
     private long timestamp;
     private java.lang.CharSequence uri;
     private double value;
+    private long producer_timestamp;
+    private long consumer_timestamp;
 
     /** Creates a new Builder */
     private Builder() {
@@ -203,6 +247,14 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
         this.value = data().deepCopy(fields()[2].schema(), other.value);
         fieldSetFlags()[2] = true;
       }
+      if (isValidValue(fields()[3], other.producer_timestamp)) {
+        this.producer_timestamp = data().deepCopy(fields()[3].schema(), other.producer_timestamp);
+        fieldSetFlags()[3] = true;
+      }
+      if (isValidValue(fields()[4], other.consumer_timestamp)) {
+        this.consumer_timestamp = data().deepCopy(fields()[4].schema(), other.consumer_timestamp);
+        fieldSetFlags()[4] = true;
+      }
     }
 
     /**
@@ -222,6 +274,14 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
       if (isValidValue(fields()[2], other.value)) {
         this.value = data().deepCopy(fields()[2].schema(), other.value);
         fieldSetFlags()[2] = true;
+      }
+      if (isValidValue(fields()[3], other.producer_timestamp)) {
+        this.producer_timestamp = data().deepCopy(fields()[3].schema(), other.producer_timestamp);
+        fieldSetFlags()[3] = true;
+      }
+      if (isValidValue(fields()[4], other.consumer_timestamp)) {
+        this.consumer_timestamp = data().deepCopy(fields()[4].schema(), other.consumer_timestamp);
+        fieldSetFlags()[4] = true;
       }
     }
 
@@ -340,6 +400,82 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
       return this;
     }
 
+    /**
+      * Gets the value of the 'producer_timestamp' field.
+      * @return The value.
+      */
+    public java.lang.Long getProducerTimestamp() {
+      return producer_timestamp;
+    }
+
+    /**
+      * Sets the value of the 'producer_timestamp' field.
+      * @param value The value of 'producer_timestamp'.
+      * @return This builder.
+      */
+    public org.opentsx.data.model.Event.Builder setProducerTimestamp(long value) {
+      validate(fields()[3], value);
+      this.producer_timestamp = value;
+      fieldSetFlags()[3] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'producer_timestamp' field has been set.
+      * @return True if the 'producer_timestamp' field has been set, false otherwise.
+      */
+    public boolean hasProducerTimestamp() {
+      return fieldSetFlags()[3];
+    }
+
+
+    /**
+      * Clears the value of the 'producer_timestamp' field.
+      * @return This builder.
+      */
+    public org.opentsx.data.model.Event.Builder clearProducerTimestamp() {
+      fieldSetFlags()[3] = false;
+      return this;
+    }
+
+    /**
+      * Gets the value of the 'consumer_timestamp' field.
+      * @return The value.
+      */
+    public java.lang.Long getConsumerTimestamp() {
+      return consumer_timestamp;
+    }
+
+    /**
+      * Sets the value of the 'consumer_timestamp' field.
+      * @param value The value of 'consumer_timestamp'.
+      * @return This builder.
+      */
+    public org.opentsx.data.model.Event.Builder setConsumerTimestamp(long value) {
+      validate(fields()[4], value);
+      this.consumer_timestamp = value;
+      fieldSetFlags()[4] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'consumer_timestamp' field has been set.
+      * @return True if the 'consumer_timestamp' field has been set, false otherwise.
+      */
+    public boolean hasConsumerTimestamp() {
+      return fieldSetFlags()[4];
+    }
+
+
+    /**
+      * Clears the value of the 'consumer_timestamp' field.
+      * @return This builder.
+      */
+    public org.opentsx.data.model.Event.Builder clearConsumerTimestamp() {
+      fieldSetFlags()[4] = false;
+      return this;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Event build() {
@@ -348,6 +484,8 @@ public class Event extends org.apache.avro.specific.SpecificRecordBase implement
         record.timestamp = fieldSetFlags()[0] ? this.timestamp : (java.lang.Long) defaultValue(fields()[0]);
         record.uri = fieldSetFlags()[1] ? this.uri : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.value = fieldSetFlags()[2] ? this.value : (java.lang.Double) defaultValue(fields()[2]);
+        record.producer_timestamp = fieldSetFlags()[3] ? this.producer_timestamp : (java.lang.Long) defaultValue(fields()[3]);
+        record.consumer_timestamp = fieldSetFlags()[4] ? this.consumer_timestamp : (java.lang.Long) defaultValue(fields()[4]);
         return record;
       } catch (java.lang.Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

@@ -2,7 +2,7 @@ package org.opentsx.algorithms.ris.experimental.agh;
 
 import org.opentsx.data.loader.MessreihenLoader;
 import org.opentsx.data.series.TimeSeriesObject;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.exporter.MeasurementTable;
 import java.io.File;
 import java.io.FileInputStream;

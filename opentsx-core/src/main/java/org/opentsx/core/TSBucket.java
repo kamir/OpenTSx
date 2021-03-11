@@ -18,10 +18,7 @@
  */
 package org.opentsx.core;
 
-import ch.qos.logback.core.db.dialect.SybaseSqlAnywhereDialect;
-import com.datastax.driver.core.*;
 import com.google.gson.Gson;
-import org.opentsx.connectors.cassandra.CassandraConnector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -33,9 +30,8 @@ import org.opentsx.data.series.TimeSeriesObject;
 
 import org.opentsx.generators.LongTermCorrelationSeriesGenerator;
 import org.opentsx.generators.TSGenerator;
-import org.opentsx.tsbucket.KafkaConnector;
-import org.opentsx.tsbucket.TSBASE;
-import org.opentsx.connectors.wikipedia.AccessFileFilter;
+
+import org.opentsx.tsbucket.folderStore.TSBASE;
 import org.opentsx.algorithms.ris.experimental.TSPropertyTester;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
@@ -73,7 +69,7 @@ public class TSBucket {
     public boolean isProcessed = false;
 
     int[] ids = null;
-    java.util.Vector<TimeSeriesObject> bucketData = new java.util.Vector<TimeSeriesObject>();
+    public java.util.Vector<TimeSeriesObject> bucketData = new java.util.Vector<TimeSeriesObject>();
 
     // record mode is a domain specific feature from WIKIPEDIA analysis.
     static String recoderIdMode = "counter";
@@ -225,7 +221,7 @@ public class TSBucket {
         // write a SequenceFile form a Vector
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
 
-        File[] liste = f.listFiles(new AccessFileFilter());
+        File[] liste = f.listFiles();
         System.out.println(liste.length);
         System.out.println("--> process bucket : " + f.getAbsolutePath() + " (" + liste.length + ")");
 
@@ -792,8 +788,8 @@ public class TSBucket {
 
     public void flush() {
         try {
-            writer.hflush();
-        } catch (IOException ex) {
+            // writer.hflush();
+        } catch (Exception ex) {
             Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -1127,87 +1123,8 @@ public class TSBucket {
         return wc;
     }
 
-    public void loadFromCassandra(CassandraConnector cc, String keyspace, String tn, TSOperation tst) {
-
-        Session session = cc.getSession();
-
-        System.out.println("Select ALL TSOs ...");
-        long t1 = System.currentTimeMillis();
-        ResultSet rs = session.execute("select id, tsdata from "+ keyspace + "." + tn);
-        System.out.println("Got rows (without fetching) = " + rs.getAvailableWithoutFetching());
-        int i2 = 0;
-        long numBytes2 = 0;
-        // example use of the data: count rows and total bytes returned.
-        Gson gson = new Gson();
-
-        int i = 0;
-        for (Row rowN : rs)
-        {
-            i++;
-            numBytes2 += rowN.toString().length();
-            // System.out.println( rowN.get(0, String.class ) + " -> " + rowN.get(1, String.class ) );
-            String s = rowN.get(1, String.class );
-            String key = rowN.get(0, String.class );
 
 
-            // **** SERIALIZATION TO JSON fails !!!
-
-            String vecS = rowN.get(1,String.class);
-
-            TSData data = gson.fromJson( vecS, TSData.class );
-            // System.out.println(data);
-
-            String descr = "(" + i + "){" + keyspace + "." + tn + "}\n[" + key.toString() + "]";
-            this.processLog.append( descr + "\n" );
-
-            TimeSeriesObject mr = new TimeSeriesObject();
-            mr.setDescription( descr );
-            mr.setLabel(key);
-
-            NamedVector vector = new NamedVector(new DenseVector(data.getData()), data.label);
-
-            int c = 0;
-            while (c < vector.size()) {
-
-                double value = vector.get(c);
-                //System.out.println( c + "\t" + value  );
-
-                mr.addValue(value);
-
-                c++;
-            }
-            try {
-
-                /*
-
-                TimeSeriesObject m = null;
-                if (tst != null) {
-                    m = tst.processReihe(fw, mr, fwe);
-                }
-
-                 */
-
-            }
-            catch (Exception ex) {
-                Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            if (inMEM) {
-                bucketData.add(mr);
-            }
-
-        }
-
-        long t2 = System.currentTimeMillis();
-        long time = t2-t1;
-
-        System.out.println( "Returned rows = " + i + ", total bytes = " + numBytes2 + ", in time = " + time );
-
-        System.out.println( "--> nr of TSOs     : " + i + " # " + bucketData.size() );
-
-        System.out.println( "TSBucket load time (from Cassandra) =>  " + time + " ms");
-
-    }
 
     public void clearProcessingLog() {
         this.processLog = new StringBuffer();
@@ -1217,32 +1134,8 @@ public class TSBucket {
         return this.processLog.toString();
     }
 
-    public void loadFromKafka(KafkaConnector kc, String topicname, int z) {
-
-        System.out.println("Read ALL TSOs ...");
-
-        long t1 = System.currentTimeMillis();
 
 
-        // example use of the data: count rows and total bytes returned.
-
-        int i = 0;
-        int numBytes2 = 0;
-
-        // Consume the data ...
-        kc.processTopic( this, z );
-
-        long t2 = System.currentTimeMillis();
-        long time = t2-t1;
-
-        System.out.println( "Returned rows = " + i + ", total bytes = " + numBytes2 + ", in time = " + time );
-
-        System.out.println( "--> nr of TSOs     : " + i + " # " + bucketData.size() );
-
-        System.out.println( "TSBucket load time (from Kafka) =>  " + time + " ms");
-
-
-    }
 
     Gson gson = new Gson();
 

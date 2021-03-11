@@ -36,8 +36,8 @@
         <slf4j.version>1.7.7</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
 
-        <kafka.version>2.4.0</kafka.version>
-        <confluent.version>5.4.0</confluent.version>
+        <kafka.version>2.5.0</kafka.version>
+        <confluent.version>5.5.1</confluent.version>
 
     </properties>
 
@@ -176,7 +176,7 @@
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-common -->
-        <dependency>
+        <!--dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
             <version>3.2.1</version>
@@ -192,20 +192,13 @@
                 </exclusion>
             </exclusions>
 
-        </dependency>
+        </dependency-->
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams-test-utils</artifactId>
             <version>${kafka.version}</version>
             <scope>test</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.confluent/kafka-streams-avro-serde -->
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-streams-avro-serde</artifactId>
-            <version>${confluent.version}</version>
         </dependency>
 
         <dependency>

@@ -9,7 +9,7 @@ import org.opentsx.app.bucketanalyser.MacroTrackerFrame;
 import org.opentsx.app.bucketanalyser.TSBucketSource;
 import org.opentsx.app.bucketanalyser.TSBucketTransformation;
 import org.opentsx.experimental.SimpleBucketTool;
-import org.semanpix.chart.simple.MultiChart;
+import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.tsbucket.generator.TSBucketCreator_GrayImageColor;
 import org.opentsx.tsbucket.generator.TSBucketCreator_WordLength;

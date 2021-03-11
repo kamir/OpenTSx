@@ -9,7 +9,7 @@
  */
 package org.opentsx.algorithms.eventsynchronisation.experiments;
 
-import org.semanpix.chart.simple.MyXYPlot;
+import org.opentsx.chart.simple.MyXYPlot;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.exporter.OriginProject;

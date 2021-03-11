@@ -5,11 +5,10 @@
  */
 package org.opentsx.tsa.rng;
 
-import org.opentsx.connectors.cassandra.CassandraTool;
+
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.tsbucket.TSBucketStore;
-import org.semanpix.chart.simple.MultiChart;
-import org.semanpix.chart.simple.SigmaFilter;
+import org.opentsx.chart.simple.MultiChart;
+import org.opentsx.chart.simple.SigmaFilter;
 
 import java.util.Locale;
 import java.util.Vector;
@@ -48,7 +47,7 @@ public class RNGReferenceDSCreator
     public static void main(String args[])
     {
 
-        CassandraTool.main(null);
+        // CassandraTool.main(null);
 
         Locale.setDefault(new Locale("en", "USA"));
 
@@ -229,7 +228,7 @@ public class RNGReferenceDSCreator
                 }
 
                 try {
-                    TSBucketStore.getWriter().persistBucket_Cassandra(tsos, title, ReferenceDataset.CASSANDRA_TN );
+                    // TSBucketStore.getWriter().persistBucket_Cassandra(tsos, title, ReferenceDataset.CASSANDRA_TN );
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -237,9 +236,9 @@ public class RNGReferenceDSCreator
 
                 try {
 
-                    TSBucketStore.getWriter().persistBucket_Kafka(tsos, title, ReferenceDataset.topicname );
+                    //TSBucketStore.getWriter().persistBucket_Kafka(tsos, title, ReferenceDataset.topicname );
 
-                    TSBucketStore.getWriter().persistEvents_Kafka(tsos, title, ReferenceDataset.topicname );
+                    //TSBucketStore.getWriter().persistEvents_Kafka(tsos, title, ReferenceDataset.topicname );
 
                 }
                 catch (Exception e) {
