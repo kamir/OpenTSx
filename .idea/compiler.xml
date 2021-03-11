@@ -6,15 +6,16 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="demo-udf" />
         <module name="opentsx-predict" />
-        <module name="opentsx-processors" />
         <module name="opentsx-data" />
-        <module name="opentsx-kafka-streams-tsa" />
+        <module name="OpenTSx" />
         <module name="opentsx-lg" />
         <module name="opentsx-core" />
-        <module name="OpenTSx" />
-        <module name="demo-udf" />
         <module name="opentsx-ksql-app" />
+        <module name="opentsx-kafka-streams-tsa" />
+        <module name="opentsx-processors" />
+        <module name="kafka-streams-tsa" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
