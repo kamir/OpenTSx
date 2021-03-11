@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-latency-test-03-2021/01_prep_link_to_ccloud_for_local_components.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-latency-test-03-2021/10_demo.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-latency-test-03-2021/20_ksql-scripts.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-latency-test-03-2021/Prepare a Kafka DEMO for OpenTSx.docx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/ccloud-latency-test-03-2021/Prepare a Kafka DEMO for OpenTSx.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-clusters/inhouse-mrc/.env" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -57,7 +65,6 @@
         <option name="createModuleGroups" value="true" />
         <option name="downloadDocsAutomatically" value="true" />
         <option name="downloadSourcesAutomatically" value="true" />
-        <option name="importAutomatically" value="true" />
         <option name="lookForNested" value="true" />
       </MavenImportingSettings>
     </option>
@@ -69,6 +76,10 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="DatabaseDriversLRU" value="cassandra" />
@@ -79,6 +90,8 @@
     <property name="RequestMappingsPanelWidth0" value="75" />
     <property name="RequestMappingsPanelWidth1" value="75" />
     <property name="RequestMappingsPanelWidth2" value="75" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="TF_FMT" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -89,13 +102,14 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-clusters" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-app-demos" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.path.for.package.tslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="nodejs_package_manager_path" value="npm" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
@@ -106,26 +120,12 @@
     <key name="CreateClassDialog.RecentsKey">
       <recent name="org.opentsx.tsbucket" />
     </key>
-    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
-      <recent name="org.opentsx.util" />
-      <recent name="udf" />
-      <recent name="" />
-      <recent name="org.apache.hadoopts" />
-      <recent name="org.opentsx" />
-    </key>
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/opentsx-clusters" />
       <recent name="$PROJECT_DIR$/opentsx-app-demos" />
+      <recent name="$PROJECT_DIR$/opentsx-clusters" />
       <recent name="$PROJECT_DIR$/config/private" />
       <recent name="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf" />
       <recent name="$PROJECT_DIR$" />
-    </key>
-    <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="org.opentsx.tsa" />
-      <recent name="org.opentsx.lg" />
-      <recent name="" />
-      <recent name="org.opentsx.kstreams.tsa" />
-      <recent name="org.opentsx.connectors.kafka" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/docs" />
@@ -134,22 +134,26 @@
       <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx" />
       <recent name="$PROJECT_DIR$/archive" />
     </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="org.opentsx.util" />
+      <recent name="udf" />
+      <recent name="" />
+      <recent name="org.apache.hadoopts" />
+      <recent name="org.opentsx" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="org.opentsx.tsa" />
+      <recent name="org.opentsx.lg" />
+      <recent name="" />
+      <recent name="org.opentsx.kstreams.tsa" />
+      <recent name="org.opentsx.connectors.kafka" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="configurationTypes">
       <set>
         <option value="SpringBootApplicationConfigurationType" />
       </set>
-    </option>
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
     </option>
   </component>
   <component name="RunManager" selected="Application.TSAExample1 (1)">
@@ -250,11 +254,11 @@
     <configuration name="Krake-container/Dockerfile" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
       <deployment type="dockerfile">
         <settings>
+          <option name="imageTag" value="krake-latest" />
           <option name="buildCliOptions" value="" />
           <option name="command" value="" />
           <option name="containerName" value="krake-master" />
           <option name="entrypoint" value="" />
-          <option name="imageTag" value="krake-latest" />
           <option name="commandLineOptions" value="" />
           <option name="sourceFilePath" value="opentsx-clusters/Krake-container/Dockerfile" />
         </settings>
@@ -292,6 +296,7 @@
       </serviceView>
     </option>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -408,6 +413,8 @@
       <workItem from="1601310894315" duration="3256000" />
       <workItem from="1601363489484" duration="270000" />
       <workItem from="1601448811510" duration="1771000" />
+      <workItem from="1614186996210" duration="1350000" />
+      <workItem from="1615297082858" duration="2226000" />
     </task>
     <task id="LOCAL-00101" summary="workaround for JAR in gitignore">
       <created>1591772232078</created>
@@ -756,20 +763,19 @@
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />

@@ -3,13 +3,22 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-core" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-core/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-core/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-data" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-data/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-kafka-streams-tsa" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-ksql" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-ksql-app" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-ksql-udf/demo-udf" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-lg" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-lg/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-lg/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-predict" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-predict/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-processors" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-spring-example" charset="UTF-8" />
   </component>
