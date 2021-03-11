@@ -21,8 +21,8 @@ public class RequestResponseAnalysisConsumer {
 
     static Logger log = Logger.getLogger(RequestResponseAnalysisConsumer.class.getName());
 
-    //private final static String TOPIC = LatencyTestEventConsumer.TOPIC_for_response_events_string;
-    private final static String TOPIC = LatencyTestEventProducer.TOPIC_for_request_events_string;
+    private final static String TOPIC = LatencyTestEventConsumer.TOPIC_for_response_events_string;
+    // private final static String TOPIC = LatencyTestEventProducer.TOPIC_for_request_events_string;
 
     static int GIVE_UP = 100;
 
