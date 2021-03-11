@@ -43,4 +43,14 @@ public class LatencyTesterEvent {
     public void trackResultShippedTS() { this.resultShippedTS = System.currentTimeMillis(); };
     public void trackResultReceivedTS() { this.resultReceivedTS = System.currentTimeMillis(); };
 
+    public String showStats() {
+        StringBuffer sb = new StringBuffer();
+        long requestTravelTime = this.receivedTS - this.sendTS;
+        long processingTime = this.processFinishedTS - this.processStartedTS;
+        long responseTravelTime = this.resultReceivedTS - this.resultShippedTS;
+        sb.append( "REQUEST_TT  :" + requestTravelTime + " ms; " );
+        sb.append( "RESPONSE_TT :" + responseTravelTime + " ms; " );
+        sb.append( "Processing  :" + processingTime + " ms; " );
+        return sb.toString();
+    }
 }
