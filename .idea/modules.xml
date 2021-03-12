@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/application-tools/application-tools.iml" filepath="$PROJECT_DIR$/application-tools/application-tools.iml" />
+      <module fileurl="file://$PROJECT_DIR$/opentsx-app-demos/echo-service/echo-service.iml" filepath="$PROJECT_DIR$/opentsx-app-demos/echo-service/echo-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ext-algorithms/ext-algorithms.iml" filepath="$PROJECT_DIR$/ext-algorithms/ext-algorithms.iml" />
       <module fileurl="file://$PROJECT_DIR$/opentsx-cloud-bridge/opentsx-cloud-bridge.iml" filepath="$PROJECT_DIR$/opentsx-cloud-bridge/opentsx-cloud-bridge.iml" />
       <module fileurl="file://$PROJECT_DIR$/opentsx-cv/opentsx-cv.iml" filepath="$PROJECT_DIR$/opentsx-cv/opentsx-cv.iml" />
       <module fileurl="file://$PROJECT_DIR$/opentsx-ext-connectors/opentsx-ext-connectors.iml" filepath="$PROJECT_DIR$/opentsx-ext-connectors/opentsx-ext-connectors.iml" />

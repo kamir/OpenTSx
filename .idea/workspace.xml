@@ -5,9 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/echo-service.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/java/EchoService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/java/EchoServiceConsumer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/java/EchoServiceProducer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/java/model/LatencyTesterEvent.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/resources/app.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/resources/kafka.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/opentsx-app-demos/echo-service/src/main/resources/log4j.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/cpl_iMac.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl_iMac.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/klatency/RequestResponseAnalysisConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/klatency/RequestResponseAnalysisConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/application-tools/application-tools.iml" beforeDir="false" afterPath="$PROJECT_DIR$/application-tools/application-tools.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ext-algorithms/ext-algorithms.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ext-algorithms/ext-algorithms.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ext-connectors/opentsx-ext-connectors.iml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ext-connectors/opentsx-ext-connectors.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-hive-udf/opentsx-hive-udf.iml" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,6 +70,7 @@
       </list>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="1" />
@@ -62,6 +80,7 @@
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
@@ -255,10 +274,7 @@
       <item itemvalue="Application.TSAExample5" />
       <item itemvalue="Application.TSAExample1" />
       <item itemvalue="Application.TSAExample1 (1)" />
-      <item itemvalue="Docker.Krake-container/Dockerfile" />
       <item itemvalue="JUnit.EpisodesProcessorTests" />
-      <item itemvalue="Spring Boot.KafkaDemoApplication" />
-      <item itemvalue="Spring Boot.KafkaDemoApp" />
     </list>
     <recent_temporary>
       <list>
@@ -266,7 +282,6 @@
         <item itemvalue="Application.TSAExample1" />
         <item itemvalue="Application.TSAExample5" />
         <item itemvalue="JUnit.EpisodesProcessorTests" />
-        <item itemvalue="Spring Boot.KafkaDemoApp" />
       </list>
     </recent_temporary>
   </component>

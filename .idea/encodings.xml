@@ -8,6 +8,7 @@
     <file url="file://$PROJECT_DIR$/opentsx-core/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-data" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-data/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/opentsx-hive-udf/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-kafka-streams-tsa" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/resources" charset="UTF-8" />

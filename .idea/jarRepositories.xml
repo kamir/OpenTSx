@@ -12,11 +12,6 @@
       <option name="url" value="https://repo.maven.apache.org/maven2" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="cdh.repo" />
-      <option name="name" value="Cloudera Repositories" />
-      <option name="url" value="https://repository.cloudera.com/artifactory/cloudera-repos" />
-    </remote-repository>
-    <remote-repository>
       <option name="id" value="apache.snapshots" />
       <option name="name" value="Apache Development Snapshot Repository" />
       <option name="url" value="https://repository.apache.org/content/repositories/snapshots/" />
@@ -27,14 +22,9 @@
       <option name="url" value="https://repo1.maven.org/maven2" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="jboss.community" />
-      <option name="name" value="JBoss Community repository" />
-      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="confluent" />
-      <option name="name" value="confluent" />
-      <option name="url" value="http://packages.confluent.io/maven/" />
+      <option name="id" value="confluent-artifactory-central" />
+      <option name="name" value="confluent-artifactory-central" />
+      <option name="url" value="https://confluent.jfrog.io/confluent/maven-public/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="mvn.repo" />
@@ -45,6 +35,36 @@
       <option name="id" value="confluent" />
       <option name="name" value="confluent" />
       <option name="url" value="https://packages.confluent.io/maven/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://confluent.jfrog.io/confluent/maven-public" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="cp.repo" />
+      <option name="name" value="Confluent Repositories" />
+      <option name="url" value="https://packages.confluent.io/maven/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="confluent" />
+      <option name="name" value="confluent" />
+      <option name="url" value="https://confluent.jfrog.io/confluent/maven-public" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="cdh.repo" />
+      <option name="name" value="Cloudera Repositories" />
+      <option name="url" value="https://repository.cloudera.com/artifactory/cloudera-repos" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jboss.community" />
+      <option name="name" value="JBoss Community repository" />
+      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="confluent" />
+      <option name="name" value="confluent" />
+      <option name="url" value="http://packages.confluent.io/maven/" />
     </remote-repository>
   </component>
 </project>
