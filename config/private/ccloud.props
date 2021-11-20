@@ -7,16 +7,17 @@ value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
 
 
 
+########
 
 
-bootstrap.servers=pkc-41wq6.eu-west-2.aws.confluent.cloud:9092
+# Kafka
+bootstrap.servers=pkc-zm3p0.eu-north-1.aws.confluent.cloud:9092
 security.protocol=SASL_SSL
-sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule   required username="KGA4LSFY6GIGF755"   password="2FF7kia5XdBCjwz13ULUFbHOm9N0IPAAAK+/QXwTOoTFBDvf5jUB5zN+dW1nyNYU";
-ssl.endpoint.identification.algorithm=https
-sasl.mechanism=PLAIN
+sasl.mechanisms=PLAIN
+sasl.username=2JMCB3VQUXPPZM7D
+sasl.password=1WiprUIWgGmNAgQV1GW0rQi0S3szeGHDSGTLsQDZ0giMbzXXkQU6MjZlpYgDf6T+
 
-schema.registry.url=https://psrc-4v1qj.eu-central-1.aws.confluent.cloud
-
+# Confluent Cloud Schema Registry
+schema.registry.url=https://psrc-xm8wx.eu-central-1.aws.confluent.cloud
 basic.auth.credentials.source=USER_INFO
-schema.registry.basic.auth.user.info=R2XNPDXWMQBHCJ43:R+Q8VXHS0OUXTrUYAq040gL7O17MKlTmVXbnMUpEnRyBu9icewWIkUdLDfGz1K/e
-
+basic.auth.user.info=QI747SYN7RCNNNI5:4OCvylbx/64yXCEf5UFsY4jMiZ5krg9O80bu3e5R4T2Zm4Bad99PhfVbYmLD60oM
