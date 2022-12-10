@@ -4,10 +4,23 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="">
+    <list default="true" id="eaf8f5d7-660b-48fa-9179-233e2ac9981b" name="Default Changelist" comment="Synch 3 machines for internal demo.">
+      <change afterPath="$PROJECT_DIR$/opentsx-lg/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/cpl_iMac.props" beforeDir="false" afterPath="$PROJECT_DIR$/config/cpl_iMac.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/klatency/RequestResponseAnalysisConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/klatency/RequestResponseAnalysisConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/open-tsx.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/00_prep-cp-local.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/00_prep-cp-local.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/10_demo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-app-demos/meetup-09-2020/10_demo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-connectors/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-connectors/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/math/PolyFit.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx/math/PolyFit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-ksql/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-ksql/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/bin/run_TSG_01.sh" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/bin/run_TSG_01.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/java/org/opentsx/lg/TSDataSineWaveGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-lg/src/main/resources/log4j2.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-lg/src/main/resources/log4j2.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/opentsx-spring-example/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/opentsx-spring-example/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,6 +67,9 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedIndex" value="5" />
+  </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="1" />
   </component>
@@ -83,11 +99,12 @@
     <property name="add_unversioned_files" value="$PROJECT_DIR$/data/out/tsb/TAB_ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/Hadoop.TS.NG/data/out/tsb/ts_bucket.dat&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1b/sensordata.csv&#10;/Users/mkampf/GITHUB.public/OpenTSx/modules/ingest-2-cassandra/data/out/path_1a/sensordata.csv" />
     <property name="android.sdk.path" value="$USER_HOME$/Library/Android/sdk" />
     <property name="aspect.path.notification.shown" value="true" />
+    <property name="dart.analysis.tool.window.visible" value="false" />
     <property name="extract.method.default.visibility" value="private" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="jdk.selected.PYTHON_MODULE" value="Python 3.7" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/opentsx-core/src/main/java/org/opentsx" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/opentsx-connectors/src/main/java/org/opentsx/connectors/kafka/klatency" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/pom.xml" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -100,6 +117,7 @@
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="show.migrate.to.gradle.popup" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
@@ -113,11 +131,11 @@
       <recent name="$PROJECT_DIR$/opentsx-ksql-udf/demo-udf/src/main/java/org/opentsx/udf" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/opentsx-ksql-udf" />
       <recent name="$PROJECT_DIR$/docs" />
       <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java" />
       <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main" />
       <recent name="$PROJECT_DIR$/opentsx-kafka-streams-tsa/src/main/java/org/opentsx" />
-      <recent name="$PROJECT_DIR$/archive" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="org.opentsx.util" />
@@ -141,7 +159,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Application.TSAExample1 (1)">
+  <component name="RunManager" selected="Application.TSDataSineWaveGenerator">
     <configuration name="TSAExample1 (1)" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.opentsx.tsa.TSAExample1" />
       <module name="opentsx-kafka-streams-tsa" />
@@ -181,6 +199,19 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TSDataSineWaveGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.opentsx.lg.TSDataSineWaveGenerator" />
+      <module name="opentsx-lg" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.opentsx.lg.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="TopicsCHECK" type="Application" factoryName="Application">
       <envs>
         <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/cpl.props " />
@@ -201,30 +232,27 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="EpisodesProcessorTests" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="opentsx-ksql" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="udf.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="udf" />
-      <option name="MAIN_CLASS_NAME" value="udf.EpisodesProcessorTests" />
+    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
       <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="KafkaDemoApp" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
-      <module name="opentsx-spring-example" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="demo1.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="SPRING_BOOT_MAIN_CLASS" value="demo1.KafkaDemoApp" />
+    <configuration name="Scala REPL" type="ScalaScriptConsoleRunConfiguration" factoryName="Scala Console" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
+      <module name="opentsx" />
+      <option name="allowRunningInParallel" value="false" />
+      <option name="javaOptions" value="-Djline.terminal=NONE" />
+      <option name="myConsoleArgs" value="" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="workingDirectory" value="$PROJECT_DIR$/opentsx-ksql-app" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -256,17 +284,17 @@
       <item itemvalue="Application.TSAExample1" />
       <item itemvalue="Application.TSAExample1 (1)" />
       <item itemvalue="Docker.Krake-container/Dockerfile" />
-      <item itemvalue="JUnit.EpisodesProcessorTests" />
       <item itemvalue="Spring Boot.KafkaDemoApplication" />
-      <item itemvalue="Spring Boot.KafkaDemoApp" />
+      <item itemvalue="Scala REPL.Scala REPL" />
+      <item itemvalue="Application.TSDataSineWaveGenerator" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.TSDataSineWaveGenerator" />
+        <item itemvalue="Scala REPL.Scala REPL" />
         <item itemvalue="Application.TSAExample1 (1)" />
         <item itemvalue="Application.TSAExample1" />
         <item itemvalue="Application.TSAExample5" />
-        <item itemvalue="JUnit.EpisodesProcessorTests" />
-        <item itemvalue="Spring Boot.KafkaDemoApp" />
       </list>
     </recent_temporary>
   </component>
@@ -400,6 +428,11 @@
       <workItem from="1601448811510" duration="1771000" />
       <workItem from="1614186996210" duration="1350000" />
       <workItem from="1615297082858" duration="2226000" />
+      <workItem from="1670607192406" duration="299000" />
+      <workItem from="1670607506977" duration="2000" />
+      <workItem from="1670607519982" duration="1000" />
+      <workItem from="1670607573642" duration="6000" />
+      <workItem from="1670607752979" duration="9041000" />
     </task>
     <task id="LOCAL-00101" summary="workaround for JAR in gitignore">
       <created>1591772232078</created>
