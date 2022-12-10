@@ -10,29 +10,39 @@
     <version>3.0.0</version>
 
     <modules>
-
         <module>opentsx-data</module>
         <module>opentsx-core</module>
         <module>opentsx-connectors</module>
         <module>opentsx-lg</module>
-        <module>opentsx-ksql-udf/demo-udf</module>
-
-        <!--module>opentsx-kafka-streams-tsa</module-->
         <module>opentsx-predict</module>
         <module>opentsx-processors</module>
+        <!--module>opentsx-ksql-udf/demo-udf</module-->
+        <!--module>opentsx-kafka-streams-tsa</module-->
         <!--module>opentsx-ksql-app</module-->
         <!--module>opentsx-spring-example</module-->
-
     </modules>
 
     <properties>
 
+        <!-- Keep versions as properties to allow easy modification -->
+        <java.version>8</java.version>
+        <gson.version>2.2.4</gson.version>
+        <!-- Maven properties for compilation -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <checkstyle.suppressions.location>checkstyle/suppressions.xml</checkstyle.suppressions.location>
+        <schemaRegistryUrl>http://localhost:8081</schemaRegistryUrl>
+        <schemaRegistryBasicAuthUserInfo></schemaRegistryBasicAuthUserInfo>
+
+        <!-- https://docs.confluent.io/platform/current/streams/developer-guide/write-streams.html#libraries-and-maven-artifacts -->
         <avro.version>1.8.2</avro.version>
 
+        <confluent.version>7.3.0-css</confluent.version>
+        <confluent.sr.version>7.3.0</confluent.sr.version>
+        <confluent.util.version>7.3.0</confluent.util.version>
+        <confluent.cfg.version>7.3.0</confluent.cfg.version>
+        <kafka.avro.serializer.version>7.3.0</kafka.avro.serializer.version>
         <kafka.version>2.3.0</kafka.version>
-        <confluent.version>5.3.1</confluent.version>
-        <kafka.avro.serializer.version>5.3.1</kafka.avro.serializer.version>
-
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jcuda.jcudaVersion>0.8.0</jcuda.jcudaVersion>
@@ -63,10 +73,10 @@
 
     <repositories>
 
-        <repository>
-            <id>confluent</id>
-            <url>http://packages.confluent.io/maven/</url>
-        </repository>
+            <repository>
+                <id>confluent</id>
+                <url>https://packages.confluent.io/maven/</url>
+            </repository>
 
         <repository>
             <id>mvn.repo</id>
@@ -90,16 +100,18 @@
 
     <dependencies>
 
+
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>common-config</artifactId>
-            <version>5.3.1</version>
+            <version>${confluent.cfg.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>common-utils</artifactId>
-            <version>${confluent.version}</version>
+            <version>${confluent.util.version}</version>
 
             <exclusions>
                 <exclusion>
@@ -117,8 +129,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client</artifactId>
-            <version>${confluent.version}</version>
-
+            <version>${confluent.sr.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -135,7 +146,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
-            <version>${confluent.version}</version>
+            <version>${kafka.avro.serializer.version}</version>
         </dependency>
 
         <dependency>
@@ -247,12 +258,12 @@
             <artifactId>hadoop-core</artifactId>
             <version>2.6.0-mr1-cdh5.11.1</version>
         </dependency>
-        <!-- Hive -->
+        <!-- Hive >
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>2.3.4</version>
-        </dependency>
+        </dependency -->
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
@@ -389,14 +400,14 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.5</version>
+            <version>3.6.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.jfree/jfreechart -->
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
-            <version>1.0.14</version>
+            <version>1.0.19</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
@@ -440,6 +451,13 @@
             <version>0.15.0</version>
         </dependency>
 
+
+        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-assembly-plugin -->
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.4.2</version>
+        </dependency>
 
     </dependencies>
 

@@ -90,10 +90,15 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>demo1.KafkaDemoApp</mainClass>
+                </configuration>
             </plugin>
+
         </plugins>
     </build>
 

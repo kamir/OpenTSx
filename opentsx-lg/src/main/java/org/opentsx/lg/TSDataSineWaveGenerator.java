@@ -67,6 +67,8 @@ public class TSDataSineWaveGenerator {
 
     private static TSGMBean tsgBean = null;
 
+    private static Boolean useKafka = false;
+
     /**
      * @param args the command line arguments
      */
@@ -93,11 +95,17 @@ public class TSDataSineWaveGenerator {
             }
         }
 
+
         /**
          * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
          */
         String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
+        String kafka_prop = System.getenv("OPENTSX_USE_KAFKA");
 
+        System.out.println("*** " + kafka_prop + " ***");
+
+
+        useKafka = Boolean.parseBoolean( kafka_prop );
         /*
          *  by default we use 1000 iterations for episode generation.
          */
@@ -175,11 +183,13 @@ public class TSDataSineWaveGenerator {
 
 
 
+        TSOProducer prod_A = null;
+        TSOProducer prod_B = null;
 
-
-        TSOProducer prod_A = new TSOProducer();
-
-        TSOProducer prod_B = new TSOProducer();
+        if ( useKafka ) {
+            prod_A = new TSOProducer();
+            prod_B = new TSOProducer();
+        }
 
         int i = 0;
 
@@ -218,7 +228,7 @@ public class TSDataSineWaveGenerator {
             /**
              * Step 2: persist data in Kafka ... as pre-aggregated full episodes.
              */
-            if( persistEpisodes ) {
+            if( persistEpisodes && useKafka) {
                 prod_A.pushTSDataAsEpisodesToKafka_String_Avro(tsbd_a, URI_A, "A");
                 System.out.println("[pushTSDataAsEpisodesToKafka_String_Avro] {A}");
                 System.out.println(">>> [t: " + i + "] -> size:" + tsbd_a.size());
@@ -235,7 +245,7 @@ public class TSDataSineWaveGenerator {
             /**
              * Step 3: persist data in Kafka ... as full single events.
              */
-            if( persistEvents ) {
+            if( persistEvents && useKafka) {
                 prod_A.pushTSDataAsEventsToKafka_String_Avro(tsbd_a, URI_A );
                 System.out.println("[pushTSDataAsEventsToKafka_String_Avro] {A}");
                 System.out.println(">>> [t: " + i + "] -> size:" + tsbd_a.size());
@@ -263,9 +273,10 @@ public class TSDataSineWaveGenerator {
             stateProps.put( "t1" , t1 );
             stateProps.put( "t2" , t2 );
 
-            EventFlowStateProducer efsp = new EventFlowStateProducer();
-            efsp.pushFlowState( stateProps, "TSDataSineWaveGenerator_" + t0);
-
+            if ( useKafka ) {
+                EventFlowStateProducer efsp = new EventFlowStateProducer();
+                efsp.pushFlowState(stateProps, "TSDataSineWaveGenerator_" + t0);
+            }
             Logger.getLogger(TSDataSineWaveGenerator.class.getName()).log(Level.SEVERE, "DURATION 2 : " + ((t2 - t1)/1000.0));
 
 

@@ -47,13 +47,13 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>common-config</artifactId>
-            <version>${confluent.version}</version>
+            <version>${confluent.cfg.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>common-utils</artifactId>
-            <version>${confluent.version}</version>
+            <version>${confluent.util.version}</version>
 
             <exclusions>
                 <exclusion>
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client</artifactId>
-            <version>${confluent.version}</version>
+            <version>${confluent.sr.version}</version>
 
             <exclusions>
                 <exclusion>
