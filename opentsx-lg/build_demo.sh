@@ -1,15 +1,18 @@
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home
-export CONFLUENT_HOME=/Users/mkampf/bin/confluent-5.5.0
+#
+# Prepare environment variables for local CP
+#
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.15.1.jdk/Contents/Home
+export CONFLUENT_HOME=/Users/mkaempf/bin/confluent-7.3.0
 
-confluent local status
+#confluent local current
 
-confluent local stop
+#confluent local services stop
 
-confluent local destroy
+#confluent local services destroy
 
-confluent local start
+#confluent local services start
 
-rm -rf /Users/mkampf/.m2/repository/org/opentsx
+rm -rf /Users/mkaempf/.m2/repository/org/opentsx
 
 cd ..
 mvn clean generate-sources compile package install -U
