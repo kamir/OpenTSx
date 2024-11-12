@@ -19,6 +19,7 @@
      ```   
 
 4.) Run the Application
-     ```
-     mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
-     ```  
+
+```
+mvn clean compile exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
+```  
