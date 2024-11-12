@@ -9,4 +9,5 @@ copy the UBER-JAR into the KSQL extgension folder.
 
 ## References
 (1) https://docs.confluent.io/current/ksql/docs/developer-guide/udf.html
+
 (2) https://www.confluent.io/blog/kafka-ksql-udf-udaf-with-maven-made-easy
