@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opentsx"
+version = "1.0.0"
+description = "OpenTSx - Advanced Time Series Analysis Platform"
+authors = [
+    {name = "OpenTSx Contributors", email = "info@opentsx.org"}
+]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+keywords = ["time-series", "analysis", "dfa", "multifractal", "kafka"]
+
+dependencies = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+]
+
+[project.optional-dependencies]
+kafka = [
+    "confluent-kafka[avro]>=2.3.0",
+    "fastavro>=1.8.0",
+]
+viz = [
+    "matplotlib>=3.7.0",
+    "plotly>=5.17.0",
+]
+ml = [
+    "scikit-learn>=1.3.0",
+    "tensorflow>=2.14.0",
+]
+storage = [
+    "cassandra-driver>=3.28.0",
+    "pyarrow>=14.0.0",
+    "tables>=3.9.0",
+]
+performance = [
+    "numba>=0.58.0",
+    "dask[complete]>=2023.10.0",
+]
+all = [
+    "opentsx[kafka,viz,ml,storage,performance]",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.10.0",
+    "ruff>=0.1.0",
+    "mypy>=1.6.0",
+    "sphinx>=7.2.0",
+]
+
+[project.urls]
+Homepage = "https://opentsx.org"
+Documentation = "https://docs.opentsx.org"
+Repository = "https://github.com/kamir/OpenTSx"
+Issues = "https://github.com/kamir/OpenTSx/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["opentsx*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
