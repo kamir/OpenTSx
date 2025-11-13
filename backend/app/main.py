@@ -13,9 +13,41 @@ FastAPI application with complete SaaS features:
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 import uvicorn
 
 from app.core.config import settings
+from app.api import auth
+from app.db.session import async_engine
+from app.db.base_class import Base
+from app.db.init_db import init_db
+from app.db.session import AsyncSessionLocal
+
+
+# ==================== Lifespan ====================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan events for FastAPI application.
+
+    Handles startup and shutdown events.
+    """
+    # Startup: Create tables and initialize database
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSessionLocal() as session:
+        await init_db(session)
+
+    print("✅ Database initialized")
+
+    yield
+
+    # Shutdown
+    await async_engine.dispose()
+    print("👋 Shutting down")
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -25,6 +57,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -35,6 +68,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ==================== Include Routers ====================
+
+# Real authentication routes (with JWT and database)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
 
 
 # ==================== Root Endpoint ====================

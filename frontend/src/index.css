@@ -1,0 +1,42 @@
+/**
+ * Tailwind CSS base styles
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  border-radius: 8px;
+  padding: 10px;
+  border: 2px solid #e5e7eb;
+  background: white;
+  font-size: 14px;
+}
+
+.react-flow__node.selected {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.react-flow__handle {
+  background: #6366f1;
+  width: 8px;
+  height: 8px;
+}
