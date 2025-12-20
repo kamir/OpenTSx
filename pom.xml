@@ -13,6 +13,7 @@
         <module>opentsx-data</module>
         <module>opentsx-core</module>
         <module>opentsx-connectors</module>
+        <module>opentsx-flink-core</module>
         <module>opentsx-lg</module>
         <module>opentsx-predict</module>
         <module>opentsx-processors</module>
