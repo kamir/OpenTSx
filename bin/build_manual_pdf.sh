@@ -254,12 +254,29 @@ PANDOC_ARGS=(
 )
 
 # Add Unicode font support for xelatex/lualatex
+# Use system default fonts which handle Unicode well
+# macOS: Uses system fonts (Helvetica, Times, etc.)
+# Linux: Uses liberation fonts or system defaults
 if [ "$PDF_ENGINE" = "xelatex" ] || [ "$PDF_ENGINE" = "lualatex" ]; then
-    PANDOC_ARGS+=(
-        "--variable" "mainfont=DejaVu Serif"
-        "--variable" "sansfont=DejaVu Sans"
-        "--variable" "monofont=DejaVu Sans Mono"
-    )
+    # Detect platform and set appropriate fonts
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS - use system fonts
+        PANDOC_ARGS+=(
+            "--variable" "mainfont=Helvetica Neue"
+            "--variable" "monofont=Menlo"
+        )
+    elif command -v fc-list &> /dev/null; then
+        # Linux with fontconfig - check for DejaVu
+        if fc-list | grep -q "DejaVu"; then
+            PANDOC_ARGS+=(
+                "--variable" "mainfont=DejaVu Serif"
+                "--variable" "sansfont=DejaVu Sans"
+                "--variable" "monofont=DejaVu Sans Mono"
+            )
+        fi
+        # Otherwise use system defaults (no explicit font setting)
+    fi
+    # If no fonts specified, xelatex will use Latin Modern (built-in Unicode support)
 fi
 
 if [ "$VERBOSE" = true ]; then
