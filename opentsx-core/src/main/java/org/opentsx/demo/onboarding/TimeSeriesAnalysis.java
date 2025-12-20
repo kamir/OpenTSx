@@ -3,6 +3,7 @@ package org.opentsx.demo.onboarding;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -52,12 +53,12 @@ public class TimeSeriesAnalysis {
         for (int i = 0; i < 500; i++) {
             // Linear trend + Gaussian noise
             double trendValue = 10.0 + 0.05 * i;
-            double noise = RNGWrapper.getGaussianRandomValue(0.0, 2.0);
+            double noise = RNGWrapper.getStdRandomGaussian(0.0, 2.0);
             trendSeries.addValuePair(i, trendValue + noise);
         }
 
         System.out.println("Created time series with linear trend:");
-        System.out.println("  Length: " + trendSeries.getLength());
+        System.out.println("  Length: " + trendSeries.yValues.size());
         System.out.println("  Start value (avg): " + String.format("%.2f",
                           average(trendSeries, 0, 10)));
         System.out.println("  End value (avg): " + String.format("%.2f",
@@ -80,8 +81,8 @@ public class TimeSeriesAnalysis {
             smoothed.setLabel("smoothed_window_" + window);
 
             System.out.println("Window size " + window + ":");
-            System.out.println("  Original length: " + trendSeries.getLength());
-            System.out.println("  Smoothed length: " + smoothed.getLength());
+            System.out.println("  Original length: " + trendSeries.yValues.size());
+            System.out.println("  Smoothed length: " + smoothed.yValues.size());
             System.out.println("  Original std dev: " + String.format("%.4f",
                               trendSeries.getStddev()));
             System.out.println("  Smoothed std dev: " + String.format("%.4f",
@@ -113,16 +114,16 @@ public class TimeSeriesAnalysis {
         TimeSeriesObject detrended = new TimeSeriesObject();
         detrended.setLabel("detrended_series");
 
-        for (int i = 0; i < trendSeries.getLength(); i++) {
-            double originalValue = trendSeries.getValueAt(i);
+        for (int i = 0; i < trendSeries.yValues.size(); i++) {
+            double originalValue = (Double)trendSeries.yValues.elementAt(i);
             double trendValue = firstAvg + estimatedSlope * i;
             double detrendedValue = originalValue - trendValue;
             detrended.addValuePair(i, detrendedValue);
         }
 
         System.out.println("Detrending results:");
-        System.out.println("  Original mean: " + String.format("%.2f", trendSeries.getMeanY()));
-        System.out.println("  Detrended mean: " + String.format("%.2f", detrended.getMeanY()));
+        System.out.println("  Original mean: " + String.format("%.2f", trendSeries.getAvarage()));
+        System.out.println("  Detrended mean: " + String.format("%.2f", detrended.getAvarage()));
         System.out.println("  (Should be close to 0)");
         System.out.println();
 
@@ -139,13 +140,13 @@ public class TimeSeriesAnalysis {
         int period = 24; // Daily pattern
         for (int i = 0; i < 500; i++) {
             double value = 10.0 + 5.0 * Math.sin(2 * Math.PI * i / period);
-            double noise = RNGWrapper.getGaussianRandomValue(0.0, 1.0);
+            double noise = RNGWrapper.getStdRandomGaussian(0.0, 1.0);
             periodic.addValuePair(i, value + noise);
         }
 
         System.out.println("Created periodic time series:");
         System.out.println("  Period: " + period + " points");
-        System.out.println("  Length: " + periodic.getLength());
+        System.out.println("  Length: " + periodic.yValues.size());
         System.out.println();
 
         // Simple autocorrelation at lag = period
@@ -179,9 +180,9 @@ public class TimeSeriesAnalysis {
         for (int i = 0; i < 300; i++) {
             double value;
             if (i < 150) {
-                value = RNGWrapper.getGaussianRandomValue(10.0, 2.0);
+                value = RNGWrapper.getStdRandomGaussian(10.0, 2.0);
             } else {
-                value = RNGWrapper.getGaussianRandomValue(20.0, 2.0);
+                value = RNGWrapper.getStdRandomGaussian(20.0, 2.0);
             }
             regimeChange.addValuePair(i, value);
         }
@@ -194,7 +195,7 @@ public class TimeSeriesAnalysis {
         double maxDiff = 0;
         int changePoint = 0;
 
-        for (int i = windowSize; i < regimeChange.getLength() - windowSize; i++) {
+        for (int i = windowSize; i < regimeChange.yValues.size() - windowSize; i++) {
             double beforeMean = average(regimeChange, i - windowSize, i);
             double afterMean = average(regimeChange, i, i + windowSize);
             double diff = Math.abs(afterMean - beforeMean);
@@ -221,10 +222,10 @@ public class TimeSeriesAnalysis {
         new java.io.File(outputDir).mkdirs();
 
         // Export various series for external analysis
-        trendSeries.writeToFile(outputDir + "trend_series.csv", ",");
-        detrended.writeToFile(outputDir + "detrended.csv", ",");
-        periodic.writeToFile(outputDir + "periodic.csv", ",");
-        regimeChange.writeToFile(outputDir + "regime_change.csv", ",");
+        trendSeries.writeToFile(new File(outputDir + "trend_series.csv"), ',');
+        detrended.writeToFile(new File(outputDir + "detrended.csv"), ',');
+        periodic.writeToFile(new File(outputDir + "periodic.csv"), ',');
+        regimeChange.writeToFile(new File(outputDir + "regime_change.csv"), ',');
 
         System.out.println("Exported time series to: " + outputDir);
         System.out.println("  - trend_series.csv (for trend analysis)");
@@ -273,8 +274,8 @@ public class TimeSeriesAnalysis {
     private static double average(TimeSeriesObject ts, int start, int end) {
         double sum = 0;
         int count = 0;
-        for (int i = start; i < end && i < ts.getLength(); i++) {
-            sum += ts.getValueAt(i);
+        for (int i = start; i < end && i < ts.yValues.size(); i++) {
+            sum += (Double)ts.yValues.elementAt(i);
             count++;
         }
         return count > 0 ? sum / count : 0.0;
@@ -284,14 +285,14 @@ public class TimeSeriesAnalysis {
      * Simple autocorrelation calculation at a specific lag
      */
     private static double simpleAutocorrelation(TimeSeriesObject ts, int lag) {
-        double mean = ts.getMeanY();
+        double mean = ts.getAvarage();
         double variance = ts.getStddev() * ts.getStddev();
 
         double sum = 0;
         int count = 0;
 
-        for (int i = 0; i < ts.getLength() - lag; i++) {
-            sum += (ts.getValueAt(i) - mean) * (ts.getValueAt(i + lag) - mean);
+        for (int i = 0; i < ts.yValues.size() - lag; i++) {
+            sum += ((Double)ts.yValues.elementAt(i) - mean) * ((Double)ts.yValues.elementAt(i + lag) - mean);
             count++;
         }
 
@@ -303,8 +304,8 @@ public class TimeSeriesAnalysis {
      */
     private static void printStatisticalSummary(TimeSeriesObject ts) {
         System.out.println("Statistical Summary for: " + ts.getLabel());
-        System.out.println("  Count: " + ts.getLength());
-        System.out.println("  Mean: " + String.format("%.4f", ts.getMeanY()));
+        System.out.println("  Count: " + ts.yValues.size());
+        System.out.println("  Mean: " + String.format("%.4f", ts.getAvarage()));
         System.out.println("  Std Dev: " + String.format("%.4f", ts.getStddev()));
         System.out.println("  Min: " + String.format("%.4f", ts.getMinY()));
         System.out.println("  Max: " + String.format("%.4f", ts.getMaxY()));
@@ -319,6 +320,6 @@ public class TimeSeriesAnalysis {
         System.out.println("  50th percentile (approx): " + String.format("%.4f", median));
         System.out.println("  75th percentile (approx): " + String.format("%.4f", q3));
         System.out.println("  Coefficient of Variation: " +
-                          String.format("%.4f", ts.getStddev() / ts.getMeanY()));
+                          String.format("%.4f", ts.getStddev() / ts.getAvarage()));
     }
 }
