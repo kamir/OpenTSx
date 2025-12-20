@@ -14,6 +14,7 @@ OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated tim
 ## Table of Contents
 - [Key Features](#key-features)
 - [Quick Start](#quick-start)
+- [Getting Started & Onboarding](#getting-started--onboarding)
 - [Architecture](#architecture)
 - [Core Concepts](#core-concepts)
 - [Algorithms](#algorithms)
@@ -143,6 +144,143 @@ docker run -d \
   -v $(pwd)/../config:/config \
   opentsx/time-series-generator:3.0.0
 ```
+
+---
+
+## Getting Started & Onboarding
+
+New to OpenTSx? We provide structured onboarding paths tailored to your background:
+
+### 📚 Conceptual Documentation (GitBook Manual)
+
+**Start here for conceptual understanding:**
+
+→ **[OpenTSx Manual](docs/manual/README.md)** — Comprehensive conceptual guide
+
+The manual covers:
+- **[Introduction](docs/manual/introduction/README.md)** — What makes OpenTSx different and when to use it
+- **[Core Concepts](docs/manual/core-concepts/README.md)** — TimeSeriesObject, data model, and design philosophy
+- **[Data Operations](docs/manual/data-operations/README.md)** — Creating, loading, transforming time series
+- **[Statistical Analysis](docs/manual/statistical-analysis/README.md)** — Built-in analytics and algorithms
+- **[Best Practices](docs/manual/best-practices/README.md)** — Production patterns, error handling, testing
+- **[API Reference](docs/manual/appendix/api-reference.md)** — Quick reference for common operations
+- **[Glossary](docs/manual/appendix/glossary.md)** — Time series terminology and OpenTSx-specific terms
+
+### 🛤️ Onboarding Paths
+
+Choose your learning track based on your background:
+
+#### 👨‍💻 Software Engineers (SWE Track)
+
+**For developers new to time series analysis:**
+
+```bash
+# Episode 1: Environment Setup
+./bin/010_build.sh                        # Build project
+./bin/000_launch_tsa_workbench.sh        # Explore GUI
+
+# Episode 2: Creating Time Series
+./bin/episode_02_create_timeseries.sh
+
+# Episode 3: Basic Operations
+./bin/episode_03_basic_operations.sh
+
+# Episode 10: Production Configuration
+./bin/episode_10_production_config.sh
+```
+
+**Learning Path:**
+1. [Core Concepts](docs/manual/core-concepts/README.md) — Understand TimeSeriesObject
+2. [Data Operations](docs/manual/data-operations/README.md) — Learn creation and transformation
+3. [Statistical Analysis](docs/manual/statistical-analysis/README.md) — Explore built-in analytics
+4. [Best Practices](docs/manual/best-practices/README.md) — Production patterns
+
+#### 📊 Time Series Experts (TSx Track)
+
+**For data scientists coming from R/Python/MATLAB:**
+
+```bash
+# Episode 1: From Python/R to OpenTSx
+./bin/010_build.sh                        # Build project
+./bin/000_launch_tsa_workbench.sh        # Visual exploration
+
+# Episode 9: Statistical Analysis Patterns
+./bin/episode_09_analysis.sh
+```
+
+**Learning Path:**
+1. [Translation Guide](docs/manual/appendix/r-python-translation.md) — Map R/Python concepts to OpenTSx
+2. [Core Concepts](docs/manual/core-concepts/README.md) — Java-specific patterns
+3. [Statistical Analysis](docs/manual/statistical-analysis/README.md) — Built-in methods
+4. [Integration](docs/manual/integration/README.md) — Export to your preferred tools
+
+### 🚀 Local Development Environment
+
+**Start the complete infrastructure for testing:**
+
+```bash
+# Start Kafka, OpenTSDB, and databases
+docker-compose -f docker-compose.local.yml up -d
+
+# Validate environment
+./bin/000_validate_environment.sh --strict
+
+# Build project
+./bin/010_build.sh
+```
+
+See **[Local Development Guide](docs/infrastructure/local-development.md)** for:
+- CP-ALL-IN-ONE Kafka setup (KRaft mode, no Zookeeper)
+- OpenTSDB and HBase configuration
+- Kafka integration examples
+- Troubleshooting and best practices
+
+### 📖 Demo Scripts
+
+All demo scripts are located in `bin/` with comprehensive documentation:
+
+| Episode | Script | Topic | Audience |
+|---------|--------|-------|----------|
+| E02 | `episode_02_create_timeseries.sh` | Creating time series | SWE + TSx |
+| E03 | `episode_03_basic_operations.sh` | Transformations & operations | SWE + TSx |
+| E09 | `episode_09_analysis.sh` | Statistical analysis | TSx |
+| E10 | `episode_10_production_config.sh` | Production patterns | SWE |
+
+See **[Script Reference](bin/README.md)** for complete documentation.
+
+### 📂 Sample Data
+
+Ready-to-use datasets for hands-on learning:
+
+```
+sample_data/
+├── sensor_data.csv       # IoT warehouse monitoring (24h)
+├── stock_prices.tsv      # Financial OHLCV data
+├── weather_data.csv      # Environmental metrics
+└── network_metrics.csv   # Infrastructure monitoring
+```
+
+### 🎯 Quick Learning Paths
+
+**60 Minutes to Productive:**
+1. Read [Introduction](docs/manual/introduction/README.md) (10 min)
+2. Run [Episode 2](bin/episode_02_create_timeseries.sh) (15 min)
+3. Run [Episode 3](bin/episode_03_basic_operations.sh) (15 min)
+4. Review [API Reference](docs/manual/appendix/api-reference.md) (20 min)
+
+**4 Hours to Proficient:**
+1. Complete 60-minute path
+2. Read [Core Concepts](docs/manual/core-concepts/README.md) (45 min)
+3. Read [Data Operations](docs/manual/data-operations/README.md) (45 min)
+4. Run all demo scripts (60 min)
+5. Review [Best Practices](docs/manual/best-practices/README.md) (30 min)
+
+**2 Days to Expert:**
+1. Complete 4-hour path
+2. Read entire [GitBook Manual](docs/manual/README.md) (4 hours)
+3. Set up local infrastructure (1 hour)
+4. Build a custom demo application (3 hours)
+5. Review advanced topics and production patterns (remaining time)
 
 ---
 
@@ -362,18 +500,35 @@ RISResult result = risTool.analyze(timeSeries, threshold);
 
 ## Documentation
 
-OpenTSx provides comprehensive documentation:
+OpenTSx provides comprehensive documentation for all experience levels:
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed system architecture, design patterns, technology stack
-- **[MODULES.md](MODULES.md)** - Complete module documentation with APIs and examples
-- **[FEATURES.md](FEATURES.md)** - Feature overview, algorithms, performance characteristics
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Deployment procedures, configuration, best practices
-- **[SECURITY.md](SECURITY.md)** - OWASP security analysis and recommendations
+### 🎓 Getting Started (Recommended)
 
-### Tutorials & Examples
-- `opentsx-app-demos/` - Real-world application examples
-- `docs/manuals/drafts/` - Algorithm tutorials and guides
-- `opentsx-core/demo/` - Algorithm demonstration applications
+- **[OpenTSx Manual](docs/manual/README.md)** — Complete conceptual guide (GitBook style)
+  - [Introduction](docs/manual/introduction/README.md) — Philosophy and when to use OpenTSx
+  - [Core Concepts](docs/manual/core-concepts/README.md) — TimeSeriesObject and data model
+  - [Data Operations](docs/manual/data-operations/README.md) — Creating and transforming data
+  - [Statistical Analysis](docs/manual/statistical-analysis/README.md) — Built-in analytics
+  - [Best Practices](docs/manual/best-practices/README.md) — Production patterns
+  - [API Reference](docs/manual/appendix/api-reference.md) — Quick reference guide
+  - [Glossary](docs/manual/appendix/glossary.md) — Terminology reference
+- **[Local Development Guide](docs/infrastructure/local-development.md)** — Docker Compose setup
+- **[Demo Scripts Reference](bin/README.md)** — Executable onboarding examples
+
+### 🏗️ Architecture & Technical Documentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — System architecture, design patterns, technology stack
+- **[MODULES.md](MODULES.md)** — Complete module documentation with APIs
+- **[FEATURES.md](FEATURES.md)** — Feature overview and algorithms
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** — Deployment procedures and configuration
+- **[SECURITY.md](SECURITY.md)** — OWASP security analysis and recommendations
+
+### 📚 Tutorials & Examples
+
+- **[Demo Scripts](bin/)** — Structured onboarding episodes (E02, E03, E09, E10)
+- **Application Demos** — `opentsx-app-demos/` — Real-world examples
+- **Algorithm Tutorials** — `docs/manuals/drafts/` — Algorithm guides
+- **Core Demos** — `opentsx-core/demo/` — Algorithm demonstrations
 
 ---
 
