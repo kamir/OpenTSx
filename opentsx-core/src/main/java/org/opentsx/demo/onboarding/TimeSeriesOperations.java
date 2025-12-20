@@ -128,13 +128,13 @@ public class TimeSeriesOperations {
         TimeSeriesObject differenced = new TimeSeriesObject();
         differenced.setLabel("differenced");
         for (int i = 1; i < trendData.yValues.size(); i++) {
-            double diff = trendData(Double).yValues.elementAt(i) - trendData(Double).yValues.elementAt(i - 1);
+            double diff = (Double)trendData.yValues.elementAt(i) - (Double)trendData.yValues.elementAt(i - 1);
             differenced.addValuePair(i, diff);
         }
 
         System.out.println("  // Manual differencing");
         System.out.println("  for (int i = 1; i < ts.yValues.size(); i++) {");
-        System.out.println("      double diff = ts(Double).yValues.elementAt(i) - ts(Double).yValues.elementAt(i-1);");
+        System.out.println("      double diff = (Double)ts.yValues.elementAt(i) - (Double)ts.yValues.elementAt(i-1);");
         System.out.println("      differenced.addValuePair(i, diff);");
         System.out.println("  }");
         System.out.println("\nResult:");
@@ -190,7 +190,7 @@ public class TimeSeriesOperations {
             int count = 0;
 
             for (int i = 0; i < ts.yValues.size() - lag; i++) {
-                sum += (ts(Double).yValues.elementAt(i) - mean) * (ts(Double).yValues.elementAt(i + lag) - mean);
+                sum += ((Double)ts.yValues.elementAt(i) - mean) * ((Double)ts.yValues.elementAt(i + lag) - mean);
                 count++;
             }
 
