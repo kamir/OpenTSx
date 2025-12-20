@@ -33,7 +33,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default settings
-PDF_ENGINE="pdflatex"
+PDF_ENGINE="xelatex"  # Use xelatex for better Unicode support
 OUTPUT_FILE="OpenTSx-Manual.pdf"
 VERBOSE=false
 CHECK_ONLY=false
@@ -252,6 +252,15 @@ PANDOC_ARGS=(
     "--variable" "urlcolor=blue"
     "--variable" "citecolor=blue"
 )
+
+# Add Unicode font support for xelatex/lualatex
+if [ "$PDF_ENGINE" = "xelatex" ] || [ "$PDF_ENGINE" = "lualatex" ]; then
+    PANDOC_ARGS+=(
+        "--variable" "mainfont=DejaVu Serif"
+        "--variable" "sansfont=DejaVu Sans"
+        "--variable" "monofont=DejaVu Sans Mono"
+    )
+fi
 
 if [ "$VERBOSE" = true ]; then
     PANDOC_ARGS+=("--verbose")
