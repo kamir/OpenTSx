@@ -5,6 +5,9 @@ This directory contains scripts for building, running, and demonstrating OpenTSx
 ## Quick Start
 
 ```bash
+# 0. Start local infrastructure (optional but recommended)
+docker-compose -f docker-compose.local.yml up -d
+
 # 1. Build the project
 ./bin/010_build.sh
 
@@ -14,6 +17,8 @@ This directory contains scripts for building, running, and demonstrating OpenTSx
 # 3. Run a demo
 ./bin/120_run_demo.sh
 ```
+
+For Kafka integration testing, see [Local Development Guide](../docs/infrastructure/local-development.md).
 
 ## Script Catalog
 
@@ -25,6 +30,25 @@ This directory contains scripts for building, running, and demonstrating OpenTSx
 | `001_build_containers.sh` | Build Docker containers | Advanced | Docker |
 
 ### Infrastructure Scripts
+
+**Local Development (Recommended)**
+
+Use the simplified Docker Compose setup for local development:
+
+```bash
+# Start core infrastructure (Kafka, OpenTSDB, databases)
+docker-compose -f docker-compose.local.yml up -d
+
+# Start full stack (includes backend/frontend)
+docker-compose -f docker-compose.local.yml --profile full up -d
+
+# Stop all services
+docker-compose -f docker-compose.local.yml down
+```
+
+See [Local Development Guide](../docs/infrastructure/local-development.md) for details.
+
+**Legacy Individual Container Scripts**
 
 | Script | Purpose | Episode | Prerequisites |
 |--------|---------|---------|---------------|
