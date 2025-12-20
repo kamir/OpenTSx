@@ -3,6 +3,7 @@ package org.opentsx.demo.onboarding;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -56,8 +57,8 @@ public class TimeSeriesOperations {
         System.out.println("  TimeSeriesObject ts = TimeSeriesObject.getGaussianDistribution(");
         System.out.println("      1000, 10.0, 1.5);");
         System.out.println("\nResult:");
-        System.out.println("  Length: " + ts.getLength());
-        System.out.println("  Mean: " + String.format("%.4f", ts.getMeanY()) + " (expected: 10.0)");
+        System.out.println("  Length: " + ts.yValues.size());
+        System.out.println("  Mean: " + String.format("%.4f", ts.getAvarage()) + " (expected: 10.0)");
         System.out.println("  Std Dev: " + String.format("%.4f", ts.getStddev()) + " (expected: 1.5)");
         System.out.println();
 
@@ -69,19 +70,19 @@ public class TimeSeriesOperations {
 
         System.out.println("Operation      | R             | Python        | OpenTSx");
         System.out.println("---------------|---------------|---------------|------------------");
-        System.out.println("Mean           | mean(ts)      | ts.mean()     | ts.getMeanY()");
+        System.out.println("Mean           | mean(ts)      | ts.mean()     | ts.getAvarage()");
         System.out.println("Std Dev        | sd(ts)        | ts.std()      | ts.getStddev()");
         System.out.println("Min            | min(ts)       | ts.min()      | ts.getMinY()");
         System.out.println("Max            | max(ts)       | ts.max()      | ts.getMaxY()");
-        System.out.println("Length         | length(ts)    | len(ts)       | ts.getLength()");
+        System.out.println("Length         | length(ts)    | len(ts)       | ts.yValues.size()");
         System.out.println();
 
         System.out.println("Computed values:");
-        System.out.println("  Mean:    " + String.format("%.4f", ts.getMeanY()));
+        System.out.println("  Mean:    " + String.format("%.4f", ts.getAvarage()));
         System.out.println("  Std Dev: " + String.format("%.4f", ts.getStddev()));
         System.out.println("  Min:     " + String.format("%.4f", ts.getMinY()));
         System.out.println("  Max:     " + String.format("%.4f", ts.getMaxY()));
-        System.out.println("  Length:  " + ts.getLength());
+        System.out.println("  Length:  " + ts.yValues.size());
         System.out.println();
 
         // =====================================================
@@ -98,8 +99,8 @@ public class TimeSeriesOperations {
 
         System.out.println("  TimeSeriesObject normalized = ts.normalizeToStdevIsOne();");
         System.out.println("\nResult:");
-        System.out.println("  Original mean: " + String.format("%.4f", ts.getMeanY()));
-        System.out.println("  Normalized mean: " + String.format("%.4f", normalized.getMeanY()) +
+        System.out.println("  Original mean: " + String.format("%.4f", ts.getAvarage()));
+        System.out.println("  Normalized mean: " + String.format("%.4f", normalized.getAvarage()) +
                           " (should be ~0)");
         System.out.println("  Original std dev: " + String.format("%.4f", ts.getStddev()));
         System.out.println("  Normalized std dev: " + String.format("%.4f", normalized.getStddev()) +
@@ -118,7 +119,7 @@ public class TimeSeriesOperations {
         // Create series with trend for better demonstration
         TimeSeriesObject trendData = new TimeSeriesObject();
         for (int i = 0; i < 100; i++) {
-            double value = 10.0 + 0.5 * i + RNGWrapper.getGaussianRandomValue(0, 1);
+            double value = 10.0 + 0.5 * i + RNGWrapper.getStdRandomGaussian(0, 1);
             trendData.addValuePair(i, value);
         }
         trendData.setLabel("trend_data");
@@ -126,21 +127,21 @@ public class TimeSeriesOperations {
         // Difference to remove trend
         TimeSeriesObject differenced = new TimeSeriesObject();
         differenced.setLabel("differenced");
-        for (int i = 1; i < trendData.getLength(); i++) {
-            double diff = trendData.getValueAt(i) - trendData.getValueAt(i - 1);
+        for (int i = 1; i < trendData.yValues.size(); i++) {
+            double diff = trendData(Double).yValues.elementAt(i) - trendData(Double).yValues.elementAt(i - 1);
             differenced.addValuePair(i, diff);
         }
 
         System.out.println("  // Manual differencing");
-        System.out.println("  for (int i = 1; i < ts.getLength(); i++) {");
-        System.out.println("      double diff = ts.getValueAt(i) - ts.getValueAt(i-1);");
+        System.out.println("  for (int i = 1; i < ts.yValues.size(); i++) {");
+        System.out.println("      double diff = ts(Double).yValues.elementAt(i) - ts(Double).yValues.elementAt(i-1);");
         System.out.println("      differenced.addValuePair(i, diff);");
         System.out.println("  }");
         System.out.println("\nResult:");
-        System.out.println("  Original length: " + trendData.getLength());
-        System.out.println("  Differenced length: " + differenced.getLength());
-        System.out.println("  Original mean: " + String.format("%.2f", trendData.getMeanY()));
-        System.out.println("  Differenced mean: " + String.format("%.2f", differenced.getMeanY()));
+        System.out.println("  Original length: " + trendData.yValues.size());
+        System.out.println("  Differenced length: " + differenced.yValues.size());
+        System.out.println("  Original mean: " + String.format("%.2f", trendData.getAvarage()));
+        System.out.println("  Differenced mean: " + String.format("%.2f", differenced.getAvarage()));
         System.out.println("  (Trend removed: mean ~0.5)");
         System.out.println();
 
@@ -181,15 +182,15 @@ public class TimeSeriesOperations {
         // Simple autocorrelation implementation
         int maxLag = 20;
         double[] acf = new double[maxLag + 1];
-        double mean = ts.getMeanY();
+        double mean = ts.getAvarage();
         double variance = ts.getStddev() * ts.getStddev();
 
         for (int lag = 0; lag <= maxLag; lag++) {
             double sum = 0;
             int count = 0;
 
-            for (int i = 0; i < ts.getLength() - lag; i++) {
-                sum += (ts.getValueAt(i) - mean) * (ts.getValueAt(i + lag) - mean);
+            for (int i = 0; i < ts.yValues.size() - lag; i++) {
+                sum += (ts(Double).yValues.elementAt(i) - mean) * (ts(Double).yValues.elementAt(i + lag) - mean);
                 count++;
             }
 
@@ -224,12 +225,12 @@ public class TimeSeriesOperations {
         System.out.println("  int factor = 5;");
         System.out.println("  TimeSeriesObject downsampled = ts.setBinningX_average(factor);");
         System.out.println("\nResult:");
-        System.out.println("  Original length: " + ts.getLength());
-        System.out.println("  Downsampled length: " + downsampled.getLength());
+        System.out.println("  Original length: " + ts.yValues.size());
+        System.out.println("  Downsampled length: " + downsampled.yValues.size());
         System.out.println("  Reduction factor: " + String.format("%.1fx",
-                          (double) ts.getLength() / downsampled.getLength()));
+                          (double) ts.yValues.size() / downsampled.yValues.size()));
         System.out.println("  Mean preserved: " +
-                          Math.abs(ts.getMeanY() - downsampled.getMeanY()) < 0.1);
+                          Math.abs(ts.getAvarage() - downsampled.getAvarage()) < 0.1);
         System.out.println();
 
         // =====================================================
@@ -251,11 +252,11 @@ public class TimeSeriesOperations {
 
         System.out.println("  TimeSeriesObject combined = ts1.add(ts2);");
         System.out.println("\nResult:");
-        System.out.println("  Series 1 mean: " + String.format("%.2f", ts1.getMeanY()));
-        System.out.println("  Series 2 mean: " + String.format("%.2f", ts2.getMeanY()));
-        System.out.println("  Combined mean: " + String.format("%.2f", combined.getMeanY()));
+        System.out.println("  Series 1 mean: " + String.format("%.2f", ts1.getAvarage()));
+        System.out.println("  Series 2 mean: " + String.format("%.2f", ts2.getAvarage()));
+        System.out.println("  Combined mean: " + String.format("%.2f", combined.getAvarage()));
         System.out.println("  Expected mean: " + String.format("%.2f",
-                          ts1.getMeanY() + ts2.getMeanY()));
+                          ts1.getAvarage() + ts2.getAvarage()));
         System.out.println();
 
         // =====================================================
@@ -267,9 +268,9 @@ public class TimeSeriesOperations {
         String outputDir = "data/demo_output/tsx/";
         new java.io.File(outputDir).mkdirs();
 
-        ts.writeToFile(outputDir + "original.csv", ",");
-        normalized.writeToFile(outputDir + "normalized.csv", ",");
-        smoothed.writeToFile(outputDir + "smoothed.csv", ",");
+        ts.writeToFile(new File(outputDir + "original.csv"), ',');
+        normalized.writeToFile(new File(outputDir + "normalized.csv"), ',');
+        smoothed.writeToFile(new File(outputDir + "smoothed.csv"), ',');
 
         System.out.println("Exported to: " + outputDir);
         System.out.println();
@@ -297,7 +298,7 @@ public class TimeSeriesOperations {
         System.out.println("Task              | R                  | Python              | OpenTSx");
         System.out.println("------------------|--------------------|--------------------|------------------------");
         System.out.println("Create TS         | rnorm(n, μ, σ)     | np.random.normal() | getGaussianDistribution()");
-        System.out.println("Mean              | mean(ts)           | ts.mean()          | ts.getMeanY()");
+        System.out.println("Mean              | mean(ts)           | ts.mean()          | ts.getAvarage()");
         System.out.println("Std Dev           | sd(ts)             | ts.std()           | ts.getStddev()");
         System.out.println("Normalize         | scale(ts)          | (ts-μ)/σ           | normalizeToStdevIsOne()");
         System.out.println("Difference        | diff(ts)           | ts.diff()          | manual loop");

@@ -3,6 +3,7 @@ package org.opentsx.demo.onboarding;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -44,8 +45,8 @@ public class BasicOperations {
 
         System.out.println("Sample Data Created:");
         System.out.println("  Label: " + rawData.getLabel());
-        System.out.println("  Length: " + rawData.getLength());
-        System.out.println("  Mean: " + String.format("%.2f", rawData.getMeanY()));
+        System.out.println("  Length: " + rawData.yValues.size());
+        System.out.println("  Mean: " + String.format("%.2f", rawData.getAvarage()));
         System.out.println("  Std Dev: " + String.format("%.2f", rawData.getStddev()));
         System.out.println();
 
@@ -60,30 +61,32 @@ public class BasicOperations {
         normalized.setLabel("normalized_data");
 
         System.out.println("Normalized time series:");
-        System.out.println("  Mean: " + String.format("%.4f", normalized.getMeanY()) +
+        System.out.println("  Mean: " + String.format("%.4f", normalized.getAvarage()) +
                           " (should be ~0)");
         System.out.println("  Std Dev: " + String.format("%.4f", normalized.getStddev()) +
                           " (should be ~1)");
         System.out.println();
 
         // Scale (multiply by constant)
-        TimeSeriesObject scaled = rawData.scaleY(0.5);
+        TimeSeriesObject scaled = rawData.copy();
+        scaled.scaleY_2(0.5);
         scaled.setLabel("scaled_data");
 
         System.out.println("Scaled time series (multiply by 0.5):");
-        System.out.println("  Original mean: " + String.format("%.2f", rawData.getMeanY()));
-        System.out.println("  Scaled mean: " + String.format("%.2f", scaled.getMeanY()));
-        System.out.println("  Expected: " + String.format("%.2f", rawData.getMeanY() * 0.5));
+        System.out.println("  Original mean: " + String.format("%.2f", rawData.getAvarage()));
+        System.out.println("  Scaled mean: " + String.format("%.2f", scaled.getAvarage()));
+        System.out.println("  Expected: " + String.format("%.2f", rawData.getAvarage() * 0.5));
         System.out.println();
 
         // Offset (add constant)
-        TimeSeriesObject offset = rawData.add(25.0);
+        TimeSeriesObject offset = rawData.copy();
+        offset.add_to_Y(25.0);
         offset.setLabel("offset_data");
 
         System.out.println("Offset time series (add 25.0):");
-        System.out.println("  Original mean: " + String.format("%.2f", rawData.getMeanY()));
-        System.out.println("  Offset mean: " + String.format("%.2f", offset.getMeanY()));
-        System.out.println("  Expected: " + String.format("%.2f", rawData.getMeanY() + 25.0));
+        System.out.println("  Original mean: " + String.format("%.2f", rawData.getAvarage()));
+        System.out.println("  Offset mean: " + String.format("%.2f", offset.getAvarage()));
+        System.out.println("  Expected: " + String.format("%.2f", rawData.getAvarage() + 25.0));
         System.out.println();
 
         // =====================================================
@@ -93,24 +96,24 @@ public class BasicOperations {
         System.out.println("------------------------");
 
         // Filter by value threshold
-        double threshold = rawData.getMeanY();
+        double threshold = rawData.getAvarage();
         TimeSeriesObject aboveAverage = rawData.copy();
         aboveAverage.setLabel("above_average");
 
         // Manual filtering (keeping values above mean)
         int countAbove = 0;
-        for (int i = 0; i < rawData.getLength(); i++) {
-            if (rawData.getValueAt(i) > threshold) {
+        for (int i = 0; i < rawData.yValues.size(); i++) {
+            if ((Double)rawData.yValues.elementAt(i) > threshold) {
                 countAbove++;
             }
         }
 
         System.out.println("Filter by value:");
         System.out.println("  Threshold (mean): " + String.format("%.2f", threshold));
-        System.out.println("  Original length: " + rawData.getLength());
+        System.out.println("  Original length: " + rawData.yValues.size());
         System.out.println("  Values above mean: " + countAbove);
         System.out.println("  Percentage: " + String.format("%.1f%%",
-                          (countAbove * 100.0) / rawData.getLength()));
+                          (countAbove * 100.0) / rawData.yValues.size()));
         System.out.println();
 
         // Filter by time range (shrink)
@@ -118,8 +121,8 @@ public class BasicOperations {
         subset.setLabel("time_window");
 
         System.out.println("Filter by time range (indices 200-400):");
-        System.out.println("  Original length: " + rawData.getLength());
-        System.out.println("  Subset length: " + subset.getLength());
+        System.out.println("  Original length: " + rawData.yValues.size());
+        System.out.println("  Subset length: " + subset.yValues.size());
         System.out.println();
 
         // =====================================================
@@ -129,7 +132,7 @@ public class BasicOperations {
         System.out.println("----------------------------");
 
         double sum = rawData.summeY();
-        double mean = rawData.getMeanY();
+        double mean = rawData.getAvarage();
         double max = rawData.getMaxY();
         double min = rawData.getMinY();
         double stddev = rawData.getStddev();
@@ -155,10 +158,10 @@ public class BasicOperations {
         downsampled.setLabel("downsampled_10x");
 
         System.out.println("Downsample by factor " + downsampleFactor + ":");
-        System.out.println("  Original length: " + rawData.getLength());
-        System.out.println("  Downsampled length: " + downsampled.getLength());
-        System.out.println("  Original mean: " + String.format("%.2f", rawData.getMeanY()));
-        System.out.println("  Downsampled mean: " + String.format("%.2f", downsampled.getMeanY()));
+        System.out.println("  Original length: " + rawData.yValues.size());
+        System.out.println("  Downsampled length: " + downsampled.yValues.size());
+        System.out.println("  Original mean: " + String.format("%.2f", rawData.getAvarage()));
+        System.out.println("  Downsampled mean: " + String.format("%.2f", downsampled.getAvarage()));
         System.out.println("  (Mean should be similar)");
         System.out.println();
 
@@ -180,11 +183,11 @@ public class BasicOperations {
         combined.setLabel("combined_series");
 
         System.out.println("Combining two time series (addition):");
-        System.out.println("  Series 1 mean: " + String.format("%.2f", ts1.getMeanY()));
-        System.out.println("  Series 2 mean: " + String.format("%.2f", ts2.getMeanY()));
-        System.out.println("  Combined mean: " + String.format("%.2f", combined.getMeanY()));
+        System.out.println("  Series 1 mean: " + String.format("%.2f", ts1.getAvarage()));
+        System.out.println("  Series 2 mean: " + String.format("%.2f", ts2.getAvarage()));
+        System.out.println("  Combined mean: " + String.format("%.2f", combined.getAvarage()));
         System.out.println("  Expected mean: " + String.format("%.2f",
-                          ts1.getMeanY() + ts2.getMeanY()));
+                          ts1.getAvarage() + ts2.getAvarage()));
         System.out.println();
 
         // =====================================================
@@ -225,10 +228,10 @@ public class BasicOperations {
         new java.io.File(outputDir).mkdirs();
 
         // Export various transformations for comparison
-        rawData.writeToFile(outputDir + "original.csv", ",");
-        normalized.writeToFile(outputDir + "normalized.csv", ",");
-        scaled.writeToFile(outputDir + "scaled.csv", ",");
-        downsampled.writeToFile(outputDir + "downsampled.csv", ",");
+        rawData.writeToFile(new File(outputDir + "original.csv"), ',');
+        normalized.writeToFile(new File(outputDir + "normalized.csv"), ',');
+        scaled.writeToFile(new File(outputDir + "scaled.csv"), ',');
+        downsampled.writeToFile(new File(outputDir + "downsampled.csv"), ',');
 
         System.out.println("Exported time series to: " + outputDir);
         System.out.println("  - original.csv");
