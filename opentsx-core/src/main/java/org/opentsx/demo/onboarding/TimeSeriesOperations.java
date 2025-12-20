@@ -230,7 +230,7 @@ public class TimeSeriesOperations {
         System.out.println("  Reduction factor: " + String.format("%.1fx",
                           (double) ts.yValues.size() / downsampled.yValues.size()));
         System.out.println("  Mean preserved: " +
-                          Math.abs(ts.getAvarage() - downsampled.getAvarage()) < 0.1);
+                          (Math.abs(ts.getAvarage() - downsampled.getAvarage()) < 0.1));
         System.out.println();
 
         // =====================================================
