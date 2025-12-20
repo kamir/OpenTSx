@@ -3,6 +3,7 @@ package org.opentsx.demo.onboarding;
 import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,8 +78,8 @@ public class AnomalyDetection {
         // Inject known anomalies
         List<Integer> injectedAnomalies = new ArrayList<>();
 
-        for (int i = 0; i < normalData.getLength(); i++) {
-            double value = normalData.getValueAt(i);
+        for (int i = 0; i < normalData.yValues.size(); i++) {
+            double value = normalData(Double).yValues.elementAt(i);
 
             // Inject point anomalies (10 total)
             if (i == 50 || i == 150 || i == 250 || i == 350 || i == 450) {
@@ -96,10 +97,10 @@ public class AnomalyDetection {
         }
 
         System.out.println("Created time series:");
-        System.out.println("  Total points: " + dataWithAnomalies.getLength());
+        System.out.println("  Total points: " + dataWithAnomalies.yValues.size());
         System.out.println("  Injected anomalies: " + injectedAnomalies.size());
         System.out.println("  Anomaly rate: " + String.format("%.2f%%",
-                (injectedAnomalies.size() * 100.0) / dataWithAnomalies.getLength()));
+                (injectedAnomalies.size() * 100.0) / dataWithAnomalies.yValues.size()));
         System.out.println();
 
         // =====================================================
@@ -182,8 +183,8 @@ public class AnomalyDetection {
         // Inject seasonal anomalies
         for (int i = 0; i < 5; i++) {
             int anomalyIndex = 50 + i * 50;
-            if (anomalyIndex < seasonal.getLength()) {
-                seasonal.setValueAt(anomalyIndex, seasonal.getValueAt(anomalyIndex) + 30.0);
+            if (anomalyIndex < seasonal.yValues.size()) {
+                seasonal.yValues.setElementAt((Double)seasonal.yValues.elementAt(anomalyIndex) + 30.0, anomalyIndex);
             }
         }
 
@@ -209,7 +210,7 @@ public class AnomalyDetection {
 
         // Inject burst (20 consecutive high values)
         for (int i = 150; i < 170; i++) {
-            burstData.setValueAt(i, 130.0 + RNGWrapper.getGaussianRandomValue(0, 3));
+            burstData.yValues.setElementAt(130.0 + RNGWrapper.getStdRandomGaussian(0, 3), i);
         }
 
         // Detect bursts
@@ -286,11 +287,11 @@ public class AnomalyDetection {
      */
     private static List<Anomaly> zScoreDetection(TimeSeriesObject ts, double threshold) {
         List<Anomaly> anomalies = new ArrayList<>();
-        double mean = ts.getMeanY();
+        double mean = ts.getAvarage();
         double stddev = ts.getStddev();
 
-        for (int i = 0; i < ts.getLength(); i++) {
-            double value = ts.getValueAt(i);
+        for (int i = 0; i < ts.yValues.size(); i++) {
+            double value = ts(Double).yValues.elementAt(i);
             double zScore = Math.abs((value - mean) / stddev);
 
             if (zScore > threshold) {
@@ -310,15 +311,15 @@ public class AnomalyDetection {
         List<Anomaly> anomalies = new ArrayList<>();
         int halfWindow = windowSize / 2;
 
-        for (int i = halfWindow; i < ts.getLength() - halfWindow; i++) {
+        for (int i = halfWindow; i < ts.yValues.size() - halfWindow; i++) {
             // Calculate local statistics
             double sum = 0;
             double sumSq = 0;
             int count = 0;
 
             for (int j = i - halfWindow; j < i + halfWindow; j++) {
-                if (j != i && j >= 0 && j < ts.getLength()) {
-                    double val = ts.getValueAt(j);
+                if (j != i && j >= 0 && j < ts.yValues.size()) {
+                    double val = ts(Double).yValues.elementAt(j);
                     sum += val;
                     sumSq += val * val;
                     count++;
@@ -329,7 +330,7 @@ public class AnomalyDetection {
             double localVariance = (sumSq / count) - (localMean * localMean);
             double localStddev = Math.sqrt(localVariance);
 
-            double value = ts.getValueAt(i);
+            double value = ts(Double).yValues.elementAt(i);
             double zScore = Math.abs((value - localMean) / localStddev);
 
             if (zScore > threshold) {
@@ -349,10 +350,10 @@ public class AnomalyDetection {
         List<Anomaly> anomalies = new ArrayList<>();
 
         // Simple seasonal decomposition
-        for (int i = period; i < ts.getLength(); i++) {
+        for (int i = period; i < ts.yValues.size(); i++) {
             // Compare with same position in previous period
-            double currentValue = ts.getValueAt(i);
-            double previousValue = ts.getValueAt(i - period);
+            double currentValue = ts(Double).yValues.elementAt(i);
+            double previousValue = ts(Double).yValues.elementAt(i - period);
             double diff = Math.abs(currentValue - previousValue);
 
             // Calculate local mean and stddev for threshold
@@ -418,7 +419,7 @@ public class AnomalyDetection {
 
         for (int i = 0; i < length; i++) {
             double seasonal = amplitude * Math.sin(2 * Math.PI * i / period);
-            double randomNoise = RNGWrapper.getGaussianRandomValue(0, noise);
+            double randomNoise = RNGWrapper.getStdRandomGaussian(0, noise);
             double value = baseline + seasonal + randomNoise;
             ts.addValuePair(i, value);
         }
@@ -435,7 +436,7 @@ public class AnomalyDetection {
         StringBuilder sb = new StringBuilder();
         sb.append("index,value,anomaly,z_score\n");
 
-        for (int i = 0; i < ts.getLength(); i++) {
+        for (int i = 0; i < ts.yValues.size(); i++) {
             boolean isAnomaly = false;
             double zScore = 0.0;
 
@@ -448,7 +449,7 @@ public class AnomalyDetection {
             }
 
             sb.append(i).append(",")
-              .append(ts.getValueAt(i)).append(",")
+              .append(ts(Double).yValues.elementAt(i)).append(",")
               .append(isAnomaly ? 1 : 0).append(",")
               .append(String.format("%.4f", zScore)).append("\n");
         }
