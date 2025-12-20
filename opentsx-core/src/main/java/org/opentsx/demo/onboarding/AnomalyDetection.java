@@ -79,7 +79,7 @@ public class AnomalyDetection {
         List<Integer> injectedAnomalies = new ArrayList<>();
 
         for (int i = 0; i < normalData.yValues.size(); i++) {
-            double value = normalData(Double).yValues.elementAt(i);
+            double value = (Double)normalData.yValues.elementAt(i);
 
             // Inject point anomalies (10 total)
             if (i == 50 || i == 150 || i == 250 || i == 350 || i == 450) {
@@ -291,7 +291,7 @@ public class AnomalyDetection {
         double stddev = ts.getStddev();
 
         for (int i = 0; i < ts.yValues.size(); i++) {
-            double value = ts(Double).yValues.elementAt(i);
+            double value = (Double)ts.yValues.elementAt(i);
             double zScore = Math.abs((value - mean) / stddev);
 
             if (zScore > threshold) {
@@ -319,7 +319,7 @@ public class AnomalyDetection {
 
             for (int j = i - halfWindow; j < i + halfWindow; j++) {
                 if (j != i && j >= 0 && j < ts.yValues.size()) {
-                    double val = ts(Double).yValues.elementAt(j);
+                    double val = (Double)ts.yValues.elementAt(j);
                     sum += val;
                     sumSq += val * val;
                     count++;
@@ -330,7 +330,7 @@ public class AnomalyDetection {
             double localVariance = (sumSq / count) - (localMean * localMean);
             double localStddev = Math.sqrt(localVariance);
 
-            double value = ts(Double).yValues.elementAt(i);
+            double value = (Double)ts.yValues.elementAt(i);
             double zScore = Math.abs((value - localMean) / localStddev);
 
             if (zScore > threshold) {
@@ -352,8 +352,8 @@ public class AnomalyDetection {
         // Simple seasonal decomposition
         for (int i = period; i < ts.yValues.size(); i++) {
             // Compare with same position in previous period
-            double currentValue = ts(Double).yValues.elementAt(i);
-            double previousValue = ts(Double).yValues.elementAt(i - period);
+            double currentValue = (Double)ts.yValues.elementAt(i);
+            double previousValue = (Double)ts.yValues.elementAt(i - period);
             double diff = Math.abs(currentValue - previousValue);
 
             // Calculate local mean and stddev for threshold
@@ -449,7 +449,7 @@ public class AnomalyDetection {
             }
 
             sb.append(i).append(",")
-              .append(ts(Double).yValues.elementAt(i)).append(",")
+              .append((Double)ts.yValues.elementAt(i)).append(",")
               .append(isAnomaly ? 1 : 0).append(",")
               .append(String.format("%.4f", zScore)).append("\n");
         }
