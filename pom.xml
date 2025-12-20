@@ -50,6 +50,9 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
+        <!-- PDF Manual Generation -->
+        <skip.pdf.generation>false</skip.pdf.generation>
+
     </properties>
 
     <name>OpenTSx</name>
@@ -509,7 +512,32 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
+            <!-- PDF Manual Generation Plugin -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-pdf-manual</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>${project.basedir}/bin/build_manual_pdf.sh</argument>
+                                <argument>--output</argument>
+                                <argument>OpenTSx-Manual-${project.version}.pdf</argument>
+                            </arguments>
+                            <skip>${skip.pdf.generation}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
 
             <!--plugin>
