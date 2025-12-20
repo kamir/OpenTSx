@@ -39,7 +39,7 @@ pandoc --version
 
 #### 2. LaTeX Distribution
 
-A LaTeX distribution is required for PDF rendering (pdflatex, xelatex, or lualatex).
+A LaTeX distribution is required for PDF rendering. **XeLaTeX** is the default engine as it provides better Unicode support (required for box-drawing characters and special symbols in the documentation).
 
 **TeXLive (Recommended):**
 
@@ -328,12 +328,20 @@ sudo apt-get install texlive-latex-extra texlive-fonts-extra
 
 ### "Unicode character ... not set up for use with LaTeX"
 
-**Problem:** Special characters require XeLaTeX/LuaLaTeX.
+**Problem:** Special characters (box-drawing characters: ┌, ├, │, └) require XeLaTeX/LuaLaTeX.
+
+**Note:** XeLaTeX is now the default engine (since version 3.0.0) to handle Unicode characters in documentation.
 
 **Solution:**
 ```bash
-# Use XeLaTeX instead of pdflatex
+# XeLaTeX is default, but you can explicitly specify it
 ./bin/build_manual_pdf.sh --engine xelatex
+
+# Or use LuaLaTeX as alternative
+./bin/build_manual_pdf.sh --engine lualatex
+
+# Only use pdflatex if documentation has no Unicode characters
+./bin/build_manual_pdf.sh --engine pdflatex
 ```
 
 ### PDF Generation Fails During Maven Build
