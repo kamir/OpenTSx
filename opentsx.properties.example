@@ -1,0 +1,60 @@
+# OpenTSx Production Configuration Example
+# Copy this file to opentsx.properties and customize for your environment
+
+# Data Directory
+# Where time series data files are stored
+opentsx.data.directory=/var/lib/opentsx/data
+
+# Thread Pool Configuration
+# Number of threads for parallel processing
+# Recommended: Number of CPU cores
+opentsx.threads.pool.size=4
+
+# Retry Configuration
+# Number of retry attempts for transient failures
+opentsx.retry.attempts=3
+
+# Logging Configuration
+# Log level: SEVERE, WARNING, INFO, FINE, FINER, FINEST
+opentsx.log.level=INFO
+
+# Kafka Configuration (if using Kafka integration)
+kafka.bootstrap.servers=localhost:9092
+kafka.schema.registry.url=http://localhost:8081
+kafka.consumer.group.id=opentsx-consumer-group
+kafka.topic.timeseries=opentsx-timeseries
+
+# OpenTSDB Configuration (if using OpenTSDB)
+opentsdb.host=localhost
+opentsdb.port=4242
+opentsdb.timeout.ms=5000
+
+# Database Configuration (if using PostgreSQL)
+postgres.host=localhost
+postgres.port=5432
+postgres.database=opentsx
+postgres.user=opentsx
+postgres.password=opentsx
+postgres.pool.size=10
+
+# Redis Configuration (if using Redis cache)
+redis.host=localhost
+redis.port=6379
+redis.pool.max.total=8
+redis.pool.max.idle=4
+
+# File I/O Configuration
+file.loader.buffer.size=8192
+file.loader.default.delimiter=,
+file.loader.max.rows=1000000
+
+# Performance Tuning
+memory.max.timeseries.size=10000000
+memory.gc.hint.threshold=0.8
+batch.processing.chunk.size=1000
+
+# Environment-specific settings
+# Override these with environment variables in production:
+# export OPENTSX_DATA_DIRECTORY=/production/data/path
+# export OPENTSX_THREADS_POOL_SIZE=16
+# export OPENTSX_LOG_LEVEL=WARNING
