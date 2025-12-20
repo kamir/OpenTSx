@@ -1,8 +1,10 @@
 package org.opentsx.demo.onboarding;
 
 import org.opentsx.data.generator.RNGWrapper;
+import org.opentsx.data.loader.MessreihenLoader;
 import org.opentsx.data.series.TimeSeriesObject;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -56,9 +58,9 @@ public class SimpleTimeSeriesCreation {
         ts.addValuePair(currentTime + 4000, 22.9);
 
         System.out.println("Created time series: " + ts.getLabel());
-        System.out.println("Number of data points: " + ts.getLength());
-        System.out.println("First value: " + ts.getValueAt(0));
-        System.out.println("Last value: " + ts.getValueAt(ts.getLength() - 1));
+        System.out.println("Number of data points: " + ts.yValues.size());
+        System.out.println("First value: " + ts.yValues.elementAt(0));
+        System.out.println("Last value: " + ts.yValues.elementAt(ts.yValues.size() - 1));
         System.out.println();
 
         // =====================================================
@@ -72,9 +74,9 @@ public class SimpleTimeSeriesCreation {
         gaussianTS.setLabel("gaussian_distribution");
 
         System.out.println("Generated Gaussian time series:");
-        System.out.println("  Length: " + gaussianTS.getLength());
+        System.out.println("  Length: " + gaussianTS.yValues.size());
         System.out.println("  Expected mean: 10.0");
-        System.out.println("  Actual mean: " + String.format("%.2f", gaussianTS.getMeanY()));
+        System.out.println("  Actual mean: " + String.format("%.2f", gaussianTS.getAvarage()));
         System.out.println("  Expected std dev: 1.5");
         System.out.println("  Actual std dev: " + String.format("%.2f", gaussianTS.getStddev()));
         System.out.println();
@@ -86,8 +88,8 @@ public class SimpleTimeSeriesCreation {
         System.out.println("-------------------------------------");
 
         System.out.println("Statistics for: " + gaussianTS.getLabel());
-        System.out.println("  Length: " + gaussianTS.getLength());
-        System.out.println("  Mean: " + String.format("%.4f", gaussianTS.getMeanY()));
+        System.out.println("  Length: " + gaussianTS.yValues.size());
+        System.out.println("  Mean: " + String.format("%.4f", gaussianTS.getAvarage()));
         System.out.println("  Std Dev: " + String.format("%.4f", gaussianTS.getStddev()));
         System.out.println("  Min: " + String.format("%.4f", gaussianTS.getMinY()));
         System.out.println("  Max: " + String.format("%.4f", gaussianTS.getMaxY()));
@@ -109,12 +111,12 @@ public class SimpleTimeSeriesCreation {
 
         // Export as tab-separated values
         String tsvFile = outputDir + "gaussian_ts.tsv";
-        gaussianTS.writeToFile(tsvFile, "\t");
+        gaussianTS.writeToFile(new File(tsvFile), '\t');
         System.out.println("Exported to TSV: " + tsvFile);
 
         // Export as comma-separated values
         String csvFile = outputDir + "gaussian_ts.csv";
-        gaussianTS.writeToFile(csvFile, ",");
+        gaussianTS.writeToFile(new File(csvFile), ',');
         System.out.println("Exported to CSV: " + csvFile);
 
         System.out.println();
@@ -125,17 +127,19 @@ public class SimpleTimeSeriesCreation {
         System.out.println("TASK 5: Load time series from file");
         System.out.println("----------------------------------");
 
-        TimeSeriesObject loaded = TimeSeriesObject.loadFromFile(new java.io.File(csvFile));
+        MessreihenLoader loader = MessreihenLoader.getLoader();
+        loader.delim = ",";
+        TimeSeriesObject loaded = loader.loadMessreihe_2(new File(csvFile), 1, 2);
         loaded.setLabel("loaded_from_csv");
 
         System.out.println("Loaded time series: " + loaded.getLabel());
-        System.out.println("  Length: " + loaded.getLength());
-        System.out.println("  Mean: " + String.format("%.4f", loaded.getMeanY()));
+        System.out.println("  Length: " + loaded.yValues.size());
+        System.out.println("  Mean: " + String.format("%.4f", loaded.getAvarage()));
         System.out.println("  Std Dev: " + String.format("%.4f", loaded.getStddev()));
         System.out.println();
 
         // Verify data integrity
-        boolean dataMatches = Math.abs(gaussianTS.getMeanY() - loaded.getMeanY()) < 0.001;
+        boolean dataMatches = Math.abs(gaussianTS.getAvarage() - loaded.getAvarage()) < 0.001;
         System.out.println("Data integrity check: " + (dataMatches ? "PASSED ✓" : "FAILED ✗"));
         System.out.println();
 
@@ -158,9 +162,9 @@ public class SimpleTimeSeriesCreation {
 
         System.out.println("Created multiple distributions:");
         System.out.println("  1. " + uniformTS.getLabel() + " - Mean: " +
-                          String.format("%.2f", uniformTS.getMeanY()));
+                          String.format("%.2f", uniformTS.getAvarage()));
         System.out.println("  2. " + highMean.getLabel() + " - Mean: " +
-                          String.format("%.2f", highMean.getMeanY()));
+                          String.format("%.2f", highMean.getAvarage()));
         System.out.println("  3. " + lowVariance.getLabel() + " - Std Dev: " +
                           String.format("%.2f", lowVariance.getStddev()));
         System.out.println();
