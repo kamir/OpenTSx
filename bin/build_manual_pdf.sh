@@ -41,7 +41,7 @@ CHECK_ONLY=false
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-DOCS_DIR="$PROJECT_ROOT/docs/manual"
+DOCS_DIR="$PROJECT_ROOT/docs"
 BUILD_DIR="$PROJECT_ROOT/target/documentation"
 OUTPUT_DIR="$PROJECT_ROOT/target"
 
@@ -186,35 +186,114 @@ EOF
 
 # Define chapter order based on SUMMARY.md
 CHAPTERS=(
-    "introduction/README.md"
-    "introduction/what-is-opentsx.md"
-    "introduction/why-opentsx.md"
-    "introduction/installation.md"
-    "core-concepts/README.md"
-    "core-concepts/architecture-overview.md"
-    "core-concepts/timeseries-object.md"
-    "core-concepts/data-model.md"
-    "core-concepts/core-procedures.md"
-    "data-operations/README.md"
-    "data-operations/creating-timeseries.md"
-    "data-operations/loading-data.md"
-    "data-operations/transformations.md"
-    "data-operations/exporting-data.md"
-    "statistical-analysis/README.md"
-    "statistical-analysis/descriptive-stats.md"
-    "statistical-analysis/distribution-testing.md"
-    "statistical-analysis/correlation.md"
-    "advanced-topics/README.md"
-    "advanced-topics/dfa-analysis.md"
-    "advanced-topics/hadoop-integration.md"
-    "best-practices/README.md"
-    "best-practices/performance.md"
-    "best-practices/memory-management.md"
-    "best-practices/production.md"
-    "appendix/README.md"
-    "appendix/api-reference.md"
-    "appendix/glossary.md"
-    "appendix/troubleshooting.md"
+    # Part I: Getting Started
+    "USER-GUIDE.md"
+    "manual/introduction/installation.md"
+    "FAQ.md"
+    "TROUBLESHOOTING.md"
+
+    # Part II: Onboarding Paths
+    "onboarding/README.md"
+    "onboarding/ONBOARDING-PATH-SWE.md"
+    "onboarding/ONBOARDING-PATH-TSx.md"
+    "onboarding/ONBOARDING-PATH-Python.md"
+    "onboarding/ONBOARDING-PATH-Flink.md"
+
+    # Part III: Core Manual
+    "manual/introduction/README.md"
+    "manual/introduction/what-is-time-series.md"
+    "manual/introduction/architecture.md"
+    "manual/introduction/when-to-use.md"
+    # "manual/introduction/installation.md" # Already included in Part I
+
+    "manual/core-concepts/README.md"
+    "manual/core-concepts/timeseries-object.md"
+    "manual/core-concepts/data-model.md"
+    "manual/core-concepts/labels-metadata.md"
+    "manual/core-concepts/vector-storage.md"
+    "manual/core-concepts/mutability.md"
+
+    "manual/data-operations/README.md"
+    "manual/data-operations/creating-timeseries.md"
+    "manual/data-operations/synthetic-data.md"
+    "manual/data-operations/loading-data.md"
+    "manual/data-operations/exporting-data.md"
+    "manual/data-operations/accessing-data.md"
+    "manual/data-operations/transformations.md"
+    "manual/data-operations/filtering.md"
+    "manual/data-operations/combining.md"
+
+    "manual/statistical-analysis/README.md"
+    "manual/statistical-analysis/descriptive-stats.md"
+    "manual/statistical-analysis/normalization.md"
+    "manual/statistical-analysis/moving-averages.md"
+    "manual/statistical-analysis/trends.md"
+    "manual/statistical-analysis/seasonality.md"
+    "manual/statistical-analysis/autocorrelation.md"
+    "manual/statistical-analysis/anomaly-detection.md"
+    "manual/statistical-analysis/change-points.md"
+
+    # Part IV: Python Implementation
+    "manual/python/README.md"
+    "manual/python/installation.md"
+    "manual/python/api-overview.md"
+    "manual/python/timeseries-object.md"
+    "manual/python/dfa.md"
+    "manual/python/mfdfa.md"
+    "manual/python/event-synchronization.md"
+    "manual/python/ris.md"
+    "manual/python/interoperability.md"
+    "manual/python/production.md"
+
+    # Part V: Advanced Topics
+    "manual/advanced-topics/README.md"
+    "manual/advanced-topics/spark-processing.md"
+    "manual/advanced-topics/kafka-streams.md"
+    "manual/advanced-topics/storage-backends.md"
+    "manual/advanced-topics/performance.md"
+    "manual/advanced-topics/custom-operations.md"
+    "manual/advanced-topics/interoperability.md"
+
+    # Part VI: Architecture & Design
+    "guides/ARCHITECTURE.md"
+    "guides/MODULES.md"
+    "guides/PYTHON-IMPLEMENTATION-DESIGN.md"
+    "guides/SAAS-PLATFORM.md"
+    "guides/WEB-UI-VISUAL-FLOW-BUILDER.md"
+    "guides/SECURITY.md"
+    "guides/FEATURES.md"
+    "guides/FEATURE_COMPARISON_JAVA_PYTHON.md"
+    "guides/INTEROPERABILITY_GUIDE.md"
+
+    # Part VII: Deployment & Operations
+    "guides/DEPLOYMENT.md"
+    "guides/RELEASE-SUMMARY.md"
+
+    # Part VIII: Best Practices
+    "manual/best-practices/README.md"
+    "manual/best-practices/error-handling.md"
+    "manual/best-practices/memory-management.md"
+    "manual/best-practices/testing.md"
+    "manual/best-practices/code-organization.md"
+    "manual/best-practices/performance-patterns.md"
+    "manual/best-practices/common-pitfalls.md"
+
+    # Part IX: Reference Materials
+    "manual/appendix/README.md"
+    "manual/appendix/api-reference.md"
+    "API-DOCUMENTATION.md"
+    "manual/appendix/glossary.md"
+    "manual/appendix/migration-guide.md"
+    "manual/appendix/further-reading.md"
+    "manual/appendix/contributing.md"
+
+    # Part X: Appendices
+    "guides/PLAN.md"
+    "guides/ROADMAP.md"
+    "guides/MARKET_RESEARCH_ANALYSIS.md"
+    "guides/IMPLEMENTATION_SUMMARY.md"
+    "guides/DEMO_VALIDATION_REPORT.md"
+    "PDF-GENERATION.md"
 )
 
 # Append each chapter
