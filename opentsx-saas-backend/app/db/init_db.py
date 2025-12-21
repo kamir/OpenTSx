@@ -1,9 +1,9 @@
 """Initialize database with default data."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, insert
 
-from app.models.user import User, Organization, PlanTier
+from app.models.user import User, Organization, PlanTier, UserRole, user_organization
 from app.core.security import get_password_hash
 from app.core.config import settings
 
@@ -45,7 +45,18 @@ async def init_db(db: AsyncSession) -> None:
             max_team_members=999999,
         )
         db.add(organization)
-        user.organizations.append(organization)
+        await db.flush()  # Flush to get organization.id
+
+        # Add user as admin member of the organization
+        # Can't use user.organizations.append() in async context (greenlet error)
+        # Must manually insert into association table
+        await db.execute(
+            insert(user_organization).values(
+                user_id=user.id,
+                organization_id=organization.id,
+                role=UserRole.ADMIN
+            )
+        )
 
         await db.commit()
         print(f"Created superuser: {settings.FIRST_SUPERUSER_EMAIL}")
