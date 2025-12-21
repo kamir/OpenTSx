@@ -1,5 +1,16 @@
 # OpenTSx - Cloud-Native Time Series Analysis Platform
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-1.8+-orange.svg)](https://www.java.com)
+[![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org)
+[![Kafka](https://img.shields.io/badge/Kafka-2.3.0-black.svg)](https://kafka.apache.org)
+
+OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated time series analysis. Built on Apache Kafka and the Confluent ecosystem, it provides advanced algorithms, flexible storage backends, and seamless integration with modern data infrastructure.
+
+![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
+
+---
+
 ## Related Work: Application of the OpenTSx toolbox:
 - IJCS :
   *Hadoop.TS:* The initial paper.
@@ -19,16 +30,6 @@
 - Wikimedia Foundation : 
   *Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia*
   https://www.researchgate.net/publication/255704719_Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia
-
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-1.8+-orange.svg)](https://www.java.com)
-[![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org)
-[![Kafka](https://img.shields.io/badge/Kafka-2.3.0-black.svg)](https://kafka.apache.org)
-
-OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated time series analysis. Built on Apache Kafka and the Confluent ecosystem, it provides advanced algorithms, flexible storage backends, and seamless integration with modern data infrastructure.
-
-![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
 
 ---
 
