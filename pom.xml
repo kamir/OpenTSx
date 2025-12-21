@@ -13,10 +13,10 @@
         <module>opentsx-data</module>
         <module>opentsx-core</module>
         <module>opentsx-connectors</module>
-        <module>opentsx-flink-core</module>
         <module>opentsx-lg</module>
         <module>opentsx-predict</module>
         <module>opentsx-processors</module>
+        <module>opentsx-flink-core</module>
         <!--module>opentsx-ksql-udf/demo-udf</module-->
         <!--module>opentsx-kafka-streams-tsa</module-->
         <!--module>opentsx-ksql-app</module-->
@@ -427,8 +427,6 @@
             <version>2.7</version>
         </dependency>
 
-
-
         <dependency>
             <groupId>xstream</groupId>
             <artifactId>xstream</artifactId>
@@ -504,7 +502,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.9</version>
+                <version>0.8.11</version>
                 <executions>
                     <execution>
                         <goals>
