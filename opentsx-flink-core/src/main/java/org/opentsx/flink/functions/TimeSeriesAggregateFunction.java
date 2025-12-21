@@ -5,12 +5,15 @@ import org.opentsx.data.model.Observation;
 import org.opentsx.data.series.TimeSeriesObject;
 
 /**
- * Flink aggregate function that accumulates {@link Observation} objects into a {@link TimeSeriesObject}.
+ * Flink aggregate function that accumulates {@link Observation} objects into a
+ * {@link TimeSeriesObject}.
  *
- * This function is typically used in windowed operations to collect observations over time
+ * This function is typically used in windowed operations to collect
+ * observations over time
  * and produce a complete time series for analysis.
  *
  * <h2>Usage Example:</h2>
+ * 
  * <pre>{@code
  * DataStream<Observation> observations = ...;
  *
@@ -22,14 +25,15 @@ import org.opentsx.data.series.TimeSeriesObject;
  * }</pre>
  *
  * <h2>Stateful Processing:</h2>
- * The accumulator (TimeSeriesObject) grows with each observation. For large windows,
+ * The accumulator (TimeSeriesObject) grows with each observation. For large
+ * windows,
  * consider using RocksDB state backend to handle state larger than memory.
  *
  * <h2>Performance Characteristics:</h2>
  * <ul>
- *   <li>Add operation: O(1) amortized (Vector append)</li>
- *   <li>Merge operation: O(n + m) where n, m are series sizes</li>
- *   <li>Memory: ~16 bytes per observation (2 doubles)</li>
+ * <li>Add operation: O(1) amortized (Vector append)</li>
+ * <li>Merge operation: O(n + m) where n, m are series sizes</li>
+ * <li>Memory: ~16 bytes per observation (2 doubles)</li>
  * </ul>
  *
  * @see TimeSeriesObject
@@ -40,7 +44,8 @@ public class TimeSeriesAggregateFunction implements AggregateFunction<Observatio
     private static final long serialVersionUID = 1L;
 
     /**
-     * Creates a new empty accumulator (TimeSeriesObject) for aggregating observations.
+     * Creates a new empty accumulator (TimeSeriesObject) for aggregating
+     * observations.
      *
      * @return A new, empty TimeSeriesObject
      */
@@ -66,8 +71,8 @@ public class TimeSeriesAggregateFunction implements AggregateFunction<Observatio
         }
 
         // Set label from first observation if not already set
-        if (accumulator.getLabel() == null && observation.getLabel() != null) {
-            accumulator.setLabel(observation.getLabel().toString());
+        if (accumulator.getLabel() == null && observation.getUri() != null) {
+            accumulator.setLabel(observation.getUri().toString());
         }
 
         // Add the observation as a (timestamp, value) pair
@@ -128,17 +133,18 @@ public class TimeSeriesAggregateFunction implements AggregateFunction<Observatio
         }
 
         // Merge x and y values
-        // Simple approach: append all points and let downstream sorting handle order if needed
+        // Simple approach: append all points and let downstream sorting handle order if
+        // needed
         // For better performance with large series, could implement sorted merge
         if (a.xValues != null && a.yValues != null) {
             for (int i = 0; i < a.xValues.size() && i < a.yValues.size(); i++) {
-                merged.addValuePair(a.xValues.get(i), a.yValues.get(i));
+                merged.addValuePair((Double) a.xValues.get(i), (Double) a.yValues.get(i));
             }
         }
 
         if (b.xValues != null && b.yValues != null) {
             for (int i = 0; i < b.xValues.size() && i < b.yValues.size(); i++) {
-                merged.addValuePair(b.xValues.get(i), b.yValues.get(i));
+                merged.addValuePair((Double) b.xValues.get(i), (Double) b.yValues.get(i));
             }
         }
 

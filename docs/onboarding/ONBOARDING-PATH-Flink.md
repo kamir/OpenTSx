@@ -59,20 +59,15 @@ Sinks (Kafka, Files, Databases)
 cd /path/to/OpenTSx
 mvn clean install -DskipTests
 
-# 2. Start local Kafka cluster
-docker-compose up -d kafka zookeeper
+# 2. Start The Lab Environment
+# This brings up Kafka, Zookeeper, Flink, and more
+docker-compose -f docker-compose.onboarding.yml up -d
 
 # 3. Verify Flink module build
 ls -l opentsx-flink-core/target/opentsx-flink-core-3.0.0.jar
 
-# 4. Download and start Flink locally
-wget https://archive.apache.org/dist/flink/flink-1.18.0/flink-1.18.0-bin-scala_2.12.tgz
-tar -xzf flink-1.18.0-bin-scala_2.12.tgz
-cd flink-1.18.0
-./bin/start-cluster.sh
-
-# 5. Verify Flink UI
-open http://localhost:8081
+# 4. Verify Flink UI
+open http://localhost:8082
 ```
 
 **Hands-On Exercise** (30 min):
@@ -114,6 +109,8 @@ env.enableCheckpointing(60000); // Exactly-once semantics
 KafkaSource<Observation> source = KafkaSource.<Observation>builder()
     .setBootstrapServers("localhost:9092")
     .setTopics("observations")
+    .setGroupId("opentsx-timeseries-analysis")
+    .setStartingOffsets(OffsetsInitializer.earliest())
     .setDeserializer(new ObservationSchema())
     .build();
 
@@ -196,12 +193,12 @@ open http://localhost:8081
 **TimeSeriesObjectSerializer Structure**:
 ```
 [label (UTF-8 string)]
-[description (UTF-8 string or null)]
+[label (UTF-8 string)]
 [xValues.size (int)]
 [xValues data (size × double)]
 [yValues.size (int)]
 [yValues data (size × double)]
-[metadata fields...]
+[metadata (int)]
 ```
 
 **Why This Matters**:
@@ -570,7 +567,7 @@ KafkaSink<TimeSeriesObject> sink = KafkaSink.<TimeSeriesObject>builder()
     .setRecordSerializer(
         KafkaRecordSerializationSchema.builder()
             .setTopic("timeseries-results")
-            .setValueSerializationSchema(new TimeSeriesObjectAvroSerializer())
+            .setValueSerializationSchema(new TimeSeriesObjectSerializer())
             .build()
     )
     .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
