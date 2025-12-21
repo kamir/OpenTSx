@@ -181,3 +181,26 @@ hs_err_pid*
 .DS_Store
 .ipynb_checkpoints/.ipynb_checkpoints/
 .ipynb_checkpoints/.gitignore-checkpoint
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
