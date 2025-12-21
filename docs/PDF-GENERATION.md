@@ -1,8 +1,124 @@
-# PDF Manual Generation Guide
+# PDF Documentation Generation Guide
 
-This document explains how to generate the OpenTSx Manual in PDF format from the GitBook-style Markdown documentation.
+This document explains how to generate the OpenTSx documentation in PDF format using various methods.
 
 ## Overview
+
+The OpenTSx project supports multiple PDF generation methods:
+- **GitBook/Honkit** - For generating PDFs from GitBook-structured docs
+- **Pandoc + Maven** - For generating manuals integrated with the build process
+- **Pandoc Standalone** - For quick PDF generation from markdown files
+- **Online Services** - For users without local tool installation
+
+## Method 1: GitBook/Honkit PDF Generation (Recommended for GitBook Docs)
+
+### What is Honkit?
+
+Honkit is a modern fork of GitBook that works with modern Node.js versions (v14+). The original GitBook CLI only works with Node.js v12-14.
+
+### Installation
+
+```bash
+# Install Honkit (works with Node.js 14+)
+npm install -g honkit
+
+# Install Calibre (required for PDF generation)
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y calibre
+
+# macOS
+brew install calibre
+
+# Windows
+# Download from https://calibre-ebook.com/download
+```
+
+### Generate Documentation PDFs
+
+```bash
+cd docs
+
+# Generate complete documentation
+honkit pdf . OpenTSx-Complete-Documentation.pdf
+
+# Generate manual only
+cd manual
+honkit pdf . ../OpenTSx-Manual.pdf
+
+# Generate onboarding paths
+cd ../onboarding
+honkit pdf . ../OpenTSx-Onboarding-Paths.pdf
+```
+
+### Generate HTML Website
+
+```bash
+cd docs
+
+# Build static website
+honkit build
+# Output in _book/ directory
+
+# Or serve locally for development
+honkit serve
+# Open http://localhost:4000
+```
+
+### Configuration
+
+The `docs/book.json` file controls PDF styling and plugins:
+
+```json
+{
+  "title": "OpenTSx Documentation",
+  "pdf": {
+    "pageNumbers": true,
+    "fontSize": 12,
+    "fontFamily": "Arial",
+    "paperSize": "a4",
+    "margin": {
+      "right": 62,
+      "left": 62,
+      "top": 56,
+      "bottom": 56
+    }
+  }
+}
+```
+
+### Troubleshooting Honkit
+
+**Issue: Plugin not found errors**
+
+Solution: Simplify `book.json` to use only basic plugins:
+
+```json
+{
+  "plugins": [
+    "theme-default",
+    "fontsettings",
+    "highlight",
+    "search",
+    "-sharing",
+    "-lunr"
+  ]
+}
+```
+
+**Issue: "ebook-convert" not found**
+
+Solution: Install Calibre (see installation section above).
+
+**Issue: Network errors during npm install**
+
+Solution: Use alternative methods below, or install tools when network is available.
+
+---
+
+## Method 2: Maven + Pandoc PDF Generation (For Manual)
+
+### Overview
 
 The OpenTSx project includes an automated PDF generation system that:
 - Converts Markdown documentation to professional PDF format
