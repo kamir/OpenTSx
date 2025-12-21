@@ -1,7 +1,7 @@
 """Application configuration."""
 
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import validator
 
 
@@ -72,9 +72,11 @@ class Settings(BaseSettings):
         """Get Redis URL."""
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=".env",
+        extra="ignore"  # Ignore extra environment variables from docker-compose
+    )
 
 
 settings = Settings()
