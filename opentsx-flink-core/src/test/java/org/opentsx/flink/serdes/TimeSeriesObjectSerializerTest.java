@@ -10,7 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for {@link TimeSeriesObjectSerializer}.
  *
- * These tests verify correct serialization and deserialization of TimeSeriesObject instances,
+ * These tests verify correct serialization and deserialization of
+ * TimeSeriesObject instances,
  * including edge cases like null values, empty series, and large datasets.
  */
 public class TimeSeriesObjectSerializerTest {
@@ -41,8 +42,8 @@ public class TimeSeriesObjectSerializerTest {
         assertEquals(original.yValues.size(), deserialized.yValues.size());
 
         for (int i = 0; i < original.xValues.size(); i++) {
-            assertEquals(original.xValues.get(i), deserialized.xValues.get(i), 0.0001);
-            assertEquals(original.yValues.get(i), deserialized.yValues.get(i), 0.0001);
+            assertEquals((Double) original.xValues.get(i), (Double) deserialized.xValues.get(i), 0.0001);
+            assertEquals((Double) original.yValues.get(i), (Double) deserialized.yValues.get(i), 0.0001);
         }
     }
 
@@ -95,12 +96,12 @@ public class TimeSeriesObjectSerializerTest {
         assertEquals(10000, deserialized.yValues.size());
 
         // Verify a few random points
-        assertEquals(original.xValues.get(0), deserialized.xValues.get(0), 0.0001);
-        assertEquals(original.yValues.get(0), deserialized.yValues.get(0), 0.0001);
-        assertEquals(original.xValues.get(5000), deserialized.xValues.get(5000), 0.0001);
-        assertEquals(original.yValues.get(5000), deserialized.yValues.get(5000), 0.0001);
-        assertEquals(original.xValues.get(9999), deserialized.xValues.get(9999), 0.0001);
-        assertEquals(original.yValues.get(9999), deserialized.yValues.get(9999), 0.0001);
+        assertEquals((Double) original.xValues.get(0), (Double) deserialized.xValues.get(0), 0.0001);
+        assertEquals((Double) original.yValues.get(0), (Double) deserialized.yValues.get(0), 0.0001);
+        assertEquals((Double) original.xValues.get(5000), (Double) deserialized.xValues.get(5000), 0.0001);
+        assertEquals((Double) original.yValues.get(5000), (Double) deserialized.yValues.get(5000), 0.0001);
+        assertEquals((Double) original.xValues.get(9999), (Double) deserialized.xValues.get(9999), 0.0001);
+        assertEquals((Double) original.yValues.get(9999), (Double) deserialized.yValues.get(9999), 0.0001);
     }
 
     @Test
