@@ -1,6 +1,7 @@
 package org.opentsx.flink.serdes;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
@@ -12,10 +13,12 @@ import java.util.Vector;
 /**
  * Efficient serializer for OpenTSx {@link TimeSeriesObject} in Apache Flink.
  *
- * This serializer handles the conversion of TimeSeriesObject instances to/from binary format
+ * This serializer handles the conversion of TimeSeriesObject instances to/from
+ * binary format
  * for Flink's state backends, network transfers, and checkpointing.
  *
  * <h2>Serialization Format:</h2>
+ * 
  * <pre>
  * [label (UTF-8 string)]
  * [description (UTF-8 string or null)]
@@ -28,9 +31,9 @@ import java.util.Vector;
  *
  * <h2>Performance Characteristics:</h2>
  * <ul>
- *   <li>Time Complexity: O(n) where n = number of data points</li>
- *   <li>Space: ~16 bytes per point (2 doubles) + metadata overhead</li>
- *   <li>Works efficiently with RocksDB for large state</li>
+ * <li>Time Complexity: O(n) where n = number of data points</li>
+ * <li>Space: ~16 bytes per point (2 doubles) + metadata overhead</li>
+ * <li>Works efficiently with RocksDB for large state</li>
  * </ul>
  *
  * @see TimeSeriesObjectTypeInfo
@@ -67,14 +70,15 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
 
         // Deep copy vectors
         if (from.xValues != null) {
-            copy.xValues = new Vector<>(from.xValues);
+            copy.xValues = new Vector<Double>(from.xValues);
         }
         if (from.yValues != null) {
-            copy.yValues = new Vector<>(from.yValues);
+            copy.yValues = new Vector<Double>(from.yValues);
         }
 
         // Copy metadata
-        copy.decimalFomrat = from.decimalFomrat;
+        copy.setDecimalFomrmatX(from.getDecimalFormat_X().toPattern());
+        copy.setDecimalFomrmatY(from.getDecimalFormat_Y().toPattern());
 
         return copy;
     }
@@ -111,8 +115,8 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         // Serialize xValues
         if (record.xValues != null) {
             target.writeInt(record.xValues.size());
-            for (Double val : record.xValues) {
-                target.writeDouble(val != null ? val : 0.0);
+            for (Object val : record.xValues) {
+                target.writeDouble(val != null ? (Double) val : 0.0);
             }
         } else {
             target.writeInt(0);
@@ -121,15 +125,22 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         // Serialize yValues
         if (record.yValues != null) {
             target.writeInt(record.yValues.size());
-            for (Double val : record.yValues) {
-                target.writeDouble(val != null ? val : 0.0);
+            for (Object val : record.yValues) {
+                target.writeDouble(val != null ? (Double) val : 0.0);
             }
         } else {
             target.writeInt(0);
         }
 
-        // Serialize metadata
-        target.writeInt(record.decimalFomrat);
+        // Copy metadata
+        // We serialize the patterns of the DecimalFormats
+        String dfx = record.getDecimalFormat_X().toPattern();
+        String dfy = record.getDecimalFormat_Y().toPattern();
+        String dfstat = record.getDecimalFormat_STAT().toPattern();
+
+        target.writeUTF(dfx);
+        target.writeUTF(dfy);
+        target.writeUTF(dfstat);
     }
 
     @Override
@@ -150,7 +161,7 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         // Deserialize xValues
         int xSize = source.readInt();
         if (xSize > 0) {
-            ts.xValues = new Vector<>(xSize);
+            ts.xValues = new Vector<Double>(xSize);
             for (int i = 0; i < xSize; i++) {
                 ts.xValues.add(source.readDouble());
             }
@@ -159,14 +170,23 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         // Deserialize yValues
         int ySize = source.readInt();
         if (ySize > 0) {
-            ts.yValues = new Vector<>(ySize);
+            ts.yValues = new Vector<Double>(ySize);
             for (int i = 0; i < ySize; i++) {
                 ts.yValues.add(source.readDouble());
             }
         }
 
         // Deserialize metadata
-        ts.decimalFomrat = source.readInt();
+        String dfx = source.readUTF();
+        String dfy = source.readUTF();
+        String dfstat = source.readUTF();
+
+        ts.setDecimalFomrmatX(dfx);
+        ts.setDecimalFomrmatY(dfy);
+        // Note: TimeSeriesObject doesn't have setDecimalFormat_STAT, but it's
+        // initialized with default.
+        // If needed, we would add that setter. For now, X and Y formats are most
+        // important for display.
 
         return ts;
     }
@@ -208,7 +228,9 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         }
 
         // Copy metadata
-        target.writeInt(source.readInt());
+        target.writeUTF(source.readUTF()); // dfx
+        target.writeUTF(source.readUTF()); // dfy
+        target.writeUTF(source.readUTF()); // dfstat
     }
 
     @Override
@@ -244,7 +266,8 @@ public class TimeSeriesObjectSerializer extends TypeSerializer<TimeSeriesObject>
         }
 
         @Override
-        public void readSnapshot(int readVersion, DataInputView in, ClassLoader userCodeClassLoader) throws IOException {
+        public void readSnapshot(int readVersion, DataInputView in, ClassLoader userCodeClassLoader)
+                throws IOException {
             // No configuration to read
         }
 

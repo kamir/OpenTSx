@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PORTS=(
+  8000    # OpenTSx-SaaS 
   9092    # Kafka
   8080    # Kafka internal HTTP
   9094    # Schema Registry

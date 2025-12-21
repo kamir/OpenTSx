@@ -14,21 +14,24 @@ import java.io.IOException;
 /**
  * Kafka deserialization schema for OpenTSx Observation records using Avro.
  *
- * This schema handles deserialization of Avro-encoded Observation objects from Kafka topics,
+ * This schema handles deserialization of Avro-encoded Observation objects from
+ * Kafka topics,
  * with built-in support for schema evolution and watermark extraction.
  *
  * <h2>Usage Example:</h2>
+ * 
  * <pre>{@code
  * KafkaSource<Observation> source = KafkaSource.<Observation>builder()
- *     .setBootstrapServers("localhost:9092")
- *     .setTopics("observations")
- *     .setDeserializer(new ObservationSchema())
- *     .build();
+ *         .setBootstrapServers("localhost:9092")
+ *         .setTopics("observations")
+ *         .setDeserializer(new ObservationSchema())
+ *         .build();
  * }</pre>
  *
  * <h2>Event Time Processing:</h2>
  * This schema automatically extracts timestamps from Observation objects for
- * event-time processing. The timestamp is taken from {@link Observation#getTimestamp()}.
+ * event-time processing. The timestamp is taken from
+ * {@link Observation#getTimestamp()}.
  *
  * @see Observation
  * @see KafkaRecordDeserializationSchema
@@ -38,7 +41,7 @@ public class ObservationSchema implements KafkaRecordDeserializationSchema<Obser
     private static final long serialVersionUID = 1L;
 
     private transient SpecificDatumReader<Observation> datumReader;
-    private transient org.apache.avro.io.Decoder decoder;
+    private transient org.apache.avro.io.BinaryDecoder decoder;
 
     /**
      * Initializes the Avro reader for Observation deserialization.
@@ -74,7 +77,7 @@ public class ObservationSchema implements KafkaRecordDeserializationSchema<Obser
             // Log error but don't fail the job
             // In production, consider using a side output for failed records
             System.err.println("Failed to deserialize observation from topic " + record.topic()
-                + " partition " + record.partition() + " offset " + record.offset() + ": " + e.getMessage());
+                    + " partition " + record.partition() + " offset " + record.offset() + ": " + e.getMessage());
         }
     }
 
