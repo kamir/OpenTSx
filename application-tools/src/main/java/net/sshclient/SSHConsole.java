@@ -1,6 +1,20 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.opentsx.net.sshclient;
 
@@ -8,8 +22,48 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * SSH Console: Swing-based graphical SSH client for cluster management.
+ *
+ * <p>This application provides a GUI interface for executing SSH commands on remote
+ * cluster nodes. It's designed for administrators who need to manage multiple cluster
+ * nodes through SSH connections.
+ *
+ * <h2>Features:</h2>
+ * <ul>
+ *   <li>Tabbed interface for multiple SSH sessions</li>
+ *   <li>Command history and execution</li>
+ *   <li>Visual terminal emulation</li>
+ *   <li>Pre-configured command execution</li>
+ * </ul>
+ *
+ * <h2>Usage Example:</h2>
+ * <pre>{@code
+ * // Launch the SSH Console
+ * java -cp application-tools.jar org.opentsx.net.sshclient.SSHConsole
+ *
+ * // In the GUI:
+ * // 1. Enter command: -v -l root master2 ls
+ * // 2. Click > to execute
+ * // 3. View output in terminal panel
+ * }</pre>
+ *
+ * <h2>Command Format:</h2>
+ * <p>Commands follow the pattern: {@code [options] hostname [command]}
+ * <ul>
+ *   <li>{@code -v} - Verbose output</li>
+ *   <li>{@code -l username} - Login username</li>
+ *   <li>{@code -p port} - SSH port (default: 22)</li>
+ * </ul>
+ *
+ * <h2>Integration with Cluster Tools:</h2>
+ * <p>This console works alongside {@link ClusterCheck} for comprehensive cluster
+ * management - use ClusterCheck to discover nodes, then SSHConsole to manage them.
  *
  * @author kamir
+ * @version 1.0.0
+ * @see SSHClientTool
+ * @see ClusterCheck
+ * @since OpenTSx 3.0.0
  */
 public class SSHConsole extends javax.swing.JFrame {
 
