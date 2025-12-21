@@ -22,6 +22,7 @@ from app.db.session import async_engine
 from app.db.base_class import Base
 from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
+from app.db.utils import wait_for_db
 
 
 # ==================== Lifespan ====================
@@ -33,6 +34,10 @@ async def lifespan(app: FastAPI):
 
     Handles startup and shutdown events.
     """
+    # Wait for database to be ready
+    print("⏳ Waiting for database connection...")
+    await wait_for_db(async_engine)
+
     # Startup: Create tables and initialize database
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
