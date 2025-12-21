@@ -3,7 +3,7 @@
 from app.db.base_class import Base  # noqa
 
 # Import all models so they are registered with SQLAlchemy
-from app.models.user import User, Organization  # noqa
-from app.models.flow import Flow  # noqa
+from app.models.user import User, Organization, Team, Invitation  # noqa
+from app.models.flow import Flow, FlowExecution  # noqa
 
-__all__ = ["Base", "User", "Organization", "Flow"]
+__all__ = ["Base", "User", "Organization", "Team", "Invitation", "Flow", "FlowExecution"]
