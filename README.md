@@ -7,7 +7,7 @@
 
 OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated time series analysis. Built on Apache Kafka and the Confluent ecosystem, it provides advanced algorithms, flexible storage backends, and seamless integration with modern data infrastructure.
 
-![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
+![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/charts-and-sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
 
 ---
 
