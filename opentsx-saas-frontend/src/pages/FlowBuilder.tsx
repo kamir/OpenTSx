@@ -66,7 +66,7 @@ export default function FlowBuilder() {
           nodes: nodes.map((node) => ({
             id: node.id,
             type: node.type || 'default',
-            label: (node.data as any).label,
+            label: (node.data as { label: string }).label,
             position: node.position,
             config: {},
           })),

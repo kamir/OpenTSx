@@ -59,11 +59,15 @@ OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated tim
 - **Return Interval Statistics (RIS)** - Extreme event and risk analysis
 - **Statistical Analysis** - Entropy, Granger causality, distribution testing
 - **Signal Processing** - FFT, peak detection, trend extraction
+- **Dynamic Flows** - Configurable processing pipelines (PFD)
+
 
 ### Cloud-Native Architecture
 - **Apache Kafka** - Event streaming backbone
 - **KStreams** - Stream processing topologies
+- **Apache Flink** - Dynamic job execution engine
 - **ksqlDB** - SQL streaming queries with custom UDFs
+
 - **Multi-Region Support** - Active-active and active-passive deployments
 - **Containerized** - Docker images and Kubernetes ready
 
@@ -165,6 +169,19 @@ docker run -d \
   -e OPENTSX_USE_KAFKA=true \
   -v $(pwd)/../config:/config \
   opentsx/time-series-generator:3.0.0
+```
+
+### SaaS Platform Quick Start
+
+```bash
+# Start full stack (Backend, Frontend, Flink integration, DBs)
+# Note: Ensure frontend is built or removed from docker-compose if not needed/built
+cd opentsx-saas-backend
+docker-compose up -d --build
+
+# Access UI
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000/docs
 ```
 
 ---
@@ -318,7 +335,7 @@ OpenTSx implements a **layered, event-driven architecture** optimized for both r
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │         Stream Processing & Query Layer                      │
-│  (KStreams, ksqlDB, Apache Flink)                           │
+│  (KStreams, ksqlDB, Apache Flink Dynamic Jobs)               │
 └──────────────────────────┬──────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -757,6 +774,9 @@ OpenTSx/
 ├── opentsx-connectors/        # Kafka integration
 ├── opentsx-lg/                # Time series data generator
 ├── opentsx-predict/           # TensorFlow ML integration
+├── opentsx-flink-core/        # Flink dynamic execution engine
+├── opentsx-saas-backend/      # FastAPI SaaS Control Plane
+├── opentsx-saas-frontend/     # React/Vite User Interface
 ├── opentsx-kafka-streams-tsa/ # KStreams applications
 ├── opentsx-ksql-udf/          # ksqlDB custom functions
 ├── opentsx-store-cassandra/   # Cassandra persistence

@@ -25,6 +25,9 @@ from app.db.base import Base  # Import from base.py to ensure all models are loa
 from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
 from app.db.utils import wait_for_db
+from app.db.session import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 
 
 # ==================== Lifespan ====================
@@ -445,19 +448,57 @@ async def delete_flow(flow_id: int):
 
 # Flow execution routes
 @app.post(f"{settings.API_V1_STR}/flows/{{flow_id}}/execute")
-async def execute_flow(flow_id: int):
+async def execute_flow(
+    flow_id: int,
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Execute flow.
+    Execute flow via Flink.
 
     Starts flow execution and returns execution ID for tracking.
     """
+    from app.models.flow import Flow, FlowExecution, ExecutionStatus
+    from app.services.flink_service import flink_service
+    from sqlalchemy import select
+    from datetime import datetime
+
+    # 1. Fetch Flow
+    result = await db.execute(select(Flow).where(Flow.id == flow_id))
+    flow = result.scalar_one_or_none()
+    
+    if not flow:
+        raise HTTPException(status_code=404, detail="Flow not found")
+
+    # 2. Submit to Flink
+    try:
+        flink_job_id = flink_service.submit_job(flow.definition)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to submit Flink job: {str(e)}")
+
+    # 3. Create Execution Record
+    execution = FlowExecution(
+        flow_id=flow.id,
+        status=ExecutionStatus.RUNNING, # Or PENDING
+        started_at=datetime.utcnow(),
+        result={"flink_job_id": flink_job_id}
+    )
+    db.add(execution)
+    await db.commit()
+    await db.refresh(execution)
+
+    # 4. Update Stats
+    flow.execution_count += 1
+    flow.last_executed_at = datetime.utcnow()
+    await db.commit()
+
     return {
         "message": "Flow execution started",
         "execution": {
-            "id": 1,
-            "flow_id": flow_id,
-            "status": "running",
-            "started_at": "2025-01-13T12:00:00Z",
+            "id": execution.id,
+            "flow_id": flow.id,
+            "status": execution.status,
+            "flink_job_id": flink_job_id,
+            "started_at": execution.started_at,
         }
     }
 
