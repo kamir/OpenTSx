@@ -1,8 +1,9 @@
 {
-  "name": "opentsx-frontend",
+  "name": "opentsx-saas-frontend",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
-  "description": "OpenTSx Visual Flow Builder - React Frontend",
+  "description": "OpenTSx SaaS Platform - React Frontend with Visual Flow Builder",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
