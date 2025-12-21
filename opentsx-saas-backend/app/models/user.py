@@ -86,11 +86,8 @@ class User(Base):
         foreign_keys="Invitation.inviter_id",
         back_populates="inviter"
     )
-    invitations_received = relationship(
-        "Invitation",
-        foreign_keys="Invitation.invitee_email",
-        back_populates="invitee"
-    )
+    # Note: invitations_received not included as invitations are sent to emails,
+    # not user IDs. Query by email if needed: Invitation.invitee_email == user.email
 
 
 class Organization(Base):
@@ -190,9 +187,5 @@ class Invitation(Base):
         foreign_keys=[inviter_id],
         back_populates="invitations_sent"
     )
-    invitee = relationship(
-        "User",
-        foreign_keys=[invitee_email],
-        primaryjoin="Invitation.invitee_email == User.email",
-        back_populates="invitations_received"
-    )
+    # Note: invitee relationship removed because invitations are sent to emails,
+    # not to existing users. Use invitee_email to look up users if needed.
