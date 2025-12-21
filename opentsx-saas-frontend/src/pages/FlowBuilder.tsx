@@ -2,7 +2,7 @@
  * Flow Builder page component
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -46,7 +46,7 @@ const initialEdges: Edge[] = [
 
 export default function FlowBuilder() {
   const navigate = useNavigate();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [flowName, setFlowName] = useState('My New Flow');
   const [isSaving, setIsSaving] = useState(false);
