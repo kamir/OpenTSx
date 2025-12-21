@@ -89,7 +89,7 @@ export interface Node {
   type: string;
   label: string;
   position: { x: number; y: number };
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 export interface Edge {
@@ -198,7 +198,7 @@ export const flowsAPI = {
   /**
    * Execute flow
    */
-  execute: async (id: number): Promise<any> => {
+  execute: async (id: number): Promise<unknown> => {
     const response = await apiClient.post(`/flows/${id}/execute`);
     return response.data;
   },

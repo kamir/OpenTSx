@@ -222,6 +222,15 @@ docker build -t opentsx-frontend .
 docker run -p 3000:3000 opentsx-frontend
 ```
 
+### Integrated Startup (Recommended)
+
+You can run the entire stack (Frontend + Backend + DB) using the backend's docker-compose:
+
+```bash
+cd ../opentsx-saas-backend
+docker-compose up -d --build
+```
+
 ## Testing
 
 ```bash

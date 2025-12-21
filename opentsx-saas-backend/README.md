@@ -193,6 +193,17 @@ docker build -t opentsx-backend .
 docker run -p 8000:8000 --env-file .env opentsx-backend
 ```
 
+### Docker Compose (Full Stack)
+
+This starts the Backend, Frontend, Postgres, and Redis:
+
+```bash
+docker-compose up -d --build
+```
+
+- **Frontend**: http://localhost:3000
+- **Backend**: http://localhost:8000
+
 ## Authentication Flow
 
 ```
