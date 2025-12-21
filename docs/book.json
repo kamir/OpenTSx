@@ -16,56 +16,18 @@
     "fontsettings",
     "highlight",
     "search",
-    "sharing",
-    "back-to-top-button",
-    "copy-code-button",
-    "expandable-chapters",
-    "anchor-navigation-ex",
-    "github",
-    "edit-link",
-    "-lunr",
-    "-search",
-    "search-plus",
-    "splitter",
-    "page-toc-button"
+    "-sharing",
+    "-lunr"
   ],
 
   "pluginsConfig": {
     "theme-default": {
-      "showLevel": true,
-      "styles": {
-        "website": "styles/website.css",
-        "pdf": "styles/pdf.css",
-        "epub": "styles/epub.css",
-        "mobi": "styles/mobi.css"
-      }
+      "showLevel": true
     },
     "fontsettings": {
       "theme": "white",
       "family": "sans",
       "size": 2
-    },
-    "github": {
-      "url": "https://github.com/kamir/OpenTSx"
-    },
-    "edit-link": {
-      "base": "https://github.com/kamir/OpenTSx/edit/main/docs",
-      "label": "Edit This Page"
-    },
-    "sharing": {
-      "facebook": false,
-      "twitter": true,
-      "google": false,
-      "weibo": false,
-      "all": ["facebook", "google", "twitter", "weibo"]
-    },
-    "anchor-navigation-ex": {
-      "showLevel": false,
-      "showGoTop": true
-    },
-    "page-toc-button": {
-      "maxTocDepth": 2,
-      "minTocSize": 2
     }
   },
 
