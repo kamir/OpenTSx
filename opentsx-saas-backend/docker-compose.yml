@@ -18,10 +18,11 @@ services:
     networks:
       - opentsx-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opentsx_user -d opentsx"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U opentsx_user -d opentsx && PGPASSWORD=change_this_password psql -U opentsx_user -d opentsx -c 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
 
   # Redis Cache
   redis:
@@ -83,11 +84,11 @@ services:
     volumes:
       - ./app:/app/app  # Mount for development hot-reload
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
 networks:
   opentsx-network:
