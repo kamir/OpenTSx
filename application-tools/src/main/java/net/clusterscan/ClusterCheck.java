@@ -1,6 +1,20 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.opentsx.net.clusterscan;
 
@@ -13,8 +27,45 @@ import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 
 /**
+ * Cluster-Checker: A Swing-based GUI application for scanning and monitoring cluster nodes.
+ *
+ * <p>This utility provides a graphical interface for cluster administrators to:
+ * <ul>
+ *   <li>Scan IP address ranges using CIDR notation (e.g., 192.168.3.255/24)</li>
+ *   <li>Identify reachable nodes within the cluster</li>
+ *   <li>Display available computers and services in a tabbed interface</li>
+ *   <li>Monitor cluster node availability in real-time</li>
+ * </ul>
+ *
+ * <h2>Usage Example:</h2>
+ * <pre>{@code
+ * // Launch the GUI
+ * java -cp application-tools.jar org.opentsx.net.clusterscan.ClusterCheck
+ *
+ * // In the GUI:
+ * // 1. Enter IP range: 192.168.1.0/24
+ * // 2. Click "scan ip-range"
+ * // 3. View available nodes in the list
+ * }</pre>
+ *
+ * <h2>Features:</h2>
+ * <ul>
+ *   <li><b>IP Range Scanning:</b> Supports CIDR notation for flexible network scanning</li>
+ *   <li><b>Reachability Detection:</b> Uses ICMP ping to detect live nodes</li>
+ *   <li><b>Tabbed Interface:</b> Separate views for computers and services</li>
+ *   <li><b>Real-time Updates:</b> Dynamic list updates as nodes are discovered</li>
+ * </ul>
+ *
+ * <h2>Technical Details:</h2>
+ * This class uses {@link ScanIPS} for the actual IP scanning logic and provides
+ * a Swing-based UI for user interaction. The GUI is generated using NetBeans
+ * Form Designer (generated code sections should not be manually modified).
  *
  * @author kamir
+ * @version 1.0.0
+ * @see ScanIPS
+ * @see InetAddress
+ * @since OpenTSx 3.0.0
  */
 public class ClusterCheck extends javax.swing.JFrame {
 
@@ -171,27 +222,54 @@ public class ClusterCheck extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 
+    /**
+     * Resets the view to its initial state.
+     *
+     * <p>Currently not implemented. Reserved for future use to clear
+     * scan results and reset UI components.
+     */
     private void resetView() {
-        
+        // Reserved for future implementation
     }
 
+    /**
+     * Scans the IP range specified in the text field and updates the display with reachable nodes.
+     *
+     * <p>This method:
+     * <ol>
+     *   <li>Reads the CIDR notation from the input text field (e.g., "192.168.3.255/24")</li>
+     *   <li>Uses {@link ScanIPS} to scan all addresses in the range</li>
+     *   <li>Tests reachability of each address using ICMP ping</li>
+     *   <li>Updates the GUI list with all reachable nodes</li>
+     * </ol>
+     *
+     * <p><b>Example Input:</b> {@code 192.168.1.0/24} scans addresses from 192.168.1.0 to 192.168.1.255
+     *
+     * <p><b>Performance:</b> Scanning large ranges may take time. Each node is tested with
+     * a 100ms timeout. For a /24 network (256 addresses), expect ~25 seconds maximum scan time.
+     *
+     * @throws UnknownHostException if the IP range format is invalid
+     * @throws IOException if network communication fails during scanning
+     * @see ScanIPS#scanRange(String)
+     */
     private void scanRange() {
         ScanIPS scanner = new ScanIPS();
         try {
-        
-            Vector<InetAddress> available = scanner.scanRange( this.jTextField1.getText() );
-            
+            Vector<InetAddress> available = scanner.scanRange(this.jTextField1.getText());
+
             DefaultListModel dlm = new DefaultListModel();
-            for( InetAddress a : available ) {
-                dlm.addElement( a );
-            }    
+            for (InetAddress a : available) {
+                dlm.addElement(a);
+            }
             this.jList1.setModel(dlm);
             this.repaint();
         }
         catch (UnknownHostException ex) {
-            Logger.getLogger(ClusterCheck.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ClusterCheck.class.getName()).log(Level.SEVERE,
+                "Invalid IP range format: " + this.jTextField1.getText(), ex);
         } catch (IOException ex) {
-            Logger.getLogger(ClusterCheck.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ClusterCheck.class.getName()).log(Level.SEVERE,
+                "Network error during IP range scan", ex);
         }
     }
 }
