@@ -93,6 +93,26 @@ services:
       retries: 3
       start_period: 60s
 
+  # Frontend
+  frontend:
+    build:
+      context: ../opentsx-saas-frontend
+      dockerfile: Dockerfile
+    container_name: opentsx-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    volumes:
+      - ../opentsx-saas-frontend:/app
+      - /app/node_modules
+    networks:
+      - opentsx-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
 networks:
   opentsx-network:
     driver: bridge

@@ -2,6 +2,7 @@
  * Authentication state management with Zustand
  */
 
+import axios from 'axios';
 import { create } from 'zustand';
 import { User, authAPI, LoginRequest, RegisterRequest } from '../services/api';
 
@@ -34,11 +35,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.detail || 'Login failed',
-        isLoading: false,
-      });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        set({
+          error: error.response.data?.detail || 'Login failed',
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Login failed',
+          isLoading: false,
+        });
+      }
       throw error;
     }
   },
@@ -55,11 +63,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.detail || 'Registration failed',
-        isLoading: false,
-      });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        set({
+          error: error.response.data?.detail || 'Registration failed',
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Registration failed',
+          isLoading: false
+        });
+      }
       throw error;
     }
   },
