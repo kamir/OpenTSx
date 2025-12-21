@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenTSx SaaS Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .auth-section {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .list-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .list-item h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .list-item p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-draft {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .user-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .user-info strong {
+            color: #667eea;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚀 OpenTSx SaaS Platform</h1>
+            <p>Visual Time Series Analysis & Flow Builder</p>
+            <span id="apiStatus" class="status disconnected">Checking connection...</span>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="authSection" class="card auth-section">
+            <h2>🔐 Login</h2>
+            <div id="authMessage"></div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="admin@localhost" value="admin@localhost">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="admin123" value="admin123">
+            </div>
+            <button class="btn btn-primary" onclick="login()">Login</button>
+            <button class="btn btn-secondary" onclick="checkHealth()">Test Connection</button>
+        </div>
+
+        <!-- Main Dashboard (hidden until logged in) -->
+        <div id="dashboard" class="hidden">
+            <!-- User Info -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div id="userInfo" class="user-info"></div>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="main-content">
+                <!-- Organizations -->
+                <div class="card">
+                    <h2>🏢 My Organizations</h2>
+                    <div id="organizationsList"></div>
+                    <button class="btn btn-primary" onclick="loadOrganizations()" style="margin-top: 15px;">Refresh</button>
+                </div>
+
+                <!-- Flows -->
+                <div class="card">
+                    <h2>📊 My Flows</h2>
+                    <div id="flowsList"></div>
+                    <button class="btn btn-primary" onclick="loadFlows()" style="margin-top: 15px;">Refresh</button>
+                </div>
+
+                <!-- Demo Flows -->
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h2>🎯 Demo Flows & Templates</h2>
+                    <div id="demoFlowsList"></div>
+                    <button class="btn btn-primary" onclick="loadDemoFlows()" style="margin-top: 15px;">Refresh</button>
+                </div>
+
+                <!-- Node Types -->
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h2>🔧 Available Node Types</h2>
+                    <div id="nodeTypesList"></div>
+                    <button class="btn btn-primary" onclick="loadNodeTypes()" style="margin-top: 15px;">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let authToken = localStorage.getItem('authToken');
+
+        // Check API health on load
+        window.addEventListener('load', () => {
+            checkHealth();
+            if (authToken) {
+                showDashboard();
+            }
+        });
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+
+                const statusEl = document.getElementById('apiStatus');
+                if (data.status === 'healthy') {
+                    statusEl.className = 'status connected';
+                    statusEl.textContent = '✓ Connected to API';
+                    showMessage('authMessage', 'API is healthy and ready!', 'success');
+                } else {
+                    throw new Error('API unhealthy');
+                }
+            } catch (error) {
+                const statusEl = document.getElementById('apiStatus');
+                statusEl.className = 'status disconnected';
+                statusEl.textContent = '✗ API Offline';
+                showMessage('authMessage', 'Could not connect to API. Make sure the backend is running on http://localhost:8000', 'error');
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Note: The current backend has stub endpoints, so this is a mock login
+            // In a real implementation, this would call /api/v1/auth/login
+
+            try {
+                showMessage('authMessage', 'Logging in...', 'success');
+
+                // Mock successful login (backend endpoints are stubs)
+                authToken = 'mock-token-' + Date.now();
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('userEmail', email);
+
+                showMessage('authMessage', 'Login successful!', 'success');
+                setTimeout(showDashboard, 1000);
+            } catch (error) {
+                showMessage('authMessage', 'Login failed: ' + error.message, 'error');
+            }
+        }
+
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('authSection').classList.remove('hidden');
+            showMessage('authMessage', 'Logged out successfully', 'success');
+        }
+
+        function showDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+
+            const email = localStorage.getItem('userEmail') || 'admin@localhost';
+            document.getElementById('userInfo').innerHTML = `
+                <strong>Logged in as:</strong> ${email}<br>
+                <strong>Role:</strong> Admin<br>
+                <strong>Session:</strong> Active
+            `;
+
+            // Load all data
+            loadOrganizations();
+            loadFlows();
+            loadDemoFlows();
+            loadNodeTypes();
+        }
+
+        async function loadOrganizations() {
+            const container = document.getElementById('organizationsList');
+            container.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/organizations`);
+                const data = await response.json();
+
+                if (data.organizations && data.organizations.length > 0) {
+                    container.innerHTML = data.organizations.map(org => `
+                        <div class="list-item">
+                            <h3>${org.name}</h3>
+                            <p>Plan: ${org.plan_tier} | Members: ${org.member_count} | Role: ${org.role}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No organizations found</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load organizations: ${error.message}</div>`;
+            }
+        }
+
+        async function loadFlows() {
+            const container = document.getElementById('flowsList');
+            container.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/flows`);
+                const data = await response.json();
+
+                if (data.flows && data.flows.length > 0) {
+                    container.innerHTML = data.flows.map(flow => `
+                        <div class="list-item">
+                            <h3>${flow.name} <span class="badge badge-${flow.status}">${flow.status}</span></h3>
+                            <p>${flow.description}</p>
+                            <p><small>Executions: ${flow.execution_count || 0}</small></p>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No flows yet. Create one using the API!</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load flows: ${error.message}</div>`;
+            }
+        }
+
+        async function loadDemoFlows() {
+            const container = document.getElementById('demoFlowsList');
+            container.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/flows/demo`);
+                const data = await response.json();
+
+                if (data.flows && data.flows.length > 0) {
+                    container.innerHTML = data.flows.map(flow => `
+                        <div class="list-item">
+                            <h3>🎯 ${flow.name}</h3>
+                            <p>${flow.description}</p>
+                            <p><small>Category: ${flow.category || 'General'}</small></p>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No demo flows available</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load demo flows: ${error.message}</div>`;
+            }
+        }
+
+        async function loadNodeTypes() {
+            const container = document.getElementById('nodeTypesList');
+            container.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/node-types`);
+                const data = await response.json();
+
+                if (data.node_types && data.node_types.length > 0) {
+                    const categories = {};
+                    data.node_types.forEach(node => {
+                        if (!categories[node.category]) {
+                            categories[node.category] = [];
+                        }
+                        categories[node.category].push(node);
+                    });
+
+                    container.innerHTML = Object.entries(categories).map(([category, nodes]) => `
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="color: #667eea; text-transform: capitalize;">${category.replace('_', ' ')}</h3>
+                            ${nodes.map(node => `
+                                <div class="list-item">
+                                    <h3>${node.icon} ${node.name}</h3>
+                                    <p>${node.description}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No node types available</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load node types: ${error.message}</div>`;
+            }
+        }
+
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.className = type;
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
