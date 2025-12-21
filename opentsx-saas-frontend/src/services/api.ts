@@ -4,7 +4,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const API_V1 = `${API_URL}/api/v1`;
 
 // Create axios instance
@@ -117,7 +117,7 @@ export const authAPI = {
    */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post('/auth/login', data);
-    const { access_token, refresh_token, user } = response.data;
+    const { access_token, refresh_token } = response.data;
 
     // Store tokens
     localStorage.setItem('access_token', access_token);
