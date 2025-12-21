@@ -19,7 +19,7 @@ import uvicorn
 from app.core.config import settings
 from app.api import auth
 from app.db.session import async_engine
-from app.db.base_class import Base
+from app.db.base import Base  # Import from base.py to ensure all models are loaded
 from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
 from app.db.utils import wait_for_db
