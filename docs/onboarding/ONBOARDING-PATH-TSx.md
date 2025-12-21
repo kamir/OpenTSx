@@ -50,9 +50,18 @@ series.resample()      →  ts.resample()
 
 **Demo Scripts**:
 - `bin/120_run_demo.sh` - Visual introduction (MacroRecorder)
-- `scala-scripts/run_rng_demo.scala` - Random number generation
+- `notebooks/Welcome.ipynb` - **NEW**: Interactive Jupyter Notebook for this track
 
 **Hands-On Exercise** (60 min):
+
+**Setup: The Lab**
+For this track, we recommend using the provided Jupyter Lab environment.
+```bash
+docker-compose -f docker-compose.onboarding.yml up -d
+open http://localhost:8888
+# Login with token: opentsx
+# Open notebooks/Welcome.ipynb
+```
 ```java
 // Exercise: Translate Python concepts to OpenTSx
 

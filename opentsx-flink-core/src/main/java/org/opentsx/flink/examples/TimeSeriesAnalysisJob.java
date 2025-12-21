@@ -16,26 +16,29 @@ import org.opentsx.flink.serdes.TimeSeriesObjectTypeInfo;
 import java.time.Duration;
 
 /**
- * Example Flink job demonstrating OpenTSx time series analysis with Apache Flink.
+ * Example Flink job demonstrating OpenTSx time series analysis with Apache
+ * Flink.
  *
  * <h2>Job Overview:</h2>
  * This job demonstrates a complete pipeline for time series processing:
  * <ol>
- *   <li>Read {@link Observation} events from Kafka</li>
- *   <li>Aggregate observations into {@link TimeSeriesObject} windows</li>
- *   <li>Apply analysis operations (e.g., normalization, statistics)</li>
- *   <li>Output results</li>
+ * <li>Read {@link Observation} events from Kafka</li>
+ * <li>Aggregate observations into {@link TimeSeriesObject} windows</li>
+ * <li>Apply analysis operations (e.g., normalization, statistics)</li>
+ * <li>Output results</li>
  * </ol>
  *
  * <h2>Prerequisites:</h2>
  * <ul>
- *   <li>Kafka broker running on localhost:9092</li>
- *   <li>Topic "observations" with Avro-serialized Observation records</li>
- *   <li>Flink cluster (local or remote)</li>
+ * <li>Kafka broker running on localhost:9092</li>
+ * <li>Topic "observations" with Avro-serialized Observation records</li>
+ * <li>Flink cluster (local or remote)</li>
  * </ul>
  *
  * <h2>Configuration:</h2>
- * Key parameters can be configured via command-line arguments or environment variables:
+ * Key parameters can be configured via command-line arguments or environment
+ * variables:
+ * 
  * <pre>
  * --kafka-brokers localhost:9092
  * --input-topic observations
@@ -43,6 +46,7 @@ import java.time.Duration;
  * </pre>
  *
  * <h2>Running Locally:</h2>
+ * 
  * <pre>
  * mvn clean package
  * flink run -c org.opentsx.flink.examples.TimeSeriesAnalysisJob \
@@ -50,6 +54,7 @@ import java.time.Duration;
  * </pre>
  *
  * <h2>Architecture:</h2>
+ * 
  * <pre>
  * Kafka (Observations)
  *   ↓
@@ -122,7 +127,7 @@ public class TimeSeriesAnalysisJob {
 
         // Aggregate observations into time series windows
         DataStream<TimeSeriesObject> timeSeries = observations
-                .keyBy(obs -> obs.getLabel() != null ? obs.getLabel().toString() : "unknown")
+                .keyBy(obs -> obs.getUri() != null ? obs.getUri().toString() : "unknown")
                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSizeMs)))
                 .aggregate(new TimeSeriesAggregateFunction())
                 .returns(new TimeSeriesObjectTypeInfo())
@@ -131,9 +136,10 @@ public class TimeSeriesAnalysisJob {
         // Apply analysis operations
         DataStream<TimeSeriesObject> analyzed = timeSeries
                 .map(ts -> {
-                    // Example: Normalize the time series
+                    // Example: Calculate statistics
                     if (ts.yValues != null && !ts.yValues.isEmpty()) {
-                        ts.normalize_zScore();
+                        ts.calcAverage();
+                        // Note: normalize_zScore() method needs to be implemented
                     }
                     return ts;
                 })
@@ -148,17 +154,15 @@ public class TimeSeriesAnalysisJob {
                     }
 
                     ts.calcAverage();
-                    ts.calcStddev();
+                    // Note: calcStddev() method needs to be implemented or use getStatisticData()
 
                     return String.format(
-                            "TimeSeries[%s]: Points=%d, Mean=%.4f, StdDev=%.4f, Min=%.4f, Max=%.4f",
+                            "TimeSeries[%s]: Points=%d, Mean=%.4f, Min=%.4f, Max=%.4f",
                             ts.getLabel(),
                             ts.yValues.size(),
                             ts.getAvarage(),
-                            ts.getStddev(),
                             ts.getMinY(),
-                            ts.getMaxY()
-                    );
+                            ts.getMaxY());
                 })
                 .name("Statistics Calculation");
 
@@ -172,8 +176,8 @@ public class TimeSeriesAnalysisJob {
     /**
      * Helper method to get configuration value from args or use default.
      *
-     * @param args Command-line arguments
-     * @param key Configuration key
+     * @param args         Command-line arguments
+     * @param key          Configuration key
      * @param defaultValue Default value if not found
      * @return Configuration value
      */

@@ -49,12 +49,14 @@ cd /path/to/OpenTSx
 # Task 2: Verify build artifacts
 ls -l target/
 
-# Task 3: Start local services
-./bin/110_run_demo_services.sh
+# Task 3: Start The Lab services
+docker-compose -f docker-compose.onboarding.yml up -d
 
 # Task 4: Verify services are running
-# Kudu: http://localhost:8050
+# Task 4: Verify services are running
 # OpenTSDB: http://localhost:4242
+# Flink: http://localhost:8082
+# Jupyter Lab: http://localhost:8888 (token: opentsx)
 
 # Task 5: Run the demo
 ./bin/120_run_demo.sh
@@ -380,7 +382,7 @@ public class NormalizeUdf {
 - Partitioning strategies
 
 **Demo Scripts**:
-- `bin/130_run_demo_in_spark_shell_locally.sh`
+- `notebooks/Welcome.ipynb` - Open for Spark interaction
 - `scala-scripts/run_opentsdb_streaming_demo.scala`
 
 **Hands-On Exercise** (90 min):
@@ -474,11 +476,9 @@ tsDF.foreachPartition { partition =>
 - Cassandra: wide-column store for high write throughput
 - Choosing the right backend
 
-**Demo Scripts**:
-- `bin/015_create_kudu_on_docker.sh`
-- `bin/015_create_opentsdb_on_docker.sh`
-- `bin/run_kudu_on_docker_locally.sh`
-- `bin/run_opentsdb_on_docker_locally.sh`
+**Demo Setup**:
+- The Lab environment (`docker-compose.onboarding.yml`) already contains OpenTSDB and HBase running.
+- No additional scripts are needed to start these services.
 
 **Hands-On Exercise** (90 min):
 ```java
@@ -759,7 +759,7 @@ Features features = extractor.extract(ts)
 - Disaster recovery
 
 **Demo Scripts**:
-- `bin/020_deploy_to_cc_cluster.sh`
+- `bin/020_deploy_to_cc_cluster.sh` (Reference only - requires Cloudera cluster)
 - Create: `demo/ProductionConfig.java` (to be created)
 
 **Hands-On Exercise** (90 min):

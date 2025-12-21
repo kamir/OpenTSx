@@ -30,8 +30,10 @@ _None yet_
 |---------|-------|--------|----------|
 | TASK-002 | Demo Script Creation | Planned | High |
 | TASK-003 | Exercise Development | Planned | High |
-| TASK-004 | Validation Framework | Planned | Medium |
-| TASK-005 | Pilot Program | Planned | Medium |
+| TASK-004 | Strengthen Onboarding Tracks | Completed | High |
+| TASK-005 | Processing Flow Descriptor | Planned | High |
+| TASK-006 | Pilot Program | Planned | Medium |
+| TASK-007 | Validation Framework | Planned | Medium |
 
 ## Task Lifecycle
 

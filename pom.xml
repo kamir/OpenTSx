@@ -463,6 +463,13 @@
             <version>3.4.2</version>
         </dependency>
 
+        <!-- UI Modernization -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.2.5</version>
+        </dependency>
+
     </dependencies>
 
     <build>
