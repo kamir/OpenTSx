@@ -7,7 +7,29 @@
 
 OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated time series analysis. Built on Apache Kafka and the Confluent ecosystem, it provides advanced algorithms, flexible storage backends, and seamless integration with modern data infrastructure.
 
-![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
+![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/charts-and-sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
+
+---
+
+## Related Work: Application of the OpenTSx toolbox:
+- IJCS :
+  *Hadoop.TS:* The initial paper.
+  https://www.ijcaonline.org/archives/volume74/number17/12974-0233
+
+- PLOS ONE :
+  *The Detection of Emerging Trends Using Wikipedia Traffic Data and Context Networks.*
+  https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0141892
+  
+- (old) WIKI : 
+  https://github.com/kamir/Hadoop.TS.NG/wiki
+
+- DPG 2014 : 
+  *Context Sensitive and Time Dependent Relevance of Wikipedia Articles*
+  https://www.slideshare.net/mirkokaempf/dpg-2014-time-05-1
+
+- Wikimedia Foundation : 
+  *Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia*
+  https://www.researchgate.net/publication/255704719_Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia
 
 ---
 
@@ -967,3 +989,7 @@ cd opentsx-lg && mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGe
 ```
 
 **Happy Analyzing!** 📊📈
+
+
+
+
