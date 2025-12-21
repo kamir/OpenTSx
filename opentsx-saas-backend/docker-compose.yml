@@ -18,7 +18,7 @@ services:
     networks:
       - opentsx-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-opentsx_user} -d ${POSTGRES_DB:-opentsx}"]
+      test: ["CMD-SHELL", "pg_isready -U opentsx_user -d opentsx"]
       interval: 10s
       timeout: 5s
       retries: 5
