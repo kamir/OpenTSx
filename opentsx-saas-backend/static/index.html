@@ -183,7 +183,11 @@
             background: #e7f3ff;
             padding: 15px;
             border-radius: 5px;
-            margin-bottom: 20px;
+            margin-bottom: 40px;  /* Increased spacing */
+        }
+
+        .user-card {
+            margin-bottom: 40px;  /* Add gap below user info card */
         }
 
         .user-info strong {
@@ -251,7 +255,7 @@
         <!-- Main Dashboard (hidden until logged in) -->
         <div id="dashboard" class="hidden">
             <!-- User Info -->
-            <div class="card" style="grid-column: 1 / -1;">
+            <div class="card user-card" style="grid-column: 1 / -1;">
                 <div id="userInfo" class="user-info"></div>
                 <button class="btn btn-secondary" onclick="logout()">Logout</button>
             </div>
@@ -303,21 +307,31 @@
         async function checkHealth() {
             try {
                 const response = await fetch(`${API_BASE_URL}/health`);
-                const data = await response.json();
 
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
                 const statusEl = document.getElementById('apiStatus');
-                if (data.status === 'healthy') {
+
+                // Check if response has status field and it equals 'healthy'
+                if (response.ok && (data.status === 'healthy' || response.status === 200)) {
                     statusEl.className = 'status connected';
                     statusEl.textContent = '✓ Connected to API';
-                    showMessage('authMessage', 'API is healthy and ready!', 'success');
+                    const authMsg = document.getElementById('authMessage');
+                    if (authMsg && !authMsg.textContent.includes('Login')) {
+                        showMessage('authMessage', 'API is healthy and ready!', 'success');
+                    }
                 } else {
                     throw new Error('API unhealthy');
                 }
             } catch (error) {
+                console.error('Health check failed:', error);
                 const statusEl = document.getElementById('apiStatus');
                 statusEl.className = 'status disconnected';
                 statusEl.textContent = '✗ API Offline';
-                showMessage('authMessage', 'Could not connect to API. Make sure the backend is running on http://localhost:8000', 'error');
+                showMessage('authMessage', `Could not connect to API: ${error.message}. Make sure the backend is running on http://localhost:8000`, 'error');
             }
         }
 
