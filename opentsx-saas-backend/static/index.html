@@ -293,11 +293,15 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:8000';
+        // Use the same origin as the current page to avoid CORS issues
+        const API_BASE_URL = window.location.origin;
         let authToken = localStorage.getItem('authToken');
+
+        console.log('API Base URL:', API_BASE_URL);
 
         // Check API health on load
         window.addEventListener('load', () => {
+            console.log('Page loaded, checking health...');
             checkHealth();
             if (authToken) {
                 showDashboard();
@@ -389,8 +393,16 @@
             container.innerHTML = '<div class="loading">Loading...</div>';
 
             try {
+                console.log('Fetching organizations from:', `${API_BASE_URL}/api/v1/organizations`);
                 const response = await fetch(`${API_BASE_URL}/api/v1/organizations`);
+                console.log('Organizations response:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
+                console.log('Organizations data:', data);
 
                 if (data.organizations && data.organizations.length > 0) {
                     container.innerHTML = data.organizations.map(org => `
@@ -403,7 +415,8 @@
                     container.innerHTML = '<p>No organizations found</p>';
                 }
             } catch (error) {
-                container.innerHTML = `<div class="error">Failed to load organizations: ${error.message}</div>`;
+                console.error('Error loading organizations:', error);
+                container.innerHTML = `<div class="error">Failed to load organizations: ${error.message}<br><small>Check browser console for details</small></div>`;
             }
         }
 
