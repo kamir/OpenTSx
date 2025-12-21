@@ -338,6 +338,37 @@ async def list_flows(organization_id: int = None, team_id: int = None):
     }
 
 
+# Demo flows (MUST come before /flows/{flow_id} to avoid route conflict)
+@app.get(f"{settings.API_V1_STR}/flows/demo")
+async def list_demo_flows():
+    """List public demo flows."""
+    return {
+        "flows": [
+            {
+                "id": 101,
+                "name": "Getting Started - Simple DFA",
+                "description": "Learn DFA with synthetic data",
+                "is_template": True,
+                "category": "tutorial",
+            },
+            {
+                "id": 102,
+                "name": "Stock Market Analysis",
+                "description": "Real-time stock price persistence detection",
+                "is_template": True,
+                "category": "finance",
+            },
+            {
+                "id": 103,
+                "name": "Climate Event Sync",
+                "description": "Detect synchronized climate patterns",
+                "is_template": True,
+                "category": "climate",
+            }
+        ]
+    }
+
+
 @app.get(f"{settings.API_V1_STR}/flows/{{flow_id}}")
 async def get_flow(flow_id: int):
     """Get flow details."""
@@ -443,37 +474,6 @@ async def list_flow_executions(flow_id: int, limit: int = 20):
                 "completed_at": "2025-01-13T10:30:45Z",
                 "duration_ms": 45000,
                 "events_processed": 1523,
-            }
-        ]
-    }
-
-
-# Demo flows
-@app.get(f"{settings.API_V1_STR}/flows/demo")
-async def list_demo_flows():
-    """List public demo flows."""
-    return {
-        "flows": [
-            {
-                "id": 101,
-                "name": "Getting Started - Simple DFA",
-                "description": "Learn DFA with synthetic data",
-                "is_template": True,
-                "category": "tutorial",
-            },
-            {
-                "id": 102,
-                "name": "Stock Market Analysis",
-                "description": "Real-time stock price persistence detection",
-                "is_template": True,
-                "category": "finance",
-            },
-            {
-                "id": 103,
-                "name": "Climate Event Sync",
-                "description": "Detect synchronized climate patterns",
-                "is_template": True,
-                "category": "climate",
             }
         ]
     }
