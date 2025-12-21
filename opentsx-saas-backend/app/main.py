@@ -12,9 +12,11 @@ FastAPI application with complete SaaS features:
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import uvicorn
+from pathlib import Path
 
 from app.core.config import settings
 from app.api import auth
@@ -74,6 +76,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+static_path = Path(__file__).parent.parent / "static"
+if static_path.exists():
+    app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
 
 # ==================== Include Routers ====================
 
@@ -85,14 +92,19 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root():
-    """Root endpoint with API information."""
-    return {
-        "name": settings.PROJECT_NAME,
-        "version": settings.VERSION,
-        "description": settings.DESCRIPTION,
-        "docs_url": "/docs",
-        "health_url": "/health",
-    }
+    """Serve the web UI."""
+    index_path = Path(__file__).parent.parent / "static" / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    else:
+        # Fallback to API info if no UI
+        return {
+            "name": settings.PROJECT_NAME,
+            "version": settings.VERSION,
+            "description": settings.DESCRIPTION,
+            "docs_url": "/docs",
+            "health_url": "/health",
+        }
 
 
 @app.get("/health")
