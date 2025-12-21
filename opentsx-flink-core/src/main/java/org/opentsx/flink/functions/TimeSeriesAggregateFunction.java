@@ -71,7 +71,8 @@ public class TimeSeriesAggregateFunction implements AggregateFunction<Observatio
         }
 
         // Set label from first observation if not already set
-        if (accumulator.getLabel() == null && observation.getUri() != null) {
+        if ((accumulator.getLabel() == null || accumulator.getLabel().startsWith("unnamed"))
+                && observation.getUri() != null) {
             accumulator.setLabel(observation.getUri().toString());
         }
 
