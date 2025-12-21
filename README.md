@@ -1,5 +1,26 @@
 # OpenTSx - Cloud-Native Time Series Analysis Platform
 
+## Related Work: Application of the OpenTSx toolbox:
+- IJCS :
+  *Hadoop.TS:* The initial paper.
+  https://www.ijcaonline.org/archives/volume74/number17/12974-0233
+
+- PLOS ONE :
+  *The Detection of Emerging Trends Using Wikipedia Traffic Data and Context Networks.*
+  https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0141892
+  
+- (old) WIKI : 
+  https://github.com/kamir/Hadoop.TS.NG/wiki
+
+- DPG 2014 : 
+  *Context Sensitive and Time Dependent Relevance of Wikipedia Articles*
+  https://www.slideshare.net/mirkokaempf/dpg-2014-time-05-1
+
+- Wikimedia Foundation : 
+  *Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia*
+  https://www.researchgate.net/publication/255704719_Comparing_the_usage_of_global_and_local_Wikipedias_with_focus_on_Swedish_Wikipedia
+
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-1.8+-orange.svg)](https://www.java.com)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org)
@@ -967,3 +988,7 @@ cd opentsx-lg && mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGe
 ```
 
 **Happy Analyzing!** 📊📈
+
+
+
+
