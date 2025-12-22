@@ -777,6 +777,7 @@ OpenTSx/
 ├── opentsx-flink-core/        # Flink dynamic execution engine
 ├── opentsx-saas-backend/      # FastAPI SaaS Control Plane
 ├── opentsx-saas-frontend/     # React/Vite User Interface
+├── opentsx-app-tools/       # Application Utilities (NetCat, etc.)
 ├── opentsx-kafka-streams-tsa/ # KStreams applications
 ├── opentsx-ksql-udf/          # ksqlDB custom functions
 ├── opentsx-store-cassandra/   # Cassandra persistence
@@ -818,6 +819,16 @@ OpenTSx/
 - Docker containerization
 - Kubernetes orchestration
 - Multi-cloud support (AWS, Azure, GCP)
+
+---
+
+## Roadmap & Evolution
+
+The OpenTSx platform is constantly evolving. Detailed plans and decision records can be found in the `EVOLUTION/` directory.
+
+### Current focus:
+- **Polyglot Notebooks (TASK-007)**: Bringing OpenTSx power to R and Python users via interactive notebooks.
+- **SaaS Integration (TASK-005)**: Creating a cloud-native control plane for flow execution.
 - Confluent Cloud integration
 
 ---
