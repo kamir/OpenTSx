@@ -13,7 +13,7 @@
     <artifactId>opentsx-flink-core</artifactId>
     <packaging>jar</packaging>
 
-    <name>OpenTSx Flink Core</name>
+    <name>opentsx-flink-core</name>
     <description>Apache Flink integration for OpenTSx time series analysis</description>
 
     <properties>

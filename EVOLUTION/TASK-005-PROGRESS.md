@@ -12,7 +12,7 @@
 ### 2. Processing Flow Descriptor Schema (Sub-task 005.1)
 **Status**: ✅ Completed
 
-- Created formal JSON Schema: `docs/schemas/processing-flow-descriptor-schema.json`
+- Created formal JSON Schema: `docs/devguide/schemas/processing-flow-descriptor-schema.json`
 - Defined operations: WINDOW_AGGREGATE, NORMALIZE, FILTER, DECOMPOSE, DETECT_ANOMALY, SMOOTH, DFA
 - Schema supports input/output configuration and parameterized steps
 
@@ -48,7 +48,7 @@ Fixed multiple compilation errors in `opentsx-flink-core`:
 ### 5. Validation Plan
 **Status**: ✅ Completed
 
-Created `docs/validation/PFD_VALIDATION_PLAN.md` covering:
+Created `docs/devguide/validation/PFD_VALIDATION_PLAN.md` covering:
 - Unit tests (Schema validation, Serialization, Flink graph construction)
 - Integration tests (Swing UI → JSON export, Flink job execution in "The Lab")
 - End-to-end scenarios (Anomaly Detection pipeline)
@@ -78,9 +78,9 @@ Define how the Python/FastAPI backend will:
 ### Created:
 - `opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/PFDRecorder.java`
 - `opentsx-flink-core/src/main/java/org/opentsx/flink/serdes/TimeSeriesObjectTypeInfo.java`
-- `docs/schemas/processing-flow-descriptor-schema.json`
+- `docs/devguide/schemas/processing-flow-descriptor-schema.json`
 - `docs/UI_MODERNIZATION.md`
-- `docs/validation/PFD_VALIDATION_PLAN.md`
+- `docs/devguide/validation/PFD_VALIDATION_PLAN.md`
 - `EVOLUTION/TASK-005-processing-flow-descriptor.md`
 
 ### Modified:

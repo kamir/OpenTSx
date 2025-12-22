@@ -22,7 +22,9 @@ import org.opentsx.lg.kping.EventFlowAnalysisSetup;
 import org.opentsx.lg.metrics.TSGBeanImpl;
 import org.opentsx.lg.metrics.TSGMBean;
 import org.opentsx.chart.simple.MultiChart;
+import org.opentsx.core.config.ConfigManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
@@ -99,8 +101,9 @@ public class TSDataSineWaveGenerator {
         /**
          * the ENV VARIABLE OPENTSX_SHOW_GUI can turn off the GUI.
          */
-        String gui_prop = System.getenv("OPENTSX_SHOW_GUI");
-        String kafka_prop = System.getenv("OPENTSX_USE_KAFKA");
+        ConfigManager cfg = ConfigManager.getInstance();
+        String gui_prop = cfg.getString("opentsx.show.gui", System.getenv("OPENTSX_SHOW_GUI"));
+        String kafka_prop = cfg.getString("opentsx.use.kafka", System.getenv("OPENTSX_USE_KAFKA"));
 
         System.out.println("*** " + kafka_prop + " ***");
 
@@ -111,7 +114,7 @@ public class TSDataSineWaveGenerator {
          */
         int zIterations = 1000;
 
-        String zIterations_tmp = System.getenv("OPENTSX_NUMBER_OF_ITERATIONS");
+        String zIterations_tmp = cfg.getString("opentsx.number.of.iterations", System.getenv("OPENTSX_NUMBER_OF_ITERATIONS"));
         System.out.println( "*** USE CUSTOM NR OF ITERATIONS *** (" + zIterations_tmp + ")");
 
         if( zIterations_tmp != null ) {
@@ -145,14 +148,21 @@ public class TSDataSineWaveGenerator {
         RNGWrapper.init();
 
         // storage for our TSBucket.
-        String baseOut = "./test-opentsx-lg/";
+        String baseOut = cfg.getString("opentsx.demo.output.dir", System.getenv("OPENTSX_DEMO_OUTPUT_DIR"));
+        if (baseOut == null || baseOut.trim().isEmpty()) {
+            baseOut = "./data/temp/";
+        }
+        if (!baseOut.endsWith("/")) {
+            baseOut = baseOut + "/";
+        }
+        new File(baseOut).mkdirs();
         String filename = "sine-waves";
 
         System.out.println(">>> TSDataSineWaveGenerator (start at : " + new Date(System.currentTimeMillis()) + ")");
         System.out.println(">>> TSBucket is written to : " + baseOut);
 
         //boolean SKIP_WRITES = true;
-        TSBucket tsb = new TSBucket();
+        TSBucket tsb = new TSBucket(false);
 
         Vector<TSData> tsbd_a = null;
         Vector<TSData> tsbd_b = null;

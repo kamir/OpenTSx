@@ -53,7 +53,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
 
         <!-- PDF Manual Generation -->
-        <skip.pdf.generation>false</skip.pdf.generation>
+        <skip.pdf.generation>true</skip.pdf.generation>
 
     </properties>
 
@@ -520,33 +520,7 @@
                 </executions>
             </plugin>
 
-            <!-- PDF Manual Generation Plugin -->
-            <!-- Only run at parent level, not in child modules -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.1.0</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>generate-pdf-manual</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>bash</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            <arguments>
-                                <argument>${project.basedir}/bin/build_manual_pdf.sh</argument>
-                                <argument>--output</argument>
-                                <argument>OpenTSx-Manual-${project.version}.pdf</argument>
-                            </arguments>
-                            <skip>${skip.pdf.generation}</skip>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            <!-- PDF Manual Generation Plugin is bound via profile 'pdf-manual' -->
 
 
             <!--plugin>
@@ -605,10 +579,52 @@
                     </execution>
                 </executions>
             </plugin-->
+            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <classpathScope>runtime</classpathScope>
+                </configuration>
+            </plugin>
 
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>pdf-manual</id>
+            <build>
+                <plugins>
+                    <!-- PDF Manual Generation Plugin -->
+                    <!-- Only run at parent level, not in child modules -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>generate-pdf-manual</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>${project.basedir}/bin/build_docs_pdfs.sh</argument>
+                                    </arguments>
+                                    <skip>${skip.pdf.generation}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
-
-

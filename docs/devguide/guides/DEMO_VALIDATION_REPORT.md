@@ -86,7 +86,7 @@ bash -n episode_10_production_config.sh  # PASS
 - ✅ Glossary (docs/manual/appendix/glossary.md)
 
 ### Infrastructure Documentation
-- ✅ Local Development Guide (docs/infrastructure/local-development.md)
+- ✅ Local Development Guide (docs/devguide/infrastructure/local-development.md)
 - ✅ Docker Compose setup (docker-compose.local.yml)
 
 ### README Integration

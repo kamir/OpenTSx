@@ -37,7 +37,7 @@ brew install calibre
 ### Generate Documentation PDFs
 
 ```bash
-cd docs
+cd docs/devguide
 
 # Generate complete documentation
 honkit pdf . OpenTSx-Complete-Documentation.pdf
@@ -54,7 +54,7 @@ honkit pdf . ../OpenTSx-Onboarding-Paths.pdf
 ### Generate HTML Website
 
 ```bash
-cd docs
+cd docs/devguide
 
 # Build static website
 honkit build
@@ -67,7 +67,7 @@ honkit serve
 
 ### Configuration
 
-The `docs/book.json` file controls PDF styling and plugins:
+The `docs/devguide/book.json` file controls PDF styling and plugins:
 
 ```json
 {

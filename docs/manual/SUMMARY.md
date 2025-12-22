@@ -79,6 +79,7 @@
 ## Appendix
 
 * [Reference Materials](appendix/README.md)
+  * [Configuration Properties](appendix/CONFIGURATION-PROPERTIES.md)
   * [API Quick Reference](appendix/api-reference.md)
   * [Glossary of Terms](appendix/glossary.md)
   * [Migration from R/Python](appendix/migration-guide.md)

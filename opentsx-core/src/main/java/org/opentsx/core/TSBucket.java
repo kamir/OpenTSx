@@ -19,6 +19,7 @@
 package org.opentsx.core;
 
 import com.google.gson.Gson;
+import org.opentsx.core.config.ConfigManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -638,7 +639,12 @@ public class TSBucket {
             double fMIN, double fMAX, double aMIN, double aMAX, double SR, double time, String uuid, String unit) throws Exception {
 
         Configuration config = initConfig();
-        // FileSystem fs = initFileSystem();
+        FileSystem fs = null;
+        SequenceFile.Writer writer = null;
+        FileWriter csvWriter = null;
+        String outputFormat = ConfigManager.getInstance().getString("opentsx.demo.output.format", "csv");
+        boolean writeCsv = "csv".equalsIgnoreCase(outputFormat);
+        boolean writeSequence = !SKIP_WRITES && !writeCsv;
 
         Path path = new Path(filename_core + ".tsb.vec.seq");
         System.out.println("--> create bucket with filename : " + path.toString());
@@ -650,9 +656,24 @@ public class TSBucket {
         System.out.println("--> create bucket : uncorrelated Time Series with frequency range : f=[ " + fMIN + ", " + fMAX + "]");
 
         // write a SequenceFile form a Vector
-/**
-        SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-**/
+        if ( writeSequence ) {
+            fs = initFileSystem();
+            if (fs != null) {
+                writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
+            } else {
+                writeSequence = false;
+                writeCsv = true;
+            }
+        }
+        if ( writeCsv ) {
+            File csvFile = new File(filename_core + ".csv");
+            File parent = csvFile.getParentFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
+            csvWriter = new FileWriter(csvFile);
+            csvWriter.write("series_id,x,y\n");
+        }
         System.out.println("--> process bucket : Sinus-Generator ( z=" + ANZ + ", length=" + (time * SR) + ")");
         System.out.println("--> zDP : " + ( ANZ * (time * SR) ) + " " );
 
@@ -677,18 +698,28 @@ public class TSBucket {
             tsbd.add( data );
 
             // to speed up the generator, we do not persist the bucket.
-            if ( !SKIP_WRITES ) {
+            if ( writeSequence && writer != null ) {
                 writer.append(new Text(nv.getName()), vec);
+            }
+            else if ( writeCsv && csvWriter != null ) {
+                double[][] seriesData = mr.getData();
+                for (int k = 0; k < seriesData[0].length; k++) {
+                    csvWriter.write(i + "," + seriesData[0][k] + "," + seriesData[1][k] + "\n");
+                }
             }
             else
                 System.out.println("!!! SKIP-WRITE: ["+SKIP_WRITES+"] : no data written to TIME SERIES BUCKET ON disc!" );
 
         }
 
-        if ( !SKIP_WRITES )
+        if ( writeSequence && writer != null ) {
             writer.close();
+        }
+        if ( csvWriter != null ) {
+            csvWriter.close();
+        }
 
-            System.out.println("### DONE {SKIP-WRITE:="+SKIP_WRITES+"} : TIME SERIES BUCKET IN PATH: " + path.toString());
+        System.out.println("### DONE {SKIP-WRITE:="+SKIP_WRITES+"} : TIME SERIES BUCKET IN PATH: " + path.toString());
 
         return tsbd;
     }

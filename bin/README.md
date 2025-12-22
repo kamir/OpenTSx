@@ -5,20 +5,23 @@ This directory contains scripts for building, running, and demonstrating OpenTSx
 ## Quick Start
 
 ```bash
-# 0. Start local infrastructure (optional but recommended)
+# 0. Run a minimal demo (no Kafka)
+./bin/005_minimal_no_kafka_demo.sh
+
+# 1. Start local infrastructure (optional but recommended)
 docker-compose -f docker-compose.local.yml up -d
 
-# 1. Build the project
+# 2. Build the project
 ./bin/010_build.sh
 
-# 2. Launch the GUI
+# 3. Launch the GUI
 ./bin/000_launch_tsa_workbench.sh
 
-# 3. Run a demo
+# 4. Run a demo
 ./bin/120_run_demo.sh
 ```
 
-For Kafka integration testing, see [Local Development Guide](../docs/infrastructure/local-development.md).
+For Kafka integration testing, see [Local Development Guide](../docs/devguide/infrastructure/local-development.md).
 
 ## Script Catalog
 
@@ -46,7 +49,7 @@ docker-compose -f docker-compose.local.yml --profile full up -d
 docker-compose -f docker-compose.local.yml down
 ```
 
-See [Local Development Guide](../docs/infrastructure/local-development.md) for details.
+See [Local Development Guide](../docs/devguide/infrastructure/local-development.md) for details.
 
 **Legacy Individual Container Scripts**
 
@@ -62,6 +65,7 @@ See [Local Development Guide](../docs/infrastructure/local-development.md) for d
 
 | Script | Purpose | Episode | Prerequisites |
 |--------|---------|---------|---------------|
+| `005_minimal_no_kafka_demo.sh` | Minimal local demo (no Kafka) | E00 | Java 8+, Maven |
 | `000_launch_tsa_workbench.sh` | Launch GUI (MacroRecorder2) | E01, E03 | Project built |
 | `120_run_demo.sh` | Run MacroRecorder demo | E01 | Project built |
 | `130_run_demo_in_spark_shell_locally.sh` | Interactive Spark session | E06 | Spark installed |
@@ -108,6 +112,17 @@ See [Local Development Guide](../docs/infrastructure/local-development.md) for d
    ```
 
 ## Script Details
+
+### 005_minimal_no_kafka_demo.sh
+
+**Purpose**: Run a minimal local demo without Kafka or GUI
+
+**Description**: Builds the `opentsx-lg` module and executes the sine wave generator with GUI and Kafka disabled. Outputs a local dataset to `./data/temp/` in CSV format by default.
+
+**Usage**:
+```bash
+./bin/005_minimal_no_kafka_demo.sh
+```
 
 ### 000_launch_tsa_workbench.sh
 

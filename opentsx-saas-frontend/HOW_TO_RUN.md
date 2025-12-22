@@ -417,8 +417,8 @@ Navigate to: **http://localhost:5173/**
 ## Documentation
 
 - **Full README**: [README.md](./README.md)
-- **SaaS Platform Guide**: [../docs/guides/SAAS-PLATFORM.md](../docs/guides/SAAS-PLATFORM.md)
-- **Visual Flow Builder**: [../docs/guides/WEB-UI-VISUAL-FLOW-BUILDER.md](../docs/guides/WEB-UI-VISUAL-FLOW-BUILDER.md)
+- **SaaS Platform Guide**: [../docs/devguide/guides/SAAS-PLATFORM.md](../docs/devguide/guides/SAAS-PLATFORM.md)
+- **Visual Flow Builder**: [../docs/devguide/guides/WEB-UI-VISUAL-FLOW-BUILDER.md](../docs/devguide/guides/WEB-UI-VISUAL-FLOW-BUILDER.md)
 
 ---
 

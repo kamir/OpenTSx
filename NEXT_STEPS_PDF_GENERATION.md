@@ -8,7 +8,7 @@ All documentation has been successfully organized into a GitBook-ready structure
 - ✅ `docs/book.json` - GitBook configuration optimized for Honkit
 - ✅ `docs/README.md` - Documentation hub
 - ✅ `docs/onboarding/README.md` - Unified onboarding overview
-- ✅ All documentation moved to `docs/guides/`
+- ✅ All documentation moved to `docs/devguide/guides/`
 - ✅ PDF-GENERATION.md updated with Honkit instructions
 
 ## What Remains: Install Tools
@@ -134,7 +134,7 @@ honkit pdf . OpenTSx-Complete-Documentation.pdf
 1. **GitBook Structure**: Created comprehensive SUMMARY.md with 10 parts
 2. **Configuration**: Simplified book.json for Honkit compatibility
 3. **Documentation**: Updated PDF-GENERATION.md with Honkit instructions
-4. **Organization**: Moved 16 files from root to docs/guides/
+4. **Organization**: Moved 16 files from root to docs/devguide/guides/
 5. **Unified Onboarding**: Created docs/onboarding/README.md overview
 6. **Committed**: All changes pushed to claude/compare-opentsx-implementations-kmndB
 
@@ -145,7 +145,7 @@ honkit pdf . OpenTSx-Complete-Documentation.pdf
 - `docs/README.md` (created)
 - `docs/onboarding/README.md` (created)
 - `docs/PDF-GENERATION.md` (updated with Honkit instructions)
-- 16 files moved from root to docs/guides/
+- 16 files moved from root to docs/devguide/guides/
 
 ## Next Action
 

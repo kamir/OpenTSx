@@ -1,0 +1,40 @@
+{
+"type"      : "record",
+"namespace" : "org.opentsx.data.model",
+"name"      : "EventSeries",
+"doc"       : "A collection of events, often representing a processed or derived series. License: Apache 2.0",
+"fields"	: [
+				{
+				"name": "eventArray",
+				"type": {
+				"type": "array",
+				"items": {
+					"name": "Event",
+					"type": "record",
+					"doc" : "A discrete event with timestamp and value.",
+					"fields": [
+						{"name": "timestamp", "type": "long", "doc": "Event timestamp."},
+						{"name": "uri", "type": "string", "doc": "Source URI or identifier."},
+						{"name": "value", "type": "double", "doc": "Event value/magnitude."}
+					]
+				}
+					},
+				"doc": "List of events in the series."
+				},
+				{
+				"name" : "labels",
+				"type" : "string",
+				"doc": "CSV or JSON string of labels associated with the series."
+				},
+				{
+				"name" : "tStart",
+				"type" : "long",
+				"doc": "Start timestamp of the series."
+				},
+				{
+					"name" : "tEnd",
+					"type" : "long",
+					"doc": "End timestamp of the series."
+				}
+	]
+}

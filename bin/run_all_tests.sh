@@ -246,7 +246,7 @@ if [ "$MODE" = "--full" ]; then
     DOCS=(
         "README.md"
         "docs/manual/README.md"
-        "docs/infrastructure/local-development.md"
+        "docs/devguide/infrastructure/local-development.md"
         "exercises/README.md"
         "bin/README.md"
     )

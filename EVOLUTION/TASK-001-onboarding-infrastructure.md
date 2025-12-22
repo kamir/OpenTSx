@@ -121,7 +121,7 @@ Create comprehensive onboarding infrastructure to enable rapid developer and dom
    - Status: ✅ **COMPLETED** (2025-12-20)
    - Actual: 3 hours (includes comprehensive documentation)
    - Components: CP-ALL-IN-ONE Kafka (no Zookeeper), PostgreSQL, Redis, HBase, OpenTSDB
-   - Documentation: docs/infrastructure/local-development.md
+   - Documentation: docs/devguide/infrastructure/local-development.md
 
 9. Update README.md with onboarding section
    - File: README.md

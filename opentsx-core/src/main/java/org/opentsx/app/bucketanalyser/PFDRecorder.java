@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * Records user actions as a Processing Flow Descriptor (PFD).
- * See: docs/schemas/processing-flow-descriptor-schema.json
+ * See: docs/devguide/schemas/processing-flow-descriptor-schema.json
  */
 public class PFDRecorder {
 

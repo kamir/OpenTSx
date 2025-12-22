@@ -444,7 +444,7 @@ When deploying to production, ensure:
 
 - [Best Practices](../../docs/manual/best-practices/README.md)
 - [Production Deployment](../../DEPLOYMENT.md)
-- [Local Development Guide](../../docs/infrastructure/local-development.md)
+- [Local Development Guide](../../docs/devguide/infrastructure/local-development.md)
 
 ---
 

@@ -381,7 +381,7 @@ After completing the exercises:
 - **SWE Track Path:** [ONBOARDING-PATH-SWE.md](../ONBOARDING-PATH-SWE.md)
 - **TSx Track Path:** [ONBOARDING-PATH-TSx.md](../ONBOARDING-PATH-TSx.md)
 - **Demo Scripts:** [bin/README.md](../bin/README.md)
-- **Local Development:** [docs/infrastructure/local-development.md](../docs/infrastructure/local-development.md)
+- **Local Development:** [docs/devguide/infrastructure/local-development.md](../docs/devguide/infrastructure/local-development.md)
 
 ---
 

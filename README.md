@@ -5,9 +5,33 @@
 [![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org)
 [![Kafka](https://img.shields.io/badge/Kafka-2.3.0-black.svg)](https://kafka.apache.org)
 
-OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated time series analysis. Built on Apache Kafka and the Confluent ecosystem, it provides advanced algorithms, flexible storage backends, and seamless integration with modern data infrastructure.
+OpenTSx is an enterprise-grade, cloud-native Java library, for sophisticated time series analysis. 
+
+Initially, it has been built for Apache Hadoop and Apache Hive. Over the years, it has evolved a lot. Now it works with Apache Spark (Databricks), Apache Flink, Apache Kafka and the Confluent ecosystem (KStreams and KSQLDB) and many commercial time series data bases. 
+
+OpenTSx provides advanced algorithms to prepare and analyse raw event data and time series samples. 
+
+It connects easily to flexible storage backends, and it offers a seamless integration with modern data infrastructures from large scale data management to in place streaming processing, ranging from Analysis to Machine Learning and Predictive Analysis.
 
 ![Simplified Architecture Overview](https://github.com/kamir/OpenTSx/blob/master/docs/charts-and-sketches/Generic%20TSA%20Use%20Case/Simplified%20Architecture%20Overview.png?raw=true "Simplified Architecture Overview")
+
+---
+
+## Start Here (Pick Your Path)
+
+### Who are you?
+
+- **Software Engineer**: Step 1 run a no-Kafka demo `./bin/005_minimal_no_kafka_demo.sh`; Step 2 read [Core Concepts](docs/manual/core-concepts/README.md)
+- **Data Scientist**: Step 1 run the GUI demo `./bin/000_launch_tsa_workbench.sh`; Step 2 read [Statistical Analysis](docs/manual/statistical-analysis/README.md)
+- **Operator / Platform**: Step 1 start local infrastructure `docker-compose -f docker-compose.local.yml up -d`; Step 2 read [Integration](docs/manual/integration/README.md)
+- **Evaluator**: Step 1 run a no-Kafka demo `./bin/005_minimal_no_kafka_demo.sh`; Step 2 read [Introduction](docs/manual/introduction/README.md)
+
+### Goal-Based Quick Start
+
+- **Run a local demo without Kafka**: `./bin/005_minimal_no_kafka_demo.sh`
+- **Run a streaming demo with Kafka**: follow [Local Development Guide](docs/infrastructure/local-development.md)
+- **Launch the GUI**: `./bin/000_launch_tsa_workbench.sh`
+- **Try the SaaS stack**: see [opentsx-saas-backend/README.md](opentsx-saas-backend/README.md)
 
 ---
 
@@ -35,6 +59,7 @@ OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated tim
 
 ## Table of Contents
 - [Key Features](#key-features)
+- [Start Here (Pick Your Path)](#start-here-pick-your-path)
 - [Quick Start](#quick-start)
 - [Getting Started & Onboarding](#getting-started--onboarding)
 - [Architecture](#architecture)
@@ -95,7 +120,7 @@ OpenTSx is an enterprise-grade, cloud-native Java platform for sophisticated tim
 ### Prerequisites
 - Java 1.8 or higher
 - Maven 3.6+
-- Apache Kafka 2.3+ (or Confluent Platform 7.3+)
+- (Optional) Apache Kafka 2.3+ (or Confluent Platform 7.3+) for streaming demos
 - (Optional) Docker for containerized deployment
 
 ### Installation
@@ -115,14 +140,19 @@ cd OpenTSx
 mvn clean install
 ```
 
-#### 3. Configure Kafka Connection
+#### 3. Run Minimal No-Kafka Demo
+```bash
+./bin/005_minimal_no_kafka_demo.sh
+```
+
+#### 4. Configure Kafka Connection (Optional)
 ```bash
 # Edit Kafka configuration
 cp config/cpl.props config/my-cluster.props
 # Update bootstrap.servers and schema.registry.url
 ```
 
-#### 4. Run Data Generator Example
+#### 5. Run Data Generator Example
 ```bash
 cd opentsx-lg
 
@@ -136,7 +166,7 @@ export OPENTSX_USE_KAFKA=false  # Set to true for Kafka output
 mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGenerator"
 ```
 
-#### 5. Run Time Series Analysis
+#### 6. Run Time Series Analysis
 ```java
 import org.opentsx.algorithms.detrending.DFA;
 import org.opentsx.data.TimeSeriesObject;
@@ -280,6 +310,7 @@ All demo scripts are located in `bin/` with comprehensive documentation:
 
 | Episode | Script | Topic | Audience |
 |---------|--------|-------|----------|
+| E00 | `005_minimal_no_kafka_demo.sh` | Minimal local demo (no Kafka) | SWE + TSx + Evaluator |
 | E02 | `episode_02_create_timeseries.sh` | Creating time series | SWE + TSx |
 | E03 | `episode_03_basic_operations.sh` | Transformations & operations | SWE + TSx |
 | E09 | `episode_09_analysis.sh` | Statistical analysis | TSx |
@@ -1020,7 +1051,3 @@ cd opentsx-lg && mvn exec:java -Dexec.mainClass="org.opentsx.lg.TSDataSineWaveGe
 ```
 
 **Happy Analyzing!** 📊📈
-
-
-
-
