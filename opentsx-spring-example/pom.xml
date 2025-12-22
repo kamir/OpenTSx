@@ -96,6 +96,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>demo1.KafkaDemoApp</mainClass>
+                    <classifier>exec</classifier>
                 </configuration>
             </plugin>
 

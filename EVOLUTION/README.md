@@ -20,6 +20,8 @@ Where:
 |---------|-------|--------|----------|---------|
 | TASK-001 | Onboarding Infrastructure Development | ✅ Completed | High | 2025-12-20 |
 | TASK-PYTHON | Python Feature Parity Implementation | ✅ Completed | High | 2025-12-21 |
+| TASK-005 | Processing Flow Descriptor & Flink Integration | 🚧 In Review | High | 2025-12-21 |
+| TASK-007 | TSx Track Polyglot Notebooks | 🚧 In Progress | Medium | 2025-12-21 |
 
 ### Completed Tasks
 
@@ -33,11 +35,11 @@ Where:
 | Task ID | Title | Status | Priority |
 |---------|-------|--------|----------|
 | TASK-002 | Marketing & Promotion | Planned | Medium |
-| TASK-003 | Flink Integration | Planned | Medium |
+| TASK-003 | Flink Integration (Advanced) | Planned | Medium |
 | TASK-004 | Strengthen Onboarding Tracks | Completed | High |
-| TASK-005 | Processing Flow Descriptor | Planned | High |
+| TASK-005 | Processing Flow Descriptor | Completed | High |
 | TASK-006 | Pilot Program | Planned | Medium |
-| TASK-007 | Validation Framework | Planned | Medium |
+| TASK-007 | TSx Track Polyglot Notebooks | In Progress | Medium |
 | TASK-STATS | Statistical Tools Suite (Python) | Planned | Low |
 
 ## Task Lifecycle
@@ -104,7 +106,13 @@ When creating a new task, use this structure:
 ### Project Documentation
 - [Main README](../README.md)
 - [Architecture](../ARCHITECTURE.md)
+- [Architecture](../ARCHITECTURE.md)
 - [Python Implementation Design](../PYTHON-IMPLEMENTATION-DESIGN.md)
+- [To-Be-Decided (Decisions Log)](T-B-DECIDED.md) ⭐ NEW
+
+## Decisions & Proposals
+
+- [TSx Track Polyglot Notebooks (TASK-007)](DECISION-TSx-Track-Polyglot-Notebooks.md)
 
 ## Contributing
 
