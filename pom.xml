@@ -37,7 +37,7 @@
         <schemaRegistryBasicAuthUserInfo></schemaRegistryBasicAuthUserInfo>
 
         <!-- https://docs.confluent.io/platform/current/streams/developer-guide/write-streams.html#libraries-and-maven-artifacts -->
-        <avro.version>1.8.2</avro.version>
+        <avro.version>1.11.5</avro.version>
 
         <confluent.version>7.3.0-css</confluent.version>
         <confluent.sr.version>7.3.0</confluent.sr.version>
@@ -248,7 +248,7 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.8.2</version>
+            <version>1.11.5</version>
         </dependency>
 
         <dependency>
