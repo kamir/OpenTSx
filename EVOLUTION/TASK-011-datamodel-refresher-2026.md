@@ -42,7 +42,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] KafScale-Conformance-Suite + `docker-compose.kafscale.yml`; gemessen gegen KafScale v1.6.0 und Apache Kafka 3.9.1.
 - [ ] Flink auf 1.20/2.x heben (aktuell 1.18, läuft auf 17/21).
 - [ ] `opentsx-app-tools`: sshd-core 0.8.0 ablösen oder archivieren.
-- [ ] Upstream-Issues bei KafScale: ListOffsets-Zeitstempel, LeaveGroup v4 / MEMBER_ID_REQUIRED, Standalone-OffsetCommit.
+- [x] Issues im KafScale-Fork angelegt: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) ListOffsets-Zeitstempel, [#17](https://github.com/kamir/kafscale/issues/17) LeaveGroup v4 / MEMBER_ID_REQUIRED, [#18](https://github.com/kamir/kafscale/issues/18) Standalone-OffsetCommit.
 - [ ] Sofort-Fixes aus Analyse §3 (Label `"123"`, quadratische Zeitstempel, gemischte Formate auf `OpenTSx_Episodes`), da sie Testdaten verfälschen.
 
 ### Phase 1 – Modell v2 & Serde (`opentsx-model`, `opentsx-serde`)

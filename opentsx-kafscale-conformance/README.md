@@ -52,7 +52,11 @@ Same suite, same client (kafka-clients 3.9.1); the Apache Kafka column validates
 | `group.rejoin.assigned` (a restarted group member gets partitions again) | ❌ false – no assignment within 20 s | ✅ true (49 ms) |
 | `topic.cleanup.policy.compact.accepted` | accepted, but KafScale does not compact | ✅ true |
 
-### Root causes found in KafScale (to report upstream)
+### Root causes found in KafScale
+
+Tracked in the fork: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) (timestamp seek),
+[kamir/kafscale#17](https://github.com/kamir/kafscale/issues/17) (group rejoin),
+[kamir/kafscale#18](https://github.com/kamir/kafscale/issues/18) (standalone commits).
 
 * **Timestamp seek:** `handleListOffsets` (`cmd/broker/main.go`) only handles `-2` (earliest); every other
   timestamp returns the next offset.
