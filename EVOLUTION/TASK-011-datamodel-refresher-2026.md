@@ -35,7 +35,14 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 
 ### Phase 0 – Fundament & Entscheidungen
 - [ ] ADRs unter `EVOLUTION/DECISIONS/` für die offenen Entscheidungen (s.u.).
-- [ ] Toolchain: gesamtes Projekt auf `maven.compiler.release=17` (CI: JDK 17 + 21); nicht migrierbare Legacy-Module nach `archive/`. Avro 1.11.x, kafka-clients 3.x, Flink 1.18+/1.20 für neue Module.
+- [x] Toolchain: gesamtes Projekt auf `maven.compiler.release=17`, Versionen nur in `dependencyManagement`, Enforcer (JDK ≥ 17, kein log4j 1.x); Kafka 3.9.1 / Confluent 7.9.1 / Avro 1.11.4; `opentsx-core` + `-data` 65 statt 388 Artefakte.
+- [x] Legacy-Module nach `archive/modules/` (Cassandra-Store, KStreams-Cassandra-State-Store, Hive-UDF, ksqlDB-UDF).
+- [x] CI (GitHub Actions): Java 17 + 21, Python 3.10–3.13, KafScale-Conformance (Broker v1.6.0 aus Quellcode).
+- [x] Python-Tests mit echten Assertions (18 Tests + 1 dokumentierte Lücke als strict xfail).
+- [x] KafScale-Conformance-Suite + `docker-compose.kafscale.yml`; gemessen gegen KafScale v1.6.0 und Apache Kafka 3.9.1.
+- [ ] Flink auf 1.20/2.x heben (aktuell 1.18, läuft auf 17/21).
+- [ ] `opentsx-app-tools`: sshd-core 0.8.0 ablösen oder archivieren.
+- [ ] Upstream-Issues bei KafScale: ListOffsets-Zeitstempel, LeaveGroup v4 / MEMBER_ID_REQUIRED, Standalone-OffsetCommit.
 - [ ] Sofort-Fixes aus Analyse §3 (Label `"123"`, quadratische Zeitstempel, gemischte Formate auf `OpenTSx_Episodes`), da sie Testdaten verfälschen.
 
 ### Phase 1 – Modell v2 & Serde (`opentsx-model`, `opentsx-serde`)
@@ -118,5 +125,6 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-09: **P0 umgesetzt** (siehe Phase 0). KafScale-Messung: Header & CreateTime bleiben erhalten; `offsetsForTimes`, idempotenter Producer, Standalone-Commits und Gruppen-Wiederbeitritt funktionieren nicht (Ursachen im Conformance-README).
 - 2026-10-09: Gap-Analyse (Build, Tests, Analytik, Windpark, KafScale v1.6.0, OpenMetadata 2.0.5) → `03-GAP-ANALYSE.md`; Entscheidungen D1/D4/D5/D7 eingearbeitet.
 - 2026-10-09: Analyse des Bestandsmodells, Zielmodell-Entwurf und Phasenplan erstellt (dieses Dokument + `docs/datamodel-2026/`).

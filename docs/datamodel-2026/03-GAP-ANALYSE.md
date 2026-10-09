@@ -104,21 +104,26 @@ Empfehlung: **Nicht den Altbestand umbauen, sondern daneben einen schlanken „O
 
 ---
 
-## 5. KafScale – Konsequenzen für das Design (recherchiert, v1.6.0)
+## 5. KafScale – Konsequenzen für das Design (recherchiert und gemessen, v1.6.0)
+
+> **Gemessen 2026-10-09** mit `opentsx-kafscale-conformance` gegen KafScale v1.6.0 und Apache Kafka 3.9.1 –
+> Ergebnisse und Ursachen: [`opentsx-kafscale-conformance/README.md`](../../opentsx-kafscale-conformance/README.md).
 
 | KafScale-Eigenschaft | Auswirkung | Design-Antwort |
 |----------------------|------------|----------------|
 | **Kein Log-Compaction** | Topics `series.v2`, `buckets.v2`, `series-stats.v2` können nicht „latest-by-key“ sein | Zustand („aktuellster Stand“) liegt in **Iceberg** (und OpenMetadata); Kafka-Topics sind reine Append-Logs; kleine Topics per Full-Scan + Dedup lesbar |
 | **ListOffsets ignoriert Zeitstempel** – liefert für alles außer *earliest* das Ende (`cmd/broker/main.go:1696-1704`); `offsetsForTimes()`, Flink `OffsetsInitializer.timestamp()`, Spark `startingTimestamp` springen stillschweigend ans Ende | Zeitbasiertes Replay über Kafka-API unmöglich | **Eigener Episoden-Index**: Indexer-Consumer schreibt `(episodeId, seriesId, tStart, tEnd, bucketId, topic, partition, offset)` nach Iceberg `tsx.episode_index`; Replay = Index-Query → `seek(partition, offset)` |
 | **Kein idempotenter Producer, keine Transaktionen** (`enable.idempotence=false` Pflicht; Java-3.x-Default ist `true`!) | At-least-once, Duplikate möglich | `episodeId` (ULID) als Dedup-Schlüssel; Iceberg-Writes per MERGE/Dedup; Manifest-Checksum prüft Vollständigkeit |
-| Record-Header: Format (RecordBatch v2) erlaubt sie, **Erhalt nicht dokumentiert**; CreateTime-Erhalt unklar | Header/Timestamps nicht als tragend annehmen | Alles Tragende **im Payload** (bucketId, tStart, Schema-Fingerprint); Conformance-Test prüft Header & CreateTime |
+| Record-Header und CreateTime: **gemessen – bleiben erhalten** | Header/Timestamps nutzbar (z.B. `tsx-bucket`, Record-Timestamp = `tStart`) | Trotzdem alles Tragende zusätzlich **im Payload**, damit Iceberg-/Datei-Pfade ohne Kafka-Metadaten auskommen; Conformance-Suite überwacht das je Release |
+| **Consumer-Gruppen: Wiederbeitritt bricht** (gemessen): `LeaveGroup` v4 wird ignoriert, `JoinGroup` antwortet neuen Mitgliedern mit `REBALANCE_IN_PROGRESS` statt `MEMBER_ID_REQUIRED` → Java-Client rejoint in Endlosschleife, Gruppe wird nie stabil | Neustart eines Gruppen-Consumers hängt | Replay & Flink über **manuelle Zuweisung + seek**; Gruppen-Consumer nur mit frischer `group.id` je Lauf; Upstream-Issue |
+| **Offset-Commit ohne Gruppen-Membership abgelehnt** (gemessen, `CommitFailedException`) | Flink-/assign-Commits schlagen fehl | Positionen in OpenTSx (Episoden-Index / Job-State) statt Kafka-Commits; Upstream-Issue |
 | Kein Schema-Registry | Confluent-Wire-Format nur mit eigenem SR | **Default `SELF_DESCRIBING`** (Avro Single-Object-Encoding + Fingerprint) – keine Infrastruktur nötig; SR optional |
 | Compression none/snappy/lz4/zstd | ✓ | `zstd` pro Topic |
 | Segmente 4 MB / 500 ms auf S3; wenig Volumen → viele kleine Objekte | Kosten durch kleine Objekte | Episoden statt Punkte, Producer-Batching (`linger.ms`), Live-Punkt-Topics nur wo nötig |
 | Latenz-Ziel 200–500 ms, Durchsatz moderat | Kein Echtzeit-Regelkreis | Für Monitoring/Analyse ok; Simulator mit Pace-Steuerung |
 | Kein SASL (geplant v2.0), ACL auf `client.id` | Sicherheit über Netzwerk | Netzsegmentierung/TLS-Proxy; Doku |
 | Iceberg-Processor-Addon: liest Segmente direkt aus S3, aber **nur JSON-Schemas, kein Avro** | Nicht direkt nutzbar | Eigener Avro-Decoder-Processor (Go-Skeleton vorhanden) **oder** Flink-Iceberg-Sink; Entscheidung nach Benchmark |
-| Dev/CI: docker-compose (etcd + MinIO + Broker), Broker-Binary mit embedded etcd + In-Memory-S3; **kein Testcontainers-Modul**; Default-Image zeigt auf private Registry | CI braucht eigenes Setup | `docker-compose.kafscale.yml` mit GHCR-Images, Testcontainers `ComposeContainer`; **OpenTSx-KafScale-Conformance-Suite** |
+| Dev/CI: docker-compose (etcd + MinIO + Broker), Broker-Binary mit In-Memory-S3; **kein Testcontainers-Modul**; Default-Image zeigt auf private Registry | CI braucht eigenes Setup | **Umgesetzt:** `docker-compose.kafscale.yml` (gepinnte Images), CI baut den Broker v1.6.0 aus dem Quellcode und fährt die Conformance-Suite (`.github/workflows/ci.yml`) |
 
 ---
 
