@@ -41,7 +41,7 @@ KAFSCALE_BROKER_HOST=127.0.0.1 KAFSCALE_BROKER_PORT=39092 ./kafscale-broker
 
 Same suite, same client (kafka-clients 3.9.1); the Apache Kafka column validates the probes themselves.
 
-| Capability | KafScale v1.6.0 (7aa2a11, built from source, in-memory S3 + metadata) | Apache Kafka 3.9.1 (KRaft) |
+| Capability | KafScale v1.6.0 and main@7aa2a11 (built from source, in-memory S3 + metadata) | Apache Kafka 3.9.1 (KRaft) |
 |------------|------------------------------------------|----------------------------|
 | Required tests | ✅ all pass | ✅ all pass |
 | `record.headers.preserved` | ✅ true | ✅ true |

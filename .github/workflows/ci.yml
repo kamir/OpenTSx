@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [master, "opentsx/**", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java:
+    name: Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - name: Build and test
+        run: mvn -B -ntp verify
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: python-package
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: python-package/pyproject.toml
+      - name: Install
+        run: python -m pip install -e . pytest
+      - name: Test
+        run: python -m pytest -q
+
+  kafscale-conformance:
+    name: KafScale conformance
+    runs-on: ubuntu-latest
+    env:
+      KAFSCALE_REF: v1.6.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/checkout@v4
+        with:
+          repository: KafScale/platform
+          ref: ${{ env.KAFSCALE_REF }}
+          path: kafscale
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: kafscale/go.mod
+          cache-dependency-path: kafscale/go.sum
+      - name: Build KafScale broker
+        working-directory: kafscale
+        run: go build -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
+      - name: Start KafScale broker (in-memory S3 and metadata)
+        run: |
+          KAFSCALE_USE_MEMORY_S3=1 KAFSCALE_BROKER_ID=0 \
+          KAFSCALE_BROKER_ADDR=127.0.0.1:39092 KAFSCALE_BROKER_HOST=127.0.0.1 KAFSCALE_BROKER_PORT=39092 \
+            nohup "$RUNNER_TEMP/kafscale-broker" > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
+          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/39092) 2>/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/kafscale-broker.log"; exit 1
+      - name: Run conformance suite
+        env:
+          KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
+        run: mvn -B -ntp -pl opentsx-kafscale-conformance test
+      - name: Capability report
+        if: always()
+        run: |
+          echo '### KafScale capabilities (${{ env.KAFSCALE_REF }})' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -v '^#' opentsx-kafscale-conformance/target/kafscale-capabilities.properties >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kafscale-capabilities
+          path: |
+            opentsx-kafscale-conformance/target/kafscale-capabilities.properties
+            opentsx-kafscale-conformance/target/surefire-reports/
