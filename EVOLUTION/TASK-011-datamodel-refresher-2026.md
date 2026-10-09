@@ -4,7 +4,7 @@
 - **Status:** 📝 Planung
 - **Priorität:** Hoch
 - **Erstellt:** 2026-10-09
-- **Dokumente:** [`docs/datamodel-2026/01-ANALYSE-Datenmodell.md`](../docs/datamodel-2026/01-ANALYSE-Datenmodell.md) · [`docs/datamodel-2026/02-ZIELMODELL.md`](../docs/datamodel-2026/02-ZIELMODELL.md)
+- **Dokumente:** [`01-ANALYSE-Datenmodell.md`](../docs/datamodel-2026/01-ANALYSE-Datenmodell.md) · [`02-ZIELMODELL.md`](../docs/datamodel-2026/02-ZIELMODELL.md) · [`03-GAP-ANALYSE.md`](../docs/datamodel-2026/03-GAP-ANALYSE.md)
 
 ## Ziel
 
@@ -90,19 +90,24 @@ opentsx-openmetadata   Metadaten-/Profil-Publisher
 opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 ```
 
-## Offene Entscheidungen (→ ADRs)
+## Entscheidungen (Stand 2026-10-09)
 
-| # | Frage | Empfehlung |
-|---|-------|-----------|
-| D1 | KafScale-Fähigkeiten: Schema Registry? Compaction? Header? Retention/Tiering-Kosten? | Bestätigen; Design funktioniert auch ohne Registry (`SELF_DESCRIBING`) und ohne Compaction (Manifest als letzter Record) |
-| D2 | Zeitpräzision | `timestamp-micros` |
-| D3 | SeriesId-Hash | xxHash64 über kanonischen String, hex |
-| D4 | Episoden-Definition: feste Länge / feste Dauer / semantische Segmente? | Feste Dauer als Default (z.B. 1 h), semantische Segmente über `labels` + Revision |
-| D5 | Java-Baseline für neue Module | Java 17 |
-| D6 | Iceberg-Catalog & Object Store | REST-Catalog + S3-kompatibel (MinIO lokal) |
-| D7 | OpenMetadata-Version/Auth, Granularität der Statistik | Bot-Token; Profil pro Topic/Tabelle, Serien nur Top-N |
-| D8 | Umgang mit v1-Topics (`OpenTSx_Events`, `OpenTSx_Episodes`) | Read-only weiter unterstützen, Migration per Replay in v2 |
-| D9 | Werte-Kompression über zstd hinaus | Erst nach Messung in Phase 2 |
+| # | Frage | Status / Entscheidung |
+|---|-------|-----------------------|
+| D1 | KafScale-Fähigkeiten | **Geklärt (v1.6.0):** keine Compaction, kein idempotenter Producer/Transaktionen, **ListOffsets ignoriert Zeitstempel**, keine Schema Registry, zstd ok, Header-/CreateTime-Erhalt undokumentiert → Conformance-Test. Konsequenzen: 03-GAP-ANALYSE §5 |
+| D2 | Zeitpräzision | `timestamp-micros` (vorgeschlagen) |
+| D3 | SeriesId-Hash | xxHash64 über kanonischen String, hex (vorgeschlagen) |
+| D4 | Episoden-Definition | **Entschieden:** feste Dauer, feste Länge **und** Feature-basiert (Extremum ± pre/post, Schwelle→Schwelle) → `Segmentation`-Record, 03-GAP-ANALYSE §7 |
+| D5 | Java-Baseline neue Module | **Java 17** (Altbestand isoliert); **Python ≥ 3.10** gleichrangig (Pandas/Jupyter, PySpark) |
+| D6 | Iceberg-Catalog & Object Store | REST-Catalog + S3-kompatibel (MinIO lokal) – offen |
+| D7 | OpenMetadata | **2.0.5**, Push via SDK/REST (kein Airflow), Bot-JWT; Profile nur auf Tables → Stats auf Iceberg-Tabellen; Inventar über Glossary/Tags/Custom Properties |
+| D8 | Umgang mit v1-Topics | Read-only weiter unterstützen, Migration per Replay in v2 |
+| D9 | Werte-Kompression über zstd hinaus | Erst nach Messung |
+| D10 | Wire-Format-Default | `SELF_DESCRIBING` (Avro Single-Object-Encoding), da KafScale keine Registry mitbringt |
+| D11 | Zeitbasiertes Replay | Eigener Episoden-Index in Iceberg (`tsx.episode_index`) statt `offsetsForTimes` |
+
+> **Hinweis:** Die Phasenreihenfolge wurde durch die Gap-Analyse überarbeitet – maßgeblich ist
+> [`docs/datamodel-2026/03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md) (P0–P6, inkl. Windpark-Domäne & Simulator).
 
 ## Risiken
 
@@ -113,4 +118,5 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-09: Gap-Analyse (Build, Tests, Analytik, Windpark, KafScale v1.6.0, OpenMetadata 2.0.5) → `03-GAP-ANALYSE.md`; Entscheidungen D1/D4/D5/D7 eingearbeitet.
 - 2026-10-09: Analyse des Bestandsmodells, Zielmodell-Entwurf und Phasenplan erstellt (dieses Dokument + `docs/datamodel-2026/`).

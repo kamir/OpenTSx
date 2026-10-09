@@ -94,7 +94,11 @@ record PatternMatch { string queryId; string episodeId; int offset; int length;
 
 ## 3. Serialisierung & Ablage in KafScale
 
-**[ENTSCHEIDUNG]** KafScale-Eigenschaften bestätigen: Kafka-Protokoll-Version, Schema-Registry verfügbar?, Log-Compaction?, Retention/Tiering-Kosten, Record-Header.
+> **Korrektur nach KafScale-Recherche (v1.6.0, siehe [03-GAP-ANALYSE §5](03-GAP-ANALYSE.md)):**
+> keine Compaction → die als `compact` markierten Topics unten werden reine Append-Logs, der „latest“-Zustand liegt in Iceberg;
+> kein idempotenter Producer → `enable.idempotence=false`, Dedup über `episodeId`;
+> **ListOffsets ignoriert Zeitstempel** → zeitbasiertes Replay über einen eigenen Episoden-Index statt `offsetsForTimes`;
+> keine Schema Registry → Default-Wire-Format `SELF_DESCRIBING`; Header nicht tragend, bis ein Conformance-Test sie bestätigt.
 
 ### 3.1 Wire-Format – zweistufig
 
@@ -120,7 +124,7 @@ Header pro Record: `tsx-schema` (Full-Name + Version), `tsx-bucket` (bucketId), 
 ### 3.3 „Preiswert“ – Kostenhebel
 
 * Episoden statt Punkte: typischerweise 1 Record pro 10³–10⁴ Werte → Overhead pro Record (Key, Header, Batch-Header) amortisiert.
-* Producer: `compression.type=zstd`, `linger.ms` 50–200, `batch.size` 256 KB–1 MB, idempotent, **asynchron** (kein `send().get()`).
+* Producer: `compression.type=zstd`, `linger.ms` 50–200, `batch.size` 256 KB–1 MB, `enable.idempotence=false` (KafScale), **asynchron** (kein `send().get()`).
 * Delta-of-Delta für unregelmäßige Zeitachsen, `REGULAR` braucht gar keine Zeitstempel.
 * Optional Phase 2: Werte-Kompression (Gorilla-XOR) als `bytes` – erst nach Messung mit zstd, sonst unnötige Komplexität.
 
