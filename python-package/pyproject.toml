@@ -29,6 +29,8 @@ dependencies = [
     "numpy>=1.24.0",
     "pandas>=2.0.0",
     "scipy>=1.10.0",
+    "fastavro>=1.9.0",
+    "xxhash>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -74,6 +76,9 @@ Issues = "https://github.com/kamir/OpenTSx/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["opentsx*"]
+
+[tool.setuptools.package-data]
+"opentsx.model" = ["schemas/*.avsc"]
 
 [tool.black]
 line-length = 100

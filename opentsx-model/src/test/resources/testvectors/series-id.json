@@ -1,0 +1,56 @@
+[
+  {
+    "metric": "wind.turbine.power_active",
+    "tags": {
+      "park": "ber-01",
+      "turbine": "T07"
+    },
+    "canonical": "wind.turbine.power_active{park=ber-01,turbine=T07}",
+    "seriesId": "58280afbd12100b7"
+  },
+  {
+    "metric": "wind.turbine.power_active",
+    "tags": {
+      "turbine": "T07",
+      "park": "ber-01"
+    },
+    "canonical": "wind.turbine.power_active{park=ber-01,turbine=T07}",
+    "seriesId": "58280afbd12100b7"
+  },
+  {
+    "metric": "wind.met.wind_speed",
+    "tags": {},
+    "canonical": "wind.met.wind_speed{}",
+    "seriesId": "ffdf7012fd1c4a84"
+  },
+  {
+    "metric": "a{b}",
+    "tags": {
+      "k=1": "v,2",
+      "back\\slash": "x"
+    },
+    "canonical": "a\\{b\\}{back\\\\slash=x,k\\=1=v\\,2}",
+    "seriesId": "39a0cfc4f5eff930"
+  },
+  {
+    "metric": "temp",
+    "tags": {
+      "Zone": "1",
+      "zone": "2",
+      "ä": "3",
+      "a": "4"
+    },
+    "canonical": "temp{Zone=1,a=4,zone=2,ä=3}",
+    "seriesId": "4e19acb6aa096dcd"
+  },
+  {
+    "metric": "rotor.rpm",
+    "tags": {
+      "park": "nordsee-süd",
+      "turbine": "WEA-12",
+      "channel": "WROT.RotSpd"
+    },
+    "canonical": "rotor.rpm{channel=WROT.RotSpd,park=nordsee-süd,turbine=WEA-12}",
+    "seriesId": "67c879f74612c3c6"
+  }
+]

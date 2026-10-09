@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>opentsx</artifactId>
+        <groupId>org.opentsx</groupId>
+        <version>3.0.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>opentsx-model</artifactId>
+    <name>opentsx-model</name>
+    <description>
+        OpenTSx data model v2: Avro schemas (single source for Java and Python), series identity (xxHash64),
+        episode time encodings and summaries, and the wire format (Avro single-object encoding).
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+        </dependency>
+        <!-- only needed for the Kafka Serializer/Deserializer adapters -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/avro</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-sources/avro</outputDirectory>
+                            <stringType>String</stringType>
+                            <fieldVisibility>PRIVATE</fieldVisibility>
+                            <!-- named types referenced by other schemas must be parsed first -->
+                            <imports>
+                                <import>${project.basedir}/src/main/avro/SeriesKey.avsc</import>
+                                <import>${project.basedir}/src/main/avro/Segmentation.avsc</import>
+                                <import>${project.basedir}/src/main/avro/EpisodeSummary.avsc</import>
+                                <import>${project.basedir}/src/main/avro/Provenance.avsc</import>
+                            </imports>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

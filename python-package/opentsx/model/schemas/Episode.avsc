@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "Episode",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "Immutable contiguous section of one series. Time axis: REGULAR => t_i = tStart + i * intervalMicros; IRREGULAR_DELTA => t_0 = tStart, timeDeltas holds count-1 zig-zag varints: first delta, then delta-of-delta.",
+  "fields": [
+    {"name": "episodeId", "type": "string", "doc": "ULID."},
+    {"name": "series", "type": "org.opentsx.model.v2.SeriesKey"},
+    {"name": "tStart", "type": {"type": "long", "logicalType": "timestamp-micros"}, "doc": "Inclusive."},
+    {"name": "tEnd", "type": {"type": "long", "logicalType": "timestamp-micros"}, "doc": "Exclusive."},
+    {"name": "count", "type": "int"},
+    {"name": "timeEncoding", "type": {"type": "enum", "name": "TimeEncoding", "symbols": ["REGULAR", "IRREGULAR_DELTA"]}},
+    {"name": "intervalMicros", "type": ["null", "long"], "default": null},
+    {"name": "timeDeltas", "type": ["null", "bytes"], "default": null},
+    {"name": "values", "type": {"type": "array", "items": "double"}},
+    {"name": "quality", "type": ["null", "bytes"], "default": null, "doc": "Optional, one byte per value (0 = ok)."},
+    {"name": "summary", "type": "org.opentsx.model.v2.EpisodeSummary"},
+    {"name": "segmentation", "type": ["null", "org.opentsx.model.v2.Segmentation"], "default": null},
+    {"name": "labels", "type": {"type": "map", "values": "string"}, "default": {}},
+    {"name": "bucketId", "type": ["null", "string"], "default": null},
+    {"name": "revision", "type": "int", "default": 0},
+    {"name": "provenance", "type": "org.opentsx.model.v2.Provenance"}
+  ]
+}
