@@ -18,7 +18,6 @@
         <module>opentsx-predict</module>
         <module>opentsx-flink-core</module>
         <module>opentsx-app-tools</module>
-        <!--module>opentsx-ksql-udf/demo-udf</module-->
         <!--module>opentsx-kafka-streams-tsa</module-->
         <!--module>opentsx-ksql-app</module-->
         <!--module>opentsx-spring-example</module-->
