@@ -321,7 +321,7 @@ Follow the [Python Developer Onboarding Path](../../onboarding/ONBOARDING-PATH-P
 
 ### Examples
 - Example scripts: `/python-package/examples/`
-- Test suite: `/python-package/test_implementations.py`
+- Test suite: `/python-package/tests/` (run with `python -m pytest`)
 
 ## Getting Help
 
