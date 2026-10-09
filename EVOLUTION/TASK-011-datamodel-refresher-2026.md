@@ -35,7 +35,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 
 ### Phase 0 – Fundament & Entscheidungen
 - [ ] ADRs unter `EVOLUTION/DECISIONS/` für die offenen Entscheidungen (s.u.).
-- [ ] Toolchain: neue Module mit `maven.compiler.release=17`; Legacy-Module bleiben vorerst auf 8. Avro 1.11.x, kafka-clients 3.x, Flink 1.18+/1.20 für neue Module.
+- [ ] Toolchain: gesamtes Projekt auf `maven.compiler.release=17` (CI: JDK 17 + 21); nicht migrierbare Legacy-Module nach `archive/`. Avro 1.11.x, kafka-clients 3.x, Flink 1.18+/1.20 für neue Module.
 - [ ] Sofort-Fixes aus Analyse §3 (Label `"123"`, quadratische Zeitstempel, gemischte Formate auf `OpenTSx_Episodes`), da sie Testdaten verfälschen.
 
 ### Phase 1 – Modell v2 & Serde (`opentsx-model`, `opentsx-serde`)
@@ -98,7 +98,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 | D2 | Zeitpräzision | `timestamp-micros` (vorgeschlagen) |
 | D3 | SeriesId-Hash | xxHash64 über kanonischen String, hex (vorgeschlagen) |
 | D4 | Episoden-Definition | **Entschieden:** feste Dauer, feste Länge **und** Feature-basiert (Extremum ± pre/post, Schwelle→Schwelle) → `Segmentation`-Record, 03-GAP-ANALYSE §7 |
-| D5 | Java-Baseline neue Module | **Java 17** (Altbestand isoliert); **Python ≥ 3.10** gleichrangig (Pandas/Jupyter, PySpark) |
+| D5 | Java-Baseline | **Entschieden: kein Java 8.** Baseline wie aktuelle Apache-Projekte: `release=17`, CI zusätzlich auf JDK 21 (Kafka 4.x, Flink 2.x, Spark 4.x, Iceberg 1.x laufen alle auf 17/21). Altbestand wird mit angehoben bzw. archiviert. **Python ≥ 3.10** gleichrangig (Pandas/Jupyter, PySpark) |
 | D6 | Iceberg-Catalog & Object Store | REST-Catalog + S3-kompatibel (MinIO lokal) – offen |
 | D7 | OpenMetadata | **2.0.5**, Push via SDK/REST (kein Airflow), Bot-JWT; Profile nur auf Tables → Stats auf Iceberg-Tabellen; Inventar über Glossary/Tags/Custom Properties |
 | D8 | Umgang mit v1-Topics | Read-only weiter unterstützen, Migration per Replay in v2 |

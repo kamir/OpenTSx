@@ -6,17 +6,17 @@
 
 ## 0. Kurzfazit
 
-OpenTSx hat einen **wissenschaftlich wertvollen Algorithmen-Kern** (DFA/MFDFA, RIS, Event-Synchronisation, FFT-Surrogate, LRC-Generatoren) und eine **saubere kleine Python-Basis**. Für das Ziel – *Windpark-Zeitreihen über KafScale erfassen, inventarisieren, normalisieren, simulieren, katalogisieren und analysieren* – fehlt aber fast die gesamte **Daten-Plattform-Schicht**: kein belastbares Datenmodell, keine Asset-/Inventar-Semantik, keine Normalisierung, keine Tests/CI, keine KafScale-taugliche Persistenz, kein Katalog-Anschluss, keine Simulation. Der Build ist durch eine monolithische Root-POM mit ~390 transitiven Artefakten (Hadoop CDH 5, Spark 2.10, log4j 1.x, xstream 1.2) belastet, und **im Repo liegen Zugangsdaten**.
+OpenTSx hat einen **wissenschaftlich wertvollen Algorithmen-Kern** (DFA/MFDFA, RIS, Event-Synchronisation, FFT-Surrogate, LRC-Generatoren) und eine **saubere kleine Python-Basis**. Für das Ziel – *Windpark-Zeitreihen über KafScale erfassen, inventarisieren, normalisieren, simulieren, katalogisieren und analysieren* – fehlt aber fast die gesamte **Daten-Plattform-Schicht**: kein belastbares Datenmodell, keine Asset-/Inventar-Semantik, keine Normalisierung, keine Tests/CI, keine KafScale-taugliche Persistenz, kein Katalog-Anschluss, keine Simulation. Der Build ist durch eine monolithische Root-POM mit ~390 transitiven Artefakten (Hadoop CDH 5, Spark 2.10, log4j 1.x, xstream 1.2) belastet, und im Repo liegen (laut Maintainer unkritische) Demo-Zugangsdaten.
 
 Empfehlung: **Nicht den Altbestand umbauen, sondern daneben einen schlanken „OpenTSx Platform Core“ (Java 17 + Python ≥ 3.10) aufbauen**, der den Algorithmen-Kern über eine Brücke nutzt, und den Altbestand schrittweise in `legacy/` bzw. `archive/` überführen.
 
 ---
 
-## 1. Sofort handeln (Sicherheit)
+## 1. Sicherheit & Hygiene
 
 | # | Befund | Ort (nur Pfad) | Aktion |
 |---|--------|----------------|--------|
-| S1 | Confluent-Cloud-API-Key/Secret (realistisches Format) **eingecheckt**, obwohl `.gitignore` den Pfad ausschließt | `config/private/ccloud.props` | **Key in Confluent Cloud rotieren/löschen**, Datei aus dem Index nehmen; History-Bereinigung (git filter-repo) separat entscheiden |
+| S1 | Confluent-Cloud-Konfiguration eingecheckt, obwohl `.gitignore` den Pfad ausschließt – laut Maintainer **Demo-Daten, unkritisch** | `config/private/ccloud.props` | Hygiene: durch `*.example` ersetzen, damit Scanner/Contributors nicht irritiert werden |
 | S2 | Weitere SASL-Konfigurationen | `opentsx-lg/src/main/docker-compose/config/ccloud.props`, `opentsx-lg/src/main/resources/config/ccloud.props` | prüfen, rotieren, durch `*.example` ersetzen |
 | S3 | MQTT-Passwortdatei | `opentsx-lg/src/main/mqtt-example/volume1/docker/mqtt/config/passwd` | durch Beispiel ersetzen |
 | S4 | Dev-Default-Secrets im SaaS-Backend | `opentsx-saas-backend/app/core/config.py` | nur via Env, keine Defaults |
@@ -204,7 +204,7 @@ Baseline: **Python ≥ 3.10** (OpenMetadata-SDK), pandas ≥ 2.2, pyarrow, fasta
 
 | Phase | Inhalt | Ergebnis |
 |-------|--------|----------|
-| **P0 Hygiene & Fundament** (1–2 Wo.) | Secrets rotieren/entfernen; neue Module mit Java 17 + `--release`; `dependencyManagement`-Sanierung für neue Module (Altbestand bleibt isoliert); CI (GitHub Actions: Java + Python); echte Python-Asserts; Altlasten nach `archive/` | grüne CI, schlanker Build für neue Module |
+| **P0 Hygiene & Fundament** (1–2 Wo.) | Demo-Credentials durch `*.example` ersetzen; neue Module mit `maven.compiler.release=17`, CI-Matrix JDK 17 + 21; `dependencyManagement`-Sanierung für neue Module (Altbestand bleibt isoliert); CI (GitHub Actions: Java + Python); echte Python-Asserts; Altlasten nach `archive/` | grüne CI, schlanker Build für neue Module |
 | **P1 Modell v2 + Serde (Java & Python)** | `.avsc` inkl. `Segmentation`, Asset/Channel-Schemas; Single-Object-Encoding; Testvektoren | identische Roundtrips Java ⇄ Python |
 | **P2 KafScale-Conformance & Persistenz** | `docker-compose.kafscale.yml`; Conformance-Suite (Produce/Fetch, Gruppen, zstd, Header?, CreateTime?, Duplikate, ListOffsets-Verhalten); BucketWriter, Indexer, Replay | Episoden günstig in KafScale, verifizierbares Replay |
 | **P3 Windpark-Domäne** | Asset-/Kanal-Katalog (IEC 61400-25-orientiert), Normalisierer, **Simulator** mit Fehlerinjektion, Szenario-YAML | reproduzierbare Experimente, die KafScale speisen |
