@@ -18,6 +18,7 @@
         <module>opentsx-lg</module>
         <module>opentsx-predict</module>
         <module>opentsx-flink-core</module>
+        <module>opentsx-legacy-bridge</module>
         <module>opentsx-app-tools</module>
         <module>opentsx-kafscale-conformance</module>
         <!--module>opentsx-kafka-streams-tsa</module-->

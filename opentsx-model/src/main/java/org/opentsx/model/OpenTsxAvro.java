@@ -58,6 +58,14 @@ public final class OpenTsxAvro {
             readerByName.put(schema.getFullName(), type);
             registerWriterSchema(schema);
         }
+        // payloads written by every released model version stay readable
+        for (String version : SchemaHistory.versions()) {
+            for (Schema writer : SchemaHistory.schemas(version).values()) {
+                if (readerByName.containsKey(writer.getFullName())) {
+                    registerWriterSchema(writer);
+                }
+            }
+        }
     }
 
     public static long fingerprint(Schema schema) {

@@ -43,16 +43,18 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] Flink auf 1.20/2.x heben (aktuell 1.18, läuft auf 17/21).
 - [ ] `opentsx-app-tools`: sshd-core 0.8.0 ablösen oder archivieren.
 - [x] Issues im KafScale-Fork angelegt: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) ListOffsets-Zeitstempel, [#17](https://github.com/kamir/kafscale/issues/17) LeaveGroup v4 / MEMBER_ID_REQUIRED, [#18](https://github.com/kamir/kafscale/issues/18) Standalone-OffsetCommit.
-- [ ] Sofort-Fixes aus Analyse §3 (Label `"123"`, quadratische Zeitstempel, gemischte Formate auf `OpenTSx_Episodes`), da sie Testdaten verfälschen.
+- [x] Sofort-Fixes `TSOProducer`: Label `"123"`/URI `"URI"`, quadratische Zeitstempel, fehlendes Pflichtfeld `consumer_timestamp`. (Gemischte Formate auf `OpenTSx_Episodes` entfallen mit den v2-Topics in P2.)
 
 ### Phase 1 – Modell v2 & Serde (`opentsx-model`, `opentsx-serde`)
-- [ ] Avro-Schemas: `SeriesKey`, `Observation`, `Episode`, `EpisodeSummary`, `Provenance`, `BucketManifest`, `SeriesStats`, `PatternMatch`.
-- [ ] Code-Generierung nach `target/generated-sources` (nicht mehr eingecheckt).
-- [ ] `SeriesId`-Berechnung (kanonische Tag-Sortierung + Hash) inkl. Testvektoren, identisch in Java & Python.
-- [ ] `OpenTsxSerde` mit Modi `REGISTRY` und `SELF_DESCRIBING` (Avro Single-Object-Encoding), Auto-Erkennung beim Lesen; Flink-`DeserializationSchema` und Python-(fastavro-)Gegenstück.
-- [ ] Time-Encodings `REGULAR`, `IRREGULAR_DELTA` + Property-basierte Roundtrip-Tests.
-- [ ] Schema-Kompatibilitätscheck in CI (`SchemaCompatibility`, BACKWARD_TRANSITIVE).
-- [ ] v1-Schemas deprecaten; Konflikt `org.opentsx.data.model.Event` dokumentieren/auflösen.
+- [x] Avro-Schemas: `SeriesKey`, `Observation`, `Episode` (+ `Segmentation`), `EpisodeSummary`, `Provenance`, `BucketManifest`, `SeriesStats`, `PatternMatch` – Spezifikation: [`04-MODELL-V2-SPEC.md`](../docs/datamodel-2026/04-MODELL-V2-SPEC.md).
+- [x] Code-Generierung nach `target/generated-sources` (nicht mehr eingecheckt).
+- [x] `SeriesId` (xxHash64, kanonische Form) inkl. gemeinsamer Testvektoren, identisch in Java & Python.
+- [x] `OpenTsxAvro`: Single-Object-Encoding (Standard), Confluent-Framing lesbar mit Resolver, Kafka-Serializer/-Deserializer; Python-Gegenstück byte-identisch. Flink-`DeserializationSchema` folgt mit der Flink-Umstellung (P4).
+- [x] Time-Encodings `REGULAR`, `IRREGULAR_DELTA` + Roundtrip-Tests und Testvektoren.
+- [x] Schema-Historie (`schema-history/v2.0`) + BACKWARD_TRANSITIVE-Prüfung im Build; Schemaänderung erzwingt neue Version.
+- [x] v1-Modell eingefroren und als veraltet dokumentiert (`opentsx-data/README.md`), `Event`-Konflikt dokumentiert.
+- [x] `opentsx-legacy-bridge`: `TimeSeriesObject ⇄ Episode` verlustfrei, `EpisodesRecord v1 → Episode`.
+- [x] Pandas-Anbindung mit UTC-`DatetimeIndex` (`opentsx.model.pandas_io`).
 
 ### Phase 2 – Kafka/KafScale-Persistenz & Replay (`opentsx-connectors` bzw. `opentsx-kafka-v2`)
 - [ ] Topic-Layout `tsx.<domain>.{observations,episodes,series,buckets,series-stats}.v2` + Provisioning-Tool (ersetzt `TopicsManagerTool` mit hartem Pfad).
@@ -102,8 +104,8 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 | # | Frage | Status / Entscheidung |
 |---|-------|-----------------------|
 | D1 | KafScale-Fähigkeiten | **Geklärt (v1.6.0):** keine Compaction, kein idempotenter Producer/Transaktionen, **ListOffsets ignoriert Zeitstempel**, keine Schema Registry, zstd ok, Header-/CreateTime-Erhalt undokumentiert → Conformance-Test. Konsequenzen: 03-GAP-ANALYSE §5 |
-| D2 | Zeitpräzision | `timestamp-micros` (vorgeschlagen) |
-| D3 | SeriesId-Hash | xxHash64 über kanonischen String, hex (vorgeschlagen) |
+| D2 | Zeitpräzision | **Entschieden:** `timestamp-micros` |
+| D3 | SeriesId-Hash | **Entschieden:** xxHash64 (Seed 0) über kanonische Form, 16 Hex-Zeichen |
 | D4 | Episoden-Definition | **Entschieden:** feste Dauer, feste Länge **und** Feature-basiert (Extremum ± pre/post, Schwelle→Schwelle) → `Segmentation`-Record, 03-GAP-ANALYSE §7 |
 | D5 | Java-Baseline | **Entschieden: kein Java 8.** Baseline wie aktuelle Apache-Projekte: `release=17`, CI zusätzlich auf JDK 21 (Kafka 4.x, Flink 2.x, Spark 4.x, Iceberg 1.x laufen alle auf 17/21). Altbestand wird mit angehoben bzw. archiviert. **Python ≥ 3.10** gleichrangig (Pandas/Jupyter, PySpark) |
 | D6 | Iceberg-Catalog & Object Store | REST-Catalog + S3-kompatibel (MinIO lokal) – offen |
@@ -125,6 +127,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-09: **P1 umgesetzt**: `opentsx-model` (Java) + `opentsx.model` (Python) byte-identisch über gemeinsame Testvektoren; Entscheidungen D2 (`timestamp-micros`) und D3 (xxHash64) bestätigt; Legacy-Brücke; Schema-Historie mit Kompatibilitätsprüfung.
 - 2026-10-09: **P0 umgesetzt** (siehe Phase 0). KafScale-Messung: Header & CreateTime bleiben erhalten; `offsetsForTimes`, idempotenter Producer, Standalone-Commits und Gruppen-Wiederbeitritt funktionieren nicht (Ursachen im Conformance-README).
 - 2026-10-09: Gap-Analyse (Build, Tests, Analytik, Windpark, KafScale v1.6.0, OpenMetadata 2.0.5) → `03-GAP-ANALYSE.md`; Entscheidungen D1/D4/D5/D7 eingearbeitet.
 - 2026-10-09: Analyse des Bestandsmodells, Zielmodell-Entwurf und Phasenplan erstellt (dieses Dokument + `docs/datamodel-2026/`).

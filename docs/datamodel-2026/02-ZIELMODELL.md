@@ -1,6 +1,7 @@
 # OpenTSx Datenmodell v2 – Zielbild (Entwurf)
 
-> Status: **Entwurf zur Diskussion**. Nichts hiervon ist implementiert. Offene Entscheidungen sind
+> Status: **Entwurf**. Das Datenmodell (§2) ist seit 2026-10-09 implementiert – verbindlich ist
+> [04-MODELL-V2-SPEC.md](04-MODELL-V2-SPEC.md); die übrigen Abschnitte sind noch Planung. Offene Entscheidungen sind
 > mit **[ENTSCHEIDUNG]** markiert und in `EVOLUTION/TASK-011-datamodel-refresher-2026.md` gesammelt.
 
 ## 1. Leitprinzipien

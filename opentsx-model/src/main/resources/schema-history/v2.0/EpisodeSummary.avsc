@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "EpisodeSummary",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "Mergeable summary of the finite values of an episode (Welford). variance = m2 / (validCount - 1). NaN values are counted, not aggregated.",
+  "fields": [
+    {"name": "validCount", "type": "long"},
+    {"name": "nanCount", "type": "long", "default": 0},
+    {"name": "min", "type": "double"},
+    {"name": "max", "type": "double"},
+    {"name": "mean", "type": "double"},
+    {"name": "m2", "type": "double"},
+    {"name": "sax", "type": ["null", "string"], "default": null, "doc": "SAX word for pattern pre-filtering (filled by the pattern engine)."}
+  ]
+}
