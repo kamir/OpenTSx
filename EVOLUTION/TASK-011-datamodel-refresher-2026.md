@@ -57,12 +57,12 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] Pandas-Anbindung mit UTC-`DatetimeIndex` (`opentsx.model.pandas_io`).
 
 ### Phase 2 – Kafka/KafScale-Persistenz & Replay (`opentsx-connectors` bzw. `opentsx-kafka-v2`)
-- [ ] Topic-Layout `tsx.<domain>.{observations,episodes,series,buckets,series-stats}.v2` + Provisioning-Tool (ersetzt `TopicsManagerTool` mit hartem Pfad).
-- [ ] `BucketWriter` (Manifest OPEN → Episoden → SEALED + Checksum), asynchroner idempotenter Producer, zstd, Header, Record-Timestamp = `tStart`.
-- [ ] `ReplayService`: nach Bucket, nach Serien + Zeitbereich (`offsetsForTimes`), Pace ASAP/Echtzeit-Faktor, Sinks Topic/Callback/TSBucket; Verifikation gegen Manifest.
-- [ ] `LegacyBridge`: SequenceFile-TSBucket → BucketWriter; `EpisodesRecord` v1 → v2 (Migrations-Replay).
-- [ ] Kostenmessung (Bytes/Wert, Records/s) gegen KafScale; Ergebnis in die Doku.
-- [ ] `TSOWriter.persistBucket_Kafka`-Stub durch Implementierung ersetzen.
+- [x] Topic-Layout `tsx.<domain>.{observations,episodes,series,buckets,series-stats}.v2` + Provisioning (`TopicLayout.provision`), Client-Settings für KafScale (`KafScaleClients`).
+- [x] `BucketWriter` (Manifest OPEN → Episoden → SEALED + Checksum), asynchron, **nicht** idempotent (KafScale), `max.in.flight=1`, zstd, Header, Record-Timestamp = `tStart`; kein SEAL bei Sendefehlern.
+- [x] `ReplayService`: nach Bucket oder Serien + Zeitbereich über den **Episoden-Index** (statt `offsetsForTimes`), manuelle Zuweisung + seek, Ereigniszeit-Reihenfolge, Pacing, Dedup, Verifikation gegen Manifest, begrenzter Speicher. `EpisodeIndexer` baut den Index aus dem Log neu, `BucketCatalog` liest Manifeste. Sink: Callback (Topic-/TSBucket-Sinks bei Bedarf).
+- [x] `LegacyBucketImport`: TSBucket-SequenceFile → Episoden (→ `BucketWriter`); `EpisodesRecord` v1 → v2 über `LegacyBridge`.
+- [x] Kostenmessung: **2,18 B/Wert** (1 Hz, Sensorauflösung, regulär, zstd), 6,96 B/Wert bei voller Double-Präzision, 4,07 B/Wert mit Zeit-Jitter (`opentsx-kafka-v2/README.md`). Records/s gegen KafScale-S3 noch offen (lokal nur In-Memory-S3).
+- [x] `TSOWriter.persistBucket_Kafka`-Stub als veraltet markiert und auf den v2-Pfad verwiesen.
 
 ### Phase 3 – Store-SPI, OpenTSDB, Iceberg (`opentsx-store-spi`, `opentsx-store-opentsdb`, `opentsx-store-iceberg`)
 - [ ] `SeriesStore`, `EpisodeQuery`, `SeriesSelector`, `StoreCapabilities` (ersetzt leere `TSBucketStore`/`TSO*Interface`).
@@ -111,7 +111,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 | D6 | Iceberg-Catalog & Object Store | REST-Catalog + S3-kompatibel (MinIO lokal) – offen |
 | D7 | OpenMetadata | **2.0.5**, Push via SDK/REST (kein Airflow), Bot-JWT; Profile nur auf Tables → Stats auf Iceberg-Tabellen; Inventar über Glossary/Tags/Custom Properties |
 | D8 | Umgang mit v1-Topics | Read-only weiter unterstützen, Migration per Replay in v2 |
-| D9 | Werte-Kompression über zstd hinaus | Erst nach Messung |
+| D9 | Werte-Kompression über zstd hinaus | **Gemessen:** 2,18 B/Wert reicht vorerst; quantisierte Integer-Kodierung (< 1 B/Wert) als Option für eine spätere Schemaversion |
 | D10 | Wire-Format-Default | `SELF_DESCRIBING` (Avro Single-Object-Encoding), da KafScale keine Registry mitbringt |
 | D11 | Zeitbasiertes Replay | Eigener Episoden-Index in Iceberg (`tsx.episode_index`) statt `offsetsForTimes` |
 
@@ -127,6 +127,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-11: **P2 umgesetzt**: `opentsx-kafka-v2` (TopicLayout, BucketWriter, Episoden-Index, Replay, Katalog), `LegacyBucketImport`; End-to-End-Tests grün gegen KafScale v1.6.0 und Apache Kafka 3.9.1; Speicherkosten gemessen.
 - 2026-10-09: **P1 umgesetzt**: `opentsx-model` (Java) + `opentsx.model` (Python) byte-identisch über gemeinsame Testvektoren; Entscheidungen D2 (`timestamp-micros`) und D3 (xxHash64) bestätigt; Legacy-Brücke; Schema-Historie mit Kompatibilitätsprüfung.
 - 2026-10-09: **P0 umgesetzt** (siehe Phase 0). KafScale-Messung: Header & CreateTime bleiben erhalten; `offsetsForTimes`, idempotenter Producer, Standalone-Commits und Gruppen-Wiederbeitritt funktionieren nicht (Ursachen im Conformance-README).
 - 2026-10-09: Gap-Analyse (Build, Tests, Analytik, Windpark, KafScale v1.6.0, OpenMetadata 2.0.5) → `03-GAP-ANALYSE.md`; Entscheidungen D1/D4/D5/D7 eingearbeitet.

@@ -50,6 +50,14 @@ axes = [
 ]
 write("time-deltas.json", [{"timestampsUs": ts, "deltasHex": m.encode_deltas(ts).hex()} for ts in axes])
 
+# --- bucket checksum ----------------------------------------------------------------------------------
+bucket_cases = [
+    [],
+    ["01HF7Z1Y4X0000000000000001"],
+    ["01HF7Z1Y4X0000000000000002", "01HF7Z1Y4X0000000000000001", "01HF7Z1Y4X0000000000000002"],
+]
+write("bucket-checksum.json", [{"episodeIds": ids, "checksum": m.bucket_checksum(ids)} for ids in bucket_cases])
+
 # --- wire format --------------------------------------------------------------------------------------
 power = m.series_key("wind.turbine.power_active", {"turbine": "T07", "park": "ber-01"}, "kW")
 speed = m.series_key("wind.met.wind_speed", {"park": "ber-01", "turbine": "T07"}, "m/s")

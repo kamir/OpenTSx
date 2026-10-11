@@ -58,4 +58,13 @@ class SeriesIdentityTest {
         assertEquals(-1, Integer.signum(a.compareTo(b)));
         assertEquals("01HF7YAT00", a.substring(0, 10)); // same time prefix as the Python implementation
     }
+
+    @Test
+    void bucketChecksumMatchesSharedVectors() {
+        for (JsonNode v : TestVectors.load("bucket-checksum.json")) {
+            java.util.List<String> ids = new java.util.ArrayList<>();
+            v.get("episodeIds").forEach(n -> ids.add(n.asText()));
+            assertEquals(v.get("checksum").asText(), Buckets.checksum(ids));
+        }
+    }
 }

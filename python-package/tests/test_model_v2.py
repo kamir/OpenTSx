@@ -160,3 +160,9 @@ def test_builders_validate():
     with pytest.raises(ValueError):
         m.regular(dict(key, seriesId="0000000000000000"), 0, 10, [1.0])
     assert math.isnan(m.regular(key, 0, 10, [float("nan")])["summary"]["mean"])
+
+
+def test_bucket_checksum_vectors_ignore_order_and_duplicates():
+    for v in load("bucket-checksum.json"):
+        assert m.bucket_checksum(v["episodeIds"]) == v["checksum"]
+        assert m.bucket_checksum(reversed(v["episodeIds"])) == v["checksum"]

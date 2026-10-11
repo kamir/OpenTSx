@@ -18,6 +18,7 @@
         <module>opentsx-lg</module>
         <module>opentsx-predict</module>
         <module>opentsx-flink-core</module>
+        <module>opentsx-kafka-v2</module>
         <module>opentsx-legacy-bridge</module>
         <module>opentsx-app-tools</module>
         <module>opentsx-kafscale-conformance</module>
@@ -131,6 +132,13 @@
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
                 <version>${avro.version}</version>
+            </dependency>
+
+            <dependency>
+                <!-- same version kafka-clients ${kafka.version} uses; for storage-cost measurements in tests -->
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>1.5.6-4</version>
             </dependency>
 
             <!-- Hadoop SequenceFile support for TSBucket (shaded client, no transitive conflicts) -->
