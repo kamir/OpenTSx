@@ -1,0 +1,192 @@
+# OpenTSx wind-farm data-point catalog ("Kanal-Katalog").
+#
+# A versioned dictionary between raw source channels and analysable signals, mapped to the information model of
+# IEC 61400-25-2 (logical device / logical node / data object / data attribute). It documents units, scaling and
+# sign, time reference, aggregation, data quality and source addresses, and marks vendor-specific extensions.
+# Note: a catalog oriented on IEC 61400-25-2 describes the MEANING of the data; it does not make the exchange or the
+# protocol mapping (IEC 61400-25-3/-4) compliant.
+catalog: opentsx-windpark-datapoints
+version: 1.0.0
+iecEdition: "IEC 61400-25-2 (Ed. 2)"
+qualityCodes:            # per-value quality byte of v2 episodes; aligned with IEC validity good/invalid/questionable
+  0: GOOD
+  1: IMPLAUSIBLE         # outside the plausibility band (value kept)
+  2: MISSING             # no value (NaN)
+  3: SUBSTITUTED         # replaced by an estimate / substitute value
+  4: QUESTIONABLE        # source flagged the value as questionable
+channels:
+  - id: WMET.HorWdSpd
+    metric: wind.met.wind_speed
+    component: nacelle anemometer
+    description: Horizontal wind speed at hub height, measured on the nacelle (behind the rotor)
+    iec: { logicalDevice: "<turbine>", logicalNode: WMET, dataObject: HorWdSpd, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: m/s
+    resolution: 0.01
+    min: 0
+    max: 60
+    kind: ANALOG
+    sampling: PT1S
+  - id: WMET.HorWdDir
+    metric: wind.met.wind_direction
+    component: nacelle wind vane
+    description: Wind direction, meteorological convention (direction the wind comes from, clockwise from north)
+    iec: { logicalDevice: "<turbine>", logicalNode: WMET, dataObject: HorWdDir, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: deg
+    resolution: 0.1
+    min: 0
+    max: 360
+    kind: ANALOG
+    sampling: PT1S
+  - id: WMET.EnvTmp
+    metric: wind.met.ambient_temperature
+    component: nacelle temperature sensor
+    description: Ambient air temperature
+    iec: { logicalDevice: "<turbine>", logicalNode: WMET, dataObject: EnvTmp, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: Cel
+    resolution: 0.1
+    min: -40
+    max: 60
+    kind: ANALOG
+    sampling: PT1S
+  - id: WNAC.Dir
+    metric: wind.nacelle.direction
+    component: yaw system
+    description: Nacelle position (yaw angle, clockwise from north)
+    iec: { logicalDevice: "<turbine>", logicalNode: WNAC, dataObject: Dir, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: deg
+    resolution: 0.1
+    min: 0
+    max: 360
+    kind: ANALOG
+    sampling: PT1S
+  - id: WROT.RotSpd
+    metric: wind.rotor.speed
+    component: rotor
+    description: Rotor speed
+    iec: { logicalDevice: "<turbine>", logicalNode: WROT, dataObject: RotSpd, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: rpm
+    resolution: 0.01
+    min: 0
+    max: 25
+    kind: ANALOG
+    sampling: PT1S
+  - id: WROT.BlPthAngVal
+    metric: wind.rotor.pitch_angle
+    component: pitch system
+    description: Collective blade pitch angle (0 = fine/working position, 90 = feathered)
+    iec: { logicalDevice: "<turbine>", logicalNode: WROT, dataObject: BlPthAngVal, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: deg
+    resolution: 0.01
+    min: -5
+    max: 95
+    kind: ANALOG
+    sampling: PT1S
+  - id: WGEN.Spd
+    metric: wind.generator.speed
+    component: generator
+    description: Generator speed
+    iec: { logicalDevice: "<turbine>", logicalNode: WGEN, dataObject: Spd, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: rpm
+    resolution: 0.1
+    min: 0
+    max: 2500
+    kind: ANALOG
+    sampling: PT1S
+  - id: WGEN.GnTmp
+    metric: wind.generator.temperature
+    component: generator
+    description: Generator winding temperature
+    iec: { logicalDevice: "<turbine>", logicalNode: WGEN, dataObject: GnTmp, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: Cel
+    resolution: 0.1
+    min: -40
+    max: 180
+    kind: ANALOG
+    sampling: PT1S
+  - id: WTUR.W
+    metric: wind.turbine.power_active
+    component: turbine terminals (grid side)
+    description: Active power; sign convention generator - export to the grid is positive
+    iec: { logicalDevice: "<turbine>", logicalNode: WTUR, dataObject: W, dataAttribute: mag.f, cdc: MV }
+    dataType: FLOAT64
+    unit: kW
+    resolution: 0.1
+    min: -100
+    max: 10000
+    kind: ANALOG
+    sampling: PT1S
+  - id: WTUR.TurSt
+    metric: wind.turbine.state
+    component: turbine controller
+    description: Operating state of the turbine (OpenTSx state codes)
+    iec: { logicalDevice: "<turbine>", logicalNode: WTUR, dataObject: TurSt, dataAttribute: stVal, cdc: INS }
+    dataType: INT32
+    unit: "1"
+    resolution: 1
+    min: 1
+    max: 6
+    kind: STATUS
+    sampling: PT1S
+    statusCodes: { 1: RUNNING, 2: IDLE_LOW_WIND, 3: CURTAILED, 4: FAULT, 5: MAINTENANCE, 6: STORM_STOP }
+    vendorSpecific: true
+    notes: >-
+      The standard defines TurSt with its own state enumeration; the 1..6 codes are an OpenTSx extension used by
+      the simulator. Vendor state codes must be mapped per source system.
+
+# How channels of concrete source systems map onto the catalog. Unmapped source channels are reported, not guessed.
+sources:
+  - system: opentsx-simulator
+    description: OpenTSx wind-farm simulator (identity mapping, UTC, 1 Hz instantaneous values)
+    timezone: UTC
+    mappings: []          # uses canonical metrics and IEC references directly
+  - system: example-vendor-scada-10min
+    description: >-
+      Example of a vendor 10-minute SCADA export (CSV). Shows the details a mapping has to pin down before data of
+      two manufacturers can be compared.
+    timezone: Europe/Berlin
+    mappings:
+      - sourceName: WindSpeed_Avg
+        channel: WMET.HorWdSpd
+        sourceUnit: m/s
+        aggregation: { function: MEAN, interval: PT10M }
+        timestamp: END            # the vendor stamps the END of the 10-minute interval
+        sourceAddress: "csv:column=WindSpeed_Avg"
+        status: CONFIRMED
+      - sourceName: WindSpeed_Max
+        channel: WMET.HorWdSpd
+        sourceUnit: m/s
+        aggregation: { function: MAX, interval: PT10M }
+        timestamp: END
+        sourceAddress: "csv:column=WindSpeed_Max"
+        status: CONFIRMED
+      - sourceName: Grid_Power_Avg
+        channel: WTUR.W
+        sourceUnit: W
+        invertSign: true          # vendor convention: export to the grid is negative
+        aggregation: { function: MEAN, interval: PT10M }
+        timestamp: END
+        sourceAddress: "csv:column=Grid_Power_Avg"
+        status: CONFIRMED
+      - sourceName: RotorSpeed_Avg
+        channel: WROT.RotSpd
+        sourceUnit: rad/s
+        aggregation: { function: MEAN, interval: PT10M }
+        timestamp: END
+        sourceAddress: "csv:column=RotorSpeed_Avg"
+        status: PROVISIONAL
+        notes: unit confirmed by the vendor manual only for firmware >= 4.2
+      - sourceName: Gen_Temp_Avg
+        channel: WGEN.GnTmp
+        sourceUnit: "[degF]"
+        aggregation: { function: MEAN, interval: PT10M }
+        timestamp: END
+        sourceAddress: "csv:column=Gen_Temp_Avg"
+        status: CONFIRMED

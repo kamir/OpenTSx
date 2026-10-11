@@ -35,7 +35,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 
 ### Phase 0 – Fundament & Entscheidungen
 - [ ] ADRs unter `EVOLUTION/DECISIONS/` für die offenen Entscheidungen (s.u.).
-- [x] Toolchain: gesamtes Projekt auf `maven.compiler.release=17`, Versionen nur in `dependencyManagement`, Enforcer (JDK ≥ 17, kein log4j 1.x); Kafka 3.9.1 / Confluent 7.9.1 / Avro 1.11.4; `opentsx-core` + `-data` 65 statt 388 Artefakte.
+- [x] Toolchain: gesamtes Projekt auf `maven.compiler.release=17`, Versionen nur in `dependencyManagement`, Enforcer (JDK ≥ 17, kein log4j 1.x); Kafka 3.9.1 / Confluent 7.9.1 / Avro 1.12.1 (seit Windpark-PR; 1.12.0 dekodiert double-Arrays mit float-Präzision, 1.12.2 verlangt `org.apache.avro.SERIALIZABLE_PACKAGES` → Folgeaufgabe); `opentsx-core` + `-data` 65 statt 388 Artefakte.
 - [x] Legacy-Module nach `archive/modules/` (Cassandra-Store, KStreams-Cassandra-State-Store, Hive-UDF, ksqlDB-UDF).
 - [x] CI (GitHub Actions): Java 17 + 21, Python 3.10–3.13, KafScale-Conformance (Broker v1.6.0 aus Quellcode).
 - [x] Python-Tests mit echten Assertions (18 Tests + 1 dokumentierte Lücke als strict xfail).
@@ -70,6 +70,15 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] OpenTSDB-Adapter `opentsx-store-opentsdb-v2`: HTTP-API, Validierung metric/tags (≤ 8), Einheit als `_unit`, `/api/put` gebatcht, `/api/query` → Episoden; ms-Präzision, NaN wird gezählt verworfen.
 - [x] Iceberg-Adapter `opentsx-store-iceberg` (Iceberg 1.10): Tabellen `episodes` (verlustfrei, `day(t_start)` + `bucket(32, series_id)`), `series`, `episode_index`; idempotente Writes; Time-Travel. Python liest dieselben Tabellen mit PyIceberg byte-identisch (CI-Job `cross-language`).
 - [x] KafScale → Iceberg: `EpisodeLogSync` (manuelle Zuweisung, Positionen zurückgegeben, idempotent) + `IcebergEpisodeIndex` als dauerhafter Replay-Index; End-to-End-Test gegen KafScale v1.6.0.
+
+### Windpark-Domäne (Gap-Roadmap P3, `opentsx-windpark`)
+- [x] Versionierter Datenpunktkatalog (`channel-catalog.yaml` v1.0.0) mit Zuordnung zu IEC 61400-25-2 (LD/LN/DO/DA, CDC, Edition), Einheit (UCUM), Auflösung, Plausibilität, Qualitätscodes, Herstellererweiterungen (`vendorSpecific`, `notes`).
+- [x] Quellsystem-Mappings: Originalname, Quelladresse, Skalierung/Offset/Vorzeichen, Quelleinheit, Zeitzone, Zeitbezug (INSTANT/START/END), Aggregation (`mean.PT10M` …), Status CONFIRMED/PROVISIONAL/UNMAPPED.
+- [x] Asset-Modell (`TurbineType`, `Turbine`, `Park`) + Inventar (erwartete Serien) als Eingabe für OpenMetadata.
+- [x] Normalisierer: Namen/Einheiten/UTC/Intervallbeginn/Quantisierung/Plausibilität → ausgerichtete 10-min-Episoden + Report (nichts wird geraten).
+- [x] Simulator: Weibull + OU-Turbulenz (exakt diskretisiert), Jensen-Wake, Leistungskurve, Pitch/Yaw/Temperatur, Betriebsereignisse, Sensorfehler mit Ground Truth; deterministisch inkl. Episoden-IDs.
+- [x] CLI `WindparkSim` → KafScale (versiegelter Bucket) und/oder Iceberg; End-to-End-Tests (Iceberg immer, KafScale mit `KAFSCALE_BOOTSTRAP`, in CI).
+- [ ] Folge: Avro 1.12.2+ mit `SERIALIZABLE_PACKAGES`; echte Herstellerexporte als weitere `sources` einpflegen.
 
 ### Phase 4 – Streaming-Statistik & OpenMetadata (`opentsx-stats-flink`, `opentsx-openmetadata`)
 - [ ] Flink-Job: keyBy(seriesId), Welford + min/max + Quantil-Sketch + Gap-/Rate-Erkennung; global laufend + Tumbling-Fenster; Episoden-Summaries direkt mergen.
@@ -127,6 +136,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-11: **Windpark-Domäne umgesetzt** (`opentsx-windpark`): IEC-61400-25-2-Datenpunktkatalog, Normalisierer, Simulator mit Ground Truth, CLI → KafScale/Iceberg. Avro 1.12.1 zentral (Präzisionsfehler in 1.12.0 per Test abgesichert).
 - 2026-10-11: **P3 umgesetzt**: Store-SPI + Contract-Suite, Iceberg-Store (+ Index, Log-Sync), OpenTSDB-Adapter, PyIceberg-Reader mit Byte-Gleichheit Java↔Python.
 - 2026-10-11: **P2 umgesetzt**: `opentsx-kafka-v2` (TopicLayout, BucketWriter, Episoden-Index, Replay, Katalog), `LegacyBucketImport`; End-to-End-Tests grün gegen KafScale v1.6.0 und Apache Kafka 3.9.1; Speicherkosten gemessen.
 - 2026-10-09: **P1 umgesetzt**: `opentsx-model` (Java) + `opentsx.model` (Python) byte-identisch über gemeinsame Testvektoren; Entscheidungen D2 (`timestamp-micros`) und D3 (xxHash64) bestätigt; Legacy-Brücke; Schema-Historie mit Kompatibilitätsprüfung.

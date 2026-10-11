@@ -22,6 +22,7 @@
         <module>opentsx-kafka-v2</module>
         <module>opentsx-store-iceberg</module>
         <module>opentsx-store-opentsdb-v2</module>
+        <module>opentsx-windpark</module>
         <module>opentsx-legacy-bridge</module>
         <module>opentsx-app-tools</module>
         <module>opentsx-kafscale-conformance</module>
@@ -39,10 +40,13 @@
         <schemaRegistryUrl>http://localhost:8081</schemaRegistryUrl>
         <schemaRegistryBasicAuthUserInfo></schemaRegistryBasicAuthUserInfo>
 
-        <!-- Kafka / Confluent / Avro must move together (CP 7.9 = Kafka 3.9 = Avro 1.11) -->
+        <!-- Kafka 3.9 / Confluent 7.9; Avro 1.12 because Iceberg 1.10 requires it. Not 1.12.0: it decodes double
+             arrays with float precision (EpisodesAndWireFormatTest.doublesSurviveTheRoundTripAtFullPrecision).
+             1.12.2 needs org.apache.avro.SERIALIZABLE_PACKAGES configured - planned follow-up. (wire format unchanged,
+             the shared test vectors and schema-compatibility checks guard this) -->
         <kafka.version>3.9.1</kafka.version>
         <confluent.version>7.9.1</confluent.version>
-        <avro.version>1.11.4</avro.version>
+        <avro.version>1.12.1</avro.version>
 
         <gson.version>2.11.0</gson.version>
         <hadoop.version>3.4.1</hadoop.version>
