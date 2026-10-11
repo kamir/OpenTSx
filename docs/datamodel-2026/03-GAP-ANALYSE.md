@@ -215,6 +215,6 @@ Baseline: **Python ≥ 3.10** (OpenMetadata-SDK), pandas ≥ 2.2, pyarrow, fasta
 | **P1 Modell v2 + Serde (Java & Python)** | `.avsc` inkl. `Segmentation`, Asset/Channel-Schemas; Single-Object-Encoding; Testvektoren | identische Roundtrips Java ⇄ Python |
 | **P2 KafScale-Conformance & Persistenz** | `docker-compose.kafscale.yml`; Conformance-Suite (Produce/Fetch, Gruppen, zstd, Header?, CreateTime?, Duplikate, ListOffsets-Verhalten); BucketWriter, Indexer, Replay | Episoden günstig in KafScale, verifizierbares Replay |
 | **P3 Windpark-Domäne** ✅ (`opentsx-windpark`) | Asset-/Kanal-Katalog (IEC 61400-25-orientiert), Normalisierer, **Simulator** mit Fehlerinjektion, Szenario-YAML | reproduzierbare Experimente, die KafScale speisen |
-| **P4 Iceberg + Stats + DQ + OpenMetadata** | Iceberg-Tabellen; Flink Stats/DQ/10-min; OM-Publisher (Glossary, Tags, Custom Props, Topics, Tables, Lineage, Profile, DQ) | gefüllter Metadata-Pool |
+| **P4 Iceberg + Stats + DQ + OpenMetadata** ✅ (`opentsx-store-iceberg`, `opentsx-stats`, `opentsx-openmetadata`) | Iceberg-Tabellen; Flink Stats/DQ/10-min; OM-Publisher (Glossary, Tags, Custom Props, Topics, Tables, Lineage, Profile, DQ) | gefüllter Metadata-Pool |
 | **P5 Segmentierung, Retrieval & Pattern** | Segmentierer (4 Strategien, batch + streaming), Retrieval-API, MASS/SAX/DTW, Power-Curve-Analyse | Episoden-Suche & Mustersuche |
 | **P6 Analytik-Lücken** | Resampling/Alignment, Gap-Filling, Change-Points, Welch-PSD/Kohärenz, Feature-Extraktion | Top-Tool-Niveau für Windpark-Analysen |

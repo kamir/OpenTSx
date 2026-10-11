@@ -206,6 +206,8 @@ Capabilities: `EPISODES, SQL, TIME_TRAVEL`; Pattern-Prefilter über `sax`, `s_mi
 
 Ingestion: kleines Java-Modul `opentsx-openmetadata` (REST-Client), das (1) Schemas/Topics/Tabellen einmalig registriert und (2) aus `series-stats.v2` **rate-limitiert** (z.B. stündlich je Dataset, nicht je Event) Profile aktualisiert. **[ENTSCHEIDUNG]** OpenMetadata-Version & Auth (JWT/Bot-Token); Granularität: Statistik pro Topic/Tabelle (empfohlen) vs. pro Serie (nur Top-N / Custom-Entity).
 
+> Stand 2026-10-11 – umgesetzt in [`opentsx-stats`](../../opentsx-stats/README.md) und [`opentsx-openmetadata`](../../opentsx-openmetadata/README.md): OpenMetadata 2.0.5, Bot-JWT; Granularität **je Kanal und Fenster über alle Turbinen** (Profile und DQ-Ergebnisse auf einer Signal-View je Park), Detail je Serie bleibt in `series-stats.v2`. KafScale kennt keine Compaction → `series-stats.v2` ist append-only, Leser nehmen den neuesten Record je Schlüssel.
+
 ## 6. Streaming-Statistikprozessor (Flink)
 
 * Quelle: `observations.v2` und/oder `episodes.v2` (Episode = vorverdichteter Batch → `EpisodeSummary` direkt mergen).
