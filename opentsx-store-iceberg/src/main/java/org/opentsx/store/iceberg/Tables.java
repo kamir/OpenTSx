@@ -12,17 +12,17 @@ import static org.apache.iceberg.types.Types.NestedField.required;
  * Iceberg table layouts. Column names are snake_case so Spark SQL, Trino and PyIceberg users can query them
  * directly; a v2 Episode maps to one row without loss.
  */
-final class Tables {
+public final class Tables {
 
-    static final String EPISODES = "episodes";
-    static final String SERIES = "series";
-    static final String EPISODE_INDEX = "episode_index";
+    public static final String EPISODES = "episodes";
+    public static final String SERIES = "series";
+    public static final String EPISODE_INDEX = "episode_index";
 
     private static final Types.MapType STRING_MAP_1 = Types.MapType.ofRequired(101, 102, Types.StringType.get(), Types.StringType.get());
     private static final Types.MapType STRING_MAP_2 = Types.MapType.ofRequired(103, 104, Types.StringType.get(), Types.StringType.get());
     private static final Types.MapType STRING_MAP_3 = Types.MapType.ofRequired(105, 106, Types.StringType.get(), Types.StringType.get());
 
-    static final Schema EPISODE_SCHEMA = new Schema(
+    public static final Schema EPISODE_SCHEMA = new Schema(
             required(1, "episode_id", Types.StringType.get()),
             required(2, "series_id", Types.StringType.get()),
             required(3, "metric", Types.StringType.get()),
@@ -63,13 +63,13 @@ final class Tables {
 
     private static final Types.MapType SERIES_TAGS = Types.MapType.ofRequired(201, 202, Types.StringType.get(), Types.StringType.get());
 
-    static final Schema SERIES_SCHEMA = new Schema(
+    public static final Schema SERIES_SCHEMA = new Schema(
             required(1, "series_id", Types.StringType.get()),
             required(2, "metric", Types.StringType.get()),
             required(3, "tags", SERIES_TAGS),
             optional(4, "unit", Types.StringType.get()));
 
-    static final Schema INDEX_SCHEMA = new Schema(
+    public static final Schema INDEX_SCHEMA = new Schema(
             required(1, "episode_id", Types.StringType.get()),
             required(2, "series_id", Types.StringType.get()),
             required(3, "t_start", Types.TimestampType.withZone()),
