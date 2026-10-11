@@ -65,11 +65,11 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] `TSOWriter.persistBucket_Kafka`-Stub als veraltet markiert und auf den v2-Pfad verwiesen.
 
 ### Phase 3 – Store-SPI, OpenTSDB, Iceberg (`opentsx-store-spi`, `opentsx-store-opentsdb`, `opentsx-store-iceberg`)
-- [ ] `SeriesStore`, `EpisodeQuery`, `SeriesSelector`, `StoreCapabilities` (ersetzt leere `TSBucketStore`/`TSO*Interface`).
-- [ ] Contract-Test-Suite für alle Adapter (Testcontainers: OpenTSDB, Iceberg REST-Catalog + MinIO).
-- [ ] OpenTSDB-Adapter: Validierung metric/tags, HTTP `/api/put` gebatcht, Query → Episoden-Rekonstruktion.
-- [ ] Iceberg-Adapter: Tabellen `series`, `episodes` (+ optional `observations`), Partitionierung `days(t_start), bucket(32, series_id)`, Sortierung.
-- [ ] Kafka → Iceberg Ingest (Flink-Iceberg-Sink oder Kafka-Connect-Iceberg-Sink) aus `episodes.v2`.
+- [x] `opentsx-store-spi`: `SeriesStore`, `EpisodeQuery`, `SeriesSelector`, `StoreCapabilities`, `EpisodeOps.clip`, `InMemorySeriesStore` (ersetzt leere `TSBucketStore`/`TSO*Interface`).
+- [x] Contract-Test-Suite (`SeriesStoreContract`, test-jar) – grün für In-Memory, Iceberg (JDBC/SQLite-Catalog) und OpenTSDB (Emulator). Offen: echter OpenTSDB-Server und Iceberg-REST-Catalog + MinIO in CI (kein Docker lokal).
+- [x] OpenTSDB-Adapter `opentsx-store-opentsdb-v2`: HTTP-API, Validierung metric/tags (≤ 8), Einheit als `_unit`, `/api/put` gebatcht, `/api/query` → Episoden; ms-Präzision, NaN wird gezählt verworfen.
+- [x] Iceberg-Adapter `opentsx-store-iceberg` (Iceberg 1.10): Tabellen `episodes` (verlustfrei, `day(t_start)` + `bucket(32, series_id)`), `series`, `episode_index`; idempotente Writes; Time-Travel. Python liest dieselben Tabellen mit PyIceberg byte-identisch (CI-Job `cross-language`).
+- [x] KafScale → Iceberg: `EpisodeLogSync` (manuelle Zuweisung, Positionen zurückgegeben, idempotent) + `IcebergEpisodeIndex` als dauerhafter Replay-Index; End-to-End-Test gegen KafScale v1.6.0.
 
 ### Phase 4 – Streaming-Statistik & OpenMetadata (`opentsx-stats-flink`, `opentsx-openmetadata`)
 - [ ] Flink-Job: keyBy(seriesId), Welford + min/max + Quantil-Sketch + Gap-/Rate-Erkennung; global laufend + Tumbling-Fenster; Episoden-Summaries direkt mergen.
@@ -127,6 +127,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-11: **P3 umgesetzt**: Store-SPI + Contract-Suite, Iceberg-Store (+ Index, Log-Sync), OpenTSDB-Adapter, PyIceberg-Reader mit Byte-Gleichheit Java↔Python.
 - 2026-10-11: **P2 umgesetzt**: `opentsx-kafka-v2` (TopicLayout, BucketWriter, Episoden-Index, Replay, Katalog), `LegacyBucketImport`; End-to-End-Tests grün gegen KafScale v1.6.0 und Apache Kafka 3.9.1; Speicherkosten gemessen.
 - 2026-10-09: **P1 umgesetzt**: `opentsx-model` (Java) + `opentsx.model` (Python) byte-identisch über gemeinsame Testvektoren; Entscheidungen D2 (`timestamp-micros`) und D3 (xxHash64) bestätigt; Legacy-Brücke; Schema-Historie mit Kompatibilitätsprüfung.
 - 2026-10-09: **P0 umgesetzt** (siehe Phase 0). KafScale-Messung: Header & CreateTime bleiben erhalten; `offsetsForTimes`, idempotenter Producer, Standalone-Commits und Gruppen-Wiederbeitritt funktionieren nicht (Ursachen im Conformance-README).

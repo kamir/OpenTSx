@@ -103,3 +103,30 @@ jobs:
             opentsx-kafscale-conformance/target/kafscale-capabilities.properties
             opentsx-kafscale-conformance/target/surefire-reports/
             opentsx-kafka-v2/target/surefire-reports/
+
+  cross-language:
+    name: Java -> Iceberg -> Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python-package/pyproject.toml
+      - name: Java writes the store-contract fixture to an Iceberg warehouse
+        env:
+          OPENTSX_EXPORT_DIR: ${{ runner.temp }}/iceberg-export
+        run: mvn -B -ntp -pl opentsx-store-iceberg -am test -Dtest=IcebergExportForPythonTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Python reads it with PyIceberg and must reproduce the same bytes
+        working-directory: python-package
+        env:
+          OPENTSX_EXPORT_DIR: ${{ runner.temp }}/iceberg-export
+        run: |
+          python -m pip install -e ".[iceberg]" pytest
+          python -m pytest -q tests/test_iceberg_interop.py
