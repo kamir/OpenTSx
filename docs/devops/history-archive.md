@@ -2,10 +2,11 @@
 
 > **Kurzfassung (Deutsch).** Die Historie (Marktdaten, später Wetter) liegt im Archivformat von
 > [`opentsx-market`](../../opentsx-market/README.md) auf einem eigenen PVC `opentsx-history`. Einmalig füllt der Job
-> `backfill-job.yaml` die Jahre 2019 bis heute (fortsetzbar, abgeschlossene Jahre werden übersprungen). Danach
-> halten zwei CronJobs das Archiv aktuell: `opentsx-market-forward` täglich um 13:41 UTC (laufendes und Vorjahr,
-> nach Veröffentlichung der Day-Ahead-Ergebnisse) und `opentsx-mosmix-archive` alle 6 Stunden (rohe MOSMIX_L-Dateien
-> der Zwillingsstandorte). **Der DWD hält keine historischen MOSMIX-Prognosen vor**: Prognosehistorie entsteht nur
+> `backfill-job.yaml` die Marktreihen 2019 bis heute, `weather-backfill-job.yaml` die DWD-Stationsmessungen der
+> Zwillingsstandorte (fortsetzbar, abgeschlossene Jahre werden übersprungen). Danach halten drei CronJobs das Archiv
+> aktuell: `opentsx-market-forward` täglich um 13:41 UTC (laufendes und Vorjahr, nach Veröffentlichung der
+> Day-Ahead-Ergebnisse), `opentsx-weather-forward` täglich um 06:23 UTC und `opentsx-mosmix-archive` alle 6 Stunden
+> (rohe MOSMIX_L-Dateien der Zwillingsstandorte). **Der DWD hält keine historischen MOSMIX-Prognosen vor**: Prognosehistorie entsteht nur
 > ab dem Tag, an dem der CronJob läuft. Zugangsdaten (`ENTSOE_TOKEN`, `NTP_CLIENT_ID`, `NTP_CLIENT_SECRET`) kommen
 > aus dem optionalen Secret `opentsx-market`; ohne sie werden ENTSO-E und netztransparenz.de übersprungen.
 
@@ -15,7 +16,9 @@
 |--------|----------|----------------------------------|
 | PVC `opentsx-history` | — | 2 Gi, mounted at `/data/history` |
 | Job `opentsx-history-backfill` ([`backfill-job.yaml`](../../deploy/k3s/history/backfill-job.yaml)) | once | `opentsx market backfill --archive /data/history --series market --from-year 2019` |
+| Job `opentsx-weather-backfill` ([`weather-backfill-job.yaml`](../../deploy/k3s/history/weather-backfill-job.yaml)) | once | `opentsx market weather-backfill --archive /data/history --from-year 2019` (hourly temperature and wind, 10-minute radiation of the site stations) |
 | CronJob `opentsx-market-forward` ([`market-forward.yaml`](../../deploy/k3s/history/market-forward.yaml)) | `41 13 * * *` UTC | `opentsx market forward --archive /data/history --series market` (running and previous year; complete years are skipped) |
+| CronJob `opentsx-weather-forward` ([`weather-forward.yaml`](../../deploy/k3s/history/weather-forward.yaml)) | `23 6 * * *` UTC | `opentsx market weather-forward --archive /data/history` (running and previous year) |
 | CronJob `opentsx-mosmix-archive` ([`mosmix-archive.yaml`](../../deploy/k3s/history/mosmix-archive.yaml)) | `40 4,10,16,22 * * *` UTC | `opentsx market mosmix-archive --archive /data/history` (raw MOSMIX_L of 10579, 10097, 10046, E5411) |
 
 Day-ahead results for the next day are published around 12:45 CET/CEST, and SMARD updates its files shortly after.
@@ -28,8 +31,9 @@ about 1 h later.
 # after 30-deploy.sh (namespace opentsx, image opentsx/tools imported)
 kubectl -n opentsx create secret generic opentsx-market \
     --from-literal=ENTSOE_TOKEN=... --from-literal=NTP_CLIENT_ID=... --from-literal=NTP_CLIENT_SECRET=...   # optional
-kubectl -n opentsx apply -k deploy/k3s/history                       # PVC + both CronJobs
+kubectl -n opentsx apply -k deploy/k3s/history                       # PVC + three CronJobs
 kubectl -n opentsx apply -f deploy/k3s/history/backfill-job.yaml     # one-off, about 1 h at the default pause
+kubectl -n opentsx apply -f deploy/k3s/history/weather-backfill-job.yaml   # one-off, a few minutes
 kubectl -n opentsx logs -f job/opentsx-history-backfill
 kubectl -n opentsx create job --from=cronjob/opentsx-mosmix-archive mosmix-now   # first MOSMIX run right away
 ```
@@ -49,7 +53,7 @@ repeated bursts.
 
 The default market set for 2019 to 2026 is about 20 MB gzip'ed (quarter-hourly series about 1.5 MB per year each).
 Raw MOSMIX is about 19 kB per station and issue, so about 30 MB per year for four stations and four runs a day. The
-2 Gi PVC leaves room for the DWD station backfill (hourly and 10-minute values of a few stations).
+DWD observations of the nine station parameters for 2019 to 2026 add about 15 MB. The 2 Gi PVC leaves plenty of room.
 
 ## Manifest
 

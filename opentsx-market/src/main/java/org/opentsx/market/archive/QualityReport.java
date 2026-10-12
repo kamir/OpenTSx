@@ -22,7 +22,8 @@ import java.util.TreeMap;
  *   <li><b>DST</b>: every local day (Europe/Berlin) must be covered for its real length; the two switch days of the
  *       year (23 h and 25 h) are listed with the hours found, and days whose coverage differs are counted;</li>
  *   <li><b>outliers</b>: values outside the plausible range of the metric, and robust outliers
- *       ({@code |v − median| > 8 · 1.4826 · MAD});</li>
+ *       ({@code |v − median| > 8 · 1.4826 · MAD}); the robust check is skipped for zero-inflated series (more than
+ *       20 % zeros, e.g. irradiance and solar power at night), where the MAD says nothing ({@code robustOutliers = -1});</li>
  *   <li><b>statistics</b> from {@code opentsx-stats} ({@link StatsAccumulator}: min, max, mean, std, p01, p50, p99)
  *       and the resolutions found (the day-ahead price changes from PT1H to PT15M on 2025-10-01).</li>
  * </ul>
@@ -115,12 +116,14 @@ public record QualityReport(long rows, double coveragePct, long missingMicros, i
         double median = sorted.length == 0 ? Double.NaN : sorted[sorted.length / 2];
         double[] dev = Arrays.stream(v).map(x -> Math.abs(x - median)).sorted().toArray();
         double mad = dev.length == 0 ? 0 : dev[dev.length / 2];
+        long zeros = Arrays.stream(v).filter(x -> x == 0).count();
+        boolean robustCheck = mad > 0 && zeros <= 0.2 * v.length;
         int implausible = 0;
-        int robust = 0;
+        int robust = robustCheck ? 0 : -1;
         List<String> examples = new ArrayList<>();
         for (Point p : pts) {
             boolean bad = p.value() < range[0] || p.value() > range[1];
-            boolean far = mad > 0 && Math.abs(p.value() - median) > 8 * 1.4826 * mad;
+            boolean far = robustCheck && Math.abs(p.value() - median) > 8 * 1.4826 * mad;
             implausible += bad ? 1 : 0;
             robust += far ? 1 : 0;
             if ((bad || far) && examples.size() < 5) {

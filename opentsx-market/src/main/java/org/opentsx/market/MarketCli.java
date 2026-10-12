@@ -5,6 +5,7 @@ import org.opentsx.market.archive.Backfill;
 import org.opentsx.market.archive.Manifest;
 import org.opentsx.market.archive.MosmixRawArchive;
 import org.opentsx.market.archive.QualityReport;
+import org.opentsx.market.archive.WeatherBackfill;
 import org.opentsx.market.source.EnergyChartsJson;
 import org.opentsx.market.source.EntsoeXml;
 import org.opentsx.market.source.Http;
@@ -12,6 +13,7 @@ import org.opentsx.market.source.Marktwerte;
 import org.opentsx.market.source.PartnerCsv;
 import org.opentsx.market.source.Rebap;
 import org.opentsx.market.source.SmardJson;
+import org.opentsx.market.twin.HistorySites;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
@@ -53,6 +55,10 @@ public final class MarketCli {
                         [--to-year YYYY] [--delay-ms 500] [--force]
               forward   [--archive data/history] [--series market|...] [--delay-ms 500]   (daily job: running year)
               report    [--archive data/history] [--series ...]
+              weather-backfill [--archive data/history] [--from-year 2019] [--to-year Y]
+                        [--stations 03166:air_temperature,01358:global_radiation,...] [--sites file.yaml]
+                        (DWD CDC observations of the twin sites; default: all stations of the sites file)
+              weather-forward [--archive data/history] [--stations ...]   (daily job: running and previous year)
               mosmix-archive [--archive data/history] [--stations 10579,10097,10046,E5411]
                         (forward archive of raw MOSMIX_L forecasts; run every 6 h)
               load      [--archive data/history] [--series ...] [--from-year Y --to-year Y]
@@ -134,6 +140,22 @@ public final class MarketCli {
                 return failed > 0 ? 3 : 0;
             }
             case "report" -> report(archive, select(o.getOrDefault("series", "all-archived")), out);
+            case "weather-backfill", "weather-forward" -> {
+                int current = now.atZone(ZoneOffset.UTC).getYear();
+                int from = cmd.equals("weather-forward") ? current - 1 : Integer.parseInt(o.getOrDefault("from-year", "2019"));
+                int to = Integer.parseInt(o.getOrDefault("to-year", Integer.toString(current)));
+                WeatherBackfill w = new WeatherBackfill(archive, new Http(Long.parseLong(o.getOrDefault("delay-ms", "500")), 4),
+                        WeatherBackfill.CDC, out);
+                long failed = 0;
+                for (String[] sp : weatherJobs(o)) {
+                    for (Backfill.Outcome r : w.run(sp[0], sp[1], from, to, o.containsKey("force"), now)) {
+                        out.printf("%-40s %d  %-16s %8d rows  %s%n", r.def().path(), r.year(), r.status(), r.rows(),
+                                r.message());
+                        failed += r.status() == Backfill.Status.FAILED ? 1 : 0;
+                    }
+                }
+                return failed > 0 ? 3 : 0;
+            }
             case "mosmix-archive" -> {
                 List<String> st = o.containsKey("stations") ? List.of(o.get("stations").split(","))
                         : MosmixRawArchive.DEFAULT_STATIONS;
@@ -294,6 +316,36 @@ public final class MarketCli {
         out.printf("loaded %d episodes, %d values into %s%n", episodes, values,
                 o.containsKey("iceberg") ? "Iceberg namespace " + o.getOrDefault("namespace", "tsx") : "an in-memory store");
         return 0;
+    }
+
+    /** Station/parameter pairs of the weather backfill: {@code --stations id:param,...} or every station of the sites. */
+    static List<String[]> weatherJobs(Map<String, String> o) {
+        java.util.LinkedHashSet<String> jobs = new java.util.LinkedHashSet<>();
+        if (o.containsKey("stations")) {
+            jobs.addAll(List.of(o.get("stations").split(",")));
+        } else {
+            for (HistorySites.Site s : HistorySites.load(o.containsKey("sites") ? Path.of(o.get("sites")) : null).values()) {
+                if (s.temperature() != null) {
+                    jobs.add(s.temperature() + ":air_temperature");
+                }
+                if (s.wind() != null) {
+                    jobs.add(s.wind() + ":wind_speed");
+                }
+                if (s.radiation() != null) {
+                    jobs.add(s.radiation() + ":global_radiation");
+                }
+            }
+        }
+        List<String[]> out = new ArrayList<>();
+        for (String j : jobs) {
+            String[] p = j.trim().split(":");
+            if (p.length != 2 || !WeatherBackfill.parameters().contains(p[1])) {
+                throw new IllegalArgumentException("expected station:parameter with parameter in "
+                        + WeatherBackfill.parameters() + ", got " + j);
+            }
+            out.add(p);
+        }
+        return out;
     }
 
     /** Series selection: {@code market}, {@code all} (catalog), {@code all-archived}, or a comma list. */

@@ -1,5 +1,5 @@
-# History archive (opentsx-market): a PVC and two CronJobs for the daily forward archiving of the market series
-# and the 6-hourly raw MOSMIX archive. Not part of the base; apply separately after 30-deploy.sh:
+# History archive (opentsx-market): a PVC and three CronJobs: daily forward archiving of the market series and of
+# the DWD station observations, and the 6-hourly raw MOSMIX archive. Not part of the base; apply separately after 30-deploy.sh:
 #   kubectl -n opentsx apply -k deploy/k3s/history
 # Credentials (optional): kubectl -n opentsx create secret generic opentsx-market \
 #   --from-literal=ENTSOE_TOKEN=... --from-literal=NTP_CLIENT_ID=... --from-literal=NTP_CLIENT_SECRET=...
@@ -13,6 +13,7 @@ labels:
 resources:
   - pvc.yaml
   - market-forward.yaml
+  - weather-forward.yaml
   - mosmix-archive.yaml
 images:
   - name: opentsx/tools

@@ -29,8 +29,8 @@ import java.util.Map;
  * <pre>
  * twin  --history data/history --year 2024 [--from 2024-03-01 --days 31] [--wind smard|dwd] [--cf 0.30]
  * house --history data/history --weather-year 2023 | 2022-2025 [--station 03166] [--hdd-ref 4300] [--levers]
- * boat  --history data/history --weather-year 2024 [--start 2024-07-06] [--days 14] [--station 02961]
- * common: [--sites file.yaml]
+ * boat  --history data/history --weather-year 2024 [--start 2024-07-06] [--days 14] [--radiation-station 06163]
+ * common: [--sites file.yaml] [--station id] (temperature) [--radiation-station id]
  * </pre>
  */
 public final class HistoryTwins {

@@ -120,10 +120,31 @@ The default set `market` is: SMARD price, load, residual load, wind onshore/offs
 
 ### Weather and forward archiving
 
-The weather backfill (DWD CDC stations of the twin sites, see [`history-sites.yaml`](src/main/resources/market/history-sites.yaml))
-is built on the parsers of the `opentsx-dwd` module and writes into the same layout (`dwd-cdc/<station>/<parameter>/`,
-parameters `air_temperature` °C, `wind_speed` m/s, `global_radiation` W/m², origin `MEASURED`). The twin adapter
-already reads that layout.
+```bash
+bin/opentsx market weather-backfill --archive data/history --from-year 2019     # all stations of the sites file
+bin/opentsx market weather-backfill --stations 03166:air_temperature,01358:global_radiation --from-year 2022
+bin/opentsx market weather-forward  --archive data/history                      # daily: running + previous year
+```
+
+The weather backfill reads the DWD CDC observations of the twin sites' stations
+([`history-sites.yaml`](src/main/resources/market/history-sites.yaml)) with the parser of
+[`opentsx-dwd`](../opentsx-dwd/README.md) (`CdcObservations`). It writes them into the same layout
+(`dwd-cdc/<station>/<parameter>/`, origin `MEASURED`, licence CC BY 4.0 DWD):
+
+| Parameter | Product | Unit |
+|-----------|---------|------|
+| `air_temperature` | hourly `TT_TU` (`hourly/air_temperature/{historical,recent}`) | °C, stored as the hour starting at the measurement |
+| `wind_speed` | hourly mean `F` (`hourly/wind/...`) | m/s, interval start |
+| `global_radiation` | 10-minute `GS_10` (`10_minutes/solar/...`), J/cm² converted to the mean W/m² | W/m², interval start |
+
+The zips come from the directory listings. A `historical` file name carries its date range, so only the zips
+overlapping the requested years are read, and nothing is downloaded when every year is already complete. `recent`
+(about the last 500 days) overrides `historical` where both have a value.
+
+Default stations: house Marienberg 03166 (temperature, wind) and Fichtelberg 01358 (radiation); wind park
+Greifswalder Oie 01759 and Arkona 00183; boat Kiel-Holtenau 02564 and Dörnick 06163. Two nearer candidates were
+checked and dropped: Chemnitz 00853 has no radiation from April 2025 to March 2026, and Leuchtturm Kiel 02961
+measures only sunshine duration.
 
 The DWD does **not** keep historical MOSMIX forecasts on opendata.dwd.de, only the latest runs. Forecast history
 therefore exists only from the day collecting starts. `bin/opentsx market mosmix-archive` stores the raw
@@ -137,8 +158,8 @@ every 6 hours; MOSMIX_L is issued at 03, 09, 15 and 21 UTC. Parsing into series 
 | Command | What changes compared with the synthetic demo |
 |---------|-----------------------------------------------|
 | `bin/opentsx twin --history data/history --year 2024 [--from 2024-03-01 --days 31] [--wind smard\|dwd] [--cf 0.30]` | H2 chain (plan [`h2-chain-history.yaml`](src/main/resources/twin-history/h2-chain-history.yaml), 15-min step) on the real day-ahead price (REPORTED). The wind comes from the national onshore generation scaled to the 12 MW park (mean capacity factor `--cf`), or from the park's DWD station through a power curve (`--wind dwd`); both ESTIMATED. The marketer's schedule is the day-ahead wind forecast minus the electrolyzer plan (FORECAST), so its deviation is the real forecast error. The electrolyzer follows a price-limit rule (SYNTHETIC). What-ifs: run always, or in the cheapest 60/40/20 % of steps. |
-| `bin/opentsx house --history data/history --weather-year 2022-2025 [--levers] [--station 03166]` | house plan of each year from local 1 January, `weather.t_out_meas_c` (and `ghi_meas_w_m2` if archived) from the DWD stations (MEASURED); heating degree days, oil, wood, cost and CO₂ per year, optional levers on each year's weather |
-| `bin/opentsx boat --history data/history --weather-year 2024 [--start 2024-07-06] [--days 14]` | the 14-day trip of the example from the first Saturday in July, `solar.ghi_wm2` from the sailing area's station (MEASURED) instead of the synthetic clearness cycle; KPIs with measured vs. synthetic irradiance and the usual what-ifs |
+| `bin/opentsx house --history data/history --weather-year 2022-2025 [--levers] [--station 03166] [--radiation-station 01358]` | house plan of each year from local 1 January, `weather.t_out_meas_c` (and `ghi_meas_w_m2` if archived) from the DWD stations (MEASURED); heating degree days, oil, wood, cost and CO₂ per year, optional levers on each year's weather |
+| `bin/opentsx boat --history data/history --weather-year 2024 [--start 2024-07-06] [--days 14] [--radiation-station 06163]` | the 14-day trip of the example from the first Saturday in July, `solar.ghi_wm2` from the sailing area's station (MEASURED) instead of the synthetic clearness cycle; KPIs with measured vs. synthetic irradiance and the usual what-ifs |
 
 `bin/opentsx` dispatches to `org.opentsx.market.twin.HistoryTwins` only when `--history` or `--weather-year` is
 given. Without them the demos of `opentsx-twin` run unchanged on synthetic data. The adapter
@@ -152,12 +173,13 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
 
 ## 6. Status (2026-10-12)
 
-* Collected into the local archive (not in git): SMARD 2019 to today for every series of the default set (see
-  `bin/opentsx market report`), and the Energy-Charts price as a cross-check.
+* Collected into the local archive (not in git): SMARD 2019 to today for every series of the default set, the
+  Energy-Charts price as a cross-check, and the DWD observations of all site stations 2019 to today (see
+  `bin/opentsx market report`).
 * Blocked: ENTSO-E (no `ENTSOE_TOKEN` in the build environment) and netztransparenz reBAP/Marktwerte (no OAuth
   client). Both clients are implemented and tested against fixtures; with credentials, `backfill` fills them, and
   without them the CSV downloads can be imported with `--offline`.
-* Weather backfill: waits for `opentsx-dwd`. The raw MOSMIX forward archive runs from 2026-10-12.
+* MOSMIX: the raw forward archive runs from 2026-10-12. Earlier forecasts cannot be recovered from the DWD.
 
 ## 7. Tests
 
@@ -165,5 +187,5 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
 day), ENTSO-E (A03 blocks, two resolutions, acknowledgement, no DOCTYPE/XXE), reBAP (API and download formats
 across the end of DST), Marktwerte (local months), partner CSV (doubled hour), OAuth flow and token reuse,
 archive round trip and checksums, quality report (gaps, DST days, implausible values), episode mapping, backfill
-resume, MOSMIX raw archive, resampling, and the three twins on fixture slices
+resume, weather backfill (listing, year filter, recent over historical, resume), MOSMIX raw archive, resampling, and the three twins on fixture slices
 ([`src/test/resources/market/`](src/test/resources/market/README.md)).

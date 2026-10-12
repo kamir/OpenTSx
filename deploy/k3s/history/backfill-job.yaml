@@ -1,4 +1,5 @@
 # One-off backfill of the market series 2019..today into the history PVC (resumable: complete years are skipped).
+# The weather history (DWD stations of the twin sites) has its own Job: weather-backfill-job.yaml.
 apiVersion: batch/v1
 kind: Job
 metadata:
