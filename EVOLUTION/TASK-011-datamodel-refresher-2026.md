@@ -198,7 +198,7 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Generisches **Modbus-Modul** (TCP/RTU), Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS), Pollintervall → `RawReading` → Normalizer → Episoden.
 - [ ] **IEC 60870-5-101/-104**-Adapter für die Parkrechner-Schnittstelle (Datenaustausch mit dem Elektrolyseurbetreiber, beide Richtungen).
 - [ ] Elektrolyseur-Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme) über die vereinbarte Schnittstelle (104, OPC UA oder Export) als Quelle `REPORTED`.
-- [ ] **DWD-Sammler**: Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit.
+- [x] **DWD-Sammler** (`opentsx-dwd`, nur JDK): MOSMIX_L-Prognosen (KMZ/KML: FF, DD, TTT, PPPP, N, Rad1h, RR1c; Ausgabezeit als `forecast.reference_time`, Herkunft FORECAST) und CDC-Messungen (10 min/stündlich, `-999`, UTC, Herkunft MEASURED) → v2-Serien/Episoden; Stationsauswahl je Standort (Haversine, MOSMIX-Katalog in Grad.Minuten, CDC-Stationsliste); Bindung an Wetter-Atom (Haus) und Solar (Boot), CSV für `house --weather` und `boat --data`; `bin/opentsx dwd stations|mosmix|obs|house`. Parser gegen Live-Abruf geprüft. Offen: zeitgesteuerter Abruf (→ KafScale `tsx.weather.*`), ICON-Gitter, deutschlandweite Vorhaltung, Wind → Leistungskurve.
 - [ ] Markt- und Partnerdaten: Preise (Day-Ahead/Intraday, 15-min-MTU), Prognosen und Fahrpläne des Direktvermarkters, Leitsystem-API (Schnittstellenbeschreibung ausstehend); zeitgesteuerter Abruf mit Formatkonvertierung, wo keine API existiert.
 - [ ] Batch-Import einzelner Datenpakete (historische Reihen) mit Herkunftsmetadaten.
 - [ ] *(Vorschlag)* infinimesh als optionale Quelle: Kafka-Addon-Topic `infinimesh.shadows` → Normalizer → `tsx.<domain>.observations.v2` (Modul `opentsx-infinimesh`); lesend zuerst, Rückweg über `desired` erst mit Freigabe-Workflow.
@@ -389,6 +389,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 
 ## Progress Log
 
+- 2026-10-12: **DWD-Sammler** `opentsx-dwd`: MOSMIX_L und CDC-Stationsdaten als v2-Serien/Episoden mit Einheit und Herkunft, nächstgelegene Stationen (Haus Erzgebirge: Marienberg/Fichtelberg, Ostsee: Greifswalder Oie/Arkona), Bindung an Haus- und Boot-Zwilling, CLI `bin/opentsx dwd`; Tests offline mit handgebauten Fixtures, Parser zusätzlich gegen opendata.dwd.de geprüft.
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.

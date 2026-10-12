@@ -11,6 +11,7 @@
 #   twin               digital twin S1 (H2 chain)                      (org.opentsx.twin.demo.H2ChainDemo)
 #   house              house twin                                      (org.opentsx.twin.demo.HouseDemo)
 #   boat               boat twin (Etap 22)                             (org.opentsx.twin.demo.BoatDemo)
+#   dwd                DWD Open Data collector                         (org.opentsx.dwd.DwdCli)
 #   studio-export      scenario data for the Smart Topics Studio       (org.opentsx.twin.studio.StudioExport <out.json>)
 #   kafscale-check     reachability, advertised brokers, topic counts  (org.opentsx.deploy.KafScaleCheck)
 #   classpath <module> print the classpath of a module
@@ -57,6 +58,7 @@ case "$cmd" in
   twin)             run "opentsx-twin" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
   house)            run "opentsx-twin" org.opentsx.twin.demo.HouseDemo "$@" ;;
   boat)             run "opentsx-twin" org.opentsx.twin.demo.BoatDemo "$@" ;;
+  dwd)              run "opentsx-dwd" org.opentsx.dwd.DwdCli "$@" ;;
   studio-export)    run "opentsx-twin" org.opentsx.twin.studio.StudioExport "$@" ;;
   kafscale-check)   run "opentsx-deploy-tools" org.opentsx.deploy.KafScaleCheck "$@" ;;
   classpath)        classpath "$@" ;;

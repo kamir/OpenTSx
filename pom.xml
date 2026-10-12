@@ -25,6 +25,7 @@
         <module>opentsx-openmetadata</module>
         <module>opentsx-retrieval</module>
         <module>opentsx-twin</module>
+        <module>opentsx-dwd</module>
         <module>opentsx-legacy-bridge</module>
         <module>opentsx-kafscale-conformance</module>
     </modules>

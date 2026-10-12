@@ -1,0 +1,10 @@
+Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe
+----------- --------- --------- ------------- --------- --------- ----------------------------------------- ---------- ------
+00183 19911101 20261012             42     54.6791   13.4344 Arkona                                   Mecklenburg-Vorpommern                   Frei 
+00853 19911106 20261012            416     50.7913   12.8720 Chemnitz                                 Sachsen                                  Frei 
+01357 19931215 20261012            655     49.9807   11.8376 Fichtelberg/Oberfranken-Hüttstadl        Bayern                                   Frei 
+01358 19911111 20261012           1213     50.4285   12.9534 Fichtelberg                              Sachsen                                  Frei 
+01759 20001025 20261012             11     54.2437   13.9104 Greifswalder Oie                         Mecklenburg-Vorpommern                   Frei 
+03166 19911101 20261012            639     50.6511   13.1469 Marienberg                               Sachsen                                  Frei 
+03167 19990601 20261012            547     50.6621    7.9603 Marienberg, Bad                          Rheinland-Pfalz                          Frei 
+04024 19911101 20261012             40     54.3643   13.4771 Putbus                                   Mecklenburg-Vorpommern                   Frei 

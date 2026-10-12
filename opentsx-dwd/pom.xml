@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>opentsx</artifactId>
+        <groupId>org.opentsx</groupId>
+        <version>3.0.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>opentsx-dwd</artifactId>
+    <name>opentsx-dwd</name>
+    <description>
+        DWD collector (Deutscher Wetterdienst Open Data): MOSMIX_L point forecasts (KMZ/KML) and CDC station
+        observations (10-minute and hourly zip/CSV), station catalogs with nearest-station search, mapping to v2
+        series and episodes with unit and origin, CSV export, and bindings for the weather inputs of opentsx-twin.
+        JDK only (java.net.http, java.util.zip, StAX).
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-twin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
