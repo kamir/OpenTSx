@@ -50,7 +50,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | `docs/*.md` duplicates (7 byte-identical copies), `docs/SUMMARY.md`, `docs/book.json` | removed / `archive/docs/` | duplicates of `devguide/`; dead TOC |
 | `NEXT_STEPS_PDF_GENERATION.md`, `test-report.txt` | archive / removed | session note; build artifact |
 | EVOLUTION TASK-001…007, `T-B-DECIDED.md`, `DECISIONS/` | `EVOLUTION/archive/` | completed or superseded by TASK-011 |
-| out-of-build modules and demos | `archive/modules/`, `archive/demos/` | see `archive/*/README.md`. ksql, ksql-app, kafka-streams-tsa, spring-example, store-opentsdb (2.x), ext-connectors, ext-algorithms, predict, processors (empty); app-demos, cloud-bridge, cluster-demo0, clusters, cv, jetson-nano, scala-scripts, modules/ |
+| out-of-build modules and demos | `archive/demos/`; modules removed from `master` in October 2026 (last state `315f01d`) | see `archive/demos/README.md` and manual chapter 13. ksql, ksql-app, kafka-streams-tsa, spring-example, store-opentsdb (2.x), ext-connectors, ext-algorithms, predict, processors (empty); app-demos, cloud-bridge, cluster-demo0, clusters, cv, jetson-nano, scala-scripts, modules/ |
 | `docker-compose.yml`, `docker-compose.onboarding.yml`, onboarding notebooks | `archive/demos/` | broken build contexts; ZooKeeper/Java 11/Spark-only stack |
 | obsolete `bin/` scripts (Kudu, Spark 2, Cloudera deploy, Pandoc manual) | `archive/bin/` | referenced tools that no longer exist |
 

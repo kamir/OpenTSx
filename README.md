@@ -121,7 +121,8 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `python-package/` | Python library `opentsx` |
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |
 
-Retired modules and the 2025 documentation are in [`archive/`](archive/).
+The 2025 documentation and old demos are in [`archive/`](archive/). Retired modules were removed from `master`
+(last state: commit `315f01d`, see the [migration chapter](docs/user-manual/13-migration.md)).
 
 ## Status
 

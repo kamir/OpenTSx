@@ -61,7 +61,8 @@ Outside the Maven build:
 
 * `python-package/`: the Python library (`pip install -e python-package`).
 * `opentsx-saas-backend` and `opentsx-saas-frontend`: experimental web stack, see [chapter 14](14-saas-service-layer.md).
-* `archive/`: retired modules and demos, see [chapter 13](13-migration.md).
+* `archive/`: the 2025 documentation and old demos; the retired modules were removed from `master`, see
+  [chapter 13](13-migration.md).
 
 ## 1.4 Design principles
 
