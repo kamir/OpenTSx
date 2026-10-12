@@ -22,7 +22,7 @@ export default function Login() {
     try {
       await login(formData);
       navigate('/dashboard');
-    } catch (error) {
+    } catch {
       // Error is handled in store
     }
   };
