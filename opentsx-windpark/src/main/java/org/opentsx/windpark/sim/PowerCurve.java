@@ -2,13 +2,13 @@ package org.opentsx.windpark.sim;
 
 import org.opentsx.windpark.catalog.TurbineType;
 
-/** Idealised power curve: cubic between cut-in and rated wind, flat to cut-out, zero above. */
-final class PowerCurve {
+/** Idealised (reference) power curve: cubic between cut-in and rated wind, flat to cut-out, zero above. */
+public final class PowerCurve {
 
     private PowerCurve() {
     }
 
-    static double powerKw(TurbineType t, double windMs) {
+    public static double powerKw(TurbineType t, double windMs) {
         if (windMs < t.cutInMs() || windMs > t.cutOutMs()) {
             return 0;
         }
