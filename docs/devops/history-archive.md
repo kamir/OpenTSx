@@ -51,9 +51,10 @@ repeated bursts.
 
 ## Sizing
 
-The default market set for 2019 to 2026 is about 20 MB gzip'ed (quarter-hourly series about 1.5 MB per year each).
+Measured on 2026-10-12: the SMARD series of the default market set for 2019 to 2026 take 13 MB gzip'ed
+(quarter-hourly series about 0.2 MB per year each), and the Energy-Charts price 0.5 MB.
 Raw MOSMIX is about 19 kB per station and issue, so about 30 MB per year for four stations and four runs a day. The
-DWD observations of the nine station parameters for 2019 to 2026 add about 15 MB. The 2 Gi PVC leaves plenty of room.
+The DWD observations of the nine station parameters for 2019 to 2026 add 6.3 MB. The 2 Gi PVC leaves plenty of room.
 
 ## Manifest
 

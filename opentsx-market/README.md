@@ -173,9 +173,13 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
 
 ## 6. Status (2026-10-12)
 
-* Collected into the local archive (not in git): SMARD 2019 to today for every series of the default set, the
-  Energy-Charts price as a cross-check, and the DWD observations of all site stations 2019 to today (see
-  `bin/opentsx market report`).
+* Collected into the local archive (not in git), 2019 to 2026-10-12, 20 MB in all (`bin/opentsx market report`
+  lists every package): SMARD day-ahead price DE-LU (hourly, quarter-hourly from 2025-10-01), load, residual load,
+  wind onshore and offshore, solar, and the forecasts of wind onshore and offshore, solar and load (quarter-hourly):
+  10 series, 13 MB. The Energy-Charts price, identical to SMARD in every interval: 0.5 MB. DWD observations of the
+  site stations (air temperature and wind 03166, 01759, 02564; radiation 01358, 00183, 06163): 6.3 MB. All
+  packages have both DST days fully covered and no implausible values. Gaps are only in the station data (mostly
+  below 1 %; wind at Greifswalder Oie 2021–2023 about 4 %).
 * Blocked: ENTSO-E (no `ENTSOE_TOKEN` in the build environment) and netztransparenz reBAP/Marktwerte (no OAuth
   client). Both clients are implemented and tested against fixtures; with credentials, `backfill` fills them, and
   without them the CSV downloads can be imported with `--offline`.

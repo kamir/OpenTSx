@@ -43,13 +43,14 @@ public record QualityReport(long rows, double coveragePct, long missingMicros, i
     public record DstDay(String date, double expectedHours, double coveredHours) {
     }
 
-    /** Plausible ranges by metric prefix (harmonised SDAC price limits -500..4000 EUR/MWh; powers not negative). */
+    /** Plausible ranges by metric prefix, first match wins (SDAC price limits -500..4000 EUR/MWh; powers not negative). */
     static final Map<String, double[]> PLAUSIBLE = new LinkedHashMap<>();
 
     static {
         PLAUSIBLE.put("market.price.day_ahead", new double[]{-500, 4000});
         PLAUSIBLE.put("market.price.imbalance", new double[]{-20_000, 20_000});
         PLAUSIBLE.put("market.value", new double[]{-500, 4000});
+        PLAUSIBLE.put("grid.load.residual", new double[]{-150_000, 200_000});   // negative when renewables exceed load
         PLAUSIBLE.put("grid.", new double[]{-1, 200_000});
         PLAUSIBLE.put("weather.air_temperature", new double[]{-45, 45});
         PLAUSIBLE.put("weather.wind_speed", new double[]{0, 70});

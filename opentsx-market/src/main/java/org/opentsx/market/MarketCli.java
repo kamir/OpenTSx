@@ -54,7 +54,8 @@ public final class MarketCli {
               backfill  [--archive data/history] [--series market|all|source/series,...] [--from-year 2019]
                         [--to-year YYYY] [--delay-ms 500] [--force]
               forward   [--archive data/history] [--series market|...] [--delay-ms 500]   (daily job: running year)
-              report    [--archive data/history] [--series ...]
+              report    [--archive data/history] [--series ...] [--requality]   (--requality: recompute the
+                        quality reports from the archived files, e.g. after a rule change; no download)
               weather-backfill [--archive data/history] [--from-year 2019] [--to-year Y]
                         [--stations 03166:air_temperature,01358:global_radiation,...] [--sites file.yaml]
                         (DWD CDC observations of the twin sites; default: all stations of the sites file)
@@ -139,7 +140,8 @@ public final class MarketCli {
                         archive.root().toAbsolutePath());
                 return failed > 0 ? 3 : 0;
             }
-            case "report" -> report(archive, select(o.getOrDefault("series", "all-archived")), out);
+            case "report" -> report(archive, select(o.getOrDefault("series", "all-archived"), archive), out,
+                    o.containsKey("requality") ? now : null);
             case "weather-backfill", "weather-forward" -> {
                 int current = now.atZone(ZoneOffset.UTC).getYear();
                 int from = cmd.equals("weather-forward") ? current - 1 : Integer.parseInt(o.getOrDefault("from-year", "2019"));
@@ -269,12 +271,23 @@ public final class MarketCli {
         }
     }
 
-    private static void report(Archive archive, List<SeriesDef> defs, PrintStream out) {
+    private static void report(Archive archive, List<SeriesDef> defs, PrintStream out, Instant requality) {
         for (SeriesDef d : defs) {
             if (!Files.isRegularFile(archive.dir(d).resolve(Manifest.FILE))) {
                 continue;
             }
             Manifest m = archive.manifest(d);
+            if (requality != null) {
+                m.years.replaceAll((y, e) -> {
+                    int year = Integer.parseInt(y);
+                    long from = Micro.utcYear(year);
+                    long to = Math.min(Micro.utcYear(year + 1), Math.max(from + 1, Micro.of(Instant.parse(e.retrievedAt()))));
+                    QualityReport q = QualityReport.of(new MarketSeries(d, archive.read(d, year)), from, to);
+                    return new Manifest.Entry(e.file(), e.rows(), e.sha256(), e.bytes(), e.first(), e.last(),
+                            e.retrievedAt(), e.complete(), e.queryCount(), e.queries(), q, e.note());
+                });
+                m.save(archive.dir(d));
+            }
             out.println(d.path() + "  [" + m.unit + ", " + m.origin + "]  " + m.licence);
             m.years.forEach((y, e) -> {
                 boolean ok = archive.exists(d, Integer.parseInt(y)) && Archive.sha256(archive.file(d, Integer.parseInt(y)))
@@ -295,7 +308,7 @@ public final class MarketCli {
         long episodes = 0;
         long values = 0;
         try (store) {
-            for (SeriesDef d : select(o.getOrDefault("series", "all-archived"))) {
+            for (SeriesDef d : select(o.getOrDefault("series", "all-archived"), archive)) {
                 Manifest m = archive.manifest(d);
                 for (String y : m.years.keySet()) {
                     int year = Integer.parseInt(y);
@@ -348,11 +361,19 @@ public final class MarketCli {
         return out;
     }
 
-    /** Series selection: {@code market}, {@code all} (catalog), {@code all-archived}, or a comma list. */
     static List<SeriesDef> select(String spec) {
+        return select(spec, null);
+    }
+
+    /**
+     * Series selection: {@code market}, {@code all} (catalog), {@code all-archived} (every series with a manifest in
+     * the archive, including weather and partner series), or a comma list of catalog paths.
+     */
+    static List<SeriesDef> select(String spec, Archive archive) {
         return switch (spec) {
             case "market" -> MARKET.stream().map(MarketCatalog::require).toList();
-            case "all", "all-archived" -> MarketCatalog.all();
+            case "all" -> MarketCatalog.all();
+            case "all-archived" -> archive == null ? MarketCatalog.all() : archive.archivedSeries();
             default -> java.util.Arrays.stream(spec.split(",")).map(String::trim).map(MarketCatalog::require).toList();
         };
     }

@@ -144,6 +144,26 @@ public final class Archive {
         return new MarketSeries(def, all).slice(from, to);
     }
 
+    /** Every series of the archive that has a manifest, from the manifests themselves (catalog, weather, partner). */
+    public List<SeriesDef> archivedSeries() {
+        if (!Files.isDirectory(root)) {
+            return List.of();
+        }
+        try (java.util.stream.Stream<Path> files = Files.walk(root)) {
+            return files.filter(f -> f.getFileName().toString().equals(Manifest.FILE)).sorted().map(f -> {
+                try {
+                    Manifest m = JSON.readValue(f.toFile(), Manifest.class);
+                    return new SeriesDef(m.source, m.series, m.metric, m.tags == null ? java.util.Map.of() : m.tags,
+                            m.unit, m.origin, m.licence);
+                } catch (IOException e) {
+                    throw new UncheckedIOException("cannot read " + f, e);
+                }
+            }).toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public Manifest manifest(SeriesDef def) {
         return Manifest.load(dir(def).resolve(Manifest.FILE), def);
     }
