@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-MODULES=(opentsx-kafka-v2 opentsx-windpark opentsx-stats opentsx-openmetadata opentsx-retrieval opentsx-store-iceberg opentsx-twin opentsx-market)
+MODULES=(opentsx-kafka-v2 opentsx-windpark opentsx-stats opentsx-openmetadata opentsx-retrieval opentsx-store-iceberg opentsx-twin opentsx-dwd opentsx-market)
 ICEBERG_MODULES=(opentsx-windpark opentsx-retrieval opentsx-store-iceberg opentsx-market)
 VERSION="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null | tail -1)"
 REPO="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=settings.localRepository -DforceStdout 2>/dev/null | tail -1)"
