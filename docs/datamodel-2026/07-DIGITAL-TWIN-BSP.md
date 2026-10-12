@@ -385,8 +385,9 @@ Modul [`opentsx-twin`](../../opentsx-twin/README.md): Atomvertrag MVC+P, Schaltp
 Variante T mit geschichtetem BSP, Topic-Vertrag (`PortMessage`, `Barrier`) als Code, Herkunftsleiter,
 Snapshots, alle drei Betriebsarten, Export der Zustandsreihen als v2-Episoden. Bausteine: Erzeugung, Markt,
 H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter, Betriebsvorgaben. Szenario S1
-läuft auf synthetischen Daten (`bin/opentsx twin`). Offen: Variante L, Avro-Schemas je Atomtyp, KafScale-Binding,
-WEA/Wake/Wetter/Zähler-Atome, Optimierer (P8.4), echte Daten.
+läuft auf synthetischen Daten (`bin/opentsx twin`). **Variante L** (`LooseRunner`) läuft mit demselben Atomcode;
+erste Messungen in §10a. Offen: Avro-Schemas je Atomtyp, KafScale-Binding, WEA/Wake/Wetter/Zähler-Atome,
+Optimierer (P8.4), echte Daten.
 
 Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md).
 
@@ -436,3 +437,60 @@ doppelte Nachrichten, Atomausfall) und Größenskalierung. Referenz ist T, Groun
 1. Synchronisationssemantik für Zwillinge auf einem Log, mit Entwurfsregel „was muss eng gekoppelt sein“.
 2. Fehlerschranken und Messungen für BSP vs. SSP vs. asynchron an einem realistischen Energieverbund.
 3. Offene Referenzimplementierung (OpenTSx) mit beiden Varianten und reproduzierbaren Szenarien.
+
+
+## 10a. Erste Messungen: Variante L gegen Variante T (RQ1, RQ5)
+
+**Aufbau.** `LooseRunner` führt jedes Atom als eigenen Prozessor mit eigener Superschritt-Uhr aus. Kopplung nur
+über Port-Nachrichten (`PortMessage`), keine globale Barriere. Ein Atom darf rechnen, sobald jeder verdrahtete
+Eingang einen *sichtbaren* Wert hat, der höchstens `s` Superschritte älter ist als der Wert, den T verwenden würde.
+`s = 0` ist BSP, `s > 0` SSP, „async“ wartet nie. Die Wandzeit wird in Ticks simuliert: ein echter Schritt kostet
+einen Tick (einstellbar je Atom), eine Nachricht aus Tick `w` ist ab Tick `w + 1 + lag (+ jitter)` sichtbar;
+Ausfälle sperren ein Atom für ein Tick-Intervall. Atomcode, Policies, Eingriffe, Laufprotokoll und Hash teilen
+beide Varianten (`RunSetup`). Messprogramm: `bin/opentsx twin-coupling [--csv datei]`, Szenarien H2-Kette
+(360 Schritte), Haus (8 760 Schritte), Boot (1 344 Schritte).
+
+**Ergebnis 1 – Konformität.** L mit `s = 0` ist für alle drei Szenarien bitgleich mit T (gleicher Lauf-Id,
+gleicher verketteter Zustands-Hash, gleiche Ereignisse, gleiche Nachrichtenmenge), auch mit Latenz, Jitter,
+langsamen Prozessoren und Ausfällen, in allen drei Betriebsarten (Test `LooseRunnerTest`). Die Transportschicht
+ändert dann nur die Wandzeit, nie das Ergebnis.
+
+**Ergebnis 2 – Durchsatz bestimmen die Rückkopplungen, nicht die Kettentiefe.** Ohne Rückkopplung arbeiten die
+Atome im Fließband: das Boot braucht unter BSP 1 346 Ticks für 1 344 Schritte. Jede Rückkopplungsschleife begrenzt
+dagegen den Takt. Gemessen gilt genau
+
+> Ticks je Schritt = max(1, max über alle Schleifen Σ(1 + lag) / Σ(d + s)),
+
+mit `d = 1` für eine verzögerte (Rückkopplungs-)Kante und `d = 0` sonst. Beispiel Haus (Schleife Gebäude ↔ Kessel,
+zwei Kanten): `lag = 0` → 2 Ticks je Schritt; `lag = 2` → 6; mit `s = 1` → 2; `s = 2` → 1,2; ab `s = 4` → 1.
+
+**Ergebnis 3 – Veraltung in schnellen Regelkreisen ist teuer.** Gewonnen wird bis Faktor 6, bezahlt mit
+Abweichung (Auszug, `lag = 2`, ohne Jitter; NRMSE normiert auf die Spannweite der T-Reihe):
+
+| Szenario | Kopplung | Ticks | Faktor | NRMSE (schlechteste Reihe) | max. KPI-Abweichung | Ereignisse anders |
+|---|---|---|---|---|---|---|
+| H2-Kette | BSP | 2 164 | 1,0 | 0 | 0 | 0 |
+| H2-Kette | SSP `s = 2` | 433 | 5,0 | 0,14 (Abweichung Fahrplan) | 1,9 % | 2 |
+| H2-Kette | async | 360 | 6,0 | 0,19 | 3,9 % | 2 |
+| Haus | BSP | 52 561 | 1,0 | 0 | 0 | 0 |
+| Haus | SSP `s = 2` | 10 513 | 5,0 | 0,28 (Ölverbrauch) | 386 % (Unterschreitungsstunden) | 0 |
+| Haus | async | 8 760 | 6,0 | 0,32 (Raumtemperatur) | 461 % | 0 |
+| Boot | async | 1 344 | 1,0 | 0,16 (Landstrom) | 12 % | 0 |
+| **H2-Kette** | **BSP, Schleifen kolokalisiert** | **369** | **5,9** | **0** | **0** | **0** |
+| **Haus** | **BSP, Schleifen kolokalisiert** | **8 766** | **6,0** | **0** | **0** | **0** |
+
+Beim Boot bringt Veraltung gar nichts (keine Schleife, Fließband ohnehin voll), kostet aber 12 % KPI-Abweichung.
+
+**Ergebnis 4 – Entwurfsregel.** *Rückkopplungsschleifen gehören in einen Prozessor; zwischen Prozessoren reicht
+BSP.* `Coupling.colocatingCycles()` legt jede stark zusammenhängende Komponente des Schaltplans (Tarjan) in einen
+Prozessor und koppelt nur die azyklischen Kanten lose. Ergebnis: bitgleich mit T **und** volle Fließband-Leistung.
+Veraltung (`s > 0`) bringt danach keinen Durchsatz mehr, nur noch Fehler. Sie bleibt ein Werkzeug für Ausfälle und
+Eigentümergrenzen (ein Atom beim Betreiber, das zeitweise nicht liefert), nicht für Geschwindigkeit. Für D20 heißt
+das: Variante L wird als **Hybrid** betrieben, T innerhalb einer Schleife, L dazwischen. Die Schnittlinie folgt aus
+dem Schaltplan, nicht aus Vorlieben.
+
+**Grenzen dieser Messung.** Simulierte Wandzeit statt echter Prozessoren; ein Tick je Schritt für alle Atome;
+Abweichungen nur gegen T, nicht gegen Messdaten; Erhaltungsgrößen (RQ2) und Kausalverletzungen (RQ3) noch nicht
+eigens gezählt; die Haus-KPI „Unterschreitungsstunden“ ist klein, relative Abweichungen wirken dort groß. Nächste
+Schritte: Ausfallversuche (Erholungszeit, RQ5), Bilanzfehler je Schritt (RQ2), echte Prozessoren über KafScale
+(RQ4), synthetische Verbünde mit gesteuerter Kopplungsstärke.
