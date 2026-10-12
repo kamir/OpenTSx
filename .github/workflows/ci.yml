@@ -121,7 +121,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           grep -v '^#' opentsx-kafscale-conformance/target/kafscale-capabilities.properties >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: kafscale-capabilities
