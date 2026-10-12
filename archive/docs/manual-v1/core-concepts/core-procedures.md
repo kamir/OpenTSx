@@ -508,22 +508,50 @@ boolean isRobust = tester.testProperty(ts, propertyFunction);
 
 ### Event Synchronisation Calculation
 
+OpenTSx implements event synchronisation as defined by Quiroga, Kreuz &
+Grassberger (Phys. Rev. E 66, 041904, 2002). Inputs are sorted event times
+(e.g. indices of peaks).
+
 ```java
 import org.opentsx.algorithms.eventsynchronisation.ESCalc;
 
-ESCalc esCalc = new ESCalc();
+int[] eventsX = extractEventTimes(ts1);   // sorted event indices
+int[] eventsY = extractEventTimes(ts2);
 
-// Define event sequences
-TimeSeriesObject events1 = extractEvents(ts1);
-TimeSeriesObject events2 = extractEvents(ts2);
-
-// Calculate synchronisation
-double Q = esCalc.calculate(events1, events2, tau);
-// Q ∈ [0, 1]: 0 = no sync, 1 = perfect sync
+double[] r = ESCalc.calc(eventsX, eventsY);
+double Q = r[0];   // Q ∈ [0, 1]: 0 = no sync, 1 = perfect sync
+double q = r[1];   // q ∈ [-1, 1]: > 0 if events in X tend to follow events in Y
 ```
 
-**Parameters:**
-- `tau` — Time lag tolerance for event matching
+```python
+from opentsx import EventSynchronization
+
+r = EventSynchronization().analyze(ts1, ts2)       # local window (default)
+r = EventSynchronization(tau_max=5).analyze(ts1, ts2)  # local window, capped at 5 steps
+print(r["overall_sync"], r["delay"], r["leader"])
+```
+
+**Time window:** each event pair (t_i, s_j) uses its own window
+`tau_ij = min(t_{i+1}-t_i, t_i-t_{i-1}, s_{j+1}-s_j, s_j-s_{j-1}) / 2`.
+Simultaneous events count J = 1/2 for both directions. The Python class accepts an
+optional fixed `tau_max` that caps the local window; it never widens it.
+
+**Parameters / results:**
+- `tau_max` (Python, optional) — upper bound for the local window
+- `overall_sync` (Q), `sync_1_to_2`, `sync_2_to_1`, `delay` (q = q_12 − q_21,
+  positive if series 1 leads), `leader`, `lead_lag_strength`
+
+**Resolved issue (Q > 1):** earlier Python versions used one global window
+`tau_max = ½ (mean inter-event interval of x + of y)`. With such a wide window a
+single event could be matched with several events of the other series, so `Q`
+could exceed 1 (e.g. ≈ 1.48 for a series and its noisy 3-step-shifted copy).
+The local window guarantees that each event is matched at most once, so
+`Q ∈ [0, 1]` and `q ∈ [-1, 1]`. Results computed with older versions are not
+comparable and should be recomputed. In Java, `ESCalc` previously gave the
+J = 1/2 weight to pairs at distance `tau` instead of to simultaneous events
+(identical series yielded Q = 0); this is fixed as well. The Java classes
+evaluate only events with two neighbours, so identical series give
+`(M-2)/(M-1)` rather than exactly 1.
 
 **Use Cases:**
 - Climate event coupling
