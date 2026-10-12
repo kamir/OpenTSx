@@ -1,0 +1,309 @@
+# Guide to the H2 chain twin (twin/h2-chain.yaml) for the Smart Topics Studio: prose for every atom, port, parameter,
+# control and wire, where each value should come from, and references to compare against.
+# Read by org.opentsx.twin.studio.StudioGuide and checked against the plan (StudioGuideTest).
+# Wire keys use the plan syntax "fromAtom.port -> toAtom.port". Texts are German, like the Studio.
+# Comparison values are rough orientation, not a substitute for the sources listed under "references".
+twin: h2-chain
+
+intro:
+  title: "Worum geht es in diesem Beispiel?"
+  text:
+    - "Ein Windpark mit 12 MW speist an einem gemeinsamen Netzanschlusspunkt ein. Hinter demselben Anschluss stehen ein Elektrolyseur mit 5 MW und eine Batterie. Der Elektrolyseur macht aus Windstrom Wasserstoff und drückt ihn in eine Leitung, aus der ein Abnehmer laufend entnimmt. Was der Park erzeugt und vor Ort nicht verbraucht wird, geht ins Netz und wird von einem Direktvermarkter nach Fahrplan verkauft."
+    - "Das Beispiel zeigt eine Störung, die durch die ganze Kette läuft. Um 01:00 schließt der Abnehmer seinen Schieber. Der Elektrolyseur produziert weiter 91 kg Wasserstoff je Stunde, aber niemand nimmt ihn ab. Die Leitung hat bei 30 bar noch Platz für 132 kg, das reicht für 87 Minuten. Gegen 02:27 erreicht der Druck 40 bar, der Elektrolyseur schaltet zum Schutz ab, und 5 MW, die eben noch Wasserstoff erzeugt haben, fließen plötzlich ins Netz. Der Direktvermarkter hat 3 MW verkauft und muss nun 8 MW unterbringen."
+    - "Vier Beteiligte sehen jeweils nur ihren Teil: der Abnehmer den Schieber, der Leitungsbetreiber den Druck, der Betreiber des Elektrolyseurs die Abschaltung, der Vermarkter die Fahrplanabweichung. Der Zwilling rechnet die Kette als Ganzes. Deshalb kann er schon um 01:00 sagen, wann die Leitung voll ist, und vergleichen, was eine vorausschauende Fahrweise gebracht hätte. Alle Daten sind synthetisch."
+  own: "Den exportierten Schaltplan rechnest du mit: bin/opentsx twin --plan config/private/h2-chain-eigen.yaml"
+  read:
+    - "Die Spalten sind die Phasen eines Takts von einer Minute, von links nach rechts: erst die Quellen (Betriebsvorgaben, Marktpreis, Abnehmer), dann die Anlagen (Windpark, Elektrolyseur, Batterie), dann die Strombilanz am Netzanschlusspunkt, zuletzt die Bestände und Abrechnungen (Leitung, Direktvermarkter)."
+    - "Eine durchgezogene Linie wirkt in derselben Minute. Die beiden gestrichelten Linien von der Leitung zurück zum Elektrolyseur sind Rückkopplungen: Druck und Restkapazität entstehen am Ende der Minute und wirken in der nächsten. Über diese Linien läuft die Schutzabschaltung."
+    - "Blaue Linien tragen Flüsse, die in eine Bilanz eingehen: elektrische Leistung in kW und Wasserstoff in kg/h. Graue Linien tragen Signale: Druck, Preis, Leistungsgrenze."
+    - "Eine Raute vor einem Eingang heißt: Dort ist eine Zeitreihe von außen gebunden, etwa die verfügbare Windleistung, der Sollwert des Elektrolyseurs oder der Fahrplan des Vermarkters."
+    - "Schiebe den Zeitregler von 01:00 über 02:27 hinaus und beobachte die Werte an den Ausgängen: erst fällt die Abnahme auf 0, dann steigt der Druck, dann fällt die Leistung des Elektrolyseurs, dann springt die Einspeisung."
+  change:
+    - title: "Parameter im Schaltplan"
+      text: "Feste Eigenschaften der Anlagen: Nennleistungen, Rampe und Mindestlast des Elektrolyseurs, Volumen und Druckgrenzen der Leitung, Größe der Batterie. Sie stehen in opentsx-twin/src/main/resources/twin/h2-chain.yaml. Unter „Eigene Angaben“ kannst du eigene Werte erfassen und als eigenen Schaltplan exportieren."
+    - title: "Stellgrößen und Eingriffe"
+      text: "Was im Betrieb verstellt wird: der Schieber des Abnehmers, der Sollwert des Elektrolyseurs, die Lade- und Entladeleistung der Batterie, die Leistungsgrenze des Parks. Der geschlossene Schieber ist ein solcher Eingriff. Die Ansicht „Prognose & Was-wäre-wenn“ vergleicht, was geschieht, wenn der Schieber zu verschiedenen Zeiten wieder öffnet."
+    - title: "Fahrweise"
+      text: "Die Regel, nach der ein Baustein seine Stellgrößen wählt. Der Elektrolyseur folgt im Referenzlauf einfach seinem Sollwert (follow). Die Alternative „druckbewusst“ (pressure-aware) drosselt ihn rechtzeitig, sodass die Leitung die Druckgrenze nicht erreicht."
+    - title: "Zeitreihen an gebundenen Eingängen"
+      text: "Windleistung, Abnahmebedarf, Fahrplan und Preis sind hier konstante oder einfache synthetische Reihen. Im Betrieb kämen sie aus SCADA, aus dem Fahrplanmanagement und vom Strommarkt. Echte Zählerwerte am Netzanschlusspunkt machen das Residuum zwischen Messung und Modell sichtbar."
+
+atoms:
+  rules:
+    title: "Betriebsvorgaben"
+    text: "Sammelt alle Auflagen, die die Leistung des Parks zeitweise begrenzen: Vorgaben des Netzbetreibers, Abschaltungen zum Schutz von Fledermäusen, Schallauflagen in der Nacht, Arbeiten auf den Flächen. Jede Auflage ist ein Zeitfenster mit einer Leistungsgrenze und einem Grund. Der Baustein gibt die jeweils strengste Grenze aus. Im Beispiel ist kein Fenster eingetragen, der Ausgang ist deshalb leer und der Park läuft unbegrenzt."
+    capture: "Keine Anlage. Erfasse die Quellen der Auflagen: Genehmigungsbescheid mit Aktenzeichen, Vorgaben des Netzbetreibers, Abschaltalgorithmen. Die Zeitfenster selbst trägst du als Parameter windows im Schaltplan ein (from, to, limitKw, reason)."
+    ports:
+      limit_kw: "Strengste Leistungsgrenze, die in dieser Minute gilt. Ein leerer Wert bedeutet: keine Einschränkung."
+
+  market:
+    title: "Strommarkt"
+    text: "Reicht den Marktpreis in die Kette. Der Preis ändert sich nicht jede Minute, sondern je Viertelstunde. Der Baustein rechnet deshalb nur in jedem fünfzehnten Takt und hält den Wert dazwischen fest. Im Beispiel schwankt der Preis synthetisch zwischen 40 und 80 € je MWh."
+    capture: "Keine Anlage. Erfasse Gebotszone, Marktsegment (Day-Ahead, Intraday) und die Datenquelle, aus der der Preis kommt."
+    ports:
+      price_eur_mwh: "Als Eingang: die gebundene Preisreihe von außen. Als Ausgang: der Preis, der in dieser Viertelstunde gilt."
+    params:
+      every:
+        text: "Der Baustein rechnet nur in jedem so vielten Takt. Bei einem Takt von einer Minute sind 15 Takte eine Viertelstunde."
+        source: "Abrechnungsintervall des Marktes, an dem verkauft wird."
+        compare: "Viertelstunde im Intraday-Handel und in der Bilanzkreisabrechnung, Stunde oder Viertelstunde im Day-Ahead-Handel."
+        refs: [smard, entsoe]
+
+  offtake:
+    title: "Wasserstoff-Abnehmer"
+    text: "Der Kunde am Ende der Leitung, etwa ein Industriebetrieb oder eine Tankstelle. Er entnimmt seinen Bedarf mal Stellung des Schiebers. Ein geschlossener Schieber ist die typische Störung: Wartung, ein Anlagenstillstand oder ein voller Speicher beim Kunden. Im Beispiel schließt er um 01:00 und bleibt zu."
+    capture: "Abnehmer, Übergabestation und Schieber: Betreiber, Typ und Seriennummer der Armatur, Messstelle für die Menge, vertraglicher Bedarf in kg je Stunde und Ansprechpartner für Störungen."
+    ports:
+      demand_kgph: "Bedarf des Abnehmers in kg je Stunde, als Zeitreihe gebunden. Im Beispiel konstant 91 kg/h, genau die Erzeugung des Elektrolyseurs bei Volllast."
+      valve: "Freier Eingang für eine von außen vorgegebene Schieberstellung. Ohne Bindung gilt die gleichnamige Stellgröße."
+      m_out_kgph: "Tatsächliche Entnahme: Bedarf mal Schieberstellung."
+    controls:
+      valve: "Schieberstellung von 0 (zu) bis 1 (offen). Der Eingriff im Referenzlauf setzt sie um 01:00 auf 0."
+
+  park:
+    title: "Windpark"
+    text: "Die Erzeugung des gesamten Parks am Netzanschlusspunkt, als eine Summe. Die verfügbare Leistung kommt aus einer Messung oder einer Prognose. Der Parkregler kappt sie auf die Nennleistung und auf eine geltende Leistungsgrenze. Der Baustein zählt mit, wie viel Energie durch Abregelung verloren geht."
+    capture: "Je Windenergieanlage lohnt ein eigener Eintrag: Hersteller, Typ, Seriennummer, Nennleistung, Nabenhöhe, Rotordurchmesser, Inbetriebnahme. Dazu die Nummer der Einheit im Marktstammdatenregister und der Parkregler."
+    ports:
+      p_avail_kw: "Verfügbare Leistung aus dem Wind, als Zeitreihe gebunden. Im Beispiel konstant 8.000 kW, eine windige Nacht."
+      limit_kw: "Leistungsgrenze aus den Betriebsvorgaben."
+      p_gen_kw: "Tatsächlich erzeugte Leistung nach Abregelung."
+    controls:
+      limit_kw: "Leistungsgrenze des Parkreglers. Sie folgt dem gleichnamigen Eingang. Ohne Vorgabe gilt die Nennleistung."
+    params:
+      ratedKw:
+        text: "Nennleistung des Parks am Netzanschlusspunkt. Mehr kann der Park nie einspeisen."
+        source: "Summe der Nennleistungen aller Anlagen laut Typenschild oder Marktstammdatenregister, begrenzt durch die vereinbarte Anschlussleistung."
+        compare: "Einzelne Anlagen an Land haben heute meist 3 bis 7 MW. 12 MW entsprechen zwei bis vier Anlagen. Im Jahresmittel erzeugt ein Park an Land etwa 20 bis 35 Prozent seiner Nennleistung."
+        refs: [mastr, wind-turbine-models, wiki-volllaststunde]
+
+  ely:
+    title: "Elektrolyseur"
+    text: "Wandelt Strom in Wasserstoff. Er folgt einem Sollwert, aber nicht beliebig: Er kann nur mit begrenzter Rampe hoch- und herunterfahren und läuft nicht unterhalb einer Mindestlast. Die Wasserstoffmenge folgt aus der Leistung geteilt durch den spezifischen Strombedarf. Erreicht der Druck in der Leitung die Abschaltschwelle, fährt er zum Schutz auf null und bleibt aus, bis der Druck wieder unter die Wiedereinschaltschwelle gefallen ist."
+    capture: "Typenschild und Anlagendokumentation: Hersteller, Typ, Seriennummer, Technologie (PEM oder alkalisch), Nennleistung, Zahl und Alter der Stacks, Betriebsstunden, Ausgangsdruck. Der spezifische Strombedarf steht im Abnahmeprotokoll."
+    ports:
+      setpoint_kw: "Leistungssollwert, als Zeitreihe gebunden. Im Beispiel konstant 5.000 kW, also Volllast."
+      p_downstream_bar: "Druck in der Leitung aus der Vorminute. Er löst die Schutzabschaltung aus."
+      headroom_kg: "Restkapazität der Leitung aus der Vorminute. Nur die Fahrweise „druckbewusst“ nutzt sie."
+      m_offtake_kgph: "Aktuelle Entnahme des Abnehmers. Nur die Fahrweise „druckbewusst“ nutzt sie."
+      p_el_kw: "Aufgenommene elektrische Leistung."
+      m_h2_kgph: "Erzeugter Wasserstoff: Leistung geteilt durch den spezifischen Strombedarf."
+    controls:
+      setpoint_kw: "Leistungssollwert. Bei „follow“ übernimmt er den gebundenen Eingang. Bei „druckbewusst“ wird er zusätzlich so begrenzt, dass die Erzeugung die Entnahme plus den Rest der Leitung über eine Stunde nicht übersteigt."
+    params:
+      ratedKw:
+        text: "Elektrische Nennleistung, die Obergrenze für den Sollwert."
+        source: "Typenschild oder Datenblatt, gemeint ist die Leistungsaufnahme der ganzen Anlage einschließlich Nebenaggregaten."
+        compare: "5 MW sind eine mittlere Anlage. Projekte reichen von unter 1 MW bis zu mehreren hundert MW."
+        refs: [iea-h2, wiki-elektrolyseur]
+      minLoad:
+        text: "Mindestlast als Anteil der Nennleistung. Sollwerte darunter werden auf null oder auf die Mindestlast gerundet."
+        source: "Datenblatt des Herstellers (Teillastbereich)."
+        compare: "PEM etwa 0,05 bis 0,10, alkalisch etwa 0,15 bis 0,40."
+        refs: [wiki-elektrolyseur]
+      rampKwPerMin:
+        text: "Größte Leistungsänderung je Minute. Sie bestimmt, wie schnell der Elektrolyseur einer Vorgabe folgt und wie lange die Schutzabschaltung dauert: von 5.000 kW auf null in 10 Minuten."
+        source: "Datenblatt oder ein gemessener Lastsprung aus den Betriebsdaten."
+        compare: "500 kW je Minute sind 10 Prozent der Nennleistung je Minute und eher vorsichtig. PEM-Anlagen schaffen den vollen Bereich in Sekunden, alkalische brauchen Minuten."
+        refs: [wiki-elektrolyseur]
+      kwhPerKg:
+        text: "Spezifischer Strombedarf: Kilowattstunden Strom je Kilogramm Wasserstoff, für die ganze Anlage. Das Modell nimmt ihn als konstant an."
+        source: "Abnahmeprotokoll oder Betriebsdaten: Strom am Zähler geteilt durch die erzeugte Menge über einen längeren Zeitraum. Der Wert steigt mit dem Alter der Stacks."
+        compare: "Der Heizwert von Wasserstoff ist 33,3 kWh je kg. Anlagen brauchen etwa 50 bis 58 kWh je kg, das sind 58 bis 67 Prozent Wirkungsgrad."
+        refs: [iea-h2, wiki-wasserstoff]
+      pTripBar:
+        text: "Druck in der Leitung, bei dem die Schutzabschaltung auslöst."
+        source: "Sicherheitskonzept der Anlage. Der Wert liegt höchstens beim zulässigen Betriebsdruck der Leitung."
+        compare: "Im Beispiel gleich dem Höchstdruck der Leitung von 40 bar."
+        refs: [dvgw-h2]
+      pResumeBar:
+        text: "Druck, unter den die Leitung fallen muss, bevor der Elektrolyseur wieder anfahren darf. Der Abstand zur Abschaltschwelle verhindert ständiges Ein- und Ausschalten."
+        source: "Sicherheitskonzept oder Einstellung der Steuerung."
+        compare: "Im Beispiel 36 bar, also 4 bar unter der Abschaltschwelle. Das entspricht 53 kg Wasserstoff, die erst entnommen sein müssen."
+      initialKw:
+        text: "Leistung zu Beginn des Laufs."
+        source: "Startbedingung: der Betriebszustand zum Startzeitpunkt."
+        compare: "Im Beispiel 5.000 kW, die Anlage läuft bereits unter Volllast."
+
+  battery:
+    title: "Batteriespeicher"
+    text: "Lädt oder entlädt nach Vorgabe, begrenzt durch Leistung und Füllstand. Positive Leistung bedeutet Laden und wirkt am Netzanschlusspunkt wie ein Verbraucher, negative bedeutet Entladen. Beim Laden und beim Entladen gehen je etwa 5 Prozent verloren. Im Beispiel steht die Vorgabe auf null, die Batterie greift nicht ein. Sie ist verdrahtet, damit sich Alternativen rechnen lassen, in denen sie den Sprung der Einspeisung abfängt."
+    capture: "Hersteller, Typ, Seriennummer des Containers und des Wechselrichters, Zellchemie, nutzbare Kapazität, Inbetriebnahme, bisherige Vollzyklen und Garantiebedingungen."
+    ports:
+      power_kw: "Vorgegebene Leistung, als Zeitreihe gebunden. Positiv lädt, negativ entlädt. Im Beispiel konstant 0."
+      p_bat_kw: "Tatsächliche Leistung nach den Grenzen von Wechselrichter und Füllstand."
+      soc: "Ladezustand von 0 (leer) bis 1 (voll)."
+    controls:
+      power_kw: "Lade- oder Entladeleistung. Sie folgt dem gebundenen Eingang."
+    params:
+      capacityKwh:
+        text: "Nutzbare Speicherkapazität."
+        source: "Datenblatt (nutzbare, nicht nominale Kapazität). Im Betrieb aus einem Kapazitätstest, weil die Kapazität mit dem Alter sinkt."
+        compare: "Im Beispiel 2.000 kWh bei 1.000 kW, also zwei Stunden Volllast. Üblich sind eine bis vier Stunden."
+        refs: [wiki-batteriespeicher]
+      powerKw:
+        text: "Größte Lade- und Entladeleistung."
+        source: "Nennleistung des Wechselrichters laut Typenschild."
+        compare: "Im Beispiel 1.000 kW. Der Sprung der Einspeisung beträgt 5.000 kW, die Batterie könnte also nur ein Fünftel davon für zwei Stunden abfangen."
+        refs: [wiki-batteriespeicher]
+      soc0:
+        text: "Ladezustand zu Beginn des Laufs."
+        source: "Startbedingung: Anzeige des Batteriemanagements zum Startzeitpunkt."
+        compare: "Im Beispiel 0,5, also halb voll und in beide Richtungen einsetzbar."
+
+  grid:
+    title: "Netzanschlusspunkt (Bilanz)"
+    text: "Die Strombilanz am gemeinsamen Anschluss, in jeder Minute neu gelöst: Erzeugung minus Elektrolyseur, Batterie und Eigenbedarf ergibt die Einspeisung ins Netz. Ein negativer Wert bedeutet Bezug. Der Baustein weist außerdem aus, wie viel der Erzeugung direkt vor Ort verbraucht wurde, und ordnet sie den Verbrauchern in einer festen Reihenfolge zu. Ist der Zähler am Anschluss gebunden, zeigt das Residuum die Abweichung zwischen Messung und Modell."
+    capture: "Netzverknüpfungspunkt und Übergabestation: Netzbetreiber, Spannungsebene, vereinbarte Anschlussleistung, Transformator (Hersteller, Typ, Seriennummer), Zählpunktbezeichnung und Messstellenbetreiber."
+    ports:
+      p_gen_kw: "Erzeugung des Windparks."
+      p_self_kw: "Freier Eingang für den Eigenbedarf am Standort, etwa Hilfsbetriebe und Gebäude. Ohne Bindung zählt er als 0."
+      p_ely_kw: "Leistungsaufnahme des Elektrolyseurs."
+      p_bat_kw: "Leistung der Batterie. Laden ist positiv und zählt als Verbrauch."
+      p_grid_meas_kw: "Freier Eingang für den gemessenen Wert des Übergabezählers."
+      p_grid_kw: "Einspeisung ins Netz. Positiv ist Einspeisung, negativ ist Bezug."
+      p_direct_kw: "Teil der Erzeugung, der direkt vor Ort verbraucht wird, ohne das öffentliche Netz zu nutzen."
+      residual_kw: "Gemessene minus berechnete Einspeisung. Nur vorhanden, wenn p_grid_meas_kw gebunden ist."
+    params:
+      priority:
+        text: "Reihenfolge, in der die Erzeugung den Verbrauchern zugerechnet wird: self ist der Eigenbedarf, ely der Elektrolyseur, bat die Batterie. Sie ändert nicht die Einspeisung, nur die Aufteilung der direkt genutzten Energie."
+        source: "Messkonzept und Verträge: Wer gilt als direkt aus dem Park versorgt? Das ist wichtig für Umlagen und für den Nachweis von grünem Wasserstoff."
+        compare: "Im Beispiel Eigenbedarf vor Elektrolyseur vor Batterie."
+
+  line:
+    title: "Wasserstoffleitung als Puffer"
+    text: "Die Leitung zwischen Elektrolyseur und Abnehmer speichert Gas, indem ihr Druck steigt. Das Modell rechnet sie als Behälter mit festem Volumen und fester Temperatur nach dem idealen Gasgesetz: Jedes Kilogramm mehr hebt den Druck um 0,076 bar. Aus Zufluss minus Abfluss folgen der Druck, die Restkapazität bis zum Höchstdruck und die Zeit, bis die Grenze beim aktuellen Zufluss erreicht ist. Diese Zeit ist die wichtigste Kennzahl des Beispiels: Sie sagt Stunden vorher, wann die Kette reißt."
+    capture: "Rohrbuch der Leitung: Betreiber, Nennweite, Länge, Werkstoff, zulässiger Betriebsdruck, Baujahr, Datum der letzten Druckprüfung, Lage der Druckmessstellen mit Typ und Seriennummer der Messumformer."
+    ports:
+      m_in_kgph: "Zufluss vom Elektrolyseur."
+      m_out_kgph: "Abfluss zum Abnehmer."
+      p_bar: "Druck in der Leitung am Ende der Minute."
+      ttl_min: "Zeit in Minuten, bis der Höchstdruck erreicht ist, wenn der Zufluss so bleibt. Leer, solange der Druck nicht steigt."
+      headroom_kg: "Restkapazität: Kilogramm, die noch hineinpassen, bis der Höchstdruck erreicht ist."
+      m_net_kgph: "Zufluss minus Abfluss. Positiv heißt: Die Leitung füllt sich."
+    params:
+      volumeM3:
+        text: "Geometrisches Volumen der Leitung. Es bestimmt, wie viel Gas je bar hineinpasst."
+        source: "Rohrbuch: Innenquerschnitt mal Länge. 157 m³ entsprechen 5 km Rohr mit 200 mm Innendurchmesser."
+        compare: "Doppeltes Volumen bedeutet doppelte Pufferzeit. Im Beispiel passen zwischen 30 und 40 bar 132 kg hinein."
+        refs: [wiki-ideales-gas]
+      tempK:
+        text: "Gastemperatur in Kelvin, als konstant angenommen."
+        source: "Bodentemperatur in Verlegetiefe oder ein Temperaturfühler an der Leitung."
+        compare: "288 K sind 15 °C. Erdverlegte Leitungen liegen im Jahr zwischen etwa 5 und 15 °C."
+      p0Bar:
+        text: "Druck zu Beginn des Laufs."
+        source: "Startbedingung: Anzeige der Druckmessung zum Startzeitpunkt."
+        compare: "Im Beispiel 30 bar, die Mitte zwischen Mindest- und Höchstdruck."
+      pMinBar:
+        text: "Mindestdruck. Darunter meldet die Leitung „Druck niedrig“, weil der Abnehmer nicht mehr versorgt werden kann."
+        source: "Liefervertrag mit dem Abnehmer oder Mindesteingangsdruck seiner Anlage."
+        compare: "Im Beispiel 20 bar."
+      pMaxBar:
+        text: "Höchster zulässiger Betriebsdruck. Beim Überschreiten entsteht das Ereignis „Druckgrenze“."
+        source: "Rohrbuch oder Abnahmebescheinigung der Leitung (zulässiger Betriebsdruck)."
+        compare: "Verteilleitungen liegen meist bei 16 bis 40 bar, Fernleitungen bei 70 bis 100 bar. Bei 40 bar weicht echter Wasserstoff etwa 2 bis 3 Prozent vom idealen Gas ab."
+        refs: [dvgw-h2, nist-h2, wiki-ideales-gas]
+      warnMin:
+        text: "Vorwarnzeit: Fällt die Zeit bis zur Druckgrenze unter diesen Wert, entsteht eine Warnung."
+        source: "Eigene Entscheidung: Wie lange brauchen Leitstelle und Betreiber, um zu reagieren?"
+        compare: "Im Beispiel 60 Minuten. Die Warnung kommt um 01:28, eine Stunde vor der Abschaltung."
+
+  marketer:
+    title: "Direktvermarkter"
+    text: "Verkauft den eingespeisten Strom am Markt und hat dafür einen Fahrplan angemeldet. Der Baustein vergleicht in jeder Minute die tatsächliche Einspeisung mit dem Fahrplan. Eine positive Abweichung ist Strom, der zusätzlich verkauft werden muss, eine negative ist Strom, der nachgekauft werden muss. Beides kostet in der Regel Ausgleichsenergie. Der Erlös ist Einspeisung mal Marktpreis."
+    capture: "Vertragspartner und Vertragsnummer, Bilanzkreis, Fristen für Fahrplanänderungen, Regelung für Ausgleichsenergie und der Meldeweg für Störungen."
+    ports:
+      p_grid_kw: "Tatsächliche Einspeisung am Netzanschlusspunkt."
+      schedule_kw: "Angemeldeter Fahrplan, als Zeitreihe gebunden. Im Beispiel konstant 3.000 kW: 8.000 kW Wind minus 5.000 kW Elektrolyseur."
+      price_eur_mwh: "Marktpreis der laufenden Viertelstunde."
+      deviation_kw: "Einspeisung minus Fahrplan. Nach der Abschaltung des Elektrolyseurs plus 5.000 kW."
+    params:
+      toleranceKw:
+        text: "Abweichung, ab der ein Ereignis „Fahrplanabweichung“ entsteht."
+        source: "Vertrag mit dem Direktvermarkter oder die eigene Meldeschwelle."
+        compare: "Im Beispiel 100 kW, das sind gut 3 Prozent des Fahrplans."
+        refs: [wiki-direktvermarktung, wiki-ausgleichsenergie]
+
+wires:
+  "rules.limit_kw -> park.limit_kw": "Die Leistungsgrenze aus den Betriebsvorgaben geht an den Parkregler. Der Park erzeugt dann höchstens diesen Wert, auch wenn mehr Wind da wäre, und zählt die Differenz als abgeregelte Energie. Im Beispiel ist keine Auflage eingetragen. Der Wert ist deshalb leer, und der Park wird nur durch seine Nennleistung von 12.000 kW begrenzt."
+  "park.p_gen_kw -> grid.p_gen_kw": "Die Erzeugung des Windparks geht in die Strombilanz am Netzanschlusspunkt ein. Im Beispiel sind es durchgehend 8.000 kW. Das ist die einzige Quelle der Bilanz. Alles, was Elektrolyseur und Batterie davon nicht aufnehmen, wird Einspeisung."
+  "ely.p_el_kw -> grid.p_ely_kw": "Die Leistungsaufnahme des Elektrolyseurs als größter Verbraucher hinter dem Anschluss. Bis zur Schutzabschaltung sind es 5.000 kW. Danach fällt sie mit 500 kW je Minute und ist nach 10 Minuten bei null. Genau diese 5.000 kW tauchen dann als zusätzliche Einspeisung auf."
+  "battery.p_bat_kw -> grid.p_bat_kw": "Die Leistung der Batterie in der Strombilanz. Laden zählt wie ein Verbraucher und senkt die Einspeisung, Entladen erhöht sie. Im Beispiel steht hier 0. Die Linie ist der Ansatzpunkt für Alternativen, in denen die Batterie den Sprung nach der Abschaltung abfedert."
+  "ely.m_h2_kgph -> line.m_in_kgph": "Der erzeugte Wasserstoff fließt in die Leitung. Bei 5.000 kW und 55 kWh je kg sind das 91 kg je Stunde. Solange der Abnehmer dieselbe Menge entnimmt, bleibt der Druck stehen. Nach dem Schließen des Schiebers füllt dieser Fluss die Leitung mit 6,9 bar je Stunde."
+  "offtake.m_out_kgph -> line.m_out_kgph": "Die Entnahme des Abnehmers aus der Leitung. Bis 01:00 sind es 91 kg je Stunde, danach 0. Diese eine Linie löst die ganze Kette aus: Ohne Abfluss steigt der Druck, bis der Elektrolyseur abschaltet."
+  "offtake.m_out_kgph -> ely.m_offtake_kgph": "Dieselbe Entnahme als Information für den Elektrolyseur. Im Referenzlauf mit der Fahrweise „follow“ wird sie nicht genutzt. Die Fahrweise „druckbewusst“ braucht sie: Sie erlaubt nur so viel Erzeugung, wie gerade entnommen wird, plus den Rest der Leitung über eine Stunde verteilt."
+  "line.p_bar -> ely.p_downstream_bar": "Die Rückkopplung, über die die Schutzabschaltung läuft. Der Elektrolyseur sieht den Druck vom Ende der Vorminute. Bei 40 bar fährt er auf null und meldet „Schutzabschaltung“. Weil das Abfahren 10 Minuten dauert, steigt der Druck noch bis 40,6 bar. Er läuft erst wieder an, wenn der Druck auf 36 bar gefallen ist. Da der Schieber im Beispiel zu bleibt, fällt der Druck nicht, und die Anlage bleibt aus. Gestrichelt, weil der Wert erst in der Folgeminute wirkt."
+  "line.headroom_kg -> ely.headroom_kg": "Die Restkapazität der Leitung in Kilogramm, zurück an den Elektrolyseur. Zu Beginn sind es 132 kg. Im Referenzlauf bleibt die Information ungenutzt, die Anlage fährt sehenden Auges in die Abschaltung. Die Fahrweise „druckbewusst“ drosselt damit rechtzeitig und nähert sich der Grenze, ohne sie zu erreichen. Gestrichelt, weil der Wert erst in der Folgeminute wirkt."
+  "grid.p_grid_kw -> marketer.p_grid_kw": "Die Einspeisung am Netzanschlusspunkt geht an den Direktvermarkter. Bis zur Abschaltung sind es 3.000 kW, genau der Fahrplan. Danach steigt sie in 10 Minuten auf 8.000 kW. Der Vermarkter erfährt hier die Folge einer Störung, die zweieinhalb Stunden vorher am anderen Ende der Kette begonnen hat."
+  "market.price_eur_mwh -> marketer.price_eur_mwh": "Der Marktpreis der laufenden Viertelstunde für die Erlösrechnung: Einspeisung in MW mal Stunden mal Preis. Bei 3 MW und 60 € je MWh sind das 180 € je Stunde. Der Preis ändert sich nur alle 15 Minuten, deshalb rechnet der Markt-Baustein nur in jedem fünfzehnten Takt."
+
+references:
+  - id: smard
+    title: "SMARD, Strommarktdaten der Bundesnetzagentur"
+    url: "https://www.smard.de/"
+    note: "Großhandelspreise, Erzeugung und Verbrauch in Viertelstunden- und Stundenauflösung, zum Vergleich mit der synthetischen Preisreihe."
+  - id: entsoe
+    title: "ENTSO-E Transparency Platform"
+    url: "https://transparency.entsoe.eu/"
+    note: "Day-Ahead-Preise, Erzeugung nach Energieträger und Ausgleichsenergiepreise für alle europäischen Gebotszonen."
+  - id: energy-charts
+    title: "Energy-Charts (Fraunhofer ISE)"
+    url: "https://www.energy-charts.info/"
+    note: "Winderzeugung, Preise und Auslastung als Diagramme, um typische Verläufe einzuordnen."
+  - id: mastr
+    title: "Marktstammdatenregister"
+    url: "https://www.marktstammdatenregister.de/MaStR"
+    note: "Stammdaten aller Windenergieanlagen, Speicher und Elektrolyseure in Deutschland: Nennleistung, Typ, Inbetriebnahme."
+  - id: wind-turbine-models
+    title: "wind-turbine-models.com"
+    url: "https://en.wind-turbine-models.com/"
+    note: "Datenblätter und Leistungskurven von Windenergieanlagen nach Hersteller und Typ."
+  - id: bnetza-engpass
+    title: "Bundesnetzagentur: Netzengpassmanagement"
+    url: "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/Versorgungssicherheit/Netzengpassmanagement/start.html"
+    note: "Umfang und Regeln der Abregelung durch Netzbetreiber, eine der Quellen für Betriebsvorgaben."
+  - id: wiki-redispatch
+    title: "Wikipedia: Redispatch"
+    url: "https://de.wikipedia.org/wiki/Redispatch"
+    note: "Wie Netzbetreiber in die Einspeisung eingreifen und wie das abgerechnet wird."
+  - id: wiki-volllaststunde
+    title: "Wikipedia: Volllaststunde"
+    url: "https://de.wikipedia.org/wiki/Volllaststunde"
+    note: "Typische Auslastung von Windparks, zum Einordnen der verfügbaren Leistung."
+  - id: iea-h2
+    title: "IEA Global Hydrogen Review 2024"
+    url: "https://www.iea.org/reports/global-hydrogen-review-2024"
+    note: "Stand der Elektrolyse weltweit: Anlagengrößen, Wirkungsgrade, Kosten."
+  - id: wiki-elektrolyseur
+    title: "Wikipedia: Elektrolyseur"
+    url: "https://de.wikipedia.org/wiki/Elektrolyseur"
+    note: "Bauarten (PEM, alkalisch), Teillastbereich und Dynamik im Vergleich."
+  - id: wiki-wasserstoff
+    title: "Wikipedia: Wasserstoff"
+    url: "https://de.wikipedia.org/wiki/Wasserstoff"
+    note: "Heizwert und Brennwert, die Grundlage für den spezifischen Strombedarf."
+  - id: nist-h2
+    title: "NIST Chemistry WebBook: Hydrogen"
+    url: "https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740"
+    note: "Stoffdaten von Wasserstoff, um die Abweichung vom idealen Gas bei höherem Druck zu prüfen."
+  - id: wiki-ideales-gas
+    title: "Wikipedia: Thermische Zustandsgleichung idealer Gase"
+    url: "https://de.wikipedia.org/wiki/Thermische_Zustandsgleichung_idealer_Gase"
+    note: "Die Gleichung, mit der die Leitung aus der Gasmasse den Druck rechnet."
+  - id: dvgw-h2
+    title: "DVGW: Wasserstoff und Energiewende"
+    url: "https://www.dvgw.de/themen/energiewende/wasserstoff-und-energiewende"
+    note: "Regelwerk und Hintergrund zu Wasserstoffleitungen und zulässigen Betriebsdrücken."
+  - id: wiki-batteriespeicher
+    title: "Wikipedia: Batterie-Speicherkraftwerk"
+    url: "https://de.wikipedia.org/wiki/Batterie-Speicherkraftwerk"
+    note: "Größenordnungen, Wirkungsgrade und Einsatzzwecke großer Batteriespeicher."
+  - id: wiki-direktvermarktung
+    title: "Wikipedia: Direktvermarktung"
+    url: "https://de.wikipedia.org/wiki/Direktvermarktung"
+    note: "Wie Strom aus Windparks am Markt verkauft wird und welche Rolle der Fahrplan spielt."
+  - id: wiki-ausgleichsenergie
+    title: "Wikipedia: Ausgleichsenergie"
+    url: "https://de.wikipedia.org/wiki/Ausgleichsenergie"
+    note: "Was eine Abweichung vom Fahrplan kostet."

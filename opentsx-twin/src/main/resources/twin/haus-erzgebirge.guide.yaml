@@ -1,0 +1,497 @@
+# Guide to the house twin (twin/haus-erzgebirge.yaml) for the Smart Topics Studio: prose for every atom, port,
+# parameter, control and wire, where each value should come from, and references to compare against.
+# Read by org.opentsx.twin.studio.StudioGuide and checked against the plan (StudioGuideTest): every wire, port and
+# parameter of the plan must be explained here, and nothing may be explained that the plan does not have.
+# Wire keys use the plan syntax "fromAtom.port -> toAtom.port". Texts are German, like the Studio.
+# Comparison values are rough orientation, not a substitute for the sources listed under "references".
+twin: haus-erzgebirge
+
+intro:
+  title: "Worum geht es in diesem Beispiel?"
+  text:
+    - "Das Beispiel ist ein Einfamilienhaus im Erzgebirge mit zwei Bewohnern, einem Ölkessel für Heizkörper und Warmwasser und einem Kaminofen im Wohnzimmer. Es gibt keine Photovoltaik und keine Wärmepumpe. Der Zwilling rechnet ein ganzes Jahr im Stundentakt nach und beantwortet eine Frage: Was kostet die heutige Fahrweise von Heizung, Warmwasser und Geräten, und was brächte eine andere Fahrweise bei gleichem Wetter und gleichem Komfort?"
+    - "Jeder Kasten ist ein Baustein mit eigenem Zustand, zum Beispiel der Füllstand im Tank oder die Raumtemperatur. Jede Linie trägt genau eine Größe von einem Ausgang zu einem Eingang. Drei Bilanzen müssen dabei aufgehen: Wärme (Kessel, Ofen, Geräte und Sonne gegen den Verlust durch die Gebäudehülle), Brennstoff (Öl aus dem Tank, Holz aus dem Lager) und Strom (Geräte und Heizung am Zähler)."
+    - "Alle Zahlen sind erfundene Beispielannahmen. Sie gelten, bis du sie durch deine eigenen Werte ersetzt: Typenschild, Abrechnung, Ablesung oder Messung. Einsparungen aus dem Zwilling sind modelliert und nicht nachgewiesen."
+  own: "Den exportierten Schaltplan rechnest du mit: bin/opentsx house --plan config/private/haus-erzgebirge-eigen.yaml"
+  read:
+    - "Die Spalten sind die Phasen eines Takts, von links nach rechts: erst die Quellen (Wetter, Warmwasserbedarf, Geräte), dann die Anlagen (Ofen, Kessel), dann die Strombilanz am Zähler, zuletzt die Bestände (Gebäude, Tank, Holzlager)."
+    - "Eine durchgezogene Linie wirkt in derselben Stunde. Eine gestrichelte Linie ist eine Rückkopplung: Der Wert entsteht am Ende der Stunde und wirkt erst in der nächsten. So fordert das Thermostat des Gebäudes die Wärme für die Folgestunde beim Kessel an."
+    - "Blaue Linien tragen Flüsse, die in eine Bilanz eingehen (kW, l/h, Ster/h). Graue Linien tragen Signale, also Informationen wie Temperatur, Füllstand oder Heizperiode."
+    - "Fahre mit der Maus über eine Linie, um zu lesen, was sie trägt und warum. Ein Klick auf eine Linie oder einen Baustein hält die Erläuterung unten fest."
+    - "Die Zahlen an den Ausgängen sind Mittelwerte über 5 Stunden, weil das Jahr für die Anzeige verdichtet ist. Der Ofen liefert beim Brennen 4,2 kW. Steht dort 2,5 kW, hat er in drei der fünf Stunden gebrannt."
+  change:
+    - title: "Parameter im Schaltplan"
+      text: "Feste Eigenschaften des Hauses und der Anlagen, etwa Wärmeverlust, Kesselleistung, Tankgröße oder Preise. Sie stehen in der Datei opentsx-twin/src/main/resources/twin/haus-erzgebirge.yaml. Im Abschnitt „Eigene Angaben“ kannst du eigene Werte erfassen und als eigenen Schaltplan exportieren."
+    - title: "Stellgrößen"
+      text: "Was sich im Betrieb verstellen lässt: Raumsollwert, Nachtabsenkung, Brenndauer des Ofens, Speichertemperatur, Pumpenleistung, Lieferungen. Jede Änderung ist ein Eingriff mit Zeitstempel. Die Ansicht „Prognose & Was-wäre-wenn“ vergleicht solche Eingriffe mit dem Referenzjahr."
+    - title: "Messwerte an freien Eingängen"
+      text: "Eingänge ohne Linie warten auf echte Daten: Außentemperatur einer DWD-Station, Zählerstand, Peilstab im Tank, Holzmenge aus dem Holzbuch. Ist ein Messwert gebunden, ersetzt er die Annahme, und der Baustein weist die Abweichung zwischen Messung und Modell als Residuum aus."
+    - title: "Kalibrierung an Abrechnungen"
+      text: "Die unsichersten Parameter (Wärmeverlust des Gebäudes, Skalierung von Warmwasser und Geräten) stellt der Zwilling selbst ein, wenn du deine Abrechnungen einträgst: bin/opentsx house --calibrate config/private/abrechnungen.csv"
+
+atoms:
+  weather:
+    title: "Wetter am Standort"
+    text: "Liefert für jede Stunde die Außentemperatur und die Sonneneinstrahlung. Solange keine Messung gebunden ist, erzeugt der Baustein ein synthetisches Klima aus Jahresgang, Tagesgang und Wetterlagen. Es ist reproduzierbar, aber erfunden. Nebenbei zählt er die Gradtagzahl G20/15, mit der sich Jahre unterschiedlicher Witterung vergleichen lassen."
+    capture: "Kein Gerät im Haus. Erfasse hier die nächste DWD-Station (Name, Stations-Id, Höhe) oder dein eigenes Außenthermometer."
+    ports:
+      t_out_meas_c: "Freier Eingang für eine gemessene Außentemperatur, zum Beispiel Stundenwerte der nächsten DWD-Station. Ist er gebunden, gewinnt die Messung gegen das synthetische Klima."
+      ghi_meas_w_m2: "Freier Eingang für gemessene Globalstrahlung auf die Horizontale. Ohne Bindung wird ein Tagesgang aus Sonnenstand und einem Bewölkungsfaktor je Tag berechnet."
+      t_out_c: "Außentemperatur der Stunde. Sie bestimmt den Wärmeverlust des Gebäudes."
+      ghi_w_m2: "Globalstrahlung auf die Horizontale. Sie wird im Gebäude zum solaren Wärmegewinn."
+    params:
+      meanC:
+        text: "Jahresmittel der Außentemperatur des synthetischen Klimas."
+        source: "Langjähriges Mittel der nächsten DWD-Station auf ähnlicher Höhe. Mit gebundenen Stationsdaten entfällt der Parameter."
+        compare: "Deutschland im Mittel etwa 9 bis 10 °C, Mittelgebirge auf 600 bis 700 m etwa 6 bis 7 °C."
+        refs: [dwd-cdc]
+      seasonAmpC:
+        text: "Halber Abstand zwischen dem wärmsten und dem kältesten Monatsmittel."
+        source: "Aus den Monatsmitteln der Station: (wärmster Monat minus kältester Monat) geteilt durch 2."
+        compare: "In Mitteleuropa etwa 8 bis 10 K."
+        refs: [dwd-cdc]
+      dailyAmpC:
+        text: "Mittlerer Abstand zwischen Tageshöchstwert und Tagestiefstwert."
+        source: "Aus Stundenwerten der Station. Im Sommer ist der Tagesgang größer als im Winter, das Modell berücksichtigt das."
+        compare: "Typisch 4 bis 8 K."
+        refs: [dwd-cdc]
+      seed:
+        text: "Startwert des Zufallsgenerators für die Wetterlagen. Gleicher Wert bedeutet exakt gleiches Wetter."
+        source: "Frei wählbar. Ein anderer Wert ergibt ein anderes, ebenso plausibles Jahr."
+        compare: "Keine fachliche Bedeutung."
+      latitude:
+        text: "Geografische Breite. Sie bestimmt Sonnenstand und Tageslänge."
+        source: "Karte oder Adresse des Hauses."
+        compare: "Deutschland liegt zwischen etwa 47,3 und 55,1 Grad Nord."
+      longitude:
+        text: "Geografische Länge. Sie verschiebt den Sonnenhöchststand gegenüber der Uhrzeit."
+        source: "Karte oder Adresse des Hauses."
+        compare: "Deutschland liegt zwischen etwa 5,9 und 15,0 Grad Ost."
+
+  dhw:
+    title: "Warmwasser"
+    text: "Berechnet, wie viel Wärme der Kessel für Warmwasser liefern muss: die Zapfungen morgens und abends und den Verlust des Speichers, der rund um die Uhr warm gehalten wird. Der Bedarf fällt das ganze Jahr an, auch im Sommer."
+    capture: "Warmwasserspeicher: Hersteller, Typ, Inhalt in Litern, Baujahr und die Angabe zum Warmhalteverlust vom Typenschild oder Energielabel."
+    ports:
+      t_store_c: "Freier Eingang für eine vorgegebene Speichertemperatur. Ohne Bindung gilt die gleichnamige Stellgröße."
+      q_dhw_kw: "Wärmeleistung, die der Kessel in dieser Stunde für Warmwasser aufbringen muss: Zapfung plus Speicherverlust."
+    controls:
+      t_store_c: "Speichertemperatur. Eine niedrigere Temperatur senkt den Speicherverlust. Unter 55 bis 60 °C steigt das Legionellenrisiko, das ist vor einer Absenkung zu klären."
+    params:
+      persons:
+        text: "Zahl der Bewohner, die Warmwasser zapfen."
+        source: "Eigene Haushaltsgröße."
+        compare: "Beispiel: 2."
+      litresPerPersonDay:
+        text: "Warmwasser je Person und Tag bei Nutztemperatur."
+        source: "Am genauesten über einen Warmwasserzähler. Sonst schätzen: Duschen mal Dauer mal Durchfluss, plus Küche."
+        compare: "Meist 25 bis 50 Liter je Person und Tag bei 45 °C."
+        refs: [uba-warmwasser]
+      tUseC:
+        text: "Temperatur, bei der die Litermenge gezählt wird."
+        source: "Konvention. 45 °C entspricht etwa der Dusche mit etwas Reserve."
+        compare: "40 bis 45 °C."
+      tColdC:
+        text: "Kaltwassertemperatur am Hausanschluss."
+        source: "Mit einem Thermometer am Kaltwasserhahn nach längerem Laufenlassen messen."
+        compare: "Im Jahresmittel etwa 10 bis 12 °C."
+      storeLossW:
+        text: "Warmhalteverlust des Speichers bei 60 °C in Watt."
+        source: "Typenschild oder Energielabel des Speichers (Warmhalteverlust in W oder in kWh je 24 h; 1 kWh je 24 h entspricht etwa 42 W)."
+        compare: "Ein 150-Liter-Speicher verliert je nach Dämmung etwa 40 bis 100 W."
+        refs: [uba-warmwasser]
+      tStoreC:
+        text: "Anfangswert der Stellgröße Speichertemperatur."
+        source: "Einstellung am Speicherthermostat oder an der Kesselregelung ablesen."
+        compare: "Üblich sind 55 bis 60 °C."
+        refs: [wiki-legionellen]
+      scale:
+        text: "Faktor auf den gesamten Warmwasserbedarf. Er ist ein Kalibrierparameter."
+        source: "Bleibt 1,0, bis die Kalibrierung an Abrechnungen ihn anpasst. Am besten aus dem Ölverbrauch im Sommer, wenn nur Warmwasser läuft."
+        compare: "Nach der Kalibrierung meist zwischen 0,5 und 1,5."
+
+  appliances:
+    title: "Haushaltsgeräte und Bewohner"
+    text: "Rechnet aus einem Inventar mit Leistung, Standby und Nutzungszeiten den Haushaltsstrom jeder Stunde. Alles, was innerhalb der beheizten Räume Strom verbraucht, wird dort zu Wärme. Dazu kommt die Körperwärme der anwesenden Personen. Der Baustein hat deshalb zwei Ausgänge: Strom für den Zähler und Wärmegewinn für das Gebäude."
+    capture: "Je Gerät ein eigener Eintrag lohnt sich: Hersteller, Modell, Seriennummer, Baujahr und die Werte vom Energielabel. Erfasse sie in der Notiz oder direkt in der Geräteliste (Parameter inventory)."
+    ports:
+      p_el_kw: "Elektrische Leistung aller Geräte in dieser Stunde, einschließlich Standby."
+      q_gain_kw: "Innerer Wärmegewinn: der Strom der Geräte innerhalb der Hülle plus die Körperwärme der Anwesenden."
+    controls:
+      standby_off: "1 bedeutet: Schaltbarer Standby ist abgeschaltet, etwa über Steckerleisten."
+      "factor.*": "Faktor je Gerät auf dessen Verbrauch. 0,4 steht für ein Neugerät mit 60 Prozent weniger Verbrauch, 0,7 für 30 Prozent weniger Nutzung."
+    params:
+      scale:
+        text: "Faktor auf den gesamten Gerätestrom. Er ist ein Kalibrierparameter."
+        source: "Bleibt 1,0, bis die Kalibrierung an der Stromabrechnung ihn anpasst."
+        compare: "Liegt er weit von 1 entfernt, fehlt ein Gerät im Inventar oder die Nutzungszeiten stimmen nicht."
+      persons:
+        text: "Zahl der Personen, die Körperwärme abgeben."
+        source: "Eigene Haushaltsgröße."
+        compare: "Beispiel: 2."
+      personW:
+        text: "Wärmeabgabe je anwesender Person."
+        source: "Richtwert aus der Raumklimatechnik, selten anzupassen."
+        compare: "Etwa 70 bis 100 W bei ruhiger Tätigkeit."
+      homeWeekday:
+        text: "Stunden, in denen an Werktagen jemand zu Hause ist. „16-24“ heißt von 16 bis 24 Uhr."
+        source: "Eigener Tagesablauf."
+        compare: "Beispiel: außer Haus von 7 bis 16 Uhr."
+      homeWeekend:
+        text: "Anwesenheit am Wochenende."
+        source: "Eigener Tagesablauf."
+        compare: "Beispiel: ganztags."
+      inventory:
+        text: "Die Geräteliste. Dauerläufer wie Kühlschrank und Gefriertruhe haben eine mittlere Leistung avgW. Geschaltete Geräte haben eine Leistung w in den Zeitfenstern weekday und weekend und eine Standby-Leistung standbyW außerhalb. inside: false markiert Geräte außerhalb der beheizten Hülle, deren Abwärme nicht mitheizt. seasonal erhöht die Nutzung im Winter, etwa bei Beleuchtung."
+        source: "Leistung vom Typenschild oder Energielabel (kWh je Jahr geteilt durch 8760 Stunden ergibt die mittlere Leistung in kW). Am genauesten ist ein Zwischenstecker mit Messfunktion über eine Woche."
+        compare: "Stromspiegel: Vergleichswerte für Haushalte nach Personenzahl und Gebäudetyp."
+        refs: [stromspiegel]
+
+  stove:
+    title: "Kaminofen im Wohnzimmer"
+    text: "Verbrennt abends in der Heizperiode Scheitholz und gibt die Wärme direkt an den Raum ab. Was der Ofen liefert, muss der Kessel nicht liefern. Der Ofen hat einen schlechteren Wirkungsgrad als der Kessel, dafür ist Holz billiger und in der CO2-Bilanz günstiger. Deshalb weist der Zwilling Kosten, CO2 und Energie getrennt aus."
+    capture: "Typenschild auf der Rückseite oder im Holzfach: Hersteller, Typ, Nennwärmeleistung in kW, Wirkungsgrad, Baujahr. Dazu das Datum der letzten Feuerstättenschau."
+    ports:
+      season: "Signal Heizperiode vom Gebäude. Außerhalb der Heizperiode bleibt der Ofen kalt."
+      wood_kwh_per_day: "Freier Eingang für die tatsächlich verbrannte Holzenergie je Tag, etwa aus dem Holzbuch oder der Abrechnung. Ist er gebunden, verbrennt der Ofen genau diese Menge, unabhängig von der Heizperiode."
+      q_heat_kw: "Wärmeleistung an den Raum: Brennstoffleistung mal Wirkungsgrad."
+      wood_ster_ph: "Holzverbrauch in Ster je Stunde: Brennstoffleistung geteilt durch den Energieinhalt je Ster."
+    controls:
+      hours_per_day: "Brenndauer je Abend in Stunden. Das Zeitfenster endet zur Stunde endH."
+      fuel_kw: "Brennstoffleistung beim Brennen in kW, also wie viel Holz je Stunde aufgelegt wird."
+    params:
+      fuelKw:
+        text: "Brennstoffleistung beim Brennen. Mal Wirkungsgrad ergibt die Wärmeleistung (6 kW mal 0,70 ergibt 4,2 kW)."
+        source: "Nennwärmeleistung vom Typenschild geteilt durch den Wirkungsgrad. Oder aus dem Holzbuch: aufgelegte Menge je Stunde mal Energieinhalt."
+        compare: "Kaminöfen haben meist 4 bis 8 kW Nennwärmeleistung."
+        refs: [uba-kaminofen]
+      eta:
+        text: "Wirkungsgrad: Anteil der Brennstoffenergie, der im Raum ankommt."
+        source: "Typenschild oder Prüfbericht des Ofens."
+        compare: "Ältere Öfen 50 bis 70 Prozent, neuere 75 bis 85 Prozent. Feuchtes Holz senkt den Wert deutlich."
+        refs: [uba-kaminofen, bimschv-1]
+      hoursPerDay:
+        text: "Anfangswert der Stellgröße Brenndauer je Abend."
+        source: "Eigene Gewohnheit. Ein Holzbuch (Körbe je Woche) macht den Wert belastbar."
+        compare: "Beispiel: 4 Stunden, von 18 bis 22 Uhr."
+      endH:
+        text: "Uhrzeit, zu der das Feuer ausgeht."
+        source: "Eigene Gewohnheit."
+        compare: "Beispiel: 22 Uhr."
+      kwhPerSter:
+        text: "Energieinhalt eines Sters (Raummeter geschichtetes Scheitholz), lufttrocken."
+        source: "Holzart und Feuchte. Der Wert steht nicht auf der Rechnung, er folgt aus der Holzart."
+        compare: "Fichte etwa 1.500 kWh je Ster, Buche etwa 2.000 kWh je Ster bei lufttrockenem Holz."
+        refs: [lwf-holz]
+
+  boiler:
+    title: "Ölkessel"
+    text: "Wandelt Heizöl in Wärme. Er bedient zuerst das Warmwasser und danach die Anforderung des Gebäudes, zusammen höchstens bis zur Nennleistung. Unterhalb der Mindestlast taktet der einstufige Brenner, dann sinkt der Wirkungsgrad. Der Kessel wird das ganze Jahr warm gehalten und verbraucht dafür auch ohne Wärmeabnahme Öl. Strom brauchen die Umwälzpumpe und der Brenner. Ist der Tank leer, liefert der Kessel keine Wärme."
+    capture: "Typenschild am Kessel: Hersteller, Typ, Seriennummer, Nennwärmeleistung, Baujahr. Dazu der Brenner (Typ, Düsengröße), die Umwälzpumpe (Typ, Leistungsaufnahme) und der Abgasverlust aus dem Messprotokoll des Schornsteinfegers."
+    ports:
+      q_req_kw: "Wärmeanforderung des Thermostats für diese Stunde, berechnet vom Gebäude am Ende der Vorstunde."
+      q_dhw_kw: "Wärmebedarf für Warmwasser. Er wird mit Vorrang bedient."
+      season: "Signal Heizperiode. Nur dann läuft die Umwälzpumpe."
+      tank_level_l: "Füllstand des Tanks aus der Vorstunde. Bei null Litern geht der Brenner auf Störung."
+      q_space_kw: "Raumwärme, die der Kessel tatsächlich an die Heizkörper liefert."
+      fuel_lph: "Ölverbrauch in Litern je Stunde, einschließlich Bereitschaftsverlust."
+      p_el_kw: "Strom für Umwälzpumpe und Brenner."
+    controls:
+      space_enabled: "1 ist Heizbetrieb, 0 ist Sommerbetrieb nur mit Warmwasser."
+      pump_w: "Leistungsaufnahme der Umwälzpumpe in Watt. Der Tausch gegen eine Hocheffizienzpumpe ist hier ein Eingriff auf 8 W."
+    params:
+      ratedKw:
+        text: "Nennwärmeleistung des Kessels, die Obergrenze für Warmwasser und Raumwärme zusammen."
+        source: "Typenschild des Kessels."
+        compare: "Das Beispielhaus braucht bei minus 14 °C etwa 7 kW. Mit 18 kW ist der Kessel deutlich überdimensioniert, wie viele Bestandskessel."
+        refs: [wiki-heizlast]
+      eta:
+        text: "Wirkungsgrad oberhalb der Mindestlast, bezogen auf den Heizwert."
+        source: "100 Prozent minus Abgasverlust aus dem Schornsteinfegerprotokoll, minus etwa 1 bis 2 Prozentpunkte Strahlungsverlust."
+        compare: "Alte Konstanttemperaturkessel etwa 0,80 bis 0,87, Niedertemperaturkessel 0,87 bis 0,93, Brennwertkessel bis etwa 0,98 und darüber."
+        refs: [wiki-niedertemperaturkessel]
+      minLoad:
+        text: "Mindestlast als Anteil der Nennleistung. Darunter schaltet der Brenner ständig ein und aus."
+        source: "Bei einstufigen Brennern eine Schätzung. Brennerstarts je Stunde zählen hilft, den Wert einzugrenzen."
+        compare: "Einstufige Brenner etwa 0,3 bis 0,5. Modulierende Brenner kommen deutlich tiefer."
+      cyclingLoss:
+        text: "Größter Abschlag auf den Wirkungsgrad beim Takten, erreicht bei sehr kleiner Last."
+        source: "Schätzung. Die Kalibrierung an Abrechnungen kann ihn nicht vom Wirkungsgrad trennen."
+        compare: "Etwa 0,05 bis 0,20."
+      standbyKw:
+        text: "Bereitschaftsverlust als Brennstoffleistung: Öl, das nur das Warmhalten des Kessels kostet, ganzjährig."
+        source: "Am einfachsten aus dem Ölverbrauch in einer Sommerwoche ohne Zapfung. Sonst Herstellerangabe zum Bereitschaftsverlust in Prozent mal Nennleistung."
+        compare: "Etwa 1 bis 3 Prozent der Nennleistung, bei 18 kW also 0,2 bis 0,5 kW."
+        refs: [wiki-niedertemperaturkessel]
+      burnerW:
+        text: "Leistungsaufnahme des Brenners (Gebläse, Ölpumpe, Zündung) beim Brennen."
+        source: "Typenschild des Brenners oder Zwischenstecker mit Messfunktion."
+        compare: "Etwa 100 bis 250 W."
+      pumpW:
+        text: "Anfangswert der Stellgröße Pumpenleistung."
+        source: "Typenschild der Pumpe. Bei mehrstufigen Pumpen gilt die eingestellte Stufe."
+        compare: "Ungeregelte Altpumpen 45 bis 100 W, Hocheffizienzpumpen 5 bis 25 W."
+      kwhPerLitre:
+        text: "Energieinhalt des Heizöls (Heizwert)."
+        source: "Stoffwert, nicht anzupassen."
+        compare: "Heizöl EL: etwa 10 kWh je Liter Heizwert, etwa 10,6 kWh je Liter Brennwert."
+        refs: [wiki-heizoel]
+
+  building:
+    title: "Gebäude mit Thermostat"
+    text: "Das ganze Haus als eine einzige Wärmezone. Die Raumtemperatur steigt mit dem, was Kessel, Ofen, Geräte und Sonne einbringen, und fällt mit dem Verlust durch Wände, Fenster und Lüftung. Am Ende jeder Stunde rechnet das Thermostat aus, wie viel Wärme die nächste Stunde braucht, um den Sollwert zu erreichen, und meldet das an den Kessel. Tagsüber gilt der Sollwert, nachts die Absenkung. Liegt das Tagesmittel der Außentemperatur über der Heizgrenze, endet die Heizperiode."
+    capture: "Kein einzelnes Gerät. Erfasse Baujahr, Wohnfläche, Sanierungsstand (Fenster, Dach, Fassade) und, falls vorhanden, die Kennwerte aus dem Energieausweis. Auch Thermostat oder Heizungsregler mit Typ und Einstellung gehören hierher."
+    ports:
+      t_out_c: "Außentemperatur vom Wetter."
+      ghi_w_m2: "Globalstrahlung vom Wetter."
+      q_heater_kw: "Raumwärme vom Ölkessel."
+      q_stove_kw: "Wärme vom Kaminofen."
+      q_gain_kw: "Abwärme der Geräte und der Bewohner."
+      setpoint_c: "Freier Eingang für einen von außen vorgegebenen Sollwert, etwa aus einem Smart-Home-Thermostat. Ohne Bindung gilt die gleichnamige Stellgröße."
+      t_in_c: "Raumtemperatur am Ende der Stunde, der Maßstab für den Komfort."
+      q_req_kw: "Wärmeanforderung an den Kessel für die nächste Stunde."
+      season: "1 in der Heizperiode, sonst 0."
+      q_loss_kw: "Wärmeverlust durch Hülle und Lüftung in dieser Stunde."
+    controls:
+      setpoint_c: "Raumsollwert am Tag. 1 K weniger spart im Beispiel etwa 150 Liter Öl im Jahr."
+      setback_k: "Nachtabsenkung in Kelvin unter den Tagessollwert. Im schweren Haus wirkt sie kaum, weil es in acht Stunden nur um 1 bis 2 K auskühlt."
+      unused_setback_k: "Absenkung in selten genutzten Räumen, gewichtet mit deren Flächenanteil."
+    params:
+      areaM2:
+        text: "Beheizte Wohnfläche. Sie dient nur der Kennzahl kWh je Quadratmeter und Jahr."
+        source: "Wohnflächenberechnung, Grundriss oder Energieausweis."
+        compare: "Beispiel: 130 m²."
+      lossWPerK:
+        text: "Wärmeverlustkoeffizient H: Watt Verlust je Kelvin Unterschied zwischen innen und außen, Transmission und Lüftung zusammen. Der wichtigste Parameter des ganzen Modells."
+        source: "Am besten durch die Kalibrierung an Abrechnungen. Als Startwert: Jahresheizwärme in kWh geteilt durch (Gradtagzahl mal 24 h), mal 1000. Oder aus dem Energieausweis beziehungsweise einer Heizlastberechnung: Heizlast geteilt durch (20 °C minus Norm-Außentemperatur)."
+        compare: "Für etwa 130 m²: unsanierter Altbau grob 300 bis 450 W/K, teilsaniert 180 bis 280, Neubau 100 bis 150, Passivhaus unter 60."
+        refs: [iwu-tabula, tabula-webtool, wiki-heizlast, iwu-gradtage]
+      capacityKwhPerK:
+        text: "Wirksame Wärmekapazität: Energie, die das Haus je Kelvin speichert. Zusammen mit H ergibt sie die Zeitkonstante, hier 14 kWh/K geteilt durch 0,2 kW/K, also 70 Stunden."
+        source: "Aus der Bauweise schätzen. Genauer: die Heizung an einem kalten Abend abschalten und die Raumtemperatur über Nacht mitschreiben. Aus der Abkühlkurve folgt die Zeitkonstante."
+        compare: "Pauschalwerte aus der Wärmeschutznormung: leichte Bauweise etwa 15 Wh je K und m³ Gebäudevolumen, schwere etwa 50. Bei 400 m³ sind das 6 bis 20 kWh/K."
+      solarApertureM2:
+        text: "Wirksame Sonnenfläche: Fensterfläche mal Energiedurchlassgrad mal Abminderung für Rahmen, Verschattung und Ausrichtung."
+        source: "Fensterflächen ausmessen. Beispielrechnung: 20 m² mal 0,6 mal 0,35 ergibt etwa 4 m²."
+        compare: "Meist 2 bis 4 Prozent der Wohnfläche."
+        refs: [pvgis]
+      heatingLimitC:
+        text: "Heizgrenze: Liegt das 24-Stunden-Mittel der Außentemperatur darüber, wird nicht geheizt."
+        source: "Einstellung der Heizungsregelung (Sommer-Winter-Umschaltung)."
+        compare: "Altbau etwa 15 °C, gut gedämmte Häuser 12 °C, Passivhaus etwa 10 °C."
+        refs: [wiki-heizgrenze]
+      setpointC:
+        text: "Anfangswert der Stellgröße Raumsollwert am Tag."
+        source: "Thermostat ablesen oder ein Raumthermometer ins Wohnzimmer stellen."
+        compare: "Üblich sind 20 bis 22 °C."
+      setbackK:
+        text: "Anfangswert der Stellgröße Nachtabsenkung."
+        source: "Heizungsregelung ablesen."
+        compare: "Üblich sind 2 bis 4 K."
+      dayStartH:
+        text: "Beginn des Tagbetriebs."
+        source: "Zeitprogramm der Heizungsregelung."
+        compare: "Beispiel: 6 Uhr."
+      dayEndH:
+        text: "Ende des Tagbetriebs, Beginn der Nachtabsenkung."
+        source: "Zeitprogramm der Heizungsregelung."
+        compare: "Beispiel: 22 Uhr."
+      unusedShare:
+        text: "Flächenanteil selten genutzter Räume."
+        source: "Fläche dieser Räume geteilt durch die Wohnfläche."
+        compare: "Beispiel: 0,2 (Arbeitszimmer und Gästezimmer, 26 von 130 m²)."
+      unusedSetbackK:
+        text: "Anfangswert der Absenkung in selten genutzten Räumen."
+        source: "Einstellung der Heizkörperthermostate in diesen Räumen."
+        compare: "0 bedeutet: alle Räume gleich warm."
+      t0C:
+        text: "Raumtemperatur zu Beginn des Laufs."
+        source: "Startbedingung. Nach wenigen Tagen hat sie keinen Einfluss mehr."
+        compare: "Beispiel: 20 °C."
+      tAvg0C:
+        text: "24-Stunden-Mittel der Außentemperatur zu Beginn des Laufs."
+        source: "Startbedingung. 0 °C passt zum Jahresanfang."
+        compare: "Beispiel: 0 °C."
+
+  meter:
+    title: "Stromzähler"
+    text: "Die Strombilanz des Hauses: Haushaltsgeräte plus Heizungsstrom ergeben den Bezug aus dem Netz. Der Baustein rechnet daraus Kosten, die höchste Stundenleistung und die nächtliche Grundlast. Ist ein echter Zählerwert gebunden, zeigt das Residuum, wie weit Modell und Messung auseinanderliegen."
+    capture: "Zählernummer, Zählerart (Ferraris, moderne Messeinrichtung, Smart Meter), Messstellenbetreiber und Tarif mit Arbeitspreis und Grundpreis."
+    ports:
+      p_appl_kw: "Strom der Haushaltsgeräte."
+      p_heating_kw: "Strom der Heizung: Umwälzpumpe und Brenner."
+      p_meas_kw: "Freier Eingang für die gemessene Leistung am Zähler, etwa aus Zählerfotos oder einem Smart Meter."
+      price_eur_kwh: "Freier Eingang für einen zeitlich veränderlichen Strompreis. Ohne Bindung gilt der feste Preis priceEurKwh."
+      p_import_kw: "Bezug aus dem Netz in dieser Stunde."
+      residual_kw: "Gemessener minus berechneter Bezug. Nur vorhanden, wenn p_meas_kw gebunden ist."
+    params:
+      priceEurKwh:
+        text: "Arbeitspreis für Strom."
+        source: "Eigene Stromrechnung, Arbeitspreis brutto ohne Grundpreis."
+        compare: "Haushaltsstrom in Deutschland zuletzt etwa 0,30 bis 0,42 € je kWh."
+        refs: [bdew-strompreis]
+      baseFromH:
+        text: "Beginn des Nachtfensters, in dem die Grundlast gemessen wird."
+        source: "Konvention. Das Fenster soll frei von bewusster Nutzung sein."
+        compare: "Beispiel: 2 Uhr."
+      baseToH:
+        text: "Ende des Nachtfensters für die Grundlast."
+        source: "Konvention."
+        compare: "Beispiel: 5 Uhr. Die Grundlast des Beispielhauses liegt bei 156 W."
+        refs: [stromspiegel]
+
+  tank:
+    title: "Öltank"
+    text: "Der Ölvorrat in Litern. Der Kessel zieht ab, Lieferungen füllen auf. Lieferungen sind Eingriffe mit Datum und Menge. Der Baustein warnt, wenn der Stand unter die Bestellschwelle fällt, und meldet einen leeren Tank. Ist eine Peilung gebunden, zeigt das Residuum die Abweichung zwischen Ablesung und Modell."
+    capture: "Tankart (Batterietank, Erdtank), Hersteller, Baujahr, Nennvolumen laut Typenschild, Zahl der Behälter und das Datum der letzten Tankprüfung oder Reinigung."
+    ports:
+      fuel_lph: "Ölentnahme durch den Kessel."
+      level_meas_l: "Freier Eingang für den abgelesenen Füllstand: Peilstab, Tankuhr oder Füllstandssensor."
+      level_l: "Berechneter Füllstand."
+      residual_l: "Abgelesener minus berechneter Füllstand. Nur vorhanden, wenn level_meas_l gebunden ist."
+    controls:
+      delivery_lph: "Lieferung als Zufluss in Litern je Stunde, für genau eine Stunde gesetzt. 2.000 Liter Lieferung sind 2.000 l/h für eine Stunde."
+    params:
+      capacityL:
+        text: "Fassungsvermögen. Eine Lieferung darüber hinaus wird als Überfüllung gemeldet."
+        source: "Typenschild des Tanks oder Tankbuch."
+        compare: "Einfamilienhäuser haben meist 2.000 bis 6.000 Liter."
+      level0L:
+        text: "Füllstand zu Beginn des Laufs."
+        source: "Peilstab oder Tankuhr am Stichtag ablesen."
+        compare: "Beispiel: 1.500 Liter am 1. Januar."
+      reorderL:
+        text: "Bestellschwelle. Darunter erscheint eine Warnung."
+        source: "Eigene Entscheidung: Verbrauch der kältesten Wochen mal Lieferzeit, plus Reserve. Unter etwa 10 Prozent Füllstand kann Bodensatz angesaugt werden."
+        compare: "Das Beispielhaus verbraucht im Januar etwa 10 Liter am Tag. 600 Liter reichen dann etwa 8 Wochen."
+      priceEurL:
+        text: "Heizölpreis je Liter."
+        source: "Letzte Lieferrechnung, Bruttopreis je Liter."
+        compare: "Tagespreise und Preisverlauf bei den Preisportalen."
+        refs: [tecson-heizoel]
+
+  woodstore:
+    title: "Holzlager"
+    text: "Der Holzvorrat in Ster. Der Ofen zieht ab, Lieferungen oder eigener Einschlag füllen auf. Fällt der Vorrat unter die Warnschwelle, entsteht ein Ereignis. Der Vorrat darf rechnerisch negativ werden. Das zeigt dann, dass der angenommene Abbrand nicht durch das gelagerte Holz gedeckt ist."
+    capture: "Kein Gerät. Erfasse Holzart, Lieferant oder eigenes Waldstück, Lagerort und das Einlagerungsjahr (lufttrocken nach etwa zwei Jahren)."
+    ports:
+      wood_ster_ph: "Holzentnahme durch den Ofen."
+      stock_ster: "Vorrat in Ster."
+    controls:
+      delivery_ster_ph: "Lieferung als Zufluss in Ster je Stunde, für genau eine Stunde gesetzt."
+    params:
+      stock0Ster:
+        text: "Vorrat zu Beginn des Laufs."
+        source: "Stapel ausmessen: Länge mal Höhe mal Scheitlänge in Metern ergibt Ster."
+        compare: "Beispiel: 4 Ster."
+      lowSter:
+        text: "Warnschwelle für den Vorrat."
+        source: "Eigene Entscheidung."
+        compare: "Beispiel: 1 Ster, das reicht bei 4 Stunden je Abend etwa zwei Monate."
+      priceEurSter:
+        text: "Holzpreis je Ster."
+        source: "Rechnung des Lieferanten. Bei eigenem Einschlag die eigenen Kosten ansetzen."
+        compare: "Stark regional. Hartholz ist teurer als Fichte."
+        refs: [lwf-holz]
+
+wires:
+  "weather.t_out_c -> building.t_out_c": "Die Außentemperatur ist der Antrieb der ganzen Wärmebilanz. Das Gebäude verliert in jeder Stunde H mal (innen minus außen). Bei 21,2 °C innen und minus 1,3 °C außen sind das 200 W/K mal 22,5 K, also 4,5 kW. Aus dem 24-Stunden-Mittel dieser Temperatur entscheidet das Gebäude auch, ob Heizperiode ist. Mit echten Stationsdaten am Wetter-Eingang wird aus dieser Linie eine Messung."
+  "weather.ghi_w_m2 -> building.ghi_w_m2": "Die Sonne heizt durch die Fenster mit. Das Gebäude rechnet Einstrahlung mal wirksame Sonnenfläche: 300 W/m² mal 4 m² ergeben 1,2 kW Gewinn. An sonnigen Wintertagen sinkt dadurch die Anforderung an den Kessel, nachts steht hier 0."
+  "building.q_req_kw -> boiler.q_req_kw": "Die Leitung vom Thermostat zum Kessel. Am Ende jeder Stunde rechnet das Gebäude: Wie viel Wärme braucht die nächste Stunde, um den dann gültigen Sollwert zu erreichen? Aufheizen plus Verlust, minus das, was Geräte, Sonne und Ofen ohnehin liefern. Gestrichelt, weil der Wert erst in der Folgestunde beim Kessel ankommt. Der Kessel liefert davon höchstens, was nach dem Warmwasser von seiner Nennleistung übrig ist."
+  "building.season -> boiler.season": "Meldet dem Kessel, ob Heizperiode ist (1) oder nicht (0). Maßgeblich ist das 24-Stunden-Mittel der Außentemperatur gegen die Heizgrenze von 15 °C. Der Kessel schaltet damit die Umwälzpumpe: In der Heizperiode läuft sie durch und zieht 65 W, im Sommer steht sie. Gestrichelt, weil das Signal aus der Vorstunde stammt."
+  "building.season -> stove.season": "Dasselbe Signal Heizperiode für den Kaminofen. Nur in der Heizperiode wird abends angefeuert, im Beispiel von 18 bis 22 Uhr. Gestrichelt, weil das Signal aus der Vorstunde stammt."
+  "dhw.q_dhw_kw -> boiler.q_dhw_kw": "Der Wärmebedarf für Warmwasser: Zapfungen morgens und abends plus der Verlust des 60 °C warmen Speichers rund um die Uhr. Der Kessel bedient ihn mit Vorrang vor der Raumheizung. Zwei Personen mit je 40 Litern am Tag brauchen etwa 3,3 kWh, der Speicherverlust kommt mit etwa 1,4 kWh am Tag dazu. Diese Linie führt das ganze Jahr Leistung, auch im Sommer."
+  "tank.level_l -> boiler.tank_level_l": "Der Füllstand des Tanks als Sicherheitssignal. Solange Öl da ist, ändert sich nichts. Fällt der Stand auf null, liefert der Kessel keine Wärme mehr und meldet das Ereignis fuel_out, und das Haus kühlt aus. Gestrichelt, weil der Kessel den Stand vom Ende der Vorstunde sieht."
+  "boiler.q_space_kw -> building.q_heater_kw": "Die Wärme, die der Kessel über die Heizkörper ins Haus bringt. Sie folgt der Anforderung des Thermostats, begrenzt durch die Nennleistung von 18 kW abzüglich Warmwasser. Im Sommer und bei leerem Tank steht hier 0. Diese Leistung kostet Öl: geteilt durch den Wirkungsgrad ergibt sie den Brennstoffbedarf."
+  "stove.q_heat_kw -> building.q_stove_kw": "Die Wärme des Kaminofens, direkt in die Wohnzone. Beim Brennen sind es 6 kW Brennstoff mal 0,70 Wirkungsgrad, also 4,2 kW. Das Thermostat zieht diese Wärme von seiner Anforderung ab, der Kessel muss entsprechend weniger liefern. Das ist die Kopplung zwischen Holz und Öl."
+  "appliances.q_gain_kw -> building.q_gain_kw": "Die inneren Wärmegewinne. Jede Kilowattstunde Strom, die innerhalb der beheizten Räume verbraucht wird, endet als Wärme im Raum. Dazu kommen 80 W je anwesender Person. Die Gefriertruhe im Keller zählt nicht mit, weil sie außerhalb der Hülle steht. Hier liegt eine wichtige Kopplung: Wer im Winter Strom spart, braucht ein wenig mehr Öl."
+  "appliances.p_el_kw -> meter.p_appl_kw": "Der Haushaltsstrom aus dem Geräteinventar, Stunde für Stunde, einschließlich Standby. Am Zähler wird er zum Heizungsstrom addiert. Im Beispieljahr sind es etwa 2.300 kWh."
+  "boiler.p_el_kw -> meter.p_heating_kw": "Der Strom, den die Heizung selbst braucht: die Umwälzpumpe mit 65 W während der ganzen Heizperiode und der Brenner mit 120 W, solange er feuert. Im Beispieljahr sind das etwa 700 kWh, fast ein Viertel des gesamten Stroms. Deshalb ist der Pumpentausch einer der wirksamsten Hebel."
+  "boiler.fuel_lph -> tank.fuel_lph": "Der Ölverbrauch des Kessels in Litern je Stunde. Er entsteht aus der gelieferten Wärme geteilt durch den Wirkungsgrad, plus 0,2 kW Bereitschaftsverlust, geteilt durch 10 kWh je Liter. Der Tank zieht diese Menge von seinem Füllstand ab und rechnet die Kosten mit dem Ölpreis. Auch ohne Wärmeabnahme fließen wegen der Bereitschaft etwa 0,02 Liter je Stunde."
+  "stove.wood_ster_ph -> woodstore.wood_ster_ph": "Der Holzverbrauch des Ofens in Ster je Stunde: 6 kW Brennstoffleistung geteilt durch 1.500 kWh je Ster ergeben 0,004 Ster je Brennstunde. Ein Abend mit vier Stunden kostet 0,016 Ster, eine Heizperiode knapp 5 Ster. Das Holzlager zieht die Menge vom Vorrat ab und rechnet die Kosten."
+
+references:
+  - id: dwd-cdc
+    title: "DWD Climate Data Center, offene Klimadaten"
+    url: "https://opendata.dwd.de/climate_environment/CDC/"
+    note: "Stunden- und Tageswerte aller DWD-Stationen: echte Außentemperatur und Strahlung statt des synthetischen Klimas."
+  - id: dwd-klimafaktoren
+    title: "DWD Klimafaktoren für Energieverbrauchsausweise"
+    url: "https://www.dwd.de/DE/leistungen/klimafaktoren/klimafaktoren.html"
+    note: "Witterungsbereinigung je Postleitzahl: macht den Verbrauch verschiedener Jahre vergleichbar."
+  - id: iwu-gradtage
+    title: "IWU Energiebilanzen für Gebäude, mit Werkzeug Gradtagzahlen"
+    url: "https://www.iwu.de/publikationen/fachinformationen/energiebilanzen/"
+    note: "Gradtagzahlen je Station und Jahr als Tabelle, zum Vergleich mit der Gradtagzahl des Wetter-Bausteins."
+  - id: iwu-tabula
+    title: "IWU Deutsche Wohngebäudetypologie (TABULA)"
+    url: "https://www.iwu.de/forschung/gebaeudebestand/tabula/"
+    note: "Typische Kennwerte nach Baualter und Sanierungsstand: Vergleich für Wärmeverlust und Energiebedarf."
+  - id: tabula-webtool
+    title: "TABULA WebTool"
+    url: "https://webtool.building-typology.eu/"
+    note: "Beispielgebäude je Land und Baualtersklasse mit Bauteilwerten und Energiebilanz, interaktiv."
+  - id: heizspiegel
+    title: "Heizspiegel für Deutschland (co2online)"
+    url: "https://www.heizspiegel.de/"
+    note: "Vergleichswerte für Heizenergie und Heizkosten je Quadratmeter nach Energieträger. Das Beispielhaus liegt bei 204 kWh je m² und Jahr."
+  - id: stromspiegel
+    title: "Stromspiegel für Deutschland"
+    url: "https://www.stromspiegel.de/"
+    note: "Vergleichswerte für den Stromverbrauch nach Personenzahl und Gebäudetyp. Das Beispielhaus liegt bei etwa 3.000 kWh im Jahr."
+  - id: geg-anlage-9
+    title: "Gebäudeenergiegesetz, Anlage 9: Emissionsfaktoren"
+    url: "https://www.gesetze-im-internet.de/geg/anlage_9.html"
+    note: "Die CO2-Faktoren, mit denen der Zwilling rechnet: Heizöl 310, Strom 560, Holz 20 g je kWh."
+  - id: pvgis
+    title: "PVGIS, Strahlungsdaten der EU-Kommission"
+    url: "https://re.jrc.ec.europa.eu/pvg_tools/en/"
+    note: "Globalstrahlung für jeden Standort als Monats- und Stundenwerte, zum Vergleich mit der synthetischen Strahlung."
+  - id: lwf-holz
+    title: "LWF-Merkblatt 12: Der Energieinhalt von Holz"
+    url: "https://www.lwf.bayern.de/service/publikationen/lwf_merkblatt/022952/index.php"
+    note: "Heizwerte je Holzart, Wassergehalt und Raummaß: Quelle für kWh je Ster."
+  - id: uba-kaminofen
+    title: "Umweltbundesamt: Kaminofen"
+    url: "https://www.umweltbundesamt.de/umwelttipps-fuer-den-alltag/heizen-bauen/kaminofen"
+    note: "Wirkungsgrade, richtiges Heizen und Emissionen von Kaminöfen."
+  - id: bimschv-1
+    title: "1. BImSchV, Verordnung über kleine und mittlere Feuerungsanlagen"
+    url: "https://www.gesetze-im-internet.de/bimschv_1_2010/"
+    note: "Mindestwirkungsgrade und Grenzwerte für Einzelraumfeuerungen und Heizkessel."
+  - id: uba-warmwasser
+    title: "Umweltbundesamt: Warmwasser"
+    url: "https://www.umweltbundesamt.de/umwelttipps-fuer-den-alltag/heizen-bauen/warmwasser"
+    note: "Typischer Warmwasserverbrauch und Sparmöglichkeiten."
+  - id: wiki-legionellen
+    title: "Wikipedia: Legionellen"
+    url: "https://de.wikipedia.org/wiki/Legionellen"
+    note: "Warum die Speichertemperatur nicht beliebig gesenkt werden sollte."
+  - id: bdew-strompreis
+    title: "BDEW-Strompreisanalyse"
+    url: "https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/"
+    note: "Durchschnittlicher Haushaltsstrompreis und seine Bestandteile im Zeitverlauf."
+  - id: tecson-heizoel
+    title: "TECSON Heizölpreise"
+    url: "https://www.tecson.de/heizoelpreise.html"
+    note: "Tagesaktueller Heizölpreis und langjähriger Preisverlauf."
+  - id: wiki-heizlast
+    title: "Wikipedia: Heizlast"
+    url: "https://de.wikipedia.org/wiki/Heizlast"
+    note: "Wie die nötige Kesselleistung aus dem Wärmeverlust und der Norm-Außentemperatur folgt (DIN EN 12831)."
+  - id: wiki-gradtagzahl
+    title: "Wikipedia: Gradtagzahl"
+    url: "https://de.wikipedia.org/wiki/Gradtagzahl"
+    note: "Definition von G20/15 nach VDI 3807, wie sie der Wetter-Baustein zählt."
+  - id: wiki-heizgrenze
+    title: "Wikipedia: Heizgrenze"
+    url: "https://de.wikipedia.org/wiki/Heizgrenze"
+    note: "Heizgrenztemperatur nach Gebäudestandard."
+  - id: wiki-niedertemperaturkessel
+    title: "Wikipedia: Niedertemperaturkessel"
+    url: "https://de.wikipedia.org/wiki/Niedertemperaturkessel"
+    note: "Einordnung des Kesseltyps gegenüber Konstanttemperatur- und Brennwertkessel."
+  - id: wiki-heizoel
+    title: "Wikipedia: Heizöl"
+    url: "https://de.wikipedia.org/wiki/Heiz%C3%B6l"
+    note: "Heizwert und Brennwert von Heizöl EL."

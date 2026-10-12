@@ -74,6 +74,9 @@ public final class StudioExport {
         m.put("kpis", s.kpis().stream().map(k -> Map.of("key", k.key(), "label", k.label(), "unit", k.unit(),
                 "decimals", k.decimals(), "better", k.better())).toList());
         m.put("graph", graph(plan, s.observed()));
+        m.put("plan", Map.of("twin", plan.twin(), "start", plan.start().toString(),
+                "baseStep", plan.baseStep().toString(), "steps", plan.steps(), "wiring", plan.wiring()));
+        m.put("guide", s.guide().content());
 
         List<String> outputs = ref.keys().stream().filter(k -> !k.contains(".state.")).toList();
         m.put("reference", run(ref, outputs, stride, plan, 0, s));
@@ -120,6 +123,9 @@ public final class StudioExport {
             n.put("controls", at.controlDefaults());
             n.put("state", List.copyOf(at.state().keySet()));
             n.put("policy", spec.policy() != null ? spec.policy() : at.defaultPolicy());
+            if (spec.policy() != null) {
+                n.put("planPolicy", spec.policy());
+            }
             n.put("params", spec.params());
             nodes.add(n);
         }

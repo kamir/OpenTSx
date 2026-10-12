@@ -46,6 +46,17 @@ Regeln, die der Prototyp schon umsetzt:
 * benannte Alternativen (Eingriffe, Fahrweisen, andere Annahmen)
 * Prognosen ab Snapshots
 * Smart Metrics, Vergleichsgrößen, Kennzahlen und Beschriftungen
+* optional ein Leitfaden (`StudioGuide`, Datei `twin/<plan>.guide.yaml` neben dem Schaltplan): worum es geht, was
+  jeder Baustein, Port, Parameter, jede Stellgröße und jeder Draht bedeutet, woher der Wert kommen soll und welche
+  Quellen zum Vergleich taugen. Ein Test prüft Leitfaden und Schaltplan gegeneinander: Nichts bleibt unerklärt,
+  nichts Unbekanntes wird erklärt. Umgesetzt für die Wasserstoffkette und das Haus; ohne Leitfaden erzeugt die Oberfläche je Draht einen
+  allgemeinen Satz aus Art, Einheit und Takt.
+
+Im Node-Graph zeigt ein Hover über Draht oder Port die Erläuterung mit dem Wert zum gewählten Zeitpunkt, ein Klick
+hält sie fest. Je Baustein lassen sich **eigene Angaben** erfassen: Hersteller, Typ, Seriennummer, Baujahr, Notiz
+und eigene Parameterwerte. Sie bleiben im Browser (lokaler Speicher) und lassen sich exportieren: als Inventar
+(`opentsx.inventory.v1`, siehe [12](12-EXPLORATIVES-UI-INVENTAR.md)) und als eigener Schaltplan, den
+`bin/opentsx house --plan` beziehungsweise `bin/opentsx twin --plan` rechnet. Beide Dateien gehören nach `config/private/`.
 
 `StudioExport` rechnet alle registrierten Szenarien und schreibt eine JSON-Datei. Die Oberfläche hat keine
 Sonderfälle. Lange Läufe, etwa ein Jahr im Stundentakt, werden für die Anzeige auf höchstens 2000 Punkte je Reihe
