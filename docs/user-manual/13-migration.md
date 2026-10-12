@@ -25,7 +25,9 @@ see its README.
 
 ## 13.2 What was archived
 
-Archived components are kept under `archive/` for reference. They are not built and not maintained.
+Archived components are not built and not maintained. The 2025 documentation and the demos are kept under
+`archive/` for reference. The archived Maven modules were removed from `master` in October 2026 because their
+outdated dependencies kept raising security alerts; their last state is commit `315f01d`.
 
 | Archived | Replaced by / reason |
 |----------|----------------------|
@@ -35,7 +37,16 @@ Archived components are kept under `archive/` for reference. They are not built 
 | `opentsx-store-opentsdb` (2.x client) | `opentsx-store-opentsdb-v2` |
 | `opentsx-ext-connectors`, `ext-algorithms` | Flume/HBase/Kudu loaders; external corelib wrapper |
 | `opentsx-predict` (TensorFlow 1.15 demo), `opentsx-processors` (empty) | Smart Topics (planned, [chapter 15](15-roadmap.md)) |
+| `opentsx-app-tools` (SSH console, cluster scan, NetCat recorder; sshd-core 0.8) | no replacement; no module depended on it |
+| `opentsx-kstreams` (Kafka Streams/Cassandra project shell) | KafScale processors (`opentsx-stats`) |
 | demos and cluster scripts (`opentsx-app-demos`, `-cloud-bridge`, `-cluster-demo0`, `-clusters`, `-cv`, `-jetson-nano`, `scala-scripts`, `modules/`) | historical: Confluent Cloud, Kudu, Spark 2 |
 | 2025 documentation (old manual, onboarding tracks, devguide guides, MANUALS) | this manual |
 
-See `archive/modules/README.md` and `archive/docs/README.md`.
+The modules (all rows up to `opentsx-kstreams`) are only in the Git history. To get one back:
+
+```bash
+git checkout 315f01d -- archive/modules/opentsx-store-cassandra   # or archive/opentsx-kstreams
+```
+
+The module overview is `archive/modules/README.md` at `315f01d`; the archived documentation and demos are described in
+`archive/docs/README.md` and `archive/demos/README.md`.

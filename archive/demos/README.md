@@ -3,6 +3,10 @@
 These are historical demos, cluster setups and experiments. They are not built, not tested, and contain hard-coded
 local paths and Confluent Cloud/Platform assumptions.
 
+Four submodule links (`opentsx-cloud-bridge/cp-all-in-one`, `opentsx-clusters/Krake-container/tmp`,
+`opentsx-clusters/examples`, `opentsx-clusters/multiregion/examples`) were removed in October 2026: they had no URL in
+`.gitmodules`, could not be checked out and caused a warning in every CI run. Their last state is commit `315f01d`.
+
 | Folder | Content |
 |--------|---------|
 | `opentsx-app-demos/` | 2019–2021 demo scripts and slides (ApacheCon, Confluent Cloud latency, meetups) |

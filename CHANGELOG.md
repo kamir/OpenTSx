@@ -22,6 +22,9 @@ entries are grouped by date. The detailed progress log (German) is in
   (command-line options and environment variables).
 
 ### Removed
+- Archived Maven modules (`archive/modules/`, `archive/opentsx-kstreams/`) removed from `master`: not built, but
+  their outdated dependencies kept raising security alerts and Dependabot PRs. Last state: commit `315f01d`.
+- Four dead submodule links in `archive/demos/` (no URL in `.gitmodules`).
 - `config/cpl.props`, `config/cpl_iMac.props`, `config/cpl_local.props`, `config/mdc_c1.props` (client profiles with
   private LAN hosts).
 

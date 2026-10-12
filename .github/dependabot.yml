@@ -1,5 +1,5 @@
 # Dependency updates.
-# - archive/ holds retired modules that are not built; updates there have no effect.
+# - archive/ holds old documentation and demos that are not built; updates there have no effect.
 # - Major versions are planned migrations, not routine updates: they are ignored here and listed in
 #   EVOLUTION/TASK-011-datamodel-refresher-2026.md (backlog "Major-Upgrades"). The same goes for the few
 #   minor updates below that are known to break the build.
