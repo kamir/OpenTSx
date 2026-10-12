@@ -1,7 +1,7 @@
 # TASK-011 – Datamodel Refresher 2026
 
 - **Branch:** `opentsx/2026-datamodel-refresher`
-- **Status:** 📝 Planung
+- **Status:** 🚧 in Umsetzung – P0–P5 umgesetzt, P6/P7 geplant
 - **Priorität:** Hoch
 - **Erstellt:** 2026-10-09
 - **Dokumente:** [`01-ANALYSE-Datenmodell.md`](../docs/datamodel-2026/01-ANALYSE-Datenmodell.md) · [`02-ZIELMODELL.md`](../docs/datamodel-2026/02-ZIELMODELL.md) · [`03-GAP-ANALYSE.md`](../docs/datamodel-2026/03-GAP-ANALYSE.md)
@@ -110,20 +110,23 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7b: Python-Training (Kandidaten mit/ohne Kontext, zeitlicher Split, konforme Intervalle) → ONNX/JSON → MLflow (Alias `champion`).
 - [ ] P7c: Java-Scoring-Prozessor (KafScale, Checkpoint, ONNX Runtime) → Smart Metrics + Prediction-API (Java/REST).
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
+- [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
 
-## Vorgeschlagene Modulstruktur (neu)
+## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
 ```
-opentsx-model          Avro v2 Schemas + generierte Klassen + SeriesId
-opentsx-serde          OpenTsxSerde (Registry / Single-Object), Kafka-/Flink-Serdes
-opentsx-legacy-bridge  TimeSeriesObject/TSBucket/EpisodesRecord <-> v2
-opentsx-store-spi      SeriesStore, EpisodeQuery, Contract-Tests
-opentsx-store-iceberg  Iceberg-Adapter
-opentsx-store-opentsdb (refaktoriert auf SPI)
-opentsx-kafka-v2       BucketWriter, ReplayService, Topic-Provisioning
-opentsx-stats-flink    Streaming-Statistik
-opentsx-openmetadata   Metadaten-/Profil-Publisher
-opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
+opentsx-model                 Avro-v2-Schemas, SeriesId, Episoden, Wire-Format inkl. Kafka-Serdes (statt eigenem opentsx-serde)
+opentsx-legacy-bridge         TimeSeriesObject/TSBucket/EpisodesRecord <-> v2
+opentsx-store-spi             SeriesStore, EpisodeQuery, Contract-Tests, In-Memory
+opentsx-store-iceberg         Iceberg-Store, Episoden-Index, KafScale->Iceberg-Sync
+opentsx-store-opentsdb-v2     OpenTSDB-HTTP-Store (der alte Client liegt im Archiv)
+opentsx-kafka-v2              TopicLayout, BucketWriter, Index, ReplayService
+opentsx-kafscale-conformance  Broker-Fähigkeiten messen
+opentsx-windpark              Datenpunktkatalog (IEC 61400-25-2), Normalisierer, Simulator, Leistungskurve
+opentsx-stats                 Streaming-Statistik + DQ (laufzeitunabhängig; Flink-Adapter folgt mit Flink-Upgrade)
+opentsx-openmetadata          Metadaten-/Profil-/DQ-Publisher
+opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, REST
+(geplant) opentsx-smart       Smart Topics (P7)
 ```
 
 ## Entscheidungen (Stand 2026-10-09)
@@ -154,6 +157,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-12: **Doku-Refresh**: neues englisches User-Manual (`docs/user-manual/`), Inventur (`docs/DOCUMENTATION-INVENTORY.md`), Archivierung veralteter Doku und Module außerhalb des Builds (`archive/`), Launcher `bin/opentsx`, Link-Check in CI.
 - 2026-10-12: **P5 umgesetzt** (`opentsx-retrieval`): Segmentierung, Pattern-Engine, Retrieval-API, REST + Python-Client, Leistungskurven-Analyse.
 - 2026-10-12: Smart Topics entworfen (`05-SMART-TOPICS.md`); Entscheidungen: Python-Training zuerst, MLflow, Modell je Serie + föderiertes globales Modell (Wayang), Umsetzung als P7 nach P6.
 - 2026-10-11: **P4 umgesetzt**: `opentsx-stats` (Streaming-Statistik, Quantil-Sketch, DQ, KafScale-Prozessor mit Checkpoints) und `opentsx-openmetadata` (Metadata-Pool, gegen OM-2.0.5-Schemas validiert); Python `opentsx.stats`.

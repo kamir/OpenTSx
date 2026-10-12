@@ -3,8 +3,8 @@
 **New code must use the v2 model in [`opentsx-model`](../opentsx-model)** (`org.opentsx.model.v2`), see
 [`docs/datamodel-2026/04-MODELL-V2-SPEC.md`](../docs/datamodel-2026/04-MODELL-V2-SPEC.md).
 
-This module is frozen. It stays in the build because existing producers, Kafka Streams examples,
-ksqlDB UDFs and the Flink job still read and write these records. Migrate data with
+This module is frozen. It stays in the build because the 2.x producers (`opentsx-connectors`, `opentsx-lg`) and the
+Flink job still read and write these records (the Kafka Streams examples and ksqlDB UDFs are archived). Migrate data with
 [`opentsx-legacy-bridge`](../opentsx-legacy-bridge) (`LegacyBridge.fromEpisodesRecord`, `fromTimeSeriesObject`).
 
 | v1 record (`org.opentsx.data.model`) | Status | v2 replacement |

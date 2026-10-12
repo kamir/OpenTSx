@@ -262,3 +262,21 @@ Noch offen, zur Umsetzung:
   * Anomalie-Scores müssen die injizierten Ereignisse treffen.
   * Ein föderiertes globales Modell über zwei simulierte Parks muss für einen neuen Park besser sein als lokale
     Modelle ohne Historie.
+
+## 11. Personal Service Layer (Vorschlag, 2026-10-12)
+
+Der vorhandene SaaS-Stack (`opentsx-saas-backend`: FastAPI, JWT, Benutzer/Organisationen/Teams; `opentsx-saas-frontend`:
+React) wird zur **Control Plane für die eigenen Smart Series** eines Benutzers/Teams. Er hält keine Zeitreihendaten
+(Datenebene bleibt KafScale/Iceberg/Retrieval-REST/MLflow), sondern Referenzen und Rechte:
+
+| Heute | Ziel |
+|-------|------|
+| `Flow` (JSON-Definition, Eigentümer, Status) | Smart-Series-Spezifikation (YAML, §3), versioniert, je Benutzer/Team |
+| `FlowExecution` | Trainingsläufe/Deployments (MLflow-Run-IDs, Champion, Prozessor-Status) |
+| `FlinkService` | allgemeiner Runner: Statistik-Prozessor, Smart-Topic-Scoring, Python-Training (MLflow Project) |
+| Dashboard | „Meine Serien“: Smart Metrics, Modellgüte/Drift, DQ, Prediction mit/ohne Kontext |
+| Benutzer/Teams | Eigentum an Topic-Präfixen, Iceberg-Namespaces, OpenMetadata-Domains |
+
+Eine persönliche Instanz ist zugleich das „System“ der Föderation (§5): lokal trainieren, nur Modell-Updates einzahlen.
+Erweiterung um Systemrekonstruktion, Simulation und Optimierung: siehe das Konzept zur Netzwerkrekonstruktion
+(`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`, in Arbeit).
