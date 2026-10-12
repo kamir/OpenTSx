@@ -41,7 +41,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] Python-Tests mit echten Assertions (18 Tests + 1 dokumentierte Lücke als strict xfail).
 - [x] KafScale-Conformance-Suite + `docker-compose.kafscale.yml`; gemessen gegen KafScale v1.6.0 und Apache Kafka 3.9.1.
 - [ ] Flink auf 1.20/2.x heben (aktuell 1.18, läuft auf 17/21).
-- [ ] `opentsx-app-tools`: sshd-core 0.8.0 ablösen oder archivieren.
+- [x] `opentsx-app-tools` nach `archive/modules/` verschoben (sshd-core 0.8.0, keine Abhängigen).
 - [x] Issues im KafScale-Fork angelegt: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) ListOffsets-Zeitstempel, [#17](https://github.com/kamir/kafscale/issues/17) LeaveGroup v4 / MEMBER_ID_REQUIRED, [#18](https://github.com/kamir/kafscale/issues/18) Standalone-OffsetCommit.
 - [x] Sofort-Fixes `TSOProducer`: Label `"123"`/URI `"URI"`, quadratische Zeitstempel, fehlendes Pflichtfeld `consumer_timestamp`. (Gemischte Formate auf `OpenTSx_Episodes` entfallen mit den v2-Topics in P2.)
 
@@ -359,7 +359,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] `sample_data/` und `data/sample_datasets/` konsolidieren (gleiche Dateinamen, anderer Inhalt; von `opentsx-core`-Demos referenziert).
 - [ ] `config/cpl*.props` (private LAN-Hosts) durch eine localhost/KafScale-Vorlage ersetzen; `opentsx.properties.example` an v2-Module anpassen.
 - [ ] `tests/validation/*.java` und `bin/run_all_tests.sh` in einen Maven-Testpfad überführen oder archivieren; Java-Beispiele in `exercises/` gegen die echte 2.x-API prüfen.
-- [ ] `opentsx-app-tools`: sshd-core 0.8.0 ablösen oder Modul archivieren (siehe Phase 0).
+- [x] `opentsx-app-tools` archiviert (siehe Phase 0).
 
 **Fehler & Qualität**
 - [ ] Event-Synchronisation (Python, ggf. Java `ESCalc`): Q > 1 durch globales `tau_max` → lokales τ nach Quiroga (vorgeschlagener separater Task; in P8.1 mit Q_rand-Kalibrierung verbunden).
