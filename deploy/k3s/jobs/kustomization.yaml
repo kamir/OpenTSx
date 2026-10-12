@@ -1,0 +1,20 @@
+# Demo and one-off Jobs. Not part of the base (Jobs are immutable and run once); 40-demo.sh renders
+# overlays/local/jobs and (re)creates one Job at a time, selected by the label opentsx.org/demo=<name>.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: opentsx
+    includeTemplates: true
+resources:
+  - kafscale-check.yaml
+  - windpark-sim.yaml
+  - metadata.yaml
+  - metadata-publish.yaml
+  - twin.yaml
+  - house.yaml
+  - boat.yaml
+  - studio-export.yaml
+images:
+  - name: opentsx/tools
+    newTag: 3.0.0-local

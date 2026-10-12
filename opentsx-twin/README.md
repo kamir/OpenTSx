@@ -74,6 +74,83 @@ Each superstep runs these phases in order:
 
 The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml).
 
+## House twin (P9.7)
+
+The same method applied to a homeowner: a single-family house in the Erzgebirge (two residents, oil boiler, wood
+stove, no PV, no heat pump). Concept (German): [`08-HAUS-ZWILLING.md`](../docs/datamodel-2026/08-HAUS-ZWILLING.md).
+**All house numbers are invented example assumptions** until the plan is calibrated against real bills.
+
+```bash
+bin/opentsx house                                          # reference year (shadow) + every lever as what-if
+bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
+bin/opentsx house --simulated                              # calibration on the bundled SIMULATED bills
+```
+
+Until real bills are available, [`twin/beispiel/`](src/main/resources/twin/beispiel/README.md) holds
+**simulated** bills and daily temperatures for 2022–2025. `house.SimulatedBills` generates them with a fixed seed,
+from hidden "true" parameters and with realistic gaps and noise. The calibration finds H/eta and the appliance
+scale, and it reports hot water as not determined (concept §7.6).
+
+| Type | Atom | Phase | Main behaviour |
+|------|------|-------|----------------|
+| `weather` | weather (A4) | SOURCES | bound station data or a deterministic synthetic climate; heating degree days G20/15 |
+| `dhw` | hot water | SOURCES | daily draw profile plus storage loss; control `t_store_c` |
+| `appliances` | household electricity | SOURCES | inventory (power, standby, weekday/weekend hours), internal gains; controls `standby_off`, `factor.<item>` |
+| `wood-stove` | wood stove | ASSETS | evening batches in the heating season, or the wood from the bills |
+| `oil-boiler` | oil boiler | ASSETS | hot-water priority, rated power, minimum load and cycling, standby loss, pump; stops when the tank is empty |
+| `meter` | electricity meter (A5/A6) | BALANCE | import, cost, base load, peak; residual against a meter reading |
+| `building` | building, one zone (1R1C) | FLOWS | closed heat balance, thermostat with day/night set-point and heating limit |
+| `oil-tank` | oil tank | FLOWS | litres, deliveries as interventions, reorder warning |
+| `wood-store` | firewood store | FLOWS | Ster, deliveries as interventions |
+
+* Plan: [`twin/haus-erzgebirge.yaml`](src/main/resources/twin/haus-erzgebirge.yaml), one year at `PT1H`
+  (8760 supersteps, about 0.5 s per run).
+* `house.HouseScenario`: reference interventions (deliveries) and the levers.
+* `house.HouseKpis`: kWh, litres, Ster, kWh/m²a, weather-normalized final energy, boiler losses, standby, base
+  load, cost, CO2.
+* `house.BillCalibration`: reads bills
+  ([`twin/abrechnungen-vorlage.csv`](src/main/resources/twin/abrechnungen-vorlage.csv), fake rows only) and fits
+  H, the hot-water scale and the appliance scale by deterministic least squares (Levenberg–Marquardt with Broyden
+  updates). It reports residuals per period, CV(RMSE)/NMBE, the condition number and the parameter correlation.
+* Real bills belong in `config/private/`, which is git-ignored.
+* `demo.HouseDemo` also exposes the scenario to generic views: `plan()`, `winterWeekPlan()` (168 steps),
+  `observed()`, `reference()`, `alternatives()` and `smartMetrics()`.
+
+## Scenario "Boot": Etap 22 as an island energy system
+
+Concept (German): [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md). A small sailing yacht with a
+portable power station (~1 kWh LiFePO4), 2 × 100 Wp solar and shore power, feeding two laptops, a phone, Starlink,
+a Raspberry Pi and a VHF radio. Plan: [`twin/boot-etap22.yaml`](src/main/resources/twin/boot-etap22.yaml), 15-minute
+steps over a 14-day summer trip. All numbers are assumptions until real data replace them.
+
+```bash
+bin/opentsx boat                                             # shadow of the synthetic trip + what-ifs
+bin/opentsx boat --data config/private/bootsdaten.csv --calibrate   # real data, fitted to the measurements
+bin/opentsx boat --simulated                                 # the same on bundled SIMULATED logs
+```
+
+Until real exports exist, [`twin/beispiel/boot-logs-simuliert.csv`](src/main/resources/twin/beispiel/boot-logs-simuliert.csv)
+holds SIMULATED logs ([README](src/main/resources/twin/beispiel/README-boot.md)): `SimulatedLogs` runs the model with
+hidden parameters (derate 0.62, Starlink ×1.25, laptops ×1.3), a cloudy spell and a day without Starlink, and writes
+a 5-minute app export with logbook, irradiance, whole-percent SoC, noise and gaps. `--simulated` calibrates on it
+and recovers the hidden values within about 1 %.
+
+| Type | Phase | Main behaviour |
+|------|-------|----------------|
+| `boat-mode` | SOURCES | harbour / sailing / anchor / away per step from the logbook (`mode_obs`) or the itinerary |
+| `solar` | ASSETS | `wp · ghi · derate · (1 − shade(mode))`; synthetic clear sky × daily clearness, or bound irradiance / measured power |
+| `shore-power` | ASSETS | charger power while plugged in (harbour, logbook); controls `enabled`, `every_n_days` |
+| `device` | ASSETS | generic consumer: hour windows per mode, standby, burst duty (VHF transmit), own battery with charge window (laptop, phone), path efficiency; measured power replaces the model |
+| `power-station` | BALANCE | stock and balance node: direct supply solar → shore → battery, charging, SoC limits, unmet demand by priority, autonomy, residuals against measured SoC/load |
+
+Real data come as CSV ([template](src/main/resources/twin/bootsdaten-vorlage.csv), invented example rows) and are bound
+by `BoatData` with origin MEASURED (station app, Starlink, USB-C meter) or REPORTED (logbook). `Calibration` fits
+model parameters such as `solar.derate` and usage scales by bounded Levenberg-Marquardt least squares against the
+measured SoC, the measured output power and (with irradiance) the measured solar power. Model parameters
+(`scale`, `derate`) are kept apart from system levers for what-ifs (`wp`, `power_factor`, `on`, `max_on_h`, ...); only
+the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `alternatives()`, `KEY_SERIES`,
+`KEY_KPIS` and `kpis(RunResult)`.
+
 ## Tests
 
 * **`TwinShadowTest`**
@@ -88,17 +165,35 @@ The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml
   * two what-ifs
   * a forecast from a snapshot that reproduces the shadow run exactly
   * the `pressure-aware` policy against schedule following
+* **`HouseTwinTest`**
+  * closed heat, oil, wood and electricity balances
+  * determinism, and an exact continuation from a snapshot
+  * −1 K lowers the heat demand
+  * an empty tank stops the boiler
+  * measured weather is used and labelled
+* **`BillCalibrationTest`**
+  * the CSV format, including German spreadsheet exports
+  * known parameters recovered from synthetic monthly bills
+  * annual totals flagged as not identifiable
 * **`TwinPlanTest`**
   * rejected wirings, bindings, policies and interventions
   * feedback delay
   * YAML loading
   * operating rules
+* **`boat.BoatTwinTest`**, **`boat.BoatDataTest`**
+  * plan validation and port type checks
+  * DC energy balance (sources − losses − served load = ΔSoC), SoC limits, unmet demand by priority
+  * determinism, forecast from a snapshot, origins
+  * what-ifs (+100 Wp, Starlink 3 h/day, shore power every third day) and the scenario API
+  * CSV import (resampling, holding, origins) and calibration that recovers known parameters
+* **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
+  the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
 
 ## Not yet
 
 * Variant L (Smart Topics, watermarks, bounded staleness) and the conformance test L(0) = T.
 * Avro schemas per atom type.
 * Binding the message contract to KafScale.
-* Atoms for turbine, wake, weather and meter.
+* Atoms for turbine and wake (weather and meter exist for the house twin).
 * An optimizer as policy (P8.4).
 * Real plant data.

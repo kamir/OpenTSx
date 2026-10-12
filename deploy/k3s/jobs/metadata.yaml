@@ -1,0 +1,59 @@
+# Metadata pool for OpenMetadata as a dry run: every request is written as JSON to /data/om-requests (no OpenMetadata server needed).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-metadata
+  labels:
+    opentsx.org/demo: metadata
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: metadata
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: metadata
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - metadata
+            - --scenario
+            - $(OPENTSX_SCENARIO)
+            - --domain
+            - $(OPENTSX_DOMAIN)
+            - --dry-run
+            - /data/om-requests
+          env:
+            - name: OPENTSX_SCENARIO
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
+            - name: OPENTSX_DOMAIN
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>
+              value: ""
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}   # measured peak RSS ~100 MB
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: opentsx-data

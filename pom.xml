@@ -26,7 +26,6 @@
         <module>opentsx-retrieval</module>
         <module>opentsx-twin</module>
         <module>opentsx-legacy-bridge</module>
-        <module>opentsx-app-tools</module>
         <module>opentsx-kafscale-conformance</module>
     </modules>
 

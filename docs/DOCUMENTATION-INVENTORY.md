@@ -10,7 +10,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | Document | Content |
 |----------|---------|
 | [`docs/user-manual/`](user-manual/README.md) | **User manual** (English, 15 chapters and 3 appendices). Every command and example was checked against the code; the quick start was run end-to-end. |
-| `opentsx-model`, `opentsx-core`, `opentsx-connectors`, `opentsx-legacy-bridge`, `opentsx-app-tools` READMEs | the modules had no README before |
+| `opentsx-model`, `opentsx-core`, `opentsx-connectors`, `opentsx-legacy-bridge` READMEs (`opentsx-app-tools` was archived later) | the modules had no README before |
 | [`bin/opentsx`](../bin/opentsx) | launcher for the current CLIs, used by the manual |
 | [`tools/check_links.py`](../tools/check_links.py) | checks relative links in the maintained docs; runs in CI |
 | `archive/docs/README.md`, `archive/demos/README.md`, `archive/bin/README.md` | archive indexes |
@@ -18,6 +18,8 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | [`docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) | concept P8: network reconstruction, simulation, optimization (concept map, research, roadmap) |
 | [`docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md`](datamodel-2026/07-DIGITAL-TWIN-BSP.md) | proposal P9: digital twin of an energy system (atoms, MVC + policy, BSP, Smart Topics) |
 | [`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md`](datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md) | Smart Topics Studio (three views), LabVIEW analogy, control-desk loop via KafScale/infinimesh; prototype in `docs/prototypes/` |
+| [`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`](datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) | proposal: Go Smart Topic processor (KafScale processor pattern), declarative DAG, DevOps lifecycle |
+| [`docs/devops/`](devops/README.md) | DevOps guide (English, German summary): setup plan, sizing plan, demos, today vs. planned, troubleshooting for k3s + an existing KafScale cluster; scripts and manifests in [`deploy/k3s/`](../deploy/k3s/README.md), images in `deploy/docker/` |
 | [`docs/roadmap/infographic-briefing.html`](roadmap/infographic-briefing.html) | briefing (German) for an infographic designer who visualizes the roadmap |
 
 ## 2. Updated

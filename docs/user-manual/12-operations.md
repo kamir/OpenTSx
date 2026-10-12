@@ -9,6 +9,10 @@
 
 Both stacks bind port 9092, so do not run them at the same time.
 
+Running the tools as services on Kubernetes (k3s) against an existing KafScale cluster — images, manifests, setup
+and sizing plan, demos — is described in the [DevOps guide](../devops/README.md) (scripts in
+[`deploy/k3s/`](../../deploy/k3s/README.md)).
+
 ## 12.2 Configuration
 
 The v2 modules take their configuration from command-line options and constructor parameters. There are no hidden

@@ -1,5 +1,7 @@
 # opentsx-app-tools: network utilities
 
+> **Archived 2026-10-12** (not part of the build). See `archive/modules/README.md`.
+
 Small stand-alone utilities. They are not specific to time series.
 
 | Class | Purpose |

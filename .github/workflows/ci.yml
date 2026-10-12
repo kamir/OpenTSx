@@ -57,6 +57,28 @@ jobs:
         working-directory: .
         run: python tools/check_links.py
 
+  deploy:
+    name: k3s scripts and manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax and shellcheck
+        run: |
+          for f in deploy/k3s/*.sh deploy/docker/*.sh; do bash -n "$f"; done
+          command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
+          shellcheck --version
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/docker/*.sh
+      - name: Render the kustomize overlays (default, hostnetwork, service, lake)
+        run: |
+          kubectl version --client
+          for cfg in "KAFSCALE_BOOTSTRAP=10.0.0.5:9092" \
+                     "KAFSCALE_BOOTSTRAP=localhost:9092 KAFSCALE_NETWORK=hostnetwork" \
+                     "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 KAFSCALE_NETWORK=service" \
+                     "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 LAKE=true INGRESS=true"; do
+            rm -f deploy/k3s/.env
+            deploy/k3s/20-configure.sh $cfg
+          done
+
   kafscale-conformance:
     name: KafScale conformance
     runs-on: ubuntu-latest

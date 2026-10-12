@@ -1,0 +1,116 @@
+# Scenario "Boot": Etap 22 (6.7 m sailing yacht) as an island energy system.
+# Power station (portable LiFePO4, ~1 kWh) with solar (2 x 100 Wp flexible) and shore power (230 V, harbour only);
+# consumers: 2 laptops, phone (Pixel 10), Starlink Mini, Raspberry Pi, VHF radio.
+# ALL NUMBERS ARE ASSUMPTIONS (concept: docs/datamodel-2026/10-BOOT-ZWILLING.md) until replaced by real data.
+# Time: 14 days from Saturday 2026-07-04 00:00 CEST, 15-minute steps; sailing area Kiel Bay / western Baltic.
+# Inputs (logbook, measurements) are bound per run; see BoatDemo and BoatData (CSV import).
+twin: boot-etap22
+start: 2026-07-03T22:00:00Z
+baseStep: PT15M
+steps: 1344
+atoms:
+  - id: boat
+    type: boat-mode
+    # H harbour, S sail -> harbour, A sail -> anchor, X stay at anchor, U away (nobody on board)
+    params: { itinerary: HAXSHSAXXSHSAS, sailFrom: 9, sailTo: 17, utcOffsetH: 2, dayZero: "2026-07-04" }
+  - id: solar
+    type: solar
+    params:
+      wp: 200                 # 2 x 100 Wp flexible panels, flat on deck/bimini
+      derate: 0.75            # temperature, soiling, wiring, MPPT
+      latitude: 54.3
+      longitude: 10.1
+      utcOffsetH: 2
+      dayZero: "2026-07-04"
+      shadeHarbour: 0.15      # mast, boom, neighbours
+      shadeSailing: 0.35      # sails
+      shadeAnchor: 0.10
+      shadeAway: 0.15
+      clearness: [0.85, 0.6, 0.9, 0.45, 0.75, 0.95, 0.55]   # daily clearness index, cycled
+  - id: shore
+    type: shore-power
+    params: { chargerW: 400, efficiency: 0.9, modes: [harbour, away], utcOffsetH: 2, dayZero: "2026-07-04" }
+  - id: laptop1
+    type: device
+    params:
+      activeW: 15
+      standbyW: 0.5
+      batteryWh: 60
+      chargeW: 60
+      soc0: 0.8
+      pathEff: 0.9            # USB-C PD from the station
+      windows: { harbour: ["09-12", "14-17"], anchor: ["09-12", "20-22"] }
+  - id: laptop2
+    type: device
+    params:
+      activeW: 10
+      standbyW: 0.5
+      batteryWh: 50
+      chargeW: 45
+      soc0: 0.8
+      pathEff: 0.9
+      windows: { harbour: ["19-22"], anchor: ["19-22"] }
+  - id: phone
+    type: device
+    params:
+      activeW: 1.2            # Pixel 10, average while in use
+      standbyW: 0.2
+      batteryWh: 18.5
+      chargeW: 20
+      soc0: 0.8
+      pathEff: 0.9
+      windows: { harbour: ["07-23"], sailing: ["07-23"], anchor: ["07-23"] }
+  - id: starlink
+    type: device
+    params:
+      activeW: 30             # Starlink Mini average; Standard: ~60
+      standbyW: 0
+      pathEff: 0.9            # 12 V DC direct; via inverter ~0.8
+      windows: { harbour: ["07-23"], sailing: ["07-23"], anchor: ["07-23"] }
+  - id: raspi
+    type: device
+    params:
+      activeW: 4
+      pathEff: 0.9
+      offModes: []
+      windows: { harbour: ["00-24"], sailing: ["00-24"], anchor: ["00-24"], away: ["00-24"] }
+  - id: vhf
+    type: device
+    params:
+      activeW: 5              # receive ~0.4 A at 12.5 V
+      burstW: 66              # transmit 25 W RF ~5.5 A at 12 V
+      burstDuty: 0.03
+      pathEff: 0.9
+      windows: { sailing: ["00-24"] }
+  - id: station
+    type: power-station
+    params:
+      capacityWh: 1024
+      soc0: 0.9
+      socMin: 0.05
+      socMax: 1.0
+      maxChargeW: 800
+      maxSolarW: 500
+      maxDischargeW: 1800
+      etaCharge: 0.95
+      etaDischarge: 0.95
+      idleW: 2
+      warnSoc: 0.2
+      loads: [vhf, raspi, phone, laptop1, laptop2, starlink]   # supply priority when short
+wiring:
+  - boat.mode -> solar.mode
+  - boat.mode -> shore.mode
+  - boat.mode -> laptop1.mode
+  - boat.mode -> laptop2.mode
+  - boat.mode -> phone.mode
+  - boat.mode -> starlink.mode
+  - boat.mode -> raspi.mode
+  - boat.mode -> vhf.mode
+  - solar.p_avail_w -> station.p_solar_w
+  - shore.p_avail_w -> station.p_shore_w
+  - vhf.p_w -> station.p_vhf_w
+  - raspi.p_w -> station.p_raspi_w
+  - phone.p_w -> station.p_phone_w
+  - laptop1.p_w -> station.p_laptop1_w
+  - laptop2.p_w -> station.p_laptop2_w
+  - starlink.p_w -> station.p_starlink_w

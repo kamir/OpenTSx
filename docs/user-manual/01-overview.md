@@ -55,7 +55,6 @@ Active Maven modules (root `pom.xml`):
 | `opentsx-core` | Classic analysis library: TimeSeriesObject, TSBucket, DFA/MFDFA/RIS/ES, generators, GUI tools | legacy, maintained |
 | `opentsx-connectors`, `opentsx-lg` | 2.x Kafka producers, topic tools, load generator, latency probes | legacy |
 | `opentsx-flink-core` | Flink 1.18 jobs (2.x model) and processing-flow descriptors | legacy |
-| `opentsx-app-tools` | Network utilities (netcat recorder, SSH, IP scan) | utility |
 
 Outside the Maven build:
 

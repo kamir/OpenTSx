@@ -17,6 +17,7 @@ They are **not part of the Maven reactor**, are not built or tested in CI, and a
 | `ext-algorithms` | `/ext-algorithms` (2026-10-12) | wrapper around an external `corelib` that has to be installed by hand |
 | `opentsx-predict` | `/opentsx-predict` (2026-10-12) | TensorFlow 1.15 hello-world; forecasting is planned as Smart Topics (P7) |
 | `opentsx-processors` | `/opentsx-processors` (2026-10-12) | empty module (pom only) |
+| `opentsx-app-tools` | `/opentsx-app-tools` (2026-10-12) | Swing network utilities (netcat recorder, SSH client, IP scan) on sshd-core 0.8.0; nothing depends on them; the sshd 2.x API is incompatible (Dependabot #85) |
 
 Scripts under `archive/demos/opentsx-app-demos/` and `opentsx-ksql-app/bin/` that referenced the old paths are historical demos
 (they also contain hard-coded local paths) and were left unchanged.
