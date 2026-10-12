@@ -100,8 +100,8 @@ Adresse), bauen, importieren, konfigurieren, ausrollen, alle Demos ausführen un
 ein Prüfprotokoll mit BESTANDEN/FEHLER je Schritt und Hinweisen zur Abhilfe.
 
 ```bash
-deploy/k3s/60-probe.sh --dry-run --local-kafscale   # nur Plan anzeigen, nichts ausführen
-deploy/k3s/60-probe.sh --local-kafscale             # der eigentliche Probelauf (etwa 30–60 Minuten)
+deploy/k3s/60-probe.sh --dry-run --local-kafscale   # nur den Plan zeigen
+deploy/k3s/60-probe.sh --local-kafscale             # Probelauf, 30–60 min
 ```
 
 | Option | Wirkung |
