@@ -1,0 +1,27 @@
+# SIMULIERT - erfundene Abrechnungen eines fiktiven Hauses, KEINE echten Daten.
+# Erzeugt von org.opentsx.twin.house.SimulatedBills (Seed 2026) mit verdeckten Parametern {building.lossWPerK=230.0, dhw.scale=0.8, appliances.scale=1.1, boiler.eta=0.86}.
+# Kalibrierung: bin/opentsx house --simulated
+zeitraum_von,zeitraum_bis,strom_kwh,heizoel_liter,tank_start_liter,tank_ende_liter,holz_ster,kosten_eur,notiz
+2022-01-01,2022-05-31,,,,,2.5,200.00,"SIMULIERT: Holz verbrannt (Fichte; geschaetzt aus Stapel, auf 0,5 Ster gerundet)"
+2022-03-16,2023-03-14,3244,,,,,1200.16,"SIMULIERT: Stromjahresabrechnung"
+2022-04-20,2023-11-04,,2500,,,,3592.10,"SIMULIERT: Heizoel-Lieferung, Tankstand nicht notiert"
+2022-09-01,2023-05-31,,,,,4.5,360.00,"SIMULIERT: Holz verbrannt (Fichte; geschaetzt aus Stapel, auf 0,5 Ster gerundet)"
+2023-03-15,2024-03-12,,,,,,,"SIMULIERT: Stromabrechnung 2023/24 nicht auffindbar"
+2023-09-01,2024-05-31,,,,,4.5,382.50,"SIMULIERT: Holz verbrannt (Fichte; geschaetzt aus Stapel, auf 0,5 Ster gerundet)"
+2023-11-05,2024-04-20,,2000,,,,2177.19,"SIMULIERT: Heizoel-Lieferung, Tankstand nicht notiert"
+2024-03-13,2025-03-17,3459,,,,,1446.20,"SIMULIERT: Stromabrechnung, Zaehlerstand vom Versorger geschaetzt"
+2024-04-21,2024-12-31,,2500,1110,2350,,2448.56,"SIMULIERT: Heizoel-Lieferung, Tankstand vor Befuellung laut Fahrer; Ende = Peilstab 01.01.2025"
+2024-09-01,2025-05-31,,,,,4.5,405.00,"SIMULIERT: Holz verbrannt (Fichte; geschaetzt aus Stapel, auf 0,5 Ster gerundet)"
+2025-01-01,2025-01-31,,0,2370,1940,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-02-01,2025-02-28,,0,1940,1600,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-03-01,2025-03-31,,0,1600,1290,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-03-18,2025-12-31,2497,,,,,1001.85,"SIMULIERT: Zwischenablesung (Zaehlerfoto) zum Jahresende"
+2025-04-01,2025-04-30,,0,1290,1120,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-05-01,2025-05-31,,0,1120,1010,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-06-01,2025-06-30,,0,1010,980,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-07-01,2025-08-31,,0,980,880,,,"SIMULIERT: Peilstab am Monatsersten; Ablesung 01.08. fehlt (Urlaub)"
+2025-09-01,2025-09-30,,0,880,790,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-09-01,2025-12-31,,,,,2.0,190.00,"SIMULIERT: Holz verbrannt (Fichte; geschaetzt aus Stapel, auf 0,5 Ster gerundet)"
+2025-10-01,2025-10-31,,2500,790,3110,,2470.43,"SIMULIERT: Peilstab am Monatsersten + Lieferung"
+2025-11-01,2025-11-30,,0,3110,2820,,,"SIMULIERT: Peilstab am Monatsersten"
+2025-12-01,2025-12-31,,0,2820,2450,,,"SIMULIERT: Peilstab am Monatsersten"

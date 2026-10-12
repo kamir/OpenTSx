@@ -83,7 +83,13 @@ stove, no PV, no heat pump). Concept (German): [`08-HAUS-ZWILLING.md`](../docs/d
 ```bash
 bin/opentsx house                                          # reference year (shadow) + every lever as what-if
 bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
+bin/opentsx house --simulated                              # calibration on the bundled SIMULATED bills
 ```
+
+Until real bills are available, [`twin/beispiel/`](src/main/resources/twin/beispiel/README.md) holds
+**simulated** bills and daily temperatures for 2022–2025. `house.SimulatedBills` generates them with a fixed seed,
+from hidden "true" parameters and with realistic gaps and noise. The calibration finds H/eta and the appliance
+scale, and it reports hot water as not determined (concept §7.6).
 
 | Type | Atom | Phase | Main behaviour |
 |------|------|-------|----------------|

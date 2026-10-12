@@ -11,6 +11,7 @@ import org.opentsx.twin.TwinRunner;
 import org.opentsx.twin.house.BillCalibration;
 import org.opentsx.twin.house.HouseKpis;
 import org.opentsx.twin.house.HouseScenario;
+import org.opentsx.twin.house.SimulatedBills;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -28,8 +29,10 @@ import java.util.Map;
  * With {@code --calibrate bills.csv} it first fits the plan to the bills (see {@link BillCalibration}) and then
  * evaluates the levers on the calibrated house.
  * <p>
+ * With {@code --simulated} it calibrates on the bundled simulated bills ({@link SimulatedBills}) instead.
+ * <p>
  * Usage: {@code bin/opentsx house [--plan file.yaml] [--calibrate bills.csv [--weather daily-temps.csv]]
- * [--hdd-ref Kd]}
+ * [--simulated] [--hdd-ref Kd]}
  * <p>
  * The static methods {@link #plan()}, {@link #observed()}, {@link #reference()}, {@link #alternatives()} and
  * {@link #smartMetrics()} expose the scenario to generic views (e.g. the studio export); the full year has 8760
@@ -87,9 +90,14 @@ public final class HouseDemo {
         TwinPlan plan = plan();
         Path bills = null;
         Path weatherCsv = null;
+        boolean simulated = false;
         double hddRef = HDD_REF;
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
+            if (a.equals("--simulated")) {
+                simulated = true;
+                continue;
+            }
             if (i + 1 >= args.length) {
                 usage();
             }
@@ -102,6 +110,20 @@ public final class HouseDemo {
             }
         }
         PrintStream out = System.out;
+        if (simulated) {
+            out.println("House twin '" + plan.twin() + "' calibrated on SIMULATED bills (" + SimulatedBills.BILLS
+                    + ", " + SimulatedBills.TEMPERATURES + ") - no real data");
+            SeriesInputs weather = BillCalibration.dailyTemperatures(SimulatedBills.bundledTemperatures(),
+                    HouseScenario.id(plan, "weather"), 5.0);
+            BillCalibration.Result c = new BillCalibration(plan, weather)
+                    .fit(BillCalibration.parse(SimulatedBills.bundledBills()));
+            report(out, c);
+            out.println("   hidden true parameters of the simulation (unknown to the fit): " + SimulatedBills.truth());
+            out.println("   (boiler.eta is fixed at the plan's assumption in the fit, so H and the hot-water scale "
+                    + "absorb the eta ratio)");
+            evaluate(out, c.calibratedPlan(), hddRef);
+            return;
+        }
         out.println("House twin '" + plan.twin() + "' - ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS"
                 + (bills == null ? " (not calibrated)" : " (calibrated on " + bills + ")"));
         if (bills != null) {
@@ -116,7 +138,7 @@ public final class HouseDemo {
 
     private static void usage() {
         System.err.println("usage: bin/opentsx house [--plan file.yaml] [--calibrate bills.csv [--weather temps.csv]] "
-                + "[--hdd-ref Kd]");
+                + "[--simulated] [--hdd-ref Kd]");
         System.exit(1);
     }
 
