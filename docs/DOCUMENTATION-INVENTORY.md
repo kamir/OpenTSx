@@ -21,6 +21,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | [`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`](datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) | proposal: Go Smart Topic processor (KafScale processor pattern), declarative DAG, DevOps lifecycle |
 | [`docs/devops/`](devops/README.md) | DevOps guide (English, German summary): setup plan, sizing plan, demos, today vs. planned, troubleshooting for k3s + an existing KafScale cluster; scripts and manifests in [`deploy/k3s/`](../deploy/k3s/README.md), images in `deploy/docker/` |
 | [`docs/roadmap/infographic-briefing.html`](roadmap/infographic-briefing.html) | briefing (German) for an infographic designer who visualizes the roadmap |
+| [`docs/business/kampagnen-briefing.html`](business/kampagnen-briefing.html) | campaign briefing (German) as a page: vendor matrix, target groups, message house, claims, 90-day plan |
 
 ## 2. Updated
 
