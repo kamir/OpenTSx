@@ -1,0 +1,119 @@
+{
+  "type" : "record",
+  "name" : "ElectrolyzerSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one electrolyzer atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "ElectrolyzerState",
+      "doc" : "State variables of electrolyzer",
+      "fields" : [ {
+        "name" : "p_el_kw",
+        "type" : "double"
+      }, {
+        "name" : "mode",
+        "type" : "double"
+      }, {
+        "name" : "h2_kg",
+        "type" : "double"
+      }, {
+        "name" : "energy_kwh",
+        "type" : "double"
+      }, {
+        "name" : "trips",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "ElectrolyzerOutputs",
+      "doc" : "Output ports of electrolyzer",
+      "fields" : [ {
+        "name" : "p_el_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "m_h2_kgph",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kg/h]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "ElectrolyzerControls",
+      "doc" : "Controls of electrolyzer overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "setpoint_kw",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "electrolyzer",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "setpoint_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  }, {
+    "name" : "p_downstream_bar",
+    "kind" : "SIGNAL",
+    "unit" : "bar"
+  }, {
+    "name" : "headroom_kg",
+    "kind" : "SIGNAL",
+    "unit" : "kg"
+  }, {
+    "name" : "m_offtake_kgph",
+    "kind" : "FLOW",
+    "unit" : "kg/h"
+  } ]
+}

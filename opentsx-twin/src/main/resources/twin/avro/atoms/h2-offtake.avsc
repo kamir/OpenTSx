@@ -1,0 +1,95 @@
+{
+  "type" : "record",
+  "name" : "H2OfftakeSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one h2-offtake atom after superstep k (phase SOURCES)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "H2OfftakeState",
+      "doc" : "State variables of h2-offtake",
+      "fields" : [ {
+        "name" : "delivered_kg",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "H2OfftakeOutputs",
+      "doc" : "Output ports of h2-offtake",
+      "fields" : [ {
+        "name" : "m_out_kgph",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kg/h]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "H2OfftakeControls",
+      "doc" : "Controls of h2-offtake overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "valve",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "h2-offtake",
+  "opentsx.phase" : "SOURCES",
+  "opentsx.inputs" : [ {
+    "name" : "demand_kgph",
+    "kind" : "FLOW",
+    "unit" : "kg/h"
+  }, {
+    "name" : "valve",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  } ]
+}

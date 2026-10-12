@@ -1,0 +1,117 @@
+{
+  "type" : "record",
+  "name" : "OilTankSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one oil-tank atom after superstep k (phase FLOWS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "OilTankState",
+      "doc" : "State variables of oil-tank",
+      "fields" : [ {
+        "name" : "level_l",
+        "type" : "double"
+      }, {
+        "name" : "consumed_l",
+        "type" : "double"
+      }, {
+        "name" : "delivered_l",
+        "type" : "double"
+      }, {
+        "name" : "shortfall_l",
+        "type" : "double"
+      }, {
+        "name" : "overfill_l",
+        "type" : "double"
+      }, {
+        "name" : "cost_eur",
+        "type" : "double"
+      }, {
+        "name" : "warned",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "OilTankOutputs",
+      "doc" : "Output ports of oil-tank",
+      "fields" : [ {
+        "name" : "level_l",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [l]"
+      }, {
+        "name" : "residual_l",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [l]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "OilTankControls",
+      "doc" : "Controls of oil-tank overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "delivery_lph",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "oil-tank",
+  "opentsx.phase" : "FLOWS",
+  "opentsx.inputs" : [ {
+    "name" : "fuel_lph",
+    "kind" : "FLOW",
+    "unit" : "l/h"
+  }, {
+    "name" : "level_meas_l",
+    "kind" : "SIGNAL",
+    "unit" : "l"
+  } ]
+}

@@ -1,0 +1,44 @@
+{
+  "type" : "record",
+  "name" : "PortMessage",
+  "namespace" : "org.opentsx.twin.v1",
+  "doc" : "One output value as it travels between atoms (topic twin.<id>.<run>.msgs).",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "phase",
+    "type" : {
+      "type" : "enum",
+      "name" : "Phase",
+      "doc" : "Layer of a superstep in which the atom runs.",
+      "symbols" : [ "SOURCES", "POLICY", "ASSETS", "BALANCE", "FLOWS", "VIEWS" ]
+    }
+  }, {
+    "name" : "atom",
+    "type" : "string"
+  }, {
+    "name" : "port",
+    "type" : "string"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "value",
+    "type" : "double"
+  }, {
+    "name" : "origin",
+    "type" : {
+      "type" : "enum",
+      "name" : "Origin",
+      "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+      "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+    }
+  } ]
+}

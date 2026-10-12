@@ -1,0 +1,122 @@
+{
+  "type" : "record",
+  "name" : "BalanceSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one balance atom after superstep k (phase BALANCE)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "BalanceState",
+      "doc" : "State variables of balance",
+      "fields" : [ {
+        "name" : "direct_self_kwh",
+        "type" : "double"
+      }, {
+        "name" : "direct_ely_kwh",
+        "type" : "double"
+      }, {
+        "name" : "direct_bat_kwh",
+        "type" : "double"
+      }, {
+        "name" : "export_kwh",
+        "type" : "double"
+      }, {
+        "name" : "import_kwh",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "BalanceOutputs",
+      "doc" : "Output ports of balance",
+      "fields" : [ {
+        "name" : "p_grid_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "p_direct_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "residual_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "BalanceControls",
+      "doc" : "Controls of balance overridden by interventions (null: policy decides)",
+      "fields" : [ ]
+    }
+  } ],
+  "opentsx.atomType" : "balance",
+  "opentsx.phase" : "BALANCE",
+  "opentsx.inputs" : [ {
+    "name" : "p_gen_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "p_self_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "p_ely_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "p_bat_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "p_grid_meas_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  } ]
+}
