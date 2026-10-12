@@ -263,6 +263,8 @@ Noch offen, zur Umsetzung:
   * Ein föderiertes globales Modell über zwei simulierte Parks muss für einen neuen Park besser sein als lokale
     Modelle ohne Historie.
 
+Betrieb im Strom (Prozessor, DAG, DevOps): siehe [11-SMART-TOPIC-PROZESSOR-DEVOPS](11-SMART-TOPIC-PROZESSOR-DEVOPS.md).
+
 ## 11. Personal Service Layer (Vorschlag, 2026-10-12)
 
 Der vorhandene SaaS-Stack (`opentsx-saas-backend`: FastAPI, JWT, Benutzer/Organisationen/Teams; `opentsx-saas-frontend`:
