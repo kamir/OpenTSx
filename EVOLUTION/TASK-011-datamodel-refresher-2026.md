@@ -110,6 +110,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7b: Python-Training (Kandidaten mit/ohne Kontext, zeitlicher Split, konforme Intervalle) → ONNX/JSON → MLflow (Alias `champion`).
 - [ ] P7c: Java-Scoring-Prozessor (KafScale, Checkpoint, ONNX Runtime) → Smart Metrics + Prediction-API (Java/REST).
 - [ ] P7f (Vorschlag, [`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`](../docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md)): **Go-TSx-Prozessor** auf Basis der KafScale-Processor-Vorlage (S3-Segmente, Lease je Partition) mit deklarativem DAG `opentsx.dag.v1`; Go-Stream-Kern (Dekodieren, Normalisieren, Episoden, Welford/DDSketch, DQ, inkrementelle Segmentierer, Resampling, Scoring reiner Go-Modelle, `train.trigger`) mit Go↔Java-Konformität über gemeinsame Testvektoren; Java-Sidecar für Mustersuche/Zwilling; Replay-Tests in CI; Schattenbetrieb und Umschalten; Rand-Betrieb (Pi, Labor-PC) mit Checkpoint-Datei.
+- [x] P7f-Betrieb (DevOps, heutiger Java-Stand): [`docs/devops/`](../docs/devops/README.md) mit Setup-Plan, Sizing-Plan (Formel + Rechenbeispiele, 2,18 B/Wert), Demos und Abgrenzung heute/geplant; Skripte `deploy/k3s/00…90`, Kustomize (Basis, Jobs, Komponenten hostnetwork/lake/ingress), Images `opentsx/tools` (JRE, alle Befehle) und `opentsx/studio` (Seite im Build erzeugt), Hilfswerkzeug `kafscale-check` (advertised addresses, Topic-Anlage); CI rendert die Overlays. Offen: erster Lauf auf echtem k3s gegen KafScale, Lake-Pfad (S3FileIO, REST-Katalog) Ende-zu-Ende, Messungen aus dem Sizing-Plan.
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
 - [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
 - [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
@@ -389,24 +390,17 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 ## Progress Log
 
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
-
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.
 - 2026-10-12: **P9.7 simulierte Abrechnungen**: Beispieldaten 2022–2025 mit verdeckten Parametern und realistischen Lücken, `--simulated`, Kalibrierung findet H/η und Geräteskala, meldet Warmwasser als nicht bestimmt.
-
 - 2026-10-12: **P9.8 Boot-Zwilling** (`10-BOOT-ZWILLING.md`): Etap 22 als Insel-Energiesystem mit 5 neuen Bausteinen, Schaltplan, Demo `bin/opentsx boat` mit Was-wäre-wenn, CSV-Import echter Daten und Kalibrierung gegen gemessenen SoC.
-
+- 2026-10-12: **DevOps-Leitfaden k3s + KafScale** (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`): Setup- und Sizing-Plan, alle Beispiele (Windpark → KafScale, Statistik, Retrieval, OpenMetadata, H2-Kette, Haus, Boot, Studio) als Deployments/Jobs mit Skripten 00–90; Befehle im Image lokal geprüft, Manifeste mit kubeconform validiert; Docker-Build und k3s-Lauf noch nicht ausgeführt.
 - 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
 - 2026-10-12: **P9.7 Haus-Zwilling**: Methode auf Hauseigentümer übertragen (`08-HAUS-ZWILLING.md`), 9 Haus-Atome, Schaltplan `haus-erzgebirge.yaml`, Kennzahlen, Kalibrierung an Abrechnungen mit Identifizierbarkeitsbericht, Demo `bin/opentsx house`; alle Hauszahlen sind Beispielannahmen.
-
 - 2026-10-12: **P9-PoC** `opentsx-twin`: Atomvertrag MVC+P, Schaltplan-YAML, geschichteter BSP-Runner (Variante T) mit Topic-Vertrag, Herkunftsleiter, 9 Bausteine (inkl. Betriebsvorgaben), Schatten/Was-wäre-wenn/Prognose; S1 H2-Kette getestet, Demo `bin/opentsx twin`.
-
 - 2026-10-12: **P8 geschärft** (Kurztitel „Zusammenspiel & Koordinationspotenzial“, Leitfrage, Bewertungsprinzip, Betriebsvorgaben, Methoden als Vorschlag); Infografik-Briefing Fassung 2 mit zwei Sichten (Was/Wie, Warum/Für wen).
-
 - 2026-10-12: **Zwilling als Kern der Roadmap festgelegt**: drei Betriebsarten in beiden Varianten (eng/ein Prozess und lose/Smart Topics, D20); Vergleich als Forschungspaper (P9.6); Wake-Graph-Export auf niedrige Priorität.
-
 - 2026-10-12: **Phase 9 vorgeschlagen** (Digitaler Zwilling Energieverbund, Konzept `07-DIGITAL-TWIN-BSP.md`: Atome mit MVC+P, Schaltplan, geschichtetes BSP, Smart Topics als Einbettung, Stufen A–D); Wake-Ground-Truth in P8.0 präzisiert (Simulationsreferenz); Punkte aus dem Projektgespräch in den Backlog.
-
 - 2026-10-12: **Phase 8 aufgenommen** (Systemrekonstruktion → Simulation → Optimierung, Konzept `06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md` aus Deep Research mit Bezug auf Kämpf 2017); vollständiger Backlog aller offenen Punkte.
 - 2026-10-12: **Doku-Refresh**: neues englisches User-Manual (`docs/user-manual/`), Inventur (`docs/DOCUMENTATION-INVENTORY.md`), Archivierung veralteter Doku und Module außerhalb des Builds (`archive/`), Launcher `bin/opentsx`, Link-Check in CI.
 - 2026-10-12: **P5 umgesetzt** (`opentsx-retrieval`): Segmentierung, Pattern-Engine, Retrieval-API, REST + Python-Client, Leistungskurven-Analyse.

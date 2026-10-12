@@ -1,0 +1,36 @@
+# OpenTSx on k3s - base (namespace-less). Do not apply directly: 20-configure.sh renders overlays/local, which sets
+# the namespace, the KafScale address, images and optional components (hostnetwork, lake, ingress).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: opentsx
+    includeTemplates: true
+resources:
+  - pvc.yaml
+  - stats.yaml
+  - retrieval.yaml
+  - studio.yaml
+configMapGenerator:
+  - name: opentsx-config
+    literals:
+      - KAFSCALE_BOOTSTRAP=kafscale.invalid:9092
+      - OPENTSX_DOMAIN=wind
+      - OPENTSX_PARTITIONS=6
+      - OPENTSX_SCENARIO=/opt/opentsx/share/scenarios/ostsee-demo.yaml
+      - STATS_WINDOWS=PT10M,PT1H
+      - STATS_LATENESS=PT0S
+      - ICEBERG_NAMESPACE=tsx
+      - ICEBERG_PROPS=
+      - OM_URL=
+      - S3_ENDPOINT=http://opentsx-minio:9000
+      - S3_BUCKET=lake
+      - S3_WAREHOUSE=s3://lake/
+      - S3_REGION=us-east-1
+generatorOptions:
+  disableNameSuffixHash: true   # Jobs refer to opentsx-config by name; 30-deploy.sh restarts pods on config changes
+images:
+  - name: opentsx/tools
+    newTag: 3.0.0-local
+  - name: opentsx/studio
+    newTag: 3.0.0-local

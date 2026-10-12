@@ -1,0 +1,21 @@
+# Persistent state. k3s ships the local-path provisioner (ReadWriteOnce, node-local): fine for a single node; on a
+# multi-node cluster pin the stats Deployment and the demo Jobs to one node or use a ReadWriteMany class.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opentsx-stats-state        # statistics checkpoint (positions + engine state)
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opentsx-data               # demo Jobs: episode index, ground truth, metadata dry-run output
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi

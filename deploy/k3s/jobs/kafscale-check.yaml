@@ -1,0 +1,60 @@
+# Checks the KafScale bootstrap AND the advertised broker addresses from inside the cluster; with --provision creates tsx.<domain>.*.v2 (TopicLayout.provision). Prints record counts per topic.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-kafscale-check
+  labels:
+    opentsx.org/demo: kafscale-check
+    opentsx.org/kafka: "true"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: kafscale-check
+        opentsx.org/kafka: "true"
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: kafscale-check
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - kafscale-check
+            - --kafscale
+            - $(KAFSCALE_BOOTSTRAP)
+            - --domain
+            - $(OPENTSX_DOMAIN)
+            - --provision
+            - "true"
+            - --partitions
+            - $(OPENTSX_PARTITIONS)
+          env:
+            - name: KAFSCALE_BOOTSTRAP
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+            - name: OPENTSX_DOMAIN
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+            - name: OPENTSX_PARTITIONS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_PARTITIONS}}
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>
+              value: ""
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

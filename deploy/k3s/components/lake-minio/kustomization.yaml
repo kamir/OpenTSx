@@ -1,0 +1,6 @@
+# In-cluster MinIO as the S3 endpoint of the lake profile (lab use; same pinned image as docker-compose.kafscale.yml).
+# Credentials come from the Secret opentsx-secrets (S3_ACCESS_KEY / S3_SECRET_KEY), written by 20-configure.sh.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - minio.yaml

@@ -1,0 +1,67 @@
+# Retrieval REST server (org.opentsx.retrieval.server.RetrievalServer). Default: --demo true (synthetic in-memory
+# store, no infrastructure). The lake component switches it to an Iceberg catalog. No authentication: keep the
+# Service cluster-internal (kubectl port-forward) or put an authenticating gateway in front.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-retrieval
+  labels:
+    app.kubernetes.io/name: opentsx-retrieval
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-retrieval
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-retrieval
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: retrieval
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args: [retrieval-server, --port, "8080", --demo, "true"]
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /v1/health, port: http}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /v1/health, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 100m, memory: 384Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-retrieval
+  labels:
+    app.kubernetes.io/name: opentsx-retrieval
+spec:
+  selector:
+    app.kubernetes.io/name: opentsx-retrieval
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
