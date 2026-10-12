@@ -132,7 +132,7 @@ def verify_installation():
     print("="*60)
     print("\nNext steps:")
     print("  1. Try the examples in python-package/examples/")
-    print("  2. Run the test suite: python test_implementations.py")
+    print("  2. Run the test suite: python -m pytest")
     print("  3. Follow the onboarding path: docs/onboarding/ONBOARDING-PATH-Python.md")
 
     return True
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
 ```bash
 cd python-package
-python test_implementations.py
+python -m pytest
 ```
 
 Expected output:

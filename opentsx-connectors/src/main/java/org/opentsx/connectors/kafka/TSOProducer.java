@@ -220,10 +220,11 @@ public class TSOProducer {
 
         try {
 
-            EpisodesRecord er = new EpisodesRecord();
-
             // the key will be based on current time and than one item per ___ms___.
             for ( TSData mrd : data ) {
+
+                // one record per series (a reused record leaked fields between series)
+                EpisodesRecord er = new EpisodesRecord();
 
                 // this MD is needed and not available in TSData object ...
                 int dt = 200;
@@ -260,13 +261,12 @@ public class TSOProducer {
 
 
 
-                CharSequence cs = "123";
-                er.setLabel( cs );
+                er.setLabel( mrd.label );
                 er.setTStart( t0 );
                 er.setTEnd( t1 );
                 er.setIncrement( dt );
                 er.setZObservations( z );
-                er.setUri("URI");
+                er.setUri( URI );
 
                 er.setObservationArray( oarray );
 
@@ -347,23 +347,22 @@ public class TSOProducer {
 
                 long t0 = System.currentTimeMillis();
 
-                long t = t0;
-
                 long i = 0;
                 for( double v : values ) {
 
                     long tP = System.currentTimeMillis();
 
-                    t = t + ( i * 200 );
+                    // evenly spaced, 200 ms apart (was t = t + i*200, i.e. quadratically growing gaps)
+                    long t = t0 + ( i * 200 );
 
                     i++;
-
-                    String theKey = key.concat( mrd.label );
 
                     e.setTimestamp( t );
                     e.setUri(URI);
                     e.setValue( v );
                     e.setProducerTimestamp( tP );
+                    // required by the schema (no default); set by the consumer when measuring latency
+                    e.setConsumerTimestamp( -1L );
 
                     /**
                      *  Create RECORD ...

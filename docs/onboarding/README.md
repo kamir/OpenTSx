@@ -228,7 +228,7 @@ source venv/bin/activate
 pip install -e ".[all]"
 
 # Verify installation
-python test_implementations.py
+python -m pytest
 ```
 
 ### Step 3: Follow the Episodes

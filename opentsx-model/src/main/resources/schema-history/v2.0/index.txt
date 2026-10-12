@@ -1,0 +1,9 @@
+SeriesKey.avsc
+Segmentation.avsc
+EpisodeSummary.avsc
+Provenance.avsc
+Episode.avsc
+Observation.avsc
+BucketManifest.avsc
+SeriesStats.avsc
+PatternMatch.avsc

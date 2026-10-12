@@ -923,7 +923,7 @@ def analyze_with_retry(ts, algorithm):
 - **Feature Comparison**: `/FEATURE_COMPARISON_JAVA_PYTHON.md`
 - **Interoperability Guide**: `/INTEROPERABILITY_GUIDE.md`
 - **API Documentation**: `/docs/api/python/`
-- **Test Suite**: `/python-package/test_implementations.py`
+- **Test Suite**: `/python-package/tests/` (run with `python -m pytest`)
 
 ### Example Scripts
 All examples located in: `/python-package/examples/`

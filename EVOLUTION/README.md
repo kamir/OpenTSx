@@ -22,6 +22,7 @@ Where:
 | TASK-PYTHON | Python Feature Parity Implementation | ✅ Completed | High | 2025-12-21 |
 | TASK-005 | Processing Flow Descriptor & Flink Integration | 🚧 In Review | High | 2025-12-21 |
 | TASK-007 | TSx Track Polyglot Notebooks | 🚧 In Progress | Medium | 2025-12-21 |
+| TASK-011 | [Datamodel Refresher 2026](TASK-011-datamodel-refresher-2026.md) | 📝 Planning | High | 2026-10-09 |
 
 ### Completed Tasks
 

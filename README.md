@@ -764,22 +764,19 @@ SELECT * FROM sensor_stats
 WHERE sensor_id = 'sensor_1';
 ```
 
-### Example 4: Multi-Storage Backend
+### Example 4: OpenTSDB Storage Backend
+
+> The Cassandra store was moved to `archive/modules/` (see `archive/modules/README.md`).
+> A unified store abstraction (OpenTSDB, Iceberg) is planned in `EVOLUTION/TASK-011-datamodel-refresher-2026.md`.
 
 ```java
-import org.opentsx.store.cassandra.TSOWriter4Cassandra;
 import org.opentsx.store.opentsdb.OpenTSDBWriter;
 
-public class MultiStorageExample {
+public class OpenTSDBStorageExample {
     public static void main(String[] args) {
         TimeSeriesObject tso = generateData();
 
-        // Write to Cassandra
-        TSOWriter4Cassandra cassandraWriter =
-            new TSOWriter4Cassandra(cassandraSession);
-        cassandraWriter.write(tso);
-
-        // Simultaneously write to OpenTSDB for monitoring
+        // Write to OpenTSDB for monitoring
         OpenTSDBWriter opentsdbWriter =
             new OpenTSDBWriter("http://opentsdb:4242");
         Map<String, String> tags = new HashMap<>();
@@ -810,11 +807,10 @@ OpenTSx/
 ├── opentsx-saas-frontend/     # React/Vite User Interface
 ├── opentsx-app-tools/       # Application Utilities (NetCat, etc.)
 ├── opentsx-kafka-streams-tsa/ # KStreams applications
-├── opentsx-ksql-udf/          # ksqlDB custom functions
-├── opentsx-store-cassandra/   # Cassandra persistence
 ├── opentsx-store-opentsdb/    # OpenTSDB persistence
 ├── opentsx-clusters/          # Multi-region configs
 ├── opentsx-app-demos/         # Demo applications
+├── archive/modules/           # Archived legacy modules (Cassandra, Hive UDF, ksqlDB UDF)
 ├── config/                    # Configuration files
 ├── bin/                       # Build & deployment scripts
 ├── docs/                      # Documentation & tutorials

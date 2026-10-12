@@ -90,7 +90,7 @@ public class MSExcelMessreihenLoader {
 
             double xValue = r-firstRow+1;
 
-            int typ = row.getCell(yCol-1).getCellType();
+            int typ = row.getCell(yCol-1).getCellType().ordinal();
 
             Integer k = types.get(typ);
             if ( k == null ) {
