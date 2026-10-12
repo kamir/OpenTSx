@@ -60,6 +60,11 @@
 - **OpenTSx-Reifegrad:** Proof of Concept auf synthetischen und simulierten Daten, **kein Produktivkunde**. Ein
   Projektumfeld mit Windpark, Elektrolyseur und Direktvermarktung ist in Vorbereitung; Partner erscheinen nur als
   Rollen.
+- **Nachtrag 12.10.2026, nachmittags:** Die in den Unterlagen als Arbeitszweige genannten Teile (lose Kopplung mit
+  Messung und Avro-Schemas, DWD-Sammler, Anlagen-Explorer, Repository-Hygiene) sind inzwischen in `master`
+  (Integration #116), ebenso der Modbus-Sammler (#115), das Betriebskonzept mit Probelauf (#137) und die
+  Abhängigkeitspflege (#131). Die Bewertungen bleiben gültig: alles läuft weiterhin auf synthetischen und simulierten
+  Daten. Damit ist das erste Arbeitspaket von Phase 0 („Merge der Arbeitszweige“) erledigt.
 - **Hypothesen:** Schmerzpunkte, Zahlungsbereitschaft, Einkaufsentscheider, KPI-Ziele und Budgetbeträge sind Annahmen
   und mit Gesprächen bzw. Angeboten zu prüfen.
 - **Zeitbezug:** Regeln (GModG seit 29.07.2026, Energy Sharing seit 01.06.2026, § 14a seit 01.01.2024) und
