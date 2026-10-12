@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -135,6 +136,19 @@ public final class IcebergSeriesStore implements SeriesStore {
         }
         out.sort(EpisodeOps.READ_ORDER);
         return out.size() > q.limit() ? new ArrayList<>(out.subList(0, q.limit())) : out;
+    }
+
+    @Override
+    public synchronized Optional<Episode> episode(String episodeId) {
+        episodes.refresh();
+        Episode[] found = new Episode[1];
+        scan(episodes, Expressions.equal("episode_id", episodeId), r -> {
+            Episode e = EpisodeRows.fromRow(r);
+            if (found[0] == null || e.getRevision() > found[0].getRevision()) {
+                found[0] = e;
+            }
+        });
+        return Optional.ofNullable(found[0]);
     }
 
     @Override

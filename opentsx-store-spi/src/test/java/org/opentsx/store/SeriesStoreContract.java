@@ -82,6 +82,17 @@ public abstract class SeriesStoreContract {
     }
 
     @Test
+    void episodeLookupById() {
+        List<Episode> fixture = fixture();
+        store.write(fixture);
+        Episode wanted = fixture.get(4);
+        if (store.capabilities().has(Capability.EPISODES)) {
+            assertEquals(java.util.Optional.of(wanted), store.episode(wanted.getEpisodeId()));
+        }
+        assertEquals(java.util.Optional.empty(), store.episode("01JUNKNOWNUNKNOWNUNKNOWN00"));
+    }
+
+    @Test
     void writesAreIdempotentPerEpisodeId() {
         List<Episode> fixture = fixture();
         store.write(fixture);

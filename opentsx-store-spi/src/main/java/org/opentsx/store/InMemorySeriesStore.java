@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** Reference implementation of the contract; also handy for notebooks and tests. */
 public final class InMemorySeriesStore implements SeriesStore {
@@ -48,6 +49,11 @@ public final class InMemorySeriesStore implements SeriesStore {
         }
         out.sort(EpisodeOps.READ_ORDER);
         return out.size() > q.limit() ? new ArrayList<>(out.subList(0, q.limit())) : out;
+    }
+
+    @Override
+    public synchronized Optional<Episode> episode(String episodeId) {
+        return Optional.ofNullable(episodes.get(episodeId));
     }
 
     @Override

@@ -5,6 +5,7 @@ import org.opentsx.model.v2.SeriesKey;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Storage backend for v2 episodes. Implementations: in-memory (reference), Iceberg, OpenTSDB.
@@ -26,6 +27,14 @@ public interface SeriesStore extends AutoCloseable {
     List<Episode> read(EpisodeQuery query);
 
     List<SeriesKey> listSeries(SeriesSelector selector);
+
+    /**
+     * The episode with this id (latest revision), if the store keeps episodes ({@link Capability#EPISODES});
+     * point stores return empty.
+     */
+    default Optional<Episode> episode(String episodeId) {
+        return Optional.empty();
+    }
 
     @Override
     default void close() {
