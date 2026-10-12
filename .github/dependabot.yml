@@ -16,6 +16,9 @@ updates:
       interval: weekly
     exclude-paths:
       - "archive/**"
+    groups:
+      python:
+        patterns: ["*"]
   - package-ecosystem: npm
     directory: "/opentsx-saas-frontend"
     schedule:
@@ -27,3 +30,6 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
