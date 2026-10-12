@@ -261,14 +261,17 @@ Zeilen dürfen sich überlappen. Typisch sind Stromjahresabrechnungen mit eigene
 
 1. Der Zwilling läuft stündlich über den gesamten Abrechnungszeitraum. Wetter: synthetisch oder die
    Tagesmitteltemperaturen einer DWD-Station (`--weather datum,t_mittel_c`, Tagesgang wird ergänzt). Holz: die
-   Ster aus den Zeilen, verteilt nach Heizgradtagen (REPORTED). Das Modell muss also nur das Öl *zusätzlich* zum
+   Ster aus den Zeilen, gleichmäßig verteilt auf die Heiztage (Tagesmittel < 15 °C) des Zeitraums (REPORTED). Das Modell muss also nur das Öl *zusätzlich* zum
    tatsächlich verbrannten Holz erklären.
-2. Je Zeile werden modellierter Strom (kWh) und Ölverbrauch (l) summiert.
+2. Je Zeile werden modellierter Strom (kWh) und Ölverbrauch (l) summiert. Öl-Zeilen ohne Tankstand (Lieferung
+   als Verbrauch) gehen nur mit Gewicht 0,2 ein.
 3. Angepasst werden **H** (Wärmeverlustkoeffizient), **Warmwasserskala** und **Geräteskala**, mit
    Levenberg–Marquardt auf den normierten Residuen der Zeiträume: Jacobi-Matrix einmal per Vorwärtsdifferenz, danach
-   Broyden-Updates, deterministisch, ohne neue Abhängigkeiten. Typisch 7–10 Zwillingsläufe.
+   Broyden-Updates, deterministisch, ohne neue Abhängigkeiten. Typisch 10–25 Zwillingsläufe. Grenzen: H 40–1500
+   W/K, Skalen 0,3–3.
 4. Ausgabe: Parameter mit relativem Standardfehler, Residuum je Zeitraum, CV(RMSE) und NMBE je Größe,
-   Konditionszahl und größte Parameterkorrelation, Warnungen, kalibrierter Schaltplan. Mit diesem werden die Hebel
+   Konditionszahl und größte Parameterkorrelation, Warnungen, kalibrierter Schaltplan. Ein Parameter mit
+   relativem Standardfehler über 25 % gilt als „poorly determined“; dann meldet der Fit „identifiable false“. Mit diesem werden die Hebel
    (§8) neu gerechnet.
 
 Fest bleiben (Annahmen, nicht angepasst): Kesselwirkungsgrad, Bereitschaftsverlust, kWh je Ster, 10 kWh/l.
@@ -307,6 +310,52 @@ cp opentsx-twin/src/main/resources/twin/abrechnungen-vorlage.csv config/private/
 # Beispielzeilen löschen, eigene Abrechnungen eintragen; optional DWD-Tagesmittel als datum,t_mittel_c
 bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
 ```
+
+### 7.6 Simulierte Beispieldaten (bis die echten Abrechnungen vorliegen)
+
+Damit die Kette Abrechnung → Kalibrierung → Hebel schon jetzt durchläuft, liegen **simulierte** Abrechnungen bei:
+[`twin/beispiel/`](../../opentsx-twin/src/main/resources/twin/beispiel/README.md). Jede Datei und jede Zeile ist
+als `SIMULIERT` markiert.
+
+**Erzeugung** (`SimulatedBills`, Seed 2026, deterministisch):
+- Das Hausmodell läuft 2022–2025 mit **verdeckten wahren Parametern**: H = 230 W/K (+15 %), Warmwasser 0,8×,
+  Geräte 1,1×, Kesselwirkungsgrad 0,86 statt der angenommenen 0,90.
+- Wetter: synthetisches Erzgebirgsklima mit Jahresunterschieden (Winter 2022/23 mild, 2024/25 kalt), Tagesmittel
+  auf 0,1 °C gerundet.
+
+**Eingebaute Unvollkommenheiten:**
+- Stromjahresabrechnungen mit wandernden Ablesedaten; die Abrechnung 2023/24 fehlt; ein Zählerstand ist vom
+  Versorger geschätzt (+4 %).
+- Öllieferungen zu unregelmäßigen Terminen (1.500/2.000/2.500 l). Tankstände sind bis 2023 nicht notiert, 2024 vom
+  Fahrer abgelesen und 2025 monatlich per Peilstab (±25 l, auf 10 l gerundet). Die Ablesung am 01.08. fehlt.
+- Holz je Winter auf 0,5 Ster gerundet; Preise mit Energiepreiskrise 2022.
+
+`bin/opentsx house --simulated` kalibriert auf allen Zeilen (22 Zwillingsläufe, ≈ 40 s):
+
+| Parameter | wahr (verdeckt) | erwartbar bei η = 0,90 angenommen | kalibriert | rel. Standardfehler |
+|-----------|----------------:|----------------------------------:|-----------:|--------------------:|
+| H (W/K) | 230 | ≈ 241 (H·0,90/0,86) | 248 | 4,6 % |
+| Geräteskala | 1,10 | 1,10 (+ geschätzter Zählerstand) | 1,12 | 3,3 % |
+| Warmwasserskala | 0,80 | ≈ 0,84 | 0,30 (untere Grenze) | 191 % → **nicht bestimmt** |
+
+**Fit-Güte:**
+- Strom: CV(RMSE) 1,9 %, NMBE −0,2 %.
+- Heizöl: CV(RMSE) 19 %, NMBE +0,3 %; die Monatswerte im Sommer streuen stark.
+
+**Was sich daran zeigt:**
+- **H und Geräte sind bestimmbar**, aber H nur als H/η. Mit dem richtigen η (0,86, z. B. aus dem
+  Schornsteinfeger-Protokoll) ergibt sich H = 240 W/K statt 230. Der Rest ist der Ausgleich für das
+  unbestimmte Warmwasser.
+- **Warmwasser ist mit Peilstab-Ablesungen nicht bestimmbar.** Der Ablesefehler (±25 l je Ablesung) ist größer als
+  das Warmwassersignal eines Sommermonats (≈ 8 l Unterschied zwischen 0,3× und 0,8×). Abhilfe: Brennerstundenzähler
+  im Sommer oder ein Warmwasserzähler.
+- **Lieferungen ohne Tankstand** (2022/23) weichen um 10–15 % ab und werden nur gering gewichtet.
+
+Der Test `SimulatedBillsTest` prüft:
+- dass die Dateien reproduzierbar erzeugt werden und markiert sind;
+- dass die Kalibrierung auf den Zeilen mit Tankständen (04/2024–12/2025) H/η auf 6 % und die Geräteskala auf
+  0,05 wiederfindet;
+- dass Warmwasser als nicht bestimmt gemeldet wird.
 
 ---
 
@@ -384,7 +433,7 @@ eine gekennzeichnete Obergrenze.
 **Umgesetzt (PoC):** Atome `weather`, `building`, `oil-boiler`, `wood-stove`, `dhw`, `appliances`, `meter`,
 `oil-tank`, `wood-store` im Standardkatalog. Dazu der Schaltplan `twin/haus-erzgebirge.yaml`, `HouseScenario`
 (Referenz, Hebel), `HouseKpis`, `BillCalibration` (CSV, DWD-Tagesmittel, LM/Broyden, Identifizierbarkeit) und
-die Demo `bin/opentsx house` mit `--calibrate`. Tests: Bilanzen, Determinismus, Snapshot, −1 K, leerer Tank,
+die Demo `bin/opentsx house` mit `--calibrate` und `--simulated` (simulierte Beispielabrechnungen, §7.6). Tests: Bilanzen, Determinismus, Snapshot, −1 K, leerer Tank,
 Identifizierbarkeit.
 
 **Offen:** Pufferspeicher und wasserführender Ofen als Variante; Mehrzonenmodell (Raum je Atom); Prognose „Reicht

@@ -253,6 +253,7 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [x] Kennzahlen (`HouseKpis`): Strom, Öl, Holz, Endenergie, kWh/m²a, witterungsbereinigt (G20/15), Kesselverluste, Standby, Grundlast, Spitze, Kosten, CO2.
 - [x] Kalibrierung an Abrechnungen (`BillCalibration`): CSV-Vorlage, Tankstände, Holz nach Heizgradtagen, DWD-Tagesmittel, LM/Broyden, Residuen, CV(RMSE)/NMBE, Identifizierbarkeit; echte Daten nur in `config/private/`.
 - [x] Demo `bin/opentsx house [--calibrate …]` mit neun Hebeln als What-if; Tests für Bilanzen, Determinismus, −1 K, leeren Tank, Identifizierbarkeit.
+- [x] Simulierte Beispielabrechnungen 2022–2025 (`SimulatedBills`, verdeckte wahre Parameter, Lücken und Ablesefehler) unter `twin/beispiel/`; `bin/opentsx house --simulated`; Test: H/η und Geräteskala gefunden, Warmwasser als nicht bestimmt gemeldet.
 - [ ] Mit echten Abrechnungen kalibrieren (Jahre, Tankstände, Holzmengen, Wohnfläche/Baujahr vom Hauseigentümer) → **Schranke B (Haus)**.
 - [ ] Nachweis einer Maßnahme: gemessene Zeiträume vor/nach, witterungsbereinigt, gegen Kalibrierunsicherheit.
 - [ ] Varianten: Pufferspeicher/wasserführender Ofen, Mehrzonenmodell, Prognose „Reicht das Öl?“, Optimierer als Policy (Bestellzeitpunkt, Holz/Öl-Aufteilung), DWD-Abruf statt CSV.
@@ -379,6 +380,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **P9.7 simulierte Abrechnungen**: Beispieldaten 2022–2025 mit verdeckten Parametern und realistischen Lücken, `--simulated`, Kalibrierung findet H/η und Geräteskala, meldet Warmwasser als nicht bestimmt.
 
 - 2026-10-12: **P9.8 Boot-Zwilling** (`10-BOOT-ZWILLING.md`): Etap 22 als Insel-Energiesystem mit 5 neuen Bausteinen, Schaltplan, Demo `bin/opentsx boat` mit Was-wäre-wenn, CSV-Import echter Daten und Kalibrierung gegen gemessenen SoC.
 

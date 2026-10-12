@@ -124,6 +124,18 @@ public final class BillCalibration {
                          TwinPlan calibratedPlan) {
     }
 
+    /**
+     * Weight of an oil row whose consumption is only a delivery (no tank levels): such a row says little about the
+     * consumption of its own period, so it should not dominate rows with readings.
+     */
+    public static final double PROXY_WEIGHT = 0.2;
+
+    /** Daily mean temperature below which a day counts as heating day (VDI 3807). */
+    public static final double HEATING_DAY_C = 15;
+
+    /** A parameter counts as determined when its relative standard error is below this. */
+    public static final double MAX_REL_STD_ERR = 0.25;
+
     private final TwinPlan base;
     private final SeriesInputs weather;
     private final String meter;
@@ -162,8 +174,8 @@ public final class BillCalibration {
         String a = HouseScenario.id(plan, "appliances");
         return List.of(
                 new Parameter(b + ".lossWPerK", HouseScenario.param(plan, b, "lossWPerK", 250), 40, 1500),
-                new Parameter(d + ".scale", HouseScenario.param(plan, d, "scale", 1), 0.1, 5),
-                new Parameter(a + ".scale", HouseScenario.param(plan, a, "scale", 1), 0.1, 5));
+                new Parameter(d + ".scale", HouseScenario.param(plan, d, "scale", 1), 0.3, 3),
+                new Parameter(a + ".scale", HouseScenario.param(plan, a, "scale", 1), 0.3, 3));
     }
 
     // ------------------------------------------------------------------------------------------------ CSV
@@ -262,25 +274,27 @@ public final class BillCalibration {
      * around each daily mean (minimum about 04:00). Days without a value fall back to the synthetic climate.
      */
     public static SeriesInputs dailyTemperatures(Path csv, String weatherAtom, double dailyAmpC) {
-        Map<LocalDate, Double> days = new TreeMap<>();
         try {
-            List<String> lines = Files.readAllLines(csv, StandardCharsets.UTF_8);
-            char sep = lines.isEmpty() || !lines.get(0).contains(";") ? ',' : ';';
-            for (String l : lines.subList(1, lines.size())) {
-                if (l.isBlank() || l.startsWith("#")) {
-                    continue;
-                }
-                List<String> c = split(l.strip(), sep);
-                double v = num(c.get(1).strip(), sep);
-                if (!Double.isNaN(v) && v > -90) {   // DWD marks missing values with -999
-                    days.put(date(c.get(0).strip()), v);
-                }
-            }
+            return dailyTemperatures(Files.readAllLines(csv, StandardCharsets.UTF_8), weatherAtom, dailyAmpC);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** As {@link #dailyTemperatures(Path, String, double)}, from CSV lines (header first; '#' lines skipped). */
+    public static SeriesInputs dailyTemperatures(List<String> lines, String weatherAtom, double dailyAmpC) {
+        List<String> rows = lines.stream().map(String::strip).filter(l -> !l.isEmpty() && !l.startsWith("#")).toList();
+        Map<LocalDate, Double> days = new TreeMap<>();
+        char sep = rows.isEmpty() || !rows.get(0).contains(";") ? ',' : ';';
+        for (String l : rows.subList(Math.min(1, rows.size()), rows.size())) {
+            List<String> c = split(l, sep);
+            double v = num(c.get(1).strip(), sep);
+            if (!Double.isNaN(v) && v > -90) {   // DWD marks missing values with -999
+                days.put(date(c.get(0).strip()), v);
+            }
+        }
         if (days.isEmpty()) {
-            throw new IllegalArgumentException("no temperatures in " + csv);
+            throw new IllegalArgumentException("no temperatures (expected header datum,t_mittel_c and rows)");
         }
         LocalDate first = days.keySet().iterator().next();
         LocalDate last = ((TreeMap<LocalDate, Double>) days).lastKey();
@@ -340,8 +354,8 @@ public final class BillCalibration {
 
     /**
      * Firewood from the bills as kWh per day for the stove (REPORTED); NaN where no bill gives wood. Within a period
-     * the wood is spread over the days in proportion to their heating degrees {@code max(0, 15 °C − daily mean)}
-     * (uniformly if the period has none), since nobody fires the stove in July.
+     * the wood is spread evenly over the heating days (daily mean below 15 °C; all days if there are none): the stove
+     * is lit on heating evenings, not in July, and a cold evening is not fired much longer than a mild one.
      */
     private SeriesInputs woodBinding(List<Bill> bills, Instant start, Instant end) {
         LocalDate first = start.atZone(HouseScenario.ZONE).toLocalDate();
@@ -357,7 +371,7 @@ public final class BillCalibration {
             double[] w = new double[(int) b.days()];
             double sum = 0;
             for (int i = 0; i < w.length; i++) {
-                w[i] = Math.max(0, 15 - dailyMeanTemperature(b.from().plusDays(i)));
+                w[i] = dailyMeanTemperature(b.from().plusDays(i)) < HEATING_DAY_C ? 1 : 0;
                 sum += w[i];
             }
             for (int i = 0; i < w.length; i++) {
@@ -431,7 +445,8 @@ public final class BillCalibration {
         // totals are nearly linear in the parameters, so this saves most of the twin runs); a fresh difference
         // Jacobian is taken when a step fails.
         double[][] jac = jacobian(bills, free, theta, r, elNorm, oilNorm);
-        int maxIter = n > p ? 20 : 2;   // underdetermined: any exact solution will do, it is reported as such
+        int maxIter = n > p ? 15 : 2;   // underdetermined: any exact solution will do, it is reported as such
+        int failures = 0;
         for (int iter = 0; iter < maxIter && cost > 1e-20; iter++) {
             double[][] jtj = new double[p][p];
             double[] jtr = new double[p];
@@ -464,6 +479,8 @@ public final class BillCalibration {
             double[] rc = residuals(bills, free, cand, elNorm, oilNorm);
             double cc = dot(rc, rc);
             if (cc < cost) {
+                failures = 0;
+                double gain = (cost - cc) / cost;
                 double[] d = new double[p];
                 for (int a = 0; a < p; a++) {
                     d[a] = cand[a] - theta[a];
@@ -483,9 +500,15 @@ public final class BillCalibration {
                 r = rc;
                 cost = cc;
                 lambda = Math.max(1e-9, lambda / 3);
+                if (gain < 1e-4) {
+                    break;
+                }
             } else {
                 lambda *= 4;
-                jac = jacobian(bills, free, theta, r, elNorm, oilNorm);
+                if (++failures >= 2) {   // the Broyden estimate went stale: take a fresh difference Jacobian
+                    jac = jacobian(bills, free, theta, r, elNorm, oilNorm);
+                    failures = 0;
+                }
             }
         }
 
@@ -514,7 +537,9 @@ public final class BillCalibration {
                 maxCorr = Math.max(maxCorr, Math.abs(inv[a][c] / Math.sqrt(inv[a][a] * inv[c][c])));
             }
         }
-        boolean identifiable = n >= p && cond < 1e6 && maxCorr < 0.98;
+        List<String> undetermined = relErr.entrySet().stream()
+                .filter(e -> Double.isNaN(e.getValue()) || e.getValue() > MAX_REL_STD_ERR).map(Map.Entry::getKey).toList();
+        boolean identifiable = n >= p && cond < 1e6 && maxCorr < 0.98 && undetermined.isEmpty();
 
         // per-period comparison and fit quality (the model at theta is cached from the last accepted step)
         double[][] m = cached(bills, params);
@@ -528,7 +553,7 @@ public final class BillCalibration {
                 periods.add(new Period(b, "heizoel_liter", b.oilConsumedL(), m[i][1], !b.oilFromLevels()));
                 if (!b.oilFromLevels()) {
                     warnings.add("oil " + b.from() + ".." + b.to() + ": delivery used as consumption (tank levels "
-                            + "missing); deliveries are not consumption - merge several years or add gauge readings");
+                            + "missing), weighted " + PROXY_WEIGHT + " - merge several years or add gauge readings");
                 }
             }
         }
@@ -549,6 +574,9 @@ public final class BillCalibration {
         if (n <= p) {
             warnings.add(n + " observed period totals for " + p + " parameters: not identifiable, the fit is one of "
                     + "many equally good solutions - add monthly meter or tank readings");
+        } else if (!undetermined.isEmpty() && cond < 1e6 && maxCorr < 0.98) {
+            warnings.add("poorly determined by these bills (relative standard error > " + (int) (100 * MAX_REL_STD_ERR)
+                    + " %): " + undetermined + " - the value is hardly better than the assumption");
         } else if (!identifiable) {
             warnings.add(String.format(Locale.ROOT, "parameters hardly separable (condition %.2g, max correlation "
                     + "%.3f) - periods with different weather (winter vs. summer readings) help", cond, maxCorr));
@@ -594,7 +622,8 @@ public final class BillCalibration {
                 r.add((m[i][0] - b.electricityKwh()) / elNorm);
             }
             if (b.hasOil()) {
-                r.add((m[i][1] - b.oilConsumedL()) / oilNorm);
+                double w = b.oilFromLevels() ? 1 : PROXY_WEIGHT;
+                r.add(w * (m[i][1] - b.oilConsumedL()) / oilNorm);
             }
         }
         return r.stream().mapToDouble(Double::doubleValue).toArray();
