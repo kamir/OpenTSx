@@ -18,6 +18,11 @@ import org.opentsx.twin.atoms.OperatingRules;
 import org.opentsx.twin.atoms.Weather;
 import org.opentsx.twin.atoms.WoodStore;
 import org.opentsx.twin.atoms.WoodStove;
+import org.opentsx.twin.boat.BoatMode;
+import org.opentsx.twin.boat.Device;
+import org.opentsx.twin.boat.PowerStation;
+import org.opentsx.twin.boat.ShorePower;
+import org.opentsx.twin.boat.Solar;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -51,7 +56,12 @@ public final class AtomCatalog {
                 .register("appliances", Appliances::new)
                 .register("meter", ElectricityMeter::new)
                 .register("oil-tank", OilTank::new)
-                .register("wood-store", WoodStore::new);
+                .register("wood-store", WoodStore::new)
+                .register("boat-mode", BoatMode::new)
+                .register("solar", Solar::new)
+                .register("shore-power", ShorePower::new)
+                .register("power-station", PowerStation::new)
+                .register("device", Device::new);
     }
 
     public AtomCatalog register(String type, BiFunction<String, Params, Atom> factory) {

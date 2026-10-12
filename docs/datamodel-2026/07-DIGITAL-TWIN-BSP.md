@@ -394,6 +394,9 @@ Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIE
 Herkunftsleiter, Stufen A–D, Alternative − Referenz) auf ein Einfamilienhaus mit Öl-Holz-Heizung, inklusive
 Kalibrierung an Abrechnungen (P9.7).
 
+Siehe auch: [10-BOOT-ZWILLING](10-BOOT-ZWILLING.md) – drittes Szenario, ein Boot (Etap 22) als Insel-Energiesystem
+mit Powerstation, Solar und Landstrom, mit CSV-Import echter Betriebsdaten und Kalibrierung.
+
 ## 10. Forschungsfrage: eng vs. lose gekoppelte Zwillinge (Paper-Skizze)
 
 **Arbeitstitel:** *Digital Twins on Logs – Synchronization Semantics from Bulk-Synchronous to Loosely Coupled Smart

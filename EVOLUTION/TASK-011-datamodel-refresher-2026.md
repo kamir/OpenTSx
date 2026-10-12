@@ -257,6 +257,15 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Nachweis einer Maßnahme: gemessene Zeiträume vor/nach, witterungsbereinigt, gegen Kalibrierunsicherheit.
 - [ ] Varianten: Pufferspeicher/wasserführender Ofen, Mehrzonenmodell, Prognose „Reicht das Öl?“, Optimierer als Policy (Bestellzeitpunkt, Holz/Öl-Aufteilung), DWD-Abruf statt CSV.
 
+**P9.8 – Boot (Etap 22): Insel-Energiesystem** – Konzept: [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md)
+- [x] Konzept mit Annahmen (Powerstation ~1 kWh, 2 × 100 Wp, Landstrom; Laptops, Pixel 10, Starlink Mini, Raspberry Pi, UKW), Nutzungsmodi, KPIs, Hebel, Abbildung Boot ↔ H2-Kette ↔ Haus.
+- [x] Bausteine `boat-mode`, `solar`, `shore-power`, `device` (×6), `power-station` (Paket `org.opentsx.twin.boat`); Schaltplan `twin/boot-etap22.yaml` (15 min, 14 Tage).
+- [x] Demo `bin/opentsx boat`: Schatten des synthetischen Törns, Was-wäre-wenn (+100 Wp, Starlink 3 h/Tag, 2 kWh, Landstrom jeden 3. Tag, Laptops mittags laden, Wechselrichter, Starlink Standard, Wochenende) als Δ Alternative − Referenz (modelliert).
+- [x] CSV-Import echter Betriebsdaten (`BoatData`, Vorlage `twin/bootsdaten-vorlage.csv`, Herkunft MEASURED/REPORTED) und Kalibrierung per Kleinste-Quadrate (`Calibration`, `--calibrate`); Tests für Bilanz, Grenzen, Determinismus, Was-wäre-wenn, Import, Kalibrierung.
+- [ ] Echte Daten des Eigners (Powerstation-Export, Starlink, Logbuch) unter `config/private/bootsdaten.csv` einspielen; Annahmen aus §2 ersetzen.
+- [ ] Raspberry Pi als Edge-Publisher (`opentsx.smartmetric.v1` über MQTT → infinimesh → KafScale); Rückweg nur mit Freigabe.
+- [ ] Szenario im Studio (generischer Export über `BoatDemo.plan/observed/reference/alternatives`).
+
 ## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
 ```
@@ -370,6 +379,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **P9.8 Boot-Zwilling** (`10-BOOT-ZWILLING.md`): Etap 22 als Insel-Energiesystem mit 5 neuen Bausteinen, Schaltplan, Demo `bin/opentsx boat` mit Was-wäre-wenn, CSV-Import echter Daten und Kalibrierung gegen gemessenen SoC.
 
 - 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
 - 2026-10-12: **P9.7 Haus-Zwilling**: Methode auf Hauseigentümer übertragen (`08-HAUS-ZWILLING.md`), 9 Haus-Atome, Schaltplan `haus-erzgebirge.yaml`, Kennzahlen, Kalibrierung an Abrechnungen mit Identifizierbarkeitsbericht, Demo `bin/opentsx house`; alle Hauszahlen sind Beispielannahmen.

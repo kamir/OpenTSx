@@ -110,6 +110,32 @@ bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/
 * `demo.HouseDemo` also exposes the scenario to generic views: `plan()`, `winterWeekPlan()` (168 steps),
   `observed()`, `reference()`, `alternatives()` and `smartMetrics()`.
 
+## Scenario "Boot": Etap 22 as an island energy system
+
+Concept (German): [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md). A small sailing yacht with a
+portable power station (~1 kWh LiFePO4), 2 × 100 Wp solar and shore power, feeding two laptops, a phone, Starlink,
+a Raspberry Pi and a VHF radio. Plan: [`twin/boot-etap22.yaml`](src/main/resources/twin/boot-etap22.yaml), 15-minute
+steps over a 14-day summer trip. All numbers are assumptions until real data replace them.
+
+```bash
+bin/opentsx boat                                             # shadow of the synthetic trip + what-ifs
+bin/opentsx boat --data config/private/bootsdaten.csv --calibrate   # real data, fitted to the measured SoC
+```
+
+| Type | Phase | Main behaviour |
+|------|-------|----------------|
+| `boat-mode` | SOURCES | harbour / sailing / anchor / away per step from the logbook (`mode_obs`) or the itinerary |
+| `solar` | ASSETS | `wp · ghi · derate · (1 − shade(mode))`; synthetic clear sky × daily clearness, or bound irradiance / measured power |
+| `shore-power` | ASSETS | charger power while plugged in (harbour, logbook); controls `enabled`, `every_n_days` |
+| `device` | ASSETS | generic consumer: hour windows per mode, standby, burst duty (VHF transmit), own battery with charge window (laptop, phone), path efficiency; measured power replaces the model |
+| `power-station` | BALANCE | stock and balance node: direct supply solar → shore → battery, charging, SoC limits, unmet demand by priority, autonomy, residuals against measured SoC/load |
+
+Real data come as CSV ([template](src/main/resources/twin/bootsdaten-vorlage.csv), invented example rows) and are bound
+by `BoatData` with origin MEASURED (station app, Starlink, USB-C meter) or REPORTED (logbook). `Calibration` fits
+controls such as `solar.derate` and usage scales by bounded Levenberg-Marquardt least squares against the measured
+SoC. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `alternatives()`, `KEY_SERIES`,
+`KEY_KPIS` and `kpis(RunResult)`.
+
 ## Tests
 
 * **`TwinShadowTest`**
@@ -139,6 +165,12 @@ bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/
   * feedback delay
   * YAML loading
   * operating rules
+* **`boat.BoatTwinTest`**, **`boat.BoatDataTest`**
+  * plan validation and port type checks
+  * DC energy balance (sources − losses − served load = ΔSoC), SoC limits, unmet demand by priority
+  * determinism, forecast from a snapshot, origins
+  * what-ifs (+100 Wp, Starlink 3 h/day, shore power every third day) and the scenario API
+  * CSV import (resampling, holding, origins) and calibration that recovers known parameters
 
 ## Not yet
 
