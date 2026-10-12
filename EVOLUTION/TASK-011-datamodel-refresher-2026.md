@@ -120,7 +120,7 @@ Messobjekt)*, gesteuert über den Personal Service Layer (P7e). Abnahme jeweils 
 Windpark-Simulators.
 
 **P8.0 – Fundament (Vertrag)**
-- [ ] Ground-Truth-Export: **der vom Simulator zur Datenerzeugung verwendete** gerichtete Wake-Graph je Windrichtungssektor aus `opentsx-windpark` (Jensen, `WakeModel`), gekennzeichnet als Simulationsreferenz (`gt.source=simulator`, `gt.kind=wake`). Festlegungen nach [07 §8](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md): meteorologische Konvention, 12 × 30°-Sektoren, Kante `A → B` = B im Wake-Kegel von A für mindestens eine Sektorrichtung, Gewichte (mittleres/maximales Defizit, Abdeckungsanteil, Abstand in D) bei Referenz-Ct (8 m/s) plus Ct-Tabelle 4/8/12 m/s; zusätzlich das **dynamische Kantenlog** des Laufs (aktive Paare je 10-s-Schritt), inkl. injizierter Fehler/Regime. Grenzen (keine Stabilität/Mäander) dokumentieren.
+- [ ] *(niedrige Priorität, vorgemerkt)* Ground-Truth-Export: **der vom Simulator zur Datenerzeugung verwendete** gerichtete Wake-Graph je Windrichtungssektor aus `opentsx-windpark` (Jensen, `WakeModel`), gekennzeichnet als Simulationsreferenz (`gt.source=simulator`, `gt.kind=wake`). Festlegungen nach [07 §8](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md): meteorologische Konvention, 12 × 30°-Sektoren, Kante `A → B` = B im Wake-Kegel von A für mindestens eine Sektorrichtung, Gewichte (mittleres/maximales Defizit, Abdeckungsanteil, Abstand in D) bei Referenz-Ct (8 m/s) plus Ct-Tabelle 4/8/12 m/s; zusätzlich das **dynamische Kantenlog** des Laufs (aktive Paare je 10-s-Schritt), inkl. injizierter Fehler/Regime. Grenzen (keine Stabilität/Mäander) dokumentieren.
 - [ ] Iceberg-Schema der **Kantentabelle** (Multilayer, versioniert): Quelle/Ziel-Serie, Layer/Methode, Lag, Stärke, Signifikanzfelder (l_adj, l_norm, l_trans, p-Wert, Surrogattyp, Konfidenz aus Bagging), Fenster, Spezifikations-Hash, Provenienz (Episoden-Hash, Topic/Offsets).
 - [ ] OpenLineage-Facet „Replay-Provenienz“ in `opentsx-openmetadata`; Kantentabelle, Simulationsläufe und Optimierungsinstanzen als Lineage-Knoten in OpenMetadata.
 
@@ -160,7 +160,9 @@ Windpark-Simulators.
 
 Verbund aus Windpark, Elektrolyseur, H2-Leitung, Speicher, Eigenverbrauch/Direktabnehmer und Vermarktung als
 Schaltplan atomarer Elemente (MVC+P), ausgeführt als geschichtetes BSP; Smart Topics liefern gelernte Teilmodelle und
-publizieren den Zwilling. **Status: Vorschlag (D18–D24).** Gestuft mit Wertschranken (A–D); P8.3/P8.4 liefern
+publizieren den Zwilling. **Der Zwilling mit seinen drei Betriebsarten (Shadow, What-if, Prognose/MPC) ist die Essenz
+der Roadmap.** Alle drei werden in beiden Ausführungsvarianten ermöglicht: eng gekoppelt als ein Prozess (T) und lose
+gekoppelt über Smart Topics (L) (D20 entschieden). **Status: übrige Punkte Vorschlag (D18, D19, D21–D24).** Gestuft mit Wertschranken (A–D); P8.3/P8.4 liefern
 Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 
 **P9.0 – Stufe A: Datenzugang & Potenzial (ohne Simulation)**
@@ -179,7 +181,9 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Screening Stand der Technik vor dem Bau: mosaik, HELICS, FMI 3.0 (Atome als FMUs?), pandapower, PyPSA, oemof → Entscheidung D24.
 - [ ] Atomvertrag MVC+P: Avro-Schemas je Atomtyp für Zustand und Ports (Bestand/Fluss/Signal, Einheit), Invarianten, Sensorsicht `h(x)`.
 - [ ] Schaltplan-YAML (Atome, Parameter, Verdrahtung), Validierung (Typ/Einheit der Ports, Zyklen nur über Schrittgrenzen), Hash in die Lineage.
-- [ ] Twin-Runner: geschichtetes BSP (Phasen Ingest → Verfügbarkeit → Policy → Bilanz → Integration → Views), Basistakt 1 min, Mehrrate, Ereignisse mit exaktem Zeitpunkt.
+- [ ] **Variante T (eng, ein Prozess):** Twin-Runner mit geschichtetem BSP (Phasen Ingest → Verfügbarkeit → Policy → Bilanz → Integration → Views), Basistakt 1 min, Mehrrate, Ereignisse mit exaktem Zeitpunkt; Referenz für Variante L.
+- [ ] **Variante L (lose, Smart Topics):** Atomtyp als Smart-Topic-Prozessor (Instanzen als Schlüssel), Kopplung über Port-Topics, Ereigniszeit-Watermarks mit einstellbarer Veraltung (BSP ↔ SSP ↔ asynchron), Bilanzknoten als eigener Prozessor mit Ausgleichsschritt; Atome können bei verschiedenen Eigentümern laufen.
+- [ ] Derselbe Atomcode läuft unverändert in T und L (gemeinsamer Atom-, Schaltplan- und Topic-Vertrag); Konformitätstest: L mit Veraltung 0 = T bitgleich.
 - [ ] Topics `twin.<id>.<run>.msgs|barrier|interventions` mit deterministischen Ids, Superschritt-Commit mit Zustands-Hash; Zustandssnapshots in Iceberg (`twin_state`); Replay-Verifikation bitgleich.
 - [ ] Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` mit Taint-Propagation in alle KPIs.
 
@@ -190,7 +194,7 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] A12 Markt, A13 Direktvermarkter/Fahrplan/PPA (Abweichung, Ausgleichsenergie), A14 Bediener (Eingriffe), A15 Optimierer (Policy-Atom).
 
 **P9.3 – Betriebsarten & Abnahmeszenarien**
-- [ ] Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog), Prognose/MPC – gleiche Atome, andere Bindung.
+- [ ] **Alle drei Betriebsarten in beiden Varianten** (Matrix 3 × 2): Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog, Verzweigungen), Prognose/MPC – gleiche Atome, andere Bindung.
 - [ ] S3 PPA-Schattenbetrieb vor der offiziellen Umstellung des Messkonzepts (Fahrplan/Prognose des Vermarkters gegen Erzeugung) → **Schranke B**.
 - [ ] S1 H2-Kette (Schieber zu → Druck → Zeit-bis-Grenze → Abregelung → Fahrplanabweichung → Mehrvermarktung), Eingriffe ändern alle nachgelagerten Zahlen konsistent → **Schranke C**.
 - [ ] S4 Wake-Referenz im Park-Atom reproduziert; rekonstruierter Graph (P8.1) dagegen geprüft.
@@ -198,6 +202,12 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 **P9.4 – Policy, Optimierung & Service Layer**
 - [ ] Smart Topics als Prognose-Ports und Schätzer für fehlende Daten; Zwilling als abgeleitetes Smart Topic mit What-if-Endpunkt der Prediction-API.
 - [ ] Optimierer als Policy-Atom (P8.4, rollierender Horizont); Vorschläge im Personal Service Layer vor Freigabe im Zwilling durchspielen; Mehrerlös gegen Referenzfahrweise → **Schranke D**.
+
+**P9.6 – Forschung: eng vs. lose gekoppelte Zwillinge (Paper)** – Skizze: [07 §10](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
+- [ ] Literaturstand: BSP/Pregel, SSP/Parameter-Server, PDES (Chandy-Misra-Bryant, Time Warp), HLA-Zeitmanagement, FMI/mosaik/HELICS, Dataflow-Watermarks.
+- [ ] Versuchsaufbau RQ1–RQ6: gleicher Schaltplan in T und L, S1/S3 plus synthetische Verbünde mit gesteuerter Kopplungsstärke und Störungen (Verzögerung, Verlust, Duplikate, Atomausfall).
+- [ ] Ergebnisse: Fehlerschranken in Abhängigkeit von Veraltung, Kopplungsstärke und Zeitkonstanten; Entwurfsregel „was muss eng gekoppelt sein“; reproduzierbares Artefakt.
+- [ ] Manuskript und Zielvenue festlegen.
 
 **P9.5 – Übertragbarkeit & Föderation**
 - [ ] Schaltplan-Vorlagen für neue Projekte (Park + Direktleitung + Abnehmerlastgang) zur Bewertung vor dem Bau.
@@ -245,7 +255,7 @@ opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, RES
 | D17 | P8: Reihenfolge | **Vorschlag:** Benchmark mit Ground Truth zuerst (P8.0/P8.1), Quanten zuletzt (P8.5) |
 | D18 | P9: Atomvertrag | **Vorschlag:** MVC+P (Dynamik und Policy getrennt), Avro-Schema je Atomtyp, Atomkatalog als Standardbauteile, Schaltplan-YAML je Anlage |
 | D19 | P9: Ausführung | **Vorschlag:** geschichtetes BSP, Basistakt 1 min, Mehrrate als ganzzahlige Vielfache, deterministisch, Barriere-Topic |
-| D20 | P9: Einbettung | **Vorschlag:** PoC mit einem Twin-Runner im Prozess; gelernte Teilmodelle als Smart Topics; Verteilung je Atomtyp erst bei Bedarf |
+| D20 | P9: Einbettung | **Entschieden (2026-10-12):** beide Ausführungsvarianten gleichrangig – eng als ein Prozess (T) und lose über Smart Topics (L); alle drei Betriebsarten in beiden; Vergleich als Forschungsfrage (P9.6) |
 | D21 | P9: Datenqualität | **Vorschlag:** Herkunftsleiter mit Taint-Propagation; jede KPI zeigt ihren Messanteil |
 | D22 | P9: Vorgehen | **Vorschlag:** Stufen A–D mit Wertschranken; Stufe A (Daten & Potenzial) ohne Simulation |
 | D23 | P9: Sprache | **Vorschlag:** Kern bleibt Java; Edge-Sammler dürfen Go/Rust sein; kein Kern-Neubau vor Schranke B |
@@ -278,7 +288,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] D6 Iceberg-Catalog/Object Store (REST + MinIO) final festlegen.
 - [ ] D14–D17 (P8-Vorschläge) bestätigen.
 - [ ] ER1: Bereitstellung anonymisierter/synthetischer Content-Interaktionsdaten (P8.x).
-- [ ] D18–D24 (P9-Vorschläge) bestätigen.
+- [ ] D18, D19, D21–D24 (P9-Vorschläge) bestätigen.
 
 **Energieverbund / Projektumfeld (P9, organisatorisch – außerhalb des Codes)**
 - [ ] Zählerdaten: Umsetzer und Verkabelung am LWL-Abschluss beauftragen (Modbus der Netzbetreiber-Zähler; freie Faserpaare vorhanden), Registerkarten der Zähler beschaffen.
@@ -316,6 +326,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **Zwilling als Kern der Roadmap festgelegt**: drei Betriebsarten in beiden Varianten (eng/ein Prozess und lose/Smart Topics, D20); Vergleich als Forschungspaper (P9.6); Wake-Graph-Export auf niedrige Priorität.
 
 - 2026-10-12: **Phase 9 vorgeschlagen** (Digitaler Zwilling Energieverbund, Konzept `07-DIGITAL-TWIN-BSP.md`: Atome mit MVC+P, Schaltplan, geschichtetes BSP, Smart Topics als Einbettung, Stufen A–D); Wake-Ground-Truth in P8.0 präzisiert (Simulationsreferenz); Punkte aus dem Projektgespräch in den Backlog.
 

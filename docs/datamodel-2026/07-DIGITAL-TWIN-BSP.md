@@ -1,6 +1,7 @@
 # OpenTSx – Digitaler Zwilling als Verbund atomarer Elemente (Konzept, P9)
 
-> Status: **Vorschlag zur Diskussion**, 2026-10-12. Ausgangspunkt: Projektgespräch zum Verbund aus Windpark,
+> Status: **Vorschlag zur Diskussion**, 2026-10-12. **Der Zwilling mit seinen drei Betriebsarten ist der Kern der
+> Roadmap**; alle drei Betriebsarten werden in beiden Ausführungsvarianten ermöglicht (§4.3, §10). Ausgangspunkt: Projektgespräch zum Verbund aus Windpark,
 > Elektrolyseur, H2-Leitung, Speicher, Eigenverbrauch und Vermarktung. Baut auf
 > [05-SMART-TOPICS](05-SMART-TOPICS.md) (Smart Topics, Personal Service Layer) und
 > [06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) (Rekonstruktion, Simulation,
@@ -29,10 +30,11 @@ Vorschlag in vier Sätzen:
 3. **Ausführung als geschichtetes BSP** (Bulk Synchronous Parallel): Superschritte im Basistakt 1 min, innerhalb
    eines Superschritts feste Phasen in topologischer Ordnung, Barriere über ein Kontroll-Topic, deterministisch und
    damit replaybar.
-4. **Smart Topics sind die Einbettung, nicht jedes Atom**: Gelernte Teilmodelle (Prognosen, Schätzer für fehlende
-   Daten) laufen als Smart Topics und speisen Ports. Der Zwilling selbst ist ein abgeleitetes Smart Topic
-   (Zustandsreihen, Smart Metrics, What-if-API). Für den PoC rechnet *ein* Twin-Runner alle Atome im Prozess. Der
-   Topic-Vertrag erlaubt später die Verteilung je Atomtyp.
+4. **Zwei Ausführungsvarianten, beide gleichrangig**: *eng gekoppelt* als ein Prozess (Twin-Runner, alle Atome im
+   Prozess, harte Barriere) und *lose gekoppelt* über Smart Topics (Atome als eigenständige Prozessoren, Kopplung nur
+   über Topics und Ereigniszeit). Alle drei Betriebsarten (Shadow, What-if, Prognose/MPC) laufen in beiden. Gelernte
+   Teilmodelle sind ohnehin Smart Topics, und der Zwilling publiziert als abgeleitetes Smart Topic. Wann die lose
+   Kopplung dasselbe Ergebnis liefert wie die enge, und was sie dafür kostet, ist eine eigene Forschungsfrage (§10).
 
 ---
 
@@ -238,13 +240,22 @@ sequenceDiagram
 
 ### 4.3 Wo Smart Topics hingehören
 
-| Option | Beschreibung | Bewertung |
-|--------|--------------|-----------|
-| A | jede Atom-*Instanz* ein Smart Topic | zu viele Prozesse und Topics, Barriere über Dutzende Dienste; kein Nutzen bei Dutzenden Atomen und 1-min-Takt |
-| B | jeder Atom-*Typ* ein Smart-Topic-Prozessor (Instanzen als Schlüssel), Runner koordiniert nur | sinnvoll ab vielen Parks/Instanzen; der Topic-Vertrag aus 4.2 erlaubt das ohne Modelländerung |
-| **C (Vorschlag PoC)** | ein Twin-Runner rechnet alle Atome im Prozess; **gelernte Teilmodelle sind Smart Topics** und speisen Ports; der Zwilling publiziert selbst als abgeleitetes Smart Topic | einfach, deterministisch, sofort testbar; ML bleibt dort, wo es schon geplant ist (P7) |
+Beide Varianten werden gebaut. Sie teilen Atomvertrag, Schaltplan und Topic-Vertrag, sodass dasselbe Atom ohne
+Änderung in beiden läuft.
 
-Smart Topics übernehmen damit drei Rollen:
+| Variante | Kopplung | Synchronisation | Stärken | Grenzen |
+|----------|----------|-----------------|---------|---------|
+| **T – eng, ein Prozess** („im Kleinen“) | Methodenaufruf im Prozess; Topics nur für Ein-/Ausgabe | geschichtetes BSP mit harter Barriere (§4.1) | deterministisch, bitgleiches Replay, Bilanz exakt im Schritt, schnell für Experimente und What-if-Läufe | ein Eigentümer, ein Ausfallbereich, skaliert nur vertikal |
+| **L – lose, Smart Topics** | jedes Atom (bzw. jeder Atomtyp, Instanzen als Schlüssel) ist ein Smart-Topic-Prozessor; Kopplung nur über Port-Topics | Ereigniszeit-Watermarks statt globaler Barriere; begrenzte Veraltung (*bounded staleness*, SSP) bis asynchron; Bilanzknoten als eigener Prozessor mit Ausgleichsschritt | Atome können bei verschiedenen Eigentümern laufen (z. B. der Elektrolyseur beim Betreiber, nur Ports werden geteilt), unabhängig deploybar, ausfalltolerant, horizontal skalierbar, Datenhoheit | Ergebnis kann von T abweichen; Erhaltung und Kausalordnung müssen explizit gesichert werden |
+
+Eine Variante je Atom-*Instanz* als eigenes Topic wird nicht verfolgt: Instanzen sind Schlüssel innerhalb des
+Topics ihres Atomtyps.
+
+Gerade die lose Kopplung passt zur Realität des Verbunds: Elektrolyseur, Zähler und Vermarktung gehören
+verschiedenen Parteien. Ein Zwilling, dessen Atome dort laufen, wo die Daten liegen, und der nur Ports austauscht,
+setzt die Föderationsidee aus P7d/P8.5 auf der Ebene des Anlagenmodells fort.
+
+Smart Topics übernehmen in beiden Varianten drei Rollen:
 
 1. **Prognose-Ports**: Wind- und Leistungsprognose, Last, Preise. Das sind P7-Modelle mit MLflow-Alias.
 2. **Schätzer für fehlende Daten**: Elektrolyseurlast, solange keine Betriebsdaten fließen; Abnahmeprofil. Damit lässt
@@ -356,8 +367,50 @@ die gegen diese Referenz nur auf Simulatordaten geprüft werden kann.
 |-----|-------|-----------|
 | D18 | Atomvertrag | MVC+P, Avro-Schema je Atomtyp für Zustand und Ports, Atomkatalog als Standardbauteile, Schaltplan-YAML je Anlage |
 | D19 | Ausführung | geschichtetes BSP, Basistakt 1 min, Mehrrate als ganzzahlige Vielfache, deterministisch, Barriere-Topic |
-| D20 | Einbettung | PoC: ein Twin-Runner im Prozess (Option C); gelernte Teilmodelle als Smart Topics; Verteilung je Atomtyp (Option B) erst bei Bedarf |
+| D20 | Einbettung | **Entschieden (2026-10-12):** beide Varianten gleichrangig – eng gekoppelt als ein Prozess (T) und lose gekoppelt über Smart Topics (L); alle drei Betriebsarten in beiden; gemeinsamer Atom-, Schaltplan- und Topic-Vertrag |
 | D21 | Datenqualität | Herkunftsleiter mit Taint-Propagation; KPIs zeigen Messanteil |
 | D22 | Vorgehen | Stufen A–D mit Wertschranke; Stufe A ohne Simulation |
 | D23 | Sprache | Kern bleibt Java; Edge-Sammler dürfen Go/Rust sein; kein Kern-Neubau vor Schranke B |
 | D24 | Kosimulation | Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
+
+---
+
+## 10. Forschungsfrage: eng vs. lose gekoppelte Zwillinge (Paper-Skizze)
+
+**Arbeitstitel:** *Digital Twins on Logs – Synchronization Semantics from Bulk-Synchronous to Loosely Coupled Smart
+Topics.*
+
+**These.** Ein Zwilling aus atomaren Elementen lässt sich als ein deterministischer Prozess (BSP) oder als lose
+gekoppelter Verbund von Stream-Prozessoren über ein Log (Kafka/KafScale) ausführen. Die lose Kopplung bringt
+Eigentümergrenzen, Datenhoheit, unabhängige Deployments und Ausfalltoleranz, kostet aber Genauigkeit und
+Reproduzierbarkeit. Wie viel, hängt messbar von der Kopplungsstärke und den Zeitkonstanten der Atome ab. Daraus
+lässt sich eine Entwurfsregel ableiten, welche Kopplungen eng bleiben müssen.
+
+**Einordnung (verwandte Arbeiten, zu prüfen):**
+* BSP (Valiant 1990), Pregel; Stale Synchronous Parallel und asynchrone Parameter-Server aus dem verteilten ML.
+* Parallele diskrete Ereignissimulation: konservativ (Chandy-Misra-Bryant) vs. optimistisch (Time Warp,
+  Jefferson); HLA-Zeitmanagement (IEEE 1516).
+* Kosimulation: FMI 3.0, mosaik, HELICS; Jacobi- vs. Gauss-Seidel-Kopplung, Fehlerabschätzungen der
+  Kopplungsschrittweite.
+* Stream Processing: Ereigniszeit und Watermarks (Dataflow-Modell), exactly-once über Logs.
+* Digital Twins in Energiesystemen; föderiertes Lernen und Föderation über Betreibergrenzen.
+
+**Forschungsfragen:**
+
+| Nr. | Frage | Messgröße |
+|-----|-------|-----------|
+| RQ1 | Wann liefert die lose Kopplung (L) dasselbe Ergebnis wie die enge (T)? Fehlerschranke als Funktion von Veraltung `s`, Kopplungsstärke und Zeitkonstanten | Zustandsabweichung gegen T, KPI-Abweichung |
+| RQ2 | Wie bleiben Erhaltungsgrößen (Leistungsbilanz, H2-Masse) unter loser Kopplung erhalten? Ausgleichsschritt, Bilanzknoten, Konservativ-Protokoll | Bilanzfehler je Schritt und kumuliert |
+| RQ3 | Wie bleibt die Kausalordnung von Ereignissen und Eingriffen erhalten (z. B. „Schieber zu“ vor „Abregelung“)? | Anzahl Kausalverletzungen, Reaktionsverzögerung |
+| RQ4 | Ist Replay ohne Transaktionen und idempotenten Producer (KafScale) reproduzierbar? Deterministische Ids, Watermark-Protokoll | bitgleiche Wiederholbarkeit, Abweichungsrate |
+| RQ5 | Was kostet und bringt L: Latenz, Durchsatz, Erholung nach Ausfall eines Atoms, Betrieb über Eigentümergrenzen | End-to-end-Latenz, Erholungszeit, Datenbewegung |
+| RQ6 | Funktionieren alle drei Betriebsarten (Shadow, What-if, MPC) in L? Insbesondere What-if-Verzweigungen und MPC-Horizonte über verteilte Atome | Laufzeit je Szenario, Ergebnisgleichheit mit T |
+
+**Versuchsaufbau.** Gleicher Schaltplan, gleiche Eingänge, beide Varianten. Szenarien S1 (H2-Kette) und S3
+(PPA-Schattenbetrieb), dazu synthetische Verbünde mit gesteuerter Kopplungsstärke, Störungen (verzögerte, fehlende,
+doppelte Nachrichten, Atomausfall) und Größenskalierung. Referenz ist T, Ground Truth kommt aus dem Simulator.
+
+**Erwarteter Beitrag.**
+1. Synchronisationssemantik für Zwillinge auf einem Log, mit Entwurfsregel „was muss eng gekoppelt sein“.
+2. Fehlerschranken und Messungen für BSP vs. SSP vs. asynchron an einem realistischen Energieverbund.
+3. Offene Referenzimplementierung (OpenTSx) mit beiden Varianten und reproduzierbaren Szenarien.
