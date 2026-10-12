@@ -195,7 +195,7 @@ gekoppelt über Smart Topics (L) (D20 entschieden). **Status: übrige Punkte Vor
 Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 
 **P9.0 – Stufe A: Datenzugang & Potenzial (ohne Simulation)**
-- [ ] Generisches **Modbus-Modul** (TCP/RTU), Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS), Pollintervall → `RawReading` → Normalizer → Episoden.
+- [x] Generisches **Modbus-Modul** (TCP/RTU), Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS), Pollintervall → `RawReading` → Normalizer → Episoden. – *`opentsx-modbus`: Modbus-TCP-Client nur mit JDK (MBAP, RTU über TCP mit CRC16), Registerkarte `opentsx.modbus.registermap.v1`, Blockbildung ≤ 125 Register, Zählerüberlauf/-reset als Qualitätscode, In-JVM-Zählersimulator, `bin/opentsx modbus`. Offen: echte Registerkarten (Beispielkarte ist markiert), serielles RTU direkt, KafScale-Senke im CLI.*
 - [ ] **IEC 60870-5-101/-104**-Adapter für die Parkrechner-Schnittstelle (Datenaustausch mit dem Elektrolyseurbetreiber, beide Richtungen).
 - [ ] Elektrolyseur-Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme) über die vereinbarte Schnittstelle (104, OPC UA oder Export) als Quelle `REPORTED`.
 - [ ] **DWD-Sammler**: Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit.
@@ -285,6 +285,7 @@ opentsx-stats                 Streaming-Statistik + DQ (laufzeitunabhängig; Fli
 opentsx-openmetadata          Metadaten-/Profil-/DQ-Publisher
 opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, REST
 opentsx-twin                  Digitaler Zwilling P9: Atomvertrag MVC+P, Schaltplan, Runner Variante T, 3 Betriebsarten
+opentsx-modbus                Modbus-TCP/RTU-über-TCP (nur JDK), Registerkarten (YAML), Poller, Normalisierer, Zählersimulator
 (geplant) opentsx-smart       Smart Topics (P7)
 (geplant) opentsx-network     Kantentabelle, Rekonstruktion (Kämpf-Signifikanzschicht, ECA), Problem-Builder (P8)
 ```
@@ -389,6 +390,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 
 ## Progress Log
 
+- 2026-10-12: **P9.0 Modbus-Modul** `opentsx-modbus`: Modbus-TCP-Client ohne Fremdbibliothek (MBAP, Transaktions-IDs, Timeouts, Reconnect, Exception-Antworten mit Klartext; RTU über TCP mit CRC16), Registerkarten als YAML mit Validierung (Überlappungen, Typen, OBIS, Herkunft), Blockbildung, Normalisierer → v2-Episoden mit Zählerüberlauf/-reset-Flags, In-JVM-Simulator und `bin/opentsx modbus check|read|poll|simulate`; Beispielkarte eines Netzanschlusszählers bis zum Eintreffen der echten Registerkarten.
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.
