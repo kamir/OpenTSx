@@ -49,6 +49,17 @@ class StudioGuideTest {
     }
 
     @Test
+    void headlineAndLimitsPointAtExistingKeys() {
+        for (StudioScenario s : Scenarios.all()) {
+            Map<String, Object> m = StudioExport.export(s);
+            List<String> kpis = s.kpis().stream().map(StudioScenario.Kpi::key).toList();
+            assertTrue(kpis.containsAll(s.headline()), s.id() + " headline " + s.headline());
+            Map<?, ?> series = (Map<?, ?>) ((Map<?, ?>) m.get("reference")).get("series");
+            assertTrue(series.keySet().containsAll(s.limits().keySet()), s.id() + " limits " + s.limits().keySet());
+        }
+    }
+
+    @Test
     void exportCarriesGuideAndPlan() {
         Map<String, Object> m = StudioExport.export(new HouseStudioScenario());
         assertTrue(m.get("guide") instanceof Map<?, ?> g && g.containsKey("wires"));

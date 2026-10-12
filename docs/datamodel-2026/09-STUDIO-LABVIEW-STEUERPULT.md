@@ -31,6 +31,14 @@
 | **Prognose & Was-wäre-wenn** | Vergleich Beobachtet ↔ Alternative mit Kennzahlen und Δ; Prognose ab „jetzt“ (Snapshot) mit austauschbarer Fahrweise; Ereignisliste | `Twin.whatIf`, `Twin.forecast`; später Prediction-API der Smart Topics (P7) | ja (vorberechnetes Raster) |
 | **Node-Graph** | Bausteine als Knoten, Ports, Drähte; Spalten = Phasen eines Takts; durchgezogen = selber Takt, gestrichelt = nächster Takt; ◆ = extern gebundener Eingang; Zeitregler zeigt Werte an den Ports; Inspektor je Knoten | `TwinPlan` (Schaltplan), Schattenlauf | ja (nur ansehen) |
 
+Seit der Überarbeitung als Produktoberfläche heißen die Ansichten **Überblick** (neu: Geschichte des Szenarios,
+Ablauf der Ereignisse, wichtigste Verläufe), **Vergleich** (bisher Prognose & Was-wäre-wenn), **Systembild** (bisher
+Node-Graph) und **Messreihen** (bisher Statistik). Über allen Ansichten steht eine Zusammenfassung mit vier
+Kennzahlen (`StudioScenario.headline()`) und der Frage, die das Szenario beantwortet (`decision()`). Im Systembild
+zeigt die Farbe einer Verbindung den Energieträger (Strom, Wasserstoff, Wärme, Brennstoff, Signal); Verbindungen
+über mehrere Spalten laufen in eigenen Spuren unter den Blöcken. Der Schalter „Technische Details“ blendet
+Kennungen, Lauf-Ids und Rohwerte ein. Grenzwerte aus `limits()` erscheinen als Linien in den Diagrammen.
+
 Regeln, die der Prototyp schon umsetzt:
 
 * **Herkunft:** Jede Reihe zeigt, wie sie entstanden ist. Modellierte Werte sehen nie aus wie Messungen.
