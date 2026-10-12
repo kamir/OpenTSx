@@ -23,7 +23,7 @@ export default function Register() {
     try {
       await register(formData);
       navigate('/dashboard');
-    } catch (error) {
+    } catch {
       // Error is handled in store
     }
   };

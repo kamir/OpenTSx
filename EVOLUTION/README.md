@@ -16,6 +16,7 @@ Where:
 
 | Task ID | Title | Status | Created |
 |---------|-------|--------|---------|
+| TASK-012 | [Briefing für den lokalen Agenten](TASK-012-lokaler-agent.md): Repo-Hygiene, lokale Testinstallation (k3s, KafScale, Images), Markthistorie mit Zugangsdaten, private Daten, Modbus | open | 2026-10-12 |
 | TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | P0–P5 done, P6/P7 planned | 2026-10-09 |
 | TASK-010 | [Open-source readiness](TASK-010.md): LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, link checker | partly done (CI, README, link check) | 2025-12 |
 | TASK-005 | [Processing flow descriptor](TASK-005-processing-flow-descriptor.md) (Flink `DynamicTopologyJob`) | concept valid, not continued | 2025-12-21 |
