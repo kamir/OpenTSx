@@ -388,7 +388,8 @@ H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter
 läuft auf synthetischen Daten (`bin/opentsx twin`). Offen: Variante L, Avro-Schemas je Atomtyp, KafScale-Binding,
 WEA/Wake/Wetter/Zähler-Atome, Optimierer (P8.4), echte Daten.
 
-Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md).
+Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md). Visuelles Inventar,
+Navigation durch die Anlage und Wartung am selben Atom-Anker: [12-EXPLORATIVES-UI-INVENTAR](12-EXPLORATIVES-UI-INVENTAR.md).
 
 *Siehe auch:* [08-HAUS-ZWILLING](08-HAUS-ZWILLING.md) überträgt die Methode (Atomvertrag, drei Betriebsarten,
 Herkunftsleiter, Stufen A–D, Alternative − Referenz) auf ein Einfamilienhaus mit Öl-Holz-Heizung, inklusive

@@ -270,6 +270,16 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Raspberry Pi als Edge-Publisher (`opentsx.smartmetric.v1` über MQTT → infinimesh → KafScale); Rückweg nur mit Freigabe.
 - [ ] Szenario im Studio (generischer Export über `BoatDemo.plan/observed/reference/alternatives`).
 
+**P9.9 – Anlage erkunden: visuelles Inventar & Wartung (Studio-Ansicht 4)** – Konzept: [`12-EXPLORATIVES-UI-INVENTAR.md`](../docs/datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md)
+- [x] E0: Konzept (Ebenen Karte/Grundriss/Decksplan, Level-of-Detail, Hover-Karte, Datenblatt, Bildherkunft, Normbezüge RDS-PP/IEC 61400-25/ZEUS/ISO 14224, Wartungskopplung, infinimesh-Anbindung) und statischer Prototyp `docs/prototypes/anlagen-explorer.html` für Windpark, Haus und Boot mit Atom-Ids der Schaltpläne; Beispielinventar `twin/inventar-beispiel.yaml` (`opentsx.inventory.v1`, erfundene Werte).
+- [ ] E1: `opentsx.inventory.v1` als JSON-Schema; Validierung gegen den Schaltplan (Atom existiert, Id-Präfix = Twin-Id); Inventar im `StudioExport`; Reiter „Anlage erkunden“ im Studio; `tools/build_explorer.py` (analog `build_studio.py`).
+- [ ] E1: Ablage – Iceberg `inventory.assets/media/documents` (versioniert), Objektspeicher mit SHA-256, Abbildung in OpenMetadata klären (kein Entitätstyp für physische Anlagen bekannt, zu prüfen).
+- [ ] E2: Livewerte aus Shadow/KafScale und infinimesh (`reported`, online/offline, Veraltung), Zeitregler über Replay/Iceberg-Zeitreise, Sprünge zu Statistik und Node-Graph.
+- [ ] E3: Wartungs-Topic `tsx.<domain>.maintenance.v1` (`opentsx.maintenance.v1`, deterministische `eventId`), Auftragsvorschläge aus Alarmen, Intervallen und Gerätestatus, Aufträge als Eingriffe im Zwilling (Verfügbarkeit), Was-wäre-wenn „Wartung verschieben“, CSV-Import/-Export.
+- [ ] E3: Kommando-Dialog nur mit Freigabe (`opentsx.command.v1` → infinimesh `desired`, `commandable: false` für Sicherheitsgeräte).
+- [ ] E4: Orthofoto-Grundkarten (Lizenzen je Land prüfen), 360°-Panoramen, glTF-Modelle; CMMS-Anbindung (z. B. openMAINT; SAP PM im Unternehmensumfeld) über API.
+- [ ] Recherche-Nacharbeit: RDS-PP-Anwendungsrichtlinie Wind (Dokumentnummer, Codes), FGW TR 7/ZEUS (Schlüsselaufbau, Lizenz), ISO-14224-Klassen für Haus/Boot, Lizenz und API von openMAINT, Namespace-/Gerätehierarchie und Online-Status in `infinimesh/core`.
+
 ## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
 ```
@@ -321,6 +331,13 @@ opentsx-twin                  Digitaler Zwilling P9: Atomvertrag MVC+P, Schaltpl
 | D27 | P7f: DAG-Spezifikation | **Vorschlag:** `opentsx.dag.v1` (YAML), gehasht, von Go und Java gelesen, im Studio bearbeitbar |
 | D28 | P7f: Training | **Vorschlag:** nie im Strom; Trigger → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
 | D29 | P7f: Semantik | **Vorschlag:** at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen |
+| D30 | P9.9: Anker des Inventars | **Vorschlag:** Asset-Id = Twin-Id/Atom-Id (+ Unterobjektpfad); keine zweite Anlagenstruktur |
+| D31 | P9.9: Bildpolitik | **Vorschlag:** echte Fotos bevorzugt; Herkunft, Lizenz und `reality` je Medium; Illustrationen immer gekennzeichnet |
+| D32 | P9.9: Ablage | **Vorschlag:** Inventar-YAML als Eingabe; Iceberg-Tabellen (versioniert) + Objektspeicher mit SHA-256; OpenMetadata als Katalog |
+| D33 | P9.9: Wartung | **Vorschlag:** leichtes Tracking als Ereignisprotokoll `tsx.<domain>.maintenance.v1`; CMMS bleibt führend, wo vorhanden; Aufträge = Eingriffe im Zwilling |
+| D34 | P9.9: Kennzeichen | **Vorschlag:** RDS-PP, IEC 61400-25, ZEUS optional für Wind; ISO 14224 generisch; keine Pflicht für Haus/Boot |
+| D35 | P9.9: infinimesh | **Vorschlag:** Gerätezustand aus infinimesh, Bedeutung aus dem Inventar; Kopplung über `{namespace, device}`; Kommandos nur mit Freigabe |
+| D36 | P9.9: Darstellung | **Vorschlag:** 2D (SVG/Canvas, Kacheln) zuerst, 3D erst in E4 |
 | D24 | P9: Kosimulation | **Vorschlag:** Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
 
 > **Hinweis:** Die Phasenreihenfolge folgt der Gap-Analyse
@@ -351,6 +368,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] D14–D17 (P8-Vorschläge) bestätigen.
 - [ ] ER1: Bereitstellung anonymisierter/synthetischer Content-Interaktionsdaten (P8.x).
 - [ ] D18, D19, D21–D24 (P9-Vorschläge) bestätigen.
+- [ ] D30–D36 (P9.9 Explorer, Inventar, Wartung) bestätigen; echte Fotos/Datenblätter je System liefern (privat: `config/private/`).
 
 **Energieverbund / Projektumfeld (P9, organisatorisch – außerhalb des Codes)**
 - [ ] Zählerdaten: Umsetzer und Verkabelung am LWL-Abschluss beauftragen (Modbus der Netzbetreiber-Zähler; freie Faserpaare vorhanden), Registerkarten der Zähler beschaffen.
@@ -389,6 +407,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 
 ## Progress Log
 
+- 2026-10-12: **Anlage erkunden (P9.9, E0)** (`12-EXPLORATIVES-UI-INVENTAR.md`): vierte Studio-Ansicht als visuelles Inventar auf Karte (Windpark), Grundriss (Haus) und Decksplan (Boot) mit Level-of-Detail, Hover-Karte und Datenblatt; Inventarmodell `opentsx.inventory.v1` am Atom-Anker, Bildherkunft, Normbezüge, Wartungs-Topic `opentsx.maintenance.v1`, infinimesh als Geräteebene; statischer Prototyp `docs/prototypes/anlagen-explorer.html` und Beispielinventar; D30–D36 als Vorschläge.
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.
