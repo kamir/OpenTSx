@@ -120,6 +120,11 @@ public final class H2ChainScenario implements StudioScenario {
     }
 
     @Override
+    public StudioGuide guide() {
+        return StudioGuide.resource("twin/h2-chain.guide.yaml");
+    }
+
+    @Override
     public List<String> markerEvents() {
         return List.of("intervention", "pressure_limit", "protective_shutdown");
     }
