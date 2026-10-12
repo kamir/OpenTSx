@@ -28,7 +28,7 @@ emails==0.6.0
 python-socketio==5.14.0
 
 # Time series (use local opentsx package)
-numpy==1.26.3
+numpy==2.5.3
 pandas==2.2.0
 
 # Utilities
