@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>opentsx</artifactId>
+        <groupId>org.opentsx</groupId>
+        <version>3.0.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>opentsx-retrieval</artifactId>
+    <name>opentsx-retrieval</name>
+    <description>
+        Episode retrieval: segmentation (fixed duration/count, extremum, threshold; batch and streaming), pattern
+        search (MASS, SAX, UCR-DTW cascade), whole-episode similarity and the EpisodeService API over SeriesStores.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-store-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-windpark</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
