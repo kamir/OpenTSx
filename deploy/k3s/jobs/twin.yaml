@@ -1,0 +1,44 @@
+# Digital twin S1 (H2 chain) in shadow, what-if and forecast mode.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-twin
+  labels:
+    opentsx.org/demo: twin
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: twin
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: twin
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - twin
+          env:
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>
+              value: ""
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}   # measured peak RSS ~120 MB
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

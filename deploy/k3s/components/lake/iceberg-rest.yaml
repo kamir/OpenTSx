@@ -1,0 +1,80 @@
+# Iceberg REST catalog (Apache reference implementation; JDBC/SQLite metadata on a PVC, data files on S3).
+# Fine for a lab; for production use a hardened catalog (e.g. Apache Polaris, Lakekeeper, Nessie).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opentsx-iceberg-catalog
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-iceberg-rest
+  labels:
+    app.kubernetes.io/name: opentsx-iceberg-rest
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-iceberg-rest
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-iceberg-rest
+    spec:
+      containers:
+        - name: iceberg-rest
+          image: apache/iceberg-rest-fixture:1.9.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8181
+          env:
+            - name: CATALOG_URI
+              value: jdbc:sqlite:/catalog/iceberg_catalog.db
+            - name: CATALOG_WAREHOUSE
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: S3_WAREHOUSE}}
+            - name: CATALOG_IO__IMPL
+              value: org.apache.iceberg.aws.s3.S3FileIO
+            - name: CATALOG_S3_ENDPOINT
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: S3_ENDPOINT}}
+            - name: CATALOG_S3_PATH__STYLE__ACCESS
+              value: "true"
+            - name: AWS_REGION
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: S3_REGION}}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom: {secretKeyRef: {name: opentsx-secrets, key: AWS_ACCESS_KEY_ID}}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom: {secretKeyRef: {name: opentsx-secrets, key: AWS_SECRET_ACCESS_KEY}}
+          readinessProbe:
+            httpGet: {path: /v1/config, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 384Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          volumeMounts:
+            - name: catalog
+              mountPath: /catalog
+      volumes:
+        - name: catalog
+          persistentVolumeClaim:
+            claimName: opentsx-iceberg-catalog
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-iceberg-rest
+spec:
+  selector:
+    app.kubernetes.io/name: opentsx-iceberg-rest
+  ports:
+    - name: http
+      port: 8181
+      targetPort: http

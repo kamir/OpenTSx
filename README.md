@@ -51,6 +51,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
 | Module READMEs | details per module, e.g. [kafka-v2](opentsx-kafka-v2/README.md), [windpark](opentsx-windpark/README.md), [retrieval](opentsx-retrieval/README.md) |
 | [Developer guide](docs/devguide/README.md) | PDF build, processing-flow descriptor schema, local infrastructure |
+| [DevOps guide](docs/devops/README.md) | run OpenTSx on k3s against an existing KafScale cluster: setup plan, sizing plan, demos, scripts in `deploy/k3s/` |
 
 ## Modules
 

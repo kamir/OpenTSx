@@ -1,0 +1,26 @@
+# KAFSCALE_NETWORK=hostnetwork: pods that talk to KafScale (label opentsx.org/kafka=true) use the node's network.
+# Use it when KafScale runs on the k3s host itself and advertises "localhost" (e.g. docker-compose.kafscale.yml
+# with its default KAFSCALE_ADVERTISED_HOST). Single-node lab only: the pods see the host's ports and loopback.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Deployment
+      labelSelector: opentsx.org/kafka=true
+    patch: |-
+      - op: add
+        path: /spec/template/spec/hostNetwork
+        value: true
+      - op: add
+        path: /spec/template/spec/dnsPolicy
+        value: ClusterFirstWithHostNet
+  - target:
+      kind: Job
+      labelSelector: opentsx.org/kafka=true
+    patch: |-
+      - op: add
+        path: /spec/template/spec/hostNetwork
+        value: true
+      - op: add
+        path: /spec/template/spec/dnsPolicy
+        value: ClusterFirstWithHostNet

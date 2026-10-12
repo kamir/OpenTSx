@@ -1,0 +1,31 @@
+# Lake profile: an Iceberg REST catalog (warehouse on S3) and the retrieval server reading Iceberg instead of the
+# demo store. S3 is either the in-cluster MinIO (component lake-minio) or an existing endpoint (S3_ENDPOINT).
+# The Java side needs S3FileIO: build the tools image with `10-build.sh --with-s3`.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - iceberg-rest.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: opentsx-retrieval
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args
+        value: [retrieval-server, --port, "8080", --iceberg, $(ICEBERG_PROPS), --namespace, $(ICEBERG_NAMESPACE)]
+      - op: add
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: ICEBERG_PROPS
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_PROPS}}
+          - name: ICEBERG_NAMESPACE
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_NAMESPACE}}
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom
+        value:
+          - secretRef: {name: opentsx-secrets, optional: true}
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: {cpu: 250m, memory: 768Mi}
+          limits: {cpu: "2", memory: 2Gi}

@@ -14,6 +14,11 @@ module classpath and caches it in `<module>/target/classpath.txt`.
 | `boat` | `org.opentsx.twin.demo.BoatDemo` | `[--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate]]`; boat twin (Etap 22): shadow of a synthetic two-week trip and what-ifs with KPI deltas; with `--data` on real operating data (CSV, template `twin/bootsdaten-vorlage.csv`), with `--calibrate` fitted to the measured SoC |
 | `classpath <module>` | — | prints the runtime classpath, e.g. for your own `java -cp` calls |
 
+The container image `opentsx/tools` (see the [DevOps guide](../devops/README.md)) offers the same commands as
+`opentsx <command>`, plus `studio-export <out.json>` (Smart Topics Studio data) and `kafscale-check --kafscale
+<bootstrap> [--domain d] [--provision true --partitions n]` (reachability of the bootstrap and the advertised broker
+addresses, topic provisioning, record counts per topic).
+
 Other scripts in `bin/`:
 
 * `000_validate_environment.sh`: environment check.

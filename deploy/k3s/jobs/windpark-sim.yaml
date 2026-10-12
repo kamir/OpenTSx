@@ -1,0 +1,75 @@
+# Wind-farm scenario (6 h, 10 turbines x 10 channels, 1 Hz) -> one sealed bucket on KafScale (also provisions the topics). The lake component adds --iceberg.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-windpark-sim
+  labels:
+    opentsx.org/demo: windpark-sim
+    opentsx.org/kafka: "true"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: windpark-sim
+        opentsx.org/kafka: "true"
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: windpark-sim
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - windpark-sim
+            - --scenario
+            - $(OPENTSX_SCENARIO)
+            - --kafscale
+            - $(KAFSCALE_BOOTSTRAP)
+            - --domain
+            - $(OPENTSX_DOMAIN)
+            - --partitions
+            - $(OPENTSX_PARTITIONS)
+            - --index
+            - /data/$(OPENTSX_DOMAIN)-index.tsv
+            - --ground-truth
+            - /data/ground-truth.json
+          env:
+            - name: OPENTSX_SCENARIO
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
+            - name: KAFSCALE_BOOTSTRAP
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+            - name: OPENTSX_DOMAIN
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+            - name: OPENTSX_PARTITIONS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_PARTITIONS}}
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>
+              value: ""
+          envFrom:
+            - secretRef:
+                name: opentsx-secrets
+                optional: true
+          resources:
+            requests: {cpu: 500m, memory: 768Mi}   # measured peak RSS ~460-560 MB (Iceberg sink); + producer buffers
+            limits: {cpu: "2", memory: 1536Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: opentsx-data

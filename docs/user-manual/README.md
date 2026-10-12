@@ -26,7 +26,7 @@ OpenTSx is a toolkit for time-series data on event-streaming infrastructure. It 
 | a data engineer (ingest, storage, replay) | [Data model](03-data-model.md), [KafScale storage](04-kafscale-storage.md), [Stores](05-stores.md) |
 | working with wind-farm data | [Wind farm](06-windpark.md), [Statistics & data quality](07-stats-quality.md), [OpenMetadata](08-openmetadata.md) |
 | an analyst or data scientist | [Retrieval & patterns](09-retrieval.md), [Python](10-python.md), [Classic analytics](11-classic-analytics.md) |
-| an operator | [Operations](12-operations.md) |
+| an operator | [Operations](12-operations.md), [DevOps guide: k3s + KafScale](../devops/README.md) |
 | coming from OpenTSx 2.x (TimeSeriesObject, TSBucket) | [Migration](13-migration.md) |
 
 ## Conventions
