@@ -10,8 +10,9 @@ cd ..
 #export OPENTSX_TOPIC_MAP_FILE_NAME=./config/topiclist_kping_cloud.def
 
 export OPENTSX_TOPIC_MAP_FILE_NAME=./config/topiclist_kping.def
-export CLUSTER_CONFIG_FILE=./../config/cpl_local.props
-#export CLUSTER_CONFIG_FILE=./../config/cpl_iMac.props
+# local profile (git-ignored); falls back to the checked-in localhost template
+export CLUSTER_CONFIG_FILE=./../config/opentsx-local.props
+[ -f "$CLUSTER_CONFIG_FILE" ] || export CLUSTER_CONFIG_FILE=./../config/opentsx-local.props.example
 
 export WP=$(pwd)
 

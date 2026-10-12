@@ -1,0 +1,154 @@
+{
+  "type" : "record",
+  "name" : "DeviceSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one device atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "DeviceState",
+      "doc" : "State variables of device",
+      "fields" : [ {
+        "name" : "energy_wh",
+        "type" : "double"
+      }, {
+        "name" : "device_wh",
+        "type" : "double"
+      }, {
+        "name" : "active_h",
+        "type" : "double"
+      }, {
+        "name" : "day",
+        "type" : "double"
+      }, {
+        "name" : "on_today_h",
+        "type" : "double"
+      }, {
+        "name" : "soc_wh",
+        "type" : "double"
+      }, {
+        "name" : "empty_h",
+        "type" : "double"
+      }, {
+        "name" : "unmet_use_wh",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "DeviceOutputs",
+      "doc" : "Output ports of device",
+      "fields" : [ {
+        "name" : "p_w",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "active",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [1]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "DeviceControls",
+      "doc" : "Controls of device overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "on",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      }, {
+        "name" : "scale",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      }, {
+        "name" : "power_factor",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      }, {
+        "name" : "max_on_h",
+        "type" : [ "null", "double" ],
+        "doc" : "default 24.0",
+        "default" : null
+      }, {
+        "name" : "path_eff",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.9",
+        "default" : null
+      }, {
+        "name" : "charge_from_h",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      }, {
+        "name" : "charge_to_h",
+        "type" : [ "null", "double" ],
+        "doc" : "default 24.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "device",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "mode",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  }, {
+    "name" : "p_meas_w",
+    "kind" : "FLOW",
+    "unit" : "W"
+  }, {
+    "name" : "on",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  } ]
+}

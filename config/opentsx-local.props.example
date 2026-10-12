@@ -1,0 +1,43 @@
+# OpenTSx 2.x Kafka client profile - local template (KafScale or Apache Kafka on localhost).
+#
+# Read by OpenTSxClusterLink (opentsx-connectors) and the 2.x tools in opentsx-lg / opentsx-core.
+# Default path: ./config/opentsx-local.props; override with OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME.
+# If ./config/opentsx-local.props does not exist, this .example file is used as is.
+#
+#   cp config/opentsx-local.props.example config/opentsx-local.props     # git-ignored, edit freely
+#   docker compose -f docker-compose.kafscale.yml up -d                  # KafScale broker on localhost:9092
+#
+# Real cluster profiles (hosts, credentials) belong in config/private/ (git-ignored), never in this file.
+# The v2 modules (windpark-sim, stats, retrieval, twin) do not read this file: they take the bootstrap via
+# --kafscale <host:port> or KAFSCALE_BOOTSTRAP, see docs/user-manual/12-operations.md.
+
+# --- kping / klatency load tools (opentsx-lg) ------------------------------------------------------------------
+kping.producer.ziterations=10
+kping.consumer.giveUp=1000
+kping.consumer.nrOfSamples=1000000
+
+klatency.producer.ziterations=1000
+klatency.consumer.giveUp=1000
+klatency.consumer.nrOfSamples=1000
+klatency.request_topic=latency_benchmark_request
+klatency.response_topic=latency_benchmark_response
+klatency.processing.delay.ms=50
+
+# --- Kafka client ----------------------------------------------------------------------------------------------
+bootstrap.servers=localhost:9092
+request.timeout.ms=20000
+retry.backoff.ms=500
+linger.ms=0
+acks=1
+# KafScale has no InitProducerId: clients >= 3.0 default to idempotence=true, which KafScale rejects
+enable.idempotence=false
+
+key.serializer=org.apache.kafka.common.serialization.StringSerializer
+value.serializer=io.confluent.kafka.serializers.KafkaAvroSerializer
+key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
+value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer
+
+# --- Confluent Schema Registry ---------------------------------------------------------------------------------
+# The 2.x Avro producers (TSOProducer, kping) always use KafkaAvroSerializer and need a registry.
+# docker-compose.kafscale.yml does not start one; run a registry on localhost:8081 or point this to yours.
+schema.registry.url=http://localhost:8081

@@ -16,6 +16,7 @@ two and shows where the planned parts will fit into the same namespace, images a
 | retrieval server (`retrieval-server`) | done | Deployment + Service, demo store or Iceberg |
 | Iceberg store (`opentsx-store-iceberg`) | done | lake profile; S3 needs `--with-s3` |
 | digital twin, variant T (one process): H2 chain, house, boat | proof of concept (P9) | Jobs |
+| Modbus poller (`modbus poll`, `opentsx-modbus`) | tested against the in-JVM simulator; real meter and register sheets pending | Deployment close to the converter (component `hostnetwork` if the meter network is only reachable from the node); writes CSV or episodes to a file today, KafScale sink still to be wired; `modbus simulate` as a demo Job/Service |
 | Smart Topics Studio | static prototype | nginx Deployment, page built into the image |
 | Python package / client | done | outside the cluster (port-forward); not containerized |
 

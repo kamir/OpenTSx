@@ -1,0 +1,113 @@
+{
+  "type" : "record",
+  "name" : "WoodStoveSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one wood-stove atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "WoodStoveState",
+      "doc" : "State variables of wood-stove",
+      "fields" : [ {
+        "name" : "fuel_kwh",
+        "type" : "double"
+      }, {
+        "name" : "wood_ster",
+        "type" : "double"
+      }, {
+        "name" : "heat_kwh",
+        "type" : "double"
+      }, {
+        "name" : "burn_h",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "WoodStoveOutputs",
+      "doc" : "Output ports of wood-stove",
+      "fields" : [ {
+        "name" : "q_heat_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "wood_ster_ph",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [Ster/h]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "WoodStoveControls",
+      "doc" : "Controls of wood-stove overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "hours_per_day",
+        "type" : [ "null", "double" ],
+        "doc" : "default 4.0",
+        "default" : null
+      }, {
+        "name" : "fuel_kw",
+        "type" : [ "null", "double" ],
+        "doc" : "default 7.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "wood-stove",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "season",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  }, {
+    "name" : "wood_kwh_per_day",
+    "kind" : "SIGNAL",
+    "unit" : "kWh/d"
+  } ]
+}

@@ -34,7 +34,12 @@ this order:
 3. profile overrides,
 4. `config/opentsx-default.properties`.
 
-`opentsx.properties.example` shows the available keys. The `config/cpl*.props` files are 2.x Kafka client profiles.
+[`opentsx.properties.example`](../../opentsx.properties.example) lists the keys the code reads, including how the v2
+modules are configured (command-line options and environment variables, no properties file). The 2.x Kafka client
+profile is `config/opentsx-local.props` (git-ignored; set `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` to use
+another file). Without it, the template [`config/opentsx-local.props.example`](../../config/opentsx-local.props.example)
+(localhost, KafScale-compatible) is used. Profiles with real hosts or credentials belong in `config/private/`
+(git-ignored).
 
 ## 12.3 State and restarts
 
