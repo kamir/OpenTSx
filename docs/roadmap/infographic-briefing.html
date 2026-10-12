@@ -94,6 +94,14 @@ code { font-family: var(--font-mono); font-size: 0.86em; background: var(--chip-
 .small { font-size: 0.88rem; color: var(--muted); }
 footer { border-top: 1px solid var(--line); padding-top: 16px; }
 @media (max-width: 520px) { .matrix { grid-template-columns: 1fr; } .layer b { min-width: 0; width: 100%; } }
+.views { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.views > * { min-width: 0; }
+.view-tag { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.formula { font-family: var(--font-mono); font-size: 0.95rem; border: 1px dashed var(--accent); padding: 12px 14px; background: var(--surface); }
+.note { border-left: 3px solid var(--proposal); padding: 4px 0 4px 14px; font-size: 0.92rem; }
+.layer.p8 { border-style: solid; border-color: var(--accent); }
+.layer.p8 b { color: var(--accent); }
+.changed { font-family: var(--font-mono); font-size: 0.72rem; color: var(--proposal); border: 1px solid var(--proposal); border-radius: 3px; padding: 0 6px; margin-left: 8px; vertical-align: middle; }
 </style>
 </head>
 <body>
@@ -101,54 +109,79 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; }
 <div class="wrap">
 
 <header class="col" style="display:grid;gap:14px">
-  <div class="eyebrow">Briefing · Infografik</div>
+  <div class="eyebrow">Briefing · Infografik · Fassung 2</div>
   <h1>OpenTSx Roadmap-Infografik</h1>
-  <p class="lede">Auftrag: Visualisiere die Roadmap der Open-Source-Plattform OpenTSx auf einer Seite. Der Betrachter soll in 30 Sekunden verstehen, was steht, wohin es geht und warum der Digitale Zwilling das Ziel ist.</p>
-  <div class="meta"><span>Stand 2026-10-12</span><span>Sprache der Grafik: Deutsch (englische Variante optional)</span><span>Quelle: Roadmap TASK-011 im Repository</span></div>
+  <p class="lede">Auftrag: Visualisiere die Roadmap der Open-Source-Plattform OpenTSx in <strong>zwei aufeinander abgestimmten Infografiken</strong>. Sicht A erklärt, was gebaut wird und wie. Sicht B erklärt, warum und für wen.</p>
+  <div class="meta"><span>Stand 2026-10-12, Fassung 2</span><span>Sprache der Grafik: Deutsch (englische Variante optional)</span><span>Quelle: Roadmap TASK-011 im Repository</span></div>
+  <p class="note">Die in diesem Briefing gezeigten Darstellungen sind Kompositions- und Inhaltsentwürfe. Sie ersetzen weder die Gestaltungsregeln noch die Lieferformate weiter unten.</p>
 </header>
 
 <section class="col">
-  <h2>Kernbotschaft</h2>
-  <p class="thesis">Von Zeitreihen zum Digitalen Zwilling, in dem Entscheidungen kausal durchschlagen. Gebaut auf einer Datenplattform, die schon steht.</p>
-  <p>Drei Aussagen muss die Grafik transportieren, in dieser Gewichtung:</p>
+  <h2>Was sich gegenüber Fassung 1 ändert</h2>
   <ol>
-    <li><strong>Der Digitale Zwilling ist die Essenz.</strong> Er bekommt den größten Raum und den einzigen Farbakzent.</li>
-    <li><strong>Das Fundament steht.</strong> Sechs Phasen (P0–P5) sind fertig und getestet. Das gibt der Roadmap Glaubwürdigkeit.</li>
-    <li><strong>Der Weg ist gestuft.</strong> Jede Stufe liefert für sich Nutzen und endet an einer Entscheidung, ob es weitergeht.</li>
+    <li>Zwei komplementäre Sichten statt einer Grafik.</li>
+    <li>P8 heißt jetzt <strong>Zusammenspiel &amp; Koordinationspotenzial</strong> und ist inhaltlich geschärft.</li>
+    <li>P8 wird für beide Sichten getrennt ausformuliert: technisch und aus Nutzensicht.</li>
+    <li>Die Brücke von P8 zu P9 ist ausdrücklich beschrieben.</li>
+    <li>Die Entscheidung D20 (Varianten T und L) und das Forschungspaket P9.6 sind präzise übernommen.</li>
+    <li>Gestaltungsregeln und Lieferumfang bleiben und gelten für beide Sichten.</li>
   </ol>
 </section>
 
 <section class="col">
-  <h2>Zielgruppe und Einsatz</h2>
-  <ul>
-    <li>Projektpartner aus der Energiebranche (Windpark, Elektrolyse, Vermarktung): fachlich stark, nicht unbedingt Software-Leute.</li>
-    <li>Technische Entscheider und Gutachter, die Machbarkeit und Vorgehen einschätzen.</li>
-    <li>Open-Source-Community und Forschung.</li>
-  </ul>
-  <p>Einsatz: als Folie in Präsentationen, als Ausdruck (A3) im Projektraum, als Bild im README des Repositories.</p>
+  <h2>Kernbotschaft</h2>
+  <p class="thesis">Von Zeitreihen zum Digitalen Zwilling, in dem Entscheidungen kausal durchschlagen. Gebaut auf einer Datenplattform, die schon steht.</p>
+  <p>Drei Aussagen müssen beide Grafiken transportieren, in dieser Gewichtung:</p>
+  <ol>
+    <li><strong>Der Digitale Zwilling (P9) ist die Essenz.</strong> Er ist das größte Element und der einzige Bereich mit Signalfarbe. Das gilt auch, wenn P8 jetzt mehr Inhalt bekommt.</li>
+    <li><strong>Das Fundament steht.</strong> Sechs Phasen (P0–P5) sind fertig und getestet.</li>
+    <li><strong>Der Weg ist gestuft.</strong> Jede Stufe liefert für sich Nutzen und endet an einer sichtbaren Entscheidung, ob es weitergeht.</li>
+  </ol>
 </section>
 
 <section>
   <div class="col" style="display:grid;gap:12px">
-    <h2>Vorschlag zur Komposition <span class="term">Skizze, kein Layout-Diktat</span></h2>
-    <p>Die Plattform folgt dem Bild aus dem Projektgespräch: <em>Die Bauteile sind Standard, die Verschaltung ist je Anlage individuell, wie im Schaltschrank.</em> Eine Bildsprache aus Schaltplänen liegt daher nahe: dünne Linien, Klemmen, Beschriftungsfelder. Der Zwilling sitzt oben als Ziel, das Fundament unten. Dazwischen liegen die Bausteine, die ihn speisen.</p>
+    <h2>Zwei komplementäre Sichten</h2>
+    <p>Beide Sichten zeigen dieselbe Roadmap, dieselben Statusangaben und dieselbe Architektur. Sie unterscheiden sich nur in Erklärungstiefe und Perspektive. Wer beide nebeneinanderlegt, muss dieselbe Struktur wiedererkennen.</p>
+  </div>
+  <div class="views">
+    <div class="panel">
+      <div class="view-tag">Sicht A</div>
+      <h3>„Was und wie?“</h3>
+      <p><strong>Für:</strong> Entwickler, Mathematiker, Ingenieure.</p>
+      <p><strong>Zeigt:</strong> Fähigkeiten, Modelle, Methoden, Schnittstellen und Prüfkriterien.</p>
+      <p><strong>Vorrang in der A3-Fassung:</strong> Matrix der Betriebsarten, H₂-Kausalkette, Bausteine, Prüfkriterien.</p>
+    </div>
+    <div class="panel">
+      <div class="view-tag">Sicht B</div>
+      <h3>„Warum und für wen?“</h3>
+      <p><strong>Für:</strong> Anlagenbetreiber, Energieabnehmer, Direktvermarkter, Netzbetreiber, Projektpartner.</p>
+      <p><strong>Zeigt:</strong> das gemeinsame Betriebsproblem, den Nutzen je Beteiligtem und die Entscheidungen, die dadurch besser werden.</p>
+      <p><strong>Vorrang in der A3-Fassung:</strong> Kooperationsproblem, Beteiligte, Entscheidungsnutzen.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Gemeinsame Komposition <span class="term">für beide Sichten, Skizze</span></h2>
+    <p>Fundament P0–P5 unten, P6–P8 in der Mitte, P9 oben. Bildsprache aus Schaltplänen: <em>Die Bauteile sind Standard, die Verschaltung ist je Anlage individuell.</em> P8 bekommt mehr fachliche Klarheit, bleibt aber gestalterisch Teil der Mitte und verdrängt P9 nicht.</p>
   </div>
   <div class="sketch" aria-label="Kompositionsskizze">
-    <div class="layer twin"><b>P9 Digitaler Zwilling</b><span>3 Betriebsarten × 2 Ausführungsvarianten</span><span>· Atomkatalog · Kausalkette H2</span><span>· Stufen A→D</span><span>· Forschungsfrage</span></div>
+    <div class="layer twin"><b>P9 Digitaler Zwilling</b><span>3 Betriebsarten × 2 Varianten (T, L)</span><span>· Bausteine · H₂-Kausalkette</span><span>· Stufen A→D</span><span>· P9.6 Forschung</span></div>
     <div class="wire"></div>
-    <div class="layer mid"><b>P8 Rekonstruktion</b><span>Struktur aus Zeitreihen finden → simulieren → optimieren</span></div>
-    <div class="layer mid"><b>P7 Smart Topics</b><span>gelernte Prognosen, Schätzer für fehlende Daten</span><span>· P7e Personal Service Layer (Bedienoberfläche)</span></div>
+    <div class="layer p8"><b>P8 Zusammenspiel &amp; Koordinationspotenzial</b><span>Abhängigkeiten und Handlungsspielräume → beziffertes Koordinationspotenzial</span></div>
+    <div class="layer mid"><b>P7 Smart Topics</b><span>gelernte Prognosen, Schätzer für fehlende Daten</span><span>· P7e Personal Service Layer</span></div>
     <div class="layer mid"><b>P6 Analytik</b><span>Alignment · Lückenfüllung · Strukturbrüche · Spektren</span></div>
     <div class="wire"></div>
     <div class="layer base"><b>Fundament P0–P5</b><span>Datenmodell · Speicher &amp; Replay · Stores · Windpark-Domäne · Statistik &amp; Metadaten · Retrieval</span></div>
   </div>
-  <p class="small col">Alternative, wenn der Platz breit statt hoch ist: eine Linie von links (Fundament) nach rechts (Zwilling) mit den Phasen als Stationen. Wichtig bleibt: Der Zwilling ist das größte Element, das Fundament wirkt solide und fertig.</p>
 </section>
 
 <section>
   <div class="col" style="display:grid;gap:12px">
-    <h2>Inhalt: Phasen <span class="term">Texte verbindlich, Kürzen erlaubt</span></h2>
-    <p>Die Kurztitel sind für die Grafik gedacht. Die Zeile „Worum es geht“ ist der längste Text, der pro Phase erscheinen darf.</p>
+    <h2>Inhalt: Phasen <span class="term">für beide Sichten gleich</span></h2>
+    <p>Die Kurztitel und Status sind in beiden Sichten identisch. Die Zeile „Worum es geht“ ist der längste Text, der pro Phase erscheinen darf.</p>
   </div>
   <div class="table-box">
     <table>
@@ -163,35 +196,121 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; }
         <tr><td class="id">P6</td><td>Analytik</td><td>Reihen ausrichten, Lücken füllen, Strukturbrüche, Spektren</td><td><span class="chip s-planned">geplant</span></td></tr>
         <tr><td class="id">P7</td><td>Smart Topics</td><td>Datenströme, die selbst lernen und Prognosen liefern; Wissen über Anlagen hinweg teilen, ohne Rohdaten zu bewegen</td><td><span class="chip s-designed">entworfen</span></td></tr>
         <tr><td class="id">P7e</td><td>Personal Service Layer</td><td>Bedienoberfläche für die eigenen Datenströme und den Zwilling</td><td><span class="chip s-proposal">Vorschlag</span></td></tr>
-        <tr><td class="id">P8</td><td>Struktur finden</td><td>Aus Zeitreihen die inneren Kopplungen eines Systems finden, simulieren, optimieren. Quantenrechner nur als Experiment.</td><td><span class="chip s-designed">Konzept</span></td></tr>
-        <tr class="core"><td class="id">P9</td><td>Digitaler Zwilling</td><td>Anlagenmodell des Energieverbunds, in dem Entscheidungen kausal durchschlagen</td><td><span class="chip s-core">Kern</span></td></tr>
-        <tr class="core"><td class="id">P9.6</td><td>Forschungsfrage</td><td>Eng oder lose gekoppelter Zwilling: Wann liefern beide dasselbe Ergebnis?</td><td><span class="chip s-research">Forschung</span></td></tr>
+        <tr><td class="id">P8</td><td>Zusammenspiel &amp; Koordinationspotenzial<span class="changed">neu</span></td><td>Was verlieren wir durch getrennte Betriebsführung, und was gewinnen wir durch abgestimmtes Handeln? Quantenrechner nur als Experiment.</td><td><span class="chip s-designed">Konzept</span></td></tr>
+        <tr class="core"><td class="id">P9</td><td>Digitaler Zwilling</td><td>Ausführbares Anlagenmodell des Energieverbunds, in dem Entscheidungen kausal durchschlagen und Gegenmaßnahmen geprüft werden</td><td><span class="chip s-core">Kern</span></td></tr>
+        <tr class="core"><td class="id">P9.6</td><td>Forschung „Digital Twins on Logs“</td><td>Wie genau, robust und wiederholbar ist die lose gekoppelte Ausführung?</td><td><span class="chip s-research">Forschung</span></td></tr>
       </tbody>
     </table>
   </div>
-  <p class="small col">Abhängigkeiten für Pfeile: P6 → P7 → P9; P8 → P9; P7e bedient P7, P8 und P9. Das Fundament trägt alles.</p>
+  <p class="small col">Abhängigkeiten für Pfeile: P6 → P7 → P9; P8 → P9; P7e bedient P7, P8 und P9. Das Fundament trägt alles. Der Wake-Graph-Export ist ein vorgemerkter Nebenpunkt niedriger Priorität und erscheint nicht in der Hauptansicht.</p>
+</section>
+
+<section class="col">
+  <h2>P8 · Zusammenspiel &amp; Koordinationspotenzial <span class="changed">neu</span></h2>
+  <p class="thesis" style="border-color:var(--accent)">„Was verlieren wir durch getrennte Betriebsführung, und was gewinnen wir durch abgestimmtes Handeln?“</p>
+  <p>Gemeint ist das gemeinsame Optimum des lokalen Energieverbunds. Windpark, Batterie, Elektrolyseur, Energieabnehmer und Vermarktung werden nicht isoliert betrachtet. P8 schafft datenbasierte Klarheit, auf deren Grundlage die Beteiligten kooperieren können: Bedarfe, Kapazitäten, Einschränkungen und Zusagen werden nachvollziehbar.</p>
+  <p><strong>Einzubeziehen sind:</strong></p>
+  <ul>
+    <li>Wetter und Erzeugungsprognosen</li>
+    <li>Strompreise und Vermarktungsfahrpläne</li>
+    <li>Wasserstoffbedarf und Abnahmeverpflichtungen</li>
+    <li>Speicherstände, Kapazitäten und technische Betriebsgrenzen</li>
+    <li>Netzrestriktionen</li>
+    <li>Ackerarbeit, Fledermausabschaltungen und weitere Betriebsvorgaben</li>
+  </ul>
+</section>
+
+<section class="views">
+  <div class="panel">
+    <div class="view-tag">P8 in Sicht A · technisch</div>
+    <h3>Was entsteht?</h3>
+    <p>Ein überprüfbares Modell der Abhängigkeiten und Handlungsspielräume sowie eine bezifferte Koordinationslücke.</p>
+    <h3>Wie entsteht es?</h3>
+    <ol>
+      <li>Zeitreihen, Ereignisse, Fahrpläne und Kontextinformationen zusammenführen.</li>
+      <li>Zeitverzögerte Abhängigkeiten und Betriebsregime identifizieren.</li>
+      <li>Gefundene Zusammenhänge mit physischer Topologie, Bilanzen und Fachwissen abgleichen.</li>
+      <li>Dynamik, Stellgrößen und Nebenbedingungen modellieren.</li>
+      <li>Koordinierte Fahrweisen berechnen und mit dem Referenzbetrieb vergleichen.</li>
+      <li>Ergebnisse auf getrennten Zeiträumen und Szenarien prüfen.</li>
+    </ol>
+    <p class="note">Statistische Abhängigkeit ist zunächst eine Hypothese, kein Kausalitätsnachweis. Diese Aussage gehört sichtbar in die Grafik.</p>
+    <h3>Bewertungsprinzip</h3>
+    <p class="formula">Koordinationspotenzial = Ergebnis der koordinierten Alternative − Ergebnis des Referenzbetriebs</p>
+    <p class="small">Der Vergleich verwendet dieselben Randbedingungen und nur die Informationen, die zum Entscheidungszeitpunkt verfügbar waren. Ein Vergleich mit perfekter Zukunftskenntnis ist ausdrücklich als theoretische Obergrenze zu kennzeichnen.</p>
+    <h3>Mögliche Ergebnisgrößen</h3>
+    <ul>
+      <li>Deckungsbeitrag</li>
+      <li>vermeidbare Abregelung</li>
+      <li>Wasserstoff-Bedarfsdeckung</li>
+      <li>Speicherbeanspruchung</li>
+      <li>Nutzen und Mehrkosten je Beteiligtem</li>
+    </ul>
+    <h3>Lieferobjekte</h3>
+    <p>Abhängigkeitsmodell, Nebenbedingungen, Referenzbetrieb, Vergleichsszenarien und ein Potenzialbericht mit Annahmen, Unsicherheiten und Sensitivitäten.</p>
+    <p class="note">Konkrete Verfahren und Prüfungen (z. B. Signifikanztests, kausale Bestätigung, Optimierungsverfahren) sind Methodenvorschläge. Sie erscheinen erst nach fachlicher Abstimmung als verbindlicher Roadmap-Inhalt; bis dahin höchstens klein und als „Vorschlag“ beschriftet.</p>
+  </div>
+  <div class="panel">
+    <div class="view-tag">P8 in Sicht B · Nutzen</div>
+    <h3>Welche Fragen werden beantwortet?</h3>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Rolle</th><th>Frage</th></tr></thead>
+        <tbody>
+          <tr><td>Windparkbetreiber</td><td>Wann vermarkten, speichern oder lokal bereitstellen?</td></tr>
+          <tr><td>Elektrolyseurbetreiber und H₂-Abnehmer</td><td>Welche Fahrweise erfüllt den tatsächlichen und den vereinbarten Bedarf?</td></tr>
+          <tr><td>Batteriespeicherbetreiber</td><td>Wann lohnt sich Laden oder Entladen für den Verbund?</td></tr>
+          <tr><td>Direktvermarkter</td><td>Welche Mengen und Fahrpläne müssen angepasst werden?</td></tr>
+          <tr><td>Netzbetreiber</td><td>Welche Fahrweisen sind am Anschluss zulässig?</td></tr>
+          <tr><td>Projektpartner und Forschung</td><td>Sind Nutzen und Modellannahmen belastbar und übertragbar?</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Kooperation braucht Transparenz</h3>
+    <ul>
+      <li>Wer stellt welche Daten bereit?</li>
+      <li>Wer entscheidet und verantwortet Änderungen?</li>
+      <li>Wer profitiert?</li>
+      <li>Wer trägt zusätzlichen Aufwand, Kosten und Risiken?</li>
+    </ul>
+    <p class="note">Modelliertes Potenzial und tatsächlich nachgewiesener Mehrerlös bleiben klar getrennt, in Text und Gestaltung (z. B. unterschiedliche Linienart oder Beschriftung „modelliert“ / „nachgewiesen“).</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Brücke von P8 zu P9</h2>
+  <ul>
+    <li><strong>P8</strong> identifiziert Abhängigkeiten und beziffert das Koordinationspotenzial.</li>
+    <li><strong>P9</strong> macht daraus einen ausführbaren Digitalen Zwilling, in dem Entscheidungen kausal durchschlagen und Gegenmaßnahmen geprüft werden.</li>
+  </ul>
+  <p>Gestalterisch ist das eine Verdrahtung von P8 nach oben in P9. Der Zwilling bleibt das größte Element und der einzige Bereich mit Signalfarbe.</p>
 </section>
 
 <section>
   <div class="col" style="display:grid;gap:12px">
     <h2>Detailbereich Digitaler Zwilling</h2>
-    <p>Dieser Bereich verdient eine eigene Zone mit vier Bausteinen. Wenn der Platz nicht reicht, haben die Matrix und die Kausalkette Vorrang.</p>
+    <p>In Sicht A haben Matrix, Kausalkette, Bausteine und Prüfkriterien Vorrang. In Sicht B genügen Matrix (vereinfacht), Kausalkette und Stufen.</p>
   </div>
   <div class="grid2">
     <div class="panel">
       <h3>1 · Drei Betriebsarten × zwei Varianten</h3>
-      <p class="small">Alle sechs Felder werden ermöglicht. Das ist eine Kernaussage.</p>
+      <p class="small">Alle sechs Felder sind der vorgesehene Zielumfang.</p>
       <div class="matrix" role="table" aria-label="Betriebsarten und Varianten">
-        <div class="h">Betriebsart</div><div class="h">Eng · ein Prozess</div><div class="h">Lose · Smart Topics</div>
+        <div class="h">Betriebsart</div><div class="h">T · eng</div><div class="h">L · lose</div>
         <div><strong>Schatten</strong><br><span class="small">Live-Daten, Zwilling schätzt den Rest</span></div><div class="ok">✓</div><div class="ok">✓</div>
         <div><strong>Was-wäre-wenn</strong><br><span class="small">Vergangenheit mit anderen Entscheidungen</span></div><div class="ok">✓</div><div class="ok">✓</div>
         <div><strong>Prognose &amp; Optimierung</strong><br><span class="small">Vorausschau, Vorschläge zur Fahrweise</span></div><div class="ok">✓</div><div class="ok">✓</div>
       </div>
-      <p class="small">Eng = „im Kleinen“, exakt und wiederholbar. Lose = Bausteine laufen dort, wo die Daten liegen, auch bei verschiedenen Eigentümern.</p>
+      <p class="small"><strong>Entschieden (D20):</strong> T und L sind gleichrangige Ausführungsvarianten.</p>
+      <ul class="small">
+        <li><strong>T:</strong> eng gekoppelt, ein Prozess, Referenzausführung.</li>
+        <li><strong>L:</strong> lose gekoppelt, Abstimmung über Datenzeitstempel, konfigurierbarer zulässiger Rückstand; Bausteine können bei unterschiedlichen Eigentümern laufen.</li>
+        <li>Derselbe Bausteincode läuft in beiden Varianten.</li>
+        <li>Verbindlicher Prüftest: L ohne erlaubte Verzögerung liefert bitgenau dasselbe Ergebnis wie T.</li>
+      </ul>
     </div>
     <div class="panel">
       <h3>2 · Kausalkette als Mini-Geschichte</h3>
-      <p class="small">Zeigt, was „Entscheidungen schlagen durch“ bedeutet. Gut als Comic-Strip oder Zeitstrahl.</p>
       <ol class="chain">
         <li>Der Wasserstoff-Abnehmer schließt den Schieber.</li>
         <li>Der Druck in der Leitung steigt. Der Puffer reicht noch etwa eine Stunde.</li>
@@ -203,43 +322,65 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; }
     </div>
     <div class="panel">
       <h3>3 · Bausteine des Zwillings</h3>
-      <p class="small">Als Icon-Reihe, gruppiert. Jedes Icon ist ein Standardbauteil.</p>
       <ul>
         <li><strong>Wind:</strong> Windenergieanlage, Nachlauf zwischen Anlagen, Parkregler</li>
         <li><strong>Messen &amp; Bilanz:</strong> Wetter, Zähler, Bilanzknoten, Eigenverbraucher</li>
-        <li><strong>Speicher &amp; Wasserstoff:</strong> Batterie, Elektrolyseur, H2-Leitung, H2-Abnehmer</li>
+        <li><strong>Speicher &amp; Wasserstoff:</strong> Batterie, Elektrolyseur, H₂-Leitung, H₂-Abnehmer</li>
         <li><strong>Markt &amp; Steuerung:</strong> Strommarkt, Direktvermarkter, Mensch am Steuer, Optimierer</li>
+        <li><strong>Betriebsvorgaben:</strong> Netzrestriktionen, Ackerarbeit, Fledermausabschaltungen</li>
       </ul>
       <p class="small">Jedes Bauteil hat dieselbe Anatomie: Zustand, Anzeigen, Verhalten und eine austauschbare Fahrweise (Fahrplan, Mensch oder Optimierer).</p>
     </div>
     <div class="panel">
       <h3>4 · Stufen mit Entscheidungspunkten</h3>
-      <p class="small">Als Treppe oder Schleusen. Nach jeder Stufe ein Tor: weiter oder anhalten.</p>
       <ol>
         <li><strong>A · Daten &amp; Potenzial:</strong> Daten anschließen, Mehrwert grob abschätzen. Ohne Simulation.</li>
         <li><strong>B · Schattenbetrieb:</strong> Zwilling läuft mit, vergleicht Plan und Wirklichkeit.</li>
         <li><strong>C · Ursache &amp; Wirkung:</strong> Kausalketten mit echten Betriebsdaten bestätigen.</li>
         <li><strong>D · Optimierung:</strong> Bessere Fahrweise vorschlagen und Mehrerlös belegen.</li>
       </ol>
+      <p class="small">Nach jeder Stufe ein sichtbares Tor: weiter oder anhalten.</p>
+    </div>
+    <div class="panel">
+      <h3>5 · Prüfkriterien <span class="term">nur Sicht A</span></h3>
+      <ul>
+        <li>Wiederholbarkeit: gleicher Plan, gleiche Eingänge, gleiche Eingriffe → bitgleicher Lauf.</li>
+        <li>Prüftest L(0) = T, bitgenau.</li>
+        <li>Bilanzen geschlossen: Leistung am Anschluss und Wasserstoffmasse in der Leitung.</li>
+        <li>Kausalkette S1 in der richtigen Reihenfolge, mit Zeitstempeln.</li>
+        <li>Jede Kennzahl zeigt, wie viel davon gemessen und wie viel geschätzt ist.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>6 · P9.6 Forschung „Digital Twins on Logs“</h3>
+      <p class="small">Die Wahl zwischen T und L ist <strong>nicht</strong> offen. Offen sind die Forschungsfragen:</p>
+      <ul>
+        <li>Fehlerschranken bei erlaubter Verzögerung</li>
+        <li>Erhaltung von Bilanzgrößen</li>
+        <li>Reihenfolge von Ursache und Wirkung</li>
+        <li>Wiederholbarkeit ohne Transaktionen in KafScale</li>
+        <li>Kosten und Ausfallsicherheit</li>
+        <li>Umsetzung aller drei Betriebsarten in L</li>
+      </ul>
     </div>
   </div>
 </section>
 
 <section class="col">
-  <h2>Bildsprache</h2>
+  <h2>Bildsprache <span class="term">beide Sichten</span></h2>
   <ul>
-    <li><strong>Status über Form und Farbe,</strong> nie nur über Farbe:
+    <li><strong>Status über Form und Beschriftung,</strong> zusätzlich Farbe:
       <span class="chip s-done">fertig: gefüllter Kreis</span>
-      <span class="chip s-designed">entworfen: Kreis</span>
+      <span class="chip s-designed">entworfen/Konzept: Kreis</span>
       <span class="chip s-planned">geplant: gestrichelt</span>
       <span class="chip s-proposal">Vorschlag: Raute</span>
       <span class="chip s-core">Kern: gefüllte Raute</span>
       <span class="chip s-research">Forschung: gepunktet</span>.
       Die Farben dieser Seite sind ein Vorschlag, keine Vorgabe.</li>
-    <li><strong>Ein Akzent:</strong> Nur der Zwilling bekommt die Signalfarbe. Alles andere bleibt ruhig.</li>
-    <li><strong>Schaltplan-Anmutung:</strong> Linien als Verdrahtung, Bauteile als Symbole mit Beschriftungsfeld. Keine Fotos, keine 3D-Renderings von Windrädern.</li>
+    <li><strong>Ein Akzent:</strong> Nur der Zwilling bekommt die Signalfarbe.</li>
+    <li><strong>Schaltplan-Anmutung:</strong> Standardbausteine, individuelle Verschaltung. Keine Fotos, keine 3D-Renderings.</li>
     <li><strong>Lesbarkeit:</strong> Auf einer Folie aus 5 m Entfernung lesbar. Maximal 12 Wörter pro Textblock in der Hauptansicht.</li>
-    <li>Ein festes OpenTSx-Branding existiert nicht. Schriften und Palette sind frei, solange sie technisch und ruhig wirken.</li>
+    <li>Ein festes OpenTSx-Branding existiert nicht. Schriften und Palette sind frei, solange sie technisch und ruhig wirken und in beiden Sichten gleich sind.</li>
   </ul>
 </section>
 
@@ -247,52 +388,57 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; }
   <div class="panel">
     <h3>Bitte so</h3>
     <ul class="do">
-      <li>Phasen als Sequenz zeigen, ohne Kalenderdaten. Es gibt keine zugesagten Termine.</li>
-      <li>„Stand 2026-10-12“ klein auf die Grafik.</li>
-      <li>Partner nur als Rollen: Netzbetreiber, Elektrolyseurbetreiber, Direktvermarkter.</li>
-      <li>Quantenrechner, falls überhaupt, klein und als „Experiment“ beschriftet.</li>
+      <li>Phasen als Sequenz zeigen, ohne Kalenderdaten.</li>
+      <li>„Stand 2026-10-12“ klein auf beide Grafiken.</li>
+      <li>Partner nur als Rollen: Windparkbetreiber, Elektrolyseurbetreiber, H₂-Abnehmer, Speicherbetreiber, Direktvermarkter, Netzbetreiber.</li>
+      <li>Quantenrechner ausschließlich als „Experiment“.</li>
+      <li>„Modelliert“ und „nachgewiesen“ sichtbar unterscheiden.</li>
       <li>Übertragbarkeit andeuten: derselbe Bausatz, anderer Schaltplan, weitere Parks.</li>
     </ul>
   </div>
   <div class="panel">
     <h3>Bitte nicht</h3>
     <ul class="dont">
-      <li>Keine Personen-, Firmen- oder Projektnamen von Partnern, keine Förder- oder Budgetangaben.</li>
-      <li>Keine Euro-Beträge oder Prozent-Versprechen. Den Mehrwert ermittelt erst Stufe A.</li>
+      <li>Keine Terminzusagen, keine Geldbeträge, keine unbelegten Nutzenversprechen.</li>
+      <li>Keine Personen-, Firmen- oder Projektnamen von Partnern, keine Förderangaben.</li>
+      <li>Methodenvorschläge zu P8 nicht als verbindlich darstellen.</li>
       <li>Keine KI-Klischees: Gehirne, Roboter, leuchtende Netze.</li>
-      <li>Kein Fachjargon in der Hauptansicht (Avro, KafScale, Iceberg, BSP). Er darf im Kleingedruckten stehen.</li>
-      <li>Den Nachlauf-Graphen (Wake-Graph) nicht hervorheben. Er ist ein vorgemerkter Nebenpunkt.</li>
+      <li>Kein Fachjargon in Sicht B (Avro, KafScale, Iceberg, BSP). In Sicht A nur im Kleingedruckten.</li>
+      <li>Den Wake-Graph-Export nicht hervorheben.</li>
     </ul>
   </div>
 </section>
 
 <section class="col">
-  <h2>Lieferumfang</h2>
+  <h2>Lieferumfang <span class="term">je Sicht</span></h2>
+  <p>Die HTML-Entwürfe liegen als editierbare Diskussionsgrundlage vor. Ausstehend ist die Reinzeichnung beider Sichten:</p>
   <div class="table-box">
     <table>
-      <thead><tr><th>Format</th><th>Verwendung</th></tr></thead>
+      <thead><tr><th>Format</th><th>Sicht A</th><th>Sicht B</th></tr></thead>
       <tbody>
-        <tr><td>A3 quer, Vektor (PDF/SVG)</td><td>Hauptfassung mit allen Bereichen, auch für Druck</td></tr>
-        <tr><td>16:9 Folie (PNG + Vektor)</td><td>reduzierte Fassung: Ebenen-Stapel plus Matrix</td></tr>
-        <tr><td>Breitbild für README (PNG, ca. 1600 px breit)</td><td>hell und dunkel, oder neutral für beide Hintergründe</td></tr>
-        <tr><td>Quelldatei, editierbar</td><td>damit Statuswechsel später ohne Neuauftrag möglich sind</td></tr>
+        <tr><td>A3 quer, Vektor (PDF/SVG)</td><td>Matrix, H₂-Kausalkette, Bausteine, Prüfkriterien</td><td>Kooperationsproblem, Beteiligte, Entscheidungsnutzen</td></tr>
+        <tr><td>16:9-Folie (PNG + Vektor)</td><td colspan="2">reduzierte Fassung: Ebenen-Stapel plus Matrix (A) bzw. Beteiligte (B)</td></tr>
+        <tr><td>README-Bild (PNG, ca. 1600 px)</td><td colspan="2">je Sicht eines, hell und dunkel oder neutral</td></tr>
+        <tr><td>Quelldateien, editierbar</td><td colspan="2">damit Statuswechsel später ohne Neuauftrag möglich sind</td></tr>
       </tbody>
     </table>
   </div>
-  <p>Ablauf: zuerst eine grobe Skizze der Komposition zur Abstimmung, dann eine Reinzeichnung, danach eine Korrekturrunde.</p>
+  <p>Die nächsten Entwürfe setzen diese Fassung um und halten die ursprüngliche visuelle Hierarchie wieder konsequent ein: Fundament unten, Mitte P6–P8, Zwilling oben und am größten.</p>
 </section>
 
 <section class="col">
-  <h2>Kleines Glossar für die Gestaltung</h2>
+  <h2>Kleines Glossar</h2>
   <div class="table-box">
     <table>
       <tbody>
         <tr><td><strong>Zeitreihe</strong></td><td>Messwerte über die Zeit, z. B. Windgeschwindigkeit jede Sekunde.</td></tr>
         <tr><td><strong>Smart Topic</strong></td><td>Ein Datenstrom, der aus anderen Strömen lernt und Prognosen liefert.</td></tr>
+        <tr><td><strong>Referenzbetrieb</strong></td><td>Die heutige, getrennte Betriebsführung, gegen die verglichen wird.</td></tr>
+        <tr><td><strong>Koordinationspotenzial</strong></td><td>Ergebnis einer abgestimmten Fahrweise minus Ergebnis des Referenzbetriebs, unter denselben Bedingungen.</td></tr>
         <tr><td><strong>Digitaler Zwilling</strong></td><td>Rechenmodell der realen Anlage. Eine Entscheidung im Modell verändert alle betroffenen Zahlen so, wie es in der Wirklichkeit passieren würde.</td></tr>
         <tr><td><strong>Baustein (Atom)</strong></td><td>Kleinstes Element des Zwillings, z. B. ein Elektrolyseur oder ein Zähler.</td></tr>
         <tr><td><strong>Schaltplan</strong></td><td>Beschreibung, welche Bausteine wie verbunden sind. Je Anlage individuell.</td></tr>
-        <tr><td><strong>Eng / lose gekoppelt</strong></td><td>Alles in einem Programm im Gleichtakt, oder verteilte Teile, die über Datenströme zusammenarbeiten.</td></tr>
+        <tr><td><strong>T / L</strong></td><td>Eng gekoppelt (ein Programm im Gleichtakt) oder lose gekoppelt (verteilte Teile, die über Datenströme zusammenarbeiten).</td></tr>
         <tr><td><strong>Entscheidungspunkt</strong></td><td>Ende einer Stufe: Lohnt sich der nächste Schritt?</td></tr>
       </tbody>
     </table>

@@ -119,6 +119,28 @@ Kette: *Quellen (Sensoren, Content-Interaktion wie ER1/Wikipedia mit Feedback) �
 Messobjekt)*, gesteuert über den Personal Service Layer (P7e). Abnahme jeweils gegen die Ground Truth des
 Windpark-Simulators.
 
+**Kurztitel: Zusammenspiel & Koordinationspotenzial.** Leitfrage: *„Was verlieren wir durch getrennte
+Betriebsführung – und was gewinnen wir durch abgestimmtes Handeln?“* Gemeint ist das gemeinsame Optimum des lokalen
+Energieverbunds (Windpark, Batterie, Elektrolyseur, Energieabnehmer, Vermarktung). Einzubeziehen: Wetter und
+Erzeugungsprognosen, Strompreise und Vermarktungsfahrpläne, H2-Bedarf und Abnahmeverpflichtungen, Speicherstände,
+Kapazitäten und technische Grenzen, Netzrestriktionen, Ackerarbeit, Fledermausabschaltungen und weitere
+Betriebsvorgaben.
+- **Ergebnis:** überprüfbares Modell der Abhängigkeiten und Handlungsspielräume plus bezifferte Koordinationslücke.
+  Lieferobjekte: Abhängigkeitsmodell, Nebenbedingungen, Referenzbetrieb, Vergleichsszenarien, Potenzialbericht mit
+  Annahmen, Unsicherheiten und Sensitivitäten.
+- **Bewertungsprinzip:** Koordinationspotenzial = Ergebnis der koordinierten Alternative − Ergebnis des
+  Referenzbetriebs, unter denselben Randbedingungen und mit den zum Entscheidungszeitpunkt verfügbaren
+  Informationen; ein Vergleich mit perfekter Zukunftskenntnis nur als gekennzeichnete theoretische Obergrenze.
+  Ergebnisgrößen: Deckungsbeitrag, vermeidbare Abregelung, H2-Bedarfsdeckung, Speicherbeanspruchung, Nutzen und
+  Mehrkosten je Beteiligtem. Modelliertes Potenzial und nachgewiesener Mehrerlös bleiben getrennt.
+- **Grundsatz:** Statistische Abhängigkeit ist zunächst eine Hypothese, kein Kausalitätsnachweis. Die Verfahren in
+  P8.0–P8.5 sind **Methodenvorschläge** und werden erst nach fachlicher Abstimmung verbindlich.
+- **Kooperation:** Transparenz darüber, wer welche Daten bereitstellt, wer Änderungen entscheidet und verantwortet,
+  wer profitiert und wer Aufwand, Kosten und Risiken trägt.
+- **Brücke zu P9:** P8 identifiziert Abhängigkeiten und beziffert das Koordinationspotenzial; P9 macht daraus einen
+  ausführbaren Zwilling, in dem Entscheidungen kausal durchschlagen und Gegenmaßnahmen geprüft werden.
+- [ ] Betriebsvorgaben (Netzrestriktionen, Ackerarbeit, Fledermausabschaltungen) als Nebenbedingungen erfassen – im Zwilling als Baustein „Betriebsvorgaben“ (Kalender-/Regelquelle für Abregelung).
+
 **P8.0 – Fundament (Vertrag)**
 - [ ] *(niedrige Priorität, vorgemerkt)* Ground-Truth-Export: **der vom Simulator zur Datenerzeugung verwendete** gerichtete Wake-Graph je Windrichtungssektor aus `opentsx-windpark` (Jensen, `WakeModel`), gekennzeichnet als Simulationsreferenz (`gt.source=simulator`, `gt.kind=wake`). Festlegungen nach [07 §8](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md): meteorologische Konvention, 12 × 30°-Sektoren, Kante `A → B` = B im Wake-Kegel von A für mindestens eine Sektorrichtung, Gewichte (mittleres/maximales Defizit, Abdeckungsanteil, Abstand in D) bei Referenz-Ct (8 m/s) plus Ct-Tabelle 4/8/12 m/s; zusätzlich das **dynamische Kantenlog** des Laufs (aktive Paare je 10-s-Schritt), inkl. injizierter Fehler/Regime. Grenzen (keine Stabilität/Mäander) dokumentieren.
 - [ ] Iceberg-Schema der **Kantentabelle** (Multilayer, versioniert): Quelle/Ziel-Serie, Layer/Methode, Lag, Stärke, Signifikanzfelder (l_adj, l_norm, l_trans, p-Wert, Surrogattyp, Konfidenz aus Bagging), Fenster, Spezifikations-Hash, Provenienz (Episoden-Hash, Topic/Offsets).
@@ -326,6 +348,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **P8 geschärft** (Kurztitel „Zusammenspiel & Koordinationspotenzial“, Leitfrage, Bewertungsprinzip, Betriebsvorgaben, Methoden als Vorschlag); Infografik-Briefing Fassung 2 mit zwei Sichten (Was/Wie, Warum/Für wen).
 
 - 2026-10-12: **Zwilling als Kern der Roadmap festgelegt**: drei Betriebsarten in beiden Varianten (eng/ein Prozess und lose/Smart Topics, D20); Vergleich als Forschungspaper (P9.6); Wake-Graph-Export auf niedrige Priorität.
 

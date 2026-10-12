@@ -79,7 +79,7 @@ Retired modules and the 2025 documentation are in [`archive/`](archive/).
 | P0–P5 | foundation, data model v2, KafScale storage, stores, wind farm, statistics, OpenMetadata, retrieval | **done** |
 | P6 | analytics gaps (alignment, gap filling, change points, spectral analysis) | planned |
 | P7 | Smart Topics (declarative model training, smart metrics, prediction API, federated models); personal service layer | designed |
-| P8 | System reconstruction from time series (Kämpf 2017 + causal discovery), simulation, optimization (classical; quantum as experiment) | concept ([06](docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)) |
+| P8 | Interplay & coordination potential of the local energy system: dependencies, constraints, reference vs. coordinated operation. Methods (proposal): system reconstruction from time series (Kämpf 2017 + causal discovery), simulation, optimization (classical; quantum as experiment) | concept ([06](docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)) |
 | P9 | Digital twin of an energy system: atoms (MVC + policy), wiring plan, bulk-synchronous execution, Smart Topics as learned sub-models | proposal ([07](docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)) |
 
 ## Related work
