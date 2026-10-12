@@ -197,12 +197,16 @@ Laden.
 
 | Phase | Atome | Ergebnis |
 |-------|-------|----------|
-| 0 · Ingest | Wetter, Markt, Zähler, Quellen | Messungen, Prognosen und Eingriffe mit Ereigniszeit im Intervall `[t_k, t_k+Δt)` sind gebunden (Lateness wie in P4) |
-| 1 · Verfügbarkeit | WEA, Wake, Parkregler, Speicher (Grenzen), Elektrolyseur (Grenzen) | verfügbare Erzeugung, mögliche Lasten |
-| 2 · Policy | Fahrplan, Bediener, Optimierer | Sollwerte für diesen Schritt |
-| 3 · Bilanz | Bilanzknoten | Aufteilung nach Prioritäten, Netzsaldo, Bilanzfehler |
-| 4 · Integration | Speicher, Elektrolyseur, H2-Leitung, Abnehmer, Vermarkter | neue Bestände, Ereignisse mit exaktem Zeitpunkt |
-| 5 · Views | alle | Smart Metrics, Sensorsicht, Residuen |
+| 0 · Quellen (`SOURCES`) | Markt, Abnehmer, Betriebsvorgaben, Zähler | exogene Werte; Messungen, Prognosen und Eingriffe des Intervalls `[t_k, t_k+Δt)` sind gebunden |
+| 1 · Policy (`POLICY`) | eigenständige Policy-Atome (Fahrplan, Optimierer) | Sollwerte für diesen Schritt |
+| 2 · Anlagen (`ASSETS`) | Erzeugung, Elektrolyseur, Speicher | Arbeitspunkt aus Sollwert, Grenzen, Rampen, Schutzlogik; die Atom-Policy läuft unmittelbar vor der Dynamik |
+| 3 · Bilanz (`BALANCE`) | Bilanzknoten | Netzsaldo, Direktbelieferung nach Prioritäten, Residuum zur Messung |
+| 4 · Flüsse (`FLOWS`) | H2-Leitung, Vermarkter | neue Bestände und Konten, Ereignisse mit exaktem Zeitpunkt |
+| 5 · Views (`VIEWS`) | abgeleitete Sichten | Smart Metrics |
+
+*Umgesetzt (PoC, `opentsx-twin`):* Die Phasen sind so benannt wie im Code. Ein Eingang erhält den Wert desselben
+Schritts, wenn seine Quelle in einer früheren Phase liegt, sonst den des vorigen Schritts; Rückkopplungen kreuzen
+damit immer die Schrittgrenze. Ein Wert bei Schritt `k` beschreibt das Ende des Intervalls `[t_k, t_k+Δt)`.
 
 Die Ausführung ist **mehrratig**. Der Basistakt beträgt 1 min, das reicht für Linepack, Elektrolyseurrampen und
 Speicher. Jedes Atom hat einen Takt als ganzzahliges Vielfaches davon: Markt und Fahrplan 15 min, Wetter 1 h. Die
@@ -374,6 +378,17 @@ die gegen diese Referenz nur auf Simulatordaten geprüft werden kann.
 | D24 | Kosimulation | Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
 
 ---
+
+## 9a. Umsetzungsstand (PoC)
+
+Modul [`opentsx-twin`](../../opentsx-twin/README.md): Atomvertrag MVC+P, Schaltplan-YAML mit Validierung,
+Variante T mit geschichtetem BSP, Topic-Vertrag (`PortMessage`, `Barrier`) als Code, Herkunftsleiter,
+Snapshots, alle drei Betriebsarten, Export der Zustandsreihen als v2-Episoden. Bausteine: Erzeugung, Markt,
+H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter, Betriebsvorgaben. Szenario S1
+läuft auf synthetischen Daten (`bin/opentsx twin`). Offen: Variante L, Avro-Schemas je Atomtyp, KafScale-Binding,
+WEA/Wake/Wetter/Zähler-Atome, Optimierer (P8.4), echte Daten.
+
+Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md).
 
 ## 10. Forschungsfrage: eng vs. lose gekoppelte Zwillinge (Paper-Skizze)
 

@@ -63,6 +63,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-stats` | streaming statistics, data quality |
 | `opentsx-openmetadata` | metadata pool in OpenMetadata 2.0 |
 | `opentsx-retrieval` | segmentation, pattern search, retrieval API, REST |
+| `opentsx-twin` | digital twin (P9 proof of concept): atoms, wiring plan, bulk-synchronous runner, shadow / what-if / forecast |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |

@@ -111,6 +111,11 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7c: Java-Scoring-Prozessor (KafScale, Checkpoint, ONNX Runtime) → Smart Metrics + Prediction-API (Java/REST).
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
 - [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
+- [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
+- [ ] P7e Studio produktiv: Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7, Node-Graph bearbeitbar (Schaltplan mit Validierung), Eingriffe mit Freigabe-Workflow, zusammengesetzte Bausteine.
+- [x] Studio allgemein: `StudioScenario` (Schaltplan, Referenz, Alternativen, Prognosen, Smart Metrics, Kennzahlen) + `StudioExport`; Oberfläche mit Szenario-Auswahl ohne Sonderfälle.
+- [ ] Haus- und Boot-Szenario als `StudioScenario` einhängen (nach P9.7/P9.8).
+- [ ] LabVIEW-Brücke (09 §4/§4a): Abbildungsdatei Sensor ↔ Smart Topic ↔ Aktor; JSON-Verträge `opentsx.smartmetric.v1`, `opentsx.command.v1`, `opentsx.command-ack.v1` als JSON-Schema + Normalizer + Tests; Feedback-Topic `tsx.<domain>.commands.v1` mit Quittungen, Spiegelung in infinimesh `desired`; Publisher-/Kommando-VIs (VIPM, BSD/MIT); Test Client-Zertifikat-TLS LabVIEW ↔ infinimesh. *(TDMS-Import zurückgestellt.)*
 
 ### Phase 8 – Systemrekonstruktion, Simulation & Optimierung – Konzept: [`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](../docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)
 
@@ -194,6 +199,7 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] **DWD-Sammler**: Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit.
 - [ ] Markt- und Partnerdaten: Preise (Day-Ahead/Intraday, 15-min-MTU), Prognosen und Fahrpläne des Direktvermarkters, Leitsystem-API (Schnittstellenbeschreibung ausstehend); zeitgesteuerter Abruf mit Formatkonvertierung, wo keine API existiert.
 - [ ] Batch-Import einzelner Datenpakete (historische Reihen) mit Herkunftsmetadaten.
+- [ ] *(Vorschlag)* infinimesh als optionale Quelle: Kafka-Addon-Topic `infinimesh.shadows` → Normalizer → `tsx.<domain>.observations.v2` (Modul `opentsx-infinimesh`); lesend zuerst, Rückweg über `desired` erst mit Freigabe-Workflow.
 - [ ] Metrikkatalog für neue Kanäle (Zähler, Elektrolyse, Speicher, H2) analog zum IEC-Katalog, Veröffentlichung über den OpenMetadata-Publisher.
 - [ ] Kafka-Spiegelung über temporären SSH-Tunnel in eine lokale Umgebung; technische Validierung (Offsets, Anzahl, Bytes, Hash) und fachliche Validierung (je Metrik identische Sketches/Statistiken).
 - [ ] OpenTSDB als optionale Projektionsschicht (vorhandener Adapter).
@@ -201,24 +207,28 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 
 **P9.1 – Atomvertrag & Runner**
 - [ ] Screening Stand der Technik vor dem Bau: mosaik, HELICS, FMI 3.0 (Atome als FMUs?), pandapower, PyPSA, oemof → Entscheidung D24.
-- [ ] Atomvertrag MVC+P: Avro-Schemas je Atomtyp für Zustand und Ports (Bestand/Fluss/Signal, Einheit), Invarianten, Sensorsicht `h(x)`.
-- [ ] Schaltplan-YAML (Atome, Parameter, Verdrahtung), Validierung (Typ/Einheit der Ports, Zyklen nur über Schrittgrenzen), Hash in die Lineage.
-- [ ] **Variante T (eng, ein Prozess):** Twin-Runner mit geschichtetem BSP (Phasen Ingest → Verfügbarkeit → Policy → Bilanz → Integration → Views), Basistakt 1 min, Mehrrate, Ereignisse mit exaktem Zeitpunkt; Referenz für Variante L.
+- [x] Atomvertrag MVC+P in `opentsx-twin` (`Atom`: Modell = Zustand/Parameter, Dynamik `step`, austauschbare `Policy`, Ports mit Art und Einheit, Sensorsicht über Residuum im Bilanzknoten).
+- [ ] Avro-Schemas je Atomtyp für Zustand und Ports (heute Java-Records/Maps; nötig für Variante L und Python).
+- [x] Schaltplan-YAML (`TwinPlan`, Beispiel `twin/h2-chain.yaml`), Validierung (Ports, Art/Einheit, eine Quelle je Eingang), Rückkopplungen automatisch über die Schrittgrenze; Plan-Hash in der Lauf-Id. *(Lineage nach OpenMetadata offen.)*
+- [x] **Variante T (eng, ein Prozess):** `TwinRunner` mit geschichtetem BSP (Phasen Quellen → Policy → Anlagen → Bilanz → Flüsse → Views), Basistakt 1 min, Mehrrate (`every`), Ereignisse mit exaktem Zeitpunkt, Snapshots zum Fortsetzen; bitgleiche Wiederholung über verketteten Zustands-Hash.
 - [ ] **Variante L (lose, Smart Topics):** Atomtyp als Smart-Topic-Prozessor (Instanzen als Schlüssel), Kopplung über Port-Topics, Ereigniszeit-Watermarks mit einstellbarer Veraltung (BSP ↔ SSP ↔ asynchron), Bilanzknoten als eigener Prozessor mit Ausgleichsschritt; Atome können bei verschiedenen Eigentümern laufen.
 - [ ] Derselbe Atomcode läuft unverändert in T und L (gemeinsamer Atom-, Schaltplan- und Topic-Vertrag); Konformitätstest: L mit Veraltung 0 = T bitgleich.
-- [ ] Topics `twin.<id>.<run>.msgs|barrier|interventions` mit deterministischen Ids, Superschritt-Commit mit Zustands-Hash; Zustandssnapshots in Iceberg (`twin_state`); Replay-Verifikation bitgleich.
-- [ ] Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` mit Taint-Propagation in alle KPIs.
+- [x] Topic-Vertrag als Code: `PortMessage` (deterministische Id `run/k/phase/atom/port`), `Barrier` (Phasenende mit Anzahl, Superschritt-Commit mit Zustands-Hash), `MessageSink`; Variante T schreibt ihn bereits mit.
+- [ ] Binding an KafScale-Topics `twin.<id>.<run>.msgs|barrier|interventions`; Zustandssnapshots in Iceberg (`twin_state`); Zustandsreihen als Episoden (`RunResult.toEpisodes`, umgesetzt) in einen Store schreiben.
+- [x] Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` (`Origin`) mit Taint-Propagation entlang des Datenflusses eines Schritts; Rückkopplungskanten färben nicht; Defaults für fehlende Eingänge zählen als SYNTHETIC.
 
 **P9.2 – Atomkatalog**
 - [ ] A1 WEA, A2 Wake-Kopplung (Relationsatom, Jensen; später rekonstruierter Graph aus P8), A3 Parkregler.
 - [ ] A4 Wetter, A5 Zähler/Messpunkt, A6 Bilanzknoten/Messkonzept (Prioritäten: Eigenverbrauch vor Markt), A7 Eigenverbraucher/Direktabnehmer.
-- [ ] A8 Batteriespeicher, A9 Elektrolyseur (Zustandsautomat, Rampen, Schutzabregelung über Leitungsdruck), A10 H2-Leitung/Linepack (Zeit-bis-Grenze), A11 H2-Abnehmer.
-- [ ] A12 Markt, A13 Direktvermarkter/Fahrplan/PPA (Abweichung, Ausgleichsenergie), A14 Bediener (Eingriffe), A15 Optimierer (Policy-Atom).
+- [x] A8 Batteriespeicher, A9 Elektrolyseur (Zustandsautomat, Rampen, Schutzabregelung über Leitungsdruck), A10 H2-Leitung/Linepack (Zeit-bis-Grenze, Restkapazität), A11 H2-Abnehmer.
+- [x] A6 Bilanzknoten (Prioritäten, Direktbelieferung, Residuum zur Zählermessung), A12 Markt (15-min-Takt), A13 Direktvermarkter (Abweichung, Mehr-/Mindermengen, Erlös), A16 Betriebsvorgaben (Zeitfenster mit Leistungsgrenze, z. B. Fledermausabschaltung, Ackerarbeit), vereinfachte Erzeugung (A1/A3 als Park am Anschlusspunkt mit Abregelgrenze).
+- [ ] A14 Bediener als Freigabe-Workflow im Service Layer (Eingriffe als `Intervention` umgesetzt), A15 Optimierer als Policy-Atom (heute: Regel `pressure-aware` mit rollierendem Horizont), A13 Ausgleichsenergiepreise.
 
 **P9.3 – Betriebsarten & Abnahmeszenarien**
-- [ ] **Alle drei Betriebsarten in beiden Varianten** (Matrix 3 × 2): Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog, Verzweigungen), Prognose/MPC – gleiche Atome, andere Bindung.
+- [ ] **Alle drei Betriebsarten in beiden Varianten** (Matrix 3 × 2) – *in Variante T umgesetzt (`Twin.shadow`, `whatIf`, `forecast` ab Snapshot mit Policy-Austausch); Variante L offen*: Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog, Verzweigungen), Prognose/MPC – gleiche Atome, andere Bindung.
 - [ ] S3 PPA-Schattenbetrieb vor der offiziellen Umstellung des Messkonzepts (Fahrplan/Prognose des Vermarkters gegen Erzeugung) → **Schranke B**.
-- [ ] S1 H2-Kette (Schieber zu → Druck → Zeit-bis-Grenze → Abregelung → Fahrplanabweichung → Mehrvermarktung), Eingriffe ändern alle nachgelagerten Zahlen konsistent → **Schranke C**.
+- [x] S1 H2-Kette auf synthetischen Daten (Schieber zu → Druck → Zeit-bis-Grenze → Abregelung → Fahrplanabweichung → Mehrvermarktung): Reihenfolge, analytischer Grenzzeitpunkt, Bilanzen, Was-wäre-wenn und Prognose getestet; Demo `bin/opentsx twin`.
+- [ ] S1 mit echten Betriebsdaten bestätigen → **Schranke C**.
 - [ ] S4 Wake-Referenz im Park-Atom reproduziert; rekonstruierter Graph (P8.1) dagegen geprüft.
 
 **P9.4 – Policy, Optimierung & Service Layer**
@@ -250,6 +260,7 @@ opentsx-windpark              Datenpunktkatalog (IEC 61400-25-2), Normalisierer,
 opentsx-stats                 Streaming-Statistik + DQ (laufzeitunabhängig; Flink-Adapter folgt mit Flink-Upgrade)
 opentsx-openmetadata          Metadaten-/Profil-/DQ-Publisher
 opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, REST
+opentsx-twin                  Digitaler Zwilling P9: Atomvertrag MVC+P, Schaltplan, Runner Variante T, 3 Betriebsarten
 (geplant) opentsx-smart       Smart Topics (P7)
 (geplant) opentsx-network     Kantentabelle, Rekonstruktion (Kämpf-Signifikanzschicht, ECA), Problem-Builder (P8)
 ```
@@ -348,6 +359,10 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
+
+- 2026-10-12: **P9-PoC** `opentsx-twin`: Atomvertrag MVC+P, Schaltplan-YAML, geschichteter BSP-Runner (Variante T) mit Topic-Vertrag, Herkunftsleiter, 9 Bausteine (inkl. Betriebsvorgaben), Schatten/Was-wäre-wenn/Prognose; S1 H2-Kette getestet, Demo `bin/opentsx twin`.
 
 - 2026-10-12: **P8 geschärft** (Kurztitel „Zusammenspiel & Koordinationspotenzial“, Leitfrage, Bewertungsprinzip, Betriebsvorgaben, Methoden als Vorschlag); Infografik-Briefing Fassung 2 mit zwei Sichten (Was/Wie, Warum/Für wen).
 
