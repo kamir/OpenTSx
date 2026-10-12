@@ -1,0 +1,98 @@
+{
+  "type" : "record",
+  "name" : "GenerationSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one generation atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "GenerationState",
+      "doc" : "State variables of generation",
+      "fields" : [ {
+        "name" : "energy_kwh",
+        "type" : "double"
+      }, {
+        "name" : "curtailed_kwh",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "GenerationOutputs",
+      "doc" : "Output ports of generation",
+      "fields" : [ {
+        "name" : "p_gen_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "GenerationControls",
+      "doc" : "Controls of generation overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "limit_kw",
+        "type" : [ "null", "double" ],
+        "doc" : "default 10000.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "generation",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "p_avail_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "limit_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  } ]
+}

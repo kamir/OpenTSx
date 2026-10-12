@@ -386,7 +386,7 @@ Variante T mit geschichtetem BSP, Topic-Vertrag (`PortMessage`, `Barrier`) als C
 Snapshots, alle drei Betriebsarten, Export der Zustandsreihen als v2-Episoden. Bausteine: Erzeugung, Markt,
 H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter, Betriebsvorgaben. Szenario S1
 läuft auf synthetischen Daten (`bin/opentsx twin`). **Variante L** (`LooseRunner`) läuft mit demselben Atomcode;
-erste Messungen in §10a. Offen: Avro-Schemas je Atomtyp, KafScale-Binding, WEA/Wake/Wetter/Zähler-Atome,
+erste Messungen in §10a. Avro-Schemas je Atomtyp (`twin/avro/`) liegen vor. Offen: KafScale-Binding, WEA/Wake/Wetter/Zähler-Atome,
 Optimierer (P8.4), echte Daten.
 
 Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md).

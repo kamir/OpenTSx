@@ -1,0 +1,103 @@
+{
+  "type" : "record",
+  "name" : "BoatModeSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one boat-mode atom after superstep k (phase SOURCES)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "BoatModeState",
+      "doc" : "State variables of boat-mode",
+      "fields" : [ {
+        "name" : "mode",
+        "type" : "double"
+      }, {
+        "name" : "harbour_h",
+        "type" : "double"
+      }, {
+        "name" : "sailing_h",
+        "type" : "double"
+      }, {
+        "name" : "anchor_h",
+        "type" : "double"
+      }, {
+        "name" : "away_h",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "BoatModeOutputs",
+      "doc" : "Output ports of boat-mode",
+      "fields" : [ {
+        "name" : "mode",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [1]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "BoatModeControls",
+      "doc" : "Controls of boat-mode overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "force_mode",
+        "type" : [ "null", "double" ],
+        "doc" : "default -1.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "boat-mode",
+  "opentsx.phase" : "SOURCES",
+  "opentsx.inputs" : [ {
+    "name" : "mode_obs",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  } ]
+}

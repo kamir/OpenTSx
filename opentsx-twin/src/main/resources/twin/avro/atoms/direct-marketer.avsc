@@ -1,0 +1,103 @@
+{
+  "type" : "record",
+  "name" : "DirectMarketerSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one direct-marketer atom after superstep k (phase FLOWS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "DirectMarketerState",
+      "doc" : "State variables of direct-marketer",
+      "fields" : [ {
+        "name" : "extra_kwh",
+        "type" : "double"
+      }, {
+        "name" : "short_kwh",
+        "type" : "double"
+      }, {
+        "name" : "revenue_eur",
+        "type" : "double"
+      }, {
+        "name" : "deviating",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "DirectMarketerOutputs",
+      "doc" : "Output ports of direct-marketer",
+      "fields" : [ {
+        "name" : "deviation_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "DirectMarketerControls",
+      "doc" : "Controls of direct-marketer overridden by interventions (null: policy decides)",
+      "fields" : [ ]
+    }
+  } ],
+  "opentsx.atomType" : "direct-marketer",
+  "opentsx.phase" : "FLOWS",
+  "opentsx.inputs" : [ {
+    "name" : "p_grid_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "schedule_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  }, {
+    "name" : "price_eur_mwh",
+    "kind" : "SIGNAL",
+    "unit" : "EUR/MWh"
+  } ]
+}
