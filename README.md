@@ -108,6 +108,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-retrieval` | segmentation, pattern search, retrieval API, REST |
 | `opentsx-twin` | digital twin: atoms, wiring plan, bulk-synchronous runner, shadow / what-if / forecast; scenarios energy system, house, boat; Studio export |
 | `opentsx-dwd` | DWD Open Data collector: MOSMIX forecasts and CDC observations as v2 series/episodes, nearest-station search, weather inputs for the twins |
+| `opentsx-modbus` | Modbus TCP / RTU-over-TCP client (JDK only), register maps in YAML (type, word order, scaling, unit, OBIS, origin), block-merging poller, counter wrap/reset detection → v2 episodes; in-JVM meter simulator |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |

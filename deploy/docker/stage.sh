@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-MODULES=(opentsx-kafka-v2 opentsx-windpark opentsx-stats opentsx-openmetadata opentsx-retrieval opentsx-store-iceberg opentsx-twin opentsx-dwd)
+MODULES=(opentsx-kafka-v2 opentsx-windpark opentsx-stats opentsx-openmetadata opentsx-retrieval opentsx-store-iceberg opentsx-twin opentsx-dwd opentsx-modbus)
 ICEBERG_MODULES=(opentsx-windpark opentsx-retrieval opentsx-store-iceberg)
 VERSION="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null | tail -1)"
 REPO="$(cd "$ROOT" && mvn -q -B help:evaluate -Dexpression=settings.localRepository -DforceStdout 2>/dev/null | tail -1)"
@@ -32,7 +32,7 @@ ICEBERG_VERSION="$(cd "$ROOT" && mvn -q -B -pl opentsx-store-iceberg help:evalua
 
 H="$OUT/opt/opentsx"
 rm -rf "$OUT"
-mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/twin" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
+mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/twin" "$H/share/modbus" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
 
 add_jar() {   # absolute jar path -> prints the classpath entry relative to OPENTSX_HOME, copies the jar once
   local jar="$1" rel
@@ -82,6 +82,7 @@ cp "$ROOT/deploy/docker/opentsx-entrypoint.sh" "$H/bin/opentsx"
 chmod 0755 "$H/bin/opentsx"
 cp "$ROOT"/opentsx-windpark/scenarios/*.yaml "$H/share/scenarios/"
 cp "$ROOT"/opentsx-twin/src/main/resources/twin/* "$H/share/twin/"
+cp "$ROOT"/opentsx-modbus/src/main/resources/modbus/*.yaml "$H/share/modbus/"
 cp "$ROOT/tools/build_studio.py" "$OUT/studio/tools/"
 cp "$ROOT/docs/prototypes/smart-topics-studio.template.html" "$OUT/studio/docs/prototypes/"
 chmod -R a+rX "$OUT"
