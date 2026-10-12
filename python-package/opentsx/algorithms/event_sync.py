@@ -31,7 +31,8 @@ class EventSynchronization:
         Initialize Event Synchronization.
 
         Args:
-            tau_max: Maximum time lag to consider (auto-calculated if None)
+            tau_max: Optional fixed cap for the event-pair specific window.
+                If None, the purely local window of Quiroga et al. is used.
         """
         self.tau_max = tau_max
 
@@ -88,106 +89,106 @@ class EventSynchronization:
         """
         Calculate event synchronization between two event series.
 
-        Computes directional synchronization measures:
-        - Q: Overall synchronization
-        - q_xy: Synchronization when x leads y
-        - q_yx: Synchronization when y leads x
+        Follows Quiroga, Kreuz & Grassberger (Phys. Rev. E 66, 041904, 2002).
+        For every event pair (t_i of x, s_j of y) a *local* time window is used::
+
+            tau_ij = min(t_{i+1} - t_i, t_i - t_{i-1},
+                         s_{j+1} - s_j, s_j - s_{j-1}) / 2
+
+        (missing neighbours at the series boundaries are ignored), optionally
+        capped by a fixed ``tau_max``. A pair contributes J = 1 to c(y|x) if
+        0 < s_j - t_i < tau_ij, J = 1 to c(x|y) if 0 < t_i - s_j < tau_ij, and
+        J = 1/2 to both if t_i == s_j.
+
+        The strict inequality guarantees that every event is matched with at
+        most one event of the other series, hence
+
+        - Q   = (c(y|x) + c(x|y)) / sqrt(m_x m_y)  in [0, 1]
+        - q   = (c(y|x) - c(x|y)) / sqrt(m_x m_y)  in [-1, 1]
 
         Args:
             events_x: Event times/indices from first series
             events_y: Event times/indices from second series
-            tau_max: Maximum time lag (uses instance default if None)
+            tau_max: Optional fixed upper bound for the local window
+                (uses instance default if None; no cap if both are None)
 
         Returns:
-            (Q, q_xy, q_yx): Overall sync, x→y sync, y→x sync
+            (Q, q_xy, q_yx): Overall sync, x→y sync (x leads, i.e.
+            c(y|x)/sqrt(m_x m_y)), y→x sync (y leads). ``q_xy - q_yx`` is
+            Quiroga's delay measure q.
         """
-        # Use instance tau_max if not specified
         if tau_max is None:
             tau_max = self.tau_max
 
-        # Calculate adaptive tau_max if still None
-        if tau_max is None:
-            tau_max = self._calculate_adaptive_tau(events_x, events_y)
-
-        # Number of events
-        m_x = len(events_x)
-        m_y = len(events_y)
+        x = np.unique(np.asarray(events_x, dtype=np.float64))
+        y = np.unique(np.asarray(events_y, dtype=np.float64))
+        m_x = len(x)
+        m_y = len(y)
 
         if m_x == 0 or m_y == 0:
             return 0.0, 0.0, 0.0
 
-        # Count synchronized events
-        c_xy = self._count_synchronized(events_x, events_y, tau_max)  # x leads y
-        c_yx = self._count_synchronized(events_y, events_x, tau_max)  # y leads x
+        c_yx, c_xy = self._count_pairs(x, y, tau_max)
 
-        # Normalize
         normalization = np.sqrt(m_x * m_y)
-
-        # Directional synchronization
-        q_xy = c_xy / normalization
-        q_yx = c_yx / normalization
-
-        # Overall synchronization
-        Q = (c_xy + c_yx) / normalization
+        q_xy = c_yx / normalization   # x leads y
+        q_yx = c_xy / normalization   # y leads x
+        Q = (c_yx + c_xy) / normalization
 
         return float(Q), float(q_xy), float(q_yx)
 
     @staticmethod
-    def _calculate_adaptive_tau(
-        events_x: npt.NDArray[np.int32],
-        events_y: npt.NDArray[np.int32]
-    ) -> float:
+    def _half_min_gap(events: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """Half of the smaller distance to the neighbouring events (inf if none)."""
+        gaps = np.diff(events)
+        left = np.concatenate(([np.inf], gaps))
+        right = np.concatenate((gaps, [np.inf]))
+        return 0.5 * np.minimum(left, right)
+
+    @classmethod
+    def _count_pairs(
+        cls,
+        x: npt.NDArray[np.float64],
+        y: npt.NDArray[np.float64],
+        tau_max: Optional[float] = None
+    ) -> Tuple[float, float]:
         """
-        Calculate adaptive time lag based on mean inter-event intervals.
+        Count synchronized event pairs with event-pair specific windows.
 
         Args:
-            events_x: Event times from first series
-            events_y: Event times from second series
+            x: Sorted, unique event times of the first series
+            y: Sorted, unique event times of the second series
+            tau_max: Optional fixed cap for the local window
 
         Returns:
-            Adaptive tau_max
+            (c(y|x), c(x|y)): weighted counts of y-events shortly after
+            x-events (x leads) and of x-events shortly after y-events (y leads)
         """
-        if len(events_x) < 2 or len(events_y) < 2:
-            return 1.0
+        half_x = cls._half_min_gap(x)
+        half_y = cls._half_min_gap(y)
 
-        # Mean inter-event interval for each series
-        tau_x = np.mean(np.diff(events_x))
-        tau_y = np.mean(np.diff(events_y))
+        # With the local window only the nearest y-event on each side of an
+        # x-event can qualify, so it is enough to look at those two candidates.
+        idx = np.searchsorted(y, x, side='left')
+        c_yx = 0.0
+        c_xy = 0.0
+        for i, j_next in enumerate(idx):
+            for j in (j_next - 1, j_next):
+                if j < 0 or j >= len(y):
+                    continue
+                tau = min(half_x[i], half_y[j])
+                if tau_max is not None:
+                    tau = min(tau, float(tau_max))
+                d = y[j] - x[i]
+                if d == 0:
+                    c_yx += 0.5
+                    c_xy += 0.5
+                elif 0 < d < tau:
+                    c_yx += 1.0
+                elif 0 < -d < tau:
+                    c_xy += 1.0
 
-        # Return average
-        return float(0.5 * (tau_x + tau_y))
-
-    @staticmethod
-    def _count_synchronized(
-        events_lead: npt.NDArray[np.int32],
-        events_lag: npt.NDArray[np.int32],
-        tau_max: float
-    ) -> int:
-        """
-        Count how many events in lead series have matching events in lag series.
-
-        For each event in the leading series, checks if there's a corresponding
-        event in the lagging series within the time window [t, t + tau_max].
-
-        Args:
-            events_lead: Leading event times
-            events_lag: Lagging event times
-            tau_max: Maximum time lag
-
-        Returns:
-            Count of synchronized events
-        """
-        count = 0
-
-        for t_lead in events_lead:
-            # Check if any lag event falls within [t_lead, t_lead + tau_max]
-            synchronized = np.any(
-                (events_lag >= t_lead) & (events_lag <= t_lead + tau_max)
-            )
-            if synchronized:
-                count += 1
-
-        return count
+        return c_yx, c_xy
 
     def analyze(
         self,
@@ -218,7 +219,9 @@ class EventSynchronization:
             - events_2: Event indices for series 2
             - leader: Which series leads ('Series 1', 'Series 2', or 'None')
             - lead_lag_strength: Magnitude of lead-lag relationship
-            - tau_max: Time window used
+            - delay (q): Quiroga's delay measure q_12 - q_21 in [-1, 1]
+              (positive if series 1 leads)
+            - tau_max: Fixed cap on the local window (inf if none was set)
         """
         # Detect events in both series
         events1 = self.detect_events(ts1, threshold=threshold1, method=method)
@@ -238,10 +241,8 @@ class EventSynchronization:
             leader = "None (symmetric)"
             lag_strength = 0.0
 
-        # Calculate tau_max used
-        tau_max_used = self.tau_max
-        if tau_max_used is None:
-            tau_max_used = self._calculate_adaptive_tau(events1, events2)
+        # Fixed cap on the local window (inf = purely local window)
+        tau_max_used = np.inf if self.tau_max is None else self.tau_max
 
         results = {
             'overall_sync': Q,
@@ -253,6 +254,7 @@ class EventSynchronization:
             'events_2': events2,
             'leader': leader,
             'lead_lag_strength': float(lag_strength),
+            'delay': float(q_12 - q_21),
             'tau_max': float(tau_max_used),
         }
 

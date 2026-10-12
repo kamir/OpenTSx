@@ -168,7 +168,8 @@ mfdfa.plot_results(results)
 
 #### Event Synchronization
 
-Detects synchronized events and lead-lag relationships:
+Detects synchronized events and lead-lag relationships (Quiroga et al. 2002,
+using the event-pair specific window; pass `tau_max=` to cap it):
 
 ```python
 from opentsx.algorithms import EventSynchronization
@@ -176,7 +177,8 @@ from opentsx.algorithms import EventSynchronization
 es = EventSynchronization()
 results = es.analyze(ts1, ts2)
 
-print(f"Overall sync Q: {results['overall_sync']:.3f}")
+print(f"Overall sync Q: {results['overall_sync']:.3f}")   # Q ∈ [0, 1]
+print(f"Delay q: {results['delay']:.3f}")                # q ∈ [-1, 1], > 0: series 1 leads
 print(f"Leader: {results['leader']}")
 
 es.plot_results(ts1, ts2, results)
