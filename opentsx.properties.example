@@ -1,60 +1,41 @@
-# OpenTSx Production Configuration Example
-# Copy this file to opentsx.properties and customize for your environment
+# OpenTSx configuration example
+#
+# This file lists only keys that the code actually reads. Copy it to ./opentsx.properties (working directory)
+# and adjust. Real hosts and credentials belong in config/private/ (git-ignored), never in a committed file.
 
-# Data Directory
-# Where time series data files are stored
+# --- 2.x tools: ProductionConfig (opentsx-core, read from ./opentsx.properties) ----------------------------------
+# Environment variables (OPENTSX_DATA_DIRECTORY, OPENTSX_THREADS_POOL_SIZE, ...) take precedence.
 opentsx.data.directory=/var/lib/opentsx/data
-
-# Thread Pool Configuration
-# Number of threads for parallel processing
-# Recommended: Number of CPU cores
 opentsx.threads.pool.size=4
-
-# Retry Configuration
-# Number of retry attempts for transient failures
 opentsx.retry.attempts=3
-
-# Logging Configuration
-# Log level: SEVERE, WARNING, INFO, FINE, FINER, FINEST
+# SEVERE, WARNING, INFO, FINE, FINER, FINEST
 opentsx.log.level=INFO
 
-# Kafka Configuration (if using Kafka integration)
-kafka.bootstrap.servers=localhost:9092
-kafka.schema.registry.url=http://localhost:8081
-kafka.consumer.group.id=opentsx-consumer-group
-kafka.topic.timeseries=opentsx-timeseries
+# --- 2.x tools: ConfigManager (opentsx-core, opentsx-lg, opentsx-connectors) --------------------------------------
+# Defaults live in config/opentsx-default.properties; select another file with OPENTSX_CONFIG_FILE=<path> or
+# OPENTSX_CONFIG_PROFILE=<name> (-> config/opentsx-<name>.properties). JVM system properties and environment
+# variables (literal key or OPENTSX_<KEY>) win over files.
+opentsx.demo.output.dir=./data/temp
+opentsx.demo.output.format=csv
+opentsx.number.of.iterations=3
+opentsx.show.gui=false
+opentsx.use.kafka=false
 
-# OpenTSDB Configuration (if using OpenTSDB)
-opentsdb.host=localhost
-opentsdb.port=4242
-opentsdb.timeout.ms=5000
+# Kafka client profile of the 2.x tools: set OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME (environment);
+# default ./config/opentsx-local.props, template config/opentsx-local.props.example (localhost / KafScale).
+# Topic list: OPENTSX_TOPIC_MAP_FILE_NAME, default ./config/topiclist.def.
 
-# Database Configuration (if using PostgreSQL)
-postgres.host=localhost
-postgres.port=5432
-postgres.database=opentsx
-postgres.user=opentsx
-postgres.password=opentsx
-postgres.pool.size=10
-
-# Redis Configuration (if using Redis cache)
-redis.host=localhost
-redis.port=6379
-redis.pool.max.total=8
-redis.pool.max.idle=4
-
-# File I/O Configuration
-file.loader.buffer.size=8192
-file.loader.default.delimiter=,
-file.loader.max.rows=1000000
-
-# Performance Tuning
-memory.max.timeseries.size=10000000
-memory.gc.hint.threshold=0.8
-batch.processing.chunk.size=1000
-
-# Environment-specific settings
-# Override these with environment variables in production:
-# export OPENTSX_DATA_DIRECTORY=/production/data/path
-# export OPENTSX_THREADS_POOL_SIZE=16
-# export OPENTSX_LOG_LEVEL=WARNING
+# --- v2 modules (bin/opentsx ...) ----------------------------------------------------------------------------------
+# The v2 modules (opentsx-kafka-v2, -windpark, -stats, -retrieval, -store-*, -openmetadata, -twin) do not read a
+# properties file. They are configured with command-line options and a few environment variables:
+#
+#   KafScale / Kafka   --kafscale localhost:9092 --domain wind --partitions 6
+#                      (tests and deploy scripts: KAFSCALE_BOOTSTRAP=localhost:9092)
+#   Iceberg            --iceberg type=jdbc,uri=jdbc:sqlite:/tmp/tsx/catalog.db,warehouse=file:/tmp/tsx/warehouse
+#                      --namespace tsx      (or type=rest,uri=...,warehouse=...)
+#   OpenTSDB           OPENTSDB_URL=http://localhost:4242   (store contract test against a real OpenTSDB)
+#   OpenMetadata       --om http://localhost:8585/api, token via --token or OPENMETADATA_JWT
+#   Retrieval server   bin/opentsx retrieval-server --port 8080 [--iceberg ... | --demo true]
+#                      (Python client tests: OPENTSX_RETRIEVAL_URL=http://127.0.0.1:8080)
+#
+# See docs/user-manual/12-operations.md and docs/user-manual/appendix-a-cli.md.

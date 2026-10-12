@@ -145,6 +145,12 @@ Retired modules and the 2025 documentation are in [`archive/`](archive/).
 | 2020–2025 | Confluent Platform/Cloud, ksqlDB, multi-region demos, SaaS prototype |
 | 2026 | refresh: Java 17, data model v2, KafScale, Iceberg, OpenMetadata, wind-farm domain, retrieval, Python parity; digital twin and Studio: from time series to decisions |
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) (build, tests, CI, pull requests), the [Code of Conduct](CODE_OF_CONDUCT.md),
+the [security policy](SECURITY.md) and the [changelog](CHANGELOG.md).
+
 ## License
 
-Apache License 2.0 (as declared in the build and the Python package). Copyright 2013–2026 the OpenTSx contributors.
+[Apache License 2.0](LICENSE) (as declared in the build and the Python package). Copyright 2013–2026 the OpenTSx
+contributors; see [NOTICE](NOTICE).
