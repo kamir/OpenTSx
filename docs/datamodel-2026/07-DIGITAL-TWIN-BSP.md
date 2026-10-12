@@ -388,6 +388,8 @@ H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter
 läuft auf synthetischen Daten (`bin/opentsx twin`). Offen: Variante L, Avro-Schemas je Atomtyp, KafScale-Binding,
 WEA/Wake/Wetter/Zähler-Atome, Optimierer (P8.4), echte Daten.
 
+Oberfläche und LabVIEW-Brücke: [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md).
+
 ## 10. Forschungsfrage: eng vs. lose gekoppelte Zwillinge (Paper-Skizze)
 
 **Arbeitstitel:** *Digital Twins on Logs – Synchronization Semantics from Bulk-Synchronous to Loosely Coupled Smart

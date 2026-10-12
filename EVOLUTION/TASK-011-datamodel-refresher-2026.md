@@ -111,6 +111,9 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7c: Java-Scoring-Prozessor (KafScale, Checkpoint, ONNX Runtime) → Smart Metrics + Prediction-API (Java/REST).
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
 - [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
+- [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
+- [ ] P7e Studio produktiv: Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7, Node-Graph bearbeitbar (Schaltplan mit Validierung), Eingriffe mit Freigabe-Workflow, zusammengesetzte Bausteine.
+- [ ] LabVIEW-Brücke (Vorschlag, 09 §4): JSON-Vertrag `opentsx.smartmetric.v1` als JSON-Schema + Normalizer + Tests; TDMS-Import (npTDMS); Publisher-Paket (VIPM, BSD/MIT); Test Client-Zertifikat-TLS LabVIEW ↔ infinimesh; Rückweg über `desired` nur mit Freigabe.
 
 ### Phase 8 – Systemrekonstruktion, Simulation & Optimierung – Konzept: [`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](../docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)
 
@@ -354,6 +357,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
 
 - 2026-10-12: **P9-PoC** `opentsx-twin`: Atomvertrag MVC+P, Schaltplan-YAML, geschichteter BSP-Runner (Variante T) mit Topic-Vertrag, Herkunftsleiter, 9 Bausteine (inkl. Betriebsvorgaben), Schatten/Was-wäre-wenn/Prognose; S1 H2-Kette getestet, Demo `bin/opentsx twin`.
 
