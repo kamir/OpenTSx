@@ -40,7 +40,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] CI (GitHub Actions): Java 17 + 21, Python 3.10–3.13, KafScale-Conformance (Broker v1.6.0 aus Quellcode).
 - [x] Python-Tests mit echten Assertions (18 Tests + 1 dokumentierte Lücke als strict xfail).
 - [x] KafScale-Conformance-Suite + `docker-compose.kafscale.yml`; gemessen gegen KafScale v1.6.0 und Apache Kafka 3.9.1.
-- [ ] Flink auf 1.20/2.x heben (aktuell 1.18, läuft auf 17/21).
+- [x] Flink auf 1.20.5 gehoben (#147), läuft auf 17/21. Die Flink-Adapter bleiben offen (siehe P4 und Backlog).
 - [x] `opentsx-app-tools` nach `archive/modules/` verschoben (sshd-core 0.8.0, keine Abhängigen).
 - [x] Issues im KafScale-Fork angelegt: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) ListOffsets-Zeitstempel, [#17](https://github.com/kamir/kafscale/issues/17) LeaveGroup v4 / MEMBER_ID_REQUIRED, [#18](https://github.com/kamir/kafscale/issues/18) Standalone-OffsetCommit.
 - [x] Sofort-Fixes `TSOProducer`: Label `"123"`/URI `"URI"`, quadratische Zeitstempel, fehlendes Pflichtfeld `consumer_timestamp`. (Gemischte Formate auf `OpenTSx_Episodes` entfallen mit den v2-Topics in P2.)
@@ -161,7 +161,7 @@ Betriebsvorgaben.
 
 **P8.1 – Klassische Rekonstruktion (Kämpf-Methodik als Apache-lizenzierte Java-Bibliothek, Clean-Room)**
 - [ ] Lagged Cross-Correlation mit adjustierter (l_adj), normierter (l_norm) und Peak-Qualitäts-Linkstärke (l_trans).
-- [ ] Event Synchronization mit Q_rand-Kalibrierung (behebt zugleich den bekannten Q>1-Fehler) **und** Event Coincidence Analysis (ECA) als robustere Alternative.
+- [ ] Event Synchronization mit Q_rand-Kalibrierung **und** Event Coincidence Analysis (ECA) als robustere Alternative. Der Q>1-Fehler selbst ist mit #110 bereits behoben.
 - [ ] Surrogate: Shuffling, Phasenrandomisierung, Fourier-Filter + Rank-Reordering (erhalten Langzeitkorrelationen); KS-Test, adaptive Schwelle je Fenster, k-Means in Linkmaß-Ebenen, FDR-Korrektur; MST/PMFG-Filter.
 - [ ] Univariate Vorstufe: DFA, RIS, Wochenzyklus-Normalisierung (168 h) für Content-Daten.
 - [ ] Kontextmaße für Content-Netze: Context Cohesive Force (CCF), Relevanzindizes (lokal/global TRRI), Structure Induced Stress (SIS) als Struktur-vs.-Funktion-Maß.
@@ -398,7 +398,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [x] `opentsx-app-tools` archiviert (siehe Phase 0).
 
 **Fehler & Qualität**
-- [ ] Event-Synchronisation (Python, ggf. Java `ESCalc`): Q > 1 durch globales `tau_max` → lokales τ nach Quiroga (vorgeschlagener separater Task; in P8.1 mit Q_rand-Kalibrierung verbunden).
+- [x] Event-Synchronisation (Python `event_sync.py` + Java `ESCalc`/`ESCalc2`): Q > 1 behoben, globales `tau_max` → lokales τ nach Quiroga (#110). Die Q_rand-Kalibrierung bleibt in P8.1 offen.
 - [ ] Avro 1.12.2+ mit `SERIALIZABLE_PACKAGES`.
 - [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly) und gegen Iceberg-REST-Catalog + MinIO in CI.
 - [ ] Records/s-Messung gegen KafScale mit echtem S3 (bisher nur In-Memory-S3).
@@ -411,7 +411,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8, React Router 7, Plotly 4 – gemeinsam als Migration (Stand 12.10.: `npm ci` scheitert an Peer-Konflikten, `tsc` an veralteten Optionen). Offene Sicherheitsbefunde, die erst mit der Migration verschwinden (`npm audit`, Stand 12.10. nach `npm audit fix`: 18): XSS in `maplibre-gl` über Plotly ≤ 4.1 (Plotly 4.1.1+ oder Plotly-Basic-Bundle ohne Kartentypen), typescript-eslint 8, `postcss-selector-parser`/`micromatch`/`braces` über Tailwind 4, React Router 7.
 
 **Laufzeit & Integration**
-- [ ] Flink 1.20/2.x-Upgrade; danach Flink-Adapter für `StatsEngine` und P8.1-Streaming-Screening; `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2 umstellen oder deprecaten.
+- [ ] Flink-Adapter für `StatsEngine` und P8.1-Streaming-Screening; `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2 umstellen oder deprecaten. Das Upgrade selbst ist mit #147 auf 1.20.5 erledigt; 2.x bleibt eine eigene Entscheidung.
 - [ ] Echte Herstellerexporte als weitere `sources` im Datenpunktkatalog.
 - [ ] Matrix-Profile (Motif/Discord) und iSAX-Index (P5-Optionen).
 
