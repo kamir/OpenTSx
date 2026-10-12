@@ -132,3 +132,11 @@ jobs:
         run: |
           python -m pip install -e ".[iceberg]" pytest
           python -m pytest -q tests/test_iceberg_interop.py
+      - name: Java retrieval server (demo store) answers the Python client
+        run: |
+          mvn -B -ntp -q -pl opentsx-retrieval -am install -DskipTests
+          mvn -B -ntp -q -pl opentsx-retrieval dependency:build-classpath -Dmdep.outputFile=cp.txt
+          nohup java -cp "opentsx-retrieval/target/classes:$(cat opentsx-retrieval/cp.txt)" \
+            org.opentsx.retrieval.server.RetrievalServer --port 18080 --demo true > retrieval-server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:18080/v1/health && break; sleep 1; done
+          cd python-package && OPENTSX_RETRIEVAL_URL=http://127.0.0.1:18080 python -m pytest -q tests/test_retrieval_client.py

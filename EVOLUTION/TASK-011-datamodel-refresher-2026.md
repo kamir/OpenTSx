@@ -89,12 +89,21 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly).
 - [ ] Bestehenden `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2-Serde umstellen oder deprecaten.
 
-### Phase 5 – Retrieval-API & Pattern-Matching (`opentsx-retrieval`)
-- [ ] 5a: Java-Fluent-API `EpisodeService` (`episodes()`, `episode(id)`, `similarTo(...)`), Store-Auswahl nach Capabilities.
-- [ ] 5a: Pattern-Engine – PAA/SAX-Berechnung beim Schreiben (`EpisodeSummary.sax`), MASS für z-ED, LB_Kim/LB_Keogh/DTW-Kaskade.
-- [ ] 5a: Synthetischer Benchmark (eingepflanzte Muster, Rauschen, Skalierung) + Recall/Latenz-Report.
-- [ ] 5b: Dünne REST-Schicht + Python-Client.
+### Phase 5 – Segmentierung, Retrieval & Pattern-Matching (`opentsx-retrieval`)
+- [x] Segmentierer für alle vier Strategien (FIXED_DURATION, FIXED_COUNT, FEATURE_EXTREMUM, FEATURE_THRESHOLD), inkrementell → Streaming == Batch (getestet), deterministische Segment-IDs, Lineage.
+- [x] Pattern-Engine: MASS (zED), PAA/SAX inkl. MINDIST (exakter Prefilter, `EpisodeSummary.sax`), DTW mit Sakoe-Chiba, LB_Kim/LB_Keogh (UCR-Kaskade); exakte Top-k ohne Überlappung über Episodengrenzen; Ganz-Episoden-Ähnlichkeit.
+- [x] Benchmark auf simulierten Winddaten (eingepflanzte Böen, Warping, Rauschen) → Recall/Latenz-Report.
+- [x] `EpisodeService`: `episodes()` (+ Resampling), `episode(id)` (neu im Store-SPI), `similarTo`, `similarEpisodes`, `segments(...).writeTo(store)`.
+- [x] Dünne REST-Schicht (`RetrievalServer`, JSON oder Avro-Stream) + Python-Client `opentsx.client.RetrievalClient`; Live-Test Python ↔ Java in CI.
+- [x] Leistungskurven-Analyse (Methode der Bins, Performance-Index, Minderleistungsphasen) in `opentsx-windpark`.
 - [ ] 5c (optional): Matrix-Profile Motif/Discord über Buckets; Treffer als Annotationen zurückschreiben.
+- [ ] iSAX-Index für heiße Daten (aktuell: SAX-Prefilter je Episode, MASS je Serie).
+
+### Phase 6 – Analytik-Lücken
+- [ ] Resampling/Alignment mehrerer Serien (gemeinsames Raster, As-of-Joins) – Grundlage für Smart Topics.
+- [ ] Gap-Filling (linear, saisonal, modellbasiert) mit Qualitätscode SUBSTITUTED.
+- [ ] Change-Point-Erkennung (CUSUM/PELT) als Segmentierer.
+- [ ] Welch-PSD/Kohärenz (Schwingungen), Feature-Extraktion je Episode.
 
 ### Phase 7 – Smart Topics (`opentsx-smart`, Python `opentsx.smart`) – Entwurf: [`05-SMART-TOPICS.md`](../docs/datamodel-2026/05-SMART-TOPICS.md)
 - [ ] P7a: Spezifikation (YAML, versioniert) + Feature-Pipeline Java/Python mit Testvektoren; Schema v2.1 `SmartMetric`.
@@ -145,6 +154,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-12: **P5 umgesetzt** (`opentsx-retrieval`): Segmentierung, Pattern-Engine, Retrieval-API, REST + Python-Client, Leistungskurven-Analyse.
 - 2026-10-12: Smart Topics entworfen (`05-SMART-TOPICS.md`); Entscheidungen: Python-Training zuerst, MLflow, Modell je Serie + föderiertes globales Modell (Wayang), Umsetzung als P7 nach P6.
 - 2026-10-11: **P4 umgesetzt**: `opentsx-stats` (Streaming-Statistik, Quantil-Sketch, DQ, KafScale-Prozessor mit Checkpoints) und `opentsx-openmetadata` (Metadata-Pool, gegen OM-2.0.5-Schemas validiert); Python `opentsx.stats`.
 - 2026-10-11: **Windpark-Domäne umgesetzt** (`opentsx-windpark`): IEC-61400-25-2-Datenpunktkatalog, Normalisierer, Simulator mit Ground Truth, CLI → KafScale/Iceberg. Avro 1.12.1 zentral (Präzisionsfehler in 1.12.0 per Test abgesichert).
