@@ -279,4 +279,4 @@ React) wird zur **Control Plane für die eigenen Smart Series** eines Benutzers/
 
 Eine persönliche Instanz ist zugleich das „System“ der Föderation (§5): lokal trainieren, nur Modell-Updates einzahlen.
 Erweiterung um Systemrekonstruktion, Simulation und Optimierung: siehe das Konzept zur Netzwerkrekonstruktion
-(`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`, in Arbeit).
+([`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md), Phase P8).

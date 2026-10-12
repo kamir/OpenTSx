@@ -47,7 +47,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 |----------|---------|
 | [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, CLI and REST reference |
 | [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) (German) | normative spec |
-| [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics |
+| [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics, system reconstruction & optimization |
 | [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
 | Module READMEs | details per module, e.g. [kafka-v2](opentsx-kafka-v2/README.md), [windpark](opentsx-windpark/README.md), [retrieval](opentsx-retrieval/README.md) |
 | [Developer guide](docs/devguide/README.md) | PDF build, processing-flow descriptor schema, local infrastructure |
@@ -78,7 +78,8 @@ Retired modules and the 2025 documentation are in [`archive/`](archive/).
 |-------|---------|--------|
 | P0–P5 | foundation, data model v2, KafScale storage, stores, wind farm, statistics, OpenMetadata, retrieval | **done** |
 | P6 | analytics gaps (alignment, gap filling, change points, spectral analysis) | planned |
-| P7 | Smart Topics (declarative model training, smart metrics, prediction API, federated models) | designed |
+| P7 | Smart Topics (declarative model training, smart metrics, prediction API, federated models); personal service layer | designed |
+| P8 | System reconstruction from time series (Kämpf 2017 + causal discovery), simulation, optimization (classical; quantum as experiment) | concept ([06](docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)) |
 
 ## Related work
 

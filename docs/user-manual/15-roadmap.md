@@ -14,9 +14,11 @@ roadmap rationale is in the [gap analysis](../datamodel-2026/03-GAP-ANALYSE.md).
 | P5 | Segmentation, pattern search, retrieval API, REST, Python client, power-curve analysis | done |
 | P6 | Analytics gaps: multi-series alignment and as-of joins, gap filling, change points, Welch PSD/coherence, feature extraction | planned |
 | P7 | **Smart Topics**: derived topics with declarative training (Python, MLflow), Java scoring (ONNX), smart metrics, prediction API with or without context, federated global models | designed ([05-SMART-TOPICS](../datamodel-2026/05-SMART-TOPICS.md)) |
-| P7+ | Personal service layer on the SaaS stack ([chapter 14](14-saas-service-layer.md)) | proposal |
+| P7e | Personal service layer on the SaaS stack: control plane for one's own smart series ([chapter 14](14-saas-service-layer.md)) | proposal |
+| P8 | **System reconstruction, simulation and optimization**. P8.0 edge table + ground-truth benchmark from the simulator; P8.1 Kämpf significance layer and event coincidence analysis (Java, streaming screen); P8.2 causal confirmation (PCMCI+, multivariate transfer entropy, Hawkes; Python); P8.3 simulation on the reconstructed structure; P8.4 classical optimization (MILP/QUBO); P8.5 quantum backends as a measured experiment, federated structure discovery | concept ([06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](../datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md), German) |
 
-Open items:
+The complete backlog of open items is maintained in TASK-011 ("Offene Punkte / Backlog"). It includes the
+credential rotation and the research follow-ups. The main items:
 
 * a Flink adapter for the statistics engine (with the Flink upgrade),
 * a smoke test against a real OpenMetadata server,

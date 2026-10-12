@@ -15,6 +15,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | [`tools/check_links.py`](../tools/check_links.py) | checks relative links in the maintained docs; runs in CI |
 | `archive/docs/README.md`, `archive/demos/README.md`, `archive/bin/README.md` | archive indexes |
 | this file | inventory |
+| [`docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) | concept P8: network reconstruction, simulation, optimization (concept map, research, roadmap) |
 
 ## 2. Updated
 

@@ -34,7 +34,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 ## Phasen & Aufgaben
 
 ### Phase 0 – Fundament & Entscheidungen
-- [ ] ADRs unter `EVOLUTION/DECISIONS/` für die offenen Entscheidungen (s.u.).
+- [x] Entscheidungen werden in der Tabelle „Entscheidungen“ dieses Dokuments geführt (der alte Ordner `DECISIONS/` liegt in `EVOLUTION/archive/`).
 - [x] Toolchain: gesamtes Projekt auf `maven.compiler.release=17`, Versionen nur in `dependencyManagement`, Enforcer (JDK ≥ 17, kein log4j 1.x); Kafka 3.9.1 / Confluent 7.9.1 / Avro 1.12.1 (seit Windpark-PR; 1.12.0 dekodiert double-Arrays mit float-Präzision, 1.12.2 verlangt `org.apache.avro.SERIALIZABLE_PACKAGES` → Folgeaufgabe); `opentsx-core` + `-data` 65 statt 388 Artefakte.
 - [x] Legacy-Module nach `archive/modules/` (Cassandra-Store, KStreams-Cassandra-State-Store, Hive-UDF, ksqlDB-UDF).
 - [x] CI (GitHub Actions): Java 17 + 21, Python 3.10–3.13, KafScale-Conformance (Broker v1.6.0 aus Quellcode).
@@ -112,6 +112,50 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
 - [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
 
+### Phase 8 – Systemrekonstruktion, Simulation & Optimierung – Konzept: [`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](../docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)
+
+Kette: *Quellen (Sensoren, Content-Interaktion wie ER1/Wikipedia mit Feedback) → Episoden → Netzwerkrekonstruktion
+(Kämpf 2017 + Stand 2026) → Simulation auf rekonstruierter Struktur → Optimierung (klassisch, Quanten nur als
+Messobjekt)*, gesteuert über den Personal Service Layer (P7e). Abnahme jeweils gegen die Ground Truth des
+Windpark-Simulators.
+
+**P8.0 – Fundament (Vertrag)**
+- [ ] Ground-Truth-Export: wahrer Wake-/Kopplungsgraph je Windrichtungssektor aus `opentsx-windpark` (Szenario-Erweiterung, z. B. `ostsee-demo.yaml`), inkl. injizierter Fehler/Regime.
+- [ ] Iceberg-Schema der **Kantentabelle** (Multilayer, versioniert): Quelle/Ziel-Serie, Layer/Methode, Lag, Stärke, Signifikanzfelder (l_adj, l_norm, l_trans, p-Wert, Surrogattyp, Konfidenz aus Bagging), Fenster, Spezifikations-Hash, Provenienz (Episoden-Hash, Topic/Offsets).
+- [ ] OpenLineage-Facet „Replay-Provenienz“ in `opentsx-openmetadata`; Kantentabelle, Simulationsläufe und Optimierungsinstanzen als Lineage-Knoten in OpenMetadata.
+
+**P8.1 – Klassische Rekonstruktion (Kämpf-Methodik als Apache-lizenzierte Java-Bibliothek, Clean-Room)**
+- [ ] Lagged Cross-Correlation mit adjustierter (l_adj), normierter (l_norm) und Peak-Qualitäts-Linkstärke (l_trans).
+- [ ] Event Synchronization mit Q_rand-Kalibrierung (behebt zugleich den bekannten Q>1-Fehler) **und** Event Coincidence Analysis (ECA) als robustere Alternative.
+- [ ] Surrogate: Shuffling, Phasenrandomisierung, Fourier-Filter + Rank-Reordering (erhalten Langzeitkorrelationen); KS-Test, adaptive Schwelle je Fenster, k-Means in Linkmaß-Ebenen, FDR-Korrektur; MST/PMFG-Filter.
+- [ ] Univariate Vorstufe: DFA, RIS, Wochenzyklus-Normalisierung (168 h) für Content-Daten.
+- [ ] Kontextmaße für Content-Netze: Context Cohesive Force (CCF), Relevanzindizes (lokal/global TRRI), Structure Induced Stress (SIS) als Struktur-vs.-Funktion-Maß.
+- [ ] Streaming-Screening: laufende Fenstersummen (CC/ECA) in `opentsx-stats`, Flink-Variante mit dem Flink-Upgrade; Precision/Recall gegen Ground Truth je Sektor, CC-Baseline immer mitberichten.
+
+**P8.2 – Kausale Bestätigung (Screen-then-Confirm)**
+- [ ] Python-Worker (`python-package/opentsx/algorithms`): liest Episoden via PyIceberg, ruft tigramite (PCMCI+, RPCMCI, J-PCMCI+) und IDTxl (multivariate TE) **hinter einer Prozessgrenze** (GPL), schreibt Kanten zurück; Bootstrap-Bagging für Konfidenzen.
+- [ ] Hawkes-Granger für Ereignisströme (Content-Interaktion: Zugriffe, Edits, Feedback).
+- [ ] Vergleichsbericht im CauseMe-Stil auf Simulator-Ground-Truth; Bestätigung wird nur Standard, wenn sie die CC-Baseline messbar schlägt.
+
+**P8.3 – Simulation auf rekonstruierter Struktur (Zwilling aus Daten)**
+- [ ] Netzwerkdynamik-Modelle auf bestätigten Kanten: VAR, Koopman/DMD; multivariater Hawkes auf Graph für Content-Daten; physikbasierter Wake-Pfad (FLORIS-artig) als Referenz.
+- [ ] Szenario- und Interventions-Replay gegen zurückgehaltene Episoden; SIS/Schwellwertparameter als Strukturbruch-Detektor; Abnahme: Out-of-sample besser als strukturfreies Modell.
+- [ ] Identifizierbarkeit: Regimevielfalt bzw. gezielte Anregung (Simulator-Interventionen, Feedback als quasi-Intervention).
+
+**P8.4 – Optimierung, klassisch**
+- [ ] Problem-Builder aus Kantentabelle/Simulation: graph-native Binärprobleme (Partitionierung, Sensor-/Turbinenauswahl, MIS) als QUBO im dimod-Format; Betriebsprobleme (Yaw/Wake-Steering, Wartung, Unit Commitment) als MILP.
+- [ ] Backends: HiGHS, OR-Tools CP-SAT (Java), Simulated Annealing/Parallel Tempering; Gurobi/CPLEX optional; Java exportiert, Python-Optimierungsdienst hinter einer Schnittstelle.
+- [ ] Ergebnisse als Smart-Topic-Ereignisse; Optimalitätslücke gegen MIP-Schranke; geschlossene Schleife im Simulator verbessert die Zielgröße.
+
+**P8.5 – Quanten- und föderierte Experimente (Messobjekt, kein Versprechen)**
+- [ ] Quantenbackends (D-Wave Leap Hybrid, Qiskit Functions, ggf. Neutralatome für MIS) nur über Python-Sidecar; Protokoll: Zeit-bis-Ziel inkl. Embedding und Warteschlange, beste getunte klassische Baseline (PT, GPU-Heuristiken), QOBLIB-Berichtsformat; „Parität/kein Vorteil“ ist ein gültiges Ergebnis.
+- [ ] Veröffentlichung versionierter, simulatorerzeugter QUBO/MILP-Instanzen mit bekannten Optima.
+- [ ] Föderierte Strukturentdeckung über Betreiber hinweg (Wayang, mergebare Sketches, gemeinsamer IEC-Katalog); vorher semantische Angleichung, da Inter-Farm-Lernen unter Heterogenität leidet.
+
+**P8.x – Content-Interaktion / ER1**
+- [ ] Klären, ob ein anonymisierter oder synthetischer Auszug ER1-artiger Daten (Zugriff, Edit, Feedback) als zweiter Prüfstein bereitgestellt werden kann; sonst Validierung mit öffentlichen Wikipedia-Pageviews/Clickstream.
+- [ ] Synthetischer Generator für Content-Interaktion mit bekannter Kopplung und Feedback (Gegenstück zum Windpark-Simulator).
+
 ## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
 ```
@@ -127,9 +171,10 @@ opentsx-stats                 Streaming-Statistik + DQ (laufzeitunabhängig; Fli
 opentsx-openmetadata          Metadaten-/Profil-/DQ-Publisher
 opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, REST
 (geplant) opentsx-smart       Smart Topics (P7)
+(geplant) opentsx-network     Kantentabelle, Rekonstruktion (Kämpf-Signifikanzschicht, ECA), Problem-Builder (P8)
 ```
 
-## Entscheidungen (Stand 2026-10-09)
+## Entscheidungen (Stand 2026-10-12)
 
 | # | Frage | Status / Entscheidung |
 |---|-------|-----------------------|
@@ -144,19 +189,68 @@ opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, RES
 | D9 | Werte-Kompression über zstd hinaus | **Gemessen:** 2,18 B/Wert reicht vorerst; quantisierte Integer-Kodierung (< 1 B/Wert) als Option für eine spätere Schemaversion |
 | D10 | Wire-Format-Default | `SELF_DESCRIBING` (Avro Single-Object-Encoding), da KafScale keine Registry mitbringt |
 | D11 | Zeitbasiertes Replay | Eigener Episoden-Index in Iceberg (`tsx.episode_index`) statt `offsetsForTimes` |
+| D12 | Smart Topics | **Entschieden (2026-10-12):** Python-Training zuerst (ONNX/JSON, Scoring in Java), MLflow als Registry, Modell je Serie + föderiertes globales Modell (Wayang-Ansatz), Umsetzung als P7 nach P6 |
+| D13 | Doku | **Entschieden (2026-10-12):** User-Manual englisch; SaaS-Stack bleibt (als künftiger Personal Service Layer); Module/Doku außerhalb des Builds archiviert |
+| D14 | P8: Methodenarchitektur | **Vorschlag:** Screen-then-Confirm – billiges Screening (CC/ECA/Kämpf-Signifikanz) im Stream (Java), kausale Bestätigung (PCMCI+/mTE/Hawkes) im Batch (Python); Kreuzkorrelation immer als Baseline |
+| D15 | P8: Lizenzen | **Vorschlag:** GPL-Bibliotheken (tigramite, JIDT, IDTxl) nur hinter Prozessgrenze; Kämpf-Maße und ECA als Clean-Room-Implementierung unter Apache 2.0 |
+| D16 | P8: Quantenrechnen | **Vorschlag:** klassische Solver sind Standard; Quantenbackends nur als Messobjekt mit vorab festgelegtem Benchmarkprotokoll (kein belegter Vorteil, Stand 2026) |
+| D17 | P8: Reihenfolge | **Vorschlag:** Benchmark mit Ground Truth zuerst (P8.0/P8.1), Quanten zuletzt (P8.5) |
 
-> **Hinweis:** Die Phasenreihenfolge wurde durch die Gap-Analyse überarbeitet – maßgeblich ist
-> [`docs/datamodel-2026/03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md) (P0–P6, inkl. Windpark-Domäne & Simulator).
+> **Hinweis:** Die Phasenreihenfolge folgt der Gap-Analyse
+> ([`03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md)), ergänzt um P7 (Smart Topics) und
+> P8 (Systemrekonstruktion & Optimierung).
 
 ## Risiken
 
-- **Java-8-Altbestand** vs. moderne Abhängigkeiten → strikt getrennte Module, Brücke nur in eine Richtung.
+- **Legacy-Module (2.x)** im Build (`opentsx-core`, `-connectors`, `-lg`, `-flink-core`, `-data`) → strikt getrennt, Brücke nur in eine Richtung (`opentsx-legacy-bridge`).
+- **Scheinlinks durch Autokorrelation/Langzeitkorrelation** (P8) → Surrogate, die Langzeitkorrelationen erhalten, FDR, Ground-Truth-Benchmarks, CC-Baseline.
+- **GPL-Kontamination** (tigramite, JIDT, IDTxl) → Prozessgrenze, Clean-Room-Implementierungen.
+- **Quanten-Hype** → nur Messobjekt mit festem Protokoll; „kein Vorteil“ ist ein gültiges Ergebnis.
+- **Identifizierbarkeit/Nicht-Stationarität** bei Rekonstruktion und Zwillingen → Regime-Segmentierung (P5), gezielte Anregung im Simulator.
 - **`offsetsForTimes` setzt monotone CreateTime je Partition voraus** – bei Out-of-Order-Produktion ist Zeit-Replay unscharf → Replay liest ab gefundenem Offset und filtert, Iceberg als präziser Index.
 - **OpenMetadata-Last** bei Statistik pro Serie → Aggregation & Rate-Limit.
 - **Schema-Drift** zwischen Java und Python → gemeinsame `.avsc` + geteilte Testvektoren.
 
+## Offene Punkte / Backlog (vollständig, Stand 2026-10-12)
+
+Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – nichts bleibt liegen.
+
+**Entscheidungen beim Owner**
+- [ ] **Credentials:** Confluent-Cloud-Key in `config/private/ccloud.props` (trotz `.gitignore` versioniert), zuvor auch in `SECURITY.md` und archivierten Notebook-Ausgaben → Key rotieren; Datei aus dem Index nehmen und ggf. Historie bereinigen.
+- [ ] D6 Iceberg-Catalog/Object Store (REST + MinIO) final festlegen.
+- [ ] D14–D17 (P8-Vorschläge) bestätigen.
+- [ ] ER1: Bereitstellung anonymisierter/synthetischer Content-Interaktionsdaten (P8.x).
+
+**Repository & Open Source (TASK-010)**
+- [ ] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert), CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Policy), CHANGELOG.
+- [ ] Python-Paket auf PyPI veröffentlichen (README nennt bislang nur lokale Installation).
+- [ ] `sample_data/` und `data/sample_datasets/` konsolidieren (gleiche Dateinamen, anderer Inhalt; von `opentsx-core`-Demos referenziert).
+- [ ] `config/cpl*.props` (private LAN-Hosts) durch eine localhost/KafScale-Vorlage ersetzen; `opentsx.properties.example` an v2-Module anpassen.
+- [ ] `tests/validation/*.java` und `bin/run_all_tests.sh` in einen Maven-Testpfad überführen oder archivieren; Java-Beispiele in `exercises/` gegen die echte 2.x-API prüfen.
+- [ ] `opentsx-app-tools`: sshd-core 0.8.0 ablösen oder Modul archivieren (siehe Phase 0).
+
+**Fehler & Qualität**
+- [ ] Event-Synchronisation (Python, ggf. Java `ESCalc`): Q > 1 durch globales `tau_max` → lokales τ nach Quiroga (vorgeschlagener separater Task; in P8.1 mit Q_rand-Kalibrierung verbunden).
+- [ ] Avro 1.12.2+ mit `SERIALIZABLE_PACKAGES`.
+- [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly) und gegen Iceberg-REST-Catalog + MinIO in CI.
+- [ ] Records/s-Messung gegen KafScale mit echtem S3 (bisher nur In-Memory-S3).
+
+**Laufzeit & Integration**
+- [ ] Flink 1.20/2.x-Upgrade; danach Flink-Adapter für `StatsEngine` und P8.1-Streaming-Screening; `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2 umstellen oder deprecaten.
+- [ ] Echte Herstellerexporte als weitere `sources` im Datenpunktkatalog.
+- [ ] Matrix-Profile (Motif/Discord) und iSAX-Index (P5-Optionen).
+
+**Recherche-Nacharbeit (aus 06-SYSTEMREKONSTRUKTION-OPTIMIERUNG, als ungeprüft markiert)**
+- [ ] Lizenzen von IDTxl, pyunicorn, netrd, causal-learn, Tetrad aus den LICENSE-Dateien verifizieren; Maven-Verfügbarkeit von JIDT.
+- [ ] CauseMe- und QOBLIB-Leaderboard-Zahlen, CausalTime-Ergebnisse einholen.
+- [ ] Offizieller AWS-Status von IoT TwinMaker; Primärdoku InfluxDB/Timescale/QuestDB/Grafana/Prometheus zu Kausal-/Netzwerkfunktionen.
+- [ ] Vergleich ES/ECA vs. Hawkes auf Clickstream-artigen Daten; Hawkes-Modell auf dem Wikipedia-Seitennetz (keine Quelle gefunden → eigener Beitrag).
+- [ ] Volltext Müller et al. (IEEE TPWRS 2025, Quanten-Unit-Commitment): Instanzgrößen und Laufzeiten.
+- [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
+
 ## Progress Log
 
+- 2026-10-12: **Phase 8 aufgenommen** (Systemrekonstruktion → Simulation → Optimierung, Konzept `06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md` aus Deep Research mit Bezug auf Kämpf 2017); vollständiger Backlog aller offenen Punkte.
 - 2026-10-12: **Doku-Refresh**: neues englisches User-Manual (`docs/user-manual/`), Inventur (`docs/DOCUMENTATION-INVENTORY.md`), Archivierung veralteter Doku und Module außerhalb des Builds (`archive/`), Launcher `bin/opentsx`, Link-Check in CI.
 - 2026-10-12: **P5 umgesetzt** (`opentsx-retrieval`): Segmentierung, Pattern-Engine, Retrieval-API, REST + Python-Client, Leistungskurven-Analyse.
 - 2026-10-12: Smart Topics entworfen (`05-SMART-TOPICS.md`); Entscheidungen: Python-Training zuerst, MLflow, Modell je Serie + föderiertes globales Modell (Wayang), Umsetzung als P7 nach P6.

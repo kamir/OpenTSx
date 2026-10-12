@@ -31,4 +31,9 @@ take on these roles:
 A personal instance is also the natural participant in **federated training**: it trains locally and contributes only
 model updates to the global model (the Wayang approach in the Smart Topic design).
 
+The same control plane would steer **system reconstruction, simulation and optimization** (phase P8). It would
+connect sources, trigger reconstruction runs, compare simulation scenarios, and submit optimization instances to
+classical solvers or, as an experiment, to quantum backends. The concept is in
+[06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](../datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) (German).
+
 This is a proposal; it is tracked in the roadmap ([chapter 15](15-roadmap.md)).
