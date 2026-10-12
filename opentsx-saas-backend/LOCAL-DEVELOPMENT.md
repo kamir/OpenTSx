@@ -6,7 +6,7 @@ This guide helps you run the OpenTSx SaaS backend **locally on your machine** wi
 
 Before starting, ensure you have:
 
-- **Python 3.11+** installed
+- **Python 3.12+** installed
 - **PostgreSQL** installed and running locally
 - **Redis** installed and running (optional, but recommended)
 - **Git** for version control
@@ -24,8 +24,8 @@ brew services start postgresql
 brew install redis
 brew services start redis
 
-# Install Python 3.11+
-brew install python@3.11
+# Install Python 3.12+
+brew install python@3.12
 ```
 
 #### Linux (Ubuntu/Debian)
@@ -40,8 +40,8 @@ sudo systemctl start postgresql
 sudo apt-get install redis-server
 sudo systemctl start redis
 
-# Install Python 3.11+
-sudo apt-get install python3.11 python3.11-venv python3.11-dev
+# Install Python 3.12+
+sudo apt-get install python3.12 python3.12-venv python3.12-dev
 ```
 
 ## Quick Start
@@ -257,19 +257,19 @@ psql -U postgres -c "DROP DATABASE opentsx_local;"
 
 ### Python Version Issues
 
-**Error:** `Python version must be 3.11 or higher`
+**Error:** `Python version must be 3.12 or higher`
 
 **Solution:**
 ```bash
-# Install Python 3.11+
+# Install Python 3.12+
 # macOS:
-brew install python@3.11
+brew install python@3.12
 
 # Linux:
-sudo apt-get install python3.11
+sudo apt-get install python3.12
 
 # Use specific Python version
-python3.11 -m venv venv
+python3.12 -m venv venv
 ```
 
 ## API Testing

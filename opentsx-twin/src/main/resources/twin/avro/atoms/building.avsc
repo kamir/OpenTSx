@@ -1,0 +1,163 @@
+{
+  "type" : "record",
+  "name" : "BuildingSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one building atom after superstep k (phase FLOWS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "BuildingState",
+      "doc" : "State variables of building",
+      "fields" : [ {
+        "name" : "t_in_c",
+        "type" : "double"
+      }, {
+        "name" : "t_avg24_c",
+        "type" : "double"
+      }, {
+        "name" : "heater_kwh",
+        "type" : "double"
+      }, {
+        "name" : "stove_kwh",
+        "type" : "double"
+      }, {
+        "name" : "gain_kwh",
+        "type" : "double"
+      }, {
+        "name" : "solar_kwh",
+        "type" : "double"
+      }, {
+        "name" : "loss_kwh",
+        "type" : "double"
+      }, {
+        "name" : "under_h",
+        "type" : "double"
+      }, {
+        "name" : "t_in_sum",
+        "type" : "double"
+      }, {
+        "name" : "hours",
+        "type" : "double"
+      }, {
+        "name" : "season_h",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "BuildingOutputs",
+      "doc" : "Output ports of building",
+      "fields" : [ {
+        "name" : "t_in_c",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [°C]"
+      }, {
+        "name" : "q_req_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [kW]"
+      }, {
+        "name" : "season",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [1]"
+      }, {
+        "name" : "q_loss_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "BuildingControls",
+      "doc" : "Controls of building overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "setpoint_c",
+        "type" : [ "null", "double" ],
+        "doc" : "default 21.0",
+        "default" : null
+      }, {
+        "name" : "setback_k",
+        "type" : [ "null", "double" ],
+        "doc" : "default 3.0",
+        "default" : null
+      }, {
+        "name" : "unused_setback_k",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "building",
+  "opentsx.phase" : "FLOWS",
+  "opentsx.inputs" : [ {
+    "name" : "t_out_c",
+    "kind" : "SIGNAL",
+    "unit" : "°C"
+  }, {
+    "name" : "ghi_w_m2",
+    "kind" : "SIGNAL",
+    "unit" : "W/m2"
+  }, {
+    "name" : "q_heater_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "q_stove_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "q_gain_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "setpoint_c",
+    "kind" : "SIGNAL",
+    "unit" : "°C"
+  } ]
+}

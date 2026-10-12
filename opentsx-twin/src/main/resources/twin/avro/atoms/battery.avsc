@@ -1,0 +1,98 @@
+{
+  "type" : "record",
+  "name" : "BatterySnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one battery atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "BatteryState",
+      "doc" : "State variables of battery",
+      "fields" : [ {
+        "name" : "soc_kwh",
+        "type" : "double"
+      }, {
+        "name" : "throughput_kwh",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "BatteryOutputs",
+      "doc" : "Output ports of battery",
+      "fields" : [ {
+        "name" : "p_bat_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "soc",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [1]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "BatteryControls",
+      "doc" : "Controls of battery overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "power_kw",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "battery",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "power_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  } ]
+}

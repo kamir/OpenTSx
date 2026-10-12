@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>
+<!-- Hand-made test fixture in the layout of a DWD MOSMIX_L single-station KML (6 of the ~247 hourly steps,
+     a subset of the elements). Values are realistic, not a real forecast. -->
+<kml:kml xmlns:dwd="https://opendata.dwd.de/weather/lib/pointforecast_dwd_extension_V1_0.xsd" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+    <kml:Document>
+        <kml:ExtendedData>
+            <dwd:ProductDefinition>
+                <dwd:Issuer>Deutscher Wetterdienst</dwd:Issuer>
+                <dwd:ProductID>MOSMIX</dwd:ProductID>
+                <dwd:GeneratingProcess>DWD MOSMIX hourly, Version 1.0</dwd:GeneratingProcess>
+                <dwd:IssueTime>2026-10-12T09:00:00.000Z</dwd:IssueTime>
+                <dwd:ReferencedModel>
+                    <dwd:Model dwd:name="ICON" dwd:referenceTime="2026-10-12T00:00:00Z"/>
+                    <dwd:Model dwd:name="ECMWF/IFS" dwd:referenceTime="2026-10-12T00:00:00Z"/>
+                </dwd:ReferencedModel>
+                <dwd:ForecastTimeSteps>
+                    <dwd:TimeStep>2026-10-12T10:00:00.000Z</dwd:TimeStep>
+                    <dwd:TimeStep>2026-10-12T11:00:00.000Z</dwd:TimeStep>
+                    <dwd:TimeStep>2026-10-12T12:00:00.000Z</dwd:TimeStep>
+                    <dwd:TimeStep>2026-10-12T13:00:00.000Z</dwd:TimeStep>
+                    <dwd:TimeStep>2026-10-12T14:00:00.000Z</dwd:TimeStep>
+                    <dwd:TimeStep>2026-10-12T15:00:00.000Z</dwd:TimeStep>
+                </dwd:ForecastTimeSteps>
+                <dwd:FormatCfg>
+                    <dwd:DefaultUndefSign>-</dwd:DefaultUndefSign>
+                </dwd:FormatCfg>
+            </dwd:ProductDefinition>
+        </kml:ExtendedData>
+        <kml:Placemark>
+            <kml:name>10578</kml:name>
+            <kml:description>FICHTELBERG</kml:description>
+            <kml:ExtendedData>
+                <dwd:Forecast dwd:elementName="PPPP">
+                    <dwd:value>     -          -          -          -          -          -     </dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="TTT">
+                    <dwd:value>      277.05     277.35     277.65     277.85     277.95     277.65</dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="DD">
+                    <dwd:value>       287.00     289.00     292.00     294.00     295.00     295.00</dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="FF">
+                    <dwd:value>         7.72       7.20          -       6.17       5.66       5.14</dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="FX1">
+                    <dwd:value>        12.35      11.83      11.32      10.80      10.29       9.77</dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="N">
+                    <dwd:value>         89.00      86.00      86.00      86.00      85.00      82.00</dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="RR1c">
+                    <dwd:value>       0.00       0.10       0.30       0.00       0.00       0.00</dwd:value>
+                </dwd:Forecast>
+                <dwd:Forecast dwd:elementName="Rad1h">
+                    <dwd:value>    720.00     900.00     850.00     810.00     660.00     510.00</dwd:value>
+                </dwd:Forecast>
+            </kml:ExtendedData>
+            <kml:Point>
+                <kml:coordinates>12.95,50.43,1213.0</kml:coordinates>
+            </kml:Point>
+        </kml:Placemark>
+    </kml:Document>
+</kml:kml>

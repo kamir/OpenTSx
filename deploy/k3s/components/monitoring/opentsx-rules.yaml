@@ -1,0 +1,45 @@
+# Prometheus alert rules for OpenTSx on k3s (rule file format; load with rule_files in prometheus.yml or vmalert).
+# Every metric below comes from kube-state-metrics (v2.x) - OpenTSx processes export no metrics yet.
+# Namespace "opentsx" is the default OPENTSX_NS; change it here if you use another one.
+groups:
+  - name: opentsx
+    rules:
+      - alert: OpenTSxDeploymentUnavailable
+        expr: kube_deployment_status_replicas_available{namespace="opentsx"} < kube_deployment_spec_replicas{namespace="opentsx"}
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.deployment }} has fewer available replicas than desired"
+          runbook: docs/devops/operations.md#runbooks
+      - alert: OpenTSxStatsCrashLooping
+        expr: increase(kube_pod_container_status_restarts_total{namespace="opentsx", container="stats"}[30m]) > 3
+        labels: {severity: critical}
+        annotations:
+          summary: "statistics processor restarted more than 3 times in 30 min (KafScale unreachable? checkpoint unreadable?)"
+          runbook: docs/devops/operations.md#r2-statistics-processor-stuck-or-crash-looping
+      - alert: OpenTSxSyntheticCheckFailing
+        expr: time() - kube_cronjob_status_last_successful_time{namespace="opentsx", cronjob="opentsx-synthetic-check"} > 1800
+        labels: {severity: critical}
+        annotations:
+          summary: "no successful synthetic check for 30 min (KafScale, checkpoint age or disk usage)"
+          runbook: docs/devops/operations.md#runbooks
+      - alert: OpenTSxJobFailed
+        expr: kube_job_status_failed{namespace="opentsx"} > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Job {{ $labels.job_name }} failed"
+          runbook: docs/devops/operations.md#runbooks
+      - alert: OpenTSxDwdForwardStale
+        expr: time() - kube_cronjob_status_last_successful_time{namespace="opentsx", cronjob="opentsx-dwd-forward"} > 2 * 86400
+        labels: {severity: warning}
+        annotations:
+          summary: "no successful DWD MOSMIX fetch for 2 days"
+          runbook: docs/devops/operations.md#r6-dwd-fetch-failing
+      - alert: OpenTSxPodWaiting
+        expr: kube_pod_container_status_waiting_reason{namespace="opentsx", reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|ErrImageNeverPull|CreateContainerConfigError"} > 0
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.pod }} waiting: {{ $labels.reason }}"
+          runbook: docs/devops/troubleshooting.md

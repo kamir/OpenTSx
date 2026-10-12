@@ -8,28 +8,28 @@ sqlalchemy==2.0.25
 alembic==1.13.1
 psycopg2-binary==2.9.9
 asyncpg==0.29.0
-greenlet==3.0.3  # Required for SQLAlchemy async operations
+greenlet==3.5.6  # Required for SQLAlchemy async operations
 
 # Authentication
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1  # Pin compatible version for passlib
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 
 # Redis
 redis==5.0.1
 hiredis==2.3.2
 
 # Email
-email-validator==2.1.0
+email-validator==2.3.0
 emails==0.6.0
 
 # WebSocket
 python-socketio==5.14.0
 
 # Time series (use local opentsx package)
-numpy==1.26.3
-pandas==2.2.0
+numpy==2.5.3
+pandas==3.0.6
 
 # Utilities
 pydantic==2.5.3
@@ -39,4 +39,4 @@ httpx==0.26.0
 # Monitoring
 prometheus-client==0.19.0
 
-greenlet==3.0.3
+greenlet==3.5.6

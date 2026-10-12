@@ -9,7 +9,8 @@ import re
 import sys
 
 SKIP_DIRS = {"archive", "target", "node_modules", ".git", "research_notes", "reports", ".pytest_cache",
-             "opentsx-saas-frontend", "opentsx-saas-backend", "exercises", "tests", "data", "sample_data"}
+             "opentsx-saas-frontend", "opentsx-saas-backend", "exercises", "tests", "data", "sample_data",
+             ".stage"}  # .stage: deploy/docker/stage.sh output (copies of READMEs with relative links)
 LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 FENCE = re.compile(r"```.*?```", re.S)
 

@@ -51,12 +51,12 @@ if command -v python3 &> /dev/null; then
     PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
     echo -e "${GREEN}✓ Python $PYTHON_VERSION installed${NC}"
 
-    # Check if version is 3.11 or higher
-    REQUIRED_VERSION="3.11"
+    # Check if version is 3.12 or higher
+    REQUIRED_VERSION="3.12"
     if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" = "$REQUIRED_VERSION" ]; then
         echo -e "${GREEN}✓ Python version is compatible${NC}"
     else
-        echo -e "${YELLOW}⚠ Python 3.11+ recommended, you have $PYTHON_VERSION${NC}"
+        echo -e "${YELLOW}⚠ Python 3.12+ recommended, you have $PYTHON_VERSION${NC}"
     fi
 else
     echo -e "${RED}✗ Python 3 is not installed${NC}"

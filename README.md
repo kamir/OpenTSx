@@ -89,7 +89,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 |----------|---------|
 | [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, CLI and REST reference |
 | [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) (German) | normative spec |
-| [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11) |
+| [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11), Explorer (12): visual inventory & maintenance |
 | [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
 | Module READMEs | details per module, e.g. [kafka-v2](opentsx-kafka-v2/README.md), [windpark](opentsx-windpark/README.md), [retrieval](opentsx-retrieval/README.md) |
 | [Developer guide](docs/devguide/README.md) | PDF build, processing-flow descriptor schema, local infrastructure |
@@ -108,6 +108,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-openmetadata` | metadata pool in OpenMetadata 2.0 |
 | `opentsx-retrieval` | segmentation, pattern search, retrieval API, REST |
 | `opentsx-twin` | digital twin: atoms, wiring plan, bulk-synchronous runner, shadow / what-if / forecast; scenarios energy system, house, boat; Studio export |
+| `opentsx-dwd` | DWD Open Data collector: MOSMIX forecasts and CDC observations as v2 series/episodes, nearest-station search, weather inputs for the twins |
 | `opentsx-modbus` | Modbus TCP / RTU-over-TCP client (JDK only), register maps in YAML (type, word order, scaling, unit, OBIS, origin), block-merging poller, counter wrap/reset detection → v2 episodes; in-JVM meter simulator |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
@@ -147,6 +148,12 @@ Retired modules and the 2025 documentation are in [`archive/`](archive/).
 | 2020–2025 | Confluent Platform/Cloud, ksqlDB, multi-region demos, SaaS prototype |
 | 2026 | refresh: Java 17, data model v2, KafScale, Iceberg, OpenMetadata, wind-farm domain, retrieval, Python parity; digital twin and Studio: from time series to decisions |
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) (build, tests, CI, pull requests), the [Code of Conduct](CODE_OF_CONDUCT.md),
+the [security policy](SECURITY.md) and the [changelog](CHANGELOG.md).
+
 ## License
 
-Apache License 2.0 (as declared in the build and the Python package). Copyright 2013–2026 the OpenTSx contributors.
+[Apache License 2.0](LICENSE) (as declared in the build and the Python package). Copyright 2013–2026 the OpenTSx
+contributors; see [NOTICE](NOTICE).

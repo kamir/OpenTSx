@@ -1,0 +1,149 @@
+{
+  "type" : "record",
+  "name" : "OilBoilerSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one oil-boiler atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "OilBoilerState",
+      "doc" : "State variables of oil-boiler",
+      "fields" : [ {
+        "name" : "heat_kwh",
+        "type" : "double"
+      }, {
+        "name" : "space_kwh",
+        "type" : "double"
+      }, {
+        "name" : "dhw_kwh",
+        "type" : "double"
+      }, {
+        "name" : "fuel_kwh",
+        "type" : "double"
+      }, {
+        "name" : "fuel_l",
+        "type" : "double"
+      }, {
+        "name" : "fuel_dhw_kwh",
+        "type" : "double"
+      }, {
+        "name" : "standby_kwh",
+        "type" : "double"
+      }, {
+        "name" : "el_kwh",
+        "type" : "double"
+      }, {
+        "name" : "pump_kwh",
+        "type" : "double"
+      }, {
+        "name" : "burner_h",
+        "type" : "double"
+      }, {
+        "name" : "unmet_kwh",
+        "type" : "double"
+      }, {
+        "name" : "fuel_out",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "OilBoilerOutputs",
+      "doc" : "Output ports of oil-boiler",
+      "fields" : [ {
+        "name" : "q_space_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "fuel_lph",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [l/h]"
+      }, {
+        "name" : "p_el_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "OilBoilerControls",
+      "doc" : "Controls of oil-boiler overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "space_enabled",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      }, {
+        "name" : "pump_w",
+        "type" : [ "null", "double" ],
+        "doc" : "default 65.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "oil-boiler",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "q_req_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  }, {
+    "name" : "q_dhw_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "season",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  }, {
+    "name" : "tank_level_l",
+    "kind" : "SIGNAL",
+    "unit" : "l"
+  } ]
+}

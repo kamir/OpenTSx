@@ -5,17 +5,26 @@
 > [`deploy/docker/`](../../deploy/docker/). Reihenfolge: `00-prereqs.sh` → `10-build.sh` → `11-import-images.sh` →
 > `20-configure.sh KAFSCALE_BOOTSTRAP=<host:port>` → `30-deploy.sh` → `40-demo.sh all`. Danach laufen
 > Statistik-Prozessor, Retrieval-Server und Smart Topics Studio dauerhaft; Windpark-Simulator, die drei
-> Zwillings-Szenarien (H2-Kette, Haus, Boot), Studio-Export und der OpenMetadata-Export laufen als Jobs.
+> Zwillings-Szenarien (H2-Kette, Haus, Boot), Studio-Export, DWD-Wetter, Modbus-Poller und der OpenMetadata-Export
+> laufen als Jobs; optional kommen ein Modbus-Simulator sowie CronJobs für den täglichen MOSMIX-Abruf und einen
+> synthetischen Check hinzu.
 > Lauffähig ist heute der Java-Stand; der Go-Smart-Topic-Prozessor mit YAML-DAG und MLflow aus Konzept 11 ist geplant
 > und fügt sich später als weiteres Deployment ein ([heute und geplant](today-vs-planned.md)).
 > Der [Sizing-Plan](sizing-plan.md) rechnet Speicher und Ressourcen je Szenario vor (z. B. 50 Anlagen × 100 Kanäle
 > × 1 Hz ≈ 0,94 GB/Tag auf S3 bei gemessenen 2,18 B/Wert). Wichtigste Stolperfalle: Die **advertised address** des
 > KafScale-Brokers muss aus den Pods erreichbar sein – `40-demo.sh kafscale-check` prüft genau das.
+> **Lokal verproben in einem Schritt:** `deploy/k3s/60-probe.sh --local-kafscale` startet KafScale per Docker Compose
+> mit der LAN-IP als advertised address, baut, installiert, führt alle Beispiele aus (inklusive DWD-Wetter offline und
+> Modbus-Simulator mit Poller) und schreibt einen PASS/FAIL-Bericht `probe-report-<Zeit>.md`; `--dry-run` zeigt nur
+> den Plan. Das **[Betriebskonzept](operations.md)** beschreibt Dienstkatalog, Umgebungen, Überwachung, Sicherung
+> (`70-backup.sh`, `71-restore.sh`), Updates, Secrets, Sicherheit, Runbooks, Rollen und SLOs.
 
 ## Pages
 
 | Page | Content |
 |------|---------|
+| [Operations](operations.md) | the local probe (`60-probe.sh`), service catalogue, environments, monitoring and alerting, logging, backup and restore, update and rollback, secrets, security, runbooks, roles, SLOs, capacity review |
+| [Anleitung lokale Testinstallation](anleitung-lokale-testinstallation.md) (German, printable) | one Linux machine: local KafScale via docker compose + k3s, step by step with expected output, checklist, troubleshooting, plan B without a cluster |
 | [Setup plan](setup-plan.md) | prerequisites, network path to KafScale, step-by-step installation with checks after each step, configuration reference, upgrade, teardown |
 | [Sizing plan](sizing-plan.md) | resources per component, storage formula and worked examples (wind farm, house, boat), what still has to be measured |
 | [Demos](demos.md) | how to run each example on k3s and what output to expect |
@@ -31,7 +40,8 @@ flowchart LR
     STATS["opentsx-stats<br/>Deployment, 1 replica<br/>checkpoint PVC"]
     RET["opentsx-retrieval<br/>Deployment + Service :8080<br/>demo store or Iceberg"]
     STU["opentsx-studio<br/>Deployment + Service :80<br/>nginx, static page"]
-    JOBS["Jobs (40-demo.sh)<br/>kafscale-check · windpark-sim · metadata<br/>twin · house · boat · studio-export"]
+    JOBS["Jobs (40-demo.sh)<br/>kafscale-check · windpark-sim · metadata<br/>twin · house · boat · studio-export<br/>dwd · modbus-poll"]
+    OPT["optional: modbus-sim (Deployment),<br/>dwd-forward + synthetic-check (CronJobs)"]
     subgraph LAKE["optional: lake profile"]
       IR["opentsx-iceberg-rest :8181"]
       MINIO["opentsx-minio :9000<br/>(or external S3)"]
@@ -45,6 +55,8 @@ flowchart LR
   RET -.-> IR
   IR --- MINIO
   JOBS -. "metadata-publish" .-> OM
+  DWD[("opendata.dwd.de")]
+  OPT -. "MOSMIX (online mode)" .-> DWD
 ```
 
 | Component | Kind | Image | Command (inside the image) |
@@ -57,12 +69,26 @@ flowchart LR
 | metadata (dry run / publish) | Job | `opentsx/tools` | `opentsx metadata --scenario … --dry-run /data/om-requests` |
 | twin, house, boat | Jobs | `opentsx/tools` | `opentsx twin` / `house` / `boat` |
 | Studio export | Job | `opentsx/tools` | `opentsx studio-export /tmp/studio.json` |
+| DWD weather demo | Job | `opentsx/tools` | `opentsx dwd mosmix --offline <fixture>` (or `--station <id>`) + `opentsx dwd house …` |
+| DWD forecast collector (`DWD_FORWARD=true`) | CronJob, daily | `opentsx/tools` | `opentsx dwd mosmix --station <id> --out /data/dwd/…csv` per station in `DWD_STATIONS` |
+| Modbus simulator (`MODBUS_SIM=true`) | Deployment + Service :1502 | `opentsx/tools` | `opentsx modbus simulate --map example --port 1502 --bind 0.0.0.0` |
+| Modbus poller | Job | `opentsx/tools` | `opentsx modbus poll --map … --host … --out episodes --file /data/modbus/…jsonl` |
+| synthetic check (`MONITORING=true`) | CronJob, every 10 min | `opentsx/tools` | `kafscale-check`, checkpoint age, disk usage |
 | Iceberg REST catalog, MinIO | Deployments (lake profile) | `apache/iceberg-rest-fixture:1.9.2`, `quay.io/minio/minio` | — |
 
 KafScale itself is **not** deployed: the guide assumes an existing cluster (for a local one, see
 `docker-compose.kafscale.yml` and [Getting started](../user-manual/02-getting-started.md)).
 
 ## Quick start
+
+To try everything on one machine (docker + k3s), one command does all steps below and writes a report:
+
+```bash
+deploy/k3s/60-probe.sh --local-kafscale                    # KafScale via compose, build, deploy, all demos -> probe-report-<time>.md
+deploy/k3s/60-probe.sh --dry-run --local-kafscale          # the plan and a configuration check, nothing changed
+```
+
+Step by step:
 
 ```bash
 deploy/k3s/00-prereqs.sh                                   # tools, cluster, KafScale reachable?
@@ -73,7 +99,10 @@ deploy/k3s/30-deploy.sh                                    # kubectl apply -k de
 deploy/k3s/40-demo.sh kafscale-check                       # from inside the cluster, incl. advertised addresses
 deploy/k3s/40-demo.sh all                                  # every example, with output
 deploy/k3s/40-demo.sh studio                               # http://localhost:8088
+deploy/k3s/40-demo.sh dwd                                  # DWD MOSMIX (offline fixture) -> CSV + house twin
+deploy/k3s/40-demo.sh modbus                               # Modbus poller against the simulator (MODBUS_SIM=true)
 deploy/k3s/50-status.sh                                    # state at a glance
+deploy/k3s/70-backup.sh --quiesce                          # checkpoint, data, catalog, MinIO, config -> ./opentsx-backup-<time>/
 deploy/k3s/90-teardown.sh                                  # remove everything (KafScale topics stay)
 ```
 
@@ -84,10 +113,12 @@ Every script has `--help`, is idempotent and stops with a clear message when som
 | Path | Content |
 |------|---------|
 | `deploy/k3s/00-prereqs.sh` … `90-teardown.sh` | the scripts, sharing `deploy/k3s/lib.sh` |
+| `deploy/k3s/60-probe.sh` | local trial run with PASS/FAIL report ([operations](operations.md#try-it-locally-first-the-probe)) |
+| `deploy/k3s/70-backup.sh`, `71-restore.sh` | backup and restore of the PVCs and the configuration ([operations](operations.md#backup-and-restore)) |
 | `deploy/k3s/env.example` | every configuration key with its default; `20-configure.sh` writes the git-ignored `deploy/k3s/.env` |
 | `deploy/k3s/base/` | kustomize base: ConfigMap, PVCs, stats, retrieval, studio |
 | `deploy/k3s/jobs/` | the demo Jobs (rendered and started by `40-demo.sh`) |
-| `deploy/k3s/components/` | optional parts: `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress` |
+| `deploy/k3s/components/` | optional parts: `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring` |
 | `deploy/k3s/overlays/local/` | rendered by `20-configure.sh`, git-ignored (namespace, config, Secret, images, components) |
 | `deploy/docker/opentsx-tools.Dockerfile` | one JRE image with all v2 commands (`eclipse-temurin:21.0.8_9-jre-noble`) |
 | `deploy/docker/studio.Dockerfile` | Studio page generated in the build, served by `nginxinc/nginx-unprivileged:1.27.4-alpine` |

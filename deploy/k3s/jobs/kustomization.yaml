@@ -15,6 +15,8 @@ resources:
   - house.yaml
   - boat.yaml
   - studio-export.yaml
+  - dwd.yaml
+  - modbus-poll.yaml
 images:
   - name: opentsx/tools
     newTag: 3.0.0-local

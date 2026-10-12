@@ -1,0 +1,206 @@
+# Example inventory (asset registry) for the three twin scenarios, schema opentsx.inventory.v1 (draft).
+# Concept: docs/datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md; prototype: docs/prototypes/anlagen-explorer.html.
+#
+# ALL VALUES ARE INVENTED EXAMPLES: serial numbers, documents, checksums, coordinates, maintenance dates.
+# Asset id = <twin>/<atom>[/<sub-asset>...]; "atom" must exist in the wiring plan of the same twin (twin/*.yaml).
+# Real inventories (photos of the house or boat, serial numbers, berths) belong in config/private/, not in the repo.
+# Not read by code yet (stage E1: JSON schema, validation against the plan, Studio export).
+schema: opentsx.inventory.v1
+example: true
+systems:
+
+  # ------------------------------------------------------------------ wind park, electrolyzer, H2 line (h2-chain.yaml)
+  - system: h2-chain
+    plans:
+      - id: park
+        kind: geo                                   # WGS84
+        basemap: { source: "Orthofoto DOP20 Mecklenburg-Vorpommern", licence: "dl-de/by-2-0 (zu prüfen)" }
+      - id: wea-schema
+        kind: image                                 # image coordinates 0..1 on the turbine schematic
+        scale: none
+    assets:
+      - id: h2-chain/park
+        atom: park
+        type: wind-park
+        name: Windpark (aggregiert 12 MW)
+        location: { plan: park, lat: 54.4519, lon: 13.9470 }
+        infinimesh: { namespace: windpark-ost }
+      - id: h2-chain/park/T02
+        atom: park
+        parent: h2-chain/park
+        type: wind-turbine
+        name: WEA T02
+        location: { plan: park, lat: 54.4515, lon: 13.9430 }
+        nameplate: { manufacturer: "(Beispiel)", model: GENERIC-3MW, serial: EX-0000-T02, ratedKw: 3000, commissioned: 2014-06-30 }
+        refDesignation:
+          rdsPp: "=G002"                            # example; codes to be checked against the RDS-PP application guideline
+          iec61400_25: { logicalDevice: T02, logicalNodes: [WTUR, WGEN, WNAC, WROT, WCNV, WTRF] }
+        iso14224: { equipmentClass: "wind turbine (zu prüfen)" }
+        media:
+          - { id: m-t02-illu, kind: illustration, reality: illustration, uri: "inline:prototype", licence: "-" }
+          - { id: m-t02-drohne, kind: drone, reality: real, uri: "s3://opentsx-inventory/h2-chain/park/T02/drohne-2026-05.jpg",
+              sha256: "0000000000000000000000000000000000000000000000000000000000000000", takenAt: 2026-05-14, author: Eigentümer,
+              licence: intern, status: planned }
+        documents:
+          - { id: d-t02-datenblatt, kind: datasheet, title: "Datenblatt GENERIC-3MW",
+              uri: "s3://opentsx-inventory/docs/generic-3mw-datenblatt.pdf", sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
+          - { id: d-t02-wkp-2025, kind: protocol, title: "Wiederkehrende Prüfung 2025",
+              uri: "s3://opentsx-inventory/h2-chain/park/T02/wkp-2025.pdf", sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
+        series:
+          - { metric: wind.turbine.power_active, tags: { turbine: T02 } }
+          - { metric: wind.turbine.operating_hours, tags: { turbine: T02 } }
+          - { smartTopic: st.wind.t02.power_curve_dev }
+        ports: [p_gen_kw]
+        maintenance:
+          intervals:
+            - { id: jahreswartung, kind: time, every: P1Y, last: 2025-10-28 }
+            - { id: oelwechsel-getriebe, kind: operatingHours, every: 20000, counter: wind.turbine.operating_hours, last: 2024-04-11 }
+            - { id: blattinspektion, kind: condition, rule: "power_curve_dev < -0.05 for P14D", source: st.wind.t02.power_curve_dev }
+        infinimesh: { namespace: windpark-ost, device: t02-scada-gw }
+        access: { visibility: team, owner: parkbetreiber }
+      - id: h2-chain/park/T02/getriebe
+        atom: park
+        parent: h2-chain/park/T02
+        type: component
+        name: Getriebe T02
+        location: { plan: wea-schema, x: 0.54, y: 0.30 }
+        nameplate: { manufacturer: "(Beispiel)", serial: EX-T02-GET-01 }
+        refDesignation: { iec61400_25: { logicalDevice: T02, logicalNodes: [WTRM] } }
+      - id: h2-chain/grid
+        atom: grid
+        type: grid-connection
+        name: Übergabestation / NVP
+        location: { plan: park, lat: 54.4470, lon: 13.9660 }
+        infinimesh: { namespace: windpark-ost, device: nvp-zaehler-gw }
+        access: { visibility: partner, owner: parkbetreiber }   # critical infrastructure: no public site plans
+      - id: h2-chain/ely
+        atom: ely
+        type: electrolyzer
+        name: Elektrolyseur
+        location: { plan: park, lat: 54.4440, lon: 13.9760 }
+        nameplate: { ratedKw: 5000, technology: "PEM (Annahme)" }
+        commandable: false                          # protective curtailment stays local logic
+        infinimesh: { namespace: h2-ely, device: ely-sps-gw }
+        access: { visibility: partner, owner: elektrolyseurbetreiber }
+      - id: h2-chain/line
+        atom: line
+        type: h2-line
+        name: H2-Leitung (Druckmessstelle)
+        location: { plan: park, lat: 54.4410, lon: 13.9930 }
+        series: [ { metric: line.p_bar } ]
+        maintenance:
+          intervals: [ { id: dichtheit, kind: time, every: P1Y, last: 2026-04-20 } ]
+      - id: h2-chain/market                        # atoms without a location appear in the tray below the map
+        atom: market
+        type: market
+        name: Markt
+
+  # ------------------------------------------------------------------ house (haus-erzgebirge.yaml)
+  - system: haus-erzgebirge
+    plans:
+      - { id: kg, kind: floor, label: Keller, unit: m, origin: [0, 0], size: [10, 8] }
+      - { id: eg, kind: floor, label: Erdgeschoss, unit: m, origin: [0, 0], size: [10, 8] }
+      - { id: og, kind: floor, label: Obergeschoss, unit: m, origin: [0, 0], size: [10, 8] }
+    assets:
+      - id: haus-erzgebirge/boiler
+        atom: boiler
+        type: oil-boiler
+        name: Ölkessel
+        location: { plan: kg, x: 1.2, y: 1.4 }
+        nameplate: { manufacturer: "(Beispiel)", ratedKw: 18, burner: "einstufig, 120 W" }
+        documents:
+          - { id: d-kessel-anleitung, kind: manual, title: "Bedienungsanleitung Kessel", uri: "file:config/private/inventar/kessel-anleitung.pdf",
+              sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
+          - { id: d-abgas-2025, kind: protocol, title: "Abgasmessung 2025", uri: "file:config/private/inventar/abgas-2025.pdf",
+              sha256: "0000000000000000000000000000000000000000000000000000000000000000" }
+        maintenance:
+          intervals:
+            - { id: kesselwartung, kind: time, every: P1Y, last: 2025-09-30 }
+            - { id: abgasmessung, kind: time, every: P2Y, last: 2024-10-15 }
+            - { id: duese-filter, kind: operatingHours, every: 1500, counter: boiler.burner_hours, last: 2025-09-30 }
+        commandable: false
+        access: { visibility: private, owner: hauseigentuemer }
+      - id: haus-erzgebirge/tank
+        atom: tank
+        type: oil-tank
+        name: Öltank 2 × 2.000 l
+        location: { plan: kg, x: 7.3, y: 1.2 }
+        nameplate: { capacityL: 4000, construction: "Batterietank, Kunststoff" }
+        series: [ { metric: tank.level_l, origin: SYNTHETIC } ]   # no level sensor yet: modelled
+        access: { visibility: private, owner: hauseigentuemer }
+      - id: haus-erzgebirge/meter
+        atom: meter
+        type: meter
+        name: Stromzähler
+        location: { plan: kg, x: 8.6, y: 6.8 }
+        refDesignation: { obis: ["1.8.0", "16.7.0"] }
+        infinimesh: { namespace: haus-erzgebirge, device: zaehler-ir-lesekopf }
+        access: { visibility: private, owner: hauseigentuemer }
+      - id: haus-erzgebirge/stove
+        atom: stove
+        type: wood-stove
+        name: Kaminofen
+        location: { plan: eg, x: 0.9, y: 1.1 }
+        maintenance:
+          intervals: [ { id: kehren, kind: time, every: P1Y, last: 2025-10-09 } ]
+        access: { visibility: private, owner: hauseigentuemer }
+      - id: haus-erzgebirge/appliances/gefriertruhe
+        atom: appliances                           # entry "gefriertruhe" in appliances.inventory
+        parent: haus-erzgebirge/appliances
+        type: appliance
+        name: Gefriertruhe (alt)
+        location: { plan: kg, x: 1.5, y: 6.4 }
+        nameplate: { avgW: 45, built: "≈ 2005 (Annahme)" }
+        access: { visibility: private, owner: hauseigentuemer }
+
+  # ------------------------------------------------------------------ boat (boot-etap22.yaml)
+  - system: boot-etap22
+    plans:
+      - { id: deck, kind: deck, label: Deck, unit: m, origin: "Heckspiegel / Mittschiffslinie", size: [6.6, 2.5] }
+      - { id: kajuete, kind: deck, label: Kajüte, unit: m, origin: "Heckspiegel / Mittschiffslinie", size: [6.6, 2.5] }
+    assets:
+      - id: boot-etap22/station
+        atom: station
+        type: power-station
+        name: Powerstation 1 kWh
+        location: { plan: kajuete, x: 2.15, y: 0.05 }
+        nameplate: { manufacturer: "(Beispiel)", capacityWh: 1024, chemistry: LiFePO4 }
+        documents:
+          - { id: d-station-garantie, kind: warranty, title: "Garantie bis 2029-05", uri: "file:config/private/inventar/station-garantie.pdf",
+              sha256: "0000000000000000000000000000000000000000000000000000000000000000", validUntil: 2029-05-31 }
+        series: [ { metric: boat.station.soc, tags: { boat: etap22, device: station } } ]
+        infinimesh: { namespace: boot-etap22, device: raspi-boatlog }      # the Pi reports for several assets
+        access: { visibility: private, owner: eigner }
+      - id: boot-etap22/solar
+        atom: solar
+        type: solar
+        name: Solar 2 × 100 Wp
+        location: { plan: deck, x: 2.6, y: -0.05 }
+        infinimesh: { namespace: boot-etap22, device: raspi-boatlog }
+        maintenance:
+          intervals: [ { id: reinigen, kind: time, every: P3M, last: 2026-08-01 } ]
+      - id: boot-etap22/raspi
+        atom: raspi
+        type: device
+        name: Raspberry Pi (Edge-Publisher)
+        location: { plan: kajuete, x: 2.5, y: -0.55 }
+        infinimesh: { namespace: boot-etap22, device: raspi-boatlog }
+      - id: boot-etap22/vhf
+        atom: vhf
+        type: device
+        name: UKW-Funkgerät
+        location: { plan: kajuete, x: 2.45, y: 0.55 }
+        commandable: false                         # safety: never switched remotely
+      - id: boot-etap22/vhf/antenne
+        atom: vhf
+        parent: boot-etap22/vhf
+        type: antenna
+        name: UKW-Antenne (Masttopp)
+        location: { plan: deck, x: 4.0, y: 0 }
+      - id: boot-etap22/shore
+        atom: shore
+        type: shore-power
+        name: Landstrom-Einspeisung
+        location: { plan: deck, x: 1.6, y: -0.95 }
+        maintenance:
+          intervals: [ { id: kabel-fi, kind: time, every: P1Y, last: 2025-09-20 } ]
