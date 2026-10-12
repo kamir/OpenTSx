@@ -362,10 +362,11 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Bewertung Direktleitung/Direktbelieferung (technische Machbarkeit hinter getrennten Netzanschlüssen) als Eingang für Schaltplan-Vorlagen (P9.5).
 
 **Repository & Open Source (TASK-010)**
-- [ ] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert), CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Policy), CHANGELOG.
+- [x] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT (Contributor Covenant 2.1), SECURITY.md (Policy), CHANGELOG.
 - [ ] Python-Paket auf PyPI veröffentlichen (README nennt bislang nur lokale Installation).
 - [ ] `sample_data/` und `data/sample_datasets/` konsolidieren (gleiche Dateinamen, anderer Inhalt; von `opentsx-core`-Demos referenziert).
-- [ ] `config/cpl*.props` (private LAN-Hosts) durch eine localhost/KafScale-Vorlage ersetzen; `opentsx.properties.example` an v2-Module anpassen.
+- [x] `config/cpl*.props` und `config/mdc_c1.props` (private LAN-Hosts) entfernt, ersetzt durch die localhost/KafScale-Vorlage `config/opentsx-local.props.example` (lokale Kopie `config/opentsx-local.props` git-ignoriert); `opentsx.properties.example` an v2-Module angepasst.
+- [ ] Weitere Profile mit privaten Hosts in `opentsx-lg/src/main/resources/config/` (`cpl.props`, `mdc_c1.props`, `mdc_local_link.props`, im Docker-Assembly referenziert), `opentsx-lg/src/main/k8s/krake-app/` und hartkodierte Schema-Registry-Adressen in `FWL_TSA_*Application.java` bereinigen.
 - [ ] `tests/validation/*.java` und `bin/run_all_tests.sh` in einen Maven-Testpfad überführen oder archivieren; Java-Beispiele in `exercises/` gegen die echte 2.x-API prüfen.
 - [x] `opentsx-app-tools` archiviert (siehe Phase 0).
 
@@ -391,6 +392,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 ## Progress Log
 
 - 2026-10-12: **P9.0 Modbus-Modul** `opentsx-modbus`: Modbus-TCP-Client ohne Fremdbibliothek (MBAP, Transaktions-IDs, Timeouts, Reconnect, Exception-Antworten mit Klartext; RTU über TCP mit CRC16), Registerkarten als YAML mit Validierung (Überlappungen, Typen, OBIS, Herkunft), Blockbildung, Normalisierer → v2-Episoden mit Zählerüberlauf/-reset-Flags, In-JVM-Simulator und `bin/opentsx modbus check|read|poll|simulate`; Beispielkarte eines Netzanschlusszählers bis zum Eintreffen der echten Registerkarten.
+- 2026-10-12: **Repository-Hygiene**: LICENSE (Apache 2.0, Volltext) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Meldeweg über GitHub Private Vulnerability Reporting), CHANGELOG (Keep a Changelog); private Client-Profile `config/cpl*.props`/`mdc_c1.props` durch `config/opentsx-local.props.example` ersetzt (Fallback in `OpenTSxClusterLink`), Referenzen in Code, Skripten und Doku angepasst; `opentsx.properties.example` auf tatsächlich gelesene Schlüssel und v2-Konfiguration reduziert. Keine Historienbereinigung.
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.

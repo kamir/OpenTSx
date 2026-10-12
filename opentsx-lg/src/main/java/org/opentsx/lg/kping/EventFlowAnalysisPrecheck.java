@@ -15,7 +15,7 @@ public class EventFlowAnalysisPrecheck {
         /*
          * Define some basic configuration.
          */
-        OpenTSxClusterLink.OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/cpl.props";
+        OpenTSxClusterLink.OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/opentsx-local.props";
         /**
          * Read environment variables to configure the tool ...
          */

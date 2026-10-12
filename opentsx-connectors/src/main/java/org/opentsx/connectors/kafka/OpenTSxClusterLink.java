@@ -9,11 +9,15 @@ import java.util.Vector;
 public class OpenTSxClusterLink {
 
     public static String OPENTSX_TOPIC_MAP_FILE_NAME = "./config/topiclist.def";;
-    public static String OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = "./config/cpl.props";;
+    /** Local client profile (git-ignored); template: config/opentsx-local.props.example. */
+    public static final String DEFAULT_CLIENT_CFG_FILE_NAME = "./config/opentsx-local.props";
+    public static final String TEMPLATE_SUFFIX = ".example";
+
+    public static String OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME = DEFAULT_CLIENT_CFG_FILE_NAME;
 
     public static Properties getClientProperties() {
 
-        File f = new File( OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME  );
+        File f = new File( OpenTSxClusterLink.get_PROPS_FN() );
 
         System.out.println( ">>> Client properties from file: " + f.getAbsolutePath() + " ("+f.canRead()+")");
 
@@ -39,7 +43,7 @@ public class OpenTSxClusterLink {
 
         System.out.println( "> PROPS_FN Path: " + f.getAbsolutePath() + " -> (r:" + f.canRead()+ ")" );
 
-        if ( f.canRead() )
+        if ( f.canRead() || new File(fn + TEMPLATE_SUFFIX).canRead() )
             PROPS_FN = fn;
         else {
             System.out.println("> Attempt to overwrite PROPS_FN in org.opentsx.connectors.kafka.TSOProducer failed.");
@@ -47,9 +51,16 @@ public class OpenTSxClusterLink {
         System.out.println("> PROPS_FN = " + PROPS_FN);
     };
 
-    public static String PROPS_FN = "./config/cpl.props";
+    public static String PROPS_FN = DEFAULT_CLIENT_CFG_FILE_NAME;
 
+    /**
+     * The client profile file. Falls back to the checked-in template ({@code <file>.example}) when the
+     * profile itself does not exist, so a fresh clone runs against localhost without extra setup.
+     */
     public static String get_PROPS_FN() {
+        if (!new File(PROPS_FN).canRead() && new File(PROPS_FN + TEMPLATE_SUFFIX).canRead()) {
+            return PROPS_FN + TEMPLATE_SUFFIX;
+        }
         return  PROPS_FN;
     };
 
