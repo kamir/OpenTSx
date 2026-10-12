@@ -17,6 +17,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | this file | inventory |
 | [`docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) | concept P8: network reconstruction, simulation, optimization (concept map, research, roadmap) |
 | [`docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md`](datamodel-2026/07-DIGITAL-TWIN-BSP.md) | proposal P9: digital twin of an energy system (atoms, MVC + policy, BSP, Smart Topics) |
+| [`docs/roadmap/infographic-briefing.html`](roadmap/infographic-briefing.html) | briefing (German) for an infographic designer who visualizes the roadmap |
 
 ## 2. Updated
 

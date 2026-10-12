@@ -3,6 +3,7 @@
 | Folder | Content |
 |--------|---------|
 | [`user-manual/`](user-manual/README.md) | **User manual** (English) for the current version. Start here. |
+| [`roadmap/infographic-briefing.html`](roadmap/infographic-briefing.html) | Briefing (German) for the roadmap infographic |
 | [`datamodel-2026/`](datamodel-2026/) | Design documents (German): analysis, target model, gap analysis, normative data-model specification, Smart Topics, system reconstruction & optimization (P8), digital twin (P9) |
 | [`devguide/`](devguide/README.md) | Developer notes: PDF build, processing-flow descriptor schema and validation plan, local infrastructure |
 | [`DOCUMENTATION-INVENTORY.md`](DOCUMENTATION-INVENTORY.md) | What was kept, updated, archived or added in the 2026 documentation refresh |

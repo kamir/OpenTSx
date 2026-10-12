@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenTSx Roadmap-Infografik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column for the brief, wide panels for the composition sketch and the content tables; visual language borrowed from wiring diagrams (thin lines, terminals, labels). */
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --ink: #17202a;
+  --muted: #56616c;
+  --line: #c9d0cf;
+  --accent: #0d5c63;      /* deep teal: wiring/ink */
+  --signal: #b5651d;      /* amber: the twin, the one highlight */
+  --done: #2f6f3e;
+  --planned: #6a5a9a;
+  --proposal: #8a6d1f;
+  --chip-bg: #eceeea;
+  --font-display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --surface: #1a2126; --ink: #e6ebe8; --muted: #9aa6ad; --line: #34404a;
+    --accent: #5fb7bd; --signal: #e39a52; --done: #79c08a; --planned: #ab9be0; --proposal: #d6b55a; --chip-bg: #232c33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --surface: #1a2126; --ink: #e6ebe8; --muted: #9aa6ad; --line: #34404a;
+  --accent: #5fb7bd; --signal: #e39a52; --done: #79c08a; --planned: #ab9be0; --proposal: #d6b55a; --chip-bg: #232c33;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: grid; gap: 48px; }
+.col { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.5rem; font-weight: 700; display: flex; gap: 12px; align-items: baseline; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+h2 .term { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); font-weight: 500; letter-spacing: 0.04em; }
+p { margin: 0; }
+section { display: grid; gap: 16px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.15rem; color: var(--ink); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); }
+.thesis { border-left: 3px solid var(--signal); padding-left: 16px; font-size: 1.2rem; font-weight: 600; }
+ul, ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 0.75rem; padding: 1px 8px; border-radius: 3px; background: var(--chip-bg); white-space: nowrap; }
+.chip::before { content: ""; width: 9px; height: 9px; display: inline-block; }
+.s-done { color: var(--done); } .s-done::before { background: var(--done); border-radius: 50%; }
+.s-designed { color: var(--planned); } .s-designed::before { border: 2px solid var(--planned); border-radius: 50%; }
+.s-planned { color: var(--muted); } .s-planned::before { border: 2px dashed var(--muted); border-radius: 50%; }
+.s-proposal { color: var(--proposal); } .s-proposal::before { border: 2px solid var(--proposal); transform: rotate(45deg); }
+.s-core { color: var(--signal); font-weight: 500; } .s-core::before { background: var(--signal); transform: rotate(45deg); }
+.s-research { color: var(--accent); } .s-research::before { border: 2px dotted var(--accent); }
+.table-box { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td.id { font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
+tr.core td { background: color-mix(in srgb, var(--signal) 9%, transparent); }
+/* composition sketch */
+.sketch { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 20px; display: grid; gap: 10px; font-family: var(--font-mono); font-size: 0.8rem; }
+.layer { border: 1px solid var(--line); padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; position: relative; }
+.layer b { font-family: var(--font-display); font-size: 0.95rem; color: var(--ink); min-width: 9em; }
+.layer.twin { border: 2px solid var(--signal); padding: 18px; }
+.layer.twin b { color: var(--signal); font-size: 1.15rem; }
+.layer.base { border-style: solid; border-color: var(--done); }
+.layer.mid { border-style: dashed; }
+.wire { height: 14px; border-left: 2px solid var(--accent); margin-left: 32px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.grid2 > * { min-width: 0; }
+.panel { border: 1px solid var(--line); background: var(--surface); padding: 16px; border-radius: 4px; display: grid; gap: 10px; align-content: start; }
+.matrix { display: grid; grid-template-columns: auto 1fr 1fr; border: 1px solid var(--line); font-size: 0.86rem; }
+.matrix > div { padding: 8px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
+.matrix .h { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.matrix .ok { color: var(--signal); font-weight: 600; }
+.chain { display: grid; gap: 0; counter-reset: c; }
+.chain li { list-style: none; position: relative; padding: 6px 0 6px 28px; border-left: 2px solid var(--accent); margin-left: 8px; }
+.chain li::before { counter-increment: c; content: counter(c); position: absolute; left: -11px; top: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); font-family: var(--font-mono); font-size: 0.7rem; display: grid; place-items: center; }
+.chain { padding: 0; }
+.dont li::marker { content: "✕  "; color: var(--signal); }
+.do li::marker { content: "✓  "; color: var(--done); }
+code { font-family: var(--font-mono); font-size: 0.86em; background: var(--chip-bg); padding: 0 4px; border-radius: 3px; }
+.small { font-size: 0.88rem; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 520px) { .matrix { grid-template-columns: 1fr; } .layer b { min-width: 0; width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="col" style="display:grid;gap:14px">
+  <div class="eyebrow">Briefing · Infografik</div>
+  <h1>OpenTSx Roadmap-Infografik</h1>
+  <p class="lede">Auftrag: Visualisiere die Roadmap der Open-Source-Plattform OpenTSx auf einer Seite. Der Betrachter soll in 30 Sekunden verstehen, was steht, wohin es geht und warum der Digitale Zwilling das Ziel ist.</p>
+  <div class="meta"><span>Stand 2026-10-12</span><span>Sprache der Grafik: Deutsch (englische Variante optional)</span><span>Quelle: Roadmap TASK-011 im Repository</span></div>
+</header>
+
+<section class="col">
+  <h2>Kernbotschaft</h2>
+  <p class="thesis">Von Zeitreihen zum Digitalen Zwilling, in dem Entscheidungen kausal durchschlagen. Gebaut auf einer Datenplattform, die schon steht.</p>
+  <p>Drei Aussagen muss die Grafik transportieren, in dieser Gewichtung:</p>
+  <ol>
+    <li><strong>Der Digitale Zwilling ist die Essenz.</strong> Er bekommt den größten Raum und den einzigen Farbakzent.</li>
+    <li><strong>Das Fundament steht.</strong> Sechs Phasen (P0–P5) sind fertig und getestet. Das gibt der Roadmap Glaubwürdigkeit.</li>
+    <li><strong>Der Weg ist gestuft.</strong> Jede Stufe liefert für sich Nutzen und endet an einer Entscheidung, ob es weitergeht.</li>
+  </ol>
+</section>
+
+<section class="col">
+  <h2>Zielgruppe und Einsatz</h2>
+  <ul>
+    <li>Projektpartner aus der Energiebranche (Windpark, Elektrolyse, Vermarktung): fachlich stark, nicht unbedingt Software-Leute.</li>
+    <li>Technische Entscheider und Gutachter, die Machbarkeit und Vorgehen einschätzen.</li>
+    <li>Open-Source-Community und Forschung.</li>
+  </ul>
+  <p>Einsatz: als Folie in Präsentationen, als Ausdruck (A3) im Projektraum, als Bild im README des Repositories.</p>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Vorschlag zur Komposition <span class="term">Skizze, kein Layout-Diktat</span></h2>
+    <p>Die Plattform folgt dem Bild aus dem Projektgespräch: <em>Die Bauteile sind Standard, die Verschaltung ist je Anlage individuell, wie im Schaltschrank.</em> Eine Bildsprache aus Schaltplänen liegt daher nahe: dünne Linien, Klemmen, Beschriftungsfelder. Der Zwilling sitzt oben als Ziel, das Fundament unten. Dazwischen liegen die Bausteine, die ihn speisen.</p>
+  </div>
+  <div class="sketch" aria-label="Kompositionsskizze">
+    <div class="layer twin"><b>P9 Digitaler Zwilling</b><span>3 Betriebsarten × 2 Ausführungsvarianten</span><span>· Atomkatalog · Kausalkette H2</span><span>· Stufen A→D</span><span>· Forschungsfrage</span></div>
+    <div class="wire"></div>
+    <div class="layer mid"><b>P8 Rekonstruktion</b><span>Struktur aus Zeitreihen finden → simulieren → optimieren</span></div>
+    <div class="layer mid"><b>P7 Smart Topics</b><span>gelernte Prognosen, Schätzer für fehlende Daten</span><span>· P7e Personal Service Layer (Bedienoberfläche)</span></div>
+    <div class="layer mid"><b>P6 Analytik</b><span>Alignment · Lückenfüllung · Strukturbrüche · Spektren</span></div>
+    <div class="wire"></div>
+    <div class="layer base"><b>Fundament P0–P5</b><span>Datenmodell · Speicher &amp; Replay · Stores · Windpark-Domäne · Statistik &amp; Metadaten · Retrieval</span></div>
+  </div>
+  <p class="small col">Alternative, wenn der Platz breit statt hoch ist: eine Linie von links (Fundament) nach rechts (Zwilling) mit den Phasen als Stationen. Wichtig bleibt: Der Zwilling ist das größte Element, das Fundament wirkt solide und fertig.</p>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Inhalt: Phasen <span class="term">Texte verbindlich, Kürzen erlaubt</span></h2>
+    <p>Die Kurztitel sind für die Grafik gedacht. Die Zeile „Worum es geht“ ist der längste Text, der pro Phase erscheinen darf.</p>
+  </div>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>Phase</th><th>Kurztitel</th><th>Worum es geht</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="id">P0</td><td>Fundament</td><td>Moderne Java-Basis, automatische Tests, Altlasten archiviert</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P1</td><td>Datenmodell v2</td><td>Ein Zeitreihenformat, in Java und Python bytegleich</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P2</td><td>Speichern &amp; Abspielen</td><td>Zeitreihen günstig im Datenstrom ablegen und exakt wieder abspielen</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P3</td><td>Speicher &amp; Windpark</td><td>Data-Lake-Tabellen, Zeitreihen-DB; Windpark-Katalog, Datenaufbereitung, Simulator</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P4</td><td>Statistik &amp; Metadaten</td><td>Laufende Statistik, Datenqualität, Metadatenkatalog</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P5</td><td>Suchen &amp; Finden</td><td>Abschnitte bilden, Muster suchen, Abfrage-Schnittstelle</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P6</td><td>Analytik</td><td>Reihen ausrichten, Lücken füllen, Strukturbrüche, Spektren</td><td><span class="chip s-planned">geplant</span></td></tr>
+        <tr><td class="id">P7</td><td>Smart Topics</td><td>Datenströme, die selbst lernen und Prognosen liefern; Wissen über Anlagen hinweg teilen, ohne Rohdaten zu bewegen</td><td><span class="chip s-designed">entworfen</span></td></tr>
+        <tr><td class="id">P7e</td><td>Personal Service Layer</td><td>Bedienoberfläche für die eigenen Datenströme und den Zwilling</td><td><span class="chip s-proposal">Vorschlag</span></td></tr>
+        <tr><td class="id">P8</td><td>Struktur finden</td><td>Aus Zeitreihen die inneren Kopplungen eines Systems finden, simulieren, optimieren. Quantenrechner nur als Experiment.</td><td><span class="chip s-designed">Konzept</span></td></tr>
+        <tr class="core"><td class="id">P9</td><td>Digitaler Zwilling</td><td>Anlagenmodell des Energieverbunds, in dem Entscheidungen kausal durchschlagen</td><td><span class="chip s-core">Kern</span></td></tr>
+        <tr class="core"><td class="id">P9.6</td><td>Forschungsfrage</td><td>Eng oder lose gekoppelter Zwilling: Wann liefern beide dasselbe Ergebnis?</td><td><span class="chip s-research">Forschung</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small col">Abhängigkeiten für Pfeile: P6 → P7 → P9; P8 → P9; P7e bedient P7, P8 und P9. Das Fundament trägt alles.</p>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Detailbereich Digitaler Zwilling</h2>
+    <p>Dieser Bereich verdient eine eigene Zone mit vier Bausteinen. Wenn der Platz nicht reicht, haben die Matrix und die Kausalkette Vorrang.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>1 · Drei Betriebsarten × zwei Varianten</h3>
+      <p class="small">Alle sechs Felder werden ermöglicht. Das ist eine Kernaussage.</p>
+      <div class="matrix" role="table" aria-label="Betriebsarten und Varianten">
+        <div class="h">Betriebsart</div><div class="h">Eng · ein Prozess</div><div class="h">Lose · Smart Topics</div>
+        <div><strong>Schatten</strong><br><span class="small">Live-Daten, Zwilling schätzt den Rest</span></div><div class="ok">✓</div><div class="ok">✓</div>
+        <div><strong>Was-wäre-wenn</strong><br><span class="small">Vergangenheit mit anderen Entscheidungen</span></div><div class="ok">✓</div><div class="ok">✓</div>
+        <div><strong>Prognose &amp; Optimierung</strong><br><span class="small">Vorausschau, Vorschläge zur Fahrweise</span></div><div class="ok">✓</div><div class="ok">✓</div>
+      </div>
+      <p class="small">Eng = „im Kleinen“, exakt und wiederholbar. Lose = Bausteine laufen dort, wo die Daten liegen, auch bei verschiedenen Eigentümern.</p>
+    </div>
+    <div class="panel">
+      <h3>2 · Kausalkette als Mini-Geschichte</h3>
+      <p class="small">Zeigt, was „Entscheidungen schlagen durch“ bedeutet. Gut als Comic-Strip oder Zeitstrahl.</p>
+      <ol class="chain">
+        <li>Der Wasserstoff-Abnehmer schließt den Schieber.</li>
+        <li>Der Druck in der Leitung steigt. Der Puffer reicht noch etwa eine Stunde.</li>
+        <li>Der Elektrolyseur muss abregeln.</li>
+        <li>Sein Fahrplan wird verletzt.</li>
+        <li>Der Direktvermarkter muss mehr Strom am Markt verkaufen.</li>
+      </ol>
+      <p class="small">Pointe: Der Zwilling warnt bei Schritt 2 und zeigt, was eine Gegenmaßnahme bewirkt.</p>
+    </div>
+    <div class="panel">
+      <h3>3 · Bausteine des Zwillings</h3>
+      <p class="small">Als Icon-Reihe, gruppiert. Jedes Icon ist ein Standardbauteil.</p>
+      <ul>
+        <li><strong>Wind:</strong> Windenergieanlage, Nachlauf zwischen Anlagen, Parkregler</li>
+        <li><strong>Messen &amp; Bilanz:</strong> Wetter, Zähler, Bilanzknoten, Eigenverbraucher</li>
+        <li><strong>Speicher &amp; Wasserstoff:</strong> Batterie, Elektrolyseur, H2-Leitung, H2-Abnehmer</li>
+        <li><strong>Markt &amp; Steuerung:</strong> Strommarkt, Direktvermarkter, Mensch am Steuer, Optimierer</li>
+      </ul>
+      <p class="small">Jedes Bauteil hat dieselbe Anatomie: Zustand, Anzeigen, Verhalten und eine austauschbare Fahrweise (Fahrplan, Mensch oder Optimierer).</p>
+    </div>
+    <div class="panel">
+      <h3>4 · Stufen mit Entscheidungspunkten</h3>
+      <p class="small">Als Treppe oder Schleusen. Nach jeder Stufe ein Tor: weiter oder anhalten.</p>
+      <ol>
+        <li><strong>A · Daten &amp; Potenzial:</strong> Daten anschließen, Mehrwert grob abschätzen. Ohne Simulation.</li>
+        <li><strong>B · Schattenbetrieb:</strong> Zwilling läuft mit, vergleicht Plan und Wirklichkeit.</li>
+        <li><strong>C · Ursache &amp; Wirkung:</strong> Kausalketten mit echten Betriebsdaten bestätigen.</li>
+        <li><strong>D · Optimierung:</strong> Bessere Fahrweise vorschlagen und Mehrerlös belegen.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Bildsprache</h2>
+  <ul>
+    <li><strong>Status über Form und Farbe,</strong> nie nur über Farbe:
+      <span class="chip s-done">fertig: gefüllter Kreis</span>
+      <span class="chip s-designed">entworfen: Kreis</span>
+      <span class="chip s-planned">geplant: gestrichelt</span>
+      <span class="chip s-proposal">Vorschlag: Raute</span>
+      <span class="chip s-core">Kern: gefüllte Raute</span>
+      <span class="chip s-research">Forschung: gepunktet</span>.
+      Die Farben dieser Seite sind ein Vorschlag, keine Vorgabe.</li>
+    <li><strong>Ein Akzent:</strong> Nur der Zwilling bekommt die Signalfarbe. Alles andere bleibt ruhig.</li>
+    <li><strong>Schaltplan-Anmutung:</strong> Linien als Verdrahtung, Bauteile als Symbole mit Beschriftungsfeld. Keine Fotos, keine 3D-Renderings von Windrädern.</li>
+    <li><strong>Lesbarkeit:</strong> Auf einer Folie aus 5 m Entfernung lesbar. Maximal 12 Wörter pro Textblock in der Hauptansicht.</li>
+    <li>Ein festes OpenTSx-Branding existiert nicht. Schriften und Palette sind frei, solange sie technisch und ruhig wirken.</li>
+  </ul>
+</section>
+
+<section class="grid2">
+  <div class="panel">
+    <h3>Bitte so</h3>
+    <ul class="do">
+      <li>Phasen als Sequenz zeigen, ohne Kalenderdaten. Es gibt keine zugesagten Termine.</li>
+      <li>„Stand 2026-10-12“ klein auf die Grafik.</li>
+      <li>Partner nur als Rollen: Netzbetreiber, Elektrolyseurbetreiber, Direktvermarkter.</li>
+      <li>Quantenrechner, falls überhaupt, klein und als „Experiment“ beschriftet.</li>
+      <li>Übertragbarkeit andeuten: derselbe Bausatz, anderer Schaltplan, weitere Parks.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <h3>Bitte nicht</h3>
+    <ul class="dont">
+      <li>Keine Personen-, Firmen- oder Projektnamen von Partnern, keine Förder- oder Budgetangaben.</li>
+      <li>Keine Euro-Beträge oder Prozent-Versprechen. Den Mehrwert ermittelt erst Stufe A.</li>
+      <li>Keine KI-Klischees: Gehirne, Roboter, leuchtende Netze.</li>
+      <li>Kein Fachjargon in der Hauptansicht (Avro, KafScale, Iceberg, BSP). Er darf im Kleingedruckten stehen.</li>
+      <li>Den Nachlauf-Graphen (Wake-Graph) nicht hervorheben. Er ist ein vorgemerkter Nebenpunkt.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Lieferumfang</h2>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>Format</th><th>Verwendung</th></tr></thead>
+      <tbody>
+        <tr><td>A3 quer, Vektor (PDF/SVG)</td><td>Hauptfassung mit allen Bereichen, auch für Druck</td></tr>
+        <tr><td>16:9 Folie (PNG + Vektor)</td><td>reduzierte Fassung: Ebenen-Stapel plus Matrix</td></tr>
+        <tr><td>Breitbild für README (PNG, ca. 1600 px breit)</td><td>hell und dunkel, oder neutral für beide Hintergründe</td></tr>
+        <tr><td>Quelldatei, editierbar</td><td>damit Statuswechsel später ohne Neuauftrag möglich sind</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Ablauf: zuerst eine grobe Skizze der Komposition zur Abstimmung, dann eine Reinzeichnung, danach eine Korrekturrunde.</p>
+</section>
+
+<section class="col">
+  <h2>Kleines Glossar für die Gestaltung</h2>
+  <div class="table-box">
+    <table>
+      <tbody>
+        <tr><td><strong>Zeitreihe</strong></td><td>Messwerte über die Zeit, z. B. Windgeschwindigkeit jede Sekunde.</td></tr>
+        <tr><td><strong>Smart Topic</strong></td><td>Ein Datenstrom, der aus anderen Strömen lernt und Prognosen liefert.</td></tr>
+        <tr><td><strong>Digitaler Zwilling</strong></td><td>Rechenmodell der realen Anlage. Eine Entscheidung im Modell verändert alle betroffenen Zahlen so, wie es in der Wirklichkeit passieren würde.</td></tr>
+        <tr><td><strong>Baustein (Atom)</strong></td><td>Kleinstes Element des Zwillings, z. B. ein Elektrolyseur oder ein Zähler.</td></tr>
+        <tr><td><strong>Schaltplan</strong></td><td>Beschreibung, welche Bausteine wie verbunden sind. Je Anlage individuell.</td></tr>
+        <tr><td><strong>Eng / lose gekoppelt</strong></td><td>Alles in einem Programm im Gleichtakt, oder verteilte Teile, die über Datenströme zusammenarbeiten.</td></tr>
+        <tr><td><strong>Entscheidungspunkt</strong></td><td>Ende einer Stufe: Lohnt sich der nächste Schritt?</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="col small">
+  Grundlage: Roadmap <code>EVOLUTION/TASK-011-datamodel-refresher-2026.md</code> und Konzepte <code>docs/datamodel-2026/05</code> bis <code>07</code> im OpenTSx-Repository. Rückfragen zum Inhalt an das OpenTSx-Team.
+</footer>
+
+</div>
+</body>
+</html>
