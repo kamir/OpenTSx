@@ -394,6 +394,13 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly) und gegen Iceberg-REST-Catalog + MinIO in CI.
 - [ ] Records/s-Messung gegen KafScale mit echtem S3 (bisher nur In-Memory-S3).
 
+**Major-Upgrades (bewusst als Migration; Dependabot ignoriert Majors und die unten genannten Bremsen)**
+- [ ] Avro 1.12.2+: Klassen-Freigabe (`ClassSecurityValidator`) für das v2-Modell **und** die Legacy-2.x-Klassen (`org.opentsx.data.model`, schon beim Bauen von Records per Builder nötig); Legacy-Module hängen nicht an `opentsx-model` → Freigabe im Generator-Template oder per Systemeigenschaft in den Startskripten. Befund vom 12.10.: v2 mit `ClassSecurityValidator.setGlobal(composite(...))` lauffähig, Legacy-Bridge-Test scheitert ohne Legacy-Freigabe.
+- [ ] Iceberg 1.11/1.12: `GenericAppenderFactory` entfernt → `IcebergIO` auf die neue Writer-API umstellen.
+- [ ] JFreeChart 1.5 (Legacy-Charts in `opentsx-core`): `org.jfree.ui` entfernt → Charts migrieren oder Legacy-UI archivieren.
+- [ ] Confluent 8 (Kafka-4-Clients, gegen KafScale prüfen), JUnit 6, networknt json-schema-validator 3 (API-Änderungen).
+- [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8, React Router 7, Plotly 4 – gemeinsam als Migration (Stand 12.10.: `npm ci` scheitert an Peer-Konflikten, `tsc` an veralteten Optionen).
+
 **Laufzeit & Integration**
 - [ ] Flink 1.20/2.x-Upgrade; danach Flink-Adapter für `StatsEngine` und P8.1-Streaming-Screening; `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2 umstellen oder deprecaten.
 - [ ] Echte Herstellerexporte als weitere `sources` im Datenpunktkatalog.
@@ -409,6 +416,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 
 ## Progress Log
 
+- 2026-10-12: **Abhängigkeiten aufgeräumt**: Dependabot-Flut gebündelt (GitHub Actions auf aktuelle Majors, Backend-Pins, Backend auf Python 3.12), Maven-Minor/Patch-Gruppe ohne die vier Bremsen (Avro, Iceberg, JFreeChart, zstd-jni); Majors nur noch als geplante Migration (Backlog „Major-Upgrades“).
 - 2026-10-12: **DWD-Sammler** `opentsx-dwd`: MOSMIX_L und CDC-Stationsdaten als v2-Serien/Episoden mit Einheit und Herkunft, nächstgelegene Stationen (Haus Erzgebirge: Marienberg/Fichtelberg, Ostsee: Greifswalder Oie/Arkona), Bindung an Haus- und Boot-Zwilling, CLI `bin/opentsx dwd`; Tests offline mit handgebauten Fixtures, Parser zusätzlich gegen opendata.dwd.de geprüft.
 - 2026-10-12: **P9.0 Modbus-Modul** `opentsx-modbus`: Modbus-TCP-Client ohne Fremdbibliothek (MBAP, Transaktions-IDs, Timeouts, Reconnect, Exception-Antworten mit Klartext; RTU über TCP mit CRC16), Registerkarten als YAML mit Validierung (Überlappungen, Typen, OBIS, Herkunft), Blockbildung, Normalisierer → v2-Episoden mit Zählerüberlauf/-reset-Flags, In-JVM-Simulator und `bin/opentsx modbus check|read|poll|simulate`; Beispielkarte eines Netzanschlusszählers bis zum Eintreffen der echten Registerkarten.
 - 2026-10-12: **Repository-Hygiene**: LICENSE (Apache 2.0, Volltext) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Meldeweg über GitHub Private Vulnerability Reporting), CHANGELOG (Keep a Changelog); private Client-Profile `config/cpl*.props`/`mdc_c1.props` durch `config/opentsx-local.props.example` ersetzt (Fallback in `OpenTSxClusterLink`), Referenzen in Code, Skripten und Doku angepasst; `opentsx.properties.example` auf tatsächlich gelesene Schlüssel und v2-Konfiguration reduziert. Keine Historienbereinigung.
