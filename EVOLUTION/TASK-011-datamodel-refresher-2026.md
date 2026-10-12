@@ -114,7 +114,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
 - [ ] P7e Studio produktiv: Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7, Node-Graph bearbeitbar (Schaltplan mit Validierung), Eingriffe mit Freigabe-Workflow, zusammengesetzte Bausteine.
 - [x] Studio allgemein: `StudioScenario` (Schaltplan, Referenz, Alternativen, Prognosen, Smart Metrics, Kennzahlen) + `StudioExport`; Oberfläche mit Szenario-Auswahl ohne Sonderfälle.
-- [ ] Haus- und Boot-Szenario als `StudioScenario` einhängen (nach P9.7/P9.8).
+- [x] Haus- und Boot-Szenario als `StudioScenario` eingehängt (`HouseStudioScenario`, `BoatStudioScenario`, abgeleitete Kennzahlen über `derivedKpis`).
 - [ ] LabVIEW-Brücke (09 §4/§4a): Abbildungsdatei Sensor ↔ Smart Topic ↔ Aktor; JSON-Verträge `opentsx.smartmetric.v1`, `opentsx.command.v1`, `opentsx.command-ack.v1` als JSON-Schema + Normalizer + Tests; Feedback-Topic `tsx.<domain>.commands.v1` mit Quittungen, Spiegelung in infinimesh `desired`; Publisher-/Kommando-VIs (VIPM, BSD/MIT); Test Client-Zertifikat-TLS LabVIEW ↔ infinimesh. *(TDMS-Import zurückgestellt.)*
 
 ### Phase 8 – Systemrekonstruktion, Simulation & Optimierung – Konzept: [`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](../docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)

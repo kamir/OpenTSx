@@ -2,6 +2,7 @@ package org.opentsx.twin.studio;
 
 import org.opentsx.twin.Inputs;
 import org.opentsx.twin.Intervention;
+import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinPlan;
 
 import java.util.List;
@@ -48,6 +49,11 @@ public interface StudioScenario {
 
     /** Human-readable labels for series keys; missing keys show the key itself. */
     default Map<String, String> labels() {
+        return Map.of();
+    }
+
+    /** KPIs computed from a run beyond the final states (keys should start with {@code kpi.}). */
+    default Map<String, Double> derivedKpis(RunResult run) {
         return Map.of();
     }
 

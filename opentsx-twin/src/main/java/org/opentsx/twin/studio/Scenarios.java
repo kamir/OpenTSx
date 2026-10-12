@@ -9,6 +9,6 @@ public final class Scenarios {
     }
 
     public static List<StudioScenario> all() {
-        return List.of(new H2ChainScenario());
+        return List.of(new H2ChainScenario(), new HouseStudioScenario(), new BoatStudioScenario());
     }
 }

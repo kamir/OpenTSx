@@ -76,13 +76,13 @@ public final class StudioExport {
         m.put("graph", graph(plan, s.observed()));
 
         List<String> outputs = ref.keys().stream().filter(k -> !k.contains(".state.")).toList();
-        m.put("reference", run(ref, outputs, stride, plan, 0));
+        m.put("reference", run(ref, outputs, stride, plan, 0, s));
 
         List<Object> alts = new ArrayList<>();
         for (StudioScenario.Alternative a : s.alternatives()) {
             Inputs in = a.inputs() != null ? a.inputs() : s.observed();
             RunResult r = runner.run(new TwinRunner.RunSpec(Mode.WHAT_IF, in, a.interventions(), null, 0, a.policies(), null));
-            Map<String, Object> x = run(r, s.compareKeys(), stride, plan, 0);
+            Map<String, Object> x = run(r, s.compareKeys(), stride, plan, 0, s);
             x.put("id", a.id());
             x.put("name", a.name());
             alts.add(x);
@@ -95,7 +95,7 @@ public final class StudioExport {
             Inputs in = s.observed() instanceof SeriesInputs si ? si.as(Origin.FORECAST) : s.observed();
             RunResult r = runner.run(new TwinRunner.RunSpec(Mode.FORECAST, in, List.of(), snap,
                     ref.size() - f.nowStep(), f.policies(), null));
-            Map<String, Object> x = run(r, s.compareKeys(), stride, plan, f.nowStep());
+            Map<String, Object> x = run(r, s.compareKeys(), stride, plan, f.nowStep(), s);
             x.put("id", f.id());
             x.put("name", f.name());
             x.put("now", f.nowStep() / stride);
@@ -131,7 +131,8 @@ public final class StudioExport {
         return Map.of("nodes", nodes, "wires", wires, "bindings", List.copyOf(observed.ports()), "planHash", plan.hash());
     }
 
-    private static Map<String, Object> run(RunResult r, List<String> keys, int stride, TwinPlan plan, int offsetSteps) {
+    private static Map<String, Object> run(RunResult r, List<String> keys, int stride, TwinPlan plan, int offsetSteps,
+                                           StudioScenario s) {
         Map<String, Object> x = new LinkedHashMap<>();
         x.put("runId", r.runId());
         x.put("mode", r.mode().name());
@@ -147,6 +148,7 @@ public final class StudioExport {
         x.put("origin", origin);
         Map<String, Double> kpis = new LinkedHashMap<>();
         r.kpis().forEach((k, v) -> kpis.put(k, round(v, 4)));
+        s.derivedKpis(r).forEach((k, v) -> kpis.put(k, round(v, 4)));
         x.put("kpis", kpis);
         long t0 = plan.startMicros();
         List<Object> ev = new ArrayList<>();
