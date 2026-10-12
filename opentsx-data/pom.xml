@@ -29,7 +29,7 @@
         <artifactId>avro-maven-plugin</artifactId>
         <!-- frozen v1 model: Avro >= 1.12 rejects the duplicate definition of org.opentsx.data.model.Event
              (see README.md); the generated classes run on the current Avro runtime -->
-        <version>1.12.2</version>
+        <version>1.11.4</version>
         <executions>
           <execution>
             <phase>generate-sources</phase>

@@ -42,11 +42,13 @@
 
         <!-- Kafka 3.9 / Confluent 7.9; Avro 1.12 because Iceberg 1.10 requires it. Not 1.12.0: it decodes double
              arrays with float precision (EpisodesAndWireFormatTest.doublesSurviveTheRoundTripAtFullPrecision).
-             1.12.2 needs org.apache.avro.SERIALIZABLE_PACKAGES configured - planned follow-up. (wire format unchanged,
-             the shared test vectors and schema-compatibility checks guard this) -->
+             1.12.2 only instantiates trusted classes (ClassSecurityValidator): the v2 model and the legacy 2.x
+             classes (org.opentsx.data.model, also in builders) must be registered first - backlog item, Dependabot
+             ignores Avro until then. (wire format unchanged, the shared test vectors and schema-compatibility checks
+             guard this) -->
         <kafka.version>3.9.1</kafka.version>
         <confluent.version>7.9.1</confluent.version>
-        <avro.version>1.12.2</avro.version>
+        <avro.version>1.12.1</avro.version>
 
         <gson.version>2.14.0</gson.version>
         <hadoop.version>3.5.0</hadoop.version>
@@ -153,7 +155,7 @@
                 <!-- same version kafka-clients ${kafka.version} uses; for storage-cost measurements in tests -->
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.7-22</version>
+                <version>1.5.6-4</version>
             </dependency>
 
             <!-- Hadoop SequenceFile support for TSBucket (shaded client, no transitive conflicts) -->
@@ -226,7 +228,7 @@
             <dependency>
                 <groupId>org.jfree</groupId>
                 <artifactId>jfreechart</artifactId>
-                <version>1.5.6</version>
+                <version>1.0.19</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
