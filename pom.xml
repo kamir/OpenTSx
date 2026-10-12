@@ -46,7 +46,7 @@
              classes (org.opentsx.data.model, also in builders) must be registered first - backlog item, Dependabot
              ignores Avro until then. (wire format unchanged, the shared test vectors and schema-compatibility checks
              guard this) -->
-        <kafka.version>3.9.1</kafka.version>
+        <kafka.version>3.9.2</kafka.version>
         <confluent.version>7.9.1</confluent.version>
         <avro.version>1.12.1</avro.version>
 
