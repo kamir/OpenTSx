@@ -45,7 +45,7 @@
              1.12.2 needs org.apache.avro.SERIALIZABLE_PACKAGES configured - planned follow-up. (wire format unchanged,
              the shared test vectors and schema-compatibility checks guard this) -->
         <kafka.version>3.9.1</kafka.version>
-        <confluent.version>7.9.1</confluent.version>
+        <confluent.version>8.3.2</confluent.version>
         <avro.version>1.12.1</avro.version>
 
         <gson.version>2.11.0</gson.version>
