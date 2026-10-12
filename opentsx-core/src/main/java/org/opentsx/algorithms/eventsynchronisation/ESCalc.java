@@ -11,16 +11,24 @@ import java.util.Vector;
 public class ESCalc {
 
     /**
-     * For two given time-series ti and tj, the "Event-Synchronisation" 
-     * is calculated. 
-     * 
-     *  
-     * sync:   Strength of Event Synchronization (Q_ij)
-     * delay:  Delay quantity (q_ij)
-     * 	
-     * The second delay q_ji(=-q_ij) is not given, as well as Q_ji(=Q_ij).
+     * For two given event series ti and tj (sorted event times), the
+     * "Event-Synchronisation" of Quiroga, Kreuz &amp; Grassberger
+     * (Phys. Rev. E 66, 041904, 2002) is calculated.
      *
-     * 
+     * A local, event-pair specific window is used:
+     * tau_lm = min(ti[l+1]-ti[l], ti[l]-ti[l-1], tj[m+1]-tj[m], tj[m]-tj[m-1]) / 2.
+     * A pair contributes J = 1 if 0 &lt; |ti[l]-tj[m]| &lt; tau_lm (to the count of
+     * the later series) and J = 1/2 to both counts if ti[l] == tj[m].
+     * The strict inequality guarantees that an event is matched with at most one
+     * event of the other series, hence sync is in [0, 1] and delay in [-1, 1].
+     * Only interior events (with two neighbours) are evaluated; the normalisation
+     * uses sqrt((di-1)*(dj-1)), as in the original implementation.
+     *
+     * sync:   Strength of Event Synchronization (Q_ij)
+     * delay:  Delay quantity (q_ij), positive if events in ti tend to follow
+     *         events in tj (i.e. tj leads)
+     *
+     * The second delay q_ji(=-q_ij) is not given, as well as Q_ji(=Q_ij).
      */
     public static double[] calc(int[] ti, int[] tj) {
         
@@ -49,7 +57,7 @@ public class ESCalc {
 
             double tau = (double)tau_temp * 0.5;
             
-            if( ti[l]-tj[m] == tau ) { 
+            if( ti[l] == tj[m] ) { 
               valij=valij + 0.5; 
               valji=valji + 0.5; 
             }

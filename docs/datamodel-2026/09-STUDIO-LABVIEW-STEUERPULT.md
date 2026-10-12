@@ -57,6 +57,11 @@ Szenarien:
 * das Einfamilienhaus im Erzgebirge ([08](08-HAUS-ZWILLING.md); ein Jahr, für die Anzeige auf 5-h-Mittel verdichtet)
 * das Boot Etap 22 ([10](10-BOOT-ZWILLING.md); 14 Tage im 15-Minuten-Takt)
 
+Als **vierte Ansicht** ist **„Anlage erkunden“** vorgesehen: ein visuelles Inventar auf Karte, Grundriss oder
+Decksplan, mit Hover-Karte, Datenblatt, Dokumenten und Wartung am selben Atom-Anker
+([12-EXPLORATIVES-UI-INVENTAR](12-EXPLORATIVES-UI-INVENTAR.md), Prototyp
+[`anlagen-explorer.html`](../prototypes/anlagen-explorer.html)).
+
 Für den Ausbau vorgesehen:
 
 * Den Node-Graph **bearbeiten**: Das Ziehen von Drähten ändert das Schaltplan-YAML, und die Plan-Validierung prüft

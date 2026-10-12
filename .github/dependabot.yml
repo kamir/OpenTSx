@@ -1,0 +1,29 @@
+# Dependency updates. archive/ holds retired modules that are not built; updates there have no effect.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+    exclude-paths:
+      - "archive/**"
+    groups:
+      maven-minor-patch:
+        update-types: ["minor", "patch"]
+  - package-ecosystem: pip
+    directories: ["/python-package", "/opentsx-saas-backend"]
+    schedule:
+      interval: weekly
+    exclude-paths:
+      - "archive/**"
+  - package-ecosystem: npm
+    directory: "/opentsx-saas-frontend"
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

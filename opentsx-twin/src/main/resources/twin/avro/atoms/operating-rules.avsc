@@ -1,0 +1,85 @@
+{
+  "type" : "record",
+  "name" : "OperatingRulesSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one operating-rules atom after superstep k (phase SOURCES)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "OperatingRulesState",
+      "doc" : "State variables of operating-rules",
+      "fields" : [ {
+        "name" : "active",
+        "type" : "double"
+      }, {
+        "name" : "restricted_h",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "OperatingRulesOutputs",
+      "doc" : "Output ports of operating-rules",
+      "fields" : [ {
+        "name" : "limit_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "OperatingRulesControls",
+      "doc" : "Controls of operating-rules overridden by interventions (null: policy decides)",
+      "fields" : [ ]
+    }
+  } ],
+  "opentsx.atomType" : "operating-rules",
+  "opentsx.phase" : "SOURCES",
+  "opentsx.inputs" : [ ]
+}

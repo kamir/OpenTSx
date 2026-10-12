@@ -216,11 +216,11 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 **P9.1 – Atomvertrag & Runner**
 - [ ] Screening Stand der Technik vor dem Bau: mosaik, HELICS, FMI 3.0 (Atome als FMUs?), pandapower, PyPSA, oemof → Entscheidung D24.
 - [x] Atomvertrag MVC+P in `opentsx-twin` (`Atom`: Modell = Zustand/Parameter, Dynamik `step`, austauschbare `Policy`, Ports mit Art und Einheit, Sensorsicht über Residuum im Bilanzknoten).
-- [ ] Avro-Schemas je Atomtyp für Zustand und Ports (heute Java-Records/Maps; nötig für Variante L und Python).
+- [x] Avro-Schemas je Atomtyp für Zustand und Ports: generiert aus dem Atomkatalog (`AtomSchemas`, `twin/avro/`, `bin/opentsx twin-schemas`), Umschläge `PortMessage`/`Barrier`/`Intervention`, `state_extra` für parameterabhängige Zustände; Rundlauf aller Szenario-Atome in Java, Lesetest in Python (fastavro).
 - [x] Schaltplan-YAML (`TwinPlan`, Beispiel `twin/h2-chain.yaml`), Validierung (Ports, Art/Einheit, eine Quelle je Eingang), Rückkopplungen automatisch über die Schrittgrenze; Plan-Hash in der Lauf-Id. *(Lineage nach OpenMetadata offen.)*
 - [x] **Variante T (eng, ein Prozess):** `TwinRunner` mit geschichtetem BSP (Phasen Quellen → Policy → Anlagen → Bilanz → Flüsse → Views), Basistakt 1 min, Mehrrate (`every`), Ereignisse mit exaktem Zeitpunkt, Snapshots zum Fortsetzen; bitgleiche Wiederholung über verketteten Zustands-Hash.
-- [ ] **Variante L (lose, Smart Topics):** Atomtyp als Smart-Topic-Prozessor (Instanzen als Schlüssel), Kopplung über Port-Topics, Ereigniszeit-Watermarks mit einstellbarer Veraltung (BSP ↔ SSP ↔ asynchron), Bilanzknoten als eigener Prozessor mit Ausgleichsschritt; Atome können bei verschiedenen Eigentümern laufen.
-- [ ] Derselbe Atomcode läuft unverändert in T und L (gemeinsamer Atom-, Schaltplan- und Topic-Vertrag); Konformitätstest: L mit Veraltung 0 = T bitgleich.
+- [x] **Variante L (lose, Smart Topics):** *umgesetzt als `LooseRunner` (eigene Uhr je Atom, Kopplung über `PortMessage`, Veraltung `s` von BSP über SSP bis async, simulierte Latenz/Jitter/Ausfälle, Prozessorgruppen und Kolokalisierung von Rückkopplungsschleifen); Messungen in 07 §10a; Bindung an KafScale offen.* Atomtyp als Smart-Topic-Prozessor (Instanzen als Schlüssel), Kopplung über Port-Topics, Ereigniszeit-Watermarks mit einstellbarer Veraltung (BSP ↔ SSP ↔ asynchron), Bilanzknoten als eigener Prozessor mit Ausgleichsschritt; Atome können bei verschiedenen Eigentümern laufen.
+- [x] Derselbe Atomcode läuft unverändert in T und L (gemeinsamer Atom-, Schaltplan- und Topic-Vertrag); Konformitätstest: L mit Veraltung 0 = T bitgleich.
 - [x] Topic-Vertrag als Code: `PortMessage` (deterministische Id `run/k/phase/atom/port`), `Barrier` (Phasenende mit Anzahl, Superschritt-Commit mit Zustands-Hash), `MessageSink`; Variante T schreibt ihn bereits mit.
 - [ ] Binding an KafScale-Topics `twin.<id>.<run>.msgs|barrier|interventions`; Zustandssnapshots in Iceberg (`twin_state`); Zustandsreihen als Episoden (`RunResult.toEpisodes`, umgesetzt) in einen Store schreiben.
 - [x] Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` (`Origin`) mit Taint-Propagation entlang des Datenflusses eines Schritts; Rückkopplungskanten färben nicht; Defaults für fehlende Eingänge zählen als SYNTHETIC.
@@ -276,6 +276,16 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Raspberry Pi als Edge-Publisher (`opentsx.smartmetric.v1` über MQTT → infinimesh → KafScale); Rückweg nur mit Freigabe.
 - [ ] Szenario im Studio (generischer Export über `BoatDemo.plan/observed/reference/alternatives`).
 
+**P9.9 – Anlage erkunden: visuelles Inventar & Wartung (Studio-Ansicht 4)** – Konzept: [`12-EXPLORATIVES-UI-INVENTAR.md`](../docs/datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md)
+- [x] E0: Konzept (Ebenen Karte/Grundriss/Decksplan, Level-of-Detail, Hover-Karte, Datenblatt, Bildherkunft, Normbezüge RDS-PP/IEC 61400-25/ZEUS/ISO 14224, Wartungskopplung, infinimesh-Anbindung) und statischer Prototyp `docs/prototypes/anlagen-explorer.html` für Windpark, Haus und Boot mit Atom-Ids der Schaltpläne; Beispielinventar `twin/inventar-beispiel.yaml` (`opentsx.inventory.v1`, erfundene Werte).
+- [ ] E1: `opentsx.inventory.v1` als JSON-Schema; Validierung gegen den Schaltplan (Atom existiert, Id-Präfix = Twin-Id); Inventar im `StudioExport`; Reiter „Anlage erkunden“ im Studio; `tools/build_explorer.py` (analog `build_studio.py`).
+- [ ] E1: Ablage – Iceberg `inventory.assets/media/documents` (versioniert), Objektspeicher mit SHA-256, Abbildung in OpenMetadata klären (kein Entitätstyp für physische Anlagen bekannt, zu prüfen).
+- [ ] E2: Livewerte aus Shadow/KafScale und infinimesh (`reported`, online/offline, Veraltung), Zeitregler über Replay/Iceberg-Zeitreise, Sprünge zu Statistik und Node-Graph.
+- [ ] E3: Wartungs-Topic `tsx.<domain>.maintenance.v1` (`opentsx.maintenance.v1`, deterministische `eventId`), Auftragsvorschläge aus Alarmen, Intervallen und Gerätestatus, Aufträge als Eingriffe im Zwilling (Verfügbarkeit), Was-wäre-wenn „Wartung verschieben“, CSV-Import/-Export.
+- [ ] E3: Kommando-Dialog nur mit Freigabe (`opentsx.command.v1` → infinimesh `desired`, `commandable: false` für Sicherheitsgeräte).
+- [ ] E4: Orthofoto-Grundkarten (Lizenzen je Land prüfen), 360°-Panoramen, glTF-Modelle; CMMS-Anbindung (z. B. openMAINT; SAP PM im Unternehmensumfeld) über API.
+- [ ] Recherche-Nacharbeit: RDS-PP-Anwendungsrichtlinie Wind (Dokumentnummer, Codes), FGW TR 7/ZEUS (Schlüsselaufbau, Lizenz), ISO-14224-Klassen für Haus/Boot, Lizenz und API von openMAINT, Namespace-/Gerätehierarchie und Online-Status in `infinimesh/core`.
+
 ## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
 ```
@@ -328,6 +338,13 @@ opentsx-modbus                Modbus-TCP/RTU-über-TCP (nur JDK), Registerkarten
 | D27 | P7f: DAG-Spezifikation | **Vorschlag:** `opentsx.dag.v1` (YAML), gehasht, von Go und Java gelesen, im Studio bearbeitbar |
 | D28 | P7f: Training | **Vorschlag:** nie im Strom; Trigger → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
 | D29 | P7f: Semantik | **Vorschlag:** at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen |
+| D30 | P9.9: Anker des Inventars | **Vorschlag:** Asset-Id = Twin-Id/Atom-Id (+ Unterobjektpfad); keine zweite Anlagenstruktur |
+| D31 | P9.9: Bildpolitik | **Vorschlag:** echte Fotos bevorzugt; Herkunft, Lizenz und `reality` je Medium; Illustrationen immer gekennzeichnet |
+| D32 | P9.9: Ablage | **Vorschlag:** Inventar-YAML als Eingabe; Iceberg-Tabellen (versioniert) + Objektspeicher mit SHA-256; OpenMetadata als Katalog |
+| D33 | P9.9: Wartung | **Vorschlag:** leichtes Tracking als Ereignisprotokoll `tsx.<domain>.maintenance.v1`; CMMS bleibt führend, wo vorhanden; Aufträge = Eingriffe im Zwilling |
+| D34 | P9.9: Kennzeichen | **Vorschlag:** RDS-PP, IEC 61400-25, ZEUS optional für Wind; ISO 14224 generisch; keine Pflicht für Haus/Boot |
+| D35 | P9.9: infinimesh | **Vorschlag:** Gerätezustand aus infinimesh, Bedeutung aus dem Inventar; Kopplung über `{namespace, device}`; Kommandos nur mit Freigabe |
+| D36 | P9.9: Darstellung | **Vorschlag:** 2D (SVG/Canvas, Kacheln) zuerst, 3D erst in E4 |
 | D24 | P9: Kosimulation | **Vorschlag:** Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
 
 > **Hinweis:** Die Phasenreihenfolge folgt der Gap-Analyse
@@ -358,6 +375,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] D14–D17 (P8-Vorschläge) bestätigen.
 - [ ] ER1: Bereitstellung anonymisierter/synthetischer Content-Interaktionsdaten (P8.x).
 - [ ] D18, D19, D21–D24 (P9-Vorschläge) bestätigen.
+- [ ] D30–D36 (P9.9 Explorer, Inventar, Wartung) bestätigen; echte Fotos/Datenblätter je System liefern (privat: `config/private/`).
 
 **Energieverbund / Projektumfeld (P9, organisatorisch – außerhalb des Codes)**
 - [ ] Zählerdaten: Umsetzer und Verkabelung am LWL-Abschluss beauftragen (Modbus der Netzbetreiber-Zähler; freie Faserpaare vorhanden), Registerkarten der Zähler beschaffen.
@@ -368,10 +386,11 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Bewertung Direktleitung/Direktbelieferung (technische Machbarkeit hinter getrennten Netzanschlüssen) als Eingang für Schaltplan-Vorlagen (P9.5).
 
 **Repository & Open Source (TASK-010)**
-- [ ] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert), CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Policy), CHANGELOG.
+- [x] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT (Contributor Covenant 2.1), SECURITY.md (Policy), CHANGELOG.
 - [ ] Python-Paket auf PyPI veröffentlichen (README nennt bislang nur lokale Installation).
 - [ ] `sample_data/` und `data/sample_datasets/` konsolidieren (gleiche Dateinamen, anderer Inhalt; von `opentsx-core`-Demos referenziert).
-- [ ] `config/cpl*.props` (private LAN-Hosts) durch eine localhost/KafScale-Vorlage ersetzen; `opentsx.properties.example` an v2-Module anpassen.
+- [x] `config/cpl*.props` und `config/mdc_c1.props` (private LAN-Hosts) entfernt, ersetzt durch die localhost/KafScale-Vorlage `config/opentsx-local.props.example` (lokale Kopie `config/opentsx-local.props` git-ignoriert); `opentsx.properties.example` an v2-Module angepasst.
+- [ ] Weitere Profile mit privaten Hosts in `opentsx-lg/src/main/resources/config/` (`cpl.props`, `mdc_c1.props`, `mdc_local_link.props`, im Docker-Assembly referenziert), `opentsx-lg/src/main/k8s/krake-app/` und hartkodierte Schema-Registry-Adressen in `FWL_TSA_*Application.java` bereinigen.
 - [ ] `tests/validation/*.java` und `bin/run_all_tests.sh` in einen Maven-Testpfad überführen oder archivieren; Java-Beispiele in `exercises/` gegen die echte 2.x-API prüfen.
 - [x] `opentsx-app-tools` archiviert (siehe Phase 0).
 
@@ -398,6 +417,9 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 
 - 2026-10-12: **DWD-Sammler** `opentsx-dwd`: MOSMIX_L und CDC-Stationsdaten als v2-Serien/Episoden mit Einheit und Herkunft, nächstgelegene Stationen (Haus Erzgebirge: Marienberg/Fichtelberg, Ostsee: Greifswalder Oie/Arkona), Bindung an Haus- und Boot-Zwilling, CLI `bin/opentsx dwd`; Tests offline mit handgebauten Fixtures, Parser zusätzlich gegen opendata.dwd.de geprüft.
 - 2026-10-12: **P9.0 Modbus-Modul** `opentsx-modbus`: Modbus-TCP-Client ohne Fremdbibliothek (MBAP, Transaktions-IDs, Timeouts, Reconnect, Exception-Antworten mit Klartext; RTU über TCP mit CRC16), Registerkarten als YAML mit Validierung (Überlappungen, Typen, OBIS, Herkunft), Blockbildung, Normalisierer → v2-Episoden mit Zählerüberlauf/-reset-Flags, In-JVM-Simulator und `bin/opentsx modbus check|read|poll|simulate`; Beispielkarte eines Netzanschlusszählers bis zum Eintreffen der echten Registerkarten.
+- 2026-10-12: **Repository-Hygiene**: LICENSE (Apache 2.0, Volltext) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Meldeweg über GitHub Private Vulnerability Reporting), CHANGELOG (Keep a Changelog); private Client-Profile `config/cpl*.props`/`mdc_c1.props` durch `config/opentsx-local.props.example` ersetzt (Fallback in `OpenTSxClusterLink`), Referenzen in Code, Skripten und Doku angepasst; `opentsx.properties.example` auf tatsächlich gelesene Schlüssel und v2-Konfiguration reduziert. Keine Historienbereinigung.
+- 2026-10-12: **P9 Variante L** (`LooseRunner`, gemeinsamer Ausführungskern `RunSetup`): Konformität L(`s = 0`) = T bitgleich für alle drei Szenarien und Betriebsarten; Messprogramm `bin/opentsx twin-coupling`; Avro-Schemas je Atomtyp. Befund: Durchsatz begrenzen nur Rückkopplungsschleifen (Formel in 07 §10a), Veraltung in schnellen Regelkreisen verfälscht stark; Entwurfsregel „Schleifen in einen Prozessor, dazwischen BSP“ liefert T-Ergebnis bei voller Fließband-Leistung (H2-Kette ×5,9, Haus ×6).
+- 2026-10-12: **Anlage erkunden (P9.9, E0)** (`12-EXPLORATIVES-UI-INVENTAR.md`): vierte Studio-Ansicht als visuelles Inventar auf Karte (Windpark), Grundriss (Haus) und Decksplan (Boot) mit Level-of-Detail, Hover-Karte und Datenblatt; Inventarmodell `opentsx.inventory.v1` am Atom-Anker, Bildherkunft, Normbezüge, Wartungs-Topic `opentsx.maintenance.v1`, infinimesh als Geräteebene; statischer Prototyp `docs/prototypes/anlagen-explorer.html` und Beispielinventar; D30–D36 als Vorschläge.
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.

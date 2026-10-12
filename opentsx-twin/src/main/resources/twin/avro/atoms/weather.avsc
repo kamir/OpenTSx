@@ -1,0 +1,115 @@
+{
+  "type" : "record",
+  "name" : "WeatherSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one weather atom after superstep k (phase SOURCES)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "WeatherState",
+      "doc" : "State variables of weather",
+      "fields" : [ {
+        "name" : "t_out_c",
+        "type" : "double"
+      }, {
+        "name" : "hdd_kd",
+        "type" : "double"
+      }, {
+        "name" : "heating_days",
+        "type" : "double"
+      }, {
+        "name" : "day_sum",
+        "type" : "double"
+      }, {
+        "name" : "day_n",
+        "type" : "double"
+      }, {
+        "name" : "t_sum",
+        "type" : "double"
+      }, {
+        "name" : "hours",
+        "type" : "double"
+      }, {
+        "name" : "ghi_kwh_m2",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "WeatherOutputs",
+      "doc" : "Output ports of weather",
+      "fields" : [ {
+        "name" : "t_out_c",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [°C]"
+      }, {
+        "name" : "ghi_w_m2",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [W/m2]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "WeatherControls",
+      "doc" : "Controls of weather overridden by interventions (null: policy decides)",
+      "fields" : [ ]
+    }
+  } ],
+  "opentsx.atomType" : "weather",
+  "opentsx.phase" : "SOURCES",
+  "opentsx.inputs" : [ {
+    "name" : "t_out_meas_c",
+    "kind" : "SIGNAL",
+    "unit" : "°C"
+  }, {
+    "name" : "ghi_meas_w_m2",
+    "kind" : "SIGNAL",
+    "unit" : "W/m2"
+  } ]
+}

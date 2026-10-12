@@ -385,7 +385,10 @@ public class ESCalc2 {
             double DIFF = e-f;
             double dij = 0.0;
 
-            if( 0.0 < DIFF && DIFF <= tau ) { 
+            // strict '<' (not '<='): with integer event times an event exactly
+            // halfway between two events of the other series would otherwise be
+            // matched twice, which can push Q above 1.
+            if( 0.0 < DIFF && DIFF < tau ) { 
               dij=1.0; 
             }
             else if ( e == f ) {

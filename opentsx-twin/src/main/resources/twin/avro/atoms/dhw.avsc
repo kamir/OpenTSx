@@ -1,0 +1,94 @@
+{
+  "type" : "record",
+  "name" : "DhwSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one dhw atom after superstep k (phase SOURCES)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "DhwState",
+      "doc" : "State variables of dhw",
+      "fields" : [ {
+        "name" : "use_kwh",
+        "type" : "double"
+      }, {
+        "name" : "loss_kwh",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "DhwOutputs",
+      "doc" : "Output ports of dhw",
+      "fields" : [ {
+        "name" : "q_dhw_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "DhwControls",
+      "doc" : "Controls of dhw overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "t_store_c",
+        "type" : [ "null", "double" ],
+        "doc" : "default 60.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "dhw",
+  "opentsx.phase" : "SOURCES",
+  "opentsx.inputs" : [ {
+    "name" : "t_store_c",
+    "kind" : "SIGNAL",
+    "unit" : "°C"
+  } ]
+}

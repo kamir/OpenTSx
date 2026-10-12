@@ -49,7 +49,7 @@ export OPENTSX_NUMBER_OF_ITERATIONS=100
 #
 # Client configuration for a particular Kafka cluster (CP local or Confluent cloud)
 #
-export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/cpl.props
+export OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME=./../config/opentsx-local.props
 
 #
 # GUI switch

@@ -1,0 +1,219 @@
+{
+  "type" : "record",
+  "name" : "PowerStationSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one power-station atom after superstep k (phase BALANCE)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "PowerStationState",
+      "doc" : "State variables of power-station",
+      "fields" : [ {
+        "name" : "capacity_wh",
+        "type" : "double"
+      }, {
+        "name" : "soc_wh",
+        "type" : "double"
+      }, {
+        "name" : "soc_start_wh",
+        "type" : "double"
+      }, {
+        "name" : "soc_min",
+        "type" : "double"
+      }, {
+        "name" : "solar_wh",
+        "type" : "double"
+      }, {
+        "name" : "shore_wh",
+        "type" : "double"
+      }, {
+        "name" : "demand_wh",
+        "type" : "double"
+      }, {
+        "name" : "served_wh",
+        "type" : "double"
+      }, {
+        "name" : "unmet_wh",
+        "type" : "double"
+      }, {
+        "name" : "unmet_h",
+        "type" : "double"
+      }, {
+        "name" : "curtailed_wh",
+        "type" : "double"
+      }, {
+        "name" : "loss_wh",
+        "type" : "double"
+      }, {
+        "name" : "discharge_wh",
+        "type" : "double"
+      }, {
+        "name" : "cycles",
+        "type" : "double"
+      }, {
+        "name" : "nudge_wh",
+        "type" : "double"
+      }, {
+        "name" : "avg_load_w",
+        "type" : "double"
+      }, {
+        "name" : "elapsed_h",
+        "type" : "double"
+      }, {
+        "name" : "autonomy_h",
+        "type" : "double"
+      }, {
+        "name" : "low",
+        "type" : "double"
+      }, {
+        "name" : "short",
+        "type" : "double"
+      }, {
+        "name" : "stepped",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "PowerStationOutputs",
+      "doc" : "Output ports of power-station",
+      "fields" : [ {
+        "name" : "soc",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [1]"
+      }, {
+        "name" : "p_batt_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "solar_used_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "shore_used_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "p_load_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "p_unmet_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "p_curtailed_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      }, {
+        "name" : "autonomy_h",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [h]"
+      }, {
+        "name" : "soc_residual",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [1]"
+      }, {
+        "name" : "load_residual_w",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [W]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "PowerStationControls",
+      "doc" : "Controls of power-station overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "capacity_wh",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1024.0",
+        "default" : null
+      }, {
+        "name" : "soc_min",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.05",
+        "default" : null
+      }, {
+        "name" : "soc_max",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      }, {
+        "name" : "max_charge_w",
+        "type" : [ "null", "double" ],
+        "doc" : "default 800.0",
+        "default" : null
+      }, {
+        "name" : "nudge",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "power-station",
+  "opentsx.phase" : "BALANCE",
+  "opentsx.inputs" : [ {
+    "name" : "p_solar_w",
+    "kind" : "FLOW",
+    "unit" : "W"
+  }, {
+    "name" : "p_shore_w",
+    "kind" : "FLOW",
+    "unit" : "W"
+  }, {
+    "name" : "soc_meas",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  }, {
+    "name" : "p_load_meas_w",
+    "kind" : "FLOW",
+    "unit" : "W"
+  } ]
+}

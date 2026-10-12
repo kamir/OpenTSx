@@ -1,0 +1,106 @@
+{
+  "type" : "record",
+  "name" : "WoodStoreSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one wood-store atom after superstep k (phase FLOWS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "WoodStoreState",
+      "doc" : "State variables of wood-store",
+      "fields" : [ {
+        "name" : "stock_ster",
+        "type" : "double"
+      }, {
+        "name" : "burned_ster",
+        "type" : "double"
+      }, {
+        "name" : "delivered_ster",
+        "type" : "double"
+      }, {
+        "name" : "cost_eur",
+        "type" : "double"
+      }, {
+        "name" : "missing_ster",
+        "type" : "double"
+      }, {
+        "name" : "low",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "WoodStoreOutputs",
+      "doc" : "Output ports of wood-store",
+      "fields" : [ {
+        "name" : "stock_ster",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [Ster]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "WoodStoreControls",
+      "doc" : "Controls of wood-store overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "delivery_ster_ph",
+        "type" : [ "null", "double" ],
+        "doc" : "default 0.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "wood-store",
+  "opentsx.phase" : "FLOWS",
+  "opentsx.inputs" : [ {
+    "name" : "wood_ster_ph",
+    "kind" : "FLOW",
+    "unit" : "Ster/h"
+  } ]
+}

@@ -1,0 +1,29 @@
+{
+  "type" : "record",
+  "name" : "Barrier",
+  "namespace" : "org.opentsx.twin.v1",
+  "doc" : "Phase end or superstep commit (topic twin.<id>.<run>.barrier).",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "phase",
+    "type" : [ "null", {
+      "type" : "enum",
+      "name" : "Phase",
+      "doc" : "Layer of a superstep in which the atom runs.",
+      "symbols" : [ "SOURCES", "POLICY", "ASSETS", "BALANCE", "FLOWS", "VIEWS" ]
+    } ],
+    "default" : null
+  }, {
+    "name" : "count",
+    "type" : "int"
+  }, {
+    "name" : "state_hash",
+    "type" : [ "null", "string" ],
+    "default" : null
+  } ]
+}
