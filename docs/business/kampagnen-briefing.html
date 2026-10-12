@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erst rechnen, dann schalten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one briefing column (max 70rem) like a control-room log; wide tables scroll in their own frame, sections stack on phones */
+:root {
+  --paper: #f4f6f7;
+  --panel: #ffffff;
+  --ink: #15212b;
+  --muted: #55636f;
+  --faint: #8b98a3;
+  --rule: #d3dae0;
+  --signal: #a85300;
+  --signal-soft: #fbe8d4;
+  --flow: #0a6f6b;
+  --flow-soft: #d9eeec;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --step--1: 0.84rem;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.55rem;
+  --step-3: 2.2rem;
+  --step-4: clamp(2.6rem, 6vw, 4.4rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e151b; --panel: #141e26; --ink: #e3e9ee; --muted: #a0adb8; --faint: #6c7a86; --rule: #26343f;
+    --signal: #f0a14a; --signal-soft: #3a2914; --flow: #4dc2bc; --flow-soft: #12302f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e151b; --panel: #141e26; --ink: #e3e9ee; --muted: #a0adb8; --faint: #6c7a86; --rule: #26343f;
+  --signal: #f0a14a; --signal-soft: #3a2914; --flow: #4dc2bc; --flow-soft: #12302f; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 var(--step-0)/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 70rem; margin: 0 auto; padding-inline: clamp(16px, 4vw, 40px); padding-block: 2.5rem 4rem; display: grid; gap: 3.25rem; }
+a { color: var(--flow); text-underline-offset: 0.18em; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 2px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.08; text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h2 { font-size: var(--step-3); }
+h3 { font-size: var(--step-1); font-weight: 600; letter-spacing: 0.01em; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 600 var(--step--1)/1.3 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.tag { font: 600 0.72rem/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 0.35em 0.55em; border-radius: 3px; background: var(--flow-soft); color: var(--flow); white-space: nowrap; }
+.tag.signal { background: var(--signal-soft); color: var(--signal); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 1.25rem; min-width: 0; }
+.section-head { display: grid; gap: 0.5rem; }
+.lead { font-size: var(--step-1); color: var(--ink); max-width: 60ch; }
+.note { color: var(--muted); font-size: var(--step--1); max-width: 72ch; }
+
+/* hero */
+.hero { display: grid; gap: 1.4rem; padding-top: 1rem; }
+.hero h1 { font-size: var(--step-4); letter-spacing: -0.005em; }
+.hero h1 .stop { color: var(--signal); }
+.hero .meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; font: 400 var(--step--1)/1.5 var(--font-mono); color: var(--muted); }
+.hero .meta b { color: var(--ink); font-weight: 600; }
+.status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.status > div { padding: 1rem 1.1rem 1.1rem 0; display: grid; gap: 0.45rem; align-content: start; min-width: 0; }
+.status > div + div { padding-left: 1.1rem; border-left: 1px solid var(--rule); }
+.status h3 { font-size: var(--step-0); font-family: var(--font-mono); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.status ul { margin: 0; padding-left: 1.05rem; display: grid; gap: 0.3rem; font-size: 0.95rem; }
+.status .today h3 { color: var(--flow); }
+.status .work h3 { color: var(--signal); }
+.status .plan h3 { color: var(--muted); }
+
+/* matrix */
+.answer { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 1.5rem 2.5rem; align-items: start; }
+.answer .verdict { font-family: var(--font-display); font-size: var(--step-2); font-weight: 600; line-height: 1.2; }
+.answer .verdict em { font-style: normal; color: var(--signal); }
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { padding: 0.55rem 0.7rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+thead th { font: 600 0.74rem/1.25 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--paper); position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+.matrix { min-width: 46rem; }
+.matrix td.c, .matrix th.c { text-align: center; width: 2.6rem; padding-inline: 0.2rem; }
+.matrix th.c abbr { text-decoration: none; cursor: help; }
+.matrix td.c { font: 600 1.05rem/1 var(--font-mono); }
+.m-full { color: var(--ink); }
+.m-part { color: var(--muted); }
+.m-none { color: var(--faint); font-weight: 400; }
+.m-unk { color: var(--faint); font-weight: 400; font-size: 0.85rem; }
+.matrix tr.self td { background: var(--flow-soft); }
+.matrix tr.self td:first-child { font-weight: 700; color: var(--flow); }
+.matrix .vendor small { display: block; color: var(--muted); font-size: 0.78rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-size: var(--step--1); color: var(--muted); }
+.legend span b { font-family: var(--font-mono); margin-right: 0.3rem; color: var(--ink); }
+.criteria { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem 1.2rem; margin: 0; font-size: 0.9rem; }
+.criteria div { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0.3rem; }
+.criteria dt { font: 600 0.9rem/1.5 var(--font-mono); color: var(--signal); }
+.criteria dd { margin: 0; color: var(--muted); }
+
+/* difference */
+.split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 2rem; }
+.combo { counter-reset: c; display: grid; gap: 0.9rem; margin: 0; padding: 0; list-style: none; }
+.combo li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.6rem; align-items: start; }
+.combo li::before { counter-increment: c; content: counter(c); font: 700 1.5rem/1 var(--font-display); color: var(--flow); padding-top: 0.15rem; }
+.combo b { display: block; }
+.combo span { color: var(--muted); font-size: 0.95rem; }
+.aside { border-left: 3px solid var(--signal); padding: 0.2rem 0 0.2rem 1.2rem; display: grid; gap: 0.9rem; align-content: start; }
+.aside ul { margin: 0; padding-left: 1.05rem; display: grid; gap: 0.35rem; font-size: 0.95rem; }
+
+/* segments */
+.segments { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.segment { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 1.2rem 1.2rem 1.3rem; display: grid; gap: 0.7rem; align-content: start; min-width: 0; }
+.segment .rank { font: 600 var(--step--1)/1 var(--font-mono); color: var(--signal); letter-spacing: 0.06em; }
+.segment h3 { font-size: var(--step-2); }
+.segment p { font-size: 0.95rem; }
+.segment .pitch { color: var(--muted); font-style: italic; border-top: 1px solid var(--rule); padding-top: 0.7rem; }
+.hooks { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; align-items: baseline; font-size: 0.95rem; color: var(--muted); }
+
+/* message house */
+.house { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.roof { background: var(--ink); color: var(--paper); padding: 1.1rem 1.3rem; display: grid; gap: 0.3rem; }
+.roof .eyebrow { color: var(--faint); }
+.roof p { font-family: var(--font-display); font-size: var(--step-2); font-weight: 600; line-height: 1.2; max-width: none; }
+.pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pillar { padding: 1.1rem 1.2rem; display: grid; gap: 0.5rem; align-content: start; min-width: 0; }
+.pillar + .pillar { border-left: 1px solid var(--rule); }
+.pillar h3 { font-size: var(--step-1); }
+.pillar p { font-size: 0.93rem; }
+.pillar .proof { font-size: 0.84rem; color: var(--muted); }
+.foundation { border-top: 1px solid var(--rule); padding: 0.85rem 1.3rem; font: 400 var(--step--1)/1.5 var(--font-mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; }
+
+/* claims */
+.claims td:nth-child(2) { color: var(--flow); }
+.claims td:nth-child(3) { color: var(--signal); text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: currentColor; }
+.claims { min-width: 40rem; }
+
+/* plan */
+.phases { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.phase { border-top: 4px solid var(--flow); padding-top: 0.7rem; display: grid; gap: 0.35rem; min-width: 0; }
+.phase:nth-child(2) { border-color: var(--signal); }
+.phase:nth-child(3) { border-color: var(--faint); }
+.phase .when { font: 400 var(--step--1)/1.4 var(--font-mono); color: var(--muted); }
+.phase p { font-size: 0.93rem; }
+.weeks { min-width: 44rem; }
+.weeks td:first-child { font-family: var(--font-mono); white-space: nowrap; color: var(--muted); }
+.weeks tr.event td { background: var(--signal-soft); }
+.weeks tr.quiet td { color: var(--faint); }
+
+/* kpis */
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.8rem; }
+.kpi { border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem 1rem; background: var(--panel); display: grid; gap: 0.2rem; align-content: start; min-width: 0; }
+.kpi .v { font: 700 2.3rem/1 var(--font-display); color: var(--ink); }
+.kpi .l { font-size: 0.88rem; color: var(--muted); }
+
+/* fairs */
+.fairs { min-width: 34rem; }
+.fairs td:first-child { font-family: var(--font-mono); white-space: nowrap; }
+
+/* post */
+.post { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.3rem 1.4rem; display: grid; gap: 0.75rem; max-width: 44rem; }
+.post .post-head { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.post h3 { font-size: var(--step-2); }
+.post p { font-size: 0.97rem; }
+.post .tags { font-family: var(--font-mono); font-size: 0.82rem; color: var(--flow); }
+button.copy { font: 600 0.8rem/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); background: transparent; border: 1px solid var(--ink); border-radius: 4px; padding: 0.55em 0.8em; cursor: pointer; }
+button.copy:hover { background: var(--ink); color: var(--paper); }
+.copy-status { font: 400 var(--step--1)/1.3 var(--font-mono); color: var(--flow); min-height: 1.3em; }
+
+/* decisions */
+.decisions { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.55rem; max-width: 68ch; }
+footer { border-top: 1px solid var(--rule); padding-top: 1.2rem; display: grid; gap: 0.5rem; color: var(--muted); font-size: var(--step--1); }
+
+@media (max-width: 960px) {
+  .answer, .split { grid-template-columns: minmax(0, 1fr); }
+  .segments { grid-template-columns: minmax(0, 1fr); }
+  .pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pillar:nth-child(3) { border-left: 0; }
+  .pillar:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .criteria { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .status { grid-template-columns: minmax(0, 1fr); }
+  .status > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); }
+  .pillars { grid-template-columns: minmax(0, 1fr); }
+  .pillar + .pillar { border-left: 0; border-top: 1px solid var(--rule); }
+  .phases { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .criteria { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">OpenTSx · Kampagnen-Briefing · Stand 12.10.2026</div>
+    <h1>Erst rechnen, dann schalten<span class="stop">.</span></h1>
+    <p class="lead">OpenTSx macht das Zusammenspiel gekoppelter Energiesysteme sichtbar und Entscheidungen prüfbar, bevor sie getroffen werden: offen, nachvollziehbar und mit der Herkunft jeder Zahl.</p>
+    <div class="meta">
+      <span>Zeitraum <b class="num">19.10.2026 – 17.01.2027</b></span>
+      <span>Englisch <b>Decide before you switch.</b></span>
+      <span>Kategorie <b>Entscheidungszwilling</b> · Technik <b>Digital Twins on Logs</b></span>
+    </div>
+    <div class="status" aria-label="Ehrlichkeitskasten: heute, in Arbeit, geplant">
+      <div class="today">
+        <h3>Heute</h3>
+        <ul>
+          <li>Drei Zwillinge (H2-Kette, Haus, Boot) mit denselben Bausteinen, auf synthetischen und simulierten Daten</li>
+          <li>Herkunft je Wert und bitgleiches Replay</li>
+          <li>Lose Kopplung gemessen, auf simulierter Wandzeit</li>
+        </ul>
+      </div>
+      <div class="work">
+        <h3>In Arbeit</h3>
+        <ul>
+          <li>Markt- und Wetterhistorie ab 2019, Zwillinge auf echten Jahren</li>
+          <li>Erster Probelauf auf echtem k3s mit KafScale</li>
+          <li>Datenzugang im Projektumfeld (Zähler, Elektrolyseur, Vermarkter)</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <h3>Geplant</h3>
+        <ul>
+          <li>Pilot mit echten Betriebsdaten</li>
+          <li>Live-Bindung über KafScale-Topics, IEC 104 und OPC UA</li>
+          <li>Produktives Studio; Sicherheitskonzept für den Rückweg</li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <section aria-labelledby="s-frage">
+    <div class="section-head">
+      <div class="eyebrow">Marktrecherche</div>
+      <h2 id="s-frage">Koppeln andere Anbieter Live-Daten und Simulation?</h2>
+    </div>
+    <div class="answer">
+      <p class="verdict">Ja, verbreitet und oft reifer als bei OpenTSx. <em>Die Kombination, die OpenTSx verfolgt, steht in keiner der geprüften Quellen.</em></p>
+      <p>Netzwerkzeuge schätzen den Zustand online am Leitsystem, Prozesszwillinge laufen auf Live-Daten, und Siemens hat am 08.10.2026 einen physikbasierten Zwilling mit Echtzeitoptimierung für eine 100-MW-Elektrolyse angekündigt. ETAP kommt den drei Betriebsarten von OpenTSx am nächsten, beschränkt sich aber auf elektrische Netze. Deshalb werben wir nicht mit „Wir koppeln Live-Daten und Simulation“, sondern mit der Kombination.</p>
+    </div>
+    <div class="scroll" role="region" aria-label="Vergleichsmatrix, horizontal scrollbar" tabindex="0">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th scope="col">Anbieter / Projekt</th>
+            <th scope="col" class="c"><abbr title="Simulation laufend von Live-Messungen getrieben">a</abbr></th>
+            <th scope="col" class="c"><abbr title="What-if vom aktuellen Zustand aus">b</abbr></th>
+            <th scope="col" class="c"><abbr title="Prognose oder MPC aus demselben Zustand">c</abbr></th>
+            <th scope="col" class="c"><abbr title="Herkunft je Wert für Nutzer sichtbar">d</abbr></th>
+            <th scope="col" class="c"><abbr title="Lauf reproduzierbar wiederholbar">e</abbr></th>
+            <th scope="col" class="c"><abbr title="Offen und herstellerneutral">f</abbr></th>
+            <th scope="col" class="c"><abbr title="Vom Haus bis zum Verbund">g</abbr></th>
+            <th scope="col" class="c"><abbr title="Über Eigentümergrenzen (föderiert)">h</abbr></th>
+            <th scope="col">Lizenz</th>
+          </tr>
+        </thead>
+        <tbody id="matrix-body"></tbody>
+      </table>
+    </div>
+    <div class="legend" aria-label="Legende">
+      <span><b class="m-full">●</b>belegt (meist Herstellerangabe)</span>
+      <span><b class="m-part">◐</b>teilweise</span>
+      <span><b class="m-none">○</b>in den geprüften Quellen nicht gefunden</span>
+      <span><b class="m-unk">?</b>nicht verifiziert</span>
+    </div>
+    <dl class="criteria">
+      <div><dt>a</dt><dd>Simulation laufend von Live-Messungen getrieben oder korrigiert</dd></div>
+      <div><dt>b</dt><dd>What-if-Varianten vom aktuellen Zustand aus</dd></div>
+      <div><dt>c</dt><dd>Prognose oder modellprädiktive Optimierung aus demselben Zustand</dd></div>
+      <div><dt>d</dt><dd>Herkunft je Wert (gemessen, geschätzt, simuliert) sichtbar</dd></div>
+      <div><dt>e</dt><dd>Lauf reproduzierbar wiederholbar (Replay)</dd></div>
+      <div><dt>f</dt><dd>Offen und herstellerneutral</dd></div>
+      <div><dt>g</dt><dd>Dasselbe Konzept vom Haus oder Boot bis zum Verbund</dd></div>
+      <div><dt>h</dt><dd>Ausführung über Eigentümergrenzen hinweg</dd></div>
+    </dl>
+    <p class="note">Auszug aus 34 bewerteten Angeboten. Grundlage sind die Veröffentlichungen der Anbieter, abgerufen am 12.10.2026, ohne Tests oder Demos. Spalte d ist bei allen kommerziellen Angeboten offen, weil sich die Quellen dazu nicht äußern; bevor wir damit werben, fragen wir ETAP, AVEVA und Cognite in Demos gezielt danach.</p>
+  </section>
+
+  <section aria-labelledby="s-unterschied">
+    <div class="section-head">
+      <div class="eyebrow">Positionierung</div>
+      <h2 id="s-unterschied">Worin sich OpenTSx unterscheidet</h2>
+    </div>
+    <div class="split">
+      <ol class="combo">
+        <li><div><b>Ein Bausteinsatz, drei Betriebsarten.</b><span>Dieselben Atome laufen als Schatten, als What-if und als Prognose; die Fahrweise (Fahrplan, Mensch, Optimierer) ist austauschbar.</span></div></li>
+        <li><div><b>Herkunft je Wert bis in jede Kennzahl.</b><span>Fünf Klassen von gemessen bis synthetisch, weitergereicht durch die ganze Modellkette.</span></div></li>
+        <li><div><b>Bitgleiches Replay auf einem offenen Log.</b><span>Die Lauf-Id ergibt sich aus Schaltplan, Eingängen, Eingriffen und Code-Version. Streitfälle und Audits lassen sich nachrechnen.</span></div></li>
+        <li><div><b>Föderierbar, mit gemessener Entwurfsregel.</b><span>Rückkopplungsschleifen gehören in einen Prozessor, dazwischen genügt lose Kopplung; das Ergebnis bleibt bitgleich.</span></div></li>
+        <li><div><b>Bewertungsprinzip als Produktregel.</b><span>Koordinationspotenzial = koordinierte Alternative minus Referenzbetrieb, mit derselben Information. Modelliert ist nicht nachgewiesen.</span></div></li>
+        <li><div><b>Offen und klein anfangen.</b><span>Apache 2.0, Kafka-Protokoll, Iceberg, OpenMetadata. Stufe A braucht keine Simulation.</span></div></li>
+      </ol>
+      <div class="aside">
+        <h3>Kein Alleinstellungsmerkmal</h3>
+        <ul>
+          <li>Live-Daten und Simulation koppeln</li>
+          <li>What-if-Szenarien und Prognosen</li>
+          <li>Zustandsschätzung und Kalibrierung</li>
+          <li>„Offen“ allein</li>
+        </ul>
+        <h3>Wo Anbieter stärker sind</h3>
+        <ul>
+          <li>Reife und installierte Basis</li>
+          <li>Physiktiefe der Modelle</li>
+          <li>Sicherheitsnachweise und Leitsystem-Integration</li>
+          <li>Support, Ökosystem, Oberfläche</li>
+        </ul>
+        <p class="note">Folgerung: ergänzen statt ersetzen. Netzzwillinge, APM-Systeme und Elektrolyseur-Suiten liefern Eingänge an den Verbundzwilling.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-kunden">
+    <div class="section-head">
+      <div class="eyebrow">Zielgruppen</div>
+      <h2 id="s-kunden">Für wen, mit welchem Nutzen</h2>
+    </div>
+    <div class="segments">
+      <article class="segment">
+        <div class="rank">Priorität 1</div>
+        <h3>Verbund aus Wind, Elektrolyse, Speicher und Vermarktung</h3>
+        <p>Das Koordinationspotenzial wird beziffert. Kausalketten wie Schieber zu, Druck steigt, Abregelung, Fahrplanabweichung werden vor dem Eingriff sichtbar, und das Replay gibt allen Parteien dieselben Fakten.</p>
+        <p class="pitch">„Wir beginnen mit einem Potenzialbericht ohne Simulation, der an einer klaren Wertschranke endet.“</p>
+      </article>
+      <article class="segment">
+        <div class="rank">Priorität 2</div>
+        <h3>Stadtwerke, über sie Energiegemeinschaften</h3>
+        <p>Ein offener Verbundzwilling über Sparten und Verträge im eigenen Haus, ergänzend zur Netzplattform. Anlässe: § 14a EnWG, Energy Sharing seit Juni 2026, Wärmeplanung, dünne Messlage.</p>
+        <p class="pitch">„Ihre Netzplattform bleibt, ihre Ergebnisse werden zu Eingängen. Die Daten bleiben bei Ihnen.“</p>
+      </article>
+      <article class="segment">
+        <div class="rank">Priorität 3</div>
+        <h3>Forschung, Labore und Ingenieurbüros</h3>
+        <p>Reproduzierbare Studien, Prüfstandsdaten mit Herkunft und eine offene Referenz für die Frage „eng oder lose gekoppelt“. Kurzer Zugang, Paper und Förderprojekte schaffen Glaubwürdigkeit vor dem ersten Produktivkunden.</p>
+        <p class="pitch">„Wir suchen Partner, die unsere Messung mit echten Prüfständen überprüfen.“</p>
+      </article>
+    </div>
+    <div class="hooks"><span class="tag">Erzählanker</span><span>Das Einfamilienhaus mit Öl-Holz-Heizung und das Segelboot mit Starlink erklären die Methode in einer Minute. Sie tragen die Kommunikation, nicht den Umsatz.</span></div>
+  </section>
+
+  <section aria-labelledby="s-botschaft">
+    <div class="section-head">
+      <div class="eyebrow">Botschaftshaus</div>
+      <h2 id="s-botschaft">Vier Säulen, ein Dach</h2>
+    </div>
+    <div class="house">
+      <div class="roof">
+        <div class="eyebrow">Kernbotschaft</div>
+        <p>Das Zusammenspiel sichtbar machen und Entscheidungen prüfen, bevor sie getroffen werden.</p>
+      </div>
+      <div class="pillars">
+        <div class="pillar">
+          <h3>Durchrechnen statt Bauchgefühl</h3>
+          <p>Dieselben Bausteine rechnen Gegenwart, Alternative und Zukunft.</p>
+          <p class="proof">Beleg: H2-Kette mit What-if und Prognose, neun Hebel am Haus, Hebel am Boot.</p>
+        </div>
+        <div class="pillar">
+          <h3>Vertrauen durch Herkunft</h3>
+          <p>Jede Zahl sagt, woher sie kommt. Modelliert ist nicht nachgewiesen.</p>
+          <p class="proof">Beleg: Herkunftsleiter mit Weitergabe; die Kalibrierung meldet Unbestimmbares offen.</p>
+        </div>
+        <div class="pillar">
+          <h3>Nachvollziehbar bis aufs Bit</h3>
+          <p>Derselbe Lauf, dasselbe Ergebnis, derselbe Hash.</p>
+          <p class="proof">Beleg: verketteter Zustands-Hash; Episoden-Replay gegen KafScale und Apache Kafka getestet; <span class="num">2,18</span> Byte je Wert.</p>
+        </div>
+        <div class="pillar">
+          <h3>Offen und föderiert</h3>
+          <p>Jede Partei betreibt ihren Teil, geteilt werden nur Ports. Lokale Sicherheit hat Vorrang.</p>
+          <p class="proof">Beleg: Apache 2.0; lose Kopplung bitgleich zur engen, auf simulierter Wandzeit.</p>
+        </div>
+      </div>
+      <div class="foundation"><span>Ehrlichkeit vor Effekt</span><span>Sicherheit bleibt lokal</span><span>Datenhoheit beim Eigentümer</span><span>Offene Formate</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-claims">
+    <div class="section-head">
+      <div class="eyebrow">Claims-Leitfaden</div>
+      <h2 id="s-claims">So sagen wir es</h2>
+      <p>Jede öffentliche Zahl braucht eine Herkunft und, wo sie modelliert ist, genau dieses Wort.</p>
+    </div>
+    <div class="scroll" role="region" aria-label="Claims-Leitfaden, horizontal scrollbar" tabindex="0">
+      <table class="claims">
+        <thead><tr><th scope="col">Thema</th><th scope="col">So sagen wir es</th><th scope="col">So nicht</th></tr></thead>
+        <tbody>
+          <tr><td>Reifegrad</td><td>Proof of Concept auf synthetischen und simulierten Daten; ein Pilot ist in Vorbereitung</td><td>produktionsreif, im Einsatz bei …</td></tr>
+          <tr><td>Einsparungen</td><td>modelliertes Potenzial: −151 l Heizöl im Jahr bei −1 K (Beispielhaus, erfundene Annahmen)</td><td>spart 15 %, garantierte Einsparung</td></tr>
+          <tr><td>Replay</td><td>bitgleich wiederholbar bei gleichem Schaltplan, gleichen Eingängen, gleichem Eingriffslog und gleicher Code-Version</td><td>manipulationssicher, revisionssicher</td></tr>
+          <tr><td>Steuerung</td><td>schlägt Fahrweisen vor; der Rückweg erfolgt nur nach Freigabe; lokale Schutzlogik hat Vorrang</td><td>steuert Ihre Anlage automatisch</td></tr>
+          <tr><td>Leistung</td><td>bis Faktor 6 mehr Durchsatz gegenüber BSP ohne Kolokation, gemessen in simulierten Ticks</td><td>6-mal schneller als Kafka Streams</td></tr>
+          <tr><td>Herkunft</td><td>Herkunft je Wert, Herkunftsklasse</td><td>Herkunftsnachweis (im Energierecht belegt)</td></tr>
+          <tr><td>Wettbewerb</td><td>Kategorien vergleichen, Quellen nennen, „in den geprüften Quellen nicht gefunden“</td><td>Kein Anbieter kann …</td></tr>
+          <tr><td>Partner</td><td>nur Rollen („ein Elektrolyseurbetreiber“), bis eine schriftliche Freigabe vorliegt</td><td>Namen von Gesprächspartnern</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-plan">
+    <div class="section-head">
+      <div class="eyebrow">Kampagnenarchitektur</div>
+      <h2 id="s-plan">90 Tage in drei Phasen</h2>
+    </div>
+    <div class="phases">
+      <div class="phase"><h3>0 · Glaubwürdigkeit</h3><div class="when">Woche 1–6 · 19.10.–29.11.2026</div><p>Ein Fremder lässt den H2-Fall in 30 Minuten laufen und versteht, was heute geht: Schnellstart, drei Demo-Videos, Landingpage, Ehrlichkeitsseite, Whitepaper.</p></div>
+      <div class="phase"><h3>1 · Leuchttürme</h3><div class="when">Woche 4–13, weiter bis Q2 2027</div><p>Pilot A Verbund (Potenzialbericht Stufe A), Pilot B Stadtwerk (Schattenbetrieb Quartier), Pilot C Labor; Preprint „Digital Twins on Logs“.</p></div>
+      <div class="phase"><h3>2 · Skalierung</h3><div class="when">ab Q1 2027</div><p>Fallstudie nur mit Freigabe, Partnerprogramm für Integratoren, betriebener Zwilling, Messen 2027.</p></div>
+    </div>
+    <div class="scroll" role="region" aria-label="Wochenplan, horizontal scrollbar" tabindex="0">
+      <table class="weeks">
+        <thead><tr><th scope="col">Woche</th><th scope="col">Schwerpunkt</th><th scope="col">Inhalt</th><th scope="col">Termine und Ansprache</th></tr></thead>
+        <tbody>
+          <tr><td>0 · 12.–18.10.</td><td>Vorbereitung</td><td>Schnellstart-Entwurf</td><td>Zielliste mit 30 Organisationen; Basiswerte messen</td></tr>
+          <tr class="event"><td>1 · 19.–25.10.</td><td>Start: H2-Kette</td><td>Post „Der Schieber geht zu.“</td><td>Hydrogen Technology World Expo, Hamburg, 20.–22.10.</td></tr>
+          <tr><td>2 · 26.10.–01.11.</td><td>Verbund</td><td>Video 1: H2-Kette</td><td>Pilot A: Termin zum Umfang der Stufe A</td></tr>
+          <tr><td>3 · 02.–08.11.</td><td>Herkunft</td><td>„Jede Zahl mit Herkunft“</td><td>5 Stadtwerke anschreiben</td></tr>
+          <tr class="event"><td>4 · 09.–15.11.</td><td>Netze, Stadtwerke</td><td>„Warum ein Zwilling auf einem Log?“; Landingpage online</td><td>Enlit Europe, Wien, 10.–12.11.</td></tr>
+          <tr><td>5 · 16.–22.11.</td><td>Haus</td><td>Post „−151 Liter Heizöl. Modelliert.“; Video 2</td><td>Feedbackrunde mit Energieberatern</td></tr>
+          <tr><td>6 · 23.–29.11.</td><td>Forschung</td><td>Post „Rückkopplungsschleifen gehören in einen Prozessor.“</td><td>6 Lehrstühle anschreiben; Preprint-Entwurf</td></tr>
+          <tr><td>7 · 30.11.–06.12.</td><td>Verbund vertiefen</td><td>Webinar „Der Verbund-Zwilling in 30 Minuten“</td><td>Angebot Stufe A an Pilot A</td></tr>
+          <tr><td>8 · 07.–13.12.</td><td>Boot</td><td>Video 3: Starlink und Autonomie</td><td>Workshop bei einem Stadtwerk</td></tr>
+          <tr><td>9 · 14.–20.12.</td><td>Jahresrückblick</td><td>„Was 2026 geht, und was noch nicht“</td><td>Preprint auf arXiv (nach Freigabe)</td></tr>
+          <tr class="quiet"><td>10–11 · 21.12.–03.01.</td><td>ruhig</td><td>ein kurzer Beitrag</td><td>Planung Q1</td></tr>
+          <tr><td>12 · 04.–10.01.</td><td>Methode</td><td>„Die eine Zahl, die getrennter Betrieb kostet“</td><td>E-world-Termine anfragen</td></tr>
+          <tr><td>13 · 11.–17.01.</td><td>Bilanz</td><td>Ergebnisse der 90 Tage</td><td>Review der Ziele; Entscheidung Phase 2</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-ziele">
+    <div class="section-head">
+      <div class="eyebrow">Ziele nach 90 Tagen</div>
+      <h2 id="s-ziele">Woran wir den Erfolg messen</h2>
+      <p class="note">Zielannahmen, nach vier Wochen gegen die gemessenen Basiswerte zu prüfen.</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span class="v num">12</span><span class="l">qualifizierte Erstgespräche</span></div>
+      <div class="kpi"><span class="v num">3</span><span class="l">Pilotangebote Stufe A</span></div>
+      <div class="kpi"><span class="v num">1</span><span class="l">unterschriebener Pilot</span></div>
+      <div class="kpi"><span class="v num">2</span><span class="l">Labore mit Absichtserklärung</span></div>
+      <div class="kpi"><span class="v num">1</span><span class="l">Preprint eingereicht</span></div>
+    </div>
+    <p class="note">Ein Gespräch gilt als qualifiziert, wenn mindestens drei von vier Punkten zutreffen: Verantwortung für mindestens zwei Anlagen oder Parteien, Datenzugang innerhalb von vier Wochen, benannte Entscheiderin oder benannter Entscheider, erkennbares Budget oder Förderweg.</p>
+  </section>
+
+  <section aria-labelledby="s-messen">
+    <div class="section-head">
+      <div class="eyebrow">Veranstaltungen, geprüft am 12.10.2026</div>
+      <h2 id="s-messen">Messen</h2>
+    </div>
+    <div class="scroll" role="region" aria-label="Messen, horizontal scrollbar" tabindex="0">
+      <table class="fairs">
+        <thead><tr><th scope="col">Termin</th><th scope="col">Veranstaltung</th><th scope="col">Ort</th><th scope="col">Zweck</th></tr></thead>
+        <tbody>
+          <tr><td>20.–22.10.2026</td><td>Hydrogen Technology World Expo</td><td>Hamburg</td><td>H2-Projekte, Elektrolyseure; besuchen</td></tr>
+          <tr><td>10.–12.11.2026</td><td>Enlit Europe</td><td>Wien</td><td>Netze, Stadtwerke; besuchen</td></tr>
+          <tr><td>23.–31.01.2027</td><td>boot Düsseldorf</td><td>Düsseldorf</td><td>Boot-Geschichte; optional</td></tr>
+          <tr><td>16.–18.02.2027</td><td>E-world energy &amp; water</td><td>Essen</td><td>Stadtwerke, Vermarkter; Vortrag prüfen</td></tr>
+          <tr><td>05.–08.04.2027</td><td>Hannover Messe</td><td>Hannover</td><td>Industrie, Zwillinge; besuchen</td></tr>
+          <tr><td>08.–10.06.2027</td><td>The smarter E Europe</td><td>München</td><td>Speicher, Energiemanagement; besuchen</td></tr>
+          <tr><td>14.–17.09.2027</td><td>HUSUM Wind</td><td>Husum</td><td>Windbetreiber, H2; Auftritt mit Pilotergebnis prüfen</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-post">
+    <div class="section-head">
+      <div class="eyebrow">Beispielbeitrag für Woche 1</div>
+      <h2 id="s-post">Der erste Post</h2>
+    </div>
+    <article class="post" id="post1">
+      <div class="post-head">
+        <h3>Der Schieber geht zu.</h3>
+        <button type="button" class="copy" id="copy-post" aria-describedby="copy-status">Text kopieren</button>
+      </div>
+      <div id="post-text">
+        <p>01:00 Uhr. Der Wasserstoff-Abnehmer schließt seinen Schieber. Eigentlich nichts Dramatisches.</p>
+        <p>Aber die Leitung füllt sich weiter, der Druck steigt. Der Zwilling meldet: weniger als eine Stunde Puffer. Bei 40 bar regelt der Elektrolyseur zum Selbstschutz ab. Sein Fahrplan ist verletzt, und der Direktvermarkter muss plötzlich rund 5 MW mehr Strom unterbringen.</p>
+        <p>Vier Parteien, vier Systeme, eine Kette. Niemand hat etwas falsch gemacht, und trotzdem kostet es.</p>
+        <p>Mit OpenTSx rechnen wir diese Kette durch, bevor sie passiert:<br>
+        → What-if: Der Schieber geht um 02:00 wieder auf, die Abschaltung entfällt.<br>
+        → Prognose ab 01:10 mit einer druckbewussten Fahrweise: keine Abschaltung, kein Überdruck, dafür eine frühere Abweichung vom Fahrplan.<br>
+        → Jede Zahl zeigt, ob sie gemessen, gemeldet, prognostiziert, geschätzt oder synthetisch ist.</p>
+        <p>Ehrlich gesagt: Das läuft heute auf synthetischen Daten. Der Code ist offen (Apache 2.0), der Fall lässt sich mit einem Befehl nachrechnen.</p>
+        <p>Sie betreiben einen Verbund aus Wind, Elektrolyse, Speicher oder Direktbelieferung und wollen wissen, was getrennter Betrieb kostet? Wir beginnen mit einem Potenzialbericht aus Ihren vorhandenen Daten, ganz ohne Simulation.</p>
+        <p class="tags">#Wasserstoff #Windenergie #DigitalerZwilling #Energiewende #OpenSource</p>
+      </div>
+      <div class="copy-status" id="copy-status" role="status" aria-live="polite"></div>
+    </article>
+  </section>
+
+  <section aria-labelledby="s-entscheidungen">
+    <div class="section-head">
+      <div class="eyebrow">Offen</div>
+      <h2 id="s-entscheidungen">Entscheidungen vor dem Start</h2>
+    </div>
+    <ol class="decisions">
+      <li>Kategoriename „Entscheidungszwilling“ und „Digital Twins on Logs“ bestätigen; vorher Marken- und Namensrecherche.</li>
+      <li>Budgetstufe für die 90 Tage: „niedrig“ (Eigenleistung plus kleiner vierstelliger Betrag) oder „mittel“ (plus Video, Design, Anzeigen, Messeauftritt). Empfehlung: niedrig starten, mittel erst freigeben, wenn Pilot A in Sicht ist.</li>
+      <li>Ansprache der Pilotpartner (Verbund, Stadtwerk, Labor) und Umfang des Stufe-A-Angebots.</li>
+      <li>Freigabe von Whitepaper, Preprint und den drei Beispielbeiträgen.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Grundlage: Marktrecherche, Kunden und Nutzen, Marketing-Kampagne im OpenTSx-Repository (<a href="https://github.com/kamir/OpenTSx/tree/master/docs/business">docs/business</a>), Webquellen abgerufen am 12.10.2026. Bewertungen der Anbieter beruhen auf deren eigenen Veröffentlichungen. Zahlungsbereitschaft, Ziele und Budgets sind Annahmen. Keine Rechtsberatung.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // criteria a–h per offering: F belegt, P teilweise, N nicht gefunden, U nicht verifiziert
+  var rows = [
+    ["ETAP Digital Twin / Real-Time", "elektrische Netze, Industrie", "FFFUPNPN", "kommerziell"],
+    ["DIgSILENT PowerFactory", "Netzbetreiber, Planer", "FPPUUNNN", "kommerziell"],
+    ["AVEVA Process Simulation + PI System", "Prozessindustrie", "FFPUUNNN", "kommerziell"],
+    ["Cognite Data Fusion, Simulator Integration", "Öl und Gas, Prozess", "FPUUPPNN", "SaaS"],
+    ["Siemens Hydrogen Performance Suite", "Elektrolyseanlagen", "FUFUUNNP", "kommerziell"],
+    ["GE Vernova SmartSignal / APM / GridOS", "Erzeuger, Netzbetreiber", "FFPUUNNN", "kommerziell"],
+    ["Ansys Twin Builder (Synopsys)", "Maschinen, Komponenten", "FPPUUPPN", "kommerziell"],
+    ["Azure Digital Twins", "Gebäude, IoT", "PNNUUPPN", "Verbrauch"],
+    ["mosaik 3", "Smart-Grid-Forschung", "PPPNPFPP", "LGPL-2.1"],
+    ["HELICS", "Netz-Kosimulation", "PPPNPFPP", "BSD-3-Clause"],
+    ["OpenEMS", "Speicher, Gebäude, Gewerbe", "PUPUUFPP", "EPL-2.0 / AGPL-3.0"],
+    ["OpenTSx", "Proof of Concept, noch kein Produktivkunde", "PFPFFFPP", "Apache 2.0", true]
+  ];
+  var sym = { F: ["●", "m-full", "belegt"], P: ["◐", "m-part", "teilweise"], N: ["○", "m-none", "nicht gefunden"], U: ["?", "m-unk", "nicht verifiziert"] };
+  var body = document.getElementById("matrix-body");
+  rows.forEach(function (r) {
+    var tr = document.createElement("tr");
+    if (r[4]) tr.className = "self";
+    var name = document.createElement("td");
+    name.className = "vendor";
+    name.textContent = r[0];
+    var small = document.createElement("small");
+    small.textContent = r[1];
+    name.appendChild(small);
+    tr.appendChild(name);
+    r[2].split("").forEach(function (code, i) {
+      var td = document.createElement("td");
+      var s = sym[code];
+      td.className = "c " + s[1];
+      td.textContent = s[0];
+      td.setAttribute("aria-label", "abcdefgh".charAt(i) + ": " + s[2]);
+      td.title = s[2];
+      tr.appendChild(td);
+    });
+    var lic = document.createElement("td");
+    lic.textContent = r[3];
+    tr.appendChild(lic);
+    body.appendChild(tr);
+  });
+
+  var btn = document.getElementById("copy-post");
+  var status = document.getElementById("copy-status");
+  btn.addEventListener("click", function () {
+    var el = document.getElementById("post-text");
+    var title = "Der Schieber geht zu.";
+    var text = title + "\n\n" + Array.prototype.map.call(el.querySelectorAll("p"), function (p) {
+      return p.innerText.trim();
+    }).join("\n\n");
+    function selectFallback() {
+      var range = document.createRange();
+      range.selectNodeContents(el);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      status.textContent = "Text markiert. Mit Strg+C oder ⌘C kopieren.";
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        status.textContent = "Kopiert.";
+      }, selectFallback);
+    } catch (e) {
+      selectFallback();
+    }
+  });
+})();
+</script>
+</body>
+</html>

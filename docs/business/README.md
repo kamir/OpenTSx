@@ -38,6 +38,7 @@
 | [01-MARKTRECHERCHE-DIGITAL-TWINS](01-MARKTRECHERCHE-DIGITAL-TWINS.md) | Prüfkriterien a–h, OpenTSx-Stand, Anbieterprofile, Vergleichsmatrix, Forschung und Standards, ehrliche Einordnung, nicht Verifiziertes, Quellen |
 | [02-KUNDEN-UND-NUTZEN](02-KUNDEN-UND-NUTZEN.md) | Nutzenbausteine, belegte Marktzahlen und Regeln, elf Segmente mit Personas, Einwänden, Zahlungsbereitschaft und Einkaufsentscheidern, Priorisierung, Geschäftsmodelle |
 | [03-MARKETING-KAMPAGNE](03-MARKETING-KAMPAGNE.md) | Kampagne auf einer Seite, Positionierung, Kategoriename, Taglines, Botschaftshaus, Pitches, Claims-Leitfaden, Phasen, 90-Tage-Plan, Assets, Kanäle mit geprüften Messeterminen, Funnel und KPIs, Budget, Partner, Risiken, drei LinkedIn-Beiträge, Landingpage |
+| [kampagnen-briefing.html](kampagnen-briefing.html) | Kampagnen-Briefing als Seite (Stand 12.10.2026): Ehrlichkeitsleiste, Anbietermatrix, Unterschiede, Zielgruppen, Botschaftshaus, Claims, 90-Tage-Plan, Messen, erster Beitrag, offene Entscheidungen; im Browser öffnen |
 
 ## 4. Methode
 
