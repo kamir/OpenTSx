@@ -85,8 +85,10 @@ jobs:
           done
       - name: Validate the rendered manifests (kubeconform, Kubernetes 1.31 schemas)
         run: |
-          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar xz -C "$RUNNER_TEMP" kubeconform
+          # retried: a single 5xx from the release download must not fail the check
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 5 -o "$RUNNER_TEMP/kubeconform.tar.gz" \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar xzf "$RUNNER_TEMP/kubeconform.tar.gz" -C "$RUNNER_TEMP" kubeconform
           "$RUNNER_TEMP/kubeconform" -strict -summary -kubernetes-version 1.31.0 "$RUNNER_TEMP"/rendered/*.yaml
       - name: Probe plan (60-probe.sh --dry-run, with and without --local-kafscale)
         run: |
