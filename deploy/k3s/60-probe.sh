@@ -86,6 +86,17 @@ detect_host_ip() {   # source address of the default route = the address other m
     ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit }}')"
   fi
   if [[ -z "$ip" ]] && have hostname; then ip="$(hostname -I 2>/dev/null | awk '{print $1}')"; fi
+  # macOS/BSD have neither iproute2 nor "hostname -I": take the interface of the default route, then its IPv4 address
+  if [[ -z "$ip" ]] && have route; then
+    local dev
+    dev="$(route -n get 1.1.1.1 2>/dev/null | awk '/interface:/ { print $2; exit }')"
+    if [[ -n "$dev" ]]; then
+      have ipconfig && ip="$(ipconfig getifaddr "$dev" 2>/dev/null)"
+      if [[ -z "$ip" ]] && have ifconfig; then
+        ip="$(ifconfig "$dev" 2>/dev/null | awk '/inet /{ print $2; exit }')"
+      fi
+    fi
+  fi
   echo "$ip"
 }
 
