@@ -246,6 +246,17 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Vergleich mehrerer Anlagen über generische Kenngrößen ohne Rohdatenexport (Wayang-Föderation, mergebare Sketches); vertikale Erweiterung (CMS-Daten, PV).
 - [ ] Edge-Sammler (Modbus/104/DWD) optional als Go/Rust-Binaries; kein Kern-Neubau vor Schranke B (D23).
 
+**P9.7 – Übertragung auf Hauseigentümer (Haus-Zwilling)** – Konzept: [`08-HAUS-ZWILLING.md`](../docs/datamodel-2026/08-HAUS-ZWILLING.md)
+- [x] Methode übertragen: gleicher Atomvertrag, drei Betriebsarten, Herkunftsleiter (Abrechnung = REPORTED), Stufen A–D mit Schranken, Bewertung Alternative − Referenz, modelliert ≠ nachgewiesen; Abbildung Haus ↔ Terawatt-Fall.
+- [x] Beispielhaus Erzgebirge (erfundene Annahmen): Räume, Hülle, 2 Bewohner mit Tagesablauf, Inventar (3 TV, Kühlschrank, Gefriertruhe, Herd, Radio, Licht …), Ölkessel + Kaminofen, keine PV/Wärmepumpe.
+- [x] Atome `weather`, `building` (1R1C, Thermostat), `oil-boiler`, `wood-stove`, `dhw`, `appliances`, `meter`, `oil-tank`, `wood-store`; Schaltplan `twin/haus-erzgebirge.yaml` (PT1H, ein Jahr).
+- [x] Kennzahlen (`HouseKpis`): Strom, Öl, Holz, Endenergie, kWh/m²a, witterungsbereinigt (G20/15), Kesselverluste, Standby, Grundlast, Spitze, Kosten, CO2.
+- [x] Kalibrierung an Abrechnungen (`BillCalibration`): CSV-Vorlage, Tankstände, Holz nach Heizgradtagen, DWD-Tagesmittel, LM/Broyden, Residuen, CV(RMSE)/NMBE, Identifizierbarkeit; echte Daten nur in `config/private/`.
+- [x] Demo `bin/opentsx house [--calibrate …]` mit neun Hebeln als What-if; Tests für Bilanzen, Determinismus, −1 K, leeren Tank, Identifizierbarkeit.
+- [ ] Mit echten Abrechnungen kalibrieren (Jahre, Tankstände, Holzmengen, Wohnfläche/Baujahr vom Hauseigentümer) → **Schranke B (Haus)**.
+- [ ] Nachweis einer Maßnahme: gemessene Zeiträume vor/nach, witterungsbereinigt, gegen Kalibrierunsicherheit.
+- [ ] Varianten: Pufferspeicher/wasserführender Ofen, Mehrzonenmodell, Prognose „Reicht das Öl?“, Optimierer als Policy (Bestellzeitpunkt, Holz/Öl-Aufteilung), DWD-Abruf statt CSV.
+
 ## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
 ```
@@ -361,6 +372,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 ## Progress Log
 
 - 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
+- 2026-10-12: **P9.7 Haus-Zwilling**: Methode auf Hauseigentümer übertragen (`08-HAUS-ZWILLING.md`), 9 Haus-Atome, Schaltplan `haus-erzgebirge.yaml`, Kennzahlen, Kalibrierung an Abrechnungen mit Identifizierbarkeitsbericht, Demo `bin/opentsx house`; alle Hauszahlen sind Beispielannahmen.
 
 - 2026-10-12: **P9-PoC** `opentsx-twin`: Atomvertrag MVC+P, Schaltplan-YAML, geschichteter BSP-Runner (Variante T) mit Topic-Vertrag, Herkunftsleiter, 9 Bausteine (inkl. Betriebsvorgaben), Schatten/Was-wäre-wenn/Prognose; S1 H2-Kette getestet, Demo `bin/opentsx twin`.
 

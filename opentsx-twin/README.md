@@ -74,6 +74,42 @@ Each superstep runs these phases in order:
 
 The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml).
 
+## House twin (P9.7)
+
+The same method applied to a homeowner: a single-family house in the Erzgebirge (two residents, oil boiler, wood
+stove, no PV, no heat pump). Concept (German): [`08-HAUS-ZWILLING.md`](../docs/datamodel-2026/08-HAUS-ZWILLING.md).
+**All house numbers are invented example assumptions** until the plan is calibrated against real bills.
+
+```bash
+bin/opentsx house                                          # reference year (shadow) + every lever as what-if
+bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
+```
+
+| Type | Atom | Phase | Main behaviour |
+|------|------|-------|----------------|
+| `weather` | weather (A4) | SOURCES | bound station data or a deterministic synthetic climate; heating degree days G20/15 |
+| `dhw` | hot water | SOURCES | daily draw profile plus storage loss; control `t_store_c` |
+| `appliances` | household electricity | SOURCES | inventory (power, standby, weekday/weekend hours), internal gains; controls `standby_off`, `factor.<item>` |
+| `wood-stove` | wood stove | ASSETS | evening batches in the heating season, or the wood from the bills |
+| `oil-boiler` | oil boiler | ASSETS | hot-water priority, rated power, minimum load and cycling, standby loss, pump; stops when the tank is empty |
+| `meter` | electricity meter (A5/A6) | BALANCE | import, cost, base load, peak; residual against a meter reading |
+| `building` | building, one zone (1R1C) | FLOWS | closed heat balance, thermostat with day/night set-point and heating limit |
+| `oil-tank` | oil tank | FLOWS | litres, deliveries as interventions, reorder warning |
+| `wood-store` | firewood store | FLOWS | Ster, deliveries as interventions |
+
+* Plan: [`twin/haus-erzgebirge.yaml`](src/main/resources/twin/haus-erzgebirge.yaml), one year at `PT1H`
+  (8760 supersteps, about 0.5 s per run).
+* `house.HouseScenario`: reference interventions (deliveries) and the levers.
+* `house.HouseKpis`: kWh, litres, Ster, kWh/m²a, weather-normalized final energy, boiler losses, standby, base
+  load, cost, CO2.
+* `house.BillCalibration`: reads bills
+  ([`twin/abrechnungen-vorlage.csv`](src/main/resources/twin/abrechnungen-vorlage.csv), fake rows only) and fits
+  H, the hot-water scale and the appliance scale by deterministic least squares (Levenberg–Marquardt with Broyden
+  updates). It reports residuals per period, CV(RMSE)/NMBE, the condition number and the parameter correlation.
+* Real bills belong in `config/private/`, which is git-ignored.
+* `demo.HouseDemo` also exposes the scenario to generic views: `plan()`, `winterWeekPlan()` (168 steps),
+  `observed()`, `reference()`, `alternatives()` and `smartMetrics()`.
+
 ## Tests
 
 * **`TwinShadowTest`**
@@ -88,6 +124,16 @@ The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml
   * two what-ifs
   * a forecast from a snapshot that reproduces the shadow run exactly
   * the `pressure-aware` policy against schedule following
+* **`HouseTwinTest`**
+  * closed heat, oil, wood and electricity balances
+  * determinism, and an exact continuation from a snapshot
+  * −1 K lowers the heat demand
+  * an empty tank stops the boiler
+  * measured weather is used and labelled
+* **`BillCalibrationTest`**
+  * the CSV format, including German spreadsheet exports
+  * known parameters recovered from synthetic monthly bills
+  * annual totals flagged as not identifiable
 * **`TwinPlanTest`**
   * rejected wirings, bindings, policies and interventions
   * feedback delay
@@ -99,6 +145,6 @@ The example plan is [`twin/h2-chain.yaml`](src/main/resources/twin/h2-chain.yaml
 * Variant L (Smart Topics, watermarks, bounded staleness) and the conformance test L(0) = T.
 * Avro schemas per atom type.
 * Binding the message contract to KafScale.
-* Atoms for turbine, wake, weather and meter.
+* Atoms for turbine and wake (weather and meter exist for the house twin).
 * An optimizer as policy (P8.4).
 * Real plant data.
