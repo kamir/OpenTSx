@@ -1,0 +1,11 @@
+# The history archive (data/history layout). 2019..2026 of the default market series is about 20 MB gzip'ed;
+# MOSMIX raw adds ~4 x 19 kB per run (~30 MB per year for four stations at four runs per day).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opentsx-history
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi

@@ -56,6 +56,11 @@ public class Http implements Fetcher {
         return send(b, uri);
     }
 
+    @Override
+    public byte[] getBytes(String uri) {
+        return send(HttpRequest.newBuilder(URI.create(uri)).GET(), uri, HttpResponse.BodyHandlers.ofByteArray());
+    }
+
     /** POST of a form ({@code application/x-www-form-urlencoded}). */
     @Override
     public String postForm(String uri, String form, Map<String, String> headers) {
@@ -67,18 +72,22 @@ public class Http implements Fetcher {
     }
 
     private String send(HttpRequest.Builder b, String uri) {
+        return send(b, uri, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+
+    private <T> T send(HttpRequest.Builder b, String uri, HttpResponse.BodyHandler<T> handler) {
         HttpRequest req = b.header("User-Agent", USER_AGENT).timeout(Duration.ofSeconds(60)).build();
         long backoff = 2_000;
         for (int attempt = 0; ; attempt++) {
             pace();
             try {
-                HttpResponse<String> r = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                HttpResponse<T> r = client.send(req, handler);
                 int s = r.statusCode();
                 if (s / 100 == 2) {
                     return r.body();
                 }
                 if (s != 429 && s / 100 != 5 || attempt >= retries) {
-                    throw new StatusException(s, uri, r.body());
+                    throw new StatusException(s, uri, r.body() instanceof String t ? t : "");
                 }
                 backoff = Math.max(backoff, r.headers().firstValue("Retry-After").map(Http::seconds).orElse(0L) * 1000);
             } catch (IOException e) {

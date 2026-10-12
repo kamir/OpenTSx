@@ -40,6 +40,7 @@ import java.util.zip.GZIPOutputStream;
  * t_utc,dt_s,value
  * 2024-01-01T00:00:00Z,3600,39.91
  * </pre>
+ * The reader also accepts plain {@code <year>.csv} (hand-made slices, test fixtures).
  * Files are written to a temporary file and moved into place, so an interrupted backfill never leaves a
  * half-written year behind; gzip output has no timestamp, so the SHA-256 depends on the content only.
  */
@@ -70,6 +71,12 @@ public final class Archive {
         return Files.isRegularFile(file(def, year));
     }
 
+    /** The year file as written ({@code .csv.gz}) or, for hand-made slices and fixtures, plain {@code .csv}. */
+    Path readable(SeriesDef def, int year) {
+        Path gz = file(def, year);
+        return Files.isRegularFile(gz) ? gz : dir(def).resolve(year + ".csv");
+    }
+
     /** Writes the points of one UTC year; returns the SHA-256 of the file. */
     public String write(SeriesDef def, int year, List<Point> points) {
         Path f = file(def, year);
@@ -98,7 +105,7 @@ public final class Archive {
 
     /** Points of one year file, or an empty list if it does not exist. */
     public List<Point> read(SeriesDef def, int year) {
-        Path f = file(def, year);
+        Path f = readable(def, year);
         if (!Files.isRegularFile(f)) {
             return List.of();
         }

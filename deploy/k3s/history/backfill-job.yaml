@@ -1,0 +1,49 @@
+# One-off backfill of the market series 2019..today into the history PVC (resumable: complete years are skipped).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-history-backfill
+  labels:
+    opentsx.org/history: backfill
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 14400
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/history: backfill
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: backfill
+          image: opentsx/tools:3.0.0-local   # applied without kustomize, so the tag is set here
+          imagePullPolicy: IfNotPresent
+          args: ["market", "backfill", "--archive", "/data/history", "--series", "market", "--from-year", "2019"]
+          envFrom:
+            - secretRef:
+                name: opentsx-market
+                optional: true
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: history
+              mountPath: /data/history
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: history
+          persistentVolumeClaim:
+            claimName: opentsx-history
+        - name: tmp
+          emptyDir: {}

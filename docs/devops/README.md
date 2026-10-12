@@ -21,6 +21,7 @@
 | [Demos](demos.md) | how to run each example on k3s and what output to expect |
 | [Today vs. planned](today-vs-planned.md) | what is deployable now, and where the Go Smart Topic processor, DAG and MLflow (concept 11) will slot in |
 | [Troubleshooting](troubleshooting.md) | symptoms, causes, fixes |
+| [History archive](history-archive.md) | market and weather history: one-off backfill, daily forward archiving of day-ahead data and MOSMIX as k3s CronJobs (`deploy/k3s/history/`) |
 
 ## What gets deployed
 

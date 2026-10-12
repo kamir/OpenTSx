@@ -12,6 +12,8 @@
 #   house              house twin                                      (org.opentsx.twin.demo.HouseDemo)
 #   boat               boat twin (Etap 22)                             (org.opentsx.twin.demo.BoatDemo)
 #   studio-export      scenario data for the Smart Topics Studio       (org.opentsx.twin.studio.StudioExport <out.json>)
+#   market             market data, history archive, backfill          (org.opentsx.market.MarketCli)
+#   history-twin       twin|house|boat on the history archive          (org.opentsx.market.twin.HistoryTwins)
 #   kafscale-check     reachability, advertised brokers, topic counts  (org.opentsx.deploy.KafScaleCheck)
 #   classpath <module> print the classpath of a module
 #   help               this text
@@ -58,6 +60,8 @@ case "$cmd" in
   house)            run "opentsx-twin" org.opentsx.twin.demo.HouseDemo "$@" ;;
   boat)             run "opentsx-twin" org.opentsx.twin.demo.BoatDemo "$@" ;;
   studio-export)    run "opentsx-twin" org.opentsx.twin.studio.StudioExport "$@" ;;
+  market)           run "opentsx-market" org.opentsx.market.MarketCli "$@" ;;
+  history-twin)     run "opentsx-market" org.opentsx.market.twin.HistoryTwins "$@" ;;
   kafscale-check)   run "opentsx-deploy-tools" org.opentsx.deploy.KafScaleCheck "$@" ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;

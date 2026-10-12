@@ -1,0 +1,132 @@
+{
+  "format": "opentsx-history/1",
+  "source": "smard",
+  "series": "day_ahead_price",
+  "metric": "market.price.day_ahead",
+  "tags": {
+    "area": "DE-LU"
+  },
+  "unit": "EUR/MWh",
+  "origin": "REPORTED",
+  "licence": "CC BY 4.0; Quelle: Bundesnetzagentur | SMARD.de",
+  "timeConvention": "interval start in UTC, interval length dt_s in seconds; year files are UTC years",
+  "years": {
+    "2024": {
+      "file": "2024.csv.gz",
+      "rows": 8784,
+      "sha256": "b486cf4cf0cdc40f5c4f303fa2028d05117970d26ac31951912fc05520608cd7",
+      "bytes": 48023,
+      "first": "2024-01-01T00:00:00Z",
+      "last": "2024-12-31T23:00:00Z",
+      "retrievedAt": "2026-10-12T11:33:40.525577015Z",
+      "complete": true,
+      "queryCount": 53,
+      "queries": [
+        "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_hour_1704063600000.json",
+        "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_hour_1704668400000.json",
+        "...",
+        "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_hour_1735513200000.json"
+      ],
+      "quality": {
+        "rows": 8784,
+        "coveragePct": 100.0,
+        "missingMicros": 0,
+        "gapCount": 0,
+        "gaps": [],
+        "resolutions": {
+          "PT1H": 8784
+        },
+        "dstDays": [
+          {
+            "date": "2024-03-31",
+            "expectedHours": 23.0,
+            "coveredHours": 23.0
+          },
+          {
+            "date": "2024-10-27",
+            "expectedHours": 25.0,
+            "coveredHours": 25.0
+          }
+        ],
+        "incompleteDays": 0,
+        "implausible": 0,
+        "robustOutliers": 32,
+        "outlierExamples": [
+          "2024-09-03T17:00:00Z=656.37",
+          "2024-09-03T18:00:00Z=520.32",
+          "2024-11-05T16:00:00Z=505.31",
+          "2024-11-05T17:00:00Z=468.74",
+          "2024-11-06T15:00:00Z=524.25"
+        ],
+        "stats": {
+          "min": -135.45,
+          "max": 936.28,
+          "mean": 78.512,
+          "std": 52.726,
+          "p01": -19.986,
+          "p50": 79.442,
+          "p99": 224.76
+        }
+      }
+    },
+    "2025": {
+      "file": "2025.csv.gz",
+      "rows": 15390,
+      "sha256": "d1b8003fc5e62fa5a7ea7ad43d8ca5ea4a759761c4a5351b95e5af0334ead795",
+      "bytes": 81186,
+      "first": "2025-01-01T00:00:00Z",
+      "last": "2025-12-31T23:45:00Z",
+      "retrievedAt": "2026-10-12T11:33:40.525577015Z",
+      "complete": true,
+      "queryCount": 55,
+      "queries": [
+        "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_hour_1735513200000.json",
+        "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_hour_1736118000000.json",
+        "...",
+        "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_quarterhour_1766962800000.json"
+      ],
+      "quality": {
+        "rows": 15390,
+        "coveragePct": 100.0,
+        "missingMicros": 0,
+        "gapCount": 0,
+        "gaps": [],
+        "resolutions": {
+          "PT15M": 8840,
+          "PT1H": 6550
+        },
+        "dstDays": [
+          {
+            "date": "2025-03-30",
+            "expectedHours": 23.0,
+            "coveredHours": 23.0
+          },
+          {
+            "date": "2025-10-26",
+            "expectedHours": 25.0,
+            "coveredHours": 25.0
+          }
+        ],
+        "incompleteDays": 0,
+        "implausible": 0,
+        "robustOutliers": 70,
+        "outlierExamples": [
+          "2025-01-15T08:00:00Z=315.02",
+          "2025-01-15T15:00:00Z=333.52",
+          "2025-01-15T16:00:00Z=377.99",
+          "2025-01-15T17:00:00Z=324.74",
+          "2025-01-20T07:00:00Z=431.99"
+        ],
+        "stats": {
+          "min": -250.32,
+          "max": 583.4,
+          "mean": 90.969,
+          "std": 49.844,
+          "p01": -7.652,
+          "p50": 90.471,
+          "p99": 263.759
+        }
+      }
+    }
+  }
+}

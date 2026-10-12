@@ -198,9 +198,10 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] Generisches **Modbus-Modul** (TCP/RTU), Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS), Pollintervall → `RawReading` → Normalizer → Episoden.
 - [ ] **IEC 60870-5-101/-104**-Adapter für die Parkrechner-Schnittstelle (Datenaustausch mit dem Elektrolyseurbetreiber, beide Richtungen).
 - [ ] Elektrolyseur-Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme) über die vereinbarte Schnittstelle (104, OPC UA oder Export) als Quelle `REPORTED`.
-- [ ] **DWD-Sammler**: Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit.
-- [ ] Markt- und Partnerdaten: Preise (Day-Ahead/Intraday, 15-min-MTU), Prognosen und Fahrpläne des Direktvermarkters, Leitsystem-API (Schnittstellenbeschreibung ausstehend); zeitgesteuerter Abruf mit Formatkonvertierung, wo keine API existiert.
-- [ ] Batch-Import einzelner Datenpakete (historische Reihen) mit Herkunftsmetadaten.
+- [ ] **DWD-Sammler**: Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit. *Teil: Roh-Vorwärtsarchiv MOSMIX_L der Zwillingsstandorte (`bin/opentsx market mosmix-archive`, k3s-CronJob alle 6 h) läuft seit 2026-10-12 – der DWD hält keine MOSMIX-Historie vor; Parser, Stationskatalog und CDC-Backfill kommen mit `opentsx-dwd`.*
+- [x] Marktdaten (öffentlich, `opentsx-market`): Day-Ahead DE-LU mit 15-min-MTU ab 2025-10-01 (SMARD, Energy-Charts als Gegenprobe, ENTSO-E A44 mit Token), Netzlast, Residuallast, Erzeugung und Prognosen Wind/PV (SMARD, ENTSO-E A65/A69), reBAP und Monatsmarktwerte (netztransparenz.de, OAuth-Client oder CSV-Import); Abbildung auf v2-Episoden mit Herkunft REPORTED/FORECAST; zeitgesteuerter Abruf (`market forward`, k3s-CronJob täglich).
+- [ ] Partnerdaten: Prognosen und Fahrpläne des Direktvermarkters, realisierte Intraday-Preise (EPEX lizenziert, kein Abruf), Leitsystem-API (Schnittstellenbeschreibung ausstehend) – *Dateiimport mit Offsets und Prüfung der Doppelstunde vorhanden (`market import`), Zugänge offen.*
+- [x] Batch-Import einzelner Datenpakete (historische Reihen) mit Herkunftsmetadaten: lokales Archiv `data/history/<quelle>/<reihe>/<jahr>.csv.gz` (nicht in git) mit `manifest.json` (Quelle, Abfragen, Lizenz, Abrufzeit, Zeilen, SHA-256, Qualitätsbericht: Lücken, Sommerzeit-Tage, Ausreißer, Statistik über `opentsx-stats`), fortsetzbarer Backfill ab 2019, Laden als Episoden nach Iceberg (`market load`). Lizenzen: SMARD und Energy-Charts CC BY 4.0 (Quellenangabe „Bundesnetzagentur | SMARD.de“ bzw. „Energy-Charts.info“), DWD CC BY 4.0 („Deutscher Wetterdienst“), ENTSO-E Nutzungsbedingungen mit Quellenangabe, netztransparenz.de Nutzungsbedingungen (Archiv lokal halten).
 - [ ] *(Vorschlag)* infinimesh als optionale Quelle: Kafka-Addon-Topic `infinimesh.shadows` → Normalizer → `tsx.<domain>.observations.v2` (Modul `opentsx-infinimesh`); lesend zuerst, Rückweg über `desired` erst mit Freigabe-Workflow.
 - [ ] Metrikkatalog für neue Kanäle (Zähler, Elektrolyse, Speicher, H2) analog zum IEC-Katalog, Veröffentlichung über den OpenMetadata-Publisher.
 - [ ] Kafka-Spiegelung über temporären SSH-Tunnel in eine lokale Umgebung; technische Validierung (Offsets, Anzahl, Bytes, Hash) und fachliche Validierung (je Metrik identische Sketches/Statistiken).
@@ -230,6 +231,7 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [ ] **Alle drei Betriebsarten in beiden Varianten** (Matrix 3 × 2) – *in Variante T umgesetzt (`Twin.shadow`, `whatIf`, `forecast` ab Snapshot mit Policy-Austausch); Variante L offen*: Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog, Verzweigungen), Prognose/MPC – gleiche Atome, andere Bindung.
 - [ ] S3 PPA-Schattenbetrieb vor der offiziellen Umstellung des Messkonzepts (Fahrplan/Prognose des Vermarkters gegen Erzeugung) → **Schranke B**.
 - [x] S1 H2-Kette auf synthetischen Daten (Schieber zu → Druck → Zeit-bis-Grenze → Abregelung → Fahrplanabweichung → Mehrvermarktung): Reihenfolge, analytischer Grenzzeitpunkt, Bilanzen, Was-wäre-wenn und Prognose getestet; Demo `bin/opentsx twin`.
+- [x] S1 auf echter Markt- und Wetterhistorie (`bin/opentsx twin --history data/history --year 2024`): Day-Ahead-Preise REPORTED, Wind aus der Onshore-Erzeugung DE skaliert oder DWD-Station über Leistungskennlinie (ESTIMATED), Fahrplan aus der Day-Ahead-Prognose (echter Prognosefehler), Elektrolyseur mit Preisgrenzen-Regel; What-if Preisgrenzen (H2-Menge, Stromkosten je kg, Erlös).
 - [ ] S1 mit echten Betriebsdaten bestätigen → **Schranke C**.
 - [ ] S4 Wake-Referenz im Park-Atom reproduziert; rekonstruierter Graph (P8.1) dagegen geprüft.
 
@@ -258,6 +260,7 @@ Simulation auf rekonstruierter Struktur und Optimierer-Policy.
 - [x] Simulierte Beispielabrechnungen 2022–2025 (`SimulatedBills`, verdeckte wahre Parameter, Lücken und Ablesefehler) unter `twin/beispiel/`; `bin/opentsx house --simulated`; Test: H/η und Geräteskala gefunden, Warmwasser als nicht bestimmt gemeldet.
 - [ ] Mit echten Abrechnungen kalibrieren (Jahre, Tankstände, Holzmengen, Wohnfläche/Baujahr vom Hauseigentümer) → **Schranke B (Haus)**.
 - [ ] Nachweis einer Maßnahme: gemessene Zeiträume vor/nach, witterungsbereinigt, gegen Kalibrierunsicherheit.
+- [x] Haus und Boot auf echtem Wetter: `bin/opentsx house --history data/history --weather-year 2022-2025` (stündliche Lufttemperatur Marienberg 03166, Globalstrahlung Chemnitz 00853, MEASURED; Heizgradtage, Öl, Holz je Jahr, Hebel je Wetterjahr) und `bin/opentsx boat --history … --weather-year 2024` (10-min-Globalstrahlung Leuchtturm Kiel 02961 statt synthetischer Bewölkung); Archivbefüllung mit Wetterdaten kommt mit `opentsx-dwd`.
 - [ ] Varianten: Pufferspeicher/wasserführender Ofen, Mehrzonenmodell, Prognose „Reicht das Öl?“, Optimierer als Policy (Bestellzeitpunkt, Holz/Öl-Aufteilung), DWD-Abruf statt CSV.
 
 **P9.8 – Boot (Etap 22): Insel-Energiesystem** – Konzept: [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md)
@@ -389,6 +392,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 
 ## Progress Log
 
+- 2026-10-12: **Markt- und Wetterhistorie** (`opentsx-market`): Sammler für SMARD, Energy-Charts, ENTSO-E (Token) und netztransparenz.de (OAuth/CSV-Import), Partnerdatei-Import; lokales Archiv mit Manifest und Qualitätsbericht, fortsetzbarer Backfill (SMARD 2019 bis heute archiviert; ENTSO-E und netztransparenz ohne Zugangsdaten übersprungen), Roh-Vorwärtsarchiv MOSMIX, k3s-CronJobs (`deploy/k3s/history/`); H2-Kette, Haus und Boot mit `--history` auf echten Jahren, Standarddemos unverändert synthetisch.
 - 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
 - 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 - 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.

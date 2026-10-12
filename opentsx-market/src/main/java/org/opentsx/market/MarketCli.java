@@ -3,9 +3,11 @@ package org.opentsx.market;
 import org.opentsx.market.archive.Archive;
 import org.opentsx.market.archive.Backfill;
 import org.opentsx.market.archive.Manifest;
+import org.opentsx.market.archive.MosmixRawArchive;
 import org.opentsx.market.archive.QualityReport;
 import org.opentsx.market.source.EnergyChartsJson;
 import org.opentsx.market.source.EntsoeXml;
+import org.opentsx.market.source.Http;
 import org.opentsx.market.source.Marktwerte;
 import org.opentsx.market.source.PartnerCsv;
 import org.opentsx.market.source.Rebap;
@@ -51,6 +53,8 @@ public final class MarketCli {
                         [--to-year YYYY] [--delay-ms 500] [--force]
               forward   [--archive data/history] [--series market|...] [--delay-ms 500]   (daily job: running year)
               report    [--archive data/history] [--series ...]
+              mosmix-archive [--archive data/history] [--stations 10579,10097,10046,E5411]
+                        (forward archive of raw MOSMIX_L forecasts; run every 6 h)
               load      [--archive data/history] [--series ...] [--from-year Y --to-year Y]
                         [--iceberg k=v,... --namespace tsx]
               catalog
@@ -130,6 +134,14 @@ public final class MarketCli {
                 return failed > 0 ? 3 : 0;
             }
             case "report" -> report(archive, select(o.getOrDefault("series", "all-archived")), out);
+            case "mosmix-archive" -> {
+                List<String> st = o.containsKey("stations") ? List.of(o.get("stations").split(","))
+                        : MosmixRawArchive.DEFAULT_STATIONS;
+                for (MosmixRawArchive.Result r : new MosmixRawArchive(archive.root(), new Http(1000, 4)).collect(st, now)) {
+                    out.printf("mosmix %-6s issue %s  %s%n", r.station(), r.issue(), r.added() ? "added " + r.file()
+                            : "already archived");
+                }
+            }
             case "load" -> {
                 return load(archive, o, out);
             }
