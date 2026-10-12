@@ -51,6 +51,37 @@ Each superstep runs these phases in order:
 * **Determinism.** The same plan, inputs, interventions and code give a bit-identical run, and therefore the same
   `RunResult.hash()`.
 
+### Runner (variant L)
+
+`LooseRunner` runs the same plan, atoms, policies and interventions as loosely coupled processors: each atom has
+its own superstep clock and reads upstream values from port messages, without a global barrier. A `Coupling`
+sets the staleness bound (`bsp()` = 0, `ssp(s)`, `async()`), transport latency and jitter in simulated ticks,
+slow processors and outages, explicit processor groups (`withGroup`) and `colocatingCycles()`, which runs every
+feedback cycle of the plan (strongly connected component) in one processor.
+
+* Staleness 0 gives a run that is bit-identical to variant T (same run id, hash, events, messages) for any
+  transport; a coupling that can change the result becomes part of the run id.
+* `LooseRun.stats()` reports simulated wall time (ticks), wait and down ticks per atom and the staleness used per
+  wire.
+* `bin/opentsx twin-coupling [--csv out.csv] [--scenario id]` runs the RQ1 grid over all scenarios. Results and
+  the design rule (cycles in one processor, BSP between processors) are in
+  [07 §10a](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md).
+
+### Topic contract as Avro
+
+`twin/avro/` holds the Avro schemas of the topic contract, generated from the atom catalog by `AtomSchemas`
+(`bin/opentsx twin-schemas` regenerates them; a test fails if the checked-in files are stale):
+
+* envelopes `PortMessage`, `Barrier`, `Intervention` (namespace `org.opentsx.twin.v1`);
+* one `<Type>Snapshot` per atom type (`twin/avro/atoms/<type>.avsc`): run, instance key `atom`, `k`, `t`, the state
+  variables as a record, `state_extra` for parameter-dependent variables (e.g. one counter per appliance), the
+  outputs as `PortValue {value, origin}` and the controls overridden by interventions. Phase and input ports
+  (kind, unit) are schema properties.
+
+Every atom of the three scenarios round-trips through these schemas (Java test), and Python reads them with
+fastavro (`python-package/tests/test_twin_schemas.py`). They are the basis for running variant L processors in other
+languages and for snapshots in Iceberg.
+
 ### Origin propagation
 
 * An output gets the worst origin of the inputs it read in the same superstep.

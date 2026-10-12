@@ -210,7 +210,7 @@
     </configuration>
     <configuration name="TopicsCHECK" type="Application" factoryName="Application">
       <envs>
-        <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/cpl.props " />
+        <env name="OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME" value="config/opentsx-local.props" />
       </envs>
       <option name="MAIN_CLASS_NAME" value="org.opentsx.util.topicmanager.TopicsCHECK" />
       <module name="opentsx-lg" />

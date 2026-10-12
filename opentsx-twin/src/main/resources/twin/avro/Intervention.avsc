@@ -1,0 +1,29 @@
+{
+  "type" : "record",
+  "name" : "Intervention",
+  "namespace" : "org.opentsx.twin.v1",
+  "doc" : "Override of an atom control from time t on (topic twin.<id>.<run>.interventions).",
+  "fields" : [ {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "atom",
+    "type" : "string"
+  }, {
+    "name" : "control",
+    "type" : "string"
+  }, {
+    "name" : "value",
+    "type" : [ "null", "double" ],
+    "default" : null
+  }, {
+    "name" : "author",
+    "type" : "string"
+  }, {
+    "name" : "reason",
+    "type" : "string"
+  } ]
+}

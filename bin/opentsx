@@ -11,7 +11,10 @@
 #   twin               digital twin demo S1 (H2 chain) in all three modes    (org.opentsx.twin.demo.H2ChainDemo)
 #   house              house twin: KPIs + levers; --calibrate f|--simulated  (org.opentsx.twin.demo.HouseDemo)
 #   boat               boat twin (Etap 22): what-ifs, --data, --simulated     (org.opentsx.twin.demo.BoatDemo)
+#   dwd                DWD collector: stations, mosmix, obs, house            (org.opentsx.dwd.DwdCli)
 #   modbus             Modbus meters: check|read|poll|simulate --map f.yaml   (org.opentsx.modbus.ModbusCli)
+#   twin-coupling      variant L vs T: staleness/latency grid, --csv f        (org.opentsx.twin.demo.CouplingStudy)
+#   twin-schemas       regenerate the twin's Avro topic contract, --out dir    (org.opentsx.twin.schema.AtomSchemas)
 #   classpath <module> print the runtime classpath of a module
 #
 # Requires a prior build: mvn -q install -DskipTests   (JDK 17+)
@@ -43,7 +46,10 @@ case "$cmd" in
   twin)             exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
   house)            exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.HouseDemo "$@" ;;
   boat)             exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.BoatDemo "$@" ;;
+  dwd)              exec java -cp "$(classpath opentsx-dwd)" org.opentsx.dwd.DwdCli "$@" ;;
   modbus)           exec java -cp "$(classpath opentsx-modbus)" org.opentsx.modbus.ModbusCli "$@" ;;
+  twin-coupling)    exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.CouplingStudy "$@" ;;
+  twin-schemas)     exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.schema.AtomSchemas "$@" ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;
   *) echo "unknown command: $cmd" >&2; usage 1 ;;
