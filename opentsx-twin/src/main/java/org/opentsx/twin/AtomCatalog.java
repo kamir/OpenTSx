@@ -9,6 +9,11 @@ import org.opentsx.twin.atoms.H2Line;
 import org.opentsx.twin.atoms.H2Offtake;
 import org.opentsx.twin.atoms.Market;
 import org.opentsx.twin.atoms.OperatingRules;
+import org.opentsx.twin.boat.BoatMode;
+import org.opentsx.twin.boat.Device;
+import org.opentsx.twin.boat.PowerStation;
+import org.opentsx.twin.boat.ShorePower;
+import org.opentsx.twin.boat.Solar;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,7 +35,12 @@ public final class AtomCatalog {
                 .register("balance", BalanceNode::new)
                 .register("h2-line", H2Line::new)
                 .register("direct-marketer", DirectMarketer::new)
-                .register("operating-rules", OperatingRules::new);
+                .register("operating-rules", OperatingRules::new)
+                .register("boat-mode", BoatMode::new)
+                .register("solar", Solar::new)
+                .register("shore-power", ShorePower::new)
+                .register("power-station", PowerStation::new)
+                .register("device", Device::new);
     }
 
     public AtomCatalog register(String type, BiFunction<String, Params, Atom> factory) {

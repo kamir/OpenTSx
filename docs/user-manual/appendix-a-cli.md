@@ -10,6 +10,7 @@ module classpath and caches it in `<module>/target/classpath.txt`.
 | `metadata` | `org.opentsx.openmetadata.WindparkMetadata` | `--scenario <yaml>` (required), `--om <url>/api --token <jwt>` or `--dry-run <dir>`, `--catalog`, `--domain`, `--namespace`, `--partitions`, `--kafscale <bootstrap> --profile-window PT1H --dq-window PT10M` |
 | `retrieval-server` | `org.opentsx.retrieval.server.RetrievalServer` | `--port <n>`, `--iceberg k=v,... --namespace <ns>` or `--demo true` |
 | `twin` | `org.opentsx.twin.demo.H2ChainDemo` | `[--plan file.yaml]`; runs scenario S1 in shadow, what-if and forecast mode and prints events and KPIs |
+| `boat` | `org.opentsx.twin.demo.BoatDemo` | `[--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate]]`; boat twin (Etap 22): shadow of a synthetic two-week trip and what-ifs with KPI deltas; with `--data` on real operating data (CSV, template `twin/bootsdaten-vorlage.csv`), with `--calibrate` fitted to the measured SoC |
 | `classpath <module>` | — | prints the runtime classpath, e.g. for your own `java -cp` calls |
 
 Other scripts in `bin/`:
