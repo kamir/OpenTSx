@@ -1,0 +1,57 @@
+# Raw MOSMIX_L forecasts of the twin sites, every 6 hours ~80 min after the runs of 03, 09, 15 and 21 UTC.
+# The DWD keeps only the latest runs: forecast history exists only from the day this job starts.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opentsx-mosmix-archive
+  labels:
+    opentsx.org/history: mosmix-archive
+spec:
+  schedule: "40 4,10,16,22 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            opentsx.org/history: mosmix-archive
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+          containers:
+            - name: mosmix-archive
+              image: opentsx/tools
+              imagePullPolicy: IfNotPresent
+              args: ["market", "mosmix-archive", "--archive", "/data/history"]
+              envFrom:
+                - secretRef:
+                    name: opentsx-market
+                    optional: true
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: "1", memory: 768Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - name: history
+                  mountPath: /data/history
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: history
+              persistentVolumeClaim:
+                claimName: opentsx-history
+            - name: tmp
+              emptyDir: {}

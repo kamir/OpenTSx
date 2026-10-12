@@ -1,0 +1,57 @@
+# Daily DWD CDC observations of the twin sites (running and previous year; complete years are skipped).
+# 06:23 UTC: the 'recent' hourly and 10-minute files are updated during the night.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opentsx-weather-forward
+  labels:
+    opentsx.org/history: weather-forward
+spec:
+  schedule: "23 6 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            opentsx.org/history: weather-forward
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+          containers:
+            - name: weather-forward
+              image: opentsx/tools
+              imagePullPolicy: IfNotPresent
+              args: ["market", "weather-forward", "--archive", "/data/history"]
+              envFrom:
+                - secretRef:
+                    name: opentsx-market
+                    optional: true
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: "1", memory: 768Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - name: history
+                  mountPath: /data/history
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: history
+              persistentVolumeClaim:
+                claimName: opentsx-history
+            - name: tmp
+              emptyDir: {}

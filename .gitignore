@@ -216,3 +216,6 @@ deploy/docker/.stage/
 
 ### OpenTSx 2.x Kafka client profile (local copy of config/opentsx-local.props.example)
 config/opentsx-local.props
+
+### OpenTSx history archive (opentsx-market backfill): bulk data stays local, see opentsx-market/README.md
+data/history/

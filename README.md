@@ -45,6 +45,10 @@ The same atoms and modes, wired differently. All three run today on synthetic or
 | **Family house** in the Erzgebirge (oil and wood heating) | a reference year; levers such as −1 K, standby or a new freezer; calibration against bills | `bin/opentsx house --simulated` |
 | **Sailing boat** Etap 22 (power station, solar, shore power, Starlink) | autonomy and unmet demand on a two-week trip; panel size, station size and Starlink usage as levers; calibration against logger data | `bin/opentsx boat --simulated` |
 
+With a history archive ([`opentsx-market`](opentsx-market/README.md)) the same twins run on real years: day-ahead
+prices and wind for the energy system, measured temperatures for the house, measured irradiance for the boat
+(`bin/opentsx twin --history data/history --year 2024`).
+
 All three appear in the [Smart Topics Studio](docs/prototypes/smart-topics-studio.html) prototype. It shows
 statistics, prediction and what-if, and the node graph of each system's wiring plan.
 
@@ -110,6 +114,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-twin` | digital twin: atoms, wiring plan, bulk-synchronous runner, shadow / what-if / forecast; scenarios energy system, house, boat; Studio export |
 | `opentsx-dwd` | DWD Open Data collector: MOSMIX forecasts and CDC observations as v2 series/episodes, nearest-station search, weather inputs for the twins |
 | `opentsx-modbus` | Modbus TCP / RTU-over-TCP client (JDK only), register maps in YAML (type, word order, scaling, unit, OBIS, origin), block-merging poller, counter wrap/reset detection → v2 episodes; in-JVM meter simulator |
+| `opentsx-market` | electricity-market collector (SMARD, ENTSO-E, netztransparenz.de, Energy-Charts, partner files), history archive with manifests and quality reports, backfill, twins on real history |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |

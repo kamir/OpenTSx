@@ -1,0 +1,57 @@
+# Daily forward archiving of the market series (running year and the previous one until it has settled).
+# 13:41 UTC: after the day-ahead results for tomorrow are published (~12:45 CET/CEST) and SMARD has updated.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opentsx-market-forward
+  labels:
+    opentsx.org/history: market-forward
+spec:
+  schedule: "41 13 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            opentsx.org/history: market-forward
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+          containers:
+            - name: market-forward
+              image: opentsx/tools
+              imagePullPolicy: IfNotPresent
+              args: ["market", "forward", "--archive", "/data/history", "--series", "market"]
+              envFrom:
+                - secretRef:
+                    name: opentsx-market
+                    optional: true
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: "1", memory: 768Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - name: history
+                  mountPath: /data/history
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: history
+              persistentVolumeClaim:
+                claimName: opentsx-history
+            - name: tmp
+              emptyDir: {}

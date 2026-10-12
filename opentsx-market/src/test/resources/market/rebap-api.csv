@@ -1,0 +1,6 @@
+Datum;Zeitzone;von;bis;Datenkategorie;Datentyp;Einheit;reBAP unterdeckt;reBAP ueberdeckt
+10.06.2023;UTC;13:00;13:15;reBAP;Qualitätsgesichert;EUR/MWh;103,97;103,97
+10.06.2023;UTC;13:15;13:30;reBAP;Qualitätsgesichert;EUR/MWh;104,06;104,06
+10.06.2023;UTC;13:30;13:45;reBAP;Qualitätsgesichert;EUR/MWh;1.204,57;-15,20
+10.06.2023;UTC;13:45;14:00;reBAP;Qualitätsgesichert;EUR/MWh;N.A.;N.A.
+10.06.2023;UTC;23:45;00:00;reBAP;Qualitätsgesichert;EUR/MWh;80,00;80,00

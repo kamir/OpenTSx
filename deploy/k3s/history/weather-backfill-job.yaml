@@ -1,0 +1,50 @@
+# One-off backfill of the DWD station observations of the twin sites 2019..today (hourly temperature and wind,
+# 10-minute global radiation) into the history PVC; resumable, a few minutes.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-weather-backfill
+  labels:
+    opentsx.org/history: weather-backfill
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 14400
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/history: weather-backfill
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: weather-backfill
+          image: opentsx/tools:3.0.0-local   # applied without kustomize, so the tag is set here
+          imagePullPolicy: IfNotPresent
+          args: ["market", "weather-backfill", "--archive", "/data/history", "--from-year", "2019"]
+          envFrom:
+            - secretRef:
+                name: opentsx-market
+                optional: true
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: history
+              mountPath: /data/history
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: history
+          persistentVolumeClaim:
+            claimName: opentsx-history
+        - name: tmp
+          emptyDir: {}
