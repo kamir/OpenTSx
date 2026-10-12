@@ -37,6 +37,10 @@ entries are grouped by date. The detailed progress log (German) is in
   (`bin/opentsx house`, `--simulated`), sailing boat Etap 22 with calibration against logger data
   (`bin/opentsx boat`, `--simulated`).
 - Smart Topics Studio prototype (`docs/prototypes/smart-topics-studio.html`) and the LabVIEW / command-loop concept.
+- Studio guide (`StudioGuide`, `twin/haus-erzgebirge.guide.yaml`): prose for every atom, port, parameter, control and
+  wire of the house twin, where each value comes from and references to compare against; checked against the plan.
+  The node graph explains wires and ports on hover, and each node takes own details (nameplate, serial number, own
+  parameter values) with export as inventory (`opentsx.inventory.v1`) and as an own wiring plan.
 - Retrieval (`opentsx-retrieval`, P5): segmentation, pattern engine (MASS, SAX, DTW), retrieval API, REST server,
   Python client, power-curve analysis.
 - DevOps guide for k3s against an existing KafScale cluster (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`).

@@ -116,9 +116,39 @@ td.n { font-family: var(--font-mono); text-align: right; font-variant-numeric: t
 .graph .phase rect { fill: var(--bg); }
 .graph .val { fill: var(--ink); font-variant-numeric: tabular-nums; }
 .graph .bind { fill: var(--accent); }
-.graph-side { }
-#nodepanel { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items: start; }
-#nodepanel > h2 { grid-column: 1 / -1; }
+.graph .wire.hov { stroke-width: 3.4; }
+.graph .wire.sel { stroke-width: 3.4; stroke: var(--accent); }
+.graph .wirehit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: help; }
+.graph .wirehit:focus-visible { outline: none; stroke: var(--accent); stroke-opacity: 0.25; }
+.graph .porttext { cursor: help; }
+.graph .own { fill: var(--accent); font-size: 9px; }
+/* hover card for wires and ports; follows the pointer, stays inside the viewport */
+.gtip { position: fixed; z-index: 10; pointer-events: none; max-width: min(400px, calc(100vw - 16px)); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 0.82rem; line-height: 1.45; box-shadow: 0 4px 16px rgba(0,0,0,0.18); display: grid; gap: 6px; }
+.gtip .t { font-family: var(--font-mono); font-weight: 500; overflow-wrap: anywhere; }
+.gtip p { margin: 0; color: var(--ink-2); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.prose { margin: 0; max-width: 78ch; color: var(--ink); font-size: 0.9rem; line-height: 1.55; }
+.prose + .prose { margin-top: 8px; }
+.cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+.sec { display: grid; gap: 6px; min-width: 0; }
+details.guide > summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+details.guide ul, details.guide dl { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 0.86rem; color: var(--ink-2); max-width: 78ch; }
+details.guide dl { padding-left: 0; }
+details.guide dt { color: var(--ink); font-weight: 500; }
+details.guide dd { margin: 0; }
+a { color: var(--accent); }
+td.doc { color: var(--ink-2); min-width: 22ch; }
+td.k, th.k { font-family: var(--font-mono); white-space: nowrap; }
+td .refs { display: block; margin-top: 2px; font-size: 0.76rem; }
+.own-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.own-form .wide { grid-column: 1 / -1; }
+input[type=text], textarea { font: inherit; font-family: var(--font-mono); font-size: 0.8rem; width: 100%; padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); }
+textarea { min-height: 64px; resize: vertical; }
+td input[type=text], td textarea { min-width: 9ch; }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--crit); }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-size: 0.82rem; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn:hover { background: var(--surface-2); }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 0.82rem; }
 .kv .k { color: var(--ink-3); font-family: var(--font-mono); }
 .kv .v { font-family: var(--font-mono); overflow-wrap: anywhere; }
@@ -135,6 +165,11 @@ td.n { font-family: var(--font-mono); text-align: right; font-variant-numeric: t
       <select id="scenario"></select>
     </label>
   </header>
+
+  <details class="card guide" id="guide" hidden>
+    <summary id="guidetitle"></summary>
+    <div class="stack" id="guidebody"></div>
+  </details>
 
   <nav class="tabs" role="tablist" aria-label="Ansichten">
     <button role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="true">Statistik</button>
@@ -197,7 +232,7 @@ td.n { font-family: var(--font-mono); text-align: right; font-variant-numeric: t
   <section id="view-graph" role="tabpanel" aria-labelledby="tab-graph" hidden>
     <div class="stack">
       <div class="card">
-        <p class="note">Blockdiagramm-Sicht, wie in Node-RED, NiFi oder LabVIEW: Knoten sind Bausteine, Drähte verbinden Ausgänge mit Eingängen. Spalten sind die Phasen eines Takts, von links nach rechts. <strong>Durchgezogen</strong> wirkt im selben Takt, <strong>gestrichelt</strong> erst im nächsten (Rückkopplung, wie ein Schieberegister). Blaue Drähte tragen Flüsse (kW, kg/h), graue Signale. ◆ markiert einen von außen gebundenen Eingang.</p>
+        <p class="note">Blockdiagramm-Sicht, wie in Node-RED, NiFi oder LabVIEW: Knoten sind Bausteine, Drähte verbinden Ausgänge mit Eingängen. Spalten sind die Phasen eines Takts, von links nach rechts. <strong>Durchgezogen</strong> wirkt im selben Takt, <strong>gestrichelt</strong> erst im nächsten (Rückkopplung, wie ein Schieberegister). Blaue Drähte tragen Flüsse (kW, kg/h), graue Signale. ◆ markiert einen von außen gebundenen Eingang. <strong>Fahre mit der Maus über einen Draht oder einen Port</strong>, um zu lesen, was er trägt; ein Klick hält die Erläuterung unten fest. ● markiert Bausteine mit eigenen Angaben.</p>
         <label class="ctl" for="scrub">Zeitpunkt <span class="mono" id="scrubt"></span>
           <input type="range" id="scrub" min="0" max="359" value="150">
         </label>
@@ -424,66 +459,244 @@ function renderSim() {
 // node graph
 const PHASES = ["SOURCES", "POLICY", "ASSETS", "BALANCE", "FLOWS", "VIEWS"];
 const PHASE_DE = { SOURCES: "QUELLEN", POLICY: "POLICY", ASSETS: "ANLAGEN", BALANCE: "BILANZ", FLOWS: "FLÜSSE", VIEWS: "SICHTEN" };
-let selNode = null;
+const KIND_DE = { FLOW: "Fluss", SIGNAL: "Signal" };
+let selNode = null, selWire = null;
+
+// guide: prose of the scenario (atoms, ports, parameters, controls, wires, references); every lookup may be empty
+const guide = () => SC.guide || {};
+const atomDoc = id => (guide().atoms || {})[id] || {};
+const portDoc = (id, port) => (atomDoc(id).ports || {})[port] || "";
+const paramDoc = (id, name) => (atomDoc(id).params || {})[name] || {};
+function controlDoc(id, name) {
+  const c = atomDoc(id).controls || {};
+  if (c[name]) return c[name];
+  const family = Object.keys(c).find(k => k.endsWith(".*") && name.startsWith(k.slice(0, -1)));
+  return family ? c[family] : "";
+}
+const wireKey = w => `${w.from}.${w.fromPort} -> ${w.to}.${w.toPort}`;
+const nodeOf = id => SC.graph.nodes.find(n => n.id === id);
+const nodeName = id => atomDoc(id).title ? `${atomDoc(id).title} (${id})` : id;
+function wireText(w, kind, unit) {
+  const t = (guide().wires || {})[wireKey(w)];
+  if (t) return t;
+  return `${w.from} gibt über den Ausgang ${w.fromPort} ${kind === "FLOW" ? "einen Fluss" : "ein Signal"}${unit ? " in " + unit : ""} an den Eingang ${w.toPort} von ${w.to}. `
+    + (kind === "FLOW" ? "Flüsse gehen in die Bilanz des Empfängers ein. " : "Signale sind Informationen und verändern keine Bilanz. ")
+    + (w.delayed ? "Der Wert entsteht am Ende eines Takts und wirkt erst im nächsten (Rückkopplung)." : "Der Wert wirkt im selben Takt.");
+}
+const meanNote = () => SC.stride > 1 ? ` <span class="note">(Mittel über ${fmt(SC.stepMinutes / 60, 1)} h)</span>` : "";
+function refLinks(ids) {
+  const refs = (guide().references || []).filter(r => (ids || []).includes(r.id));
+  return refs.length ? `<span class="refs">${refs.map(r => `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`).join(" · ")}</span>` : "";
+}
+function wireHead(w, k) {
+  const op = (nodeOf(w.from).outputs.find(o => o.name === w.fromPort)) || {}, s = SC.reference.series[w.from + "." + w.fromPort], v = s ? s[k] : null;
+  return { kind: op.kind, unit: op.unit, html: `<div class="t">${esc(w.from)}.${esc(w.fromPort)} → ${esc(w.to)}.${esc(w.toPort)}</div>
+    <div class="chips"><span class="chip">${KIND_DE[op.kind] || esc(op.kind)}</span>${op.unit ? `<span class="chip">${esc(op.unit)}</span>` : ""}<span class="chip">${w.delayed ? "wirkt im nächsten Takt" : "wirkt im selben Takt"}</span></div>
+    <div>Wert um ${tLabel(k, true)}: <strong class="mono">${v == null ? "–" : fmt(v, 2)} ${esc(op.unit || "")}</strong>${v == null ? "" : meanNote()}</div>` };
+}
+
+// hover card
+const gtip = document.createElement("div"); gtip.className = "gtip"; gtip.hidden = true; gtip.setAttribute("role", "tooltip"); document.body.appendChild(gtip);
+function moveTip(ev) {
+  const pad = 14, w = gtip.offsetWidth, h = gtip.offsetHeight;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = Math.max(8, ev.clientX - w - pad);
+  if (y + h > innerHeight - 8) y = Math.max(8, ev.clientY - h - pad);
+  gtip.style.left = x + "px"; gtip.style.top = y + "px";
+}
+function showTip(html, ev) { gtip.innerHTML = html; gtip.hidden = false; moveTip(ev); }
+function hideTip() { gtip.hidden = true; }
+function hoverTip(el, html) {
+  el.addEventListener("pointerenter", ev => showTip(html(), ev));
+  el.addEventListener("pointermove", moveTip);
+  el.addEventListener("pointerleave", hideTip);
+}
+
+// own details per atom (nameplate, own parameter values); kept in this browser only
+const OWN_FIELDS = [["manufacturer", "Hersteller"], ["model", "Typ / Modell"], ["serial", "Seriennummer"], ["commissioned", "Baujahr / Inbetriebnahme"]];
+let OWN = {};
+const ownKey = () => "opentsx.studio.own." + SC.id;
+function loadOwn() { OWN = {}; try { OWN = JSON.parse(localStorage.getItem(ownKey()) || "{}") || {}; } catch (e) {} }
+function saveOwn() { try { localStorage.setItem(ownKey(), JSON.stringify(OWN)); } catch (e) {} }
+const ownOf = id => OWN[id] || {};
+const hasOwn = id => { const o = ownOf(id); return OWN_FIELDS.some(([f]) => o[f]) || !!o.note || Object.values(o.params || {}).some(v => String(v).trim() !== ""); };
+// undefined = nothing entered, null = not readable as the type of the example value
+function parseOwn(text, example) {
+  const t = String(text == null ? "" : text).trim();
+  if (t === "") return undefined;
+  if (typeof example === "number") { const v = Number(t.replace(",", ".")); return Number.isFinite(v) ? v : null; }
+  if (typeof example === "boolean") return t === "true" ? true : t === "false" ? false : null;
+  if (example && typeof example === "object") { try { const v = JSON.parse(t); return v && typeof v === "object" ? v : null; } catch (e) { return null; } }
+  return t;
+}
+function ownParams(n) {
+  const out = {}, own = ownOf(n.id).params || {};
+  Object.keys(n.params).forEach(k => { const v = parseOwn(own[k], n.params[k]); if (v !== undefined && v !== null) out[k] = v; });
+  return out;
+}
+const q = t => JSON.stringify(String(t));
+function inventoryYaml() {
+  const twin = SC.plan.twin, L = ["# Eigene Angaben aus dem Smart Topics Studio, Schema opentsx.inventory.v1 (Entwurf).",
+    "# Enthält persönliche Daten wie Seriennummern. Ablage: config/private/, nicht im Repository.",
+    "schema: opentsx.inventory.v1", "systems:", `  - system: ${twin}`, "    assets:"];
+  SC.graph.nodes.filter(n => hasOwn(n.id)).forEach(n => {
+    const o = ownOf(n.id), np = OWN_FIELDS.filter(([f]) => o[f]).map(([f]) => `${f}: ${q(o[f])}`);
+    Object.entries(ownParams(n)).forEach(([k, v]) => np.push(`${k}: ${JSON.stringify(v)}`));
+    if (o.note) np.push(`note: ${q(o.note)}`);
+    L.push(`      - id: ${twin}/${n.id}`, `        atom: ${n.id}`, `        type: ${n.type}`, `        name: ${q(atomDoc(n.id).title || n.id)}`,
+      `        nameplate: { ${np.join(", ")} }`, "        access: { visibility: private }");
+  });
+  return L.join("\n") + "\n";
+}
+function planYaml() {
+  const L = ["# Eigener Schaltplan aus dem Smart Topics Studio: der Beispielplan mit den eigenen Parameterwerten.",
+    "# Ablage: config/private/. Die Werte sind eigene Angaben und nicht geprüft.",
+    `twin: ${SC.plan.twin}`, `start: ${SC.plan.start}`, `baseStep: ${SC.plan.baseStep}`, `steps: ${SC.plan.steps}`, "atoms:"];
+  SC.graph.nodes.forEach(n => {
+    L.push(`  - id: ${n.id}`, `    type: ${n.type}`);
+    if (n.planPolicy) L.push(`    policy: ${n.planPolicy}`);
+    L.push(`    params: ${JSON.stringify(Object.assign({}, n.params, ownParams(n)))}`);
+  });
+  L.push("wiring:"); SC.plan.wiring.forEach(w => L.push(`  - ${q(w)}`));
+  return L.join("\n") + "\n";
+}
+function download(name, text, type) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type || "text/yaml" })); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 function layout() {
   const nodes = SC.graph.nodes, cols = PHASES.filter(p => nodes.some(n => n.phase === p));
   const NW = 236, GAP = 60, PW = NW + GAP, pos = {};
   cols.forEach((p, ci) => { let yy = 44; nodes.filter(n => n.phase === p).forEach(n => { const rows = Math.max(n.inputs.length, n.outputs.length, 1); const h = 34 + rows * 18 + 8; pos[n.id] = { x: 24 + ci * PW, y: yy, w: NW, h, n }; yy += h + 26; }); });
-  const W = 24 + cols.length * PW, H = Math.max(...Object.values(pos).map(p => p.y + p.h)) + 60;
+  const lanes = SC.graph.wires.filter(w => w.delayed).length;
+  const W = 24 + cols.length * PW, H = Math.max(...Object.values(pos).map(p => p.y + p.h)) + 36 + lanes * 9;
   return { cols, pos, W, H, PW };
 }
 const portY = (p, i) => p.y + 34 + i * 18 + 6;
 function renderGraph() {
   $("scrub").max = N - 1; if (+$("scrub").value > N - 1) $("scrub").value = Math.floor(N / 2);
   const k = +$("scrub").value; $("scrubt").textContent = tLabel(k, true);
-  const L = layout(), svg = $("graph"); svg.innerHTML = "";
+  const L = layout(), svg = $("graph"); svg.innerHTML = ""; hideTip();
   svg.setAttribute("viewBox", `0 0 ${L.W} ${L.H}`); svg.setAttribute("width", L.W); svg.setAttribute("height", L.H);
   L.cols.forEach((p, ci) => { const g = svgEl("g", { class: "phase" }, svg); svgEl("rect", { x: 24 + ci * L.PW - 8, y: 8, width: L.PW - 44, height: L.H - 16, rx: 6 }, g); const t = svgEl("text", { x: 24 + ci * L.PW, y: 28 }, g); t.textContent = (ci + 1) + " · " + PHASE_DE[p]; });
-  const kinds = {}; SC.graph.nodes.forEach(n => n.outputs.forEach(o => kinds[n.id + "." + o.name] = o.kind));
   const wg = svgEl("g", {}, svg);
+  let lane = 0;
   SC.graph.wires.forEach((w, wi) => {
     const a = L.pos[w.from], b = L.pos[w.to];
     const ay = portY(a, a.n.outputs.findIndex(o => o.name === w.fromPort)), by = portY(b, b.n.inputs.findIndex(o => o.name === w.toPort));
     const ax = a.x + a.w, bx = b.x;
     let d;
     if (!w.delayed) { const c = Math.max(30, (bx - ax) / 2); d = `M${ax},${ay} C${ax + c},${ay} ${bx - c},${by} ${bx},${by}`; }
-    else { const low = L.H - 24 - (wi % 4) * 6; d = `M${ax},${ay} C${ax + 40},${ay} ${ax + 40},${low} ${ax},${low} L${bx},${low} C${bx - 40},${low} ${bx - 40},${by} ${bx},${by}`; }
+    else { const low = L.H - 20 - (lane++) * 9; d = `M${ax},${ay} C${ax + 40},${ay} ${ax + 40},${low} ${ax},${low} L${bx},${low} C${bx - 40},${low} ${bx - 40},${by} ${bx},${by}`; }
+    const head = wireHead(w, k);
     const hl = w.from === selNode || w.to === selNode;
-    svgEl("path", { d, class: `wire ${kinds[w.from + "." + w.fromPort]} ${w.delayed ? "delayed" : ""} ${hl ? "hl" : ""}` }, wg);
+    const line = svgEl("path", { d, class: `wire ${head.kind} ${w.delayed ? "delayed" : ""} ${selWire == null && hl ? "hl" : ""} ${selWire === wi ? "sel" : ""}` }, wg);
+    const hit = svgEl("path", { d, class: "wirehit", tabindex: 0, role: "button", "aria-label": `Draht ${w.from}.${w.fromPort} nach ${w.to}.${w.toPort}` }, wg);
+    hit.addEventListener("pointerenter", ev => { line.classList.add("hov"); showTip(`${wireHead(w, k).html}<p>${esc(wireText(w, head.kind, head.unit))}</p>`, ev); });
+    hit.addEventListener("pointermove", moveTip);
+    hit.addEventListener("pointerleave", () => { line.classList.remove("hov"); hideTip(); });
+    const pick = () => { selWire = wi; renderGraph(); };
+    hit.addEventListener("click", pick); hit.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
   });
   const bound = new Set(SC.graph.bindings);
+  const portTip = (n, port, side) => () => `<div class="t">${esc(n.id)}.${esc(port.name)}</div>
+    <div class="chips"><span class="chip">${side}</span><span class="chip">${KIND_DE[port.kind] || esc(port.kind)}</span>${port.unit ? `<span class="chip">${esc(port.unit)}</span>` : ""}</div>
+    ${portDoc(n.id, port.name) ? `<p>${esc(portDoc(n.id, port.name))}</p>` : ""}`;
   SC.graph.nodes.forEach(n => {
-    const p = L.pos[n.id]; const g = svgEl("g", { class: "node" + (n.id === selNode ? " sel" : ""), tabindex: 0, role: "button", "aria-label": n.id + " (" + n.type + ")" }, svg);
+    const p = L.pos[n.id]; const g = svgEl("g", { class: "node" + (selWire == null && n.id === selNode ? " sel" : ""), tabindex: 0, role: "button", "aria-label": nodeName(n.id) + " (" + n.type + ")" }, svg);
     svgEl("rect", { x: p.x, y: p.y, width: p.w, height: p.h, rx: 5, class: "box" }, g);
     svgEl("rect", { x: p.x + 1, y: p.y + 1, width: p.w - 2, height: 24, rx: 4, class: "head" }, g);
     const t = svgEl("text", { x: p.x + 8, y: p.y + 17, class: "title" }, g); t.textContent = n.id;
+    const dot = svgEl("tspan", { class: "own", dx: 5, "data-own-dot": n.id, visibility: hasOwn(n.id) ? "visible" : "hidden" }, t); dot.textContent = "●";
     const ty = svgEl("text", { x: p.x + p.w - 8, y: p.y + 17, "text-anchor": "end", class: "type" }, g); ty.textContent = n.type + (n.every > 1 ? " ·" + n.every : "");
+    if (atomDoc(n.id).title) hoverTip(t, () => `<div class="t">${esc(nodeName(n.id))}</div><p>${esc(atomDoc(n.id).text || "")}</p>`);
     n.inputs.forEach((ip, i) => { const yy = portY(p, i); svgEl("circle", { cx: p.x, cy: yy, r: 4, class: "port " + ip.kind }, g);
-      const tx = svgEl("text", { x: p.x + 8, y: yy + 3 }, g); tx.textContent = ip.name;
+      const tx = svgEl("text", { x: p.x + 8, y: yy + 3, class: "porttext" }, g); tx.textContent = ip.name; hoverTip(tx, portTip(n, ip, "Eingang"));
       if (bound.has(n.id + "." + ip.name)) { const bt = svgEl("text", { x: p.x - 8, y: yy + 3, "text-anchor": "end", class: "bind" }, g); bt.textContent = "◆"; } });
     n.outputs.forEach((op, i) => { const yy = portY(p, i); svgEl("circle", { cx: p.x + p.w, cy: yy, r: 4, class: "port " + op.kind }, g);
       const s = SC.reference.series[n.id + "." + op.name]; const v = s ? s[k] : null;
-      const tx = svgEl("text", { x: p.x + p.w - 8, y: yy + 3, "text-anchor": "end" }, g);
-      tx.innerHTML = `${esc(op.name)} <tspan class="val">${v == null ? "–" : fmt(v, 1)}</tspan>`; });
-    const pick = () => { selNode = n.id; renderGraph(); };
+      const tx = svgEl("text", { x: p.x + p.w - 8, y: yy + 3, "text-anchor": "end", class: "porttext" }, g);
+      tx.innerHTML = `${esc(op.name)} <tspan class="val">${v == null ? "–" : fmt(v, 1)}</tspan>`; hoverTip(tx, portTip(n, op, "Ausgang")); });
+    const pick = () => { selNode = n.id; selWire = null; renderGraph(); };
     g.addEventListener("click", pick); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
   });
-  renderNodePanel(k);
+  if (selWire != null && SC.graph.wires[selWire]) renderWirePanel(SC.graph.wires[selWire], k); else renderNodePanel(k);
+}
+function renderWirePanel(w, k) {
+  const head = wireHead(w, k), end = (id, port, side) => `<div class="sec"><h3>${side}</h3><div><button class="btn" data-node="${esc(id)}">${esc(nodeName(id))}</button></div>
+    <p class="note"><span class="mono">${esc(port)}</span>${portDoc(id, port) ? ": " + esc(portDoc(id, port)) : ""}</p></div>`;
+  const el = $("nodepanel");
+  el.innerHTML = `<h2>Draht <span class="mono">${esc(w.from)}.${esc(w.fromPort)} → ${esc(w.to)}.${esc(w.toPort)}</span></h2>
+    <div class="sec">${head.html.replace(/<div class="t">[\s\S]*?<\/div>/, "")}</div>
+    <p class="prose">${esc(wireText(w, head.kind, head.unit))}</p>
+    <div class="cols2">${end(w.from, w.fromPort, "Von (Ausgang)")}${end(w.to, w.toPort, "Nach (Eingang)")}</div>`;
+  el.querySelectorAll("[data-node]").forEach(b => b.addEventListener("click", () => { selNode = b.dataset.node; selWire = null; renderGraph(); }));
 }
 function renderNodePanel(k) {
-  const n = SC.graph.nodes.find(x => x.id === selNode) || SC.graph.nodes[0], el = $("nodepanel");
-  const params = Object.entries(n.params).map(([kk, v]) => `<span class="k">${esc(kk)}</span><span class="v">${esc(typeof v === "object" ? JSON.stringify(v) : v)}</span>`).join("");
+  const n = nodeOf(selNode) || SC.graph.nodes[0], el = $("nodepanel"), doc = atomDoc(n.id), own = ownOf(n.id);
+  const th = cols => `<tr>${cols.filter(Boolean).map(c => `<th>${c}</th>`).join("")}</tr>`;
+  const hasPortDocs = !!doc.ports, hasParamDocs = !!doc.params;
   const outs = n.outputs.map(o => { const key = n.id + "." + o.name, s = SC.reference.series[key], org = SC.reference.origin[key];
-    return `<span class="k">${esc(o.name)}</span><span class="v">${s && s[k] != null ? fmt(s[k], 2) : "–"} ${esc(o.unit)} ${org ? `<span class="chip ${org}">${org.toLowerCase()}</span>` : ""}</span>`; }).join("");
+    const to = SC.graph.wires.filter(x => x.from === n.id && x.fromPort === o.name).map(x => `${esc(x.to)}.${esc(x.toPort)}${x.delayed ? " (nächster Takt)" : ""}`).join("<br>");
+    return `<tr><td class="k">${esc(o.name)}</td><td class="n">${s && s[k] != null ? fmt(s[k], 2) : "–"} ${esc(o.unit)}</td><td>${org ? `<span class="chip ${org}">${org.toLowerCase()}</span>` : ""}</td><td class="mono">${to || '<span class="note">Ergebnis, nicht weiterverdrahtet</span>'}</td>${hasPortDocs ? `<td class="doc">${esc(portDoc(n.id, o.name))}</td>` : ""}</tr>`; }).join("");
   const ins = n.inputs.map(i => { const w = SC.graph.wires.find(x => x.to === n.id && x.toPort === i.name); const b = SC.graph.bindings.includes(n.id + "." + i.name);
-    return `<span class="k">${esc(i.name)}</span><span class="v">${w ? `${esc(w.from)}.${esc(w.fromPort)}${w.delayed ? " (nächster Takt)" : ""}` : b ? "◆ extern gebunden" : "nicht verbunden → Standardwert"}</span>`; }).join("");
-  el.innerHTML = `<h2>${esc(n.id)} <span class="note mono">${esc(n.type)}</span></h2>
-    <div><h3>Rolle</h3><div class="kv"><span class="k">Phase</span><span class="v">${PHASE_DE[n.phase]}${n.every > 1 ? `, alle ${n.every} Takte` : ""}</span><span class="k">Fahrweise</span><span class="v">${esc(n.policy)}</span>
-    ${Object.keys(n.controls).length ? `<span class="k">Stellgrößen</span><span class="v">${esc(Object.entries(n.controls).map(([a, b]) => a + "=" + b).join(", "))}</span>` : ""}</div></div>
-    <div><h3>Ausgänge um ${tLabel(k, true)}</h3><div class="kv">${outs || '<span class="note">keine</span>'}</div></div>
-    <div><h3>Eingänge</h3><div class="kv">${ins || '<span class="note">keine</span>'}</div></div>
-    <div><h3>Zustand</h3><div class="note mono">${esc(n.state.join(", "))}</div>${params ? `<h3 style="margin-top:8px">Parameter</h3><div class="kv">${params}</div>` : ""}</div>`;
+    return `<tr><td class="k">${esc(i.name)}</td><td class="mono">${w ? `${esc(w.from)}.${esc(w.fromPort)}${w.delayed ? " (nächster Takt)" : ""}` : b ? "◆ extern gebunden" : '<span class="note">frei: Standardwert oder Stellgröße</span>'}</td><td>${esc(i.unit)}</td>${hasPortDocs ? `<td class="doc">${esc(portDoc(n.id, i.name))}</td>` : ""}</tr>`; }).join("");
+  const ctl = Object.entries(n.controls).map(([a, b]) => `<tr><td class="k">${esc(a)}</td><td class="n">${fmt(b, 3)}</td>${doc.controls ? `<td class="doc">${esc(controlDoc(n.id, a))}</td>` : ""}</tr>`).join("");
+  const show = v => typeof v === "object" ? JSON.stringify(v) : String(v);
+  const params = Object.entries(n.params).map(([name, v]) => { const d = paramDoc(n.id, name), mine = (own.params || {})[name] || "", bad = parseOwn(mine, v) === null;
+    const field = typeof v === "object"
+      ? `<textarea data-param="${esc(name)}" aria-label="Eigener Wert für ${esc(name)}" aria-invalid="${bad}" placeholder="JSON wie im Beispielwert">${esc(mine)}</textarea>`
+      : `<input type="text" data-param="${esc(name)}" aria-label="Eigener Wert für ${esc(name)}" aria-invalid="${bad}" value="${esc(mine)}" placeholder="${esc(show(v))}">`;
+    return `<tr><td class="k">${esc(name)}</td><td class="mono" style="overflow-wrap:anywhere;max-width:32ch">${esc(show(v))}</td><td>${field}</td>${hasParamDocs ? `<td class="doc">${esc(d.text || "")}</td><td class="doc">${esc(d.source || "")}</td><td class="doc">${esc(d.compare || "")}${refLinks(d.refs)}</td>` : ""}</tr>`; }).join("");
+  el.innerHTML = `<h2>${esc(doc.title || n.id)} <span class="note mono">${esc(n.id)} · ${esc(n.type)}</span></h2>
+    ${doc.text ? `<p class="prose">${esc(doc.text)}</p>` : ""}
+    <div class="cols2">
+      <div class="sec"><h3>Rolle</h3><div class="kv"><span class="k">Phase</span><span class="v">${PHASE_DE[n.phase]}${n.every > 1 ? `, alle ${n.every} Takte` : ""}</span><span class="k">Fahrweise</span><span class="v">${esc(n.policy)}</span></div></div>
+      <div class="sec"><h3>Zustand (wird je Takt fortgeschrieben)</h3><div class="note mono">${esc(n.state.join(", "))}</div></div>
+    </div>
+    <div class="sec"><h3>Ausgänge um ${tLabel(k, true)}${SC.stride > 1 ? `, Mittel über ${fmt(SC.stepMinutes / 60, 1)} h` : ""}</h3>${outs ? `<div class="scroll"><table>${th(["Port", "Wert", "Herkunft", "geht an", hasPortDocs && "Bedeutung"])}${outs}</table></div>` : '<span class="note">keine</span>'}</div>
+    <div class="sec"><h3>Eingänge</h3>${ins ? `<div class="scroll"><table>${th(["Port", "kommt von", "Einheit", hasPortDocs && "Bedeutung"])}${ins}</table></div>` : '<span class="note">keine</span>'}</div>
+    ${ctl ? `<div class="sec"><h3>Stellgrößen (im Betrieb verstellbar, als Eingriff)</h3><div class="scroll"><table>${th(["Stellgröße", "Ausgangswert", doc.controls && "Bedeutung"])}${ctl}</table></div></div>` : ""}
+    ${params ? `<div class="sec"><h3>Parameter (feste Eigenschaften im Schaltplan)</h3><div class="scroll"><table>${th(["Parameter", "Beispielwert", "Dein Wert", hasParamDocs && "Bedeutung", hasParamDocs && "Woher kommt der Wert?", hasParamDocs && "Zum Vergleich"])}${params}</table></div></div>` : ""}
+    <div class="sec"><h3>Eigene Angaben zu diesem Baustein</h3>
+      ${doc.capture ? `<p class="note">${esc(doc.capture)}</p>` : ""}
+      <div class="own-form">
+        ${OWN_FIELDS.map(([f, l]) => `<label class="ctl">${l}<input type="text" data-own="${f}" value="${esc(own[f] || "")}" autocomplete="off"></label>`).join("")}
+        <label class="ctl wide">Notiz (Einstellungen, Wartung, Ablesungen)<textarea data-own="note">${esc(own.note || "")}</textarea></label>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="exp-inv">Inventar exportieren (YAML)</button>
+        <button class="btn" id="exp-plan">Eigenen Schaltplan exportieren (YAML)</button>
+        <button class="btn" id="exp-json">Sicherung speichern (JSON)</button>
+        <label class="btn">Sicherung laden<input type="file" id="imp-json" accept="application/json,.json" hidden></label>
+      </div>
+      <p class="note" id="own-note">Die Angaben bleiben in diesem Browser gespeichert und verlassen ihn nur über den Export. Exportierte Dateien enthalten persönliche Daten und gehören nach <span class="mono">config/private/</span>. ${esc((guide().intro || {}).own || "")}</p>
+    </div>`;
+  const mark = () => { const dot = $("graph").querySelector(`[data-own-dot="${n.id}"]`); if (dot) dot.setAttribute("visibility", hasOwn(n.id) ? "visible" : "hidden"); };
+  el.querySelectorAll("[data-own]").forEach(i => i.addEventListener("input", () => { (OWN[n.id] = OWN[n.id] || {})[i.dataset.own] = i.value; saveOwn(); mark(); }));
+  el.querySelectorAll("[data-param]").forEach(i => i.addEventListener("input", () => { const o = OWN[n.id] = OWN[n.id] || {}; (o.params = o.params || {})[i.dataset.param] = i.value; saveOwn(); mark();
+    i.setAttribute("aria-invalid", parseOwn(i.value, n.params[i.dataset.param]) === null); }));
+  $("exp-inv").addEventListener("click", () => download(`inventar-${SC.plan.twin}.yaml`, inventoryYaml()));
+  $("exp-plan").addEventListener("click", () => download(`${SC.plan.twin}-eigen.yaml`, planYaml()));
+  $("exp-json").addEventListener("click", () => download(`studio-angaben-${SC.id}.json`, JSON.stringify(OWN, null, 2), "application/json"));
+  $("imp-json").addEventListener("change", ev => { const f = ev.target.files[0]; if (!f) return; f.text().then(t => { try { const v = JSON.parse(t); if (v && typeof v === "object" && !Array.isArray(v)) { OWN = v; saveOwn(); renderGraph(); } else throw 0; } catch (e) { $("own-note").textContent = "Die Datei ist keine Sicherung aus dem Studio."; } }); });
 }
+function renderGuide() {
+  const g = guide(), intro = g.intro, box = $("guide");
+  box.hidden = !intro; if (!intro) return;
+  $("guidetitle").textContent = intro.title || "Worum geht es?";
+  const refs = g.references || [];
+  $("guidebody").innerHTML = `<div>${(intro.text || []).map(t => `<p class="prose">${esc(t)}</p>`).join("")}</div>
+    <div class="cols2">
+      ${(intro.read || []).length ? `<div class="sec"><h3>So liest du den Node-Graph</h3><ul>${intro.read.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${(intro.change || []).length ? `<div class="sec"><h3>Was du ändern kannst</h3><dl>${intro.change.map(c => `<div><dt>${esc(c.title)}</dt><dd>${esc(c.text)}</dd></div>`).join("")}</dl></div>` : ""}
+    </div>
+    ${refs.length ? `<details class="sec"><summary><h3 style="display:inline">Referenzen zum Vergleich (${refs.length} Quellen)</h3></summary><div class="scroll"><table><tr><th>Quelle</th><th>Wofür</th></tr>${refs.map(r => `<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></td><td class="doc">${esc(r.note)}</td></tr>`).join("")}</table></div></details>` : ""}`;
+  let open = true; try { open = localStorage.getItem("opentsx.studio.guide") !== "closed"; } catch (e) {}
+  box.open = open;
+}
+$("guide").addEventListener("toggle", () => { try { localStorage.setItem("opentsx.studio.guide", $("guide").open ? "open" : "closed"); } catch (e) {} });
 $("scrub").addEventListener("input", renderGraph);
 
 // scenario switching
@@ -492,7 +705,8 @@ function useScenario(id) {
   units = {}; SC.graph.nodes.forEach(n => n.outputs.forEach(p => units[n.id + "." + p.name] = p.unit));
   $("scdesc").innerHTML = `${esc(SC.description)} <span class="mono">Plan ${esc(SC.graph.planHash)}</span>`;
   selected = (SC.smartMetrics || []).find(k => SC.reference.series[k]) || Object.keys(SC.reference.series)[0];
-  selNode = SC.graph.nodes[0].id;
+  selNode = SC.graph.nodes[0].id; selWire = null;
+  loadOwn(); renderGuide();
   $("alt").innerHTML = SC.alternatives.map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join("");
   $("fc").innerHTML = SC.forecasts.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join("");
   $("m-forecast").disabled = !SC.forecasts.length;

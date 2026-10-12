@@ -104,6 +104,11 @@ public final class HouseStudioScenario implements StudioScenario {
     }
 
     @Override
+    public StudioGuide guide() {
+        return StudioGuide.resource("twin/haus-erzgebirge.guide.yaml");
+    }
+
+    @Override
     public List<String> markerEvents() {
         return List.of("delivery", "reorder_warning", "tank_empty");
     }

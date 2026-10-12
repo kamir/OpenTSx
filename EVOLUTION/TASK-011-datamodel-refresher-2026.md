@@ -120,6 +120,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
 - [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
 - [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
+- [x] P7e Studio-Leitfaden (Branch `opentsx/2026-studio-guide`): `StudioGuide` + `twin/haus-erzgebirge.guide.yaml` (Prosa je Baustein, Port, Parameter, Stellgröße, Draht; Herkunft der Werte; Vergleichsquellen), gegen den Schaltplan getestet; Hover-Erläuterung je Draht und Port; eigene Angaben je Baustein mit Export als Inventar und als eigener Schaltplan. Offen: Leitfäden für H2-Kette und Boot.
 - [ ] P7e Studio produktiv: Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7, Node-Graph bearbeitbar (Schaltplan mit Validierung), Eingriffe mit Freigabe-Workflow, zusammengesetzte Bausteine.
 - [x] Studio allgemein: `StudioScenario` (Schaltplan, Referenz, Alternativen, Prognosen, Smart Metrics, Kennzahlen) + `StudioExport`; Oberfläche mit Szenario-Auswahl ohne Sonderfälle.
 - [x] Haus- und Boot-Szenario als `StudioScenario` eingehängt (`HouseStudioScenario`, `BoatStudioScenario`, abgeleitete Kennzahlen über `derivedKpis`).

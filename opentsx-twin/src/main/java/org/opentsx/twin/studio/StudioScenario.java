@@ -10,7 +10,8 @@ import java.util.Map;
 
 /**
  * A modelled system as the Smart Topics Studio shows it: the wiring plan, the observed inputs and decisions of the
- * reference run, named what-if alternatives, forecasts from snapshots and the series worth showing first. Every
+ * reference run, named what-if alternatives, forecasts from snapshots, the series worth showing first and an
+ * optional {@link StudioGuide} that explains the plan. Every
  * scenario (H2 chain, house, boat, ...) is an ordinary twin; the Studio has no special cases.
  */
 public interface StudioScenario {
@@ -55,6 +56,11 @@ public interface StudioScenario {
     /** KPIs computed from a run beyond the final states (keys should start with {@code kpi.}). */
     default Map<String, Double> derivedKpis(RunResult run) {
         return Map.of();
+    }
+
+    /** Prose for the plan (atoms, ports, parameters, wires, references); empty if the scenario has none. */
+    default StudioGuide guide() {
+        return StudioGuide.EMPTY;
     }
 
     /** Event types drawn as markers in charts. */
