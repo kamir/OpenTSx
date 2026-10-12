@@ -83,8 +83,15 @@ steps over a 14-day summer trip. All numbers are assumptions until real data rep
 
 ```bash
 bin/opentsx boat                                             # shadow of the synthetic trip + what-ifs
-bin/opentsx boat --data config/private/bootsdaten.csv --calibrate   # real data, fitted to the measured SoC
+bin/opentsx boat --data config/private/bootsdaten.csv --calibrate   # real data, fitted to the measurements
+bin/opentsx boat --simulated                                 # the same on bundled SIMULATED logs
 ```
+
+Until real exports exist, [`twin/beispiel/boot-logs-simuliert.csv`](src/main/resources/twin/beispiel/boot-logs-simuliert.csv)
+holds SIMULATED logs ([README](src/main/resources/twin/beispiel/README-boot.md)): `SimulatedLogs` runs the model with
+hidden parameters (derate 0.62, Starlink ×1.25, laptops ×1.3), a cloudy spell and a day without Starlink, and writes
+a 5-minute app export with logbook, irradiance, whole-percent SoC, noise and gaps. `--simulated` calibrates on it
+and recovers the hidden values within about 1 %.
 
 | Type | Phase | Main behaviour |
 |------|-------|----------------|
@@ -96,8 +103,10 @@ bin/opentsx boat --data config/private/bootsdaten.csv --calibrate   # real data,
 
 Real data come as CSV ([template](src/main/resources/twin/bootsdaten-vorlage.csv), invented example rows) and are bound
 by `BoatData` with origin MEASURED (station app, Starlink, USB-C meter) or REPORTED (logbook). `Calibration` fits
-controls such as `solar.derate` and usage scales by bounded Levenberg-Marquardt least squares against the measured
-SoC. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `alternatives()`, `KEY_SERIES`,
+model parameters such as `solar.derate` and usage scales by bounded Levenberg-Marquardt least squares against the
+measured SoC, the measured output power and (with irradiance) the measured solar power. Model parameters
+(`scale`, `derate`) are kept apart from system levers for what-ifs (`wp`, `power_factor`, `on`, `max_on_h`, ...); only
+the levers act on measured values. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `alternatives()`, `KEY_SERIES`,
 `KEY_KPIS` and `kpis(RunResult)`.
 
 ## Tests
@@ -125,6 +134,8 @@ SoC. For front ends, `BoatDemo` exposes `plan()`, `observed()`, `reference()`, `
   * determinism, forecast from a snapshot, origins
   * what-ifs (+100 Wp, Starlink 3 h/day, shore power every third day) and the scenario API
   * CSV import (resampling, holding, origins) and calibration that recovers known parameters
+* **`boat.SimulatedLogsTest`**: the bundled simulated logs equal the generator output; calibration on them recovers
+  the hidden parameters, and unmet demand and autonomy on the logs match the hidden true run
 
 ## Not yet
 

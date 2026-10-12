@@ -13,6 +13,7 @@ import org.opentsx.twin.boat.BoatClock;
 import org.opentsx.twin.boat.BoatData;
 import org.opentsx.twin.boat.BoatMode;
 import org.opentsx.twin.boat.Calibration;
+import org.opentsx.twin.boat.SimulatedLogs;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -33,12 +34,14 @@ import java.util.Map;
  *   <li>what-if alternatives against that reference, as KPI deltas (alternative minus reference, modelled).</li>
  * </ol>
  * With {@code --data file.csv} the twin runs on real operating data instead (see {@link BoatData}), with
- * {@code --calibrate} it first fits solar derating and usage scales to the measured SoC.
+ * {@code --calibrate} it first fits solar derating and usage scales to the measurements ({@link #calibrate}).
+ * {@code --simulated} does both on the bundled SIMULATED logs ({@link SimulatedLogs}) and compares with the hidden
+ * true parameters.
  * <p>
  * For the Studio and other front ends the scenario is exposed as data: {@link #plan()}, {@link #observed()},
  * {@link #reference()}, {@link #alternatives()}, {@link #KEY_SERIES}, {@link #KEY_KPIS} and {@link #kpis(RunResult)}.
  * <p>
- * Usage: {@code bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate]]}
+ * Usage: {@code bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate] | --simulated]}
  */
 public final class BoatDemo {
 
@@ -103,7 +106,7 @@ public final class BoatDemo {
                 set(t, "laptop1", "charge_from_h", 10), set(t, "laptop1", "charge_to_h", 16),
                 set(t, "laptop2", "charge_from_h", 10), set(t, "laptop2", "charge_to_h", 16)));
         out.add(alt("starlinkAc", "Starlink via inverter (230 V)", inputs, set(t, "starlink", "path_eff", 0.8)));
-        out.add(alt("starlinkStd", "Starlink Standard instead of Mini", inputs, set(t, "starlink", "scale", 2.0)));
+        out.add(alt("starlinkStd", "Starlink Standard instead of Mini", inputs, set(t, "starlink", "power_factor", 2.0)));
         if (weekendInputs != null) {
             out.add(new Alternative("weekends", "weekend use instead of the holiday trip", List.of(), Map.of(),
                     weekendInputs));
@@ -176,6 +179,7 @@ public final class BoatDemo {
         TwinPlan plan = plan();
         Path data = null;
         boolean calibrate = false;
+        boolean simulated = false;
         ZoneId zone = ZoneId.of("Europe/Berlin");
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -183,14 +187,31 @@ public final class BoatDemo {
                 case "--data" -> data = Path.of(arg(args, ++i));
                 case "--zone" -> zone = ZoneId.of(arg(args, ++i));
                 case "--calibrate" -> calibrate = true;
+                case "--simulated" -> simulated = true;
                 default -> usage();
             }
         }
-        if (calibrate && data == null) {
+        if (calibrate && data == null || simulated && data != null) {
             usage();
         }
         PrintStream out = System.out;
-        if (data == null) {
+        if (simulated) {
+            out.println("SIMULATED operating data (" + SimulatedLogs.RESOURCE + "), not measurements: import + calibration demo.");
+            BoatData d = BoatData.parse(simulatedLogs(), plan, SimulatedLogs.ZONE);
+            Calibration.Fit fit = real(out, plan, d, true);
+            out.println();
+            out.println("3. Hidden true parameters of the simulation vs. calibrated");
+            Map<String, Double> truth = SimulatedLogs.truth();
+            fit.values().forEach((k, v) -> out.printf(Locale.ROOT, "     %-16s true %.3f  calibrated %.3f  (%+.1f %%)%n",
+                    k, truth.get(k), v, 100 * (v / truth.get(k) - 1)));
+            Map<String, Double> t = kpis(SimulatedLogs.truthRun(plan));
+            Map<String, Double> c = kpis(new Twin(d.plan()).shadow(d.inputs(), fit.interventions()));
+            out.println("   KPIs of the hidden true run (5 min) vs. the calibrated twin on the logs (15 min):");
+            for (String k : List.of("unmet_wh", "unmet_h", "soc_min_pct", "solar_used_wh", "shore_wh", "load_wh_per_day",
+                    "starlink_wh_per_day")) {
+                out.printf(Locale.ROOT, "     %-22s true %9.1f  twin %9.1f%n", k, t.get(k), c.get(k));
+            }
+        } else if (data == null) {
             synthetic(out, plan);
         } else {
             real(out, plan, BoatData.load(data, plan, zone), calibrate);
@@ -212,7 +233,66 @@ public final class BoatDemo {
         whatIfs(out, plan, ref, alternatives(plan, observed, logbook(plan, WEEKENDS)), List.of());
     }
 
-    private static void real(PrintStream out, TwinPlan template, BoatData d, boolean calibrate) {
+    /** The bundled simulated logs ({@link SimulatedLogs#RESOURCE}) as lines. */
+    public static List<String> simulatedLogs() {
+        try (java.io.InputStream in = BoatDemo.class.getClassLoader().getResourceAsStream(SimulatedLogs.RESOURCE)) {
+            if (in == null) {
+                throw new IllegalStateException("missing resource " + SimulatedLogs.RESOURCE);
+            }
+            return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).lines().toList();
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Calibrates {@link #defaultKnobs()} on operating data against every measurement that can see them:
+     * <ul>
+     *   <li>the measured SoC ({@code station.soc}, sigma 1 %-point);</li>
+     *   <li>the measured output power, via {@code station.load_residual_w} (sigma 5 W);</li>
+     *   <li>if irradiance is bound: the measured solar power where the battery is below 95 % (not curtailed), with
+     *       the solar measurement unbound so that the solar model runs on the irradiance (sigma 5 W).</li>
+     * </ul>
+     * Knobs of parts whose power is measured in more than half of the steps are left out (they would only absorb
+     * errors elsewhere); so is the solar derating if solar power is measured but irradiance is not.
+     */
+    public static Calibration.Fit calibrate(BoatData d) {
+        TwinPlan plan = d.plan();
+        int half = plan.steps() / 2;
+        boolean solarMeasured = d.coverage().getOrDefault("solar.p_meas_w", 0) > 0;
+        boolean ghi = d.coverage().getOrDefault("solar.ghi_wm2", 0) > half;
+        List<Calibration.Knob> knobs = defaultKnobs().stream().filter(k -> k.controls().stream().noneMatch(c -> {
+            String atom = c.substring(0, c.indexOf('.'));
+            if (atom.equals("solar")) {
+                return solarMeasured && !ghi;
+            }
+            return d.coverage().getOrDefault(atom + ".p_meas_w", 0) > half;
+        })).toList();
+        List<Calibration.Target> targets = new ArrayList<>();
+        targets.add(new Calibration.Target("station.soc", d.socMeas(), 0.01));
+        double[] load = d.measured("station.p_load_meas_w");
+        double[] zero = new double[load.length];
+        for (int i = 0; i < load.length; i++) {
+            zero[i] = Double.isNaN(load[i]) ? Double.NaN : 0;
+        }
+        targets.add(new Calibration.Target("station.load_residual_w", zero, 5));
+        SeriesInputs inputs = d.inputs();
+        if (solarMeasured && ghi) {
+            double[] pv = d.measured("solar.p_meas_w");
+            double[] soc = d.socMeas();
+            for (int i = 0; i < pv.length; i++) {
+                if (Double.isNaN(soc[i]) || soc[i] >= 0.95) {
+                    pv[i] = Double.NaN;
+                }
+            }
+            targets.add(new Calibration.Target("solar.p_avail_w", pv, 5));
+            inputs = d.inputs(java.util.Set.of("solar.p_meas_w"));
+        }
+        return Calibration.fit(plan, inputs, List.of(), targets, knobs);
+    }
+
+    private static Calibration.Fit real(PrintStream out, TwinPlan template, BoatData d, boolean calibrate) {
+        Calibration.Fit fit = null;
         TwinPlan plan = d.plan();
         out.println("Boat twin " + plan.twin() + " on operating data: " + d.rows() + " rows, " + plan.steps()
                 + " steps from " + plan.start());
@@ -230,18 +310,17 @@ public final class BoatDemo {
             if (Double.isNaN(rmse)) {
                 out.println("   --calibrate needs the column soc_prozent");
             } else {
-                // knobs of measured parts would only absorb errors elsewhere: calibrate what is not measured
-                List<Calibration.Knob> knobs = defaultKnobs().stream().filter(k -> k.controls().stream()
-                        .noneMatch(c -> d.coverage().getOrDefault(c.substring(0, c.indexOf('.')) + ".p_meas_w", 0)
-                                > plan.steps() / 2)).toList();
-                out.println("   calibrating " + knobs.stream().map(Calibration.Knob::name).toList()
-                        + " (parts measured in more than half of the steps are left out)");
-                Calibration.Fit fit = Calibration.fit(plan, d.inputs(), base, "station.soc", d.socMeas(), knobs);
-                out.printf(Locale.ROOT, "   calibrated in %d runs: RMSE %.1f -> %.1f %%-points%n", fit.evaluations(),
-                        100 * fit.rmseStart(), 100 * fit.rmse());
+                fit = calibrate(d);
+                out.println("   calibrated " + fit.values().keySet() + " in " + fit.evaluations()
+                        + " runs (parts measured in more than half of the steps are left out)");
+                Calibration.Fit f = fit;
+                f.rmseByTarget().forEach((k, v) -> out.printf(Locale.ROOT, "     RMSE %-24s %8.3f -> %8.3f%n", k,
+                        f.rmseStartByTarget().get(k), v));
                 fit.values().forEach((k, v) -> out.printf(Locale.ROOT, "     %-16s %.3f%n", k, v));
                 base = fit.interventions();
                 shadow = new Twin(plan).shadow(d.inputs(), base);
+                out.printf(Locale.ROOT, "   shadow with calibrated values: SoC RMSE %.1f %%-points%n",
+                        100 * Calibration.rmse(shadow.series("station.soc"), d.socMeas()));
             }
         }
         days(out, shadow);
@@ -249,6 +328,7 @@ public final class BoatDemo {
         out.println();
         out.println("2. What-if on the data (modelled; delta = alternative minus shadow, same inputs)");
         whatIfs(out, plan, shadow, alternatives(plan, d.inputs(), null), base);
+        return fit;
     }
 
     /** Knobs fitted by {@code --calibrate}: solar derating and usage scales (start = plan defaults). */
@@ -338,7 +418,7 @@ public final class BoatDemo {
     }
 
     private static void usage() {
-        System.err.println("usage: bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate]]");
+        System.err.println("usage: bin/opentsx boat [--plan file.yaml] [--data file.csv [--zone Europe/Berlin] [--calibrate] | --simulated]");
         System.exit(1);
     }
 }

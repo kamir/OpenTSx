@@ -9,7 +9,7 @@
 #   metadata           publish the metadata pool to OpenMetadata             (org.opentsx.openmetadata.WindparkMetadata)
 #   retrieval-server   REST API for episodes, patterns, segments             (org.opentsx.retrieval.server.RetrievalServer)
 #   twin               digital twin demo S1 (H2 chain) in all three modes    (org.opentsx.twin.demo.H2ChainDemo)
-#   boat               boat twin (Etap 22): trip, what-ifs, --data/--calibrate (org.opentsx.twin.demo.BoatDemo)
+#   boat               boat twin (Etap 22): what-ifs, --data, --simulated     (org.opentsx.twin.demo.BoatDemo)
 #   classpath <module> print the runtime classpath of a module
 #
 # Requires a prior build: mvn -q install -DskipTests   (JDK 17+)

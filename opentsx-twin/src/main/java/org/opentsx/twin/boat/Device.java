@@ -16,7 +16,7 @@ import java.util.Map;
  * <p>
  * <b>Usage profile.</b> The device is active inside its local hour {@code windows} for the current mode (parameter
  * map mode → list of {@code "HH-HH"}), otherwise in standby. Power while active is
- * {@code scale · (activeW · (1 − burstDuty) + burstW · burstDuty)}; {@code burstW}/{@code burstDuty} model short
+ * {@code scale · power_factor · (activeW · (1 − burstDuty) + burstW · burstDuty)}; {@code burstW}/{@code burstDuty} model short
  * high-power phases such as VHF transmission. Standby draws {@code standbyW}.
  * <p>
  * <b>Own battery (optional).</b> With {@code batteryWh > 0} (laptop, phone) the usage drains the device battery, and
@@ -28,12 +28,21 @@ import java.util.Map;
  * 12 V outlet ≈ 0.9; inverter and power supply ≈ 0.8).
  * <p>
  * <b>Measurement.</b> A bound {@code p_meas_w} (device-side power, e.g. from the Starlink app or a USB-C meter)
- * replaces the model in that step. In a what-if the controls {@code on}, {@code scale} and {@code max_on_h} still
- * apply to it; a changed value then counts as {@link Origin#ESTIMATED}.
+ * replaces the model in that step. In a what-if the system controls {@code on}, {@code power_factor} and
+ * {@code max_on_h} still apply to it; a changed value then counts as {@link Origin#ESTIMATED}. The model parameter
+ * {@code scale} (usage intensity, the calibration knob) does not, because a measurement already contains it.
+ * <p>
+ * Two kinds of controls, kept apart on purpose: <i>model parameters</i> describe how well the model matches the
+ * boat ({@code scale}; fitted by calibration), <i>system levers</i> change the boat ({@code on},
+ * {@code power_factor} for a replacement device, e.g. Starlink Standard instead of Mini, {@code max_on_h},
+ * {@code path_eff}, charge window; used by what-ifs).
  * <p>
  * In the modes listed in {@code offModes} (default: away) the device is not on board and draws nothing.
  * <p>
- * Controls (defaults from parameters): {@code on}, {@code scale}, {@code max_on_h} (active hours per local day),
+ * Input {@code on} (bindable, e.g. the logbook entry "Starlink off today") drives the control of the same name
+ * through the {@code follow} policy.
+ * <p>
+ * Controls (defaults from parameters): {@code on}, {@code scale}, {@code power_factor}, {@code max_on_h} (active hours per local day),
  * {@code path_eff}, {@code charge_from_h}, {@code charge_to_h}.
  * <p>
  * Simplification: the device does not learn whether the station could serve it; energy the station cannot deliver
@@ -95,7 +104,7 @@ public final class Device extends Atom {
 
     @Override
     public List<PortSpec> inputs() {
-        return List.of(PortSpec.signal("mode", "1"), PortSpec.flow("p_meas_w", "W"));
+        return List.of(PortSpec.signal("mode", "1"), PortSpec.flow("p_meas_w", "W"), PortSpec.signal("on", "1"));
     }
 
     @Override
@@ -108,6 +117,7 @@ public final class Device extends Atom {
         Map<String, Double> c = new LinkedHashMap<>();
         c.put("on", params.d("on", 1));
         c.put("scale", params.d("scale", 1));
+        c.put("power_factor", params.d("powerFactor", 1));
         c.put("max_on_h", params.d("maxOnH", 24));
         c.put("path_eff", params.d("pathEff", 0.9));
         c.put("charge_from_h", params.d("chargeFromH", 0));
@@ -156,11 +166,11 @@ public final class Device extends Atom {
         if (ctx.has("p_meas_w")) {
             // a what-if on history applies the controls to the measurement (unchanged in the reference)
             double meas = Math.max(0, ctx.in("p_meas_w").getAsDouble());
-            double scale = ctx.control("scale");
+            double factor = ctx.control("power_factor");
             boolean wants = meas > standbyW + 0.5;
             boolean capped = wants && onTodayH + h > ctx.control("max_on_h") + 1e-9;
             boolean active = on && wants && !capped;
-            double devW = !on ? 0 : capped ? Math.min(meas, standbyW) : wants ? meas * scale : meas;
+            double devW = !on ? 0 : capped ? Math.min(meas, standbyW) : wants ? meas * factor : meas;
             if (active) {
                 activeH += h;
                 onTodayH += h;
@@ -188,7 +198,7 @@ public final class Device extends Atom {
             activeH += h;
             onTodayH += h;
         }
-        double use = active ? ctx.control("scale") * (activeW * (1 - burstDuty) + burstW * burstDuty)
+        double use = active ? ctx.control("scale") * ctx.control("power_factor") * (activeW * (1 - burstDuty) + burstW * burstDuty)
                 : on ? standbyW : 0;
         double devW;
         if (batteryWh <= 0) {
