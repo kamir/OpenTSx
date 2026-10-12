@@ -1,0 +1,1165 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anlagen-Explorer</title>
+<meta name="description" content="Prototyp der Studio-Ansicht 'Anlage erkunden': visuelles Inventar auf Karte, Grundriss und Decksplan mit Hover-Karte, Datenblatt und Wartung. Beispieldaten, erfunden.">
+<style>
+/* Layout: tool page. Header with system selector; toolbar (breadcrumb, plan tabs, search, filters, layers);
+   workspace = map stage (zoom/pan, mini-map, hover card) + detail sheet on the right, bottom sheet at phone width. */
+:root {
+  --bg: #f4f5f3;
+  --surface: #ffffff;
+  --surface-2: #eef0ed;
+  --ink: #15191d;
+  --ink-2: #4c555d;
+  --ink-3: #79838b;
+  --line: #d3d8d6;
+  --accent: #0d5c63;
+  --accent-soft: #d7ebec;
+  --warn: #9a6a00;
+  --warn-soft: #f6ead0;
+  --crit: #b3261e;
+  --crit-soft: #f6dcda;
+  --ok: #2f6f3e;
+  --ok-soft: #dcefe0;
+  --off: #6b747b;
+  /* map and plan surfaces */
+  --sea: #cfe3ea;
+  --sea-line: #9fc4d1;
+  --land: #e9ecdf;
+  --field: #dfe5cf;
+  --forest: #c9d8bd;
+  --road: #ffffff;
+  --road-edge: #c9cdc3;
+  --paper: #f7f6f1;
+  --wall: #3a4148;
+  --room: #fbfaf6;
+  --room-alt: #f1efe7;
+  --hull: #fdfcf8;
+  --deck: #e8e1d2;
+  --water: #d5e6ee;
+  --h2: #2a78d6;
+  --cable: #8a6d3b;
+  --wake: rgba(42, 120, 214, 0.16);
+  --wake-line: rgba(42, 120, 214, 0.55);
+  --shadow: 0 6px 24px rgba(20, 30, 35, 0.18);
+  --font-body: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111517; --surface: #192024; --surface-2: #20282d; --ink: #e8ece9; --ink-2: #b2bcc2; --ink-3: #87939a;
+    --line: #313b41; --accent: #5fb7bd; --accent-soft: #1d3436; --warn: #d6a43a; --warn-soft: #3a2f17;
+    --crit: #ef7d75; --crit-soft: #3d2120; --ok: #79c08a; --ok-soft: #1c3322; --off: #8c969d;
+    --sea: #13303a; --sea-line: #285565; --land: #1b2320; --field: #1f2a24; --forest: #22322a; --road: #313a3b;
+    --road-edge: #2a3233; --paper: #1a2023; --wall: #c7cfd3; --room: #20282c; --room-alt: #1c2427; --hull: #232b2f;
+    --deck: #2b3236; --water: #142a33; --h2: #6aa8f0; --cable: #c9a66a; --wake: rgba(106, 168, 240, 0.16);
+    --wake-line: rgba(106, 168, 240, 0.6); --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111517; --surface: #192024; --surface-2: #20282d; --ink: #e8ece9; --ink-2: #b2bcc2; --ink-3: #87939a;
+  --line: #313b41; --accent: #5fb7bd; --accent-soft: #1d3436; --warn: #d6a43a; --warn-soft: #3a2f17;
+  --crit: #ef7d75; --crit-soft: #3d2120; --ok: #79c08a; --ok-soft: #1c3322; --off: #8c969d;
+  --sea: #13303a; --sea-line: #285565; --land: #1b2320; --field: #1f2a24; --forest: #22322a; --road: #313a3b;
+  --road-edge: #2a3233; --paper: #1a2023; --wall: #c7cfd3; --room: #20282c; --room-alt: #1c2427; --hull: #232b2f;
+  --deck: #2b3236; --water: #142a33; --h2: #6aa8f0; --cable: #c9a66a; --wake: rgba(106, 168, 240, 0.16);
+  --wake-line: rgba(106, 168, 240, 0.6); --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.45; overflow-x: hidden; }
+.app { max-width: 1320px; margin: 0 auto; padding: 16px 16px 40px; display: grid; gap: 12px; }
+.mono { font-family: var(--font-mono); }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: end; justify-content: space-between; }
+h1 { font-size: 1.3rem; margin: 0; font-weight: 600; }
+.sub { color: var(--ink-2); font-size: 0.84rem; }
+.tag-example { display: inline-block; padding: 0 6px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); font-size: 0.76rem; font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 6px 12px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.top-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 10px; color: var(--ink-2); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 0.86rem; min-width: 0; }
+.crumbs button { border: 0; background: none; padding: 2px 4px; color: var(--accent); border-radius: 4px; }
+.crumbs button[aria-current="page"] { color: var(--ink); font-weight: 600; cursor: default; }
+.crumbs .sep { color: var(--ink-3); }
+.plantabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.plantabs button { border: 1px solid var(--line); background: var(--surface); padding: 4px 10px; border-radius: 999px; color: var(--ink-2); font-size: 0.84rem; }
+.plantabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search { position: relative; flex: 1 1 220px; max-width: 340px; min-width: 0; }
+.search input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; }
+.results { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); max-height: 300px; overflow: auto; margin: 0; padding: 4px; list-style: none; }
+.results li button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 6px; }
+.results li button:hover, .results li button:focus-visible { background: var(--surface-2); }
+.results small { color: var(--ink-3); display: block; font-family: var(--font-mono); font-size: 0.74rem; overflow-wrap: anywhere; }
+.chip-toggle { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; color: var(--ink-2); font-size: 0.84rem; display: inline-flex; gap: 6px; align-items: center; }
+.chip-toggle[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.chip-toggle .n { font-family: var(--font-mono); font-size: 0.76rem; }
+.layers { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.84rem; color: var(--ink-2); align-items: center; }
+.layers label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+
+.work { position: relative; }
+.stage { position: relative; height: 600px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); touch-action: none; user-select: none; -webkit-user-select: none; }
+#map { width: 100%; height: 100%; display: block; cursor: grab; }
+#map.dragging { cursor: grabbing; }
+.zoom { position: absolute; right: 10px; top: 10px; display: grid; gap: 4px; }
+.zoom button { width: 32px; height: 32px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; font-size: 16px; line-height: 1; color: var(--ink-2); }
+.minimap { position: absolute; left: 10px; bottom: 10px; width: 168px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+.minimap svg { display: block; width: 100%; height: auto; cursor: pointer; }
+.minimap .vpr { fill: none; stroke: var(--crit); stroke-width: 6; }
+.minimap .dot { stroke: none; }
+.legend { position: absolute; left: 10px; top: 42px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 0.74rem; color: var(--ink-2); display: grid; gap: 2px; max-width: 220px; }
+.legend .row { display: flex; gap: 6px; align-items: center; }
+.lod { position: absolute; left: 10px; top: 10px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 0.76rem; color: var(--ink-2); }
+
+/* plan drawing classes */
+.p-land { fill: var(--land); }
+.p-field { fill: var(--field); }
+.p-forest { fill: var(--forest); }
+.p-sea { fill: var(--sea); }
+.p-coast { fill: none; stroke: var(--sea-line); stroke-width: 2; }
+.p-road { fill: none; stroke: var(--road); stroke-width: 6; stroke-linecap: round; }
+.p-road-edge { fill: none; stroke: var(--road-edge); stroke-width: 8; stroke-linecap: round; }
+.p-contour { fill: none; stroke: var(--road-edge); stroke-width: 1; stroke-dasharray: 2 4; }
+.p-cable { fill: none; stroke: var(--cable); stroke-width: 2; stroke-dasharray: 6 4; }
+.p-h2 { fill: none; stroke: var(--h2); stroke-width: 4; stroke-linecap: round; }
+.p-text { fill: var(--ink-3); font-size: 13px; font-family: var(--font-body); }
+.p-text-strong { fill: var(--ink-2); font-size: 14px; font-weight: 600; font-family: var(--font-body); }
+.p-italic { fill: var(--ink-3); font-size: 15px; font-style: italic; font-family: var(--font-body); letter-spacing: 2px; }
+.p-ink { fill: none; stroke: var(--ink-2); stroke-width: 1.5; }
+.p-inkfill { fill: var(--ink-2); }
+.p-paper { fill: var(--paper); }
+.p-wall { fill: none; stroke: var(--wall); stroke-width: 8; stroke-linejoin: miter; }
+.p-iwall { fill: none; stroke: var(--wall); stroke-width: 3; }
+.p-room { fill: var(--room); }
+.p-room-alt { fill: var(--room-alt); }
+.p-stairs { fill: none; stroke: var(--ink-3); stroke-width: 1.2; }
+.p-door { fill: none; stroke: var(--ink-3); stroke-width: 1.2; }
+.p-window { stroke: var(--sea-line); stroke-width: 4; }
+.p-garden { fill: var(--field); }
+.p-water { fill: var(--water); }
+.p-hull { fill: var(--hull); stroke: var(--wall); stroke-width: 3; }
+.p-deck { fill: var(--deck); stroke: var(--ink-3); stroke-width: 1.5; }
+.p-thin { fill: none; stroke: var(--ink-3); stroke-width: 1.2; }
+.p-tower { fill: var(--room-alt); stroke: var(--wall); stroke-width: 2; }
+.p-wake { fill: var(--wake); stroke: var(--wake-line); stroke-width: 1; }
+
+/* asset markers */
+.asset { cursor: pointer; outline: none; }
+.asset .pin { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.5; }
+.asset .glyph { color: var(--ink); }
+.asset.st-warn .pin { stroke: var(--warn); stroke-width: 2.5; }
+.asset.st-crit .pin { stroke: var(--crit); stroke-width: 2.5; }
+.asset:hover .pin, .asset:focus-visible .pin, .asset.hot .pin { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+.asset.sel .pin { fill: var(--accent); stroke: var(--accent); }
+.asset.sel .glyph { color: var(--surface); }
+.asset .badge circle { stroke: var(--surface); stroke-width: 1.5; }
+.asset .badge text { fill: #fff; font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; font-family: var(--font-body); }
+.b-ok { fill: var(--ok); } .b-warn { fill: var(--warn); } .b-crit { fill: var(--crit); } .b-off { fill: var(--off); }
+.b-due { fill: var(--accent); }
+.asset .lbl { font-size: 12px; font-weight: 600; text-anchor: middle; fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; font-family: var(--font-body); }
+.asset .lv { font-size: 11px; text-anchor: middle; fill: var(--accent); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; font-family: var(--font-mono); }
+.asset.dim { opacity: 0.22; }
+.hide-labels .asset .lbl, .hide-live .asset .lv, .hide-maint .asset .badge.due { display: none; }
+
+/* hover card */
+.hovercard { position: absolute; z-index: 20; width: 280px; max-width: calc(100% - 16px); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; pointer-events: none; }
+.hovercard.touch { pointer-events: auto; cursor: pointer; }
+@media (max-width: 860px) { .hovercard .illus { aspect-ratio: 16 / 3.2; } .hovercard { width: 260px; } .hovercard .kpis div:nth-child(n+3) { display: none; } }
+.hc-body { padding: 8px 10px 10px; display: grid; gap: 4px; }
+.hc-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.hc-head b { font-size: 0.98rem; }
+.hc-id { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; margin: 2px 0; }
+.kpis div { display: flex; flex-direction: column; min-width: 0; }
+.kpis dt { font-size: 0.7rem; color: var(--ink-3); margin: 0; }
+.kpis dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 0.86rem; }
+.liveline { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: 0.82rem; }
+.liveline b { font-variant-numeric: tabular-nums; }
+.ts { color: var(--ink-3); font-size: 0.74rem; font-family: var(--font-mono); }
+.hint { color: var(--ink-3); font-size: 0.72rem; border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+.mline { font-size: 0.8rem; display: flex; gap: 6px; align-items: baseline; }
+.mline.due { color: var(--accent); font-weight: 600; }
+.imline { font-size: 0.78rem; color: var(--ink-2); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.imline .mono { font-size: 0.72rem; overflow-wrap: anywhere; }
+
+.st { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+.st.ok { background: var(--ok-soft); color: var(--ok); }
+.st.warn { background: var(--warn-soft); color: var(--warn); }
+.st.crit { background: var(--crit-soft); color: var(--crit); }
+.st.off { background: var(--surface-2); color: var(--off); }
+.origin { display: inline-block; padding: 0 5px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; border: 1px solid currentColor; }
+.origin.MEASURED { color: var(--ok); }
+.origin.REPORTED { color: var(--accent); }
+.origin.FORECAST, .origin.ESTIMATED { color: var(--warn); }
+.origin.SYNTHETIC { color: var(--ink-3); border-style: dashed; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.dot.online { background: var(--ok); }
+.dot.offline { background: var(--off); }
+.dot.error { background: var(--crit); }
+
+/* illustration placeholder */
+.illus { position: relative; background: var(--surface-2); color: var(--ink-2); aspect-ratio: 16 / 7; overflow: hidden; }
+.illus svg { width: 100%; height: 100%; display: block; }
+.illus-tag { position: absolute; left: 6px; bottom: 6px; background: var(--surface); color: var(--ink-2); border: 1px dashed var(--ink-3); border-radius: 4px; font-size: 0.68rem; padding: 0 5px; font-weight: 600; }
+
+/* detail sheet */
+/* desktop: the sheet floats over the right side of the map (the map does not reflow, markers stay under the pointer) */
+.sheet { position: absolute; z-index: 25; top: 10px; right: 54px; width: 380px; max-width: calc(100% - 64px); max-height: calc(100% - 20px); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
+.sheet-head { padding: 10px 12px 6px; display: grid; gap: 4px; border-bottom: 1px solid var(--line); }
+.sheet-head .row { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.sheet-head h2 { font-size: 1.08rem; margin: 0; }
+.sheet-close { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; width: 30px; height: 30px; flex: none; color: var(--ink-2); }
+.sheet-head, .sheet-tabs { flex: none; }
+.sheet-tabs { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.sheet-tabs button { border: 0; background: none; padding: 8px 10px; color: var(--ink-2); border-bottom: 2px solid transparent; white-space: nowrap; }
+.sheet-tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.sheet-body { flex: 1 1 auto; min-height: 0; padding: 10px 12px 16px; overflow: auto; display: grid; gap: 12px; align-content: start; }
+.sheet-body h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin: 4px 0 0; }
+.gallery { display: grid; grid-template-columns: 2fr 1fr; gap: 6px; }
+.gallery .illus { border-radius: 8px; aspect-ratio: auto; height: 100%; min-height: 70px; }
+.gallery .main { grid-row: span 2; min-height: 150px; }
+table.kv { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+table.kv th { text-align: left; font-weight: 500; color: var(--ink-3); padding: 3px 8px 3px 0; vertical-align: top; width: 40%; }
+table.kv td { padding: 3px 0; overflow-wrap: anywhere; }
+table.grid { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+table.grid th { text-align: left; font-weight: 600; color: var(--ink-3); border-bottom: 1px solid var(--line); padding: 4px 6px 4px 0; }
+table.grid td { border-bottom: 1px solid var(--line); padding: 4px 6px 4px 0; vertical-align: top; overflow-wrap: anywhere; }
+.doc { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.doc svg { width: 24px; height: 24px; color: var(--ink-3); }
+.doc .meta { font-size: 0.74rem; color: var(--ink-3); font-family: var(--font-mono); overflow-wrap: anywhere; }
+.doc button, .actions button, .actions a { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; color: var(--ink-2); text-decoration: none; }
+.doc button[disabled], .actions button[disabled] { opacity: 0.55; cursor: not-allowed; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions .primary { border-color: var(--accent); color: var(--accent); }
+.note { font-size: 0.78rem; color: var(--ink-3); }
+.callout { border-left: 3px solid var(--accent); background: var(--surface-2); padding: 6px 10px; border-radius: 0 6px 6px 0; font-size: 0.82rem; }
+.callout.due { border-left-color: var(--warn); }
+.spark { width: 100%; height: 70px; display: block; }
+.spark .ln { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.spark .ar { fill: var(--accent-soft); }
+.spark .ax { stroke: var(--line); }
+.spark text { font-size: 10px; fill: var(--ink-3); font-family: var(--font-mono); }
+
+.tray { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.84rem; color: var(--ink-2); }
+.tray button { border: 1px dashed var(--ink-3); background: var(--surface); border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; color: var(--ink-2); }
+footer.foot { color: var(--ink-3); font-size: 0.78rem; display: grid; gap: 4px; }
+footer.foot a { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .stage { height: 62vh; min-height: 380px; }
+  .sheet { position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: auto; max-width: none; z-index: 50; max-height: 72vh; border-radius: 14px 14px 0 0; box-shadow: var(--shadow); }
+  .sheet-head::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 4px; }
+  .legend { display: none; }
+  .minimap { width: 120px; }
+  .search { max-width: none; }
+}
+@media (max-width: 480px) {
+  .app { padding: 12px 16px 32px; }
+  .lod { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #vp { transition: none; }
+}
+</style>
+</head>
+<body>
+<!-- Glyph library: 24x24, stroke = currentColor. Used by markers, hover cards and illustrations. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="none"/><line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" stroke-opacity="0.12" stroke-width="3"/>
+    </pattern>
+    <symbol id="g-turbine" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v11M10 22h4"/><path d="M12 10.5c-.6-2.6-.5-5.2.4-8 .9 2.4.8 5.1-.4 8zM12.7 11.7c2.4.9 4.4 2.5 6 4.8-2.6-.1-4.8-1.6-6-4.8zM11.2 11.6c-1.8 1.9-4.1 3.2-6.9 3.6 1.5-2.1 3.9-3.4 6.9-3.6z"/><circle cx="12" cy="11" r="1.2"/></symbol>
+    <symbol id="g-ely" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="1.5"/><path d="M6.5 9.5v5M6.5 12h3M9.5 9.5v5M12.5 13h2.2l-2.2 2h2.2"/><path d="M17.5 9v6"/></symbol>
+    <symbol id="g-battery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="1.5"/><path d="M21 10.5v3M11.5 8.8l-2 3.4h3l-2 3.2"/></symbol>
+    <symbol id="g-substation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9.5" cy="12" r="5"/><circle cx="14.5" cy="12" r="5"/><path d="M2 12h2.5M19.5 12H22"/></symbol>
+    <symbol id="g-meter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7 9h10M8 13h2M11 13h2M14 13h2M8 17h8"/></symbol>
+    <symbol id="g-factory" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 21V11l5 3v-3l5 3v-3l5 3V4h3v17z"/><path d="M7 18h2M12 18h2"/></symbol>
+    <symbol id="g-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M7 13h1.5M12 7.5V9M16.5 13H18"/></symbol>
+    <symbol id="g-boiler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M12 9.5c1.8 1.6 2.4 3 2.4 4.2a2.4 2.4 0 0 1-4.8 0c0-1 .5-1.8 1.2-2.4.1.8.5 1.2 1 1.4 0-1.1.1-2.1.2-3.2z"/><path d="M8 6h8"/></symbol>
+    <symbol id="g-tank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 13h16" stroke-dasharray="2 2"/><path d="M12 2v3"/></symbol>
+    <symbol id="g-stove" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M10 2v4M14 2v4"/><rect x="5" y="6" width="14" height="14" rx="1.5"/><rect x="8" y="10" width="8" height="7" rx="1"/><path d="M12 11.5c1 .9 1.3 1.7 1.3 2.4a1.3 1.3 0 0 1-2.6 0c0-.6.3-1.1.7-1.4z"/><path d="M6 20v2M18 20v2"/></symbol>
+    <symbol id="g-fridge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="1.5"/><path d="M6 9h12M9 5.5v1.5M9 11.5v3"/></symbol>
+    <symbol id="g-freezer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="8" width="19" height="11" rx="1.5"/><path d="M2.5 11h19M10 9.5h4M12 13.5v4M10.3 14.5l3.4 2M13.7 14.5l-3.4 2"/></symbol>
+    <symbol id="g-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="4" width="19" height="12.5" rx="1.5"/><path d="M8 20.5h8M12 16.5v4"/></symbol>
+    <symbol id="g-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="9" cy="14" r="3"/><path d="M15 12h3M15 15h3M6 8l11-5"/></symbol>
+    <symbol id="g-washer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="13" r="4.5"/><path d="M7 6.5h3"/></symbol>
+    <symbol id="g-router" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 17h.01M10 17h.01M8.5 10.5a5 5 0 0 1 7 0M6 8a8.5 8.5 0 0 1 12 0"/></symbol>
+    <symbol id="g-dhw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="5"/><path d="M12 8.5c1.6 2 2.4 3.4 2.4 4.6a2.4 2.4 0 0 1-4.8 0c0-1.2.8-2.6 2.4-4.6z"/></symbol>
+    <symbol id="g-wood" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="16.5" r="3.3"/><circle cx="17" cy="16.5" r="3.3"/><circle cx="12" cy="9.5" r="3.3"/><circle cx="7" cy="16.5" r="1"/><circle cx="17" cy="16.5" r="1"/><circle cx="12" cy="9.5" r="1"/></symbol>
+    <symbol id="g-herd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><circle cx="8.5" cy="8.5" r="2.4"/><circle cx="15.5" cy="8.5" r="2.4"/><circle cx="8.5" cy="15.5" r="2.4"/><circle cx="15.5" cy="15.5" r="2.4"/></symbol>
+    <symbol id="g-solar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 6h16l-2 13H3z"/><path d="M4 12.5h16M12 6l-1 13M8 6l-2 13M16.5 6l-1.5 13"/></symbol>
+    <symbol id="g-starlink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="5" width="16" height="10" rx="1.5" transform="rotate(-12 12 10)"/><path d="M12 15v5M8 21h8"/><path d="M17 2.5a5 5 0 0 1 3.5 3.5" opacity=".7"/></symbol>
+    <symbol id="g-vhf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 9v13M9 22h6"/><circle cx="12" cy="7" r="1.5"/><path d="M8.5 3.5a5 5 0 0 0 0 7M15.5 3.5a5 5 0 0 1 0 7M5.7 1.3a8.5 8.5 0 0 0 0 11.4M18.3 1.3a8.5 8.5 0 0 1 0 11.4"/></symbol>
+    <symbol id="g-radiounit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="18" height="11" rx="1.5"/><path d="M6 10.5h6M6 14h3M15.5 12.5h.01M18 12.5h.01M17 7V3"/></symbol>
+    <symbol id="g-plug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v5"/></symbol>
+    <symbol id="g-station" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6V4h8v2"/><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M13 9.5l-3 4h4l-3 4"/></symbol>
+    <symbol id="g-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3"/></symbol>
+    <symbol id="g-laptop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="5" width="14" height="10" rx="1"/><path d="M2.5 18.5h19l-2-3.5h-15z"/></symbol>
+    <symbol id="g-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="g-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/></symbol>
+    <symbol id="g-generator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M7.5 12c1.2-2.4 2.8-2.4 4.5 0s3.3 2.4 4.5 0"/></symbol>
+    <symbol id="g-converter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M3.5 20.5l17-17M6 8c.8-1.4 1.7-1.4 2.5 0s1.7 1.4 2.5 0M13 16h5M13 18h5"/></symbol>
+    <symbol id="g-rotor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="1.8"/><path d="M12 10.2C11 7 11.3 4.3 12.8 1.8c1 2.6.6 5.6-.8 8.4zM13.6 12.9c3.2.6 5.4 2.2 6.8 4.7-2.8.2-5.4-1.3-6.8-4.7zM10.4 12.9c-2.2 2.4-4.7 3.6-7.6 3.5 1.6-2.4 4.4-3.6 7.6-3.5z"/></symbol>
+    <symbol id="g-yaw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M18 2.5v4h-4"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="g-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></symbol>
+    <symbol id="g-market" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 16l4-5 4 3 6-8"/><path d="M15 6h4v4"/></symbol>
+    <symbol id="g-rules" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></symbol>
+    <symbol id="g-house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="g-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></symbol>
+    <symbol id="g-boat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2v14M12 3l6 11h-6M12 5l-5 9h5"/><path d="M3 17h18l-2.5 4h-13z"/></symbol>
+    <symbol id="g-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+    <symbol id="g-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L3.5 17.5l3 3 5.7-5.7a4 4 0 0 0 5.3-5.3l-2.4 2.4-2.6-.5-.5-2.6z"/></symbol>
+    <symbol id="g-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4M8.5 11h7M8.5 14h7M8.5 17h5"/></symbol>
+    <symbol id="g-cluster" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 10v10M12 6v14M18 10v10"/><circle cx="6" cy="9" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="18" cy="9" r="1.6"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Anlage erkunden</h1>
+      <div class="sub">Visuelles Inventar · vierte Ansicht des Smart Topics Studio · <span class="tag-example">Beispieldaten, erfunden</span></div>
+    </div>
+    <div class="top-right">
+      <div class="seg" role="group" aria-label="System" id="systems"></div>
+      <button class="icon-btn" id="theme" type="button" aria-label="Farbschema wechseln">Auto</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <nav class="crumbs" id="crumbs" aria-label="Brotkrumen"></nav>
+    <div class="plantabs" id="plantabs" role="tablist" aria-label="Ebene"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tools">
+      <div class="search">
+        <input id="q" type="search" placeholder="Suchen: Id, Name, Typ, Seriennummer" aria-label="Inventar durchsuchen" autocomplete="off">
+        <ul class="results" id="results" hidden></ul>
+      </div>
+      <button class="chip-toggle" id="f-due" type="button" aria-pressed="false">Wartung fällig <span class="n" id="n-due"></span></button>
+      <button class="chip-toggle" id="f-dev" type="button" aria-pressed="false">Nur Abweichungen <span class="n" id="n-dev"></span></button>
+    </div>
+    <div class="layers" role="group" aria-label="Ebenen">
+      <label><input type="checkbox" id="l-labels" checked> Beschriftungen</label>
+      <label><input type="checkbox" id="l-live" checked> Livewerte</label>
+      <label><input type="checkbox" id="l-maint" checked> Wartung</label>
+      <label id="l-wake-wrap"><input type="checkbox" id="l-wake"> Wake-Sektor</label>
+    </div>
+  </div>
+
+  <div class="work" id="work">
+    <div class="stage" id="stage">
+      <svg id="map" role="application" aria-label="Plan mit Anlagenelementen; Tab wechselt zwischen Elementen, Enter öffnet das Datenblatt">
+        <g id="vp"><g id="plan"></g><g id="overlay"></g><g id="assets"></g></g>
+      </svg>
+      <div class="lod" id="lod"></div>
+      <div class="zoom">
+        <button type="button" id="z-in" aria-label="Hineinzoomen">+</button>
+        <button type="button" id="z-out" aria-label="Herauszoomen">&minus;</button>
+        <button type="button" id="z-fit" aria-label="Ansicht zurücksetzen">&#8634;</button>
+      </div>
+      <div class="minimap" aria-label="Mini-Karte"><svg id="mini"></svg></div>
+      <div class="legend" id="legend"></div>
+      <div class="hovercard" id="hc" hidden></div>
+    </div>
+    <aside class="sheet" id="sheet" hidden aria-label="Datenblatt">
+      <div class="sheet-head" id="sheet-head"></div>
+      <div class="sheet-tabs" role="tablist" id="sheet-tabs"></div>
+      <div class="sheet-body" id="sheet-body"></div>
+    </aside>
+  </div>
+
+  <div class="tray" id="tray"></div>
+
+  <footer class="foot">
+    <div>Ids = Atom-Ids der Schaltpläne <span class="mono">opentsx-twin/src/main/resources/twin/*.yaml</span> (+ Unterobjektpfad). Alle Werte, Seriennummern, Dokumente und Wartungsdaten sind <b>erfundene Beispiele</b>; Abbildungen sind gekennzeichnete Illustrationen, keine Fotos.</div>
+    <div>Konzept: <a href="../datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md">12-EXPLORATIVES-UI-INVENTAR</a> · Studio: <a href="smart-topics-studio.html">Smart Topics Studio</a> · Stand 2026-10-12 (Beispielzeitpunkt 09:41 UTC)</div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------ data (example, invented) ------------------ */
+const TODAY = "2026-10-12";
+const ORIGIN = { MEASURED: "gemessen", REPORTED: "gemeldet", FORECAST: "Prognose", ESTIMATED: "geschätzt", SYNTHETIC: "modelliert" };
+const STATUS = { ok: ["✓", "in Ordnung"], warn: ["!", "Warnung"], crit: ["×", "Störung"], off: ["–", "außer Betrieb"] };
+const TYPES = {
+  "wind-turbine": ["Windenergieanlage", "turbine"], electrolyzer: ["Elektrolyseur", "ely"], battery: ["Batteriespeicher", "battery"],
+  "grid-connection": ["Übergabestation / Bilanzknoten", "substation"], "h2-line": ["H2-Leitung, Druckmessstelle", "gauge"],
+  "h2-offtake": ["H2-Abnehmer", "factory"], market: ["Markt", "market"], "direct-marketer": ["Direktvermarkter", "market"],
+  "operating-rules": ["Betriebsvorgaben", "rules"], component: ["Komponente", "gear"],
+  "oil-boiler": ["Ölkessel", "boiler"], "oil-tank": ["Öltank", "tank"], "wood-stove": ["Kaminofen", "stove"], dhw: ["Warmwasserspeicher", "dhw"],
+  meter: ["Stromzähler", "meter"], "wood-store": ["Holzlager", "wood"], appliance: ["Gerät", "tv"], weather: ["Wetter", "sun"],
+  building: ["Gebäude (Rahmen)", "house"], appliances: ["Geräte (Gruppe)", "bulb"],
+  "power-station": ["Powerstation", "station"], solar: ["Solarmodule", "solar"], "shore-power": ["Landstrom", "plug"],
+  device: ["Gerät", "chip"], "boat-mode": ["Nutzungsmodus", "boat"], antenna: ["Antenne", "vhf"]
+};
+const PROJ = { lon0: 13.90, lon1: 14.02, lat0: 54.4746, lat1: 54.4300, w: 1000, h: 640 };
+const geo = (lat, lon) => [Math.round((lon - PROJ.lon0) / (PROJ.lon1 - PROJ.lon0) * PROJ.w), Math.round((PROJ.lat0 - lat) / (PROJ.lat0 - PROJ.lat1) * PROJ.h)];
+const hx = (x, y) => [200 + 60 * x, 80 + 60 * y];        // house plan: metres -> px (60 px/m, origin 200/80)
+const bx = (x, y) => [90 + 125 * x, 220 + 125 * y];       // boat plan: metres from transom / centreline -> px
+
+function doc(kind, title, fmt, size, sha) { return { kind, title, fmt, size, sha }; }
+function iv(name, kind, every, last, next) { return { name, kind, every, last, next }; }
+
+const TURBINES = [
+  ["T01", 54.4520, 13.9350, "ok", false, "2.212 kW", "+0,4 %", "99,1 %", { ns: "windpark-ost", dev: "t01-scada-gw", state: "online" }],
+  ["T02", 54.4515, 13.9430, "warn", true, "1.842 kW", "−6,1 %", "97,8 %", { ns: "windpark-ost", dev: "t02-scada-gw", state: "online" }],
+  ["T03", 54.4523, 13.9510, "crit", false, "0 kW", "–", "88,4 %", { ns: "windpark-ost", dev: "t03-scada-gw", state: "offline" }],
+  ["T04", 54.4518, 13.9590, "ok", true, "1.960 kW", "−1,2 %", "98,9 %", { ns: "windpark-ost", dev: "t04-scada-gw", state: "online" }]
+];
+
+const ASSETS = [];
+function add(a) { ASSETS.push(a); return a; }
+
+/* --- h2-chain (wind park, electrolyzer, H2 line) --- */
+TURBINES.forEach(([t, lat, lon, status, due, p, dev, av, im], i) => {
+  const [x, y] = geo(lat, lon);
+  add({
+    id: `h2-chain/park/${t}`, sys: "h2-chain", atom: "park", parent: "h2-chain/park", type: "wind-turbine", name: `WEA ${t}`,
+    plan: "park", x, y, lat, lon, status, due, cluster: "park", zoomable: true,
+    kpi: [["Nennleistung", "3,0 MW"], ["Verfügbarkeit 30 d", av], ["Leistungskurve", dev], ["Betriebsstunden", `${(84210 + i * 1312).toLocaleString("de-DE")} h`]],
+    live: { label: "Wirkleistung", v: p, origin: "MEASURED", ts: status === "crit" ? "2026-10-12 07:58 UTC" : "2026-10-12 09:41 UTC", stale: status === "crit" },
+    im,
+    plate: { Hersteller: "(Beispiel)", Modell: "GENERIC-3MW", Seriennummer: `EX-0000-${t}`, Rotordurchmesser: "≈ 100 m (Annahme)", Nabenhöhe: "≈ 100 m (Annahme)", Inbetriebnahme: "2014-06-30" },
+    refs: { "RDS-PP": `=G00${i + 1} (Beispiel, zu prüfen)`, "IEC 61400-25": `LD ${t}: WTUR, WGEN, WNAC, WROT, WCNV, WTRF`, "ISO 14224": "Anlagenklasse Windturbine (zu prüfen)" },
+    docs: [doc("Datenblatt", "Datenblatt GENERIC-3MW", "PDF", "1,4 MB", "9c1e04…"), doc("Handbuch", "Betriebsanleitung, Rev. 7", "PDF", "18,2 MB", "51aa7f…"),
+           doc("Zertifikat", "Typenzertifikat (Beispiel)", "PDF", "0,6 MB", "e07b3d…"), doc("Protokoll", "Wiederkehrende Prüfung 2025", "PDF", "3,1 MB", "0f88c2…")],
+    maint: {
+      intervals: [iv("Jahreswartung", "Zeit", "P1Y", "2025-10-28", "2026-10-28"), iv("Ölwechsel Getriebe", "Betriebsstunden", "20.000 h", "2024-04-11", "≈ 2027-02"),
+                  iv("Blattinspektion", "Zustand", "Leistungskurve < −5 % über 14 d", "2024-08-02", status === "warn" ? "fällig seit 2026-10-01" : "Regel nicht erfüllt")],
+      open: status === "warn" ? [["wo-2026-0042", "Blattinspektion Rotor, Drohnenbefliegung", "geplant", "2026-10-14"]]
+          : status === "crit" ? [["wo-2026-0047", "Störung Umrichter, Fehlersuche vor Ort", "in Arbeit", "2026-10-12"]]
+          : due ? [["wo-2026-0039", "Jahreswartung", "vorgeschlagen", "2026-10-28"]] : [],
+      history: [["2025-10-28", "Jahreswartung, Befund: keiner", "Servicepartner (Rolle)"], ["2024-04-11", "Getriebeölwechsel", "Servicepartner (Rolle)"]]
+    },
+    series: [["wind.turbine.power_active", "kW", "MEASURED"], ["wind.met.wind_speed", "m/s", "MEASURED"], ["wind.generator.temperature", "°C", "MEASURED"], ["wind.turbine.operating_hours", "h", "MEASURED"]],
+    ports: ["park.p_gen_kw (Anteil)", "rules.limit_kw → park.limit_kw"], smart: [`st.wind.${t.toLowerCase()}.power_curve_dev`],
+    note: "Unterobjekt des Atoms park (heute aggregiert 12 MW, 4 × 3 MW Beispiel). Benennung T01 … wie im Windpark-Simulator."
+  });
+});
+(function () {
+  const [x, y] = geo(54.4470, 13.9660);
+  add({ id: "h2-chain/grid", sys: "h2-chain", atom: "grid", type: "grid-connection", name: "Übergabestation / NVP", plan: "park", x, y, lat: 54.4470, lon: 13.9660, status: "ok", due: false,
+    kpi: [["Netzanschluss", "12 MW (Annahme)"], ["Einspeisung heute", "41,8 MWh"], ["Bilanzfehler", "0,0 kW"], ["Priorität", "self › ely › bat"]],
+    live: { label: "Netz", v: "+2.106 kW", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" },
+    im: { ns: "windpark-ost", dev: "nvp-zaehler-gw", state: "online" },
+    plate: { Betreiber: "Parkbetreiber (Rolle)", Spannungsebene: "20 kV (Annahme)", Zähler: "RLM-Zähler Netzbetreiber (Beispiel)" },
+    refs: { "RDS-PP": "=AAA (Beispiel, zu prüfen)", Atom: "grid (balance)" },
+    docs: [doc("Zeichnung", "Übersichtsschaltplan Übergabestation", "PDF", "2,2 MB", "77c0a1…"), doc("Protokoll", "Prüfprotokoll Schutztechnik 2024", "PDF", "1,1 MB", "3ad910…")],
+    maint: { intervals: [iv("Schutzprüfung", "Zeit", "P4Y", "2024-05-06", "2028-05")], open: [], history: [["2024-05-06", "Schutzprüfung ohne Befund", "Prüfdienst (Rolle)"]] },
+    series: [["grid.p_grid_kw", "kW", "MEASURED"], ["grid.balance_error_kw", "kW", "SYNTHETIC"]],
+    ports: ["park.p_gen_kw → grid.p_gen_kw", "ely.p_el_kw → grid.p_ely_kw", "battery.p_bat_kw → grid.p_bat_kw", "grid.p_grid_kw → marketer.p_grid_kw"], smart: [] });
+})();
+(function () {
+  const [x, y] = geo(54.4430, 13.9600);
+  add({ id: "h2-chain/battery", sys: "h2-chain", atom: "battery", type: "battery", name: "Batteriespeicher", plan: "park", x, y, lat: 54.4430, lon: 13.9600, status: "ok", due: false,
+    kpi: [["Kapazität", "2.000 kWh"], ["Leistung", "1.000 kW"], ["SoH", "96 %"], ["Zyklen", "412"]],
+    live: { label: "SoC", v: "63 %", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" },
+    im: { ns: "windpark-ost", dev: "bess-ems", state: "online" },
+    plate: { Hersteller: "(Beispiel)", Chemie: "LFP", Container: "1 × 20 ft" },
+    refs: { Atom: "battery" },
+    docs: [doc("Datenblatt", "Datenblatt BESS 2 MWh", "PDF", "0,9 MB", "aa01c7…"), doc("Garantie", "Leistungsgarantie 10 Jahre", "PDF", "0,3 MB", "5d2e88…")],
+    maint: { intervals: [iv("Inspektion Klima/Brandschutz", "Zeit", "P6M", "2026-05-02", "2026-11-02")], open: [], history: [["2026-05-02", "Filter Klimagerät getauscht", "Servicepartner (Rolle)"]] },
+    series: [["battery.soc", "1", "MEASURED"], ["battery.p_bat_kw", "kW", "MEASURED"]],
+    ports: ["battery.p_bat_kw → grid.p_bat_kw"], smart: [] });
+})();
+(function () {
+  const [x, y] = geo(54.4440, 13.9760);
+  add({ id: "h2-chain/ely", sys: "h2-chain", atom: "ely", type: "electrolyzer", name: "Elektrolyseur", plan: "park", x, y, lat: 54.4440, lon: 13.9760, status: "ok", due: false,
+    kpi: [["Nennleistung", "5,0 MW"], ["Mindestlast", "10 %"], ["spez. Verbrauch", "55 kWh/kg"], ["Abschaltdruck", "40 bar"]],
+    live: { label: "Elektr. Leistung", v: "3.950 kW", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
+    im: { ns: "h2-ely", dev: "ely-sps-gw", state: "online" },
+    plate: { Betreiber: "Elektrolyseurbetreiber (Rolle)", Technologie: "PEM (Annahme)", Rampe: "500 kW/min" },
+    refs: { Atom: "ely (electrolyzer)", Hinweis: "Daten über vereinbarte Schnittstelle (IEC 104/OPC UA)" },
+    docs: [doc("Datenblatt", "Datenblatt Stack-Modul", "PDF", "1,7 MB", "c4d2e1…"), doc("Zertifikat", "Druckgeräte-Konformität", "PDF", "0,8 MB", "9e1f00…")],
+    maint: { intervals: [iv("Stack-Inspektion", "Betriebsstunden", "8.000 h", "2026-03-15", "≈ 2027-01")], open: [], history: [["2026-03-15", "Stack-Inspektion, Wasseraufbereitung gewartet", "Betreiber (Rolle)"]] },
+    series: [["ely.p_el_kw", "kW", "REPORTED"], ["ely.m_h2_kgph", "kg/h", "REPORTED"], ["ely.state", "–", "REPORTED"]],
+    ports: ["ely.p_el_kw → grid.p_ely_kw", "ely.m_h2_kgph → line.m_in_kgph", "line.p_bar → ely.p_downstream_bar", "line.headroom_kg → ely.headroom_kg"], smart: [],
+    commandable: false, note: "Schutzabregelung bei Leitungsdruck > 40 bar bleibt lokale Logik; aus dem Explorer nicht schaltbar." });
+})();
+(function () {
+  const [x, y] = geo(54.4410, 13.9930);
+  add({ id: "h2-chain/line", sys: "h2-chain", atom: "line", type: "h2-line", name: "H2-Leitung (Druck)", plan: "park", x, y, lat: 54.4410, lon: 13.9930, status: "warn", due: false,
+    kpi: [["Volumen", "157 m³"], ["Grenzen", "20–40 bar"], ["Puffer bis Grenze", "≈ 74 min"], ["Länge", "≈ 2,6 km (Beispiel)"]],
+    live: { label: "Druck", v: "37,8 bar", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
+    im: null,
+    plate: { Werkstoff: "(Beispiel)", Nenndruck: "PN 40 (Annahme)" },
+    refs: { Atom: "line (h2-line)" },
+    docs: [doc("Zeichnung", "Trassenplan (Beispiel)", "PDF", "4,6 MB", "1b0c9a…"), doc("Protokoll", "Druckprüfung Inbetriebnahme", "PDF", "0,7 MB", "6f3e2d…")],
+    maint: { intervals: [iv("Dichtheitsprüfung", "Zeit", "P1Y", "2026-04-20", "2027-04-20")], open: [], history: [["2026-04-20", "Dichtheitsprüfung ohne Befund", "Prüfdienst (Rolle)"]] },
+    series: [["line.p_bar", "bar", "REPORTED"], ["line.headroom_kg", "kg", "SYNTHETIC"]],
+    ports: ["ely.m_h2_kgph → line.m_in_kgph", "offtake.m_out_kgph → line.m_out_kgph", "line.p_bar → ely.p_downstream_bar"], smart: [],
+    note: "Warnung: Zeit bis Druckgrenze unter 90 min (Schwelle Beispiel). Ereignis aus dem Schattenlauf." });
+})();
+(function () {
+  const [x, y] = geo(54.4370, 14.0100);
+  add({ id: "h2-chain/offtake", sys: "h2-chain", atom: "offtake", type: "h2-offtake", name: "H2-Abnehmer", plan: "park", x, y, lat: 54.4370, lon: 14.0100, status: "ok", due: false,
+    kpi: [["Abnahme", "70 kg/h"], ["Schieber", "offen"], ["heute geliefert", "602 kg"]],
+    live: { label: "Abnahme", v: "70 kg/h", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" }, im: null,
+    plate: { Rolle: "H2-Abnehmer (Rolle)" }, refs: { Atom: "offtake (h2-offtake)" },
+    docs: [doc("Vertrag", "Liefervereinbarung (vertraulich, nicht hinterlegt)", "–", "–", "–")],
+    maint: { intervals: [], open: [], history: [] },
+    series: [["offtake.m_out_kgph", "kg/h", "REPORTED"]], ports: ["offtake.m_out_kgph → line.m_out_kgph", "offtake.m_out_kgph → ely.m_offtake_kgph"], smart: [] });
+})();
+[["market", "market", "Markt", "Day-Ahead 15 min", "86,40 €/MWh", "REPORTED"], ["marketer", "direct-marketer", "Direktvermarkter", "Toleranz 100 kW", "−64 kW Abw.", "SYNTHETIC"], ["rules", "operating-rules", "Betriebsvorgaben", "Abregelung", "keine", "REPORTED"]]
+  .forEach(([atom, type, name, k, v, o]) => add({ id: `h2-chain/${atom}`, sys: "h2-chain", atom, type, name, plan: null, status: "ok", due: false,
+    kpi: [["Kenngröße", k]], live: { label: name, v, origin: o, ts: "2026-10-12 09:41 UTC" }, im: null, plate: {}, refs: { Atom: atom },
+    docs: [], maint: { intervals: [], open: [], history: [] }, series: [], ports: [], smart: [], note: "Atom ohne Ort: erscheint in der Leiste unter dem Plan, nicht auf der Karte." }));
+
+/* turbine components (level 2), generated per turbine */
+const COMPONENTS = [
+  ["rotor", "Rotor / Blätter", "rotor", 418, 92, "WROT", "Blattwinkel, Drehzahl"],
+  ["getriebe", "Getriebe", "gear", 540, 190, "WTRM", "Öltemperatur, Schwingung (CMS)"],
+  ["generator", "Generator", "generator", 640, 190, "WGEN", "Wicklungstemperatur"],
+  ["azimut", "Azimutantrieb", "yaw", 560, 248, "WYAW", "Gondelposition"],
+  ["umrichter", "Umrichter", "converter", 500, 520, "WCNV", "Leistung, Fehlercodes"],
+  ["trafo", "Trafo (Turmfuß)", "substation", 690, 560, "WTRF", "Öltemperatur"],
+  ["anemometer", "Gondel-Anemometer", "wind", 690, 120, "WMET", "Windgeschwindigkeit, -richtung"]
+];
+function componentAssets(turbine) {
+  const t = turbine.id.split("/").pop();
+  return COMPONENTS.map(([k, name, glyph, x, y, ln, what]) => {
+    const crit = turbine.status === "crit" && k === "umrichter";
+    const warn = turbine.status === "warn" && k === "rotor";
+    return {
+      id: `${turbine.id}/${k}`, sys: "h2-chain", atom: "park", parent: turbine.id, type: "component", glyph, name: `${name} ${t}`, plan: "wea", x, y,
+      status: crit ? "crit" : warn ? "warn" : "ok", due: warn, comp: true,
+      kpi: [["IEC 61400-25", ln], ["Messgrößen", what]],
+      live: crit ? { label: "Fehlercode", v: "F-1207 (Beispiel)", origin: "MEASURED", ts: "2026-10-12 07:58 UTC" } : null,
+      im: null, plate: { Hersteller: "(Beispiel)", Seriennummer: `EX-${t}-${k.toUpperCase().slice(0, 3)}-01` },
+      refs: { "IEC 61400-25": `LD ${t} / LN ${ln}`, "RDS-PP": "(Beispiel, zu prüfen)", "ISO 14224": "Unterklasse (zu prüfen)" },
+      docs: [doc("Datenblatt", `Datenblatt ${name}`, "PDF", "0,5 MB", "b1c2d3…")],
+      maint: warn ? { intervals: [iv("Blattinspektion", "Zustand", "Leistungskurve < −5 % über 14 d", "2024-08-02", "fällig seit 2026-10-01")], open: [["wo-2026-0042", "Blattinspektion Rotor, Drohnenbefliegung", "geplant", "2026-10-14"]], history: [] }
+          : crit ? { intervals: [], open: [["wo-2026-0047", "Störung Umrichter, Fehlersuche vor Ort", "in Arbeit", "2026-10-12"]], history: [] }
+          : { intervals: [], open: [], history: [] },
+      series: [], ports: [], smart: [], note: "Komponente (Ebene 2), Unterobjekt der WEA. Ort in Bildkoordinaten des Schemas."
+    };
+  });
+}
+
+/* --- haus-erzgebirge --- */
+function hAdd(o) { const [x, y] = hx(o.mx, o.my); return add(Object.assign({ sys: "haus-erzgebirge", x, y, due: false, status: "ok", im: null, refs: {}, docs: [], series: [], ports: [], smart: [], plate: {}, maint: { intervals: [], open: [], history: [] } }, o)); }
+hAdd({ id: "haus-erzgebirge/boiler", atom: "boiler", type: "oil-boiler", name: "Ölkessel", plan: "kg", mx: 1.2, my: 1.4, status: "warn", due: true,
+  kpi: [["Nennleistung", "18 kW"], ["Wirkungsgrad", "90 % (Annahme)"], ["Brennerstarts heute", "31"], ["Baujahr", "1990er"]],
+  live: { label: "Heizleistung", v: "6,2 kW", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+  plate: { Hersteller: "(Beispiel)", Typ: "Niedertemperaturkessel", Brenner: "einstufig, 120 W", Umwälzpumpe: "ungeregelt, 65 W" },
+  refs: { Atom: "boiler (oil-boiler)", "ISO 14224": "Kessel (zu prüfen)" },
+  docs: [doc("Handbuch", "Bedienungsanleitung Kessel", "PDF", "2,4 MB", "4c11e0…"), doc("Protokoll", "Abgasmessung Schornsteinfeger 2025", "PDF", "0,2 MB", "8a90b1…"), doc("Rechnung", "Wartungsrechnung 2025 (privat, lokal)", "PDF", "0,1 MB", "d00f13…")],
+  maint: { intervals: [iv("Kesselwartung", "Zeit", "P1Y", "2025-09-30", "2026-09-30"), iv("Abgasmessung", "Zeit", "P2Y", "2024-10-15", "2026-10-15"), iv("Düse/Ölfilter", "Brennerstunden", "1.500 h", "2025-09-30", "≈ 2026-12")],
+          open: [["wo-2026-0103", "Kesselwartung und Abgasmessung", "vorgeschlagen", "2026-10-20"]], history: [["2025-09-30", "Wartung, Düse getauscht", "Heizungsbauer (Rolle)"], ["2024-10-15", "Abgasmessung bestanden", "Schornsteinfeger (Rolle)"]] },
+  series: [["boiler.q_space_kw", "kW", "SYNTHETIC"], ["boiler.fuel_lph", "l/h", "SYNTHETIC"], ["boiler.starts", "1", "SYNTHETIC"]],
+  ports: ["building.q_req_kw → boiler.q_req_kw", "dhw.q_dhw_kw → boiler.q_dhw_kw", "tank.level_l → boiler.tank_level_l", "boiler.q_space_kw → building.q_heater_kw", "boiler.fuel_lph → tank.fuel_lph"],
+  smart: ["st.haus.boiler.cycling"], commandable: false, note: "Kein Sensor: Werte aus dem Zwilling (modelliert). Wartung fällig: Intervall überschritten." });
+hAdd({ id: "haus-erzgebirge/dhw", atom: "dhw", type: "dhw", name: "Warmwasserspeicher 150 l", plan: "kg", mx: 2.9, my: 1.0,
+  kpi: [["Volumen", "150 l"], ["Solltemperatur", "60 °C"], ["Verlust", "60 W"]], live: { label: "Wärmebedarf", v: "0,3 kW", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+  plate: { Hersteller: "(Beispiel)", Inhalt: "150 l" }, refs: { Atom: "dhw" },
+  maint: { intervals: [iv("Schutzanode prüfen", "Zeit", "P2Y", "2025-09-30", "2027-09")], open: [], history: [] },
+  series: [["dhw.q_dhw_kw", "kW", "SYNTHETIC"]], ports: ["dhw.q_dhw_kw → boiler.q_dhw_kw"] });
+hAdd({ id: "haus-erzgebirge/tank", atom: "tank", type: "oil-tank", name: "Öltank 2 × 2.000 l", plan: "kg", mx: 7.27, my: 1.18,
+  kpi: [["Kapazität", "4.000 l"], ["Nachbestellen bei", "600 l"], ["Reichweite", "≈ 74 Tage (Prognose)"]],
+  live: { label: "Füllstand", v: "1.150 l", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+  plate: { Bauart: "Batterietank, Kunststoff", Inhalt: "2 × 2.000 l" }, refs: { Atom: "tank (oil-tank)" },
+  docs: [doc("Protokoll", "Tankprüfung (Beispiel)", "PDF", "0,3 MB", "71ab02…"), doc("Rechnung", "Öllieferung 2025-08 (privat, lokal)", "PDF", "0,1 MB", "2fe9c4…")],
+  maint: { intervals: [iv("Sichtprüfung Auffangraum", "Zeit", "P1Y", "2026-03-01", "2027-03-01")], open: [], history: [["2025-08-19", "Lieferung 2.400 l", "Händler (Rolle)"]] },
+  series: [["tank.level_l", "l", "SYNTHETIC"]], ports: ["boiler.fuel_lph → tank.fuel_lph", "tank.level_l → boiler.tank_level_l"], smart: ["st.haus.oil.days_left"],
+  note: "Kein Füllstandssensor: Füllstand modelliert, Tankstände aus Ablesungen gehen als REPORTED in die Kalibrierung." });
+hAdd({ id: "haus-erzgebirge/appliances/gefriertruhe", atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph: "freezer", name: "Gefriertruhe (alt)", plan: "kg", mx: 1.5, my: 6.4, status: "warn",
+  kpi: [["Mittlere Leistung", "45 W"], ["Jahresverbrauch", "394 kWh"], ["Austausch spart", "≈ 250 kWh/a (modelliert)"]],
+  live: { label: "Leistung", v: "45 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, plate: { Baujahr: "≈ 2005 (Annahme)" }, refs: { Atom: "appliances.inventory[gefriertruhe]" },
+  series: [["appliances.p_el_kw (Anteil)", "kW", "SYNTHETIC"]], note: "Warnung = Effizienzhinweis, keine Störung." });
+hAdd({ id: "haus-erzgebirge/meter", atom: "meter", type: "meter", name: "Stromzähler", plan: "kg", mx: 8.6, my: 6.8,
+  kpi: [["Arbeitspreis", "0,36 €/kWh"], ["Grundlast", "≈ 190 W"], ["Jahr bisher", "2.318 kWh"]],
+  live: { label: "Leistung", v: "412 W", origin: "MEASURED", ts: "2026-10-12 09:41 UTC" }, im: { ns: "haus-erzgebirge", dev: "zaehler-ir-lesekopf", state: "online" },
+  plate: { Typ: "moderne Messeinrichtung (Beispiel)", Zählernummer: "1EX0000000000 (Beispiel)" }, refs: { Atom: "meter", OBIS: "1.8.0 / 16.7.0" },
+  docs: [doc("Datenblatt", "IR-Lesekopf (Beispiel)", "PDF", "0,2 MB", "aa77d0…")],
+  maint: { intervals: [iv("Eichfrist", "Zeit", "8 Jahre (zu prüfen)", "2021-03", "2029-03")], open: [], history: [] },
+  series: [["meter.p_kw", "kW", "MEASURED"], ["meter.e_kwh", "kWh", "MEASURED"]], ports: ["appliances.p_el_kw → meter.p_appl_kw", "boiler.p_el_kw → meter.p_heating_kw"] });
+hAdd({ id: "haus-erzgebirge/stove", atom: "stove", type: "wood-stove", name: "Kaminofen", plan: "eg", mx: 0.9, my: 1.1, due: true,
+  kpi: [["Brennstoffleistung", "6 kW"], ["Wirkungsgrad", "70 %"], ["Abende/Woche", "7 (Heizperiode)"]],
+  live: { label: "Wärme", v: "0 kW (aus)", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, plate: { Hersteller: "(Beispiel)", Nennwärmeleistung: "6 kW" }, refs: { Atom: "stove (wood-stove)" },
+  docs: [doc("Handbuch", "Bedienungsanleitung Kaminofen", "PDF", "1,1 MB", "f3a0b9…"), doc("Protokoll", "Feuerstättenschau (Beispiel)", "PDF", "0,2 MB", "aa0911…")],
+  maint: { intervals: [iv("Schornsteinfegen", "Zeit", "P1Y", "2025-10-09", "2026-10-09")], open: [["wo-2026-0104", "Kehrtermin vereinbaren", "vorgeschlagen", "2026-10-19"]], history: [["2025-10-09", "Kehren ohne Befund", "Schornsteinfeger (Rolle)"]] },
+  series: [["stove.q_heat_kw", "kW", "SYNTHETIC"], ["stove.wood_ster_ph", "Ster/h", "SYNTHETIC"]], ports: ["stove.q_heat_kw → building.q_stove_kw", "stove.wood_ster_ph → woodstore.wood_ster_ph"] });
+hAdd({ id: "haus-erzgebirge/woodstore", atom: "woodstore", type: "wood-store", name: "Holzlager (außen)", plan: "eg", mx: 11.9, my: 1.6,
+  kpi: [["Vorrat", "2,6 Ster"], ["Warnschwelle", "1 Ster"], ["Preis", "90 €/Ster"]], live: { label: "Vorrat", v: "2,6 Ster", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, refs: { Atom: "woodstore" },
+  series: [["woodstore.stock_ster", "Ster", "SYNTHETIC"]], ports: ["stove.wood_ster_ph → woodstore.wood_ster_ph"] });
+[["kuehlschrank", "Kühlschrank", "fridge", 9.3, 0.7, "25 W", "219 kWh"], ["herd", "E-Herd", "herd", 7.6, 0.6, "1,3 kW", "475 kWh"], ["radio", "Radio", "radio", 8.7, 2.9, "6 W", "21 kWh"],
+ ["tv-kueche", "TV Küche", "tv", 7.0, 2.2, "40 W", "45 kWh"], ["tv-wohnzimmer", "TV Wohnzimmer", "tv", 4.9, 2.9, "100 W", "191 kWh"], ["waschmaschine", "Waschmaschine", "washer", 1.6, 6.5, "0,9 kWh/Gang", "94 kWh"]]
+  .forEach(([k, name, glyph, mx, my, p, e]) => hAdd({ id: `haus-erzgebirge/appliances/${k}`, atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph, name, plan: "eg", mx, my,
+    kpi: [["Leistung", p], ["Jahr (Modell)", e]], live: { label: "Leistung", v: k === "kuehlschrank" ? "25 W" : "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+    refs: { Atom: `appliances.inventory[${k}]` }, series: [["appliances.p_el_kw (Anteil)", "kW", "SYNTHETIC"]], docs: [doc("Handbuch", `Anleitung ${name}`, "PDF", "0,8 MB", "0c0c0c…")] }));
+[["tv-schlafzimmer", "TV Schlafzimmer", "tv", 2.0, 3.3, "70 W", "58 kWh", "Standby 3 W"], ["router", "Router", "router", 8.6, 1.8, "10 W", "88 kWh", "Dauerbetrieb"]]
+  .forEach(([k, name, glyph, mx, my, p, e, x]) => hAdd({ id: `haus-erzgebirge/appliances/${k}`, atom: "appliances", parent: "haus-erzgebirge/appliances", type: "appliance", glyph, name, plan: "og", mx, my,
+    kpi: [["Leistung", p], ["Jahr (Modell)", e], ["Hinweis", x]], live: { label: "Leistung", v: k === "router" ? "10 W" : "3 W", origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" },
+    refs: { Atom: `appliances.inventory[${k}]` }, series: [["appliances.p_el_kw (Anteil)", "kW", "SYNTHETIC"]] }));
+[["weather", "weather", "Wetter (synthetisch)", "7,0 °C Jahresmittel", "9,4 °C"], ["building", "building", "Gebäude 130 m²", "H = 200 W/K (Annahme)", "20,6 °C"], ["appliances", "appliances", "Geräte (Gruppe)", "11 Geräte", "0,41 kW"]]
+  .forEach(([atom, type, name, k, v]) => hAdd({ id: `haus-erzgebirge/${atom}`, atom, type, name, plan: null, mx: 0, my: 0, kpi: [["Kenngröße", k]],
+    live: { label: name, v, origin: "SYNTHETIC", ts: "2026-10-12 09:00 UTC" }, refs: { Atom: atom }, note: "Atom ohne einzelnen Ort (Rahmen bzw. Gruppe)." }));
+
+/* --- boot-etap22 --- */
+function bAdd(o) { const [x, y] = bx(o.mx, o.my); return add(Object.assign({ sys: "boot-etap22", x, y, due: false, status: "ok", im: null, refs: {}, docs: [], series: [], ports: [], smart: [], plate: {}, maint: { intervals: [], open: [], history: [] } }, o)); }
+const RASPI = { ns: "boot-etap22", dev: "raspi-boatlog", state: "online" };
+bAdd({ id: "boot-etap22/station", atom: "station", type: "power-station", name: "Powerstation 1 kWh", plan: "kajuete", mx: 2.15, my: 0.05,
+  kpi: [["Kapazität", "1.024 Wh"], ["Laden max.", "800 W"], ["Solar-Eingang", "500 W"], ["Zyklen", "143"]],
+  live: { label: "SoC", v: "72 %", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
+  plate: { Hersteller: "(Beispiel)", Chemie: "LiFePO4", Ausgänge: "12 V, USB-C PD, 230 V" }, refs: { Atom: "station (power-station)" },
+  docs: [doc("Datenblatt", "Datenblatt Powerstation (Beispiel)", "PDF", "0,6 MB", "e1d2c3…"), doc("Garantie", "Garantie bis 2029-05", "PDF", "0,1 MB", "77aa11…")],
+  maint: { intervals: [iv("Kapazitätstest", "Zeit", "P1Y", "2026-04-18", "2027-04-18")], open: [], history: [["2026-04-18", "Kapazitätstest: 97 % (Beispiel)", "Eigner"]] },
+  series: [["boat.station.soc", "1", "MEASURED"], ["station.p_load_meas_w", "W", "MEASURED"]],
+  ports: ["solar.p_avail_w → station.p_solar_w", "shore.p_avail_w → station.p_shore_w", "vhf/raspi/phone/laptop1/laptop2/starlink.p_w → station.p_*_w"], smart: ["st.boot.station.soc_forecast"] });
+bAdd({ id: "boot-etap22/raspi", atom: "raspi", type: "device", glyph: "chip", name: "Raspberry Pi (Edge)", plan: "kajuete", mx: 2.5, my: -0.55,
+  kpi: [["Leistung", "4 W"], ["Puffer", "3 Tage lokal"], ["Rolle", "Edge-Publisher"]],
+  live: { label: "Leistung", v: "4,1 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI, refs: { Atom: "raspi (device)" },
+  maint: { intervals: [iv("SD-Karte sichern", "Zeit", "P3M", "2026-07-01", "2026-10-01")], open: [], history: [] }, due: true,
+  series: [["raspi.p_w", "W", "MEASURED"]], ports: ["boat.mode → raspi.mode", "raspi.p_w → station.p_raspi_w"] });
+bAdd({ id: "boot-etap22/vhf", atom: "vhf", type: "device", glyph: "radiounit", name: "UKW-Funkgerät", plan: "kajuete", mx: 2.45, my: 0.55,
+  kpi: [["Empfang", "5 W"], ["Senden", "66 W"], ["Sendeanteil", "3 %"]], live: { label: "Leistung", v: "0 W (Hafen)", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" },
+  plate: { Hersteller: "(Beispiel)", MMSI: "(privat, nicht angezeigt)" }, refs: { Atom: "vhf (device)" }, commandable: false,
+  maint: { intervals: [iv("Antennenkabel/Stecker prüfen", "Zeit", "P1Y", "2025-04-12", "2026-04-12")], open: [["wo-2026-0201", "Antennenstecker am Mastfuß prüfen", "vorgeschlagen", "vor Saisonbeginn"]], history: [] }, due: true,
+  series: [["vhf.p_w", "W", "SYNTHETIC"]], ports: ["boat.mode → vhf.mode", "vhf.p_w → station.p_vhf_w"], note: "Sicherheitsrelevant: wird nie geschaltet (commandable: false)." });
+[["laptop1", "Laptop 1", "laptop", 3.35, -0.58, "15 W", "60 Wh"], ["laptop2", "Laptop 2", "laptop", 4.0, -0.58, "10 W", "50 Wh"], ["phone", "Pixel 10", "phone", 4.3, 0.6, "1,2 W", "18,5 Wh"]]
+  .forEach(([atom, name, glyph, mx, my, p, b]) => bAdd({ id: `boot-etap22/${atom}`, atom, type: "device", glyph, name, plan: "kajuete", mx, my,
+    kpi: [["Nutzung", p], ["Akku", b]], live: { label: "Leistung", v: "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" }, refs: { Atom: `${atom} (device)` },
+    series: [[`${atom}.p_w`, "W", "SYNTHETIC"]], ports: [`boat.mode → ${atom}.mode`, `${atom}.p_w → station.p_${atom}_w`] }));
+bAdd({ id: "boot-etap22/solar", atom: "solar", type: "solar", name: "Solar 2 × 100 Wp", plan: "deck", mx: 2.6, my: -0.05,
+  kpi: [["Leistung", "200 Wp"], ["Minderung", "0,75"], ["heute", "0,41 kWh"]], live: { label: "Leistung", v: "96 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
+  plate: { Bauart: "flexibel, auf Kajütdach (Annahme)" }, refs: { Atom: "solar" },
+  docs: [doc("Datenblatt", "Flexibles Modul 100 Wp (Beispiel)", "PDF", "0,4 MB", "abcd01…")],
+  maint: { intervals: [iv("Reinigen, Stecker prüfen", "Zeit", "P3M", "2026-08-01", "2026-11-01")], open: [], history: [] },
+  series: [["solar.p_meas_w", "W", "MEASURED"], ["solar.ghi_wm2", "W/m²", "MEASURED"]], ports: ["boat.mode → solar.mode", "solar.p_avail_w → station.p_solar_w"] });
+bAdd({ id: "boot-etap22/starlink", atom: "starlink", type: "device", glyph: "starlink", name: "Starlink Mini", plan: "deck", mx: 0.25, my: 0.75,
+  kpi: [["Leistung", "≈ 30 W"], ["an Bord", "7–23 h"], ["Pfad", "12 V DC"]], live: { label: "Leistung", v: "31 W", origin: "MEASURED", ts: "2026-10-12 09:40 UTC" }, im: RASPI,
+  refs: { Atom: "starlink (device)" }, series: [["starlink.p_w", "W", "MEASURED"]], ports: ["boat.mode → starlink.mode", "starlink.p_w → station.p_starlink_w"] });
+bAdd({ id: "boot-etap22/shore", atom: "shore", type: "shore-power", name: "Landstrom-Einspeisung", plan: "deck", mx: 1.6, my: -0.95, due: true,
+  kpi: [["Ladegerät", "400 W AC"], ["Wirkungsgrad", "0,9"], ["nur", "Hafen"]], live: { label: "Leistung", v: "0 W", origin: "SYNTHETIC", ts: "2026-10-12 09:40 UTC" },
+  refs: { Atom: "shore (shore-power)" }, docs: [doc("Protokoll", "Sichtprüfung Landstromkabel (Beispiel)", "PDF", "0,1 MB", "5e5e5e…")],
+  maint: { intervals: [iv("Landstromkabel und FI prüfen", "Zeit", "P1Y", "2025-09-20", "2026-09-20")], open: [["wo-2026-0202", "Kabel, Stecker, FI-Test", "vorgeschlagen", "2026-10-18"]], history: [] },
+  series: [["shore.p_avail_w", "W", "SYNTHETIC"]], ports: ["boat.mode → shore.mode", "shore.p_avail_w → station.p_shore_w"] });
+bAdd({ id: "boot-etap22/vhf/antenne", atom: "vhf", parent: "boot-etap22/vhf", type: "antenna", name: "UKW-Antenne (Masttopp)", plan: "deck", mx: 4.0, my: 0,
+  kpi: [["Kabel", "≈ 12 m (Annahme)"]], live: null, refs: { Atom: "vhf (Unterobjekt)" }, note: "Unterobjekt des Funkgeräts." });
+bAdd({ id: "boot-etap22/boat", atom: "boat", type: "boat-mode", name: "Boot (Nutzungsmodus)", plan: null, mx: 0, my: 0,
+  kpi: [["Rumpf", "Etap 22, ≈ 6,6 m"], ["Revier", "Kieler Bucht"]], live: { label: "Modus", v: "Hafen", origin: "REPORTED", ts: "2026-10-12 09:40 UTC" },
+  refs: { Atom: "boat (boat-mode)" }, ports: ["boat.mode → alle Geräte"], note: "Atom ohne Ort: der Modus gilt für das ganze Boot." });
+
+const SYSTEMS = {
+  "h2-chain": { label: "Windpark & H2", plans: [{ id: "park", label: "Park (Karte)", w: 1000, h: 640, draw: drawPark, phone: [1.5, 605, 430] }] },
+  "haus-erzgebirge": { label: "Haus", plans: [{ id: "kg", label: "Keller", w: 1000, h: 640, draw: () => drawHouse("kg"), phone: [1.55, 520, 320] }, { id: "eg", label: "Erdgeschoss", w: 1000, h: 640, draw: () => drawHouse("eg"), phone: [1.55, 520, 320] }, { id: "og", label: "Obergeschoss", w: 1000, h: 640, draw: () => drawHouse("og"), phone: [1.55, 520, 320] }] },
+  "boot-etap22": { label: "Boot Etap 22", plans: [{ id: "deck", label: "Deck", w: 1000, h: 440, draw: () => drawBoat("deck"), phone: [1.15, 500, 220] }, { id: "kajuete", label: "Kajüte", w: 1000, h: 440, draw: () => drawBoat("kajuete"), phone: [1.15, 500, 220] }] }
+};
+const WEA_PLAN = { id: "wea", label: "Komponenten", w: 1000, h: 640, draw: drawWea, phone: [1.5, 540, 330] };
+
+/* ------------------------------------------------------------------ plan drawings (schematic) ----------------- */
+function drawPark() {
+  const t = TURBINES.map(r => geo(r[1], r[2]));
+  const g = (la, lo) => geo(la, lo).join(",");
+  const [sx, sy] = geo(54.4470, 13.9660), [ex, ey] = geo(54.4440, 13.9760), [lx, ly] = geo(54.4410, 13.9930), [ox, oy] = geo(54.4370, 14.0100);
+  return `<rect class="p-land" x="-1500" y="-1000" width="4000" height="2640"/><rect class="p-sea" x="-1500" y="-1000" width="1500" height="1185"/><rect class="p-sea" x="1000" y="-1000" width="1500" height="1120"/><rect class="p-sea" x="-1500" y="-1000" width="4000" height="1000"/>
+  <path class="p-field" d="M40 260 L250 235 L270 360 L60 390 Z"/><path class="p-field" d="M560 250 L760 230 L790 360 L600 380 Z"/>
+  <path class="p-field" d="M120 450 L380 430 L400 600 L140 620 Z"/><path class="p-field" d="M660 560 L860 600 L840 640 L640 640 Z"/>
+  <path class="p-forest" d="M820 260c30-30 90-20 120 10s20 80-30 90-120-10-110-50 0-30 20-50z"/>
+  <path class="p-forest" d="M420 520c30-20 80-10 100 20s0 60-40 60-90-20-80-50z"/>
+  <path class="p-contour" d="M0 470 C200 440 340 500 520 470 S 820 430 1000 470"/><path class="p-contour" d="M0 540 C220 510 360 570 560 540 S 840 500 1000 540"/>
+  <path class="p-sea" d="M0 0 H1000 V120 C 900 150 820 110 720 140 C 620 170 560 130 470 160 C 380 190 300 150 200 175 C 120 195 60 170 0 185 Z"/>
+  <path class="p-coast" d="M1000 120 C 900 150 820 110 720 140 C 620 170 560 130 470 160 C 380 190 300 150 200 175 C 120 195 60 170 0 185"/>
+  <text class="p-italic" x="330" y="80">Ostsee</text>
+  <path class="p-road-edge" d="M0 420 C 200 400 420 430 600 410 S 900 380 1000 400"/><path class="p-road" d="M0 420 C 200 400 420 430 600 410 S 900 380 1000 400"/>
+  <path class="p-road-edge" d="M700 640 C 690 520 720 430 740 300"/><path class="p-road" d="M700 640 C 690 520 720 430 740 300"/>
+  <g class="p-inkfill" opacity=".35"><rect x="300" y="470" width="16" height="12"/><rect x="322" y="480" width="14" height="12"/><rect x="310" y="498" width="18" height="12"/><rect x="336" y="502" width="12" height="10"/></g>
+  <text class="p-text" x="290" y="530">Ortschaft (fiktiv)</text>
+  <path class="p-cable" d="M${t[0][0]} ${t[0][1] + 6} L${t[3][0]} ${t[3][1] + 6} L${sx} ${sy}"/>
+  <text class="p-text" x="${sx + 22}" y="${sy - 44}">Kabeltrasse 20 kV (Beispiel)</text>
+  <path class="p-h2" d="M${ex} ${ey} C ${ex + 60} ${ey + 10}, ${lx - 60} ${ly - 20}, ${lx} ${ly} S ${ox - 50} ${oy - 20}, ${ox} ${oy}"/>
+  <text class="p-text" x="${lx + 24}" y="${ly - 22}">H2-Leitung (Beispiel)</text>
+  <g transform="translate(40 600)"><rect class="p-paper" x="-6" y="-22" width="150" height="34" rx="4" opacity=".85"/><path class="p-ink" d="M0 0 h129 M0 -5 v10 M129 -5 v10 M64 -3 v6"/><text class="p-text" x="0" y="-8">0</text><text class="p-text" x="112" y="-8">1 km</text></g>
+  <g transform="translate(950 40)"><path class="p-inkfill" d="M0 -18 L7 6 L0 1 L-7 6 Z"/><text class="p-text-strong" x="-5" y="24">N</text></g>
+  <g transform="translate(70 300)"><path class="p-ink" d="M-34 6 L30 -5" stroke-width="2.5"/><path class="p-inkfill" d="M36 -6 L22 -12 L25 1 Z"/><text class="p-text" x="-40" y="28">Wind aus 260°</text></g>`;
+}
+function wakeOverlay() {
+  const dir = 80 * Math.PI / 180, dx = Math.sin(dir), dy = -Math.cos(dir), nx = -dy, ny = dx;
+  const r0 = 50 / 7.75, k = 0.04, L = 2000 / 7.75;
+  let s = "";
+  TURBINES.forEach(r => {
+    const [x, y] = geo(r[1], r[2]); const r1 = r0 + k * L;
+    s += `<polygon class="p-wake" points="${x + nx * r0},${y + ny * r0} ${x + dx * L + nx * r1},${y + dy * L + ny * r1} ${x + dx * L - nx * r1},${y + dy * L - ny * r1} ${x - nx * r0},${y - ny * r0}"/>`;
+  });
+  const [x2, y2] = geo(TURBINES[0][1], TURBINES[0][2]);
+  return s + `<text class="p-text" x="${x2 - 60}" y="${y2 - 70}">Wake-Kegel bei 260° · Jensen, k = 0,04, D ≈ 100 m · Simulationsreferenz (Beispiel)</text>`;
+}
+function drawWea() {
+  return `<rect class="p-paper" x="-1500" y="-1000" width="4000" height="2640"/>
+  <path class="p-field" d="M-1500 600 H2500 V1640 H-1500 Z"/>
+  <path class="p-tower" d="M488 600 L500 220 L520 220 L532 600 Z"/>
+  <rect class="p-tower" x="470" y="160" width="250" height="60" rx="12"/>
+  <path class="p-thin" d="M480 168 h230 M480 212 h230" stroke-dasharray="3 4"/>
+  <rect class="p-room-alt" x="505" y="172" width="70" height="36" rx="4" stroke="var(--ink-3)"/>
+  <rect class="p-room-alt" x="605" y="172" width="70" height="36" rx="18" stroke="var(--ink-3)"/>
+  <path class="p-ink" d="M470 190 h-20"/><ellipse class="p-tower" cx="440" cy="190" rx="18" ry="22"/>
+  <path class="p-tower" d="M432 172 C 420 120 400 60 392 20 L 404 20 C 418 70 438 125 446 172 Z"/>
+  <path class="p-tower" d="M432 208 C 420 260 404 330 396 380 L 408 380 C 420 330 440 262 446 208 Z"/>
+  <rect class="p-tower" x="470" y="560" width="80" height="34" rx="3"/>
+  <rect class="p-tower" x="660" y="566" width="60" height="34" rx="3"/>
+  <path class="p-cable" d="M550 584 L660 584"/>
+  <text class="p-text" x="740" y="196">Gondel (Schnitt)</text><text class="p-text" x="560" y="300">Turm</text>
+  <text class="p-text" x="30" y="40">Schema, nicht maßstäblich · Komponenten als Unterobjekte der WEA (Ebene 2)</text>`;
+}
+const ROOMS = {
+  kg: [["Heizraum", 0, 0, 4, 4, "", "p-room-alt"], ["Tankraum", 4, 0, 6, 4, "", "p-room-alt"], ["Vorratskeller", 0, 4, 5, 4, ""], ["Werkstatt / Zähler", 5, 4, 5, 4, ""]],
+  eg: [["Wohnzimmer", 0, 0, 6, 5.8, "35 m²"], ["Küche", 6, 0, 4, 3.75, "15 m²"], ["WC/HWR", 0, 5.8, 2.3, 2.2, "5 m²"], ["Flur/Diele", 2.3, 5.8, 7.7, 2.2, "14 m²"], ["", 6, 3.75, 4, 2.05, "", "p-room"]],
+  og: [["Schlafzimmer", 0, 0, 4.25, 4, "17 m²"], ["Bad", 4.25, 0, 2.25, 4, "9 m²"], ["Arbeitszimmer", 6.5, 0, 3.5, 3.7, "13 m²"], ["Gästezimmer", 0, 4.3, 3.5, 3.7, "13 m²"], ["Flur", 3.5, 4, 6.5, 4, "9 m²"], ["", 0, 4, 3.5, 0.3, "", "p-room"]]
+};
+function drawHouse(level) {
+  const P = (x, y) => hx(x, y);
+  let s = `<rect class="${level === "kg" ? "p-paper" : "p-garden"}" x="-1500" y="-1000" width="4000" height="2640"/>`;
+  if (level === "eg") s += `<rect class="p-land" x="830" y="110" width="150" height="200" rx="6"/><rect class="p-room-alt" x="845" y="135" width="125" height="120" stroke="var(--ink-3)"/><text class="p-text" x="840" y="290">Garten</text>`;
+  ROOMS[level].forEach(([n, x, y, w, h, a, cls]) => {
+    const [px, py] = P(x, y);
+    s += `<rect class="${cls || "p-room"}" x="${px}" y="${py}" width="${w * 60}" height="${h * 60}"/><rect class="p-iwall" x="${px}" y="${py}" width="${w * 60}" height="${h * 60}" fill="none"/>`;
+    if (n) s += `<text class="p-text-strong" x="${px + 10}" y="${py + h * 60 - 26}">${n}</text><text class="p-text" x="${px + 10}" y="${py + h * 60 - 10}">${a}</text>`;
+  });
+  const [x0, y0] = P(0, 0);
+  s += `<rect class="p-wall" x="${x0}" y="${y0}" width="600" height="480"/>`;
+  // stairs (same position on every level)
+  const [sx, sy] = P(5.2, 4.1);
+  for (let i = 0; i < 8; i++) s += `<line class="p-stairs" x1="${sx}" y1="${sy + i * 9}" x2="${sx + 60}" y2="${sy + i * 9}"/>`;
+  s += `<rect class="p-stairs" x="${sx}" y="${sy}" width="60" height="72"/><text class="p-text" x="${sx + 2}" y="${sy + 88}">Treppe</text>`;
+  if (level !== "kg") {
+    [[1, 0], [3.5, 0], [7, 0], [9, 0]].forEach(([x]) => { const [a, b] = P(x, 0); s += `<line class="p-window" x1="${a}" y1="${b}" x2="${a + 60}" y2="${b}"/>`; });
+    [[1.5, 8], [7, 8]].forEach(([x]) => { const [a, b] = P(x, 8); s += `<line class="p-window" x1="${a}" y1="${b}" x2="${a + 60}" y2="${b}"/>`; });
+    const [wx, wy] = P(10, 1.2); s += `<line class="p-window" x1="${wx}" y1="${wy}" x2="${wx}" y2="${wy + 60}"/>`;
+  }
+  if (level === "eg") { const [dx, dy] = P(4.2, 8); s += `<path class="p-door" d="M${dx} ${dy} a54 54 0 0 1 54 -54 v54"/><text class="p-text" x="${dx}" y="${dy + 22}">Haustür</text>`; }
+  if (level === "kg") { const [tx, ty] = P(4.6, 0.6); s += `<rect class="p-tower" x="${tx}" y="${ty}" width="150" height="70" rx="12"/><rect class="p-tower" x="${tx + 170}" y="${ty}" width="150" height="70" rx="12"/><text class="p-text" x="${tx}" y="${ty + 128}">2 × 2.000 l Batterietank, Auffangwanne</text>`; }
+  s += `<g transform="translate(${x0} ${y0 + 500})"><path class="p-ink" d="M0 0 h120 M0 -5 v10 M120 -5 v10"/><text class="p-text" x="0" y="20">0</text><text class="p-text" x="104" y="20">2 m</text></g>`;
+  s += `<text class="p-text" x="${x0 + 200}" y="${y0 + 520}">Grundriss schematisch, Flächen aus dem Beispielhaus (08 §3)</text>`;
+  return s;
+}
+function drawBoat(view) {
+  const hull = "M90 92 C 300 62 520 62 640 90 C 760 120 870 180 915 220 C 870 260 760 320 640 350 C 520 378 300 378 90 348 Z";
+  let s = `<rect class="p-water" x="-1500" y="-1000" width="4000" height="2440"/>
+  <path class="p-thin" d="M30 400 q20 -8 40 0 t40 0 M880 30 q20 -8 40 0 t40 0 M40 40 q20 -8 40 0 t40 0" opacity=".6"/>
+  <path class="p-hull" d="${hull}"/>`;
+  if (view === "deck") {
+    s += `<path class="p-deck" d="M100 140 H330 V300 H100 Z"/><text class="p-text" x="110" y="292">Plicht</text>
+    <path class="p-deck" d="M330 128 C 450 112 560 116 650 150 C 680 175 680 265 650 290 C 560 324 450 328 330 312 Z"/>
+    <rect class="p-thin" x="342" y="190" width="40" height="60" rx="4"/><text class="p-text" x="338" y="270">Niedergang</text>
+    <rect class="p-thin" x="690" y="196" width="48" height="48" rx="4"/><text class="p-text" x="690" y="266">Vorluk</text>
+    <rect class="p-tower" x="388" y="158" width="125" height="58" rx="6"/><rect class="p-tower" x="388" y="224" width="125" height="58" rx="6"/>
+    <path class="p-thin" d="M388 187 h125 M450 158 v58 M388 253 h125 M450 224 v58"/>
+    <circle class="p-tower" cx="590" cy="220" r="9"/><path class="p-thin" d="M590 220 L 915 220" stroke-dasharray="3 5"/><path class="p-thin" d="M590 220 L 300 220" stroke-dasharray="1 0" opacity=".6"/>
+    <path class="p-ink" d="M90 220 L 200 220" stroke-width="4"/><text class="p-text" x="120" y="210">Pinne</text>
+    <path class="p-thin" d="M95 110 C 150 96 200 92 250 92 M95 330 C 150 344 200 348 250 348"/><text class="p-text" x="680" y="112">Bug (vorn)</text><text class="p-text" x="20" y="226">Heck</text>
+    <text class="p-text" x="600" y="244">Mast</text>`;
+  } else {
+    s += `<path class="p-deck" d="M330 128 C 450 112 560 116 650 150 C 760 170 850 200 880 220 C 850 240 760 270 650 290 C 560 324 450 328 330 312 Z" opacity=".55"/>
+    <rect class="p-room-alt" x="400" y="128" width="200" height="44" rx="6" stroke="var(--ink-3)"/><text class="p-text" x="410" y="122">Sitzbank / Koje Bb</text>
+    <rect class="p-room-alt" x="400" y="268" width="200" height="44" rx="6" stroke="var(--ink-3)"/><text class="p-text" x="470" y="330">Sitzbank / Koje Stb</text>
+    <path class="p-room-alt" d="M650 160 C 740 180 820 205 850 220 C 820 235 740 260 650 280 Z" stroke="var(--ink-3)"/><text class="p-text" x="700" y="224">Vorschiff-Koje</text>
+    <rect class="p-tower" x="335" y="190" width="52" height="60" rx="4"/><text class="p-text" x="326" y="226" text-anchor="end">Niedergang</text>
+    <rect class="p-thin" x="440" y="196" width="110" height="48" rx="6"/><text class="p-text" x="452" y="226">Klapptisch</text>
+    <path class="p-cable" d="M359 228 C 380 200 390 170 403 151"/><path class="p-cable" d="M359 228 L 425 288"/>
+    <text class="p-text" x="200" y="400">Einrichtung schematisch (Annahme), Lage der Geräte nach Absprache mit dem Eigner zu prüfen</text>`;
+  }
+  s += `<g transform="translate(780 410)"><path class="p-ink" d="M0 0 h125 M0 -5 v10 M125 -5 v10"/><text class="p-text" x="132" y="5">1 m</text></g>`;
+  return s;
+}
+
+/* ------------------------------------------------------------------ state & helpers ------------------------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const byId = id => ASSETS.find(a => a.id === id) || compById(id);
+const glyphOf = a => a.glyph || (TYPES[a.type] || ["", "chip"])[1];
+const typeLabel = a => (TYPES[a.type] || [a.type])[0];
+const state = { sys: "h2-chain", plan: "park", parent: null, s: 1, tx: 0, ty: 0, sel: null, hover: null, tab: "uebersicht", fDue: false, fDev: false };
+let compCache = {};
+function compById(id) {
+  const m = id.match(/^(h2-chain\/park\/T0\d)\/(.+)$/); if (!m) return null;
+  const t = ASSETS.find(a => a.id === m[1]); if (!t) return null;
+  return componentAssets(t).find(c => c.id === id);
+}
+function currentPlan() { return state.plan === "wea" ? WEA_PLAN : SYSTEMS[state.sys].plans.find(p => p.id === state.plan); }
+function visibleAssets() {
+  if (state.plan === "wea") return componentAssets(byId(state.parent));
+  return ASSETS.filter(a => a.sys === state.sys && a.plan === state.plan);
+}
+function svgEl(tag, attrs) { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+/* ------------------------------------------------------------------ rendering ------------------------------- */
+function renderSystems() {
+  $("systems").innerHTML = Object.entries(SYSTEMS).map(([k, v]) => `<button type="button" data-sys="${k}" aria-pressed="${k === state.sys}">${esc(v.label)}</button>`).join("");
+}
+function renderPlanTabs() {
+  const plans = SYSTEMS[state.sys].plans;
+  let html = plans.map(p => `<button type="button" role="tab" data-plan="${p.id}" aria-selected="${p.id === state.plan}">${esc(p.label)}</button>`).join("");
+  if (state.plan === "wea") html += `<button type="button" role="tab" aria-selected="true" data-plan="wea">${esc(byId(state.parent).name)} · Komponenten</button>`;
+  $("plantabs").innerHTML = html;
+}
+function renderCrumbs() {
+  const parts = [[SYSTEMS[state.sys].label, "sys"]];
+  if (state.plan === "wea") { parts.push(["Park (Karte)", "plan:park"]); parts.push([byId(state.parent).name, "asset:" + state.parent]); parts.push(["Komponenten", "plan:wea"]); }
+  else parts.push([currentPlan().label, "plan:" + state.plan]);
+  if (state.sel) { const a = byId(state.sel); if (a && a.id !== state.parent) parts.push([a.name, "asset:" + a.id]); }
+  $("crumbs").innerHTML = parts.map(([l, act], i) => (i ? '<span class="sep" aria-hidden="true">›</span>' : "") +
+    `<button type="button" data-act="${esc(act)}"${i === parts.length - 1 ? ' aria-current="page"' : ""}>${esc(l)}</button>`).join("");
+}
+function renderPlan() {
+  const p = currentPlan();
+  const map = $("map");
+  map.setAttribute("viewBox", `0 0 ${p.w} ${p.h}`);
+  $("plan").innerHTML = p.draw();
+  $("overlay").innerHTML = (state.plan === "park" && $("l-wake").checked) ? wakeOverlay() : "";
+  $("l-wake-wrap").hidden = state.sys !== "h2-chain" || state.plan !== "park";
+  renderAssets();
+  renderMini();
+  renderLegend();
+  renderTray();
+}
+function renderAssets() {
+  const g = $("assets"); g.innerHTML = "";
+  const list = visibleAssets();
+  const collapsed = state.plan === "park" && state.s < 0.75;
+  list.forEach(a => {
+    if (collapsed && a.cluster) return;
+    g.appendChild(marker(a));
+  });
+  if (collapsed) {
+    const ts = list.filter(a => a.cluster);
+    const cx = ts.reduce((s, a) => s + a.x, 0) / ts.length, cy = ts.reduce((s, a) => s + a.y, 0) / ts.length;
+    const worst = ts.some(a => a.status === "crit") ? "crit" : ts.some(a => a.status === "warn") ? "warn" : "ok";
+    const c = marker({ id: "__cluster", name: `Park · ${ts.length} WEA`, x: cx, y: cy, status: worst, due: ts.some(a => a.due), glyph: "cluster", live: { v: "6.014 kW" }, cluster: true });
+    c.classList.add("cluster"); g.appendChild(c);
+  }
+  applyZoom(); applyFilters();
+}
+function marker(a) {
+  const g = svgEl("g", { class: `asset st-${a.status}`, tabindex: "0", role: "button", "data-id": a.id, transform: `translate(${a.x} ${a.y})`,
+    "aria-label": `${a.name}, ${STATUS[a.status][1]}${a.due ? ", Wartung fällig" : ""}` });
+  const k = svgEl("g", { class: "mk" });
+  k.appendChild(svgEl("circle", { class: "pin", r: "17" }));
+  const u = svgEl("use", { class: "glyph", href: "#g-" + glyphOf(a), x: "-11", y: "-11", width: "22", height: "22" });
+  k.appendChild(u);
+  if (a.status !== "ok") {
+    const b = svgEl("g", { class: "badge", transform: "translate(13 -13)" });
+    b.appendChild(svgEl("circle", { r: "7.5", class: "b-" + a.status }));
+    const t = svgEl("text", {}); t.textContent = STATUS[a.status][0]; b.appendChild(t); k.appendChild(b);
+  }
+  if (a.due) {
+    const b = svgEl("g", { class: "badge due", transform: "translate(13 13)" });
+    b.appendChild(svgEl("circle", { r: "7.5", class: "b-due" }));
+    b.appendChild(svgEl("use", { href: "#g-wrench", x: "-5", y: "-5", width: "10", height: "10", style: "color:#fff" }));
+    k.appendChild(b);
+  }
+  const l = svgEl("text", { class: "lbl", y: "33" }); l.textContent = a.name; k.appendChild(l);
+  if (a.live && a.live.v) { const v = svgEl("text", { class: "lv", y: "47" }); v.textContent = a.live.v; k.appendChild(v); }
+  g.appendChild(k);
+  if (state.sel === a.id) g.classList.add("sel");
+  return g;
+}
+function applyZoom() {
+  $("vp").setAttribute("transform", `translate(${state.tx} ${state.ty}) scale(${state.s})`);
+  const k = Math.max(1 / Math.pow(state.s, 0.75), 0.82 / (screenScale() * state.s));   // markers keep >= ~28 px on screen
+  document.querySelectorAll("#assets .mk").forEach(m => m.setAttribute("transform", `scale(${k})`));
+  const stage = $("stage");
+  stage.classList.toggle("hide-labels", !$("l-labels").checked || state.s < 0.85);
+  stage.classList.toggle("hide-live", !$("l-live").checked);
+  stage.classList.toggle("hide-maint", !$("l-maint").checked);
+  const lvl = state.plan === "wea" ? "Ebene 2 · Komponente" : (state.plan === "park" && state.s < 0.75) ? "Ebene 0 · Übersicht" : "Ebene 1 · Objekte";
+  $("lod").textContent = `${lvl} · Zoom ${Math.round(state.s * 100)} %`;
+  updateMiniRect();
+}
+function applyFilters() {
+  const all = state.plan === "wea" ? visibleAssets() : ASSETS.filter(a => a.sys === state.sys);
+  $("n-due").textContent = all.filter(a => a.due).length;
+  $("n-dev").textContent = all.filter(a => a.status !== "ok").length;
+  document.querySelectorAll("#assets .asset").forEach(g => {
+    const a = g.dataset.id === "__cluster" ? null : byId(g.dataset.id);
+    let dim = false;
+    if (a) { if (state.fDue && !a.due) dim = true; if (state.fDev && a.status === "ok") dim = true; }
+    g.classList.toggle("dim", dim);
+  });
+}
+function renderMini() {
+  const p = currentPlan(); const m = $("mini");
+  m.setAttribute("viewBox", `0 0 ${p.w} ${p.h}`);
+  const dots = visibleAssets().map(a => `<circle class="dot b-${a.status}" cx="${a.x}" cy="${a.y}" r="${p.w / 90}"/>`).join("");
+  m.innerHTML = `<g style="pointer-events:none">${p.draw()}${dots}</g><rect class="vpr" id="vpr"/>`;
+  updateMiniRect();
+}
+function updateMiniRect() {
+  const r = document.getElementById("vpr"); if (!r) return;
+  const p = currentPlan();
+  r.setAttribute("x", -state.tx / state.s); r.setAttribute("y", -state.ty / state.s);
+  r.setAttribute("width", p.w / state.s); r.setAttribute("height", p.h / state.s);
+}
+function renderLegend() {
+  const extra = state.plan === "park" ? `<div class="row"><svg width="22" height="8"><path d="M1 4h20" stroke="var(--h2)" stroke-width="4"/></svg>H2-Leitung</div><div class="row"><svg width="22" height="8"><path d="M1 4h20" stroke="var(--cable)" stroke-width="2" stroke-dasharray="5 3"/></svg>Kabeltrasse</div>` : "";
+  $("legend").innerHTML = `<div class="row"><span class="st ok">✓</span>in Ordnung</div><div class="row"><span class="st warn">!</span>Warnung</div><div class="row"><span class="st crit">×</span>Störung</div>
+    <div class="row"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="7.5" class="b-due"/><use href="#g-wrench" x="-5" y="-5" width="10" height="10" style="color:#fff"/></svg>Wartung fällig</div>${extra}`;
+}
+function renderTray() {
+  const free = state.plan === "wea" ? [] : ASSETS.filter(a => a.sys === state.sys && !a.plan);
+  $("tray").innerHTML = free.length ? `<span>Atome ohne Ort:</span>` + free.map(a => `<button type="button" data-open="${esc(a.id)}">${esc(a.name)} <span class="mono">${esc(a.atom)}</span></button>`).join("") : "";
+}
+
+/* ------------------------------------------------------------------ hover card ------------------------------ */
+function illus(a, caption) {
+  return `<div class="illus"><svg viewBox="0 0 160 70" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="160" height="70" fill="url(#hatch)"/><use href="#g-${glyphOf(a)}" x="56" y="9" width="48" height="48"/></svg><span class="illus-tag">${esc(caption || "Illustration – Foto folgt")}</span></div>`;
+}
+function liveLine(a) {
+  if (!a.live) return `<div class="liveline note">kein Livewert</div>`;
+  return `<div class="liveline">${esc(a.live.label)} <b>${esc(a.live.v)}</b> <span class="origin ${a.live.origin}" title="Herkunft ${a.live.origin}">${ORIGIN[a.live.origin]}</span> <span class="ts">${esc(a.live.ts)}${a.live.stale ? " · veraltet" : ""}</span></div>`;
+}
+function imLine(a) {
+  if (!a.im) return "";
+  return `<div class="imline"><span class="dot ${a.im.state}" aria-hidden="true"></span>infinimesh <span class="mono">${esc(a.im.ns)}/${esc(a.im.dev)}</span> ${a.im.state}</div>`;
+}
+function maintLine(a) {
+  const o = a.maint && a.maint.open && a.maint.open[0];
+  if (a.due) return `<div class="mline due"><svg width="12" height="12"><use href="#g-wrench"/></svg>Wartung fällig${o ? ": " + esc(o[1]) : ""}</div>`;
+  if (o) return `<div class="mline"><svg width="12" height="12"><use href="#g-wrench"/></svg>${esc(o[0])} · ${esc(o[2])}</div>`;
+  const n = a.maint && a.maint.intervals && a.maint.intervals[0];
+  return n ? `<div class="mline note">Nächste Wartung: ${esc(n.name)} ${esc(n.next)}</div>` : "";
+}
+function showCard(id, anchorEl, touch) {
+  const hc = $("hc");
+  if (id === "__cluster") {
+    hc.innerHTML = `<div class="hc-body"><div class="hc-head"><b>Windpark · 4 WEA</b></div><div class="hc-id">h2-chain/park</div><div class="liveline">Summe <b>6.014 kW</b> <span class="origin MEASURED">gemessen</span></div><div class="hint">Klick oder Hineinzoomen: einzelne Anlagen</div></div>`;
+  } else {
+    const a = byId(id); if (!a) return;
+    const kp = (a.kpi || []).slice(0, 4).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
+    hc.innerHTML = illus(a) + `<div class="hc-body">
+      <div class="hc-head"><b>${esc(a.name)}</b><span class="st ${a.status}">${STATUS[a.status][0]} ${STATUS[a.status][1]}</span></div>
+      <div class="hc-id">${esc(a.id)} · ${esc(typeLabel(a))}</div>
+      <dl class="kpis">${kp}</dl>${liveLine(a)}${maintLine(a)}${imLine(a)}
+      <div class="hint">${touch ? "Karte oder Symbol nochmals tippen: Datenblatt" : "Klick: Datenblatt"}${a.zoomable ? " · Doppelklick: Komponenten" : ""}</div></div>`;
+  }
+  hc.hidden = false; hc.classList.toggle("touch", !!touch);
+  const sr = $("stage").getBoundingClientRect(), er = anchorEl.getBoundingClientRect();
+  const w = hc.offsetWidth, h = hc.offsetHeight;
+  const right = er.right - sr.left + 10, left = er.left - sr.left - w - 10;
+  let x, y;
+  if (right + w <= sr.width - 8 || left >= 8) {
+    x = right + w <= sr.width - 8 ? right : left;
+    y = Math.max(8, Math.min(sr.height - h - 8, er.top - sr.top - 20));
+  } else {                                   // narrow stage: above or below the marker, never on top of it
+    x = Math.max(8, Math.min(sr.width - w - 8, er.left - sr.left + er.width / 2 - w / 2));
+    const below = er.bottom - sr.top + 8, above = er.top - sr.top - h - 8;
+    y = below + h <= sr.height - 8 ? below : above >= 8 ? above : (er.top - sr.top > sr.height / 2 ? 8 : sr.height - h - 8);
+  }
+  hc.style.left = x + "px"; hc.style.top = y + "px";
+  state.hover = id;
+  document.querySelectorAll("#assets .asset.hot").forEach(g => g.classList.remove("hot"));
+  anchorEl.classList.add("hot");
+}
+function hideCard() { $("hc").hidden = true; state.hover = null; document.querySelectorAll("#assets .asset.hot").forEach(g => g.classList.remove("hot")); }
+
+/* ------------------------------------------------------------------ detail sheet ---------------------------- */
+const TABS = [["uebersicht", "Übersicht"], ["dokumente", "Dokumente"], ["wartung", "Wartung"], ["messwerte", "Messwerte"]];
+function openSheet(id, tab) {
+  const a = byId(id); if (!a) return;
+  state.sel = id; if (tab) state.tab = tab;
+  hideCard();
+  $("sheet").hidden = false; $("work").classList.add("has-sheet");
+  $("sheet-head").innerHTML = `<div class="row"><div><h2>${esc(a.name)}</h2><div class="hc-id">${esc(a.id)}</div></div><button class="sheet-close" type="button" id="sheet-close" aria-label="Datenblatt schließen">×</button></div>
+    <div class="actions"><span class="st ${a.status}">${STATUS[a.status][0]} ${STATUS[a.status][1]}</span>${a.due ? '<span class="st warn">Wartung fällig</span>' : ""}<span class="tag-example">Beispiel</span><span class="note">${esc(typeLabel(a))}</span></div>`;
+  $("sheet-tabs").innerHTML = TABS.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === state.tab}">${l}</button>`).join("");
+  renderTab(a);
+  document.querySelectorAll("#assets .asset").forEach(g => g.classList.toggle("sel", g.dataset.id === id));
+  renderCrumbs();
+}
+function closeSheet() { state.sel = null; $("sheet").hidden = true; $("work").classList.remove("has-sheet"); document.querySelectorAll("#assets .asset.sel").forEach(g => g.classList.remove("sel")); renderCrumbs(); }
+function kv(obj) { const r = Object.entries(obj || {}); return r.length ? `<table class="kv">${r.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}</table>` : `<p class="note">keine Angaben</p>`; }
+function renderTab(a) {
+  const b = $("sheet-body"); let h = "";
+  if (state.tab === "uebersicht") {
+    h += `<div class="gallery"><div class="main">${illus(a, "Illustration – Foto folgt")}</div>${illus(a, "Illustration")}${illus(a, "Illustration")}</div>
+      <p class="note">Gesamtansicht, Typenschild, Detail: Bildplätze für echte Fotos, Drohnen- oder 360°-Aufnahmen des Eigentümers (mit Quelle, Datum, Lizenz). Bis dahin gekennzeichnete Illustrationen.</p>`;
+    if (a.note) h += `<div class="callout">${esc(a.note)}</div>`;
+    h += `<h3>Kennzahlen</h3>${kv(Object.fromEntries(a.kpi || []))}${liveLine(a)}`;
+    h += `<h3>Typenschild</h3>${kv(a.plate)}`;
+    const loc = a.lat ? { Ort: `${a.lat.toFixed(4)}° N, ${a.lon.toFixed(4)}° O (WGS84)` } : a.plan ? { Ort: `Plan ${a.plan}, x ${Math.round(a.x)} / y ${Math.round(a.y)} (Planeinheiten)` } : { Ort: "ohne Ort" };
+    h += `<h3>Kennzeichen & Ort</h3>${kv(Object.assign({ "Asset-Id": a.id, Atom: a.atom || "–", Elternobjekt: a.parent || "–" }, a.refs, loc))}`;
+    if (a.im) h += `<h3>infinimesh</h3>${kv({ Namespace: a.im.ns, Gerät: a.im.dev, Status: a.im.state, "Letztes reported": a.live ? `${a.live.v} · ${a.live.ts}` : "–" })}`;
+    h += `<div class="actions">${a.zoomable ? `<button type="button" class="primary" data-zoomin="${esc(a.id)}">Komponenten ansehen (Ebene 2)</button>` : ""}<a href="smart-topics-studio.html">Im Node-Graph zeigen</a>
+      <button type="button" disabled title="nur mit Freigabe, Stufe E2+">${a.commandable === false ? "Nicht schaltbar (Sicherheit)" : "Kommando mit Freigabe …"}</button></div>`;
+  } else if (state.tab === "dokumente") {
+    h += (a.docs && a.docs.length) ? a.docs.map(d => `<div class="doc"><svg><use href="#g-doc"/></svg><div><div>${esc(d.title)}</div><div class="meta">${esc(d.kind)} · ${esc(d.fmt)} · ${esc(d.size)} · sha256 ${esc(d.sha)}</div></div><button type="button" disabled title="Beispiel – Datei nicht hinterlegt">öffnen</button></div>`).join("")
+      : `<p class="note">Noch keine Dokumente hinterlegt.</p>`;
+    h += `<p class="note">Ablage im Objektspeicher (s3://opentsx-inventory/…) mit Prüfsumme; Dateien in diesem Prototyp nicht hinterlegt. Private Dokumente (Haus, Boot) bleiben lokal.</p>`;
+    h += `<h3>Bildherkunft</h3><table class="grid"><tr><th>Medium</th><th>Art</th><th>Quelle</th><th>Lizenz</th></tr>
+      <tr><td>Gesamtansicht</td><td>Illustration</td><td>generiert (Prototyp)</td><td>–</td></tr><tr><td>Typenschild</td><td>Illustration</td><td>generiert (Prototyp)</td><td>–</td></tr></table>`;
+  } else if (state.tab === "wartung") {
+    const m = a.maint || { intervals: [], open: [], history: [] };
+    if (a.due) h += `<div class="callout due">Wartung fällig${m.open[0] ? ": " + esc(m.open[0][1]) : ""}</div>`;
+    h += `<h3>Intervalle</h3>` + (m.intervals.length ? `<table class="grid"><tr><th>Was</th><th>Art</th><th>Intervall</th><th>zuletzt</th><th>nächste</th></tr>${m.intervals.map(i => `<tr><td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${esc(i.every)}</td><td>${esc(i.last)}</td><td>${esc(i.next)}</td></tr>`).join("")}</table>` : `<p class="note">keine</p>`);
+    h += `<h3>Offene Aufträge</h3>` + (m.open.length ? `<table class="grid"><tr><th>Auftrag</th><th>Inhalt</th><th>Status</th><th>Termin</th></tr>${m.open.map(o => `<tr><td class="mono">${esc(o[0])}</td><td>${esc(o[1])}</td><td><span class="st ${o[2] === "in Arbeit" ? "warn" : "off"}">${esc(o[2])}</span></td><td>${esc(o[3])}</td></tr>`).join("")}</table>` : `<p class="note">keine</p>`);
+    h += `<h3>Historie</h3>` + (m.history.length ? `<table class="grid"><tr><th>Datum</th><th>Arbeit</th><th>durch</th></tr>${m.history.map(o => `<tr><td>${esc(o[0])}</td><td>${esc(o[1])}</td><td>${esc(o[2])}</td></tr>`).join("")}</table>` : `<p class="note">keine Einträge</p>`);
+    h += `<p class="note">Lebenszyklus: vorgeschlagen → geplant → in Arbeit ↔ wartet → erledigt → abgenommen. Jede Änderung ist ein Ereignis in <span class="mono">tsx.&lt;domain&gt;.maintenance.v1</span>; ein geplanter Auftrag ist im Zwilling ein Eingriff (Verfügbarkeit).</p>
+      <div class="actions"><button type="button" disabled title="Stufe E3">Auftrag anlegen</button><button type="button" disabled title="Stufe E3">Was-wäre-wenn: Wartung verschieben</button></div>`;
+  } else {
+    h += liveLine(a) + sparkline(a);
+    h += `<h3>Reihen</h3>` + (a.series && a.series.length ? `<table class="grid"><tr><th>Metrik</th><th>Einheit</th><th>Herkunft</th></tr>${a.series.map(([m, u, o]) => `<tr><td class="mono">${esc(m)}</td><td>${esc(u)}</td><td><span class="origin ${o}">${ORIGIN[o]}</span></td></tr>`).join("")}</table>` : `<p class="note">keine</p>`);
+    h += `<h3>Ports im Schaltplan</h3>` + (a.ports && a.ports.length ? `<ul class="mono" style="margin:0;padding-left:18px;font-size:.78rem">${a.ports.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="note">keine</p>`);
+    if (a.smart && a.smart.length) h += `<h3>Smart Topics</h3><ul class="mono" style="margin:0;padding-left:18px;font-size:.78rem">${a.smart.map(p => `<li>${esc(p)}</li>`).join("")}</ul>`;
+    h += `<p class="note">Historie aus OpenTSx, nicht aus dem Gerät: ${a.im ? "infinimesh Kafka-Addon → " : ""}KafScale → Normalizer → Episoden (v2) → Iceberg.</p>`;
+  }
+  b.innerHTML = h; b.scrollTop = 0;
+}
+function sparkline(a) {
+  let seed = hash(a.id), v = 0.5; const pts = [];
+  for (let i = 0; i < 48; i++) { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; v = Math.max(0.05, Math.min(0.95, v + ((seed / 4294967296) - 0.5) * 0.18)); pts.push(v); }
+  const W = 320, H = 70, xs = i => 4 + i * (W - 8) / 47, ys = v => 8 + (1 - v) * (H - 22);
+  const line = pts.map((v, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)} ${ys(v).toFixed(1)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Beispielverlauf 48 h"><path class="ar" d="${line} L${xs(47)} ${H - 14} L${xs(0)} ${H - 14} Z"/><path class="ln" d="${line}"/><line class="ax" x1="0" x2="${W}" y1="${H - 14}" y2="${H - 14}"/><text x="4" y="${H - 2}">−48 h</text><text x="${W - 34}" y="${H - 2}">jetzt</text><text x="${W / 2 - 50}" y="${H - 2}">Beispielverlauf, erfunden</text></svg>`;
+}
+
+/* ------------------------------------------------------------------ navigation ------------------------------ */
+function setSystem(sys) { state.sys = sys; state.plan = SYSTEMS[sys].plans[0].id; state.parent = null; resetView(); closeSheet(); renderSystems(); renderAll(); }
+function setPlan(plan) { if (plan !== "wea") state.parent = null; state.plan = plan; resetView(); hideCard(); renderAll(); }
+function zoomInto(turbineId) { state.parent = turbineId; state.plan = "wea"; resetView(); hideCard(); renderAll(); }
+function renderAll() { renderPlanTabs(); renderPlan(); renderCrumbs(); }
+function screenScale() { const p = currentPlan(), r = $("map").getBoundingClientRect(); return r.width ? Math.min(r.width / p.w, r.height / p.h) : 1; }
+function resetView() {
+  state.s = 1; state.tx = 0; state.ty = 0;
+  const p = currentPlan();
+  if ($("map").getBoundingClientRect().width < 600 && p.phone) {      // phone: start closer, centred on the content
+    const [s, fx, fy] = p.phone; state.s = s; state.tx = p.w / 2 - fx * s; state.ty = p.h / 2 - fy * s; clampView();
+  }
+}
+function locate(id) {
+  let a = byId(id); if (!a) return;
+  if (a.comp) { state.sys = "h2-chain"; zoomInto(a.parent); }
+  else if (a.sys !== state.sys || (a.plan && a.plan !== state.plan) || state.plan === "wea") { state.sys = a.sys; state.plan = a.plan || SYSTEMS[a.sys].plans[0].id; state.parent = null; renderSystems(); resetView(); renderAll(); }
+  if (a.plan) { const p = currentPlan(); state.s = Math.max(state.s, 1.6); const cx = window.innerWidth > 860 ? p.w * 0.33 : p.w / 2;   // keep the object left of the floating sheet
+    state.tx = cx - a.x * state.s; state.ty = p.h / 2 - a.y * state.s; clampView(); renderAssets(); }
+  openSheet(id);
+}
+function clampView() {
+  const p = currentPlan();
+  state.s = Math.max(0.5, Math.min(4, state.s));
+  const mx = p.w * 0.6, my = p.h * 0.6;
+  state.tx = Math.max(-p.w * state.s + p.w - mx, Math.min(mx, state.tx));
+  state.ty = Math.max(-p.h * state.s + p.h - my, Math.min(my, state.ty));
+}
+function zoomAt(f, ux, uy) {
+  const s0 = state.s; const s1 = Math.max(0.5, Math.min(4, s0 * f)); if (s1 === s0) return;
+  const before = state.plan === "park" && s0 < 0.75, after = state.plan === "park" && s1 < 0.75;
+  state.tx = ux - (ux - state.tx) * (s1 / s0); state.ty = uy - (uy - state.ty) * (s1 / s0); state.s = s1; clampView();
+  if (before !== after) renderAssets(); else applyZoom();
+}
+function toUser(evt) {
+  const svg = $("map"); const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+/* ------------------------------------------------------------------ events ---------------------------------- */
+$("systems").addEventListener("click", e => { const b = e.target.closest("button[data-sys]"); if (b) setSystem(b.dataset.sys); });
+$("plantabs").addEventListener("click", e => { const b = e.target.closest("button[data-plan]"); if (b && b.dataset.plan !== state.plan) setPlan(b.dataset.plan); });
+$("crumbs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return; const [k, v] = b.dataset.act.split(/:(.*)/s);
+  if (k === "sys") setSystem(state.sys); else if (k === "plan") { if (v !== state.plan) setPlan(v); } else if (k === "asset") locate(v);
+});
+$("hc").addEventListener("click", () => { if ($("hc").classList.contains("touch") && state.hover && state.hover !== "__cluster") openSheet(state.hover); });
+$("tray").addEventListener("click", e => { const b = e.target.closest("button[data-open]"); if (b) openSheet(b.dataset.open); });
+$("sheet").addEventListener("click", e => {
+  if (e.target.closest("#sheet-close")) return closeSheet();
+  const t = e.target.closest("button[data-tab]"); if (t) { state.tab = t.dataset.tab; openSheet(state.sel); return; }
+  const z = e.target.closest("button[data-zoomin]"); if (z) { const id = z.dataset.zoomin; zoomInto(id); openSheet(id); }
+});
+const map = $("map"); let drag = null, lastType = "mouse", moved = false, pointerFocus = false;
+document.addEventListener("pointerdown", () => { pointerFocus = true; }, true);
+document.addEventListener("keydown", () => { pointerFocus = false; }, true);
+map.addEventListener("pointerdown", e => {
+  lastType = e.pointerType; moved = false;
+  drag = { x: e.clientX, y: e.clientY, tx: state.tx, ty: state.ty, onAsset: !!e.target.closest(".asset") };
+});
+map.addEventListener("pointermove", e => {
+  if (drag && (drag.onAsset ? false : true) && (e.buttons || e.pointerType === "touch")) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!moved && Math.hypot(dx, dy) > 4) { moved = true; map.classList.add("dragging"); try { map.setPointerCapture(e.pointerId); } catch (_) {} hideCard(); }
+    if (moved) { const k = currentPlan().w / map.getBoundingClientRect().width; const kk = Math.max(k, currentPlan().h / map.getBoundingClientRect().height); state.tx = drag.tx + dx * kk; state.ty = drag.ty + dy * kk; clampView(); applyZoom(); }
+  }
+});
+const endDrag = () => { drag = null; map.classList.remove("dragging"); };
+map.addEventListener("pointerup", endDrag); map.addEventListener("pointercancel", endDrag);
+map.addEventListener("pointerover", e => { if (e.pointerType === "touch" || drag && moved) return; const g = e.target.closest(".asset"); if (g && state.hover !== g.dataset.id) showCard(g.dataset.id, g, false); });
+map.addEventListener("pointerout", e => { if (e.pointerType === "touch") return; const g = e.target.closest(".asset"); if (g && !g.contains(e.relatedTarget)) hideCard(); });
+map.addEventListener("click", e => {
+  if (moved) return;
+  const g = e.target.closest(".asset");
+  if (!g) { if (lastType === "touch") hideCard(); return; }
+  const id = g.dataset.id;
+  if (id === "__cluster") { const u = toUser(e); zoomAt(1.6 / state.s, u.x, u.y); return; }
+  if (lastType === "touch" && state.hover !== id) { showCard(id, g, true); return; }
+  openSheet(id);
+});
+map.addEventListener("dblclick", e => { const g = e.target.closest(".asset"); if (!g) return; const a = byId(g.dataset.id); if (a && a.zoomable) { zoomInto(a.id); openSheet(a.id); } });
+map.addEventListener("wheel", e => { e.preventDefault(); const u = toUser(e); zoomAt(Math.exp(-e.deltaY * 0.0015), u.x, u.y); }, { passive: false });
+map.addEventListener("focusin", e => { if (pointerFocus) return; const g = e.target.closest(".asset"); if (g) showCard(g.dataset.id, g, false); });
+map.addEventListener("focusout", e => { if (pointerFocus) return; if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest(".asset")) hideCard(); });
+map.addEventListener("keydown", e => {
+  const g = e.target.closest(".asset");
+  if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); const id = g.dataset.id; if (id === "__cluster") { const p = currentPlan(); zoomAt(1.6 / state.s, p.w / 2, p.h / 2); } else openSheet(id); }
+  const p = currentPlan();
+  if (e.key === "+" || e.key === "=") zoomAt(1.25, p.w / 2, p.h / 2);
+  if (e.key === "-") zoomAt(0.8, p.w / 2, p.h / 2);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") { if (!$("results").hidden) $("results").hidden = true; else if (!$("hc").hidden) hideCard(); else closeSheet(); } });
+$("z-in").onclick = () => { const p = currentPlan(); zoomAt(1.3, p.w / 2, p.h / 2); };
+$("z-out").onclick = () => { const p = currentPlan(); zoomAt(1 / 1.3, p.w / 2, p.h / 2); };
+$("z-fit").onclick = () => { resetView(); renderAssets(); };
+$("mini").addEventListener("click", e => {
+  const svg = $("mini"); const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const u = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const p = currentPlan(); state.tx = p.w / 2 - u.x * state.s; state.ty = p.h / 2 - u.y * state.s; clampView(); applyZoom();
+});
+["l-labels", "l-live", "l-maint"].forEach(id => $(id).addEventListener("change", applyZoom));
+$("l-wake").addEventListener("change", () => { $("overlay").innerHTML = $("l-wake").checked ? wakeOverlay() : ""; });
+$("f-due").onclick = () => { state.fDue = !state.fDue; $("f-due").setAttribute("aria-pressed", state.fDue); applyFilters(); };
+$("f-dev").onclick = () => { state.fDev = !state.fDev; $("f-dev").setAttribute("aria-pressed", state.fDev); applyFilters(); };
+function searchPool() { const comps = ASSETS.filter(a => a.zoomable).flatMap(componentAssets); return ASSETS.concat(comps); }
+$("q").addEventListener("input", () => {
+  const q = $("q").value.trim().toLowerCase(); const r = $("results");
+  if (!q) { r.hidden = true; return; }
+  const hits = searchPool().filter(a => [a.id, a.name, typeLabel(a), Object.values(a.plate || {}).join(" "), Object.values(a.refs || {}).join(" ")].join(" ").toLowerCase().includes(q)).slice(0, 8);
+  r.innerHTML = hits.length ? hits.map(a => `<li><button type="button" data-loc="${esc(a.id)}">${esc(a.name)} <small>${esc(a.id)} · ${esc(SYSTEMS[a.sys].label)}</small></button></li>`).join("") : `<li class="note" style="padding:6px 8px">keine Treffer</li>`;
+  r.hidden = false;
+});
+$("results").addEventListener("click", e => { const b = e.target.closest("button[data-loc]"); if (b) { $("results").hidden = true; $("q").value = ""; locate(b.dataset.loc); } });
+document.addEventListener("click", e => { if (!e.target.closest(".search")) $("results").hidden = true; });
+const THEMES = ["auto", "light", "dark"]; let theme = 0;
+try { const t = localStorage.getItem("explorer-theme"); if (t && THEMES.includes(t)) theme = THEMES.indexOf(t); } catch (_) {}
+function applyTheme() { const t = THEMES[theme]; if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); $("theme").textContent = { auto: "Auto", light: "Hell", dark: "Dunkel" }[t]; try { localStorage.setItem("explorer-theme", t); } catch (_) {} }
+$("theme").onclick = () => { theme = (theme + 1) % 3; applyTheme(); };
+let lastW = window.innerWidth;
+window.addEventListener("resize", () => { if (window.innerWidth !== lastW && !$("hc").hidden) hideCard(); lastW = window.innerWidth; });
+
+/* boot: optional ?sys=…&plan=…&open=… for links and screenshots */
+applyTheme();
+const qp = new URLSearchParams(location.search);
+if (qp.get("theme")) { theme = Math.max(0, THEMES.indexOf(qp.get("theme"))); applyTheme(); }
+if (qp.get("sys") && SYSTEMS[qp.get("sys")]) state.sys = qp.get("sys");
+state.plan = SYSTEMS[state.sys].plans[0].id;
+if (qp.get("plan") && SYSTEMS[state.sys].plans.some(p => p.id === qp.get("plan"))) state.plan = qp.get("plan");
+if (qp.get("wake") === "1") $("l-wake").checked = true;
+resetView(); renderSystems(); renderAll();
+if (qp.get("open")) locate(qp.get("open"));
+</script>
+</body>
+</html>
