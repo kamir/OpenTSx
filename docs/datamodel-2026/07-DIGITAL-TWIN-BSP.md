@@ -465,6 +465,12 @@ dagegen den Takt. Gemessen gilt genau
 mit `d = 1` für eine verzögerte (Rückkopplungs-)Kante und `d = 0` sonst. Beispiel Haus (Schleife Gebäude ↔ Kessel,
 zwei Kanten): `lag = 0` → 2 Ticks je Schritt; `lag = 2` → 6; mit `s = 1` → 2; `s = 2` → 1,2; ab `s = 4` → 1.
 
+Einordnung: Das ist die aus der Datenfluss-Analyse bekannte *Iterationsschranke* (maximales Zyklusverhältnis aus
+Bearbeitungszeit und Verzögerungen je Schleife; Reiter 1968 für Rechengraphen, Renfors/Neuvo 1981 für digitale
+Filter, Parhi/Messerschmitt 1991 für iterative Datenflussprogramme – Literaturangaben vor der Veröffentlichung
+prüfen). Neu ist nicht die Formel, sondern ihre Anwendung auf Zwillinge über einem Log: Veraltung `s` wirkt wie
+zusätzliche Verzögerungen auf den Kanten, und die Kolokalisierung von Schleifen hält das Ergebnis bitgleich zu T.
+
 **Ergebnis 3 – Veraltung in schnellen Regelkreisen ist teuer.** Gewonnen wird bis Faktor 6, bezahlt mit
 Abweichung (Auszug, `lag = 2`, ohne Jitter; NRMSE normiert auf die Spannweite der T-Reihe):
 

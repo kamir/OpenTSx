@@ -1,0 +1,30 @@
+# Sites of the history runs and their DWD CDC stations (station ids from the DWD station lists of the hourly
+# air-temperature, wind and solar products and the 10-minute solar product, checked 2026-10-12, including that the
+# radiation stations deliver GS_10 for 2019 to today; distance to the site in km). Override with --sites <file> or --station / --radiation-station.
+sites:
+  # family house, Erzgebirge (~650 m, invented site)
+  haus-erzgebirge:
+    latitude: 50.6
+    longitude: 13.0
+    temperature: "03166"     # Marienberg, 639 m, 11.8 km (hourly air temperature since 1982)
+    wind: "03166"
+    radiation: "01358"       # Fichtelberg, 1213 m, 19 km (10-min global radiation; a summit, cloudier than the house);
+                             # Chemnitz 00853 (416 m, 23 km) has no radiation from April 2025 to March 2026
+  # Baltic coast wind park (scenario opentsx-windpark/scenarios/ostsee-demo.yaml: 54.45 N, 13.95 E)
+  windpark-ostsee:
+    latitude: 54.45
+    longitude: 13.95
+    temperature: "01759"     # Greifswalder Oie, 11 m, 23 km (island, exposed: good for wind)
+    wind: "01759"
+    radiation: "00183"       # Arkona, 42 m, 42 km
+    anemometerHeightM: 10
+    hubHeightM: 120
+    shearExponent: 0.11      # open sea / coast
+  # sailing area of the boat: Kiel Bay / western Baltic (plan boot-etap22: 54.3 N, 10.1 E)
+  boot-kieler-bucht:
+    latitude: 54.3
+    longitude: 10.1
+    temperature: "02564"     # Kiel-Holtenau, 28 m, 9 km
+    wind: "02564"
+    radiation: "06163"       # Dörnick, 27 m, 22 km (10-min global radiation since 2006); Leuchtturm Kiel 02961
+                             # measures sunshine duration only

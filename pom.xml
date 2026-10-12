@@ -27,6 +27,7 @@
         <module>opentsx-twin</module>
         <module>opentsx-dwd</module>
         <module>opentsx-modbus</module>
+        <module>opentsx-market</module>
         <module>opentsx-legacy-bridge</module>
         <module>opentsx-kafscale-conformance</module>
     </modules>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Shape of an ENTSO-E day-ahead price document (A44) for DE-LU around the MTU switch; values invented. -->
+<Publication_MarketDocument xmlns="urn:iec62325.351:tc57wg16:451-3:publicationdocument:7:3">
+	<mRID>fixture-a44</mRID>
+	<revisionNumber>1</revisionNumber>
+	<type>A44</type>
+	<period.timeInterval>
+		<start>2025-09-30T20:00Z</start>
+		<end>2025-09-30T23:00Z</end>
+	</period.timeInterval>
+	<TimeSeries>
+		<mRID>1</mRID>
+		<auction.type>A01</auction.type>
+		<businessType>A62</businessType>
+		<in_Domain.mRID codingScheme="A01">10Y1001A1001A82H</in_Domain.mRID>
+		<out_Domain.mRID codingScheme="A01">10Y1001A1001A82H</out_Domain.mRID>
+		<currency_Unit.name>EUR</currency_Unit.name>
+		<price_Measure_Unit.name>MWH</price_Measure_Unit.name>
+		<curveType>A03</curveType>
+		<Period>
+			<timeInterval>
+				<start>2025-09-30T20:00Z</start>
+				<end>2025-09-30T22:00Z</end>
+			</timeInterval>
+			<resolution>PT60M</resolution>
+			<Point><position>1</position><price.amount>101.63</price.amount></Point>
+			<Point><position>2</position><price.amount>92.54</price.amount></Point>
+		</Period>
+	</TimeSeries>
+	<TimeSeries>
+		<mRID>2</mRID>
+		<businessType>A62</businessType>
+		<curveType>A03</curveType>
+		<Period>
+			<timeInterval>
+				<start>2025-09-30T22:00Z</start>
+				<end>2025-09-30T23:00Z</end>
+			</timeInterval>
+			<resolution>PT15M</resolution>
+			<Point><position>1</position><price.amount>95.10</price.amount></Point>
+			<!-- position 2 omitted: A03 repeats 95.10 -->
+			<Point><position>3</position><price.amount>-0.01</price.amount></Point>
+			<Point><position>4</position><price.amount>88</price.amount></Point>
+		</Period>
+	</TimeSeries>
+</Publication_MarketDocument>

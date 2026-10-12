@@ -14,6 +14,8 @@
 #   dwd                DWD Open Data collector                         (org.opentsx.dwd.DwdCli)
 #   modbus             Modbus meters: check|read|poll|simulate         (org.opentsx.modbus.ModbusCli; maps in share/modbus)
 #   studio-export      scenario data for the Smart Topics Studio       (org.opentsx.twin.studio.StudioExport <out.json>)
+#   market             market data, history archive, backfill          (org.opentsx.market.MarketCli)
+#   history-twin       twin|house|boat on the history archive          (org.opentsx.market.twin.HistoryTwins)
 #   kafscale-check     reachability, advertised brokers, topic counts  (org.opentsx.deploy.KafScaleCheck)
 #   classpath <module> print the classpath of a module
 #   help               this text
@@ -62,6 +64,8 @@ case "$cmd" in
   dwd)              run "opentsx-dwd" org.opentsx.dwd.DwdCli "$@" ;;
   modbus)           run "opentsx-modbus" org.opentsx.modbus.ModbusCli "$@" ;;
   studio-export)    run "opentsx-twin" org.opentsx.twin.studio.StudioExport "$@" ;;
+  market)           run "opentsx-market" org.opentsx.market.MarketCli "$@" ;;
+  history-twin)     run "opentsx-market" org.opentsx.market.twin.HistoryTwins "$@" ;;
   kafscale-check)   run "opentsx-deploy-tools" org.opentsx.deploy.KafScaleCheck "$@" ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;
