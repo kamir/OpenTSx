@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { flowsAPI, Flow } from '../services/api';
+import { WORKBENCH_KIND } from '../workbench/flow';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -129,7 +130,11 @@ export default function Dashboard() {
                 <div
                   key={flow.id}
                   className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/flow-builder/${flow.id}`)}
+                  onClick={() =>
+                    navigate(
+                      flow.definition?.kind === WORKBENCH_KIND ? `/workbench?flow=${flow.id}` : `/flow-builder/${flow.id}`
+                    )
+                  }
                 >
                   <h4 className="text-lg font-medium text-gray-900 mb-2">
                     {flow.name}

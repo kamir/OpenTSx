@@ -22,23 +22,43 @@ deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into th
 | `env.example` | all configuration keys with defaults |
 | `base/` | ConfigMap, PVCs, stats processor, retrieval server, Studio |
 | `jobs/` | demo Jobs (`40-demo.sh`) |
-| `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring`, `saas-frontend` |
+| `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring`, `saas` |
 | `overlays/local/` | rendered by `20-configure.sh` (not in Git) |
 | `lib.sh` | shared shell helpers |
 | `../docker/` | Dockerfiles, staging script, image entrypoint, deployment helper |
 
-## SaaS frontend with the web workbench
+## SaaS module: web workbench, accounts, stored flows
 
-`20-configure.sh SAAS_FRONTEND=true` adds the component `saas-frontend`: the React frontend as a static build behind
-nginx, Deployment and NodePort Service `opentsx-saas-frontend` on node port 30311. `10-build.sh` then also builds
-`<repo>/saas-frontend:<tag>` (needs npm registry access during the image build) and `11-import-images.sh` imports it.
+`20-configure.sh SAAS=true` adds the component `saas`:
+
+| Workload | What | Reachable |
+|----------|------|-----------|
+| `opentsx-saas-frontend` | React frontend as a static build behind nginx; proxies `/api/` and `/retrieval/` | NodePort 30311 |
+| `opentsx-saas-backend` | FastAPI: accounts, organizations, stored flows | cluster-internal, through `/api/` |
+| `opentsx-saas-db` | PostgreSQL with the PVC `opentsx-saas-db` (1Gi) | cluster-internal |
+
+`10-build.sh` then also builds `<repo>/saas-frontend:<tag>` and `<repo>/saas-backend:<tag>` (both need registry access
+during the image build: npm and PyPI), and `11-import-images.sh` imports them. The cluster pulls `postgres` itself.
 
 ```bash
-deploy/k3s/20-configure.sh SAAS_FRONTEND=true
+deploy/k3s/20-configure.sh SAAS=true
 deploy/k3s/10-build.sh --skip-maven && deploy/k3s/11-import-images.sh && deploy/k3s/30-deploy.sh
-# http://<node>:30311/workbench
+# http://<node>:30311/workbench   (no account needed)
+# http://<node>:30311/register    (account, to save flows; they appear on /dashboard)
+opentsx-saas-backend/smoke-flows.sh http://<node>:30311      # register, login, store, read, change, delete
 ```
 
-The workbench computes in the browser. Its "Load episodes" reaches the retrieval server through `/retrieval/`, which
-has no authentication: use this on a trusted network only. The SaaS backend is not deployed by this component, so
-`/login` and `/dashboard` have no API behind them.
+`20-configure.sh` generates the database password, the token key and the password of the first administrator
+(`SAAS_ADMIN_EMAIL`) when they are empty and keeps them in `.env` and the Secret `opentsx-saas-secrets`:
+
+```bash
+kubectl -n opentsx get secret opentsx-saas-secrets -o jsonpath='{.data.SAAS_ADMIN_PASSWORD}' | base64 -d
+```
+
+Limits:
+
+* Plain HTTP on a node port: logins and tokens travel unencrypted. Use it on a trusted network only. The same holds
+  for `/retrieval/`, which reaches the retrieval server without authentication.
+* The database password is fixed once the volume exists; change it in PostgreSQL first, then in `.env`.
+* `70-backup.sh` does not cover the PVC `opentsx-saas-db`.
+* Saving a flow stores its definition. Nothing in this repository executes `opentsx.dag.v1` yet.

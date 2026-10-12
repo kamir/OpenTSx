@@ -76,7 +76,6 @@ export default function FlowBuilder() {
             target: edge.target,
           })),
         },
-        organization_id: 1, // This should come from auth context
       };
 
       await flowsAPI.create(flowData);

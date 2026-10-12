@@ -15,11 +15,20 @@ entries are grouped by date. The detailed progress log (German) is in
   a graph and export it as `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor or Java code. See
   [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the limits: no runtime executes
   the DAG yet.
+- SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
+  executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
+  dashboard. `opentsx-saas-backend/smoke-flows.sh` checks accounts and flows against a running instance.
+- `deploy/k3s`: optional component `saas` (`SAAS=true`): frontend on node port 30311, backend, PostgreSQL; images
+  `saas-frontend` and `saas-backend` (`deploy/docker/`).
 - `LICENSE` (Apache License 2.0, full text) and `NOTICE`.
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (reporting via GitHub private
   vulnerability reporting), this changelog.
 - `config/opentsx-local.props.example`: localhost / KafScale-compatible Kafka client profile for the 2.x tools.
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
+
+### Fixed
+- SaaS backend: registration failed against a real database (`MissingGreenlet`), every authenticated request
+  answered 401 (numeric token subject), and a refresh token was accepted as access token.
 
 ### Changed
 - Default 2.x client profile is now `./config/opentsx-local.props` (was `./config/cpl.props`); scripts, the

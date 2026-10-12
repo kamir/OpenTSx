@@ -60,8 +60,15 @@ Beobachtungen am Swing-Code:
 ## Grenzen (bewusst, bitte nicht überlesen)
 
 * **Kein Deployment aus der Oberfläche.** Für `opentsx.dag.v1` gibt es im Repository keine Laufzeit: der
-  Go-Prozessor aus Dokument 11 ist ein Vorschlag. `POST /api/v1/flows` im SaaS-Backend ist ein Platzhalter,
-  der nichts speichert. Die Workbench übergibt deshalb eine Datei und behauptet kein Ausrollen.
+  Go-Prozessor aus Dokument 11 ist ein Vorschlag. Die Workbench übergibt deshalb eine Datei bzw. speichert
+  den Flow im Konto und behauptet kein Ausrollen. `POST /flows/{id}/execute` reicht die Definition weiter
+  an Flink (`DynamicTopologyJob`) und antwortet ohne Flink-Cluster mit 502; ein Workbench-Flow ist kein PFD.
+* **Betrieb nur im vertrauten Netz.** Der NodePort spricht HTTP ohne TLS; Anmeldedaten und Tokens gehen im
+  Klartext über das Netz. Es gibt keinen Token-Refresh im Frontend: nach 30 Minuten neu anmelden. Die
+  Workbench bleibt dabei stehen und verliert den Flow nicht.
+* **Backend-Reste:** Die Routen für Organisationen, Teams, Einladungen und Abrechnung in `app/main.py` sind
+  weiterhin Platzhalter. Die Plangrenze `max_flows` wird nicht geprüft. Es gibt keine Backend-Tests in der
+  CI; geprüft wird mit `opentsx-saas-backend/smoke-flows.sh` gegen eine laufende Instanz.
 * **Katalog:** Nur `resample`, `dq.checks` (Plausible range), `stats.welford-ddsketch` (Window statistics)
   und `segment.threshold` stehen im Stream-Katalog (11, Abschnitt 6). Alle Analyse-Operationen (FFT, DFA,
   ...) laufen nur in der Workbench; die Prüfung meldet das am Sink.
@@ -71,15 +78,18 @@ Beobachtungen am Swing-Code:
 * **Abweichungen vom Java-Code:** Shuffle mit festem Startwert statt `Collections.shuffle`; Entropie mit
   eigener Klasseneinteilung (16 Klassen über den Wertebereich); DFA-Exponent als Steigung über alle Skalen
   statt über `fitMIN`/`fitMAX`; Autokorrelation bis höchstens 1000 Lags.
-* Die Route `/workbench` ist ohne Anmeldung erreichbar, weil alles im Browser rechnet.
+* Die Route `/workbench` ist ohne Anmeldung erreichbar, weil alles im Browser rechnet. Speichern braucht ein Konto.
 
 ## Sub-Tasks
 
 - [x] 013.1 Analyse der Swing-Workbench
 - [x] 013.2 Operator-Bibliothek, Loader, Flow-Modell, Exporte, mit Tests (`src/workbench/workbench.test.ts`)
 - [x] 013.3 Oszilloskop, Track-Baum, Operationsleiste, Graph, Inspektor
-- [x] 013.3a Auslieferung: `deploy/docker/saas-frontend.Dockerfile`, k3s-Komponente `saas-frontend` (`SAAS_FRONTEND=true`, NodePort 30311)
-- [ ] 013.4 Backend: Flows wirklich speichern (`POST /api/v1/flows` mit Body und Datenbank), DAG als Flow-Definition
+- [x] 013.3a Auslieferung: Images `saas-frontend` und `saas-backend` (`deploy/docker/`), k3s-Komponente `saas`
+      (`SAAS=true`: Frontend auf NodePort 30311, Backend, PostgreSQL mit PVC, Secret `opentsx-saas-secrets`)
+- [x] 013.4 Backend: Flows je Benutzer in der Datenbank (`app/api/flows.py`: anlegen, lesen, ändern, löschen,
+      Ausführungen), Workbench speichert (`Save flow`) und öffnet (`/workbench?flow=<id>`, Dashboard) die
+      Definition `opentsx.workbench.v1` (Knotenliste plus gerendertes `opentsx.dag.v1`)
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
 - [ ] 013.6 Knoten mit mehreren Eingängen, Kontext-Topics, `score.onnx`, `train.trigger`
 - [ ] 013.7 MF-DFA und Normalverteilungstest portieren; Paritätsvektoren Java gegen TypeScript
@@ -102,4 +112,18 @@ npm run dev          # http://localhost:3000/workbench
   Episoden über `/retrieval/` vom Retrieval-Server im Cluster, DFA darauf rechnet, keine Konsolenfehler.
   Rückbau: `kubectl -n opentsx delete deploy,svc opentsx-saas-frontend`. Nach dem Merge den regulären Weg
   nehmen (`20-configure.sh SAAS_FRONTEND=true`, Tag `3.0.0-local`).
+* 2026-10-12, Backend: Beim ersten echten Lauf gegen PostgreSQL drei alte Fehler gefunden und behoben.
+  (1) Registrierung brach mit `MissingGreenlet` ab (`user.organizations.append` im Async-Kontext).
+  (2) Jeder Aufruf mit Token gab 401, weil das Token-Subjekt eine Zahl war und python-jose beim Lesen eine
+  Zeichenkette verlangt. (3) Ein Refresh-Token wurde als Access-Token angenommen. Dazu: Organisations-Slug
+  jetzt eindeutig (zwei Adressen mit gleichem Teil vor dem @ kollidierten).
+* 2026-10-12, Rollout auf master2 mit Backend und Datenbank (Images `3.0.0-task013-3`, aus dem
+  Delivery-Worktree, Stand dieses Commits). Geprüft: `smoke-flows.sh http://<master2>:30311` (26 Prüfungen
+  grün, darunter Fremdzugriff auf Flows abgewiesen) und eine Browser-Sitzung: registrieren, Flow bauen,
+  Smart Topic markieren, speichern, im Dashboard öffnen, nach Neuladen wiederherstellen, auf neuem Bucket
+  rechnen; keine Konsolenfehler. Die Prüfung hat Testkonten hinterlassen (`smoke-...@example.com`,
+  `e2e-...@example.com`). Rückbau (löscht auch die Datenbank):
+  `kubectl -n opentsx delete deploy,svc opentsx-saas-frontend opentsx-saas-backend opentsx-saas-db`, danach
+  `kubectl -n opentsx delete pvc opentsx-saas-db` und `kubectl -n opentsx delete secret opentsx-saas-secrets`.
+  Der frühere Eintrag zum Rollout nur des Frontends ist damit überholt.
 

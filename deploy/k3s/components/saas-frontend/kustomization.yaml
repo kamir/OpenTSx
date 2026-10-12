@@ -1,8 +1,0 @@
-# SAAS_FRONTEND=true: the SaaS frontend with the web workbench (/workbench) as Deployment + NodePort Service
-# opentsx-saas-frontend (node port 30311). Static files only; the SaaS backend is not part of this component, so
-# login and the dashboard have no API to talk to. The page proxies /retrieval/ to opentsx-retrieval, which has NO
-# authentication: enable this only on a trusted network.
-apiVersion: kustomize.config.k8s.io/v1alpha1
-kind: Component
-resources:
-  - saas-frontend.yaml

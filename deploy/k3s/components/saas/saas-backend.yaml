@@ -1,0 +1,73 @@
+# SaaS backend: FastAPI (saas-backend.Dockerfile). Creates its tables and the first administrator on start.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-saas-backend
+  labels:
+    app.kubernetes.io/name: opentsx-saas-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-saas-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-saas-backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: backend
+          image: opentsx/saas-backend
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_SERVER
+              value: opentsx-saas-db
+            - name: POSTGRES_USER
+              value: opentsx
+            - name: POSTGRES_DB
+              value: opentsx
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_DB_PASSWORD}}
+            - name: SECRET_KEY
+              valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_SECRET_KEY}}
+            - name: FIRST_SUPERUSER_EMAIL
+              valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_ADMIN_EMAIL}}
+            - name: FIRST_SUPERUSER_PASSWORD
+              valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_ADMIN_PASSWORD}}
+          ports:
+            - name: http
+              containerPort: 8000
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 36   # waits for the database
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 20m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-saas-backend
+  labels:
+    app.kubernetes.io/name: opentsx-saas-backend
+spec:
+  selector:
+    app.kubernetes.io/name: opentsx-saas-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

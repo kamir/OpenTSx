@@ -1,0 +1,86 @@
+# PostgreSQL of the SaaS backend: users, organizations, flows. One instance, data on a PVC.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opentsx-saas-db
+  labels:
+    app.kubernetes.io/name: opentsx-saas-db
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-saas-db
+  labels:
+    app.kubernetes.io/name: opentsx-saas-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # the volume is ReadWriteOnce
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-saas-db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-saas-db
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: postgres:15.12-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: opentsx
+            - name: POSTGRES_DB
+              value: opentsx
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_DB_PASSWORD}}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec: {command: [pg_isready, -U, opentsx, -d, opentsx]}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: [pg_isready, -U, opentsx, -d, opentsx]}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 20m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: opentsx-saas-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-saas-db
+  labels:
+    app.kubernetes.io/name: opentsx-saas-db
+spec:
+  selector:
+    app.kubernetes.io/name: opentsx-saas-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

@@ -68,7 +68,7 @@ jobs:
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
           shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/docker/*.sh
-      - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas-frontend)
+      - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas)
         run: |
           kubectl version --client
           mkdir -p "$RUNNER_TEMP/rendered"
@@ -76,7 +76,7 @@ jobs:
           for cfg in "KAFSCALE_BOOTSTRAP=10.0.0.5:9092" \
                      "KAFSCALE_BOOTSTRAP=localhost:9092 KAFSCALE_NETWORK=hostnetwork MODBUS_SIM=true DWD_FORWARD=true MONITORING=true" \
                      "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 KAFSCALE_NETWORK=service" \
-                     "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 LAKE=true INGRESS=true MODBUS_SIM=true DWD_FORWARD=true MONITORING=true SAAS_FRONTEND=true STORAGE_CLASS=local-path"; do
+                     "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 LAKE=true INGRESS=true MODBUS_SIM=true DWD_FORWARD=true MONITORING=true SAAS=true STORAGE_CLASS=local-path"; do
             rm -f deploy/k3s/.env
             deploy/k3s/20-configure.sh $cfg
             i=$((i + 1))

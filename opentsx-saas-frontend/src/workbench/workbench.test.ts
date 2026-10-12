@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { OPS, OP_BY_ID, crossings, defaultParams, dfa, fftRadix2, linFit, mulberry32, profileOf, stats } from './ops';
 import { bucketToCsv, generateSineMix, parseBucketText, parseDelimited, parseEpisodes } from './loaders';
-import { SOURCE_ID, evaluate, toDagYaml, toJavaCode, toPfdJson, useFlow, validate } from './flow';
+import { SOURCE_ID, evaluate, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate } from './flow';
 import { Bucket } from './types';
 
 function bucketOf(...ys: number[][]): Bucket {
@@ -295,5 +295,40 @@ describe('flow', () => {
     const java = toJavaCode(useFlow.getState());
     expect(java).toContain('TSBucket tsbB = TSBucket.loadViaContext( sc, "/TSBASE/EXP2/B.tsb.vec.seq" );');
     expect(java).toContain('TSBucket tsbDFA_Standardized_B = tsbStandardized_B.processBucket( "DFA(2,10)", null );');
+  });
+
+  it('restores a stored flow and binds the next bucket as its source', () => {
+    useFlow.getState().applyOp('diff');
+    const st = useFlow.getState().applyOp('stats.window', { window: 4, field: 'MAX' })!;
+    useFlow.getState().setSink(st, 'tsx.lab.smart.x.metrics.v2');
+    const stored = JSON.parse(JSON.stringify(toDefinition(useFlow.getState())));
+    expect(stored.kind).toBe('opentsx.workbench.v1');
+    expect(stored.dag).toContain('topic: tsx.lab.smart.x.metrics.v2');
+
+    useFlow.getState().loadBucket(bucketOf([0]), { kind: 'test', detail: '' });
+    expect(useFlow.getState().restore(stored, 7)).toBe(true);
+    let s = useFlow.getState();
+    expect([s.savedId, s.source, s.nodes.length, s.counter]).toEqual([7, null, 3, 2]);
+    expect(evaluate(s.source, s.nodes, st)).toBeNull();
+
+    s.loadBucket({ ...bucketOf([1, 5, 2, 9, 3, 3, 4, 8]), name: 'Other' }, { kind: 'test', detail: '' });
+    s = useFlow.getState();
+    expect(s.nodes.map((n) => n.label)).toEqual(['Other', 'Diff_Other', 'Stats_Diff_Other']);
+    expect(s.savedId).toBe(7);
+    expect(Array.from(evaluate(s.source, s.nodes, st)!.series[0].y)).toEqual([7, 4]);
+    expect(useFlow.getState().applyOp('fft')).toBe('n3');
+  });
+
+  it('refuses stored definitions that are foreign, cyclic or use unknown operators', () => {
+    const node = (id: string, op: string, input: string | null) => ({ id, op, input, label: id, params: {} });
+    const src = node('source', 'source', null);
+    const restore = (nodes: unknown, kind = 'opentsx.workbench.v1') => useFlow.getState().restore({ kind, nodes }, 1);
+    expect(restore([src, node('n1', 'diff', 'source')])).toBe(true);
+    expect(restore([src, node('n1', 'diff', 'source')], 'other')).toBe(false);
+    expect(restore([src, node('n1', 'rm -rf', 'source')])).toBe(false);
+    expect(restore([src, node('n1', 'diff', 'n2'), node('n2', 'diff', 'n1')])).toBe(false);
+    expect(restore([src, node('n1', 'diff', 'gone')])).toBe(false);
+    expect(restore([node('n1', 'diff', null)])).toBe(false);
+    expect(restore('nodes')).toBe(false);
   });
 });

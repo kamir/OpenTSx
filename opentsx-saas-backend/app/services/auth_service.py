@@ -3,10 +3,10 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import insert, select
 from fastapi import HTTPException, status
 
-from app.models.user import User, Organization, PlanTier
+from app.models.user import User, Organization, PlanTier, UserRole, user_organization
 from app.core.security import (
     verify_password,
     get_password_hash,
@@ -81,7 +81,8 @@ async def create_user(db: AsyncSession, user_create: UserCreate) -> User:
     await db.flush()  # Flush to get user.id
 
     # Create default organization
-    org_slug = user_create.email.split("@")[0].replace(".", "-").replace("_", "-")
+    # The slug is unique per organization; the user id keeps equal local parts of two addresses apart.
+    org_slug = f'{user_create.email.split("@")[0].replace(".", "-").replace("_", "-")}-{user.id}'
     organization = Organization(
         name=f"{user_create.full_name}'s Organization" if user_create.full_name else f"{org_slug}'s Organization",
         slug=org_slug,
@@ -93,9 +94,17 @@ async def create_user(db: AsyncSession, user_create: UserCreate) -> User:
     )
 
     db.add(organization)
+    await db.flush()  # Flush to get organization.id
 
-    # Add user to organization members
-    user.organizations.append(organization)
+    # Add the user as admin member of the organization. user.organizations.append() would lazy-load the
+    # collection, which fails in the async session (MissingGreenlet); insert into the association table instead.
+    await db.execute(
+        insert(user_organization).values(
+            user_id=user.id,
+            organization_id=organization.id,
+            role=UserRole.ADMIN,
+        )
+    )
 
     await db.commit()
     await db.refresh(user)
@@ -127,8 +136,9 @@ async def login(db: AsyncSession, login_data: LoginRequest) -> dict:
         )
 
     # Create tokens
-    access_token = create_access_token(data={"sub": user.id})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    # python-jose rejects a non-string subject when it decodes the token
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
     return {
         "access_token": access_token,

@@ -4,7 +4,8 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// An empty VITE_API_BASE_URL means same origin: the nginx image proxies /api to the backend.
+const API_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 const API_V1 = `${API_URL}/api/v1`;
 
 // Create axios instance
@@ -35,7 +36,10 @@ apiClient.interceptors.response.use(
       // Token expired, clear storage and redirect to login
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      window.location.href = '/login';
+      // The workbench keeps its flow in memory: it reports the expired session instead of leaving the page.
+      if (!window.location.pathname.startsWith('/workbench')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -80,6 +84,8 @@ export interface Flow {
 }
 
 export interface FlowDefinition {
+  /** 'opentsx.workbench.v1' for flows saved from the workbench. */
+  kind?: string;
   nodes: Node[];
   edges: Edge[];
 }
@@ -186,6 +192,25 @@ export const flowsAPI = {
   update: async (id: number, data: Partial<Flow>): Promise<Flow> => {
     const response = await apiClient.put(`/flows/${id}`, data);
     return response.data.flow;
+  },
+
+  /**
+   * Create or update a flow with a free-form definition (used by the workbench)
+   */
+  save: async (
+    id: number | null,
+    data: { name: string; description: string; definition: Record<string, unknown> }
+  ): Promise<{ id: number; name: string }> => {
+    const response = id === null ? await apiClient.post('/flows', data) : await apiClient.put(`/flows/${id}`, data);
+    return response.data.flow;
+  },
+
+  /**
+   * Get the raw definition of a flow
+   */
+  getDefinition: async (id: number): Promise<{ id: number; name: string; definition: Record<string, unknown> }> => {
+    const response = await apiClient.get(`/flows/${id}`);
+    return response.data;
   },
 
   /**

@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import FlowGraph from '../workbench/FlowGraph';
 import Scope from '../workbench/Scope';
 import {
@@ -15,12 +15,15 @@ import {
   defaultSinkTopic,
   evaluate,
   toDagYaml,
+  toDefinition,
   toJavaCode,
   toPfdJson,
   useFlow,
   validate,
 } from '../workbench/flow';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
+import axios from 'axios';
+import { flowsAPI } from '../services/api';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
@@ -415,6 +418,54 @@ export default function Workbench() {
   const [error, setError] = useState<string | null>(null);
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
   const fileRef = useRef<HTMLInputElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const signedIn = !!localStorage.getItem('access_token');
+  const flowParam = searchParams.get('flow');
+
+  // /workbench?flow=<id> opens a flow stored in the account.
+  useEffect(() => {
+    const id = Number(flowParam);
+    if (!flowParam || !Number.isInteger(id) || useFlow.getState().savedId === id) return;
+    let cancelled = false;
+    flowsAPI
+      .getDefinition(id)
+      .then((flow) => {
+        if (cancelled) return;
+        if (useFlow.getState().restore(flow.definition, flow.id)) {
+          setError(null);
+          setStatus(`Flow "${flow.name}" opened. Load a bucket to run it.`);
+        } else {
+          setError(`Flow ${id} was not saved from the workbench and cannot be opened here.`);
+        }
+      })
+      .catch((e) => !cancelled && setError(`Flow ${id} could not be opened: ${e instanceof Error ? e.message : e}`));
+    return () => {
+      cancelled = true;
+    };
+  }, [flowParam]);
+
+  const saveFlow = async () => {
+    const s = useFlow.getState();
+    const published = s.nodes.filter((n) => n.sinkTopic).length;
+    try {
+      const flow = await flowsAPI.save(s.savedId, {
+        name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
+        description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
+        definition: toDefinition(s),
+      });
+      s.setSavedId(flow.id);
+      setSearchParams({ flow: String(flow.id) }, { replace: true });
+      setError(null);
+      setStatus(`Saved to your account as flow ${flow.id}`);
+    } catch (e) {
+      const expired = axios.isAxiosError(e) && e.response?.status === 401;
+      setError(
+        expired
+          ? 'Your session has expired. Sign in again (the link opens a new tab), then save: the flow stays here.'
+          : `The flow could not be saved: ${e instanceof Error ? e.message : e}`
+      );
+    }
+  };
 
   const selected = nodes.find((n) => n.id === selectedId);
   const result = useMemo(() => {
@@ -493,6 +544,13 @@ export default function Workbench() {
           Load episodes
         </button>
         <span className="wb-grow" />
+        {signedIn ? (
+          <button disabled={nodes.length === 0} onClick={saveFlow} title="Stores the flow in your account; it appears on the dashboard">
+            {state.savedId === null ? 'Save flow' : `Save flow ${state.savedId}`}
+          </button>
+        ) : (
+          <Link to="/login" target="_blank" rel="noopener">Sign in to save flows</Link>
+        )}
         <Link to="/dashboard">Dashboard</Link>
       </header>
 
@@ -524,6 +582,12 @@ export default function Workbench() {
               <div className="wb-empty">
                 {source ? (
                   <p>This bucket has no series to draw. Change the parameters in the Properties tab or select another bucket.</p>
+                ) : nodes.length > 0 ? (
+                  <>
+                    <p>This flow has no data yet.</p>
+                    <p>Load a bucket: it becomes the source of the flow, and every node is computed on it.</p>
+                    <button className="wb-primary" onClick={loadSample}>Load sample bucket</button>
+                  </>
                 ) : (
                   <>
                     <p>No bucket loaded.</p>

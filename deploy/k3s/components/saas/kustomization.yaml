@@ -1,0 +1,14 @@
+# SAAS=true: the SaaS module. Frontend with the web workbench (/workbench) as static files behind nginx, the backend
+# (accounts, stored flows) and its PostgreSQL database.
+#   opentsx-saas-frontend   Deployment + NodePort Service, node port 30311; proxies /api/ to the backend and
+#                           /retrieval/ to opentsx-retrieval
+#   opentsx-saas-backend    Deployment + Service (cluster-internal)
+#   opentsx-saas-db         Deployment + Service + PVC opentsx-saas-db (1Gi)
+# Passwords and the token key come from the Secret opentsx-saas-secrets, written by 20-configure.sh.
+# The retrieval server behind /retrieval/ has NO authentication: enable this only on a trusted network.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - saas-db.yaml
+  - saas-backend.yaml
+  - saas-frontend.yaml

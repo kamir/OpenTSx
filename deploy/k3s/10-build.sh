@@ -81,7 +81,8 @@ build() {   # dockerfile image [context]
 build "$ROOT/deploy/docker/opentsx-tools.Dockerfile" "$TOOLS_IMAGE"
 build "$ROOT/deploy/docker/studio.Dockerfile" "$STUDIO_IMAGE"
 
-if is_true "$SAAS_FRONTEND"; then
+if is_true "$SAAS"; then
+  build "$ROOT/deploy/docker/saas-backend.Dockerfile" "$SAAS_BACKEND_IMAGE" "$ROOT/opentsx-saas-backend"
   build "$ROOT/deploy/docker/saas-frontend.Dockerfile" "$SAAS_FRONTEND_IMAGE" "$ROOT/opentsx-saas-frontend"
 fi
 

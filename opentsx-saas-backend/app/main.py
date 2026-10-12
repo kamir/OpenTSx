@@ -19,7 +19,7 @@ import uvicorn
 from pathlib import Path
 
 from app.core.config import settings
-from app.api import auth
+from app.api import auth, flows
 from app.db.session import async_engine
 from app.db.base import Base  # Import from base.py to ensure all models are loaded
 from app.db.init_db import init_db
@@ -315,33 +315,7 @@ async def accept_invitation(token: str):
 
 
 # Flow routes
-@app.get(f"{settings.API_V1_STR}/flows")
-async def list_flows(organization_id: int = None, team_id: int = None):
-    """List flows."""
-    return {
-        "flows": [
-            {
-                "id": 1,
-                "name": "Stock Market DFA Analysis",
-                "description": "Analyze persistence in stock prices",
-                "status": "active",
-                "execution_count": 147,
-                "last_executed_at": "2025-01-13T10:30:00Z",
-                "created_at": "2025-01-10T08:00:00Z",
-            },
-            {
-                "id": 2,
-                "name": "Climate Event Synchronization",
-                "description": "Detect synchronized climate events",
-                "status": "draft",
-                "execution_count": 0,
-                "created_at": "2025-01-12T14:20:00Z",
-            }
-        ]
-    }
-
-
-# Demo flows (MUST come before /flows/{flow_id} to avoid route conflict)
+# Demo flows (must be registered before the flow router, or /flows/{flow_id} takes the path)
 @app.get(f"{settings.API_V1_STR}/flows/demo")
 async def list_demo_flows():
     """List public demo flows."""
@@ -372,152 +346,8 @@ async def list_demo_flows():
     }
 
 
-@app.get(f"{settings.API_V1_STR}/flows/{{flow_id}}")
-async def get_flow(flow_id: int):
-    """Get flow details."""
-    return {
-        "id": flow_id,
-        "name": "Stock Market DFA Analysis",
-        "description": "Analyze persistence in stock prices",
-        "definition": {
-            "nodes": [
-                {
-                    "id": "source_1",
-                    "type": "data.kafka_consumer",
-                    "config": {"topic": "stock_prices"},
-                },
-                {
-                    "id": "dfa_1",
-                    "type": "analysis.dfa",
-                    "config": {"polynom_order": 1},
-                }
-            ],
-            "edges": [
-                {"source": "source_1", "target": "dfa_1"}
-            ]
-        },
-        "status": "active",
-    }
-
-
-@app.post(f"{settings.API_V1_STR}/flows")
-async def create_flow(
-    name: str,
-    description: str,
-    definition: dict,
-    organization_id: int
-):
-    """Create new flow."""
-    return {
-        "message": "Flow created successfully",
-        "flow": {
-            "id": 1,
-            "name": name,
-            "description": description,
-            "status": "draft",
-        }
-    }
-
-
-@app.put(f"{settings.API_V1_STR}/flows/{{flow_id}}")
-async def update_flow(
-    flow_id: int,
-    name: str = None,
-    description: str = None,
-    definition: dict = None,
-    status: str = None
-):
-    """Update flow."""
-    return {
-        "message": "Flow updated successfully",
-        "flow": {
-            "id": flow_id,
-            "name": name,
-            "status": status,
-        }
-    }
-
-
-@app.delete(f"{settings.API_V1_STR}/flows/{{flow_id}}")
-async def delete_flow(flow_id: int):
-    """Delete flow."""
-    return {
-        "message": "Flow deleted successfully"
-    }
-
-
-# Flow execution routes
-@app.post(f"{settings.API_V1_STR}/flows/{{flow_id}}/execute")
-async def execute_flow(
-    flow_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Execute flow via Flink.
-
-    Starts flow execution and returns execution ID for tracking.
-    """
-    from app.models.flow import Flow, FlowExecution, ExecutionStatus
-    from app.services.flink_service import flink_service
-    from sqlalchemy import select
-    from datetime import datetime
-
-    # 1. Fetch Flow
-    result = await db.execute(select(Flow).where(Flow.id == flow_id))
-    flow = result.scalar_one_or_none()
-    
-    if not flow:
-        raise HTTPException(status_code=404, detail="Flow not found")
-
-    # 2. Submit to Flink
-    try:
-        flink_job_id = flink_service.submit_job(flow.definition)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to submit Flink job: {str(e)}")
-
-    # 3. Create Execution Record
-    execution = FlowExecution(
-        flow_id=flow.id,
-        status=ExecutionStatus.RUNNING, # Or PENDING
-        started_at=datetime.utcnow(),
-        result={"flink_job_id": flink_job_id}
-    )
-    db.add(execution)
-    await db.commit()
-    await db.refresh(execution)
-
-    # 4. Update Stats
-    flow.execution_count += 1
-    flow.last_executed_at = datetime.utcnow()
-    await db.commit()
-
-    return {
-        "message": "Flow execution started",
-        "execution": {
-            "id": execution.id,
-            "flow_id": flow.id,
-            "status": execution.status,
-            "flink_job_id": flink_job_id,
-            "started_at": execution.started_at,
-        }
-    }
-
-
-@app.get(f"{settings.API_V1_STR}/flows/{{flow_id}}/executions")
-async def list_flow_executions(flow_id: int, limit: int = 20):
-    """List flow executions."""
-    return {
-        "executions": [
-            {
-                "id": 1,
-                "status": "completed",
-                "started_at": "2025-01-13T10:30:00Z",
-                "completed_at": "2025-01-13T10:30:45Z",
-                "duration_ms": 45000,
-                "events_processed": 1523,
-            }
-        ]
-    }
+# Flows: stored per user (app/api/flows.py)
+app.include_router(flows.router, prefix=settings.API_V1_STR)
 
 
 # Payment routes (stub)

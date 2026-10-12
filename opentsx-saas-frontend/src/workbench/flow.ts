@@ -9,6 +9,8 @@ import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SourceInfo } from './types';
 
 export const SOURCE_ID = 'source';
+/** `kind` of a flow definition stored in the backend by the workbench. */
+export const WORKBENCH_KIND = 'opentsx.workbench.v1';
 
 export interface FlowState {
   track: string;
@@ -19,6 +21,8 @@ export interface FlowState {
   nodes: FlowNode[];
   selectedId: string | null;
   counter: number;
+  /** Id of the flow in the backend once it was saved or loaded from there. */
+  savedId: number | null;
 
   setTrack: (track: string) => void;
   setDomain: (domain: string) => void;
@@ -31,6 +35,8 @@ export interface FlowState {
   rewire: (id: string, inputId: string) => boolean;
   moveNode: (id: string, pos: { x: number; y: number }) => void;
   setSink: (id: string, topic: string | null) => void;
+  setSavedId: (id: number | null) => void;
+  restore: (definition: Record<string, unknown>, savedId: number) => boolean;
 }
 
 export function slug(text: string): string {
@@ -107,6 +113,7 @@ export const useFlow = create<FlowState>((set, get) => ({
   nodes: [],
   selectedId: null,
   counter: 0,
+  savedId: null,
 
   setTrack: (track) => set({ track }),
   setDomain: (domain) =>
@@ -119,12 +126,23 @@ export const useFlow = create<FlowState>((set, get) => ({
 
   loadBucket: (bucket, info) => {
     cache.clear();
+    const s = get();
+    // A flow restored from the backend waits for its data: the bucket becomes its source.
+    if (s.source === null && s.nodes.length > 1) {
+      set({
+        source: bucket,
+        sourceInfo: info,
+        nodes: relabel(s.nodes.map((n) => (n.id === SOURCE_ID ? { ...n, label: bucket.name } : n))),
+      });
+      return;
+    }
     set({
       source: bucket,
       sourceInfo: info,
       nodes: [{ id: SOURCE_ID, op: 'source', params: {}, input: null, label: bucket.name }],
       selectedId: SOURCE_ID,
       counter: 0,
+      savedId: null,
     });
   },
 
@@ -178,7 +196,76 @@ export const useFlow = create<FlowState>((set, get) => ({
 
   setSink: (id, topic) =>
     set((s) => ({ nodes: s.nodes.map((n) => (n.id === id ? { ...n, sinkTopic: topic ?? undefined } : n)) })),
+
+  setSavedId: (savedId) => set({ savedId }),
+
+  restore: (definition, savedId) => {
+    const nodes = parseNodes(definition.nodes);
+    if (definition.kind !== WORKBENCH_KIND || !nodes) return false;
+    cache.clear();
+    const numbers = nodes.map((n) => Number(/^n(\d+)$/.exec(n.id)?.[1] ?? 0));
+    set({
+      track: typeof definition.track === 'string' ? definition.track : get().track,
+      domain: typeof definition.domain === 'string' ? definition.domain : get().domain,
+      sourceTopic: typeof definition.sourceTopic === 'string' ? definition.sourceTopic : get().sourceTopic,
+      source: null,
+      sourceInfo: null,
+      nodes,
+      selectedId: nodes[nodes.length - 1].id,
+      counter: Math.max(0, ...numbers),
+      savedId,
+    });
+    return true;
+  },
 }));
+
+/** Checks a stored node list: known operators, one source, every input present, no cycles. */
+function parseNodes(raw: unknown): FlowNode[] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 500) return null;
+  const nodes: FlowNode[] = [];
+  for (const r of raw as Partial<FlowNode>[]) {
+    if (!r || typeof r.id !== 'string' || typeof r.op !== 'string' || typeof r.label !== 'string') return null;
+    if (r.op !== 'source' && !OP_BY_ID[r.op]) return null;
+    nodes.push({
+      id: r.id,
+      op: r.op,
+      params: r.params && typeof r.params === 'object' ? { ...r.params } : {},
+      input: typeof r.input === 'string' ? r.input : null,
+      label: r.label,
+      pos: r.pos && typeof r.pos.x === 'number' && typeof r.pos.y === 'number' ? { x: r.pos.x, y: r.pos.y } : undefined,
+      sinkTopic: typeof r.sinkTopic === 'string' ? r.sinkTopic : undefined,
+    });
+  }
+  const ids = new Set(nodes.map((n) => n.id));
+  if (ids.size !== nodes.length) return null;
+  const sources = nodes.filter((n) => n.op === 'source');
+  if (sources.length !== 1 || sources[0].id !== SOURCE_ID || sources[0].input !== null) return null;
+  for (const n of nodes) {
+    if (n.op === 'source') continue;
+    if (!n.input || !ids.has(n.input)) return null;
+  }
+  // Every node must reach the source; a cycle never does.
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  for (const n of nodes) {
+    let cur: FlowNode | undefined = n;
+    for (let steps = 0; cur && cur.input && steps <= nodes.length; steps++) cur = byId.get(cur.input);
+    if (!cur || cur.id !== SOURCE_ID) return null;
+  }
+  return nodes;
+}
+
+/** The flow as stored in the backend: the node list plus the rendered DAG for readers without the workbench. */
+export function toDefinition(s: Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'>): Record<string, unknown> {
+  return {
+    kind: WORKBENCH_KIND,
+    track: s.track,
+    domain: s.domain,
+    sourceTopic: s.sourceTopic,
+    nodes: s.nodes,
+    edges: s.nodes.filter((n) => n.input).map((n) => ({ id: `${n.input}-${n.id}`, source: n.input, target: n.id })),
+    dag: toDagYaml(s),
+  };
+}
 
 // ---------------------------------------------------------------- evaluation
 
