@@ -1,6 +1,6 @@
 # deploy/k3s: OpenTSx on k3s against an existing KafScale cluster
 
-The guide is [docs/devops/](../../docs/devops/README.md) (setup plan, sizing plan, demos, troubleshooting).
+The guide is [docs/devops/](../../docs/devops/README.md) (setup plan, sizing plan, demos, troubleshooting, operations).
 
 ```bash
 deploy/k3s/00-prereqs.sh                                          # check tools, cluster, KafScale
@@ -11,6 +11,10 @@ deploy/k3s/30-deploy.sh                                           # kubectl appl
 deploy/k3s/40-demo.sh all                                         # every example as a Job, with output
 deploy/k3s/50-status.sh                                           # state
 deploy/k3s/90-teardown.sh                                         # remove (KafScale topics stay)
+
+deploy/k3s/60-probe.sh --local-kafscale                           # all of the above in one trial run -> probe-report-<time>.md
+deploy/k3s/70-backup.sh --quiesce                                 # PVCs + configuration -> ./opentsx-backup-<time>/
+deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into the PVCs (asks first)
 ```
 
 | Path | Content |
@@ -18,7 +22,7 @@ deploy/k3s/90-teardown.sh                                         # remove (KafS
 | `env.example` | all configuration keys with defaults |
 | `base/` | ConfigMap, PVCs, stats processor, retrieval server, Studio |
 | `jobs/` | demo Jobs (`40-demo.sh`) |
-| `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress` |
+| `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring` |
 | `overlays/local/` | rendered by `20-configure.sh` (not in Git) |
 | `lib.sh` | shared shell helpers |
 | `../docker/` | Dockerfiles, staging script, image entrypoint, deployment helper |

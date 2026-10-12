@@ -1,7 +1,8 @@
 # Troubleshooting
 
-Start with `deploy/k3s/50-status.sh` (workloads, Jobs, PVCs, images, recent warnings) and
-`kubectl -n opentsx describe pod <pod>`.
+Start with `deploy/k3s/50-status.sh` (workloads, Jobs, CronJobs, PVCs, images, checkpoint age, recent warnings) and
+`kubectl -n opentsx describe pod <pod>`. The probe (`deploy/k3s/60-probe.sh`) puts the matching hints into its report;
+step-by-step runbooks for the common incidents are in [operations](operations.md#runbooks).
 
 ## Images and pods
 
@@ -46,6 +47,29 @@ Start with `deploy/k3s/50-status.sh` (workloads, Jobs, PVCs, images, recent warn
 | `port-forward` fails: address in use | local port taken | `kubectl -n opentsx port-forward svc/opentsx-studio 9099:80` |
 | retrieval returns `[]` in lake mode | no data in the namespace yet | run `40-demo.sh windpark-sim` with `LAKE=true` first |
 | retrieval reachable from the LAN without login | `INGRESS=true` | the server has no authentication: switch the ingress off or put an authenticating proxy in front |
+
+## DWD and Modbus
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `40-demo.sh dwd`: `NoSuchFileException …/share/dwd/…kml` | image staged before the DWD fixture was added | `10-build.sh`, re-import, `30-deploy.sh --restart` |
+| `dwd-online` / `dwd-forward`: connect timeout, `UnknownHostException` | no internet or DNS from the pods, proxy required | allow egress to `opendata.dwd.de:443`, or `HTTPS_PROXY` in the Job; offline mode to separate the cases ([R6](operations.md#r6-dwd-fetch-failing)) |
+| `dwd-forward`: `station … FAILED` | MOSMIX id wrong (CDC ids differ) | `bin/opentsx dwd stations --near LAT,LON`, `20-configure.sh DWD_STATIONS=…` |
+| `40-demo.sh modbus`: `simulator not deployed` | `MODBUS_SIM=false` and `MODBUS_HOST` is the simulator | `20-configure.sh MODBUS_SIM=true`, `30-deploy.sh` |
+| `modbus-poll` fails: `Connection refused` / timeouts | simulator not ready, converter unreachable from the pod network | `kubectl -n opentsx logs deploy/opentsx-modbus-sim`; real converter: routing from the pod CIDR ([R7](operations.md#r7-modbus-timeouts-or-exception-responses)) |
+| `ILLEGAL_DATA_ADDRESS`, `ILLEGAL_DATA_VALUE` | register map does not match the device | [opentsx-modbus README](../../opentsx-modbus/README.md#when-the-real-register-sheets-arrive) |
+
+## Probe, backup, restore
+
+| Symptom | Fix |
+|---------|-----|
+| probe: `kafscale-local` FAIL, `docker compose … up failed` | docker daemon running and accessible? `docker compose version` (v2 plugin) or `docker-compose` |
+| probe: `could not detect this host's IP` | `60-probe.sh --local-kafscale --kafscale-host <LAN IP>` |
+| probe: every step after `deploy` is SKIP | a critical step failed; fix it (report) or run with `--keep-going` |
+| probe: `series-stats` FAIL with records 0 | processor started before the topics: `kubectl -n opentsx rollout restart deploy/opentsx-stats`, then `60-probe.sh --skip-build --only series-stats`; longer wait: `PROBE_STATS_WAIT=600` |
+| probe: `retrieval`/`studio` port-forward failed | local ports 18080/18088 taken: `PROBE_RETRIEVAL_PORT=…`, `PROBE_STUDIO_PORT=…` |
+| `70-backup.sh` / `71-restore.sh`: `helper pod not ready` | tools image not in containerd, or the PVCs are on different nodes (`kubectl -n opentsx describe pod opentsx-backup-helper`) |
+| `71-restore.sh`: `checksum mismatch` | the backup directory was changed or damaged; use another backup |
 
 ## Scripts
 

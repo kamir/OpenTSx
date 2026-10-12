@@ -1,6 +1,6 @@
 # OpenTSx lokal ausprobieren: Testinstallation mit k3s und KafScale
 
-*Anleitung zum Ausdrucken · Stand 12.10.2026 · gilt für den Stand von `master` ab diesem Datum*
+*Anleitung zum Ausdrucken · Stand 12.10.2026 (Version 2, mit Probelauf) · gilt für `master` ab diesem Datum*
 
 > **Worum es geht.** Auf **einem** Linux-Rechner laufen danach: ein lokales KafScale (Log-Speicher, Kafka-Protokoll,
 > per docker compose), ein k3s-Cluster mit dem Statistik-Prozessor, dem Retrieval-Server und dem Smart Topics Studio,
@@ -93,6 +93,28 @@ echo "$HOST_IP"     # z. B. 192.168.1.20 – nicht 127.0.0.1 und nicht 172.17.x.
 Wenn die erste Adresse nicht die LAN-Adresse ist: `ip -4 addr` ansehen und `HOST_IP=…` von Hand setzen. In jedem
 neuen Terminal muss `HOST_IP` erneut gesetzt werden.
 
+## Schnellweg: Teil B bis E mit einem Befehl
+
+Nach Teil A kann ein einziges Skript den Rest erledigen: KafScale lokal starten (mit der LAN-IP als angekündigter
+Adresse), bauen, importieren, konfigurieren, ausrollen, alle Demos ausführen und jede Station prüfen. Am Ende steht
+ein Prüfprotokoll mit BESTANDEN/FEHLER je Schritt und Hinweisen zur Abhilfe.
+
+```bash
+deploy/k3s/60-probe.sh --dry-run --local-kafscale   # nur den Plan zeigen
+deploy/k3s/60-probe.sh --local-kafscale             # Probelauf, 30–60 min
+```
+
+| Option | Wirkung |
+|---|---|
+| `--skip-build` | Bauen und Import überspringen (Images schon in k3s) |
+| `--online` | DWD-Schritt holt echte Vorhersagen (sonst Beispieldatei, kein Internet nötig) |
+| `--keep-going` | nach einem Fehler in Vorbereitung/Bau/Ausrollen trotzdem weitermachen |
+| `--only kafscale-check,twin` | nur bestimmte Schritte |
+| `--kafscale-host 192.168.1.20` | IP selbst vorgeben, falls die automatische Wahl nicht passt |
+
+Ergebnis: `probe-report-<Zeit>.md` (Übersicht) und `probe-logs-<Zeit>/` (Ausgabe je Schritt). Exit-Code 0 heißt:
+alles bestanden. Wer lieber Schritt für Schritt vorgeht oder einen Fehler eingrenzen will, folgt Teil B bis E.
+
 ## Teil B: Lokales KafScale starten
 
 ```bash
@@ -171,6 +193,7 @@ Die Ergebnisse sind reproduzierbar: Gleicher Code und gleiche Eingaben ergeben d
 | ☐ | D: Windpark-Episoden und Statistik in KafScale | |
 | ☐ | D: Zwilling, Haus, Boot laufen durch | |
 | ☐ | D: Retrieval antwortet, Studio im Browser sichtbar | |
+| ☐ | Schnellweg: `60-probe.sh` ohne FEHLER, Prüfprotokoll beigelegt | |
 
 ## Teil F: Wenn etwas hakt
 
@@ -207,11 +230,10 @@ bin/opentsx boat --simulated     # Boot mit simulierten Logger-Daten
 
 Das Studio lässt sich direkt im Browser öffnen: `docs/prototypes/smart-topics-studio.html`.
 
-## Ausblick
+## Betrieb nach dem Test
 
-In Arbeit ist `deploy/k3s/60-probe.sh`: ein Befehl, der Teil B bis E selbst ausführt und ein Prüfprotokoll schreibt,
-dazu ein Betriebskonzept (`docs/devops/operations.md`) mit Überwachung, Sicherung und Störungsabläufen. Diese
-Anleitung wird dann ergänzt.
+Das Betriebskonzept ([operations.md](operations.md)) beschreibt Überwachung, Sicherung, Updates und
+Störungsabläufe. Sicherung und Wiederherstellung: `deploy/k3s/70-backup.sh` und `deploy/k3s/71-restore.sh`.
 
-*Weiterführend:* [DevOps-Leitfaden](README.md) · [Setup-Plan](setup-plan.md) · [Sizing-Plan](sizing-plan.md) ·
+*Weiterführend:* [DevOps-Leitfaden](README.md) · [Betriebskonzept](operations.md) · [Setup-Plan](setup-plan.md) · [Sizing-Plan](sizing-plan.md) ·
 [Demos](demos.md) · [Fehlersuche](troubleshooting.md)

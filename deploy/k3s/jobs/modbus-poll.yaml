@@ -1,0 +1,67 @@
+# Modbus poller demo: polls MODBUS_HOST:MODBUS_PORT (default: the simulator Service opentsx-modbus-sim, component
+# modbus-sim / MODBUS_SIM=true) with the register map MODBUS_MAP for 30 cycles at 1 s, closes 10 s episodes and writes
+# them as Avro JSON lines to /data/modbus/episodes-<UTC time>.jsonl on the data PVC. There is no KafScale sink for the
+# Modbus episodes yet (opentsx-modbus stays free of Kafka dependencies); the file is the hand-over point.
+# The Job fails (exit code 1) when a read block failed, e.g. timeouts or connection refused.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-modbus-poll
+  labels:
+    opentsx.org/demo: modbus-poll
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: modbus-poll
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: modbus-poll
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              mkdir -p /data/modbus
+              f="/data/modbus/episodes-`date -u +%Y%m%dT%H%M%SZ`.jsonl"
+              opentsx modbus poll --map "$MODBUS_MAP" --host "$MODBUS_HOST" --port "$MODBUS_PORT" \
+                --interval 1s --count 30 --out episodes --episode PT10S --file "$f"
+              echo "wrote $f: `wc -l < "$f"` episodes"
+              ls -l /data/modbus | tail -n 5
+          env:
+            - name: MODBUS_HOST
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_HOST}}
+            - name: MODBUS_PORT
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_PORT}}
+            - name: MODBUS_MAP
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: MODBUS_MAP}}
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>, e.g. -- --count 300
+              value: ""
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}   # measured peak RSS ~90 MB (example map, 14 points)
+            limits: {cpu: 500m, memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: opentsx-data

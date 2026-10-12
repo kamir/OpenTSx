@@ -4,8 +4,10 @@
 
 K3S_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$K3S_DIR/../.." && pwd)"
-ENV_FILE="$K3S_DIR/.env"
-OVERLAY="$K3S_DIR/overlays/local"
+# OPENTSX_ENV_FILE / OPENTSX_OVERLAY: only for 60-probe.sh --dry-run (renders into a throw-away overlay; it must sit
+# two levels below deploy/k3s, like overlays/local, because the overlay refers to ../../base)
+ENV_FILE="${OPENTSX_ENV_FILE:-$K3S_DIR/.env}"
+OVERLAY="${OPENTSX_OVERLAY:-$K3S_DIR/overlays/local}"
 
 if [[ -t 1 ]]; then C_RED=$'\e[31m'; C_GRN=$'\e[32m'; C_YEL=$'\e[33m'; C_BLD=$'\e[1m'; C_OFF=$'\e[0m'
 else C_RED=""; C_GRN=""; C_YEL=""; C_BLD=""; C_OFF=""; fi
@@ -24,7 +26,8 @@ have() { command -v "$1" >/dev/null 2>&1; }
 # Configuration keys known to the scripts (see env.example).
 CONFIG_KEYS=(OPENTSX_NS KUBECTL STORAGE_CLASS KAFSCALE_BOOTSTRAP KAFSCALE_NETWORK OPENTSX_DOMAIN OPENTSX_PARTITIONS
   OPENTSX_IMAGE_REPO OPENTSX_TAG OPENTSX_PLATFORM IMAGE_METHOD LAKE LAKE_MINIO S3_ENDPOINT S3_BUCKET S3_REGION
-  S3_ACCESS_KEY S3_SECRET_KEY OM_URL OPENMETADATA_JWT INGRESS)
+  S3_ACCESS_KEY S3_SECRET_KEY OM_URL OPENMETADATA_JWT INGRESS
+  DWD_FORWARD DWD_STATIONS DWD_SCHEDULE DWD_MODE MODBUS_SIM MODBUS_HOST MODBUS_PORT MODBUS_MAP MONITORING)
 
 # Loads env.example defaults, then .env. Variables already set in the environment win over both.
 load_env() {
@@ -68,3 +71,67 @@ require_overlay() {
 }
 
 is_true() { [[ "${1,,}" =~ ^(true|yes|1|on)$ ]]; }
+
+# helper_pod NAME ro|rw PVC... - a short-lived pod (tools image) with the PVCs mounted under /backup/<pvc>, for
+# 70-backup.sh / 71-restore.sh. Root without privileges: only CHOWN, DAC_OVERRIDE and FOWNER (to read and restore files
+# of other users, e.g. MinIO's). On a multi-node cluster all PVCs must be on the same node.
+helper_pod() {
+  local name="$1" ro=true p; [[ "$2" == rw ]] && ro=false
+  shift 2
+  {
+    cat <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: $name
+  namespace: $OPENTSX_NS
+  labels:
+    app.kubernetes.io/part-of: opentsx
+    app.kubernetes.io/name: $name
+spec:
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 5
+  containers:
+    - name: helper
+      image: $TOOLS_IMAGE
+      imagePullPolicy: IfNotPresent
+      command: [/bin/sh, -c, "sleep 3600"]
+      securityContext:
+        runAsUser: 0
+        allowPrivilegeEscalation: false
+        capabilities: {drop: [ALL], add: [CHOWN, DAC_OVERRIDE, FOWNER]}
+      resources:
+        requests: {cpu: 50m, memory: 64Mi}
+        limits: {cpu: "1", memory: 256Mi}
+      volumeMounts:
+EOF
+    for p in "$@"; do printf '        - {name: %s, mountPath: /backup/%s, readOnly: %s}\n' "$p" "$p" "$ro"; done
+    echo "  volumes:"
+    for p in "$@"; do printf '    - {name: %s, persistentVolumeClaim: {claimName: %s, readOnly: %s}}\n' "$p" "$p" "$ro"; done
+  } | kc apply -f - >/dev/null
+  kns wait --for=condition=Ready "pod/$name" --timeout=180s >/dev/null \
+    || die "helper pod not ready (image $TOOLS_IMAGE imported? PVCs on different nodes?) - ${KUBECTL} -n $OPENTSX_NS describe pod $name"
+}
+
+# stop_writers / start_writers - scale opentsx-stats, opentsx-iceberg-rest and opentsx-minio to 0 (remembering their
+# replicas) and back, so that 70-backup.sh / 71-restore.sh see files nobody writes to.
+declare -A STOPPED_WRITERS=()
+stop_writers() {
+  local d r
+  for d in opentsx-stats opentsx-iceberg-rest opentsx-minio; do
+    r="$(kns get deployment "$d" -o 'jsonpath={.spec.replicas}' 2>/dev/null || true)"
+    if ! [[ "$r" =~ ^[0-9]+$ ]] || (( r == 0 )); then continue; fi
+    STOPPED_WRITERS[$d]="$r"
+    kns scale "deployment/$d" --replicas=0 >/dev/null
+    kns wait --for=delete pod -l "app.kubernetes.io/name=$d" --timeout=150s >/dev/null 2>&1 || true
+    ok "$d scaled to 0 (was $r)"
+  done
+}
+start_writers() {
+  local d
+  for d in "${!STOPPED_WRITERS[@]}"; do
+    if kns scale "deployment/$d" --replicas="${STOPPED_WRITERS[$d]}" >/dev/null 2>&1; then ok "scaled $d back to ${STOPPED_WRITERS[$d]}"
+    else warn "could not scale $d back to ${STOPPED_WRITERS[$d]} - do it by hand"; fi
+  done
+  STOPPED_WRITERS=()
+}

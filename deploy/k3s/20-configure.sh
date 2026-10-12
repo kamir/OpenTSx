@@ -7,6 +7,7 @@
 #   deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=192.168.1.50:9092
 #   deploy/k3s/20-configure.sh KAFSCALE_BOOTSTRAP=localhost:9092 KAFSCALE_NETWORK=hostnetwork
 #   deploy/k3s/20-configure.sh LAKE=true LAKE_MINIO=true          # Iceberg REST + MinIO in the cluster
+#   deploy/k3s/20-configure.sh MODBUS_SIM=true DWD_FORWARD=true MONITORING=true   # simulator, daily MOSMIX, checks
 #
 # Precedence: KEY=VALUE arguments > environment variables > existing deploy/k3s/.env > env.example defaults.
 # Keys: see deploy/k3s/env.example. Idempotent: run it again to change a value.
@@ -55,9 +56,15 @@ fi
 if [[ "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
   warn "KAFSCALE_BOOTSTRAP is still the example value 192.168.1.50:9092"
 fi
-for b in LAKE LAKE_MINIO INGRESS; do
+for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING; do
   [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] || die "$b must be true or false"
 done
+[[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE must be online or offline"
+[[ "$DWD_STATIONS" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || die "DWD_STATIONS=$DWD_STATIONS: expected MOSMIX ids like 10578,10579"
+read -r -a cron_fields <<< "$DWD_SCHEDULE"
+(( ${#cron_fields[@]} == 5 )) || die "DWD_SCHEDULE='$DWD_SCHEDULE': expected 5 cron fields, e.g. '17 5 * * *'"
+if ! [[ "$MODBUS_PORT" =~ ^[0-9]+$ ]] || (( MODBUS_PORT < 1 || MODBUS_PORT > 65535 )); then die "MODBUS_PORT must be a TCP port"; fi
+[[ -n "$MODBUS_HOST" && -n "$MODBUS_MAP" ]] || die "MODBUS_HOST and MODBUS_MAP must not be empty"
 
 # ---- derived values -----------------------------------------------------------------------------------------------
 POD_BOOTSTRAP="$KAFSCALE_BOOTSTRAP"
@@ -110,6 +117,11 @@ S3_ENDPOINT=${S3_ENDPOINT:-http://opentsx-minio:9000}
 S3_BUCKET=$S3_BUCKET
 S3_WAREHOUSE=s3://$S3_BUCKET/
 S3_REGION=$S3_REGION
+DWD_STATIONS=$DWD_STATIONS
+DWD_MODE=$DWD_MODE
+MODBUS_HOST=$MODBUS_HOST
+MODBUS_PORT=$MODBUS_PORT
+MODBUS_MAP=$MODBUS_MAP
 EOF
 
 {
@@ -168,20 +180,25 @@ EOF
 else
   rm -f "$OVERLAY/kafscale-service.yaml"
 fi
-if [[ "$KAFSCALE_NETWORK" == "hostnetwork" ]]; then
-  components+=("../../components/hostnetwork"); jobs_components+=("../../../components/hostnetwork")
-fi
 if is_true "$LAKE"; then
   components+=("../../components/lake"); jobs_components+=("../../../components/lake-jobs")
   is_true "$LAKE_MINIO" && components+=("../../components/lake-minio")
 fi
+is_true "$MODBUS_SIM" && components+=("../../components/modbus-sim")
+is_true "$DWD_FORWARD" && components+=("../../components/dwd-forward")
+is_true "$MONITORING" && components+=("../../components/monitoring")
 is_true "$INGRESS" && components+=("../../components/ingress")
+# last: a component's patches only see the workloads added before it (base and the components above)
+if [[ "$KAFSCALE_NETWORK" == "hostnetwork" ]]; then
+  components+=("../../components/hostnetwork"); jobs_components+=("../../../components/hostnetwork")
+fi
 
 yaml_list() { local i; for i in "$@"; do echo "  - $i"; done; }
-storage_patch() {
-  [[ -n "$STORAGE_CLASS" ]] || return 0
-  cat <<EOF
-patches:
+overlay_patches() {   # storage class for every PVC; schedule of the DWD CronJob
+  if [[ -z "$STORAGE_CLASS" ]] && ! is_true "$DWD_FORWARD"; then return 0; fi
+  echo "patches:"
+  if [[ -n "$STORAGE_CLASS" ]]; then
+    cat <<EOF
   - target:
       kind: PersistentVolumeClaim
     patch: |-
@@ -189,6 +206,18 @@ patches:
         path: /spec/storageClassName
         value: $STORAGE_CLASS
 EOF
+  fi
+  if is_true "$DWD_FORWARD"; then
+    cat <<EOF
+  - target:
+      kind: CronJob
+      name: opentsx-dwd-forward
+    patch: |-
+      - op: replace
+        path: /spec/schedule
+        value: "$DWD_SCHEDULE"
+EOF
+  fi
 }
 
 {
@@ -217,7 +246,7 @@ images:
     newName: $OPENTSX_IMAGE_REPO/studio
     newTag: "$OPENTSX_TAG"
 EOF
-  storage_patch
+  overlay_patches
 } > "$OVERLAY/kustomization.yaml"
 
 {
@@ -239,6 +268,7 @@ EOF
 info "configuration written: $ENV_FILE, $OVERLAY/"
 echo "  namespace $OPENTSX_NS | KafScale $KAFSCALE_BOOTSTRAP ($KAFSCALE_NETWORK; pods use $POD_BOOTSTRAP) | domain $OPENTSX_DOMAIN"
 echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"
+echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING"
 if kc version --client >/dev/null 2>&1; then
   n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY failed"
   m="$(kc kustomize "$OVERLAY/jobs" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY/jobs failed"
