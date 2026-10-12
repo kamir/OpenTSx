@@ -49,6 +49,7 @@ Active Maven modules (root `pom.xml`):
 | `opentsx-openmetadata` | Publishes the metadata pool to OpenMetadata 2.0 | stable (validated against the 2.0.5 schemas) |
 | `opentsx-retrieval` | Segmentation, pattern search, `EpisodeService`, REST server | stable |
 | `opentsx-twin` | Digital twin: atoms, wiring plan, runner, three modes ([README](../../opentsx-twin/README.md)) | proof of concept |
+| `opentsx-modbus` | Modbus client (JDK only), YAML register maps, poller, normalizer → v2 episodes, meter simulator ([README](../../opentsx-modbus/README.md)) | tested against the simulator; real meter pending |
 | `opentsx-legacy-bridge` | Converts 2.x `TimeSeriesObject`/TSBucket/EpisodesRecord to v2 episodes | stable |
 | `opentsx-kafscale-conformance` | Measures which Kafka features a broker supports (KafScale) | stable |
 | `opentsx-data` | 2.x Avro model (frozen) | legacy |
