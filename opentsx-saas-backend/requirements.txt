@@ -14,7 +14,7 @@ greenlet==3.5.6  # Required for SQLAlchemy async operations
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1  # Pin compatible version for passlib
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 
 # Redis
 redis==5.0.1
