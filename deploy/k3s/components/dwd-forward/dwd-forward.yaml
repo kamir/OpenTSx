@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opentsx-dwd-forward
+  labels:
+    app.kubernetes.io/name: opentsx-dwd-forward
+spec:
+  schedule: "17 5 * * *"          # replaced by DWD_SCHEDULE (20-configure.sh)
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-dwd-forward
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      ttlSecondsAfterFinished: 259200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: opentsx-dwd-forward
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+          containers:
+            - name: dwd-forward
+              image: opentsx/tools
+              imagePullPolicy: IfNotPresent
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  mkdir -p /data/dwd
+                  ts=`date -u +%Y%m%dT%H%M%SZ`
+                  failed=0
+                  stations="$DWD_STATIONS"
+                  if [ "$DWD_MODE" != online ]; then stations=10578; echo "offline mode: the fixture holds station 10578 only"; fi
+                  IFS=,
+                  for s in $stations; do
+                    if [ "$DWD_MODE" = online ]; then src="--station $s"; else src="--offline $DWD_FIXTURE --station $s"; fi
+                    echo "== station $s ($DWD_MODE)"
+                    IFS=' '
+                    opentsx dwd mosmix $src --out "/data/dwd/mosmix-$s-$ts.csv" --daily "/data/dwd/daily-$s-$ts.csv" \
+                      || { echo "station $s FAILED"; failed=$((failed + 1)); }
+                    IFS=,
+                  done
+                  find /data/dwd -name '*.csv' -mtime +30 -delete
+                  ls -l /data/dwd | tail -n 10
+                  [ "$failed" -eq 0 ]
+              env:
+                - name: DWD_MODE
+                  valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_MODE}}
+                - name: DWD_STATIONS
+                  valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_STATIONS}}
+                - name: DWD_FIXTURE
+                  valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_FIXTURE}}
+              resources:
+                requests: {cpu: 100m, memory: 192Mi}
+                limits: {cpu: "1", memory: 512Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: data
+                  mountPath: /data
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            - name: data
+              persistentVolumeClaim:
+                claimName: opentsx-data

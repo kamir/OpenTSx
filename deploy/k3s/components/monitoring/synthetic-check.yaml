@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opentsx-synthetic-check
+  labels:
+    app.kubernetes.io/name: opentsx-synthetic-check
+    opentsx.org/kafka: "true"
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-synthetic-check
+        opentsx.org/kafka: "true"
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: opentsx-synthetic-check
+            opentsx.org/kafka: "true"
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: check
+              image: opentsx/tools
+              imagePullPolicy: IfNotPresent
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  rc=0
+                  echo "== KafScale (bootstrap, advertised addresses, record counts)"
+                  opentsx kafscale-check --kafscale "$KAFSCALE_BOOTSTRAP" --domain "$OPENTSX_DOMAIN" || rc=1
+                  echo "== statistics checkpoint age (written every 30 s while the processor runs)"
+                  if [ -n "`find /state/stats.ckpt -mmin -5 2>/dev/null`" ]; then ls -l /state/stats.ckpt
+                  else echo "FAIL: /state/stats.ckpt missing or older than 5 min (processor stuck or down)"; rc=1; fi
+                  echo "== disk usage of the volumes (local-path: the node's file system)"
+                  df -P /state /data | awk 'NR > 1 { print } NR > 1 && $5 + 0 > 85 { bad = 1 } END { exit bad }' \
+                    || { echo "FAIL: a volume is more than 85 % full"; rc=1; }
+                  exit $rc
+              env:
+                - name: KAFSCALE_BOOTSTRAP
+                  valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+                - name: OPENTSX_DOMAIN
+                  valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: 500m, memory: 512Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: state
+                  mountPath: /state
+                  readOnly: true
+                - name: data
+                  mountPath: /data
+                  readOnly: true
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            - name: state
+              persistentVolumeClaim:
+                claimName: opentsx-stats-state
+                readOnly: true
+            - name: data
+              persistentVolumeClaim:
+                claimName: opentsx-data
+                readOnly: true

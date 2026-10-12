@@ -208,4 +208,8 @@ MANIFEST
 ### OpenTSx deployment (deploy/k3s): local configuration, rendered overlay, staged image context
 deploy/k3s/.env
 deploy/k3s/overlays/local/
+deploy/k3s/overlays/.probe-dryrun-*/
+/probe-report-*.md
+/probe-logs-*/
+/opentsx-backup-*/
 deploy/docker/.stage/

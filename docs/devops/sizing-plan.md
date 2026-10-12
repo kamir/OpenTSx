@@ -21,6 +21,11 @@ marked **assumption** are estimates to be replaced by measurements on your hardw
 | Job `kafscale-check` | 250m / 1 | 256Mi / 768Mi | — | Kafka client only |
 | `opentsx-iceberg-rest` (lake) | 100m / 1 | 384Mi / 768Mi | PVC 1Gi (SQLite catalog) | **assumption** |
 | `opentsx-minio` (lake) | 100m / 1 | 256Mi / 1Gi | PVC 20Gi | size from §3 |
+| Job `dwd` | 100m / 1 | 192Mi / 512Mi | PVC `opentsx-data` (a few KB) | **measured** peak RSS ~80 MB, ~1 s (fixture; house twin over 5 h) |
+| CronJob `opentsx-dwd-forward` | 100m / 1 | 192Mi / 512Mi | ~25 KB CSV per station and run (live MOSMIX_L, 247 steps) → ~9 MB per station and year, pruned after 30 days | **measured** CSV size; RSS as `dwd` (**assumption** for 247 steps) |
+| `opentsx-modbus-sim` | 50m / 500m | 128Mi / 384Mi | — | **measured** peak RSS ~80 MB |
+| Job `modbus-poll` | 100m / 500m | 192Mi / 384Mi | ~71 KB JSON per 30 s run (14 points, 10 s episodes) | **measured** peak RSS ~90 MB; a continuous poller at 5 s with 1-min episodes: ~14 points × 1,440 episodes/day ≈ 20,000 lines/day, roughly 25 MB/day as JSON (**assumption**: JSON is ~10× the Avro/zstd size on KafScale) |
+| CronJob `opentsx-synthetic-check` | 100m / 500m | 256Mi / 512Mi | — | Kafka client only, ~10 s per run (**assumption**) |
 
 The JVMs use `-XX:MaxRAMPercentage=75`, so the heap follows the container limit. The measured RSS values grow with
 the heap the JVM is allowed; they are upper bounds at the given heap, not minimums.
@@ -122,6 +127,9 @@ What the repository supports and what it does not tell you:
 * The checkpoint PVC holds one file (positions + state), written atomically; 1 Gi is ample up to the size above.
 
 ## 5. Measure on your installation
+
+`deploy/k3s/60-probe.sh` runs all of the steps below except the byte counts and keeps the logs; the
+[operations concept](operations.md#capacity-review) describes the regular capacity review.
 
 1. `40-demo.sh windpark-sim` and note `bucket … sealed: 3600 episodes`.
 2. Bytes in the KafScale bucket before and after (S3 console, `mc du`) → B/value on your KafScale.

@@ -1,0 +1,7 @@
+# MODBUS_SIM=true: a simulated meter (opentsx modbus simulate, example register map) as Deployment + Service
+# opentsx-modbus-sim:1502, so the modbus-poll Job (40-demo.sh modbus) and the probe have a device to talk to.
+# Lab/demo only: the example map has made-up addresses (registermap.example=true).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - modbus-sim.yaml

@@ -5,7 +5,7 @@
 #
 #   (default)    delete everything in overlays/local, including the namespace and its PVCs (checkpoint, demo data,
 #                MinIO/Iceberg catalog with LAKE=true)
-#   --keep-data  delete workloads, Jobs and Services but keep the namespace, PVCs, ConfigMap and Secret
+#   --keep-data  delete workloads, Jobs, CronJobs and Services but keep the namespace, PVCs, ConfigMaps and Secret
 #   --images     also remove the OpenTSx images from k3s' containerd (local k3s only)
 #   --yes        do not ask
 #
@@ -39,8 +39,8 @@ if kc get namespace "$OPENTSX_NS" >/dev/null 2>&1; then
   kns delete job -l app.kubernetes.io/part-of=opentsx --ignore-not-found
   kns delete job -l opentsx.org/setup=true --ignore-not-found
   if $KEEP; then
-    info "deleting Deployments, Services, Ingress (keeping PVCs, ConfigMap, Secret)"
-    kns delete deployment,service,ingress -l app.kubernetes.io/part-of=opentsx --ignore-not-found
+    info "deleting Deployments, CronJobs, Services, Ingress (keeping PVCs, ConfigMaps, Secret)"
+    kns delete deployment,cronjob,service,ingress -l app.kubernetes.io/part-of=opentsx --ignore-not-found
   else
     info "kubectl delete -k overlays/local (namespace $OPENTSX_NS)"
     kc delete -k "$OVERLAY" --ignore-not-found --wait=true

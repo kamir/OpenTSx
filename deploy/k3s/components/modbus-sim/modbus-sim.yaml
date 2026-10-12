@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-modbus-sim
+  labels:
+    app.kubernetes.io/name: opentsx-modbus-sim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-modbus-sim
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-modbus-sim
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: modbus-sim
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          # --bind 0.0.0.0: reachable through the Service (the CLI default 127.0.0.1 is pod-local)
+          args: [modbus, simulate, --map, example, --port, "1502", --bind, 0.0.0.0]
+          ports:
+            - name: modbus
+              containerPort: 1502
+          readinessProbe:
+            tcpSocket: {port: modbus}
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: modbus}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}    # measured peak RSS ~80 MB
+            limits: {cpu: 500m, memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-modbus-sim
+  labels:
+    app.kubernetes.io/name: opentsx-modbus-sim
+spec:
+  selector:
+    app.kubernetes.io/name: opentsx-modbus-sim
+  ports:
+    - name: modbus
+      port: 1502
+      targetPort: modbus

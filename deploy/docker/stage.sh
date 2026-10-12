@@ -7,7 +7,8 @@
 #   DIR/opt/opentsx/bin/opentsx        entrypoint (deploy/docker/opentsx-entrypoint.sh)
 #   DIR/opt/opentsx/lib/m2/...         every runtime jar once, in Maven repository layout (no version clashes)
 #   DIR/opt/opentsx/cp/<module>.txt    exact runtime classpath per module (as `bin/opentsx classpath` computes it)
-#   DIR/opt/opentsx/share/...          wind-farm scenario, twin plans and CSV templates
+#   DIR/opt/opentsx/share/...          wind-farm scenario, twin plans and CSV templates, Modbus register maps,
+#                                      DWD offline fixtures (MOSMIX KML + station catalog excerpt, for demos without internet)
 #   DIR/studio/...                     tools/build_studio.py + the Studio template (for studio.Dockerfile)
 # --with-s3 adds iceberg-aws + iceberg-aws-bundle (S3FileIO) to the Iceberg classpaths, needed for an s3:// warehouse.
 set -euo pipefail
@@ -32,7 +33,7 @@ ICEBERG_VERSION="$(cd "$ROOT" && mvn -q -B -pl opentsx-store-iceberg help:evalua
 
 H="$OUT/opt/opentsx"
 rm -rf "$OUT"
-mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/twin" "$H/share/modbus" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
+mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/twin" "$H/share/modbus" "$H/share/dwd" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
 
 add_jar() {   # absolute jar path -> prints the classpath entry relative to OPENTSX_HOME, copies the jar once
   local jar="$1" rel
@@ -81,8 +82,11 @@ jar --create --file "$H/lib/opentsx-deploy-tools.jar" -C "$tmp/classes" .
 cp "$ROOT/deploy/docker/opentsx-entrypoint.sh" "$H/bin/opentsx"
 chmod 0755 "$H/bin/opentsx"
 cp "$ROOT"/opentsx-windpark/scenarios/*.yaml "$H/share/scenarios/"
-cp "$ROOT"/opentsx-twin/src/main/resources/twin/* "$H/share/twin/"
+cp -R "$ROOT"/opentsx-twin/src/main/resources/twin/. "$H/share/twin/"   # including subdirectories (beispiel/)
 cp "$ROOT"/opentsx-modbus/src/main/resources/modbus/*.yaml "$H/share/modbus/"
+# small DWD test fixtures (real file layout, a few KB): offline mode of the dwd demo Job and the probe
+cp "$ROOT"/opentsx-dwd/src/test/resources/dwd/MOSMIX_L_2026101209_10578.kml \
+   "$ROOT"/opentsx-dwd/src/test/resources/dwd/mosmix_stationskatalog.cfg "$H/share/dwd/"
 cp "$ROOT/tools/build_studio.py" "$OUT/studio/tools/"
 cp "$ROOT/docs/prototypes/smart-topics-studio.template.html" "$OUT/studio/docs/prototypes/"
 chmod -R a+rX "$OUT"

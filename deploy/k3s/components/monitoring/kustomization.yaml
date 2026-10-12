@@ -1,0 +1,16 @@
+# MONITORING=true: lightweight monitoring that needs no extra stack (docs/devops/operations.md, section Monitoring):
+#   CronJob opentsx-synthetic-check (every 10 min): kafscale-check without provisioning (bootstrap + advertised
+#     addresses + record counts), age of the statistics checkpoint (< 5 min), disk usage of the PVC mounts (< 85 %).
+#     A failed run is visible in `kubectl get jobs` / 50-status.sh, and as kube_cronjob_status_last_successful_time.
+#   ConfigMap opentsx-prometheus-rules: alert rules for a plain Prometheus (or VictoriaMetrics vmalert) that scrapes
+#     kube-state-metrics. OpenTSx itself exports no metrics yet - see the backlog in operations.md.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - synthetic-check.yaml
+configMapGenerator:
+  - name: opentsx-prometheus-rules
+    files:
+      - opentsx-rules.yaml
+    options:
+      disableNameSuffixHash: true
