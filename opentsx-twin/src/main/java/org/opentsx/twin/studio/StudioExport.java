@@ -73,6 +73,12 @@ public final class StudioExport {
         m.put("markerEvents", s.markerEvents());
         m.put("kpis", s.kpis().stream().map(k -> Map.of("key", k.key(), "label", k.label(), "unit", k.unit(),
                 "decimals", k.decimals(), "better", k.better())).toList());
+        m.put("headline", s.headline());
+        m.put("decision", s.decision());
+        Map<String, Object> limits = new LinkedHashMap<>();
+        s.limits().forEach((key, list) -> limits.put(key,
+                list.stream().map(l -> Map.of("label", l.label(), "value", l.value())).toList()));
+        m.put("limits", limits);
         m.put("graph", graph(plan, s.observed()));
         m.put("plan", Map.of("twin", plan.twin(), "start", plan.start().toString(),
                 "baseStep", plan.baseStep().toString(), "steps", plan.steps(), "wiring", plan.wiring()));

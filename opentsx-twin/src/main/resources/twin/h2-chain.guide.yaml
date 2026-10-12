@@ -13,7 +13,7 @@ intro:
     - "Vier Beteiligte sehen jeweils nur ihren Teil: der Abnehmer den Schieber, der Leitungsbetreiber den Druck, der Betreiber des Elektrolyseurs die Abschaltung, der Vermarkter die Fahrplanabweichung. Der Zwilling rechnet die Kette als Ganzes. Deshalb kann er schon um 01:00 sagen, wann die Leitung voll ist, und vergleichen, was eine vorausschauende Fahrweise gebracht hätte. Alle Daten sind synthetisch."
   own: "Den exportierten Schaltplan rechnest du mit: bin/opentsx twin --plan config/private/h2-chain-eigen.yaml"
   read:
-    - "Die Spalten sind die Phasen eines Takts von einer Minute, von links nach rechts: erst die Quellen (Betriebsvorgaben, Marktpreis, Abnehmer), dann die Anlagen (Windpark, Elektrolyseur, Batterie), dann die Strombilanz am Netzanschlusspunkt, zuletzt die Bestände und Abrechnungen (Leitung, Direktvermarkter)."
+    - "Die Spalten sind die Phasen eines Zeitschritts von einer Minute, von links nach rechts: erst die Quellen (Betriebsvorgaben, Marktpreis, Abnehmer), dann die Anlagen (Windpark, Elektrolyseur, Batterie), dann die Strombilanz am Netzanschlusspunkt, zuletzt die Bestände und Abrechnungen (Leitung, Direktvermarkter)."
     - "Eine durchgezogene Linie wirkt in derselben Minute. Die beiden gestrichelten Linien von der Leitung zurück zum Elektrolyseur sind Rückkopplungen: Druck und Restkapazität entstehen am Ende der Minute und wirken in der nächsten. Über diese Linien läuft die Schutzabschaltung."
     - "Blaue Linien tragen Flüsse, die in eine Bilanz eingehen: elektrische Leistung in kW und Wasserstoff in kg/h. Graue Linien tragen Signale: Druck, Preis, Leistungsgrenze."
     - "Eine Raute vor einem Eingang heißt: Dort ist eine Zeitreihe von außen gebunden, etwa die verfügbare Windleistung, der Sollwert des Elektrolyseurs oder der Fahrplan des Vermarkters."
@@ -38,13 +38,13 @@ atoms:
 
   market:
     title: "Strommarkt"
-    text: "Reicht den Marktpreis in die Kette. Der Preis ändert sich nicht jede Minute, sondern je Viertelstunde. Der Baustein rechnet deshalb nur in jedem fünfzehnten Takt und hält den Wert dazwischen fest. Im Beispiel schwankt der Preis synthetisch zwischen 40 und 80 € je MWh."
+    text: "Reicht den Marktpreis in die Kette. Der Preis ändert sich nicht jede Minute, sondern je Viertelstunde. Der Baustein rechnet deshalb nur in jedem fünfzehnten Zeitschritt und hält den Wert dazwischen fest. Im Beispiel schwankt der Preis synthetisch zwischen 40 und 80 € je MWh."
     capture: "Keine Anlage. Erfasse Gebotszone, Marktsegment (Day-Ahead, Intraday) und die Datenquelle, aus der der Preis kommt."
     ports:
       price_eur_mwh: "Als Eingang: die gebundene Preisreihe von außen. Als Ausgang: der Preis, der in dieser Viertelstunde gilt."
     params:
       every:
-        text: "Der Baustein rechnet nur in jedem so vielten Takt. Bei einem Takt von einer Minute sind 15 Takte eine Viertelstunde."
+        text: "Der Baustein rechnet nur in jedem so vielten Zeitschritt. Bei einem Zeitschritt von einer Minute sind 15 Schritte eine Viertelstunde."
         source: "Abrechnungsintervall des Marktes, an dem verkauft wird."
         compare: "Viertelstunde im Intraday-Handel und in der Bilanzkreisabrechnung, Stunde oder Viertelstunde im Day-Ahead-Handel."
         refs: [smard, entsoe]
@@ -104,17 +104,17 @@ atoms:
       rampKwPerMin:
         text: "Größte Leistungsänderung je Minute. Sie bestimmt, wie schnell der Elektrolyseur einer Vorgabe folgt und wie lange die Schutzabschaltung dauert: von 5.000 kW auf null in 10 Minuten."
         source: "Datenblatt oder ein gemessener Lastsprung aus den Betriebsdaten."
-        compare: "500 kW je Minute sind 10 Prozent der Nennleistung je Minute und eher vorsichtig. PEM-Anlagen schaffen den vollen Bereich in Sekunden, alkalische brauchen Minuten."
+        compare: "500 kW je Minute sind 10 Prozent der Nennleistung je Minute und eher vorsichtig. PEM-Anlagen schaffen den vollen Bereich in Sekunden, alkalische sind je nach Bauart und Betriebszustand langsamer."
         refs: [wiki-elektrolyseur]
       kwhPerKg:
         text: "Spezifischer Strombedarf: Kilowattstunden Strom je Kilogramm Wasserstoff, für die ganze Anlage. Das Modell nimmt ihn als konstant an."
         source: "Abnahmeprotokoll oder Betriebsdaten: Strom am Zähler geteilt durch die erzeugte Menge über einen längeren Zeitraum. Der Wert steigt mit dem Alter der Stacks."
-        compare: "Der Heizwert von Wasserstoff ist 33,3 kWh je kg. Anlagen brauchen etwa 50 bis 58 kWh je kg, das sind 58 bis 67 Prozent Wirkungsgrad."
+        compare: "Der Heizwert von Wasserstoff ist 33,3 kWh je kg. Anlagen brauchen etwa 50 bis 58 kWh je kg, das sind 57 bis 67 Prozent Wirkungsgrad bezogen auf den Heizwert."
         refs: [iea-h2, wiki-wasserstoff]
       pTripBar:
         text: "Druck in der Leitung, bei dem die Schutzabschaltung auslöst."
         source: "Sicherheitskonzept der Anlage. Der Wert liegt höchstens beim zulässigen Betriebsdruck der Leitung."
-        compare: "Im Beispiel gleich dem Höchstdruck der Leitung von 40 bar."
+        compare: "Im Beispiel gleich dem Höchstdruck der Leitung von 40 bar. Weil das Abfahren 10 Minuten dauert, steigt der Druck im Lauf bis 40,6 bar. In einer echten Anlage liegt die Schwelle deshalb unter dem zulässigen Betriebsdruck, und den Schutz gegen Überdruck übernehmen Sicherheitsarmaturen, die in Sekunden wirken. Das Modell zeigt die betriebliche Abfahrt."
         refs: [dvgw-h2]
       pResumeBar:
         text: "Druck, unter den die Leitung fallen muss, bevor der Elektrolyseur wieder anfahren darf. Der Abstand zur Abschaltschwelle verhindert ständiges Ein- und Ausschalten."
@@ -144,7 +144,7 @@ atoms:
       powerKw:
         text: "Größte Lade- und Entladeleistung."
         source: "Nennleistung des Wechselrichters laut Typenschild."
-        compare: "Im Beispiel 1.000 kW. Der Sprung der Einspeisung beträgt 5.000 kW, die Batterie könnte also nur ein Fünftel davon für zwei Stunden abfangen."
+        compare: "Im Beispiel 1.000 kW. Der Sprung der Einspeisung beträgt 5.000 kW, die Batterie könnte also nur ein Fünftel davon abfangen, aus halb vollem Zustand etwa eine Stunde lang."
         refs: [wiki-batteriespeicher]
       soc0:
         text: "Ladezustand zu Beginn des Laufs."
@@ -152,7 +152,7 @@ atoms:
         compare: "Im Beispiel 0,5, also halb voll und in beide Richtungen einsetzbar."
 
   grid:
-    title: "Netzanschlusspunkt (Bilanz)"
+    title: "Netzanschlusspunkt"
     text: "Die Strombilanz am gemeinsamen Anschluss, in jeder Minute neu gelöst: Erzeugung minus Elektrolyseur, Batterie und Eigenbedarf ergibt die Einspeisung ins Netz. Ein negativer Wert bedeutet Bezug. Der Baustein weist außerdem aus, wie viel der Erzeugung direkt vor Ort verbraucht wurde, und ordnet sie den Verbrauchern in einer festen Reihenfolge zu. Ist der Zähler am Anschluss gebunden, zeigt das Residuum die Abweichung zwischen Messung und Modell."
     capture: "Netzverknüpfungspunkt und Übergabestation: Netzbetreiber, Spannungsebene, vereinbarte Anschlussleistung, Transformator (Hersteller, Typ, Seriennummer), Zählpunktbezeichnung und Messstellenbetreiber."
     ports:
@@ -171,8 +171,8 @@ atoms:
         compare: "Im Beispiel Eigenbedarf vor Elektrolyseur vor Batterie."
 
   line:
-    title: "Wasserstoffleitung als Puffer"
-    text: "Die Leitung zwischen Elektrolyseur und Abnehmer speichert Gas, indem ihr Druck steigt. Das Modell rechnet sie als Behälter mit festem Volumen und fester Temperatur nach dem idealen Gasgesetz: Jedes Kilogramm mehr hebt den Druck um 0,076 bar. Aus Zufluss minus Abfluss folgen der Druck, die Restkapazität bis zum Höchstdruck und die Zeit, bis die Grenze beim aktuellen Zufluss erreicht ist. Diese Zeit ist die wichtigste Kennzahl des Beispiels: Sie sagt Stunden vorher, wann die Kette reißt."
+    title: "Wasserstoffleitung"
+    text: "Die Leitung zwischen Elektrolyseur und Abnehmer speichert Gas, indem ihr Druck steigt. Das Modell rechnet sie als Behälter mit festem Volumen und fester Temperatur nach dem idealen Gasgesetz: Jedes Kilogramm mehr hebt den Druck um 0,076 bar. Aus Zufluss minus Abfluss folgen der Druck, die Restkapazität bis zum Höchstdruck und die Zeit, bis die Grenze beim aktuellen Zufluss erreicht ist. Diese Zeit ist die wichtigste Kennzahl des Beispiels: Sie sagt hier 87 Minuten vorher, wann die Kette reißt. Grenzen des Modells: ideales Gas bei fester Temperatur, Absolutdruck, keine Verdichterleistung."
     capture: "Rohrbuch der Leitung: Betreiber, Nennweite, Länge, Werkstoff, zulässiger Betriebsdruck, Baujahr, Datum der letzten Druckprüfung, Lage der Druckmessstellen mit Typ und Seriennummer der Messumformer."
     ports:
       m_in_kgph: "Zufluss vom Elektrolyseur."
@@ -202,7 +202,7 @@ atoms:
       pMaxBar:
         text: "Höchster zulässiger Betriebsdruck. Beim Überschreiten entsteht das Ereignis „Druckgrenze“."
         source: "Rohrbuch oder Abnahmebescheinigung der Leitung (zulässiger Betriebsdruck)."
-        compare: "Verteilleitungen liegen meist bei 16 bis 40 bar, Fernleitungen bei 70 bis 100 bar. Bei 40 bar weicht echter Wasserstoff etwa 2 bis 3 Prozent vom idealen Gas ab."
+        compare: "Verteilnetze arbeiten bis 16 bar, Hochdruckleitungen darüber, Fernleitungen bei etwa 55 bis 100 bar. Das Modell rechnet mit Absolutdruck, Betriebsdrücke werden meist als Überdruck angegeben. Bei 40 bar weicht echter Wasserstoff etwa 2 bis 3 Prozent vom idealen Gas ab."
         refs: [dvgw-h2, nist-h2, wiki-ideales-gas]
       warnMin:
         text: "Vorwarnzeit: Fällt die Zeit bis zur Druckgrenze unter diesen Wert, entsteht eine Warnung."
@@ -211,7 +211,7 @@ atoms:
 
   marketer:
     title: "Direktvermarkter"
-    text: "Verkauft den eingespeisten Strom am Markt und hat dafür einen Fahrplan angemeldet. Der Baustein vergleicht in jeder Minute die tatsächliche Einspeisung mit dem Fahrplan. Eine positive Abweichung ist Strom, der zusätzlich verkauft werden muss, eine negative ist Strom, der nachgekauft werden muss. Beides kostet in der Regel Ausgleichsenergie. Der Erlös ist Einspeisung mal Marktpreis."
+    text: "Verkauft den eingespeisten Strom am Markt und hat dafür einen Fahrplan angemeldet. Der Baustein vergleicht in jeder Minute die tatsächliche Einspeisung mit dem Fahrplan. Eine positive Abweichung ist Strom, der zusätzlich verkauft werden muss, eine negative ist Strom, der nachgekauft werden muss. Abweichungen werden je Viertelstunde als Ausgleichsenergie abgerechnet. Das kann Kosten oder eine Gutschrift bedeuten. Das Modell rechnet diese Abrechnung nicht: Der Erlös ist nur Einspeisung mal Marktpreis und damit unvollständig."
     capture: "Vertragspartner und Vertragsnummer, Bilanzkreis, Fristen für Fahrplanänderungen, Regelung für Ausgleichsenergie und der Meldeweg für Störungen."
     ports:
       p_grid_kw: "Tatsächliche Einspeisung am Netzanschlusspunkt."
@@ -235,8 +235,8 @@ wires:
   "offtake.m_out_kgph -> ely.m_offtake_kgph": "Dieselbe Entnahme als Information für den Elektrolyseur. Im Referenzlauf mit der Fahrweise „follow“ wird sie nicht genutzt. Die Fahrweise „druckbewusst“ braucht sie: Sie erlaubt nur so viel Erzeugung, wie gerade entnommen wird, plus den Rest der Leitung über eine Stunde verteilt."
   "line.p_bar -> ely.p_downstream_bar": "Die Rückkopplung, über die die Schutzabschaltung läuft. Der Elektrolyseur sieht den Druck vom Ende der Vorminute. Bei 40 bar fährt er auf null und meldet „Schutzabschaltung“. Weil das Abfahren 10 Minuten dauert, steigt der Druck noch bis 40,6 bar. Er läuft erst wieder an, wenn der Druck auf 36 bar gefallen ist. Da der Schieber im Beispiel zu bleibt, fällt der Druck nicht, und die Anlage bleibt aus. Gestrichelt, weil der Wert erst in der Folgeminute wirkt."
   "line.headroom_kg -> ely.headroom_kg": "Die Restkapazität der Leitung in Kilogramm, zurück an den Elektrolyseur. Zu Beginn sind es 132 kg. Im Referenzlauf bleibt die Information ungenutzt, die Anlage fährt sehenden Auges in die Abschaltung. Die Fahrweise „druckbewusst“ drosselt damit rechtzeitig und nähert sich der Grenze, ohne sie zu erreichen. Gestrichelt, weil der Wert erst in der Folgeminute wirkt."
-  "grid.p_grid_kw -> marketer.p_grid_kw": "Die Einspeisung am Netzanschlusspunkt geht an den Direktvermarkter. Bis zur Abschaltung sind es 3.000 kW, genau der Fahrplan. Danach steigt sie in 10 Minuten auf 8.000 kW. Der Vermarkter erfährt hier die Folge einer Störung, die zweieinhalb Stunden vorher am anderen Ende der Kette begonnen hat."
-  "market.price_eur_mwh -> marketer.price_eur_mwh": "Der Marktpreis der laufenden Viertelstunde für die Erlösrechnung: Einspeisung in MW mal Stunden mal Preis. Bei 3 MW und 60 € je MWh sind das 180 € je Stunde. Der Preis ändert sich nur alle 15 Minuten, deshalb rechnet der Markt-Baustein nur in jedem fünfzehnten Takt."
+  "grid.p_grid_kw -> marketer.p_grid_kw": "Die Einspeisung am Netzanschlusspunkt geht an den Direktvermarkter. Bis zur Abschaltung sind es 3.000 kW, genau der Fahrplan. Danach steigt sie in 10 Minuten auf 8.000 kW. Der Vermarkter erfährt hier die Folge einer Störung, die knapp anderthalb Stunden vorher am anderen Ende der Kette begonnen hat."
+  "market.price_eur_mwh -> marketer.price_eur_mwh": "Der Marktpreis der laufenden Viertelstunde für die Erlösrechnung: Einspeisung in MW mal Stunden mal Preis. Bei 3 MW und 60 € je MWh sind das 180 € je Stunde. Der Preis ändert sich nur alle 15 Minuten, deshalb rechnet der Markt-Baustein nur in jedem fünfzehnten Zeitschritt."
 
 references:
   - id: smard

@@ -56,6 +56,12 @@ entries are grouped by date. The detailed progress log (German) is in
   port, parameter, control and wire of the house twin and the H2 chain, where each value comes from and references to compare against; checked against the plan.
   The node graph explains wires and ports on hover, and each node takes own details (nameplate, serial number, own
   parameter values) with export as inventory (`opentsx.inventory.v1`) and as an own wiring plan.
+- Smart Topics Studio redesigned as a product component after reviews from four viewpoints (UI design, UX and
+  accessibility, electrical and energy engineering, commercial reader): app bar with scenario switch, scenario summary
+  with headline figures and the question behind it, views Überblick, Vergleich, Systembild and Messreihen, inspector
+  beside the diagram, connections coloured by energy carrier and routed around the blocks, events in plain language,
+  larger units from a threshold on, limit lines in charts, a switch for technical details. Engineering corrections
+  in both guides.
 - Retrieval (`opentsx-retrieval`, P5): segmentation, pattern engine (MASS, SAX, DTW), retrieval API, REST server,
   Python client, power-curve analysis.
 - DevOps guide for k3s against an existing KafScale cluster (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`).

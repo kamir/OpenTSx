@@ -14,7 +14,7 @@ intro:
     - "Alle Zahlen sind erfundene Beispielannahmen. Sie gelten, bis du sie durch deine eigenen Werte ersetzt: Typenschild, Abrechnung, Ablesung oder Messung. Einsparungen aus dem Zwilling sind modelliert und nicht nachgewiesen."
   own: "Den exportierten Schaltplan rechnest du mit: bin/opentsx house --plan config/private/haus-erzgebirge-eigen.yaml"
   read:
-    - "Die Spalten sind die Phasen eines Takts, von links nach rechts: erst die Quellen (Wetter, Warmwasserbedarf, Geräte), dann die Anlagen (Ofen, Kessel), dann die Strombilanz am Zähler, zuletzt die Bestände (Gebäude, Tank, Holzlager)."
+    - "Die Spalten sind die Phasen eines Zeitschritts, von links nach rechts: erst die Quellen (Wetter, Warmwasserbedarf, Geräte), dann die Anlagen (Ofen, Kessel), dann die Strombilanz am Zähler, zuletzt die Bestände (Gebäude, Tank, Holzlager)."
     - "Eine durchgezogene Linie wirkt in derselben Stunde. Eine gestrichelte Linie ist eine Rückkopplung: Der Wert entsteht am Ende der Stunde und wirkt erst in der nächsten. So fordert das Thermostat des Gebäudes die Wärme für die Folgestunde beim Kessel an."
     - "Blaue Linien tragen Flüsse, die in eine Bilanz eingehen (kW, l/h, Ster/h). Graue Linien tragen Signale, also Informationen wie Temperatur, Füllstand oder Heizperiode."
     - "Fahre mit der Maus über eine Linie, um zu lesen, was sie trägt und warum. Ein Klick auf eine Linie oder einen Baustein hält die Erläuterung unten fest."
@@ -111,7 +111,7 @@ atoms:
         compare: "Nach der Kalibrierung meist zwischen 0,5 und 1,5."
 
   appliances:
-    title: "Haushaltsgeräte und Bewohner"
+    title: "Geräte und Bewohner"
     text: "Rechnet aus einem Inventar mit Leistung, Standby und Nutzungszeiten den Haushaltsstrom jeder Stunde. Alles, was innerhalb der beheizten Räume Strom verbraucht, wird dort zu Wärme. Dazu kommt die Körperwärme der anwesenden Personen. Der Baustein hat deshalb zwei Ausgänge: Strom für den Zähler und Wärmegewinn für das Gebäude."
     capture: "Je Gerät ein eigener Eintrag lohnt sich: Hersteller, Modell, Seriennummer, Baujahr und die Werte vom Energielabel. Erfasse sie in der Notiz oder direkt in der Geräteliste (Parameter inventory)."
     ports:
@@ -186,7 +186,7 @@ atoms:
 
   boiler:
     title: "Ölkessel"
-    text: "Wandelt Heizöl in Wärme. Er bedient zuerst das Warmwasser und danach die Anforderung des Gebäudes, zusammen höchstens bis zur Nennleistung. Unterhalb der Mindestlast taktet der einstufige Brenner, dann sinkt der Wirkungsgrad. Der Kessel wird das ganze Jahr warm gehalten und verbraucht dafür auch ohne Wärmeabnahme Öl. Strom brauchen die Umwälzpumpe und der Brenner. Ist der Tank leer, liefert der Kessel keine Wärme."
+    text: "Wandelt Heizöl in Wärme. Er bedient zuerst das Warmwasser und danach die Anforderung des Gebäudes, zusammen höchstens bis zur Nennleistung. Unterhalb der Mindestlast taktet der einstufige Brenner, dann sinkt der Wirkungsgrad. Im Modell wird der Kessel das ganze Jahr warm gehalten und verbraucht dafür auch ohne Wärmeabnahme Öl. Strom brauchen die Umwälzpumpe und der Brenner. Ist der Tank leer, liefert der Kessel keine Wärme."
     capture: "Typenschild am Kessel: Hersteller, Typ, Seriennummer, Nennwärmeleistung, Baujahr. Dazu der Brenner (Typ, Düsengröße), die Umwälzpumpe (Typ, Leistungsaufnahme) und der Abgasverlust aus dem Messprotokoll des Schornsteinfegers."
     ports:
       q_req_kw: "Wärmeanforderung des Thermostats für diese Stunde, berechnet vom Gebäude am Ende der Vorstunde."
@@ -211,9 +211,9 @@ atoms:
         compare: "Alte Konstanttemperaturkessel etwa 0,80 bis 0,87, Niedertemperaturkessel 0,87 bis 0,93, Brennwertkessel bis etwa 0,98 und darüber."
         refs: [wiki-niedertemperaturkessel]
       minLoad:
-        text: "Mindestlast als Anteil der Nennleistung. Darunter schaltet der Brenner ständig ein und aus."
+        text: "Schwelle der Auslastung, unter der das Modell Taktverluste ansetzt."
         source: "Bei einstufigen Brennern eine Schätzung. Brennerstarts je Stunde zählen hilft, den Wert einzugrenzen."
-        compare: "Einstufige Brenner etwa 0,3 bis 0,5. Modulierende Brenner kommen deutlich tiefer."
+        compare: "Ein einstufiger Brenner kennt keine Teillast, er taktet bei jeder Last unter der Nennleistung. 0,35 ist eine Modellannahme und kein Wert vom Typenschild."
       cyclingLoss:
         text: "Größter Abschlag auf den Wirkungsgrad beim Takten, erreicht bei sehr kleiner Last."
         source: "Schätzung. Die Kalibrierung an Abrechnungen kann ihn nicht vom Wirkungsgrad trennen."
@@ -254,7 +254,7 @@ atoms:
       q_loss_kw: "Wärmeverlust durch Hülle und Lüftung in dieser Stunde."
     controls:
       setpoint_c: "Raumsollwert am Tag. 1 K weniger spart im Beispiel etwa 150 Liter Öl im Jahr."
-      setback_k: "Nachtabsenkung in Kelvin unter den Tagessollwert. Im schweren Haus wirkt sie kaum, weil es in acht Stunden nur um 1 bis 2 K auskühlt."
+      setback_k: "Nachtabsenkung in Kelvin unter den Tagessollwert. In einem Haus mit so viel Speichermasse wirkt sie kaum, weil es in acht Stunden nur um 1 bis 2 K auskühlt."
       unused_setback_k: "Absenkung in selten genutzten Räumen, gewichtet mit deren Flächenanteil."
     params:
       areaM2:
@@ -273,7 +273,7 @@ atoms:
       solarApertureM2:
         text: "Wirksame Sonnenfläche: Fensterfläche mal Energiedurchlassgrad mal Abminderung für Rahmen, Verschattung und Ausrichtung."
         source: "Fensterflächen ausmessen. Beispielrechnung: 20 m² mal 0,6 mal 0,35 ergibt etwa 4 m²."
-        compare: "Meist 2 bis 4 Prozent der Wohnfläche."
+        compare: "Meist 2 bis 4 Prozent der Wohnfläche. Grenze des Modells: Es rechnet mit der Strahlung auf die Horizontale und unterschätzt damit im Winter die Gewinne durch Südfenster."
         refs: [pvgis]
       heatingLimitC:
         text: "Heizgrenze: Liegt das 24-Stunden-Mittel der Außentemperatur darüber, wird nicht geheizt."
@@ -355,7 +355,7 @@ atoms:
       capacityL:
         text: "Fassungsvermögen. Eine Lieferung darüber hinaus wird als Überfüllung gemeldet."
         source: "Typenschild des Tanks oder Tankbuch."
-        compare: "Einfamilienhäuser haben meist 2.000 bis 6.000 Liter."
+        compare: "Einfamilienhäuser haben meist 2.000 bis 6.000 Liter. Nutzbar sind etwa 95 Prozent des Nennvolumens."
       level0L:
         text: "Füllstand zu Beginn des Laufs."
         source: "Peilstab oder Tankuhr am Stichtag ablesen."
@@ -406,7 +406,7 @@ wires:
   "stove.q_heat_kw -> building.q_stove_kw": "Die Wärme des Kaminofens, direkt in die Wohnzone. Beim Brennen sind es 6 kW Brennstoff mal 0,70 Wirkungsgrad, also 4,2 kW. Das Thermostat zieht diese Wärme von seiner Anforderung ab, der Kessel muss entsprechend weniger liefern. Das ist die Kopplung zwischen Holz und Öl."
   "appliances.q_gain_kw -> building.q_gain_kw": "Die inneren Wärmegewinne. Jede Kilowattstunde Strom, die innerhalb der beheizten Räume verbraucht wird, endet als Wärme im Raum. Dazu kommen 80 W je anwesender Person. Die Gefriertruhe im Keller zählt nicht mit, weil sie außerhalb der Hülle steht. Hier liegt eine wichtige Kopplung: Wer im Winter Strom spart, braucht ein wenig mehr Öl."
   "appliances.p_el_kw -> meter.p_appl_kw": "Der Haushaltsstrom aus dem Geräteinventar, Stunde für Stunde, einschließlich Standby. Am Zähler wird er zum Heizungsstrom addiert. Im Beispieljahr sind es etwa 2.300 kWh."
-  "boiler.p_el_kw -> meter.p_heating_kw": "Der Strom, den die Heizung selbst braucht: die Umwälzpumpe mit 65 W während der ganzen Heizperiode und der Brenner mit 120 W, solange er feuert. Im Beispieljahr sind das etwa 700 kWh, fast ein Viertel des gesamten Stroms. Deshalb ist der Pumpentausch einer der wirksamsten Hebel."
+  "boiler.p_el_kw -> meter.p_heating_kw": "Der Strom, den die Heizung selbst braucht: die Umwälzpumpe mit 65 W während der ganzen Heizperiode und der Brenner mit 120 W, solange er feuert. Im Beispieljahr rechnet das Modell dafür etwa 700 kWh, fast ein Viertel des gesamten Stroms. Den Brenneranteil setzt das Modell eher hoch an, weil es die Laufzeit aus der Mindestlast ableitet. Der Pumpenanteil von etwa 490 kWh ist davon nicht betroffen, deshalb bleibt der Pumpentausch einer der wirksamsten Hebel."
   "boiler.fuel_lph -> tank.fuel_lph": "Der Ölverbrauch des Kessels in Litern je Stunde. Er entsteht aus der gelieferten Wärme geteilt durch den Wirkungsgrad, plus 0,2 kW Bereitschaftsverlust, geteilt durch 10 kWh je Liter. Der Tank zieht diese Menge von seinem Füllstand ab und rechnet die Kosten mit dem Ölpreis. Auch ohne Wärmeabnahme fließen wegen der Bereitschaft etwa 0,02 Liter je Stunde."
   "stove.wood_ster_ph -> woodstore.wood_ster_ph": "Der Holzverbrauch des Ofens in Ster je Stunde: 6 kW Brennstoffleistung geteilt durch 1.500 kWh je Ster ergeben 0,004 Ster je Brennstunde. Ein Abend mit vier Stunden kostet 0,016 Ster, eine Heizperiode knapp 5 Ster. Das Holzlager zieht die Menge vom Vorrat ab und rechnet die Kosten."
 
@@ -482,7 +482,7 @@ references:
   - id: wiki-gradtagzahl
     title: "Wikipedia: Gradtagzahl"
     url: "https://de.wikipedia.org/wiki/Gradtagzahl"
-    note: "Definition von G20/15 nach VDI 3807, wie sie der Wetter-Baustein zählt."
+    note: "Definition der Gradtagzahl G20/15, wie sie der Wetter-Baustein zählt, und Abgrenzung zu den Heizgradtagen."
   - id: wiki-heizgrenze
     title: "Wikipedia: Heizgrenze"
     url: "https://de.wikipedia.org/wiki/Heizgrenze"
