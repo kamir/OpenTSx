@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # Makes the two images available to k3s' containerd.
 #
-#   deploy/k3s/11-import-images.sh [--method docker|podman|nerdctl|buildah|registry|ssh|none] [--ssh user@host]
+#   deploy/k3s/11-import-images.sh [--method docker|podman|nerdctl|buildah|kind|registry|ssh|none] [--ssh user@host]
+#                                  [--kind-cluster <name>]
 #
 # Methods (default IMAGE_METHOD from .env, "docker"):
 #   docker    docker save <images> | sudo k3s ctr images import -          (k3s on this host)
 #   podman    podman save ... | sudo k3s ctr images import -
 #   nerdctl   nerdctl save ... | sudo k3s ctr images import -               (images built in another namespace)
 #   buildah   buildah push <image> docker-archive:<tmp>; sudo k3s ctr images import <tmp>
+#   kind      kind load docker-image <images> --name <cluster>                      (a kind cluster instead of k3s,
+#             e.g. for a trial run on macOS, where k3s does not run natively; the cluster name is required,
+#             via --kind-cluster or KIND_CLUSTER, so that no unrelated cluster is written to by accident)
 #   ssh       docker|podman save ... | ssh <user@host> sudo k3s ctr images import -   (k3s on another machine, e.g. a Pi)
 #   registry  <builder> push to OPENTSX_IMAGE_REPO (e.g. registry.lan:5000/opentsx); k3s pulls from there.
 #             An insecure/plain-HTTP registry must be listed in /etc/rancher/k3s/registries.yaml on every node.
@@ -20,11 +24,12 @@ set -euo pipefail
 # shellcheck source=deploy/k3s/lib.sh
 source "$(dirname "$0")/lib.sh"
 
-METHOD=""; SSH_TARGET="${K3S_SSH:-}"
+METHOD=""; SSH_TARGET="${K3S_SSH:-}"; KIND_CLUSTER="${KIND_CLUSTER:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --method) METHOD="${2:?--method needs a value}"; shift 2 ;;
     --ssh) SSH_TARGET="${2:?--ssh needs user@host}"; METHOD="${METHOD:-ssh}"; shift 2 ;;
+    --kind-cluster) KIND_CLUSTER="${2:?--kind-cluster needs a name}"; METHOD="${METHOD:-kind}"; shift 2 ;;
     -h|--help) usage 0 ;;
     *) die "unknown option $1 (see --help)" ;;
   esac
@@ -69,6 +74,14 @@ case "$METHOD" in
     info "importing ${IMAGES[*]} on $SSH_TARGET ($s save | ssh ... k3s ctr images import)"
     "$s" save "${IMAGES[@]}" | ssh "$SSH_TARGET" sudo k3s ctr images import -
     echo "check on the node: ssh $SSH_TARGET sudo k3s ctr images ls | grep $OPENTSX_IMAGE_REPO"
+    exit 0 ;;
+  kind)
+    have kind || die "kind not found - install kind, or use --method ssh/registry for a remote k3s"
+    [[ -n "$KIND_CLUSTER" ]] || die "method kind needs the cluster name: --kind-cluster <name> (or KIND_CLUSTER). Available: $(kubectl config get-contexts -o name 2>/dev/null | sed -n 's/^kind-//p' | paste -sd, - || echo 'none found')"
+    kind get clusters 2>/dev/null | grep -qxF "$KIND_CLUSTER" || die "kind cluster '$KIND_CLUSTER' not found (kind get clusters)"
+    info "loading ${IMAGES[*]} into kind cluster $KIND_CLUSTER (kind load docker-image)"
+    kind load docker-image "${IMAGES[@]}" --name "$KIND_CLUSTER"
+    echo "check on the node: docker exec ${KIND_CLUSTER}-control-plane crictl images | grep ${OPENTSX_IMAGE_REPO##*/}"
     exit 0 ;;
   registry)
     [[ "$OPENTSX_IMAGE_REPO" == */* ]] || die "OPENTSX_IMAGE_REPO=$OPENTSX_IMAGE_REPO has no registry host - e.g. 20-configure.sh OPENTSX_IMAGE_REPO=registry.lan:5000/opentsx, then rebuild"
