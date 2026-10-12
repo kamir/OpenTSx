@@ -45,6 +45,9 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # 0.5 needs ESLint 9+ (part of the frontend migration)
+      - dependency-name: "eslint-plugin-react-refresh"
+        versions: [">=0.5.0"]
     groups:
       frontend:
         patterns: ["*"]

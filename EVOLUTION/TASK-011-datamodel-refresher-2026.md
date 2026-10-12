@@ -405,7 +405,7 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Iceberg 1.11/1.12: `GenericAppenderFactory` entfernt → `IcebergIO` auf die neue Writer-API umstellen.
 - [ ] JFreeChart 1.5 (Legacy-Charts in `opentsx-core`): `org.jfree.ui` entfernt → Charts migrieren oder Legacy-UI archivieren.
 - [ ] Confluent 8 (Kafka-4-Clients, gegen KafScale prüfen), JUnit 6, networknt json-schema-validator 3 (API-Änderungen).
-- [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8, React Router 7, Plotly 4 – gemeinsam als Migration (Stand 12.10.: `npm ci` scheitert an Peer-Konflikten, `tsc` an veralteten Optionen).
+- [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8, React Router 7, Plotly 4 – gemeinsam als Migration (Stand 12.10.: `npm ci` scheitert an Peer-Konflikten, `tsc` an veralteten Optionen). Offene Sicherheitsbefunde, die erst mit der Migration verschwinden (`npm audit`, Stand 12.10. nach `npm audit fix`: 18): XSS in `maplibre-gl` über Plotly ≤ 4.1 (Plotly 4.1.1+ oder Plotly-Basic-Bundle ohne Kartentypen), typescript-eslint 8, `postcss-selector-parser`/`micromatch`/`braces` über Tailwind 4, React Router 7.
 
 **Laufzeit & Integration**
 - [ ] Flink 1.20/2.x-Upgrade; danach Flink-Adapter für `StatsEngine` und P8.1-Streaming-Screening; `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2 umstellen oder deprecaten.
