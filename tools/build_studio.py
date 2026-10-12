@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Builds docs/prototypes/smart-topics-studio.html from the template and twin data.
+"""Builds docs/prototypes/smart-topics-studio.html from the template and the scenario data (all StudioScenarios).
 
-    java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.demo.UiExport /tmp/twin-data.json
-    python3 tools/build_studio.py /tmp/twin-data.json
+    java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport /tmp/studio.json
+    python3 tools/build_studio.py /tmp/studio.json
 """
 import pathlib
 import sys

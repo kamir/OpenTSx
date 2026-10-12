@@ -38,6 +38,25 @@ Regeln, die der Prototyp schon umsetzt:
 * **Gleiche Basis:** Alternativen werden gegen dieselbe Ausgangslage verglichen (Referenz minus Alternative, wie in
   P8).
 
+**Das Studio ist eine Sicht auf jedes modellierte System.** Ein System beschreibt sich über die Schnittstelle
+`org.opentsx.twin.studio.StudioScenario`:
+
+* Schaltplan
+* Eingänge und Eingriffe des Referenzlaufs
+* benannte Alternativen (Eingriffe, Fahrweisen, andere Annahmen)
+* Prognosen ab Snapshots
+* Smart Metrics, Vergleichsgrößen, Kennzahlen und Beschriftungen
+
+`StudioExport` rechnet alle registrierten Szenarien und schreibt eine JSON-Datei. Die Oberfläche hat keine
+Sonderfälle. Lange Läufe, etwa ein Jahr im Stundentakt, werden für die Anzeige auf höchstens 2000 Punkte je Reihe
+gemittelt.
+
+Szenarien:
+
+* die Wasserstoffkette (umgesetzt)
+* das Einfamilienhaus im Erzgebirge (`08-HAUS-ZWILLING.md`, in Arbeit)
+* das Boot Etap 22 (`10-BOOT-ZWILLING.md`, in Arbeit)
+
 Für den Ausbau vorgesehen:
 
 * Den Node-Graph **bearbeiten**: Das Ziehen von Drähten ändert das Schaltplan-YAML, und die Plan-Validierung prüft
@@ -50,8 +69,8 @@ Für den Ausbau vorgesehen:
 Der Prototyp lässt sich reproduzieren:
 
 ```bash
-java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.demo.UiExport /tmp/twin-data.json
-python3 tools/build_studio.py /tmp/twin-data.json      # schreibt docs/prototypes/smart-topics-studio.html
+java -cp "$(bin/opentsx classpath opentsx-twin)" org.opentsx.twin.studio.StudioExport /tmp/studio.json
+python3 tools/build_studio.py /tmp/studio.json      # schreibt docs/prototypes/smart-topics-studio.html
 ```
 
 ---
@@ -132,7 +151,7 @@ flowchart LR
 | Rang | Weg | Aufwand | Bemerkung |
 |------|-----|---------|-----------|
 | 1 | **LabVIEW → MQTT (JSON) → infinimesh → Kafka-Addon → KafScale → Normalizer** | niedrig–mittel | reifer MQTT-Client, keine DLL, Rückweg über `desired` inklusive; offen: Client-Zertifikat-TLS |
-| 2 | **TDMS-Import** (npTDMS → Observations/Episoden) | niedrig | Bestandsdaten sofort nutzbar, ohne Änderung an LabVIEW |
+| 2 | **TDMS-Import** (npTDMS → Observations/Episoden) | niedrig | zurückgestellt (keine Bestände, 4a); Option für spätere Anwender |
 | 3 | **OpenTSx-Publisher-Paket für LabVIEW** (VIs „DAQmx-Task → SmartMetric veröffentlichen“, JSON-Vertrag unten, später optional Avro) | mittel | macht die Brücke für LabVIEW-Nutzer greifbar; Pflege nötig |
 | 4 | Kafka direkt (LVKafka/librdkafka, JSON) | mittel–hoch | unreif, native Bibliotheken je Plattform; KafScale: `enable.idempotence=false` |
 | 5 | OPC UA / Sparkplug B | mittel | sinnvoll, wenn ein OPC-UA-Server ohnehin existiert ([LabVIEW OPC UA Toolkit](https://www.ni.com/en-us/shop/product/labview-opc-ua-toolkit.html)) |
@@ -178,6 +197,78 @@ Zeiten sind UTC mit Mikrosekunden.
 
 ---
 
+## 4a. Entscheidungen vom 2026-10-12
+
+* **Kein LabVIEW-Pilot vorerst.** Die Überlegung stammt aus der Laborpraxis. Der Aufhänger bleibt: LabVIEW-Anwender
+  haben selten ein Datenmanagement. Hier setzt OpenTSx an, indem ein Smart Topic **direkt auf Sensoren abgebildet**
+  wird.
+* **Der Rückweg wird von Anfang an mitgedacht.** Steuerkommandos laufen in einem **Feedback-Topic** auf und werden
+  dort auf LabVIEW-Aktoren abgebildet.
+* **Keine TDMS-Bestände.** Der TDMS-Import fällt in der Rangfolge zurück und bleibt eine Option für spätere Anwender.
+
+### Abbildung Sensor ↔ Smart Topic ↔ Aktor
+
+Je Apparatur gibt es eine versionierte Abbildungsdatei, analog zur Registerkarte beim Modbus-Modul:
+
+```yaml
+apparatus: pruefstand-3
+sensors:                                  # physischer Kanal -> Serie
+  - channel: cDAQ1Mod1/ai0                # DAQmx-Kanal
+    metric: rig.motor.vibration_rms
+    tags: { rig: P3, sensor: acc1 }
+    unit: m/s^2
+    smartMetric: { window: PT1S, function: rms }
+actuators:                                # Kommando-Ziel -> Ausgang an der Apparatur
+  - target: rig.motor.speed_setpoint
+    channel: cDAQ1Mod2/ao0
+    unit: rpm
+    limits: { min: 0, max: 3000, maxStepPerSecond: 100 }
+    requiresApproval: true
+```
+
+Das Smart Topic eines Sensors hat damit einen festen Namen, eine Einheit und eine Herkunft (`MEASURED`, VI und
+Version als Provenienz). Die Datenhaltung übernimmt OpenTSx: KafScale, Iceberg, Statistik und Metadaten.
+
+### Feedback-Topic: Kommandos und Quittungen (Entwurf)
+
+* **Kommandos:** `tsx.<domain>.commands.v1` (Schlüssel = Apparatur). Für Geräte hinter infinimesh wird dasselbe
+  Kommando in den `desired`-Zustand gespiegelt.
+* **Quittungen:** `tsx.<domain>.command-acks.v1`.
+
+```json
+{
+  "schema": "opentsx.command.v1",
+  "commandId": "01JA0Q3K8Z0000000000000000",
+  "target": { "apparatus": "pruefstand-3", "actuator": "rig.motor.speed_setpoint" },
+  "action": "set",
+  "value": 1200,
+  "unit": "rpm",
+  "validFrom": "2026-10-12T10:00:00Z",
+  "validUntil": "2026-10-12T10:15:00Z",
+  "issuedBy": "twin:pruefstand-3@run-…",
+  "approvedBy": "operator:mk",
+  "reason": "Was-wäre-wenn W3 freigegeben"
+}
+```
+
+```json
+{ "schema": "opentsx.command-ack.v1", "commandId": "01JA0Q3K8Z0000000000000000",
+  "status": "applied", "appliedValue": 1200, "ts": "2026-10-12T10:00:00.250Z", "detail": "" }
+```
+
+Regeln:
+
+1. **Lokale Verriegelungen haben immer Vorrang.** LabVIEW prüft Grenzen, Schrittweite und Gültigkeit. Ein
+   abgelaufenes Kommando wird nicht ausgeführt und mit `expired` quittiert, eines außerhalb der Grenzen mit
+   `rejected`.
+2. **Jedes Kommando bekommt eine Quittung:** `accepted`, `applied`, `rejected` oder `expired`.
+3. **Herkunft im Zwilling:** Quittungen fließen als Ereignisse zurück. Ein angewendeter Sollwert wird im Zwilling zum
+   `Intervention`-Eintrag mit Herkunft `REPORTED`. Damit sind Modell und Wirklichkeit vergleichbar.
+4. **Idempotenz:** Weil KafScale keinen idempotenten Producer hat, ist die `commandId` deterministisch. Doppelte
+   Zustellungen ignoriert die Apparatur.
+5. **Freigabe:** Kommandos aus Optimierer oder Zwilling brauchen eine Freigabe im Studio, wenn `requiresApproval`
+   gesetzt ist.
+
 ## 5. Roadmap-Einträge
 
 * **P7e Studio:** die drei Ansichten produktiv (Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7),
@@ -189,9 +280,4 @@ Zeiten sind UTC mit Mikrosekunden.
   * Test der Client-Zertifikat-TLS gegen infinimesh
 * **infinimesh-Connector** (schon vorgemerkt) und der Rückweg `desired` mit Freigabe.
 
-### Offene Fragen
-
-1. **Pilot:** Welcher Prüfstand oder welche Laboranlage mit LabVIEW kommt als erster Pilot in Frage, und welche
-   LabVIEW-Version läuft dort (Windows, NI Linux RT)?
-2. **Rückweg:** Soll er von Anfang an mitgedacht werden, oder zunächst nur lesend?
-3. **TDMS-Bestände:** Gibt es TDMS-Bestände, die als Erstes importiert werden sollen?
+Die offenen Fragen von 2026-10-12 sind in §4a beantwortet.
