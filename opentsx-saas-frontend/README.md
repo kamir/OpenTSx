@@ -200,7 +200,7 @@ The build creates optimized static files that can be served by any web server (N
 **Dockerfile:**
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
