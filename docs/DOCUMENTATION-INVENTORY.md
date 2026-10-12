@@ -18,6 +18,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | [`docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) | concept P8: network reconstruction, simulation, optimization (concept map, research, roadmap) |
 | [`docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md`](datamodel-2026/07-DIGITAL-TWIN-BSP.md) | proposal P9: digital twin of an energy system (atoms, MVC + policy, BSP, Smart Topics) |
 | [`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md`](datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md) | Smart Topics Studio (three views), LabVIEW analogy, control-desk loop via KafScale/infinimesh; prototype in `docs/prototypes/` |
+| [`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`](datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md) | proposal: Go Smart Topic processor (KafScale processor pattern), declarative DAG, DevOps lifecycle |
 | [`docs/roadmap/infographic-briefing.html`](roadmap/infographic-briefing.html) | briefing (German) for an infographic designer who visualizes the roadmap |
 
 ## 2. Updated

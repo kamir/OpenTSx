@@ -1,0 +1,263 @@
+# OpenTSx – Smart-Topic-Prozessor und DevOps-Konzept
+
+> Status: **Vorschlag**, 2026-10-12. Beantwortet die Frage: *Wie rechnen Smart Topics im Strom, schlank und mit
+> unseren TSA-Algorithmen, ohne den Overhead von Flink oder Kafka Streams?* Bezüge:
+> [05-SMART-TOPICS](05-SMART-TOPICS.md) (Smart Topics, Training, Prediction-API),
+> [07-DIGITAL-TWIN-BSP](07-DIGITAL-TWIN-BSP.md) (Varianten T/L, Herkunft),
+> [09-STUDIO-LABVIEW-STEUERPULT](09-STUDIO-LABVIEW-STEUERPULT.md) (Edge-Metriken, Kommandos).
+
+---
+
+## 1. Kurzfassung
+
+1. **Ein Go-Prozessor in KafScale ist selbst der Rechner.** KafScale-Processors sind eigenständige Go-Programme. Sie
+   lesen abgeschlossene Segmente direkt aus S3 und laufen neben dem Broker, nicht in ihm. Die Operatoren des DAG sind
+   Go-Funktionen im selben Prozess. Es braucht weder Flink noch Kafka Streams.
+2. **Kafka Streams scheidet unter KafScale aus.** Es braucht Compaction für die Changelogs seiner State Stores und
+   Transaktionen für exactly-once. KafScale bietet beides nicht. Flink ginge (manuelle Zuweisung, eigene
+   Checkpoints), ist aber für einen schlanken DAG zu schwer.
+3. **Nicht alles nach Go portieren, sondern einen Stream-Kern.** Go bekommt die kleinen, deterministischen
+   Operatoren, die im Strom laufen müssen:
+   * Dekodieren und Normalisieren
+   * Episoden bilden
+   * Statistik und Sketches
+   * Datenqualität
+   * inkrementelle Segmentierung
+   * Resampling
+   * Scoring exportierter Modelle
+   * Smart Metrics schreiben
+
+   Die Parität sichern **gemeinsame Testvektoren**, wie bisher bei Sketch, SeriesId und Avro zwischen Java und
+   Python.
+4. **Training läuft nie im Strom.** Ein `train`-Knoten im DAG stößt nur an: Er schreibt eine Trainingsanfrage.
+   Python trainiert im Batch, registriert das Modell in MLflow und meldet es. Der `score`-Knoten tauscht den
+   Champion im laufenden Betrieb aus.
+5. **Was es nur in Java oder Python gibt, läuft über einen Sidecar.** Das gilt für Mustersuche, Zwilling und
+   Kausalanalyse. Der Go-Prozessor reicht ganze Episoden lokal per gRPC weiter. Weil eine Episode schon ein
+   Mikro-Batch ist, bleibt der Aufruf billig.
+6. **Ein deklarativer DAG (YAML), zwei Laufzeiten.** Go ist schlank, liest direkt aus S3 und läuft auch am Rand: auf
+   dem Raspberry Pi an Bord oder dem Labor-PC. Java ist der bestehende Prozessor (`StatsProcessor`), verallgemeinert.
+   Beide lesen dieselbe Spezifikation. Ein Konformitätstest prüft je Operator, dass die Ausgaben bytegleich sind.
+
+---
+
+## 2. Faktenlage: KafScale-Processors
+
+Quelle ist das Repository [KafScale/platform](https://github.com/KafScale/platform), `addons/processors/`
+(Stand 2026-10-12):
+
+| Eigenschaft | Befund |
+|-------------|--------|
+| Art | eigenständige Go-Programme („storage-native“). Sie lesen abgeschlossene `.kfs`- und `.index`-Segmente aus S3 und sind weder Broker noch Kafka-Client. |
+| Vorlagen | `skeleton` (Vorlage), `iceberg-processor` (Topics → Iceberg), `sql-processor` (Ad-hoc-SQL über Postgres-Wire, ohne kontinuierliche Abfragen) |
+| Bausteine | Segmentsuche, Decoder nach `kafscale-spec.md`, YAML-Mapping, Sink-Interface (`Write(ctx, []Record)`), Lease je Partition mit Offset-Checkpoint (Backend etcd), Helm-Chart, Dockerfile |
+| Semantik | at-least-once. Offsets rücken erst nach bestätigtem Schreiben vor. Skaliert je Partition; eine Partition wird nie auf mehrere Worker verteilt. |
+| Latenz | Sekunden bis Minuten, weil nur abgeschlossene Segmente gelesen werden. Dafür ist der Betrieb einfacher und günstiger. |
+
+**Folge für OpenTSx:** Ein TSx-Prozessor in Go folgt genau diesem Muster. Er ersetzt die Sink-Stufe durch einen
+Operator-DAG. Der Neubau einer Stream-Engine entfällt; Lease, Checkpoint und Segmentdekodierung kommen aus der Vorlage.
+Für Latenzen im Sekundenbereich gibt es den zweiten Eingang: Kafka-Protokoll über den Broker mit manueller Zuweisung,
+wie heute im Java-`StatsProcessor`.
+
+---
+
+## 3. Optionen im Vergleich
+
+| Option | Algorithmen | Betrieb | Passt zu KafScale | Rand (Pi, Labor-PC) | Bewertung |
+|--------|-------------|---------|-------------------|---------------------|-----------|
+| **Kafka Streams** | Java, direkt nutzbar | leicht | **nein:** State-Store-Changelogs brauchen Compaction, exactly-once braucht Transaktionen | mäßig | ausgeschlossen |
+| **Flink** | Java, nutzbar | schwer (JobManager, TaskManager, State Backend) | ja, mit manueller Zuweisung und eigenen Checkpoints | nein | für große Joins und Fenster über viele Topics, nicht für den schlanken DAG |
+| **Java-Prozessor** (wie `StatsProcessor`) | alle Java-Algorithmen direkt | mittel (JVM, ca. 150–300 MB) | ja (Kafka-Protokoll; Segmente aus S3 möglich, wenn ein Java-Decoder gebaut wird) | eingeschränkt | gut für Operatoren, die es nur in Java gibt (Mustersuche, Zwilling) |
+| **Go-Prozessor (TSx-Kern)** | Stream-Kern neu in Go, Rest per Sidecar | sehr leicht (eine Binärdatei, ca. 20 MB Image) | **nativ**, auf Basis der Processor-Vorlage | **ja** | **Empfehlung** für die Datenebene |
+| Alles nach Go portieren | alles neu | leicht | ja | ja | nein: großer Aufwand, Gefahr auseinanderlaufender Ergebnisse. Mustersuche, Zwilling und Kausalanalyse gehören nicht in den Strom. |
+| WASM-Plugins (z. B. wazero) | Nutzerfunktionen portabel | leicht | ja | ja | später, für eigene Operatoren der Nutzer; numerisch noch unreif |
+
+---
+
+## 4. Architektur: drei Ebenen
+
+```mermaid
+flowchart LR
+  subgraph DP["Datenebene (Strom)"]
+    S3[("KafScale-Segmente<br/>in S3")] --> GO["TSx-Prozessor (Go)<br/>YAML-DAG"]
+    BR["KafScale-Broker<br/>Kafka-Protokoll"] -. "Sekundenlatenz" .-> GO
+    GO --> OUT["Smart Topics<br/>stats · episodes · metrics · predictions"]
+    GO <-- "Episoden-Batches, gRPC (lokal)" --> SC["Sidecar Java/Python<br/>Mustersuche, Zwilling, Kausalanalyse"]
+  end
+  subgraph LP["Lernebene (Batch)"]
+    REQ["training-requests"] --> TR["Python-Trainer<br/>(Job)"]
+    TR --> ML[("MLflow<br/>Champion-Alias")]
+    TR --> EV["model-events"]
+  end
+  subgraph CP["Steuerebene"]
+    GIT["Git: DAG-YAML,<br/>Modell-Specs"] --> CI["CI: Validierung,<br/>Replay-Tests, Images"]
+    CI --> DEP["Deploy (Helm / Edge)"]
+    ST["Studio / Service Layer"] --> GIT
+    OM[("OpenMetadata<br/>Lineage")]
+  end
+  GO -- "train-Knoten" --> REQ
+  EV --> GO
+  DEP --> GO
+  GO --> OM
+```
+
+* **Datenebene:** Der Prozessor liest aus S3 oder vom Broker, führt den DAG aus und schreibt Smart Topics. Er braucht
+  nichts außer S3, etcd (oder Checkpoint-Dateien am Rand) und optional einen Sidecar.
+* **Lernebene:** Training ist ein Batch-Job. Er wird über ein Topic angestoßen und quittiert. Die Daten wählt er
+  über die Episoden-Abfrage (Iceberg oder Replay) und ist damit reproduzierbar.
+* **Steuerebene:**
+  * DAG und Modell-Spezifikationen sind versioniert in Git (GitOps).
+  * CI validiert und testet gegen aufgezeichnete Segmente.
+  * Das Deployment läuft per Helm oder am Rand per Binärdatei mit Konfigurationsdatei.
+  * Das Studio bearbeitet den DAG.
+  * OpenMetadata zeigt die Lineage, mit dem Spezifikations-Hash als Pipeline-Version.
+
+---
+
+## 5. Der deklarative Processor-DAG (Entwurf `opentsx.dag.v1`)
+
+```yaml
+dag: windpark-ostsee-smart
+version: 3
+source:
+  kind: kafscale-s3              # oder kafscale-broker (Sekundenlatenz)
+  s3: { bucket: kafscale-data, namespace: production }
+  topics: [tsx.windpark.observations.v2]
+checkpoint: { backend: etcd }    # am Rand: file
+nodes:
+  - id: decode
+    op: decode.avro-soe          # v2 Single-Object-Encoding; JSON (opentsx.smartmetric.v1) ebenfalls
+  - id: norm
+    op: normalize
+    in: [decode]
+    params: { mapping: catalog/windpark-iec.yaml }
+  - id: ep
+    op: episodes.fixed-duration
+    in: [norm]
+    params: { duration: PT10M, lateness: PT2M }
+  - id: stats
+    op: stats.welford-ddsketch
+    in: [ep]
+    params: { windows: [PT10M, PT1H], alpha: 0.01 }
+  - id: dq
+    op: dq.checks
+    in: [ep]
+    params: { checks: [COMPLETENESS, PLAUSIBLE_RANGE, FLATLINE, GAPS] }
+  - id: gusts
+    op: segment.extremum
+    in: [ep]
+    params: { feature: MAX, prominence: 2.0, window: PT4M, distance: PT5M }
+  - id: forecast
+    op: score.onnx
+    in: [ep, stats]
+    params: { model: "models:/windpark-power/champion", context: [weather] }
+  - id: retrain
+    op: train.trigger            # rechnet nicht, stößt an
+    in: [stats]
+    params: { when: "drift(psi) > 0.2 or every P7D", spec: models/windpark-power.yaml }
+  - id: similar
+    op: sidecar.call             # nur bei Bedarf: Java-Mustersuche
+    in: [gusts]
+    params: { endpoint: "localhost:7071", method: PatternSearch.topK, k: 5 }
+sinks:
+  - { from: stats,    topic: tsx.windpark.series-stats.v2 }
+  - { from: dq,       topic: tsx.windpark.dq.v1 }
+  - { from: gusts,    topic: tsx.windpark.episodes.v2, labels: { segmentation: gust } }
+  - { from: forecast, topic: tsx.windpark.predictions.v1 }
+  - { from: retrain,  topic: tsx.windpark.training-requests.v1 }
+```
+
+Regeln:
+
+* **Prüfung vor dem Start.** Die CI und der Prozessor prüfen den DAG vor dem Start: Operatoren müssen in der
+  Laufzeit vorhanden sein, Typen passen (Observation, Episode, Stats, Prediction), es gibt keine Zyklen. Zustand gibt
+  es nur in zustandsbehafteten Operatoren, mit Checkpoint.
+* **Hash:** Der Spezifikations-Hash geht in die Provenienz jedes Ausgabesatzes ein, wie der Plan-Hash beim Zwilling.
+* **Studio:** Der Node-Graph im Studio ist dieselbe Darstellung wie beim Zwilling. Ein Prozessor-DAG ist ein
+  Schaltplan aus Stream-Operatoren.
+
+---
+
+## 6. Operator-Katalog und Laufzeiten
+
+| Operator | Go (Kern) | Java | Python | Parität |
+|----------|-----------|------|--------|---------|
+| `decode.avro-soe`, `decode.json-smartmetric` | ja | ja (vorhanden) | ja (vorhanden) | Testvektoren vorhanden (Avro SOE) |
+| `normalize` (Katalog/Mapping) | ja | ja (Windpark-Normalizer) | – | Golden Files |
+| `episodes.fixed-duration`, `episodes.fixed-count` | ja | ja | – | Episoden-Ids deterministisch |
+| `stats.welford-ddsketch` | ja | ja (`opentsx-stats`) | ja (`opentsx.stats`) | **Sketch-Testvektor vorhanden** |
+| `dq.checks` | ja | ja | – | Golden Files |
+| `segment.threshold`, `segment.extremum` (inkrementell) | ja | ja (`opentsx-retrieval`) | – | Streaming = Batch, Testsuite vorhanden |
+| `resample` | ja | ja | – | Golden Files |
+| `score.onnx` | ja (onnxruntime über cgo) **oder** reine Go-Modelle (linear, ES, konforme Intervalle) | ja (ONNX Runtime) | Training | Toleranz statt Bytegleichheit (Fließkomma) |
+| `train.trigger` | ja | ja | – | – |
+| `twin.step` (Zwilling) | später, für Variante L | ja (`opentsx-twin`) | – | L(0) = T |
+| `pattern.search` (MASS/DTW) | nein, `sidecar.call` | ja | – | – |
+| Kausalanalyse (PCMCI, mTE) | nein | nein | ja (Batch, P8.2) | – |
+
+**Grenze des Go-Kerns:** In Go kommt, was im Strom pro Partition mit beschränktem Zustand laufen muss. Was über
+Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angestoßen oder abgefragt.
+
+---
+
+## 7. Semantik
+
+* **Lieferung:** at-least-once, wie bei den KafScale-Processors. Weil Episoden-Ids, Stats-Schlüssel und
+  Kommando-Ids **deterministisch** sind, verwerfen die Leser Duplikate. Iceberg schreibt idempotent über den
+  Schlüssel. Das ergibt **effektiv genau einmal**, ohne Transaktionen.
+* **Ordnung und Zeit:** Die Ordnung gilt je Partition. Zeit ist Ereigniszeit mit erlaubter Verspätung (`lateness`)
+  wie in P4. Verspätete Daten erzeugen eine neue Revision der Episode (`revision`) statt eines stillen Verlusts.
+* **Zustand:** Zustand haben nur Statistik, Segmentierer, Episodenbildung und Scoring (Modellversion). Er wird mit
+  dem Offset in den Checkpoint geschrieben. Ein Neustart setzt bitgleich fort; das gleiche Prinzip wie die Snapshots
+  beim Zwilling.
+* **Backfill:** Weil der Prozessor aus S3 liest, ist Backfill nur ein Lauf derselben Version über alte Segmente,
+  ohne Sonderpfad.
+
+---
+
+## 8. DevOps-Lebenszyklus
+
+| Schritt | Wie |
+|---------|-----|
+| **Entwickeln** | DAG-YAML im Repo; lokal `tsx-processor run --dag x.yaml --source file:segments/` gegen aufgezeichnete Segmente |
+| **Validieren (CI)** | Schema- und Typprüfung des DAG, Verfügbarkeit der Operatoren je Laufzeit, **Operator-Konformität Go ↔ Java** (gemeinsame Testvektoren), **Replay-Test:** aufgezeichnete Segmente → erwartete Ausgaben (Hash) |
+| **Bauen** | eine Go-Binärdatei je Architektur (amd64, arm64 für den Pi), Distroless-Image, signiert; Java-Sidecar als eigenes Image |
+| **Ausrollen** | Kubernetes per Helm (Vorlage aus KafScale), je Partition eine Lease; am Rand per systemd-Unit mit Checkpoint-Datei |
+| **Schattenbetrieb** | Die neue DAG-Version läuft parallel und schreibt in `…shadow`-Topics. Ein Vergleichsjob prüft die Abweichungen (Statistik, Vorhersagegüte) und gibt erst dann frei. |
+| **Umschalten / Zurückrollen** | Konfiguration wechseln; Offsets bleiben je Version getrennt; Rücksprung ist ein Konfigurationswechsel |
+| **Modell-Lebenszyklus** | `train.trigger` → Trainingsanfrage → Python-Job → MLflow (`challenger`) → Schattenbewertung → Alias `champion` → `model-events` → `score` lädt neu, ohne Neustart |
+| **Beobachten** | Prometheus-Metriken: Rückstand je Partition, Verarbeitungszeit je Operator, verspätete Daten, DQ-Quoten; Lineage und Version in OpenMetadata |
+| **Mandanten** | im Personal Service Layer ein Namespace je Nutzer und System (Haus, Boot, Labor), gleiche Binärdatei, eigener DAG |
+
+---
+
+## 9. Was das für die drei Szenarien heißt
+
+| Szenario | Laufzeit | DAG (Kurzform) |
+|----------|----------|----------------|
+| Energieverbund (Windpark, Elektrolyse) | Go im Cluster + Java-Sidecar (Zwilling) | Messwerte → Episoden → Statistik/DQ → Prognose → Zwilling-Schritt → Kennzahlen |
+| Haus (Erzgebirge) | Go auf einem kleinen Rechner im Haus oder zentral | Zähler/Smart Plugs/Tankstand → Episoden (1 h) → Statistik → Heizgradtage → Abgleich mit dem Hausmodell |
+| Boot (Etap 22) | **Go auf dem Raspberry Pi an Bord**, Checkpoint-Datei, lädt hoch, wenn Starlink oder Hafen-WLAN da ist | Powerstation/USB-Messer/Starlink → Episoden (5 min) → Ladezustand/Autarkie → Prognose aus Solar und Nutzungsmuster |
+
+---
+
+## 10. Entscheidungen (Vorschläge)
+
+| Nr. | Thema | Vorschlag |
+|-----|-------|-----------|
+| D25 | Stream-Laufzeit | Go-TSx-Prozessor auf Basis der KafScale-Processor-Vorlage für die Datenebene; kein Kafka Streams; Flink nur für große Joins und Fenster über viele Topics |
+| D26 | Algorithmen in Go | nur der Stream-Kern (Abschnitt 6) mit gemeinsamen Testvektoren; Mustersuche, Zwilling und Kausalanalyse bleiben in Java/Python (Sidecar oder Batch) |
+| D27 | DAG-Spezifikation | `opentsx.dag.v1` (YAML), sprachneutral, gehasht, von Go und Java gelesen; Studio bearbeitet sie |
+| D28 | Training | nie im Strom; `train.trigger` → Trainingsanfrage → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
+| D29 | Semantik | at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen statt Verwerfen |
+
+## 11. Offene Punkte
+
+* **Latenz:** Reichen Sekunden bis Minuten (nur abgeschlossene Segmente)? Sonst ist der Broker-Eingang (Kafka-Protokoll)
+  für den Go-Prozessor der Standard.
+* **ONNX in Go:** onnxruntime über cgo (größere Images, plattformabhängig) oder zunächst nur reine Go-Modelle
+  (lineare, ES, Quantilregression)? Vorschlag: zuerst reine Go-Modelle; ONNX, wenn ein Modell es braucht.
+* **Leases ohne etcd:** Am Rand (Pi, Labor-PC) gibt es kein etcd. Dort reichen eine Checkpoint-Datei und eine
+  einzige Instanz.
+* **Repository:** Lebt der Go-Prozessor in OpenTSx (`opentsx-processor-go/`) oder als Addon im KafScale-Repo?
+  Vorschlag: in OpenTSx, mit der KafScale-Vorlage als Abhängigkeit.

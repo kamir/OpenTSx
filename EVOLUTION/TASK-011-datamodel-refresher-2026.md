@@ -109,6 +109,7 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [ ] P7a: Spezifikation (YAML, versioniert) + Feature-Pipeline Java/Python mit Testvektoren; Schema v2.1 `SmartMetric`.
 - [ ] P7b: Python-Training (Kandidaten mit/ohne Kontext, zeitlicher Split, konforme Intervalle) → ONNX/JSON → MLflow (Alias `champion`).
 - [ ] P7c: Java-Scoring-Prozessor (KafScale, Checkpoint, ONNX Runtime) → Smart Metrics + Prediction-API (Java/REST).
+- [ ] P7f (Vorschlag, [`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`](../docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md)): **Go-TSx-Prozessor** auf Basis der KafScale-Processor-Vorlage (S3-Segmente, Lease je Partition) mit deklarativem DAG `opentsx.dag.v1`; Go-Stream-Kern (Dekodieren, Normalisieren, Episoden, Welford/DDSketch, DQ, inkrementelle Segmentierer, Resampling, Scoring reiner Go-Modelle, `train.trigger`) mit Go↔Java-Konformität über gemeinsame Testvektoren; Java-Sidecar für Mustersuche/Zwilling; Replay-Tests in CI; Schattenbetrieb und Umschalten; Rand-Betrieb (Pi, Labor-PC) mit Checkpoint-Datei.
 - [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
 - [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
 - [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
@@ -292,6 +293,11 @@ opentsx-twin                  Digitaler Zwilling P9: Atomvertrag MVC+P, Schaltpl
 | D21 | P9: Datenqualität | **Vorschlag:** Herkunftsleiter mit Taint-Propagation; jede KPI zeigt ihren Messanteil |
 | D22 | P9: Vorgehen | **Vorschlag:** Stufen A–D mit Wertschranken; Stufe A (Daten & Potenzial) ohne Simulation |
 | D23 | P9: Sprache | **Vorschlag:** Kern bleibt Java; Edge-Sammler dürfen Go/Rust sein; kein Kern-Neubau vor Schranke B |
+| D25 | P7f: Stream-Laufzeit | **Vorschlag:** Go-TSx-Prozessor (KafScale-Processor-Muster) für die Datenebene; kein Kafka Streams (braucht Compaction/Transaktionen); Flink nur für große Joins |
+| D26 | P7f: Algorithmen in Go | **Vorschlag:** nur der Stream-Kern mit gemeinsamen Testvektoren; Mustersuche, Zwilling, Kausalanalyse bleiben Java/Python |
+| D27 | P7f: DAG-Spezifikation | **Vorschlag:** `opentsx.dag.v1` (YAML), gehasht, von Go und Java gelesen, im Studio bearbeitbar |
+| D28 | P7f: Training | **Vorschlag:** nie im Strom; Trigger → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
+| D29 | P7f: Semantik | **Vorschlag:** at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen |
 | D24 | P9: Kosimulation | **Vorschlag:** Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
 
 > **Hinweis:** Die Phasenreihenfolge folgt der Gap-Analyse
@@ -359,6 +365,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
 
 - 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
 
