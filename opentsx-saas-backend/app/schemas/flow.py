@@ -18,7 +18,7 @@ class FlowCreate(BaseModel):
     name: str
     description: Optional[str] = None
     definition: Dict[str, Any]
-    organization_id: int
+    organization_id: Optional[int] = None  # default: the first organization of the user
     team_id: Optional[int] = None
     tags: List[str] = []
     category: Optional[str] = None

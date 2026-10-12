@@ -13,6 +13,12 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      // Retrieval server (opentsx-retrieval) for "Load episodes" in the workbench; it sends no CORS headers
+      '/retrieval': {
+        target: process.env.OPENTSX_RETRIEVAL_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/retrieval/, ''),
+      },
     },
   },
   build: {

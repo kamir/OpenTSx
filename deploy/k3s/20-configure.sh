@@ -56,7 +56,7 @@ fi
 if [[ "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
   warn "KAFSCALE_BOOTSTRAP is still the example value 192.168.1.50:9092"
 fi
-for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING; do
+for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS; do
   [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] || die "$b must be true or false"
 done
 [[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE must be online or offline"
@@ -86,6 +86,18 @@ if is_true "$LAKE"; then
   ICEBERG_PROPS="type=rest,uri=http://opentsx-iceberg-rest:8181,warehouse=s3://$S3_BUCKET/,io-impl=org.apache.iceberg.aws.s3.S3FileIO,s3.endpoint=$S3_ENDPOINT,s3.path-style-access=true,client.region=$S3_REGION"
 else
   ICEBERG_PROPS=""
+fi
+
+if is_true "$SAAS"; then
+  gen_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
+  [[ "$SAAS_ADMIN_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || die "SAAS_ADMIN_EMAIL=$SAAS_ADMIN_EMAIL is not an e-mail address"
+  [[ -n "$SAAS_DB_PASSWORD" ]] || SAAS_DB_PASSWORD="$(gen_secret 32)"
+  [[ -n "$SAAS_SECRET_KEY" ]] || SAAS_SECRET_KEY="$(gen_secret 48)"
+  [[ -n "$SAAS_ADMIN_PASSWORD" ]] || SAAS_ADMIN_PASSWORD="$(gen_secret 20)"
+  # both end up in a URL (database) and in an env file: keep them to letters and digits
+  [[ "$SAAS_DB_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || die "SAAS_DB_PASSWORD may only hold letters and digits"
+  (( ${#SAAS_SECRET_KEY} >= 32 )) || die "SAAS_SECRET_KEY needs at least 32 characters"
+  (( ${#SAAS_ADMIN_PASSWORD} >= 8 )) || die "SAAS_ADMIN_PASSWORD needs at least 8 characters"
 fi
 
 # ---- .env ----------------------------------------------------------------------------------------------------------
@@ -132,6 +144,13 @@ EOF
   true
 } > "$OVERLAY/secrets.env"
 chmod 600 "$OVERLAY/secrets.env"
+if is_true "$SAAS"; then
+  printf 'SAAS_ADMIN_EMAIL=%s\nSAAS_ADMIN_PASSWORD=%s\nSAAS_DB_PASSWORD=%s\nSAAS_SECRET_KEY=%s\n' \
+    "$SAAS_ADMIN_EMAIL" "$SAAS_ADMIN_PASSWORD" "$SAAS_DB_PASSWORD" "$SAAS_SECRET_KEY" > "$OVERLAY/saas-secrets.env"
+  chmod 600 "$OVERLAY/saas-secrets.env"
+else
+  rm -f "$OVERLAY/saas-secrets.env"
+fi
 
 resources=("namespace.yaml" "../../base")
 components=()
@@ -187,6 +206,7 @@ fi
 is_true "$MODBUS_SIM" && components+=("../../components/modbus-sim")
 is_true "$DWD_FORWARD" && components+=("../../components/dwd-forward")
 is_true "$MONITORING" && components+=("../../components/monitoring")
+is_true "$SAAS" && components+=("../../components/saas")
 is_true "$INGRESS" && components+=("../../components/ingress")
 # last: a component's patches only see the workloads added before it (base and the components above)
 if [[ "$KAFSCALE_NETWORK" == "hostnetwork" ]]; then
@@ -236,6 +256,9 @@ configMapGenerator:
 secretGenerator:
   - name: opentsx-secrets
     envs: [secrets.env]
+EOF
+  if is_true "$SAAS"; then printf '  - name: opentsx-saas-secrets\n    envs: [saas-secrets.env]\n'; fi
+  cat <<EOF
 generatorOptions:
   disableNameSuffixHash: true
 images:
@@ -244,6 +267,12 @@ images:
     newTag: "$OPENTSX_TAG"
   - name: opentsx/studio
     newName: $OPENTSX_IMAGE_REPO/studio
+    newTag: "$OPENTSX_TAG"
+  - name: opentsx/saas-frontend
+    newName: $OPENTSX_IMAGE_REPO/saas-frontend
+    newTag: "$OPENTSX_TAG"
+  - name: opentsx/saas-backend
+    newName: $OPENTSX_IMAGE_REPO/saas-backend
     newTag: "$OPENTSX_TAG"
 EOF
   overlay_patches
@@ -268,7 +297,7 @@ EOF
 info "configuration written: $ENV_FILE, $OVERLAY/"
 echo "  namespace $OPENTSX_NS | KafScale $KAFSCALE_BOOTSTRAP ($KAFSCALE_NETWORK; pods use $POD_BOOTSTRAP) | domain $OPENTSX_DOMAIN"
 echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"
-echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING"
+echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING | saas $SAAS"
 if kc version --client >/dev/null 2>&1; then
   n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY failed"
   m="$(kc kustomize "$OVERLAY/jobs" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY/jobs failed"

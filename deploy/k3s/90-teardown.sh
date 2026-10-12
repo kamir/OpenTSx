@@ -52,7 +52,7 @@ fi
 if $IMAGES; then
   have k3s || die "--images needs k3s on this host"
   info "removing images from k3s containerd"
-  for img in "$TOOLS_IMAGE" "$STUDIO_IMAGE"; do
+  for img in "$TOOLS_IMAGE" "$STUDIO_IMAGE" "$SAAS_FRONTEND_IMAGE" "$SAAS_BACKEND_IMAGE"; do
     as_root k3s ctr images rm "docker.io/$img" "$img" 2>/dev/null || true
   done
 fi

@@ -60,8 +60,8 @@ if [[ -z "$BUILDER" ]]; then
 fi
 [[ -n "$BUILDER" ]] || die "no image builder found (docker, podman, nerdctl or buildah)"
 
-build() {   # dockerfile image
-  local file="$1" image="$2"
+build() {   # dockerfile image [context]
+  local file="$1" image="$2" CTX="${3:-$CTX}"
   info "building $image with $BUILDER${OPENTSX_PLATFORM:+ for $OPENTSX_PLATFORM}"
   case "$BUILDER" in
     docker)
@@ -80,6 +80,11 @@ build() {   # dockerfile image
 }
 build "$ROOT/deploy/docker/opentsx-tools.Dockerfile" "$TOOLS_IMAGE"
 build "$ROOT/deploy/docker/studio.Dockerfile" "$STUDIO_IMAGE"
+
+if is_true "$SAAS"; then
+  build "$ROOT/deploy/docker/saas-backend.Dockerfile" "$SAAS_BACKEND_IMAGE" "$ROOT/opentsx-saas-backend"
+  build "$ROOT/deploy/docker/saas-frontend.Dockerfile" "$SAAS_FRONTEND_IMAGE" "$ROOT/opentsx-saas-frontend"
+fi
 
 info "built $TOOLS_IMAGE and $STUDIO_IMAGE"
 echo "next: deploy/k3s/11-import-images.sh   (or IMAGE_METHOD=registry / none, see --help there)"

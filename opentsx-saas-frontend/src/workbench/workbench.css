@@ -1,0 +1,661 @@
+/*
+ * Workbench look: the Nimbus panel grey and the pastel panel colours of the
+ * Swing TSOperationControlerPanel around a dark instrument screen.
+ * Everything is scoped under .wb so the rest of the app keeps its styles.
+ */
+
+.wb {
+  --panel: #d6d9df;
+  --panel-2: #e9ebef;
+  --line: #9aa0ab;
+  --line-soft: #bcc1ca;
+  --ink: #1d2126;
+  --ink-2: #4a515b;
+  --field: #ffffff;
+  --focus: #1c5fb8;
+  --sel: #39698a;
+  --g-source: #ccccff;
+  --g-tsb: #ccccff;
+  --g-transform: #ffffcc;
+  --g-univariate: #dbe7f3;
+  --g-group: #ffcccc;
+  --g-model: #ccffcc;
+  --g-stream: #c6ecea;
+  --mono: ui-monospace, Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  background: var(--panel);
+  color: var(--ink);
+  font: 13px/1.35 'Lucida Grande', 'Segoe UI', Tahoma, 'DejaVu Sans', sans-serif;
+}
+
+.wb *:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* Buttons and fields in the Nimbus manner: light gradient, fine dark edge. */
+.wb button {
+  font: inherit;
+  color: var(--ink);
+  padding: 3px 10px;
+  border: 1px solid #7d8591;
+  border-radius: 4px;
+  background: linear-gradient(#fbfbfc, #dfe2e8 55%, #cfd3db);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wb button:hover:not(:disabled) {
+  background: linear-gradient(#ffffff, #e9ecf1 55%, #d9dde5);
+}
+.wb button:active:not(:disabled) {
+  background: linear-gradient(#c3c8d1, #d8dce3);
+}
+.wb button:disabled {
+  color: #8b919b;
+  border-color: #b2b7c0;
+  cursor: default;
+}
+.wb input[type='text'],
+.wb input[type='number'],
+.wb select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid #8d94a0;
+  border-radius: 2px;
+  padding: 2px 5px;
+  min-width: 0;
+}
+.wb input[type='number'] {
+  width: 68px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.wb fieldset {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px 8px;
+  margin: 0;
+  min-width: 0;
+}
+.wb legend {
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.wb a {
+  color: #174a8c;
+  text-decoration: underline;
+}
+.wb-muted {
+  color: var(--ink-2);
+  font-size: 12px;
+  margin: 4px 0 0;
+  max-width: 70ch;
+}
+.wb-muted.pad {
+  padding: 12px;
+}
+.wb-grow,
+.wb-param.grow {
+  flex: 1;
+}
+.wb-param.grow {
+  display: flex;
+}
+.wb-param.grow input {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------- toolbar */
+
+.wb-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(#e6e8ec, #d0d4db);
+}
+.wb-toolbar h1 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 10px 0 0;
+}
+.wb-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line);
+}
+.wb-param {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.wb-remote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+}
+.wb-error {
+  padding: 6px 10px;
+  background: #ffe1dc;
+  border-bottom: 1px solid #b3392b;
+  color: #6b140b;
+}
+
+/* ---------------------------------------------------------------- layout */
+
+.wb-main {
+  grid-row: 4;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 390px;
+  gap: 5px;
+  padding: 5px;
+  min-height: 0;
+}
+.wb-center {
+  display: grid;
+  grid-template-rows: minmax(250px, 1fr) auto 210px;
+  gap: 5px;
+  min-width: 0;
+  min-height: 0;
+}
+.wb-status {
+  grid-row: 5;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 3px 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--panel-2);
+}
+
+/* ---------------------------------------------------------------- track tree */
+
+.wb-tree {
+  background: var(--field);
+  border: 1px solid var(--line);
+  overflow: auto;
+  padding: 4px 0;
+  font-size: 12px;
+}
+.wb-tree-root,
+.wb-tree-track {
+  padding: 2px 8px;
+  color: var(--ink-2);
+}
+.wb-tree-track {
+  padding-left: 16px;
+  color: var(--ink);
+}
+.wb-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wb .wb-tree li button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding-block: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb .wb-tree li button:hover {
+  background: #e4ebf3;
+}
+.wb .wb-tree li button.selected {
+  background: var(--sel);
+  color: #fff;
+}
+.wb-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #5d6470;
+  border-radius: 2px;
+}
+.wb-tag {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+.wb-dot.wb-g-source { background: var(--g-source); }
+.wb-dot.wb-g-transform { background: var(--g-transform); }
+.wb-dot.wb-g-univariate { background: var(--g-univariate); }
+.wb-dot.wb-g-group { background: var(--g-group); }
+.wb-dot.wb-g-stream { background: var(--g-stream); }
+
+/* ---------------------------------------------------------------- scope */
+
+.wb-scopewrap {
+  min-height: 0;
+  min-width: 0;
+  border: 1px solid #4c535e;
+  background: #23282e;
+  display: grid;
+}
+.wb-scope {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 236px;
+  min-height: 0;
+}
+.wb-screen {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 6px;
+  border: 2px solid #050807;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0b1513;
+}
+.wb-screen canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+.wb-knobs {
+  background: var(--panel);
+  border-left: 1px solid #4c535e;
+  padding: 5px;
+  overflow: auto;
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  font-size: 12px;
+}
+.wb-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+.wb-row output {
+  flex: 1;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: #f3f6f2;
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
+  padding: 2px 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb .wb-row button {
+  padding: 2px 7px;
+  min-width: 24px;
+}
+.wb-lbl {
+  width: 50px;
+  flex: none;
+  color: var(--ink-2);
+}
+.wb .wb-run {
+  flex: 1;
+  font-weight: 600;
+}
+.wb .wb-run.on {
+  background: linear-gradient(#d6f5d9, #9fdca6);
+  border-color: #3d7d45;
+}
+.wb .wb-wide {
+  width: 100%;
+  margin-top: 5px;
+}
+.wb-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+.wb-channels {
+  list-style: none;
+  margin: 5px 0 0;
+  padding: 0;
+  max-height: 150px;
+  overflow: auto;
+  background: #1a2023;
+  border: 1px solid #4c535e;
+  border-radius: 2px;
+}
+.wb-channels li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+}
+.wb-channels li.active {
+  background: #33414a;
+}
+.wb .wb-channels button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: #e9ece8;
+  padding: 2px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.wb-channels i {
+  flex: none;
+  width: 14px;
+  height: 3px;
+}
+.wb-readout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 10px;
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.wb-readout dt {
+  color: var(--ink-2);
+}
+.wb-readout dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.wb-readout.wide {
+  font-family: inherit;
+  font-size: 12px;
+}
+.wb-readout.wide dd {
+  text-align: left;
+}
+.wb-empty {
+  align-self: center;
+  justify-self: center;
+  max-width: 52ch;
+  padding: 24px;
+  color: #d5dbd6;
+  font-size: 14px;
+}
+.wb-empty p {
+  margin: 0 0 10px;
+}
+
+/* ---------------------------------------------------------------- tabs */
+
+.wb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  padding: 0 6px;
+}
+.wb .wb-tabs button {
+  border-radius: 5px 5px 0 0;
+  border-bottom: 0;
+  padding: 3px 11px;
+  margin-bottom: -1px;
+  background: linear-gradient(#e4e7ec, #cfd3db);
+}
+.wb .wb-tabs button[aria-selected='true'] {
+  background: linear-gradient(#5d87aa, #39698a);
+  border-color: #2b5270;
+  color: #fff;
+}
+.wb-tabpanel {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+  padding: 7px;
+  min-height: 0;
+}
+.wb-ops .wb-tabpanel {
+  min-height: 74px;
+}
+.wb-tabpanel.wb-g-tsb { background: var(--g-tsb); }
+.wb-tabpanel.wb-g-transform { background: var(--g-transform); }
+.wb-tabpanel.wb-g-univariate { background: var(--g-univariate); }
+.wb-tabpanel.wb-g-group { background: var(--g-group); }
+.wb-tabpanel.wb-g-model { background: var(--g-model); }
+.wb-tabpanel.wb-g-stream { background: var(--g-stream); }
+.wb-oprow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.wb-op {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.wb .wb-chartlabel {
+  background: #ccffcc;
+  width: 320px;
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------------- graph */
+
+.wb-graph {
+  border: 1px solid var(--line);
+  background: #eceef2;
+  min-height: 0;
+}
+.wb .react-flow__node {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 12px;
+}
+.wb-node {
+  width: 196px;
+  padding: 4px 8px 5px;
+  border: 1px solid #5d6470;
+  border-radius: 4px;
+  background: var(--panel-2);
+  text-align: left;
+}
+.wb-node.selected {
+  border-color: var(--sel);
+  box-shadow: 0 0 0 2px var(--sel);
+}
+.wb-node.wb-g-source { background: var(--g-source); }
+.wb-node.wb-g-transform { background: var(--g-transform); }
+.wb-node.wb-g-univariate { background: var(--g-univariate); }
+.wb-node.wb-g-group { background: var(--g-group); }
+.wb-node.wb-g-stream { background: var(--g-stream); }
+.wb-node-op {
+  font-weight: 600;
+}
+.wb-node-label,
+.wb-node-sink {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb-node-sink {
+  margin-top: 3px;
+  padding-top: 2px;
+  border-top: 1px dashed #5d6470;
+  color: #0d4f55;
+}
+.wb .react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: #39698a;
+}
+.wb .react-flow__controls button {
+  padding: 4px;
+  border-radius: 0;
+}
+
+/* ---------------------------------------------------------------- inspector */
+
+.wb-inspector {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+.wb-inspector .wb-tabpanel {
+  overflow: auto;
+}
+.wb .wb-inspector .wb-tabs button {
+  padding-inline: 8px;
+}
+.wb .wb-row input[type='number'] {
+  flex: 1;
+  width: 0;
+}
+.wb-props {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.wb-code-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.wb-code pre,
+.wb-note {
+  margin: 0;
+  padding: 8px;
+  background: var(--field);
+  border: 1px solid var(--line-soft);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  overflow: auto;
+  white-space: pre;
+}
+.wb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--field);
+}
+.wb-table th,
+.wb-table td {
+  border: 1px solid var(--line-soft);
+  padding: 2px 5px;
+  text-align: right;
+  white-space: nowrap;
+}
+.wb-table th {
+  background: var(--panel);
+  font-family: inherit;
+  font-weight: 600;
+}
+.wb-table td:first-child,
+.wb-table th:first-child {
+  text-align: left;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-sinks,
+.wb-findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.wb-sinks li {
+  display: grid;
+  gap: 2px;
+}
+.wb-sinks code {
+  font-family: var(--mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.wb-findings li {
+  padding: 4px 7px;
+  border-left: 4px solid var(--line);
+  background: var(--field);
+  font-size: 12px;
+}
+.wb-findings li.error { border-color: #b3392b; }
+.wb-findings li.warning { border-color: #b98300; }
+.wb-findings li.ok { border-color: #3d7d45; }
+.wb .wb-primary {
+  background: linear-gradient(#5d87aa, #39698a);
+  border-color: #2b5270;
+  color: #fff;
+  padding: 5px 12px;
+  justify-self: start;
+}
+.wb .wb-primary:hover:not(:disabled) {
+  background: linear-gradient(#6b96ba, #437595);
+}
+.wb .wb-primary:disabled {
+  background: #aeb6bf;
+  color: #eef0f3;
+}
+.wb .wb-danger {
+  justify-self: start;
+  color: #7a1c12;
+}
+
+@media (max-width: 1180px) {
+  .wb {
+    height: auto;
+    min-height: 100vh;
+  }
+  .wb-main {
+    grid-template-columns: 1fr;
+  }
+  .wb-center {
+    grid-template-rows: 420px auto 240px;
+  }
+  .wb-tree {
+    max-height: 180px;
+  }
+}
+@media (max-width: 700px) {
+  .wb-scope {
+    grid-template-columns: 1fr;
+    grid-template-rows: 300px auto;
+  }
+  .wb-center {
+    grid-template-rows: auto auto 240px;
+  }
+  .wb-status span:last-child {
+    display: none;
+  }
+}

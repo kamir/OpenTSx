@@ -42,9 +42,9 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Get user ID from token
-    user_id: Optional[int] = payload.get("sub")
-    if user_id is None:
+    # Get user ID from token. A refresh token is not an access token.
+    user_id = payload.get("sub")
+    if user_id is None or payload.get("type") == "refresh" or not str(user_id).isdigit():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# shellcheck disable=SC2034  # ROOT, TOOLS_IMAGE, STUDIO_IMAGE, colours are used by the sourcing scripts
+# shellcheck disable=SC2034  # ROOT, TOOLS_IMAGE, STUDIO_IMAGE, SAAS_*_IMAGE, colours are used by the sourcing scripts
 # Shared helpers for the deploy/k3s scripts. Sourced, not executed.
 
 K3S_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -27,7 +27,8 @@ have() { command -v "$1" >/dev/null 2>&1; }
 CONFIG_KEYS=(OPENTSX_NS KUBECTL STORAGE_CLASS KAFSCALE_BOOTSTRAP KAFSCALE_NETWORK OPENTSX_DOMAIN OPENTSX_PARTITIONS
   OPENTSX_IMAGE_REPO OPENTSX_TAG OPENTSX_PLATFORM IMAGE_METHOD LAKE LAKE_MINIO S3_ENDPOINT S3_BUCKET S3_REGION
   S3_ACCESS_KEY S3_SECRET_KEY OM_URL OPENMETADATA_JWT INGRESS
-  DWD_FORWARD DWD_STATIONS DWD_SCHEDULE DWD_MODE MODBUS_SIM MODBUS_HOST MODBUS_PORT MODBUS_MAP MONITORING)
+  DWD_FORWARD DWD_STATIONS DWD_SCHEDULE DWD_MODE MODBUS_SIM MODBUS_HOST MODBUS_PORT MODBUS_MAP MONITORING
+  SAAS SAAS_ADMIN_EMAIL SAAS_DB_PASSWORD SAAS_SECRET_KEY SAAS_ADMIN_PASSWORD)
 
 # Loads env.example defaults, then .env. Variables already set in the environment win over both.
 load_env() {
@@ -45,6 +46,8 @@ load_env() {
   for k in "${!from_env[@]}"; do printf -v "$k" '%s' "${from_env[$k]}"; done
   TOOLS_IMAGE="$OPENTSX_IMAGE_REPO/tools:$OPENTSX_TAG"
   STUDIO_IMAGE="$OPENTSX_IMAGE_REPO/studio:$OPENTSX_TAG"
+  SAAS_FRONTEND_IMAGE="$OPENTSX_IMAGE_REPO/saas-frontend:$OPENTSX_TAG"
+  SAAS_BACKEND_IMAGE="$OPENTSX_IMAGE_REPO/saas-backend:$OPENTSX_TAG"
 }
 
 # kubectl as configured (KUBECTL may be "sudo k3s kubectl").

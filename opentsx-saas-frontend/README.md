@@ -98,6 +98,15 @@ frontend/
 - Node connections
 - Save flow to backend
 
+#### Workbench (`/workbench`)
+- The Swing bucket analyser in the browser; computes locally and needs no account
+- Load a bucket: sample, CSV/TSV file, episode JSON, or episodes from the retrieval server
+  (dev proxy `/retrieval`, target `OPENTSX_RETRIEVAL_URL`, default `http://localhost:8080`)
+- Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
+- Time series operations as buttons, recorded as a processing flow graph
+- Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
+- Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`
+
 ### State Management
 
 **Auth Store (Zustand):**
