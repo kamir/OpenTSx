@@ -96,7 +96,7 @@ jobs:
           repository: KafScale/platform
           ref: ${{ env.KAFSCALE_REF }}
           path: kafscale
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: kafscale/go.mod
           cache-dependency-path: kafscale/go.sum
