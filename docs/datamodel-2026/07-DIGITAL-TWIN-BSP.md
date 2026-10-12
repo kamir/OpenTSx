@@ -388,6 +388,10 @@ H2-Abnehmer, Elektrolyseur, Batterie, Bilanzknoten, H2-Leitung, Direktvermarkter
 läuft auf synthetischen Daten (`bin/opentsx twin`). Offen: Variante L, Avro-Schemas je Atomtyp, KafScale-Binding,
 WEA/Wake/Wetter/Zähler-Atome, Optimierer (P8.4), echte Daten.
 
+*Siehe auch:* [08-HAUS-ZWILLING](08-HAUS-ZWILLING.md) überträgt die Methode (Atomvertrag, drei Betriebsarten,
+Herkunftsleiter, Stufen A–D, Alternative − Referenz) auf ein Einfamilienhaus mit Öl-Holz-Heizung, inklusive
+Kalibrierung an Abrechnungen (P9.7).
+
 ## 10. Forschungsfrage: eng vs. lose gekoppelte Zwillinge (Paper-Skizze)
 
 **Arbeitstitel:** *Digital Twins on Logs – Synchronization Semantics from Bulk-Synchronous to Loosely Coupled Smart

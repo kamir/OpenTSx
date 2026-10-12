@@ -10,6 +10,7 @@ module classpath and caches it in `<module>/target/classpath.txt`.
 | `metadata` | `org.opentsx.openmetadata.WindparkMetadata` | `--scenario <yaml>` (required), `--om <url>/api --token <jwt>` or `--dry-run <dir>`, `--catalog`, `--domain`, `--namespace`, `--partitions`, `--kafscale <bootstrap> --profile-window PT1H --dq-window PT10M` |
 | `retrieval-server` | `org.opentsx.retrieval.server.RetrievalServer` | `--port <n>`, `--iceberg k=v,... --namespace <ns>` or `--demo true` |
 | `twin` | `org.opentsx.twin.demo.H2ChainDemo` | `[--plan file.yaml]`; runs scenario S1 in shadow, what-if and forecast mode and prints events and KPIs |
+| `house` | `org.opentsx.twin.demo.HouseDemo` | `[--plan file.yaml] [--calibrate bills.csv [--weather temps.csv]] [--hdd-ref Kd]`; house twin: reference year in shadow mode, KPIs and every efficiency lever as what-if (alternative minus reference); `--calibrate` first fits the plan to bills (template `twin/abrechnungen-vorlage.csv`, keep real bills in `config/private/`) |
 | `classpath <module>` | — | prints the runtime classpath, e.g. for your own `java -cp` calls |
 
 Other scripts in `bin/`:

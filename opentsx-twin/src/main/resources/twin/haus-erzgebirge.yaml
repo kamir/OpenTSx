@@ -1,0 +1,77 @@
+# House twin (P9.7): single-family house in the Erzgebirge, two residents, oil boiler + wood stove, no PV, no heat pump.
+# ALL NUMBERS ARE INVENTED EXAMPLE ASSUMPTIONS until they are calibrated against real bills
+# (bin/opentsx house --calibrate config/private/abrechnungen.csv). Concept: docs/datamodel-2026/08-HAUS-ZWILLING.md
+#
+# One year in hourly supersteps. Start = local midnight 2025-01-01 (Europe/Berlin = UTC+1 in winter).
+twin: haus-erzgebirge
+start: 2024-12-31T23:00:00Z
+baseStep: PT1H
+steps: 8760
+atoms:
+  # synthetic climate, about 650 m altitude (assumption); bind t_out_meas_c to use DWD station data instead
+  - id: weather
+    type: weather
+    params: { meanC: 7.0, seasonAmpC: 9.0, dailyAmpC: 5.0, seed: 7, latitude: 50.6, longitude: 13.0 }
+  # 2 persons, about 40 l hot water per person and day at 45 °C, 150-l cylinder at 60 °C
+  - id: dhw
+    type: dhw
+    params: { persons: 2, litresPerPersonDay: 40, tUseC: 45, tColdC: 10, storeLossW: 60, tStoreC: 60, scale: 1.0 }
+  # inventory with typical powers; hours are local time, "a-b" = from a:00 to b:00
+  - id: appliances
+    type: appliances
+    params:
+      scale: 1.0
+      persons: 2
+      personW: 80
+      homeWeekday: ["0-7", "16-24"]
+      homeWeekend: ["0-24"]
+      inventory:
+        - { name: kuehlschrank, avgW: 25 }
+        - { name: gefriertruhe, avgW: 45, inside: false }          # older chest freezer in the cellar
+        - { name: herd, w: 1300, weekday: ["18-19"], weekend: ["12-13"] }
+        - { name: tv-wohnzimmer, w: 100, standbyW: 0.5, weekday: ["19-23"], weekend: ["15-23"] }
+        - { name: tv-schlafzimmer, w: 70, standbyW: 3, weekday: ["22-23"], weekend: ["21-23"] }
+        - { name: tv-kueche, w: 40, standbyW: 2, weekday: ["6-7", "18-19"], weekend: ["8-10"] }
+        - { name: radio, w: 6, standbyW: 2, weekday: ["6-8"], weekend: ["8-12"] }
+        - { name: beleuchtung, w: 140, seasonal: 0.6, weekday: ["6-7", "17-23"], weekend: ["7-9", "17-23"] }
+        - { name: waschmaschine, w: 900, weekend: ["10-11"] }
+        - { name: kleingeraete, w: 150, standbyW: 12, weekday: ["7-8", "18-21"], weekend: ["8-12", "18-21"] }
+        - { name: router, avgW: 10 }
+  # wood stove in the living room: 4 h per evening in the heating season, spruce about 1500 kWh/Ster
+  - id: stove
+    type: wood-stove
+    params: { fuelKw: 6, eta: 0.70, hoursPerDay: 4, endH: 22, kwhPerSter: 1500 }
+  # oil boiler (low-temperature boiler, 1990s), single-stage burner, uncontrolled circulation pump
+  - id: boiler
+    type: oil-boiler
+    params: { ratedKw: 18, eta: 0.90, minLoad: 0.35, cyclingLoss: 0.15, standbyKw: 0.2, burnerW: 120, pumpW: 65, kwhPerLitre: 10.0 }
+  # 1978 house, windows 2005, top-floor ceiling insulated 2012, walls not insulated; 130 m2 heated
+  - id: building
+    type: building
+    params: { areaM2: 130, lossWPerK: 200, capacityKwhPerK: 14, solarApertureM2: 4, heatingLimitC: 15,
+              setpointC: 21, setbackK: 3, dayStartH: 6, dayEndH: 22, unusedShare: 0.2, unusedSetbackK: 0,
+              t0C: 20, tAvg0C: 0 }
+  - id: meter
+    type: meter
+    params: { priceEurKwh: 0.36, baseFromH: 2, baseToH: 5 }
+  - id: tank
+    type: oil-tank
+    params: { capacityL: 4000, level0L: 1500, reorderL: 600, priceEurL: 1.00 }
+  - id: woodstore
+    type: wood-store
+    params: { stock0Ster: 4, lowSter: 1, priceEurSter: 90 }
+wiring:
+  - weather.t_out_c -> building.t_out_c
+  - weather.ghi_w_m2 -> building.ghi_w_m2
+  - building.q_req_kw -> boiler.q_req_kw          # thermostat request, previous superstep
+  - building.season -> boiler.season
+  - building.season -> stove.season
+  - dhw.q_dhw_kw -> boiler.q_dhw_kw
+  - tank.level_l -> boiler.tank_level_l            # empty tank stops the boiler, previous superstep
+  - boiler.q_space_kw -> building.q_heater_kw
+  - stove.q_heat_kw -> building.q_stove_kw
+  - appliances.q_gain_kw -> building.q_gain_kw
+  - appliances.p_el_kw -> meter.p_appl_kw
+  - boiler.p_el_kw -> meter.p_heating_kw
+  - boiler.fuel_lph -> tank.fuel_lph
+  - stove.wood_ster_ph -> woodstore.wood_ster_ph
