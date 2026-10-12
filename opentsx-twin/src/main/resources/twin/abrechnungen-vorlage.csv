@@ -1,0 +1,17 @@
+# VORLAGE - alle Werte sind ERFUNDENE BEISPIELE. Echte Daten NICHT hier eintragen, sondern in
+# config/private/abrechnungen.csv (per .gitignore vom Commit ausgeschlossen) und dann:
+#   bin/opentsx house --calibrate config/private/abrechnungen.csv [--weather config/private/tagesmittel.csv]
+# Eine Zeile = ein Zeitraum (Datum von/bis jeweils einschliesslich). Leere Zellen = unbekannt.
+#   strom_kwh         Verbrauch laut Stromabrechnung oder Zaehlerablesung im Zeitraum
+#   heizoel_liter     im Zeitraum GELIEFERTE Liter (0, wenn nur der Tank abgelesen wurde)
+#   tank_start_liter  Tankstand am Anfang des Zeitraums (Peilstab/Anzeige), wenn bekannt
+#   tank_ende_liter   Tankstand am Ende des Zeitraums, wenn bekannt -> Verbrauch = Lieferung + Start - Ende
+#   holz_ster         im Zeitraum VERBRANNTES Holz in Ster (Raummeter); Holzart bitte in notiz
+#   kosten_eur        optional, wird nur angezeigt
+# Trennzeichen ',' mit Dezimalpunkt oder ';' mit Dezimalkomma (Excel-Export); Datum 2024-01-31 oder 31.01.2024.
+zeitraum_von,zeitraum_bis,strom_kwh,heizoel_liter,tank_start_liter,tank_ende_liter,holz_ster,kosten_eur,notiz
+2023-01-01,2023-12-31,2950,,,,,1062,BEISPIEL erfunden: Stromjahresabrechnung 2023
+2024-01-01,2024-12-31,2880,,,,,1037,BEISPIEL erfunden: Stromjahresabrechnung 2024
+2023-01-01,2023-12-31,,2200,1500,1650,5,2550,BEISPIEL erfunden: Heizoel 2023 (eine Lieferung) + Tankstand Jahresanfang/-ende; Fichte
+2024-01-01,2024-06-30,,0,1650,520,3,,BEISPIEL erfunden: nur Tank abgelesen (Halbjahr); Holz Winter
+2024-07-01,2024-12-31,,1800,520,1390,2,1890,BEISPIEL erfunden: Lieferung im September + Tankstand Jahresende

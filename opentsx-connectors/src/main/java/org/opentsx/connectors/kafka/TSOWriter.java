@@ -62,6 +62,12 @@ public class TSOWriter{
 
 
 
+    /**
+     * Never implemented (it only logs). Use the v2 path instead: {@code org.opentsx.bridge.LegacyBridge}
+     * (or {@code LegacyBucketImport} for TSBucket files) to create episodes and
+     * {@code org.opentsx.kafka.BucketWriter} to store them.
+     */
+    @Deprecated
     public static void persistBucket_Kafka(Vector<TimeSeriesObject> show, String title, String topicname) {
 
         int ANZ = show.size();

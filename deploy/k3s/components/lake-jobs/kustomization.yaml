@@ -1,0 +1,30 @@
+# Lake profile for the demo Jobs: windpark-sim also writes the episodes to the Iceberg catalog.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Job
+      name: opentsx-windpark-sim
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --iceberg
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: $(ICEBERG_PROPS)
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --namespace
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: $(ICEBERG_NAMESPACE)
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: ICEBERG_PROPS
+          valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_PROPS}}
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: ICEBERG_NAMESPACE
+          valueFrom: {configMapKeyRef: {name: opentsx-config, key: ICEBERG_NAMESPACE}}

@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenTSx Roadmap-Infografik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column for the brief, wide panels for the composition sketch and the content tables; visual language borrowed from wiring diagrams (thin lines, terminals, labels). */
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --ink: #17202a;
+  --muted: #56616c;
+  --line: #c9d0cf;
+  --accent: #0d5c63;      /* deep teal: wiring/ink */
+  --signal: #b5651d;      /* amber: the twin, the one highlight */
+  --done: #2f6f3e;
+  --planned: #6a5a9a;
+  --proposal: #8a6d1f;
+  --chip-bg: #eceeea;
+  --font-display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --surface: #1a2126; --ink: #e6ebe8; --muted: #9aa6ad; --line: #34404a;
+    --accent: #5fb7bd; --signal: #e39a52; --done: #79c08a; --planned: #ab9be0; --proposal: #d6b55a; --chip-bg: #232c33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --surface: #1a2126; --ink: #e6ebe8; --muted: #9aa6ad; --line: #34404a;
+  --accent: #5fb7bd; --signal: #e39a52; --done: #79c08a; --planned: #ab9be0; --proposal: #d6b55a; --chip-bg: #232c33;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: grid; gap: 48px; }
+.col { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.5rem; font-weight: 700; display: flex; gap: 12px; align-items: baseline; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+h2 .term { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); font-weight: 500; letter-spacing: 0.04em; }
+p { margin: 0; }
+section { display: grid; gap: 16px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.15rem; color: var(--ink); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); }
+.thesis { border-left: 3px solid var(--signal); padding-left: 16px; font-size: 1.2rem; font-weight: 600; }
+ul, ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 0.75rem; padding: 1px 8px; border-radius: 3px; background: var(--chip-bg); white-space: nowrap; }
+.chip::before { content: ""; width: 9px; height: 9px; display: inline-block; }
+.s-done { color: var(--done); } .s-done::before { background: var(--done); border-radius: 50%; }
+.s-designed { color: var(--planned); } .s-designed::before { border: 2px solid var(--planned); border-radius: 50%; }
+.s-planned { color: var(--muted); } .s-planned::before { border: 2px dashed var(--muted); border-radius: 50%; }
+.s-proposal { color: var(--proposal); } .s-proposal::before { border: 2px solid var(--proposal); transform: rotate(45deg); }
+.s-core { color: var(--signal); font-weight: 500; } .s-core::before { background: var(--signal); transform: rotate(45deg); }
+.s-research { color: var(--accent); } .s-research::before { border: 2px dotted var(--accent); }
+.table-box { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td.id { font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
+tr.core td { background: color-mix(in srgb, var(--signal) 9%, transparent); }
+/* composition sketch */
+.sketch { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 20px; display: grid; gap: 10px; font-family: var(--font-mono); font-size: 0.8rem; }
+.layer { border: 1px solid var(--line); padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; position: relative; }
+.layer b { font-family: var(--font-display); font-size: 0.95rem; color: var(--ink); min-width: 9em; }
+.layer.twin { border: 2px solid var(--signal); padding: 18px; }
+.layer.twin b { color: var(--signal); font-size: 1.15rem; }
+.layer.base { border-style: solid; border-color: var(--done); }
+.layer.mid { border-style: dashed; }
+.wire { height: 14px; border-left: 2px solid var(--accent); margin-left: 32px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.grid2 > * { min-width: 0; }
+.panel { border: 1px solid var(--line); background: var(--surface); padding: 16px; border-radius: 4px; display: grid; gap: 10px; align-content: start; }
+.matrix { display: grid; grid-template-columns: auto 1fr 1fr; border: 1px solid var(--line); font-size: 0.86rem; }
+.matrix > div { padding: 8px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
+.matrix .h { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.matrix .ok { color: var(--signal); font-weight: 600; }
+.chain { display: grid; gap: 0; counter-reset: c; }
+.chain li { list-style: none; position: relative; padding: 6px 0 6px 28px; border-left: 2px solid var(--accent); margin-left: 8px; }
+.chain li::before { counter-increment: c; content: counter(c); position: absolute; left: -11px; top: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); font-family: var(--font-mono); font-size: 0.7rem; display: grid; place-items: center; }
+.chain { padding: 0; }
+.dont li::marker { content: "✕  "; color: var(--signal); }
+.do li::marker { content: "✓  "; color: var(--done); }
+code { font-family: var(--font-mono); font-size: 0.86em; background: var(--chip-bg); padding: 0 4px; border-radius: 3px; }
+.small { font-size: 0.88rem; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 520px) { .matrix { grid-template-columns: 1fr; } .layer b { min-width: 0; width: 100%; } }
+.views { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.views > * { min-width: 0; }
+.view-tag { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.formula { font-family: var(--font-mono); font-size: 0.95rem; border: 1px dashed var(--accent); padding: 12px 14px; background: var(--surface); }
+.note { border-left: 3px solid var(--proposal); padding: 4px 0 4px 14px; font-size: 0.92rem; }
+.layer.p8 { border-style: solid; border-color: var(--accent); }
+.layer.p8 b { color: var(--accent); }
+.changed { font-family: var(--font-mono); font-size: 0.72rem; color: var(--proposal); border: 1px solid var(--proposal); border-radius: 3px; padding: 0 6px; margin-left: 8px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="col" style="display:grid;gap:14px">
+  <div class="eyebrow">Briefing · Infografik · Fassung 2</div>
+  <h1>OpenTSx Roadmap-Infografik</h1>
+  <p class="lede">Auftrag: Visualisiere die Roadmap der Open-Source-Plattform OpenTSx in <strong>zwei aufeinander abgestimmten Infografiken</strong>. Sicht A erklärt, was gebaut wird und wie. Sicht B erklärt, warum und für wen.</p>
+  <div class="meta"><span>Stand 2026-10-12, Fassung 2</span><span>Sprache der Grafik: Deutsch (englische Variante optional)</span><span>Quelle: Roadmap TASK-011 im Repository</span></div>
+  <p class="note">Die in diesem Briefing gezeigten Darstellungen sind Kompositions- und Inhaltsentwürfe. Sie ersetzen weder die Gestaltungsregeln noch die Lieferformate weiter unten.</p>
+</header>
+
+<section class="col">
+  <h2>Was sich gegenüber Fassung 1 ändert</h2>
+  <ol>
+    <li>Zwei komplementäre Sichten statt einer Grafik.</li>
+    <li>P8 heißt jetzt <strong>Zusammenspiel &amp; Koordinationspotenzial</strong> und ist inhaltlich geschärft.</li>
+    <li>P8 wird für beide Sichten getrennt ausformuliert: technisch und aus Nutzensicht.</li>
+    <li>Die Brücke von P8 zu P9 ist ausdrücklich beschrieben.</li>
+    <li>Die Entscheidung D20 (Varianten T und L) und das Forschungspaket P9.6 sind präzise übernommen.</li>
+    <li>Gestaltungsregeln und Lieferumfang bleiben und gelten für beide Sichten.</li>
+  </ol>
+</section>
+
+<section class="col">
+  <h2>Kernbotschaft</h2>
+  <p class="thesis">Von Zeitreihen zum Digitalen Zwilling, in dem Entscheidungen kausal durchschlagen. Gebaut auf einer Datenplattform, die schon steht.</p>
+  <p>Drei Aussagen müssen beide Grafiken transportieren, in dieser Gewichtung:</p>
+  <ol>
+    <li><strong>Der Digitale Zwilling (P9) ist die Essenz.</strong> Er ist das größte Element und der einzige Bereich mit Signalfarbe. Das gilt auch, wenn P8 jetzt mehr Inhalt bekommt.</li>
+    <li><strong>Das Fundament steht.</strong> Sechs Phasen (P0–P5) sind fertig und getestet.</li>
+    <li><strong>Der Weg ist gestuft.</strong> Jede Stufe liefert für sich Nutzen und endet an einer sichtbaren Entscheidung, ob es weitergeht.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Zwei komplementäre Sichten</h2>
+    <p>Beide Sichten zeigen dieselbe Roadmap, dieselben Statusangaben und dieselbe Architektur. Sie unterscheiden sich nur in Erklärungstiefe und Perspektive. Wer beide nebeneinanderlegt, muss dieselbe Struktur wiedererkennen.</p>
+  </div>
+  <div class="views">
+    <div class="panel">
+      <div class="view-tag">Sicht A</div>
+      <h3>„Was und wie?“</h3>
+      <p><strong>Für:</strong> Entwickler, Mathematiker, Ingenieure.</p>
+      <p><strong>Zeigt:</strong> Fähigkeiten, Modelle, Methoden, Schnittstellen und Prüfkriterien.</p>
+      <p><strong>Vorrang in der A3-Fassung:</strong> Matrix der Betriebsarten, H₂-Kausalkette, Bausteine, Prüfkriterien.</p>
+    </div>
+    <div class="panel">
+      <div class="view-tag">Sicht B</div>
+      <h3>„Warum und für wen?“</h3>
+      <p><strong>Für:</strong> Anlagenbetreiber, Energieabnehmer, Direktvermarkter, Netzbetreiber, Projektpartner.</p>
+      <p><strong>Zeigt:</strong> das gemeinsame Betriebsproblem, den Nutzen je Beteiligtem und die Entscheidungen, die dadurch besser werden.</p>
+      <p><strong>Vorrang in der A3-Fassung:</strong> Kooperationsproblem, Beteiligte, Entscheidungsnutzen.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Gemeinsame Komposition <span class="term">für beide Sichten, Skizze</span></h2>
+    <p>Fundament P0–P5 unten, P6–P8 in der Mitte, P9 oben. Bildsprache aus Schaltplänen: <em>Die Bauteile sind Standard, die Verschaltung ist je Anlage individuell.</em> P8 bekommt mehr fachliche Klarheit, bleibt aber gestalterisch Teil der Mitte und verdrängt P9 nicht.</p>
+  </div>
+  <div class="sketch" aria-label="Kompositionsskizze">
+    <div class="layer twin"><b>P9 Digitaler Zwilling</b><span>3 Betriebsarten × 2 Varianten (T, L)</span><span>· Bausteine · H₂-Kausalkette</span><span>· Stufen A→D</span><span>· P9.6 Forschung</span></div>
+    <div class="wire"></div>
+    <div class="layer p8"><b>P8 Zusammenspiel &amp; Koordinationspotenzial</b><span>Abhängigkeiten und Handlungsspielräume → beziffertes Koordinationspotenzial</span></div>
+    <div class="layer mid"><b>P7 Smart Topics</b><span>gelernte Prognosen, Schätzer für fehlende Daten</span><span>· P7e Personal Service Layer</span></div>
+    <div class="layer mid"><b>P6 Analytik</b><span>Alignment · Lückenfüllung · Strukturbrüche · Spektren</span></div>
+    <div class="wire"></div>
+    <div class="layer base"><b>Fundament P0–P5</b><span>Datenmodell · Speicher &amp; Replay · Stores · Windpark-Domäne · Statistik &amp; Metadaten · Retrieval</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Inhalt: Phasen <span class="term">für beide Sichten gleich</span></h2>
+    <p>Die Kurztitel und Status sind in beiden Sichten identisch. Die Zeile „Worum es geht“ ist der längste Text, der pro Phase erscheinen darf.</p>
+  </div>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>Phase</th><th>Kurztitel</th><th>Worum es geht</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="id">P0</td><td>Fundament</td><td>Moderne Java-Basis, automatische Tests, Altlasten archiviert</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P1</td><td>Datenmodell v2</td><td>Ein Zeitreihenformat, in Java und Python bytegleich</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P2</td><td>Speichern &amp; Abspielen</td><td>Zeitreihen günstig im Datenstrom ablegen und exakt wieder abspielen</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P3</td><td>Speicher &amp; Windpark</td><td>Data-Lake-Tabellen, Zeitreihen-DB; Windpark-Katalog, Datenaufbereitung, Simulator</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P4</td><td>Statistik &amp; Metadaten</td><td>Laufende Statistik, Datenqualität, Metadatenkatalog</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P5</td><td>Suchen &amp; Finden</td><td>Abschnitte bilden, Muster suchen, Abfrage-Schnittstelle</td><td><span class="chip s-done">fertig</span></td></tr>
+        <tr><td class="id">P6</td><td>Analytik</td><td>Reihen ausrichten, Lücken füllen, Strukturbrüche, Spektren</td><td><span class="chip s-planned">geplant</span></td></tr>
+        <tr><td class="id">P7</td><td>Smart Topics</td><td>Datenströme, die selbst lernen und Prognosen liefern; Wissen über Anlagen hinweg teilen, ohne Rohdaten zu bewegen</td><td><span class="chip s-designed">entworfen</span></td></tr>
+        <tr><td class="id">P7e</td><td>Personal Service Layer</td><td>Bedienoberfläche für die eigenen Datenströme und den Zwilling</td><td><span class="chip s-proposal">Vorschlag</span></td></tr>
+        <tr><td class="id">P8</td><td>Zusammenspiel &amp; Koordinationspotenzial<span class="changed">neu</span></td><td>Was verlieren wir durch getrennte Betriebsführung, und was gewinnen wir durch abgestimmtes Handeln? Quantenrechner nur als Experiment.</td><td><span class="chip s-designed">Konzept</span></td></tr>
+        <tr class="core"><td class="id">P9</td><td>Digitaler Zwilling</td><td>Ausführbares Anlagenmodell des Energieverbunds, in dem Entscheidungen kausal durchschlagen und Gegenmaßnahmen geprüft werden</td><td><span class="chip s-core">Kern</span></td></tr>
+        <tr class="core"><td class="id">P9.6</td><td>Forschung „Digital Twins on Logs“</td><td>Wie genau, robust und wiederholbar ist die lose gekoppelte Ausführung?</td><td><span class="chip s-research">Forschung</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small col">Abhängigkeiten für Pfeile: P6 → P7 → P9; P8 → P9; P7e bedient P7, P8 und P9. Das Fundament trägt alles. Der Wake-Graph-Export ist ein vorgemerkter Nebenpunkt niedriger Priorität und erscheint nicht in der Hauptansicht.</p>
+</section>
+
+<section class="col">
+  <h2>P8 · Zusammenspiel &amp; Koordinationspotenzial <span class="changed">neu</span></h2>
+  <p class="thesis" style="border-color:var(--accent)">„Was verlieren wir durch getrennte Betriebsführung, und was gewinnen wir durch abgestimmtes Handeln?“</p>
+  <p>Gemeint ist das gemeinsame Optimum des lokalen Energieverbunds. Windpark, Batterie, Elektrolyseur, Energieabnehmer und Vermarktung werden nicht isoliert betrachtet. P8 schafft datenbasierte Klarheit, auf deren Grundlage die Beteiligten kooperieren können: Bedarfe, Kapazitäten, Einschränkungen und Zusagen werden nachvollziehbar.</p>
+  <p><strong>Einzubeziehen sind:</strong></p>
+  <ul>
+    <li>Wetter und Erzeugungsprognosen</li>
+    <li>Strompreise und Vermarktungsfahrpläne</li>
+    <li>Wasserstoffbedarf und Abnahmeverpflichtungen</li>
+    <li>Speicherstände, Kapazitäten und technische Betriebsgrenzen</li>
+    <li>Netzrestriktionen</li>
+    <li>Ackerarbeit, Fledermausabschaltungen und weitere Betriebsvorgaben</li>
+  </ul>
+</section>
+
+<section class="views">
+  <div class="panel">
+    <div class="view-tag">P8 in Sicht A · technisch</div>
+    <h3>Was entsteht?</h3>
+    <p>Ein überprüfbares Modell der Abhängigkeiten und Handlungsspielräume sowie eine bezifferte Koordinationslücke.</p>
+    <h3>Wie entsteht es?</h3>
+    <ol>
+      <li>Zeitreihen, Ereignisse, Fahrpläne und Kontextinformationen zusammenführen.</li>
+      <li>Zeitverzögerte Abhängigkeiten und Betriebsregime identifizieren.</li>
+      <li>Gefundene Zusammenhänge mit physischer Topologie, Bilanzen und Fachwissen abgleichen.</li>
+      <li>Dynamik, Stellgrößen und Nebenbedingungen modellieren.</li>
+      <li>Koordinierte Fahrweisen berechnen und mit dem Referenzbetrieb vergleichen.</li>
+      <li>Ergebnisse auf getrennten Zeiträumen und Szenarien prüfen.</li>
+    </ol>
+    <p class="note">Statistische Abhängigkeit ist zunächst eine Hypothese, kein Kausalitätsnachweis. Diese Aussage gehört sichtbar in die Grafik.</p>
+    <h3>Bewertungsprinzip</h3>
+    <p class="formula">Koordinationspotenzial = Ergebnis der koordinierten Alternative − Ergebnis des Referenzbetriebs</p>
+    <p class="small">Der Vergleich verwendet dieselben Randbedingungen und nur die Informationen, die zum Entscheidungszeitpunkt verfügbar waren. Ein Vergleich mit perfekter Zukunftskenntnis ist ausdrücklich als theoretische Obergrenze zu kennzeichnen.</p>
+    <h3>Mögliche Ergebnisgrößen</h3>
+    <ul>
+      <li>Deckungsbeitrag</li>
+      <li>vermeidbare Abregelung</li>
+      <li>Wasserstoff-Bedarfsdeckung</li>
+      <li>Speicherbeanspruchung</li>
+      <li>Nutzen und Mehrkosten je Beteiligtem</li>
+    </ul>
+    <h3>Lieferobjekte</h3>
+    <p>Abhängigkeitsmodell, Nebenbedingungen, Referenzbetrieb, Vergleichsszenarien und ein Potenzialbericht mit Annahmen, Unsicherheiten und Sensitivitäten.</p>
+    <p class="note">Konkrete Verfahren und Prüfungen (z. B. Signifikanztests, kausale Bestätigung, Optimierungsverfahren) sind Methodenvorschläge. Sie erscheinen erst nach fachlicher Abstimmung als verbindlicher Roadmap-Inhalt; bis dahin höchstens klein und als „Vorschlag“ beschriftet.</p>
+  </div>
+  <div class="panel">
+    <div class="view-tag">P8 in Sicht B · Nutzen</div>
+    <h3>Welche Fragen werden beantwortet?</h3>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Rolle</th><th>Frage</th></tr></thead>
+        <tbody>
+          <tr><td>Windparkbetreiber</td><td>Wann vermarkten, speichern oder lokal bereitstellen?</td></tr>
+          <tr><td>Elektrolyseurbetreiber und H₂-Abnehmer</td><td>Welche Fahrweise erfüllt den tatsächlichen und den vereinbarten Bedarf?</td></tr>
+          <tr><td>Batteriespeicherbetreiber</td><td>Wann lohnt sich Laden oder Entladen für den Verbund?</td></tr>
+          <tr><td>Direktvermarkter</td><td>Welche Mengen und Fahrpläne müssen angepasst werden?</td></tr>
+          <tr><td>Netzbetreiber</td><td>Welche Fahrweisen sind am Anschluss zulässig?</td></tr>
+          <tr><td>Projektpartner und Forschung</td><td>Sind Nutzen und Modellannahmen belastbar und übertragbar?</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Kooperation braucht Transparenz</h3>
+    <ul>
+      <li>Wer stellt welche Daten bereit?</li>
+      <li>Wer entscheidet und verantwortet Änderungen?</li>
+      <li>Wer profitiert?</li>
+      <li>Wer trägt zusätzlichen Aufwand, Kosten und Risiken?</li>
+    </ul>
+    <p class="note">Modelliertes Potenzial und tatsächlich nachgewiesener Mehrerlös bleiben klar getrennt, in Text und Gestaltung (z. B. unterschiedliche Linienart oder Beschriftung „modelliert“ / „nachgewiesen“).</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Brücke von P8 zu P9</h2>
+  <ul>
+    <li><strong>P8</strong> identifiziert Abhängigkeiten und beziffert das Koordinationspotenzial.</li>
+    <li><strong>P9</strong> macht daraus einen ausführbaren Digitalen Zwilling, in dem Entscheidungen kausal durchschlagen und Gegenmaßnahmen geprüft werden.</li>
+  </ul>
+  <p>Gestalterisch ist das eine Verdrahtung von P8 nach oben in P9. Der Zwilling bleibt das größte Element und der einzige Bereich mit Signalfarbe.</p>
+</section>
+
+<section>
+  <div class="col" style="display:grid;gap:12px">
+    <h2>Detailbereich Digitaler Zwilling</h2>
+    <p>In Sicht A haben Matrix, Kausalkette, Bausteine und Prüfkriterien Vorrang. In Sicht B genügen Matrix (vereinfacht), Kausalkette und Stufen.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>1 · Drei Betriebsarten × zwei Varianten</h3>
+      <p class="small">Alle sechs Felder sind der vorgesehene Zielumfang.</p>
+      <div class="matrix" role="table" aria-label="Betriebsarten und Varianten">
+        <div class="h">Betriebsart</div><div class="h">T · eng</div><div class="h">L · lose</div>
+        <div><strong>Schatten</strong><br><span class="small">Live-Daten, Zwilling schätzt den Rest</span></div><div class="ok">✓</div><div class="ok">✓</div>
+        <div><strong>Was-wäre-wenn</strong><br><span class="small">Vergangenheit mit anderen Entscheidungen</span></div><div class="ok">✓</div><div class="ok">✓</div>
+        <div><strong>Prognose &amp; Optimierung</strong><br><span class="small">Vorausschau, Vorschläge zur Fahrweise</span></div><div class="ok">✓</div><div class="ok">✓</div>
+      </div>
+      <p class="small"><strong>Entschieden (D20):</strong> T und L sind gleichrangige Ausführungsvarianten.</p>
+      <ul class="small">
+        <li><strong>T:</strong> eng gekoppelt, ein Prozess, Referenzausführung.</li>
+        <li><strong>L:</strong> lose gekoppelt, Abstimmung über Datenzeitstempel, konfigurierbarer zulässiger Rückstand; Bausteine können bei unterschiedlichen Eigentümern laufen.</li>
+        <li>Derselbe Bausteincode läuft in beiden Varianten.</li>
+        <li>Verbindlicher Prüftest: L ohne erlaubte Verzögerung liefert bitgenau dasselbe Ergebnis wie T.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>2 · Kausalkette als Mini-Geschichte</h3>
+      <ol class="chain">
+        <li>Der Wasserstoff-Abnehmer schließt den Schieber.</li>
+        <li>Der Druck in der Leitung steigt. Der Puffer reicht noch etwa eine Stunde.</li>
+        <li>Der Elektrolyseur muss abregeln.</li>
+        <li>Sein Fahrplan wird verletzt.</li>
+        <li>Der Direktvermarkter muss mehr Strom am Markt verkaufen.</li>
+      </ol>
+      <p class="small">Pointe: Der Zwilling warnt bei Schritt 2 und zeigt, was eine Gegenmaßnahme bewirkt.</p>
+    </div>
+    <div class="panel">
+      <h3>3 · Bausteine des Zwillings</h3>
+      <ul>
+        <li><strong>Wind:</strong> Windenergieanlage, Nachlauf zwischen Anlagen, Parkregler</li>
+        <li><strong>Messen &amp; Bilanz:</strong> Wetter, Zähler, Bilanzknoten, Eigenverbraucher</li>
+        <li><strong>Speicher &amp; Wasserstoff:</strong> Batterie, Elektrolyseur, H₂-Leitung, H₂-Abnehmer</li>
+        <li><strong>Markt &amp; Steuerung:</strong> Strommarkt, Direktvermarkter, Mensch am Steuer, Optimierer</li>
+        <li><strong>Betriebsvorgaben:</strong> Netzrestriktionen, Ackerarbeit, Fledermausabschaltungen</li>
+      </ul>
+      <p class="small">Jedes Bauteil hat dieselbe Anatomie: Zustand, Anzeigen, Verhalten und eine austauschbare Fahrweise (Fahrplan, Mensch oder Optimierer).</p>
+    </div>
+    <div class="panel">
+      <h3>4 · Stufen mit Entscheidungspunkten</h3>
+      <ol>
+        <li><strong>A · Daten &amp; Potenzial:</strong> Daten anschließen, Mehrwert grob abschätzen. Ohne Simulation.</li>
+        <li><strong>B · Schattenbetrieb:</strong> Zwilling läuft mit, vergleicht Plan und Wirklichkeit.</li>
+        <li><strong>C · Ursache &amp; Wirkung:</strong> Kausalketten mit echten Betriebsdaten bestätigen.</li>
+        <li><strong>D · Optimierung:</strong> Bessere Fahrweise vorschlagen und Mehrerlös belegen.</li>
+      </ol>
+      <p class="small">Nach jeder Stufe ein sichtbares Tor: weiter oder anhalten.</p>
+    </div>
+    <div class="panel">
+      <h3>5 · Prüfkriterien <span class="term">nur Sicht A</span></h3>
+      <ul>
+        <li>Wiederholbarkeit: gleicher Plan, gleiche Eingänge, gleiche Eingriffe → bitgleicher Lauf.</li>
+        <li>Prüftest L(0) = T, bitgenau.</li>
+        <li>Bilanzen geschlossen: Leistung am Anschluss und Wasserstoffmasse in der Leitung.</li>
+        <li>Kausalkette S1 in der richtigen Reihenfolge, mit Zeitstempeln.</li>
+        <li>Jede Kennzahl zeigt, wie viel davon gemessen und wie viel geschätzt ist.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>6 · P9.6 Forschung „Digital Twins on Logs“</h3>
+      <p class="small">Die Wahl zwischen T und L ist <strong>nicht</strong> offen. Offen sind die Forschungsfragen:</p>
+      <ul>
+        <li>Fehlerschranken bei erlaubter Verzögerung</li>
+        <li>Erhaltung von Bilanzgrößen</li>
+        <li>Reihenfolge von Ursache und Wirkung</li>
+        <li>Wiederholbarkeit ohne Transaktionen in KafScale</li>
+        <li>Kosten und Ausfallsicherheit</li>
+        <li>Umsetzung aller drei Betriebsarten in L</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Bildsprache <span class="term">beide Sichten</span></h2>
+  <ul>
+    <li><strong>Status über Form und Beschriftung,</strong> zusätzlich Farbe:
+      <span class="chip s-done">fertig: gefüllter Kreis</span>
+      <span class="chip s-designed">entworfen/Konzept: Kreis</span>
+      <span class="chip s-planned">geplant: gestrichelt</span>
+      <span class="chip s-proposal">Vorschlag: Raute</span>
+      <span class="chip s-core">Kern: gefüllte Raute</span>
+      <span class="chip s-research">Forschung: gepunktet</span>.
+      Die Farben dieser Seite sind ein Vorschlag, keine Vorgabe.</li>
+    <li><strong>Ein Akzent:</strong> Nur der Zwilling bekommt die Signalfarbe.</li>
+    <li><strong>Schaltplan-Anmutung:</strong> Standardbausteine, individuelle Verschaltung. Keine Fotos, keine 3D-Renderings.</li>
+    <li><strong>Lesbarkeit:</strong> Auf einer Folie aus 5 m Entfernung lesbar. Maximal 12 Wörter pro Textblock in der Hauptansicht.</li>
+    <li>Ein festes OpenTSx-Branding existiert nicht. Schriften und Palette sind frei, solange sie technisch und ruhig wirken und in beiden Sichten gleich sind.</li>
+  </ul>
+</section>
+
+<section class="grid2">
+  <div class="panel">
+    <h3>Bitte so</h3>
+    <ul class="do">
+      <li>Phasen als Sequenz zeigen, ohne Kalenderdaten.</li>
+      <li>„Stand 2026-10-12“ klein auf beide Grafiken.</li>
+      <li>Partner nur als Rollen: Windparkbetreiber, Elektrolyseurbetreiber, H₂-Abnehmer, Speicherbetreiber, Direktvermarkter, Netzbetreiber.</li>
+      <li>Quantenrechner ausschließlich als „Experiment“.</li>
+      <li>„Modelliert“ und „nachgewiesen“ sichtbar unterscheiden.</li>
+      <li>Übertragbarkeit andeuten: derselbe Bausatz, anderer Schaltplan, weitere Parks.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <h3>Bitte nicht</h3>
+    <ul class="dont">
+      <li>Keine Terminzusagen, keine Geldbeträge, keine unbelegten Nutzenversprechen.</li>
+      <li>Keine Personen-, Firmen- oder Projektnamen von Partnern, keine Förderangaben.</li>
+      <li>Methodenvorschläge zu P8 nicht als verbindlich darstellen.</li>
+      <li>Keine KI-Klischees: Gehirne, Roboter, leuchtende Netze.</li>
+      <li>Kein Fachjargon in Sicht B (Avro, KafScale, Iceberg, BSP). In Sicht A nur im Kleingedruckten.</li>
+      <li>Den Wake-Graph-Export nicht hervorheben.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Lieferumfang <span class="term">je Sicht</span></h2>
+  <p>Die HTML-Entwürfe liegen als editierbare Diskussionsgrundlage vor. Ausstehend ist die Reinzeichnung beider Sichten:</p>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>Format</th><th>Sicht A</th><th>Sicht B</th></tr></thead>
+      <tbody>
+        <tr><td>A3 quer, Vektor (PDF/SVG)</td><td>Matrix, H₂-Kausalkette, Bausteine, Prüfkriterien</td><td>Kooperationsproblem, Beteiligte, Entscheidungsnutzen</td></tr>
+        <tr><td>16:9-Folie (PNG + Vektor)</td><td colspan="2">reduzierte Fassung: Ebenen-Stapel plus Matrix (A) bzw. Beteiligte (B)</td></tr>
+        <tr><td>README-Bild (PNG, ca. 1600 px)</td><td colspan="2">je Sicht eines, hell und dunkel oder neutral</td></tr>
+        <tr><td>Quelldateien, editierbar</td><td colspan="2">damit Statuswechsel später ohne Neuauftrag möglich sind</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Die nächsten Entwürfe setzen diese Fassung um und halten die ursprüngliche visuelle Hierarchie wieder konsequent ein: Fundament unten, Mitte P6–P8, Zwilling oben und am größten.</p>
+</section>
+
+<section class="col">
+  <h2>Kleines Glossar</h2>
+  <div class="table-box">
+    <table>
+      <tbody>
+        <tr><td><strong>Zeitreihe</strong></td><td>Messwerte über die Zeit, z. B. Windgeschwindigkeit jede Sekunde.</td></tr>
+        <tr><td><strong>Smart Topic</strong></td><td>Ein Datenstrom, der aus anderen Strömen lernt und Prognosen liefert.</td></tr>
+        <tr><td><strong>Referenzbetrieb</strong></td><td>Die heutige, getrennte Betriebsführung, gegen die verglichen wird.</td></tr>
+        <tr><td><strong>Koordinationspotenzial</strong></td><td>Ergebnis einer abgestimmten Fahrweise minus Ergebnis des Referenzbetriebs, unter denselben Bedingungen.</td></tr>
+        <tr><td><strong>Digitaler Zwilling</strong></td><td>Rechenmodell der realen Anlage. Eine Entscheidung im Modell verändert alle betroffenen Zahlen so, wie es in der Wirklichkeit passieren würde.</td></tr>
+        <tr><td><strong>Baustein (Atom)</strong></td><td>Kleinstes Element des Zwillings, z. B. ein Elektrolyseur oder ein Zähler.</td></tr>
+        <tr><td><strong>Schaltplan</strong></td><td>Beschreibung, welche Bausteine wie verbunden sind. Je Anlage individuell.</td></tr>
+        <tr><td><strong>T / L</strong></td><td>Eng gekoppelt (ein Programm im Gleichtakt) oder lose gekoppelt (verteilte Teile, die über Datenströme zusammenarbeiten).</td></tr>
+        <tr><td><strong>Entscheidungspunkt</strong></td><td>Ende einer Stufe: Lohnt sich der nächste Schritt?</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="col small">
+  Grundlage: Roadmap <code>EVOLUTION/TASK-011-datamodel-refresher-2026.md</code> und Konzepte <code>docs/datamodel-2026/05</code> bis <code>07</code> im OpenTSx-Repository. Rückfragen zum Inhalt an das OpenTSx-Team.
+</footer>
+
+</div>
+</body>
+</html>

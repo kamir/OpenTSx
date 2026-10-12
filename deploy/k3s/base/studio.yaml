@@ -1,0 +1,55 @@
+# Smart Topics Studio: the static page generated at image build time (studio.Dockerfile), served by nginx.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-studio
+  labels:
+    app.kubernetes.io/name: opentsx-studio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-studio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-studio
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: studio
+          image: opentsx/studio
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 200m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-studio
+  labels:
+    app.kubernetes.io/name: opentsx-studio
+spec:
+  selector:
+    app.kubernetes.io/name: opentsx-studio
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

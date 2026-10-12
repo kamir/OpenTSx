@@ -91,8 +91,7 @@ build_pdf() {
   (cd "$dir" && "$BOOK_CMD" pdf . "$out")
 }
 
-build_pdf "$PROJECT_ROOT/docs/manual" "$OUT_DIR/OpenTSx-Manual.pdf"
-build_pdf "$PROJECT_ROOT/docs/onboarding" "$OUT_DIR/OpenTSx-Onboarding.pdf"
+build_pdf "$PROJECT_ROOT/docs/user-manual" "$OUT_DIR/OpenTSx-User-Manual.pdf"
 build_pdf "$PROJECT_ROOT/docs/devguide" "$OUT_DIR/OpenTSx-DevGuide.pdf"
 
 echo "[INFO] PDFs written to $OUT_DIR"

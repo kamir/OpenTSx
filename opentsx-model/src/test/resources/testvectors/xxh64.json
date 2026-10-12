@@ -1,0 +1,30 @@
+[
+  {
+    "input": "",
+    "hex": "ef46db3751d8e999"
+  },
+  {
+    "input": "a",
+    "hex": "d24ec4f1a98c6e5b"
+  },
+  {
+    "input": "abc",
+    "hex": "44bc2cf5ad770999"
+  },
+  {
+    "input": "0123456789abcdef0123456789abcdef",
+    "hex": "642a94958e71e6c5"
+  },
+  {
+    "input": "The quick brown fox jumps over the lazy dog",
+    "hex": "0b242d361fda71bc"
+  },
+  {
+    "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "hex": "92f0de5a88a3c094"
+  },
+  {
+    "input": "Windpark Ostsee — Turbine Ü7",
+    "hex": "fc287b200f861b49"
+  }
+]

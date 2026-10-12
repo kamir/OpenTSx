@@ -1,0 +1,70 @@
+# Streaming statistics processor (org.opentsx.stats.StatsProcessorApp) on KafScale.
+# Exactly ONE replica, strategy Recreate: the processor assigns all partitions manually (KafScale consumer groups
+# are unreliable) and keeps positions + engine state in a checkpoint file. Two instances would double the output and
+# fight over the checkpoint. It reads tsx.<domain>.episodes.v2 and writes tsx.<domain>.series-stats.v2.
+# Partitions are discovered at start: if the topics did not exist yet, restart it after provisioning
+# (40-demo.sh does this after windpark-sim / topics).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-stats
+  labels:
+    app.kubernetes.io/name: opentsx-stats
+    opentsx.org/kafka: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-stats
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-stats
+        opentsx.org/kafka: "true"
+    spec:
+      terminationGracePeriodSeconds: 90   # the shutdown hook waits up to 60 s for the final checkpoint
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: stats
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - stats
+            - --kafscale
+            - $(KAFSCALE_BOOTSTRAP)
+            - --domain
+            - $(OPENTSX_DOMAIN)
+            - --checkpoint
+            - /state/stats.ckpt
+            - --windows
+            - $(STATS_WINDOWS)
+            - --lateness
+            - $(STATS_LATENESS)
+          env:
+            - name: KAFSCALE_BOOTSTRAP
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+            - name: OPENTSX_DOMAIN
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+            - name: STATS_WINDOWS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: STATS_WINDOWS}}
+            - name: STATS_LATENESS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: STATS_LATENESS}}
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: state
+              mountPath: /state
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: opentsx-stats-state

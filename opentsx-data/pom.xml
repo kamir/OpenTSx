@@ -10,9 +10,16 @@
   <artifactId>opentsx-data</artifactId>
   <dependencies>
     <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
     </dependency>
   </dependencies>
   <build>
@@ -20,7 +27,9 @@
       <plugin>
         <groupId>org.apache.avro</groupId>
         <artifactId>avro-maven-plugin</artifactId>
-        <version>${avro.version}</version>
+        <!-- frozen v1 model: Avro >= 1.12 rejects the duplicate definition of org.opentsx.data.model.Event
+             (see README.md); the generated classes run on the current Avro runtime -->
+        <version>1.11.4</version>
         <executions>
           <execution>
             <phase>generate-sources</phase>

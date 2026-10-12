@@ -1,3 +1,5 @@
+> **Legacy (2.x).** These exercises use the 2.x `TimeSeriesObject` API from `opentsx-core`. For the current data model and tools, see the [user manual](../docs/user-manual/README.md).
+
 # OpenTSx Exercises
 
 Welcome to the OpenTSx hands-on exercises! This directory contains structured exercises designed to help you master the OpenTSx framework through practical, real-world examples.

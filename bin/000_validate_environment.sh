@@ -104,14 +104,14 @@ if command -v java &> /dev/null; then
         JAVA_MAJOR=$(echo "$JAVA_VERSION" | cut -d'.' -f2)
     fi
 
-    if [[ "$JAVA_MAJOR" -ge 8 ]]; then
+    if [[ "$JAVA_MAJOR" -ge 17 ]]; then
         check_pass "Java $JAVA_VERSION installed"
     else
-        check_fail "Java version too old: $JAVA_VERSION (need 8+)"
+        check_fail "Java version too old: $JAVA_VERSION (need 17+)"
     fi
 else
     check_fail "Java not found in PATH"
-    echo "   Install Java 8+ from: https://adoptium.net/"
+    echo "   Install Java 17+ (Temurin) from: https://adoptium.net/"
 fi
 
 # Check JAVA_HOME
@@ -367,7 +367,7 @@ else
     echo
     echo "Please fix the failed checks above before proceeding."
     echo "Common fixes:"
-    echo "  • Install Java 8+: https://adoptium.net/"
+    echo "  • Install Java 17+ (Temurin): https://adoptium.net/"
     echo "  • Install Maven 3.6+: https://maven.apache.org/"
     echo "  • Install Git: https://git-scm.com/"
     echo

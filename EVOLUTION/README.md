@@ -14,33 +14,17 @@ Where:
 
 ## Current Tasks
 
-### Active Tasks
+| Task ID | Title | Status | Created |
+|---------|-------|--------|---------|
+| TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | P0–P5 done, P6/P7 planned | 2026-10-09 |
+| TASK-010 | [Open-source readiness](TASK-010.md): LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, link checker | partly done (CI, README, link check) | 2025-12 |
+| TASK-005 | [Processing flow descriptor](TASK-005-processing-flow-descriptor.md) (Flink `DynamicTopologyJob`) | concept valid, not continued | 2025-12-21 |
 
-| Task ID | Title | Status | Priority | Created |
-|---------|-------|--------|----------|---------|
-| TASK-001 | Onboarding Infrastructure Development | ✅ Completed | High | 2025-12-20 |
-| TASK-PYTHON | Python Feature Parity Implementation | ✅ Completed | High | 2025-12-21 |
-| TASK-005 | Processing Flow Descriptor & Flink Integration | 🚧 In Review | High | 2025-12-21 |
-| TASK-007 | TSx Track Polyglot Notebooks | 🚧 In Progress | Medium | 2025-12-21 |
+## Archived Tasks
 
-### Completed Tasks
-
-| Task ID | Title | Completed | Duration | Deliverables |
-|---------|-------|-----------|----------|--------------|
-| TASK-001 | Onboarding Infrastructure Development | 2025-12-20 | ~74 hours | 6 demo files, GitBook manual, Docker setup, 21 exercises, validation framework |
-| TASK-PYTHON | Python Feature Parity Implementation | 2025-12-21 | ~8 hours | Complete MFDFA, Event Sync, RIS, Python onboarding path |
-
-### Planned Tasks
-
-| Task ID | Title | Status | Priority |
-|---------|-------|--------|----------|
-| TASK-002 | Marketing & Promotion | Planned | Medium |
-| TASK-003 | Flink Integration (Advanced) | Planned | Medium |
-| TASK-004 | Strengthen Onboarding Tracks | Completed | High |
-| TASK-005 | Processing Flow Descriptor | Completed | High |
-| TASK-006 | Pilot Program | Planned | Medium |
-| TASK-007 | TSx Track Polyglot Notebooks | In Progress | Medium |
-| TASK-STATS | Statistical Tools Suite (Python) | Planned | Low |
+`archive/` holds the completed or superseded tasks: TASK-001 to TASK-004, TASK-005-PROGRESS, TASK-006, TASK-007,
+`T-B-DECIDED.md`, and the `DECISIONS/` folder. TASK-002/003/006/007 were not continued. The 2026 plan (TASK-011)
+supersedes them; the Flink upgrade is part of TASK-011.
 
 ## Task Lifecycle
 
@@ -92,27 +76,10 @@ When creating a new task, use this structure:
 
 ## Related Documentation
 
-### Onboarding Paths
-- [Software Engineer Track (Java)](../docs/onboarding/ONBOARDING-PATH-SWE.md)
-- [Time Series Expert Track (Java)](../docs/onboarding/ONBOARDING-PATH-TSx.md)
-- [Python Developer Track](../docs/onboarding/ONBOARDING-PATH-Python.md) ⭐ NEW
-- [Flink Integration Track](../docs/onboarding/ONBOARDING-PATH-Flink.md)
-
-### Implementation Guides
-- [Feature Comparison: Java vs Python](../FEATURE_COMPARISON_JAVA_PYTHON.md) ⭐ NEW
-- [Interoperability Guide](../INTEROPERABILITY_GUIDE.md) ⭐ NEW
-- [Implementation Summary](../IMPLEMENTATION_SUMMARY.md) ⭐ NEW
-
-### Project Documentation
 - [Main README](../README.md)
-- [Architecture](../ARCHITECTURE.md)
-- [Architecture](../ARCHITECTURE.md)
-- [Python Implementation Design](../PYTHON-IMPLEMENTATION-DESIGN.md)
-- [To-Be-Decided (Decisions Log)](T-B-DECIDED.md) ⭐ NEW
-
-## Decisions & Proposals
-
-- [TSx Track Polyglot Notebooks (TASK-007)](DECISION-TSx-Track-Polyglot-Notebooks.md)
+- [User manual](../docs/user-manual/README.md)
+- [Design documents 2026](../docs/datamodel-2026/) (German)
+- Archived 2025 material: [onboarding tracks, guides, decisions](../archive/docs/README.md), [archived tasks](archive/)
 
 ## Contributing
 

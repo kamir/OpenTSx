@@ -1,0 +1,66 @@
+# Publishes the metadata pool to OpenMetadata (OM_URL in the config, OPENMETADATA_JWT in the Secret opentsx-secrets) including the latest statistics from KafScale.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-metadata-publish
+  labels:
+    opentsx.org/demo: metadata-publish
+    opentsx.org/kafka: "true"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: metadata-publish
+        opentsx.org/kafka: "true"
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: metadata-publish
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - metadata
+            - --scenario
+            - $(OPENTSX_SCENARIO)
+            - --domain
+            - $(OPENTSX_DOMAIN)
+            - --om
+            - $(OM_URL)
+            - --kafscale
+            - $(KAFSCALE_BOOTSTRAP)
+          env:
+            - name: OPENTSX_SCENARIO
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
+            - name: OPENTSX_DOMAIN
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+            - name: OM_URL
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OM_URL}}
+            - name: KAFSCALE_BOOTSTRAP
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args>
+              value: ""
+          envFrom:
+            - secretRef:
+                name: opentsx-secrets
+                optional: true
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

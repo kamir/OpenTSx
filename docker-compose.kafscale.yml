@@ -1,0 +1,71 @@
+# KafScale (Kafka-protocol broker on S3) for local development and the OpenTSx conformance suite.
+#
+#   docker compose -f docker-compose.kafscale.yml up -d
+#   KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-kafscale-conformance test
+#
+# Services: etcd (metadata, consumer groups), MinIO (segment storage, console :9001), KafScale broker (:9092).
+# Images are pinned; override KAFSCALE_TAG to test another KafScale release.
+#
+# KafScale differs from Apache Kafka in ways OpenTSx depends on - see
+# docs/datamodel-2026/03-GAP-ANALYSE.md §5 and opentsx-kafscale-conformance/README.md.
+
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.12
+    command:
+      - etcd
+      - --name=etcd0
+      - --data-dir=/etcd-data
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - etcd-data:/etcd-data
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-09-22T00-33-43Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - minio-data:/data
+
+  kafscale-broker:
+    image: ghcr.io/kafscale/kafscale-broker:${KAFSCALE_TAG:-v1.6.0}
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      KAFSCALE_BROKER_ID: "0"
+      KAFSCALE_BROKER_ADDR: ":9092"
+      # advertised host: clients on the docker host connect via localhost
+      KAFSCALE_BROKER_HOST: "${KAFSCALE_ADVERTISED_HOST:-localhost}"
+      KAFSCALE_BROKER_PORT: "9092"
+      KAFSCALE_ETCD_ENDPOINTS: "http://etcd:2379"
+      KAFSCALE_S3_BUCKET: "opentsx"
+      KAFSCALE_S3_REGION: "us-east-1"
+      KAFSCALE_S3_ENDPOINT: "http://minio:9000"
+      KAFSCALE_S3_ACCESS_KEY: "minioadmin"
+      KAFSCALE_S3_SECRET_KEY: "minioadmin"
+      KAFSCALE_S3_PATH_STYLE: "true"
+    ports:
+      - "9092:9092"
+
+volumes:
+  etcd-data:
+  minio-data:

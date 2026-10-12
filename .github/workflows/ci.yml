@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: [master, "opentsx/**", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java:
+    name: Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["17", "21"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - name: Build and test
+        run: mvn -B -ntp verify
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: python-package
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: python-package/pyproject.toml
+      - name: Install
+        run: python -m pip install -e . pytest
+      - name: Test
+        run: python -m pytest -q
+      - name: Documentation links
+        if: matrix.python == '3.12'
+        working-directory: .
+        run: python tools/check_links.py
+
+  deploy:
+    name: k3s scripts and manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax and shellcheck
+        run: |
+          for f in deploy/k3s/*.sh deploy/docker/*.sh; do bash -n "$f"; done
+          command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
+          shellcheck --version
+          shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/docker/*.sh
+      - name: Render the kustomize overlays (default, hostnetwork, service, lake)
+        run: |
+          kubectl version --client
+          for cfg in "KAFSCALE_BOOTSTRAP=10.0.0.5:9092" \
+                     "KAFSCALE_BOOTSTRAP=localhost:9092 KAFSCALE_NETWORK=hostnetwork" \
+                     "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 KAFSCALE_NETWORK=service" \
+                     "KAFSCALE_BOOTSTRAP=10.0.0.5:9092 LAKE=true INGRESS=true"; do
+            rm -f deploy/k3s/.env
+            deploy/k3s/20-configure.sh $cfg
+          done
+
+  kafscale-conformance:
+    name: KafScale conformance
+    runs-on: ubuntu-latest
+    env:
+      KAFSCALE_REF: v1.6.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/checkout@v4
+        with:
+          repository: KafScale/platform
+          ref: ${{ env.KAFSCALE_REF }}
+          path: kafscale
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: kafscale/go.mod
+          cache-dependency-path: kafscale/go.sum
+      - name: Build KafScale broker
+        working-directory: kafscale
+        run: go build -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
+      - name: Start KafScale broker (in-memory S3 and metadata)
+        run: |
+          KAFSCALE_USE_MEMORY_S3=1 KAFSCALE_BROKER_ID=0 \
+          KAFSCALE_BROKER_ADDR=127.0.0.1:39092 KAFSCALE_BROKER_HOST=127.0.0.1 KAFSCALE_BROKER_PORT=39092 \
+            nohup "$RUNNER_TEMP/kafscale-broker" > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
+          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/39092) 2>/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/kafscale-broker.log"; exit 1
+      - name: Run conformance suite, episode-log, wind-farm and statistics integration tests
+        env:
+          KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
+        run: mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-windpark,opentsx-stats -am test
+      - name: Capability report
+        if: always()
+        run: |
+          echo '### KafScale capabilities (${{ env.KAFSCALE_REF }})' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -v '^#' opentsx-kafscale-conformance/target/kafscale-capabilities.properties >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kafscale-capabilities
+          path: |
+            opentsx-kafscale-conformance/target/kafscale-capabilities.properties
+            opentsx-kafscale-conformance/target/surefire-reports/
+            opentsx-kafka-v2/target/surefire-reports/
+            opentsx-windpark/target/surefire-reports/
+            opentsx-stats/target/surefire-reports/
+
+  cross-language:
+    name: Java -> Iceberg -> Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python-package/pyproject.toml
+      - name: Java writes the store-contract fixture to an Iceberg warehouse
+        env:
+          OPENTSX_EXPORT_DIR: ${{ runner.temp }}/iceberg-export
+        run: mvn -B -ntp -pl opentsx-store-iceberg -am test -Dtest=IcebergExportForPythonTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Python reads it with PyIceberg and must reproduce the same bytes
+        working-directory: python-package
+        env:
+          OPENTSX_EXPORT_DIR: ${{ runner.temp }}/iceberg-export
+        run: |
+          python -m pip install -e ".[iceberg]" pytest
+          python -m pytest -q tests/test_iceberg_interop.py
+      - name: Java retrieval server (demo store) answers the Python client
+        run: |
+          mvn -B -ntp -q -pl opentsx-retrieval -am install -DskipTests
+          mvn -B -ntp -q -pl opentsx-retrieval dependency:build-classpath -Dmdep.outputFile=cp.txt
+          nohup java -cp "opentsx-retrieval/target/classes:$(cat opentsx-retrieval/cp.txt)" \
+            org.opentsx.retrieval.server.RetrievalServer --port 18080 --demo true > retrieval-server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:18080/v1/health && break; sleep 1; done
+          cd python-package && OPENTSX_RETRIEVAL_URL=http://127.0.0.1:18080 python -m pytest -q tests/test_retrieval_client.py
