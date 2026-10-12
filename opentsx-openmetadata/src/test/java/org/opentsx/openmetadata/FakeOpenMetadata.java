@@ -293,13 +293,21 @@ final class FakeOpenMetadata implements AutoCloseable {
                 p -> factory.getSchema(SchemaLocation.of("classpath:json/schema/" + p)));
         // columnProfile.min/max are oneOf [number, integer]; in JSON Schema an integral number such as 0.0 matches
         // both. The server deserializes into POJOs (no schema validation) and accepts it, so this ambiguity is ignored.
+        // Matched on the keyword, not on the message: getMessage() is localised, so a message-text filter silently
+        // stops matching on any non-English JVM (de, fr, ja ...) and the ignored ambiguity resurfaces as a failure.
         List<ValidationMessage> errors = schema.validate(body).stream()
-                .filter(m -> !(m.getMessage().contains("2 are valid with indexes '0, 1'")
-                        && m.getInstanceLocation().toString().matches(".*columnProfile\\[\\d+]\\.(min|max)$")))
+                .filter(m -> !("oneOf".equals(m.getType())
+                        && m.getInstanceLocation().toString().matches(".*columnProfile\\[\\d+]\\.(min|max)$")
+                        && isIntegralNumber(m.getInstanceNode())))
                 .toList();
         if (!errors.isEmpty()) {
             throw new Violation(schemaPath + ": " + errors);
         }
+    }
+
+    /** True for a number whose value is integral, i.e. exactly the value that matches both "number" and "integer". */
+    private static boolean isIntegralNumber(JsonNode n) {
+        return n != null && n.isNumber() && n.canConvertToExactIntegral();
     }
 
     private static void reply(HttpExchange ex, int status, String body) throws IOException {
