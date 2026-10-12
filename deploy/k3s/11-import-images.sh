@@ -37,6 +37,7 @@ done
 load_env
 METHOD="${METHOD:-$IMAGE_METHOD}"
 IMAGES=("$TOOLS_IMAGE" "$STUDIO_IMAGE")
+if is_true "$SAAS_FRONTEND"; then IMAGES+=("$SAAS_FRONTEND_IMAGE"); fi
 
 saver() {   # first available of docker/podman
   if have docker && docker info >/dev/null 2>&1; then echo docker

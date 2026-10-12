@@ -9,6 +9,12 @@ entries are grouped by date. The detailed progress log (German) is in
 ## [Unreleased]
 
 ### Added
+- Web workbench in `opentsx-saas-frontend` (route `/workbench`): the Swing bucket analyser in the browser. Load a
+  bucket (sample, CSV/TSV, episode JSON, retrieval server), apply the time series operations, inspect every result
+  on an oscilloscope view (time base, vertical scale, cursors, trigger, measurements), build the processing flow as
+  a graph and export it as `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor or Java code. See
+  [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the limits: no runtime executes
+  the DAG yet.
 - `LICENSE` (Apache License 2.0, full text) and `NOTICE`.
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (reporting via GitHub private
   vulnerability reporting), this changelog.

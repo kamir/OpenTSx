@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import FlowBuilder from './pages/FlowBuilder';
+import Workbench from './pages/Workbench';
 
 /**
  * Protected route wrapper that requires authentication
@@ -101,6 +102,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* The workbench computes in the browser and needs no account */}
+        <Route path="/workbench" element={<Workbench />} />
 
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

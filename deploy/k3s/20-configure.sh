@@ -56,7 +56,7 @@ fi
 if [[ "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
   warn "KAFSCALE_BOOTSTRAP is still the example value 192.168.1.50:9092"
 fi
-for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING; do
+for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS_FRONTEND; do
   [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] || die "$b must be true or false"
 done
 [[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE must be online or offline"
@@ -187,6 +187,7 @@ fi
 is_true "$MODBUS_SIM" && components+=("../../components/modbus-sim")
 is_true "$DWD_FORWARD" && components+=("../../components/dwd-forward")
 is_true "$MONITORING" && components+=("../../components/monitoring")
+is_true "$SAAS_FRONTEND" && components+=("../../components/saas-frontend")
 is_true "$INGRESS" && components+=("../../components/ingress")
 # last: a component's patches only see the workloads added before it (base and the components above)
 if [[ "$KAFSCALE_NETWORK" == "hostnetwork" ]]; then
@@ -245,6 +246,9 @@ images:
   - name: opentsx/studio
     newName: $OPENTSX_IMAGE_REPO/studio
     newTag: "$OPENTSX_TAG"
+  - name: opentsx/saas-frontend
+    newName: $OPENTSX_IMAGE_REPO/saas-frontend
+    newTag: "$OPENTSX_TAG"
 EOF
   overlay_patches
 } > "$OVERLAY/kustomization.yaml"
@@ -268,7 +272,7 @@ EOF
 info "configuration written: $ENV_FILE, $OVERLAY/"
 echo "  namespace $OPENTSX_NS | KafScale $KAFSCALE_BOOTSTRAP ($KAFSCALE_NETWORK; pods use $POD_BOOTSTRAP) | domain $OPENTSX_DOMAIN"
 echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"
-echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING"
+echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING | saas-frontend $SAAS_FRONTEND"
 if kc version --client >/dev/null 2>&1; then
   n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY failed"
   m="$(kc kustomize "$OVERLAY/jobs" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY/jobs failed"

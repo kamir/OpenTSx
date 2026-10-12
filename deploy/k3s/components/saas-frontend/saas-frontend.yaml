@@ -1,0 +1,57 @@
+# SaaS frontend: static build (saas-frontend.Dockerfile), served by nginx.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-saas-frontend
+  labels:
+    app.kubernetes.io/name: opentsx-saas-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-saas-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-saas-frontend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: frontend
+          image: opentsx/saas-frontend
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 200m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-saas-frontend
+  labels:
+    app.kubernetes.io/name: opentsx-saas-frontend
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: opentsx-saas-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      nodePort: 30311
