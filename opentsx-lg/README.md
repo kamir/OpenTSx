@@ -1,3 +1,5 @@
+> **Legacy (2.x model).** These load-generator and latency tools use the 2.x topics and Confluent serializers. For KafScale and v2 episodes, see [`opentsx-kafka-v2`](../opentsx-kafka-v2/README.md) and the [user manual](../docs/user-manual/README.md).
+
 ### How to Start the OpenTSx UI?
 
 (1) Enter the folder:

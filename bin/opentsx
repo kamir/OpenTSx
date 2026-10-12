@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# OpenTSx command launcher.
+#
+#   bin/opentsx <command> [options]
+#
+# Commands:
+#   windpark-sim       run a wind-farm scenario -> KafScale and/or Iceberg   (org.opentsx.windpark.WindparkSim)
+#   stats              streaming statistics processor on KafScale            (org.opentsx.stats.StatsProcessorApp)
+#   metadata           publish the metadata pool to OpenMetadata             (org.opentsx.openmetadata.WindparkMetadata)
+#   retrieval-server   REST API for episodes, patterns, segments             (org.opentsx.retrieval.server.RetrievalServer)
+#   twin               digital twin demo S1 (H2 chain) in all three modes    (org.opentsx.twin.demo.H2ChainDemo)
+#   classpath <module> print the runtime classpath of a module
+#
+# Requires a prior build: mvn -q install -DskipTests   (JDK 17+)
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+usage() { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+classpath() {   # module... -> classpath (cached per module in target/classpath.txt)
+  local cp="" m
+  for m in "$@"; do
+    local f="$ROOT/$m/target/classpath.txt"
+    if [[ ! -f "$f" || "$ROOT/$m/pom.xml" -nt "$f" ]]; then
+      (cd "$ROOT" && mvn -q -B -pl "$m" dependency:build-classpath -Dmdep.outputFile=target/classpath.txt >/dev/null)
+    fi
+    [[ -d "$ROOT/$m/target/classes" ]] || { echo "module $m is not built - run: mvn -q install -DskipTests" >&2; exit 1; }
+    cp="$cp:$ROOT/$m/target/classes:$(cat "$f")"
+  done
+  echo "${cp#:}"
+}
+
+[[ $# -ge 1 ]] || usage 1
+cmd="$1"; shift
+case "$cmd" in
+  windpark-sim)     exec java -cp "$(classpath opentsx-windpark)" org.opentsx.windpark.WindparkSim "$@" ;;
+  stats)            exec java -cp "$(classpath opentsx-stats)" org.opentsx.stats.StatsProcessorApp "$@" ;;
+  metadata)         exec java -cp "$(classpath opentsx-openmetadata)" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
+  retrieval-server) exec java -cp "$(classpath opentsx-retrieval opentsx-store-iceberg)" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
+  twin)             exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
+  classpath)        classpath "$@" ;;
+  -h|--help|help)   usage 0 ;;
+  *) echo "unknown command: $cmd" >&2; usage 1 ;;
+esac

@@ -1,3 +1,5 @@
+> **Status:** Flink 1.18 jobs on the 2.x model (`TimeSeriesObject`). This module also contains `pfd.DynamicTopologyJob`, which builds a topology from a JSON processing-flow descriptor (schema: [`docs/devguide/schemas`](../docs/devguide/schemas/)). A Flink adapter for the v2 statistics engine (`opentsx-stats`) is planned with the Flink upgrade. See the [user manual, chapter 11](../docs/user-manual/11-classic-analytics.md).
+
 # OpenTSx Flink Integration
 
 Apache Flink integration for OpenTSx time series analysis framework.
@@ -313,16 +315,16 @@ flink run -m localhost:8081 \
 
 ## Contributing
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for development guidelines.
+Contributions: open an issue or pull request on GitHub.
 
 ## License
 
-Apache License 2.0 - See [LICENSE](../LICENSE) for details.
+Apache License 2.0.
 
 ## Related Documentation
 
-- [OpenTSx Manual](../docs/manual/)
-- [TASK-003: Flink Integration Plan](../EVOLUTION/TASK-003/)
+- [OpenTSx user manual](../docs/user-manual/README.md)
+- [TASK-003: Flink integration plan (archived)](../EVOLUTION/archive/TASK-003-flink-integration.md)
 - [Apache Flink Documentation](https://flink.apache.org/docs/)
 
 ---

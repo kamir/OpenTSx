@@ -1,4 +1,3 @@
-version: '3.8'
 
 # Simplified local development environment for OpenTSx
 # Uses CP-ALL-IN-ONE for Kafka (KRaft mode, no Zookeeper)
@@ -146,7 +145,7 @@ services:
   # Backend API (Optional - requires backend implementation)
   backend:
     build:
-      context: ./backend
+      context: ./opentsx-saas-backend
       dockerfile: Dockerfile
     container_name: opentsx-backend
     depends_on:
@@ -170,7 +169,7 @@ services:
       - OPENTSDB_PORT=4242
       - SECRET_KEY=change-this-to-a-secure-random-key-in-production
     volumes:
-      - ./backend:/app
+      - ./opentsx-saas-backend:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - opentsx-network
@@ -180,7 +179,7 @@ services:
   # Frontend UI (Optional - requires frontend implementation)
   frontend:
     build:
-      context: ./frontend
+      context: ./opentsx-saas-frontend
       dockerfile: Dockerfile
     container_name: opentsx-frontend
     depends_on:
@@ -190,7 +189,7 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000
     volumes:
-      - ./frontend:/app
+      - ./opentsx-saas-frontend:/app
       - /app/node_modules
     command: npm run dev
     networks:

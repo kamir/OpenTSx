@@ -1,5 +1,16 @@
 # Local Development Environment
 
+> **Two stacks.**
+>
+> * For the v2 modules (KafScale storage, statistics, wind farm, retrieval), use
+>   **`docker-compose.kafscale.yml`** (etcd, MinIO, KafScale broker on :9092). It is described in the
+>   [user manual, chapter 12](../../user-manual/12-operations.md).
+> * The stack documented below (`docker-compose.local.yml`) serves the OpenTSDB store, the 2.x tools and the
+>   experimental SaaS stack. Its `full` profile builds the backend from `opentsx-saas-backend/` and the frontend from
+>   `opentsx-saas-frontend/`.
+>
+> Both stacks bind port 9092, so do not run them at the same time.
+
 This document describes the simplified local development setup for OpenTSx using Docker Compose.
 
 ## Overview
@@ -415,8 +426,8 @@ Apache Kudu was evaluated and found to have minimal usage in the codebase:
 
 ## See Also
 
-- [OpenTSx Manual](../manual/README.md) — Conceptual documentation
-- [Demo Scripts](../../bin/README.md) — Executable examples
+- [OpenTSx Manual](../../user-manual/README.md) — User manual
+- [Demo Scripts](../../../bin/README.md) — Scripts
 - [Confluent Platform Documentation](https://docs.confluent.io/platform/current/overview.html)
 - [OpenTSDB Documentation](http://opentsdb.net/docs/build/html/)
 - [HBase Reference Guide](https://hbase.apache.org/book.html)

@@ -1,3 +1,5 @@
+> **Legacy (2.x).** These exercises use the 2.x `TimeSeriesObject` API from `opentsx-core`. For the current data model and tools, see the [user manual](../docs/user-manual/README.md).
+
 # OpenTSx Testing Guide
 
 **Phase 3: Testing Infrastructure**

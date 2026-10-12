@@ -47,7 +47,7 @@ fi
 # Verify Java is available
 if ! command -v java &> /dev/null; then
     echo "ERROR: Java not found in PATH"
-    echo "Please install Java 8+ and set JAVA_HOME"
+    echo "Please install Java 17+ and set JAVA_HOME"
     exit 1
 fi
 
@@ -90,7 +90,7 @@ else
     echo "=========================================="
     echo
     echo "Troubleshooting:"
-    echo "  - Check Java version (need 8+)"
+    echo "  - Check Java version (need 17+)"
     echo "  - Verify Maven is installed"
     echo "  - Check network connectivity for dependencies"
     echo "  - Run with: mvn clean install -X for debug output"

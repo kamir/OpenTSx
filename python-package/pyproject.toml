@@ -38,6 +38,9 @@ kafka = [
     "confluent-kafka[avro]>=2.3.0",
     "fastavro>=1.8.0",
 ]
+iceberg = [
+    "pyiceberg[sql-sqlite,pyarrow]>=0.9",
+]
 viz = [
     "matplotlib>=3.7.0",
     "plotly>=5.17.0",
