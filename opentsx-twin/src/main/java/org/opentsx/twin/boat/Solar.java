@@ -19,7 +19,7 @@ import java.util.Map;
  * series (measurement or forecast) or, if none is bound, from a deterministic synthetic clear-sky model for
  * {@code latitude}/{@code longitude} (Meinel air-mass model, no equation of time) times a daily clearness index
  * ({@code clearness}, cycled per local day from {@code dayZero}). A bound {@code p_meas_w} (PV power measured at the
- * power station) replaces the model; in a what-if it is scaled by {@code wp/wp₀ · derate/derate₀} and then counts
+ * power station) replaces the model; in a what-if it is scaled by {@code wp/wp₀} and then counts
  * as {@link Origin#ESTIMATED}. (A measured PV power is what the station took, so it is curtailed while the battery
  * is full; the scaling is an approximation.)
  * <p>
@@ -102,8 +102,9 @@ public final class Solar extends Atom {
     public void step(StepContext ctx) {
         double p;
         if (ctx.has("p_meas_w")) {
-            // a what-if on history scales the measurement by the changed controls (ratio 1 in the reference)
-            double ratio = ctx.control("wp") / params.d("wp", 200) * ctx.control("derate") / params.d("derate", 0.75);
+            // a what-if on history scales the measurement by the installed power (ratio 1 in the reference); the
+            // model parameter derate does not apply, the measurement already contains it
+            double ratio = ctx.control("wp") / params.d("wp", 200);
             p = Math.max(0, ctx.in("p_meas_w").getAsDouble()) * ratio;
             if (ratio == 1) {
                 ctx.out("p_avail_w", p);

@@ -21,8 +21,9 @@ import java.util.Map;
  * steps are clamped to the bounds. No randomness, so the same data give the same fit. Knobs the data cannot see
  * (e.g. the usage of a device whose power is measured) keep their start value.
  * <p>
- * The objective is the root mean square error between a model series (default {@code station.soc}) and the
- * measurement, over the steps where the measurement is present.
+ * The objective is the sum of squared residuals {@code (model − measured) / sigma} over one or several targets
+ * (e.g. the station SoC, the residual against the measured output power, the solar power), over the steps where
+ * the measurement is present.
  */
 public final class Calibration {
 
@@ -36,9 +37,26 @@ public final class Calibration {
         }
     }
 
-    /** Result: fitted values, error before (at the start values) and after, number of runs, the interventions. */
+    /**
+     * A measured series to match: {@code seriesKey} of the run against {@code measured} (one value per plan step, NaN
+     * = not measured); residuals are divided by {@code sigma} (the expected error), so targets in different units
+     * can be combined.
+     */
+    public record Target(String seriesKey, double[] measured, double sigma) {
+        public Target {
+            if (!(sigma > 0)) {
+                throw new IllegalArgumentException("sigma must be positive");
+            }
+        }
+    }
+
+    /**
+     * Result: fitted values; overall error in units of sigma before (at the start values) and after; RMSE per target
+     * (in the target's unit) before and after; number of runs; the interventions that set the fitted values.
+     */
     public record Fit(Map<String, Double> values, double rmseStart, double rmse, int evaluations,
-                      List<Intervention> interventions) {
+                      List<Intervention> interventions, Map<String, Double> rmseStartByTarget,
+                      Map<String, Double> rmseByTarget) {
     }
 
     private static final int MAX_EVALUATIONS = 400;
@@ -73,30 +91,46 @@ public final class Calibration {
         return n == 0 ? Double.NaN : Math.sqrt(sse / n);
     }
 
-    /**
-     * Fits the knobs so that {@code seriesKey} of the run matches {@code measured} (one value per plan step), by
-     * bounded Levenberg-Marquardt least squares with forward-difference Jacobians.
-     */
+    /** Fits the knobs so that {@code seriesKey} of the run matches {@code measured} (one value per plan step). */
     public static Fit fit(TwinPlan plan, Inputs inputs, List<Intervention> base, String seriesKey, double[] measured,
+                          List<Knob> knobs) {
+        return fit(plan, inputs, base, List.of(new Target(seriesKey, measured, 1)), knobs);
+    }
+
+    /**
+     * Fits the knobs so that the run matches all targets at once, by bounded Levenberg-Marquardt least squares on the
+     * residuals {@code (model − measured) / sigma} with forward-difference Jacobians.
+     */
+    public static Fit fit(TwinPlan plan, Inputs inputs, List<Intervention> base, List<Target> targets,
                           List<Knob> knobs) {
         TwinRunner runner = new TwinRunner(plan);
         int n = knobs.size();
         int[] evals = {0};
-        int[] idx = java.util.stream.IntStream.range(0, measured.length).filter(i -> !Double.isNaN(measured[i]))
-                .toArray();
-        if (idx.length == 0) {
+        int[][] idxs = new int[targets.size()][];
+        int total = 0;
+        for (int t = 0; t < targets.size(); t++) {
+            double[] m = targets.get(t).measured();
+            idxs[t] = java.util.stream.IntStream.range(0, m.length).filter(i -> !Double.isNaN(m[i])).toArray();
+            total += idxs[t].length;
+        }
+        if (total == 0) {
             throw new IllegalArgumentException("no measured values to calibrate against");
         }
+        int size = total;
         java.util.function.Function<double[], double[]> residuals = x -> {
             evals[0]++;
             List<Intervention> log = new ArrayList<>(base);
             log.addAll(interventions(plan, knobs, x));
             RunResult r = runner.run(new TwinRunner.RunSpec(Mode.SHADOW, inputs, log, null, 0, Map.of(), null));
-            double[] model = r.series(seriesKey);
-            double[] res = new double[idx.length];
-            for (int j = 0; j < idx.length; j++) {
-                double m = idx[j] < model.length ? model[idx[j]] : Double.NaN;
-                res[j] = Double.isNaN(m) ? 0 : m - measured[idx[j]];
+            double[] res = new double[size];
+            int j = 0;
+            for (int t = 0; t < targets.size(); t++) {
+                Target tg = targets.get(t);
+                double[] model = r.series(tg.seriesKey());
+                for (int i : idxs[t]) {
+                    double m = i < model.length ? model[i] : Double.NaN;
+                    res[j++] = Double.isNaN(m) ? 0 : (m - tg.measured()[i]) / tg.sigma();
+                }
             }
             return res;
         };
@@ -109,6 +143,7 @@ public final class Calibration {
             x[i] = knobs.get(i).start();
         }
         double[] r = residuals.apply(x);
+        double[] r0 = r;
         double f = sse(r);
         double f0 = f;
         double lambda = 1e-2;
@@ -181,8 +216,22 @@ public final class Calibration {
         for (int i = 0; i < n; i++) {
             values.put(knobs.get(i).name(), x[i]);
         }
-        return new Fit(values, Math.sqrt(f0 / idx.length), Math.sqrt(f / idx.length), evals[0],
-                interventions(plan, knobs, x));
+        return new Fit(values, Math.sqrt(f0 / size), Math.sqrt(f / size), evals[0], interventions(plan, knobs, x),
+                byTarget(targets, idxs, r0), byTarget(targets, idxs, r));
+    }
+
+    private static Map<String, Double> byTarget(List<Target> targets, int[][] idxs, double[] r) {
+        Map<String, Double> out = new LinkedHashMap<>();
+        int j = 0;
+        for (int t = 0; t < targets.size(); t++) {
+            double s = 0;
+            for (int k = 0; k < idxs[t].length; k++, j++) {
+                s += r[j] * r[j];
+            }
+            out.put(targets.get(t).seriesKey(), idxs[t].length == 0 ? Double.NaN
+                    : targets.get(t).sigma() * Math.sqrt(s / idxs[t].length));
+        }
+        return out;
     }
 
     private static double sse(double[] r) {

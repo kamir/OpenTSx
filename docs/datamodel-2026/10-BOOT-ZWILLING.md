@@ -181,7 +181,7 @@ synthetisches Wetter), nicht gemessen. Ausgabe von `bin/opentsx boat`:
 | Landstrom nur jeden 3. Tag (`shore.every_n_days = 3`) | 0 | −4,1 pp | +297 | −815 | −2,6 h | 0 |
 | Laptops laden nur 10–16 h (`charge_from_h/charge_to_h`) | 0 | −4,3 pp | +92 | −104 | +1,3 h | −3 |
 | Starlink über Wechselrichter (`path_eff = 0,8`) | 0 | −20,2 pp | +184 | +786 | −2,8 h | +67 |
-| Starlink Standard statt Mini (`scale = 2`) | **+2371** | −28,5 pp | +674 | +4487 | −12,4 h | +533 |
+| Starlink Standard statt Mini (`power_factor = 2`) | **+2371** | −28,5 pp | +674 | +4487 | −12,4 h | +533 |
 | Wochenendnutzung statt Törn (anderes Logbuch) | 0 | +29,7 pp | −5183 | −2016 | +57,8 h | −503 |
 
 Lesart (modelliert): Starlink entscheidet über die Bilanz; DC-direkt statt Wechselrichter spart ~70 Wh/Tag. Seltener
@@ -217,21 +217,29 @@ das Verzeichnis ist per `.gitignore` vom Repository ausgeschlossen.
 | `solar_w` | Solar-Eingang in W | `solar.p_meas_w` (MEASURED) |
 | `last_w` | Ausgangsleistung gesamt in W | `station.p_load_meas_w` (MEASURED) |
 | `<gerät>_w` | z. B. `starlink_w`, `laptop1_w` (geräteseitig) | `<gerät>.p_meas_w` (MEASURED) |
+| `<gerät>_an` | Gerät an diesem Tag an, 0/1 (Logbuch), z. B. `starlink_an` | `<gerät>.on` (REPORTED) |
+| `einstrahlung_wm2` | Globalstrahlung in W/m² (nahe Wetterstation, z. B. DWD) | `solar.ghi_wm2` (MEASURED) |
 | `notiz` | freier Text | ignoriert |
 
 Trennzeichen `,` oder `;` (dann Dezimalkomma erlaubt), `#`-Zeilen sind Kommentare. Zeilen innerhalb eines
 15-min-Schritts werden gemittelt (Modus: letzter Wert); Lücken bis 1 h werden gehalten, danach rechnet das Modell
 (Herkunft `SYNTHETIC`). Gemessene Werte ersetzen das Modell im jeweiligen Schritt; in Was-wäre-wenn-Läufen auf
-Messdaten werden sie über die Steuergrößen skaliert (z. B. Solar × `wp/wp₀`) und gelten dann als `ESTIMATED`.
+Messdaten werden sie über die **Systemhebel** skaliert (Solar × `wp/wp₀`, Gerät × `power_factor`, `on`,
+`max_on_h`) und gelten dann als `ESTIMATED`. **Modellparameter** (`derate`, `scale`) wirken nicht auf Messwerte,
+denn die Messung enthält sie schon; sie sind die Stellgrößen der Kalibrierung.
 
 ### Kalibrierung
 
-`--calibrate` passt Nutzungs- und Minderungsparameter so an, dass der modellierte SoC den gemessenen trifft:
+`--calibrate` passt Nutzungs- und Minderungsparameter so an, dass der Zwilling die Messungen trifft:
 
 * **Stellgrößen:** `solar.derate`, `laptops.scale` (beide Laptops), `starlink.scale`, jeweils als Eingriff zu
   Planbeginn. Teile, die in mehr als der Hälfte der Schritte gemessen sind, werden ausgelassen, sonst würden sie
   Fehler anderswo aufnehmen.
-* **Verfahren:** Kleinste Quadrate auf den Residuen `soc_model − soc_gemessen`, beschränktes Levenberg-Marquardt mit
+* **Ziele:** gemessener SoC (σ = 1 Prozentpunkt), gemessene Ausgangsleistung über `station.load_residual_w`
+  (σ = 5 W) und, wenn Einstrahlung vorliegt, die gemessene Solarleistung bei SoC < 95 % (nicht abgeregelt; σ = 5 W).
+  Für dieses Ziel rechnet das Solarmodell aus der Einstrahlung, die Solarmessung wird dafür nicht gebunden. Ohne
+  Einstrahlung bleibt `solar.derate` außen vor, wenn Solar gemessen ist.
+* **Verfahren:** Kleinste Quadrate auf den Residuen `(Modell − Messung)/σ`, beschränktes Levenberg-Marquardt mit
   Jacobi-Matrix aus Vorwärtsdifferenzen (ein Zwillingslauf je Stellgröße). Deterministisch.
 * **Prüfung:** Aus Modelldaten mit bekannten Werten (Minderung 0,6, Starlink-Faktor 1,4) findet die Kalibrierung
   beide wieder (Test `calibrationRecoversKnownParameters`). Auf der Vorlage sinkt der Fehler von 1,9 auf 1,1
@@ -239,6 +247,43 @@ Messdaten werden sie über die Steuergrößen skaliert (z. B. Solar × `wp/wp₀
 * **Danach:** Schattenlauf und alle Was-wäre-wenn-Hebel laufen auf den echten Daten mit den kalibrierten Werten.
   Steuergröße `station.nudge` (0..1) zieht den Modell-SoC optional an die Messung (Assimilation, z. B. vor einer
   Prognose); die Korrektur wird als `nudge_wh` ausgewiesen.
+
+### Simulierte Beispieldaten
+
+Solange keine echten Exporte vorliegen, zeigt
+[`twin/beispiel/boot-logs-simuliert.csv`](../../opentsx-twin/src/main/resources/twin/beispiel/boot-logs-simuliert.csv)
+die ganze Kette von Import bis Kalibrierung ([Beschreibung](../../opentsx-twin/src/main/resources/twin/beispiel/README-boot.md)).
+Die Datei ist **simuliert**, nicht gemessen: Kommentarkopf und `notiz` sagen es.
+
+* **Erzeugung:** `org.opentsx.twin.boat.SimulatedLogs`, Seed 20260704, deterministisch. Der Zwilling läuft im
+  5-min-Takt mit **verdeckten wahren Parametern** (Minderung 0,62, Starlink-Faktor 1,25, Laptop-Faktor 1,3), Törn
+  `UHAXSHSAXXSHSU` (mit unbemannten Tagen), Bewölkung und Regen an den Ankertagen 8–10, Starlink aus an Tag 4.
+* **Form und Unvollkommenheiten:** App-Export alle 5 min mit Logbuch und stündlicher Einstrahlung; Ortszeit ohne
+  Offset; SoC in ganzen Prozent; Rauschen auf Solar, Last und Einstrahlung; keine App-Daten an unbemannten Tagen,
+  drei Nächte und vier kurze Strecken ohne Bluetooth (81 % der Schritte haben Messwerte).
+* **Aufruf:** `bin/opentsx boat --simulated` (Import, Kalibrierung, Schatten, Was-wäre-wenn, Vergleich mit der
+  verdeckten Wahrheit).
+
+| | wahr (verdeckt) | kalibriert |
+|-|----------------:|-----------:|
+| `solar.derate` | 0,620 | 0,614 |
+| `laptops.scale` | 1,300 | 1,295 |
+| `starlink.scale` | 1,250 | 1,249 |
+| SoC-Abweichung (Schattenlauf) | – | 11,4 → 0,5 Prozentpunkte |
+
+| Kennzahl auf dem „gemessenen“ Törn | wahrer Lauf (5 min) | kalibrierter Zwilling (15 min) |
+|------------------------------------|--------------------:|-------------------------------:|
+| ungedeckter Bedarf | 1493 Wh | 1494 Wh |
+| Stunden mit Unterversorgung | 46,2 h | 46,3 h |
+| SoC-Minimum | 5 % | 5 % |
+| Solar genutzt / Landstrom | 5954 / 4597 Wh | 5946 / 4595 Wh |
+| Last | 793 Wh/Tag | 792 Wh/Tag |
+
+Lesart: In diesem simulierten Törn reichen 200 Wp bei derate 0,62 in der Regenphase vor Anker nicht; die Station
+läuft drei Tage leer. Auf diesen Daten (modelliert, Δ zur Kalibrierung): Starlink nur 3 h/Tag beseitigt den
+Fehlbetrag ganz, 2 kWh Speicher halbieren ihn grob (−906 Wh), +100 Wp senkt ihn um ~490 Wh. Der Test
+`SimulatedLogsTest` prüft, dass die Datei genau der Generatorausgabe entspricht und die Kalibrierung die verdeckten
+Werte wiederfindet.
 
 ---
 
@@ -304,6 +349,7 @@ Das Boot ist ein gewöhnlicher Zwilling; ein Exporter braucht nur diese statisch
 | `KEY_SERIES` | zuerst zu zeigende Reihen (`station.soc`, `station.p_unmet_w`, `solar.p_avail_w`, …) |
 | `KEY_KPIS`, `kpis(RunResult)` | abgeleitete Kennzahlen (§6) |
 | `logbook(plan, itinerary)` | Logbuchreihe zu einem Reiseplan |
+| `calibrate(BoatData)`, `simulatedLogs()` | Kalibrierung auf Betriebsdaten; die simulierten Beispiel-Logs als Zeilen |
 
 ---
 

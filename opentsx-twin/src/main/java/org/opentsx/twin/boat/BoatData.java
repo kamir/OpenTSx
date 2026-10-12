@@ -36,6 +36,8 @@ import java.util.Map;
  *   <tr><td>{@code soc_prozent}</td><td>power station state of charge, %</td><td>{@code <power-station>.soc_meas}</td><td>MEASURED</td></tr>
  *   <tr><td>{@code solar_w}</td><td>solar input power at the station, W</td><td>{@code <solar>.p_meas_w}</td><td>MEASURED</td></tr>
  *   <tr><td>{@code last_w}</td><td>total output power of the station, W</td><td>{@code <power-station>.p_load_meas_w}</td><td>MEASURED</td></tr>
+ *   <tr><td>{@code einstrahlung_wm2}</td><td>global horizontal irradiance, W/m² (e.g. nearby DWD station)</td><td>{@code <solar>.ghi_wm2}</td><td>MEASURED</td></tr>
+ *   <tr><td>{@code <device>_an}</td><td>device switched on that day, 0/1 (logbook, e.g. {@code starlink_an})</td><td>{@code <device>.on}</td><td>REPORTED</td></tr>
  *   <tr><td>{@code <device>_w}</td><td>power of one device at the device, W (e.g. {@code starlink_w})</td><td>{@code <device>.p_meas_w}</td><td>MEASURED</td></tr>
  *   <tr><td>{@code notiz}</td><td>free text, ignored</td><td>-</td><td>-</td></tr>
  * </table>
@@ -48,9 +50,33 @@ import java.util.Map;
  * @param coverage per bound port, the number of steps with a value
  * @param ignored  columns that were not understood
  * @param rows     data rows read
+ * @param series   per bound port the resampled values (NaN = missing)
+ * @param origins  per bound port its origin
  */
 public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map<String, Integer> coverage,
-                       List<String> ignored, int rows) {
+                       List<String> ignored, int rows, Map<String, double[]> series, Map<String, Origin> origins) {
+
+    /** The bindings without the given ports, e.g. without measured solar power to calibrate the solar model. */
+    public SeriesInputs inputs(java.util.Set<String> exclude) {
+        SeriesInputs out = new SeriesInputs();
+        series.forEach((port, v) -> {
+            if (!exclude.contains(port)) {
+                out.bind(port, plan.startMicros(), plan.baseStepMicros(), v, origins.get(port));
+            }
+        });
+        return out;
+    }
+
+    /** Resampled values of a bound port (NaN = missing), or all NaN if the port is not bound. */
+    public double[] measured(String port) {
+        double[] v = series.get(port);
+        if (v != null) {
+            return v.clone();
+        }
+        double[] none = new double[plan.steps()];
+        Arrays.fill(none, Double.NaN);
+        return none;
+    }
 
     private enum Agg { MEAN, LAST, MAX }
 
@@ -95,11 +121,14 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
                 case "soc_prozent", "soc_percent" -> c = col(i, station, "soc_meas", Origin.MEASURED, 0.01, Agg.MEAN);
                 case "solar_w" -> c = col(i, solar, "p_meas_w", Origin.MEASURED, 1, Agg.MEAN);
                 case "last_w", "load_w" -> c = col(i, station, "p_load_meas_w", Origin.MEASURED, 1, Agg.MEAN);
+                case "einstrahlung_wm2", "ghi_wm2" -> c = col(i, solar, "ghi_wm2", Origin.MEASURED, 1, Agg.MEAN);
                 case "notiz", "note", "" -> {
                 }
                 default -> {
                     if (h.endsWith("_w") && devices.contains(h.substring(0, h.length() - 2))) {
                         c = col(i, h.substring(0, h.length() - 2), "p_meas_w", Origin.MEASURED, 1, Agg.MEAN);
+                    } else if (h.endsWith("_an") && devices.contains(h.substring(0, h.length() - 3))) {
+                        c = col(i, h.substring(0, h.length() - 3), "on", Origin.REPORTED, 1, Agg.LAST);
                     }
                 }
             }
@@ -135,6 +164,8 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
 
         SeriesInputs inputs = new SeriesInputs();
         Map<String, Integer> coverage = new LinkedHashMap<>();
+        Map<String, double[]> series = new LinkedHashMap<>();
+        Map<String, Origin> origins = new LinkedHashMap<>();
         double[] soc = new double[n];
         Arrays.fill(soc, Double.NaN);
         for (Column c : cols) {
@@ -178,13 +209,16 @@ public record BoatData(TwinPlan plan, SeriesInputs inputs, double[] socMeas, Map
             }
             inputs.bind(c.port(), start, step, values, c.origin());
             coverage.put(c.port(), covered);
+            series.put(c.port(), values);
+            origins.put(c.port(), c.origin());
             if (c.port().equals(station + ".soc_meas")) {
                 soc = values;
             }
         }
         TwinPlan plan = new TwinPlan(template.twin(), Micros.toInstant(start), template.baseStep(), n,
                 template.atoms(), template.wiring());
-        return new BoatData(plan, inputs, soc, coverage, List.copyOf(ignored), rows.size());
+        return new BoatData(plan, inputs, soc, coverage, List.copyOf(ignored), rows.size(),
+                java.util.Collections.unmodifiableMap(series), java.util.Collections.unmodifiableMap(origins));
     }
 
     private static Column col(int index, String atom, String port, Origin origin, double factor, Agg agg) {

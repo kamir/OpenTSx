@@ -32,7 +32,7 @@ class BoatTwinTest {
     /** A tight setup: Starlink Standard (twice the Mini's power) and no shore power at all. */
     private List<Intervention> tight() {
         return List.of(
-                Intervention.set(BoatDemo.START, "starlink", "scale", 2.0, "test", "Starlink Standard"),
+                Intervention.set(BoatDemo.START, "starlink", "power_factor", 2.0, "test", "Starlink Standard"),
                 Intervention.set(BoatDemo.START, "shore", "enabled", 0, "test", "no shore power"));
     }
 
