@@ -80,10 +80,13 @@ Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisi
 - [x] CLI `WindparkSim` → KafScale (versiegelter Bucket) und/oder Iceberg; End-to-End-Tests (Iceberg immer, KafScale mit `KAFSCALE_BOOTSTRAP`, in CI).
 - [ ] Folge: Avro 1.12.2+ mit `SERIALIZABLE_PACKAGES`; echte Herstellerexporte als weitere `sources` einpflegen.
 
-### Phase 4 – Streaming-Statistik & OpenMetadata (`opentsx-stats-flink`, `opentsx-openmetadata`)
-- [ ] Flink-Job: keyBy(seriesId), Welford + min/max + Quantil-Sketch + Gap-/Rate-Erkennung; global laufend + Tumbling-Fenster; Episoden-Summaries direkt mergen.
-- [ ] Output `series-stats.v2` (compacted); Late-Data-Side-Output.
-- [ ] OpenMetadata-Modul: Registrierung Topics (mit Avro-Schema), Iceberg-Tabellen, Pipelines + Lineage; rate-limitierte Profil-/Data-Quality-Updates aus `series-stats.v2`.
+### Phase 4 – Streaming-Statistik & OpenMetadata (`opentsx-stats`, `opentsx-openmetadata`)
+- [x] `StatsEngine` (laufzeitunabhängig): je `seriesId` Welford + min/max + NaN + **Quantil-Sketch** (DDSketch, 1 % rel. Fehler, Java/Python byte-identisch) + Gap-Erkennung; GLOBAL + epoch-ausgerichtete Tumbling-Fenster; Ereigniszeit je Serie (Episode → `tEnd`); Dedup per `episodeId`; Checkpoint des kompletten Zustands.
+- [x] `StatsProcessor` auf KafScale (manuelle Zuweisung, keine Gruppen/Commits, Checkpoint-Datei nach bestätigten Outputs) → `series-stats.v2`. Keine Compaction auf KafScale → `SeriesStatsLog` liest „latest per key“. Late Data: gezählt, nur GLOBAL. Grün gegen KafScale v1.6.0.
+- [x] Data Quality auf Statistiken (Vollständigkeit, Plausibilitätsband via Sketch, Flatline, Lücken, Aktualität); findet die Simulator-Fehler exakt in den betroffenen Fenstern.
+- [x] `opentsx-openmetadata`: Glossary aus dem Datenpunktkatalog, Klassifikationen (IEC-LN, Mapping-Status), Custom Properties, Topics mit Avro-Schema, Iceberg-Tabellen, Signal-View je Park, Pipelines + Lineage, Profile je Fenster, DQ-Testdefinitionen/-fälle/-ergebnisse. Payloads gegen die JSON-Schemas von `openmetadata-spec 2.0.5` validiert; Dry-Run-Modus.
+- [ ] Flink-Wrapper um `StatsEngine` (KafkaSource ohne Offset-Commits) – erst mit Flink-Upgrade.
+- [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly).
 - [ ] Bestehenden `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2-Serde umstellen oder deprecaten.
 
 ### Phase 5 – Retrieval-API & Pattern-Matching (`opentsx-retrieval`)
@@ -136,6 +139,7 @@ opentsx-retrieval      EpisodeService + Pattern-Engine (+ optional REST)
 
 ## Progress Log
 
+- 2026-10-11: **P4 umgesetzt**: `opentsx-stats` (Streaming-Statistik, Quantil-Sketch, DQ, KafScale-Prozessor mit Checkpoints) und `opentsx-openmetadata` (Metadata-Pool, gegen OM-2.0.5-Schemas validiert); Python `opentsx.stats`.
 - 2026-10-11: **Windpark-Domäne umgesetzt** (`opentsx-windpark`): IEC-61400-25-2-Datenpunktkatalog, Normalisierer, Simulator mit Ground Truth, CLI → KafScale/Iceberg. Avro 1.12.1 zentral (Präzisionsfehler in 1.12.0 per Test abgesichert).
 - 2026-10-11: **P3 umgesetzt**: Store-SPI + Contract-Suite, Iceberg-Store (+ Index, Log-Sync), OpenTSDB-Adapter, PyIceberg-Reader mit Byte-Gleichheit Java↔Python.
 - 2026-10-11: **P2 umgesetzt**: `opentsx-kafka-v2` (TopicLayout, BucketWriter, Episoden-Index, Replay, Katalog), `LegacyBucketImport`; End-to-End-Tests grün gegen KafScale v1.6.0 und Apache Kafka 3.9.1; Speicherkosten gemessen.
