@@ -1,0 +1,9 @@
+# DWD_FORWARD=true: CronJob opentsx-dwd-forward - fetches the MOSMIX_L forecast of every station in DWD_STATIONS
+# (daily by default; 20-configure.sh patches DWD_SCHEDULE in) and writes CSV files to the data PVC:
+#   /data/dwd/mosmix-<station>-<UTC time>.csv  (wide CSV, all elements)   /data/dwd/daily-<station>-<UTC time>.csv
+# Files older than 30 days are removed. Needs HTTPS access from the pods to opendata.dwd.de (DWD_MODE=online), or
+# reads the fixture in the image (DWD_MODE=offline, for tests). Not yet: a KafScale sink (tsx.weather.*).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - dwd-forward.yaml

@@ -1,0 +1,66 @@
+# DWD weather demo: MOSMIX forecast -> v2 series + CSV on the data PVC (/data/dwd), then the house twin over the
+# forecast horizon. DWD_MODE=offline (default of this Job via 40-demo.sh dwd) reads the MOSMIX fixture that ships in
+# the image - no internet needed; 40-demo.sh dwd-online fetches the first station of DWD_STATIONS from opendata.dwd.de.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opentsx-dwd
+  labels:
+    opentsx.org/demo: dwd
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        opentsx.org/demo: dwd
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: dwd
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              mkdir -p /data/dwd
+              station="${DWD_STATIONS%%,*}"
+              if [ "$DWD_MODE" = online ]; then src="--station $station"; else src="--offline $DWD_FIXTURE"; fi
+              echo "dwd demo: mode $DWD_MODE ($src)"
+              opentsx dwd mosmix $src --out /data/dwd/demo-mosmix.csv --daily /data/dwd/demo-daily.csv
+              OPENTSX_EXTRA_ARGS= opentsx dwd house $src
+              ls -l /data/dwd
+          env:
+            - name: DWD_MODE                 # 40-demo.sh sets offline (dwd) or online (dwd-online)
+              value: offline
+            - name: DWD_STATIONS
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_STATIONS}}
+            - name: DWD_FIXTURE
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: DWD_FIXTURE}}
+            - name: OPENTSX_EXTRA_ARGS       # set by 40-demo.sh -- <args> (appended to the mosmix command)
+              value: ""
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}   # measured peak RSS ~80 MB (fixture, house twin over 5 h)
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: opentsx-data

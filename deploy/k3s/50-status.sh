@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Shows the state of the OpenTSx installation: workloads, Jobs, PVCs, images, configuration, recent problems.
+# Shows the state of the OpenTSx installation: workloads, Jobs, CronJobs (dwd-forward, synthetic-check), PVCs, images,
+# configuration, the statistics checkpoint and its age, recent problems.
 #
 #   deploy/k3s/50-status.sh [--logs]
 #
@@ -26,6 +27,9 @@ info "deployments, pods, services"
 kns get deployment,pod,service -l app.kubernetes.io/part-of=opentsx -o wide
 info "jobs"
 kns get job -L opentsx.org/demo 2>/dev/null || true
+info "cronjobs (dwd-forward: DWD_FORWARD=true, synthetic-check: MONITORING=true)"
+# shellcheck disable=SC2016  # a Go template, not a shell expansion
+kns get cronjob -o go-template='{{range .items}}  {{.metadata.name}}  schedule "{{.spec.schedule}}"  last run {{or .status.lastScheduleTime "-"}}  last success {{or .status.lastSuccessfulTime "-"}}{{"\n"}}{{end}}' 2>/dev/null || true
 info "persistent volume claims"
 kns get pvc
 info "images in use"
@@ -33,8 +37,18 @@ kns get pod -o 'jsonpath={range .items[*]}{.spec.containers[*].image}{"\n"}{end}
 if have k3s; then
   as_root k3s ctr images ls -q 2>/dev/null | grep -F "$OPENTSX_IMAGE_REPO/" | sed 's/^/  in k3s containerd: /' || warn "no $OPENTSX_IMAGE_REPO images in k3s containerd (11-import-images.sh)"
 fi
-info "statistics checkpoint"
-kns exec deployment/opentsx-stats -- ls -l /state 2>/dev/null || warn "not available (pod not running or no checkpoint yet)"
+info "statistics checkpoint (written every 30 s; older than a few minutes = processor stuck, see operations.md R2)"
+if kns exec deployment/opentsx-stats -- ls -l --time-style=+%Y-%m-%dT%H:%M:%S /state 2>/dev/null; then
+  # shellcheck disable=SC2016  # expanded by the shell inside the pod
+  age="$(kns exec deployment/opentsx-stats -- sh -c 'echo $(( $(date +%s) - $(stat -c %Y /state/stats.ckpt) ))' 2>/dev/null || true)"
+  if [[ "$age" =~ ^[0-9]+$ ]]; then
+    if (( age > 300 )); then warn "checkpoint is ${age} s old"; else ok "checkpoint age ${age} s"; fi
+  fi
+else
+  warn "not available (pod not running or no checkpoint yet)"
+fi
+info "Modbus simulator (MODBUS_SIM=true)"
+kns get deployment/opentsx-modbus-sim 2>/dev/null || echo "  not deployed"
 info "warnings (last 10 events)"
 kns get events --field-selector type=Warning --sort-by=.lastTimestamp 2>/dev/null | tail -n 10 || true
 if $LOGS; then

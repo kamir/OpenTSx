@@ -1,5 +1,6 @@
 # OpenTSx on k3s - base (namespace-less). Do not apply directly: 20-configure.sh renders overlays/local, which sets
-# the namespace, the KafScale address, images and optional components (hostnetwork, lake, ingress).
+# the namespace, the KafScale address, images and optional components (hostnetwork, lake, ingress, modbus-sim,
+# dwd-forward, monitoring).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 labels:
@@ -27,6 +28,12 @@ configMapGenerator:
       - S3_BUCKET=lake
       - S3_WAREHOUSE=s3://lake/
       - S3_REGION=us-east-1
+      - DWD_STATIONS=10578,10579
+      - DWD_MODE=online
+      - DWD_FIXTURE=/opt/opentsx/share/dwd/MOSMIX_L_2026101209_10578.kml
+      - MODBUS_HOST=opentsx-modbus-sim
+      - MODBUS_PORT=1502
+      - MODBUS_MAP=example
 generatorOptions:
   disableNameSuffixHash: true   # Jobs refer to opentsx-config by name; 30-deploy.sh restarts pods on config changes
 images:

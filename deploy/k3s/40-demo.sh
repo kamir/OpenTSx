@@ -15,7 +15,14 @@
 #   studio-export      runs the Studio export inside the cluster (size + checksum of the scenario JSON)
 #   retrieval          queries the retrieval REST API through a temporary port-forward
 #   studio             port-forwards the Studio page to http://localhost:8088 (Ctrl-C to stop)
-#   all                kafscale-check, windpark-sim, stats, metadata, twin, house, boat, studio-export, retrieval
+#   dwd                DWD MOSMIX -> v2 series + CSV on the data PVC (/data/dwd), house twin over the forecast;
+#                      OFFLINE: reads the MOSMIX fixture in the image (no internet needed)
+#   dwd-online         the same, fetching the first station of DWD_STATIONS from opendata.dwd.de
+#   dwd-forward        triggers the CronJob opentsx-dwd-forward once (needs DWD_FORWARD=true)
+#   modbus             polls the Modbus device MODBUS_HOST:MODBUS_PORT (default: the simulator, MODBUS_SIM=true) for
+#                      30 s and writes 10 s episodes to /data/modbus/episodes-<time>.jsonl (no KafScale sink yet)
+#   all                kafscale-check, windpark-sim, stats, metadata, twin, house, boat, studio-export, dwd,
+#                      modbus (when a device is configured), retrieval
 #
 # Extra arguments go to the command via OPENTSX_EXTRA_ARGS, e.g. with private data from the Secret opentsx-private:
 #   kubectl -n opentsx create secret generic opentsx-private --from-file=abrechnungen.csv=config/private/abrechnungen.csv
@@ -45,11 +52,15 @@ render_job() {   # name -> the Job manifest from overlays/local/jobs
     END { flush(); exit found ? 0 : 1 }'
 }
 
-run_job() {   # name [extra args]
+run_job() {   # name [extra args] [ENV=value ...]
   local name="$1" extra="${2:-}" job="opentsx-$1" manifest phase reason start
+  shift $(( $# >= 2 ? 2 : 1 ))
   manifest="$(render_job "$name")" || die "no Job opentsx-$name in deploy/k3s/jobs"
   if [[ -n "$extra" ]]; then
     manifest="$(kc set env --local -f - -o yaml "OPENTSX_EXTRA_ARGS=$extra" <<< "$manifest")"
+  fi
+  if [[ $# -gt 0 ]]; then
+    manifest="$(kc set env --local -f - -o yaml "$@" <<< "$manifest")"
   fi
   info "job $job${extra:+ (extra args: $extra)}"
   kns delete job "$job" --ignore-not-found --wait=true >/dev/null
@@ -110,6 +121,37 @@ demo_retrieval() {
   curl -sf "localhost:$port/v1/episodes?$q" | head -c 400; echo " ..."
 }
 
+modbus_device() {   # 0 when a device is configured: the simulator is deployed, or MODBUS_HOST points elsewhere
+  [[ "$MODBUS_HOST" != "opentsx-modbus-sim" ]] && return 0
+  kns get deployment/opentsx-modbus-sim >/dev/null 2>&1
+}
+
+demo_modbus() {
+  if [[ "$MODBUS_HOST" == "opentsx-modbus-sim" ]]; then
+    modbus_device || die "simulator not deployed - 20-configure.sh MODBUS_SIM=true && 30-deploy.sh (or MODBUS_HOST=<converter>)"
+    info "Modbus simulator opentsx-modbus-sim:$MODBUS_PORT (example register map)"
+    kns rollout status deployment/opentsx-modbus-sim --timeout=120s
+  fi
+  run_job modbus-poll "$EXTRA"
+}
+
+demo_dwd_forward() {
+  kns get cronjob/opentsx-dwd-forward >/dev/null 2>&1 \
+    || die "CronJob opentsx-dwd-forward not deployed - 20-configure.sh DWD_FORWARD=true && 30-deploy.sh"
+  local job="opentsx-dwd-forward-manual"
+  info "job $job (from cronjob/opentsx-dwd-forward, DWD_MODE=$DWD_MODE)"
+  kns delete job "$job" --ignore-not-found --wait=true >/dev/null
+  kns create job "$job" --from=cronjob/opentsx-dwd-forward >/dev/null
+  if kns wait --for=condition=complete "job/$job" --timeout="${JOB_TIMEOUT}s" >/dev/null 2>&1; then
+    kns logs "job/$job" | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+    ok "$job completed"
+  else
+    kns logs "job/$job" 2>/dev/null | grep -v '^Picked up JAVA_TOOL_OPTIONS' || true
+    fail "$job did not complete - ${KUBECTL} -n $OPENTSX_NS describe job $job"
+    return 1
+  fi
+}
+
 case "$DEMO" in
   kafscale-check|metadata|metadata-publish|twin|house|boat|studio-export)
     if [[ "$DEMO" == "metadata-publish" ]]; then
@@ -118,6 +160,10 @@ case "$DEMO" in
     run_job "$DEMO" "$EXTRA" ;;
   windpark-sim) run_job windpark-sim "$EXTRA"; restart_stats ;;
   stats) demo_stats ;;
+  dwd) run_job dwd "$EXTRA" DWD_MODE=offline ;;
+  dwd-online) run_job dwd "$EXTRA" DWD_MODE=online ;;
+  dwd-forward) demo_dwd_forward ;;
+  modbus|modbus-poll) demo_modbus ;;
   retrieval) demo_retrieval ;;
   studio)
     info "Studio on http://localhost:8088 (Ctrl-C to stop)"
@@ -130,6 +176,8 @@ case "$DEMO" in
     run_job metadata
     run_job twin; run_job house; run_job boat
     run_job studio-export
+    run_job dwd "" DWD_MODE=offline
+    if modbus_device; then demo_modbus; else warn "modbus skipped: no device (MODBUS_SIM=true or MODBUS_HOST=<converter>)"; fi
     demo_retrieval
     info "all demos done - Studio: deploy/k3s/40-demo.sh studio" ;;
   *) die "unknown demo '$DEMO' (see --help)" ;;

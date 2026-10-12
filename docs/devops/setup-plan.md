@@ -2,6 +2,9 @@
 
 The steps in order, each with what it does, the command and how to verify it. All scripts live in
 [`deploy/k3s/`](../../deploy/k3s/); run them from the repository root. Every script has `--help`.
+`deploy/k3s/60-probe.sh` runs steps 0–5 in one go and writes a PASS/FAIL report
+([operations](operations.md#try-it-locally-first-the-probe)); operating the installation afterwards (monitoring,
+backup, updates, runbooks) is described in the [operations concept](operations.md).
 
 | Step | Script | Result |
 |------|--------|--------|
@@ -12,6 +15,8 @@ The steps in order, each with what it does, the command and how to verify it. Al
 | 4 | `30-deploy.sh` | namespace, config, PVCs, stats, retrieval, Studio (+ lake) running |
 | 5 | `40-demo.sh <demo>` | examples run as Jobs, output in the terminal |
 | — | `50-status.sh`, `90-teardown.sh` | state; removal |
+| — | `60-probe.sh` | all of the above plus checks, as one trial run with a report |
+| — | `70-backup.sh`, `71-restore.sh` | backup and restore of PVCs and configuration |
 
 `20-configure.sh` can run at any time and is idempotent. Run it **before** step 1 when you change the image
 repository, tag or platform (`OPENTSX_IMAGE_REPO`, `OPENTSX_TAG`, `OPENTSX_PLATFORM`), because `10-build.sh` reads them.
@@ -60,7 +65,8 @@ What happens:
 2. [`deploy/docker/stage.sh`](../../deploy/docker/stage.sh) copies every runtime jar of the v2 modules once into
    `deploy/docker/.stage/opt/opentsx/lib/m2/` (Maven repository layout, so no version clashes), writes the exact
    classpath per module to `cp/<module>.txt` (the same resolution `bin/opentsx` uses), compiles the deployment helper
-   `KafScaleCheck`, and copies the wind-farm scenario, the twin plans and CSV templates to `share/`.
+   `KafScaleCheck`, and copies the wind-farm scenario, the twin plans and CSV templates, the Modbus register maps and the
+   DWD offline fixture (a MOSMIX KML and a station-catalog excerpt) to `share/`.
 3. `opentsx-tools.Dockerfile` copies that tree onto `eclipse-temurin:21.0.8_9-jre-noble` (non-root user 10001,
    `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`).
 4. `studio.Dockerfile` runs `StudioExport` and `tools/build_studio.py` in build stages and puts the page into
@@ -157,6 +163,11 @@ advertised address, then the topics of the domain with record counts, and `OK`.
 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` | generated for in-cluster MinIO | Secret only, never in Git |
 | `OM_URL`, `OPENMETADATA_JWT` | empty | OpenMetadata `http://host:8585/api` and bot token (Secret) |
 | `INGRESS` | `false` | Traefik Ingress: `/` → Studio, `/v1` → retrieval (**no authentication**) |
+| `DWD_FORWARD` | `false` | CronJob `opentsx-dwd-forward`: daily MOSMIX per station → CSV on the data PVC |
+| `DWD_STATIONS`, `DWD_SCHEDULE`, `DWD_MODE` | `10578,10579`, `17 5 * * *`, `online` | MOSMIX ids, cron schedule (cluster time, usually UTC), `offline` = fixture in the image |
+| `MODBUS_SIM` | `false` | Deployment + Service `opentsx-modbus-sim:1502` (simulated meter, example map) |
+| `MODBUS_HOST`, `MODBUS_PORT`, `MODBUS_MAP` | `opentsx-modbus-sim`, `1502`, `example` | device the `modbus-poll` Job reads |
+| `MONITORING` | `false` | CronJob `opentsx-synthetic-check` + ConfigMap `opentsx-prometheus-rules` ([operations](operations.md#monitoring-and-alerting)) |
 
 Rendered objects: Namespace, ConfigMap `opentsx-config` (non-secret values), Secret `opentsx-secrets` (S3 keys as
 `S3_*` and `AWS_*`, `OPENMETADATA_JWT`), the base and the selected components. Private twin data (bills, boat logs)
