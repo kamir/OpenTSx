@@ -1,0 +1,38 @@
+# Demo experiment: 10 x 3 MW turbines in two rows, westerly wind, 6 hours at 1 Hz.
+# Contains every operational event and sensor-fault type, so data-quality checks and pattern search
+# have ground truth to be evaluated against.
+name: ostsee-demo
+seed: 42
+start: 2026-10-01T00:00:00Z
+duration: PT6H
+sampleInterval: PT1S
+episodeDuration: PT10M
+park:
+  id: ost-01
+  name: Windpark Ostsee (demo)
+  latitude: 54.45
+  longitude: 13.95
+  turbineModel: GENERIC-3MW
+  rows: 2
+  columns: 5
+  spacingRotorDiameters: 5
+  rowSpacingRotorDiameters: 7
+  wakeDecay: 0.04
+wind:
+  weibullK: 2.1
+  weibullC: 10.5
+  turbulenceIntensity: 0.10
+  meanDirectionDeg: 260
+  directionStdDeg: 12
+  diurnalAmplitude: 0.10
+  meanTemperatureC: 11
+operations:
+  - { type: CURTAILMENT, turbines: ["*"], offset: PT1H, duration: PT40M, limitKw: 1500 }
+  - { type: FAULT, turbines: [T03], offset: PT2H, duration: PT30M }
+  - { type: MAINTENANCE, turbines: [T08], offset: PT3H, duration: PT1H }
+sensorFaults:
+  - { type: STUCK, turbine: T05, channel: wind.met.wind_speed, offset: PT1H30M, duration: PT20M }
+  - { type: DRIFT, turbine: T02, channel: wind.generator.temperature, offset: PT2H, duration: PT2H, ratePerHour: 6.0 }
+  - { type: OFFSET, turbine: T09, channel: wind.met.wind_direction, offset: PT4H, duration: PT1H, magnitude: 25 }
+  - { type: SPIKES, turbine: T07, channel: wind.rotor.speed, offset: PT4H30M, duration: PT30M, probability: 0.01, magnitude: 6 }
+  - { type: GAP, turbine: T01, channel: wind.turbine.power_active, offset: PT5H, duration: PT15M }

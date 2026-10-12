@@ -15,6 +15,14 @@ public final class Ulid {
         return of(System.currentTimeMillis(), RANDOM);
     }
 
+    /**
+     * Deterministic ULID for reproducible datasets (e.g. simulations): time part from {@code epochMillis},
+     * randomness derived from {@code seed}. Same inputs, same id.
+     */
+    public static String deterministic(long epochMillis, long seed) {
+        return of(epochMillis, new java.util.Random(seed));
+    }
+
     static String of(long epochMillis, java.util.Random random) {
         if (epochMillis < 0 || epochMillis >= (1L << 48)) {
             throw new IllegalArgumentException("timestamp out of ULID range: " + epochMillis);

@@ -123,6 +123,14 @@ class EpisodesAndWireFormatTest {
     }
 
     @Test
+    void doublesSurviveTheRoundTripAtFullPrecision() {
+        // values that are not representable as float must come back bit-identical
+        double[] v = {10.67, 9.82, Math.PI, 1e-300, -0.1, Double.MAX_VALUE};
+        Episode e = Episodes.regular(key, 0, 1_000, v).build();
+        assertArrayEquals(v, Episodes.values(avro.decode(avro.encode(e), Episode.class)));
+    }
+
+    @Test
     void kafkaSerdeRoundTrip() {
         Episode e = Episodes.regular(key, 0, 1_000, new double[]{1, 2}).build();
         try (OpenTsxSerializer ser = new OpenTsxSerializer(); OpenTsxDeserializer de = new OpenTsxDeserializer()) {

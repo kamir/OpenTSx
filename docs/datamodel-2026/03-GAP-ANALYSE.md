@@ -102,6 +102,8 @@ Empfehlung: **Nicht den Altbestand umbauen, sondern daneben einen schlanken „O
 * **Simulator** (fehlt vollständig): Windfeld (Weibull-Mittelwert + Turbulenz über vorhandenen LRC-Generator + Tagesgang), Leistungskurve, einfaches Wake-Modell (Jensen), Yaw/Pitch, Verfügbarkeit/Alarme/Curtailment, **Sensorfehler-Injektion** (Stuck, Drift, Spikes, Lücken, Zeitversatz) als Ground-Truth für DQ- und Pattern-Tests.
 * **Experiment-Steuerung**: Szenario-Definition (YAML) → Simulator → KafScale-Bucket → Replay in Analysen; reproduzierbar über Seed + Manifest.
 
+> Stand 2026-10-11: umgesetzt in [`opentsx-windpark`](../../opentsx-windpark/README.md) (Katalog, Normalisierer, Simulator, CLI). Offen: Zeitversatz-Fehler, Tagesgang, weitere logische Knoten (`WTRM`, `WYAW`, `WCNV`).
+
 ---
 
 ## 5. KafScale – Konsequenzen für das Design (recherchiert und gemessen, v1.6.0)
@@ -212,7 +214,7 @@ Baseline: **Python ≥ 3.10** (OpenMetadata-SDK), pandas ≥ 2.2, pyarrow, fasta
 | **P0 Hygiene & Fundament** (1–2 Wo.) | Demo-Credentials durch `*.example` ersetzen; neue Module mit `maven.compiler.release=17`, CI-Matrix JDK 17 + 21; `dependencyManagement`-Sanierung für neue Module (Altbestand bleibt isoliert); CI (GitHub Actions: Java + Python); echte Python-Asserts; Altlasten nach `archive/` | grüne CI, schlanker Build für neue Module |
 | **P1 Modell v2 + Serde (Java & Python)** | `.avsc` inkl. `Segmentation`, Asset/Channel-Schemas; Single-Object-Encoding; Testvektoren | identische Roundtrips Java ⇄ Python |
 | **P2 KafScale-Conformance & Persistenz** | `docker-compose.kafscale.yml`; Conformance-Suite (Produce/Fetch, Gruppen, zstd, Header?, CreateTime?, Duplikate, ListOffsets-Verhalten); BucketWriter, Indexer, Replay | Episoden günstig in KafScale, verifizierbares Replay |
-| **P3 Windpark-Domäne** | Asset-/Kanal-Katalog (IEC 61400-25-orientiert), Normalisierer, **Simulator** mit Fehlerinjektion, Szenario-YAML | reproduzierbare Experimente, die KafScale speisen |
+| **P3 Windpark-Domäne** ✅ (`opentsx-windpark`) | Asset-/Kanal-Katalog (IEC 61400-25-orientiert), Normalisierer, **Simulator** mit Fehlerinjektion, Szenario-YAML | reproduzierbare Experimente, die KafScale speisen |
 | **P4 Iceberg + Stats + DQ + OpenMetadata** | Iceberg-Tabellen; Flink Stats/DQ/10-min; OM-Publisher (Glossary, Tags, Custom Props, Topics, Tables, Lineage, Profile, DQ) | gefüllter Metadata-Pool |
 | **P5 Segmentierung, Retrieval & Pattern** | Segmentierer (4 Strategien, batch + streaming), Retrieval-API, MASS/SAX/DTW, Power-Curve-Analyse | Episoden-Suche & Mustersuche |
 | **P6 Analytik-Lücken** | Resampling/Alignment, Gap-Filling, Change-Points, Welch-PSD/Kohärenz, Feature-Extraktion | Top-Tool-Niveau für Windpark-Analysen |
