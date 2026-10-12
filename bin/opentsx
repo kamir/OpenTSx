@@ -11,6 +11,10 @@
 #   twin               digital twin demo S1 (H2 chain) in all three modes    (org.opentsx.twin.demo.H2ChainDemo)
 #   house              house twin: KPIs + levers; --calibrate f|--simulated  (org.opentsx.twin.demo.HouseDemo)
 #   boat               boat twin (Etap 22): what-ifs, --data, --simulated     (org.opentsx.twin.demo.BoatDemo)
+#   market             market data: prices, rebap, marktwert, import, backfill, report, load
+#                                                                            (org.opentsx.market.MarketCli)
+#   twin --history d   twin S1 on archived history (year, real prices + wind)  (org.opentsx.market.twin.HistoryTwins)
+#   house --weather-year Y, boat --weather-year Y   same for house and boat (archive: --history data/history)
 #   classpath <module> print the runtime classpath of a module
 #
 # Requires a prior build: mvn -q install -DskipTests   (JDK 17+)
@@ -39,9 +43,17 @@ case "$cmd" in
   stats)            exec java -cp "$(classpath opentsx-stats)" org.opentsx.stats.StatsProcessorApp "$@" ;;
   metadata)         exec java -cp "$(classpath opentsx-openmetadata)" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
   retrieval-server) exec java -cp "$(classpath opentsx-retrieval opentsx-store-iceberg)" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
-  twin)             exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
-  house)            exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.HouseDemo "$@" ;;
-  boat)             exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.BoatDemo "$@" ;;
+  twin|house|boat)
+    # with archived history (--history / --weather-year) the run goes through the history adapter of opentsx-market
+    if [[ " $* " == *" --history "* || " $* " == *" --weather-year "* ]]; then
+      exec java -cp "$(classpath opentsx-market)" org.opentsx.market.twin.HistoryTwins "$cmd" "$@"
+    fi
+    case "$cmd" in
+      twin)  exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
+      house) exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.HouseDemo "$@" ;;
+      boat)  exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.BoatDemo "$@" ;;
+    esac ;;
+  market)           exec java -cp "$(classpath opentsx-market)" org.opentsx.market.MarketCli "$@" ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;
   *) echo "unknown command: $cmd" >&2; usage 1 ;;

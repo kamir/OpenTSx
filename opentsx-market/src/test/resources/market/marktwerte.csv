@@ -1,0 +1,4 @@
+Monat;MW-EPEX in ct/kWh;MW Wind Onshore in ct/kWh;PM Wind Onshore fernsteuerbar in ct/kWh;MW Wind Offshore in ct/kWh;PM Wind Offshore fernsteuerbar in ct/kWh;MW Solar in ct/kWh;PM Solar fernsteuerbar in ct/kWh;MW steuerbar in ct/kWh;PM steuerbar in ct/kWh;Negative Stunden (6H);Negative Stunden (4H);Negative Stunden (3H);Negative Stunden (1H)
+1/2024;7,657;6,502;;7,138;;7,535;;7,657;;Ja;Ja;Ja;Ja
+2/2024;6,134;5,335;;5,655;;5,875;;6,134;;Nein;Ja;Ja;Ja
+3/2024;6,470;5,538;;5,937;;4,965;;6,470;;Nein;Ja;Ja;Ja
