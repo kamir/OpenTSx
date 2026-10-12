@@ -36,4 +36,8 @@ connect sources, trigger reconstruction runs, compare simulation scenarios, and 
 classical solvers or, as an experiment, to quantum backends. The concept is in
 [06-SYSTEMREKONSTRUKTION-OPTIMIERUNG](../datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) (German).
 
+It would also host the **digital twin** of an energy system (phase P9): operators review optimizer proposals and
+play their own decisions through the twin before releasing them. The concept is in
+[07-DIGITAL-TWIN-BSP](../datamodel-2026/07-DIGITAL-TWIN-BSP.md) (German).
+
 This is a proposal; it is tracked in the roadmap ([chapter 15](15-roadmap.md)).

@@ -120,7 +120,7 @@ Messobjekt)*, gesteuert über den Personal Service Layer (P7e). Abnahme jeweils 
 Windpark-Simulators.
 
 **P8.0 – Fundament (Vertrag)**
-- [ ] Ground-Truth-Export: wahrer Wake-/Kopplungsgraph je Windrichtungssektor aus `opentsx-windpark` (Szenario-Erweiterung, z. B. `ostsee-demo.yaml`), inkl. injizierter Fehler/Regime.
+- [ ] Ground-Truth-Export: **der vom Simulator zur Datenerzeugung verwendete** gerichtete Wake-Graph je Windrichtungssektor aus `opentsx-windpark` (Jensen, `WakeModel`), gekennzeichnet als Simulationsreferenz (`gt.source=simulator`, `gt.kind=wake`). Festlegungen nach [07 §8](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md): meteorologische Konvention, 12 × 30°-Sektoren, Kante `A → B` = B im Wake-Kegel von A für mindestens eine Sektorrichtung, Gewichte (mittleres/maximales Defizit, Abdeckungsanteil, Abstand in D) bei Referenz-Ct (8 m/s) plus Ct-Tabelle 4/8/12 m/s; zusätzlich das **dynamische Kantenlog** des Laufs (aktive Paare je 10-s-Schritt), inkl. injizierter Fehler/Regime. Grenzen (keine Stabilität/Mäander) dokumentieren.
 - [ ] Iceberg-Schema der **Kantentabelle** (Multilayer, versioniert): Quelle/Ziel-Serie, Layer/Methode, Lag, Stärke, Signifikanzfelder (l_adj, l_norm, l_trans, p-Wert, Surrogattyp, Konfidenz aus Bagging), Fenster, Spezifikations-Hash, Provenienz (Episoden-Hash, Topic/Offsets).
 - [ ] OpenLineage-Facet „Replay-Provenienz“ in `opentsx-openmetadata`; Kantentabelle, Simulationsläufe und Optimierungsinstanzen als Lineage-Knoten in OpenMetadata.
 
@@ -155,6 +155,54 @@ Windpark-Simulators.
 **P8.x – Content-Interaktion / ER1**
 - [ ] Klären, ob ein anonymisierter oder synthetischer Auszug ER1-artiger Daten (Zugriff, Edit, Feedback) als zweiter Prüfstein bereitgestellt werden kann; sonst Validierung mit öffentlichen Wikipedia-Pageviews/Clickstream.
 - [ ] Synthetischer Generator für Content-Interaktion mit bekannter Kopplung und Feedback (Gegenstück zum Windpark-Simulator).
+
+### Phase 9 – Digitaler Zwilling Energieverbund (BSP) – Konzept: [`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
+
+Verbund aus Windpark, Elektrolyseur, H2-Leitung, Speicher, Eigenverbrauch/Direktabnehmer und Vermarktung als
+Schaltplan atomarer Elemente (MVC+P), ausgeführt als geschichtetes BSP; Smart Topics liefern gelernte Teilmodelle und
+publizieren den Zwilling. **Status: Vorschlag (D18–D24).** Gestuft mit Wertschranken (A–D); P8.3/P8.4 liefern
+Simulation auf rekonstruierter Struktur und Optimierer-Policy.
+
+**P9.0 – Stufe A: Datenzugang & Potenzial (ohne Simulation)**
+- [ ] Generisches **Modbus-Modul** (TCP/RTU), Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS), Pollintervall → `RawReading` → Normalizer → Episoden.
+- [ ] **IEC 60870-5-101/-104**-Adapter für die Parkrechner-Schnittstelle (Datenaustausch mit dem Elektrolyseurbetreiber, beide Richtungen).
+- [ ] Elektrolyseur-Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme) über die vereinbarte Schnittstelle (104, OPC UA oder Export) als Quelle `REPORTED`.
+- [ ] **DWD-Sammler**: Open-Data-Prognosen (MOSMIX/ICON) und Messungen, automatischer Abruf, Stationsauswahl je Standort, optional deutschlandweit.
+- [ ] Markt- und Partnerdaten: Preise (Day-Ahead/Intraday, 15-min-MTU), Prognosen und Fahrpläne des Direktvermarkters, Leitsystem-API (Schnittstellenbeschreibung ausstehend); zeitgesteuerter Abruf mit Formatkonvertierung, wo keine API existiert.
+- [ ] Batch-Import einzelner Datenpakete (historische Reihen) mit Herkunftsmetadaten.
+- [ ] Metrikkatalog für neue Kanäle (Zähler, Elektrolyse, Speicher, H2) analog zum IEC-Katalog, Veröffentlichung über den OpenMetadata-Publisher.
+- [ ] Kafka-Spiegelung über temporären SSH-Tunnel in eine lokale Umgebung; technische Validierung (Offsets, Anzahl, Bytes, Hash) und fachliche Validierung (je Metrik identische Sketches/Statistiken).
+- [ ] OpenTSDB als optionale Projektionsschicht (vorhandener Adapter).
+- [ ] Abnahme S2: Potenzialabschätzung (Überlappung Erzeugung/Verbrauch, Direktbelieferungsanteil vs. Einspeisung, Größenordnung €/a) mit Herkunftsanteilen → **Schranke A**.
+
+**P9.1 – Atomvertrag & Runner**
+- [ ] Screening Stand der Technik vor dem Bau: mosaik, HELICS, FMI 3.0 (Atome als FMUs?), pandapower, PyPSA, oemof → Entscheidung D24.
+- [ ] Atomvertrag MVC+P: Avro-Schemas je Atomtyp für Zustand und Ports (Bestand/Fluss/Signal, Einheit), Invarianten, Sensorsicht `h(x)`.
+- [ ] Schaltplan-YAML (Atome, Parameter, Verdrahtung), Validierung (Typ/Einheit der Ports, Zyklen nur über Schrittgrenzen), Hash in die Lineage.
+- [ ] Twin-Runner: geschichtetes BSP (Phasen Ingest → Verfügbarkeit → Policy → Bilanz → Integration → Views), Basistakt 1 min, Mehrrate, Ereignisse mit exaktem Zeitpunkt.
+- [ ] Topics `twin.<id>.<run>.msgs|barrier|interventions` mit deterministischen Ids, Superschritt-Commit mit Zustands-Hash; Zustandssnapshots in Iceberg (`twin_state`); Replay-Verifikation bitgleich.
+- [ ] Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` mit Taint-Propagation in alle KPIs.
+
+**P9.2 – Atomkatalog**
+- [ ] A1 WEA, A2 Wake-Kopplung (Relationsatom, Jensen; später rekonstruierter Graph aus P8), A3 Parkregler.
+- [ ] A4 Wetter, A5 Zähler/Messpunkt, A6 Bilanzknoten/Messkonzept (Prioritäten: Eigenverbrauch vor Markt), A7 Eigenverbraucher/Direktabnehmer.
+- [ ] A8 Batteriespeicher, A9 Elektrolyseur (Zustandsautomat, Rampen, Schutzabregelung über Leitungsdruck), A10 H2-Leitung/Linepack (Zeit-bis-Grenze), A11 H2-Abnehmer.
+- [ ] A12 Markt, A13 Direktvermarkter/Fahrplan/PPA (Abweichung, Ausgleichsenergie), A14 Bediener (Eingriffe), A15 Optimierer (Policy-Atom).
+
+**P9.3 – Betriebsarten & Abnahmeszenarien**
+- [ ] Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog), Prognose/MPC – gleiche Atome, andere Bindung.
+- [ ] S3 PPA-Schattenbetrieb vor der offiziellen Umstellung des Messkonzepts (Fahrplan/Prognose des Vermarkters gegen Erzeugung) → **Schranke B**.
+- [ ] S1 H2-Kette (Schieber zu → Druck → Zeit-bis-Grenze → Abregelung → Fahrplanabweichung → Mehrvermarktung), Eingriffe ändern alle nachgelagerten Zahlen konsistent → **Schranke C**.
+- [ ] S4 Wake-Referenz im Park-Atom reproduziert; rekonstruierter Graph (P8.1) dagegen geprüft.
+
+**P9.4 – Policy, Optimierung & Service Layer**
+- [ ] Smart Topics als Prognose-Ports und Schätzer für fehlende Daten; Zwilling als abgeleitetes Smart Topic mit What-if-Endpunkt der Prediction-API.
+- [ ] Optimierer als Policy-Atom (P8.4, rollierender Horizont); Vorschläge im Personal Service Layer vor Freigabe im Zwilling durchspielen; Mehrerlös gegen Referenzfahrweise → **Schranke D**.
+
+**P9.5 – Übertragbarkeit & Föderation**
+- [ ] Schaltplan-Vorlagen für neue Projekte (Park + Direktleitung + Abnehmerlastgang) zur Bewertung vor dem Bau.
+- [ ] Vergleich mehrerer Anlagen über generische Kenngrößen ohne Rohdatenexport (Wayang-Föderation, mergebare Sketches); vertikale Erweiterung (CMS-Daten, PV).
+- [ ] Edge-Sammler (Modbus/104/DWD) optional als Go/Rust-Binaries; kein Kern-Neubau vor Schranke B (D23).
 
 ## Modulstruktur (umgesetzt, Stand 2026-10-12)
 
@@ -195,10 +243,17 @@ opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, RES
 | D15 | P8: Lizenzen | **Vorschlag:** GPL-Bibliotheken (tigramite, JIDT, IDTxl) nur hinter Prozessgrenze; Kämpf-Maße und ECA als Clean-Room-Implementierung unter Apache 2.0 |
 | D16 | P8: Quantenrechnen | **Vorschlag:** klassische Solver sind Standard; Quantenbackends nur als Messobjekt mit vorab festgelegtem Benchmarkprotokoll (kein belegter Vorteil, Stand 2026) |
 | D17 | P8: Reihenfolge | **Vorschlag:** Benchmark mit Ground Truth zuerst (P8.0/P8.1), Quanten zuletzt (P8.5) |
+| D18 | P9: Atomvertrag | **Vorschlag:** MVC+P (Dynamik und Policy getrennt), Avro-Schema je Atomtyp, Atomkatalog als Standardbauteile, Schaltplan-YAML je Anlage |
+| D19 | P9: Ausführung | **Vorschlag:** geschichtetes BSP, Basistakt 1 min, Mehrrate als ganzzahlige Vielfache, deterministisch, Barriere-Topic |
+| D20 | P9: Einbettung | **Vorschlag:** PoC mit einem Twin-Runner im Prozess; gelernte Teilmodelle als Smart Topics; Verteilung je Atomtyp erst bei Bedarf |
+| D21 | P9: Datenqualität | **Vorschlag:** Herkunftsleiter mit Taint-Propagation; jede KPI zeigt ihren Messanteil |
+| D22 | P9: Vorgehen | **Vorschlag:** Stufen A–D mit Wertschranken; Stufe A (Daten & Potenzial) ohne Simulation |
+| D23 | P9: Sprache | **Vorschlag:** Kern bleibt Java; Edge-Sammler dürfen Go/Rust sein; kein Kern-Neubau vor Schranke B |
+| D24 | P9: Kosimulation | **Vorschlag:** Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
 
 > **Hinweis:** Die Phasenreihenfolge folgt der Gap-Analyse
-> ([`03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md)), ergänzt um P7 (Smart Topics) und
-> P8 (Systemrekonstruktion & Optimierung).
+> ([`03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md)), ergänzt um P7 (Smart Topics),
+> P8 (Systemrekonstruktion & Optimierung) und P9 (Digitaler Zwilling Energieverbund).
 
 ## Risiken
 
@@ -208,6 +263,9 @@ opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, RES
 - **Quanten-Hype** → nur Messobjekt mit festem Protokoll; „kein Vorteil“ ist ein gültiges Ergebnis.
 - **Identifizierbarkeit/Nicht-Stationarität** bei Rekonstruktion und Zwillingen → Regime-Segmentierung (P5), gezielte Anregung im Simulator.
 - **`offsetsForTimes` setzt monotone CreateTime je Partition voraus** – bei Out-of-Order-Produktion ist Zeit-Replay unscharf → Replay liest ab gefundenem Offset und filtert, Iceberg als präziser Index.
+- **Zwilling größer als sein Nutzen** (P9) → Stufen mit Wertschranken; Stufe A ohne Simulation; Screening bestehender Kosimulationswerkzeuge vor Eigenbau.
+- **Datenzugang hängt von Partnern ab** (Elektrolyseur, Vermarkter, Netzbetreiber-Zähler) (P9) → Herkunftsleiter mit Schätzern/Profilen, damit der Zwilling auch ohne diese Daten plausibel rechnet und den Messanteil ausweist.
+- **Algebraische Schleifen** in der Leistungsbilanz (P9) → geschichtetes BSP mit Bilanzknoten im selben Schritt; Zyklen nur über Schrittgrenzen.
 - **OpenMetadata-Last** bei Statistik pro Serie → Aggregation & Rate-Limit.
 - **Schema-Drift** zwischen Java und Python → gemeinsame `.avsc` + geteilte Testvektoren.
 
@@ -220,6 +278,15 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] D6 Iceberg-Catalog/Object Store (REST + MinIO) final festlegen.
 - [ ] D14–D17 (P8-Vorschläge) bestätigen.
 - [ ] ER1: Bereitstellung anonymisierter/synthetischer Content-Interaktionsdaten (P8.x).
+- [ ] D18–D24 (P9-Vorschläge) bestätigen.
+
+**Energieverbund / Projektumfeld (P9, organisatorisch – außerhalb des Codes)**
+- [ ] Zählerdaten: Umsetzer und Verkabelung am LWL-Abschluss beauftragen (Modbus der Netzbetreiber-Zähler; freie Faserpaare vorhanden), Registerkarten der Zähler beschaffen.
+- [ ] Datenaustausch mit dem Elektrolyseurbetreiber vereinbaren: Parkrechner-Daten über IEC 104 gegen Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme).
+- [ ] Prognose- und Fahrplandaten beim Direktvermarkter anfordern (für den PPA-Schattenbetrieb vor der Umstellung des Messkonzepts).
+- [ ] Schnittstellenbeschreibung (Swagger/OpenAPI) der Leitsystem-API beschaffen.
+- [ ] Abstimmung zum konkreten Aufsatzpunkt (wo werden Daten eingespielt, Hardware/VPN) – geplant für die kommende Woche.
+- [ ] Bewertung Direktleitung/Direktbelieferung (technische Machbarkeit hinter getrennten Netzanschlüssen) als Eingang für Schaltplan-Vorlagen (P9.5).
 
 **Repository & Open Source (TASK-010)**
 - [ ] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert), CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Policy), CHANGELOG.
@@ -249,6 +316,8 @@ Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – 
 - [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
 
 ## Progress Log
+
+- 2026-10-12: **Phase 9 vorgeschlagen** (Digitaler Zwilling Energieverbund, Konzept `07-DIGITAL-TWIN-BSP.md`: Atome mit MVC+P, Schaltplan, geschichtetes BSP, Smart Topics als Einbettung, Stufen A–D); Wake-Ground-Truth in P8.0 präzisiert (Simulationsreferenz); Punkte aus dem Projektgespräch in den Backlog.
 
 - 2026-10-12: **Phase 8 aufgenommen** (Systemrekonstruktion → Simulation → Optimierung, Konzept `06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md` aus Deep Research mit Bezug auf Kämpf 2017); vollständiger Backlog aller offenen Punkte.
 - 2026-10-12: **Doku-Refresh**: neues englisches User-Manual (`docs/user-manual/`), Inventur (`docs/DOCUMENTATION-INVENTORY.md`), Archivierung veralteter Doku und Module außerhalb des Builds (`archive/`), Launcher `bin/opentsx`, Link-Check in CI.
