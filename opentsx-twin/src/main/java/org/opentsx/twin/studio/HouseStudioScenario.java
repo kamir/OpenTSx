@@ -6,6 +6,7 @@ import org.opentsx.twin.RunResult;
 import org.opentsx.twin.TwinPlan;
 import org.opentsx.twin.demo.HouseDemo;
 import org.opentsx.twin.house.HouseKpis;
+import org.opentsx.twin.house.HouseScenario;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -14,6 +15,19 @@ import java.util.Map;
 
 /** The single-family house in the Erzgebirge (P9.7) for the Studio: one synthetic year, levers as alternatives. */
 public final class HouseStudioScenario implements StudioScenario {
+
+    /** German names of the levers (ids from {@code HouseScenario.levers}). */
+    private static final Map<String, String> LEVERS = Map.of(
+            "minus-1K", "Raumtemperatur 1 °C niedriger (21 → 20 °C)",
+            "night-setback-5K", "Tiefere Nachtabsenkung (3 → 5 K, 22 bis 6 Uhr)",
+            "unused-rooms-17C", "Selten genutzte Räume 4 K kühler (20 % der Fläche)",
+            "more-wood", "Mehr Holz: Ofen 7 statt 4 Stunden je Abend",
+            "dhw-50C", "Warmwasserspeicher 50 statt 60 °C",
+            "he-pump", "Hocheffizienzpumpe (8 statt 65 W)",
+            "new-freezer", "Neue Gefriertruhe (60 % weniger Strom)",
+            "standby-off", "Standby abschalten (Steckerleisten)",
+            "less-tv", "30 % weniger Fernsehzeit",
+            "combined", "Alle Hebel außer „mehr Holz“");
 
     private final TwinPlan plan = HouseDemo.plan();
 
@@ -29,7 +43,7 @@ public final class HouseStudioScenario implements StudioScenario {
 
     @Override
     public String description() {
-        return "Zwei Bewohner, Ölkessel und Kaminofen, kein PV, keine Wärmepumpe. Ein Jahr im Stundentakt auf "
+        return "Zwei Bewohner, Ölkessel und Kaminofen, kein PV, keine Wärmepumpe. Ein Jahr in Stundenschritten auf "
                 + "synthetischem Klima; alle Zahlen sind Annahmen, bis die Abrechnungen eingespielt sind. Hebel sind modelliert.";
     }
 
@@ -52,7 +66,8 @@ public final class HouseStudioScenario implements StudioScenario {
     public List<Alternative> alternatives() {
         List<Alternative> out = new ArrayList<>();
         HouseDemo.alternativesFor(plan).forEach((name, a) -> out.add(new Alternative(name,
-                name + " · " + a.description(), a.interventions(), a.policyOverrides(), a.inputOverrides())));
+                LEVERS.getOrDefault(name, name + " · " + a.description()), a.interventions(), a.policyOverrides(),
+                a.inputOverrides())));
         return out;
     }
 
@@ -84,8 +99,8 @@ public final class HouseStudioScenario implements StudioScenario {
                 new Kpi("kpi.boiler_loss_kwh", "Kesselverluste", "kWh", 0, -1),
                 new Kpi("kpi.mean_indoor_c", "mittlere Raumtemperatur", "°C", 1, 0),
                 new Kpi("kpi.under_h", "Stunden unter Komfortgrenze", "h", 0, -1),
-                new Kpi("kpi.cost_eur", "Kosten (Modell)", "€", 0, -1),
-                new Kpi("kpi.co2_kg", "CO₂ (Modell)", "kg", 0, -1));
+                new Kpi("kpi.cost_eur", "Energiekosten im Jahr", "€", 0, -1),
+                new Kpi("kpi.co2_kg", "CO₂ im Jahr", "kg", 0, -1));
     }
 
     @Override
@@ -101,6 +116,22 @@ public final class HouseStudioScenario implements StudioScenario {
         m.put("woodstore.stock_ster", "Holzvorrat");
         m.put("meter.p_import_kw", "Strombezug");
         return m;
+    }
+
+    @Override
+    public List<String> headline() {
+        return List.of("kpi.cost_eur", "kpi.oil_l", "kpi.co2_kg", "kpi.final_heat_kwh_m2");
+    }
+
+    @Override
+    public String decision() {
+        return "Welcher Hebel lohnt sich, und zu welchem Verlust an Komfort?";
+    }
+
+    @Override
+    public Map<String, List<Limit>> limits() {
+        return Map.of("tank.level_l", List.of(new Limit("Bestellschwelle",
+                HouseScenario.param(plan, "tank", "reorderL", 600))));
     }
 
     @Override

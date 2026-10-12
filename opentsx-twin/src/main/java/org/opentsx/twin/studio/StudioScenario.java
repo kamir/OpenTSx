@@ -48,6 +48,21 @@ public interface StudioScenario {
     /** KPI rows (final state values, {@code atom.var}). */
     List<Kpi> kpis();
 
+    /** KPI keys shown as headline figures; by default the first four KPIs. */
+    default List<String> headline() {
+        return kpis().stream().limit(4).map(Kpi::key).toList();
+    }
+
+    /** The decision the scenario supports, as one question; empty if none is stated. */
+    default String decision() {
+        return "";
+    }
+
+    /** Limit lines drawn in the charts of a series (keyed by output key), e.g. a maximum pressure. */
+    default Map<String, List<Limit>> limits() {
+        return Map.of();
+    }
+
     /** Human-readable labels for series keys; missing keys show the key itself. */
     default Map<String, String> labels() {
         return Map.of();
@@ -80,6 +95,9 @@ public interface StudioScenario {
         public Forecast {
             policies = policies == null ? Map.of() : Map.copyOf(policies);
         }
+    }
+
+    record Limit(String label, double value) {
     }
 
     /** {@code better}: +1 if higher is better, -1 if lower is better, 0 neutral. */

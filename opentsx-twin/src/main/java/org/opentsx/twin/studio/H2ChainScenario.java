@@ -26,7 +26,7 @@ public final class H2ChainScenario implements StudioScenario {
     @Override
     public String description() {
         return "Der Abnehmer schließt um 01:00 den Schieber. Die Leitung füllt sich, der Elektrolyseur schaltet ab, "
-                + "der Direktvermarkter muss mehr Strom verkaufen. 6 h im 1-Minuten-Takt, synthetische Daten.";
+                + "der Direktvermarkter muss mehr Strom verkaufen. Sechs Stunden in Minutenschritten, synthetische Daten.";
     }
 
     @Override
@@ -48,7 +48,7 @@ public final class H2ChainScenario implements StudioScenario {
     public List<Alternative> alternatives() {
         List<Alternative> out = new ArrayList<>();
         for (String policy : new String[]{"follow", "pressure-aware"}) {
-            String pName = policy.equals("follow") ? "dem Fahrplan folgen" : "druckbewusst";
+            String pName = policy.equals("follow") ? "Fahrweise unverändert" : "Elektrolyseur drosselt bei steigendem Druck";
             Map<String, String> pol = policy.equals("follow") ? Map.of() : Map.of("ely", policy);
             if (!policy.equals("follow")) {
                 out.add(new Alternative("closed-" + policy, "Schieber bleibt zu · " + pName, reference(), pol, null));
@@ -70,8 +70,8 @@ public final class H2ChainScenario implements StudioScenario {
         List<Forecast> out = new ArrayList<>();
         for (int now : new int[]{70, 90, 110, 130}) {
             String t = String.format("%02d:%02d", now / 60, now % 60);
-            out.add(new Forecast("now-" + now + "-follow", "ab " + t + " · dem Fahrplan folgen", now, Map.of()));
-            out.add(new Forecast("now-" + now + "-aware", "ab " + t + " · druckbewusst", now, Map.of("ely", "pressure-aware")));
+            out.add(new Forecast("now-" + now + "-follow", "ab " + t + " · Fahrweise unverändert", now, Map.of()));
+            out.add(new Forecast("now-" + now + "-aware", "ab " + t + " · Elektrolyseur drosselt bei steigendem Druck", now, Map.of("ely", "pressure-aware")));
         }
         return out;
     }
@@ -93,8 +93,8 @@ public final class H2ChainScenario implements StudioScenario {
                 new Kpi("line.p_max_bar", "Höchster Leitungsdruck", "bar", 2, -1),
                 new Kpi("ely.h2_kg", "Erzeugter Wasserstoff", "kg", 1, 1),
                 new Kpi("offtake.delivered_kg", "An Abnehmer geliefert", "kg", 1, 1),
-                new Kpi("marketer.extra_kwh", "Mehrvermarktung über Fahrplan", "kWh", 0, -1),
-                new Kpi("marketer.revenue_eur", "Erlös Einspeisung (Modell)", "€", 0, 0));
+                new Kpi("marketer.extra_kwh", "Ungeplante Mehreinspeisung", "kWh", 0, -1),
+                new Kpi("marketer.revenue_eur", "Erlös Einspeisung (ohne Ausgleichsenergie und H₂-Erlös)", "€", 0, 0));
     }
 
     @Override
@@ -117,6 +117,29 @@ public final class H2ChainScenario implements StudioScenario {
         m.put("line.m_net_kgph", "Netto-Zufluss Leitung");
         m.put("rules.limit_kw", "Leistungsgrenze (Betriebsvorgaben)");
         return m;
+    }
+
+    @Override
+    public List<String> headline() {
+        return List.of("ely.trips", "marketer.extra_kwh", "offtake.delivered_kg", "line.p_max_bar");
+    }
+
+    @Override
+    public String decision() {
+        return "Bis wann muss der Schieber wieder offen sein, und wann wird der Direktvermarkter informiert?";
+    }
+
+    @Override
+    public Map<String, List<Limit>> limits() {
+        TwinPlan p = plan();
+        return Map.of("line.p_bar", List.of(
+                new Limit("Höchstdruck", param(p, "line", "pMaxBar")),
+                new Limit("Wiedereinschalten", param(p, "ely", "pResumeBar"))));
+    }
+
+    private static double param(TwinPlan plan, String atom, String name) {
+        return plan.atoms().stream().filter(a -> a.id().equals(atom)).findFirst()
+                .map(a -> ((Number) a.params().get(name)).doubleValue()).orElseThrow();
     }
 
     @Override
