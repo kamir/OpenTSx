@@ -5,7 +5,9 @@
 > [14](14-ENGINEERING-FLOW.md). Es ändert den Plan ab der Lieferstufe nach L3 und schärft die Verträge. Umgesetzt
 > ist davon: die Korrektur des H2-Beispiels; Rolle, Bedeutung und Betriebsbereich im Systemdokument und in den
 > Details eines Signals; eine Kennung für bereinigte Episoden; zwei Schema-Entwürfe mit Beispiel. Alles andere
-> folgt in den Stufen, in der Reihenfolge aus D62: erst L4 und L5, dann E1 bis E3. Arbeitspaket:
+> folgt in den Stufen, in der Reihenfolge aus D62: erst L4 und L5, dann E1 bis E3. Ein zweites Briefing (das
+> Jahresmodell eines Windparks mit Wasserstoff) ist in Abschnitt 13 verarbeitet und am selben Tag entschieden (D64
+> bis D66): Der Systemplan und das reale Jahr 2025 kommen vor E1. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md).
 
 ## 1. Kurzfassung
@@ -429,3 +431,91 @@ Entschieden vom Auftraggeber am 2026-10-13.
   Kafka-Clients, und der Nachweis der Korrektur auf master2 steht aus.
 * **Wer eine Entscheidungskarte ändern darf,** und wie sie versioniert wird, folgt D42 (Datei im Repository,
   Arbeitskopie je Konto) und ist dort so offen wie beim Systemdokument.
+
+## 13. Zweites Briefing: das Jahresmodell
+
+Ein zweites externes Briefing (2026-10-13) beschreibt das Ziel als gekoppeltes Betriebsmodell eines Windparks, das
+für ein ganzes Jahr rechnet, wie Windstrom, Batterie, Elektrolyse, Wasserstoffspeicher und Vermarktung
+zusammenarbeiten. Geprüft ist es gegen den Stand des Repositorys. Die Quellen, die es nennt (PyPSA, windpowerlib,
+DWD, KNE), sind **nicht nachgeschlagen**; was hier über sie steht, ist die Aussage des Briefings.
+
+### 13.1 Was sich deckt
+
+| Aussage des Briefings | Stand hier |
+|---|---|
+| Die Aufbereitung ist ein DAG; Rückkopplung gehört in den Simulator | so gebaut: Der Prozessor rechnet DAGs, der Zwilling hat die Schleife zwischen Elektrolyseur und Leitung |
+| Jede Zahl sagt, ob sie gemessen, vorgegeben, geschätzt oder simuliert ist; Simulation überschreibt keine Messkanäle | D56; Generiertes hat ein eigenes Topic; `origin` und `madeOf` an jeder Reihe |
+| Was fehlt, sperrt nur, was davon abhängt | seit L5 gebaut (Abschnitt 7) |
+| Rollierende Planung ist nur ohne Zukunftswissen ehrlich, wenn ihre Eingaben es sind | Abschnitt 6 und E2: Replay mit dem damaligen Stand |
+| Historie und Livebetrieb über denselben Kanalvertrag, ohne Lücke und Doppelzählung | Abschnitt 6; die Kennung der Episoden übersteht einen Neustart |
+| Eine neue Strategie gegen eine einfache Referenz | D63, E3 |
+
+Schon vorhanden, was das Briefing nicht kennt: `opentsx-market` (Day-Ahead-Preise, reBAP, Marktwerte, Archiv mit
+Manifest und Qualitätsbericht, Zwillinge auf realer Historie), `opentsx-dwd` (Stationsdaten und MOSMIX), der
+Zwilling `h2-chain` mit neun Bausteinen, darunter Betriebsregeln und Direktvermarktung.
+
+### 13.2 Was übernommen wird
+
+* **Drei Leistungsgrößen.** Wetterbedingtes Potenzial vor Einschränkungen, zulässig verfügbare Leistung nach
+  technischen und umweltbedingten Einschränkungen, tatsächlich gefahrene Leistung. Heute gibt es die zweite
+  (`park.p_avail_kw`) und die dritte (`park.p_gen_kw`); die erste kommt dazu. Erst mit allen dreien lässt sich
+  sagen, warum Energie nicht erzeugt wurde.
+* **Topologie der Wasserstoffseite.** Puffer, Verdichter und Übergabestation als eigene Bausteine; `p_bar` wird in
+  zugeordnete Ein- und Ausgangsdrücke geteilt; `headroom_kg` gehört zu einem benannten Speicher; der Abnehmer hängt
+  physisch an der Übergabe, sein Bedarf ist eine eigene Informationsverbindung; Marktvertrag und physische
+  Netzabgabe sind getrennt. Die Reihenfolge von Verdichter, Puffer und Leitung ist eine Eigenschaft der Anlage,
+  keine der Darstellung. Solange keine echte Anlage vorliegt, ist die gewählte Reihenfolge eine Annahme und steht
+  als solche im Plan.
+* **Überlappende Abschaltungen** werden nicht mehrfach als Verlust gezählt: eine ausgewiesene Zuordnungsregel und
+  die Überschneidung getrennt sichtbar.
+* **Kennungen eines Laufs.** Jedes Ergebnis trägt Lauf und Szenario neben Signal, Einheit, Fassung und Prüfstatus.
+  Heute stehen Flow, Herkunft und Hash der Spezifikation an der Reihe; `run` und `scenario` kommen mit E3.
+* **Faire Anfangs- und Endbestände** beim Vergleich von Läufen: Ein Lauf darf nicht besser aussehen, weil er
+  Batterie und Speicher am Ende leert.
+* **Einheiten für Wasserstoff.** kg und kg/h im Fachmodell; die Umrechnung auf eine Energiebasis geschieht an einer
+  Stelle, mit benannter Heizwertbasis.
+
+### 13.3 Einwände
+
+1. **Der Umfang.** Fünf Entscheidungen, ein Optimierer, Druckphysik, Regeln für Fledermäuse und Bewirtschaftung
+   sind ein Programm, keine Lieferstufe. Der Durchstich für eine Entscheidung bleibt deshalb das Maß (D64).
+2. **Der Optimierer.** Startzeiten, Mindestlaufzeiten und Stand-by des Elektrolyseurs machen die Aufgabe
+   ganzzahlig; über 35.040 Schritte mit voller Voraussicht ist das schwer. Ein Teillastwirkungsgrad braucht eine
+   stückweise Näherung. Es wäre ein zweiter Rechenkern in Python neben dem Zwilling in Java.
+3. **Die Schleife** aus Fahrplan, Druckprüfung und Neuberechnung hat im Briefing keine Abbruchregel. Sie braucht
+   eine Obergrenze der Durchläufe und eine feste Regel, wie Grenzen verschärft werden; sonst kann sie pendeln.
+4. **Das Jahr 2025 hat einen Bruch.** Der Day-Ahead-Preis ist bis zum Liefertag 2025-09-30 stündlich und danach
+   viertelstündlich. Das Archiv hält die Originalauflösung; ein Stundenwert wird durch Wiederholung keine
+   Viertelstundenmessung, und die Herkunft sagt das.
+5. **Historische Prognosen.** Die rollierende Planung braucht die Prognosen von damals. Ob MOSMIX für 2025
+   rückwirkend zu bekommen ist, ist nicht geprüft. Sonst bleiben simulierte Prognosen mit benanntem Fehlerverhalten.
+6. **Die Leistungskurve von L5 ist ein Demo-Modell.** Sie rechnet aus der Windgeschwindigkeit an der Gondel, ohne
+   Nabenhöhe, Luftdichte und Parkverluste. Für Wind einer DWD-Station reicht sie nicht.
+7. **Ohne Daten der Anlage** bleibt jedes Ergebnis `restricted`. Reales Wetter und reale Preise mit angenommenen
+   Anlagenwerten ergeben eine wettergetriebene Simulation, keine Rekonstruktion des Betriebs. Bewirtschaftung und
+   Fledermausschutz wären reine Szenarien.
+8. **Der Broker im Labor** trägt ein Jahr in Viertelstunden (35.040 Werte je Signal), kein Jahr in Sekunden.
+
+### 13.4 Entscheidungen
+
+Entschieden vom Auftraggeber am 2026-10-13.
+
+| Nr. | Thema | Entscheidung | Stand |
+|---|---|---|---|
+| D64 | Ziel | **beides:** Der Durchstich für eine Entscheidung bleibt (D52, D62). Das reale Jahr 2025 wird als Daten vorgezogen und kommt vor E1, damit die weiteren Stufen auf echten äußeren Daten laufen | **geändert** (Vorschlag war: das Jahr als Szenariomodell in E2c) |
+| D65 | Optimierer | später, als eine weitere Analyse der Entscheidungskarte nach E3, mit Export des Systems (Netz als NetCDF, dazu ein Manifest mit Zuordnung, Einheiten, Datenständen und Fassungen). Bis dahin rechnet der Zwilling. Die Druckprüfung bleibt im Zwilling | wie vorgeschlagen |
+| D66 | Reihenfolge | **der Systemplan zuerst:** Topologie und drittes Leistungssignal aus 13.2 vor allem anderen; danach E1a | **geändert** (Vorschlag war: E1a, E2a, E1b) |
+
+**Folgen.** D64 und D66 stellen zwei Stufen vor E1. Ihre Reihenfolge untereinander ist nicht eigens entschieden;
+gewählt ist: erst der Plan, dann die Daten, weil der Plan festlegt, welche Signale es gibt und woran das Jahr
+gebunden wird.
+
+| Stufe | Inhalt | Abgenommen, wenn |
+|---|---|---|
+| **S1 Systemplan** | Zwilling und Systemdokument `h2-chain` in neuer Fassung: Puffer, Verdichter, Übergabestation; getrennte Drücke; `headroom_kg` am Speicher; Bedarf als Informationsverbindung; Marktvertrag getrennt von der Netzabgabe; Signal für das wetterbedingte Potenzial; die Annahme zur Reihenfolge im Plan vermerkt | der Plan hat keinen Eingang von außen ohne Signal; der Zwilling läuft mit dem neuen Plan durch seine Tests; das Systembild zeigt die neuen Bausteine |
+| **J1 Das Jahr 2025 als Daten** | Preise und Wetter des Jahres 2025 aus dem Archiv als Reihen im Topic, an die Signale des Systems gebunden, mit Herkunft `REPORTED` und `MEASURED`; der Bruch der Auflösung im Preis und die Tage der Zeitumstellung geprüft; die Quelle des Windes benannt (Station, Höhe) und als nicht auf Nabenhöhe übertragen gekennzeichnet | `market.price_eur_mwh` hat Daten für 2025 mit Herkunft `REPORTED`; die Seite Signals zeigt Abdeckung und Lücken des Jahres; kein Wert ist erfunden, um eine Lücke zu schließen |
+| danach | E1a, E2a, E1b, E2b, E2c, E3a, E3b aus 10.3. E2c schrumpft auf das, was J1 nicht liefert (Bedarf des Abnehmers, Zusammenhang der äußeren Größen) | wie in 10.3 |
+
+Offen bleibt nach diesem Briefing: Standort und Koordinaten, Kennwerte der Anlagen, Druckbereiche der
+Wasserstoffseite, das Abnahmeprofil, die Bedingungen für Import, Export und Vermarktung. Ohne sie sind die Werte
+des Plans Annahmen und als solche geführt.

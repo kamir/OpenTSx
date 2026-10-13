@@ -145,6 +145,11 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
 - [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge. Neuplanung als Vorschlag in 15,
       Abschnitt 10.3 (2026-10-13): was L4 und L5 von E1 und E2 schon liefern, sieben Schnitte, drei offene Fragen;
       die Entscheidung des Auftraggebers steht aus
+      - Entschieden am 2026-10-13 nach einem zweiten Briefing (15, Abschnitt 13; D64 bis D66): der Durchstich
+        bleibt, der Systemplan (S1) und das reale Jahr 2025 als Daten (J1) kommen vor E1; der Optimierer folgt
+        nach E3 als Analyse
+- [ ] 014.13 S1 Systemplan `h2-chain` in neuer Fassung (15, Abschnitt 13.4)
+- [ ] 014.14 J1 Das Jahr 2025 als Daten (15, Abschnitt 13.4)
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 
