@@ -60,7 +60,11 @@ public final class WindPark extends Atom {
 
     @Override
     public Map<String, Double> controlDefaults() {
-        return Map.of("limit_kw", ratedKw, "dispatch_kw", ratedKw);
+        // in a fixed order: a Map.of with two entries iterates differently from one JVM to the next
+        Map<String, Double> c = new LinkedHashMap<>();
+        c.put("dispatch_kw", ratedKw);
+        c.put("limit_kw", ratedKw);
+        return c;
     }
 
     @Override

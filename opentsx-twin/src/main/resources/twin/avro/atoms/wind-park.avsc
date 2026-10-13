@@ -87,12 +87,12 @@
       "name" : "WindParkControls",
       "doc" : "Controls of wind-park overridden by interventions (null: policy decides)",
       "fields" : [ {
-        "name" : "limit_kw",
+        "name" : "dispatch_kw",
         "type" : [ "null", "double" ],
         "doc" : "default 10000.0",
         "default" : null
       }, {
-        "name" : "dispatch_kw",
+        "name" : "limit_kw",
         "type" : [ "null", "double" ],
         "doc" : "default 10000.0",
         "default" : null
