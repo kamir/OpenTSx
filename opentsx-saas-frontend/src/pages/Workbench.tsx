@@ -77,7 +77,7 @@ function TrackTree() {
       ]);
 
   return (
-    <nav className="wb-tree" aria-label="Transformation track">
+    <nav className="wb-tree" aria-label="Input bucket" role="tabpanel">
       <div className="wb-tree-root">TSB-Transformation-TRACK</div>
       <div className="wb-tree-track">Track: {track}</div>
       {nodes.length === 0 ? (
@@ -447,7 +447,32 @@ function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSa
   );
 }
 
-function Inspector({ base, onSave }: { base: string; onSave: () => Promise<number | null> }) {
+/** Left side: the input bucket with the buckets made of it, and what the flow publishes and deploys. */
+function SidePanel({ tab, setTab, base, onSave }: { tab: string; setTab: (t: string) => void; base: string; onSave: () => Promise<number | null> }) {
+  const nodes = useFlow((s) => s.nodes);
+  const selectedId = useFlow((s) => s.selectedId);
+  const node = nodes.find((n) => n.id === selectedId);
+  return (
+    <aside className="wb-side" aria-label="Flow">
+      <div className="wb-tabs" role="tablist">
+        {[['tree', 'Input bucket'], ['topic', 'Smart Topic']].map(([id, title]) => (
+          <button key={id} role="tab" aria-selected={id === tab} onClick={() => setTab(id)}>
+            {title}
+          </button>
+        ))}
+      </div>
+      {tab === 'tree' ? (
+        <TrackTree />
+      ) : (
+        <div className="wb-tabpanel" role="tabpanel">
+          {node ? <SmartTopic node={node} base={base} onSave={onSave} /> : <p className="wb-muted">Load an input bucket first: a Smart Topic publishes a bucket of the flow.</p>}
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function Inspector() {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -456,7 +481,6 @@ function Inspector({ base, onSave }: { base: string; onSave: () => Promise<numbe
     ['code', 'Code'],
     ['pfd', 'Flow (JSON)'],
     ['dag', 'DAG (YAML)'],
-    ['topic', 'Smart Topic'],
   ];
   return (
     <aside className="wb-inspector" aria-label="Inspector">
@@ -469,17 +493,15 @@ function Inspector({ base, onSave }: { base: string; onSave: () => Promise<numbe
       </div>
       <div className="wb-tabpanel" role="tabpanel">
         {!node ? (
-          <p className="wb-muted">Select a bucket in the track or in the graph.</p>
+          <p className="wb-muted">Select a bucket in the tab "Input bucket" or in the graph.</p>
         ) : tab === 'props' ? (
           <Properties node={node} />
         ) : tab === 'code' ? (
           <CodeBlock text={toJavaCode(state)} file={`${state.track}.java.txt`} />
         ) : tab === 'pfd' ? (
           <CodeBlock text={toPfdJson(state, node.id)} file={`${node.label}.pfd.json`} mime="application/json" />
-        ) : tab === 'dag' ? (
-          <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} base={base} onSave={onSave} />
+          <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         )}
       </div>
     </aside>
@@ -497,6 +519,7 @@ export default function Workbench() {
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [flowsOpen, setFlowsOpen] = useState(false);
+  const [sideTab, setSideTab] = useState('tree');
   const remoteBase = useRef(remote.base);
   remoteBase.current = remote.base;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -746,8 +769,8 @@ export default function Workbench() {
       )}
       {(error || result.error) && <div className="wb-error" role="alert">{error ?? `The operation failed: ${result.error}`}</div>}
 
-      <main className="wb-main">
-        <TrackTree />
+      <main className={`wb-main ${sideTab === 'topic' ? 'wb-side-wide' : ''}`}>
+        <SidePanel tab={sideTab} setTab={setSideTab} base={remote.base} onSave={saveFlow} />
 
         <div className="wb-center">
           <section
@@ -793,7 +816,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector base={remote.base} onSave={saveFlow} />
+        <Inspector />
       </main>
 
       <footer className="wb-status">

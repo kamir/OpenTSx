@@ -188,6 +188,18 @@
 
 /* ---------------------------------------------------------------- track tree */
 
+.wb-main.wb-side-wide {
+  grid-template-columns: 390px minmax(0, 1fr) 390px;
+}
+.wb-side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+.wb-side > .wb-tabpanel {
+  overflow: auto;
+}
 .wb-tree {
   background: var(--field);
   border: 1px solid var(--line);
@@ -537,7 +549,8 @@
 .wb-inspector .wb-tabpanel {
   overflow: auto;
 }
-.wb .wb-inspector .wb-tabs button {
+.wb .wb-inspector .wb-tabs button,
+.wb .wb-side .wb-tabs button {
   padding-inline: 8px;
 }
 .wb .wb-row input[type='number'] {
