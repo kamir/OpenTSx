@@ -12,6 +12,11 @@ public final class MemoryTopics implements Topics {
     private final Map<String, List<Rec>> logs = new ConcurrentHashMap<>();
 
     @Override
+    public void create(String topic) {
+        logs.computeIfAbsent(topic, t -> new ArrayList<>());
+    }
+
+    @Override
     public void append(String topic, String key, byte[] value, String schema) {
         List<Rec> log = logs.computeIfAbsent(topic, t -> new ArrayList<>());
         synchronized (log) {

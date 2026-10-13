@@ -41,9 +41,7 @@ public final class KafkaTopics implements Topics {
         if (producer == null) {
             producer = KafScaleClients.producer(bootstrap);
         }
-        if (known.add(topic)) {
-            create(topic);
-        }
+        create(topic);
         ProducerRecord<String, byte[]> rec = new ProducerRecord<>(topic, 0, key, value);
         rec.headers().add(TopicLayout.HEADER_SCHEMA, schema.getBytes(StandardCharsets.UTF_8));
         try {
@@ -56,7 +54,11 @@ public final class KafkaTopics implements Topics {
         }
     }
 
-    private void create(String topic) {
+    @Override
+    public void create(String topic) {
+        if (!known.add(topic)) {
+            return;
+        }
         try (Admin admin = KafScaleClients.admin(bootstrap)) {
             if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
                 admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1)

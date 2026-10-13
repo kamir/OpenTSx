@@ -25,6 +25,10 @@ class KafkaTopicsBrokerTest {
         String topic = EventTopic.name("brokertest", "run-" + System.currentTimeMillis());
         try (KafkaTopics topics = new KafkaTopics(bootstrap)) {
             assertThrows(Topics.NoSuchTopicException.class, () -> topics.open(topic, Topics.EARLIEST));
+            topics.create(topic);
+            try (Topics.Cursor empty = topics.open(topic, Topics.EARLIEST)) {
+                assertEquals(0, empty.poll(Duration.ofMillis(800)).size(), "the topic exists and is empty");
+            }
             for (int i = 0; i < 3; i++) {
                 topics.append(topic, "atom-" + i, ("{\"n\":" + i + "}").getBytes(StandardCharsets.UTF_8), EventTopic.SCHEMA);
             }

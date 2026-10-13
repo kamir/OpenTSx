@@ -120,6 +120,38 @@ class EventTopicLiveTest {
     }
 
     @Test
+    void aReaderCanOpenTheTopicBeforeTheFirstEvent() throws Exception {
+        StudioScenario s = h2();
+        RunResult run = EventPublisher.referenceRun(s);
+        MemoryTopics topics = new MemoryTopics();
+        String topic = EventTopic.name(s.plan().twin(), run.runId());
+        java.util.concurrent.CountDownLatch waiting = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
+        Thread publisher = new Thread(() -> {
+            try {
+                new EventPublisher(topics, ms -> {
+                    waiting.countDown();
+                    go.await();
+                }).publish(s.plan(), run, Duration.ofSeconds(60));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        publisher.setDaemon(true);
+        publisher.start();
+        assertTrue(waiting.await(5, TimeUnit.SECONDS));
+        assertEquals(0, topics.size(topic));
+        try (EventBridge bridge = new EventBridge(topics, 0, "*", 4)) {
+            BlockingQueue<JsonNode> got = new LinkedBlockingQueue<>();
+            Thread reader = follow(bridge, topic, "from=earliest", null, got);
+            assertNull(got.poll(500, TimeUnit.MILLISECONDS), "connected, nothing published yet");
+            go.countDown();
+            assertEquals(0, next(got).get("offset").asLong());
+            reader.interrupt();
+        }
+    }
+
+    @Test
     void bridgeServesOnlyEventTopicsOfTwins() throws Exception {
         MemoryTopics topics = new MemoryTopics();
         topics.append("tsx.windpark.episodes.v2", "k", new byte[] {1}, "x");
