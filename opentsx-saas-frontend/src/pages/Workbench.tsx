@@ -732,13 +732,13 @@ export default function Workbench() {
           </button>
         )}
         {signedIn ? (
-          <button disabled={nodes.length === 0} onClick={saveFlow} title="Stores the flow in your account; it appears on the dashboard">
+          <button disabled={nodes.length === 0} onClick={saveFlow} title="Stores the flow in your account; it appears in the Flow Composer">
             {state.savedId === null ? 'Save flow' : `Save flow ${state.savedId}`}
           </button>
         ) : (
           <Link to="/login" target="_blank" rel="noopener">Sign in to save flows</Link>
         )}
-        <Link to="/dashboard">Dashboard</Link>
+        <Link to="/dashboard" title="The page with the flows of your account">Composer page</Link>
       </header>
 
       {remote.open && (

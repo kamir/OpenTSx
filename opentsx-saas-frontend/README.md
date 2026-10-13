@@ -39,7 +39,7 @@ frontend/
 │   ├── pages/
 │   │   ├── Login.tsx           # Login page
 │   │   ├── Register.tsx        # Registration page
-│   │   ├── Dashboard.tsx       # Dashboard with flows list
+│   │   ├── Dashboard.tsx       # OpenTSx Flow Composer: the flows of the account
 │   │   └── FlowBuilder.tsx     # Visual flow builder
 │   ├── services/
 │   │   └── api.ts              # Axios API client
@@ -86,7 +86,7 @@ frontend/
 - Email validation
 - Password requirements
 
-#### Dashboard (`/dashboard`)
+#### OpenTSx Flow Composer (`/dashboard`)
 - Flows list with stats
 - Create new flow button
 - Organization overview
@@ -170,7 +170,7 @@ apiClient.interceptors.response.use(
 /                     → Redirect to /dashboard
 /login                → Login page (public)
 /register             → Register page (public)
-/dashboard            → Dashboard (protected)
+/dashboard            → OpenTSx Flow Composer (protected)
 /flow-builder         → Create new flow (protected)
 /flow-builder/:flowId → Edit existing flow (protected)
 ```

@@ -56,6 +56,9 @@ entries are grouped by date. The detailed progress log (German) is in
   the old name keep running and belong to no flow.
 - Workbench: the left side has two tabs. "Input bucket" is the tree of the loaded bucket and the buckets made
   of it; "Smart Topic" (moved there from the inspector) holds publishing, the DAG download and the deployments.
+- SaaS frontend: the page after sign-in (`/dashboard`) is the "OpenTSx Flow Composer". It replaces the cards of
+  the dashboard by the composer as a whole page: select flows, open them in the editor, create, rename, copy,
+  delete, activate and pause them.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
