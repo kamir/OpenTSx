@@ -114,6 +114,14 @@ export interface Edge {
  */
 export const authAPI = {
   /**
+   * Whether the installation runs in test operation (sign in with admin/admin)
+   */
+  mode: async (): Promise<{ testLogin: boolean }> => {
+    const response = await apiClient.get('/auth/mode');
+    return response.data;
+  },
+
+  /**
    * Register new user
    */
   register: async (data: RegisterRequest): Promise<User> => {

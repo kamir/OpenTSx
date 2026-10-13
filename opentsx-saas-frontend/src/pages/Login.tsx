@@ -2,8 +2,9 @@
  * Login page component
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { authAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
@@ -14,6 +15,19 @@ export default function Login() {
     email: '',
     password: '',
   });
+
+  // Test operation is a property of the installation: the backend says whether admin/admin is accepted.
+  const [testLogin, setTestLogin] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    authAPI
+      .mode()
+      .then((m) => !cancelled && setTestLogin(m.testLogin))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,11 +75,11 @@ export default function Login() {
               <input
                 id="email"
                 name="email"
-                type="email"
-                autoComplete="email"
+                type="text"
+                autoComplete="username"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder="Email address or user name"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -110,8 +124,18 @@ export default function Login() {
             </p>
           </div>
 
+          {testLogin && (
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <p className="text-xs text-gray-500 text-center">
+                <strong>Test operation:</strong> sign in with the name admin and the password admin.
+                <br />
+                Everyone who reaches this page is an administrator. Not for use outside a lab network.
+              </p>
+            </div>
+          )}
+
           {/* The default administrator of a local backend; a deployment generates its own password. */}
-          {import.meta.env.DEV && (
+          {import.meta.env.DEV && !testLogin && (
             <div className="mt-6 border-t border-gray-200 pt-6">
               <p className="text-xs text-gray-500 text-center">
                 <strong>Local development account:</strong>

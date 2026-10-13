@@ -163,6 +163,9 @@ Beobachtungen am Swing-Code:
         ein neues Sink-Topic den ganzen Prozessor an (Fehler im KafScale-Proxy, KOI-2026-10-13-02)
       - Workbench: Liste "was ein Deployment braucht" mit bereit oder fehlt je Schritt, und ein Knopf, der aus den
         geladenen Reihen einen veröffentlichten Vektor macht
+- [x] 013.18 Testbetrieb für die Anmeldung (Stand 2026-10-13): `SAAS_TEST_LOGIN=true` lässt `admin` mit dem Passwort
+      `admin` als ersten Administrator hinein; die Login-Seite zeigt es an. Das gespeicherte Passwort bleibt
+      unverändert. Voreinstellung aus; eingeschaltet ist jeder, der die Seite erreicht, Administrator
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren

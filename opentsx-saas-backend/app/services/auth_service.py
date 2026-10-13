@@ -1,6 +1,7 @@
 """Authentication service for user operations."""
 
 from datetime import datetime, timedelta
+import hmac
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
@@ -14,6 +15,7 @@ from app.core.security import (
     create_refresh_token,
 )
 from app.schemas.user import UserCreate, LoginRequest
+from app.core.config import settings
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
@@ -112,6 +114,25 @@ async def create_user(db: AsyncSession, user_create: UserCreate) -> User:
     return user
 
 
+TEST_LOGIN_NAME = "admin"
+TEST_LOGIN_PASSWORD = "admin"
+
+
+def admin_test_login(identifier: str, password: str) -> Optional[str]:
+    """
+    The address of the first administrator when test operation is on and the caller signs in with admin/admin
+    (the name or the administrator's address), otherwise None. The stored password is not involved and not changed.
+    """
+    if not settings.TEST_LOGIN:
+        return None
+    name = identifier.strip().lower()
+    if name not in (TEST_LOGIN_NAME, settings.FIRST_SUPERUSER_EMAIL.lower()):
+        return None
+    if not hmac.compare_digest(password.encode(), TEST_LOGIN_PASSWORD.encode()):
+        return None
+    return settings.FIRST_SUPERUSER_EMAIL
+
+
 async def login(db: AsyncSession, login_data: LoginRequest) -> dict:
     """
     Login user and return tokens.
@@ -126,7 +147,12 @@ async def login(db: AsyncSession, login_data: LoginRequest) -> dict:
     Raises:
         HTTPException: If credentials are invalid
     """
-    user = await authenticate_user(db, login_data.email, login_data.password)
+    test_email = admin_test_login(login_data.email, login_data.password)
+    if test_email is not None:
+        found = await db.execute(select(User).where(User.email == test_email))
+        user = found.scalar_one_or_none()
+    else:
+        user = await authenticate_user(db, login_data.email.strip(), login_data.password)
 
     if not user:
         raise HTTPException(

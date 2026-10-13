@@ -89,8 +89,8 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector }
         earlier one and starts over.
       </p>
       <ul className="wb-findings" aria-label="What a deployment needs">
-        <li className={allowed ? 'ok' : 'error'}>
-          <b>{allowed ? 'Ready' : 'Missing'}</b>{' '}
+        <li className={allowed ? 'ok' : signedIn && !access ? 'info' : 'error'}>
+          <b>{allowed ? 'Ready' : signedIn && !access ? 'Wait' : 'Missing'}</b>{' '}
           {allowed
             ? 'You are signed in as an administrator.'
             : !signedIn

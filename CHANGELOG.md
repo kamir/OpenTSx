@@ -42,6 +42,8 @@ entries are grouped by date. The detailed progress log (German) is in
 - Workbench: the ground truth of the scenario shows on the scope. Series loaded from the TS inventory bring their
   events (operations, sensor faults) along as bands on the time axis; operators that keep the time axis hand them
   on, and "Segment at threshold" says how many crossings lie inside an event.
+- SaaS module, test operation: `TEST_LOGIN=true` (`deploy/k3s`: `SAAS_TEST_LOGIN=true`) lets `admin` with the
+  password `admin` sign in as the first administrator; the login page shows it. Off by default.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the

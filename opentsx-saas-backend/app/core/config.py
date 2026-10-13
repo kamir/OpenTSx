@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     DAG_RUN_TOKEN: Optional[str] = None       # sent as X-OpenTSx-Run-Token; must match the server's token
     DAG_RUN_ROLE: str = "superuser"           # "superuser": administrators only; "user": every signed-in user
 
+    # Test operation: "admin" with the password "admin" signs in as the first administrator. For a lab only:
+    # whoever reaches the page is an administrator then. The stored password of the account stays as it is.
+    TEST_LOGIN: bool = False
+
     # Features
     ENABLE_SIGNUP: bool = True
     ENABLE_INVITATIONS: bool = True
