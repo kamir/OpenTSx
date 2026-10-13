@@ -134,6 +134,7 @@
 .wb-param {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   gap: 4px;
   font-size: 12px;
   color: var(--ink-2);
@@ -169,6 +170,9 @@
   gap: 5px;
   min-width: 0;
   min-height: 0;
+}
+.wb-center > * {
+  min-width: 0;
 }
 .wb-status {
   grid-row: 5;
@@ -451,8 +455,10 @@
 }
 .wb-op {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 5px;
+  min-width: 0;
 }
 .wb .wb-chartlabel {
   background: #ccffcc;
@@ -540,6 +546,7 @@
 }
 .wb-props {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   align-content: start;
 }
@@ -630,6 +637,36 @@
 .wb .wb-danger {
   justify-self: start;
   color: #7a1c12;
+}
+
+.wb-components {
+  list-style: decimal inside;
+  margin: 0 0 6px;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+}
+.wb-components li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.wb-components code {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+.wb-components span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-components .wb-muted {
+  flex: none;
+  margin: 0;
 }
 
 /* ---------------------------------------------------------------- TS inventory dialog */

@@ -105,6 +105,8 @@ frontend/
 - TS Inventory: browse the series of a retrieval server (`GET /v1/inventory`) by tag, channel and scenario event,
   pick series, window and resolution; needs a retrieval server started with `--kafscale`, `--iceberg` or `--demo`
 - Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
+- Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
+  `src/workbench/vector.ts`)
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`

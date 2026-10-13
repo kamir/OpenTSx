@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kamir/OpenTSx/docs/datamodel-2026/schemas/opentsx.vector.v1.schema.json",
+  "title": "opentsx.vector.v1",
+  "description": "Draft. One measuring point of a vector Smart Topic: the values of several DAG nodes for one key in one tick of a common clock. Written by the operator align.vector, see docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a.",
+  "type": "object",
+  "required": ["schema", "vector", "key", "ts", "window", "clock", "components", "values", "missing"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "opentsx.vector.v1" },
+    "vector": { "type": "string", "minLength": 1, "description": "Name of the vector, the bucket name of the node that wrote it." },
+    "key": {
+      "type": "object",
+      "description": "What the vector belongs to. key: series gives the tags of the series plus its id under `series`; key: <tag> gives that tag only; key: all gives an empty object.",
+      "additionalProperties": { "type": "string" }
+    },
+    "ts": {
+      "description": "End of the tick, the time from which the vector is complete. UTC, ISO-8601. A number of seconds only for data without absolute time (workbench preview).",
+      "type": ["string", "number"]
+    },
+    "window": {
+      "type": "object",
+      "description": "The tick as half-open interval [from, to). Ticks are multiples of the clock since 1970-01-01T00:00:00Z.",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": { "from": { "type": ["string", "number"] }, "to": { "type": ["string", "number"] } }
+    },
+    "clock": { "type": "string", "pattern": "^PT[0-9.]+S$", "description": "Length of a tick as ISO-8601 duration in seconds." },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)?$" },
+      "description": "Names of the components, in the order of the inputs of the node. The order is fixed for a version of the DAG."
+    },
+    "values": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": ["number", "null"] },
+      "description": "One value per component, same order and length as `components`. null: the component has no value in this tick."
+    },
+    "missing": { "type": "integer", "minimum": 0, "description": "Number of null entries in `values`." },
+    "provenance": {
+      "type": "object",
+      "description": "Set by a runtime: DAG name, version and specification hash. The workbench preview leaves it out.",
+      "properties": { "dag": { "type": "string" }, "version": { "type": "integer" }, "specHash": { "type": "string" } }
+    }
+  }
+}
