@@ -90,11 +90,14 @@ public final class SystemDoc {
     }
 
     /** One port of an atom of the plan; {@code from} is the output it is wired to, null for an input from outside. */
-    public record Port(String name, String unit, String kind, String from) {
+    public record Port(String name, String unit, String kind, String from, boolean delayed) {
     }
 
-    /** An atom of the plan with its ports, as the place "System" shows it. */
-    public record PlanAtom(String id, String type, List<Port> inputs, List<Port> outputs) {
+    /**
+     * An atom of the plan with its ports, as the place "System" shows it. {@code phase} is the phase of a time step
+     * the atom computes in; an input is {@code delayed} when its wire delivers the value of the step before.
+     */
+    public record PlanAtom(String id, String type, String phase, List<Port> inputs, List<Port> outputs) {
     }
 
     /** A flow in the form a person writes ({@code opentsx.flow.v1}): it names signal grades it reads and writes. */
@@ -112,6 +115,7 @@ public final class SystemDoc {
     private final Map<String, JsonNode> decisions = new LinkedHashMap<>();
     private final List<String> problems = new ArrayList<>();
     private final List<String> notes = new ArrayList<>();
+    private final List<String> assumptions = new ArrayList<>();
     private final StringBuilder hashed = new StringBuilder();
 
     private SystemDoc(JsonNode doc) {
@@ -120,6 +124,12 @@ public final class SystemDoc {
         this.title = doc.path("title").asText(system);
         this.domain = doc.path("domain").asText("");
         this.example = doc.path("example").asBoolean(false);
+        doc.path("assumptions").forEach(a -> assumptions.add(a.asText()));
+    }
+
+    /** What the system document assumes about the plant, in sentences a person reads next to the picture. */
+    public List<String> assumptions() {
+        return assumptions;
     }
 
     public String system() {
@@ -259,14 +269,21 @@ public final class SystemDoc {
             TwinPlan plan = TwinPlan.load(file);
             List<Atom> instances = plan.instantiate(AtomCatalog.standard());
             Map<String, String> wiredFrom = new TreeMap<>();
-            plan.resolve(instances).forEach(w -> wiredFrom.put(w.toAtom() + "." + w.toPort(), w.fromAtom() + "." + w.fromPort()));
+            java.util.Set<String> late = new java.util.TreeSet<>();
+            plan.resolve(instances).forEach(w -> {
+                wiredFrom.put(w.toAtom() + "." + w.toPort(), w.fromAtom() + "." + w.fromPort());
+                if (w.delayed()) {
+                    late.add(w.toAtom() + "." + w.toPort());
+                }
+            });
             for (Atom a : instances) {
                 Map<String, PortSpec> of = out.computeIfAbsent(a.id(), k -> new TreeMap<>());
                 a.inputs().forEach(p -> of.put(p.name(), p));
                 a.outputs().forEach(p -> of.putIfAbsent(p.name(), p));
-                atoms.add(new PlanAtom(a.id(), a.type(),
-                        a.inputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), wiredFrom.get(a.id() + "." + p.name()))).toList(),
-                        a.outputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), null)).toList()));
+                atoms.add(new PlanAtom(a.id(), a.type(), a.phase().name(),
+                        a.inputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), wiredFrom.get(a.id() + "." + p.name()),
+                                late.contains(a.id() + "." + p.name()))).toList(),
+                        a.outputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), null, false)).toList()));
             }
         } catch (RuntimeException e) {
             problems.add("plan " + file + " cannot be read: " + e.getMessage());

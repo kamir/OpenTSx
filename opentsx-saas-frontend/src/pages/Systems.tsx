@@ -11,6 +11,7 @@ import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
 import ModelsPlace from '../systems/ModelsPlace';
+import SimulatePlace from '../systems/SimulatePlace';
 import SignalsPlace from '../systems/SignalsPlace';
 import SystemPlace from '../systems/SystemPlace';
 import { DecisionStatus, Place, PlanDoc, SystemEntry, SystemStatus, countsText, guideSteps, parseStatus, railCounts } from '../systems/signals';
@@ -22,6 +23,7 @@ const PLACES: { id: Place; title: string; hint: string }[] = [
   { id: 'signals', title: 'Signals', hint: 'What the system expects, what is there, what to do next' },
   { id: 'flows', title: 'Flows', hint: 'What prepares the data, and what runs' },
   { id: 'models', title: 'Models', hint: 'What the system predicts' },
+  { id: 'simulate', title: 'Simulate', hint: 'Ask the twin what happens when a decision changes' },
 ];
 
 function remembered(key: string): boolean {
@@ -80,7 +82,7 @@ export default function Systems() {
     const withWorkingCopy = async () => {
       const mine = signedIn ? await systemsAPI.bindings(system).catch(() => []) : [];
       if (!cancelled) setBindings(mine);
-      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null)]);
+      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null), get('plan')]);
       const post = async (what: string) => {
         const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
           method: 'POST',
@@ -90,10 +92,11 @@ export default function Systems() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       };
-      return Promise.all([post('signals'), post('decisions').catch(() => null)]);
+      // the plan with the working copy: a server that cannot lay it over still has the plan of the document
+      return Promise.all([post('signals'), post('decisions').catch(() => null), post('plan').catch(() => get('plan'))]);
     };
-    Promise.all([withWorkingCopy(), get('plan')])
-      .then(([[signals, decisionDoc], planDoc]) => {
+    withWorkingCopy()
+      .then(([signals, decisionDoc, planDoc]) => {
         if (cancelled) return;
         setStatus(parseStatus(signals));
         setDecisions(decisionDoc as DecisionStatus | null);
@@ -214,6 +217,7 @@ export default function Systems() {
             </main>
           ))}
         {here === 'models' && <ModelsPlace status={status} decisions={decisions} />}
+        {here === 'simulate' && <SimulatePlace system={system ?? ''} base={BASE} />}
       </div>
 
       <footer className="wb-status">

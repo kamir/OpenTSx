@@ -16,6 +16,11 @@
     "schema": {
       "const": "opentsx.system.v1"
     },
+    "assumptions": {
+      "description": "What the document assumes about the plant where no real plant stands behind it, one sentence each. Shown next to the picture of the plan.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
     "system": {
       "$ref": "#/$defs/slug",
       "description": "Id of the system; the name of its twin plan where one exists."

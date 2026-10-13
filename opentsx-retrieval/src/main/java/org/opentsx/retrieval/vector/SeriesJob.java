@@ -51,10 +51,11 @@ public record SeriesJob(String dag, String name, String topic, List<String> seri
      * Reads the series sinks of a DAG.
      *
      * @param cleanTopic the topic clean series of the domain go to
+     * @param syntheticTopic the topic generated series of the domain live in; a flow may read them as raw series
      * @param specHash   hash of the DAG document, carried by every clean episode
      * @throws IllegalArgumentException with a message for the user when a sink cannot be run here
      */
-    static List<SeriesJob> of(JsonNode dag, String episodesTopic, String cleanTopic, String featuresTopic, String specHash) {
+    static List<SeriesJob> of(JsonNode dag, String episodesTopic, String cleanTopic, String featuresTopic, String syntheticTopic, String specHash) {
         List<SeriesJob> jobs = new ArrayList<>();
         Map<String, JsonNode> nodes = new LinkedHashMap<>();
         dag.path("nodes").forEach(n -> nodes.put(n.path("id").asText(), n));
@@ -67,9 +68,10 @@ public record SeriesJob(String dag, String name, String topic, List<String> seri
             }
             List<String> topics = new ArrayList<>();
             dag.path("source").path("topics").forEach(t -> topics.add(t.asText()));
-            // raw series come from the episodes topic, clean ones from the topic of the clean series
-            if (!topics.equals(List.of(episodesTopic)) && !topics.equals(List.of(cleanTopic))) {
-                throw new IllegalArgumentException("the DAG reads " + topics + "; this runtime reads " + episodesTopic + " or " + cleanTopic);
+            // raw series come from the episodes topic or, when a generator wrote them, from the topic of the generated
+            // series; clean ones from the topic of the clean series
+            if (!topics.equals(List.of(episodesTopic)) && !topics.equals(List.of(cleanTopic)) && !topics.equals(List.of(syntheticTopic))) {
+                throw new IllegalArgumentException("the DAG reads " + topics + "; this runtime reads " + episodesTopic + ", " + syntheticTopic + " or " + cleanTopic);
             }
             String topic = sink.path("topic").asText();
             JsonNode signal = sink.path("signal");

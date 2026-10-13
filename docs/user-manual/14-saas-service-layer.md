@@ -29,7 +29,11 @@
     the account.
     "Flows": the Flow Composer for the flows of the system. "Models": the decisions of the system, the signals each
     needs, and whether each analysis is usable, restricted or blocked today, with the reasons. "System" shows the
-    plan as a picture with its wires above the table. The
+    plan as a picture above the table: the atoms in the phases of a time step, power, hydrogen and information in
+    three colours, what the document assumes about the plant, and a link to the Smart Topics Studio (`/studio/`).
+    "Simulate": ask the twin what happens when a decision changes (a control set at a time, a policy, a forecast
+    from a time on); the answer is a run shown next to the reference, with the difference in every KPI, and it
+    says how far it may be trusted. The
     switch "Guide" shows the seven steps of the method of [chapter 16](16-engineering-method.md) with the state of
     the system in each. The data comes from the retrieval server (`GET /v1/systems`).
   * the earlier visual flow builder (`/flow-builder`); its flows cannot be opened in the workbench.

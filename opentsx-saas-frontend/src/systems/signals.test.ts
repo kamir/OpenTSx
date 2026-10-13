@@ -19,6 +19,7 @@ import {
   PlanAtom,
   PlanDoc,
   PlanPort,
+  carrierOf,
   durationText,
   planGraph,
   usability,
@@ -212,7 +213,7 @@ describe('the shell around a system', () => {
   });
 
   it('gives each place of the rail its number', () => {
-    expect(railCounts(status(all), plan, 2)).toEqual({ system: '9 atoms', signals: '1 open, 4 to do', flows: '2 flows', models: 'none yet' });
+    expect(railCounts(status(all), plan, 2)).toEqual({ system: '9 atoms', signals: '1 open, 4 to do', flows: '2 flows', models: 'none yet', simulate: 'ask the twin' });
     expect(railCounts(status([setpoint]), plan, null)).toMatchObject({ signals: '1 signals', flows: 'sign in' });
   });
 
@@ -296,6 +297,28 @@ describe('plan as a picture and decisions', () => {
     expect(g.edges.filter((e) => e.back).map((e) => `${e.from}>${e.to}`)).toEqual(['line>ely']);
     expect(g.edges.find((e) => e.to === 'line')!.label).toBe('m_h2 > m_in');
     expect(g.edges.find((e) => e.back)!.label).toBe('p_bar');
+  });
+
+  it('puts the atoms in the phases of a time step when the plan names them, and tells the carriers apart', () => {
+    const out = (name: string, unit: string, kind = 'FLOW') => ({ name, unit, kind }) as PlanPort;
+    const phased: PlanDoc = {
+      ...loop,
+      phases: ['SOURCES', 'ASSETS', 'FLOWS'],
+      atoms: [
+        { id: 'offtake', type: 'h2-consumer', phase: 'SOURCES', channels: 0, outputs: [out('request', 'kg/h', 'SIGNAL')], inputs: [port('demand', undefined, 'offtake.demand', 'raw-only')] },
+        { id: 'ely', type: 'electrolyzer', phase: 'ASSETS', channels: 0, outputs: [out('p_el', 'kW'), out('m_h2', 'kg/h')], inputs: [{ ...port('p_bar', 'buffer.p_bar'), delayed: true }] },
+        { id: 'handover', type: 'h2-handover', phase: 'ASSETS', channels: 0, outputs: [out('m_out', 'kg/h')], inputs: [port('request', 'offtake.request'), port('valve', undefined, 'handover.valve', 'constant')] },
+        { id: 'buffer', type: 'h2-buffer', phase: 'FLOWS', channels: 0, outputs: [out('p_bar', 'bar', 'SIGNAL')], inputs: [port('m_in', 'ely.m_h2'), port('p_meas', undefined, 'buffer.p_meas', 'open')] },
+      ],
+    };
+    const g = planGraph(phased);
+    expect(g.columns).toEqual(['Sources', 'Assets', 'Stocks']);
+    expect(g.nodes.map((n) => `${n.id} ${n.layer}/${n.row} ${n.mark}`)).toEqual(['offtake 0/0 todo', 'ely 1/0 ok', 'handover 1/1 ok', 'buffer 2/0 open']);
+    expect(g.edges.map((e) => `${e.from}>${e.to} ${e.carrier}${e.back ? ' late' : ''}`)).toEqual(['buffer>ely info late', 'offtake>handover info', 'ely>buffer hydrogen']);
+    expect(carrierOf({ kind: 'FLOW', unit: 'kW' })).toBe('power');
+    expect(carrierOf(undefined)).toBe('info');
+    // a plan without phases keeps the layout by what feeds what
+    expect(planGraph(loop).columns).toEqual([]);
   });
 
   it('counts what the analyses may claim, for the rail and the guide', () => {

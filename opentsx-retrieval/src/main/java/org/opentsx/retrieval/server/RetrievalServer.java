@@ -68,6 +68,8 @@ public final class RetrievalServer implements AutoCloseable {
     private final boolean dagWrites;
     private final byte[] dagRunToken;
     private final Systems systems;
+    /** Runs of the twin on request, for the systems that have a scenario. */
+    private final org.opentsx.retrieval.runs.Runs runs = org.opentsx.retrieval.runs.Runs.standard();
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
 
@@ -181,6 +183,8 @@ public final class RetrievalServer implements AutoCloseable {
             } else {
                 json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such endpoint"));
             }
+        } catch (java.util.NoSuchElementException e) {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", String.valueOf(e.getMessage())));
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
             json(ex, 400, EpisodeJson.JSON.createObjectNode().put("error", String.valueOf(e.getMessage())));
         } catch (RuntimeException e) {
@@ -392,8 +396,38 @@ public final class RetrievalServer implements AutoCloseable {
             json(ex, 200, systems.plan(p[1], inventory.get()));
         } else if (p.length == 3 && p[2].equals("decisions") && systems.has(p[1])) {
             json(ex, 200, systems.decisions(p[1], inventory.get(), List.of()));
+        } else if (p.length >= 3 && (p[2].equals("scenario") || p[2].equals("runs")) && systems.has(p[1])) {
+            runs(ex, p);
         } else {
             json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
+        }
+    }
+
+    /**
+     * {@code GET /v1/systems/<id>/scenario}: what can be asked of the twin of the system. {@code /runs}: the runs kept.
+     * {@code /runs/<run>}: one run. {@code /runs/<run>/series?keys=a,b}: its series. {@code /runs/<run>/compare?base=<run>}:
+     * the run next to another one. Runs compute and keep nothing outside this process; they write to no topic.
+     */
+    private void runs(HttpExchange ex, String[] p) throws IOException {
+        String system = p[1];
+        if (!runs.has(system)) {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "the system " + system + " has no scenario to run"));
+        } else if (p.length == 3 && p[2].equals("scenario")) {
+            json(ex, 200, runs.scenario(system));
+        } else if (p.length == 3) {
+            json(ex, 200, runs.list(system));
+        } else if (p.length == 4) {
+            json(ex, 200, runs.doc(system, p[3]));
+        } else if (p.length == 5 && p[4].equals("series")) {
+            String keys = query(ex).getOrDefault("keys", "");
+            if (keys.isBlank()) {
+                throw new IllegalArgumentException("name the series: ?keys=atom.port,atom.port");
+            }
+            json(ex, 200, runs.series(system, p[3], List.of(keys.split(","))));
+        } else if (p.length == 5 && p[4].equals("compare")) {
+            json(ex, 200, runs.compare(system, p[3], query(ex).getOrDefault("base", runs.reference(system))));
+        } else {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such route for runs"));
         }
     }
 
@@ -414,10 +448,18 @@ public final class RetrievalServer implements AutoCloseable {
             return;
         }
         JsonNode body = raw.length == 0 ? EpisodeJson.JSON.createObjectNode() : EpisodeJson.JSON.readTree(raw);
-        if (p[2].equals("signals")) {
+        if (p[2].equals("runs")) {
+            if (!runs.has(p[1])) {
+                json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "the system " + p[1] + " has no scenario to run"));
+            } else {
+                json(ex, 200, runs.run(p[1], body));
+            }
+        } else if (p[2].equals("signals")) {
             json(ex, 200, systems.signals(p[1], inventory.get(), Systems.bindings(body)));
         } else if (p[2].equals("decisions")) {
             json(ex, 200, systems.decisions(p[1], inventory.get(), Systems.bindings(body)));
+        } else if (p[2].equals("plan")) {
+            json(ex, 200, systems.plan(p[1], inventory.get(), Systems.bindings(body)));
         } else if (p[2].equals("generate")) {
             if (signalWriter == null) {
                 json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server cannot write generated series (it needs --kafscale and --dag-runs true)"));

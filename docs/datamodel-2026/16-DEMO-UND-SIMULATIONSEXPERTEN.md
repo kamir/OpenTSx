@@ -102,9 +102,9 @@ Ein Agent ist so gut wie seine Werkzeuge. Die Tabelle ist der Werkzeugvertrag un
 | Entscheidungsstatus lesen | wissen, was gesperrt ist und warum | **da** (`GET /v1/systems/<id>/decisions`) |
 | Reihen lesen | Eingänge und Ergebnisse ansehen | **da** (`/v1/inventory`, `/v1/episodes`) |
 | Signal binden, Generator laufen lassen | eine Quelle anschließen | **da**, als Arbeitskopie je Konto; Generatoren nur für Administratoren |
-| **Lauf starten** | Schatten, Was-wäre-wenn, Prognose mit Eingriffen und Fahrweisen | **fehlt** als Dienst; es gibt die Kommandozeile und Java |
-| **Lauf lesen** | Reihen, Ereignisse, Kennzahlen eines Laufs nach Kennung | **halb:** Ereignisse stehen im Topic; Reihen und Kennzahlen eines Laufs sind nicht abrufbar |
-| **Läufe vergleichen** | Alternative gegen Referenz, unter gleichen Eingängen | **fehlt** als Dienst; der Zwilling rechnet es |
+| **Lauf starten** | Was-wäre-wenn und Prognose mit Eingriffen und Fahrweisen | **da** seit 014.17 (`POST /v1/systems/<id>/runs`), mit den Eingängen des Szenarios; die Reihen der Signale liest ein Lauf noch nicht |
+| **Lauf lesen** | Reihen, Ereignisse, Kennzahlen eines Laufs nach Kennung | **da** (`GET /runs/<lauf>`, `/series`); das Register liegt im Speicher und vergisst beim Neustart |
+| **Läufe vergleichen** | Alternative gegen Referenz, unter gleichen Eingängen | **da** (`GET /runs/<lauf>/compare`), mit den Endbeständen der Speicher neben den Kennzahlen |
 | **Bilanzen prüfen** | Strom und Wasserstoff, Grenzen, Gültigkeit | **fehlt** als Werkzeug; die Prüfungen stehen in den Tests |
 | **Protokolleintrag schreiben** | Empfehlung, Freigabe, Maßnahme, Wirkung | **fehlt** (E3); Format als Entwurf |
 
@@ -186,12 +186,19 @@ Schutzabschaltung, Mehreinspeisung.
 | 1 | Das Systembild der Web-Anwendung ist mit zwölf Bausteinen schwer zu lesen: Der Weg des Wasserstoffs ist nicht als Kette zu erkennen, Beschriftungen überlappen, Strom, Gas und Information sehen gleich aus. Die Annahme zur Reihenfolge steht nur im Plan, nicht im Bild | Akt 1 im Studio zeigen (dort sind die Spalten die Phasen und die Flüsse farbig), bis das Bild der Web-Anwendung nachgezogen ist |
 | 2 | Das Studio ist von außen nicht erreichbar (Dienst nur im Cluster) und aus der Web-Anwendung nicht verlinkt. Zwei Fenster, zwei Adressen | vor der Demo eine Weiterleitung einrichten; auf Dauer ein Weg vom Ort System ins Studio |
 | 3 | Die Web-Anwendung spricht Englisch, das Studio Deutsch | für ein deutsches Publikum im Ablauf ansagen; eine Sprache je Publikum ist eine Entscheidung |
-| 4 | Beide Analysen stehen auf `blocked`: Der Preis ist gebunden, aber nicht erzeugt; der Bedarf hat nur Rohdaten; das Potenzial des Parks ist nicht veröffentlicht | vor der Demo drei Schritte: Preis erzeugen, Bedarf bereinigen, Potenzial aus der Windgeschwindigkeit veröffentlichen. Danach steht `restricted`, und genau das ist die Aussage der Demo |
+| 4 | Beide Analysen stehen auf `blocked`: Der Preis ist gebunden, aber nicht erzeugt; der Bedarf hat nur Rohdaten; das Potenzial des Parks ist nicht veröffentlicht | vor der Demo drei Schritte: Preis erzeugen, Bedarf bereinigen, Potenzial aus der Windgeschwindigkeit veröffentlichen. **Nachtrag:** Die drei Schritte sind getan, und es bleibt bei `blocked`, mit einem anderen und richtigen Grund: Preis und Bedarf stammen aus Demo-Generatoren, und die Entscheidung nimmt nur gemeldete Werte oder Prognosen an (D61). Die Erwartung "danach steht `restricted`" war falsch. `restricted` wird es erst mit einer gemeldeten Preisreihe (J1) und einem Bedarf des Betreibers |
 | 5 | Die Reihe, die vor S1 als `park.p_avail_kw` veröffentlicht wurde, zählt nicht mehr: Das Signal heißt jetzt `park.p_potential_kw`, und der laufende Flow schreibt weiter unter dem alten Namen | den Flow auf das neue Signal umstellen und neu starten; ein umbenanntes Signal braucht einen beschriebenen Weg |
 | 6 | Der Lauf des Studios hat mit dem neuen Plan eine neue Kennung. Das Ereignis-Topic dieses Laufs ist nicht veröffentlicht | den Lauf einmal ins Topic veröffentlichen, sonst bleibt die Ansicht "Ereignis-Topic" leer |
 | 7 | Das Studio zeigt nur vorgerechnete Alternativen (Ventil wieder offen zu neun festen Zeiten, zwei Fahrweisen). Eine Frage dazwischen lässt sich nicht stellen | die Fragen der Demo auf die vorgerechneten legen; das ist die Lücke 1 aus Abschnitt 4 |
 | 8 | Akt 6 hat nichts zu zeigen: Im Lauf der Demo wird nichts abgeregelt, Potenzial, verfügbare und erzeugte Leistung sind gleich | dem Szenario ein Fenster mit einer Auflage und einen Fahrbefehl geben, damit die drei Leistungen auseinanderlaufen |
 | 9 | Der Abnehmer steht im Systembild der Web-Anwendung auf "to do", obwohl sein Bedarf gebunden ist: Die Marke unterscheidet nicht zwischen "Rohdaten da" und "offen" | die Marke am Baustein auf den Zustand des Signals abbilden, nicht nur auf "bereinigt oder nicht" |
+
+**Stand der Befunde (2026-10-13, Arbeitspaket 014.16).** Bearbeitet sind 1 (Bild in Phasen, drei Farben für
+Strom, Wasserstoff und Information, Annahmen neben dem Bild), 2 (das Studio hängt unter `/studio/` an der
+Web-Anwendung und ist vom Ort System verlinkt), 8 (eine Auflage von 04:00 bis 05:00 und ein Fahrbefehl von 05:00
+bis 05:30 im Szenario) und 9 (das Bild folgt der Arbeitskopie und unterscheidet "offen" von "noch nicht
+bereinigt"). Befund 7 ist mit dem Lauf-Dienst bearbeitet (Arbeitspaket 014.17): Der Ort "Simulate" rechnet eine
+Frage auf Anfrage. Offen bleibt 3 (Sprache).
 
 Die Befunde 4, 5 und 6 sind Vorbereitung und brauchen keinen Code. Die Befunde 1, 2, 8 und 9 sind kleine Arbeiten
 an Oberfläche und Szenario. Befund 7 ist der Lauf-Dienst.

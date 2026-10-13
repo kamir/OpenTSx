@@ -26,7 +26,9 @@ public final class H2ChainScenario implements StudioScenario {
     @Override
     public String description() {
         return "Die Übergabestation schließt um 01:00 ihr Ventil. Der Puffer füllt sich, der Elektrolyseur schaltet ab, "
-                + "der Direktvermarkter muss mehr Strom verkaufen. Sechs Stunden in Minutenschritten, synthetische Daten.";
+                + "der Direktvermarkter muss mehr Strom verkaufen. Später in der Nacht begrenzt eine Auflage den Park für eine "
+                + "Stunde, und die Betriebsführung regelt ihn für eine halbe Stunde ab. Sechs Stunden in Minutenschritten, "
+                + "synthetische Daten.";
     }
 
     @Override
@@ -41,7 +43,7 @@ public final class H2ChainScenario implements StudioScenario {
 
     @Override
     public List<Intervention> reference() {
-        return H2ChainDemo.valveClosed();
+        return H2ChainDemo.reference();
     }
 
     @Override
@@ -95,6 +97,8 @@ public final class H2ChainScenario implements StudioScenario {
                 new Kpi("handover.delivered_kg", "An Abnehmer geliefert", "kg", 1, 1),
                 new Kpi("handover.shortfall_kg", "Nicht geliefert", "kg", 1, -1),
                 new Kpi("compressor.energy_kwh", "Strom für die Verdichtung", "kWh", 0, 0),
+                new Kpi("park.curtailed_rules_kwh", "Nicht erzeugt wegen Auflagen", "kWh", 0, -1),
+                new Kpi("park.curtailed_dispatch_kwh", "Nicht erzeugt wegen Fahrbefehl", "kWh", 0, -1),
                 new Kpi("marketer.extra_kwh", "Ungeplante Mehreinspeisung", "kWh", 0, -1),
                 new Kpi("marketer.revenue_eur", "Erlös Einspeisung (ohne Ausgleichsenergie und H₂-Erlös)", "€", 0, 0));
     }

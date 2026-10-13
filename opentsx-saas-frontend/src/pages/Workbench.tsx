@@ -24,6 +24,7 @@ import {
   evaluate,
   inputsOf,
   cleanTopic,
+  syntheticTopic,
   runBlocker,
   toDagYaml,
   toDefinition,
@@ -37,6 +38,7 @@ import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
+import { fetchSignalStatus } from '../systems/load';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
@@ -599,11 +601,9 @@ export default function Workbench() {
     let cancelled = false;
     const root = remoteBase.current.replace(/\/$/, '');
     setStatus(`Opening the signal ${signalParam}`);
-    fetch(`${root}/v1/systems/${encodeURIComponent(systemParam)}/signals`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${systemParam}"` : `HTTP ${res.status}`);
-        return parseStatus(await res.json());
-      })
+    // with the working copy of the account: a signal bound there has its data only in that view
+    fetchSignalStatus(root, systemParam)
+      .then((doc) => parseStatus(doc))
       .then(async (doc) => {
         const signal = doc.signals.find((x) => x.id === signalParam);
         const series = signal?.grades[gradeParam as GradeName]?.data?.series ?? [];
@@ -615,7 +615,9 @@ export default function Workbench() {
         flow.clear();
         flow.setDomain(doc.domain);
         // clean series live in the topic of the clean series of the domain, raw ones in the episodes topic
+        // and what a generator wrote lives in the topic of the generated series
         if (gradeParam === 'clean') flow.setSourceTopic(cleanTopic(doc.domain));
+        else if (signal.grades.raw?.source?.kind === 'generator') flow.setSourceTopic(syntheticTopic(doc.domain));
         else if (load.topic) flow.setSourceTopic(load.topic);
         flow.loadBucket(load.bucket, { kind: 'inventory', detail: load.detail });
         flow.setSourceSeries(load.seriesIds);
