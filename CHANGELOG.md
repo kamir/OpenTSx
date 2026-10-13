@@ -113,6 +113,13 @@ entries are grouped by date. The detailed progress log (German) is in
   says so in the plan; every simplification is named in its atom. The system document has a signal for every input
   from outside. The scenario now tells: the handover station closes, the buffer fills, the electrolyzer trips at
   200 bar. The first form of the plan is kept for the tests of the twin, and its atoms stay in the catalog.
+- Demo of the H2 chain made showable (TASK-014, after the first walk-through in
+  [`docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`](docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md),
+  section 7). The place "System" draws the plan in the phases of a time step, with power, hydrogen and information in
+  three colours and late wires dashed, shows what the system document assumes (`assumptions`), follows the working
+  copy (`POST /v1/systems/<id>/plan`) and links to the Smart Topics Studio, which the frontend image now serves
+  under `/studio/`. The scenario has a rule window (04:00 to 05:00) and a dispatch (05:00 to 05:30), so potential,
+  available and generated power differ and the energy not generated shows per cause.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

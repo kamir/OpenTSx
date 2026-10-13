@@ -293,13 +293,27 @@ public final class Systems {
      * from: the output it is wired to, the signal declared for it, or nothing.
      */
     public JsonNode plan(String system, JsonNode inventory) {
-        SystemDoc d = docs.get(system);
+        return plan(system, inventory, List.of());
+    }
+
+    /** As {@link #plan(String, JsonNode)}, with the bindings of a working copy laid over the document. */
+    public JsonNode plan(String system, JsonNode inventory, List<SystemDoc.Binding> overlay) {
+        SystemDoc d = doc(system, overlay);
         Map<String, JsonNode> signals = new TreeMap<>();
-        signals(system, inventory).path("signals").forEach(s -> signals.put(s.path("id").asText(), s));
+        signals(system, inventory, overlay).path("signals").forEach(s -> signals.put(s.path("id").asText(), s));
         ObjectNode out = JSON.objectNode();
         out.put("schema", "opentsx.system-plan.v1");
         out.put("system", d.system());
         out.put("title", d.title());
+        // the phases of a time step in their order: the columns of the picture
+        ArrayNode phases = out.putArray("phases");
+        for (org.opentsx.twin.Phase ph : org.opentsx.twin.Phase.values()) {
+            if (d.atoms().stream().anyMatch(a -> a.phase().equals(ph.name()))) {
+                phases.add(ph.name());
+            }
+        }
+        ArrayNode assumed = out.putArray("assumptions");
+        d.assumptions().forEach(assumed::add);
         ArrayNode atoms = out.putArray("atoms");
         int outside = 0;
         int uncovered = 0;
@@ -307,12 +321,16 @@ public final class Systems {
             ObjectNode o = atoms.addObject();
             o.put("id", a.id());
             o.put("type", a.type());
+            o.put("phase", a.phase());
             ArrayNode ins = o.putArray("inputs");
             for (SystemDoc.Port p : a.inputs()) {
                 ObjectNode n = port(ins.addObject(), p);
                 JsonNode sig = signals.get(a.id() + "." + p.name());
                 if (p.from() != null) {
                     n.put("from", p.from());
+                    if (p.delayed()) {
+                        n.put("delayed", true);
+                    }
                 } else {
                     outside++;
                     if (sig == null) {

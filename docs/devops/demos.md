@@ -132,27 +132,52 @@ deploy/k3s/40-demo.sh twin
 
 ```text
 1. Shadow: observed history (valve closed at 01:00)
-   run h2-chain-1a7d8816f5e90a30  mode SHADOW  hash 8b7910ccc91b45d8
-   01:00:00  handover   intervention             {author=h2-handover, reason=valve closed, control=valve, value=0.0}
+   run h2-chain-afee4f96bafe47fc  mode SHADOW  hash a0e598a9003fc434
+   01:00:00  handover   intervention             {control=valve, value=0.0, author=h2-handover, reason=valve closed}
    01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
    02:28:54  buffer     pressure_limit           {p_max_bar=200.000}
    02:29:00  ely        protective_shutdown      {p_bar=200.084, p_el_kw=5000.000}
    02:29:00  marketer   schedule_deviation       {deviation_kw=467.897}
-   max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 17446 kWh
+   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   05:00:00  park       intervention             {control=dispatch_kw, value=5000.0, author=operator, reason=dispatch reduced}
+   05:00:00  rules      restriction_end          {}
+   05:30:00  park       intervention             {control=dispatch_kw, value=release, author=operator, reason=dispatch released}
+   max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 13946 kWh
+   not generated: 2000 kWh by the operating rules, 1500 kWh by the dispatch
 
 2. What-if: valve reopened at 02:00
-   run h2-chain-92e7c6c283524e98  mode WHAT_IF  hash d760cb94cbf64c62
-   ...
+   run h2-chain-e4b63e3af776a88a  mode WHAT_IF  hash 3f6ef095fddae0e8
+   01:00:00  handover   intervention             {control=valve, value=0.0, author=h2-handover, reason=valve closed}
+   01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
+   02:00:00  handover   intervention             {control=valve, value=1.0, author=h2-handover, reason=valve reopened}
+   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   04:00:00  marketer   schedule_deviation       {deviation_kw=-2022.516}
+   05:00:00  park       intervention             {control=dispatch_kw, value=5000.0, author=operator, reason=dispatch reduced}
+   05:00:00  rules      restriction_end          {}
+   05:30:00  park       intervention             {control=dispatch_kw, value=release, author=operator, reason=dispatch released}
+   05:30:00  marketer   schedule_back            {deviation_kw=-22.515}
    max buffer pressure 174.01 bar, electrolyzer trips 0, H2 545.5 kg, extra feed-in 1 kWh
+   not generated: 2000 kWh by the operating rules, 1500 kWh by the dispatch
 
 3a. Forecast from 01:10, electrolyzer follows its schedule
-   max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 17446 kWh
+   run h2-chain-8fab981d5ddf4fea  mode FORECAST  hash a1b54c399aff2182
+   01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
+   02:28:54  buffer     pressure_limit           {p_max_bar=200.000}
+   02:29:00  ely        protective_shutdown      {p_bar=200.084, p_el_kw=5000.000}
+   02:29:00  marketer   schedule_deviation       {deviation_kw=467.897}
+   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   05:00:00  rules      restriction_end          {}
+   max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 15446 kWh
+   not generated: 2000 kWh by the operating rules, 0 kWh by the dispatch
 
 3b. Forecast from 01:10, electrolyzer policy pressure-aware
-   run h2-chain-b50f8c7a90fc58aa  mode FORECAST  hash 31ef43a9a3a6c29b
+   run h2-chain-80ebf0dc98522ea9  mode FORECAST  hash a25ab27516e72bc8
    01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
    01:31:00  marketer   schedule_deviation       {deviation_kw=164.005}
-   max buffer pressure 197.43 bar, electrolyzer trips 0, H2 219.8 kg, extra feed-in 18143 kWh
+   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   05:00:00  rules      restriction_end          {}
+   max buffer pressure 197.43 bar, electrolyzer trips 0, H2 219.8 kg, extra feed-in 16143 kWh
+   not generated: 2000 kWh by the operating rules, 0 kWh by the dispatch
 ```
 
 Own wiring plan: put it into a ConfigMap, mount it (edit `deploy/k3s/jobs/twin.yaml`) and pass

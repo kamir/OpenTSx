@@ -193,5 +193,11 @@ Schutzabschaltung, Mehreinspeisung.
 | 8 | Akt 6 hat nichts zu zeigen: Im Lauf der Demo wird nichts abgeregelt, Potenzial, verfügbare und erzeugte Leistung sind gleich | dem Szenario ein Fenster mit einer Auflage und einen Fahrbefehl geben, damit die drei Leistungen auseinanderlaufen |
 | 9 | Der Abnehmer steht im Systembild der Web-Anwendung auf "to do", obwohl sein Bedarf gebunden ist: Die Marke unterscheidet nicht zwischen "Rohdaten da" und "offen" | die Marke am Baustein auf den Zustand des Signals abbilden, nicht nur auf "bereinigt oder nicht" |
 
+**Stand der Befunde (2026-10-13, Arbeitspaket 014.16).** Bearbeitet sind 1 (Bild in Phasen, drei Farben für
+Strom, Wasserstoff und Information, Annahmen neben dem Bild), 2 (das Studio hängt unter `/studio/` an der
+Web-Anwendung und ist vom Ort System verlinkt), 8 (eine Auflage von 04:00 bis 05:00 und ein Fahrbefehl von 05:00
+bis 05:30 im Szenario) und 9 (das Bild folgt der Arbeitskopie und unterscheidet "offen" von "noch nicht
+bereinigt"). Offen bleiben 3 (Sprache) und 7 (Lauf-Dienst, Arbeitspaket 014.17).
+
 Die Befunde 4, 5 und 6 sind Vorbereitung und brauchen keinen Code. Die Befunde 1, 2, 8 und 9 sind kleine Arbeiten
 an Oberfläche und Szenario. Befund 7 ist der Lauf-Dienst.

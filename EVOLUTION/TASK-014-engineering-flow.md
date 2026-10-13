@@ -6,9 +6,9 @@
 - **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-system-plan` (S1 Systemplan, 014.13), Worktree
-  `../OpenTSx-worktrees/system-plan`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Delivery-Branch**: `opentsx/2026-task014-demo-ui` (Demo A zeigbar machen, 014.16), Worktree
+  `../OpenTSx-worktrees/demo-ui`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
@@ -173,6 +173,8 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       (`.claude/agents/sim-*.md`, angelegt), nach S1 erst Demo A ausrollen und durchspielen.
       Erster Durchlauf am 2026-10-13 mit neun Befunden (16, Abschnitt 7); die nächste Baustufe ist danach zu
       entscheiden
+- [ ] 014.16 Demo A zeigbar machen: Befunde 1, 2, 4, 5, 6, 8 und 9 aus 16, Abschnitt 7
+- [ ] 014.17 Lauf-Dienst und Lauf-Register (16, Abschnitt 4, Punkte 1 und 2; entschieden am 2026-10-13)
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 

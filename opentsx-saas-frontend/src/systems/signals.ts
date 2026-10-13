@@ -287,11 +287,15 @@ export interface PlanPort {
   state?: SignalState;
   origin?: string;
   via?: string;
+  /** The wire delivers the value of the time step before: a feedback, or a hand-over inside one phase. */
+  delayed?: boolean;
 }
 
 export interface PlanAtom {
   id: string;
   type: string;
+  /** Phase of a time step the atom computes in. */
+  phase?: string;
   inputs: PlanPort[];
   outputs: PlanPort[];
   /** Sensor channels declared below the atom. */
@@ -303,6 +307,10 @@ export interface PlanDoc {
   system: string;
   title: string;
   atoms: PlanAtom[];
+  /** The phases of a time step in their order; the columns of the picture. */
+  phases?: string[];
+  /** What the system document assumes about the plant. */
+  assumptions?: string[];
   counts: { atoms: number; inputsFromOutside: number; inputsWithoutSignal: number };
 }
 
@@ -313,14 +321,26 @@ export function feedOf(p: PlanPort): { kind: 'wired' | 'signal' | 'missing'; tex
   return { kind: 'missing', text: 'no signal declared' };
 }
 
+/** What a wire carries: electrical power, hydrogen as gas, or information. */
+export type Carrier = 'power' | 'hydrogen' | 'info';
+
+/** The carrier of a port by its kind and unit: a flow in kW is power, a flow in kg/h is gas, the rest is information. */
+export function carrierOf(p: Pick<PlanPort, 'kind' | 'unit'> | undefined): Carrier {
+  if (!p || p.kind !== 'FLOW') return 'info';
+  return p.unit === 'kW' ? 'power' : p.unit === 'kg/h' ? 'hydrogen' : 'info';
+}
+
 /** An atom of the plan placed in a picture: its column, its row, and what its inputs from outside are missing. */
 export interface GraphNode {
   id: string;
   type: string;
   layer: number;
   row: number;
-  /** ok: every input is fed; todo: a signal is not clean yet; missing: an input from outside has no signal. */
-  mark: 'ok' | 'todo' | 'missing';
+  /**
+   * ok: every input is fed with clean or constant data; todo: a signal has data that is not clean yet; open: a signal
+   * has no source or no data; missing: an input from outside has no signal at all.
+   */
+  mark: 'ok' | 'todo' | 'open' | 'missing';
   outside: number;
 }
 
@@ -330,16 +350,30 @@ export interface GraphEdge {
   to: string;
   /** The output and the input the wire joins. */
   label: string;
-  /** A wire back to an atom that comes earlier in the plan: the value of the step before. */
+  carrier: Carrier;
+  /** The value arrives one time step later: a feedback, or a hand-over between atoms of one phase. */
   back: boolean;
 }
 
+/** Names of the phases of a time step, as the head of a column. */
+export const PHASE_TITLE: Record<string, string> = {
+  SOURCES: 'Sources',
+  POLICY: 'Policy',
+  ASSETS: 'Assets',
+  BALANCE: 'Balance',
+  FLOWS: 'Stocks',
+  VIEWS: 'Views',
+};
+
 /**
- * The plan as a graph from left to right. An atom stands one column right of the last atom that feeds it; a wire
- * back to an earlier atom (a loop, as between the electrolyser and the line) does not move anything.
+ * The plan as a picture. With phases the columns are the phases of a time step from left to right, as in the Smart
+ * Topics Studio. Without them an atom stands one column right of the last atom that feeds it, and a wire back to an
+ * earlier atom moves nothing.
  */
-export function planGraph(plan: PlanDoc): { nodes: GraphNode[]; edges: GraphEdge[] } {
+export function planGraph(plan: PlanDoc): { nodes: GraphNode[]; edges: GraphEdge[]; columns: string[] } {
   const order = new Map(plan.atoms.map((a, i) => [a.id, i]));
+  const byId = new Map(plan.atoms.map((a) => [a.id, a]));
+  const phases = plan.phases && plan.atoms.every((a) => a.phase && plan.phases!.includes(a.phase)) ? plan.phases : null;
   const layer = new Map<string, number>();
   const edges: GraphEdge[] = [];
   for (const a of plan.atoms) {
@@ -348,12 +382,20 @@ export function planGraph(plan: PlanDoc): { nodes: GraphNode[]; edges: GraphEdge
       if (!p.from) continue;
       const src = p.from.split('.')[0];
       if (!order.has(src)) continue;
-      const back = order.get(src)! >= order.get(a.id)!;
-      if (!back) l = Math.max(l, (layer.get(src) ?? 0) + 1);
+      const back = p.delayed ?? order.get(src)! >= order.get(a.id)!;
+      if (!phases && !(order.get(src)! >= order.get(a.id)!)) l = Math.max(l, (layer.get(src) ?? 0) + 1);
       const port = p.from.slice(src.length + 1);
-      edges.push({ id: `${p.from}>${a.id}.${p.name}`, from: src, to: a.id, label: port === p.name ? port : `${port} > ${p.name}`, back });
+      const out = byId.get(src)!.outputs.find((o) => o.name === port);
+      edges.push({
+        id: `${p.from}>${a.id}.${p.name}`,
+        from: src,
+        to: a.id,
+        label: port === p.name ? port : `${port} > ${p.name}`,
+        carrier: carrierOf(out ?? p),
+        back,
+      });
     }
-    layer.set(a.id, l);
+    layer.set(a.id, phases ? phases.indexOf(a.phase!) : l);
   }
   const rows = new Map<number, number>();
   const nodes = plan.atoms.map((a) => {
@@ -363,12 +405,14 @@ export function planGraph(plan: PlanDoc): { nodes: GraphNode[]; edges: GraphEdge
     const outside = a.inputs.filter((p) => !p.from);
     const mark: GraphNode['mark'] = outside.some((p) => !p.signal)
       ? 'missing'
-      : outside.some((p) => p.state !== 'clean' && p.state !== 'constant')
-        ? 'todo'
-        : 'ok';
+      : outside.some((p) => p.state === 'open' || p.state === 'bound-no-data')
+        ? 'open'
+        : outside.some((p) => p.state !== 'clean' && p.state !== 'constant')
+          ? 'todo'
+          : 'ok';
     return { id: a.id, type: a.type, layer: l, row, mark, outside: outside.length };
   });
-  return { nodes, edges };
+  return { nodes, edges, columns: phases ? phases.map((p) => PHASE_TITLE[p] ?? p) : [] };
 }
 
 // ---------------------------------------------------------------- decisions (GET /v1/systems/<id>/decisions)

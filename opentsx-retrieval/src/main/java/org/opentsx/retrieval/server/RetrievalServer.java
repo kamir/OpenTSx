@@ -418,6 +418,8 @@ public final class RetrievalServer implements AutoCloseable {
             json(ex, 200, systems.signals(p[1], inventory.get(), Systems.bindings(body)));
         } else if (p[2].equals("decisions")) {
             json(ex, 200, systems.decisions(p[1], inventory.get(), Systems.bindings(body)));
+        } else if (p[2].equals("plan")) {
+            json(ex, 200, systems.plan(p[1], inventory.get(), Systems.bindings(body)));
         } else if (p[2].equals("generate")) {
             if (signalWriter == null) {
                 json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server cannot write generated series (it needs --kafscale and --dag-runs true)"));

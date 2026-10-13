@@ -141,6 +141,25 @@ class H2ChainTest {
     }
 
     @Test
+    void theNightOfTheScenarioSeparatesRuleAndDispatch() {
+        RunResult night = twin.shadow(H2ChainDemo.observed(), H2ChainDemo.reference());
+        double[] avail = night.series("park.p_avail_kw");
+        double[] gen = night.series("park.p_gen_kw");
+        // 04:00 to 05:00 the rule of the plan holds the park at 6 MW; 05:00 to 05:30 the operator dispatches it to 5 MW
+        assertEquals(8000, avail[239]);
+        assertEquals(6000, avail[240]);
+        assertEquals(6000, gen[299]);
+        assertEquals(8000, avail[300], "the rule has ended; what is available is the potential again");
+        assertEquals(5000, gen[300]);
+        assertEquals(8000, gen[330], "the dispatch is released");
+        assertEquals(2000, night.kpis().get("park.curtailed_rules_kwh"), 1e-6);
+        assertEquals(1500, night.kpis().get("park.curtailed_dispatch_kwh"), 1e-6);
+        assertEquals("bat curtailment", night.firstEvent("restriction_start").orElseThrow().attrs().get("reason"));
+        // the story of the valve is the same with and without the later dispatch
+        assertEquals(r.firstEvent("protective_shutdown").orElseThrow().tMicros(), night.firstEvent("protective_shutdown").orElseThrow().tMicros());
+    }
+
+    @Test
     void theParkSaysWhyEnergyWasNotGenerated() {
         TwinPlan plan = H2ChainDemo.plan();
         List<Intervention> log = List.of(

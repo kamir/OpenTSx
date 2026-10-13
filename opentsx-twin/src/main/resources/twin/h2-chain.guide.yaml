@@ -32,10 +32,15 @@ intro:
 atoms:
   rules:
     title: "Betriebsvorgaben"
-    text: "Sammelt alle Auflagen, die die Leistung des Parks zeitweise begrenzen: Vorgaben des Netzbetreibers, Abschaltungen zum Schutz von Fledermäusen, Schallauflagen in der Nacht, Arbeiten auf den Flächen. Jede Auflage ist ein Zeitfenster mit einer Leistungsgrenze und einem Grund. Der Baustein gibt die jeweils strengste Grenze aus. Im Beispiel ist kein Fenster eingetragen, der Ausgang ist deshalb leer und der Park läuft unbegrenzt."
+    text: "Sammelt alle Auflagen, die die Leistung des Parks zeitweise begrenzen: Vorgaben des Netzbetreibers, Abschaltungen zum Schutz von Fledermäusen, Schallauflagen in der Nacht, Arbeiten auf den Flächen. Jede Auflage ist ein Zeitfenster mit einer Leistungsgrenze und einem Grund. Der Baustein gibt die jeweils strengste Grenze aus. Im Beispiel gilt von 04:00 bis 05:00 eine Abschaltung zum Schutz von Fledermäusen mit 6.000 kW; in dieser Stunde liegt die verfügbare Leistung 2.000 kW unter dem Potenzial. Das Fenster ist angenommen."
     capture: "Keine Anlage. Erfasse die Quellen der Auflagen: Genehmigungsbescheid mit Aktenzeichen, Vorgaben des Netzbetreibers, Abschaltalgorithmen. Die Zeitfenster selbst trägst du als Parameter windows im Schaltplan ein (from, to, limitKw, reason)."
     ports:
       limit_kw: "Strengste Leistungsgrenze, die in dieser Minute gilt. Ein leerer Wert bedeutet: keine Einschränkung."
+    params:
+      windows:
+        text: "Die Auflagen als Zeitfenster: Beginn, Ende, Leistungsgrenze in kW und Grund. Überlappen sich Fenster, gilt die strengste Grenze."
+        source: "Genehmigungsbescheid, Vorgaben des Netzbetreibers, Abschaltalgorithmen, Absprachen mit den Bewirtschaftern der Flächen."
+        compare: "Im Beispiel ein angenommenes Fenster von 04:00 bis 05:00 mit 6.000 kW zum Schutz von Fledermäusen. Echte Abschaltungen hängen an Jahreszeit, Nachtzeit, Wind, Temperatur und Niederschlag."
 
   market:
     title: "Strommarkt"
@@ -71,7 +76,7 @@ atoms:
       p_gen_kw: "Tatsächlich erzeugte Leistung: die verfügbare Leistung, gekappt auf den Fahrbefehl."
     controls:
       limit_kw: "Leistungsgrenze des Parkreglers. Sie folgt dem gleichnamigen Eingang. Ohne Vorgabe gilt die Nennleistung."
-      dispatch_kw: "Fahrbefehl der Betriebsführung, etwa eine Abregelung aus wirtschaftlichen Gründen. Ohne Vorgabe gilt die Nennleistung, der Park fährt also alles, was verfügbar ist."
+      dispatch_kw: "Fahrbefehl der Betriebsführung, etwa eine Abregelung aus wirtschaftlichen Gründen. Ohne Vorgabe gilt die Nennleistung, der Park fährt also alles, was verfügbar ist. Im Referenzlauf setzt ihn ein Eingriff von 05:00 bis 05:30 auf 5.000 kW."
     params:
       ratedKw:
         text: "Nennleistung des Parks am Netzanschlusspunkt. Mehr kann der Park nie einspeisen."
@@ -345,7 +350,7 @@ atoms:
         refs: [wiki-direktvermarktung, wiki-ausgleichsenergie]
 
 wires:
-  "rules.limit_kw -> park.limit_kw": "Die Leistungsgrenze aus den Betriebsvorgaben geht an den Parkregler. Der Park stellt dann höchstens diesen Wert als verfügbar bereit, auch wenn mehr Wind da wäre, und zählt die Differenz als durch Auflagen nicht erzeugte Energie. Im Beispiel ist keine Auflage eingetragen. Der Wert ist deshalb leer, und der Park wird nur durch seine Nennleistung von 12.000 kW begrenzt."
+  "rules.limit_kw -> park.limit_kw": "Die Leistungsgrenze aus den Betriebsvorgaben geht an den Parkregler. Der Park stellt dann höchstens diesen Wert als verfügbar bereit, auch wenn mehr Wind da wäre, und zählt die Differenz als durch Auflagen nicht erzeugte Energie. Im Beispiel gilt von 04:00 bis 05:00 eine Grenze von 6.000 kW. Außerhalb des Fensters ist der Wert leer, und der Park wird nur durch seine Nennleistung von 12.000 kW begrenzt."
   "park.p_gen_kw -> grid.p_gen_kw": "Die Erzeugung des Windparks geht in die Strombilanz am Netzanschlusspunkt ein. Im Beispiel sind es durchgehend 8.000 kW. Das ist die einzige Quelle der Bilanz. Alles, was Elektrolyseur, Verdichter und Batterie davon nicht aufnehmen, wird Einspeisung."
   "ely.p_el_kw -> grid.p_ely_kw": "Die Leistungsaufnahme des Elektrolyseurs als größter Verbraucher hinter dem Anschluss. Bis zur Schutzabschaltung sind es 5.000 kW. Danach fällt sie mit 500 kW je Minute und ist nach 10 Minuten bei null. Genau diese 5.000 kW tauchen dann als zusätzliche Einspeisung auf."
   "compressor.p_el_kw -> grid.p_self_kw": "Die Leistung des Verdichters als Eigenbedarf in der Strombilanz. Sie steigt mit dem Druck im Puffer von 69 kW bei 120 bar auf 102 kW bei 200 bar und fällt mit dem Elektrolyseur auf null. Ohne diese Linie wäre der Fahrplan des Vermarkters um diesen Betrag falsch."

@@ -12,6 +12,10 @@ steps: 360
 atoms:
   - id: rules
     type: operating-rules
+    params:
+      windows:
+        # an assumed restriction, so that potential and available power differ for an hour
+        - { from: "2026-10-01T04:00:00Z", to: "2026-10-01T05:00:00Z", limitKw: 6000, reason: bat curtailment }
   - id: market
     type: market
     params: { every: 15 }

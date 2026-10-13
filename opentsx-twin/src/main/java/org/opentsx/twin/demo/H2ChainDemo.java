@@ -69,6 +69,20 @@ public final class H2ChainDemo {
         return List.of(Intervention.set(START.plusSeconds(3600), "handover", "valve", 0, "h2-handover", "valve closed"));
     }
 
+    /** The operator reduces the park to 5 MW from 05:00 to 05:30: a dispatch, not a restriction. */
+    public static List<Intervention> dispatched() {
+        return List.of(
+                Intervention.set(START.plusSeconds(5 * 3600), "park", "dispatch_kw", 5000, "operator", "dispatch reduced"),
+                Intervention.release(START.plusSeconds(5 * 3600 + 1800), "park", "dispatch_kw", "operator", "dispatch released"));
+    }
+
+    /** The night the scenario tells: the valve closes at 01:00, and the park is dispatched down for half an hour at 05:00. */
+    public static List<Intervention> reference() {
+        List<Intervention> log = new ArrayList<>(valveClosed());
+        log.addAll(dispatched());
+        return log;
+    }
+
     static double[] constant(int n, double v) {
         double[] a = new double[n];
         Arrays.fill(a, v);
@@ -88,12 +102,12 @@ public final class H2ChainDemo {
         Twin twin = new Twin(plan);
         PrintStream out = System.out;
 
-        RunResult shadow = twin.shadow(observed(), valveClosed());
+        RunResult shadow = twin.shadow(observed(), reference());
         report(out, "1. Shadow: observed history (valve closed at 01:00)", shadow);
 
-        List<Intervention> reopened = new ArrayList<>(valveClosed());
+        List<Intervention> reopened = new ArrayList<>(reference());
         reopened.add(Intervention.set(START.plusSeconds(7200), "handover", "valve", 1, "h2-handover", "valve reopened"));
-        Twin.WhatIf w = twin.whatIf(observed(), valveClosed(), reopened);
+        Twin.WhatIf w = twin.whatIf(observed(), reference(), reopened);
         report(out, "2. What-if: valve reopened at 02:00", w.alternative());
         out.println("   KPI delta (what-if minus baseline):");
         w.kpiDelta().forEach((k, v) -> {
@@ -121,5 +135,7 @@ public final class H2ChainDemo {
         out.printf(Locale.ROOT, "   max buffer pressure %.2f bar, electrolyzer trips %.0f, H2 %.1f kg, extra feed-in %.0f kWh%n",
                 r.max("buffer.p_bar"), r.kpis().get("ely.trips"), r.kpis().get("ely.h2_kg"),
                 r.kpis().get("marketer.extra_kwh"));
+        out.printf(Locale.ROOT, "   not generated: %.0f kWh by the operating rules, %.0f kWh by the dispatch%n",
+                r.kpis().get("park.curtailed_rules_kwh"), r.kpis().get("park.curtailed_dispatch_kwh"));
     }
 }

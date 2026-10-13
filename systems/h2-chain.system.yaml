@@ -20,6 +20,10 @@ version: 3
 title: Wasserstoffkette am Windpark
 example: true
 domain: wind
+assumptions:
+  - "The order on the hydrogen side is assumed, no real plant stands behind it: electrolyser at 30 bar, compressor, buffer of 50 to 200 bar, pipeline of 20 to 40 bar, handover station at 20 bar or more."
+  - "All sizes, pressures and efficiencies of the plan are assumed values."
+  - "The physics is simple on purpose: ideal gas, one compressor stage, a pressure loss that grows with the square of the flow."
 plan: { ref: opentsx-twin/src/main/resources/twin/h2-chain.yaml }
 inventory: { ref: opentsx-twin/src/main/resources/twin/inventar-beispiel.yaml, system: h2-chain }
 catalogs:

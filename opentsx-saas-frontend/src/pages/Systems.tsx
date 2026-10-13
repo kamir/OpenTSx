@@ -80,7 +80,7 @@ export default function Systems() {
     const withWorkingCopy = async () => {
       const mine = signedIn ? await systemsAPI.bindings(system).catch(() => []) : [];
       if (!cancelled) setBindings(mine);
-      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null)]);
+      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null), get('plan')]);
       const post = async (what: string) => {
         const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
           method: 'POST',
@@ -90,10 +90,11 @@ export default function Systems() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       };
-      return Promise.all([post('signals'), post('decisions').catch(() => null)]);
+      // the plan with the working copy: a server that cannot lay it over still has the plan of the document
+      return Promise.all([post('signals'), post('decisions').catch(() => null), post('plan').catch(() => get('plan'))]);
     };
-    Promise.all([withWorkingCopy(), get('plan')])
-      .then(([[signals, decisionDoc], planDoc]) => {
+    withWorkingCopy()
+      .then(([signals, decisionDoc, planDoc]) => {
         if (cancelled) return;
         setStatus(parseStatus(signals));
         setDecisions(decisionDoc as DecisionStatus | null);

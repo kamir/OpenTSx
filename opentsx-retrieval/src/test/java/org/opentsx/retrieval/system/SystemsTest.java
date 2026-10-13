@@ -145,6 +145,24 @@ class SystemsTest {
             grid = a.path("id").asText().equals("grid") ? a : grid;
         }
         assertEquals("wind-park", park.path("type").asText());
+        // the phases are the columns of the picture; the assumptions stand next to it
+        assertEquals(List.of("SOURCES", "ASSETS", "BALANCE", "FLOWS"), texts(plan.path("phases")));
+        assertEquals("ASSETS", park.path("phase").asText());
+        assertEquals(3, plan.path("assumptions").size());
+        assertTrue(plan.path("assumptions").get(0).asText().contains("assumed"));
+        // a wire inside one phase, and a feedback, deliver the value of the step before
+        JsonNode ely = null;
+        for (JsonNode a : plan.path("atoms")) {
+            ely = a.path("id").asText().equals("ely") ? a : ely;
+        }
+        for (JsonNode in : ely.path("inputs")) {
+            if (in.path("name").asText().equals("p_downstream_bar")) {
+                assertTrue(in.path("delayed").asBoolean());
+            }
+        }
+        for (JsonNode in : grid.path("inputs")) {
+            assertFalse(in.path("delayed").asBoolean(false), in.toString());
+        }
         assertEquals(3, park.path("channels").asInt());
         JsonNode avail = null;
         JsonNode limit = null;
@@ -335,6 +353,18 @@ class SystemsTest {
             assertEquals(13, JSON.readTree(signals.body()).path("signals").size());
 
             assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+            // the plan with a working copy laid over it: the open demand is bound, and the input says so
+            String body = "{\"bindings\":[{\"signal\":\"offtake.demand_kgph\",\"grade\":\"raw\",\"source\":{\"kind\":\"manual\",\"value\":80,\"origin\":\"REPORTED\"}}]}";
+            HttpResponse<String> overlaid = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan"))
+                    .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, overlaid.statusCode());
+            String demand = "";
+            for (JsonNode a : JSON.readTree(overlaid.body()).path("atoms")) {
+                for (JsonNode in : a.path("inputs")) {
+                    demand = in.path("signal").asText().equals("offtake.demand_kgph") ? in.path("state").asText() : demand;
+                }
+            }
+            assertEquals("constant", demand);
             HttpResponse<String> decisions = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/decisions")).build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, decisions.statusCode());
             assertEquals("h2-dispatch", JSON.readTree(decisions.body()).path("decisions").get(0).path("id").asText());

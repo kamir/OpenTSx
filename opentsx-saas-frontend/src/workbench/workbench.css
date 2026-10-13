@@ -1560,3 +1560,68 @@
   white-space: normal;
   overflow: visible;
 }
+
+/* ---- the plan in phases: columns, carriers, assumptions ---- */
+.wb-plan {
+  grid-template-rows: minmax(330px, 46%) minmax(0, 1fr);
+}
+.wb-plan-picture {
+  position: relative;
+}
+.wb-plan-picture .react-flow__node.wb-plan-node.open { border-color: #b3392b; border-left-style: double; }
+.wb-plan-picture .react-flow__node.wb-plan-column {
+  width: 150px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted, #5b6672);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: left;
+  cursor: default;
+}
+.wb-plan-picture .react-flow__node.wb-plan-column .react-flow__handle {
+  display: none;
+}
+.wb-plan-legend {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 3px 8px;
+  list-style: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-size: 11px;
+}
+.wb-plan-legend i {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.wb-plan-legend i.dashed {
+  height: 0;
+  border-top: 2px dashed #8a949e;
+}
+.wb-head-link {
+  margin-left: auto;
+  font-size: 12px;
+}
+.wb-assumptions {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.wb-assumptions summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.wb-assumptions ul {
+  margin: 3px 0 0;
+  padding-left: 18px;
+}
