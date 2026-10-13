@@ -22,6 +22,8 @@ import java.util.Map;
  * twin-live demo    [--port 8090] [--scenario id] [--duration 120]
  *     both in one process on topics kept in memory: no broker, nothing is written to KafScale
  * </pre>
+ * Without {@code --bootstrap} the broker comes from the environment variable {@code KAFSCALE_BOOTSTRAP}; without
+ * {@code --allow-origin} the allowed origin comes from {@code EVENT_BRIDGE_ALLOW_ORIGIN} (default {@code *}).
  */
 public final class TwinLive {
 
@@ -43,10 +45,11 @@ public final class TwinLive {
                 }
             }
             case "bridge" -> {
-                Topics topics = new KafkaTopics(required(o, "bootstrap"));
+                String bootstrap = required(o, "bootstrap");
+                Topics topics = new KafkaTopics(bootstrap);
                 EventBridge bridge = bridge(topics, o);
                 System.out.println("event bridge on http://localhost:" + bridge.port() + "/v1/topics/<topic>/events, broker "
-                        + o.get("bootstrap"));
+                        + bootstrap);
                 Thread.currentThread().join();
             }
             case "demo" -> {
@@ -64,7 +67,7 @@ public final class TwinLive {
 
     private static EventBridge bridge(Topics topics, Map<String, String> o) throws java.io.IOException {
         return new EventBridge(topics, Integer.parseInt(o.getOrDefault("port", "8090")),
-                o.getOrDefault("allow-origin", "*"), Integer.parseInt(o.getOrDefault("max-streams", "16")));
+                o.getOrDefault("allow-origin", env("EVENT_BRIDGE_ALLOW_ORIGIN", "*")), Integer.parseInt(o.getOrDefault("max-streams", "16")));
     }
 
     private static void publish(Topics topics, Map<String, String> o) throws InterruptedException {
@@ -129,8 +132,16 @@ public final class TwinLive {
         return o;
     }
 
+    private static String env(String name, String fallback) {
+        String v = System.getenv(name);
+        return v == null || v.isBlank() ? fallback : v;
+    }
+
     private static String required(Map<String, String> o, String name) {
         String v = o.get(name);
+        if (v == null && name.equals("bootstrap")) {
+            v = env("KAFSCALE_BOOTSTRAP", null);
+        }
         if (v == null || v.equals("true")) {
             System.err.println("missing --" + name);
             usage();

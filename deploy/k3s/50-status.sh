@@ -49,6 +49,8 @@ else
 fi
 info "Modbus simulator (MODBUS_SIM=true)"
 kns get deployment/opentsx-modbus-sim 2>/dev/null || echo "  not deployed"
+info "event bridge (EVENT_BRIDGE=true)"
+kns get deployment/opentsx-event-bridge 2>/dev/null || echo "  not deployed"
 info "warnings (last 10 events)"
 kns get events --field-selector type=Warning --sort-by=.lastTimestamp 2>/dev/null | tail -n 10 || true
 if $LOGS; then

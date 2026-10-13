@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-event-bridge
+  labels:
+    app.kubernetes.io/name: opentsx-event-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-event-bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-event-bridge
+        opentsx.org/kafka: "true"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: event-bridge
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          # broker and allowed origin come from the environment (KAFSCALE_BOOTSTRAP, EVENT_BRIDGE_ALLOW_ORIGIN)
+          args: [twin-live, bridge, --port, "8090"]
+          env:
+            - name: KAFSCALE_BOOTSTRAP
+              valueFrom:
+                configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}
+            - name: EVENT_BRIDGE_ALLOW_ORIGIN
+              valueFrom:
+                configMapKeyRef: {name: opentsx-config, key: EVENT_BRIDGE_ALLOW_ORIGIN, optional: true}
+          ports:
+            - name: http
+              containerPort: 8090
+          readinessProbe:
+            httpGet: {path: /v1/health, port: http}
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /v1/health, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentsx-event-bridge
+  labels:
+    app.kubernetes.io/name: opentsx-event-bridge
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: opentsx-event-bridge
+  ports:
+    - name: http
+      port: 8090
+      targetPort: http
+      nodePort: 30312

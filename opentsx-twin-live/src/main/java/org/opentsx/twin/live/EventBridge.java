@@ -86,7 +86,12 @@ public final class EventBridge implements AutoCloseable {
         } catch (IllegalArgumentException e) {
             error(ex, 400, String.valueOf(e.getMessage()));
         } catch (RuntimeException e) {
-            error(ex, 502, e.getMessage() == null ? e.toString() : e.getMessage());
+            System.err.println("event bridge: " + ex.getRequestURI() + " failed: " + e);
+            try {
+                error(ex, 502, e.getMessage() == null ? e.toString() : e.getMessage());
+            } catch (IOException alreadyStreaming) {
+                // the stream had started; closing it makes the browser reconnect
+            }
         } finally {
             ex.close();
         }
