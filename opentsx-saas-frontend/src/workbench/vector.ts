@@ -215,6 +215,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
     t0Ms: first.t0Ms,
     series,
     vector: { clock: every, components, keyBy },
+    marks: first.marks,
     note:
       `Vector of ${components.length} components on a clock of ${every} s: ${components.join(', ')}\n` +
       `${keys.size} key(s) by ${keyBy}, ${ticksOut} measuring points, ${missing} missing component values` +

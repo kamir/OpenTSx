@@ -22,6 +22,20 @@ export interface Series {
   y: Float64Array;
 }
 
+/**
+ * A ground-truth event of the scenario on the time axis of a bucket: an operation (curtailment, maintenance) or a
+ * sensor fault (stuck, drift, gap). `from` and `to` are in the x unit of the bucket.
+ */
+export interface Mark {
+  /** 'operation' | 'sensor_fault' */
+  kind: string;
+  type: string;
+  from: number;
+  to: number;
+  /** Which of the loaded series it concerns; empty when it concerns all of them. */
+  scope: string;
+}
+
 export interface Bucket {
   name: string;
   xKind: AxisKind;
@@ -32,6 +46,8 @@ export interface Bucket {
   t0Ms?: number;
   /** Free text shown in the properties tab, for example the fitted DFA exponents. */
   note?: string;
+  /** Ground truth that came with the data. Operators that keep the time axis hand it on. */
+  marks?: Mark[];
   /** Set by align.vector: clock in seconds and the component names in vector order. */
   vector?: { clock: number; components: string[]; keyBy: string };
 }

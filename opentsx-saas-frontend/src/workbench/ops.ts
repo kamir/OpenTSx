@@ -114,7 +114,8 @@ export function linFit(x: ArrayLike<number>, y: ArrayLike<number>): { slope: num
 function shuffle(b: Bucket, p: Params): Bucket {
   const rounds = Math.max(1, Math.round(num(p, 'rounds', 1)));
   const rnd = mulberry32(Math.round(num(p, 'seed', 1)));
-  return mapY(b, `Shuffle_${b.name}`, (s) => {
+  // shuffled values have left their place in time: the ground truth no longer applies
+  return mapY({ ...b, marks: undefined }, `Shuffle_${b.name}`, (s) => {
     const y = Float64Array.from(s.y);
     for (let r = 0; r < rounds; r++) {
       for (let i = y.length - 1; i > 0; i--) {
@@ -650,10 +651,13 @@ function segmentThreshold(b: Bucket, p: Params): Bucket {
   const post = Math.max(1, Math.round(num(p, 'post', 80)));
   const out: Series[] = [];
   let events = 0;
+  let inside = 0;
+  const marks = b.xKind === 'time' ? (b.marks ?? []) : [];
   for (const s of b.series) {
     const dt = sampleInterval(s.x);
     for (const i of crossings(s.y, level, rising)) {
       events++;
+      if (marks.some((m) => s.x[i] >= m.from && s.x[i] < m.to)) inside++;
       if (out.length >= 24) continue;
       const from = Math.max(0, i - pre);
       const to = Math.min(s.y.length, i + post);
@@ -668,7 +672,11 @@ function segmentThreshold(b: Bucket, p: Params): Bucket {
     xLabel: 'offset from the crossing',
     yLabel: b.yLabel,
     series: out,
-    note: `${events} episodes at level ${level} (${rising ? 'ABOVE' : 'BELOW'}); the first ${out.length} are drawn, aligned on the crossing`,
+    note:
+      `${events} episodes at level ${level} (${rising ? 'ABOVE' : 'BELOW'}); the first ${out.length} are drawn, aligned on the crossing` +
+      (marks.length > 0
+        ? `\n${inside} of ${events} crossings lie inside a ground-truth event (${[...new Set(marks.map((m) => m.type))].join(', ')})`
+        : ''),
   };
 }
 
