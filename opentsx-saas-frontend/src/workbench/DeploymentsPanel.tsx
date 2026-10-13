@@ -131,7 +131,7 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
       </ul>
       {onMakeVector && (
         <button onClick={onMakeVector} title="Adds an Align to vector node on the source bucket and publishes it">
-          Create a vector of the loaded series
+          Align series to a common clock
         </button>
       )}{' '}
       <button

@@ -26,6 +26,9 @@ export interface FlowSummary {
   track: string;
   domain: string;
   sourceTopic: string;
+  /** System and signal the flow was made for; empty for a flow made without a system. */
+  system: string;
+  signal: string;
   /** Ids of the series the flow was built on; empty when it was built on a file or the sample bucket. */
   sourceSeries: string[];
   /** Labels of the buckets after the source, in the order they were made. */
@@ -58,6 +61,8 @@ export function summarize(flow: StoredFlow): FlowSummary {
     track: str(def.track),
     domain: str(def.domain),
     sourceTopic: str(def.sourceTopic),
+    system: str(def.system),
+    signal: str(def.signal),
     sourceSeries: Array.isArray(def.sourceSeries) ? def.sourceSeries.filter((i): i is string => typeof i === 'string') : [],
   };
   const none = { steps: [], published: [], vectors: 0, dag: '', runnable: false };
@@ -108,6 +113,8 @@ export interface FlowFilter {
   /** 'published': flows with a Smart Topic; 'data': flows that name their series. */
   only: 'published' | 'data' | null;
   status: string | null;
+  /** Only flows of this system: made for one of its signals, or, without a system of their own, in its domain. */
+  system?: { id: string; domain: string } | null;
 }
 
 export const NO_FLOW_FILTER: FlowFilter = { text: '', domain: null, only: null, status: null };
@@ -120,11 +127,12 @@ export function filterFlows(flows: FlowSummary[], f: FlowFilter): FlowSummary[] 
   const words = f.text.toLowerCase().split(/\s+/).filter(Boolean);
   return flows.filter((s) => {
     if (f.domain && s.domain !== f.domain) return false;
+    if (f.system && !(s.system === f.system.id || (s.system === '' && s.domain === f.system.domain))) return false;
     if (f.status && s.status !== f.status) return false;
     if (f.only === 'published' && s.published.length === 0) return false;
     if (f.only === 'data' && s.sourceSeries.length === 0) return false;
     if (words.length === 0) return true;
-    const hay = `${s.id} ${s.name} ${s.description} ${s.track} ${s.domain} ${s.sourceTopic} ${s.steps.join(' ')} ${s.published.join(' ')}`.toLowerCase();
+    const hay = `${s.id} ${s.name} ${s.description} ${s.track} ${s.domain} ${s.signal} ${s.sourceTopic} ${s.steps.join(' ')} ${s.published.join(' ')}`.toLowerCase();
     return words.every((w) => hay.includes(w));
   });
 }

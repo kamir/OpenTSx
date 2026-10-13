@@ -171,7 +171,7 @@ apiClient.interceptors.response.use(
 /login                → Login page (public)
 /register             → Register page (public)
 /dashboard            → OpenTSx Flow Composer (protected)
-/systems              → Signals of a system (public; reads the retrieval server)
+/systems/:system/:place → Shell around a system: system, signals, flows, models (public except flows)
 /flow-builder         → Create new flow (protected)
 /flow-builder/:flowId → Edit existing flow (protected)
 ```

@@ -180,6 +180,63 @@ public final class Systems {
         return out;
     }
 
+    /**
+     * The plan of the system for the place "System": every atom with its ports. An input says where its value comes
+     * from: the output it is wired to, the signal declared for it, or nothing.
+     */
+    public JsonNode plan(String system, JsonNode inventory) {
+        SystemDoc d = docs.get(system);
+        Map<String, JsonNode> signals = new TreeMap<>();
+        signals(system, inventory).path("signals").forEach(s -> signals.put(s.path("id").asText(), s));
+        ObjectNode out = JSON.objectNode();
+        out.put("schema", "opentsx.system-plan.v1");
+        out.put("system", d.system());
+        out.put("title", d.title());
+        ArrayNode atoms = out.putArray("atoms");
+        int outside = 0;
+        int uncovered = 0;
+        for (SystemDoc.PlanAtom a : d.atoms()) {
+            ObjectNode o = atoms.addObject();
+            o.put("id", a.id());
+            o.put("type", a.type());
+            ArrayNode ins = o.putArray("inputs");
+            for (SystemDoc.Port p : a.inputs()) {
+                ObjectNode n = port(ins.addObject(), p);
+                JsonNode sig = signals.get(a.id() + "." + p.name());
+                if (p.from() != null) {
+                    n.put("from", p.from());
+                } else {
+                    outside++;
+                    if (sig == null) {
+                        uncovered++;
+                    }
+                }
+                if (sig != null) {
+                    n.put("signal", sig.path("id").asText());
+                    n.put("state", sig.path("state").asText());
+                    put(n, "origin", sig.path("origin").asText(null));
+                    n.put("via", sig.path("via").asText());
+                }
+            }
+            ArrayNode outs = o.putArray("outputs");
+            a.outputs().forEach(p -> port(outs.addObject(), p));
+            long below = d.signals().stream().filter(s -> !s.isPort() && s.atom().equals(a.id())).count();
+            o.put("channels", below);
+        }
+        ObjectNode c = out.putObject("counts");
+        c.put("atoms", d.atoms().size());
+        c.put("inputsFromOutside", outside);
+        c.put("inputsWithoutSignal", uncovered);
+        return out;
+    }
+
+    private static ObjectNode port(ObjectNode n, SystemDoc.Port p) {
+        n.put("name", p.name());
+        put(n, "unit", p.unit());
+        n.put("kind", p.kind());
+        return n;
+    }
+
     /** How a person would say where the signal comes from. */
     private static String via(Signal s) {
         Source first = s.raw() != null ? s.raw() : s.clean();

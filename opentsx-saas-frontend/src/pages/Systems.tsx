@@ -1,50 +1,50 @@
 /**
- * The place "Signals" of a system: every quantity the system expects, where its data comes from, how far it has
- * come and what to do next. The state is computed by the retrieval server from the system document and the TS
- * inventory. Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md, delivery stage L1.
+ * The shell around a system: a rail with its four places (System, Signals, Flows, Models) and the workbench as the
+ * tool, a line that says where the system stands, and, when switched on, the guide with the seven steps of the
+ * engineering method. Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md, sections 3.2 and 8.
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
-import {
-  GradeName,
-  NEXT,
-  NO_SIGNAL_FILTER,
-  Signal,
-  SignalFilter,
-  SystemEntry,
-  SystemStatus,
-  countsText,
-  dataText,
-  expectText,
-  filterSignals,
-  groupSignals,
-  isSynthetic,
-  originText,
-  parseStatus,
-  scopeGrade,
-  scopeLink,
-  sourceText,
-  stateText,
-} from '../systems/signals';
+import ModelsPlace from '../systems/ModelsPlace';
+import SignalsPlace from '../systems/SignalsPlace';
+import SystemPlace from '../systems/SystemPlace';
+import { Place, PlanDoc, SystemEntry, SystemStatus, countsText, guideSteps, parseStatus, railCounts } from '../systems/signals';
 import '../workbench/workbench.css';
 
 const BASE = '/retrieval';
-const GRADES: GradeName[] = ['raw', 'clean', 'features'];
+const PLACES: { id: Place; title: string; hint: string }[] = [
+  { id: 'system', title: 'System', hint: 'What the plant is made of' },
+  { id: 'signals', title: 'Signals', hint: 'What the system expects, what is there, what to do next' },
+  { id: 'flows', title: 'Flows', hint: 'What prepares the data, and what runs' },
+  { id: 'models', title: 'Models', hint: 'What the system predicts' },
+];
+
+function remembered(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export default function Systems() {
-  const { system } = useParams();
+  const { system, place } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
   const [systems, setSystems] = useState<SystemEntry[] | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
+  const [plan, setPlan] = useState<PlanDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<SignalFilter>(NO_SIGNAL_FILTER);
-  const [focus, setFocus] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
-  /** A jump to the scope that waits for a yes, because the workbench holds unsaved work. */
-  const [pending, setPending] = useState<string | null>(null);
+  const [guide, setGuide] = useState(() => remembered('opentsx.guide'));
+  const [flows, setFlows] = useState<{ all: number; running: number } | null>(null);
   const signedIn = !!localStorage.getItem('access_token');
+  const here = (PLACES.find((p) => p.id === place)?.id ?? 'signals') as Place;
 
   useEffect(() => {
     let cancelled = false;
@@ -68,243 +68,140 @@ export default function Systems() {
   useEffect(() => {
     if (!system) return;
     let cancelled = false;
-    setStatus(null);
-    fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/signals`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
-        return parseStatus(await res.json());
-      })
-      .then((doc) => {
+    const get = async (what: string) => {
+      const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/${what}`);
+      if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
+      return res.json();
+    };
+    Promise.all([get('signals'), get('plan')])
+      .then(([signals, planDoc]) => {
         if (cancelled) return;
-        setStatus(doc);
+        setStatus(parseStatus(signals));
+        setPlan(planDoc as PlanDoc);
         setError(null);
       })
-      .catch((e) => !cancelled && setError(`The signals could not be read: ${e instanceof Error ? e.message : e}.`));
+      .catch((e) => !cancelled && setError(`The system could not be read: ${e instanceof Error ? e.message : e}.`));
     return () => {
       cancelled = true;
     };
   }, [system, reload]);
 
-  const rows = useMemo(() => filterSignals(status?.signals ?? [], filter), [status, filter]);
-  const groups = useMemo(() => groupSignals(rows), [rows]);
-  const focused = status?.signals.find((s) => s.id === focus) ?? null;
-  const filtered = filter.text !== '' || filter.state !== null || filter.via !== null || filter.todo;
-  const states = Object.entries(status?.states ?? {});
-  const vias = Object.entries(status?.counts ?? {}).filter(([k]) => k !== 'signals');
-
-  /** Opens the series of a grade on the scope; asks first when that would throw away an unsaved flow. */
-  const openOnScope = (s: Signal, grade: GradeName) => {
-    const link = scopeLink(status!.system, s, grade);
-    const flow = useFlow.getState();
-    if (flow.nodes.length > 1 && flow.savedId === null) setPending(link);
-    else navigate(link);
+  const toggleGuide = () => {
+    setGuide((g) => {
+      try {
+        localStorage.setItem('opentsx.guide', g ? '0' : '1');
+      } catch {
+        // the guide works without being remembered
+      }
+      return !g;
+    });
   };
 
-  const step = (s: Signal, n: Signal['next'][number]) => {
-    const def = NEXT[n];
-    const grade = scopeGrade(s);
-    const live = def.live && grade !== null;
-    return (
-      <button
-        key={n}
-        disabled={!live}
-        title={def.hint}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (grade) openOnScope(s, n === 'prepare' ? 'raw' : grade);
-        }}
-      >
-        {def.label}
-      </button>
-    );
+  // The first flow opens in the workbench of this tab, the others in tabs of their own.
+  const openFlows = (ids: number[]) => {
+    const [first, ...others] = ids;
+    for (const id of others) window.open(`/workbench?flow=${id}`, '_blank');
+    if (useFlow.getState().savedId === first) useFlow.getState().setSavedId(null);
+    navigate(`/workbench?flow=${first}`);
   };
+  const newFlow = () => {
+    useFlow.getState().clear();
+    navigate('/workbench');
+  };
+  const forget = (ids: number[]) => {
+    const id = useFlow.getState().savedId;
+    if (id !== null && ids.includes(id)) useFlow.getState().clear();
+  };
+
+  const counts = railCounts(status, plan, signedIn ? flows?.all : null);
+  const steps = guideSteps(status, plan, flows?.running ?? null);
+  const next = steps.find((s) => s.mark === 'todo');
 
   return (
-    <div className="wb wb-page">
+    <div className="wb wb-shell">
       <header className="wb-toolbar">
-        <h1>OpenTSx Signals</h1>
+        <h1>OpenTSx</h1>
         <label className="wb-param">
           System
-          <select value={system ?? ''} onChange={(e) => navigate(`/systems/${e.target.value}/signals`)}>
+          <select value={system ?? ''} onChange={(e) => navigate(`/systems/${e.target.value}/${here}`)}>
             {(systems ?? []).map((s) => <option key={s.system} value={s.system}>{s.title}</option>)}
           </select>
         </label>
         <span className="wb-muted">{status ? countsText(status.counts) : ''}</span>
         <span className="wb-grow" />
-        <Link to="/workbench">Workbench</Link>
-        {signedIn ? <Link to="/dashboard">Flows</Link> : <Link to="/login">Sign in</Link>}
+        <button aria-pressed={guide} onClick={toggleGuide} title="Shows the seven steps of the engineering method with the state of this system">
+          Guide
+        </button>
+        {signedIn ? (
+          <>
+            <span className="wb-muted">{user?.full_name || user?.email}</span>
+            <button onClick={() => logout().then(() => navigate('/login'))}>Logout</button>
+          </>
+        ) : (
+          <Link to="/login">Sign in</Link>
+        )}
       </header>
 
-      <main className="wb-inv wb-inv-page" aria-label="Signals of the system">
-        <header className="wb-inv-head">
-          <h2>{status?.title ?? system ?? 'Signals'}</h2>
-          <button onClick={() => setReload((n) => n + 1)}>Reload</button>
-          <span className="wb-grow" />
-          {status && <span className="wb-muted">{status.example ? 'example data, ' : ''}system hash {status.hash.slice(0, 8)}, version {status.version}</span>}
-        </header>
+      {guide && (
+        <ol className="wb-guide" aria-label="The seven steps of the engineering method">
+          {steps.map((s) => (
+            <li key={s.n} className={`${s.mark} ${next?.n === s.n ? 'next' : ''}`}>
+              <Link to={`/systems/${system}/${s.place}`} title={next?.n === s.n ? 'The next sensible step' : undefined}>
+                <span className="n">{s.n}</span>
+                <span className="t">{s.title}</span>
+                <span className="s">{s.state}</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
+      {error && <div className="wb-error" role="alert">{error}</div>}
 
-        <div className="wb-inv-source">
-          <span>
-            A signal is a quantity the system expects, whether data exists for it or not. Each row says where its data
-            comes from, how far it has come, and the next step.
-          </span>
-          {(status?.problems.length ?? 0) > 0 && (
-            <span className="warn">The system document has {status!.problems.length} problems: {status!.problems.join('; ')}</span>
-          )}
-        </div>
-        {error && <div className="wb-error" role="alert">{error}</div>}
-        {!error && pending && (
-          <div className="wb-error" role="alert">
-            The workbench holds a flow that is not saved. Opening the signal there replaces it.{' '}
-            <button className="wb-danger" onClick={() => navigate(pending)}>Open and discard the flow</button>{' '}
-            <button onClick={() => setPending(null)}>Keep it</button>
-          </div>
-        )}
+      <div className="wb-shell-body">
+        <nav className="wb-rail" aria-label="Places of the system">
+          {PLACES.map((p) => (
+            <NavLink key={p.id} to={`/systems/${system}/${p.id}`} title={p.hint} className={() => (p.id === here ? 'here' : '')}>
+              <span className="t">{p.title}</span>
+              <span className="c">{counts[p.id]}</span>
+            </NavLink>
+          ))}
+          <hr />
+          <Link to="/workbench" title="The oscilloscope and the operators; open a signal from Signals to work on it">
+            <span className="t">Workbench</span>
+            <span className="c">tool</span>
+          </Link>
+        </nav>
 
-        <div className="wb-inv-body">
-          <nav className="wb-inv-facets" aria-label="Filters">
-            <section>
-              <h3>state</h3>
-              <ul>
-                {states.map(([st, n]) => (
-                  <li key={st}>
-                    <button aria-pressed={filter.state === st} onClick={() => setFilter({ ...filter, state: filter.state === st ? null : (st as Signal['state']) })}>
-                      <span className="name">{st.replace(/-/g, ' ')}</span>
-                      <span className="unit">{n}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section>
-              <h3>comes from</h3>
-              <ul>
-                {vias.map(([v, n]) => (
-                  <li key={v}>
-                    <button aria-pressed={filter.via === v} onClick={() => setFilter({ ...filter, via: filter.via === v ? null : v })}>
-                      <span className="name">{v}</span>
-                      <span className="unit">{n}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section>
-              <h3>show only</h3>
-              <ul>
-                <li>
-                  <button aria-pressed={filter.todo} onClick={() => setFilter({ ...filter, todo: !filter.todo })}>
-                    <span className="name">Signals with a next step</span>
-                  </button>
-                </li>
-              </ul>
-            </section>
-          </nav>
+        {here === 'system' && <SystemPlace plan={plan} system={system ?? ''} />}
+        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} onReload={() => setReload((n) => n + 1)} />}
+        {here === 'flows' &&
+          (signedIn && status ? (
+            <FlowComposer
+              base={BASE}
+              currentId={useFlow.getState().savedId}
+              replaces={false}
+              onOpen={openFlows}
+              onNew={newFlow}
+              onDeleted={forget}
+              system={{ id: status.system, domain: status.domain, title: status.title }}
+              onCount={(all, running) => setFlows({ all, running })}
+            />
+          ) : (
+            <main className="wb-place">
+              <p className="wb-muted pad">
+                Flows are stored per account. <Link to="/login">Sign in</Link> to see the flows of this system, and to start and stop them.
+              </p>
+            </main>
+          ))}
+        {here === 'models' && <ModelsPlace status={status} />}
+      </div>
 
-          <section className="wb-inv-list" aria-label="Signals">
-            <div className="wb-inv-search">
-              <input
-                type="search"
-                placeholder="Filter: signal, unit, origin, state, flow"
-                aria-label="Filter the signals"
-                value={filter.text}
-                onChange={(e) => setFilter({ ...filter, text: e.target.value })}
-              />
-              <span className="wb-muted">{rows.length} of {status?.signals.length ?? 0} shown</span>
-              <button disabled={!filtered} onClick={() => setFilter(NO_SIGNAL_FILTER)}>Clear filters</button>
-            </div>
-            <div className="wb-inv-scroll">
-              <table className="wb-table wb-inv-table wb-signals">
-                <thead>
-                  <tr>
-                    <th>signal</th>
-                    <th>expected</th>
-                    <th>origin</th>
-                    <th>state</th>
-                    <th>next</th>
-                  </tr>
-                </thead>
-                {groups.map((g) => (
-                  <tbody key={g.title}>
-                    <tr className="group"><th colSpan={5} scope="rowgroup">{g.title}</th></tr>
-                    {g.signals.map((s) => (
-                      <tr key={s.id} className={focus === s.id ? 'picked focused' : ''} onClick={() => setFocus(s.id)}>
-                        <td className="l" title={s.title}>{s.name}</td>
-                        <td className="l">{expectText(s.expect)}</td>
-                        <td className="l">
-                          <span className={`wb-origin ${isSynthetic(s) ? 'synthetic' : ''} ${s.via === 'simulated' ? 'simulated' : ''}`}>{originText(s)}</span>
-                        </td>
-                        <td className="l">
-                          <span className={`wb-flow-status ${s.state}`}>{stateText(s)}</span>
-                          {s.outOfRange && <span className="wb-flow-status failed" title={`Seen ${s.outOfRange.min} to ${s.outOfRange.max}`}>out of range</span>}
-                        </td>
-                        <td className="l wb-flow-run">{s.next.length === 0 ? 'n/a' : s.next.map((n) => step(s, n))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                ))}
-              </table>
-              {status && status.signals.length === 0 && <p className="wb-muted pad">The system document names no signals.</p>}
-              {status && status.signals.length > 0 && rows.length === 0 && <p className="wb-muted pad">No signal matches the filters.</p>}
-            </div>
-          </section>
-
-          <aside className="wb-inv-detail" aria-label="Signal details">
-            {focused ? (
-              <>
-                <h3>{focused.id}</h3>
-                <p>{focused.title}</p>
-                <dl className="wb-readout wide">
-                  <dt>Expected</dt><dd>{expectText(focused.expect)}{focused.expect.kind ? `, ${focused.expect.kind.toLowerCase()}` : ''}</dd>
-                  {focused.channel && [<dt key="ck">Channel</dt>, <dd key="cv">{focused.channel}</dd>]}
-                  <dt>Origin</dt><dd>{originText(focused)}{focused.expect.origin ? ` (expected: ${focused.expect.origin.toLowerCase()})` : ''}</dd>
-                  <dt>State</dt><dd>{stateText(focused)}</dd>
-                  {focused.outOfRange && [
-                    <dt key="ok">Seen</dt>,
-                    <dd key="ov" className="warn">{focused.outOfRange.min} to {focused.outOfRange.max}: outside the expected range</dd>,
-                  ]}
-                  {focused.usedBy.length > 0 && [<dt key="uk">Used by</dt>, <dd key="uv">{focused.usedBy.join(', ')}</dd>]}
-                </dl>
-                {focused.note && <p className="wb-muted">{focused.note}</p>}
-                {GRADES.map((g) => {
-                  const grade = focused.grades[g];
-                  if (!grade && g === 'features') return null;
-                  return (
-                    <div key={g}>
-                      <h3>{g}</h3>
-                      <div className="wb-flow-run-box">
-                        <p>{sourceText(grade)}</p>
-                        {grade && grade.source.kind !== 'manual' && <p className="wb-muted">{dataText(grade.data)}{grade.data?.from ? `, ${grade.data.from.slice(0, 16).replace('T', ' ')} to ${grade.data.to?.slice(0, 16).replace('T', ' ')} UTC` : ''}</p>}
-                        {(grade?.data?.series.length ?? 0) > 0 && g !== 'features' && (
-                          <button onClick={() => openOnScope(focused, g)}>Open on scope</button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {focused.next.length > 0 && (
-                  <>
-                    <h3>Next</h3>
-                    <ul className="wb-findings">
-                      {focused.next.map((n) => (
-                        <li key={n} className={NEXT[n].live ? 'ok' : 'warning'}><b>{NEXT[n].label}</b> {NEXT[n].hint}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
-            ) : (
-              <p className="wb-muted pad">Select a signal to see its expectation, its sources and what the server found for it.</p>
-            )}
-          </aside>
-        </div>
-
-        <footer className="wb-inv-foot">
-          <span className="wb-muted">
-            {(status?.notes.length ?? 0) > 0 ? `Notes of the check: ${status!.notes.join('; ')}` : 'The state is computed from the system document and the TS inventory on every reload.'}
-          </span>
-        </footer>
-      </main>
+      <footer className="wb-status">
+        <span>
+          {status ? `${status.example ? 'Example data. ' : ''}System ${status.system}, version ${status.version}, hash ${status.hash.slice(0, 8)}.` : 'Reading the system'}
+        </span>
+        <span>Times in UTC.</span>
+      </footer>
     </div>
   );
 }

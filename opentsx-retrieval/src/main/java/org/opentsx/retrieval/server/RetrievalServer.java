@@ -371,7 +371,10 @@ public final class RetrievalServer implements AutoCloseable {
         send(ex, status, "application/json", EpisodeJson.JSON.writeValueAsBytes(n));
     }
 
-    /** {@code /v1/systems}: the list; {@code /v1/systems/<id>/signals}: every signal of one system with its state. */
+    /**
+     * {@code /v1/systems}: the list; {@code /v1/systems/<id>/signals}: every signal of one system with its state;
+     * {@code /v1/systems/<id>/plan}: the atoms of its plan with their ports and what feeds each input.
+     */
     private void systems(HttpExchange ex, String path) throws IOException {
         if (systems == null) {
             json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no system documents (it needs --systems)"));
@@ -382,6 +385,8 @@ public final class RetrievalServer implements AutoCloseable {
             json(ex, 200, systems.list(inventory.get()));
         } else if (p.length == 3 && p[2].equals("signals") && systems.has(p[1])) {
             json(ex, 200, systems.signals(p[1], inventory.get()));
+        } else if (p.length == 3 && p[2].equals("plan") && systems.has(p[1])) {
+            json(ex, 200, systems.plan(p[1], inventory.get()));
         } else {
             json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
         }

@@ -72,6 +72,14 @@ public final class SystemDoc {
         }
     }
 
+    /** One port of an atom of the plan; {@code from} is the output it is wired to, null for an input from outside. */
+    public record Port(String name, String unit, String kind, String from) {
+    }
+
+    /** An atom of the plan with its ports, as the place "System" shows it. */
+    public record PlanAtom(String id, String type, List<Port> inputs, List<Port> outputs) {
+    }
+
     /** A flow in the form a person writes ({@code opentsx.flow.v1}): it names signal grades it reads and writes. */
     public record Flow(String id, String ref, List<String> reads, Map<String, List<String>> writes) {
     }
@@ -83,6 +91,7 @@ public final class SystemDoc {
     private final boolean example;
     private final List<Signal> signals = new ArrayList<>();
     private final Map<String, Flow> flows = new LinkedHashMap<>();
+    private final List<PlanAtom> atoms = new ArrayList<>();
     private final List<String> problems = new ArrayList<>();
     private final List<String> notes = new ArrayList<>();
     private final StringBuilder hashed = new StringBuilder();
@@ -121,6 +130,11 @@ public final class SystemDoc {
 
     public Map<String, Flow> flows() {
         return flows;
+    }
+
+    /** The atoms of the plan in its order; empty when the document names no plan or the plan cannot be read. */
+    public List<PlanAtom> atoms() {
+        return atoms;
     }
 
     /** What makes the document wrong; empty for a valid one. */
@@ -185,10 +199,16 @@ public final class SystemDoc {
         }
         try {
             TwinPlan plan = TwinPlan.load(file);
-            for (Atom a : plan.instantiate(AtomCatalog.standard())) {
+            List<Atom> instances = plan.instantiate(AtomCatalog.standard());
+            Map<String, String> wiredFrom = new TreeMap<>();
+            plan.resolve(instances).forEach(w -> wiredFrom.put(w.toAtom() + "." + w.toPort(), w.fromAtom() + "." + w.fromPort()));
+            for (Atom a : instances) {
                 Map<String, PortSpec> of = out.computeIfAbsent(a.id(), k -> new TreeMap<>());
                 a.inputs().forEach(p -> of.put(p.name(), p));
                 a.outputs().forEach(p -> of.putIfAbsent(p.name(), p));
+                atoms.add(new PlanAtom(a.id(), a.type(),
+                        a.inputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), wiredFrom.get(a.id() + "." + p.name()))).toList(),
+                        a.outputs().stream().map(p -> new Port(p.name(), p.unit(), p.kind().name(), null)).toList()));
             }
         } catch (RuntimeException e) {
             problems.add("plan " + file + " cannot be read: " + e.getMessage());

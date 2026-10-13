@@ -64,6 +64,16 @@ describe('filterFlows', () => {
     expect(filterFlows(all, { ...NO_FLOW_FILTER, only: 'data' }).map((f) => f.id)).toEqual([7]);
   });
 
+  it('keeps to the flows of one system', () => {
+    const forSignal = summarize(stored(20, 'T02 power', { ...(published.definition as object), system: 'h2-chain', signal: 'park/T02/WTUR.W' }));
+    const other = summarize(stored(21, 'other system', { ...(published.definition as object), system: 'boat', signal: 'solar.p_kw' }));
+    expect(forSignal).toMatchObject({ system: 'h2-chain', signal: 'park/T02/WTUR.W' });
+    const list = [...all, forSignal, other];
+    // made for a signal of the system, or without a system and in its domain
+    expect(filterFlows(list, { ...NO_FLOW_FILTER, system: { id: 'h2-chain', domain: 'wind' } }).map((f) => f.id)).toEqual([7, 20]);
+    expect(filterFlows(list, { ...NO_FLOW_FILTER, text: 'wtur' }).map((f) => f.id)).toEqual([20]);
+  });
+
   it('offers the domains of the flows', () => {
     expect(domainFacets(all)).toEqual(['lab', 'wind']);
   });
