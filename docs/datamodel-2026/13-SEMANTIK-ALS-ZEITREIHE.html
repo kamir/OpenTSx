@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semantik als Zeitreihe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 72rem), wie die anderen Briefing-Seiten unter docs/.
+   Verfahren sind ein wiederkehrendes Objekt: Kopfzeile mit zwei Abzeichen, Formelzeile,
+   vierzeiliges Raster, Mapping-Zeile. Tabellen, Figuren und Code scrollen im eigenen Rahmen. */
+:root {
+  --paper: #f4f6f7;
+  --panel: #ffffff;
+  --sunk: #eceff1;
+  --ink: #15212b;
+  --muted: #55636f;
+  --faint: #8b98a3;
+  --rule: #d3dae0;
+  --signal: #a85300;
+  --signal-soft: #fbe8d4;
+  --flow: #0a6f6b;
+  --flow-soft: #d9eeec;
+  --stale: #8d3b3b;
+  --stale-soft: #f6e0e0;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --step--1: 0.84rem;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.55rem;
+  --step-3: 2.2rem;
+  --step-4: clamp(2.4rem, 5.5vw, 3.9rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e151b; --panel: #141e26; --sunk: #101a21; --ink: #e3e9ee; --muted: #a0adb8;
+    --faint: #6c7a86; --rule: #26343f; --signal: #f0a14a; --signal-soft: #3a2914;
+    --flow: #4dc2bc; --flow-soft: #12302f; --stale: #e58a8a; --stale-soft: #351b1b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e151b; --panel: #141e26; --sunk: #101a21; --ink: #e3e9ee; --muted: #a0adb8;
+  --faint: #6c7a86; --rule: #26343f; --signal: #f0a14a; --signal-soft: #3a2914;
+  --flow: #4dc2bc; --flow-soft: #12302f; --stale: #e58a8a; --stale-soft: #351b1b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.62;
+  padding-inline: 16px;
+  padding-block: 0;
+}
+.wrap { max-width: 72rem; margin-inline: auto; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.08; text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+h1 { font-size: var(--step-4); }
+h2 { font-size: var(--step-3); }
+h3 { font-size: var(--step-2); }
+h4 { font-size: var(--step-1); }
+p { margin: 0; }
+a { color: var(--flow); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 2px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+code { background: var(--sunk); padding: 0.08em 0.32em; border-radius: 3px; }
+
+/* --- Kopf --- */
+header.masthead { padding-block: clamp(2.5rem, 6vw, 4.5rem) 2rem; border-bottom: 2px solid var(--ink); }
+.eyebrow {
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.16em;
+  font-size: var(--step--1); color: var(--signal); margin-bottom: 0.9rem;
+}
+.standfirst { font-size: var(--step-1); color: var(--muted); max-width: 54ch; margin-top: 1.1rem; }
+.meta {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin-top: 1.6rem;
+  font-family: var(--font-mono); font-size: var(--step--1); color: var(--faint);
+}
+.meta b { color: var(--muted); font-weight: 600; }
+
+/* --- Abschnitte --- */
+section { padding-block: clamp(2.2rem, 5vw, 3.4rem); border-bottom: 1px solid var(--rule); }
+section > * + * { margin-top: 1.1rem; }
+.lede { font-size: var(--step-1); color: var(--muted); max-width: 62ch; }
+.cols { display: grid; gap: 1.4rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.prose { max-width: 66ch; }
+
+/* --- Regelkarten --- */
+.rules { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.rule-card { background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--flow); padding: 1.1rem 1.2rem; }
+.rule-card h4 { margin-bottom: 0.5rem; }
+.rule-card p { font-size: var(--step--1); color: var(--muted); }
+.rule-card.warn { border-left-color: var(--signal); }
+
+/* --- Verfahren (wiederkehrendes Objekt) --- */
+.method { background: var(--panel); border: 1px solid var(--rule); padding: 1.3rem 1.4rem; }
+.methods { display: grid; gap: 1.2rem; }
+.method-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.9rem; }
+.method-id {
+  font-family: var(--font-display); font-size: var(--step-2); color: var(--faint);
+  min-width: 1.4em; font-variant-numeric: tabular-nums;
+}
+.method-head h3 { flex: 1 1 14rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.badge {
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.1em;
+  font-size: 0.7rem; padding: 0.18em 0.6em; border: 1px solid currentColor; border-radius: 999px; white-space: nowrap;
+}
+.badge.free { color: var(--flow); background: var(--flow-soft); }
+.badge.model { color: var(--signal); background: var(--signal-soft); }
+.badge.gran { color: var(--muted); background: transparent; }
+.formula {
+  font-family: var(--font-mono); font-size: var(--step--1); background: var(--sunk);
+  border-left: 2px solid var(--rule); padding: 0.7rem 0.9rem; margin-top: 0.9rem;
+  overflow-x: auto; white-space: pre;
+}
+.spec { display: grid; gap: 0.1rem 1rem; grid-template-columns: max-content 1fr; margin-top: 0.9rem; font-size: var(--step--1); }
+.spec dt { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); font-size: 0.72rem; padding-top: 0.35em; }
+.spec dd { margin: 0; color: var(--muted); }
+.spec dd.weak { color: var(--signal); }
+.maps { margin-top: 0.9rem; padding-top: 0.75rem; border-top: 1px dashed var(--rule); font-size: var(--step--1); color: var(--muted); }
+.maps b { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.72rem; color: var(--faint); font-weight: 600; }
+@media (max-width: 30rem) { .spec { grid-template-columns: 1fr; } .spec dt { padding-top: 0.6em; } }
+
+/* --- Tabellen --- */
+.scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.74rem; color: var(--faint); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.mono, th.mono { font-family: var(--font-mono); white-space: nowrap; }
+td.num { font-variant-numeric: tabular-nums; }
+
+/* --- Figuren --- */
+figure { margin: 0; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.figframe { background: var(--panel); border: 1px solid var(--rule); padding: 1.1rem; overflow-x: auto; }
+figcaption { font-size: var(--step--1); color: var(--muted); margin-top: 0.75rem; max-width: 70ch; }
+figcaption b { color: var(--ink); }
+
+/* --- Hinweis --- */
+.note { background: var(--signal-soft); border: 1px solid var(--signal); padding: 1.1rem 1.2rem; }
+.note.flow { background: var(--flow-soft); border-color: var(--flow); }
+.note h4 { margin-bottom: 0.45rem; }
+.note p { font-size: var(--step--1); }
+.note > * + * { margin-top: 0.6rem; }
+
+ul.tight { margin: 0; padding-left: 1.2rem; }
+ul.tight li + li { margin-top: 0.35rem; }
+ul.tight { font-size: var(--step-0); color: var(--muted); max-width: 66ch; }
+
+footer.colophon { padding-block: 2.4rem 3.2rem; font-size: var(--step--1); color: var(--faint); }
+footer.colophon p { max-width: 70ch; }
+footer.colophon p + p { margin-top: 0.7rem; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">OpenTSx · Datenmodell 2026 · Konzept 13</div>
+  <h1>Semantik als Zeitreihe</h1>
+  <p class="standfirst">
+    OpenTSx rechnet auf Zahlen. ER1 besteht aus Text. Dieses Dokument beschreibt sieben Verfahrensfamilien,
+    die Bedeutung in numerisch auswertbare Reihen überführen, und die eine Regel, ohne die keine davon
+    eine Zeitreihe ergibt.
+  </p>
+  <div class="meta">
+    <span><b>Stand</b> 2026-10-13</span>
+    <span><b>Gegenstand</b> ER1 → OpenTSx v2</span>
+    <span><b>Status</b> Konzept, nicht implementiert</span>
+    <span><b>Verwandt</b> 04, 05, 11 · TASK-011 P8.1 · TASK-013</span>
+  </div>
+</header>
+
+<section>
+  <h2>Warum das überhaupt nötig ist</h2>
+  <p class="lede">
+    Die Methoden von OpenTSx sind auf numerische Reihen gebaut: <code>StatsEngine</code> rechnet Momente und
+    Quantile, <code>DataQuality</code> prüft Plausibilitätsbänder, die Mustersuche arbeitet mit z-normalisierter
+    euklidischer Distanz, und die Ereignissynchronisation vergleicht Ereigniszüge.
+  </p>
+  <p class="prose">
+    ER1 trägt dagegen Titel, Volltext, Kategorien und Tags. Nichts davon hat eine Ordnung, auf der sich ein
+    Mittelwert bilden ließe. Wer OpenTSx direkt auf ER1 ansetzt, bekommt Zählkurven und sonst nichts: Items pro
+    Tag, Items pro Kontext. Das ist nicht falsch, aber es ist Aktivitätsmessung und keine Analyse des Inhalts.
+  </p>
+  <p class="prose">
+    Die Lücke schließt eine Abbildung, die jedem Item oder jedem Zeitfenster eine Zahl zuordnet, deren
+    Veränderung etwas bedeutet. Diese Abbildung ist der eigentliche Entwurfsgegenstand. Sie ist nicht neutral:
+    sie entscheidet, welche Fragen später beantwortbar sind, und sie kann, falsch gebaut, Kurven erzeugen, die
+    das Modell messen statt den Korpus.
+  </p>
+  <div class="note flow">
+    <h4>Was dieses Dokument nicht vorschlägt</h4>
+    <p>
+      OpenTSx soll keine Semantik können. Die semantische Suche existiert bei uns getrennt als lokales RAG und
+      als Durchdenken-Pipeline, der Beziehungsgraph als KafGraph. Dieses Dokument beschreibt die dritte,
+      komplementäre Schicht: abgeleitete Zahlen über derselben Quelle, verbunden über <code>memory_id</code>.
+      Drei Schichten, ein Schlüssel. Keine davon ersetzt die anderen.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Der Vertrag, auf dem alles aufsetzt</h2>
+  <p class="lede">
+    ER1-Items liegen als Avro-Record <code>academy.maindset.er1.Er1Item</code> vor, registriert in der Schema
+    Registry als Subject <code>events.er1_items-value</code>, Version 1. Das ist die gesamte verfügbare
+    Oberfläche. Was hier nicht steht, muss erst erzeugt werden.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th class="mono">Feld</th><th class="mono">Typ</th><th>Rolle für Zeitreihen</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">memory_id</td><td class="mono">string</td><td>Pflicht. Der Schlüssel, über den die numerische, die semantische und die Graphschicht zusammenfinden.</td></tr>
+        <tr><td class="mono">ctx_id</td><td class="mono">string</td><td>Pflicht. Natürliche Seriendimension, immer vorhanden, niedrige Kardinalität.</td></tr>
+        <tr><td class="mono">event_ts</td><td class="mono">long, timestamp-millis</td><td><b>Die Zeitachse.</b> Das einzige echte Zeitfeld im Record.</td></tr>
+        <tr><td class="mono">created_at</td><td class="mono">?string</td><td>Freitext, kein Zeitstempel. Als Achse unbrauchbar, als Herkunftsnachweis nützlich.</td></tr>
+        <tr><td class="mono">category</td><td class="mono">?string</td><td>Seriendimension mit kleiner, stabiler Kardinalität. Der beste erste Kanalbegriff.</td></tr>
+        <tr><td class="mono">source</td><td class="mono">?string</td><td>Seriendimension. Trennt Erfassungswege, nützlich zur Störungssuche.</td></tr>
+        <tr><td class="mono">tags</td><td class="mono">?array&lt;string&gt;</td><td>Gemischt. Siehe die Falle unten: hier stecken auch die typisierten Links.</td></tr>
+        <tr><td class="mono">title</td><td class="mono">?string</td><td>Kurztext. Billiger Eingang für lexikalische Verfahren.</td></tr>
+        <tr><td class="mono">text</td><td class="mono">?string</td><td>Der Volltext. Eingang für alle inhaltlichen Verfahren, und die einzige Längengröße im Record.</td></tr>
+        <tr><td class="mono">raw</td><td class="mono">?string</td><td>Rohform. Vorhanden oder nicht: ein brauchbares Vollständigkeitssignal.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    <h4>Die Falle: <code>tags</code> ist kein Vokabularfeld</h4>
+    <p>
+      Nach der Link-Konvention der Memory-Schicht tragen Items in <code>tags</code> auch Maschineneinträge der
+      Form <code>link/parent/&lt;ctx&gt;/&lt;doc_id&gt;</code> und <code>link/followup/&lt;ctx&gt;/&lt;doc_id&gt;</code>.
+      Der Beziehungsgraph steckt also im selben Array wie die inhaltlichen Tags.
+    </p>
+    <p>
+      Wer <code>tags</code> ungefiltert als Seriendimension nimmt, erzeugt pro Eltern-Dokument eine eigene Serie.
+      Die Kardinalität wächst dann mit dem Korpus statt mit dem Vokabular. Trennung nach Präfix ist Pflicht:
+      <code>link/*</code> wird Graphkante, der Rest wird Dimension.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Wo die Reihen entstehen</h2>
+  <p class="lede">
+    Die Strecke von ER1 nach KafScale existiert als Code und ist deployt. Sie führt derzeit kein Wasser: das
+    Quelltopic enthält null Records, und der Unfolder hat seit dem Start nichts verarbeitet. Die fehlende
+    Stufe ist der Quellkonnektor, nicht die Auswertung.
+  </p>
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 1040 400" role="img" aria-label="Die ER1-Strecke: der Quellkonnektor er1-source steht, deshalb ist das Topic er1a.events.er1_items leer; daran hängen Leg B zum Graphen und der vorgeschlagene Leg C zu den Zeitreihentopics.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 9,5 0,9" fill="currentColor"></polygon>
+          </marker>
+          <marker id="ar-stale" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 9,5 0,9" fill="var(--stale)"></polygon>
+          </marker>
+          <marker id="ar-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 9,5 0,9" fill="var(--flow)"></polygon>
+          </marker>
+        </defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="14" y="172" width="150" height="58" fill="var(--sunk)"></rect>
+          <rect x="414" y="172" width="212" height="58" fill="var(--sunk)"></rect>
+          <rect x="690" y="58" width="158" height="58" fill="var(--sunk)"></rect>
+          <rect x="884" y="58" width="142" height="58" fill="var(--sunk)"></rect>
+        </g>
+        <rect x="204" y="172" width="178" height="58" fill="var(--stale-soft)" stroke="var(--stale)" stroke-width="1.5" stroke-dasharray="6 4"></rect>
+        <g fill="none" stroke="var(--flow)" stroke-width="1.5" stroke-dasharray="5 4">
+          <rect x="690" y="288" width="158" height="58" fill="var(--flow-soft)"></rect>
+          <rect x="884" y="288" width="142" height="58" fill="var(--flow-soft)"></rect>
+        </g>
+        <g font-family="JetBrains Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">
+          <text x="89" y="196">ER1</text>
+          <text x="89" y="213" font-size="10.5" fill="var(--muted)">aims-core</text>
+          <text x="293" y="196" fill="var(--stale)">er1-source</text>
+          <text x="293" y="213" font-size="10.5" fill="var(--stale)">Kafka Connect · steht</text>
+          <text x="520" y="190">er1a.events.er1_items</text>
+          <text x="520" y="207" font-size="10.5" fill="var(--muted)">KafScale · Avro Er1Item</text>
+          <text x="520" y="222" font-size="10.5" fill="var(--stale)">0 Records</text>
+          <text x="769" y="83">er1-unfolder</text>
+          <text x="769" y="100" font-size="10.5" fill="var(--muted)">Go · franz-go</text>
+          <text x="955" y="83">KafGraph</text>
+          <text x="955" y="100" font-size="10.5" fill="var(--muted)">Knoten, Kanten</text>
+          <text x="769" y="313" fill="var(--flow)">er1-metrics</text>
+          <text x="769" y="330" font-size="10.5" fill="var(--flow)">Vorschlag</text>
+          <text x="955" y="310" fill="var(--flow)">tsx.er1.*</text>
+          <text x="955" y="327" font-size="10.5" fill="var(--flow)">observations</text>
+          <text x="955" y="340" font-size="10.5" fill="var(--flow)">vectors.v1</text>
+        </g>
+        <g stroke-width="1.5" fill="none">
+          <line x1="164" y1="201" x2="196" y2="201" stroke="currentColor" marker-end="url(#ar)"></line>
+          <line x1="382" y1="201" x2="406" y2="201" stroke="var(--stale)" stroke-dasharray="6 4" marker-end="url(#ar-stale)"></line>
+          <path d="M626 190 L658 190 L658 87 L682 87" stroke="currentColor" marker-end="url(#ar)"></path>
+          <path d="M626 212 L658 212 L658 317 L682 317" stroke="var(--flow)" stroke-dasharray="5 4" marker-end="url(#ar-flow)"></path>
+          <line x1="848" y1="87" x2="876" y2="87" stroke="currentColor" marker-end="url(#ar)"></line>
+          <line x1="848" y1="317" x2="876" y2="317" stroke="var(--flow)" stroke-dasharray="5 4" marker-end="url(#ar-flow)"></line>
+        </g>
+        <g font-family="Barlow Condensed, sans-serif" font-size="12.5" letter-spacing="0.08em">
+          <text x="690" y="40" fill="var(--muted)">LEG B · LÄUFT, OHNE DATEN</text>
+          <text x="690" y="378" fill="var(--flow)">LEG C · DIESES DOKUMENT</text>
+        </g>
+        <g font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--muted)" text-anchor="middle">
+          <text x="672" y="138">MemoryItem</text>
+          <text x="672" y="152">Context, Tag</text>
+          <text x="672" y="262" fill="var(--flow)">Observation</text>
+          <text x="672" y="276" fill="var(--flow)">je memory_id</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Eine Quelle, zwei Projektionen.</b> Leg B faltet Items in Knoten und Kanten auf, Leg C in Messpunkte.
+      Beide lesen dasselbe Topic und stören sich nicht. Die gestrichelte rote Kante ist der Grund, warum heute
+      nichts fließt: solange <code>er1-source</code> steht, hat auch Leg C keine Eingabe. Erst den Fluss
+      herstellen, dann messen, dann modellieren.
+    </figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Die Regel vor den Verfahren</h2>
+  <p class="lede">
+    Eine semantische Kennzahl wird erst dann eine Zeitreihe, wenn die Abbildung eingefroren und versioniert
+    ist. Andernfalls misst die Kurve das Modell und nicht den Korpus, und keine Aussage über sie ist
+    überprüfbar.
+  </p>
+  <div class="rules">
+    <div class="rule-card">
+      <h4>1 · Abbildung festnageln</h4>
+      <p>
+        Modell, Chunking, Referenzvektoren und Fensterbreite gehören in die Herkunft der Nachricht.
+        <code>opentsx.vector.v1</code> hat dafür das Feld <code>provenance</code>. Für den Korpus sind
+        <code>corpus_hash</code> und <code>git_commit</code> des Index die passenden Werte.
+      </p>
+    </div>
+    <div class="rule-card">
+      <h4>2 · Immer eine Kontrollreihe</h4>
+      <p>
+        Mindestens eine Kennzahl muss ohne Modell auskommen. Nur so lässt sich später Modelldrift von echter
+        Veränderung trennen. Ohne diese Reihe ist jede Interpretation unfalsifizierbar. Familie E liefert
+        Kandidaten.
+      </p>
+    </div>
+    <div class="rule-card warn">
+      <h4>3 · Methodenwechsel ist neue Serie</h4>
+      <p>
+        Eine geänderte Abbildung korrigiert keine Werte, sie erzeugt andere. Weil OpenTSx-Buckets mit Manifest
+        und Prüfsumme replayfähig sind, lässt sich die Interpretation versionieren und beide Varianten
+        nebeneinander halten. Das ist das Hauptargument, das in OpenTSx zu legen und nicht in ein Skript.
+      </p>
+      <p style="margin-top:0.6rem">
+        Dasselbe in der Sprache der Ereignis-Taxonomie: das Ereignissystem transportiert Zustandsänderungen,
+        es entscheidet sie nicht. Eine Metrikstrecke, die klassifiziert, entscheidet. Siehe Familie G.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Die sieben Verfahrensfamilien</h2>
+  <p class="lede">
+    Die Buchstaben sind Namen, keine Reihenfolge. Zwei Abzeichen pro Familie kodieren die beiden Achsen, die
+    technisch wirklich entscheiden: ob eine Kennzahl von einem Modell abhängt, und ob sie pro Item oder pro
+    Zeitfenster entsteht. Die erste Achse bestimmt die Reproduzierbarkeit, die zweite den Zeitachsentyp,
+    irregulär gegen regulär.
+  </p>
+
+  <div class="methods">
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">A</span>
+        <h3>Ankerprojektionen</h3>
+        <span class="badges"><span class="badge model">modellabhängig</span><span class="badge gran">pro Item</span></span>
+      </div>
+      <p class="prose">
+        Man wählt k feste Referenztexte, je einer pro Thema, und bettet sie einmal ein. Für jedes Item wird die
+        Kosinus-Ähnlichkeit zu jedem Anker berechnet. Aus einem Item werden k Zahlen, aus dem Strom werden k
+        parallele Reihen, die über Jahre vergleichbar bleiben, weil die Anker nicht wandern.
+      </p>
+      <div class="formula">a_j = anchor_j / |anchor_j|          j = 1..k, einmalig
+v_i = embed(text_i)
+s_ij = (v_i · a_j) / (|v_i| · |a_j|)   ein Wert je Item je Anker</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd><code>text</code>, <code>event_ts</code></dd>
+        <dt>Ausgabe</dt><dd>k Skalare je Item, Wertebereich ungefähr [-1, 1]</dd>
+        <dt>Frage</dt><dd>Wie stark hat Thema X in diesem Zeitraum belegt, und wann kippt das Verhältnis zwischen zwei Themen?</dd>
+        <dt>Schwäche</dt><dd class="weak">Du siehst nur, was du ankerst. Die Ankerwahl ist eine inhaltliche Entscheidung und muss dokumentiert sein.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Der direkteste Treffer im vorhandenen Modell. Die k Werte eines Ticks sind genau ein
+        <code>opentsx.vector.v1</code>: <code>components</code> sind die Ankernamen in fester Reihenfolge,
+        <code>values</code> die Kosinuswerte, <code>provenance</code> trägt Modell und Korpus-Hash. Erzeugt vom
+        Operator <code>align.vector</code> aus TASK-013, geschrieben nach
+        <code>tsx.&lt;domain&gt;.smart.&lt;name&gt;.vectors.v1</code>.
+      </p>
+    </article>
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">B</span>
+        <h3>Novelty und Drift</h3>
+        <span class="badges"><span class="badge model">modellabhängig</span><span class="badge gran">pro Item</span></span>
+      </div>
+      <p class="prose">
+        Abstand eines Items zum Zentroid des vorangehenden Fensters. Hohe Werte heißen: hier kommt etwas vor,
+        das in der näheren Vergangenheit nicht vorkam. Auf Fensterebene gibt es die Variante Zentroid-Schrittweite:
+        wie weit der Schwerpunkt des Korpus von einem Fenster zum nächsten wandert.
+      </p>
+      <div class="formula">c_t = mean( v_i : i im Fenster W(t) )
+novelty_i = 1 - cos( v_i , c_{t-1} )
+drift_t   = 1 - cos( c_t , c_{t-1} )     eine Zahl je Fenster</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd><code>text</code>, <code>event_ts</code>, Fensterbreite</dd>
+        <dt>Ausgabe</dt><dd>ein Skalar je Item, zusätzlich einer je Fenster</dd>
+        <dt>Frage</dt><dd>Wann ist ein Thema neu, und wie schnell verschiebt sich der Schwerpunkt?</dd>
+        <dt>Schwäche</dt><dd class="weak">Relativ zur eigenen Vergangenheit, also nicht jahresübergreifend vergleichbar. Beantwortet eine andere Frage als A, nicht dieselbe besser.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Novelty als irreguläre <code>Observation</code> je <code>memory_id</code>, Drift als
+        reguläre Reihe mit der Fensterbreite als <code>clock</code>.
+      </p>
+    </article>
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">C</span>
+        <h3>Streuung und effektive Dimensionalität</h3>
+        <span class="badges"><span class="badge model">modellabhängig</span><span class="badge gran">pro Fenster</span></span>
+      </div>
+      <p class="prose">
+        Pro Zeitfenster die mittlere paarweise Distanz, das ist Fokussierung gegen Zersplitterung. Schärfer
+        über das Eigenwertspektrum der Kovarianz im Fenster: die Participation Ratio sagt, wie viele
+        unterscheidbare Richtungen gleichzeitig aktiv waren. Das macht eine Größe messbar, die man sonst nur
+        als Gefühl hat.
+      </p>
+      <div class="formula">spread_t = mean( 1 - cos(v_i, v_j) : i &lt; j im Fenster )
+PR_t     = ( sum_m lambda_m )^2 / sum_m lambda_m^2
+           lambda_m = Eigenwerte der Kovarianz im Fenster</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd>alle <code>v_i</code> eines Fensters</dd>
+        <dt>Ausgabe</dt><dd>zwei Skalare je Fenster, PR ungefähr in [1, k]</dd>
+        <dt>Frage</dt><dd>War diese Woche fokussiert oder zerfasert, und an wie vielen Themen gleichzeitig?</dd>
+        <dt>Schwäche</dt><dd class="weak">Am empfindlichsten gegenüber der Fensterwahl und der Fensterbesetzung. Bei wenigen Items pro Fenster ist PR praktisch Rauschen. Mindestbesetzung festlegen und mitschreiben.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Reguläre Reihe, <code>window</code> als halboffenes Intervall, <code>missing</code>
+        zählt unterbesetzte Ticks. Die Mindestbesetzung gehört in <code>provenance</code>.
+      </p>
+    </article>
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">D</span>
+        <h3>Kanalbelegung</h3>
+        <span class="badges"><span class="badge free">modellfrei bei deklarierten Kanälen</span><span class="badge gran">pro Fenster</span></span>
+      </div>
+      <p class="prose">
+        Jeder Kanal einer festen Kanalmenge bekommt eine Zählreihe: Items pro Kanal pro Tick. Das ergibt die
+        multivariaten Ereigniszüge, die die Ereignissynchronisation braucht. Diese Familie ist die Brücke von
+        Bedeutung zu Fragen über Abhängigkeit und Verzug.
+      </p>
+      <p class="prose">
+        Der Entwurfsgegenstand ist nicht das Verfahren, sondern <b>woher die Kanäle kommen</b>. Clustering über
+        Embeddings ist dafür die schlechteste der verfügbaren Möglichkeiten, weil es die Achsen aus den Daten
+        zieht und damit die Falle im nächsten Abschnitt erst erzeugt. Deklarierte Kanalmengen haben dieses
+        Problem nicht, und wir haben zwei davon.
+      </p>
+      <div class="formula">chan(i) aus einer DEKLARIERTEN Menge, nicht aus Clustering
+n_mt = | { i : chan(i) = m , event_ts_i im Tick t } |
+n_?t = | { i : chan(i) undefiniert , event_ts_i im Tick t } |   Pflichtkanal</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd>Kanalmenge mit Gültigkeitsintervall je Kanal, <code>event_ts</code></dd>
+        <dt>Ausgabe</dt><dd>eine Zählreihe je Kanal, plus der Kanal „nicht zugeordnet"</dd>
+        <dt>Frage</dt><dd>Laufen zwei Kanäle synchron, oder folgt einer dem anderen mit Verzug?</dd>
+        <dt>Schwäche</dt><dd class="weak">Bei Clustering: Nachclustern verschiebt die Achsen rückwirkend, siehe die Figur unten. Bei deklarierten Kanälen: ein Kanal, der noch nicht existierte, ist nicht null, sondern abwesend. Wer das verwechselt, rechnet Projektstarts als Einbruch.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Je Kanal eine reguläre Reihe, zusammengefasst als ein <code>opentsx.vector.v1</code> mit
+        den Clusternamen als <code>components</code>. Verbraucher ist <code>ESCalc</code> beziehungsweise
+        <code>event_sync.py</code>, mit lokalem τ nach Quiroga. Die Q_rand-Kalibrierung und die
+        Event-Coincidence-Analyse aus P8.1 sind genau die Robustheit, die solche Aussagen brauchen.
+      </p>
+    </article>
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">E</span>
+        <h3>Lexikalisch und informationstheoretisch</h3>
+        <span class="badges"><span class="badge free">modellfrei</span><span class="badge gran">pro Fenster</span></span>
+      </div>
+      <p class="prose">
+        Veränderungsrate direkt auf den Termverteilungen, ohne jedes Modell. Die Jensen-Shannon-Distanz
+        zwischen aufeinanderfolgenden Fenstern ist das klassische robuste Maß für thematischen Wechsel.
+        Dazu Rate neuer Terme, Type-Token-Verhältnis, Hapax-Anteil und Surprisal eines Fensters unter einem
+        Modell, das nur auf den vorherigen Fenstern geschätzt wurde.
+      </p>
+      <div class="formula">P_t = relative Termhäufigkeiten im Fenster t
+JS(P_t, P_{t-1}) = 0.5 * KL(P_t || M) + 0.5 * KL(P_{t-1} || M)
+                   M = 0.5 * (P_t + P_{t-1})
+newterm_t = | Terme in t, nie zuvor gesehen | / | Terme in t |</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd><code>title</code>, <code>text</code>, <code>event_ts</code></dd>
+        <dt>Ausgabe</dt><dd>mehrere Skalare je Fenster, JS in [0, 1]</dd>
+        <dt>Frage</dt><dd>Wie stark hat sich das Vokabular verändert, unabhängig von jedem Modell?</dd>
+        <dt>Schwäche</dt><dd class="weak">Oberflächlich: Synonyme und Umformulierungen sieht sie nicht. Sprachabhängig bei der Tokenisierung, also Tokenizer-Version mitschreiben. Und JS ist bei dünn besetzten Verteilungen nach oben verzerrt, siehe die Bucketbreite unten.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Reguläre Reihe. <b>Dies ist die Kontrollreihe aus Regel 2.</b> Deterministisch, billig,
+        auditierbar. Mindestens eine davon mitführen, auch wenn A bis D schöner aussehen.
+      </p>
+    </article>
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">F</span>
+        <h3>Graphabgeleitete Kennzahlen</h3>
+        <span class="badges"><span class="badge free">modellfrei</span><span class="badge gran">pro Item</span></span>
+      </div>
+      <p class="prose">
+        Weil <code>tags</code> die typisierten Links trägt und KafGraph die Kanten schon materialisiert, lassen
+        sich Strukturgrößen pro Intervall messen: Ausgangsgrad, Zahl der Komponenten, Tiefe der längsten Kette,
+        Anteil Followups gegen Wurzelitems.
+      </p>
+      <p class="prose">
+        Die wertvollste daraus ist die <b>Followup-Latenz</b>: die Zeit zwischen einem Elternitem und seinem
+        ersten Kind. Das ist eine echte Dauer in Sekunden, braucht kein Semantikmodell und ist trotzdem
+        inhaltlich, denn sie misst, wie schnell auf Festgehaltenes reagiert wird.
+      </p>
+      <div class="formula">parent(i) aus tags: link/parent/&lt;ctx&gt;/&lt;doc_id&gt;
+latency_p = min( event_ts_c - event_ts_p : c Kind von p )
+depth_t   = längste Kette, die in Tick t endet</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd><code>tags</code> mit Präfix <code>link/</code>, <code>event_ts</code></dd>
+        <dt>Ausgabe</dt><dd>Dauer in Sekunden je Elternitem, Strukturgrößen je Fenster</dd>
+        <dt>Frage</dt><dd>Wie schnell wird aus einer Notiz eine Handlung, und wird der Rückstand größer?</dd>
+        <dt>Schwäche</dt><dd class="weak">Zensiert: Items ohne Kind haben keine Latenz, nicht eine unendliche. Wer das ignoriert, rechnet den Mittelwert systematisch zu klein. Überlebenszeitanalyse statt arithmetischem Mittel.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Latenz als irreguläre <code>Observation</code> mit Einheit <code>s</code>, Strukturgrößen
+        als reguläre Reihen. Einzige Familie, die ohne Embeddings und ohne Volltext auskommt.
+      </p>
+    </article>
+
+    <article class="method">
+      <div class="method-head">
+        <span class="method-id">G</span>
+        <h3>Rubrik-Scores</h3>
+        <span class="badges"><span class="badge model">modellabhängig</span><span class="badge gran">pro Item</span></span>
+      </div>
+      <p class="prose">
+        Jedes Item gegen eine feste Rubrik bewerten, je Dimension ein Wert zwischen 0 und 1: Entscheidung gegen
+        Beobachtung, blockiert gegen fließend, intern gegen Kunde. Jede Rubrikdimension wird eine Reihe. Das ist
+        die einzige Familie, die Begriffe messbar macht, für die es keinen Ankertext gibt.
+      </p>
+      <p class="prose">
+        <b>Entscheidend ist, wo die Bewertung stattfindet.</b> Nicht in der Metrikstrecke. Ein Metrikjob, der
+        selbst ein Modell fragt, erzeugt bei jedem Lauf andere Zahlen und ist nicht replayfähig. Die Bewertung
+        gehört in die Reviewer-Stufe der Ereignis-Taxonomie und verlässt sie als eigenes Ereignis
+        <code>classification.proposed</code>, mit eigener Herkunft. Familie G konsumiert dann dieses Ereignis
+        statt ein Modell aufzurufen.
+      </p>
+      <div class="formula">FALSCH: metrikjob -> modell -> wert        bei jedem Lauf neu
+RICHTIG: reviewer -> classification.proposed -> metrikjob -> wert
+
+r_id   = aus classification.proposed, nicht neu berechnet
+agree_d = Streuung aus Mehrfachbewertung derselben Items</div>
+      <dl class="spec">
+        <dt>Eingabe</dt><dd><code>classification.proposed</code> mit Rubrikversion und Modellversion in der Herkunft</dd>
+        <dt>Ausgabe</dt><dd>D Skalare je Item, plus ein Übereinstimmungsmaß</dd>
+        <dt>Frage</dt><dd>Wie verschiebt sich der Charakter der Arbeit, nicht ihr Thema?</dd>
+        <dt>Schwäche</dt><dd class="weak">Bleibt die teuerste Familie: laufende Kosten pro Item, und ohne Mehrfachbewertung ist die Unsicherheit unbekannt. Eine Rubrikänderung ist nach Regel 3 eine neue Serie, kein Update.</dd>
+      </dl>
+      <p class="maps">
+        <b>Mapping</b> Wie A ein <code>opentsx.vector.v1</code>, <code>components</code> sind die
+        Rubrikdimensionen. Der Gewinn der Ereignis-Variante ist, dass die Serie <b>unterhalb eines
+        Entscheidungsnachweises</b> liegt: die Klassifikation ist einmal mit ihrer Herkunft festgehalten und
+        wird nicht pro Metriklauf neu erfunden. Damit ist G so reproduzierbar wie A, obwohl ein Modell
+        beteiligt war.
+      </p>
+    </article>
+
+  </div>
+</section>
+
+<section>
+  <h2>Drei Kanalmengen, drei Fragen</h2>
+  <p class="lede">
+    Familie D steht und fällt mit der Kanalmenge. Es gibt nicht die richtige, sondern drei, die verschiedene
+    Fragen beantworten. Zwei davon sind bei uns bereits deklariert und damit dem Clustering überlegen.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Kanalmenge</th><th>Herkunft</th><th>Beantwortet</th><th>Natürliche Kennzahl</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>PLM-Projekte</b></td>
+          <td>deklariert, extern verwaltet. Bindung existiert über die <code>project:&lt;id&gt;</code>-Tags und den Projekt-Deskriptor.</td>
+          <td>Welche Arbeit hat Aufmerksamkeit bekommen, und verschiebt sich das Verhältnis?</td>
+          <td>Items je Projekt je Tick</td>
+        </tr>
+        <tr>
+          <td><b>Lebenszyklus-Ereignisse</b></td>
+          <td>deklariert. Die Taxonomie <code>intake.created</code>, <code>classification.proposed</code>, <code>operation.permit</code>, <code>work.created</code>, <code>verification.completed</code> und die übrigen.</td>
+          <td>Wo bleibt Arbeit hängen, und wird der Stau größer?</td>
+          <td>Verweildauer je Zustand, Übergangsrate, Zahl der Hängenden</td>
+        </tr>
+        <tr>
+          <td><b>Embedding-Cluster</b></td>
+          <td>entdeckt, nicht deklariert.</td>
+          <td>Woran arbeite ich, das keine deklarierte Kategorie abdeckt?</td>
+          <td>Abstand zum nächsten deklarierten Kanal</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">
+    <b>Die PLM-Projekte sind die richtige primäre Kanalmenge.</b> Sie lösen die Einfrier-Frage vollständig, weil
+    ihre Identität außerhalb der Messung verwaltet wird: ein Projekt heißt morgen noch so wie heute, unabhängig
+    davon, was im Korpus passiert. Regel 3 hört damit auf, ein Risiko zu sein, und die Kanäle sind
+    bauartbedingt interpretierbar. Ein Clusternamen wie <code>c7</code> muss man erst deuten, ein Projektname
+    nicht.
+  </p>
+  <p class="prose">
+    Drei Dinge müssen dabei sauber gehalten werden. Erstens braucht es einen <b>Pflichtkanal „nicht
+    zugeordnet"</b>, sonst verschwindet Masse unbemerkt; seine Größe ist selbst eine nützliche Kennzahl, nämlich
+    wie viel Arbeit außerhalb jeder Projektstruktur läuft. Zweitens sind Projekte <b>nicht disjunkt</b>: ein Item
+    kann zwei tragen. Entweder anteilig zuordnen oder in beide zählen, dann übersteigt die Kanalsumme die
+    Itemzahl und das muss dokumentiert sein. Drittens haben Projekte ein <b>Gültigkeitsintervall</b>. Vor dem
+    Start ist der Kanal abwesend, nicht null.
+  </p>
+  <p class="prose">
+    Die Lebenszyklus-Ereignisse sind die zweite deklarierte Menge, und sie beantworten die wertvollere Frage.
+    Projekte sagen, wo Aufmerksamkeit war; Zustände sagen, wo sie nicht weiterkam. Die natürlichen Kennzahlen
+    sind dort nicht Zählwerte, sondern <b>Verweildauern</b>, und damit derselbe zensierte Datentyp wie die
+    Followup-Latenz aus Familie F: ein Item, das einen Zustand nie verlassen hat, hat keine unendliche
+    Verweildauer, sondern eine noch unbekannte.
+  </p>
+  <p class="prose">
+    Das Clustering bleibt im Programm, aber mit umgedrehter Aufgabe: nicht als Kanalmenge, sondern als
+    <b>Ausreißerdetektor gegen die deklarierte Taxonomie</b>. Items, die weit von jedem Projekt und jedem
+    Zustand entfernt liegen, sind genau die interessanten, weil sie zeigen, was die bestehende Struktur nicht
+    erfasst. Das ist nützlicher als Clustern um des Clusterns willen, und es umgeht die Achsenfalle, weil kein
+    historischer Wert von der Clusterung abhängt.
+  </p>
+  <div class="note flow">
+    <h4>Nebeneffekt für Familie A</h4>
+    <p>
+      Wenn die Kanäle Projekte sind, können auch die Anker aus den Projektbeschreibungen kommen. Dann teilen A
+      und D eine Taxonomie, und die Ankerprojektion wird direkt als „Nähe zu Projekt X" lesbar, ohne dass man
+      Themen separat erfinden muss. Die Ankerwahl, bei A ausdrücklich als Schwäche benannt, verschwindet damit
+      als freie Entscheidung.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Wie breit ist ein Bucket</h2>
+  <p class="lede">
+    Die Fensterbreite ist keine Darstellungsfrage, sie entscheidet, ob die Kennzahl schätzbar ist. Und sie ist
+    nicht für alle Familien dieselbe.
+  </p>
+  <div class="cols">
+    <div class="rule-card">
+      <h4>E und C: ISO-Woche</h4>
+      <p>
+        Drei Gründe, und alle drei zeigen in dieselbe Richtung. Erstens die Schätzbarkeit: die
+        Jensen-Shannon-Distanz zwischen zwei Termverteilungen ist bei wenigen Token pro Fenster nach oben
+        verzerrt, weil Stichprobenrauschen wie Veränderung aussieht. Je kleiner das Fenster, desto größer die
+        Scheinveränderung. Zweitens der Wochenrhythmus: bei Tagesfenstern erzeugt der Unterschied zwischen
+        Werktag und Wochenende eine 7-Tage-Periode, die jeden echten Trend überdeckt und selbst wie Signal
+        aussieht. Wochenfenster entfernen sie bauartbedingt. Drittens die Lesbarkeit: die Woche ist bei uns
+        schon die Berichtseinheit, also lässt sich jeder Ausschlag gegen bekannte Ereignisse halten.
+      </p>
+    </div>
+    <div class="rule-card warn">
+      <h4>D: Tag oder feiner</h4>
+      <p>
+        Für die Ereignissynchronisation ist das Fenster nicht das Aggregationsintervall, sondern die
+        Koinzidenzbreite τ. Wochenweise gezählt ist jede Gleichzeitigkeit trivial erfüllt und die Methode sagt
+        nichts mehr. Die Zählkanäle brauchen also Tagesauflösung oder feiner, und τ wird separat und bewusst
+        gewählt, lokal nach Quiroga statt global.
+      </p>
+    </div>
+    <div class="rule-card">
+      <h4>Was mitgeschrieben werden muss</h4>
+      <p>
+        JS-Werte sind nur zwischen Fenstern ähnlicher Tokenmasse vergleichbar. Die Tokenzahl je Fenster gehört
+        deshalb als eigene Komponente in denselben <code>opentsx.vector.v1</code>, nicht in eine Fußnote. Ohne
+        sie ist später nicht entscheidbar, ob ein Ausschlag Inhalt oder Dünnbesetzung war. Unterbesetzte Ticks
+        zählt <code>missing</code>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Wie aus einem Text k Reihen werden</h2>
+  <p class="lede">
+    Familie A im Bild. Entscheidend ist, dass die Anker vor der ersten Messung festgelegt und danach nicht
+    mehr angefasst werden. Dann ist jeder einzelne Wert mit jedem späteren vergleichbar.
+  </p>
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 900 330" role="img" aria-label="Ein Item-Vektor wird gegen drei feste Ankervektoren projiziert; aus jeder Projektion entsteht über die Zeit eine eigene Reihe, die zusammen einen Vektor je Tick bilden.">
+        <defs>
+          <marker id="f2-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 9,5 0,9" fill="currentColor"></polygon>
+          </marker>
+          <marker id="f2-ar-signal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 9,5 0,9" fill="var(--signal)"></polygon>
+          </marker>
+        </defs>
+        <g fill="none" stroke="var(--rule)" stroke-width="1">
+          <circle cx="150" cy="165" r="112"></circle>
+        </g>
+        <g stroke="currentColor" stroke-width="1.5" fill="none">
+          <line x1="150" y1="165" x2="150" y2="53" marker-end="url(#f2-ar)"></line>
+          <line x1="150" y1="165" x2="246" y2="221" marker-end="url(#f2-ar)"></line>
+          <line x1="150" y1="165" x2="52" y2="213" marker-end="url(#f2-ar)"></line>
+        </g>
+        <line x1="150" y1="165" x2="238" y2="98" stroke="var(--signal)" stroke-width="2.5" fill="none" marker-end="url(#f2-ar-signal)"></line>
+        <path d="M150 131 A 34 34 0 0 1 177 148" fill="none" stroke="var(--signal)" stroke-width="1.2" stroke-dasharray="3 3"></path>
+        <g font-family="JetBrains Mono, monospace" font-size="11.5" fill="var(--muted)">
+          <text x="158" y="46">a1 Betrieb</text>
+          <text x="252" y="228">a2 Methodik</text>
+          <text x="6" y="228">a3 Kunde</text>
+          <text x="246" y="92" fill="var(--signal)">v_i  Item</text>
+          <text x="182" y="146" fill="var(--signal)" font-size="10.5">s_i1</text>
+        </g>
+        <line x1="300" y1="40" x2="300" y2="290" stroke="var(--rule)" stroke-width="1" stroke-dasharray="4 4"></line>
+        <g font-family="Barlow Condensed, sans-serif" font-size="12.5" letter-spacing="0.08em" fill="var(--faint)">
+          <text x="330" y="36">EINE REIHE JE ANKER, GEMEINSAMER TICK</text>
+        </g>
+        <g fill="none" stroke-width="2">
+          <polyline points="340,100 390,88 440,104 490,74 540,92 590,70 640,84 690,62 740,78 790,58" stroke="currentColor"></polyline>
+          <polyline points="340,178 390,186 440,170 490,182 540,160 590,174 640,156 690,168 740,150 790,162" stroke="var(--flow)"></polyline>
+          <polyline points="340,256 390,248 440,262 490,244 540,258 590,250 640,264 690,246 740,260 790,252" stroke="var(--signal)"></polyline>
+        </g>
+        <g stroke="var(--rule)" stroke-width="1">
+          <line x1="340" y1="124" x2="840" y2="124"></line>
+          <line x1="340" y1="202" x2="840" y2="202"></line>
+          <line x1="340" y1="280" x2="840" y2="280"></line>
+        </g>
+        <g font-family="JetBrains Mono, monospace" font-size="11" fill="var(--muted)">
+          <text x="846" y="76">s·1</text>
+          <text x="846" y="154" fill="var(--flow)">s·2</text>
+          <text x="846" y="232" fill="var(--signal)">s·3</text>
+        </g>
+        <g stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="3 3" fill="none">
+          <line x1="640" y1="52" x2="640" y2="286"></line>
+        </g>
+        <g font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--ink)" text-anchor="middle">
+          <text x="640" y="306">ein Tick = ein opentsx.vector.v1</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Aus einem Item werden k Zahlen, aus dem Strom k Reihen.</b> Links die Projektion eines Item-Vektors auf
+      drei feste Anker, rechts die daraus entstehenden Reihen. Der gestrichelte Schnitt ist ein Tick: alle k
+      Werte eines Ticks reisen als ein <code>opentsx.vector.v1</code> mit den Ankernamen in
+      <code>components</code>. Damit ist der Übergang zur Vektor-Runtime aus TASK-013 kein Bruch, sondern genau
+      der vorgesehene Weg.
+    </figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Die Falle bei Familie D</h2>
+  <p class="lede">
+    Clustering ist verführerisch, weil es ohne Ankerwahl auskommt. Der Preis ist, dass die Achsen aus den Daten
+    kommen. Wer nachclustert, ändert die Bedeutung bereits geschriebener Werte, ohne dass eine Zahl sich
+    sichtbar bewegt.
+  </p>
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 900 300" role="img" aria-label="Links bleiben die Clusterkanäle über zwei Zeitpunkte identisch, deshalb sind die Zählwerte vergleichbar. Rechts wurde nachgeclustert, ein Kanal zerfällt in zwei, und derselbe historische Wert liegt danach auf einer anderen Achse.">
+        <defs>
+          <marker id="f3-ar-stale" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 9,5 0,9" fill="var(--stale)"></polygon>
+          </marker>
+        </defs>
+        <g font-family="Barlow Condensed, sans-serif" font-size="13" letter-spacing="0.08em">
+          <text x="14" y="26" fill="var(--flow)">EINGEFROREN · VERGLEICHBAR</text>
+          <text x="470" y="26" fill="var(--stale)">NACHGECLUSTERT · NICHT VERGLEICHBAR</text>
+        </g>
+        <line x1="440" y1="12" x2="440" y2="288" stroke="var(--rule)" stroke-width="1"></line>
+
+        <g stroke="var(--rule)" stroke-width="1"><line x1="76" y1="240" x2="410" y2="240"></line></g>
+        <g fill="var(--flow-soft)" stroke="var(--flow)" stroke-width="1.5">
+          <rect x="100" y="160" width="46" height="80"></rect>
+          <rect x="160" y="190" width="46" height="50"></rect>
+          <rect x="220" y="124" width="46" height="116"></rect>
+          <rect x="290" y="150" width="46" height="90"></rect>
+          <rect x="350" y="182" width="46" height="58"></rect>
+        </g>
+        <g font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--muted)" text-anchor="middle">
+          <text x="123" y="256">c1</text><text x="183" y="256">c2</text><text x="243" y="256">c3</text>
+          <text x="313" y="256">c1</text><text x="373" y="256">c2</text>
+          <text x="183" y="276" fill="var(--faint)">t1</text>
+          <text x="340" y="276" fill="var(--faint)">t2</text>
+          <text x="243" y="112">c3 = 116</text>
+        </g>
+
+        <g stroke="var(--rule)" stroke-width="1"><line x1="500" y1="240" x2="880" y2="240"></line></g>
+        <g fill="var(--flow-soft)" stroke="var(--flow)" stroke-width="1.5">
+          <rect x="520" y="160" width="42" height="80"></rect>
+          <rect x="574" y="190" width="42" height="50"></rect>
+          <rect x="628" y="124" width="42" height="116"></rect>
+        </g>
+        <g fill="var(--stale-soft)" stroke="var(--stale)" stroke-width="1.5" stroke-dasharray="5 3">
+          <rect x="716" y="164" width="38" height="76"></rect>
+          <rect x="762" y="196" width="38" height="44"></rect>
+          <rect x="808" y="182" width="38" height="58"></rect>
+        </g>
+        <g font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--muted)" text-anchor="middle">
+          <text x="541" y="256">c1</text><text x="595" y="256">c2</text><text x="649" y="256">c3</text>
+          <text x="735" y="256" fill="var(--stale)">d1</text><text x="781" y="256" fill="var(--stale)">d2</text><text x="827" y="256" fill="var(--stale)">d3</text>
+          <text x="595" y="276" fill="var(--faint)">t1</text>
+          <text x="781" y="276" fill="var(--stale)">t2 · neue Achsen</text>
+          <text x="649" y="112">c3 = 116</text>
+        </g>
+        <path d="M672 118 C 706 100 744 126 748 156" fill="none" stroke="var(--stale)" stroke-width="1.6" marker-end="url(#f3-ar-stale)"></path>
+        <path d="M672 130 C 714 142 786 160 806 176" fill="none" stroke="var(--stale)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#f3-ar-stale)"></path>
+        <text x="760" y="96" font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--stale)" text-anchor="middle">c3 zerfällt in d1 und d3</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Der Unterschied liegt in den Achsen, nicht in den Zahlen.</b> Links sind die Kanäle über beide
+      Zeitpunkte dieselben, die Werte lassen sich also direkt vergleichen. Rechts wurde zwischen t1 und t2
+      nachgeclustert: der alte Kanal c3 verteilt sich auf d1 und d3. Der historische Wert 116 steht danach
+      unverändert in der Datenbank und bedeutet trotzdem etwas anderes. Deshalb ist Nachclustern nach Regel 3
+      kein Update, sondern eine neue Serie mit eigener Herkunft.
+    </figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Was zuerst</h2>
+  <p class="lede">
+    Nicht alle sieben. Die Reihenfolge folgt den Abhängigkeiten, nicht dem Reiz: zuerst die drei modellfreien
+    Familien, die nur Zeitstempel und Tags brauchen, dann die erste inhaltliche, dann die empfindlichen. Mit
+    PLM-Projekten als Kanalmenge ist D die billigste von allen und nicht mehr die vierte.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Reihenfolge</th><th>Familie</th><th>Warum gerade diese</th><th class="mono">Voraussetzung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="num">1</td><td><b>D</b> Kanalbelegung, PLM-Projekte</td><td>Mit deklarierten Kanälen braucht sie weder Embeddings noch Volltext, nur <code>event_ts</code> und die Projekt-Tags. Billigste Familie und sofort interpretierbar.</td><td class="mono">project:-Tags</td></tr>
+        <tr><td class="num">2</td><td><b>F</b> Followup-Latenz</td><td>Ebenfalls modellfrei, nutzt den vorhandenen Graphen, liefert das Verhaltenssignal.</td><td class="mono">link/-Tags</td></tr>
+        <tr><td class="num">3</td><td><b>E</b> Lexikalisch</td><td>Die Kontrollreihe nach Regel 2. Muss stehen, bevor eine modellabhängige Familie interpretiert wird.</td><td class="mono">nur Volltext</td></tr>
+        <tr><td class="num">4</td><td><b>A</b> Ankerprojektionen</td><td>Erste inhaltliche Familie. Anker aus den Projektbeschreibungen, dann teilt sie die Taxonomie mit D.</td><td class="mono">Embeddings</td></tr>
+        <tr><td class="num">5</td><td><b>D</b> Lebenszyklus-Kanäle</td><td>Verweildauern statt Zählwerte, beantwortet „wo bleibt Arbeit hängen". Braucht die Ereignis-Taxonomie im Fluss.</td><td class="mono">Ereignisstrom</td></tr>
+        <tr><td class="num">6</td><td><b>B</b>, <b>C</b></td><td>C ist der interessanteste Einzelwert, aber am empfindlichsten gegenüber der Fensterwahl. Erst mit belegten Fenstern sinnvoll.</td><td class="mono">Fensterkalibrierung</td></tr>
+        <tr><td class="num">7</td><td><b>G</b> Rubriken</td><td>Zuletzt, weil laufende Kosten pro Item. Setzt voraus, dass <code>classification.proposed</code> als Ereignis existiert.</td><td class="mono">Reviewer-Stufe</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    <h4>Vor allem davon: messen, nicht bauen</h4>
+    <p>
+      Solange <code>er1a.events.er1_items</code> leer ist, ist jede Serienmodellierung Spekulation. Der erste
+      Schritt ist nicht Familie A, sondern den Quellkonnektor wiederherstellen und dann das Topic einmal von
+      vorn lesen: Items pro Tag je <code>ctx_id</code>, je <code>category</code>, je <code>source</code> und je
+      nicht-<code>link/</code>-Tag. Read-only, keine neuen Topics. Erst diese Kardinalitäten sagen, wie der
+      Serienschlüssel aussehen muss.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Ein Vorbehalt zum vorhandenen Index</h2>
+  <p class="lede">
+    Die Embeddings aus Familie A, B, C und D müssen nicht neu beschafft werden. Es gibt sie bereits, lokal und
+    offline, im RAG-Index des Braindump-Korpus.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th class="mono">Eigenschaft</th><th class="mono">Wert</th><th>Bedeutung für Metriken</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">model</td><td class="mono">BAAI/bge-m3</td><td>mehrsprachig, deckt deutsche und englische Notizen gemeinsam ab</td></tr>
+        <tr><td class="mono">dim</td><td class="mono num">1024</td><td>dicht, geeignet für Kosinusmaße</td></tr>
+        <tr><td class="mono">bit_width</td><td class="mono num">4</td><td><b>der Vorbehalt.</b> Quantisierungsrauschen geht direkt in jeden Kosinusabstand</td></tr>
+        <tr><td class="mono">chunks</td><td class="mono num">98 677</td><td>ausreichend für eingefrorenes Clustering</td></tr>
+        <tr><td class="mono">corpus_hash, git_commit</td><td class="mono">gesetzt</td><td>genau der Anker, den Regel 1 für <code>provenance</code> verlangt</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">
+    Die 4-Bit-Quantisierung ist für Retrieval richtig dimensioniert, dort zählt Recall. Für Metriken ist sie es
+    nicht unbedingt: das Rauschen landet unmittelbar in den Kurven aus A, B und C.
+  </p>
+  <p class="prose">
+    Zwei Wege. Entweder die Embeddings für genau die Items, die zu Serien werden, in voller Präzision neu
+    rechnen. Oder das Rauschen hinnehmen und <b>messen</b>, indem eine Teilmenge doppelt gerechnet wird und die
+    Differenz als Rauschband in der Serie dokumentiert ist. Für den Anfang ist der zweite Weg der bessere, weil
+    er billig ist und zuerst die Frage beantwortet, ob der Unterschied überhaupt eine Rolle spielt.
+  </p>
+</section>
+
+<section>
+  <h2>Was dieses Dokument nicht behauptet</h2>
+  <ul class="tight">
+    <li>Keine der sieben Familien ist implementiert. Es gibt keinen Code, auf den hier verwiesen wird, außer dem bereits vorhandenen <code>align.vector</code> und <code>ESCalc</code>.</li>
+    <li>Die Formeln sind Spezifikation, nicht Messung. Kein Wert in diesem Dokument stammt aus einem Lauf über ER1-Daten, weil es derzeit keine gibt.</li>
+    <li>Die Eignung der Verfahren für diesen Korpus ist unbelegt. Ob Ankerprojektionen über 5120 Notizen etwas zeigen, ist eine empirische Frage, die erst die Messung beantwortet.</li>
+    <li>Die Einordnung der ER1-Memory-Schicht selbst, also <code>doc_id</code>, Kontexte und die Link-Konvention, stammt aus den Werkzeugbeschreibungen und ist nicht gegen den Quellcode von aims-core geprüft. Der Avro-Vertrag dagegen ist aus der laufenden Schema Registry gelesen.</li>
+    <li>Die Ereignis-Taxonomie in Familie G und im Kanalabschnitt ist aus einer Entwurfsnotiz übernommen, nicht aus einer Spezifikation. Sie ist noch nirgends implementiert, und die Namen können sich ändern. Was bleibt, ist die Aufteilung: klassifizieren gehört in eine eigene Stufe mit eigenem Ereignis, nicht in die Metrikstrecke.</li>
+    <li>Für den in diesem Zusammenhang genannten Begriff „JEV" liegt keine Definition im Korpus. Belegt sind drei Fundstellen vom 2026-09-28, zwei davon YouTube-Items mit dem Tag, eine Entwurfsnotiz mit der Formulierung „ER1 → Kafka/KafScale → JEV-artiger Klassifikation → Topics". Familie G ist deshalb über die <b>Anforderung</b> beschrieben, nämlich eine extern definierte, nachweisbare Klassifikationsstufe, und nicht über ein bestimmtes Verfahren. Sobald die Quelle benannt ist, gehört sie hier hinein.</li>
+  </ul>
+</section>
+
+<footer class="colophon">
+  <p>
+    <b>Herkunft der Angaben.</b> Der Avro-Vertrag wurde am 2026-10-13 aus der Schema Registry gelesen
+    (Subject <code>events.er1_items-value</code>, Version 1). Der Zustand der Strecke, also leeres Topic und
+    Unfolder ohne Verarbeitung, wurde am gleichen Tag am laufenden System erhoben. Die Indexangaben stammen aus
+    der Konfiguration und dem Zustand des lokalen RAG-Index, Stand 2026-10-12. <code>opentsx.vector.v1</code>,
+    <code>align.vector</code> und <code>VectorAligner</code> sind der Stand von TASK-013 auf <code>master</code>.
+    <code>ESCalc</code>, <code>ESCalc2</code> und <code>event_sync.py</code> tragen seit PR #110 das lokale τ
+    nach Quiroga.
+  </p>
+  <p>
+    <b>Weiterlesen.</b> Modell v2 in <a href="04-MODELL-V2-SPEC.md">04-MODELL-V2-SPEC</a>, Smart Topics in
+    <a href="05-SMART-TOPICS.md">05-SMART-TOPICS</a>, der Prozessor und die DAG-Definition in
+    <a href="11-SMART-TOPIC-PROZESSOR-DEVOPS.md">11-SMART-TOPIC-PROZESSOR-DEVOPS</a>, das Vektor-Schema unter
+    <a href="schemas/opentsx.vector.v1.schema.json">schemas/opentsx.vector.v1.schema.json</a>, der Backlog zur
+    Ereignissynchronisation in <a href="../../EVOLUTION/TASK-011-datamodel-refresher-2026.md">TASK-011</a>, P8.1.
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
