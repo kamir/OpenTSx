@@ -38,6 +38,13 @@ spec:
               valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_ADMIN_EMAIL}}
             - name: FIRST_SUPERUSER_PASSWORD
               valueFrom: {secretKeyRef: {name: opentsx-saas-secrets, key: SAAS_ADMIN_PASSWORD}}
+            # DAG runs: forwarded to the retrieval server with the run token, for accounts the role allows
+            - name: RETRIEVAL_URL
+              value: http://opentsx-retrieval:8080
+            - name: DAG_RUN_TOKEN
+              valueFrom: {secretKeyRef: {name: opentsx-secrets, key: DAG_RUN_TOKEN, optional: true}}
+            - name: DAG_RUN_ROLE
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: SAAS_DAG_RUN_ROLE, optional: true}}
           ports:
             - name: http
               containerPort: 8000

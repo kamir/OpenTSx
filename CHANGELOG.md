@@ -32,6 +32,11 @@ entries are grouped by date. The detailed progress log (German) is in
   has "Run once and write to KafScale". The Java operator `VectorAligner` and the workbench pass the same test
   vectors (`docs/datamodel-2026/testvectors/`). It is one pass, not a stream processor, and the endpoint has no
   authentication.
+- DAG runs need an account: the retrieval server accepts `POST /v1/dags/run` only with its run token
+  (`OPENTSX_DAG_RUN_TOKEN`), the SaaS backend forwards runs of signed-in users (`POST /api/v1/dags/run`,
+  administrators only unless `DAG_RUN_ROLE=user`), and the frontend image no longer proxies the write path.
+  `deploy/k3s`: `RETRIEVAL_DAG_RUN_TOKEN` (generated), `SAAS_DAG_RUN_ROLE`.
+- CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
   dashboard. `opentsx-saas-backend/smoke-flows.sh` checks accounts and flows against a running instance.
@@ -44,6 +49,9 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Retrieval server: a DAG run reported success even when the broker confirmed only a part of the measuring points.
+  The run now fails and says how many were confirmed. A vector topic the broker does not hand out no longer keeps
+  the feed from reading the other topics.
 - SaaS frontend: the login page showed the default administrator password of a local backend on every
   installation, also where the deployment generates another one. The hint now appears in the dev server only.
   A wrong password reloaded the page instead of showing the error; the form now reports it.

@@ -117,8 +117,12 @@ appends the measuring points to the sink topic. The answer says what was written
 * `source.series` names the series ids to read; without it, all series of the topic.
 * A second run appends again. Readers take the later measuring point per key and tick.
 * It is one pass: no checkpoint, no following of the source topic. At most 500000 measuring points per run.
-* **No authentication.** Whoever reaches the port can write vector topics of the domain. Keep `--dag-runs` off
-  outside a trusted network.
+* **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` a run needs
+  the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever reaches the port
+  can write vector topics of the domain. The SaaS backend holds the token and forwards runs of its users
+  (`POST /api/v1/dags/run`).
+* A run fails when the broker does not confirm every measuring point, and says how many it confirmed. Those stay
+  in the topic.
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in

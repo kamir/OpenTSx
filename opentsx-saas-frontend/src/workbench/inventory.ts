@@ -62,6 +62,8 @@ export interface Inventory {
     dagRuns?: boolean;
     /** Vector topics of the domain whose components are part of `series`. */
     vectorTopics?: string[];
+    /** Vector topics the broker did not hand out at the last try; their series may be out of date. */
+    unreadableVectorTopics?: string[];
   };
   totals: { series: number; episodes: number; samples: number; from?: string; to?: string; scenarios: string[] };
   /** The scenario file the server was started with, unchanged. */

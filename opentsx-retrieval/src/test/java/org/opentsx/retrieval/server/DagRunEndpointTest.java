@@ -23,9 +23,39 @@ class DagRunEndpointTest {
     }
 
     static RetrievalServer server(RetrievalServer.DagRunner runner) throws Exception {
+        return server(runner, null);
+    }
+
+    static RetrievalServer server(RetrievalServer.DagRunner runner, String token) throws Exception {
         InMemorySeriesStore store = new InMemorySeriesStore();
         return new RetrievalServer(new EpisodeService(store), 0,
-                new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1)), runner);
+                new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1)), runner, token);
+    }
+
+    @Test
+    void withARunTokenOnlyCallersThatKnowItMayRun() throws Exception {
+        int[] runs = {0};
+        RetrievalServer.DagRunner runner = (dag, text) -> {
+            runs[0]++;
+            return EpisodeJson.JSON.createObjectNode().put("ok", true);
+        };
+        try (RetrievalServer server = server(runner, "s3cret-run-token")) {
+            HttpClient http = HttpClient.newHttpClient();
+            URI uri = URI.create("http://127.0.0.1:" + server.port() + "/v1/dags/run");
+            HttpRequest.BodyPublisher body = HttpRequest.BodyPublishers.ofString("dag: x\n");
+
+            assertEquals(401, post(server, "dag: x\n").statusCode(), "no token");
+            assertEquals(401, http.send(HttpRequest.newBuilder(uri).header(RetrievalServer.RUN_TOKEN_HEADER, "wrong").POST(body).build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode(), "wrong token");
+            assertEquals(0, runs[0]);
+            HttpResponse<String> ok = http.send(HttpRequest.newBuilder(uri).header(RetrievalServer.RUN_TOKEN_HEADER, "s3cret-run-token")
+                    .POST(body).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, ok.statusCode());
+            assertEquals(1, runs[0]);
+            // reading stays open
+            assertEquals(200, http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/v1/inventory")).build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode());
+        }
     }
 
     @Test

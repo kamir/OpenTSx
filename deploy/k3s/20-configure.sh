@@ -95,8 +95,14 @@ else
   ICEBERG_PROPS=""
 fi
 
+gen_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
+if is_true "$RETRIEVAL_DAG_RUNS"; then
+  # the retrieval server runs DAGs only for callers that know this token; the SaaS backend is the caller
+  [[ -n "$RETRIEVAL_DAG_RUN_TOKEN" ]] || RETRIEVAL_DAG_RUN_TOKEN="$(gen_secret 40)"
+  [[ "$RETRIEVAL_DAG_RUN_TOKEN" =~ ^[A-Za-z0-9]{24,}$ ]] || die "RETRIEVAL_DAG_RUN_TOKEN needs at least 24 letters and digits"
+fi
+[[ "$SAAS_DAG_RUN_ROLE" =~ ^(superuser|user)$ ]] || die "SAAS_DAG_RUN_ROLE must be superuser or user"
 if is_true "$SAAS"; then
-  gen_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1" || true; }
   [[ "$SAAS_ADMIN_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || die "SAAS_ADMIN_EMAIL=$SAAS_ADMIN_EMAIL is not an e-mail address"
   [[ -n "$SAAS_DB_PASSWORD" ]] || SAAS_DB_PASSWORD="$(gen_secret 32)"
   [[ -n "$SAAS_SECRET_KEY" ]] || SAAS_SECRET_KEY="$(gen_secret 48)"
@@ -143,6 +149,7 @@ MODBUS_PORT=$MODBUS_PORT
 MODBUS_MAP=$MODBUS_MAP
 EVENT_BRIDGE_ALLOW_ORIGIN=$EVENT_BRIDGE_ALLOW_ORIGIN
 RETRIEVAL_DAG_RUNS=$(is_true "$RETRIEVAL_DAG_RUNS" && echo true || echo false)
+SAAS_DAG_RUN_ROLE=$SAAS_DAG_RUN_ROLE
 EOF
 
 {
@@ -150,6 +157,7 @@ EOF
   [[ -n "$S3_SECRET_KEY" ]] && printf 'S3_SECRET_KEY=%s\nAWS_SECRET_ACCESS_KEY=%s\n' "$S3_SECRET_KEY" "$S3_SECRET_KEY"
   [[ -n "$S3_ACCESS_KEY" ]] && printf 'AWS_REGION=%s\n' "$S3_REGION"
   [[ -n "$OPENMETADATA_JWT" ]] && printf 'OPENMETADATA_JWT=%s\n' "$OPENMETADATA_JWT"
+  is_true "$RETRIEVAL_DAG_RUNS" && printf 'DAG_RUN_TOKEN=%s\n' "$RETRIEVAL_DAG_RUN_TOKEN"
   true
 } > "$OVERLAY/secrets.env"
 chmod 600 "$OVERLAY/secrets.env"
