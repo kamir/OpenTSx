@@ -1,11 +1,11 @@
 # OpenTSx: Entscheidung, Streaming-Vertrag und Wirkungskreis (Überarbeitung des Plans)
 
-> Stand: 2026-10-13. **Entwurf zur Freigabe.** Dieses Dokument verarbeitet ein externes Review-Briefing (Engineering
+> Stand: 2026-10-13. **Entschieden am 2026-10-13** mit zwei Änderungen (D57, D62; Abschnitt 11). Dieses Dokument verarbeitet ein externes Review-Briefing (Engineering
 > und komplexe Systeme) zum Methodik-Leitfaden und zum Plan aus
 > [14](14-ENGINEERING-FLOW.md). Es ändert den Plan ab der Lieferstufe nach L3 und schärft die Verträge. Umgesetzt
 > ist davon: die Korrektur des H2-Beispiels; Rolle, Bedeutung und Betriebsbereich im Systemdokument und in den
 > Details eines Signals; eine Kennung für bereinigte Episoden; zwei Schema-Entwürfe mit Beispiel. Alles andere
-> wartet auf die Freigabe der Entscheidungen in Abschnitt 11. Arbeitspaket:
+> folgt in den Stufen, in der Reihenfolge aus D62: erst L4 und L5, dann E1 bis E3. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md).
 
 ## 1. Kurzfassung
@@ -317,9 +317,11 @@ vermerkt.
 
 ## 10. Der überarbeitete Plan
 
-L1 bis L3 aus [14](14-ENGINEERING-FLOW.md) sind umgesetzt. Die früheren Stufen L4 (Generatoren, Bind und Simulate)
-und L5 (Models) entfallen als eigene Stufen; ihr Inhalt verteilt sich. Die neue Reihenfolge folgt der Priorität des
-Briefings: **ein vollständiger Durchstich für eine Entscheidung** statt weiterer Breite.
+L1 bis L3 aus [14](14-ENGINEERING-FLOW.md) sind umgesetzt. **Entschieden ist (D62): Zuerst werden L4 (Generatoren,
+Bind und Simulate) und L5 (Models) fertig gebaut. Danach wird neu geplant, und es geht mit E1, E2 und E3 weiter.**
+Die Tabelle beschreibt die Stufen danach; was L4 und L5 davon schon liefern (Binden in der Oberfläche,
+Demo-Generatoren, ein erstes Modell mit Gültigkeitsbereich), entfällt dort. Ihre Reihenfolge folgt der Priorität
+des Briefings: **ein vollständiger Durchstich für eine Entscheidung** statt weiterer Breite.
 
 | Stufe | Inhalt | Abgenommen, wenn |
 |---|---|---|
@@ -356,22 +358,34 @@ Abnahmekriterien der ersten Version, je mit der Stufe, die sie erfüllt:
 * Keine Vollständigkeit des Systems als Voraussetzung: Was fehlt, sperrt nur, was davon abhängt.
 * Nichts Geplantes wird als heute durchspielbar gezeigt.
 
-## 11. Entscheidungen zur Freigabe
+## 11. Entscheidungen
 
-| Nr. | Thema | Vorschlag |
-|---|---|---|
-| D52 | Zentrale Einheit | die Entscheidung; die Entscheidungskarte (`opentsx.decision.v1`) ist das Arbeitsobjekt, die Orte der Hülle ordnen sich als drei Ansichten darunter ein |
-| D53 | Rolle und Bedeutung | jedes Signal hat `role` und `meaning`; verbunden wird erst nach Bestätigung der Bedeutung |
-| D54 | Zwei Wertebereiche | Plausibilität (Messung) und Betrieb (System) getrennt; nur die Plausibilität betrifft die Messgültigkeit |
-| D55 | Zustand | fünf Dimensionen statt eines Zustands; angezeigt wird die Verwendbarkeit je Entscheidung |
-| D56 | Herkunft | Ableitungsweg mit Anteilen; `worst` entfällt als Bewertung, es bleibt die Marke "enthält Synthetisches" |
-| D57 | Bedeutung von `clean` | auf Takt und in Einheit, mit Urteil je Wert; Vorgabe ist Kennzeichnen (`flag`), nicht Entfernen. Ändert D43 nicht, schärft es |
-| D58 | Streaming-Vertrag | die sieben Grundsätze aus Abschnitt 6, ausgeführt in 11, Abschnitt 7a |
-| D59 | Modellfreigabe | je Analyse Eingänge, Gültigkeitsbereich, Nachweis, Unsicherheit; daraus ein Verwendbarkeitsstatus je Ergebnis |
-| D60 | Kreis | vier Datensätze (`opentsx.decision-record.v1`); OpenTSx führt nichts aus |
-| D61 | Simulation | Demo-Generator und Szenariomodell getrennt benannt; Ergebnisse auf Demo-Generatoren sind für Strategievergleiche gesperrt |
-| D62 | Plan | E1, E2, E3 ersetzen L4 und L5; Maßstab ist der Durchstich aus 10.1 |
-| D63 | Beispielentscheidung | "Fahrplan für Elektrolyseur und Batterie in der nächsten Stunde" am System `h2-chain` |
+Entschieden vom Auftraggeber am 2026-10-13.
+
+| Nr. | Thema | Entscheidung | Stand |
+|---|---|---|---|
+| D52 | Zentrale Einheit | die Entscheidung; die Entscheidungskarte (`opentsx.decision.v1`) ist das Arbeitsobjekt, die Orte der Hülle ordnen sich als drei Ansichten darunter ein | wie vorgeschlagen |
+| D53 | Rolle und Bedeutung | jedes Signal hat `role` und `meaning`; verbunden wird erst nach Bestätigung der Bedeutung | wie vorgeschlagen |
+| D54 | Zwei Wertebereiche | Plausibilität (Messung) und Betrieb (System) getrennt; nur die Plausibilität betrifft die Messgültigkeit | wie vorgeschlagen |
+| D55 | Zustand | fünf Dimensionen statt eines Zustands; angezeigt wird die Verwendbarkeit je Entscheidung | wie vorgeschlagen |
+| D56 | Herkunft | Ableitungsweg mit Anteilen; `worst` entfällt als Bewertung, es bleibt die Marke "enthält Synthetisches" | wie vorgeschlagen |
+| D57 | Bedeutung von `clean` | **beides wird geschrieben:** eine Güte `clean` in zwei Varianten im selben Topic, unterschieden durch das Tag `variant`. `marked`: die Werte bleiben, jeder mit Urteil. `filtered`: fragliche Werte sind entfernt. Vorgabe für Leser ist `marked`. Keine vierte Güte | **geändert** (Vorschlag war: Kennzeichnen als Vorgabe, Entfernen wählbar) |
+| D58 | Streaming-Vertrag | die sieben Grundsätze aus Abschnitt 6, ausgeführt in 11, Abschnitt 7a | wie vorgeschlagen |
+| D59 | Modellfreigabe | je Analyse Eingänge, Gültigkeitsbereich, Nachweis, Unsicherheit; daraus ein Verwendbarkeitsstatus je Ergebnis | wie vorgeschlagen |
+| D60 | Kreis | vier Datensätze (`opentsx.decision-record.v1`); OpenTSx führt nichts aus | wie vorgeschlagen |
+| D61 | Simulation | L4 baut Demo-Generatoren je Signal und nennt sie so; Ergebnisse darauf sind für Strategievergleiche gesperrt. Ein Szenariomodell folgt in E2 | wie vorgeschlagen |
+| D62 | Plan | **erst L4 und L5 fertig bauen, dann neu planen und mit E1, E2 und E3 weitermachen.** L4 und L5 entfallen also nicht; Abschnitt 10 gilt für die Zeit danach und wird vor E1 noch einmal durchgesehen | **geändert** (Vorschlag war: E1 bis E3 ersetzen L4 und L5) |
+| D63 | Beispielentscheidung | "Fahrplan für Elektrolyseur und Batterie in der nächsten Stunde" am System `h2-chain` | wie vorgeschlagen |
+
+**Folgen der beiden Änderungen.**
+
+* D57: Abschnitt 5.1 gilt mit einer Ergänzung. Der Prozessor schreibt je bereinigtem Signal zwei Reihen. Die
+  Regel für die Reihe (14, Abschnitt 6.1) bekommt das Tag `variant`; die Kennung einer Episode schließt es ein. Die
+  Seite Signals zeigt die Variante `marked`; ein Flow oder ein Modell, das die gefilterte Reihe will, sagt es. Das
+  kostet den doppelten Platz im Topic der bereinigten Reihen. Gebaut wird es mit E2, nicht mit L4 oder L5.
+* D62: L4 und L5 werden mit dem gebaut, was schon entschieden ist. Das heißt für L4: Demo-Generatoren, so benannt
+  (D61), Binden erst nach bestätigter Bedeutung (D53). Für L5: Ein Modell bekommt seinen Gültigkeitsbereich und
+  Nachweis von Anfang an (D59), auch wenn die Entscheidungskarte als Oberfläche erst mit E1 kommt.
 
 ## 12. Was offen bleibt
 

@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-014-engineering-flow
 - **Created**: 2026-10-13
-- **Status**: Freigegeben am 2026-10-13, Umsetzung läuft (L1)
+- **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
 - **Delivery-Branch**: `opentsx/2026-task014-clean-signals` (L3 und die Überarbeitung nach dem Review-Briefing), Worktree
@@ -103,10 +103,14 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         nicht doppelt zählt; Schema-Entwürfe `opentsx.decision.v1` und `opentsx.decision-record.v1` mit Beispiel,
         im Build geprüft; Streaming-Vertrag in 11, Abschnitt 7a, mit "Heute" und "Ziel" je Punkt; Modellfreigabe in
         05, Abschnitt 5a; Leitfaden (Kapitel 16) auf acht Schritte umgeschrieben
-- [ ] 014.7 Freigabe der Entscheidungen D52 bis D63
-- [ ] 014.8 E1 Entscheidungskarte und fachliche Verträge (ersetzt mit E2 und E3 die früheren Stufen L4 und L5)
-- [ ] 014.9 E2 Durchgängiger Streaming- und Replay-Pfad
-- [ ] 014.10 E3 Handlungs- und Lernkreis
+- [x] 014.7 Entscheidungen D52 bis D63 (2026-10-13): zehn wie vorgeschlagen. **D57 geändert:** `clean` wird in zwei
+      Varianten geschrieben, `marked` und `filtered`, im selben Topic. **D62 geändert:** erst L4 und L5 fertig
+      bauen, dann neu planen und mit E1 bis E3 weitermachen
+- [ ] 014.8 L4 Demo-Generatoren: Topic, Laufzeit, Bind und Simulate
+- [ ] 014.9 L5 Models
+- [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge
+- [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
+- [ ] 014.12 E3 Handlungs- und Lernkreis
 
 ## Review-Briefing (extern, 2026-10-13)
 

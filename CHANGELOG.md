@@ -85,7 +85,7 @@ entries are grouped by date. The detailed progress log (German) is in
   signal as clean. Shared test vectors for the cleaning operators in Java and TypeScript
   (`docs/datamodel-2026/testvectors/clean-ops.v1.json`).
 - Plan revised after an external review ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
-  German, waits for sign-off): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
+  German, decided on 2026-10-13: stages L4 and L5 are built first, then E1 to E3): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
   card) and `opentsx.decision-record.v1` (recommendation, approval, action, outcome) and an example; a streaming
   contract with what holds today and what is the aim (11, section 7a); release of a model for a purpose (05, section
   5a). Signals carry a role, a meaning and an operating range next to the plausible range. Clean episodes carry an

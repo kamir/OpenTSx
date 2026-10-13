@@ -3,8 +3,8 @@
 > **Status: method described, tooling partial.** This chapter describes a way of working. Each step says what
 > OpenTSx supports today and what is planned. The design behind steps 2 to 5 was signed off on 2026-10-13
 > ([`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../datamodel-2026/14-ENGINEERING-FLOW.md), German). The frame
-> around them, a decision at the start and its effect at the end, is a revision after an external review and
-> waits for sign-off ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
+> around them, a decision at the start and its effect at the end, is a revision after an external review, decided
+> on the same day ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
 > German). Work item: [`EVOLUTION/TASK-014-engineering-flow.md`](../../EVOLUTION/TASK-014-engineering-flow.md).
 > Where this chapter and the design differ, the design is the source and this chapter follows.
 
@@ -139,9 +139,9 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
 * **Today:** the workbench ([chapter 14](14-saas-service-layer.md)). "Prepare" on the page "Signals" opens it for
   one signal: its raw series, a line that names system, signal, expectation and origin, the plausible range on the
   screen, and the cleaning operators preset from the expectation. Ground truth of the scenario shows as bands.
-  The plausible-range operator today removes or clips what lies outside. **Planned:** it marks the value and keeps
-  it, and the mark travels through resampling; the operating range on the screen; release of an analysis for a
-  purpose.
+  The plausible-range operator today removes or clips what lies outside. **Planned:** every clean signal is written
+  in two variants, one that keeps each value with a verdict on it and one with the questionable values removed;
+  the operating range on the screen; release of an analysis for a purpose.
 
 ### Step 6: Run in the shadow
 
@@ -197,8 +197,9 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
 2. **Expectation before data.** Write down what a signal means and should be before you look at what it is.
 3. **One truth per question.** Components and ports live in the plan, the meaning of a channel in the catalog,
    the device in the inventory, the source of a signal in the system document.
-4. **Preparation marks, it does not remove.** The raw series stays. A questionable value is marked, a real
-   excursion stays visible.
+4. **Preparation marks before it removes.** The raw series stays. The clean series that is read by default keeps
+   every value with a verdict on it; a variant without the questionable values exists next to it for those who ask
+   for it. A real excursion stays visible.
 5. **A measurement and a state are two things.** Out of the plausible range puts the measurement in question; out
    of the operating range is an event.
 6. **Origin is a path, and always visible.** Generated or modelled values never look like measurements, in a
