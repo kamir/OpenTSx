@@ -51,6 +51,8 @@ async def lifespan(app: FastAPI):
         await init_db(session)
 
     print("✅ Database initialized")
+    if settings.TEST_LOGIN:
+        print("TEST OPERATION: admin/admin signs in as administrator. Do not run this outside a lab network.")
 
     yield
 

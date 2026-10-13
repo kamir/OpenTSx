@@ -114,6 +114,13 @@ Key dependencies:
 - `POST /api/v1/auth/refresh` - Refresh access token
 - `GET /api/v1/auth/me` - Get current user
 
+### Test operation
+
+With `TEST_LOGIN=true` the name `admin` with the password `admin` signs in as the first administrator
+(`FIRST_SUPERUSER_EMAIL`). `GET /api/v1/auth/mode` tells the login page, which then shows the hint. The stored
+password of the account is not involved and not changed, so switching the setting off ends it. Off by default;
+with it on, everyone who reaches the page is an administrator.
+
 ### DAG deployments
 
 | Route | What |

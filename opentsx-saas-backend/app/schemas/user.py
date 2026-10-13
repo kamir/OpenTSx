@@ -70,8 +70,8 @@ class TokenData(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login request schema."""
-    email: EmailStr
+    """Login request schema. `email` is an address, or the name "admin" where test operation is switched on."""
+    email: str = Field(min_length=1, max_length=254)
     password: str
 
 

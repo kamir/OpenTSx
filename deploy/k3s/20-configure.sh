@@ -56,7 +56,7 @@ fi
 if [[ "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
   warn "KAFSCALE_BOOTSTRAP is still the example value 192.168.1.50:9092"
 fi
-for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS RETRIEVAL_DAG_RUNS VECTOR_PROCESSOR EVENT_BRIDGE; do
+for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS SAAS_TEST_LOGIN RETRIEVAL_DAG_RUNS VECTOR_PROCESSOR EVENT_BRIDGE; do
   [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] || die "$b must be true or false"
 done
 [[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE must be online or offline"
@@ -102,6 +102,9 @@ if is_true "$RETRIEVAL_DAG_RUNS"; then
   [[ "$RETRIEVAL_DAG_RUN_TOKEN" =~ ^[A-Za-z0-9]{24,}$ ]] || die "RETRIEVAL_DAG_RUN_TOKEN needs at least 24 letters and digits"
 fi
 [[ "$SAAS_DAG_RUN_ROLE" =~ ^(superuser|user)$ ]] || die "SAAS_DAG_RUN_ROLE must be superuser or user"
+if is_true "$SAAS" && is_true "$SAAS_TEST_LOGIN"; then
+  warn "SAAS_TEST_LOGIN=true: admin/admin signs in as administrator. Everyone who reaches the page can deploy DAGs. Lab networks only."
+fi
 if is_true "$SAAS"; then
   [[ "$SAAS_ADMIN_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]] || die "SAAS_ADMIN_EMAIL=$SAAS_ADMIN_EMAIL is not an e-mail address"
   [[ -n "$SAAS_DB_PASSWORD" ]] || SAAS_DB_PASSWORD="$(gen_secret 32)"
@@ -150,6 +153,7 @@ MODBUS_MAP=$MODBUS_MAP
 EVENT_BRIDGE_ALLOW_ORIGIN=$EVENT_BRIDGE_ALLOW_ORIGIN
 RETRIEVAL_DAG_RUNS=$(is_true "$RETRIEVAL_DAG_RUNS" && echo true || echo false)
 SAAS_DAG_RUN_ROLE=$SAAS_DAG_RUN_ROLE
+SAAS_TEST_LOGIN=$(is_true "$SAAS_TEST_LOGIN" && echo true || echo false)
 EOF
 
 {

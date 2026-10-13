@@ -33,7 +33,8 @@ entries are grouped by date. The detailed progress log (German) is in
   (`GET /v1/dags`). The Java operator and the workbench pass the same test vectors
   (`docs/datamodel-2026/testvectors/`).
 - Deploying needs an account: the workbench has "Deploy" and "Stop" in the tab "Smart Topic" with the state the
-  processor reports. The SaaS backend checks the account (`POST /api/v1/dags/deploy`, `/stop`; administrators only
+  processor reports, a list of what a deployment needs (ready or missing, step by step) and a button that turns
+  the loaded series into a published vector. The SaaS backend checks the account (`POST /api/v1/dags/deploy`, `/stop`; administrators only
   unless `DAG_RUN_ROLE=user`) and forwards with the run token to the retrieval server (`POST /v1/dags/deploy`,
   `/stop`, only with `--kafscale`, `--dag-runs true` and the token `OPENTSX_DAG_RUN_TOKEN`). The frontend image
   does not proxy those write routes. `deploy/k3s`: `RETRIEVAL_DAG_RUNS`, `RETRIEVAL_DAG_RUN_TOKEN` (generated),
@@ -41,6 +42,18 @@ entries are grouped by date. The detailed progress log (German) is in
 - Workbench: the ground truth of the scenario shows on the scope. Series loaded from the TS inventory bring their
   events (operations, sensor faults) along as bands on the time axis; operators that keep the time axis hand them
   on, and "Segment at threshold" says how many crossings lie inside an event.
+- SaaS module, test operation: `TEST_LOGIN=true` (`deploy/k3s`: `SAAS_TEST_LOGIN=true`) lets `admin` with the
+  password `admin` sign in as the first administrator; the login page shows it. Off by default.
+- Workbench: the "OpenTSx Flow Composer" lists the flows stored in the account in a selection window like the TS
+  inventory: filter by text, domain, status or kind, see what a flow reads, computes and publishes and what the
+  processor does with it. From there a flow is opened in the editor (several: the first on the workbench, the
+  others in tabs of their own), created, renamed, copied, deleted, activated and paused. Activating a flow the
+  vector processor can run deploys it, pausing stops it; any other flow is only marked. An opened flow loads the
+  series it was built on from the TS inventory, over their whole range.
+- Workbench: a deployment belongs to its flow. It is named `<domain>-flow-<id>` (was `<domain>-<track>-smart`),
+  so flows of one track no longer replace each other. "Deploy" saves the flow first and marks it active, "Stop"
+  marks it paused. A deployment is refused while another running one writes the same topic. Deployments under
+  the old name keep running and belong to no flow.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
@@ -54,6 +67,11 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Vector processor: the first write to a new sink topic stopped the whole processor. The KafScale proxy answers a
+  produce request that mixes a topic nobody has written to yet with another one in a way the Kafka client cannot
+  parse, and the producer then sent nothing any more, not even status records. Every runner now has its own
+  producer and the status records have another; waiting for the broker's confirmation no longer blocks the loop,
+  and a producer that gets no answer is closed and replaced.
 - Readers no longer end when KafScale refuses fetches for a minute (`Unexpected error code 7 while fetching`): they
   wait it out (`org.opentsx.kafka.Patience`, used by `LogReader`, the statistics processor and `SeriesStatsLog`).
   Producers retry with pauses for up to three minutes instead of five quick attempts

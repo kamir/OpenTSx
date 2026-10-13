@@ -42,6 +42,8 @@ export interface FlowState {
   moveNode: (id: string, pos: { x: number; y: number }) => void;
   setSink: (id: string, topic: string | null) => void;
   setSavedId: (id: number | null) => void;
+  /** Empties the workbench for a new flow; track and domain stay. */
+  clear: () => void;
   restore: (definition: Record<string, unknown>, savedId: number) => boolean;
 }
 
@@ -256,6 +258,11 @@ export const useFlow = create<FlowState>((set, get) => ({
 
   setSavedId: (savedId) => set({ savedId }),
 
+  clear: () => {
+    cache.clear();
+    set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null });
+  },
+
   restore: (definition, savedId) => {
     const nodes = parseNodes(definition.nodes);
     if (definition.kind !== WORKBENCH_KIND || !nodes) return false;
@@ -280,8 +287,7 @@ export const useFlow = create<FlowState>((set, get) => ({
 }));
 
 /** Checks a stored node list: known operators, one source, every input present, no cycles. */
-export 
-function parseNodes(raw: unknown): FlowNode[] | null {
+export function parseNodes(raw: unknown): FlowNode[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > 500) return null;
   const nodes: FlowNode[] = [];
   for (const r of raw as Partial<FlowNode>[]) {
@@ -325,7 +331,25 @@ function parseNodes(raw: unknown): FlowNode[] | null {
 }
 
 /** What the exports read of the flow. */
-export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & { sourceSeries?: string[] };
+export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & {
+  sourceSeries?: string[];
+  /** Number of the flow in the account, once it is stored. */
+  savedId?: number | null;
+};
+
+/**
+ * Name of the deployment of a flow. A stored flow is deployed under its number, so two flows never share a
+ * deployment; an export of an unsaved flow is named after its track.
+ */
+export function dagName(domain: string, track: string, flowId?: number | null): string {
+  return flowId === null || flowId === undefined ? `${slug(domain)}-${slug(track)}-smart` : `${slug(domain)}-flow-${flowId}`;
+}
+
+/** The flow a deployment belongs to, or null for one named after a track. */
+export function flowIdOfDag(dag: string): number | null {
+  const m = /-flow-(\d+)$/.exec(dag);
+  return m ? Number(m[1]) : null;
+}
 
 /** The flow as stored in the backend: the node list plus the rendered DAG for readers without the workbench. */
 export function toDefinition(s: FlowDoc): Record<string, unknown> {
@@ -442,6 +466,51 @@ export function runBlocker(nodes: FlowNode[], sourceSeries?: string[]): string |
   return null;
 }
 
+export interface DeployCheck {
+  ok: boolean;
+  /** What is required, and when it is missing, what to do about it. */
+  text: string;
+}
+
+/**
+ * What the vector processor needs of a flow, one line each, so a person sees which step is still open instead of
+ * only the first obstacle ({@link runBlocker}).
+ */
+export function deployChecks(nodes: FlowNode[], sourceSeries: string[]): DeployCheck[] {
+  const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
+  const fromInventory = sourceSeries.length > 0;
+  const onSource = vectors.length > 0 && vectors.every((v) => inputsOf(v).every((i) => i === SOURCE_ID));
+  const topicsOk = vectors.length > 0 && vectors.every((v) => /^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? ''));
+  return [
+    {
+      ok: fromInventory,
+      text: fromInventory
+        ? `The bucket comes from a topic: ${sourceSeries.length} series loaded from the TS inventory.`
+        : 'Load the series from the TS inventory. A sample bucket or a file has no topic the processor could follow.',
+    },
+    {
+      ok: vectors.length > 0,
+      text: vectors.length > 0
+        ? `An "Align to vector" node is published: ${vectors.map((v) => v.label).join(', ')}.`
+        : 'Publish an "Align to vector" node. The processor writes vector topics; other published nodes are export only.',
+    },
+    {
+      ok: onSource,
+      text: onSource
+        ? 'The vector reads the source bucket directly.'
+        : vectors.length === 0
+          ? 'The vector must read the source bucket directly.'
+          : 'The vector must read the source bucket directly. Operators before it (normalising, smoothing, resampling) run in the workbench only.',
+    },
+    {
+      ok: topicsOk,
+      text: topicsOk
+        ? `It writes ${vectors.map((v) => v.sinkTopic).join(', ')}.`
+        : 'The topic must have the form tsx.<domain>.smart.<name>.vectors.v1 (lower-case letters, digits and hyphens in the name).',
+    },
+  ];
+}
+
 /** Checks whether the flow can be handed over as a Smart Topic definition. */
 export function validate(nodes: FlowNode[]): Finding[] {
   const out: Finding[] = [];
@@ -489,7 +558,7 @@ export function toDagYaml(s: FlowDoc): string {
   const nodes = s.nodes.filter((n) => n.op !== 'source' && (sinks.length === 0 || keep.has(n.id)));
   const lines = [
     '# opentsx.dag.v1, written by the OpenTSx web workbench',
-    `dag: ${yamlScalar(`${slug(s.domain)}-${slug(s.track)}-smart`)}`,
+    `dag: ${yamlScalar(dagName(s.domain, s.track, s.savedId))}`,
     'version: 1',
     'source:',
     '  kind: kafscale-broker',

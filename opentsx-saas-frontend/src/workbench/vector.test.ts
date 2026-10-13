@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SOURCE_ID, evaluate, parseNodes, runBlocker, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate, vectorComponents } from './flow';
+import { SOURCE_ID, deployChecks, evaluate, parseNodes, runBlocker, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate, vectorComponents } from './flow';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, Series } from './types';
-import { VECTOR_OP, VECTOR_SCHEMA, alignVector, componentNames, vectorRecords } from './vector';
+import { VECTOR_OP, VECTOR_SCHEMA, alignVector, componentNames, suggestKey, vectorRecords } from './vector';
 
 const T0 = Date.parse('2026-10-01T00:00:00Z');
 
@@ -324,6 +324,38 @@ describe('flow with a vector node', () => {
     expect(state().sourceSeries).toEqual([]);
     expect(state().restore(stored, 3)).toBe(true);
     expect(state().sourceSeries).toEqual(['6e803ad522510511', 'bf9fb54cca74b30a']);
+  });
+
+  it('lists what a deployment needs, step by step', () => {
+    const marks = (series: string[]) => deployChecks(state().nodes, series).map((c) => (c.ok ? 'ok' : 'missing'));
+    expect(marks([])).toEqual(['missing', 'missing', 'missing', 'missing']);
+    expect(marks(['a'])).toEqual(['ok', 'missing', 'missing', 'missing']);
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    expect(marks(['a'])).toEqual(['ok', 'ok', 'ok', 'ok']);
+    expect(runBlocker(state().nodes, ['a'])).toBeNull();
+    state().setSink(v, 'tsx.wind.smart.Turbine_State.vectors.v1');
+    expect(marks(['a'])).toEqual(['ok', 'ok', 'ok', 'missing']);
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    state().addInput(v, z);
+    const checks = deployChecks(state().nodes, ['a']);
+    expect(checks.map((c) => c.ok)).toEqual([true, true, false, true]);
+    expect(checks[2].text).toMatch(/Operators before it .* run in the workbench only/);
+    // a published operator alone is not a vector
+    state().removeInput(v, z);
+    state().setSink(v, null);
+    state().setSink(z, 'tsx.wind.smart.z.metrics.v2');
+    expect(deployChecks(state().nodes, ['a'])[1].text).toMatch(/other published nodes are export only/);
+  });
+
+  it('suggests the key that makes one vector per unit', () => {
+    const s = (id: string, metric: string, turbine: string) => series(id, [0], [1], { metric, tags: { park: 'p', turbine } });
+    const twoChannels = timeBucket('b', [s('a', 'ws', 'T01'), s('b', 'pa', 'T01'), s('c', 'ws', 'T02'), s('d', 'pa', 'T02')]);
+    expect(suggestKey(twoChannels)).toBe('turbine');
+    // one channel of several turbines: nothing to put together
+    expect(suggestKey(timeBucket('b', [s('a', 'ws', 'T01'), s('c', 'ws', 'T02')]))).toBe('series');
+    // several channels of one turbine: one vector of that turbine
+    expect(suggestKey(timeBucket('b', [s('a', 'ws', 'T01'), s('b', 'pa', 'T01')]))).toMatch(/^(turbine|park)$/);
+    expect(suggestKey(timeBucket('b', [series('x', [0], [1]), series('y', [0], [1])]))).toBe('series');
   });
 
   it('names the further inputs in the descriptor and the Java export', () => {

@@ -6,12 +6,13 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-vector-ops` (013.15 und 013.16, PR #177), Worktree
-  `../OpenTSx-worktrees/vector-ops`
+- **Delivery-Branch**: `opentsx/2026-task013-processor-resilience` (013.17), Worktree
+  `../OpenTSx-worktrees/processor-resilience`
 - **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task013-web-workbench` (013.1 bis 013.4, PR #161),
   `opentsx/2026-task013-ts-inventory` (013.8, PR #165), `opentsx/2026-task013-vector-sink` (013.10, PR #166),
   `opentsx/2026-task013-vector-runtime` (013.11, PR #168), `opentsx/2026-task013-secure-dag-runs` (013.12, PR #172),
-  `opentsx/2026-task013-ground-truth` (013.13, PR #173), `opentsx/2026-task013-broker-patience` (013.14, PR #175).
+  `opentsx/2026-task013-ground-truth` (013.13, PR #173), `opentsx/2026-task013-broker-patience` (013.14, PR #175),
+  `opentsx/2026-task013-vector-ops` (013.15 und 013.16, PR #177).
   `opentsx/2026-task013-vector-processor` (013.15, PR #176) wurde in seinen Basis-Branch statt nach `master`
   gemergt; sein Inhalt kommt mit PR #177.
 
@@ -156,6 +157,31 @@ Beobachtungen am Swing-Code:
       - Backend: `POST /api/v1/dags/deploy`, `/stop` (nur Administratoren)
       - Workbench: "Keep running on KafScale" im Reiter "Smart Topic" mit Deploy, Stop und Zustand je Sink;
         Parameter `lateness` am Vektor-Knoten
+- [x] 013.17 Verknüpfung Workbench und Prozessor robust und sichtbar (Stand 2026-10-13)
+      - Prozessor: ein Producer je Läufer und einer für den Status; das Warten auf die Bestätigung blockiert die
+        Schleife nicht; ein Producer ohne Antwort wird verworfen und ersetzt. Vorher hielt das erste Schreiben in
+        ein neues Sink-Topic den ganzen Prozessor an (Fehler im KafScale-Proxy, KOI-2026-10-13-02)
+      - Workbench: Liste "was ein Deployment braucht" mit bereit oder fehlt je Schritt, und ein Knopf, der aus den
+        geladenen Reihen einen veröffentlichten Vektor macht
+- [x] 013.18 Testbetrieb für die Anmeldung (Stand 2026-10-13): `SAAS_TEST_LOGIN=true` lässt `admin` mit dem Passwort
+      `admin` als ersten Administrator hinein; die Login-Seite zeigt es an. Das gespeicherte Passwort bleibt
+      unverändert. Voreinstellung aus; eingeschaltet ist jeder, der die Seite erreicht, Administrator
+- [x] 013.19 "OpenTSx Flow Composer": gespeicherte Flows auswählen und verwalten (Stand 2026-10-13)
+      - Auswahlfenster nach dem Muster des TS-Inventars (`FlowComposer.tsx`, `flows.ts`): Filter nach Text,
+        Domain, Status und Art, Vorschau mit Quelle, Buckets, Smart Topics und Zustand im Prozessor
+      - Öffnen im Editor (der Workbench), auch mehrere: der erste Flow hier, die weiteren in eigenen Tabs. Ein
+        geöffneter Flow lädt die Reihen, auf denen er gebaut wurde, über ihren ganzen Zeitraum; das Zeitfenster der
+        ursprünglichen Auswahl ist nicht gespeichert
+      - Anlegen, Umbenennen (Name, Beschreibung), Kopieren, Löschen (mit Rückfrage im Fenster)
+      - Aktivieren und Pausieren: setzt den Status des Flows. Kann der Vektor-Prozessor den Flow ausführen, wird
+        er dabei bereitgestellt beziehungsweise gestoppt (nur Administratoren); sonst wird er nur markiert, und
+        das Fenster sagt, warum
+      - Bereitstellung an die Flow-Id gebunden: Sie heißt `<domain>-flow-<id>` statt `<domain>-<track>-smart`.
+        Zwei Flows desselben Tracks teilen sich keine Bereitstellung mehr, und eine Kopie hat ihre eigene. "Deploy"
+        im Editor speichert den Flow deshalb zuerst und setzt seinen Status auf aktiv, "Stop" auf pausiert. Ein
+        bereitgestellter Flow lässt sich nicht löschen. Schreibt eine andere laufende Bereitstellung schon in
+        dasselbe Topic, wird abgelehnt. Der Export eines ungespeicherten Flows trägt weiter den Namen des Tracks;
+        Bereitstellungen mit altem Namen laufen weiter und gehören zu keinem Flow
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
@@ -281,3 +307,12 @@ curl -s localhost:8080/v1/inventory | head -c 400
   "running, 3600, Daten bis 06:00". Nach einem Neustart des Pods blieb der Endoffset bei 18280: Er setzt am
   Checkpoint fort. Ein normales Konto sieht den Zustand, Deploy und Stop sind gesperrt. Der DAG bleibt deployt.
   Neue Episoden kamen nicht dazu; das Nachführen ist weiterhin nur durch Tests belegt.
+* 2026-10-13: Meldung des Nutzers: "Verknüpfung zwischen Workbench und DAG-Flow-Runner klappt nicht." Zwei Befunde.
+  Erstens blieb der Deploy-Knopf für naheliegende Flüsse gesperrt (Beispiel-Bucket, veröffentlichter Operator statt
+  Vektor), und die Seite nannte nur das erste Hindernis. Zweitens ein echter Fehler: Das erste Deployment in ein
+  neues Sink-Topic über die Oberfläche hielt den Prozessor an. Er schrieb 20 Messpunkte, bekam vom KafScale-Proxy
+  eine Antwort, die der Client nicht lesen kann, und sendete danach nichts mehr, auch keinen Status; ein Neustart
+  des Pods löste es. Ursache gemessen und nachgestellt (KOI-2026-10-13-02): gemischte Produce-Anfrage aus Topic mit
+  und ohne Besitzer. Nach der Korrektur (013.17, Images `3.0.0-task013-19`) über die Oberfläche als Administrator
+  geprüft: Reihen laden, "Create a vector of the loaded series", Deploy in ein neues Topic; nach 15 s "running",
+  360 Messpunkte im Topic, kein Fehler im Prozessor-Log.

@@ -10,12 +10,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import DeploymentsPanel from '../workbench/DeploymentsPanel';
 import FlowGraph from '../workbench/FlowGraph';
+import FlowComposer from '../workbench/FlowComposer';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
+import { fetchFlowSeries } from '../workbench/inventoryLoad';
 import Scope from '../workbench/Scope';
 import {
   SOURCE_ID,
   defaultSinkTopic,
   descendants,
+  deployChecks,
   evaluate,
   inputsOf,
   runBlocker,
@@ -27,7 +30,7 @@ import {
   validate,
   vectorComponents,
 } from '../workbench/flow';
-import { vectorRecords } from '../workbench/vector';
+import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
@@ -358,9 +361,20 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
+function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSave: () => Promise<number | null> }) {
   const state = useFlow();
   const blocker = runBlocker(state.nodes, state.sourceSeries);
+  // One step from loaded series to something the processor can run: a vector on the source, published.
+  const hasVector = state.nodes.some((n) => n.op === VECTOR_OP && n.sinkTopic);
+  const canMakeVector = !hasVector && state.sourceSeries.length > 0 && state.source?.xKind === 'time';
+  const makeVector = () => {
+    const s = useFlow.getState();
+    if (!s.source) return;
+    s.select(SOURCE_ID);
+    const id = s.applyOp(VECTOR_OP, { key: suggestKey(s.source) });
+    const made = useFlow.getState().nodes.find((n) => n.id === id);
+    if (id && made) s.setSink(id, defaultSinkTopic(useFlow.getState().domain, made.label, VECTOR_OP));
+  };
   const sinks = state.nodes.filter((n) => n.sinkTopic);
   const findings = validate(state.nodes);
   const blocked = findings.some((f) => f.level === 'error');
@@ -422,12 +436,18 @@ function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
         The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
         a proposal; the download hands the file over and does not deploy.
       </p>
-      <DeploymentsPanel base={base} blocker={blocked ? 'Fix what is marked as missing above first.' : blocker} />
+      <DeploymentsPanel
+        base={base}
+        blocker={blocker}
+        checks={deployChecks(state.nodes, state.sourceSeries)}
+        onMakeVector={canMakeVector ? makeVector : undefined}
+        onSave={onSave}
+      />
     </div>
   );
 }
 
-function Inspector({ base }: { base: string }) {
+function Inspector({ base, onSave }: { base: string; onSave: () => Promise<number | null> }) {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -459,7 +479,7 @@ function Inspector({ base }: { base: string }) {
         ) : tab === 'dag' ? (
           <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} base={base} />
+          <SmartTopic node={node} base={base} onSave={onSave} />
         )}
       </div>
     </aside>
@@ -476,25 +496,47 @@ export default function Workbench() {
   const [error, setError] = useState<string | null>(null);
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [flowsOpen, setFlowsOpen] = useState(false);
+  const remoteBase = useRef(remote.base);
+  remoteBase.current = remote.base;
   const fileRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const signedIn = !!localStorage.getItem('access_token');
   const flowParam = searchParams.get('flow');
 
-  // /workbench?flow=<id> opens a flow stored in the account.
+  // /workbench?flow=<id> opens a flow stored in the account and loads the series it was built on.
   useEffect(() => {
     const id = Number(flowParam);
     if (!flowParam || !Number.isInteger(id) || useFlow.getState().savedId === id) return;
     let cancelled = false;
+    const current = () => !cancelled && useFlow.getState().savedId === id;
     flowsAPI
       .getDefinition(id)
-      .then((flow) => {
+      .then(async (flow) => {
         if (cancelled) return;
-        if (useFlow.getState().restore(flow.definition, flow.id)) {
-          setError(null);
-          setStatus(`Flow "${flow.name}" opened. Load a bucket to run it.`);
-        } else {
+        if (!useFlow.getState().restore(flow.definition, flow.id)) {
           setError(`Flow ${id} was not saved from the workbench and cannot be opened here.`);
+          return;
+        }
+        setError(null);
+        const wanted = useFlow.getState().sourceSeries;
+        if (wanted.length === 0) {
+          setStatus(`Flow "${flow.name}" opened. Load a bucket to run it.`);
+          return;
+        }
+        setStatus(`Flow "${flow.name}" opened. Loading its ${wanted.length} series`);
+        try {
+          const { load, missing } = await fetchFlowSeries(remoteBase.current.replace(/\/$/, ''), wanted);
+          if (!current()) return;
+          useFlow.getState().loadBucket(load.bucket, { kind: 'inventory', detail: load.detail });
+          // a flow of the source alone is loaded like a new bucket: it stays the stored flow
+          useFlow.getState().setSavedId(id);
+          useFlow.getState().setSourceSeries(load.seriesIds);
+          if (missing > 0) setError(`${missing} of the ${wanted.length} series of flow "${flow.name}" are no longer in the TS inventory; it runs on the others.`);
+        } catch (e) {
+          if (!current()) return;
+          setStatus(`Flow "${flow.name}" opened without data.`);
+          setError(`The series of flow "${flow.name}" could not be loaded: ${e instanceof Error ? e.message : e}. Load a bucket to run it.`);
         }
       })
       .catch((e) => !cancelled && setError(`Flow ${id} could not be opened: ${e instanceof Error ? e.message : e}`));
@@ -503,19 +545,58 @@ export default function Workbench() {
     };
   }, [flowParam]);
 
-  const saveFlow = async () => {
+  const openFlows = (ids: number[]) => {
+    setFlowsOpen(false);
+    const [here, ...others] = ids;
+    const blocked = others.filter((id) => !window.open(`/workbench?flow=${id}`, '_blank')).length;
+    if (here === useFlow.getState().savedId) {
+      // the stored state replaces what is on the workbench
+      useFlow.getState().setSavedId(null);
+    }
+    setSearchParams({ flow: String(here) });
+    setError(
+      blocked > 0
+        ? `The browser kept ${blocked} of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.`
+        : null
+    );
+  };
+
+  const newFlow = () => {
+    setFlowsOpen(false);
+    useFlow.getState().clear();
+    setSearchParams({}, { replace: true });
+    setError(null);
+    setStatus('New flow. Load a bucket to begin.');
+  };
+
+  /** A flow deleted in the composer stays in the editor as an unsaved one. */
+  const forgetFlows = (ids: number[]) => {
+    const id = useFlow.getState().savedId;
+    if (id === null || !ids.includes(id)) return;
+    useFlow.getState().setSavedId(null);
+    setSearchParams({}, { replace: true });
+    setStatus(`Flow ${id} is deleted in your account. What you see here is unsaved.`);
+  };
+
+  const saveFlow = async (): Promise<number | null> => {
     const s = useFlow.getState();
     const published = s.nodes.filter((n) => n.sinkTopic).length;
     try {
       const flow = await flowsAPI.save(s.savedId, {
-        name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
-        description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
+        // a stored flow keeps the name and description it was given in the composer
+        ...(s.savedId === null
+          ? {
+              name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
+              description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
+            }
+          : {}),
         definition: toDefinition(s),
       });
       s.setSavedId(flow.id);
       setSearchParams({ flow: String(flow.id) }, { replace: true });
       setError(null);
       setStatus(`Saved to your account as flow ${flow.id}`);
+      return flow.id;
     } catch (e) {
       const expired = axios.isAxiosError(e) && e.response?.status === 401;
       setError(
@@ -523,6 +604,7 @@ export default function Workbench() {
           ? 'Your session has expired. Sign in again (the link opens a new tab), then save: the flow stays here.'
           : `The flow could not be saved: ${e instanceof Error ? e.message : e}`
       );
+      return null;
     }
   };
 
@@ -621,6 +703,11 @@ export default function Workbench() {
           Load episodes
         </button>
         <span className="wb-grow" />
+        {signedIn && (
+          <button onClick={() => setFlowsOpen(true)} title="The flows of your account: open, create, copy, delete, activate, pause">
+            Flow Composer
+          </button>
+        )}
         {signedIn ? (
           <button disabled={nodes.length === 0} onClick={saveFlow} title="Stores the flow in your account; it appears on the dashboard">
             {state.savedId === null ? 'Save flow' : `Save flow ${state.savedId}`}
@@ -644,6 +731,17 @@ export default function Workbench() {
           onBase={(base) => setRemote((r) => ({ ...r, base }))}
           onLoad={loadInventory}
           onClose={() => setInventoryOpen(false)}
+        />
+      )}
+      {flowsOpen && (
+        <FlowComposer
+          base={remote.base}
+          currentId={state.savedId}
+          replaces={nodes.length > 0}
+          onOpen={openFlows}
+          onNew={newFlow}
+          onDeleted={forgetFlows}
+          onClose={() => setFlowsOpen(false)}
         />
       )}
       {(error || result.error) && <div className="wb-error" role="alert">{error ?? `The operation failed: ${result.error}`}</div>}
@@ -678,10 +776,12 @@ export default function Workbench() {
                     <p>No bucket loaded.</p>
                     <p>
                       Pick series from the TS inventory, load the sample bucket, open a CSV, TSV or episode JSON file,
-                      or drop a file here. Then apply operations and watch each result on the scope.
+                      or drop a file here. Then apply operations and watch each result on the scope. The Flow
+                      Composer holds the flows saved earlier; they open with their series.
                     </p>
                     <button className="wb-primary" onClick={() => setInventoryOpen(true)}>Open TS inventory</button>{' '}
                     <button onClick={loadSample}>Load sample bucket</button>
+                    {signedIn && <> <button onClick={() => setFlowsOpen(true)}>Open the Flow Composer</button></>}
                   </>
                 )}
               </div>
@@ -693,7 +793,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector base={remote.base} />
+        <Inspector base={remote.base} onSave={saveFlow} />
       </main>
 
       <footer className="wb-status">

@@ -36,6 +36,10 @@ CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' "${BASE%/}/api/v1/openapi.json
 check "backend answers (openapi.json)" 200 "$CODE"
 [[ "$CODE" == 200 ]] || { echo "no backend at $API - stopping"; exit 1; }
 
+call GET /auth/mode ""
+check "login mode answers" 200 "$CODE"
+[[ "$(field 'd["testLogin"]')" == True ]] && echo "  note  test operation is on: admin/admin signs in as administrator"
+
 login() {   # suffix -> TOKEN
   local email="smoke-$STAMP-$1@example.com"
   call POST /auth/register "" "{\"email\":\"$email\",\"password\":\"$PASSWORD\",\"full_name\":\"Smoke $1\"}"

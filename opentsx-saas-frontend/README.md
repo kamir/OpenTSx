@@ -109,7 +109,8 @@ frontend/
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
   `src/workbench/vector.ts`)
-- Deploy and Stop (tab "Smart Topic"): hands the flow to the vector processor, which keeps the vector topic up to
+- Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
+  series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to
   date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
   `--dag-runs true`, and a running vector processor
 - Time series operations as buttons, recorded as a processing flow graph

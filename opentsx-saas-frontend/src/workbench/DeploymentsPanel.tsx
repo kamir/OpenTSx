@@ -6,18 +6,25 @@
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { dagsAPI } from '../services/api';
-import { DagList, describeSink, hasProcessor } from './deployments';
-import { toDagYaml, useFlow } from './flow';
+import { dagsAPI, flowsAPI } from '../services/api';
+import { DagList, describeSink, hasProcessor, topicConflict } from './deployments';
+import { summarize } from './flows';
+import { DeployCheck, dagName, flowIdOfDag, toDagYaml, useFlow } from './flow';
 
 interface Props {
   /** Retrieval server the state is read from. */
   base: string;
   /** Why the flow cannot be deployed, or null. */
   blocker: string | null;
+  /** What the processor needs of the flow, step by step. */
+  checks: DeployCheck[];
+  /** Builds and publishes a vector of the loaded series; offered while the flow has none. */
+  onMakeVector?: () => void;
+  /** Stores the flow in the account and gives its number, or null when that failed. */
+  onSave: () => Promise<number | null>;
 }
 
-export default function DeploymentsPanel({ base, blocker }: Props) {
+export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, onSave }: Props) {
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
   const [list, setList] = useState<DagList | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -75,30 +82,71 @@ export default function DeploymentsPanel({ base, blocker }: Props) {
     }
   };
 
+  // A deployment carries the number of its flow, so the flow is stored first; its status follows the deployment.
+  const deploy = async () => {
+    const id = await onSave();
+    if (id === null) throw new Error('the flow could not be saved to your account');
+    const now = useFlow.getState();
+    const topics = now.nodes.flatMap((n) => (n.sinkTopic ? [n.sinkTopic] : []));
+    const stored = (await flowsAPI.list()).map(summarize);
+    const conflict = topicConflict(list?.dags ?? [], dagName(now.domain, now.track, id), topics, stored);
+    if (conflict) throw new Error(conflict);
+    const answer = await dagsAPI.deploy(toDagYaml(now));
+    await flowsAPI.patch(id, { status: 'active' });
+    return answer;
+  };
+  const stop = async (dag: string) => {
+    const answer = await dagsAPI.stop(dag);
+    const id = flowIdOfDag(dag);
+    // the flow may belong to another account or be deleted: the deployment is stopped either way
+    if (id !== null) await flowsAPI.patch(id, { status: 'paused' }).catch(() => undefined);
+    return answer;
+  };
+
+  const flow = useFlow();
+  const own = flow.savedId === null ? null : dagName(flow.domain, flow.track, flow.savedId);
   const allowed = signedIn && !!access?.canRun;
   return (
     <fieldset>
       <legend>Keep running on KafScale</legend>
       <p className="wb-muted">
         Deploying hands the flow to the vector processor. It computes the vector from the beginning of the source topic and
-        then follows it: new episodes give new measuring points. A flow deployed again under the same track replaces the
-        earlier one and starts over.
+        then follows it: new episodes give new measuring points. Deploy saves the flow first: the deployment carries its
+        number. A flow deployed again replaces its own deployment and starts over.
       </p>
+      <ul className="wb-findings" aria-label="What a deployment needs">
+        <li className={allowed ? 'ok' : signedIn && !access ? 'info' : 'error'}>
+          <b>{allowed ? 'Ready' : signedIn && !access ? 'Wait' : 'Missing'}</b>{' '}
+          {allowed
+            ? 'You are signed in as an administrator.'
+            : !signedIn
+              ? 'Sign in as an administrator.'
+              : (access?.reason ?? 'Checking your account.')}
+        </li>
+        {checks.map((c, i) => (
+          <li key={i} className={c.ok ? 'ok' : 'error'}>
+            <b>{c.ok ? 'Ready' : 'Missing'}</b> {c.text}
+          </li>
+        ))}
+      </ul>
+      {onMakeVector && (
+        <button onClick={onMakeVector} title="Adds an Align to vector node on the source bucket and publishes it">
+          Create a vector of the loaded series
+        </button>
+      )}{' '}
       <button
         className="wb-primary"
         disabled={!allowed || !!blocker || !!busy}
-        onClick={() => act('Deploy', () => dagsAPI.deploy(toDagYaml(useFlow.getState())), (dag) => `Deployed as ${dag}. The processor takes it up within a few seconds.`)}
+        onClick={() => act('Deploy', deploy, (dag) => `Saved and deployed as ${dag}. The processor takes it up within a few seconds.`)}
       >
         {busy === 'Deploy' ? 'Deploying' : 'Deploy'}
       </button>
-      {!signedIn ? (
+      {!signedIn && (
         <p className="wb-muted">
-          Deploying needs an account. <Link to="/login" target="_blank" rel="noopener">Sign in</Link>, then reload this tab.
+          <Link to="/login" target="_blank" rel="noopener">Sign in</Link>, then reload this tab. The flow stays in the browser only
+          until you save it.
         </p>
-      ) : (
-        access && !access.canRun && <p className="wb-muted">{access.reason}</p>
       )}
-      {blocker && <p className="wb-muted">{blocker}</p>}
       {message && (
         <div className={message.ok ? 'wb-note' : 'wb-error'} role={message.ok ? 'status' : 'alert'}>{message.text}</div>
       )}
@@ -112,12 +160,12 @@ export default function DeploymentsPanel({ base, blocker }: Props) {
           {list.dags.map((d) => (
             <li key={d.dag} className={d.desired}>
               <div className="head">
-                <b>{d.dag}</b>
+                <b>{d.dag}{d.dag === own ? ' (this flow)' : ''}</b>
                 <span>
                   {d.desired} by {d.by}, {d.at.slice(0, 16).replace('T', ' ')} UTC
                 </span>
                 {d.desired === 'deployed' && (
-                  <button disabled={!allowed || !!busy} onClick={() => act('Stop', () => dagsAPI.stop(d.dag), (dag) => `${dag} is stopped.`)}>
+                  <button disabled={!allowed || !!busy} onClick={() => act('Stop', () => stop(d.dag), (dag) => `${dag} is stopped.`)}>
                     Stop
                   </button>
                 )}

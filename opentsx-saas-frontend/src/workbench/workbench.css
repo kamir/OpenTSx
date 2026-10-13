@@ -1053,3 +1053,58 @@
     display: none;
   }
 }
+
+/* "Open flow" dialog: shares the frame of the TS inventory */
+.wb-inv-table tbody tr.off {
+  color: var(--muted, #6b7280);
+  cursor: default;
+}
+.wb-flows-steps {
+  margin: 4px 8px 8px 26px;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+.wb-inv > .wb-note {
+  grid-row: 3;
+  padding: 5px 10px;
+  font-size: 12px;
+  background: #e3efe3;
+  border-bottom: 1px solid #9dbb9d;
+}
+.wb-flow-status {
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-size: 11px;
+}
+.wb-flow-status.active {
+  background: #d9ecd9;
+  border-color: #7fae7f;
+}
+.wb-flow-status.paused {
+  background: #f3e6c8;
+  border-color: #c9a655;
+}
+.wb-flow-edit {
+  display: grid;
+  gap: 5px;
+  padding: 6px 8px;
+}
+.wb-flow-edit label {
+  display: grid;
+  gap: 2px;
+  font-size: 11.5px;
+}
+.wb .wb-flow-edit input,
+.wb .wb-flow-edit textarea {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 5px;
+  border: 1px solid #8d94a0;
+  border-radius: 2px;
+  background: var(--field);
+  color: var(--ink);
+  resize: vertical;
+}

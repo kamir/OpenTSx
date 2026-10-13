@@ -112,6 +112,11 @@ deploy/k3s/10-build.sh --skip-maven && deploy/k3s/11-import-images.sh && deploy/
 opentsx-saas-backend/smoke-flows.sh http://<node>:30311      # register, login, store, read, change, delete
 ```
 
+**Test operation.** `SAAS_TEST_LOGIN=true` lets the name `admin` with the password `admin` sign in as the first
+administrator; the login page says so. The generated password keeps working and is not changed. Everyone who reaches
+the page is an administrator then and can deploy and stop DAGs: use it on a lab network only, and switch it off
+again with `SAAS_TEST_LOGIN=false`.
+
 `20-configure.sh` generates the database password, the token key and the password of the first administrator
 (`SAAS_ADMIN_EMAIL`) when they are empty and keeps them in `.env` and the Secret `opentsx-saas-secrets`:
 

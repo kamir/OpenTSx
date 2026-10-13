@@ -10,39 +10,22 @@ import {
   InventoryFilter,
   InventorySeries,
   LoadOptions,
+  MANY_POINTS,
   NO_FILTER,
   RESAMPLE_STEPS,
   ScenarioEvent,
-  bucketName,
   clock,
-  episodesQuery,
   estimatePoints,
   filterSeries,
-  marksOf,
   metricFacets,
-  parseInventory,
-  relabel,
   scenarioEvents,
   tagFacets,
-  topicOf,
   windowError,
 } from './inventory';
-import { parseEpisodes } from './loaders';
+import { InventoryLoad, fetchBucket, fetchInventory } from './inventoryLoad';
 import { fmt } from './ops';
-import { Bucket } from './types';
 
-/** More points than this make the scope slow; the dialog then asks for a coarser resolution. */
-const MANY_POINTS = 400_000;
-
-export interface InventoryLoad {
-  bucket: Bucket;
-  /** Topic the series were read from, when the server reads a log. */
-  topic?: string;
-  domain?: string;
-  /** Ids of the loaded series in the source topic. */
-  seriesIds: string[];
-  detail: string;
-}
+export type { InventoryLoad };
 
 interface Props {
   base: string;
@@ -112,11 +95,7 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
     let cancelled = false;
     setBusy('Reading the inventory');
     setError(null);
-    fetch(`${root}/v1/inventory`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(res.status === 404 ? 'the server has no /v1/inventory (older retrieval server?)' : `HTTP ${res.status}`);
-        return parseInventory(await res.json());
-      })
+    fetchInventory(root)
       .then((doc) => {
         if (cancelled) return;
         setInv(doc);
@@ -180,27 +159,10 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
 
   const load = async () => {
     if (!inv || selection.length === 0 || badWindow) return;
-    const url = `${root}/v1/episodes?${episodesQuery(selection.map((s) => s.seriesId), options)}`;
     setBusy(`Loading ${selection.length} series`);
     setError(null);
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const name = bucketName(selection);
-      const parsed = relabel(parseEpisodes(await res.json(), name), selection, name);
-      const t0Ms = parsed.t0Ms ?? Date.parse(options.from);
-      const bucket = {
-        ...parsed,
-        marks: marksOf(selection, t0Ms, (Date.parse(options.from) - t0Ms) / 1000, (Date.parse(options.to) - t0Ms) / 1000),
-      };
-      const topic = topicOf(inv, selection);
-      onLoad({
-        bucket,
-        topic,
-        domain: inv.source.domain,
-        seriesIds: selection.map((s) => s.seriesId),
-        detail: `${topic ?? inv.source.kind}, ${selection.length} series, ${clock(options.from, true)} to ${clock(options.to, true)} UTC${options.resample ? `, ${options.agg} per ${options.resample}` : ''}`,
-      });
+      onLoad(await fetchBucket(root, inv, selection, options));
     } catch (e) {
       setError(`The series could not be loaded: ${e instanceof Error ? e.message : e}. The window may hold no data.`);
       setBusy(null);

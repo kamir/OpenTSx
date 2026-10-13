@@ -45,6 +45,8 @@ spec:
               valueFrom: {secretKeyRef: {name: opentsx-secrets, key: DAG_RUN_TOKEN, optional: true}}
             - name: DAG_RUN_ROLE
               valueFrom: {configMapKeyRef: {name: opentsx-config, key: SAAS_DAG_RUN_ROLE, optional: true}}
+            - name: TEST_LOGIN         # test operation: admin/admin signs in as administrator
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: SAAS_TEST_LOGIN, optional: true}}
           ports:
             - name: http
               containerPort: 8000

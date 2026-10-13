@@ -53,7 +53,8 @@ import java.util.function.Supplier;
  *   <li><b>One runner per vector sink</b> with its own consumer, positions and state. A new or changed DAG starts
  *   from the beginning of the source topic (or from now, {@code source.start: latest}) without touching the others.</li>
  *   <li><b>Checkpoint</b> per runner in the state directory: positions and {@link VectorStream} state, written only
- *   after the broker confirmed every measuring point. After a crash the runner repeats at most what it wrote since
+ *   after the broker confirmed every measuring point. Waiting for that does not stop the loop: every runner has its
+ *   own producer, and one whose sends are not confirmed is closed and replaced when the runner starts again. After a crash the runner repeats at most what it wrote since
  *   the last checkpoint; readers take the later record per key and tick, and the values are the same.</li>
  *   <li><b>Status</b> per runner goes to {@link TopicLayout#dagStatus()}.</li>
  * </ul>
@@ -69,15 +70,20 @@ public final class VectorProcessor implements AutoCloseable {
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
 
     /** Timing of the processor. The defaults are for a service; tests use short ones. */
-    public record Timing(Duration checkpointEvery, Duration statusEvery, Duration controlEvery, Duration retryAfter, Duration poll) {
+    public record Timing(Duration checkpointEvery, Duration statusEvery, Duration controlEvery, Duration retryAfter, Duration poll,
+                         Duration confirmWithin) {
         public static Timing standard() {
+            // a send retries until the delivery timeout; a confirmation that is still missing a while later never comes
             return new Timing(Duration.ofSeconds(10), Duration.ofSeconds(30), Duration.ofSeconds(5), Duration.ofSeconds(60),
-                    Duration.ofMillis(200));
+                    Duration.ofMillis(200), KafScaleClients.DELIVERY_TIMEOUT.plusSeconds(30));
         }
     }
 
     private final Supplier<Consumer<byte[], byte[]>> consumers;
-    private final Producer<String, byte[]> producer;
+    private final Supplier<Producer<String, byte[]>> producers;
+    /** Producer of the status records. Replaced when a send fails, so reporting survives a producer that got stuck. */
+    private Producer<String, byte[]> statusProducer;
+    private volatile boolean statusBroken;
     private final TopicLayout layout;
     private final Path stateDir;
     private final Timing timing;
@@ -92,12 +98,15 @@ public final class VectorProcessor implements AutoCloseable {
 
     /**
      * @param consumers gives a new consumer for the control topic and for each runner
+     * @param producers gives a new producer: one per runner and one for the status records. They are separate so
+     *                  that a sink the broker does not confirm cannot hold up the others; a producer whose send
+     *                  failed is closed and replaced
      * @param stateDir  directory of the checkpoints; created when missing
      */
-    public VectorProcessor(Supplier<Consumer<byte[], byte[]>> consumers, Producer<String, byte[]> producer, TopicLayout layout,
-                           Path stateDir, Timing timing) {
+    public VectorProcessor(Supplier<Consumer<byte[], byte[]>> consumers, Supplier<Producer<String, byte[]>> producers,
+                           TopicLayout layout, Path stateDir, Timing timing) {
         this.consumers = consumers;
-        this.producer = producer;
+        this.producers = producers;
         this.layout = layout;
         this.stateDir = stateDir;
         this.timing = timing;
@@ -156,6 +165,35 @@ public final class VectorProcessor implements AutoCloseable {
             controlConsumer.close(Duration.ofSeconds(5));
             controlConsumer = null;
             control = null;
+        }
+        if (statusProducer != null) {
+            statusProducer.close(Duration.ofSeconds(5));
+            statusProducer = null;
+        }
+    }
+
+    /** Sends a status record without waiting for it. A failed send makes the next one use a new producer. */
+    private void status(String key, byte[] value) {
+        if (statusProducer == null || statusBroken) {
+            if (statusProducer != null) {
+                closeNow(statusProducer);
+            }
+            statusProducer = producers.get();
+            statusBroken = false;
+        }
+        statusProducer.send(new ProducerRecord<>(layout.dagStatus(), key, value), (meta, error) -> {
+            if (error != null) {
+                statusBroken = true;
+            }
+        });
+    }
+
+    /** Closes a producer without waiting for what it has not sent: it is being given up. */
+    private static void closeNow(Producer<String, byte[]> producer) {
+        try {
+            producer.close(Duration.ZERO);
+        } catch (RuntimeException ignored) {
+            // a producer of a broker that does not answer may fail to close; it is gone either way
         }
     }
 
@@ -259,7 +297,7 @@ public final class VectorProcessor implements AutoCloseable {
         ObjectNode n = JSON.createObjectNode();
         n.put("schema", STATUS_SCHEMA).put("dag", dag).put("state", "failed").put("specHash", hash).put("error", error)
                 .put("at", Micros.toInstant(Micros.now()).toString());
-        producer.send(new ProducerRecord<>(layout.dagStatus(), dag, bytes(n)));
+        status(dag, bytes(n));
     }
 
     // ---- one vector sink -------------------------------------------------------------------------------------------
@@ -272,6 +310,9 @@ public final class VectorProcessor implements AutoCloseable {
         final List<Future<RecordMetadata>> pending = new ArrayList<>();
         final Patience patience = Patience.standard();
         Consumer<byte[], byte[]> consumer;
+        Producer<String, byte[]> producer;
+        /** A checkpoint that waits for the broker to confirm what was written before it; null when none is under way. */
+        Snapshot waiting;
         VectorStream stream;
         long records;
         long undecodable;
@@ -308,9 +349,12 @@ public final class VectorProcessor implements AutoCloseable {
                 error = null;
                 long now = System.nanoTime();
                 boolean saved = false;
-                if (dirty && (now - lastCheckpoint >= timing.checkpointEvery().toNanos() || pending.size() >= 5000)) {
-                    saved = pending.size() > 0;
-                    checkpoint();
+                if (waiting == null && dirty && (now - lastCheckpoint >= timing.checkpointEvery().toNanos() || pending.size() >= 5000)) {
+                    snapshot();
+                }
+                if (waiting != null && confirmed()) {
+                    saved = !waiting.confirmations.isEmpty();
+                    save();
                 }
                 // report a change of state at once, confirmed progress with the checkpoint, and otherwise now and then
                 if (!state.equals(reported) || (saved && records != reportedRecords) || now - lastStatus >= timing.statusEvery().toNanos()) {
@@ -325,6 +369,8 @@ public final class VectorProcessor implements AutoCloseable {
             sinkProvisioner.accept(job.name());
             positions.clear();
             pending.clear();
+            waiting = null;
+            producer = producers.get();
             records = 0;
             JsonNode saved = load();
             stream = saved == null
@@ -380,35 +426,60 @@ public final class VectorProcessor implements AutoCloseable {
             }
         }
 
-        /** Waits for the broker to confirm what was written, then saves positions and state. */
-        void checkpoint() {
-            producer.flush();
-            for (Future<RecordMetadata> f : pending) {
-                try {
-                    f.get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("interrupted while waiting for the broker to confirm", e);
-                } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-                    Throwable cause = e.getCause() == null ? e : e.getCause();
-                    throw new IllegalStateException("the broker did not confirm every measuring point; continuing from the last"
-                            + " checkpoint (" + cause.getClass().getSimpleName() + ": " + cause.getMessage() + ")", cause);
-                }
-            }
-            pending.clear();
+        /**
+         * Takes down positions and state as they are now. The checkpoint is written once the broker has confirmed
+         * every measuring point sent up to here ({@link #confirmed()}); meanwhile the runner keeps reading, and the
+         * other runners are not held up.
+         */
+        void snapshot() {
             ObjectNode n = JSON.createObjectNode();
             n.put("dag", job.dag()).put("vector", job.name()).put("specHash", hash).put("records", records);
             ObjectNode pos = n.putObject("positions");
             new TreeMap<>(positionsByName()).forEach(pos::put);
             n.set("stream", stream.state());
+            waiting = new Snapshot(n, new ArrayList<>(pending), System.nanoTime());
+            pending.clear();
+            dirty = false;
+        }
+
+        /**
+         * True when the broker has confirmed everything the waiting checkpoint depends on.
+         *
+         * @throws IllegalStateException when a send failed, or no confirmation came within the time a send may take
+         */
+        boolean confirmed() {
+            for (Future<RecordMetadata> f : waiting.confirmations) {
+                if (!f.isDone()) {
+                    if (System.nanoTime() - waiting.since > timing.confirmWithin().toNanos()) {
+                        throw new IllegalStateException("the broker has not confirmed the measuring points for "
+                                + timing.confirmWithin().toSeconds() + " s; continuing from the last checkpoint with a new producer");
+                    }
+                    return false;
+                }
+                try {
+                    f.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("interrupted while waiting for the broker to confirm", e);
+                } catch (java.util.concurrent.ExecutionException e) {
+                    Throwable cause = e.getCause() == null ? e : e.getCause();
+                    throw new IllegalStateException("the broker did not confirm every measuring point; continuing from the last"
+                            + " checkpoint (" + cause.getClass().getSimpleName() + ": " + cause.getMessage() + ")", cause);
+                }
+            }
+            return true;
+        }
+
+        /** Writes the waiting checkpoint. */
+        void save() {
             try {
                 Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
-                Files.write(tmp, bytes(n));
+                Files.write(tmp, bytes(waiting.document));
                 Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            dirty = false;
+            waiting = null;
             lastCheckpoint = System.nanoTime();
         }
 
@@ -447,6 +518,12 @@ public final class VectorProcessor implements AutoCloseable {
         }
 
         private void release() {
+            if (producer != null) {
+                closeNow(producer);     // what it has not sent belongs to work that is repeated from the checkpoint
+                producer = null;
+            }
+            pending.clear();
+            waiting = null;
             if (consumer != null) {
                 try {
                     consumer.close(Duration.ofSeconds(5));
@@ -459,14 +536,35 @@ public final class VectorProcessor implements AutoCloseable {
 
         /** Ends the runner in order: a last checkpoint when the broker allows it. */
         void shutdown() {
-            if (consumer != null && dirty) {
+            if (consumer != null && (dirty || waiting != null)) {
                 try {
-                    checkpoint();
+                    if (waiting == null) {
+                        snapshot();
+                    } else if (dirty) {
+                        // a checkpoint is under way and more was read since: finish that one first, then take the last
+                        awaitConfirmation();
+                        save();
+                        snapshot();
+                    }
+                    awaitConfirmation();
+                    save();
                 } catch (RuntimeException e) {
                     System.err.println("vector processor: " + job.dag() + "/" + job.name() + ": no final checkpoint: " + e.getMessage());
                 }
             }
             release();
+        }
+
+        /** Waits a short while for the broker, as an orderly end allows. */
+        private void awaitConfirmation() {
+            producer.flush();
+            long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+            while (!confirmed()) {
+                if (System.nanoTime() > deadline) {
+                    throw new IllegalStateException("the broker did not confirm in time");
+                }
+                sleep(Duration.ofMillis(50));
+            }
         }
 
         /** Removes the checkpoint: the DAG was stopped or replaced. */
@@ -499,11 +597,15 @@ public final class VectorProcessor implements AutoCloseable {
                 n.put("error", error);
             }
             n.put("at", Micros.toInstant(Micros.now()).toString());
-            producer.send(new ProducerRecord<>(layout.dagStatus(), job.dag() + "/" + job.name(), bytes(n)));
+            status(job.dag() + "/" + job.name(), bytes(n));
             reported = state;
             reportedRecords = records;
             lastStatus = System.nanoTime();
         }
+    }
+
+    /** Positions and state of a runner at one moment, and the sends that must be confirmed before it may be written. */
+    private record Snapshot(ObjectNode document, List<Future<RecordMetadata>> confirmations, long since) {
     }
 
     // ---- helpers ---------------------------------------------------------------------------------------------------
