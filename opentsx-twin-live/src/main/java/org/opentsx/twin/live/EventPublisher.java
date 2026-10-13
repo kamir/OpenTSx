@@ -15,7 +15,8 @@ import java.util.Map;
 /**
  * Writes the events of a twin run to its event topic, in the order of the run. With a duration the run is played in
  * that time: every event is published when its moment in the (compressed) run has come, so that a reader of the
- * topic sees the run unfold. Without one, all events are published at once.
+ * topic sees the run unfold. Without one, all events are published at once. The topic is created before the first
+ * event, so a reader can open it while the run has not reported anything yet.
  */
 public final class EventPublisher {
 
@@ -48,6 +49,7 @@ public final class EventPublisher {
      */
     public String publish(TwinPlan plan, RunResult run, Duration duration) throws InterruptedException {
         String topic = EventTopic.name(plan.twin(), run.runId());
+        topics.create(topic);
         List<TwinEvent> events = run.events().stream().sorted(Comparator.comparingLong(TwinEvent::tMicros)).toList();
         long spanMicros = plan.baseStepMicros() * plan.steps();
         long slept = 0;

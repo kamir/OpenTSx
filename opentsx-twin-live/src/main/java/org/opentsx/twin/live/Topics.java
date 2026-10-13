@@ -14,6 +14,9 @@ public interface Topics extends AutoCloseable {
     /** Start behind the last record: only what arrives from now on. */
     long LATEST = -1;
 
+    /** Makes sure the topic exists, so that readers can open it before the first record arrives. */
+    void create(String topic);
+
     void append(String topic, String key, byte[] value, String schema);
 
     /** Opens a cursor at {@code offset}, {@link #EARLIEST} or {@link #LATEST}. */
