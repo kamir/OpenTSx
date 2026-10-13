@@ -6,7 +6,8 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-broker-patience` (013.14), Worktree `../OpenTSx-worktrees/broker-patience`;
+- **Delivery-Branch**: `opentsx/2026-task013-vector-processor` (013.15, baut auf 013.14 auf), Worktree
+  `../OpenTSx-worktrees/vector-processor`; davor: `opentsx/2026-task013-broker-patience` (013.14), Worktree `../OpenTSx-worktrees/broker-patience`;
   davor: `opentsx/2026-task013-secure-dag-runs` (013.12), Worktree `../OpenTSx-worktrees/secure-dag-runs`;
 - **Delivery-Branch**: `opentsx/2026-task013-ground-truth` (013.13), Worktree `../OpenTSx-worktrees/ground-truth`;
   `opentsx/2026-task013-secure-dag-runs` (013.12, PR #172, gemergt);
@@ -143,7 +144,17 @@ Beobachtungen am Swing-Code:
       - Der Schirm zeichnet sie als Bänder (Betriebsereignis gelb, Sensorfehler rot) mit Namen am unteren Rand;
         Feld "Ground truth" schaltet sie und springt zu einem Ereignis
       - "Segment at threshold" zählt, wie viele Schwellenübergänge in ein Ereignis fallen
-- [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
+- [x] 013.15 Vektor-Prozessor: fortlaufender Betrieb (Stand 2026-10-13)
+      - `VectorStream`: Messpunkte, sobald sie endgültig sind; dasselbe Ergebnis wie der Einmal-Lauf; Zustand für
+        den Neustart
+      - `VectorProcessor`: Deployments aus dem Steuer-Topic `tsx.<domain>.dags.v1`, je Sink ein Läufer mit
+        Checkpoint, Status nach `tsx.<domain>.dag-status.v1`; Kommando `opentsx vectors` (run, deploy, stop)
+      - Regeln in 11 §5b, Entscheidung D39
+- [ ] 013.16 Vektor-Prozessor ausliefern und bedienen: k3s-Komponente (ein Pod, Volume für den Zustand), Deploy und
+      Stop über das Backend (nur Administratoren), Status und Schaltflächen im Reiter "Smart Topic", Status im
+      TS-Inventar; der Einmal-Lauf des Retrieval-Servers entfällt dann
+- [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
+      (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
       Eingängen gibt es seit 013.10
 - [ ] 013.7 MF-DFA und Normalverteilungstest portieren; Paritätsvektoren Java gegen TypeScript
@@ -253,3 +264,9 @@ curl -s localhost:8080/v1/inventory | head -c 400
   an der richtigen Stelle; nach dem Sprung auf STUCK liegt die flache Strecke von T05 im roten Band, T07 läuft
   weiter. Ein abgeleiteter Bucket (Diffs) behält die Marken, die FFT hat keine. Keine Konsolenfehler.
   Die Marken sind so fein wie die Episoden lang sind (10 Minuten), also Näherungen des Ereignisses.
+* 2026-10-13: Vektor-Prozessor (013.15) lokal gegen den Labor-Broker gelaufen: DAG `wind-exp2-smart` über das
+  Steuer-Topic deployt, der Läufer schrieb 3600 Messpunkte nach `tsx.wind.smart.turbine-state.vectors.v1`
+  (Endoffset 11080 auf 14680), legte seinen Checkpoint am Ende aller sechs Partitionen ab und meldete Status.
+  Danach beendet und der DAG per Steuer-Topic gestoppt: Auf dem Broker läuft kein Prozessor, bis 013.16 ihn
+  ausliefert. Neue Episoden kamen während des Laufs nicht dazu; das Nachführen ist durch die Tests belegt
+  (`VectorProcessorTest`), nicht durch diesen Lauf.

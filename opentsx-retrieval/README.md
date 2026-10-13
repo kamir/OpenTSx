@@ -128,6 +128,29 @@ The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
 `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5a.
 
+### Vector processor
+
+`org.opentsx.retrieval.vector.VectorProcessorApp` (`opentsx vectors`) keeps vector sinks up to date. It follows the
+episodes topic and appends measuring points as they become final, where the run above is one pass.
+
+```bash
+opentsx vectors --kafscale host:9092 --domain wind --state /state              # the processor, exactly one per domain
+opentsx vectors deploy --kafscale host:9092 --domain wind --dag flow.dag.yaml  # deploy a DAG, or replace it
+opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
+```
+
+* Deployments live in the control topic `tsx.<domain>.dags.v1` (latest record per DAG name), so they survive a
+  restart. The processor reports per sink to `tsx.<domain>.dag-status.v1`.
+* A tick is written when every series named in `source.series` has passed its end, plus `lateness` of the node.
+  Until every named series was seen once, the sink waits; the status says for which.
+* Per series, episodes must arrive in time order. One that does not continue its series is skipped and counted.
+* A checkpoint per sink in `--state` holds positions and state. It is written after the broker confirmed the
+  records, so a crash repeats at most the records since the last checkpoint, with the same values.
+* A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
+
+Limits: one processor per domain, no idle timeout for a series that falls silent, vectors on source series only.
+The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5b.
+
 ### Series inventory
 
 `GET /v1/inventory` answers with an `opentsx.ts-inventory.v1` document:

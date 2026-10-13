@@ -22,9 +22,19 @@ import java.util.regex.Pattern;
  * @param name       name of the vector, the {@code <name>} part of the topic
  * @param seriesIds  series of the source topic to read; empty for all
  * @param inputNames one name per input of the node
+ * @param lateness   continuous operation: how long a tick stays open after every series has passed its end
+ *                   ({@code params.lateness} of the node, default none)
+ * @param fromStart  continuous operation: begin at the start of the source topic ({@code source.start: earliest},
+ *                   the default) or with what arrives from now on ({@code latest})
  */
 public record VectorJob(String dag, String topic, String name, List<String> seriesIds, List<String> inputNames,
-                        VectorAligner.Params params) {
+                        VectorAligner.Params params, Duration lateness, boolean fromStart) {
+
+    /** A job as a single run needs it: no lateness, the whole topic. */
+    public VectorJob(String dag, String topic, String name, List<String> seriesIds, List<String> inputNames,
+                     VectorAligner.Params params) {
+        this(dag, topic, name, seriesIds, inputNames, params, Duration.ZERO, true);
+    }
 
     public static final String SCHEMA = "opentsx.vector.v1";
     public static final String OP = "align.vector";
@@ -86,8 +96,18 @@ public record VectorJob(String dag, String topic, String name, List<String> seri
             if (names.isEmpty()) {
                 throw new IllegalArgumentException("node " + from + " has no input");
             }
+            Duration lateness;
+            try {
+                lateness = Duration.parse(node.path("params").path("lateness").asText("PT0S"));
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException("node " + from + ": lateness must be a duration like PT2M");
+            }
+            String start = dag.path("source").path("start").asText("earliest");
+            if (!start.equals("earliest") && !start.equals("latest")) {
+                throw new IllegalArgumentException("source.start must be earliest or latest, not " + start);
+            }
             jobs.add(new VectorJob(dag.path("dag").asText("dag"), topic, m.group(1), List.copyOf(seriesIds), names,
-                    params(from, node.path("params"))));
+                    params(from, node.path("params")), lateness, start.equals("earliest")));
         }
         if (jobs.isEmpty()) {
             throw new IllegalArgumentException("the DAG has no vector sink. Publish an \"Align to vector\" node."
