@@ -29,6 +29,9 @@ signals:
         select: { metric: wind.turbine.power_active, tags: { turbine: T02 } }
     clean:
       source: { kind: flow, flow: turbine-power-clean, output: clean }
+    features:
+      source: { kind: flow, flow: turbine-power-features }
+      names: [lag_1, lag_10, mean_1h, std_1h]
   - id: park/T02/WMET.HorWdSpd
     title: Windgeschwindigkeit WEA T02
     channel: wind/WMET.HorWdSpd
@@ -77,4 +80,5 @@ signals:
 
 flows:
   - { id: turbine-power-clean, ref: docs/datamodel-2026/examples/flows/turbine-power-clean.flow.yaml }
+  - { id: turbine-power-features, ref: docs/datamodel-2026/examples/flows/turbine-power-features.flow.yaml }
   - { id: park-power, ref: docs/datamodel-2026/examples/flows/park-power.flow.yaml }

@@ -32,7 +32,7 @@ model gives results nobody can explain: in that case walk the steps backwards fr
 | **Series** | The data of a signal. |
 | **Channel** | An entry of a channel catalog: what a sensor value means (unit, range, sampling). |
 | **Expectation** | What a signal should look like: unit, plausible range, sampling interval, kind. |
-| **Grade** | `raw`: as delivered or generated. `clean`: prepared, on the clock and in the unit of the system. |
+| **Grade** | `raw`: as delivered or generated. `clean`: prepared, on the clock and in the unit of the system. `features`: values computed from the clean series for models (lagged values, rolling statistics, derived quantities). |
 | **Origin** | How data came to be: measured, reported, forecast, estimated, synthetic. |
 | **Flow** | The recipe that turns series into other series. A running flow publishes a Smart Topic. |
 
@@ -126,7 +126,9 @@ are in.
 ### Step 7: Model, and feed the result back
 
 * **Goal:** predictions, training and optimisation on data whose quality is known.
-* **Do:** give a model clean signals only. Record which signals it uses and their origin. Put its result where
+* **Do:** give a model clean signals only, or features computed from them. Compute a feature that several models
+  need once, at the signal, and give it a name; keep a feature only one model needs with that model. Record which
+  signals and features a model uses and their origin. Put its result where
   the system picture can show it, next to what it predicts. When a result surprises, walk back: model, clean
   series, flow, raw series, source, expectation.
 * **Result:** a model whose inputs can be named, and results placed in the system.
@@ -145,7 +147,7 @@ are in.
    screen, or in a model report. A derived series carries the worst origin of its inputs.
 4. **Open is a state.** A signal without a source is recorded as open, not left out.
 5. **Clean is a contract.** A clean series is on the clock and in the unit of the system and meets the
-   expectation. If it does not, it is not clean.
+   expectation. If it does not, it is not clean. Features are computed from clean series only.
 6. **One signal, one source per grade.** Two writers on one topic produce every point twice.
 7. **Reproducible.** A generator has a seed; a flow, a plan and a system description have a version. What produced
    a series can be named afterwards.
@@ -164,7 +166,7 @@ format, not read by code yet).
 | 3 Stock | The topic `tsx.wind.episodes.v2` holds active power and wind speed per turbine. There is no price, no demand, no schedule. |
 | 4 Bind or simulate | Turbine channels are bound to the topic; their origin is synthetic, because the topic holds simulator output. The price is simulated with a mean-reverting generator and a seed. The setpoint and the battery schedule are constants set by hand. Demand and marketing schedule stay open. |
 | 5 Prepare | Active power of a turbine: plausibility check against the expected range, then the mean per minute. |
-| 6 Run | The preparation runs as a flow; a second flow adds the turbines up to the available power of the farm. |
+| 6 Run | The preparation runs as a flow; a second flow adds the turbines up to the available power of the farm; a third computes four features of the turbine power (two lags, mean and standard deviation over an hour). |
 | 7 Model | The twin runs on the available power, the price and the setpoints. Its report says which inputs are synthetic. |
 
 The example ends with two open signals out of eight. That is a valid state: it says exactly what is still missing

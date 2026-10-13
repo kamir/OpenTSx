@@ -1,0 +1,16 @@
+# Example flow, opentsx.flow.v1 (proposal): features of the clean active power of a turbine, for models to share.
+# Every written node is one feature; its id is the name of the feature and becomes the tag "feature".
+# The processors feature.lag and feature.rolling do not exist yet (concept, section 9).
+schema: opentsx.flow.v1
+flow: turbine-power-features
+reads: ["park/T02/WTUR.W@clean"]
+nodes:
+  - { id: lag_1,   op: feature.lag,     in: [source], params: { steps: 1 } }
+  - { id: lag_10,  op: feature.lag,     in: [source], params: { steps: 10 } }
+  - { id: mean_1h, op: feature.rolling, in: [source], params: { window: PT1H, fn: MEAN } }
+  - { id: std_1h,  op: feature.rolling, in: [source], params: { window: PT1H, fn: STD } }
+writes:
+  - { from: lag_1,   signal: "park/T02/WTUR.W@features" }
+  - { from: lag_10,  signal: "park/T02/WTUR.W@features" }
+  - { from: mean_1h, signal: "park/T02/WTUR.W@features" }
+  - { from: std_1h,  signal: "park/T02/WTUR.W@features" }

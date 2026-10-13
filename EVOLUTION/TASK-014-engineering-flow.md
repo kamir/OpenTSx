@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-014-engineering-flow
 - **Created**: 2026-10-13
-- **Status**: Entwurf, wartet auf Freigabe
+- **Status**: Freigegeben am 2026-10-13, Umsetzung läuft (L1)
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
 - **Delivery-Branch**: `opentsx/2026-task014-engineering-flow`, Worktree `../OpenTSx-worktrees/engineering-flow`
@@ -17,7 +17,7 @@ Ende steht eine deklarative Darstellung des ganzen Systems (`opentsx.system.v1`)
 
 ## Vorgehen
 Erst Konzept und Entwurf, dann Review (Engineering, UX), dann Freigabe durch den Auftraggeber, dann Umsetzung in
-den Lieferstufen L1 bis L5 des Konzepts. **Vor der Freigabe wird nichts umgesetzt.**
+den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
 
 ## Subtasks
 - [x] 014.1 Konzept und Entwurf (Stand 2026-10-13): Signal als Schlüssel, zwei Schemas, Beispiele für `h2-chain`
@@ -27,7 +27,10 @@ den Lieferstufen L1 bis L5 des Konzepts. **Vor der Freigabe wird nichts umgesetz
       [`docs/user-manual/16-engineering-method.md`](../docs/user-manual/16-engineering-method.md), englisch wie das
       Handbuch. Sieben Schritte, Regeln, Beispiel, Checkliste; je Schritt, was heute geht und was geplant ist.
       Kapitel 14 dabei auf den Stand gebracht (Flow Composer, Workbench, CI)
-- [ ] 014.3 Freigabe der Entscheidungen D40 bis D50
+- [x] 014.3 Freigabe der Entscheidungen D40 bis D50 (2026-10-13): neun wie vorgeschlagen; **D43 geändert** auf drei
+      Güten (`raw`, `clean`, `features`); **D50 ergänzt** um einen wahlweisen geführten Modus mit nummerierten
+      Schritten. Folge: D51, ein Topic für Merkmale je Domain (nicht eigens entschieden). Konzept, Schema, Beispiel
+      und Leitfaden sind nachgezogen
 - [ ] 014.4 L1 Systemdokument, Prüfwerkzeug, Signalzustand, Ort Signals mit Sprung auf den Schirm
 - [ ] 014.5 L2 Hülle, Beschriftungen, Orte Flows und System
 - [ ] 014.6 L3 Topic für bereinigte Reihen, Senke für Reihen, Operatoren im Prozessor, "Publish as clean signal"
@@ -37,7 +40,7 @@ den Lieferstufen L1 bis L5 des Konzepts. **Vor der Freigabe wird nichts umgesetz
 ## Stand der Prüfung
 * Die Beispieldokumente sind gegen die beiden Schemas geprüft, dazu die Verweise im Systemdokument: Bausteine im
   Schaltplan, Kanäle im Katalog, Assets im Inventar, Flows in der Liste und mit passendem Ausgang, Generatoren mit
-  Beschreibung und Pflichtparametern. Ergebnis: 8 Signale, 2 offen, 3 Prozessoren, kein Fehler.
+  Beschreibung und Pflichtparametern. Ergebnis: 8 Signale, 2 offen, 3 Prozessoren, 3 Flows, kein Fehler.
 * Ein Hinweis bleibt stehen und ist gewollt: Das Inventar nennt für das Asset `h2-chain/park/T02` die Reihe der
   Windgeschwindigkeit nicht, das Systemdokument bindet sie. Das ist der Fall, den D47 entscheidet.
 * 13 Gegenproben (je eine Änderung, die das Schema ablehnen muss) werden abgelehnt.

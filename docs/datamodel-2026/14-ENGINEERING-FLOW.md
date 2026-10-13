@@ -1,8 +1,8 @@
 # OpenTSx: Engineering-Ablauf vom System zum Modell (Konzept und Entwurf)
 
-> Stand: 2026-10-13, zweite Fassung nach Review. **Entwurf zur Freigabe.** Umgesetzt ist davon nichts außer den
-> Beispieldokumenten und den zwei JSON-Schemas in diesem Verzeichnis. Die Umsetzung (Abschnitt 10) beginnt erst
-> nach der Freigabe der Entscheidungen in Abschnitt 11. Arbeitspaket:
+> Stand: 2026-10-13, dritte Fassung. **Freigegeben am 2026-10-13** mit zwei Änderungen gegenüber dem Vorschlag
+> (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt sind bisher die Beispieldokumente
+> und die zwei JSON-Schemas in diesem Verzeichnis; die Lieferstufen stehen in Abschnitt 10. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md); dort stehen auch die Befunde der beiden Reviews.
 
 ## 1. Kurzfassung
@@ -17,8 +17,8 @@ Der Vorschlag:
 
 1. **Vier Orte und ein Werkzeug** statt einzelner Seiten: System, Signals, Flows, Models; dazu die Workbench
    (Abschnitt 3).
-2. Das **Signal** als gemeinsamer Schlüssel: eine erwartete Messgröße mit Rohdaten und bereinigten Daten
-   (Abschnitt 4).
+2. Das **Signal** als gemeinsamer Schlüssel: eine erwartete Messgröße mit Rohdaten, bereinigten Daten und
+   Merkmalen für Modelle (Abschnitt 4).
 3. Zwei neue deklarative Dokumente: `opentsx.system.v1` beschreibt das ganze System, `opentsx.processor.v1` einen
    Zeitreihen-Prozessor, ob Generator, Transformator oder Modell (Abschnitte 5 und 7).
 4. Eine **feste Regel, wo die Daten eines Signals liegen**, und ein Übersetzungsschritt vom Flow, wie ihn ein
@@ -38,7 +38,7 @@ Ein Wort je Sache. Die Oberfläche und die Dokumente halten sich daran.
 |---|---|---|
 | **System** | die Anlage: Bausteine, Ports, Verbindungen | **Szenario**: ein Fall oder Lauf des Systems (Zeitraum, Eingriffe) |
 | **Signal** | eine Messgröße, die das System erwartet, ob Daten da sind oder nicht | **Reihe** (series): die Daten eines Signals; **Kanal** (channel): Eintrag im Kanal-Katalog |
-| **Güte** (grade) | `raw` (wie angeliefert oder erzeugt) oder `clean` (bereinigt, auf dem Takt, in der Einheit des Systems) | Ansicht der Oberfläche, Lieferstufe der Umsetzung |
+| **Güte** (grade) | `raw` (wie angeliefert oder erzeugt), `clean` (bereinigt, auf dem Takt, in der Einheit des Systems) oder `features` (Merkmale für Modelle, aus `clean` berechnet) | Ansicht der Oberfläche, Lieferstufe der Umsetzung |
 | **Herkunft** (origin) | `MEASURED`, `REPORTED`, `FORECAST`, `ESTIMATED`, `SYNTHETIC`, wie `Origin` im Zwilling | Art der Quelle (Topic, Generator, Flow, von Hand) |
 | **Flow** | das Rezept: Prozessoren und ihre Verbindung | **laufender Flow**: ein gestarteter Flow; **Smart Topic**: sein veröffentlichtes Ergebnis |
 | **Prozessor** | ein Baustein eines Flows oder ein Generator | Vektor-Prozessor: die Laufzeit, die Flows ausführt |
@@ -93,7 +93,9 @@ Der glatte Weg:
 * **Erwartung:** Einheit, Wertebereich, Abtastintervall, Art (`ANALOG`, `STATUS`, `COUNTER` wie im Katalog),
   erwartete Herkunft. Bei einem Sensorkanal kommt sie aus dem Katalog (dort heißt das Intervall `sampling`) und
   kann überschrieben werden.
-* **Güte:** `raw` und `clean`. Ein abgeleitetes Signal hat nur `clean`.
+* **Güte:** `raw`, `clean` und `features`. Ein abgeleitetes Signal hat kein `raw`. `features` sind Merkmale für
+  Modelle: verzögerte Werte, gleitende Kennwerte, abgeleitete Größen. Sie werden immer per Flow aus `clean`
+  berechnet, tragen je Merkmal einen Namen und lassen sich von mehreren Modellen nutzen.
 * **Quelle je Güte:**
 
   | `kind` | Bedeutung | Herkunft |
@@ -116,8 +118,9 @@ Der glatte Weg:
   | `out of range` | Werte außerhalb der Erwartung über einer Schwelle | Prepare oder Erwartung prüfen |
   | `constant` | von Hand gesetzt | n/a |
 
-  Dazu kommt als eigene Angabe, wer das Signal nutzt (Flows, Modelle, Zwilling). Das ist eine Abhängigkeit, kein
-  Fortschritt.
+  Der Zustand beschreibt den Weg bis `clean`. Daneben stehen zwei eigene Angaben: ob Merkmale deklariert sind
+  und laufen, und wer das Signal nutzt (Flows, Modelle, Zwilling). Beides ist kein Fortschritt des Signals; ein
+  Signal ohne Merkmale ist vollständig.
 
 Simulierte und gemessene Daten dürfen nie gleich aussehen. Es gilt die Regel des Studios, mit seinen
 Herkunfts-Marken als einzigem Vokabular: `SYNTHETIC` trägt in Liste und Schirm eine eigene Marke mit Generator und
@@ -174,8 +177,8 @@ Regeln:
 * **Prüfung.** Kennung eindeutig; der Baustein und, bei Ports, der Port stehen im Schaltplan; `channel` endet auf
   dieselbe Kanal-Kennung wie die Signalkennung und steht im Katalog; das Asset steht im Inventar; eine Auswahl
   `select` trifft genau die Reihen des Signals; jeder `flow` steht in der Liste, jeder `processor` hat eine
-  Beschreibung; ein Flow als Quelle von `clean` liest nur `raw` desselben Signals oder `clean` anderer; Zyklen sind
-  ein Fehler. Was ein JSON-Schema nicht prüfen kann (Eindeutigkeit, Verweise), prüft das Werkzeug.
+  Beschreibung; ein Flow als Quelle von `clean` liest nur `raw` desselben Signals oder `clean` anderer, ein Flow
+  als Quelle von `features` liest nur `clean`; Zyklen sind ein Fehler. Was ein JSON-Schema nicht prüfen kann (Eindeutigkeit, Verweise), prüft das Werkzeug.
 * **Hash.** Der Hash eines Systems wird vom Werkzeug berechnet: über das Dokument und den Inhalt aller Dateien,
   auf die es verweist, wie der Plan-Hash des Zwillings. Er geht in die Provenienz der erzeugten Reihen ein.
 * **Offene Signale sind erlaubt.** Die Oberfläche zählt sie.
@@ -191,19 +194,22 @@ stehen, und ihre Beispiel-Flows kann der heutige Prozessor nicht lesen.
 |---|---|---|
 | `topic` | wie an der Quelle angegeben | wie dort |
 | `generator` | `tsx.<domain>.synthetic.v2` | v2-Episoden |
-| `flow` | `tsx.<domain>.clean.v2` | v2-Episoden |
+| `flow`, Güte `clean` | `tsx.<domain>.clean.v2` | v2-Episoden |
+| `flow`, Güte `features` | `tsx.<domain>.features.v2` | v2-Episoden, eine Reihe je Merkmal |
 | `manual` | keines; der Wert steht im Dokument | n/a |
 
-Je Domain gibt es also **ein** Topic für simulierte und **eines** für bereinigte Reihen, nicht eines je Signal.
+Je Domain gibt es also **ein** Topic für simulierte, **eines** für bereinigte Reihen und **eines** für Merkmale,
+nicht eines je Signal.
 Die Reihe darin ist bestimmt durch:
 
 * **Metrik:** die Metrik des Kanals, wenn das Signal auf einen verweist, sonst `<system>.<baustein>.<port>`.
-* **Tags:** `system` und `signal` (die Kennung); bei Sensorkanälen dazu die Tags der Rohreihe.
+* **Tags:** `system` und `signal` (die Kennung); bei Sensorkanälen dazu die Tags der Rohreihe; bei Merkmalen dazu
+  `feature` mit dem Namen des Merkmals.
 * **Reihen-Id:** wie überall aus Metrik und Tags (`SeriesKeys`).
 * **Labels der Episoden:** `origin`, `grade`, Hash des Systems.
 
 Damit findet das TS-Inventar die Reihen eines Signals ohne weitere Angabe, und der Zustand lässt sich berechnen.
-Voraussetzung: `TopicLayout` kennt beide Topics, und der Retrieval-Server liest sie wie das Episoden-Topic.
+Voraussetzung: `TopicLayout` kennt die drei Topics, und der Retrieval-Server liest sie wie das Episoden-Topic.
 
 ### 6.2 Flow, wie ihn ein Mensch schreibt, und DAG, wie ihn der Prozessor liest
 
@@ -322,6 +328,16 @@ schöpft. Die Workbench behält ihre Dichte.
 
 Adressen: `/systems`, `/systems/<id>/system|signals|flows|models`. Die Zahlen der Skizze entsprechen dem Beispiel.
 
+**Geführter Modus (wahlweise).** Die vier Orte sind die Grundlage. Wer neu ist oder ein System von vorn aufbaut,
+schaltet "Guide" ein. Dann steht über dem Inhalt die Folge der sieben Schritte der Methode
+([Benutzerhandbuch, Kapitel 16](../user-manual/16-engineering-method.md)), nummeriert, mit dem Stand je Schritt
+und einem Sprung an den Ort, an dem der Schritt getan wird. Der Modus ändert nichts an den Orten und erzwingt
+keine Reihenfolge; er zeigt den nächsten sinnvollen Schritt.
+
+```
+ Guide:  1 System ok | 2 Signals ok | 3 Stock ok | 4 Bind 2 open | 5 Prepare 1 of 3 | 6 Run 0 | 7 Model blocked
+```
+
 ### 8.2 Signals
 
 Eine Zeile sagt, was das Signal ist, woher es kommt, wie es ihm geht und was als Nächstes zu tun ist. Gruppiert
@@ -389,7 +405,11 @@ und mit dem Hinweis "prototype, German".
   Episoden-Topic, und braucht ein eigenes Recht (heute gilt ein Token für alles).
 * **Der Prozessor führt nur `align.vector` aus und schreibt nur Vektoren** (Abschnitt 6.3).
 * **Die Smart-Topic-Spezifikation ([05](05-SMART-TOPICS.md)) wählt ihr Ziel per Metrik und Tags** und kann kein
-  Signal nennen. Für Models braucht sie `target.signal`; ihr eigenes `resample` wird dann überflüssig.
+  Signal nennen. Für Models braucht sie `target.signal`; ihr eigenes `resample` wird dann überflüssig. Ihr Abschnitt
+  `features` überschneidet sich mit der Güte `features` (D43): Merkmale, die mehrere Modelle brauchen, stehen am
+  Signal, die eines einzelnen Modells bleiben in dessen Spezifikation. Die Abgrenzung ist mit L5 festzulegen.
+* **Prozessoren für Merkmale gibt es nicht.** Das Beispiel nennt `feature.lags` und `feature.rolling`; beide sind
+  zu bauen.
 * **Der Zwilling rechnet einen Lauf als Ganzes.** Models zeigt zunächst gerechnete Läufe.
 * **Viele gleichartige Assets.** Das Beispiel nennt eine Turbine von sechs. Eine Schablone "für jedes Asset dieser
   Art" fehlt im Schema; ohne sie wird ein Dokument für einen großen Park lang.
@@ -406,26 +426,29 @@ vom kleinsten Stand her gebaut, der die Idee von Anfang bis Ende zeigt.
 | Stufe | Inhalt | Sichtbar |
 |---|---|---|
 | L1 | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfwerkzeug in der CI; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
-| L2 | Hülle: Leiste, Pfad, Statuszeile, gemeinsame Farben; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System mit eingebettetem Prototyp | ein Rahmen statt drei Seiten |
+| L2 | Hülle: Leiste, Pfad, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System mit eingebettetem Prototyp | ein Rahmen statt drei Seiten |
 | L3 | Topic `clean`, Senke für Reihen, Operatoren im Prozessor (013.5), Übersetzung Flow zu DAG; "Publish as clean signal" | Rohdaten werden fortlaufend zu bereinigten Reihen |
 | L4 | Topic `synthetic`, Generator-Laufzeit mit eigenem Recht, erste Generatoren; Aktionen Bind und Simulate | offene Signale werden gebunden oder simuliert |
-| L5 | Models: Smart-Topic-Spezifikation mit `target.signal`; Systembild und Vergleich in React | Prognose und Was-wäre-wenn im selben Rahmen |
+| L5 | Models: Topic `features`, Prozessoren für Merkmale, Smart-Topic-Spezifikation mit `target.signal`; Systembild und Vergleich in React | Prognose und Was-wäre-wenn im selben Rahmen |
 
 Prozessor-Beschreibungen kommen mit der Stufe, die sie braucht: L3 die Transformatoren der Bereinigung, L4 die
 Generatoren.
 
-## 11. Entscheidungen zur Freigabe
+## 11. Entscheidungen
 
-| Nr. | Thema | Vorschlag |
-|---|---|---|
-| D40 | Rahmen | die Web-Anwendung ist die Hülle, im Aufbau des Studios; dessen Ansichten werden eingebettet und später nachgebaut |
-| D41 | Schlüssel | das Signal verbindet alles; Kennung `<baustein>.<port>` oder `<baustein>/<asset>/<kanal>`, eindeutig im System |
-| D42 | Ablage | Systemdokumente und Prozessor-Beschreibungen liegen als Dateien im Repository; der Retrieval-Server liefert sie aus; die Oberfläche schreibt in eine Arbeitskopie je Konto, mit Hash der Ausgangsfassung, und erzeugt daraus die Datei |
-| D43 | Güte | genau zwei: `raw` und `clean`; Merkmale für Modelle gehören zum Modell |
-| D44 | Prozessoren | eine Beschreibung je Prozessor, Art Generator, Transformator oder Modell; sie entstehen stufenweise und werden gegen `ops.ts` geprüft |
-| D45 | Sprache | Englisch; Texte der Szenarien bleiben in ihrer Sprache |
-| D46 | Beispielsystem | `h2-chain`: Es hat ein Systembild, und sein Windpark steht auf den Daten in `tsx.wind.episodes.v2` |
-| D47 | Ort der Bindung | welche Reihen zu einem Signal gehören, steht im Systemdokument; `series` im Inventar entfällt, wenn das Inventar von Code gelesen wird |
-| D48 | Topics | je Domain ein Topic `tsx.<domain>.synthetic.v2` und eines `tsx.<domain>.clean.v2`, beide v2-Episoden; die Reihe folgt der Regel in 6.1 |
-| D49 | Flow und DAG | Flows nennen Signale (`opentsx.flow.v1`); ein Übersetzungsschritt erzeugt den DAG; der Prozessor bekommt `opentsx.dag.v2` mit Senke für Reihen |
-| D50 | Orte | vier Orte ohne Nummern (System, Signals, Flows, Models) und die Workbench als Werkzeug; Anbinden und Simulieren sind Aktionen in Signals |
+Entschieden vom Auftraggeber am 2026-10-13.
+
+| Nr. | Thema | Entscheidung | Stand |
+|---|---|---|---|
+| D40 | Rahmen | die Web-Anwendung ist die Hülle, im Aufbau des Studios; dessen Ansichten werden eingebettet und später nachgebaut | wie vorgeschlagen |
+| D41 | Schlüssel | das Signal verbindet alles; Kennung `<baustein>.<port>` oder `<baustein>/<asset>/<kanal>`, eindeutig im System | wie vorgeschlagen |
+| D42 | Ablage | Systemdokumente und Prozessor-Beschreibungen liegen als Dateien im Repository; der Retrieval-Server liefert sie aus; die Oberfläche schreibt in eine Arbeitskopie je Konto, mit Hash der Ausgangsfassung, und erzeugt daraus die Datei | wie vorgeschlagen |
+| D43 | Güte | **drei:** `raw`, `clean` und `features`. Merkmale sind eine Güte des Signals und lassen sich zwischen Modellen teilen | **geändert** (Vorschlag war zwei) |
+| D44 | Prozessoren | eine Beschreibung je Prozessor, Art Generator, Transformator oder Modell; sie entstehen stufenweise und werden gegen `ops.ts` geprüft | wie vorgeschlagen |
+| D45 | Sprache | Englisch; Texte der Szenarien bleiben in ihrer Sprache | wie vorgeschlagen |
+| D46 | Beispielsystem | `h2-chain`: Es hat ein Systembild, und sein Windpark steht auf den Daten in `tsx.wind.episodes.v2` | wie vorgeschlagen |
+| D47 | Ort der Bindung | welche Reihen zu einem Signal gehören, steht im Systemdokument; `series` im Inventar entfällt, wenn das Inventar von Code gelesen wird | wie vorgeschlagen |
+| D48 | Topics | je Domain ein Topic `tsx.<domain>.synthetic.v2` und eines `tsx.<domain>.clean.v2`, beide v2-Episoden; die Reihe folgt der Regel in 6.1 | wie vorgeschlagen |
+| D49 | Flow und DAG | Flows nennen Signale (`opentsx.flow.v1`); ein Übersetzungsschritt erzeugt den DAG; der Prozessor bekommt `opentsx.dag.v2` mit Senke für Reihen | wie vorgeschlagen |
+| D50 | Orte | vier Orte ohne Nummern (System, Signals, Flows, Models) und die Workbench als Werkzeug als Grundlage; **dazu wahlweise ein geführter Modus** mit den nummerierten Schritten der Methode | **ergänzt** |
+| D51 | Topic für Merkmale | `tsx.<domain>.features.v2`, v2-Episoden, eine Reihe je Merkmal mit Tag `feature` | **Folge aus D43 und D48, nicht eigens entschieden**; bei Widerspruch vor L5 ändern |

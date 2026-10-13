@@ -160,13 +160,18 @@
           "$ref": "#/$defs/expect"
         },
         "raw": {
-          "$ref": "#/$defs/stage"
+          "$ref": "#/$defs/stage",
+          "description": "As delivered or generated."
         },
         "clean": {
-          "$ref": "#/$defs/stage"
+          "$ref": "#/$defs/stage",
+          "description": "Prepared: on the clock and in the unit of the system."
         },
         "note": {
           "type": "string"
+        },
+        "features": {
+          "$ref": "#/$defs/featureStage"
         }
       },
       "anyOf": [
@@ -373,6 +378,49 @@
           ]
         }
       ]
+    },
+    "featureStage": {
+      "type": "object",
+      "required": [
+        "source",
+        "names"
+      ],
+      "additionalProperties": false,
+      "description": "Features for models, computed from the clean grade by a flow. The data goes to tsx.<domain>.features.v2, one series per feature.",
+      "properties": {
+        "source": {
+          "type": "object",
+          "required": [
+            "kind",
+            "flow"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "flow"
+            },
+            "flow": {
+              "$ref": "#/$defs/slug",
+              "description": "Id in the list flows."
+            },
+            "output": {
+              "type": "string",
+              "description": "Node of the flow whose result is this stage."
+            }
+          },
+          "description": "Derived: the data goes to tsx.<domain>.clean.v2; the origin is the worst of the inputs."
+        },
+        "names": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "description": "Names of the features; each is a node of the flow and becomes the tag feature."
+        }
+      }
     }
   }
 }

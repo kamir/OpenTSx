@@ -65,7 +65,8 @@ entries are grouped by date. The detailed progress log (German) is in
   ([`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](docs/datamodel-2026/14-ENGINEERING-FLOW.md), German): the
   signal as the key between Studio, workbench and Flow Composer, and two draft schemas, `opentsx.system.v1` (a
   whole system: which signal comes from where) and `opentsx.processor.v1` (generators, transformers, models),
-  with examples for the system `h2-chain`. Nothing of it is implemented; it waits for sign-off.
+  with examples for the system `h2-chain`. Signed off on 2026-10-13 with three grades of a signal (raw, clean,
+  features) and an optional guided mode; the implementation follows in delivery stages.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.
