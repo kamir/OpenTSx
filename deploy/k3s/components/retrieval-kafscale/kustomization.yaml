@@ -2,8 +2,9 @@
 # store: GET /v1/inventory then lists the real series with their scenario metadata, and the workbench of the SaaS
 # module ("TS Inventory") loads them. The server keeps the episodes in memory (up to --max-episodes, default 20000);
 # for more data use the lake profile, which reads Iceberg.
-# It also reads the vector topics of the domain. With RETRIEVAL_DAG_RUNS=true it runs vector DAGs once and WRITES
-# their topics (POST /v1/dags/run), for callers with the run token (the SaaS backend, which checks the account).
+# It also reads the vector topics of the domain and the state of the vector processor. With RETRIEVAL_DAG_RUNS=true it
+# deploys and stops DAGs for that processor (POST /v1/dags/deploy, /stop: records in the control topic), for callers
+# with the run token (the SaaS backend, which checks the account).
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 patches:

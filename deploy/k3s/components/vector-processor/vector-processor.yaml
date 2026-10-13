@@ -1,0 +1,76 @@
+# Exactly ONE replica, strategy Recreate: every runner assigns all partitions itself (no consumer group) and keeps
+# positions + state in a checkpoint file per vector sink. Two instances would double the output and fight over the
+# checkpoints.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentsx-vectors
+  labels:
+    app.kubernetes.io/name: opentsx-vectors
+    opentsx.org/kafka: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentsx-vectors
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opentsx-vectors
+        opentsx.org/kafka: "true"
+    spec:
+      terminationGracePeriodSeconds: 90   # the shutdown hook waits up to 60 s for the final checkpoints
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: vectors
+          image: opentsx/tools
+          imagePullPolicy: IfNotPresent
+          args:
+            - vectors
+            - --kafscale
+            - $(KAFSCALE_BOOTSTRAP)
+            - --domain
+            - $(OPENTSX_DOMAIN)
+            - --state
+            - /state
+          env:
+            - name: KAFSCALE_BOOTSTRAP
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+            - name: OPENTSX_DOMAIN
+              valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+            - name: JAVA_OPTS      # the Kafka clients log every seek at INFO
+              value: -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+          resources:
+            requests: {cpu: 100m, memory: 384Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: state
+              mountPath: /state
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: opentsx-vectors-state
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opentsx-vectors-state      # one checkpoint file per vector sink (positions + state)
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi

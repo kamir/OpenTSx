@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import DeploymentsPanel from '../workbench/DeploymentsPanel';
 import FlowGraph from '../workbench/FlowGraph';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import Scope from '../workbench/Scope';
@@ -29,7 +30,7 @@ import {
 import { vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
-import { DagRunResult, dagsAPI, flowsAPI } from '../services/api';
+import { flowsAPI } from '../services/api';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
@@ -357,41 +358,9 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-function SmartTopic({ node }: { node: FlowNode }) {
+function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
   const state = useFlow();
-  const [run, setRun] = useState<{ busy: boolean; result?: DagRunResult; error?: string }>({ busy: false });
-  const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
-  const signedIn = !!localStorage.getItem('access_token');
-  const blocker = runBlocker(state.nodes);
-
-  // Writing topics needs an account that is allowed to: the backend says whether this one is.
-  useEffect(() => {
-    if (!signedIn) return;
-    let cancelled = false;
-    dagsAPI
-      .capabilities()
-      .then((c) => !cancelled && setAccess(c))
-      .catch(() => !cancelled && setAccess({ canRun: false, reason: 'Your session has expired or the backend cannot be reached. Sign in again.' }));
-    return () => {
-      cancelled = true;
-    };
-  }, [signedIn]);
-
-  const runOnce = async () => {
-    setRun({ busy: true });
-    try {
-      setRun({ busy: false, result: await dagsAPI.run(toDagYaml(useFlow.getState())) });
-    } catch (e) {
-      const detail = axios.isAxiosError(e) ? e.response?.data?.detail : null;
-      const expired = axios.isAxiosError(e) && e.response?.status === 401;
-      setRun({
-        busy: false,
-        error: expired
-          ? 'Your session has expired. Sign in again (the link above opens a new tab), then run: the flow stays here.'
-          : `The run failed: ${typeof detail === 'string' ? detail : e instanceof Error ? e.message : e}`,
-      });
-    }
-  };
+  const blocker = runBlocker(state.nodes, state.sourceSeries);
   const sinks = state.nodes.filter((n) => n.sinkTopic);
   const findings = validate(state.nodes);
   const blocked = findings.some((f) => f.level === 'error');
@@ -453,52 +422,12 @@ function SmartTopic({ node }: { node: FlowNode }) {
         The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
         a proposal; the download hands the file over and does not deploy.
       </p>
-      <fieldset>
-        <legend>Run on KafScale</legend>
-        <p className="wb-muted">
-          The retrieval server can run vector sinks once over the episodes it holds and append the measuring points to
-          their topic. The request goes through the backend, which checks your account. It is one pass, not a processor that keeps running; a second run appends again and the later
-          measuring point wins. The topic then shows in the TS inventory.
-        </p>
-        <button
-          className="wb-primary"
-          disabled={!signedIn || !access?.canRun || !!blocker || blocked || run.busy}
-          onClick={runOnce}
-        >
-          {run.busy ? 'Running' : 'Run once and write to KafScale'}
-        </button>
-        {!signedIn ? (
-          <p className="wb-muted">
-            Writing topics needs an account. <Link to="/login" target="_blank" rel="noopener">Sign in</Link>, then reload this tab.
-          </p>
-        ) : (
-          access && !access.canRun && <p className="wb-muted">{access.reason}</p>
-        )}
-        {blocker && <p className="wb-muted">{blocker}</p>}
-        {run.error && <div className="wb-error" role="alert">{run.error}</div>}
-        {run.result && (
-          <ul className="wb-findings" role="status">
-            {run.result.sinks.map((s) => (
-              <li key={s.topic} className="ok">
-                <b>Written</b> {s.records.toLocaleString('en')} measuring points for {s.keys} key(s) from {s.series} series to{' '}
-                <code>{s.topic}</code>; components {s.components.join(', ')}; {s.missingValues} missing values. Open the TS inventory to load them.
-              </li>
-            ))}
-            {run.result.skipped.map((s) => <li key={s} className="info"><b>Skipped</b> {s}</li>)}
-            {run.result.readBack?.startsWith('pending') && (
-              <li className="warning">
-                <b>Check</b> The records are written, but the broker has not handed them out again yet. The inventory shows
-                them once it does.
-              </li>
-            )}
-          </ul>
-        )}
-      </fieldset>
+      <DeploymentsPanel base={base} blocker={blocked ? 'Fix what is marked as missing above first.' : blocker} />
     </div>
   );
 }
 
-function Inspector() {
+function Inspector({ base }: { base: string }) {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -530,7 +459,7 @@ function Inspector() {
         ) : tab === 'dag' ? (
           <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} />
+          <SmartTopic node={node} base={base} />
         )}
       </div>
     </aside>
@@ -764,7 +693,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector />
+        <Inspector base={remote.base} />
       </main>
 
       <footer className="wb-status">

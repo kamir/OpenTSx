@@ -2,6 +2,7 @@ package org.opentsx.retrieval.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.opentsx.model.Episodes;
@@ -44,8 +45,12 @@ import java.util.concurrent.Executors;
  * POST /v1/segments          {"strategy":"FIXED_DURATION|FIXED_COUNT|FEATURE_EXTREMUM|FEATURE_THRESHOLD", "params":{..},
  *                             "metric","tags","from","to"}
  * GET  /v1/inventory          every series with extent, labels and ground-truth marks, see {@link SeriesInventory}
- * POST /v1/dags/run           opentsx.dag.v1 as YAML: runs its vector sinks once and writes their topics (only with
- *                             {@code --kafscale} and {@code --dag-runs true})
+ * GET  /v1/dags               the DAGs of the domain: what was deployed or stopped, and what the vector processor
+ *                             reports per sink (only with {@code --kafscale})
+ * POST /v1/dags/deploy        opentsx.dag.v1 as YAML: hands the DAG to the vector processor (control topic)
+ * POST /v1/dags/stop?name=    stops the DAG of that name
+ *                             (both only with {@code --kafscale} and {@code --dag-runs true}, and with the run token
+ *                             when the server has one)
  * GET  /v1/health
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
@@ -57,7 +62,8 @@ public final class RetrievalServer implements AutoCloseable {
 
     private final EpisodeService service;
     private final SeriesInventory inventory;
-    private final DagRunner dagRunner;
+    private final Dags dags;
+    private final boolean dagWrites;
     private final byte[] dagRunToken;
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
@@ -68,32 +74,35 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory) throws IOException {
-        this(service, port, inventory, null);
+        this(service, port, inventory, null, false, null);
     }
 
-    /** Runs the sinks of a DAG that this server can execute and says what it wrote. */
-    @FunctionalInterface
-    public interface DagRunner {
-        JsonNode run(JsonNode dag, String text);
+    /** The DAGs of the domain: deploying and stopping them for the vector processor, and their state. */
+    public interface Dags {
+        /** @param by who asks, for the record in the control topic */
+        JsonNode deploy(JsonNode dag, String text, String by);
+
+        JsonNode stop(String name, String by);
+
+        JsonNode list();
     }
 
-    /** Header a caller of {@code POST /v1/dags/run} proves itself with when the server has a run token. */
+    /** Header a caller of the DAG write routes proves itself with when the server has a run token. */
     public static final String RUN_TOKEN_HEADER = "X-OpenTSx-Run-Token";
-
-    /** @param dagRunner behind {@code POST /v1/dags/run}; null when the server does not run DAGs */
-    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, DagRunner dagRunner) throws IOException {
-        this(service, port, inventory, dagRunner, null);
-    }
+    /** Header that names who asked for a deployment or a stop; kept in the control record. */
+    public static final String BY_HEADER = "X-OpenTSx-By";
 
     /**
-     * @param dagRunner   behind {@code POST /v1/dags/run}; null when the server does not run DAGs
-     * @param dagRunToken when not blank, a run needs this value in the header {@link #RUN_TOKEN_HEADER}
+     * @param dags        behind {@code /v1/dags}; null when the server has no DAGs (no KafScale)
+     * @param dagWrites   whether {@code POST /v1/dags/deploy} and {@code /stop} are offered
+     * @param dagRunToken when not blank, the write routes need this value in the header {@link #RUN_TOKEN_HEADER}
      */
-    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, DagRunner dagRunner,
+    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, Dags dags, boolean dagWrites,
                            String dagRunToken) throws IOException {
         this.service = service;
         this.inventory = inventory;
-        this.dagRunner = dagRunner;
+        this.dags = dags;
+        this.dagWrites = dagWrites && dags != null;
         this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
@@ -119,15 +128,25 @@ public final class RetrievalServer implements AutoCloseable {
                 json(ex, 200, EpisodeJson.JSON.createObjectNode().put("status", "ok"));
             } else if (method.equals("GET") && path.equals("/v1/inventory")) {
                 json(ex, 200, inventory.get());
-            } else if (method.equals("POST") && path.equals("/v1/dags/run")) {
-                if (dagRunner == null) {
+            } else if (method.equals("GET") && path.equals("/v1/dags")) {
+                if (dags == null) {
+                    json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no DAGs (it needs --kafscale)"));
+                } else {
+                    ObjectNode list = (ObjectNode) dags.list();
+                    list.put("writes", dagWrites);
+                    json(ex, 200, list);
+                }
+            } else if (method.equals("POST") && (path.equals("/v1/dags/deploy") || path.equals("/v1/dags/stop"))) {
+                if (!dagWrites) {
                     json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error",
-                            "this server does not run DAGs (it needs --kafscale and --dag-runs true)"));
+                            "this server does not deploy DAGs (it needs --kafscale and --dag-runs true)"));
                 } else if (!mayRun(ex)) {
                     json(ex, 401, EpisodeJson.JSON.createObjectNode().put("error",
-                            "this server runs DAGs for callers with its run token only (header " + RUN_TOKEN_HEADER + ")"));
+                            "this server deploys DAGs for callers with its run token only (header " + RUN_TOKEN_HEADER + ")"));
+                } else if (path.equals("/v1/dags/stop")) {
+                    json(ex, 200, dags.stop(query(ex).get("name"), by(ex)));
                 } else {
-                    json(ex, 200, runDag(ex));
+                    json(ex, 200, deployDag(ex));
                 }
             } else if (method.equals("GET") && path.equals("/v1/episodes")) {
                 episodes(ex, listEpisodes(query(ex)));
@@ -184,7 +203,13 @@ public final class RetrievalServer implements AutoCloseable {
     /** A DAG document is small; anything larger is not one. */
     private static final int MAX_DAG_BYTES = 256 * 1024;
 
-    private JsonNode runDag(HttpExchange ex) throws IOException {
+    /** Who asked, as far as the caller says; a name for the record, not a proof. */
+    private static String by(HttpExchange ex) {
+        String by = ex.getRequestHeaders().getFirst(BY_HEADER);
+        return by == null || by.isBlank() ? "unknown" : by.replaceAll("[^\\x20-\\x7E]", "?").trim();
+    }
+
+    private JsonNode deployDag(HttpExchange ex) throws IOException {
         byte[] body = ex.getRequestBody().readNBytes(MAX_DAG_BYTES + 1);
         if (body.length > MAX_DAG_BYTES) {
             throw new IllegalArgumentException("the DAG is larger than " + MAX_DAG_BYTES + " bytes");
@@ -196,7 +221,7 @@ public final class RetrievalServer implements AutoCloseable {
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             throw new IllegalArgumentException("the DAG is no valid YAML: " + e.getOriginalMessage());
         }
-        return dagRunner.run(dag, text);
+        return dags.deploy(dag, text, by(ex));
     }
 
     private List<PatternMatch> search(JsonNode b) {
@@ -352,7 +377,8 @@ public final class RetrievalServer implements AutoCloseable {
      * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
      * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
      * {@code tsx.<domain>.episodes.v2} into memory and follows it, and it reads the vector topics of the domain.
-     * {@code --dag-runs true} lets {@code POST /v1/dags/run} write vector topics. With a run token
+     * {@code --dag-runs true} offers {@code POST /v1/dags/deploy} and {@code /stop}: they write to the control topic
+     * of the vector processor, which then writes the vector topics. With a run token
      * ({@code --dag-run-token} or the environment variable {@code OPENTSX_DAG_RUN_TOKEN}) a run needs it in the header
      * {@code X-OpenTSx-Run-Token}; without one, anyone who reaches the port can write. {@code --scenario} and {@code --catalog} are handed out unchanged in
      * {@code GET /v1/inventory}.
@@ -383,7 +409,8 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode scenario = yaml(a.get("scenario"));
         JsonNode catalog = yaml(a.get("catalog"));
         SeriesInventory inventory;
-        DagRunner runner = null;
+        Dags dags = null;
+        boolean dagWrites = false;
         String envToken = System.getenv("OPENTSX_DAG_RUN_TOKEN");
         String runToken = a.getOrDefault("dag-run-token", envToken == null ? "" : envToken);
         if (a.containsKey("kafscale")) {
@@ -411,17 +438,33 @@ public final class RetrievalServer implements AutoCloseable {
                     feed.unreadableVectorTopics().forEach(bad::add);
                 }
             });
+            dags = new Dags() {
+                @Override
+                public JsonNode deploy(JsonNode dag, String text, String by) {
+                    return feed.deploy(dag, text, by);
+                }
+
+                @Override
+                public JsonNode stop(String name, String by) {
+                    return feed.stop(name, by);
+                }
+
+                @Override
+                public JsonNode list() {
+                    return feed.dags();
+                }
+            };
+            dagWrites = dagRuns;
             if (dagRuns) {
-                runner = feed::run;
                 System.out.println(runToken.isBlank()
-                        ? "dag runs: OPEN, anyone who reaches this port can write vector topics (set OPENTSX_DAG_RUN_TOKEN)"
-                        : "dag runs: for callers with the run token");
+                        ? "dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)"
+                        : "dag deployments: for callers with the run token");
             }
         } else {
             inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));
         }
         RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
-                inventory, runner, runToken);
+                inventory, dags, dagWrites, runToken);
         System.out.println("opentsx retrieval server on port " + s.port());
     }
 

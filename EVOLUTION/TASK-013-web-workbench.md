@@ -6,16 +6,14 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-vector-processor` (013.15, baut auf 013.14 auf), Worktree
-  `../OpenTSx-worktrees/vector-processor`; davor: `opentsx/2026-task013-broker-patience` (013.14), Worktree `../OpenTSx-worktrees/broker-patience`;
-  davor: `opentsx/2026-task013-secure-dag-runs` (013.12), Worktree `../OpenTSx-worktrees/secure-dag-runs`;
-- **Delivery-Branch**: `opentsx/2026-task013-ground-truth` (013.13), Worktree `../OpenTSx-worktrees/ground-truth`;
-  `opentsx/2026-task013-secure-dag-runs` (013.12, PR #172, gemergt);
-  `opentsx/2026-task013-vector-runtime` (013.11, PR #168, gemergt, baut auf 013.10 auf);
-  `opentsx/2026-task013-vector-sink` (013.10, PR #166, baut auf 013.8 auf); `opentsx/2026-task013-ts-inventory`
-  (013.8, PR #165); davor `opentsx/2026-task013-web-workbench`
-  (013.1 bis 013.4, gemergt mit PR #161 am 2026-10-12)
-- **Delivery-Worktree**: `../OpenTSx-worktrees/web-workbench`
+- **Delivery-Branch**: `opentsx/2026-task013-vector-ops` (013.15 und 013.16, PR #177), Worktree
+  `../OpenTSx-worktrees/vector-ops`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task013-web-workbench` (013.1 bis 013.4, PR #161),
+  `opentsx/2026-task013-ts-inventory` (013.8, PR #165), `opentsx/2026-task013-vector-sink` (013.10, PR #166),
+  `opentsx/2026-task013-vector-runtime` (013.11, PR #168), `opentsx/2026-task013-secure-dag-runs` (013.12, PR #172),
+  `opentsx/2026-task013-ground-truth` (013.13, PR #173), `opentsx/2026-task013-broker-patience` (013.14, PR #175).
+  `opentsx/2026-task013-vector-processor` (013.15, PR #176) wurde in seinen Basis-Branch statt nach `master`
+  gemergt; sein Inhalt kommt mit PR #177.
 
 ## Ziel
 Die Swing-Workbench (`org.opentsx.app.bucketanalyser`: `MacroTrackerFrame`, `TSOperationControlerPanel`,
@@ -150,9 +148,14 @@ Beobachtungen am Swing-Code:
       - `VectorProcessor`: Deployments aus dem Steuer-Topic `tsx.<domain>.dags.v1`, je Sink ein Läufer mit
         Checkpoint, Status nach `tsx.<domain>.dag-status.v1`; Kommando `opentsx vectors` (run, deploy, stop)
       - Regeln in 11 §5b, Entscheidung D39
-- [ ] 013.16 Vektor-Prozessor ausliefern und bedienen: k3s-Komponente (ein Pod, Volume für den Zustand), Deploy und
-      Stop über das Backend (nur Administratoren), Status und Schaltflächen im Reiter "Smart Topic", Status im
-      TS-Inventar; der Einmal-Lauf des Retrieval-Servers entfällt dann
+- [x] 013.16 Vektor-Prozessor ausliefern und bedienen (Stand 2026-10-13)
+      - k3s-Komponente `vector-processor` (`VECTOR_PROCESSOR=true`): ein Pod `opentsx-vectors`, Zustand auf einem
+        Volume
+      - Retrieval-Server: `POST /v1/dags/deploy`, `/stop` schreiben ins Steuer-Topic; `GET /v1/dags` zeigt, was
+        verlangt ist und was der Prozessor meldet. Der Einmal-Lauf (`/v1/dags/run`) ist entfallen
+      - Backend: `POST /api/v1/dags/deploy`, `/stop` (nur Administratoren)
+      - Workbench: "Keep running on KafScale" im Reiter "Smart Topic" mit Deploy, Stop und Zustand je Sink;
+        Parameter `lateness` am Vektor-Knoten
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
@@ -176,12 +179,14 @@ Beobachtungen am Swing-Code:
 
 ## Grenzen der Vektor-Messpunkte
 
-* **Einmal-Lauf, kein Stream-Prozessor.** Der Retrieval-Server rechnet einen Vektor-Sink einmal über die Episoden,
-  die er gerade hält, und schreibt das Ergebnis. Er folgt dem Quell-Topic dabei nicht und hat keinen Checkpoint.
-  Ein zweiter Lauf hängt erneut an; beim Lesen gilt der spätere Messpunkt.
+* **Ein Prozessor, ein Neustart je Änderung.** Der Vektor-Prozessor hält einen Sink dauerhaft aktuell. Ein
+  geänderter DAG beginnt von vorn und hängt alles erneut an; beim Lesen gilt der spätere Messpunkt. Es darf nur ein
+  Prozessor je Domäne laufen, und nichts verhindert einen zweiten.
+* **Eine verstummte Reihe hält ihren Vektor an.** Ein Tick wird erst geschrieben, wenn jede genannte Reihe ihn
+  erreicht hat. Der Zustand zeigt, worauf gewartet wird; einen Leerlauf-Timeout gibt es nicht.
 * **Nur Vektoren direkt auf der Quelle.** Steht ein anderer Operator vor dem Vektor (Normierung, Glättung,
-  Resampling), lehnt der Server ab und nennt den Knoten. Solche Flüsse rechnet weiterhin nur die Workbench.
-* **Schreiben nur mit Konto, Lesen ohne.** Seit 013.12 läuft das Schreiben über das Backend und ist auf
+  Resampling), wird der DAG abgelehnt und der Knoten genannt. Solche Flüsse rechnet weiterhin nur die Workbench.
+* **Deployen nur mit Konto, Lesen ohne.** Seit 013.12 läuft das Schreiben über das Backend und ist auf
   Administratoren beschränkt (`SAAS_DAG_RUN_ROLE=superuser`). Mit `user` darf jedes Konto schreiben; weil sich
   jeder registrieren kann, ist das praktisch offen. Das Lesen über `/retrieval/` braucht weiterhin kein Konto.
   Das Lauf-Token schützt nur, solange der Retrieval-Server nicht auf anderem Weg ohne Token erreichbar gemacht wird
@@ -270,3 +275,9 @@ curl -s localhost:8080/v1/inventory | head -c 400
   Danach beendet und der DAG per Steuer-Topic gestoppt: Auf dem Broker läuft kein Prozessor, bis 013.16 ihn
   ausliefert. Neue Episoden kamen während des Laufs nicht dazu; das Nachführen ist durch die Tests belegt
   (`VectorProcessorTest`), nicht durch diesen Lauf.
+* 2026-10-13: Vektor-Prozessor auf master2 ausgeliefert (013.16): Pod `opentsx-vectors` mit Volume, Images
+  `3.0.0-task013-17`. Als Administrator über das Backend deployt: Der Eintrag ging ins Steuer-Topic, der Prozessor
+  übernahm ihn nach wenigen Sekunden und schrieb 3600 Messpunkte (Endoffset 14680 auf 18280), `GET /v1/dags` zeigt
+  "running, 3600, Daten bis 06:00". Nach einem Neustart des Pods blieb der Endoffset bei 18280: Er setzt am
+  Checkpoint fort. Ein normales Konto sieht den Zustand, Deploy und Stop sind gesperrt. Der DAG bleibt deployt.
+  Neue Episoden kamen nicht dazu; das Nachführen ist weiterhin nur durch Tests belegt.

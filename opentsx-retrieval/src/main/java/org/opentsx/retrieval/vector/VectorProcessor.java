@@ -281,6 +281,7 @@ public final class VectorProcessor implements AutoCloseable {
         boolean dirty;
         String state = "starting";
         String reported = "";
+        long reportedRecords = -1;
         String error;
 
         Runner(VectorJob job, String hash) {
@@ -306,10 +307,13 @@ public final class VectorProcessor implements AutoCloseable {
                 state = stream.waitingFor().isEmpty() ? "running" : "waiting";
                 error = null;
                 long now = System.nanoTime();
+                boolean saved = false;
                 if (dirty && (now - lastCheckpoint >= timing.checkpointEvery().toNanos() || pending.size() >= 5000)) {
+                    saved = pending.size() > 0;
                     checkpoint();
                 }
-                if (!state.equals(reported) || now - lastStatus >= timing.statusEvery().toNanos()) {
+                // report a change of state at once, confirmed progress with the checkpoint, and otherwise now and then
+                if (!state.equals(reported) || (saved && records != reportedRecords) || now - lastStatus >= timing.statusEvery().toNanos()) {
                     report();
                 }
             } catch (RuntimeException e) {
@@ -497,6 +501,7 @@ public final class VectorProcessor implements AutoCloseable {
             n.put("at", Micros.toInstant(Micros.now()).toString());
             producer.send(new ProducerRecord<>(layout.dagStatus(), job.dag() + "/" + job.name(), bytes(n)));
             reported = state;
+            reportedRecords = records;
             lastStatus = System.nanoTime();
         }
     }

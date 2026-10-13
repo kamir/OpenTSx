@@ -789,7 +789,7 @@ export const OPS: OpDef[] = [
       { key: 'post', label: 'post', type: 'number', default: 80, min: 1 },
     ], apply: segmentThreshold },
   { id: VECTOR_OP, label: 'Align to vector', group: 'stream', prefix: 'Vector_', pfdOperation: 'ALIGN_VECTOR', inCatalog: false, multiInput: true,
-    hint: 'Brings this bucket and further inputs onto one clock: one measuring point per tick with one component per input. "vector per" is series (same series in every input), all (everything in one vector) or a tag name such as turbine. Add the inputs in the Properties tab or draw a connection onto the node.',
+    hint: 'Brings this bucket and further inputs onto one clock: one measuring point per tick with one component per input. "vector per" is series (same series in every input), all (everything in one vector) or a tag name such as turbine. Add the inputs in the Properties tab or draw a connection onto the node. "lateness" only matters once the flow is deployed: how long a tick waits for series that lag behind.',
     params: [
       { key: 'every', label: 'clock [s]', type: 'number', default: 60, min: 0 },
       { key: 'key', label: 'vector per', type: 'text', default: 'series' },
@@ -798,6 +798,7 @@ export const OPS: OpDef[] = [
       { key: 'maxAge', label: 'max age [s]', type: 'number', default: 60, min: 0 },
       { key: 'emit', label: 'emit', type: 'select', default: 'any', options: ['any', 'complete'] },
       { key: 'names', label: 'names', type: 'text', default: '' },
+      { key: 'lateness', label: 'lateness [s]', type: 'number', default: 0, min: 0 },
     ], apply: alignVector },
 ];
 

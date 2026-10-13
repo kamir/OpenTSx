@@ -25,24 +25,22 @@ entries are grouped by date. The detailed progress log (German) is in
   `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/11`, section 5a). The workbench has the operator as
   "Align to vector": nodes can have several inputs, the scope shows the components on one time base, and the DAG
   export writes the node with all inputs and a vector sink. No runtime executes it yet.
-- Vector topics are written and read back: the retrieval server runs the vector sinks of a DAG once over the
-  episodes it holds and appends the measuring points to `tsx.<domain>.smart.<name>.vectors.v1`
-  (`POST /v1/dags/run`, only with `--kafscale` and `--dag-runs true`; `deploy/k3s`: `RETRIEVAL_DAG_RUNS=true`). It
-  reads the vector topics of the domain, and their components show in the TS inventory as series. The workbench
-  has "Run once and write to KafScale". The Java operator `VectorAligner` and the workbench pass the same test
-  vectors (`docs/datamodel-2026/testvectors/`). It is one pass, not a stream processor, and the endpoint has no
-  authentication.
+- Vector topics are written and read back. The vector processor (`opentsx vectors`, `deploy/k3s`:
+  `VECTOR_PROCESSOR=true`) keeps them up to date: it follows the episodes topic, writes a measuring point to
+  `tsx.<domain>.smart.<name>.vectors.v1` when every series has passed its tick, checkpoints per sink and reports
+  its status. DAGs are deployed and stopped through the control topic `tsx.<domain>.dags.v1`. The retrieval server
+  reads the vector topics, so their components show in the TS inventory as series, and it lists the deployments
+  (`GET /v1/dags`). The Java operator and the workbench pass the same test vectors
+  (`docs/datamodel-2026/testvectors/`).
+- Deploying needs an account: the workbench has "Deploy" and "Stop" in the tab "Smart Topic" with the state the
+  processor reports. The SaaS backend checks the account (`POST /api/v1/dags/deploy`, `/stop`; administrators only
+  unless `DAG_RUN_ROLE=user`) and forwards with the run token to the retrieval server (`POST /v1/dags/deploy`,
+  `/stop`, only with `--kafscale`, `--dag-runs true` and the token `OPENTSX_DAG_RUN_TOKEN`). The frontend image
+  does not proxy those write routes. `deploy/k3s`: `RETRIEVAL_DAG_RUNS`, `RETRIEVAL_DAG_RUN_TOKEN` (generated),
+  `SAAS_DAG_RUN_ROLE`.
 - Workbench: the ground truth of the scenario shows on the scope. Series loaded from the TS inventory bring their
   events (operations, sensor faults) along as bands on the time axis; operators that keep the time axis hand them
   on, and "Segment at threshold" says how many crossings lie inside an event.
-- Vector processor (`opentsx vectors`): keeps vector sinks up to date. It follows the episodes topic, writes a
-  measuring point when every series has passed its tick, checkpoints per sink and reports its status. DAGs are
-  deployed and stopped through the control topic `tsx.<domain>.dags.v1`. Not yet part of the k3s deployment and not
-  yet operated from the workbench.
-- DAG runs need an account: the retrieval server accepts `POST /v1/dags/run` only with its run token
-  (`OPENTSX_DAG_RUN_TOKEN`), the SaaS backend forwards runs of signed-in users (`POST /api/v1/dags/run`,
-  administrators only unless `DAG_RUN_ROLE=user`), and the frontend image no longer proxies the write path.
-  `deploy/k3s`: `RETRIEVAL_DAG_RUN_TOKEN` (generated), `SAAS_DAG_RUN_ROLE`.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
@@ -60,9 +58,8 @@ entries are grouped by date. The detailed progress log (German) is in
   wait it out (`org.opentsx.kafka.Patience`, used by `LogReader`, the statistics processor and `SeriesStatsLog`).
   Producers retry with pauses for up to three minutes instead of five quick attempts
   (`KafScaleClients.producerProps`). The statistics processor used to restart on every such window.
-- Retrieval server: a DAG run reported success even when the broker confirmed only a part of the measuring points.
-  The run now fails and says how many were confirmed. A vector topic the broker does not hand out no longer keeps
-  the feed from reading the other topics.
+- Retrieval server: a vector topic the broker does not hand out no longer keeps the feed from reading the other
+  topics.
 - SaaS frontend: the login page showed the default administrator password of a local backend on every
   installation, also where the deployment generates another one. The hint now appears in the dev server only.
   A wrong password reloaded the page instead of showing the error; the form now reports it.

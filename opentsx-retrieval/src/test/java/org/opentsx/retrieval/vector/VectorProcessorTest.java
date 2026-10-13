@@ -223,6 +223,8 @@ class VectorProcessorTest {
             JsonNode status = lastStatus(producer);
             assertEquals("running", status.path("state").asText());
             assertEquals("tsx.wind.smart.turbine-state.vectors.v1", status.path("topic").asText());
+            assertEquals(30, status.path("records").asLong(), "the report follows what was written");
+            assertEquals("2026-10-01T00:30:00Z", status.path("watermark").asText());
         }
     }
 

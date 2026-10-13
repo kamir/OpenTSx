@@ -8,7 +8,6 @@ import org.opentsx.model.Episodes;
 import org.opentsx.model.SeriesKeys;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesKey;
-import org.opentsx.store.InMemorySeriesStore;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -63,29 +62,6 @@ class VectorJobTest {
         return VectorJob.of(YAML.readTree(yaml), "wind", "tsx.wind.episodes.v2");
     }
 
-    static InMemorySeriesStore store() {
-        List<Episode> eps = new ArrayList<>();
-        for (int e = 0; e < 2; e++) {           // two episodes of 60 s each per series
-            double[] speed = new double[60];
-            double[] power = new double[60];
-            double[] rotor = new double[60];
-            for (int i = 0; i < 60; i++) {
-                speed[i] = e == 0 ? 4 : 8;
-                power[i] = e == 0 ? 100 : 300;
-                rotor[i] = 12;
-            }
-            eps.add(Episodes.regular(SPEED, T0 + e * 60 * SECOND, SECOND, speed).source("t").createdAt(T0).build());
-            eps.add(Episodes.regular(POWER, T0 + e * 60 * SECOND, SECOND, power).source("t").createdAt(T0).build());
-            eps.add(Episodes.regular(OTHER, T0 + e * 60 * SECOND, SECOND, rotor).source("t").createdAt(T0).build());
-        }
-        // a segment cut out of the first speed episode must not count twice
-        eps.add(Episodes.regular(SPEED, T0, SECOND, new double[]{1000}).parentEpisodeId(eps.get(0).getEpisodeId())
-                .source("t").createdAt(T0).build());
-        InMemorySeriesStore s = new InMemorySeriesStore();
-        s.write(eps);
-        return s;
-    }
-
     @Test
     void readsTheVectorSinkOfAWorkbenchDag() throws Exception {
         VectorJob.Plan plan = plan(dag(VECTOR_NODE, VECTOR_SINK + "- { from: decode, topic: tsx.wind.smart.raw.metrics.v2 }\n"));
@@ -102,19 +78,22 @@ class VectorJobTest {
     }
 
     @Test
-    void runsTheJobOverTheSeriesTheDagNames() throws Exception {
-        VectorJob job = plan(dag(VECTOR_NODE, VECTOR_SINK)).jobs().get(0);
-        List<VectorAligner.Input> inputs = VectorStoreBridge.inputs(store(), job);
-        assertEquals(1, inputs.size());
-        assertEquals(2, inputs.get(0).series().size(), "the rotor speed is not named in source.series");
-        assertEquals(120, inputs.get(0).series().get(0).values().length, "the segment is left out");
-        List<VectorAligner.Point> points = VectorAligner.align(inputs, job.params());
-        assertEquals(2, points.size());
-        assertEquals(Map.of("turbine", "T01"), points.get(0).key());
-        assertEquals(List.of("power_active", "wind_speed"), points.get(0).components());
-        assertEquals(List.of(100.0, 4.0), points.get(0).values());
-        assertEquals(List.of(300.0, 8.0), points.get(1).values());
-        assertEquals(T0 + 60 * SECOND, points.get(1).fromMicros());
+    void readsLatenessAndWhereToStart() throws Exception {
+        VectorJob plain = plan(dag(VECTOR_NODE, VECTOR_SINK)).jobs().get(0);
+        assertEquals(Duration.ZERO, plain.lateness());
+        assertTrue(plain.fromStart());
+
+        String late = dag(VECTOR_NODE.replace("emit: any", "emit: any, lateness: PT2M"), VECTOR_SINK)
+                .replace("  kind: kafscale-broker", "  kind: kafscale-broker\n  start: latest");
+        VectorJob job = plan(late).jobs().get(0);
+        assertEquals(Duration.ofMinutes(2), job.lateness());
+        assertEquals(false, job.fromStart());
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> plan(late.replace("start: latest", "start: yesterday")));
+        assertTrue(e.getMessage().contains("earliest or latest"), e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> plan(late.replace("PT2M", "2 minutes")));
+        assertTrue(e.getMessage().contains("lateness must be a duration"), e.getMessage());
     }
 
     @Test
@@ -153,7 +132,10 @@ class VectorJobTest {
     @Test
     void recordsRoundTripAndComeBackAsSeries() throws Exception {
         VectorJob job = plan(dag(VECTOR_NODE, VECTOR_SINK)).jobs().get(0);
-        List<VectorAligner.Point> points = new ArrayList<>(VectorAligner.align(VectorStoreBridge.inputs(store(), job), job.params()));
+        List<String> components = List.of("power_active", "wind_speed");
+        List<VectorAligner.Point> points = new ArrayList<>(List.of(
+                new VectorAligner.Point(Map.of("turbine", "T01"), T0, T0 + 60 * SECOND, components, List.of(100.0, 4.0)),
+                new VectorAligner.Point(Map.of("turbine", "T01"), T0 + 60 * SECOND, T0 + 120 * SECOND, components, List.of(300.0, 8.0))));
         // a third tick with a missing power value
         points.add(new VectorAligner.Point(Map.of("turbine", "T01"), T0 + 180 * SECOND, T0 + 240 * SECOND,
                 List.of("power_active", "wind_speed"), java.util.Arrays.asList(null, 9.0)));

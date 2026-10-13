@@ -408,7 +408,7 @@ function dagParams(nodes: FlowNode[], node: FlowNode): Params | string {
   }
   if (node.op === VECTOR_OP) {
     const p = node.params;
-    const fill = p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '';
+    const fill = (p.fill === 'as-of' ? `, fill: as-of, maxAge: PT${p.maxAge}S` : '') + (Number(p.lateness) > 0 ? `, lateness: PT${p.lateness}S` : '');
     return `{ every: PT${p.every}S, key: ${p.key}, agg: ${p.agg}${fill}, emit: ${p.emit}, names: [${vectorComponents(nodes, node).join(', ')}] }`;
   }
   return node.params;
@@ -420,17 +420,20 @@ export interface Finding {
 }
 
 /**
- * Why the retrieval server cannot run the flow, or null when it can. Its runtime executes align.vector on the series
- * of the source topic and nothing else (docs/datamodel-2026/11, section 5a).
+ * Why the vector processor cannot run the flow, or null when it can. It executes align.vector on the series of the
+ * source topic and nothing else, and it needs their ids (docs/datamodel-2026/11, sections 5a and 5b).
  */
-export function runBlocker(nodes: FlowNode[]): string | null {
+export function runBlocker(nodes: FlowNode[], sourceSeries?: string[]): string | null {
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
-  if (vectors.length === 0) return 'Publish an "Align to vector" node first: the runtime writes vector topics only.';
+  if (vectors.length === 0) return 'Publish an "Align to vector" node first: the processor writes vector topics only.';
+  if (sourceSeries && sourceSeries.length === 0) {
+    return 'Load the series from the TS inventory: a vector that keeps running has to name the series it is made of.';
+  }
   for (const v of vectors) {
     const other = inputsOf(v).find((i) => i !== SOURCE_ID);
     if (other) {
       const label = nodes.find((n) => n.id === other)?.label ?? other;
-      return `${v.label} reads ${label}. The runtime executes vectors built from the source bucket only; operators before the vector need the stream processor, which does not exist yet.`;
+      return `${v.label} reads ${label}. The processor executes vectors built from the source bucket only; operators before the vector are not available in it yet.`;
     }
     if (!/^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? '')) {
       return `Topic ${v.sinkTopic} must have the form tsx.<domain>.smart.<name>.vectors.v1.`;
