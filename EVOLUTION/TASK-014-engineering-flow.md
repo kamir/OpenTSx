@@ -167,6 +167,9 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         Plan in der ersten Fassung (wird mit J1 umgestellt); die verfügbare Leistung nach Auflagen ist ein Ausgang
         des Zwillings und kein Signal mehr
 - [ ] 014.14 J1 Das Jahr 2025 als Daten (15, Abschnitt 13.4)
+- [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
+      [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
+      Werkzeugvertrag, 15 Lücken; Entscheidungen D70 bis D74 stehen aus
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 
