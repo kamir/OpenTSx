@@ -674,6 +674,47 @@
   font-size: 10.5px;
   color: var(--ink-2);
 }
+.wb-deployments {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+.wb-deployments li {
+  border: 1px solid var(--line-soft);
+  background: var(--field);
+  padding: 5px 7px;
+}
+.wb-deployments li.stopped {
+  color: var(--ink-2);
+}
+.wb-deployments .head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.wb-deployments .head span {
+  flex: 1;
+  color: var(--ink-2);
+}
+.wb-deployments p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.wb-deployments code {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.wb-deployments p.bad,
+.wb-deployments p.failed {
+  color: #8a2a2a;
+}
+.wb-deployments p.waiting {
+  color: #8a4b00;
+}
 
 .wb-components {
   list-style: decimal inside;

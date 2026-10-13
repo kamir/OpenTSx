@@ -164,24 +164,22 @@ export const authAPI = {
 /**
  * Flows API
  */
-/** What the retrieval server wrote in a DAG run, per vector sink. */
-export interface DagRunResult {
-  sinks: { topic: string; records: number; keys: number; series: number; missingValues: number; components: string[]; from?: string; to?: string }[];
-  skipped: string[];
-  /** 'done', or 'pending: ...' when the broker has not handed the new records out yet. */
-  readBack?: string;
-}
-
 export const dagsAPI = {
-  /** Whether the signed-in user may run DAGs on this installation, and if not, why. */
+  /** Whether the signed-in user may deploy and stop DAGs on this installation, and if not, why. */
   capabilities: async (): Promise<{ canRun: boolean; reason: string | null }> => {
     const response = await apiClient.get('/dags/capabilities');
     return response.data;
   },
 
-  /** Runs the vector sinks of an opentsx.dag.v1 document once. The backend forwards it to the retrieval server. */
-  run: async (yaml: string): Promise<DagRunResult> => {
-    const response = await apiClient.post('/dags/run', yaml, { headers: { 'Content-Type': 'application/yaml' } });
+  /** Hands an opentsx.dag.v1 document to the vector processor. A DAG of the same name is replaced. */
+  deploy: async (yaml: string): Promise<{ dag: string; state: string }> => {
+    const response = await apiClient.post('/dags/deploy', yaml, { headers: { 'Content-Type': 'application/yaml' } });
+    return response.data;
+  },
+
+  /** Stops the DAG of this name. */
+  stop: async (name: string): Promise<{ dag: string; state: string }> => {
+    const response = await apiClient.post('/dags/stop', null, { params: { name } });
     return response.data;
   },
 };

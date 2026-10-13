@@ -40,20 +40,36 @@ deploy/k3s/20-configure.sh RETRIEVAL_SOURCE=kafscale SAAS=true
 deploy/k3s/30-deploy.sh --restart
 ```
 
-With `RETRIEVAL_DAG_RUNS=true` the server also accepts `POST /v1/dags/run` and writes vector topics
-(`tsx.<domain>.smart.<name>.vectors.v1`); the workbench uses that for "Run once and write to KafScale".
+### Vector Smart Topics
+
+`VECTOR_PROCESSOR=true` adds the component `vector-processor`: one pod `opentsx-vectors` that keeps the vector
+topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`) up to date, with its checkpoints on the PVC
+`opentsx-vectors-state`. It takes its DAGs from the control topic `tsx.<domain>.dags.v1`.
+
+With `RETRIEVAL_DAG_RUNS=true` the retrieval server writes to that control topic for callers with the run token
+(`POST /v1/dags/deploy`, `/stop`); the workbench uses that for "Deploy" and "Stop" in the tab "Smart Topic".
+`GET /v1/dags` shows what is deployed and what the processor reports.
+
+```bash
+deploy/k3s/20-configure.sh RETRIEVAL_SOURCE=kafscale RETRIEVAL_DAG_RUNS=true VECTOR_PROCESSOR=true SAAS=true
+deploy/k3s/30-deploy.sh --restart
+kubectl -n opentsx logs deploy/opentsx-vectors          # deployed, refused, failed and why
+```
+
+Keep `opentsx-vectors` at one replica (as shipped): two processors would write every measuring point twice.
 
 Who may write:
 
 * `20-configure.sh` generates `RETRIEVAL_DAG_RUN_TOKEN` (kept in `.env` and the Secret `opentsx-secrets`). The
-  retrieval server runs DAGs only for callers that send it.
-* The SaaS backend knows the token and forwards runs of signed-in accounts (`POST /api/v1/dags/run`).
+  retrieval server deploys and stops DAGs only for callers that send it.
+* The SaaS backend knows the token and forwards for signed-in accounts (`POST /api/v1/dags/deploy`, `/stop`).
   `SAAS_DAG_RUN_ROLE=superuser` (default) allows administrators only. `user` allows every account; anyone can
   register, so that opens writing to everyone who reaches the page.
 * The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
   reachable through the node port. Reading through `/retrieval/` needs no account.
-* Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from writing. There is
-  no NetworkPolicy.
+* Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from deploying. Whoever
+  reaches the broker itself can write the control topic directly; KafScale has no access control here. There is no
+  NetworkPolicy.
 
 Limits: at most 20000 episodes in memory (the inventory then says `truncated`), memory limit 2Gi, no
 authentication. `LAKE=true` and `RETRIEVAL_SOURCE=kafscale` exclude each other: with the lake profile the server

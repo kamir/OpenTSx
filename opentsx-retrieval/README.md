@@ -99,7 +99,9 @@ POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "me
 POST /v1/episodes/similar  {"episodeId", …}
 POST /v1/segments          {"strategy","params":{…}, "metric","tags","from","to"}
 GET  /v1/inventory         every series of the store with its metadata
-POST /v1/dags/run          opentsx.dag.v1 (YAML): runs its vector sinks once and writes their topics
+GET  /v1/dags              the DAGs of the domain: what was deployed or stopped, what the processor reports
+POST /v1/dags/deploy       opentsx.dag.v1 (YAML): hands the DAG to the vector processor
+POST /v1/dags/stop?name=   stops the DAG of that name
 ```
 
 ### Vector topics
@@ -108,25 +110,45 @@ With `--kafscale` the server also reads the vector topics of the domain (`tsx.<d
 records `opentsx.vector.v1`). Every component of a vector is offered as a series `smart.<name>.<component>` with the
 tags of the vector key plus `vector=<name>`; the inventory lists the topics under `source.vectorTopics`.
 
-`POST /v1/dags/run` exists only with `--dag-runs true`. It takes an `opentsx.dag.v1` document as YAML, runs every
-vector sink (`schema: opentsx.vector.v1` on an `align.vector` node) once over the episodes the server holds, and
-appends the measuring points to the sink topic. The answer says what was written per sink.
+Vector topics are written by the vector processor (below). The server is its front door:
 
-* It runs `align.vector` on the series of the source topic only (`in: [decode]`). Any other operator before the
-  vector is refused with the id of the node.
-* `source.series` names the series ids to read; without it, all series of the topic.
-* A second run appends again. Readers take the later measuring point per key and tick.
-* It is one pass: no checkpoint, no following of the source topic. At most 500000 measuring points per run.
-* **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` a run needs
-  the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever reaches the port
-  can write vector topics of the domain. The SaaS backend holds the token and forwards runs of its users
-  (`POST /api/v1/dags/run`).
-* A run fails when the broker does not confirm every measuring point, and says how many it confirmed. Those stay
-  in the topic.
+* `GET /v1/dags` lists the DAGs of the domain: what was asked for (deployed or stopped, by whom, when) and what
+  the processor reports per sink (state, records, how far the data goes, what it waits for). It needs no token.
+* `POST /v1/dags/deploy` (body: the DAG as YAML) checks that the processor can run the DAG and appends it to the
+  control topic. `POST /v1/dags/stop?name=<dag>` appends the stop. Both exist only with `--dag-runs true`.
+* The processor runs `align.vector` on the series of the source topic only (`in: [decode]`); any other operator
+  before the vector is refused with the id of the node. `source.series` must name the series.
+* **Run token.** With `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN` the two write
+  routes need the token in the header `X-OpenTSx-Run-Token`; anything else gets 401. Without a token, whoever
+  reaches the port can deploy and stop. The SaaS backend holds the token and forwards for its users
+  (`POST /api/v1/dags/deploy`, `/stop`); it names the user in `X-OpenTSx-By`, which ends up in the control record.
 
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
 `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5a.
+
+### Vector processor
+
+`org.opentsx.retrieval.vector.VectorProcessorApp` (`opentsx vectors`) keeps vector sinks up to date. It follows the
+episodes topic and appends measuring points as they become final, where the run above is one pass.
+
+```bash
+opentsx vectors --kafscale host:9092 --domain wind --state /state              # the processor, exactly one per domain
+opentsx vectors deploy --kafscale host:9092 --domain wind --dag flow.dag.yaml  # deploy a DAG, or replace it
+opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
+```
+
+* Deployments live in the control topic `tsx.<domain>.dags.v1` (latest record per DAG name), so they survive a
+  restart. The processor reports per sink to `tsx.<domain>.dag-status.v1`.
+* A tick is written when every series named in `source.series` has passed its end, plus `lateness` of the node.
+  Until every named series was seen once, the sink waits; the status says for which.
+* Per series, episodes must arrive in time order. One that does not continue its series is skipped and counted.
+* A checkpoint per sink in `--state` holds positions and state. It is written after the broker confirmed the
+  records, so a crash repeats at most the records since the last checkpoint, with the same values.
+* A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
+
+Limits: one processor per domain, no idle timeout for a series that falls silent, vectors on source series only.
+The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5b.
 
 ### Series inventory
 

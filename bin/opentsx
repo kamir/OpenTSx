@@ -8,6 +8,7 @@
 #   stats              streaming statistics processor on KafScale            (org.opentsx.stats.StatsProcessorApp)
 #   metadata           publish the metadata pool to OpenMetadata             (org.opentsx.openmetadata.WindparkMetadata)
 #   retrieval-server   REST API for episodes, patterns, segments             (org.opentsx.retrieval.server.RetrievalServer)
+#   vectors            vector processor: run | deploy | stop                 (org.opentsx.retrieval.vector.VectorProcessorApp)
 #   twin               digital twin demo S1 (H2 chain) in all three modes    (org.opentsx.twin.demo.H2ChainDemo)
 #   house              house twin: KPIs + levers; --calibrate f|--simulated  (org.opentsx.twin.demo.HouseDemo)
 #   boat               boat twin (Etap 22): what-ifs, --data, --simulated     (org.opentsx.twin.demo.BoatDemo)
@@ -48,6 +49,7 @@ case "$cmd" in
   stats)            exec java -cp "$(classpath opentsx-stats)" org.opentsx.stats.StatsProcessorApp "$@" ;;
   metadata)         exec java -cp "$(classpath opentsx-openmetadata)" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
   retrieval-server) exec java -cp "$(classpath opentsx-retrieval opentsx-store-iceberg)" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
+  vectors) exec java -cp "$(classpath opentsx-retrieval)" org.opentsx.retrieval.vector.VectorProcessorApp "$@" ;;
   twin|house|boat)
     # with archived history (--history / --weather-year) the run goes through the history adapter of opentsx-market
     if [[ " $* " == *" --history "* || " $* " == *" --weather-year "* ]]; then

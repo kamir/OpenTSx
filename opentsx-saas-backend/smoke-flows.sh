@@ -96,29 +96,36 @@ check "delete flow" 200 "$CODE"
 call GET "/flows/$ID" "$TOKEN_A"
 check "deleted flow is gone" 404 "$CODE"
 
-# DAG runs write topics: only with an account, and for a plain account only where the installation allows it.
-# Nothing is run here: the checks stop at the refusal or use a document the retrieval server rejects.
-CODE="$(curl -s -m 20 -o "$OUT" -w '%{http_code}' -X POST -H 'Content-Type: application/yaml' --data-binary 'dag: smoke' "$API/dags/run" || true)"
+# Deploying a DAG makes the vector processor write topics: only with an account, and for a plain account only where
+# the installation allows it. Nothing is deployed here: the checks stop at the refusal or use a document the
+# retrieval server rejects.
+CODE="$(curl -s -m 20 -o "$OUT" -w '%{http_code}' -X POST -H 'Content-Type: application/yaml' --data-binary 'dag: smoke' "$API/dags/deploy" || true)"
 [[ "$CODE" == 401 || "$CODE" == 403 ]] && CODE=denied
-check "dag run without token is refused" denied "$CODE"
+check "deploying without token is refused" denied "$CODE"
+CODE="$(curl -s -m 20 -o "$OUT" -w '%{http_code}' -X POST "$API/dags/stop?name=smoke" || true)"
+[[ "$CODE" == 401 || "$CODE" == 403 ]] && CODE=denied
+check "stopping without token is refused" denied "$CODE"
 call GET /dags/capabilities "$TOKEN_A"
 check "capabilities answer" 200 "$CODE"
 CAN_RUN="$(field 'd["canRun"]')"
 CODE="$(curl -s -m 30 -o "$OUT" -w '%{http_code}' -X POST -H "Authorization: Bearer $TOKEN_A" -H 'Content-Type: application/yaml' \
-  --data-binary 'dag: smoke' "$API/dags/run" || true)"
+  --data-binary 'dag: smoke' "$API/dags/deploy" || true)"
 if [[ "$CAN_RUN" == True ]]; then
-  # allowed to run: the document is no DAG, so the retrieval server must refuse it (400) and write nothing;
-  # 503 means this installation has no retrieval server that runs DAGs
+  # allowed to deploy: the document is no DAG, so the retrieval server must refuse it (400) and write nothing;
+  # 503 means this installation has no retrieval server that deploys DAGs
   [[ "$CODE" == 400 || "$CODE" == 503 ]] && CODE=refused
   check "a document that is no DAG is refused" refused "$CODE"
 else
-  check "a plain account may not run DAGs here" 403 "$CODE"
+  check "a plain account may not deploy DAGs here" 403 "$CODE"
 fi
-# through the frontend image the write path of the retrieval server itself is closed
+# through the frontend image the write routes of the retrieval server itself are closed, its state is readable
 CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' "${BASE%/}/retrieval/v1/health" || true)"
 if [[ "$CODE" == 200 ]]; then
-  CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' -X POST --data-binary 'dag: smoke' "${BASE%/}/retrieval/v1/dags/run" || true)"
-  check "the retrieval write path is closed at the frontend" 403 "$CODE"
+  CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' -X POST --data-binary 'dag: smoke' "${BASE%/}/retrieval/v1/dags/deploy" || true)"
+  check "the retrieval write routes are closed at the frontend" 403 "$CODE"
+  CODE="$(curl -s -m 10 -o "$OUT" -w '%{http_code}' "${BASE%/}/retrieval/v1/dags" || true)"
+  [[ "$CODE" == 200 || "$CODE" == 404 ]] && CODE=answered     # 404: the retrieval server does not read KafScale
+  check "the state of the deployments is readable" answered "$CODE"
 fi
 
 if (( FAILED )); then echo "FAILED"; exit 1; fi

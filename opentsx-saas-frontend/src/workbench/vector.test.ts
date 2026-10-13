@@ -301,6 +301,12 @@ describe('flow with a vector node', () => {
     expect(runBlocker(state().nodes)).toMatch(/Publish an "Align to vector" node first/);
     state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
     expect(runBlocker(state().nodes)).toBeNull();
+    expect(runBlocker(state().nodes, [])).toMatch(/Load the series from the TS inventory/);
+    expect(runBlocker(state().nodes, ['6e803ad522510511'])).toBeNull();
+    state().updateParams(v, { lateness: 120 });
+    expect(toDagYaml(state())).toContain('lateness: PT120S');
+    state().updateParams(v, { lateness: 0 });
+    expect(toDagYaml(state())).not.toContain('lateness');
     expect(toDagYaml(state())).not.toContain('  series:');
     state().setSourceSeries(['6e803ad522510511', 'bf9fb54cca74b30a']);
     expect(toDagYaml(state())).toContain('  topics: [tsx.wind.episodes.v2]\n  series: ["6e803ad522510511", bf9fb54cca74b30a]\n');
@@ -310,7 +316,7 @@ describe('flow with a vector node', () => {
     expect(runBlocker(state().nodes)).toMatch(/must have the form/);
     state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
     state().addInput(v, z);
-    expect(runBlocker(state().nodes)).toMatch(/reads Standardized_ws_T05. The runtime executes vectors built from the source bucket only/);
+    expect(runBlocker(state().nodes)).toMatch(/reads Standardized_ws_T05. The processor executes vectors built from the source bucket only/);
 
     // a new bucket forgets the series of the old one; a stored flow brings its own back
     const stored = JSON.parse(JSON.stringify(toDefinition(state())));

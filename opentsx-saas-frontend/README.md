@@ -109,8 +109,9 @@ frontend/
   (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
   `src/workbench/vector.ts`)
-- Run once and write to KafScale (tab "Smart Topic"): sends the DAG to the retrieval server, which writes the
-  vector topic; needs a server started with `--kafscale` and `--dag-runs true`
+- Deploy and Stop (tab "Smart Topic"): hands the flow to the vector processor, which keeps the vector topic up to
+  date, and shows what it reports; needs an administrator account, a retrieval server started with `--kafscale` and
+  `--dag-runs true`, and a running vector processor
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`

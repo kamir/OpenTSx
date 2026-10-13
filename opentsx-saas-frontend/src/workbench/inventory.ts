@@ -58,7 +58,7 @@ export interface Inventory {
     domain?: string;
     topics: Record<string, string>;
     truncated?: boolean;
-    /** True when the server runs vector DAGs (POST /v1/dags/run). */
+    /** True when the server deploys DAGs for the vector processor (POST /v1/dags/deploy). */
     dagRuns?: boolean;
     /** Vector topics of the domain whose components are part of `series`. */
     vectorTopics?: string[];

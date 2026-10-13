@@ -8,6 +8,7 @@
 #   stats              streaming statistics processor on KafScale      (org.opentsx.stats.StatsProcessorApp)
 #   metadata           metadata pool -> OpenMetadata (or --dry-run)    (org.opentsx.openmetadata.WindparkMetadata)
 #   retrieval-server   REST API for episodes, patterns, segments       (org.opentsx.retrieval.server.RetrievalServer)
+#   vectors            vector processor: run | deploy | stop           (org.opentsx.retrieval.vector.VectorProcessorApp)
 #   twin               digital twin S1 (H2 chain)                      (org.opentsx.twin.demo.H2ChainDemo)
 #   house              house twin                                      (org.opentsx.twin.demo.HouseDemo)
 #   boat               boat twin (Etap 22)                             (org.opentsx.twin.demo.BoatDemo)
@@ -59,6 +60,7 @@ case "$cmd" in
   stats)            run "opentsx-stats" org.opentsx.stats.StatsProcessorApp "$@" ;;
   metadata)         run "opentsx-openmetadata" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
   retrieval-server) run "opentsx-retrieval opentsx-store-iceberg" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
+  vectors)          run "opentsx-retrieval" org.opentsx.retrieval.vector.VectorProcessorApp "$@" ;;
   twin)             run "opentsx-twin" org.opentsx.twin.demo.H2ChainDemo "$@" ;;
   house)            run "opentsx-twin" org.opentsx.twin.demo.HouseDemo "$@" ;;
   boat)             run "opentsx-twin" org.opentsx.twin.demo.BoatDemo "$@" ;;

@@ -197,11 +197,11 @@ public final class VectorAligner {
         return out;
     }
 
-    private static String keyText(Series s, boolean bySeries, boolean all, String keyBy) {
+    static String keyText(Series s, boolean bySeries, boolean all, String keyBy) {
         return bySeries ? s.id() : all ? "" : s.tags().getOrDefault(keyBy, "");
     }
 
-    private static Map<String, String> keyOf(Series s, boolean bySeries, boolean all, String keyBy) {
+    static Map<String, String> keyOf(Series s, boolean bySeries, boolean all, String keyBy) {
         Map<String, String> key = new TreeMap<>();
         if (bySeries) {
             key.putAll(s.tags());

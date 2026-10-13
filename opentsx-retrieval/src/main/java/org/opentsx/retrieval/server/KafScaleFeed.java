@@ -12,18 +12,16 @@ import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.LogTail;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.v2.Episode;
-import org.opentsx.retrieval.vector.VectorAligner;
 import org.opentsx.retrieval.vector.VectorJob;
 import org.opentsx.retrieval.vector.VectorJson;
+import org.opentsx.retrieval.vector.VectorProcessor;
 import org.opentsx.retrieval.vector.VectorStoreBridge;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +38,8 @@ import java.util.concurrent.TimeUnit;
  *   once, then whatever was appended, every {@code refresh}.</li>
  *   <li>Reads the vector topics of the domain ({@code tsx.<domain>.smart.<name>.vectors.v1}) and offers their
  *   components as series ({@link #vectorStore()}).</li>
- *   <li>Runs the vector sinks of a DAG over the episodes it holds and writes the measuring points to their topic
- *   ({@link #run}). This is one pass over the data held now, not a processor that keeps running.</li>
+ *   <li>Deploys and stops DAGs for the vector processor by writing to its control topic ({@link #deploy},
+ *   {@link #stop}), and reads back what the processor reports ({@link #dags()}).</li>
  * </ul>
  *
  * <p>The stores live in the heap. Loading episodes stops at {@code maxEpisodes}; {@link #truncated()} then says
@@ -49,8 +47,6 @@ import java.util.concurrent.TimeUnit;
  */
 final class KafScaleFeed implements AutoCloseable {
 
-    /** A run that would write more measuring points than this is refused. */
-    static final int MAX_POINTS_PER_RUN = 500_000;
     /** How long reading one vector topic may take, and how long a topic that failed is left alone. */
     private static final Duration VECTOR_READ_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration VECTOR_RETRY = Duration.ofSeconds(90);
@@ -66,6 +62,10 @@ final class KafScaleFeed implements AutoCloseable {
     private final Map<String, Map<String, VectorJson.Row>> vectorRows = new TreeMap<>();
     /** Vector topics whose last read failed, with the time (nanoTime) of the next try. */
     private final Map<String, Long> unreadable = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, JsonNode> deployments = new TreeMap<>();
+    private final Map<String, JsonNode> statuses = new TreeMap<>();
+    private LogTail controlTail;
+    private LogTail statusTail;
     private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "kafscale-feed");
         t.setDaemon(true);
@@ -122,6 +122,11 @@ final class KafScaleFeed implements AutoCloseable {
             loaded += written;
         }
         boolean vectorsChanged = pullVectors();
+        try {
+            pullDags();
+        } catch (RuntimeException e) {
+            System.err.println("kafscale feed: the DAG topics cannot be read now: " + e.getMessage());
+        }
         if (written > 0 || vectorsChanged) {
             onChange.run();
         }
@@ -171,111 +176,131 @@ final class KafScaleFeed implements AutoCloseable {
     }
 
     /**
-     * Runs the vector sinks of the DAG over the episodes held now and appends the measuring points to their topics.
+     * Deploys the DAG: checks that the vector processor can run it and appends a record to the control topic
+     * {@link TopicLayout#dags()}. The processor takes it up; a DAG of the same name is replaced.
      *
-     * @return what was written, for the caller of {@code POST /v1/dags/run}
-     * @throws IllegalArgumentException with a message for the user when the DAG cannot be run here
+     * @throws IllegalArgumentException with a message for the user when the DAG cannot be run
      */
-    synchronized ObjectNode run(JsonNode dag, String text) {
+    synchronized ObjectNode deploy(JsonNode dag, String text, String by) {
+        String name = VectorProcessor.dagName(text);
         VectorJob.Plan plan = VectorJob.of(dag, layout.domain(), layout.episodes());
-        String hash = sha256(text);
-        ObjectNode out = EpisodeJson.JSON.createObjectNode();
-        out.put("dag", plan.jobs().get(0).dag());
-        out.put("specHash", hash);
-        ArrayNode sinks = out.putArray("sinks");
-        try (Admin admin = KafScaleClients.admin(bootstrap);
-             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
-            for (VectorJob job : plan.jobs()) {
-                List<VectorAligner.Input> inputs = VectorStoreBridge.inputs(store, job);
-                List<VectorAligner.Point> points = VectorAligner.align(inputs, job.params());
-                if (points.size() > MAX_POINTS_PER_RUN) {
-                    throw new IllegalArgumentException(job.topic() + ": the run would write " + points.size()
-                            + " measuring points, more than " + MAX_POINTS_PER_RUN + ". Use a coarser clock or fewer series.");
-                }
-                layout.provisionSmartVectors(admin, job.name(), (short) 1);
-                long missing = 0;
-                java.util.Set<String> keys = new java.util.TreeSet<>();
-                List<ProducerRecord<String, byte[]>> records = new ArrayList<>(points.size());
-                for (VectorAligner.Point p : points) {
-                    String key = VectorJson.keyText(p.key());
-                    keys.add(key);
-                    missing += p.missing();
-                    records.add(new ProducerRecord<>(job.topic(), key, VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash))));
-                }
-                sendAll(producer, records);
-                ObjectNode s = sinks.addObject();
-                s.put("topic", job.topic());
-                s.put("vector", job.name());
-                s.put("records", points.size());
-                s.put("keys", keys.size());
-                s.put("series", inputs.get(0).series().size());
-                s.put("missingValues", missing);
-                ArrayNode components = s.putArray("components");
-                if (!points.isEmpty()) {
-                    points.get(0).components().forEach(components::add);
-                    s.put("from", org.opentsx.model.Micros.toInstant(points.stream().mapToLong(VectorAligner.Point::fromMicros).min().getAsLong()).toString());
-                    s.put("to", org.opentsx.model.Micros.toInstant(points.stream().mapToLong(VectorAligner.Point::toMicros).max().getAsLong()).toString());
-                }
+        for (VectorJob job : plan.jobs()) {
+            if (job.seriesIds().isEmpty()) {
+                throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)."
+                        + " Load the series from the TS inventory, then build the vector.");
             }
         }
+        control(name, VectorProcessor.deployRecord(name, text, by));
+        ObjectNode out = EpisodeJson.JSON.createObjectNode();
+        out.put("dag", name).put("state", "deployed");
+        ArrayNode sinks = out.putArray("sinks");
+        plan.jobs().forEach(j -> sinks.addObject().put("vector", j.name()).put("topic", j.topic()).put("series", j.seriesIds().size()));
         ArrayNode skipped = out.putArray("skipped");
         plan.skipped().forEach(skipped::add);
-        // read the new records back at once, so the inventory shows the topic without waiting for the next round
-        try {
-            if (pullVectors()) {
-                onChange.run();
-            }
-            out.put("readBack", unreadable.isEmpty() ? "done" : "pending: " + unreadable.keySet());
-        } catch (RuntimeException e) {
-            // the records are written; reading them back is the business of the next round
-            out.put("readBack", "pending: " + e.getMessage());
-        }
         return out;
     }
 
-    /**
-     * Sends the records and waits for the broker to confirm every one. A send that fails after the retries of the
-     * client makes the run fail; records sent before stay in the topic (a later run repeats them, and readers take
-     * the later measuring point).
-     *
-     * @throws IllegalStateException when the broker did not confirm every record, with the number it confirmed
-     */
-    static void sendAll(org.apache.kafka.clients.producer.Producer<String, byte[]> producer,
-                        List<ProducerRecord<String, byte[]>> records) {
-        List<java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata>> pending = new ArrayList<>(records.size());
-        for (ProducerRecord<String, byte[]> r : records) {
-            pending.add(producer.send(r));
+    /** Stops the DAG of this name: appends the record to the control topic. */
+    synchronized ObjectNode stop(String name, String by) {
+        if (name == null || !name.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+            throw new IllegalArgumentException("name the DAG to stop (letters, digits, dots, hyphens and underscores)");
         }
-        producer.flush();
-        int confirmed = 0;
-        Throwable first = null;
-        for (java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata> f : pending) {
-            try {
-                f.get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
-                confirmed++;
-            } catch (java.util.concurrent.ExecutionException e) {
-                first = first == null ? e.getCause() : first;
-            } catch (java.util.concurrent.TimeoutException e) {
-                first = first == null ? e : first;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                first = first == null ? e : first;
-            }
+        control(name, VectorProcessor.stopRecord(name, by));
+        return EpisodeJson.JSON.createObjectNode().put("dag", name).put("state", "stopped");
+    }
+
+    private void control(String name, byte[] record) {
+        try (Admin admin = KafScaleClients.admin(bootstrap);
+             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
+            layout.provisionDagTopics(admin, (short) 1);
+            producer.send(new ProducerRecord<>(layout.dags(), name, record))
+                    .get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted while writing to " + layout.dags(), e);
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            throw new IllegalStateException("the broker did not confirm the record for " + layout.dags() + " ("
+                    + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "); try again", cause);
         }
-        if (first != null) {
-            String topic = records.isEmpty() ? "" : records.get(0).topic();
-            throw new IllegalStateException("the broker confirmed only " + confirmed + " of " + records.size()
-                    + " measuring points for " + topic + " (" + first.getClass().getSimpleName() + ": " + first.getMessage()
-                    + "). What it confirmed stays in the topic; run again once the broker answers.");
+        try {
+            pullDags();     // so the caller sees its own record at once
+        } catch (RuntimeException e) {
+            // the record is written; the next round reads it
         }
     }
 
-    private static String sha256(String text) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8)));
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
+    /** Reads what was appended to the control and the status topic of the vector processor. */
+    private void pullDags() {
+        if (controlTail == null) {
+            controlTail = new LogTail(consumer, layout.dags(), VECTOR_READ_TIMEOUT);
+            statusTail = new LogTail(consumer, layout.dagStatus(), VECTOR_READ_TIMEOUT);
         }
+        controlTail.poll(r -> {
+            JsonNode n = json(r.value());
+            if (n != null && VectorProcessor.CONTROL_SCHEMA.equals(n.path("schema").asText()) && n.hasNonNull("dag")) {
+                ObjectNode slim = ((ObjectNode) n).deepCopy();
+                slim.remove("spec");        // the document can be large and is not needed to show the state
+                deployments.put(n.path("dag").asText(), slim);
+            }
+        });
+        statusTail.poll(r -> {
+            JsonNode n = json(r.value());
+            if (n != null && VectorProcessor.STATUS_SCHEMA.equals(n.path("schema").asText()) && r.key() != null) {
+                statuses.put(new String(r.key(), StandardCharsets.UTF_8), n);
+            }
+        });
+    }
+
+    private static JsonNode json(byte[] value) {
+        try {
+            return EpisodeJson.JSON.readTree(value);
+        } catch (java.io.IOException e) {
+            return null;
+        }
+    }
+
+    /**
+     * The DAGs of the domain as the control topic and the vector processor see them: per DAG what was asked for
+     * (deployed or stopped, by whom, when) and what the processor reports per sink. {@code now} lets a reader judge
+     * how old a report is: a deployed DAG without a recent report has no processor behind it.
+     */
+    synchronized ObjectNode dags() {
+        return dagView(deployments, statuses, org.opentsx.model.Micros.toInstant(org.opentsx.model.Micros.now()).toString());
+    }
+
+    /**
+     * Puts the latest control record per DAG together with the reports of its sinks. A report older than the control
+     * record belongs to what ran before: under a stopped DAG it is shown as stopped, under a DAG deployed again it is
+     * left out until the processor reports for the new deployment.
+     */
+    static ObjectNode dagView(Map<String, JsonNode> deployments, Map<String, JsonNode> statuses, String now) {
+        ObjectNode out = EpisodeJson.JSON.createObjectNode();
+        out.put("now", now);
+        ArrayNode list = out.putArray("dags");
+        for (Map.Entry<String, JsonNode> d : deployments.entrySet()) {
+            String asked = d.getValue().path("at").asText();
+            boolean stopped = "stopped".equals(d.getValue().path("state").asText());
+            ObjectNode o = list.addObject();
+            o.put("dag", d.getKey());
+            o.put("desired", d.getValue().path("state").asText());
+            o.put("by", d.getValue().path("by").asText());
+            o.put("at", asked);
+            ArrayNode sinks = o.putArray("sinks");
+            for (Map.Entry<String, JsonNode> st : statuses.entrySet()) {
+                boolean before = st.getValue().path("at").asText().compareTo(asked) < 0;
+                if (st.getKey().startsWith(d.getKey() + "/")) {
+                    if (stopped) {
+                        sinks.add(((ObjectNode) st.getValue().deepCopy()).put("state", "stopped"));
+                    } else if (!before) {
+                        sinks.add(st.getValue());
+                    }
+                } else if (st.getKey().equals(d.getKey()) && !before && !stopped) {
+                    o.put("refused", st.getValue().path("error").asText());     // the processor could not run this document
+                }
+            }
+        }
+        return out;
     }
 
     boolean truncated() {

@@ -182,10 +182,8 @@ Regeln:
 
 > Stand: Entwurf vom 2026-10-13. Den Operator gibt es zweimal: in der Web-Workbench (`opentsx-saas-frontend`,
 > `src/workbench/vector.ts`) und in Java (`opentsx-retrieval`, `VectorAligner`). Beide bestehen dieselben
-> Testvektoren ([`testvectors/align-vector.v1.json`](testvectors/align-vector.v1.json)). Der Retrieval-Server führt
-> Vektor-Sinks als **Einmal-Lauf** aus und schreibt das Topic (`POST /v1/dags/run`, siehe unten). Eine
-> Stream-Laufzeit, die fortlaufend rechnet, gibt es noch nicht. Das Nachrichtenformat ist JSON; eine Avro-Fassung
-> ist offen.
+> Testvektoren ([`testvectors/align-vector.v1.json`](testvectors/align-vector.v1.json)). Ausgeführt werden
+> Vektor-Sinks vom Vektor-Prozessor (Abschnitt 5b). Das Nachrichtenformat ist JSON; eine Avro-Fassung ist offen.
 
 **Wozu.** Ein Sink schreibt bisher das Ergebnis genau eines Knotens, und jede Nachricht trägt einen Wert einer
 Reihe. Wer "alle Werte zum Zeitpunkt t" braucht (Modell-Eingang, Zustandsvektor einer Anlage, Vergleich von Roh- und
@@ -239,21 +237,21 @@ eine feste Ordnung, und ein Modell liest ihn ohne Namensauflösung. Die Liste `c
 Nachricht, damit ein Leser ohne DAG auskommt. Der Kafka-Schlüssel der Nachricht ist der kanonische Text von `key`,
 damit alle Messpunkte einer Anlage in einer Partition und in Zeitordnung liegen.
 
-**Einmal-Lauf im Retrieval-Server.** Mit `--kafscale` und `--dag-runs true` nimmt der Retrieval-Server unter
-`POST /v1/dags/run` einen DAG als YAML entgegen. Er rechnet dessen Vektor-Sinks über die Episoden, die er aus
-`tsx.<domain>.episodes.v2` im Speicher hält, und hängt die Messpunkte an das Sink-Topic an (eine Partition,
-Kafka-Schlüssel = `key`, Provenienz mit DAG-Name und Hash des Dokuments). Danach liest er das Topic zurück: Jede
-Komponente erscheint im TS-Inventar als Reihe `smart.<name>.<komponente>` mit dem Tag `vector=<name>` und lässt
-sich wie jede andere Reihe laden.
+**Zurück ins Inventar.** Der Retrieval-Server liest die Vektor-Topics der Domäne: Jede Komponente erscheint im
+TS-Inventar als Reihe `smart.<name>.<komponente>` mit dem Tag `vector=<name>` und lässt sich wie jede andere Reihe
+laden. Je Schlüssel und Tick gilt der spätere Messpunkt; Messpunkte mit anderem Takt oder anderen Komponenten als der
+jüngste zählen nicht zur Reihe.
 
-| Punkt | Regel des Einmal-Laufs |
-|-------|------------------------|
-| Was läuft | `align.vector`, dessen Eingänge alle direkt die Quelle sind (`in: [decode]`). Steht ein anderer Operator davor, lehnt der Server den DAG ab und nennt den Knoten. |
-| Welche Reihen | `source.series` nennt die Reihen (seriesId) des Quell-Topics; fehlt die Angabe, alle. Die Workbench schreibt die im Inventar gewählten Reihen hinein. |
-| Sink | nur `tsx.<domain>.smart.<name>.vectors.v1` der Domäne des Servers; das Topic wird bei Bedarf angelegt. |
-| Wiederholung | Ein zweiter Lauf hängt erneut an (KafScale kompaktiert nicht). Beim Lesen gilt je Schlüssel und Tick der spätere Messpunkt. Messpunkte eines früheren Laufs mit anderem Takt oder anderen Komponenten zählen nicht zur Reihe. |
-| Grenzen | höchstens 500000 Messpunkte je Lauf; kein Checkpoint, kein Folgen des Quell-Topics; kein Alles-oder-nichts (bestätigt der Broker nur einen Teil, schlägt der Lauf fehl, und der Teil bleibt im Topic). |
-| Zugriff | Mit Lauf-Token (`OPENTSX_DAG_RUN_TOKEN`) nimmt der Server Läufe nur mit dem Header `X-OpenTSx-Run-Token` an. Das SaaS-Backend kennt das Token, prüft das Konto und reicht weiter (`POST /api/v1/dags/run`). Ohne Token kann jeder schreiben, der den Port erreicht. |
+**Was ausgeführt wird.**
+
+| Punkt | Regel |
+|-------|-------|
+| Was läuft | `align.vector`, dessen Eingänge alle direkt die Quelle sind (`in: [decode]`). Steht ein anderer Operator davor, wird der DAG abgelehnt und der Knoten genannt. |
+| Welche Reihen | `source.series` nennt die Reihen (seriesId) des Quell-Topics. Die Workbench schreibt die im Inventar gewählten Reihen hinein. |
+| Sink | nur `tsx.<domain>.smart.<name>.vectors.v1` der Domäne; das Topic wird bei Bedarf angelegt (eine Partition, Kafka-Schlüssel = `key`, Provenienz mit DAG-Name und Hash des Dokuments). |
+
+Einen Einmal-Lauf im Retrieval-Server (`POST /v1/dags/run`) gab es als ersten Schritt; er ist mit dem
+Vektor-Prozessor entfallen.
 
 **Für eine Stream-Laufzeit folgt aus den Regeln:**
 
@@ -268,6 +266,53 @@ sich wie jede andere Reihe laden.
 
 ---
 
+## 5b. Fortlaufender Betrieb der Vektor-Sinks (Vektor-Prozessor)
+
+> Stand: 2026-10-13. Umgesetzt in `opentsx-retrieval` (`VectorStream`, `VectorProcessor`, `VectorProcessorApp`,
+> Kommando `opentsx vectors`), als k3s-Komponente `vector-processor` (`VECTOR_PROCESSOR=true`) und in der Workbench
+> (Reiter "Smart Topic": Deploy, Stop, Zustand).
+
+Der Einmal-Lauf aus 5a rechnet, was gerade da ist. Der Vektor-Prozessor hält einen Vektor-Sink dauerhaft aktuell: Er
+folgt `tsx.<domain>.episodes.v2` und hängt die Messpunkte an, sobald sie endgültig sind.
+
+**Steuerung über Topics.**
+
+| Topic | Inhalt | Regel |
+|-------|--------|-------|
+| `tsx.<domain>.dags.v1` | `opentsx.dag-control.v1`: `dag`, `state` (`deployed` oder `stopped`), `spec` (das DAG-Dokument), `by` (wer es verlangt hat), `at` | Schlüssel ist der DAG-Name; je Name gilt der letzte Eintrag. Ein Deployment überlebt damit jeden Neustart des Prozessors. |
+| `tsx.<domain>.dag-status.v1` | `opentsx.dag-status.v1`: `dag`, `vector`, `topic`, `state` (`waiting`, `running`, `failed`, `stopped`), `records`, `watermark`, `waitingFor`, `skippedBlocks`, `error`, `at` | Schlüssel `<dag>/<vector>`; der letzte Eintrag gilt. Bei Zustandswechsel und alle 30 s. |
+
+**Semantik.**
+
+| Punkt | Regel |
+|-------|-------|
+| Läufer | Je Vektor-Sink ein Läufer mit eigenem Consumer, eigenen Lesepositionen und eigenem Zustand. Ein neuer oder geänderter DAG beginnt am Anfang des Quell-Topics (`source.start: earliest`, Voreinstellung) oder mit dem, was ab jetzt kommt (`latest`), ohne die anderen zu berühren. |
+| Reihen | `source.series` ist Pflicht. Solange eine genannte Reihe noch nie gesehen wurde, wird nichts geschrieben (`waiting`): Erst dann steht fest, welche Reihen einen Vektor bilden und wie die Komponenten heißen. |
+| Abschluss eines Ticks | Ein Tick ist endgültig, wenn **jede** genannte Reihe sein Ende erreicht hat, plus `lateness` (Parameter des Knotens, Voreinstellung keine). Maßgeblich ist das Ende der Episode (`tEnd`), nicht der letzte Messwert. Bei Episoden von 10 Minuten und 60 s Takt erscheinen also je Schlüssel zehn Messpunkte auf einmal. |
+| Reihenfolge je Reihe | Eine Episode muss dort beginnen, wo die vorige derselben Reihe endete, oder später. Sonst wird sie übersprungen und gezählt (`skippedBlocks`): ein Duplikat nach einem wiederholten Schreibversuch oder Daten außer der Reihe. `lateness` gleicht also den Versatz **zwischen** Reihen aus, nicht verspätete Episoden einer Reihe. |
+| Checkpoint | Je Läufer eine Datei im Zustandsverzeichnis: Lesepositionen und Zustand (offene Ticks, letzter Wert je Reihe für `as-of`, Fortschritt). Geschrieben wird sie erst, wenn der Broker alle Messpunkte bestätigt hat. Nach einem Absturz wiederholt der Läufer höchstens, was er seit dem letzten Checkpoint geschrieben hat; die Werte sind dieselben, und Leser nehmen den späteren Messpunkt. |
+| Broker-Fenster | Lesen wartet (`Patience`), Schreiben wiederholt bis zum Delivery-Timeout. Bestätigt der Broker nicht alles, geht der Läufer in `failed` und setzt nach einer Minute am letzten Checkpoint neu an. |
+| Gleichheit mit dem Einmal-Lauf | Mit allen Daten gefüttert liefert `VectorStream` dieselben Messpunkte wie `VectorAligner`, unabhängig davon, in welcher Folge die Reihen eintreffen (Test `VectorStreamTest`). |
+
+**Bedienung.** Deployen und Stoppen sind Einträge im Steuer-Topic. Es gibt drei Wege dorthin:
+
+| Weg | Wer |
+|-----|-----|
+| Workbench, Reiter "Smart Topic": Deploy, Stop | angemeldete Administratoren; das SaaS-Backend prüft das Konto (`POST /api/v1/dags/deploy`, `/stop`) und reicht mit dem Lauf-Token an den Retrieval-Server weiter |
+| Retrieval-Server `POST /v1/dags/deploy`, `/stop?name=` | wer das Lauf-Token kennt (`X-OpenTSx-Run-Token`); der Server prüft den DAG und schreibt den Eintrag |
+| `opentsx vectors deploy --dag`, `stop --name` | wer den Broker erreicht |
+
+Den Zustand liefert `GET /v1/dags` des Retrieval-Servers ohne Anmeldung: je DAG, was verlangt ist (von wem, wann),
+und was der Prozessor je Sink meldet. Ein deployter DAG, für den seit zwei Minuten niemand meldet, hat keinen
+Prozessor hinter sich; die Workbench sagt das.
+
+**Grenzen.** Genau ein Prozessor je Domäne (kein Lease, keine Gruppe). Eine Reihe, die verstummt, hält ihren
+Vektor an: Es gibt keinen Leerlauf-Timeout, der Status zeigt aber, worauf gewartet wird. Vektoren wie in 5a nur
+direkt auf den Reihen der Quelle. Der Zustand eines Läufers liegt im Arbeitsspeicher und im Checkpoint; bei sehr
+vielen Reihen mit großem Versatz wächst er mit der Zahl offener Ticks.
+
+---
+
 ## 6. Operator-Katalog und Laufzeiten
 
 | Operator | Go (Kern) | Java | Python | Parität |
@@ -279,7 +324,7 @@ sich wie jede andere Reihe laden.
 | `dq.checks` | ja | ja | – | Golden Files |
 | `segment.threshold`, `segment.extremum` (inkrementell) | ja | ja (`opentsx-retrieval`) | – | Streaming = Batch, Testsuite vorhanden |
 | `resample` | ja | ja | – | Golden Files |
-| `align.vector` (Abschnitt 5a) | geplant | ja, als Einmal-Lauf (`opentsx-retrieval`, `VectorAligner`) | n/a | **gemeinsame Testvektoren vorhanden** (Java und TypeScript, `testvectors/align-vector.v1.json`) |
+| `align.vector` (Abschnitte 5a, 5b) | geplant | ja: Einmal-Lauf (`VectorAligner`) und fortlaufend (`VectorProcessor`), beide in `opentsx-retrieval` | n/a | **gemeinsame Testvektoren vorhanden** (Java und TypeScript, `testvectors/align-vector.v1.json`) |
 | `score.onnx` | ja (onnxruntime über cgo) **oder** reine Go-Modelle (linear, ES, konforme Intervalle) | ja (ONNX Runtime) | Training | Toleranz statt Bytegleichheit (Fließkomma) |
 | `train.trigger` | ja | ja | – | – |
 | `twin.step` (Zwilling) | später, für Variante L | ja (`opentsx-twin`) | – | L(0) = T |
@@ -342,13 +387,15 @@ Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angest
 | D28 | Training | nie im Strom; `train.trigger` → Trainingsanfrage → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
 | D29 | Semantik | at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen statt Verwerfen |
 | D37 | Vektor-Messpunkte | `align.vector` als Operator mit mehreren Eingängen, Nachricht `opentsx.vector.v1`, Takt an der Epoche ausgerichtet, Werte als geordnete Liste (Abschnitt 5a) |
-| D38 | Erste Ausführung | Vektor-Sinks laufen als Einmal-Lauf im Retrieval-Server (Java), bis es den Stream-Prozessor gibt; Parität über gemeinsame Testvektoren (Abschnitt 5a) |
+| D39 | Fortlaufender Betrieb | eigener Vektor-Prozessor nach dem Muster des Stats-Prozessors; Deployments über das Steuer-Topic `tsx.<domain>.dags.v1`, Status über `tsx.<domain>.dag-status.v1`; ein Läufer je Sink mit Checkpoint-Datei (Abschnitt 5b) |
+| D38 | Erste Ausführung | Vektor-Sinks liefen zuerst als Einmal-Lauf im Retrieval-Server (Java); abgelöst durch D39. Die Parität über gemeinsame Testvektoren bleibt (Abschnitt 5a) |
 
 ## 11. Offene Punkte
 
 * **Vektor-Messpunkte (5a):** Avro-Fassung von `opentsx.vector.v1` und ihr Platz im Modell v2; Qualitätsbyte je
   Komponente statt nur `null`; Einheiten der Komponenten (heute nur in der Workbench bekannt); die Testvektoren
-  auch für Go; Vektoren über mehrere Quell-Topics; fortlaufender Betrieb mit Checkpoint statt Einmal-Lauf.
+  auch für Go; Vektoren über mehrere Quell-Topics; im fortlaufenden Betrieb (5b) ein Leerlauf-Timeout für
+  verstummte Reihen und ein Lease, das eine zweite Instanz verhindert.
 * **Latenz:** Reichen Sekunden bis Minuten (nur abgeschlossene Segmente)? Sonst ist der Broker-Eingang (Kafka-Protokoll)
   für den Go-Prozessor der Standard.
 * **ONNX in Go:** onnxruntime über cgo (größere Images, plattformabhängig) oder zunächst nur reine Go-Modelle
