@@ -254,3 +254,95 @@ export function dataText(d: GradeData | undefined): string {
   const range = d.min !== undefined && d.max !== undefined ? `, ${num(d.min)}..${num(d.max)}` : '';
   return `${d.series.length} series, ${d.samples.toLocaleString('en')} samples, ${Number(share.toFixed(1))} % missing${range}`;
 }
+
+// ---------------------------------------------------------------- plan of a system (GET /v1/systems/<id>/plan)
+
+export interface PlanPort {
+  name: string;
+  unit?: string;
+  kind: string;
+  /** Output of another atom this input is wired to. */
+  from?: string;
+  /** Signal declared for this input, with its state. */
+  signal?: string;
+  state?: SignalState;
+  origin?: string;
+  via?: string;
+}
+
+export interface PlanAtom {
+  id: string;
+  type: string;
+  inputs: PlanPort[];
+  outputs: PlanPort[];
+  /** Sensor channels declared below the atom. */
+  channels: number;
+}
+
+export interface PlanDoc {
+  schema: string;
+  system: string;
+  title: string;
+  atoms: PlanAtom[];
+  counts: { atoms: number; inputsFromOutside: number; inputsWithoutSignal: number };
+}
+
+/** What feeds an input, in one word and a hint: wired inside the plan, a signal, or nothing. */
+export function feedOf(p: PlanPort): { kind: 'wired' | 'signal' | 'missing'; text: string } {
+  if (p.from) return { kind: 'wired', text: p.from };
+  if (p.signal) return { kind: 'signal', text: (p.state ?? '').replace(/-/g, ' ') };
+  return { kind: 'missing', text: 'no signal declared' };
+}
+
+// ---------------------------------------------------------------- guided mode
+
+export type Place = 'system' | 'signals' | 'flows' | 'models';
+
+export interface GuideStep {
+  n: number;
+  title: string;
+  /** How far the system is in this step, in a few words. */
+  state: string;
+  /** done: nothing left; todo: something to do; later: cannot be done before an earlier step or a later stage. */
+  mark: 'done' | 'todo' | 'later';
+  place: Place;
+}
+
+/**
+ * The seven steps of the engineering method (user manual, chapter 16) with the state of this system in each. The
+ * guide shows the next sensible step; it does not enforce an order.
+ */
+export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, running: number | null): GuideStep[] {
+  const signals = status?.signals ?? [];
+  const n = signals.length;
+  const open = signals.filter((s) => s.state === 'open').length;
+  const noData = signals.filter((s) => s.state === 'bound-no-data').length;
+  const withRaw = signals.filter((s) => s.grades.raw && s.state !== 'constant').length;
+  const prepared = signals.filter((s) => s.grades.clean).length;
+  const needClean = signals.filter((s) => s.state !== 'constant' && s.state !== 'open').length;
+  const clean = signals.filter((s) => s.state === 'clean').length;
+  const problems = status?.problems.length ?? 0;
+  const uncovered = plan?.counts.inputsWithoutSignal ?? 0;
+  return [
+    { n: 1, title: 'System', place: 'system', state: plan ? `${plan.counts.atoms} atoms${problems > 0 ? `, ${problems} problems` : ''}` : 'no plan', mark: plan && problems === 0 ? 'done' : 'todo' },
+    { n: 2, title: 'Signals', place: 'signals', state: uncovered > 0 ? `${n} expected, ${uncovered} inputs without a signal` : `${n} expected`, mark: n > 0 && uncovered === 0 ? 'done' : 'todo' },
+    { n: 3, title: 'Stock', place: 'signals', state: noData > 0 ? `${noData} without data` : 'all looked up', mark: noData > 0 ? 'todo' : 'done' },
+    { n: 4, title: 'Bind', place: 'signals', state: open > 0 ? `${open} open` : 'none open', mark: open > 0 ? 'todo' : 'done' },
+    { n: 5, title: 'Prepare', place: 'signals', state: `${prepared} of ${needClean} prepared`, mark: needClean > 0 && prepared >= needClean ? 'done' : withRaw > 0 ? 'todo' : 'later' },
+    { n: 6, title: 'Run', place: 'flows', state: running === null ? `${clean} clean` : `${running} running, ${clean} clean`, mark: prepared === 0 ? 'later' : clean >= prepared ? 'done' : 'todo' },
+    { n: 7, title: 'Model', place: 'models', state: clean === 0 ? 'needs clean signals' : 'none declared', mark: 'later' },
+  ];
+}
+
+/** The number each place shows in the rail: what there is, or what is left to do. */
+export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, flows: number | null | undefined): Record<Place, string> {
+  const open = status?.states.open ?? 0;
+  const todo = (status?.signals ?? []).filter((s) => s.next.length > 0).length;
+  return {
+    system: plan ? `${plan.counts.atoms} atoms` : '',
+    signals: status ? (todo > 0 ? `${open} open, ${todo} to do` : `${status.signals.length} signals`) : '',
+    // null: not signed in; undefined: signed in, not counted yet
+    flows: flows === null ? 'sign in' : flows === undefined ? '' : `${flows} flows`,
+    models: 'none yet',
+  };
+}

@@ -797,8 +797,8 @@ export default function Workbench() {
         ) : (
           <Link to="/login" target="_blank" rel="noopener">Sign in to save flows</Link>
         )}
-        <Link to="/systems" title="The signals a system expects, and what is there for each">Signals</Link>
-        <Link to="/dashboard" title="The page with the flows of your account">Composer page</Link>
+        <Link to="/systems" title="Systems with their signals, flows and models">Systems</Link>
+        <Link to="/dashboard" title="The page with the flows of your account">Flows</Link>
       </header>
 
       {state.context && (

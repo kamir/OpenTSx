@@ -6,7 +6,8 @@
 - **Status**: Freigegeben am 2026-10-13, Umsetzung läuft (L1)
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-engineering-flow`, Worktree `../OpenTSx-worktrees/engineering-flow`
+- **Delivery-Branch**: `opentsx/2026-task014-shell` (L2 und L3), Worktree `../OpenTSx-worktrees/engineering-flow`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
 ## Ziel
@@ -47,7 +48,21 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       - Grenzen: Die Zustände "running" und "stale" gibt es noch nicht (nichts läuft); Bind, Simulate, Generate
         und Start sind sichtbar, aber gesperrt, mit Hinweis auf die Lieferstufe; die Bindung wird von Hand ins
         Dokument geschrieben; Schreibform der Flows (`opentsx.flow.v1`) ohne Schema
-- [ ] 014.5 L2 Hülle, Beschriftungen, Orte Flows und System
+- [x] 014.5 L2 (Stand 2026-10-13)
+      - Hülle unter `/systems/<id>/<ort>`: Leiste mit den vier Orten und der Workbench als Werkzeug, je Ort eine
+        Zahl; Kopfzeile mit Systemwahl; Statuszeile mit Version und Hash
+      - Geführter Modus (Schalter "Guide", gemerkt je Browser): die sieben Schritte der Methode mit dem Stand des
+        Systems je Schritt, der nächste sinnvolle Schritt hervorgehoben
+      - Ort System: Route `GET /v1/systems/<id>/plan`; je Baustein die Eingänge mit dem, was sie speist. Für
+        `h2-chain` zeigt das einen echten Befund: Von neun Eingängen von außen haben drei kein Signal
+        (`offtake.valve`, `grid.p_self_kw`, `grid.p_grid_meas_kw`)
+      - Ort Flows: der Flow Composer, gefiltert auf das System. Ein Flow, der aus einem Signal heraus gebaut wird,
+        merkt sich System und Signal; Flows ohne System zählen über ihre Domain dazu
+      - Ort Models: Vorschau, welche Signale bereinigt vorliegen und welche fehlen
+      - Beschriftungen: "Workbench" und "Flows" statt "Editor" und "Composer page", "steps" statt "buckets", eine
+        Zustandsspalte im Composer, "Align series to a common clock"
+      - Abweichungen vom Entwurf: Ort System als Tabelle statt eingebettetem Prototyp; "Input bucket" und der
+        Reiter "TS-Model" bleiben (Konzept, Abschnitte 8.4 und 8.5)
 - [ ] 014.6 L3 Topic für bereinigte Reihen, Senke für Reihen, Operatoren im Prozessor, "Publish as clean signal"
 - [ ] 014.7 L4 Generatoren: Topic, Laufzeit, Bind und Simulate
 - [ ] 014.8 L5 Models

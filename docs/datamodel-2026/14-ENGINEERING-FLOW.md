@@ -1,8 +1,9 @@
 # OpenTSx: Engineering-Ablauf vom System zum Modell (Konzept und Entwurf)
 
 > Stand: 2026-10-13, dritte Fassung. **Freigegeben am 2026-10-13** mit zwei Änderungen gegenüber dem Vorschlag
-> (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt ist die Lieferstufe L1 (Abschnitt
-> 10): Systemdokument mit Prüfung, Zustand der Signale, Seite "Signals", Sprung auf den Schirm. Arbeitspaket:
+> (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt sind die Lieferstufen L1 und L2
+> (Abschnitt 10): Systemdokument mit Prüfung, Zustand der Signale, die Hülle mit ihren vier Orten und dem geführten
+> Modus, Sprung auf den Schirm. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md); dort stehen auch die Befunde der beiden Reviews.
 
 ## 1. Kurzfassung
@@ -387,16 +388,21 @@ Die Workbench hält heute genau einen Flow; ein zweiter ersetzt ihn. Deshalb:
 |---|---|---|
 | Link "Editor" (Composer-Seite), Link "Composer page" (Workbench) | "Workbench", "Flows" | zwei Namen für dieselben Orte |
 | Spalte "buckets" im Composer | "steps" | sie zählt Schritte |
-| Reiter "Input bucket" | "Steps" | er zeigt die Schritte des Flows |
+| Reiter "Input bucket" | bleibt | der Name ist ein ausdrücklicher Wunsch des Auftraggebers; der Vorschlag "Steps" aus dem Review entfällt |
 | "Create a vector of the loaded series" | "Align series to a common clock" | sagt, was geschieht |
 | zwei Zustandsspalten im Composer ("status", "Smart Topic") | eine | derselbe Sachverhalt |
-| Reiter "TS-Model" in der Workbench | entfällt | ohne Funktion |
+| Reiter "TS-Model" in der Workbench | bleibt | er spiegelt die Swing-Workbench und sagt selbst, dass seine Knöpfe dort auch nichts tun |
 
 ### 8.5 Die Studio-Ansichten
 
 "Systembild" wird der Ort System, "Messreihen" geht in Signals auf, "Überblick" und "Vergleich" werden Models.
-Bis sie in React nachgebaut sind, zeigt die Hülle den vorhandenen Prototyp eingebettet, ohne dessen eigene Leisten
-und mit dem Hinweis "prototype, German".
+
+**Stand L2, abweichend vom Entwurf:** Der Ort System bettet den Prototyp nicht ein. Er zeigt den Schaltplan als
+Tabelle: je Baustein die Eingänge mit Einheit und dem, was sie speist (Ausgang eines anderen Bausteins, Signal mit
+Zustand oder nichts), und die Ausgänge. Der Grund: Der Prototyp ist eine erzeugte HTML-Datei außerhalb der
+Web-Anwendung, und von seinen Ports führt kein Weg zu einem Signal. Die Tabelle leistet genau diese Verbindung und
+zeigt nebenbei, welche Eingänge von außen noch kein Signal haben. Das Bild mit den Verbindungen bleibt Aufgabe von
+L5 (Systembild in React).
 
 ## 9. Was der Entwurf nicht löst
 
@@ -426,7 +432,7 @@ vom kleinsten Stand her gebaut, der die Idee von Anfang bis Ende zeigt.
 | Stufe | Inhalt | Sichtbar |
 |---|---|---|
 | L1 (**umgesetzt** 2026-10-13) | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfung im Build; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
-| L2 | Hülle: Leiste, Pfad, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System mit eingebettetem Prototyp | ein Rahmen statt drei Seiten |
+| L2 (**umgesetzt** 2026-10-13) | Hülle: Leiste, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System als Tabelle der Bausteine und Ports (statt des eingebetteten Prototyps, siehe 8.5); Ort Models als Vorschau | ein Rahmen statt drei Seiten |
 | L3 | Topic `clean`, Senke für Reihen, Operatoren im Prozessor (013.5), Übersetzung Flow zu DAG; "Publish as clean signal" | Rohdaten werden fortlaufend zu bereinigten Reihen |
 | L4 | Topic `synthetic`, Generator-Laufzeit mit eigenem Recht, erste Generatoren; Aktionen Bind und Simulate | offene Signale werden gebunden oder simuliert |
 | L5 | Models: Topic `features`, Prozessoren für Merkmale, Smart-Topic-Spezifikation mit `target.signal`; Systembild und Vergleich in React | Prognose und Was-wäre-wenn im selben Rahmen |

@@ -5,7 +5,12 @@ import {
   countsText,
   dataText,
   expectText,
+  feedOf,
   filterSignals,
+  guideSteps,
+  PlanDoc,
+  railCounts,
+  SystemStatus,
   groupSignals,
   intervalText,
   isSynthetic,
@@ -142,5 +147,58 @@ describe('the list of signals', () => {
   it('refuses an answer that is no status document', () => {
     expect(() => parseStatus({ schema: 'something.else', signals: [] })).toThrow(/opentsx.signal-status.v1/);
     expect(parseStatus({ schema: 'opentsx.signal-status.v1', signals: [] }).signals).toEqual([]);
+  });
+});
+
+describe('the shell around a system', () => {
+  const status = (signals: Signal[]): SystemStatus => ({
+    schema: 'opentsx.signal-status.v1',
+    system: 'h2-chain',
+    title: 'H2',
+    version: 1,
+    domain: 'wind',
+    example: true,
+    hash: 'abc',
+    problems: [],
+    notes: [],
+    counts: { signals: signals.length },
+    states: { open: signals.filter((s) => s.state === 'open').length },
+    signals,
+  });
+  const plan: PlanDoc = { schema: 'opentsx.system-plan.v1', system: 'h2-chain', title: 'H2', atoms: [], counts: { atoms: 9, inputsFromOutside: 6, inputsWithoutSignal: 0 } };
+  const all = [base, avail, price, setpoint, demand];
+
+  it('says for every step of the method how far the system is', () => {
+    const steps = guideSteps(status(all), plan, 0);
+    expect(steps.map((s) => `${s.n} ${s.title}: ${s.state} (${s.mark})`)).toEqual([
+      '1 System: 9 atoms (done)',
+      '2 Signals: 5 expected (done)',
+      '3 Stock: 1 without data (todo)',
+      '4 Bind: 1 open (todo)',
+      '5 Prepare: 1 of 3 prepared (todo)',
+      '6 Run: 0 running, 0 clean (todo)',
+      '7 Model: needs clean signals (later)',
+    ]);
+    expect(steps.map((s) => s.place)).toEqual(['system', 'signals', 'signals', 'signals', 'signals', 'flows', 'models']);
+  });
+
+  it('names what is wrong before anything else', () => {
+    const broken = { ...status(all), problems: ['park.x: no such port'] };
+    expect(guideSteps(broken, { ...plan, counts: { ...plan.counts, inputsWithoutSignal: 2 } }, null).slice(0, 2).map((s) => `${s.state} (${s.mark})`)).toEqual([
+      '9 atoms, 1 problems (todo)',
+      '5 expected, 2 inputs without a signal (todo)',
+    ]);
+    expect(guideSteps(null, null, null)[0]).toMatchObject({ state: 'no plan', mark: 'todo' });
+  });
+
+  it('gives each place of the rail its number', () => {
+    expect(railCounts(status(all), plan, 2)).toEqual({ system: '9 atoms', signals: '1 open, 4 to do', flows: '2 flows', models: 'none yet' });
+    expect(railCounts(status([setpoint]), plan, null)).toMatchObject({ signals: '1 signals', flows: 'sign in' });
+  });
+
+  it('says what feeds an input of the plan', () => {
+    expect(feedOf({ name: 'limit_kw', kind: 'SIGNAL', from: 'rules.limit_kw' })).toEqual({ kind: 'wired', text: 'rules.limit_kw' });
+    expect(feedOf({ name: 'p_avail_kw', kind: 'FLOW', signal: 'park.p_avail_kw', state: 'clean-not-running' })).toEqual({ kind: 'signal', text: 'clean not running' });
+    expect(feedOf({ name: 'x', kind: 'FLOW' })).toEqual({ kind: 'missing', text: 'no signal declared' });
   });
 });

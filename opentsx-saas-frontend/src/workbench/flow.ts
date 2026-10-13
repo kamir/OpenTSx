@@ -341,6 +341,8 @@ export function parseNodes(raw: unknown): FlowNode[] | null {
 /** What the exports read of the flow. */
 export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & {
   sourceSeries?: string[];
+  /** The signal the flow was made for, when the workbench was opened for one. */
+  context?: SignalContext | null;
   /** Number of the flow in the account, once it is stored. */
   savedId?: number | null;
 };
@@ -367,6 +369,7 @@ export function toDefinition(s: FlowDoc): Record<string, unknown> {
     domain: s.domain,
     sourceTopic: s.sourceTopic,
     sourceSeries: s.sourceSeries ?? [],
+    ...(s.context ? { system: s.context.system, signal: s.context.signal, grade: s.context.grade } : {}),
     nodes: s.nodes,
     edges: s.nodes.flatMap((n) => inputsOf(n).map((i) => ({ id: `${i}-${n.id}`, source: i, target: n.id }))),
     dag: toDagYaml(s),

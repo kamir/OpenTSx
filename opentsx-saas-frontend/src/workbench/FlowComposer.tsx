@@ -24,9 +24,11 @@ interface Props {
   onDeleted: (ids: number[]) => void;
   /** Closes the window; absent when the composer is a page of its own. */
   onClose?: () => void;
+  /** Shows only the flows of this system: those made for one of its signals, and flows of its domain without a system. */
+  system?: { id: string; domain: string; title: string };
+  /** Reports how many flows the list holds, for the rail of the shell. */
+  onCount?: (flows: number, running: number) => void;
 }
-
-const STATUSES = ['draft', 'active', 'paused', 'archived'];
 
 function deployment(d: DagState | undefined): string {
   if (!d) return '';
@@ -43,7 +45,7 @@ function reasonOf(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export default function FlowComposer({ base, currentId, replaces, onOpen, onNew, onDeleted, onClose }: Props) {
+export default function FlowComposer({ base, currentId, replaces, onOpen, onNew, onDeleted, onClose, system, onCount }: Props) {
   const [flows, setFlows] = useState<FlowSummary[] | null>(null);
   const [dags, setDags] = useState<Map<string, DagState>>(new Map());
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
@@ -84,7 +86,14 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
   }, [refresh]);
 
   const domains = useMemo(() => domainFacets(flows ?? []), [flows]);
-  const rows = useMemo(() => filterFlows(flows ?? [], filter), [flows, filter]);
+  const own = useMemo(() => filterFlows(flows ?? [], { ...NO_FLOW_FILTER, system: system ?? null }), [flows, system]);
+  const rows = useMemo(() => filterFlows(own, filter), [own, filter]);
+  const running = own.filter((f) => f.dag && dags.get(f.dag)?.desired === 'deployed').length;
+  useEffect(() => {
+    if (flows) onCount?.(own.length, running);
+    // the callback is not a dependency: only the numbers are
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flows, own.length, running]);
   const focused = flows?.find((f) => f.id === focus) ?? null;
   const filtered = filter.text !== '' || filter.domain !== null || filter.only !== null || filter.status !== null;
   const allShown = rows.length > 0 && rows.every((f) => picked.includes(f.id));
@@ -210,7 +219,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
   const body = (
       <>
         <header className="wb-inv-head">
-          <h2>{onClose ? 'OpenTSx Flow Composer' : 'Your flows'}</h2>
+          <h2>{onClose ? 'OpenTSx Flow Composer' : system ? `Flows of ${system.title}` : 'Your flows'}</h2>
           <button onClick={onNew} title="Opens the editor with an empty flow">New flow</button>
           <button onClick={refresh}>Reload</button>
           <span className="wb-grow" />
@@ -221,7 +230,9 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
           <span>
             {flows === null && !error
               ? 'Reading the flows of your account'
-              : `${flows?.length ?? 0} flows in your account, ${flows?.filter((f) => f.status === 'active').length ?? 0} active.`}{' '}
+              : system
+                ? `${own.length} of the ${flows?.length ?? 0} flows in your account belong to this system, ${running} running.`
+                : `${flows?.length ?? 0} flows in your account, ${running} running.`}{' '}
             Select a flow, then open it in the editor, copy or delete it, or start and stop its Smart Topic.
           </span>
           <span>
@@ -238,7 +249,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
 
         <div className="wb-inv-body">
           <nav className="wb-inv-facets" aria-label="Filters">
-            {domains.length > 0 && (
+            {!system && domains.length > 0 && (
               <section>
                 <h3>domain</h3>
                 <div className="wb-inv-chips">
@@ -250,16 +261,6 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                 </div>
               </section>
             )}
-            <section>
-              <h3>status</h3>
-              <div className="wb-inv-chips">
-                {STATUSES.filter((s) => flows?.some((f) => f.status === s)).map((s) => (
-                  <button key={s} aria-pressed={filter.status === s} onClick={() => setFilter({ ...filter, status: filter.status === s ? null : s })}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </section>
             <section>
               <h3>show only</h3>
               <ul>
@@ -286,7 +287,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                 value={filter.text}
                 onChange={(e) => setFilter({ ...filter, text: e.target.value })}
               />
-              <span className="wb-muted">{rows.length} of {flows?.length ?? 0} shown, {picked.length} selected</span>
+              <span className="wb-muted">{rows.length} of {own.length} shown, {picked.length} selected</span>
               <button disabled={!filtered} onClick={() => setFilter(NO_FLOW_FILTER)}>Clear filters</button>
               <button disabled={picked.length === 0} onClick={() => setPicked([])}>Clear selection</button>
             </div>
@@ -297,13 +298,13 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                     <th><input type="checkbox" aria-label="Select all shown flows" checked={allShown} onChange={toggleAll} /></th>
                     <th>id</th>
                     <th>name</th>
-                    <th>status</th>
+                    <th>signal</th>
                     <th>track</th>
-                    <th>domain</th>
-                    <th>buckets</th>
+                    {!system && <th>domain</th>}
+                    <th>steps</th>
                     <th>series</th>
                     <th>topics</th>
-                    <th>Smart Topic</th>
+                    <th>state</th>
                     <th>changed (UTC)</th>
                   </tr>
                 </thead>
@@ -326,9 +327,9 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                       </td>
                       <td>{f.id}</td>
                       <td className="l">{f.name}{f.id === currentId ? ' (in the editor)' : ''}</td>
-                      <td className="l"><span className={`wb-flow-status ${f.status}`}>{f.status}</span></td>
+                      <td className="l">{f.signal}</td>
                       <td className="l">{f.track}</td>
-                      <td className="l">{f.domain}</td>
+                      {!system && <td className="l">{f.domain}</td>}
                       <td>{f.openable ? f.steps.length : ''}</td>
                       <td>{f.sourceSeries.length || ''}</td>
                       <td>{f.published.length || ''}</td>
@@ -343,7 +344,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                             )}
                           </>
                         ) : (
-                          deployment(dags.get(f.dag))
+                          <span className="wb-muted" title="The processor cannot run this flow; select it to see what it needs">{f.openable ? 'workbench only' : 'flow builder'}</span>
                         )}
                       </td>
                       <td className="l">{stamp(f.updatedAt)}</td>
@@ -354,7 +355,10 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
               {flows && flows.length === 0 && (
                 <p className="wb-muted pad">No flow is stored yet. Press "New flow", build one in the editor and press "Save flow".</p>
               )}
-              {flows && flows.length > 0 && rows.length === 0 && <p className="wb-muted pad">No flow matches the filters.</p>}
+              {flows && flows.length > 0 && own.length === 0 && (
+                <p className="wb-muted pad">No flow belongs to this system yet. Open a signal on the scope from "Signals", prepare it and save the flow.</p>
+              )}
+              {own.length > 0 && rows.length === 0 && <p className="wb-muted pad">No flow matches the filters.</p>}
             </div>
           </section>
 
@@ -379,7 +383,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                   </p>
                 )}
                 <dl className="wb-readout wide">
-                  <dt>Status</dt><dd>{focused.status}</dd>
+                  {focused.signal && [<dt key="sgk">Signal</dt>, <dd key="sgv">{focused.system} / {focused.signal}</dd>]}
                   {focused.track && [<dt key="tk">Track</dt>, <dd key="tv">{focused.track}</dd>]}
                   {focused.sourceTopic && [<dt key="sk">Reads from</dt>, <dd key="sv">{focused.sourceTopic}</dd>]}
                   {focused.openable && [

@@ -124,6 +124,40 @@ class SystemsTest {
     }
 
     @Test
+    void thePlanSaysWhatFeedsEveryInput() {
+        JsonNode plan = SYSTEMS.plan("h2-chain", windFarm());
+        assertEquals(9, plan.path("atoms").size());
+        assertEquals(9, plan.path("counts").path("atoms").asInt());
+        JsonNode park = null;
+        JsonNode grid = null;
+        for (JsonNode a : plan.path("atoms")) {
+            park = a.path("id").asText().equals("park") ? a : park;
+            grid = a.path("id").asText().equals("grid") ? a : grid;
+        }
+        assertEquals("generation", park.path("type").asText());
+        assertEquals(2, park.path("channels").asInt());
+        JsonNode avail = null;
+        JsonNode limit = null;
+        for (JsonNode in : park.path("inputs")) {
+            avail = in.path("name").asText().equals("p_avail_kw") ? in : avail;
+            limit = in.path("name").asText().equals("limit_kw") ? in : limit;
+        }
+        // an input from outside with a signal declared for it, and one wired inside the plan
+        assertEquals("park.p_avail_kw", avail.path("signal").asText());
+        assertEquals("clean-not-running", avail.path("state").asText());
+        assertEquals("kW", avail.path("unit").asText());
+        assertFalse(avail.has("from"));
+        assertEquals("rules.limit_kw", limit.path("from").asText());
+        assertFalse(limit.has("signal"));
+        boolean wired = false;
+        for (JsonNode in : grid.path("inputs")) {
+            wired |= "park.p_gen_kw".equals(in.path("from").asText());
+        }
+        assertTrue(wired);
+        assertTrue(plan.path("counts").path("inputsFromOutside").asInt() >= 6);
+    }
+
+    @Test
     void cleanDataIsFoundByTheTagsSystemAndSignal() {
         ObjectNode inv = windFarm();
         ((ObjectNode) series(inv, "ddd", "wind.turbine.power_active", 0, 2900).get("tags"))
@@ -165,6 +199,7 @@ class SystemsTest {
             assertEquals(200, signals.statusCode());
             assertEquals(8, JSON.readTree(signals.body()).path("signals").size());
 
+            assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(base + "/no-such/signals")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
             String none = "http://localhost:" + without.port() + "/v1/systems";
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(none)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());

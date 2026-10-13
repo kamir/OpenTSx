@@ -109,7 +109,7 @@ function App() {
 
         {/* The signals of a system are read from the retrieval server and need no account */}
         <Route path="/systems" element={<Systems />} />
-        <Route path="/systems/:system/signals" element={<Systems />} />
+        <Route path="/systems/:system/:place" element={<Systems />} />
 
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
