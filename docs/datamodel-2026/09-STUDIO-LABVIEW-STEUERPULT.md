@@ -47,10 +47,13 @@ steht seitdem nur noch im Überblick. Tastatur: Alt+1 bis Alt+4 für die Ansicht
 
 Die Dokument-Reiter gehören zum gewählten Szenario; gewechselt wird es im Menü „Szenario“. Neben dem Szenario selbst
 stehen dort ein Link auf seine Seite im Anlagen-Explorer (`anlagen-explorer.html?sys=<twin>`, aus einem Baustein
-heraus mit `&open=<twin>/<atom>`) und die Ansicht **Ereignis-Topic**. Sie spielt die Ereignisse des Referenzlaufs im
-Zeitraffer als Datensätze ab (Schlüssel: Baustein). Eine Live-Verbindung gibt es noch nicht: `MessageSink` kennt nur
-das In-Memory-Log, für `TwinEvent` ist kein Topic festgelegt, und der Browser braucht eine Brücke zum Broker. Der
-angezeigte Name `twin.<id>.<run>.events` ist ein Vorschlag nach dem Muster der Avro-Kontrakte.
+heraus mit `&open=<twin>/<atom>`) und die Ansicht **Ereignis-Topic**. Sie zeigt die Datensätze des Topics
+`twin.<id>.<run>.events` (Schlüssel: Baustein, Wert: JSON `twin.event.v1`) aus zwei Quellen. **Live:** über die
+Brücke aus `opentsx-twin-live`, die das Topic aus KafScale liest und als Server-Sent Events an den Browser gibt
+(`bin/opentsx twin-live bridge`); geschrieben wird das Topic von `bin/opentsx twin-live publish`, auf Wunsch im
+Zeitraffer. **Wiedergabe:** der gerechnete Referenzlauf im Browser, ohne Broker. Der Zwilling rechnet einen Lauf
+weiterhin als Ganzes; ein Zwilling, der während des Rechnens veröffentlicht, ist eine spätere Stufe. Details:
+[`opentsx-twin-live/README.md`](../../opentsx-twin-live/README.md).
 
 Regeln, die der Prototyp schon umsetzt:
 
