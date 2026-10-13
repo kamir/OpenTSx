@@ -20,6 +20,18 @@ entries are grouped by date. The detailed progress log (German) is in
   scenario as time ranges (`GET /v1/inventory`, `opentsx.ts-inventory.v1`). The workbench has a "TS Inventory"
   dialog: filter by tag, channel, scenario event or text, choose window and resolution, load the selection as the
   bucket. `deploy/k3s`: `RETRIEVAL_SOURCE=kafscale`.
+- Vector measuring points (draft): operator `align.vector` brings the results of several nodes onto one clock and
+  gives one record per tick and key with one value per component (`opentsx.vector.v1`, JSON schema in
+  `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/11`, section 5a). The workbench has the operator as
+  "Align to vector": nodes can have several inputs, the scope shows the components on one time base, and the DAG
+  export writes the node with all inputs and a vector sink. No runtime executes it yet.
+- Vector topics are written and read back: the retrieval server runs the vector sinks of a DAG once over the
+  episodes it holds and appends the measuring points to `tsx.<domain>.smart.<name>.vectors.v1`
+  (`POST /v1/dags/run`, only with `--kafscale` and `--dag-runs true`; `deploy/k3s`: `RETRIEVAL_DAG_RUNS=true`). It
+  reads the vector topics of the domain, and their components show in the TS inventory as series. The workbench
+  has "Run once and write to KafScale". The Java operator `VectorAligner` and the workbench pass the same test
+  vectors (`docs/datamodel-2026/testvectors/`). It is one pass, not a stream processor, and the endpoint has no
+  authentication.
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
   dashboard. `opentsx-saas-backend/smoke-flows.sh` checks accounts and flows against a running instance.

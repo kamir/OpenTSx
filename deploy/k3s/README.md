@@ -40,6 +40,11 @@ deploy/k3s/20-configure.sh RETRIEVAL_SOURCE=kafscale SAAS=true
 deploy/k3s/30-deploy.sh --restart
 ```
 
+With `RETRIEVAL_DAG_RUNS=true` the server also accepts `POST /v1/dags/run` and writes vector topics
+(`tsx.<domain>.smart.<name>.vectors.v1`); the workbench uses that for "Run once and write to KafScale". The API has
+no authentication, so whoever reaches the node port of the SaaS frontend (it proxies `/retrieval/`) can write those
+topics. Leave it off outside a trusted network.
+
 Limits: at most 20000 episodes in memory (the inventory then says `truncated`), memory limit 2Gi, no
 authentication. `LAKE=true` and `RETRIEVAL_SOURCE=kafscale` exclude each other: with the lake profile the server
 reads Iceberg.

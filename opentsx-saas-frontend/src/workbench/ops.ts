@@ -8,6 +8,7 @@
  */
 
 import { Bucket, OpDef, Params, Series } from './types';
+import { VECTOR_AGGREGATIONS, VECTOR_OP, alignVector } from './vector';
 
 // ---------------------------------------------------------------- helpers
 
@@ -779,6 +780,17 @@ export const OPS: OpDef[] = [
       { key: 'pre', label: 'pre', type: 'number', default: 20, min: 0 },
       { key: 'post', label: 'post', type: 'number', default: 80, min: 1 },
     ], apply: segmentThreshold },
+  { id: VECTOR_OP, label: 'Align to vector', group: 'stream', prefix: 'Vector_', pfdOperation: 'ALIGN_VECTOR', inCatalog: false, multiInput: true,
+    hint: 'Brings this bucket and further inputs onto one clock: one measuring point per tick with one component per input. "vector per" is series (same series in every input), all (everything in one vector) or a tag name such as turbine. Add the inputs in the Properties tab or draw a connection onto the node.',
+    params: [
+      { key: 'every', label: 'clock [s]', type: 'number', default: 60, min: 0 },
+      { key: 'key', label: 'vector per', type: 'text', default: 'series' },
+      { key: 'agg', label: 'agg', type: 'select', default: 'MEAN', options: VECTOR_AGGREGATIONS },
+      { key: 'fill', label: 'fill', type: 'select', default: 'none', options: ['none', 'as-of'] },
+      { key: 'maxAge', label: 'max age [s]', type: 'number', default: 60, min: 0 },
+      { key: 'emit', label: 'emit', type: 'select', default: 'any', options: ['any', 'complete'] },
+      { key: 'names', label: 'names', type: 'text', default: '' },
+    ], apply: alignVector },
 ];
 
 export const OP_BY_ID: Record<string, OpDef> = Object.fromEntries(OPS.map((o) => [o.id, o]));

@@ -6,7 +6,9 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-ts-inventory` (013.8); davor `opentsx/2026-task013-web-workbench`
+- **Delivery-Branch**: `opentsx/2026-task013-vector-runtime` (013.11, baut auf 013.10 auf);
+  `opentsx/2026-task013-vector-sink` (013.10, PR #166, baut auf 013.8 auf); `opentsx/2026-task013-ts-inventory`
+  (013.8, PR #165); davor `opentsx/2026-task013-web-workbench`
   (013.1 bis 013.4, gemergt mit PR #161 am 2026-10-12)
 - **Delivery-Worktree**: `../OpenTSx-worktrees/web-workbench`
 
@@ -101,12 +103,30 @@ Beobachtungen am Swing-Code:
         Tag, Kanal, Szenario-Ereignis und Text; Zeitfenster und Auflösung wählen; Auswahl wird der Bucket, Domäne
         und Quell-Topic des Flows folgen dem Inventar
       - k3s: `RETRIEVAL_SOURCE=kafscale` (Komponente `retrieval-kafscale`)
+- [x] 013.10 Vektor-Messpunkte (Stand 2026-10-13): Operator `align.vector` mit mehreren Eingängen und Nachricht
+      `opentsx.vector.v1` (Entwurf in 11 §5a, JSON-Schema unter `docs/datamodel-2026/schemas/`)
+      - Flussmodell: ein Knoten kann weitere Eingänge haben (`FlowNode.inputs`); Auswertung, Zyklenprüfung,
+        Speichern und Exporte folgen allen Eingängen
+      - Workbench: "Align to vector" im Reiter "Filter and conversion"; Eingänge im Reiter Properties oder per
+        Verbindung im Graphen (gestrichelt); Vorschau der ersten Messpunkte als JSON; Sink-Topic
+        `tsx.<domain>.smart.<name>.vectors.v1`
+- [x] 013.11 Vektor-Topics schreiben und zurücklesen (Stand 2026-10-13)
+      - Java-Operator `VectorAligner` (`opentsx-retrieval`), dieselben Testvektoren wie die Workbench
+        (`docs/datamodel-2026/testvectors/align-vector.v1.json`)
+      - Retrieval-Server: `POST /v1/dags/run` (nur mit `--kafscale` und `--dag-runs true`) rechnet die Vektor-Sinks
+        eines DAG einmal über die gehaltenen Episoden und schreibt `tsx.<domain>.smart.<name>.vectors.v1`
+      - Der Server liest die Vektor-Topics der Domäne; ihre Komponenten stehen als Reihen
+        `smart.<name>.<komponente>` mit Tag `vector` im TS-Inventar
+      - Workbench: der DAG nennt die geladenen Reihen (`source.series`); Reiter "Smart Topic" hat "Run once and
+        write to KafScale" mit Ergebnis oder Ablehnungsgrund
+      - k3s: `RETRIEVAL_DAG_RUNS=true`
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
-- [ ] 013.6 Knoten mit mehreren Eingängen, Kontext-Topics, `score.onnx`, `train.trigger`
+- [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
+      Eingängen gibt es seit 013.10
 - [ ] 013.7 MF-DFA und Normalverteilungstest portieren; Paritätsvektoren Java gegen TypeScript
-- [ ] 013.9 Experimentierschleife schließen: Ground-Truth-Marken auf dem Oszilloskop einblenden; Ergebnis eines
-      Knotens als Episoden in ein Smart Topic schreiben (`tsx.<domain>.smart.<name>.metrics.v2`), das dann selbst
-      im Inventar erscheint; Asset-Register `opentsx.inventory.v1` (12) über `series` an das TS-Inventar binden
+- [ ] 013.9 Ground-Truth-Marken auf dem Oszilloskop einblenden; Ergebnis eines einzelnen Knotens als Episoden in ein
+      Smart Topic schreiben (`tsx.<domain>.smart.<name>.metrics.v2`); Asset-Register `opentsx.inventory.v1` (12) über
+      `series` an das TS-Inventar binden. Für Vektoren ist die Schleife seit 013.11 geschlossen.
 
 ## Grenzen des TS-Inventars
 
@@ -119,6 +139,21 @@ Beobachtungen am Swing-Code:
 * **Ground Truth in Episodenschritten.** Die Marken kommen aus den Labels der Episoden, also im Raster der
   Episodendauer (im Demo-Szenario 10 Minuten). Ein Ereignis von 15 Minuten erscheint als 20 Minuten.
 * **Kein Zugriffsschutz.** `/retrieval/` ist ohne Anmeldung erreichbar, wie bisher.
+
+## Grenzen der Vektor-Messpunkte
+
+* **Einmal-Lauf, kein Stream-Prozessor.** Der Retrieval-Server rechnet einen Vektor-Sink einmal über die Episoden,
+  die er gerade hält, und schreibt das Ergebnis. Er folgt dem Quell-Topic dabei nicht und hat keinen Checkpoint.
+  Ein zweiter Lauf hängt erneut an; beim Lesen gilt der spätere Messpunkt.
+* **Nur Vektoren direkt auf der Quelle.** Steht ein anderer Operator vor dem Vektor (Normierung, Glättung,
+  Resampling), lehnt der Server ab und nennt den Knoten. Solche Flüsse rechnet weiterhin nur die Workbench.
+* **Schreibzugriff ohne Anmeldung.** `POST /v1/dags/run` ist wie die ganze Retrieval-Schnittstelle ohne Anmeldung
+  erreichbar. Wer den Port erreicht, kann Vektor-Topics der Domäne beschreiben. Deshalb ist der Schalter
+  standardmäßig aus (`RETRIEVAL_DAG_RUNS=false`).
+* **Ein Quell-Bucket.** Alle Eingänge stammen aus dem einen geladenen Bucket. Vektoren über mehrere Topics sind
+  nicht abgedeckt.
+* **Nur Zeitachsen.** FFT, Histogramm, DFA und ähnliche Knoten sind keine Komponenten; der Operator lehnt sie ab.
+* **Format ist JSON.** Eine Avro-Fassung und ein Qualitätsbyte je Komponente sind offen (11 §11).
 
 ## Prüfung
 
@@ -169,3 +204,13 @@ curl -s localhost:8080/v1/inventory | head -c 400
   Auf master2 ausgerollt: `opentsx-retrieval` liest jetzt das Topic (Image `opentsx/tools:3.0.0-task013-4`,
   vorher Demo-Store), Frontend `3.0.0-task013-4`. Stand vor der Änderung auf dem Host unter
   `~/opentsx-builds/task013/retrieval-before-task013-4.yaml`.
+* 2026-10-13: Vektor-Messpunkte (013.10). Im Browser mit den Daten von master2 geprüft: Windgeschwindigkeit und
+  Leistung von T05 geladen, standardisiert, mit `key: turbine` und 60 s Takt zu einem Vektor aus vier Komponenten
+  ausgerichtet: 360 Messpunkte, keine fehlenden Werte, Vorschau und DAG-Export stimmen, keine Konsolenfehler.
+* 2026-10-13: Schleife für Vektoren geschlossen (013.11). Auf master2 im Browser: vier Kanäle aller zehn Turbinen
+  aus dem Inventar geladen, mit `key: turbine` und 60 s Takt ausgerichtet, als
+  `tsx.wind.smart.turbine-state.vectors.v1` veröffentlicht und geschrieben: 3600 Messpunkte, 10 Schlüssel, 15
+  fehlende Werte (die Lücke von T01). Das Topic erscheint im Inventar, die vier Komponenten von T05 lassen sich
+  laden. Der Endoffset des Topics ist 7200, weil der Lauf zweimal lief (der zweite nach der Korrektur der
+  Komponentenreihenfolge). Retrieval-Server `opentsx/tools:3.0.0-task013-8` mit `--dag-runs true`, Frontend
+  `3.0.0-task013-9`.

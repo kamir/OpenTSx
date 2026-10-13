@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /**
  * The series inventory behind {@code GET /v1/inventory}: every series of the store with its extent (episodes,
@@ -55,6 +56,7 @@ public final class SeriesInventory {
     private final long ttlNanos;
 
     private BooleanSupplier truncated = () -> false;
+    private Consumer<ObjectNode> sourceDetails = src -> { };
 
     private JsonNode cached;
     private long cachedAt;
@@ -74,6 +76,11 @@ public final class SeriesInventory {
     /** The source reports through this that the store holds only a part of what the source has. */
     public synchronized void truncatedWhen(BooleanSupplier truncated) {
         this.truncated = truncated;
+    }
+
+    /** Lets the source add what it knows to the {@code source} object: vector topics, whether it runs DAGs. */
+    public synchronized void sourceDetails(Consumer<ObjectNode> details) {
+        this.sourceDetails = details;
     }
 
     /** Drops the cached inventory; the next {@link #get()} reads the store again. */
@@ -114,6 +121,7 @@ public final class SeriesInventory {
         if (truncated.getAsBoolean()) {
             src.put("truncated", true);
         }
+        sourceDetails.accept(src);
 
         long episodes = 0;
         long samples = 0;

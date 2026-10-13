@@ -11,6 +11,13 @@ export interface Series {
   id: string;
   label: string;
   unit?: string;
+  /** Metric name when the source carried one. */
+  metric?: string;
+  /** Tags of the series when the source carried them (episodes of a retrieval server). */
+  tags?: Record<string, string>;
+  /** In a vector bucket: the series id the vector belongs to, and the name of the component. */
+  key?: string;
+  component?: string;
   x: Float64Array;
   y: Float64Array;
 }
@@ -25,6 +32,8 @@ export interface Bucket {
   t0Ms?: number;
   /** Free text shown in the properties tab, for example the fitted DFA exponents. */
   note?: string;
+  /** Set by align.vector: clock in seconds and the component names in vector order. */
+  vector?: { clock: number; components: string[]; keyBy: string };
 }
 
 export type ParamValue = number | string;
@@ -62,7 +71,9 @@ export interface OpDef {
   inCatalog: boolean;
   hint: string;
   params: ParamDef[];
-  apply: (input: Bucket, params: Params) => Bucket;
+  /** True when the operator reads further inputs besides its first one (`FlowNode.inputs`). */
+  multiInput?: boolean;
+  apply: (input: Bucket, params: Params, others?: Bucket[]) => Bucket;
 }
 
 export interface FlowNode {
@@ -70,8 +81,10 @@ export interface FlowNode {
   /** 'source' or an OpDef id. */
   op: string;
   params: Params;
-  /** Upstream node. Null for the source. Every node has exactly one input. */
+  /** Upstream node. Null for the source. The track tree and the bucket names follow this input. */
   input: string | null;
+  /** Further inputs of a multi-input operator, in order after `input`. */
+  inputs?: string[];
   /** Name of the bucket this node produces (the "target" of the Swing macro recorder). */
   label: string;
   /** Position in the graph view, set once the user drags the node. */

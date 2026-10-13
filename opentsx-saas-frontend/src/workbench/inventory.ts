@@ -53,12 +53,30 @@ export interface InventoryChannel {
 export interface Inventory {
   schema: string;
   generatedAt: string;
-  source: { kind: string; domain?: string; topics: Record<string, string>; truncated?: boolean };
+  source: {
+    kind: string;
+    domain?: string;
+    topics: Record<string, string>;
+    truncated?: boolean;
+    /** True when the server runs vector DAGs (POST /v1/dags/run). */
+    dagRuns?: boolean;
+    /** Vector topics of the domain whose components are part of `series`. */
+    vectorTopics?: string[];
+  };
   totals: { series: number; episodes: number; samples: number; from?: string; to?: string; scenarios: string[] };
   /** The scenario file the server was started with, unchanged. */
   scenario?: Record<string, unknown>;
   channels: InventoryChannel[];
   series: InventorySeries[];
+}
+
+/**
+ * The topic a selection was read from: the vector topic of its series, otherwise the episodes topic of the source.
+ * Undefined when the selection spans several topics or the source is no log.
+ */
+export function topicOf(inv: Inventory, series: InventorySeries[]): string | undefined {
+  const topics = new Set(series.map((s) => s.labels.smartTopic?.[0] ?? inv.source.topics.episodes));
+  return topics.size === 1 ? [...topics][0] : undefined;
 }
 
 /** Checks the answer of GET /v1/inventory. */

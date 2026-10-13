@@ -10,6 +10,7 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 | `POST /v1/patterns/search` | `pattern` (array) **or** `episodeId`+`offset`+`length`; `metric`, `tags` (object), `series`, `from`, `to`, `distance` (`zED`\|`DTW`), `band` (DTW, default 0.1), `topK` (default 10) | matches |
 | `POST /v1/episodes/similar` | `episodeId`; `metric`, `tags`, `from`, `to`, `distance`, `band`, `topK` | matches |
 | `GET /v1/inventory` | none | `opentsx.ts-inventory.v1`: every series with extent, value range, labels and ground-truth marks (see `opentsx-retrieval/README.md`) |
+| `POST /v1/dags/run` | body: `opentsx.dag.v1` as YAML | what was written per vector sink; 404 unless the server runs with `--kafscale` and `--dag-runs true`; 400 with the reason when the DAG cannot be run |
 | `POST /v1/segments` | `strategy` (`FIXED_DURATION`, `FIXED_COUNT`, `FEATURE_EXTREMUM`, `FEATURE_THRESHOLD`), `params` (see below); `metric`, `tags`, `from`, `to` | episodes |
 
 **Segment parameters** (durations in ISO-8601):

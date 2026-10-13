@@ -44,6 +44,8 @@ import java.util.concurrent.Executors;
  * POST /v1/segments          {"strategy":"FIXED_DURATION|FIXED_COUNT|FEATURE_EXTREMUM|FEATURE_THRESHOLD", "params":{..},
  *                             "metric","tags","from","to"}
  * GET  /v1/inventory          every series with extent, labels and ground-truth marks, see {@link SeriesInventory}
+ * POST /v1/dags/run           opentsx.dag.v1 as YAML: runs its vector sinks once and writes their topics (only with
+ *                             {@code --kafscale} and {@code --dag-runs true})
  * GET  /v1/health
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
@@ -55,6 +57,7 @@ public final class RetrievalServer implements AutoCloseable {
 
     private final EpisodeService service;
     private final SeriesInventory inventory;
+    private final DagRunner dagRunner;
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
 
@@ -64,8 +67,20 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory) throws IOException {
+        this(service, port, inventory, null);
+    }
+
+    /** Runs the sinks of a DAG that this server can execute and says what it wrote. */
+    @FunctionalInterface
+    public interface DagRunner {
+        JsonNode run(JsonNode dag, String text);
+    }
+
+    /** @param dagRunner behind {@code POST /v1/dags/run}; null when the server does not run DAGs */
+    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, DagRunner dagRunner) throws IOException {
         this.service = service;
         this.inventory = inventory;
+        this.dagRunner = dagRunner;
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
         http.createContext("/v1/", this::handle);
@@ -90,6 +105,13 @@ public final class RetrievalServer implements AutoCloseable {
                 json(ex, 200, EpisodeJson.JSON.createObjectNode().put("status", "ok"));
             } else if (method.equals("GET") && path.equals("/v1/inventory")) {
                 json(ex, 200, inventory.get());
+            } else if (method.equals("POST") && path.equals("/v1/dags/run")) {
+                if (dagRunner == null) {
+                    json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error",
+                            "this server does not run DAGs (it needs --kafscale and --dag-runs true)"));
+                } else {
+                    json(ex, 200, runDag(ex));
+                }
             } else if (method.equals("GET") && path.equals("/v1/episodes")) {
                 episodes(ex, listEpisodes(query(ex)));
             } else if (method.equals("GET") && path.startsWith("/v1/episodes/")) {
@@ -131,6 +153,24 @@ public final class RetrievalServer implements AutoCloseable {
             eq.resample(Duration.parse(q.get("resample")), Resampling.Agg.valueOf(q.getOrDefault("agg", "MEAN")));
         }
         return eq.fetch();
+    }
+
+    /** A DAG document is small; anything larger is not one. */
+    private static final int MAX_DAG_BYTES = 256 * 1024;
+
+    private JsonNode runDag(HttpExchange ex) throws IOException {
+        byte[] body = ex.getRequestBody().readNBytes(MAX_DAG_BYTES + 1);
+        if (body.length > MAX_DAG_BYTES) {
+            throw new IllegalArgumentException("the DAG is larger than " + MAX_DAG_BYTES + " bytes");
+        }
+        String text = new String(body, StandardCharsets.UTF_8);
+        JsonNode dag;
+        try {
+            dag = YAML.readTree(text);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalArgumentException("the DAG is no valid YAML: " + e.getOriginalMessage());
+        }
+        return dagRunner.run(dag, text);
     }
 
     private List<PatternMatch> search(JsonNode b) {
@@ -280,12 +320,15 @@ public final class RetrievalServer implements AutoCloseable {
 
     /**
      * {@code RetrievalServer --port 8080 (--demo true | --iceberg k=v,... [--namespace tsx] | --kafscale host:port
-     * [--domain wind] [--refresh PT30S] [--max-episodes 20000]) [--scenario file.yaml] [--catalog file.yaml]}.
+     * [--domain wind] [--refresh PT30S] [--max-episodes 20000] [--dag-runs true]) [--scenario file.yaml]
+     * [--catalog file.yaml]}.
      *
      * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
      * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
-     * {@code tsx.<domain>.episodes.v2} into memory and follows it. {@code --scenario} and {@code --catalog} are
-     * handed out unchanged in {@code GET /v1/inventory}.
+     * {@code tsx.<domain>.episodes.v2} into memory and follows it, and it reads the vector topics of the domain.
+     * {@code --dag-runs true} lets {@code POST /v1/dags/run} write vector topics: the API has no authentication, so
+     * switch it on in a trusted network only. {@code --scenario} and {@code --catalog} are handed out unchanged in
+     * {@code GET /v1/inventory}.
      */
     public static void main(String[] args) throws Exception {
         Map<String, String> a = new LinkedHashMap<>();
@@ -313,29 +356,45 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode scenario = yaml(a.get("scenario"));
         JsonNode catalog = yaml(a.get("catalog"));
         SeriesInventory inventory;
+        DagRunner runner = null;
         if (a.containsKey("kafscale")) {
             String domain = a.getOrDefault("domain", "wind");
-            // the feed invalidates the inventory whenever it adds episodes, so the cache may live long
+            boolean dagRuns = Boolean.parseBoolean(a.getOrDefault("dag-runs", "false"));
+            Runnable[] invalidate = {() -> { }};
+            KafScaleFeed feed = KafScaleFeed.start(a.get("kafscale"), domain, Duration.parse(a.getOrDefault("refresh", "PT30S")),
+                    (InMemorySeriesStore) store, Integer.parseInt(a.getOrDefault("max-episodes", "20000")), () -> invalidate[0].run());
+            // episodes of the domain plus the components of its vector topics
+            store = new CompositeSeriesStore(store, feed::vectorStore);
+            // the feed invalidates the inventory whenever something was appended, so the cache may live long
             inventory = new SeriesInventory(store, new SeriesInventory.Source("kafscale", domain, KafScaleFeed.topics(domain)),
                     scenario, catalog, Duration.ofMinutes(10));
-            KafScaleFeed feed = KafScaleFeed.start(a.get("kafscale"), domain, Duration.parse(a.getOrDefault("refresh", "PT30S")),
-                    (InMemorySeriesStore) store, Integer.parseInt(a.getOrDefault("max-episodes", "20000")), inventory::invalidate);
+            invalidate[0] = inventory::invalidate;
             inventory.truncatedWhen(feed::truncated);
+            inventory.sourceDetails(src -> {
+                src.put("dagRuns", dagRuns);
+                ArrayNode vt = src.putArray("vectorTopics");
+                feed.vectorTopics().forEach(vt::add);
+            });
+            if (dagRuns) {
+                runner = feed::run;
+            }
         } else {
             inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));
         }
         RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
-                inventory);
+                inventory, runner);
         System.out.println("opentsx retrieval server on port " + s.port());
     }
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper YAML =
+            new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
 
     /** Reads a YAML (or JSON) file as a tree; null when no file is given. */
     private static JsonNode yaml(String file) throws IOException {
         if (file == null || file.isBlank()) {
             return null;
         }
-        return new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory())
-                .readTree(java.nio.file.Path.of(file).toFile());
+        return YAML.readTree(java.nio.file.Path.of(file).toFile());
     }
 
     /** Planted pattern of the demo store: 120 samples starting at sample 5000 of series "demo.signal{n=1}". */

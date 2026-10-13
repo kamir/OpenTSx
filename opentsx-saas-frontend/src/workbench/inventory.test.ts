@@ -15,6 +15,7 @@ import {
   scenarioEvents,
   shortLabels,
   tagFacets,
+  topicOf,
   windowError,
 } from './inventory';
 import { parseEpisodes } from './loaders';
@@ -155,6 +156,14 @@ describe('TS inventory', () => {
     expect(bucket.name).toBe('wind_speed_2x');
     expect(bucket.series.map((s) => s.label)).toEqual(['T10', 'T02']);
     expect(bucket.yLabel).toBe('[m/s]');
+  });
+
+  it('names the topic a selection comes from', () => {
+    const inv = inventory();
+    expect(topicOf(inv, inv.series.slice(0, 2))).toBe('tsx.wind.episodes.v2');
+    const vector = { ...inv.series[0], seriesId: 'v', labels: { smartTopic: ['tsx.wind.smart.state.vectors.v1'] } };
+    expect(topicOf(inv, [vector])).toBe('tsx.wind.smart.state.vectors.v1');
+    expect(topicOf(inv, [vector, inv.series[0]])).toBeUndefined();
   });
 
   it('formats clock times in UTC', () => {

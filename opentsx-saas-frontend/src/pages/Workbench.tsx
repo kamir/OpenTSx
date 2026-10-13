@@ -14,14 +14,19 @@ import Scope from '../workbench/Scope';
 import {
   SOURCE_ID,
   defaultSinkTopic,
+  descendants,
   evaluate,
+  inputsOf,
+  runBlocker,
   toDagYaml,
   toDefinition,
   toJavaCode,
   toPfdJson,
   useFlow,
   validate,
+  vectorComponents,
 } from '../workbench/flow';
+import { vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
@@ -243,9 +248,22 @@ function Properties({ node }: { node: FlowNode }) {
   const sourceInfo = useFlow((s) => s.sourceInfo);
   const updateParams = useFlow((s) => s.updateParams);
   const removeNode = useFlow((s) => s.removeNode);
+  const addInput = useFlow((s) => s.addInput);
+  const removeInput = useFlow((s) => s.removeInput);
   const op = OP_BY_ID[node.op];
-  const parent = nodes.find((n) => n.id === node.input);
-  const bucket = useMemo(() => evaluate(source, nodes, node.id), [source, nodes, node.id]);
+  const inputs = inputsOf(node).map((i) => nodes.find((n) => n.id === i));
+  // A failing operator is reported by the page; here it only means there is nothing to list.
+  const bucket = useMemo(() => {
+    try {
+      return evaluate(source, nodes, node.id);
+    } catch {
+      return null;
+    }
+  }, [source, nodes, node.id]);
+  const components = op?.multiInput ? vectorComponents(nodes, node) : [];
+  const downstream = op?.multiInput ? descendants(nodes, node.id, true) : new Set<string>();
+  const candidates = op?.multiInput ? nodes.filter((n) => !downstream.has(n.id) && !inputsOf(node).includes(n.id)) : [];
+  const records = bucket?.vector ? vectorRecords(bucket, node.label, 2) : [];
 
   return (
     <div className="wb-props">
@@ -253,7 +271,7 @@ function Properties({ node }: { node: FlowNode }) {
         <dt>Bucket</dt><dd>{node.label}</dd>
         {op ? (
           <>
-            <dt>Transform</dt><dd>{node.label} = {op.label}( {parent?.label} )</dd>
+            <dt>Transform</dt><dd>{node.label} = {op.label}( {inputs.map((n) => n?.label).join(', ')} )</dd>
             <dt>Operator</dt><dd>{op.dagOp ?? op.id}{op.inCatalog ? ' (stream operator catalog)' : ' (workbench only)'}</dd>
           </>
         ) : (
@@ -274,7 +292,43 @@ function Properties({ node }: { node: FlowNode }) {
           </div>
         </fieldset>
       )}
+      {op?.multiInput && (
+        <fieldset>
+          <legend>Components (one per input, in vector order)</legend>
+          <ol className="wb-components">
+            {inputs.map((n, i) => (
+              <li key={n?.id ?? i}>
+                <code>{components[i]}</code>
+                <span title={n?.label}>{n?.label}</span>
+                {i === 0 ? (
+                  <span className="wb-muted">first input</span>
+                ) : (
+                  <button onClick={() => n && removeInput(node.id, n.id)}>Remove</button>
+                )}
+              </li>
+            ))}
+          </ol>
+          <label className="wb-param grow">
+            add input
+            <select
+              value=""
+              aria-label="Add an input to the vector"
+              disabled={candidates.length === 0}
+              onChange={(e) => e.target.value && addInput(node.id, e.target.value)}
+            >
+              <option value="">{candidates.length === 0 ? 'no further bucket in the flow' : 'choose a bucket'}</option>
+              {candidates.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
+            </select>
+          </label>
+        </fieldset>
+      )}
       {bucket?.note && <pre className="wb-note">{bucket.note}</pre>}
+      {records.length > 0 && (
+        <fieldset>
+          <legend>First measuring points as written to the topic (opentsx.vector.v1)</legend>
+          <pre className="wb-note" tabIndex={0}>{records.map((r) => JSON.stringify(r)).join('\n')}</pre>
+        </fieldset>
+      )}
       {bucket && (
         <table className="wb-table">
           <thead>
@@ -303,8 +357,28 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-function SmartTopic({ node }: { node: FlowNode }) {
+interface RunResult {
+  sinks: { topic: string; records: number; keys: number; series: number; missingValues: number; components: string[]; from?: string; to?: string }[];
+  skipped: string[];
+}
+
+function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
   const state = useFlow();
+  const [run, setRun] = useState<{ busy: boolean; result?: RunResult; error?: string }>({ busy: false });
+  const blocker = runBlocker(state.nodes);
+
+  const runOnce = async () => {
+    const url = `${base.replace(/\/$/, '')}/v1/dags/run`;
+    setRun({ busy: true });
+    try {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/yaml' }, body: toDagYaml(useFlow.getState()) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+      setRun({ busy: false, result: body as RunResult });
+    } catch (e) {
+      setRun({ busy: false, error: `The run failed at ${url}: ${e instanceof Error ? e.message : e}` });
+    }
+  };
   const sinks = state.nodes.filter((n) => n.sinkTopic);
   const findings = validate(state.nodes);
   const blocked = findings.some((f) => f.level === 'error');
@@ -325,7 +399,7 @@ function SmartTopic({ node }: { node: FlowNode }) {
           <input
             type="checkbox"
             checked={!!node.sinkTopic}
-            onChange={(e) => state.setSink(node.id, e.target.checked ? defaultSinkTopic(state.domain, node.label) : null)}
+            onChange={(e) => state.setSink(node.id, e.target.checked ? defaultSinkTopic(state.domain, node.label, node.op) : null)}
           />
           Publish as Smart Topic
         </label>
@@ -364,13 +438,37 @@ function SmartTopic({ node }: { node: FlowNode }) {
       </button>
       <p className="wb-muted">
         The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
-        a proposal; nothing in this repository runs the file yet, so this step hands it over and does not deploy.
+        a proposal; the download hands the file over and does not deploy.
       </p>
+      <fieldset>
+        <legend>Run on KafScale</legend>
+        <p className="wb-muted">
+          The retrieval server can run vector sinks once over the episodes it holds and append the measuring points to
+          their topic. It is one pass, not a processor that keeps running; a second run appends again and the later
+          measuring point wins. The topic then shows in the TS inventory.
+        </p>
+        <button className="wb-primary" disabled={!!blocker || blocked || run.busy} onClick={runOnce}>
+          {run.busy ? 'Running' : 'Run once and write to KafScale'}
+        </button>
+        {blocker && <p className="wb-muted">{blocker}</p>}
+        {run.error && <div className="wb-error" role="alert">{run.error}</div>}
+        {run.result && (
+          <ul className="wb-findings" role="status">
+            {run.result.sinks.map((s) => (
+              <li key={s.topic} className="ok">
+                <b>Written</b> {s.records.toLocaleString('en')} measuring points for {s.keys} key(s) from {s.series} series to{' '}
+                <code>{s.topic}</code>; components {s.components.join(', ')}; {s.missingValues} missing values. Open the TS inventory to load them.
+              </li>
+            ))}
+            {run.result.skipped.map((s) => <li key={s} className="info"><b>Skipped</b> {s}</li>)}
+          </ul>
+        )}
+      </fieldset>
     </div>
   );
 }
 
-function Inspector() {
+function Inspector({ base }: { base: string }) {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -402,7 +500,7 @@ function Inspector() {
         ) : tab === 'dag' ? (
           <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} />
+          <SmartTopic node={node} base={base} />
         )}
       </div>
     </aside>
@@ -526,6 +624,9 @@ export default function Workbench() {
     }
     setError(null);
     loadBucket(l.bucket, { kind: 'inventory', detail: l.detail });
+    // the DAG then names the series it reads, so a runtime works on the same selection
+    if (l.topic) useFlow.getState().setSourceSeries(l.seriesIds);
+    else if (l.domain) setStatus('The selection spans several topics: the flow keeps its source topic.');
     setInventoryOpen(false);
   };
 
@@ -633,7 +734,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector />
+        <Inspector base={remote.base} />
       </main>
 
       <footer className="wb-status">
