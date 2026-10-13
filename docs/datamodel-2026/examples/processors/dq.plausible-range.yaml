@@ -1,0 +1,22 @@
+# Example processor description, schema opentsx.processor.v1 (draft), for an operator of the workbench
+# (opentsx-saas-frontend/src/workbench/ops.ts, id dq.plausible-range, written into the DAG as dq.checks).
+schema: opentsx.processor.v1
+id: dq.plausible-range
+version: 1
+kind: transformer
+title: Plausible range
+description: Values outside the band become gaps or are clipped.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: min, type: number, required: true, default: -10, from: expect.min }
+  - { name: max, type: number, required: true, default: 10, from: expect.max }
+  - { name: mode, type: enum, values: [gap, clip], default: gap }
+semantics: { needs: point, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+dag: { op: dq.checks, fixed: { checks: [PLAUSIBLE_RANGE] } }
+runtimes:
+  workbench: { status: available }
+  processor: { status: planned, note: "TASK-013, 013.5" }
+ui: { group: stream, label: Plausible range }

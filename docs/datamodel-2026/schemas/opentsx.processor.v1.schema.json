@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.processor.v1.schema.json",
+  "title": "opentsx.processor.v1",
+  "description": "Declarative description of one time series processor: a generator, a transformer or a model. The id is the op of a node in opentsx.dag.v1. Draft, see docs/datamodel-2026/14-ENGINEERING-FLOW.md.",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "kind",
+    "title",
+    "outputs",
+    "runtimes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "opentsx.processor.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z0-9-]+)*$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "kind": {
+      "enum": [
+        "generator",
+        "transformer",
+        "model"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/port"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/port"
+      }
+    },
+    "params": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/param"
+      }
+    },
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deterministic": {
+          "type": "boolean",
+          "description": "Same input and parameters (and seed) give the same output."
+        },
+        "keeps": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "time",
+              "unit",
+              "count",
+              "series"
+            ]
+          },
+          "description": "What of the input the output keeps."
+        },
+        "origin": {
+          "enum": [
+            "MEASURED",
+            "REPORTED",
+            "FORECAST",
+            "ESTIMATED",
+            "SYNTHETIC",
+            "INHERIT"
+          ],
+          "description": "Origin of the output; INHERIT: the worst origin of the inputs."
+        },
+        "needs": {
+          "enum": [
+            "point",
+            "window",
+            "series"
+          ],
+          "description": "How much of the input one output value needs. series: the whole series, so the processor cannot run continuously."
+        }
+      }
+    },
+    "runtimes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "workbench": {
+          "$ref": "#/$defs/runtime"
+        },
+        "java": {
+          "$ref": "#/$defs/runtime"
+        },
+        "python": {
+          "$ref": "#/$defs/runtime"
+        },
+        "go": {
+          "$ref": "#/$defs/runtime"
+        },
+        "processor": {
+          "$ref": "#/$defs/runtime",
+          "description": "Runs continuously on a topic."
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "enum": [
+            "source",
+            "transform",
+            "univariate",
+            "group",
+            "stream"
+          ],
+          "description": "Tab of the operator panel of the workbench (OpGroup); source for generators."
+        },
+        "label": {
+          "type": "string"
+        }
+      }
+    },
+    "testvectors": {
+      "type": "string"
+    },
+    "dag": {
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "type": "string",
+          "description": "Operator of opentsx.dag when it is named differently from the processor."
+        },
+        "fixed": {
+          "type": "object",
+          "description": "Parameters of the DAG operator that are fixed for this processor."
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "generator"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "maxItems": 0
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "inputs"
+        ],
+        "properties": {
+          "inputs": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "port": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "type": {
+          "enum": [
+            "series",
+            "vector",
+            "xy",
+            "stats",
+            "events",
+            "model"
+          ],
+          "description": "xy: values over another axis than time (spectrum, histogram, distribution); cannot be published as a signal."
+        },
+        "cardinality": {
+          "enum": [
+            "one",
+            "many"
+          ]
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "param": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+        },
+        "type": {
+          "enum": [
+            "number",
+            "integer",
+            "boolean",
+            "string",
+            "duration",
+            "enum",
+            "list"
+          ]
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Allowed values of an enum."
+        },
+        "default": {},
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^expect\\.(unit|min|max|interval|kind)$",
+          "description": "Preset from the expectation of the signal whose data the processor produces."
+        },
+        "description": {
+          "type": "string"
+        },
+        "editAs": {
+          "enum": [
+            "seconds"
+          ],
+          "description": "How the workbench lets a person enter a duration."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "enum"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "values"
+            ],
+            "properties": {
+              "values": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "available",
+            "planned",
+            "none"
+          ]
+        },
+        "class": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

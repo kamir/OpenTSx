@@ -61,6 +61,11 @@ entries are grouped by date. The detailed progress log (German) is in
   delete them. "Start" and "Stop" (in each row, in the details and for a selection; they replace "Activate" and
   "Pause") run a flow as a Smart Topic on the vector processor. A flow the processor cannot run shows what it
   needs and is no longer marked active.
+- Concept and draft for the engineering workflow from system to model
+  ([`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](docs/datamodel-2026/14-ENGINEERING-FLOW.md), German): the
+  signal as the key between Studio, workbench and Flow Composer, and two draft schemas, `opentsx.system.v1` (a
+  whole system: which signal comes from where) and `opentsx.processor.v1` (generators, transformers, models),
+  with examples for the system `h2-chain`. Nothing of it is implemented; it waits for sign-off.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the

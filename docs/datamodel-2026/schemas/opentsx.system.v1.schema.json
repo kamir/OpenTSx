@@ -1,0 +1,378 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.system.v1.schema.json",
+  "title": "opentsx.system.v1",
+  "description": "Declarative description of one system: its plan, catalogs and inventory by reference, and for every signal where its raw and its clean data come from. Draft, see docs/datamodel-2026/14-ENGINEERING-FLOW.md. The tool checks what a schema cannot: unique ids and every reference.",
+  "type": "object",
+  "required": [
+    "schema",
+    "system",
+    "version",
+    "domain",
+    "signals"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "opentsx.system.v1"
+    },
+    "system": {
+      "$ref": "#/$defs/slug",
+      "description": "Id of the system; the name of its twin plan where one exists."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "example": {
+      "type": "boolean",
+      "description": "True when values are invented."
+    },
+    "domain": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "description": "Topic namespace: tsx.<domain>.*"
+    },
+    "plan": {
+      "$ref": "#/$defs/ref",
+      "description": "Atoms and wiring (twin plan)."
+    },
+    "inventory": {
+      "type": "object",
+      "required": [
+        "ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        }
+      }
+    },
+    "catalogs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "ref"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/slug"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/signal"
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/named"
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/named"
+      }
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^P(\\d+D(T(\\d+H)?(\\d+M)?(\\d+(\\.\\d+)?S)?)?|T(\\d+H(\\d+M)?(\\d+(\\.\\d+)?S)?|\\d+M(\\d+(\\.\\d+)?S)?|\\d+(\\.\\d+)?S))$"
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string"
+        }
+      }
+    },
+    "named": {
+      "type": "object",
+      "required": [
+        "id",
+        "ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "ref": {
+          "type": "string"
+        }
+      }
+    },
+    "signal": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*(\\.[a-z0-9_]+|/[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*/[A-Za-z0-9_.-]+)$",
+          "description": "<atom>.<port> for a port of the plan (the id is the port), <atom>/<asset>/<channel> for a sensor channel below an atom. Unique within the system; the tool checks uniqueness and that atom, port, asset and channel exist."
+        },
+        "title": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*/[A-Za-z0-9._-]+$",
+          "description": "<catalog id>/<channel id>; the channel id is the last part of the signal id. The expectation is taken from the catalog and may be overridden by expect."
+        },
+        "expect": {
+          "$ref": "#/$defs/expect"
+        },
+        "raw": {
+          "$ref": "#/$defs/stage"
+        },
+        "clean": {
+          "$ref": "#/$defs/stage"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "channel"
+          ]
+        },
+        {
+          "required": [
+            "expect"
+          ]
+        }
+      ]
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "type": "string"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "interval": {
+          "$ref": "#/$defs/duration",
+          "description": "Sampling interval; the catalog calls it sampling."
+        },
+        "kind": {
+          "enum": [
+            "ANALOG",
+            "STATUS",
+            "COUNTER"
+          ],
+          "description": "As ChannelKind of the catalog."
+        },
+        "origin": {
+          "enum": [
+            "MEASURED",
+            "REPORTED",
+            "FORECAST",
+            "ESTIMATED",
+            "SYNTHETIC"
+          ],
+          "description": "Where the data is expected to come from once the system is complete."
+        }
+      },
+      "minProperties": 1
+    },
+    "stage": {
+      "type": "object",
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      }
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "topic",
+            "select",
+            "origin"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "topic"
+            },
+            "topic": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "select": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "metric": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "series": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "minProperties": 1
+            },
+            "origin": {
+              "enum": [
+                "MEASURED",
+                "REPORTED",
+                "FORECAST",
+                "ESTIMATED",
+                "SYNTHETIC"
+              ],
+              "description": "Origin of the data in the topic; SYNTHETIC for the output of a simulator."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "processor"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "generator"
+            },
+            "processor": {
+              "type": "string",
+              "description": "Id of an opentsx.processor.v1 of kind generator."
+            },
+            "seed": {
+              "type": "integer"
+            },
+            "params": {
+              "type": "object"
+            }
+          },
+          "description": "Simulated: always SYNTHETIC. The data goes to tsx.<domain>.synthetic.v2."
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "flow"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "flow"
+            },
+            "flow": {
+              "$ref": "#/$defs/slug",
+              "description": "Id in the list flows."
+            },
+            "output": {
+              "type": "string",
+              "description": "Node of the flow whose result is this stage."
+            }
+          },
+          "description": "Derived: the data goes to tsx.<domain>.clean.v2; the origin is the worst of the inputs."
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "manual"
+            },
+            "value": {
+              "type": "number"
+            },
+            "table": {
+              "type": "string",
+              "description": "Reference to a table of time and value."
+            },
+            "origin": {
+              "enum": [
+                "MEASURED",
+                "REPORTED",
+                "FORECAST",
+                "ESTIMATED",
+                "SYNTHETIC"
+              ],
+              "default": "REPORTED"
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "required": [
+                "table"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
