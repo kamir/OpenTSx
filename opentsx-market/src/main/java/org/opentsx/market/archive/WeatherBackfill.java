@@ -26,6 +26,11 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>{@code air_temperature}: hourly {@code TT_TU} (°C), {@code hourly/air_temperature/{historical,recent}};</li>
  *   <li>{@code wind_speed}: hourly mean {@code F} (m/s), {@code hourly/wind/{historical,recent}};</li>
+ *   <li>from the same products: {@code relative_humidity} ({@code RF_TU}, %) and {@code wind_direction} ({@code D}, deg);</li>
+ *   <li>{@code wind_speed_10min}: 10-minute mean {@code FF_10} (m/s), {@code 10_minutes/wind/};</li>
+ *   <li>{@code wind_gust}: highest gust of the hour {@code FX_911} (m/s), {@code hourly/extreme_wind/};</li>
+ *   <li>{@code pressure}: hourly {@code P0} at station level (hPa), {@code hourly/pressure/};</li>
+ *   <li>{@code precipitation}: hourly sum {@code R1} (mm), {@code hourly/precipitation/};</li>
  *   <li>{@code global_radiation}: 10-minute {@code GS_10} as mean irradiance (W/m²),
  *       {@code 10_minutes/solar/{historical,recent}}.</li>
  * </ul>
@@ -46,7 +51,13 @@ public final class WeatherBackfill {
 
     static final Map<String, Product> PRODUCTS = Map.of(
             "air_temperature", new Product("hourly/air_temperature/", "stundenwerte_TU_", Variable.AIR_TEMPERATURE),
+            "relative_humidity", new Product("hourly/air_temperature/", "stundenwerte_TU_", Variable.RELATIVE_HUMIDITY),
             "wind_speed", new Product("hourly/wind/", "stundenwerte_FF_", Variable.WIND_SPEED),
+            "wind_direction", new Product("hourly/wind/", "stundenwerte_FF_", Variable.WIND_DIRECTION),
+            "wind_speed_10min", new Product("10_minutes/wind/", "10minutenwerte_wind_", Variable.WIND_SPEED),
+            "wind_gust", new Product("hourly/extreme_wind/", "stundenwerte_FX_", Variable.WIND_GUST),
+            "pressure", new Product("hourly/pressure/", "stundenwerte_P0_", Variable.PRESSURE),
+            "precipitation", new Product("hourly/precipitation/", "stundenwerte_RR_", Variable.PRECIPITATION),
             "global_radiation", new Product("10_minutes/solar/", "10minutenwerte_SOLAR_", Variable.GLOBAL_IRRADIANCE));
 
     private final Archive archive;
@@ -147,6 +158,7 @@ public final class WeatherBackfill {
 
     /** Parameters of the backfill, in CLI order. */
     public static List<String> parameters() {
-        return List.of("air_temperature", "wind_speed", "global_radiation");
+        return List.of("air_temperature", "relative_humidity", "wind_speed", "wind_direction", "wind_speed_10min", "wind_gust",
+                "pressure", "precipitation", "global_radiation");
     }
 }

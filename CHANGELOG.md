@@ -127,6 +127,9 @@ entries are grouped by date. The detailed progress log (German) is in
   its status, which is `restricted` as long as the inputs are those of the scenario. The web application has the
   place "Simulate": a question on the left, the run next to the reference on the right. Also: a signal bound in the
   working copy opens in the workbench, and a flow may read a generated series as the raw grade of its signal.
+- `opentsx-market`, weather backfill: six more DWD quantities per station (relative humidity, wind direction,
+  10-minute wind speed, the highest gust of the hour, pressure, precipitation) next to temperature, hourly wind
+  speed and global radiation. `opentsx-dwd` knows the variable `weather.wind_gust`.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

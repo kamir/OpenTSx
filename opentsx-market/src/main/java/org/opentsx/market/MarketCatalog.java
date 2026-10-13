@@ -116,7 +116,11 @@ public final class MarketCatalog {
     public static SeriesDef dwd(String station, String param) {
         String unit = switch (param) {
             case "air_temperature" -> "Cel";
-            case "wind_speed" -> "m/s";
+            case "wind_speed", "wind_speed_10min", "wind_gust" -> "m/s";
+            case "wind_direction" -> "deg";
+            case "relative_humidity" -> "%";
+            case "pressure" -> "hPa";
+            case "precipitation" -> "mm";
             case "global_radiation" -> "W/m2";
             default -> throw new IllegalArgumentException("unknown DWD parameter " + param);
         };

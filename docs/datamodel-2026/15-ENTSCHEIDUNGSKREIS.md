@@ -558,14 +558,26 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
 2. **Der Zeitraum.** Das Szenario der Demo spielt am 2026-10-01, die Daten sind von 2025. Solange beides
    nebeneinander steht, hält die Prüfung "Alter gegen die neuesten Daten des Systems" das Wetter für veraltet. Das
    Szenario gehört auf einen Tag des Jahres 2025 gelegt, oder das System bekommt einen Zeitraum, den es betrachtet.
-3. **Die Größen.** Geladen werden drei: Temperatur, Windgeschwindigkeit als Stundenmittel, Globalstrahlung. Das
-   zweite Briefing nennt dazu Windrichtung, Luftdruck, Niederschlag, Feuchte, Böen und Wind in 10 Minuten. Der
-   Abruf kennt sie noch nicht.
+3. **Die Größen.** Geladen waren zunächst drei: Temperatur, Windgeschwindigkeit als Stundenmittel,
+   Globalstrahlung. **Nachgezogen (D77):** Der Abruf kennt jetzt auch Windrichtung, Luftdruck, Niederschlag,
+   Feuchte, Böen (höchste Böe der Stunde) und Wind in 10 Minuten. Für die Station des Windparks (01759) sind sie
+   für 2025 geladen, Abdeckung 99,60 bis 99,74 Prozent, 2 bis 4 Lücken je Reihe. Die täglichen Abrufe im Cluster
+   holen weiter nur die drei ersten Größen; die neuen werden mit `--stations <id>:<größe>` angefordert.
 4. **Der Plan.** Der Jahreslauf rechnet mit der ersten Fassung des Plans. Die zweite Fassung (S1) rechnet in
    Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte.
 5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
    MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
    nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.
+
+**Entschieden vom Auftraggeber am 2026-10-13.**
+
+| Nr. | Thema | Entscheidung | Stand |
+|---|---|---|---|
+| D75 | Zeitraum | das Szenario der Wasserstoffkette wird auf einen Tag im Jahr 2025 gelegt, damit Demo, Wetter und Preis zusammenpassen | wie vorgeschlagen |
+| D76 | Weg der Daten | die Reihen des Jahres 2025 werden **in den Broker des Labors geschrieben** und an die Signale gebunden | **geändert** (Vorschlag war: Läufe direkt aus dem Archiv, der Broker bleibt unberührt) |
+| D77 | Wettergrößen | die sechs fehlenden Größen werden **jetzt** nachgezogen | **geändert** (Vorschlag war: mit den Regeln, die sie brauchen) |
+| D78 | Plan für das Jahr | die zweite Fassung des Plans (S1) rechnet das Jahr im Viertelstundenschritt; vorher wird geprüft, ob Regler und Rampen bei diesem Schritt stabil bleiben | wie vorgeschlagen |
+| D79 | Sprache | die Oberflächen bleiben, wie sie sind: Web-Anwendung Englisch, Studio Deutsch | entschieden |
 
 Offen bleibt nach diesem Briefing: Standort und Koordinaten, Kennwerte der Anlagen, Druckbereiche der
 Wasserstoffseite, das Abnahmeprofil, die Bedingungen für Import, Export und Vermarktung. Ohne sie sind die Werte
