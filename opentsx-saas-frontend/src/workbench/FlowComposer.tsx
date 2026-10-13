@@ -21,7 +21,8 @@ interface Props {
   onNew: () => void;
   /** Flows that no longer exist; the editor lets go of them. */
   onDeleted: (ids: number[]) => void;
-  onClose: () => void;
+  /** Closes the window; absent when the composer is a page of its own. */
+  onClose?: () => void;
 }
 
 const STATUSES = ['draft', 'active', 'paused', 'archived'];
@@ -194,23 +195,14 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
   const plan = focused ? runPlan(focused) : null;
   const none = targets.length === 0;
 
-  return (
-    <div className="wb-inv-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="wb-inv"
-        role="dialog"
-        aria-modal="true"
-        aria-label="OpenTSx Flow Composer"
-        tabIndex={-1}
-        ref={dialog}
-        onKeyDown={(e) => e.key === 'Escape' && onClose()}
-      >
+  const body = (
+      <>
         <header className="wb-inv-head">
-          <h2>OpenTSx Flow Composer</h2>
-          <button onClick={onNew} title="Empties the editor for a new flow">New flow</button>
+          <h2>{onClose ? 'OpenTSx Flow Composer' : 'Your flows'}</h2>
+          <button onClick={onNew} title="Opens the editor with an empty flow">New flow</button>
           <button onClick={refresh}>Reload</button>
           <span className="wb-grow" />
-          <button onClick={onClose}>Close</button>
+          {onClose && <button onClick={onClose}>Close</button>}
         </header>
 
         <div className="wb-inv-source">
@@ -436,7 +428,26 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
             {openable.length > 1 ? `Open ${openable.length} flows in the editor` : 'Open in the editor'}
           </button>
         </footer>
+      </>
+  );
+
+  return onClose ? (
+    <div className="wb-inv-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div
+        className="wb-inv"
+        role="dialog"
+        aria-modal="true"
+        aria-label="OpenTSx Flow Composer"
+        tabIndex={-1}
+        ref={dialog}
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      >
+        {body}
       </div>
     </div>
+  ) : (
+    <main className="wb-inv wb-inv-page" aria-label="Flows of your account">
+      {body}
+    </main>
   );
 }

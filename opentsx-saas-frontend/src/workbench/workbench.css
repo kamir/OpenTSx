@@ -1121,3 +1121,15 @@
   color: var(--ink);
   resize: vertical;
 }
+
+/* the Flow Composer as a page of its own */
+.wb.wb-page {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.wb-inv.wb-inv-page {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  box-shadow: none;
+}
