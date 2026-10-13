@@ -3,8 +3,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: product shell. Navy app bar (scenario switch, guide, detail level), scenario summary with headline figures,
-   four views (overview, comparison, system diagram with inspector beside it, series). Stacks at phone width. */
+/* Layout: tool shell. Title bar with menus, icon rail on the left (collapsible), scenarios as document tabs, workspace
+   that scrolls on its own, detail panel sliding in from the right, status bar. Overlays instead of columns at phone width. */
 :root {
   --bg: #f7f9fa; --surface: #ffffff; --surface-2: #f0f3f6; --ink: #0a083b; --ink-2: #57586e; --ink-3: #6b6d85;
   --line: #e3e6ee; --grid: #edf0f4; --navy: #0a083b; --on-navy: #ffffff; --on-navy-2: #b9bbd0;
@@ -34,32 +34,80 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 :root:not([data-tech]) .tech { display: none !important; }
-html { scroll-padding-top: 120px; }
-body { margin: 0; background: var(--bg); color: var(--ink-2); font-family: var(--font-body); font-size: 14px; line-height: 1.55; }
+html, body { height: 100%; }
+body { display: grid; grid-template-rows: 40px minmax(0, 1fr) 26px; height: 100dvh; overflow: hidden; margin: 0; background: var(--bg); color: var(--ink-2); font-family: var(--font-body); font-size: 14px; line-height: 1.55; }
 h1, h2, h3, p { margin: 0; }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 a { color: var(--action); }
 :focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
 
-/* app bar */
-.bar { position: sticky; top: 0; z-index: 5; background: var(--navy); color: var(--on-navy); }
-.bar-in { max-width: 1440px; margin: 0 auto; padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; }
-.brand { font-weight: 700; font-size: 15px; letter-spacing: 0.01em; white-space: nowrap; }
-.brand small { font-weight: 500; font-size: 12px; color: var(--on-navy-2); margin-left: 8px; }
-.switch { display: flex; gap: 4px; flex: 1 1 auto; min-width: 0; overflow-x: auto; }
-.switch button { font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--on-navy-2); background: none; border: 1px solid transparent; border-radius: 10px; padding: 7px 12px; cursor: pointer; }
-.switch button:hover { color: var(--on-navy); }
-.switch button[aria-pressed="true"] { color: var(--on-navy); background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.18); }
-.bar .tools { display: flex; gap: 8px; align-items: center; }
-.bar .ghost { font: inherit; font-size: 13px; font-weight: 600; color: var(--on-navy); background: none; border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 10px; padding: 7px 12px; cursor: pointer; white-space: nowrap; }
-.bar .ghost:hover, .bar .ghost[aria-pressed="true"] { background: rgba(255, 255, 255, 0.14); }
-.bar :focus-visible { outline-color: #ffffff; }
-.notice { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); color: var(--ink); font-size: 13px; }
-.notice div { max-width: 1440px; margin: 0 auto; padding: 7px 24px; }
+/* title bar and menus */
+.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.titlebar { position: relative; z-index: 20; background: var(--navy); color: var(--on-navy); display: flex; align-items: center; gap: 4px; padding-right: 8px; min-width: 0; }
+.titlebar :focus-visible, .rail :focus-visible { outline-color: #ffffff; }
+.brand { display: flex; align-items: center; font-weight: 700; font-size: 13.5px; letter-spacing: 0.01em; white-space: nowrap; }
+.brand .mark { width: 52px; display: grid; place-items: center; color: var(--accent); }
+.menubar { display: flex; margin-left: 14px; }
+.menu { position: relative; }
+.menu-btn { font: inherit; font-size: 13px; font-weight: 500; color: var(--on-navy-2); background: none; border: 0; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.menu-btn:hover, .menu-btn[aria-expanded="true"] { color: var(--on-navy); background: rgba(255, 255, 255, 0.12); }
+.menu-pop { position: absolute; top: calc(100% + 6px); left: 0; min-width: 270px; max-width: calc(100vw - 16px); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-over); padding: 5px; display: grid; }
+.menu-pop button { font: inherit; font-size: 13px; text-align: left; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px 6px 6px; border: 0; border-radius: 6px; background: none; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.menu-pop button span { overflow: hidden; text-overflow: ellipsis; }
+.menu-pop button:hover, .menu-pop button:focus-visible { background: var(--surface-2); outline: none; }
+.menu-pop button[aria-checked="true"]::before { content: "✓"; color: var(--action); font-weight: 700; }
+.menu-pop button:not([aria-checked="true"])::before { content: ""; }
+.menu-pop kbd { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.menu-pop hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+.tb-space { flex: 1 1 auto; }
+.tb-btn { font: inherit; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 9px; color: var(--on-navy-2); background: none; border: 1px solid transparent; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+.tb-btn .i { width: 17px; height: 17px; }
+.tb-btn:hover { color: var(--on-navy); background: rgba(255, 255, 255, 0.1); }
+.tb-btn[aria-pressed="true"] { color: var(--on-navy); background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.2); }
 
-.app { max-width: 1440px; margin: 0 auto; padding: 24px 24px 64px; display: grid; gap: 24px; }
+/* workspace: rail, centre, detail panel */
+.work { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); min-height: 0; overflow: hidden; }
+.work[data-detail] { grid-template-columns: auto minmax(0, 1fr) 420px; }
+.rail { background: var(--navy); width: 52px; padding: 8px 6px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; border-top: 1px solid rgba(255, 255, 255, 0.08); transition: width 0.18s ease; }
+:root[data-rail="open"] .rail { width: 220px; }
+.rail .tabs { display: flex; flex-direction: column; gap: 2px; }
+.rail .grow { flex: 1 1 auto; }
+.rail button { position: relative; flex: none; font: inherit; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--on-navy-2); cursor: pointer; white-space: nowrap; overflow: hidden; text-align: left; }
+.rail button span { opacity: 0; transition: opacity 0.14s ease; }
+:root[data-rail="open"] .rail button span { opacity: 1; }
+.rail button:hover { color: var(--on-navy); background: rgba(255, 255, 255, 0.08); }
+.rail button[aria-selected="true"] { color: var(--on-navy); background: rgba(255, 255, 255, 0.13); }
+.rail button[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+:root[data-rail="open"] #rail-toggle .i { transform: scaleX(-1); }
+.center { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-width: 0; min-height: 0; }
+.doctabs { display: flex; background: var(--surface-2); border-bottom: 1px solid var(--line); overflow-x: auto; min-width: 0; }
+.doctabs button { flex: none; font: inherit; font-size: 13px; font-weight: 500; color: var(--ink-2); background: none; border: 0; border-right: 1px solid var(--line); border-top: 2px solid transparent; padding: 7px 18px 8px; cursor: pointer; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+.doctabs button:hover { color: var(--ink); }
+.doctabs button[aria-pressed="true"] { background: var(--bg); color: var(--ink); font-weight: 600; border-top-color: var(--accent); box-shadow: 0 1px 0 var(--bg); }
+.doctabs button:focus-visible { outline-offset: -2px; }
+.crumbs { display: flex; align-items: center; gap: 12px; padding: 6px 24px; border-bottom: 1px solid var(--line); min-width: 0; }
+.crumbs h1 { font-size: 12.5px; font-weight: 500; color: var(--ink-3); display: flex; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.crumbs h1 span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.crumbs h1 b { font-weight: 600; color: var(--ink); }
+.scrollarea { overflow: auto; min-height: 0; }
+.detail { background: var(--surface); border-left: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; animation: slide-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes slide-in { from { transform: translateX(40px); opacity: 0; } }
+.detail-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px 5px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.detail-body { overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.icon-btn { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--ink-2); cursor: pointer; }
+.icon-btn:hover { background: var(--line); color: var(--ink); }
+.icon-btn .i { width: 16px; height: 16px; }
+
+/* status bar */
+.status { background: var(--navy); color: var(--on-navy-2); display: flex; align-items: center; gap: 16px; padding-right: 12px; font-size: 12px; white-space: nowrap; overflow: hidden; }
+.status .sample { align-self: stretch; display: flex; align-items: center; padding: 0 12px; background: var(--accent); color: #0a083b; font-weight: 700; }
+.status .meta { display: flex; gap: 16px; }
+.status .grow { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.status #flash { color: var(--on-navy); font-weight: 600; }
+
+.app { max-width: 1440px; margin: 0 auto; padding: 20px 24px 48px; display: grid; gap: 24px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 20px; display: grid; gap: 14px; min-width: 0; align-content: start; }
-.card h2 { font-size: 16px; font-weight: 600; color: var(--ink); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.card h2, .detail-body h2 { font-size: 16px; font-weight: 600; color: var(--ink); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 h3 { font-size: 12px; font-weight: 600; color: var(--ink-3); }
 .stack { display: grid; gap: 24px; min-width: 0; align-content: start; }
 .sec { display: grid; gap: 8px; min-width: 0; }
@@ -70,7 +118,7 @@ h3 { font-size: 12px; font-weight: 600; color: var(--ink-3); }
 
 /* summary */
 .summary { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px 32px; align-items: start; }
-.summary h1 { font-size: 24px; line-height: 1.25; font-weight: 700; color: var(--ink); }
+.summary .title { display: block; font-size: 24px; line-height: 1.25; font-weight: 700; color: var(--ink); }
 .summary .story { max-width: 68ch; font-size: 14.5px; color: var(--ink-2); margin-top: 8px; }
 .decision { margin-top: 14px; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 10px 10px 0; color: var(--ink); font-weight: 500; max-width: 68ch; }
 .decision span { display: block; font-size: 12px; font-weight: 600; color: var(--ink-3); }
@@ -90,11 +138,7 @@ h3 { font-size: 12px; font-weight: 600; color: var(--ink-3); }
 .inline-stats { display: flex; flex-wrap: wrap; gap: 4px 20px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
 .inline-stats b { font-weight: 500; color: var(--ink); }
 
-/* tabs */
-.tabs { position: sticky; top: 52px; z-index: 4; background: var(--bg); display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; margin-bottom: -8px; }
-.tabs button { font: inherit; font-weight: 600; white-space: nowrap; background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 14px; color: var(--ink-2); cursor: pointer; }
-.tabs button:hover { color: var(--ink); }
-.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--action); }
+/* panes */
 .pane { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; align-items: start; }
 .two { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
 .seg { display: inline-flex; flex-wrap: wrap; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; max-width: 100%; }
@@ -128,6 +172,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 .serie { display: flex; justify-content: space-between; gap: 8px; align-items: center; min-height: 40px; padding: 6px 10px; border-radius: 10px; cursor: pointer; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; width: 100%; }
 .serie:hover { background: var(--surface-2); }
 .serie[aria-current="true"] { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--action); }
+.serie .chip { flex: none; }
 .serie .k { font-size: 13px; font-weight: 500; }
 .serie .id { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -173,7 +218,6 @@ td.doc { min-width: 20ch; }
 .legend .dash { background: repeating-linear-gradient(90deg, var(--ink-3) 0 4px, transparent 4px 7px); }
 
 /* system diagram */
-.gridlay { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 24px; align-items: start; }
 .graphwrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
 .graph text { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-2); }
 .graph .phase text { font-family: var(--font-body); font-size: 11px; font-weight: 600; fill: var(--ink-3); letter-spacing: 0.08em; }
@@ -215,10 +259,9 @@ td.doc { min-width: 20ch; }
 .ticks button::before { content: ""; position: absolute; left: 6px; top: 2px; width: 2px; height: 10px; border-radius: 1px; background: var(--accent); }
 .timepill { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--ink); background: var(--surface-2); border-radius: 8px; padding: 4px 10px; white-space: nowrap; }
 .toolbar { display: grid; grid-template-columns: auto minmax(160px, 1fr); gap: 4px 16px; align-items: center; }
-.inspector { position: sticky; top: 118px; max-height: calc(100vh - 142px); overflow: auto; }
-.inspector .seg { display: flex; flex-wrap: nowrap; }
-.inspector .seg button { flex: 1 1 auto; padding: 6px 4px; font-size: 12px; }
-.inspector h2 small { font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--ink-3); }
+.detail-body .seg { display: flex; flex-wrap: nowrap; }
+.detail-body .seg button { flex: 1 1 auto; padding: 6px 4px; font-size: 12px; }
+.detail-body h2 small { font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--ink-3); }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
 .kv .k { color: var(--ink-3); }
 .kv .v { font-family: var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
@@ -236,6 +279,7 @@ td.doc { min-width: 20ch; }
 .own-form .wide { grid-column: 1 / -1; }
 
 /* guide drawer */
+dialog.drawer[open] { animation: slide-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
 dialog.drawer { margin: 0 0 0 auto; height: 100vh; max-height: 100vh; width: min(520px, 100vw); max-width: 100vw; border: 0; border-left: 1px solid var(--line); border-radius: 15px 0 0 15px; padding: 0; background: var(--surface); color: var(--ink-2); box-shadow: var(--shadow-over); }
 dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
 .drawer-in { padding: 20px 24px 40px; display: grid; gap: 22px; }
@@ -248,52 +292,65 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
 .reflist { display: grid; gap: 12px; }
 .reflist div { display: grid; gap: 2px; }
 
-@media (max-width: 1180px) { .gridlay { grid-template-columns: 1fr; } .inspector { position: static; max-height: none; } }
+@media (max-width: 1100px) {
+  .work[data-detail] { grid-template-columns: auto minmax(0, 1fr); }
+  .detail { position: absolute; top: 0; right: 0; bottom: 0; width: min(420px, 100%); z-index: 8; box-shadow: var(--shadow-over); }
+}
 @media (max-width: 900px) {
   .summary, .pane, .two { grid-template-columns: 1fr; }
-  .app { padding: 16px 16px 48px; gap: 16px; } .stack { gap: 16px; } .card { padding: 16px; }
-  .bar-in, .notice div { padding-inline: 16px; }
-  .tabs { top: 96px; }
-  .summary h1 { font-size: 20px; }
+  .app { padding: 16px 16px 40px; gap: 16px; } .stack { gap: 16px; } .card { padding: 16px; }
+  .crumbs { padding-inline: 16px; }
+  .summary .title { font-size: 20px; }
   dialog.drawer { border-radius: 0; }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 700px) {
+  .rail { position: absolute; top: 0; bottom: 0; left: 0; z-index: 9; }
+  :root[data-rail="open"] .rail { box-shadow: var(--shadow-over); }
+  .center { margin-left: 52px; }
+  .brand b, .tb-btn span, .status .meta { display: none; }
+  .menubar { margin-left: 0; } .menu-btn { padding: 5px 6px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 
-<header class="bar">
-  <div class="bar-in">
-    <div class="brand">Smart Topics Studio<small>OpenTSx</small></div>
-    <div class="switch" id="scenario" role="group" aria-label="Szenario"></div>
-    <div class="tools">
-      <button class="ghost" id="open-guide">Erläuterung</button>
-      <button class="ghost" id="tech" aria-pressed="false" title="Kennungen, Lauf-Ids und Rohwerte ein- oder ausblenden">Technische Details</button>
-    </div>
-  </div>
+<header class="titlebar">
+  <div class="brand"><span class="mark"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-7 4 4 7-9"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><circle cx="13" cy="14" r="1.6" fill="currentColor"/></svg></span><b>Smart Topics Studio</b></div>
+  <nav class="menubar" id="menubar" aria-label="Menü"></nav>
+  <span class="tb-space"></span>
+  <button class="tb-btn" id="tech" aria-pressed="false" title="Kennungen, Lauf-Ids und Rohwerte ein- oder ausblenden"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6M13.5 4l-3 16"/></svg><span>Technische Details</span></button>
+  <button class="tb-btn" id="theme" title="Hell oder dunkel" aria-label="Zwischen hellem und dunklem Erscheinungsbild wechseln"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg></button>
 </header>
-<div class="notice" role="note"><div><strong>Beispieldaten.</strong> Synthetische Eingangsreihen und Modellannahmen, keine Messwerte. Nicht für Abrechnung oder Angebot.</div></div>
 
-<main class="app">
-  <section class="card summary" aria-labelledby="sc-title">
-    <div>
-      <h1 id="sc-title"></h1>
-      <p class="story" id="sc-story"></p>
-      <p class="decision" id="sc-decision" hidden></p>
-      <div class="chips" id="sc-meta"></div>
+<div class="work" id="work">
+  <nav class="rail" id="rail" aria-label="Ansichten und Werkzeuge">
+    <div class="tabs" role="tablist" aria-orientation="vertical" aria-label="Ansichten">
+      <button role="tab" id="tab-overview" aria-controls="view-overview" title="Überblick"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg><span>Überblick</span></button>
+      <button role="tab" id="tab-sim" aria-controls="view-sim" title="Vergleich"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 4L4 7M7 4l3 3M17 4v16M17 20l-3-3M17 20l3-3"/></svg><span>Vergleich</span></button>
+      <button role="tab" id="tab-graph" aria-controls="view-graph" title="Systembild"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="6" height="6" rx="1.5"/><rect x="15" y="4" width="6" height="6" rx="1.5"/><rect x="9" y="15" width="6" height="6" rx="1.5"/><path d="M9 7h6M6 10v6a2 2 0 0 0 2 2h1M18 10v6a2 2 0 0 1-2 2h-1"/></svg><span>Systembild</span></button>
+      <button role="tab" id="tab-stats" aria-controls="view-stats" title="Messreihen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Messreihen</span></button>
     </div>
-    <div class="sec">
-      <h3 id="sc-kpi-title">Kennzahlen des Referenzlaufs</h3>
-      <div class="tiles" id="sc-tiles"></div>
-    </div>
-  </section>
-
-  <nav class="tabs" role="tablist" aria-label="Ansichten">
-    <button role="tab" id="tab-overview" aria-controls="view-overview">Überblick</button>
-    <button role="tab" id="tab-sim" aria-controls="view-sim">Vergleich</button>
-    <button role="tab" id="tab-graph" aria-controls="view-graph">Systembild</button>
-    <button role="tab" id="tab-stats" aria-controls="view-stats">Messreihen</button>
+    <div class="grow"></div>
+    <button id="open-guide" title="Erläuterung zum Szenario"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2zM12 6v14"/></svg><span>Erläuterung</span></button>
+    <button id="rail-toggle" aria-expanded="false" title="Seitenleiste aus- oder einklappen"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16M14 10l2 2-2 2"/></svg><span>Einklappen</span></button>
   </nav>
 
+  <div class="center">
+    <div class="doctabs" id="scenario" role="group" aria-label="Szenario"></div>
+    <div class="crumbs"><h1><span id="cr-sc"></span><span aria-hidden="true">›</span><b id="cr-view"></b></h1></div>
+    <div class="scrollarea" id="scroll">
+<main class="app">
   <section id="view-overview" role="tabpanel" aria-labelledby="tab-overview" class="stack" hidden>
+    <section class="card summary" aria-labelledby="sc-title">
+      <div>
+        <h2 class="title" id="sc-title"></h2>
+        <p class="story" id="sc-story"></p>
+        <p class="decision" id="sc-decision" hidden></p>
+      </div>
+      <div class="sec">
+        <h3 id="sc-kpi-title">Kennzahlen des Referenzlaufs</h3>
+        <div class="tiles" id="sc-tiles"></div>
+      </div>
+    </section>
     <div class="two">
       <div class="card">
         <h2>Was hier passiert</h2>
@@ -351,10 +408,8 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
       </div>
       <div class="legend" id="graphlegend"></div>
     </div>
-    <div class="gridlay">
-      <div class="graphwrap"><svg class="graph" id="graph" role="group" aria-label="Systembild des Zwillings"></svg></div>
-      <div class="card inspector" id="nodepanel"></div>
-    </div>
+    <div class="graphwrap"><svg class="graph" id="graph" role="group" aria-label="Systembild des Zwillings"></svg></div>
+    <p class="note">Ein Klick auf einen Baustein oder eine Verbindung blendet rechts die Details ein.</p>
   </section>
 
   <section id="view-stats" role="tabpanel" aria-labelledby="tab-stats" class="pane" hidden>
@@ -380,6 +435,22 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
     </div>
   </section>
 </main>
+    </div>
+  </div>
+
+  <aside class="detail" id="detail" aria-labelledby="detail-kind" hidden>
+    <div class="detail-head"><span id="detail-kind">Baustein</span><button class="icon-btn" id="close-detail" aria-label="Details schließen" title="Schließen (Esc)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="detail-body" id="nodepanel"></div>
+  </aside>
+</div>
+
+<footer class="status">
+  <span class="sample">Beispieldaten</span>
+  <span class="grow" role="note">Synthetische Eingangsreihen und Modellannahmen, keine Messwerte. Nicht für Abrechnung oder Angebot.</span>
+  <span id="flash" role="status"></span>
+  <span class="meta" id="sc-meta"></span>
+</footer>
+<input type="file" id="imp-file" accept="application/json,.json" hidden>
 
 <dialog class="drawer" id="guide" aria-labelledby="guidetitle">
   <div class="drawer-in">
@@ -603,17 +674,25 @@ function eventRows(el, evs, total, limit) {
 
 // views
 const TABS = ["overview", "sim", "graph", "stats"];
+const TAB_DE = { overview: "Überblick", sim: "Vergleich", graph: "Systembild", stats: "Messreihen" };
 let currentTab = "overview";
 function show(name) {
-  currentTab = name;
+  const changed = name !== currentTab; currentTab = name;
   TABS.forEach(k => { const on = k === name, b = $("tab-" + k); b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; $("view-" + k).hidden = !on; });
+  $("cr-sc").textContent = SC.title.split(" (")[0]; $("cr-view").textContent = TAB_DE[name];
   try { history.replaceState(null, "", "#" + SC.id + "-" + name); } catch (e) {}
+  if (name !== "graph") setDetail(false);
+  if (changed) $("scroll").scrollTop = 0;
   render();
 }
 TABS.forEach(k => $("tab-" + k).addEventListener("click", () => show(k)));
-document.querySelector(".tabs").addEventListener("keydown", e => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (!d) return;
-  const next = TABS[(TABS.indexOf(currentTab) + d + TABS.length) % TABS.length]; show(next); $("tab-" + next).focus(); });
-document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { show(b.dataset.go); window.scrollTo({ top: 0 }); }));
+document.querySelector(".tabs").addEventListener("keydown", e => { const d = ["ArrowDown", "ArrowRight"].includes(e.key) ? 1 : ["ArrowUp", "ArrowLeft"].includes(e.key) ? -1 : 0; if (!d) return;
+  e.preventDefault(); const next = TABS[(TABS.indexOf(currentTab) + d + TABS.length) % TABS.length]; show(next); $("tab-" + next).focus(); });
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => show(b.dataset.go)));
+
+// detail panel on the right: open while a block or a connection of the system diagram is selected
+function setDetail(on) { $("work").toggleAttribute("data-detail", on); $("detail").hidden = !on; }
+$("close-detail").addEventListener("click", () => { selNode = null; selWire = null; renderGraph(); });
 
 // scenario summary
 function kpiTile(k, v) { const s = unitFor(k.unit, Math.abs(v || 0)); return `<div class="tile"><span class="l">${esc(k.label)}</span><span class="v">${v == null ? NA : num(v / s.f, k.decimals && s.f === 1 ? k.decimals : undefined)}<small>${esc(s.u)}</small></span></div>`; }
@@ -623,7 +702,7 @@ function renderSummary() {
   $("sc-decision").hidden = !SC.decision; $("sc-decision").innerHTML = SC.decision ? `<span>Die Frage dahinter</span>${esc(SC.decision)}` : "";
   const h = spanH(), base = SC.stepMinutes / SC.stride;
   $("sc-meta").innerHTML = [`Zeitraum ${h <= 72 ? num(h) + " h" : num(h / 24) + " Tage"}`, `Zeitschritt ${base >= 60 ? num(base / 60) + " h" : num(base) + " min"}`, `${SC.graph.nodes.length} Bausteine`, "Zeiten in UTC"]
-    .map(t => `<span class="chip">${t}</span>`).join("") + `<span class="chip tech">Plan ${esc(SC.graph.planHash)}</span><span class="chip tech">Lauf ${esc(SC.reference.runId)}</span>`;
+    .concat([`<span class="tech mono">Plan ${esc(SC.graph.planHash)}</span>`, `<span class="tech mono">Lauf ${esc(SC.reference.runId)}</span>`]).map(t => t.startsWith("<") ? t : `<span>${t}</span>`).join("");
   $("sc-tiles").innerHTML = (SC.headline || []).map(key => SC.kpis.find(k => k.key === key)).filter(Boolean).map(k => kpiTile(k, SC.reference.kpis[k.key])).join("");
 }
 
@@ -825,10 +904,22 @@ function planYaml() {
   L.push("wiring:"); SC.plan.wiring.forEach(w => L.push(`  - ${q(w)}`));
   return L.join("\n") + "\n";
 }
+let flashTimer;
+function flash(text) { $("flash").textContent = text; clearTimeout(flashTimer); flashTimer = setTimeout(() => $("flash").textContent = "", 5000); }
 function download(name, text, type) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type || "text/yaml" })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  flash("Exportiert: " + name);
 }
+const exportPlan = () => download(`${SC.plan.twin}-eigen.yaml`, planYaml());
+const exportInventory = () => download(`inventar-${SC.plan.twin}.yaml`, inventoryYaml());
+const exportBackup = () => download(`studio-angaben-${SC.id}.json`, JSON.stringify(OWN, null, 2), "application/json");
+function importBackup(file, fail) {
+  if (!file) return;
+  file.text().then(t => { try { const v = JSON.parse(t); if (!v || typeof v !== "object" || Array.isArray(v)) throw 0; OWN = v; saveOwn(); render(); flash("Sicherung importiert"); }
+    catch (e) { fail("Die Datei ist keine Sicherung aus dem Studio."); } });
+}
+$("imp-file").addEventListener("change", ev => { importBackup(ev.target.files[0], flash); ev.target.value = ""; });
 
 // Columns are the phases of a time step. Connections between neighbouring columns cross the gap directly; all others
 // (longer ones and feedback) run through their own lane below the blocks, so that no line passes behind a block.
@@ -854,6 +945,7 @@ function fit(text, max) { return text.length > max ? text.slice(0, max - 1) + "�
 function renderGraph() {
   $("scrub").max = N - 1; if (+$("scrub").value > N - 1) $("scrub").value = Math.floor(N / 2);
   const k = +$("scrub").value; $("scrubt").textContent = tLabel(k, true) + " UTC";
+  setDetail(selWire != null || !!nodeOf(selNode));
   const L = layout(), svg = $("graph"); svg.innerHTML = ""; hideTip();
   const zoom = Math.min(1, Math.max(0.8, (svg.parentNode.clientWidth - 2) / L.W));
   svg.setAttribute("viewBox", `0 0 ${L.W} ${L.H}`); svg.setAttribute("width", L.W * zoom); svg.setAttribute("height", L.H * zoom);
@@ -916,12 +1008,12 @@ function renderGraph() {
   shownEvents(SC.reference.events).filter(e => (SC.markerEvents || []).includes(e.type)).slice(0, 24).forEach(e => { const i = Math.max(0, Math.min(N - 1, Math.round(evIndex(e.t)))), b = document.createElement("button");
     b.style.left = (100 * i / Math.max(1, N - 1)) + "%"; b.title = `${tLabel(i, true)}: ${evText(e)}`; b.setAttribute("aria-label", b.title);
     b.addEventListener("click", () => { $("scrub").value = i; renderGraph(); }); ticks.appendChild(b); });
-  if (selWire != null && SC.graph.wires[selWire]) renderWirePanel(SC.graph.wires[selWire], k); else renderNodePanel(k);
+  if (selWire != null && SC.graph.wires[selWire]) renderWirePanel(SC.graph.wires[selWire], k); else if (nodeOf(selNode)) renderNodePanel(k);
 }
 function renderWirePanel(w, k) {
   const head = wireHead(w, k), end = (id, port, side) => `<div class="sec"><h3>${side}</h3><div><button class="btn" data-node="${esc(id)}">${esc(nodeTitle(id))}</button></div>
     <p class="note"><span class="mono">${esc(port)}</span>${portDoc(id, port) ? ": " + esc(portDoc(id, port)) : ""}</p></div>`;
-  const el = $("nodepanel");
+  const el = $("nodepanel"); $("detail-kind").textContent = "Verbindung";
   el.innerHTML = `<h2>${head.title}</h2><div class="mono note">${head.ids}</div>${head.chips}${head.now}
     <p class="prose">${esc(wireText(w, head.kind, head.unit))}</p>
     ${end(w.from, w.fromPort, "Von (Ausgang)")}${end(w.to, w.toPort, "Nach (Eingang)")}`;
@@ -929,7 +1021,7 @@ function renderWirePanel(w, k) {
 }
 const POLICY_DE = { follow: "folgt der Vorgabe", hold: "hält die Ausgangswerte", "pressure-aware": "drosselt bei steigendem Druck" };
 function renderNodePanel(k) {
-  const n = nodeOf(selNode) || SC.graph.nodes[0], el = $("nodepanel"), doc = atomDoc(n.id), own = ownOf(n.id);
+  const n = nodeOf(selNode), el = $("nodepanel"), doc = atomDoc(n.id), own = ownOf(n.id); $("detail-kind").textContent = "Baustein";
   const th = cols => `<tr class="h">${cols.filter(Boolean).map(c => `<th scope="col">${c}</th>`).join("")}</tr>`;
   const outs = n.outputs.map(o => { const key = n.id + "." + o.name, s = SC.reference.series[key];
     const to = SC.graph.wires.filter(x => x.from === n.id && x.fromPort === o.name).map(x => `${esc(nodeTitle(x.to))}${x.delayed ? " (nächster Zeitschritt)" : ""}`).join(", ");
@@ -957,7 +1049,7 @@ function renderNodePanel(k) {
     ports: `<div class="sec"><h3>Eingänge</h3>${ins ? `<div class="scroll"><table>${th(["Eingang", "Bedeutung und Quelle"])}${ins}</table></div>` : '<p class="note">Keine Eingänge.</p>'}</div>
       <div class="sec"><h3>Ausgänge</h3>${outs ? `<div class="scroll"><table>${th(["Ausgang", "Wert", "Bedeutung"])}${outs}</table></div>` : '<p class="note">Keine Ausgänge.</p>'}</div>
       ${ctl ? `<div class="sec"><h3>Stellgrößen und Sollwerte (im Betrieb verstellbar)</h3><div class="scroll"><table>${th(["Name", "Ausgangswert", "Bedeutung"])}${ctl}</table></div></div>` : ""}`,
-    params: params ? `<p class="note">Feste Eigenschaften im Anlagenmodell. Trage neben dem Beispielwert deinen eigenen ein; der Export unter „Eigene Angaben“ schreibt daraus ein eigenes Anlagenmodell.</p><div class="plist">${params}</div>` : '<p class="note">Dieser Baustein hat im Beispiel keine Parameter.</p>',
+    params: params ? `<p class="note">Feste Eigenschaften im Anlagenmodell. Trage neben dem Beispielwert deinen eigenen ein; der Export unter „Eigene Daten“ oder im Menü „Datei“ schreibt daraus ein eigenes Anlagenmodell.</p><div class="plist">${params}</div>` : '<p class="note">Dieser Baustein hat im Beispiel keine Parameter.</p>',
     own: `${doc.capture ? `<p class="note">${esc(doc.capture)}</p>` : ""}
       <div class="own-form">
         ${OWN_FIELDS.map(([f, l]) => `<label class="ctl">${l}<input type="text" data-own="${f}" value="${esc(own[f] || "")}" autocomplete="off"></label>`).join("")}
@@ -981,10 +1073,10 @@ function renderNodePanel(k) {
   el.querySelectorAll("[data-param]").forEach(i => i.addEventListener("input", () => { const o = OWN[n.id] = OWN[n.id] || {}; (o.params = o.params || {})[i.dataset.param] = i.value; saveOwn(); mark();
     i.setAttribute("aria-invalid", parseOwn(i.value, n.params[i.dataset.param]) === null); }));
   if (inspTab !== "own") return;
-  $("exp-inv").addEventListener("click", () => download(`inventar-${SC.plan.twin}.yaml`, inventoryYaml()));
-  $("exp-plan").addEventListener("click", () => download(`${SC.plan.twin}-eigen.yaml`, planYaml()));
-  $("exp-json").addEventListener("click", () => download(`studio-angaben-${SC.id}.json`, JSON.stringify(OWN, null, 2), "application/json"));
-  $("imp-json").addEventListener("change", ev => { const f = ev.target.files[0]; if (!f) return; f.text().then(t => { try { const v = JSON.parse(t); if (v && typeof v === "object" && !Array.isArray(v)) { OWN = v; saveOwn(); renderGraph(); } else throw 0; } catch (e) { $("own-note").textContent = "Die Datei ist keine Sicherung aus dem Studio."; } }); });
+  $("exp-inv").addEventListener("click", exportInventory);
+  $("exp-plan").addEventListener("click", exportPlan);
+  $("exp-json").addEventListener("click", exportBackup);
+  $("imp-json").addEventListener("change", ev => importBackup(ev.target.files[0], t => $("own-note").textContent = t));
 }
 $("scrub").addEventListener("input", renderGraph);
 
@@ -992,7 +1084,7 @@ $("scrub").addEventListener("input", renderGraph);
 const READ_DEFAULT = ["Die Spalten sind die Phasen eines Zeitschritts, von links nach rechts. Jeder Kasten ist ein Baustein mit eigenem Zustand, jede Linie trägt genau eine Größe von einem Ausgang zu einem Eingang.",
   "Die Farbe einer Linie zeigt, was sie trägt: Strom, Wasserstoff, Wärme, Brennstoff oder ein Signal. Ein Pfeil zeigt die Richtung.",
   "Eine gestrichelte Linie ist eine Rückkopplung: Der Wert entsteht am Ende des Zeitschritts und wirkt erst im nächsten.",
-  "Fahre mit der Maus über eine Linie oder einen Anschluss, um die Erläuterung zu lesen. Ein Klick hält sie im Bereich rechts fest. Mit der Tabulatortaste erreichst du jede Linie auch ohne Maus."];
+  "Fahre mit der Maus über eine Linie oder einen Anschluss, um die Erläuterung zu lesen. Ein Klick blendet die Details rechts ein. Mit der Tabulatortaste erreichst du jede Linie auch ohne Maus."];
 function renderGuide() {
   const g = guide(), intro = g.intro || {}, refs = g.references || [];
   $("guidebody").innerHTML = `<div class="sec"><h3>So liest du das Systembild</h3><ul>${(intro.read || READ_DEFAULT).map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>
@@ -1010,13 +1102,74 @@ $("tech").addEventListener("click", () => setTech(!document.documentElement.data
 let tech0 = false; try { tech0 = localStorage.getItem("opentsx.studio.tech") === "1"; } catch (e) {}
 setTech(tech0);
 
+// rail: icons only or with labels; the diagram is measured again once the width has settled
+function setRail(open) { if (open) document.documentElement.dataset.rail = "open"; else delete document.documentElement.dataset.rail;
+  $("rail-toggle").setAttribute("aria-expanded", open); $("rail-toggle").querySelector("span").textContent = open ? "Einklappen" : "Ausklappen";
+  try { localStorage.setItem("opentsx.studio.rail", open ? "1" : "0"); } catch (e) {} if (SC) setTimeout(render, 220); }
+const railOpen = () => document.documentElement.dataset.rail === "open";
+$("rail-toggle").addEventListener("click", () => setRail(!railOpen()));
+let rail0 = innerWidth >= 1280; try { const r = localStorage.getItem("opentsx.studio.rail"); if (r != null && innerWidth > 700) rail0 = r === "1"; } catch (e) {}
+setRail(rail0);
+
+// theme: follows the system unless chosen here
+const themeNow = () => document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+function setTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { if (t) localStorage.setItem("opentsx.studio.theme", t); else localStorage.removeItem("opentsx.studio.theme"); } catch (e) {} }
+$("theme").addEventListener("click", () => setTheme(themeNow() === "dark" ? "light" : "dark"));
+try { const t = localStorage.getItem("opentsx.studio.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+
+// menu bar; the entries are built when a menu opens, so that check marks show the current state
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Strg+";
+const MENUS = [
+  ["Datei", () => [
+    { l: "Anlagenmodell exportieren (YAML)", run: exportPlan }, { l: "Inventar exportieren (YAML)", run: exportInventory }, null,
+    { l: "Sicherung speichern (JSON)", run: exportBackup }, { l: "Sicherung importieren …", run: () => $("imp-file").click() }]],
+  ["Ansicht", () => TABS.map((t, i) => ({ l: TAB_DE[t], k: "Alt+" + (i + 1), on: currentTab === t, run: () => show(t) })).concat([null,
+    { l: "Seitenleiste mit Beschriftung", k: MOD + "B", on: railOpen(), run: () => setRail(!railOpen()) },
+    { l: "Technische Details", on: !!document.documentElement.dataset.tech, run: () => setTech(!document.documentElement.dataset.tech) }, null,
+    { l: "Hell", on: document.documentElement.dataset.theme === "light", run: () => setTheme("light") },
+    { l: "Dunkel", on: document.documentElement.dataset.theme === "dark", run: () => setTheme("dark") },
+    { l: "Wie das System", on: !document.documentElement.dataset.theme, run: () => setTheme(null) }])],
+  ["Szenario", () => ALL.scenarios.map(sc => ({ l: sc.title.split(" (")[0], on: sc.id === SC.id, run: () => { useScenario(sc.id); show(currentTab); } }))],
+  ["Hilfe", () => [{ l: "Erläuterung zum Szenario", run: () => $("guide").showModal() }]]];
+let openMenu = -1;
+$("menubar").innerHTML = MENUS.map(([name], i) => `<div class="menu"><button class="menu-btn" data-menu="${i}" aria-haspopup="menu" aria-expanded="false">${name}</button><div class="menu-pop" role="menu" aria-label="${name}" hidden></div></div>`).join("");
+const menuBtn = i => document.querySelector(`[data-menu="${i}"]`);
+function closeMenu(focus) { if (openMenu < 0) return; const b = menuBtn(openMenu); b.setAttribute("aria-expanded", false); b.nextElementSibling.hidden = true; openMenu = -1; if (focus) b.focus(); }
+function showMenu(i, focusFirst) {
+  closeMenu(); openMenu = i; const b = menuBtn(i), pop = b.nextElementSibling; pop.innerHTML = "";
+  MENUS[i][1]().forEach(it => { if (!it) { pop.appendChild(document.createElement("hr")); return; }
+    const e = document.createElement("button"); e.setAttribute("role", it.on == null ? "menuitem" : "menuitemcheckbox"); if (it.on != null) e.setAttribute("aria-checked", !!it.on); e.tabIndex = -1;
+    e.innerHTML = `<span>${esc(it.l)}</span>${it.k ? `<kbd>${esc(it.k)}</kbd>` : ""}`; e.addEventListener("click", () => { closeMenu(); it.run(); }); pop.appendChild(e); });
+  b.setAttribute("aria-expanded", true); pop.hidden = false; if (focusFirst) pop.querySelector("button").focus();
+}
+document.querySelectorAll(".menu-btn").forEach(b => { const i = +b.dataset.menu;
+  b.addEventListener("click", () => openMenu === i ? closeMenu() : showMenu(i));
+  b.addEventListener("pointerenter", () => { if (openMenu >= 0 && openMenu !== i) showMenu(i); }); });
+$("menubar").addEventListener("keydown", e => {
+  const inBar = e.target.classList.contains("menu-btn"), i = openMenu >= 0 ? openMenu : +(e.target.dataset.menu || 0), n = MENUS.length;
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); const j = (i + (e.key === "ArrowRight" ? 1 : -1) + n) % n; if (openMenu >= 0) showMenu(j, true); else menuBtn(j).focus(); }
+  else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (openMenu < 0) { showMenu(i, true); return; }
+    const items = [...menuBtn(openMenu).nextElementSibling.querySelectorAll("button")], at = items.indexOf(document.activeElement);
+    items[(at + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length].focus(); }
+  else if (e.key === "Escape" && openMenu >= 0) { e.stopPropagation(); closeMenu(true); }
+  else if (e.key === "Tab") closeMenu();
+  else if (inBar && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); showMenu(i, true); }
+});
+document.addEventListener("pointerdown", e => { if (!e.target.closest(".menu")) closeMenu(); });
+document.addEventListener("keydown", e => {
+  if (e.altKey && /^Digit[1-4]$/.test(e.code)) { e.preventDefault(); show(TABS[+e.code.slice(5) - 1]); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") { e.preventDefault(); setRail(!railOpen()); }
+  else if (e.key === "Escape" && !$("detail").hidden && !$("guide").open && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) $("close-detail").click();
+});
+
 // scenario switching
 function useScenario(id) {
   SC = ALL.scenarios.find(s => s.id === id) || ALL.scenarios[0]; N = SC.steps;
   units = {}; SC.graph.nodes.forEach(n => n.outputs.forEach(p => units[n.id + "." + p.name] = p.unit));
   document.querySelectorAll("#scenario button").forEach(b => b.setAttribute("aria-pressed", b.dataset.id === SC.id));
   selected = (SC.smartMetrics || []).find(k => SC.reference.series[k]) || Object.keys(SC.reference.series)[0];
-  selNode = SC.graph.nodes[0].id; selWire = null;
+  selNode = null; selWire = null;
   loadOwn(); renderGuide(); renderSummary();
   $("alt").innerHTML = SC.alternatives.map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join("");
   $("fc").innerHTML = SC.forecasts.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join("");

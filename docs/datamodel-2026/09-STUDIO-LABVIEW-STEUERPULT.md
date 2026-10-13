@@ -39,6 +39,12 @@ zeigt die Farbe einer Verbindung den Energieträger (Strom, Wasserstoff, Wärme,
 über mehrere Spalten laufen in eigenen Spuren unter den Blöcken. Der Schalter „Technische Details“ blendet
 Kennungen, Lauf-Ids und Rohwerte ein. Grenzwerte aus `limits()` erscheinen als Linien in den Diagrammen.
 
+Die Hülle folgt dem Aufbau einer Entwicklungsumgebung: oben eine Titelleiste mit Menüs (Datei, Ansicht, Szenario,
+Hilfe), links eine Icon-Leiste für die vier Ansichten, die sich aus- und einklappen lässt, darunter die Szenarien als
+Dokument-Reiter. Details zu einem Baustein oder einer Verbindung werden von rechts eingeblendet und mit Esc
+geschlossen. Die Statusleiste unten trägt den Hinweis „Beispieldaten“, Zeitraum und Zeitschritt. Die Zusammenfassung
+steht seitdem nur noch im Überblick. Tastatur: Alt+1 bis Alt+4 für die Ansichten, Strg+B für die Icon-Leiste.
+
 Regeln, die der Prototyp schon umsetzt:
 
 * **Herkunft:** Jede Reihe zeigt, wie sie entstanden ist. Modellierte Werte sehen nie aus wie Messungen.
