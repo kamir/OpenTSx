@@ -14,14 +14,18 @@ import Scope from '../workbench/Scope';
 import {
   SOURCE_ID,
   defaultSinkTopic,
+  descendants,
   evaluate,
+  inputsOf,
   toDagYaml,
   toDefinition,
   toJavaCode,
   toPfdJson,
   useFlow,
   validate,
+  vectorComponents,
 } from '../workbench/flow';
+import { vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
@@ -243,9 +247,22 @@ function Properties({ node }: { node: FlowNode }) {
   const sourceInfo = useFlow((s) => s.sourceInfo);
   const updateParams = useFlow((s) => s.updateParams);
   const removeNode = useFlow((s) => s.removeNode);
+  const addInput = useFlow((s) => s.addInput);
+  const removeInput = useFlow((s) => s.removeInput);
   const op = OP_BY_ID[node.op];
-  const parent = nodes.find((n) => n.id === node.input);
-  const bucket = useMemo(() => evaluate(source, nodes, node.id), [source, nodes, node.id]);
+  const inputs = inputsOf(node).map((i) => nodes.find((n) => n.id === i));
+  // A failing operator is reported by the page; here it only means there is nothing to list.
+  const bucket = useMemo(() => {
+    try {
+      return evaluate(source, nodes, node.id);
+    } catch {
+      return null;
+    }
+  }, [source, nodes, node.id]);
+  const components = op?.multiInput ? vectorComponents(nodes, node) : [];
+  const downstream = op?.multiInput ? descendants(nodes, node.id, true) : new Set<string>();
+  const candidates = op?.multiInput ? nodes.filter((n) => !downstream.has(n.id) && !inputsOf(node).includes(n.id)) : [];
+  const records = bucket?.vector ? vectorRecords(bucket, node.label, 2) : [];
 
   return (
     <div className="wb-props">
@@ -253,7 +270,7 @@ function Properties({ node }: { node: FlowNode }) {
         <dt>Bucket</dt><dd>{node.label}</dd>
         {op ? (
           <>
-            <dt>Transform</dt><dd>{node.label} = {op.label}( {parent?.label} )</dd>
+            <dt>Transform</dt><dd>{node.label} = {op.label}( {inputs.map((n) => n?.label).join(', ')} )</dd>
             <dt>Operator</dt><dd>{op.dagOp ?? op.id}{op.inCatalog ? ' (stream operator catalog)' : ' (workbench only)'}</dd>
           </>
         ) : (
@@ -274,7 +291,43 @@ function Properties({ node }: { node: FlowNode }) {
           </div>
         </fieldset>
       )}
+      {op?.multiInput && (
+        <fieldset>
+          <legend>Components (one per input, in vector order)</legend>
+          <ol className="wb-components">
+            {inputs.map((n, i) => (
+              <li key={n?.id ?? i}>
+                <code>{components[i]}</code>
+                <span title={n?.label}>{n?.label}</span>
+                {i === 0 ? (
+                  <span className="wb-muted">first input</span>
+                ) : (
+                  <button onClick={() => n && removeInput(node.id, n.id)}>Remove</button>
+                )}
+              </li>
+            ))}
+          </ol>
+          <label className="wb-param grow">
+            add input
+            <select
+              value=""
+              aria-label="Add an input to the vector"
+              disabled={candidates.length === 0}
+              onChange={(e) => e.target.value && addInput(node.id, e.target.value)}
+            >
+              <option value="">{candidates.length === 0 ? 'no further bucket in the flow' : 'choose a bucket'}</option>
+              {candidates.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
+            </select>
+          </label>
+        </fieldset>
+      )}
       {bucket?.note && <pre className="wb-note">{bucket.note}</pre>}
+      {records.length > 0 && (
+        <fieldset>
+          <legend>First measuring points as written to the topic (opentsx.vector.v1)</legend>
+          <pre className="wb-note" tabIndex={0}>{records.map((r) => JSON.stringify(r)).join('\n')}</pre>
+        </fieldset>
+      )}
       {bucket && (
         <table className="wb-table">
           <thead>
@@ -325,7 +378,7 @@ function SmartTopic({ node }: { node: FlowNode }) {
           <input
             type="checkbox"
             checked={!!node.sinkTopic}
-            onChange={(e) => state.setSink(node.id, e.target.checked ? defaultSinkTopic(state.domain, node.label) : null)}
+            onChange={(e) => state.setSink(node.id, e.target.checked ? defaultSinkTopic(state.domain, node.label, node.op) : null)}
           />
           Publish as Smart Topic
         </label>

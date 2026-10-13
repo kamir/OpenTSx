@@ -1,6 +1,7 @@
 /**
  * Graph view of the processing flow. Nodes are buckets, edges are operators
- * feeding the next bucket. Dragging a connection onto a node changes its input.
+ * feeding the next bucket. Dragging a connection onto a node changes its input; onto a multi-input node (a vector)
+ * it adds a further input, drawn dashed.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -18,7 +19,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { OP_BY_ID } from './ops';
-import { SOURCE_ID, useFlow } from './flow';
+import { SOURCE_ID, inputsOf, useFlow } from './flow';
 import { FlowNode } from './types';
 
 interface NodeData {
@@ -66,6 +67,7 @@ export default function FlowGraph() {
   const selectedId = useFlow((s) => s.selectedId);
   const select = useFlow((s) => s.select);
   const rewire = useFlow((s) => s.rewire);
+  const addInput = useFlow((s) => s.addInput);
   const moveNode = useFlow((s) => s.moveNode);
   const removeNode = useFlow((s) => s.removeNode);
 
@@ -95,9 +97,15 @@ export default function FlowGraph() {
 
   const rfEdges: Edge[] = useMemo(
     () =>
-      nodes
-        .filter((n) => n.input)
-        .map((n) => ({ id: `${n.input}-${n.id}`, source: n.input!, target: n.id, deletable: false })),
+      nodes.flatMap((n) =>
+        inputsOf(n).map((i, k) => ({
+          id: `${i}-${n.id}`,
+          source: i,
+          target: n.id,
+          deletable: false,
+          ...(k > 0 ? { style: { strokeDasharray: '5 4' } } : {}),
+        }))
+      ),
     [nodes]
   );
 
@@ -109,7 +117,10 @@ export default function FlowGraph() {
   };
 
   const onConnect = (c: Connection) => {
-    if (c.source && c.target) rewire(c.target, c.source);
+    if (!c.source || !c.target) return;
+    const target = nodes.find((n) => n.id === c.target);
+    if (target && OP_BY_ID[target.op]?.multiInput) addInput(c.target, c.source);
+    else rewire(c.target, c.source);
   };
 
   return (

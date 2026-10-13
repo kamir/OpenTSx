@@ -146,6 +146,8 @@ export function parseEpisodes(json: unknown, name: string): Bucket {
       id,
       label: g.e.metric ? `${g.e.metric}${tags ? `{${tags}}` : ''}` : id,
       unit: g.e.unit,
+      metric: g.e.metric,
+      tags: g.e.tags,
       x: Float64Array.from(order, (i) => (g.t[i] - t0) / 1e6),
       y: Float64Array.from(order, (i) => g.v[i]),
     };
