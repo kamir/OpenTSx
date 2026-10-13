@@ -49,6 +49,10 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Readers no longer end when KafScale refuses fetches for a minute (`Unexpected error code 7 while fetching`): they
+  wait it out (`org.opentsx.kafka.Patience`, used by `LogReader`, the statistics processor and `SeriesStatsLog`).
+  Producers retry with pauses for up to three minutes instead of five quick attempts
+  (`KafScaleClients.producerProps`). The statistics processor used to restart on every such window.
 - Retrieval server: a DAG run reported success even when the broker confirmed only a part of the measuring points.
   The run now fails and says how many were confirmed. A vector topic the broker does not hand out no longer keeps
   the feed from reading the other topics.

@@ -34,12 +34,14 @@ final class LogReader {
         consumer.assign(open);
         open.forEach(tp -> consumer.seek(tp, ranges.get(tp)[0]));
         long deadline = System.nanoTime() + timeout.toNanos();
+        // a refused fetch is waited out; the deadline of this read still holds
+        Patience patience = new Patience(timeout, Duration.ofSeconds(2));
         try {
             while (!open.isEmpty()) {
                 if (System.nanoTime() > deadline) {
                     throw new IllegalStateException("timed out reading " + open);
                 }
-                for (ConsumerRecord<byte[], byte[]> r : consumer.poll(Duration.ofMillis(500))) {
+                for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     TopicPartition tp = new TopicPartition(r.topic(), r.partition());
                     Long end = until.get(tp);
                     if (end != null && r.offset() < end && open.contains(tp)) {

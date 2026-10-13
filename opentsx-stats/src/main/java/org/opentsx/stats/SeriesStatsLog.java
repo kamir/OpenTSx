@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
@@ -40,12 +41,13 @@ public final class SeriesStatsLog {
         OpenTsxAvro avro = new OpenTsxAvro();
         List<SeriesStats> all = new ArrayList<>();
         long deadline = System.nanoTime() + timeout.toNanos();
+        Patience patience = new Patience(timeout, Duration.ofSeconds(2));
         try {
             while (tps.stream().anyMatch(tp -> next.get(tp) < end.get(tp))) {
                 if (System.nanoTime() > deadline) {
                     throw new IllegalStateException("timed out reading " + layout.seriesStats());
                 }
-                for (ConsumerRecord<byte[], byte[]> r : consumer.poll(Duration.ofMillis(500))) {
+                for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     TopicPartition tp = new TopicPartition(r.topic(), r.partition());
                     if (r.offset() < end.get(tp)) {
                         all.add(avro.decode(r.value(), SeriesStats.class));

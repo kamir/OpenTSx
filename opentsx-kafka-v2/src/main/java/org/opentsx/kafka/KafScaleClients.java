@@ -17,12 +17,18 @@ import java.util.Properties;
  *
  * <ul>
  *   <li>Producer: {@code enable.idempotence=false} (KafScale has no InitProducerId; clients >= 3.0 default to
- *   true), {@code acks=all}, zstd, batching for cheap S3 segments. Duplicates are removed by episodeId.</li>
+ *   true), {@code acks=all}, zstd, batching for cheap S3 segments. Duplicates are removed by episodeId.
+ *   No fixed number of retries: KafScale refuses every produce for about a minute while it rates its object
+ *   store as degraded, so a send retries with pauses until the delivery timeout of three minutes.</li>
  *   <li>Consumer: no group id - readers use manual assignment and seek (KafScale cannot seek by time, rejects
- *   commits without membership and does not let restarted group members rejoin, see kamir/kafscale#16-#18).</li>
+ *   commits without membership and does not let restarted group members rejoin, see kamir/kafscale#16-#18).
+ *   Read with {@link Patience#poll}: a refused fetch otherwise ends the reader with an exception.</li>
  * </ul>
  */
 public final class KafScaleClients {
+
+    /** How long a send keeps retrying before it fails. Longer than the minute KafScale refuses writes at a time. */
+    public static final java.time.Duration DELIVERY_TIMEOUT = java.time.Duration.ofMinutes(3);
 
     private KafScaleClients() {
     }
@@ -36,7 +42,10 @@ public final class KafScaleClients {
         p.put(ProducerConfig.LINGER_MS_CONFIG, 50);
         p.put(ProducerConfig.BATCH_SIZE_CONFIG, 512 * 1024);
         p.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, 4 * 1024 * 1024);
-        p.put(ProducerConfig.RETRIES_CONFIG, 5);
+        // retries stays at the client default (unbounded): the delivery timeout decides when a send has failed
+        p.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, (int) DELIVERY_TIMEOUT.toMillis());
+        p.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000L);
+        p.put(ProducerConfig.RETRY_BACKOFF_MAX_MS_CONFIG, 10_000L);
         // without idempotence, more than one in-flight request can reorder episodes of a series on retry
         p.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
         return p;

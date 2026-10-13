@@ -28,6 +28,7 @@ step-by-step runbooks for the common incidents are in [operations](operations.md
 | consumer hangs or rejoins | consumer groups on KafScale | OpenTSx tools use manual assignment; do the same in your own code |
 | duplicate episodes after a rerun | expected: no idempotent producer | readers and stores drop duplicates by `episodeId` |
 | `offsetsForTimes` returns nothing | not supported by KafScale | use the episode index (`/data/<domain>-index.tsv`) or `ReplayRequest.range` |
+| a reader ends with `Unexpected error code 7 while fetching at offset ...`; producers log `Got error produce response ... retrying`; for about a minute nothing is read or written | KafScale rates its object store as degraded after one slow write and refuses every produce and fetch with REQUEST_TIMED_OUT until its 60 s average recovers | nothing to repair: the OpenTSx readers wait it out (`org.opentsx.kafka.Patience`) and producers retry for up to three minutes. In your own code do the same; watch `kafscale_s3_health_state` on the broker when it happens often |
 | two stats processors | `replicas > 1` or a rolling update | keep `replicas: 1` and `strategy: Recreate` (as shipped) |
 
 ## Lake profile

@@ -27,18 +27,6 @@ class KafScaleFeedSendTest {
     }
 
     @Test
-    void aRunOutlastsTheMinuteTheBrokerRefusesWrites() {
-        java.util.Properties p = KafScaleFeed.patientProducerProps("localhost:9092");
-        assertEquals(180_000, p.get("delivery.timeout.ms"));
-        assertEquals(1000L, p.get("retry.backoff.ms"));
-        assertTrue(!p.containsKey("retries"), "no fixed number of retries: the delivery timeout decides");
-        assertEquals(false, p.get("enable.idempotence"));
-        assertEquals(1, p.get("max.in.flight.requests.per.connection"));
-        // the client accepts the combination
-        new org.apache.kafka.clients.producer.KafkaProducer<>(p, new StringSerializer(), new ByteArraySerializer()).close();
-    }
-
-    @Test
     void confirmsEveryRecord() {
         MockProducer<String, byte[]> producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
         assertDoesNotThrow(() -> KafScaleFeed.sendAll(producer, records(5)));

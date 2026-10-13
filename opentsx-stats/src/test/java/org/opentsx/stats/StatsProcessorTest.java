@@ -56,8 +56,11 @@ class StatsProcessorTest {
     }
 
     private static MockConsumer<byte[], byte[]> consumerWith(TopicLayout layout, List<Episode> episodes) {
+        return fill(new MockConsumer<>(OffsetResetStrategy.EARLIEST), layout, episodes);
+    }
+
+    private static MockConsumer<byte[], byte[]> fill(MockConsumer<byte[], byte[]> c, TopicLayout layout, List<Episode> episodes) {
         OpenTsxAvro avro = new OpenTsxAvro();
-        MockConsumer<byte[], byte[]> c = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
         Node node = new Node(0, "localhost", 9092);
         c.updatePartitions(layout.episodes(), List.of(
                 new PartitionInfo(layout.episodes(), 0, node, new Node[]{node}, new Node[]{node}),
@@ -79,6 +82,30 @@ class StatsProcessorTest {
     private static List<SeriesStats> decode(MockProducer<String, byte[]> producer) {
         OpenTsxAvro avro = new OpenTsxAvro();
         return producer.history().stream().map(ProducerRecord::value).map(v -> avro.decode(v, SeriesStats.class)).toList();
+    }
+
+    @Test
+    void aRefusedFetchIsWaitedOutNotFatal() {
+        // KafScale refuses fetches for about a minute at a time; the consumer reports that as IllegalStateException
+        MockConsumer<byte[], byte[]> refusing = new MockConsumer<>(OffsetResetStrategy.EARLIEST) {
+            private int refusals = 3;
+
+            @Override
+            public synchronized org.apache.kafka.clients.consumer.ConsumerRecords<byte[], byte[]> poll(Duration timeout) {
+                if (refusals-- > 0) {
+                    throw new IllegalStateException("Unexpected error code 7 while fetching at offset 0 from topic-partition x-0");
+                }
+                return super.poll(timeout);
+            }
+        };
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Episode> eps = simulate(scenario("refused", Duration.ofMinutes(20), 1));
+        MockProducer<String, byte[]> out = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+        StatsProcessor p = new StatsProcessor(fill(refusing, layout, eps), out, layout,
+                new StatsEngine(StatsEngine.Config.defaults()), null, false);
+        p.patience(new org.opentsx.kafka.Patience(Duration.ofSeconds(30), Duration.ofMillis(5)));
+        StatsProcessor.RunResult r = p.runUntilCaughtUp(Duration.ofSeconds(30), true);
+        assertEquals(eps.size(), r.records(), "every record is read once the broker answers again");
     }
 
     @Test

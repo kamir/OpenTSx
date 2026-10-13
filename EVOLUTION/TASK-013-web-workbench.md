@@ -6,7 +6,8 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-secure-dag-runs` (013.12), Worktree `../OpenTSx-worktrees/secure-dag-runs`;
+- **Delivery-Branch**: `opentsx/2026-task013-broker-patience` (013.14), Worktree `../OpenTSx-worktrees/broker-patience`;
+  davor: `opentsx/2026-task013-secure-dag-runs` (013.12), Worktree `../OpenTSx-worktrees/secure-dag-runs`;
   `opentsx/2026-task013-vector-runtime` (013.11, PR #168, gemergt, baut auf 013.10 auf);
   `opentsx/2026-task013-vector-sink` (013.10, PR #166, baut auf 013.8 auf); `opentsx/2026-task013-ts-inventory`
   (013.8, PR #165); davor `opentsx/2026-task013-web-workbench`
@@ -129,6 +130,11 @@ Beobachtungen am Swing-Code:
       - Ein Lauf schlägt fehl, wenn der Broker nicht jeden Messpunkt bestätigt (vorher blieb das unbemerkt); ein
         nicht lesbares Vektor-Topic hält die übrigen Topics nicht mehr auf
       - CI: Jobs "SaaS frontend" (Typen, Lint, Tests, Build) und "SaaS backend" (pytest)
+- [x] 013.14 Ausdauer im Broker-Fenster (Stand 2026-10-13): KafScale weist nach einem langsamen Schreibzugriff etwa
+      eine Minute lang jedes Lesen und Schreiben ab. Leser warten das jetzt ab (`org.opentsx.kafka.Patience`, in
+      `LogReader`, `StatsProcessor`, `SeriesStatsLog`), und alle Schreiber wiederholen bis zu drei Minuten
+      (`KafScaleClients.producerProps`). Vorher endete der Stats-Prozessor daran (15 Neustarts in 17 Stunden auf
+      master2).
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
       Eingängen gibt es seit 013.10
