@@ -584,6 +584,23 @@ newterm_t = | Terme in t, nie zuvor gesehen | / | Terme in t |</div>
         trotz seines Namens <b>keine</b> Latenz, 96 Prozent am selben Tag. Die Dauer steckt in
         <code>link/step</code> und <code>link/gegenfrage</code>.
       </p>
+      <p class="prose" style="margin-top:0.6rem">
+        <b>Nachtrag 2026-10-13: die beiden Mediane von 7 und 9 Tagen sind nach unten verzerrt.</b> Die
+        Dauer-Kanten gibt es nicht über 30 Monate, sondern erst <b>seit 2026-08</b>: 31 Kanten in 2026-08,
+        97 in 2026-09, 17 bis zum 13. Oktober. Über die drei Monate getrennt steigen die Mediane monoton,
+        bei <code>link/step</code> von 0,53 über 7,25 auf 14,65 Tage und bei <code>link/gegenfrage</code>
+        von 0,06 über 7,92 auf 19,07.
+      </p>
+      <p class="prose" style="margin-top:0.6rem">
+        Das ist kein Verhaltenswandel, sondern eine <b>Anfangszensierung</b>. Im ersten Monat eines
+        Mechanismus kann keine lange Latenz beobachtet werden, weil es keine alten Ziele gibt; die
+        beobachtbare Dauer ist nach oben durch das Alter des Mechanismus begrenzt. Daraus folgt eine
+        Faustregel für die ganze Familie: <b>das Beobachtungsfenster muss länger sein als die Dauer, die
+        geschätzt werden soll.</b> Für <code>link/step</code> mit p90 um 25 Tage genügen zwei Monate, das
+        ist erfüllt. Das p90 ist dabei selbst zensiert und kann mit dem Alter noch steigen: über die drei
+        Monate gepoolt liegt es bei 25,1 Tagen, im September allein lag es bei <code>link/gegenfrage</code>
+        bei 198 Tagen.
+      </p>
       <div class="formula">EDGE = link/&lt;kind&gt;/&lt;ctx&gt;/&lt;doc_id&gt;,  kind aus {step, gegenfrage}
 latency_e = event_ts_kind - event_ts_ziel       je KANTE, nicht je Item
 depth_t   = längste Kette, die in Tick t endet
