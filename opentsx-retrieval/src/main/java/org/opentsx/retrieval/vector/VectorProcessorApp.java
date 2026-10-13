@@ -80,26 +80,24 @@ public final class VectorProcessorApp {
             // sinks are created as their DAGs arrive; the processor needs the right to create topics
             layout.provisionDagTopics(admin, (short) 1);
         }
-        try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
-            VectorProcessor p = new VectorProcessor(() -> KafScaleClients.consumer(bootstrap), producer, layout, state,
-                    VectorProcessor.Timing.standard());
-            p.sinkProvisioner(name -> {
-                try (Admin admin = KafScaleClients.admin(bootstrap)) {
-                    layout.provisionSmartVectors(admin, name, (short) 1);
-                }
-            });
-            AtomicBoolean stop = new AtomicBoolean();
-            Thread main = Thread.currentThread();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                stop.set(true);
-                try {
-                    main.join(60_000);    // let the runners write their final checkpoints
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }));
-            System.out.println("vector processor for domain " + layout.domain() + ", state in " + state.toAbsolutePath());
-            p.run(stop::get);
-        }
+        VectorProcessor p = new VectorProcessor(() -> KafScaleClients.consumer(bootstrap), () -> KafScaleClients.producer(bootstrap),
+                layout, state, VectorProcessor.Timing.standard());
+        p.sinkProvisioner(name -> {
+            try (Admin admin = KafScaleClients.admin(bootstrap)) {
+                layout.provisionSmartVectors(admin, name, (short) 1);
+            }
+        });
+        AtomicBoolean stop = new AtomicBoolean();
+        Thread main = Thread.currentThread();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            stop.set(true);
+            try {
+                main.join(60_000);    // let the runners write their final checkpoints
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }));
+        System.out.println("vector processor for domain " + layout.domain() + ", state in " + state.toAbsolutePath());
+        p.run(stop::get);
     }
 }

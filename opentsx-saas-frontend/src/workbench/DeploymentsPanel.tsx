@@ -8,16 +8,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dagsAPI } from '../services/api';
 import { DagList, describeSink, hasProcessor } from './deployments';
-import { toDagYaml, useFlow } from './flow';
+import { DeployCheck, toDagYaml, useFlow } from './flow';
 
 interface Props {
   /** Retrieval server the state is read from. */
   base: string;
   /** Why the flow cannot be deployed, or null. */
   blocker: string | null;
+  /** What the processor needs of the flow, step by step. */
+  checks: DeployCheck[];
+  /** Builds and publishes a vector of the loaded series; offered while the flow has none. */
+  onMakeVector?: () => void;
 }
 
-export default function DeploymentsPanel({ base, blocker }: Props) {
+export default function DeploymentsPanel({ base, blocker, checks, onMakeVector }: Props) {
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
   const [list, setList] = useState<DagList | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -84,6 +88,26 @@ export default function DeploymentsPanel({ base, blocker }: Props) {
         then follows it: new episodes give new measuring points. A flow deployed again under the same track replaces the
         earlier one and starts over.
       </p>
+      <ul className="wb-findings" aria-label="What a deployment needs">
+        <li className={allowed ? 'ok' : 'error'}>
+          <b>{allowed ? 'Ready' : 'Missing'}</b>{' '}
+          {allowed
+            ? 'You are signed in as an administrator.'
+            : !signedIn
+              ? 'Sign in as an administrator.'
+              : (access?.reason ?? 'Checking your account.')}
+        </li>
+        {checks.map((c, i) => (
+          <li key={i} className={c.ok ? 'ok' : 'error'}>
+            <b>{c.ok ? 'Ready' : 'Missing'}</b> {c.text}
+          </li>
+        ))}
+      </ul>
+      {onMakeVector && (
+        <button onClick={onMakeVector} title="Adds an Align to vector node on the source bucket and publishes it">
+          Create a vector of the loaded series
+        </button>
+      )}{' '}
       <button
         className="wb-primary"
         disabled={!allowed || !!blocker || !!busy}
@@ -91,14 +115,12 @@ export default function DeploymentsPanel({ base, blocker }: Props) {
       >
         {busy === 'Deploy' ? 'Deploying' : 'Deploy'}
       </button>
-      {!signedIn ? (
+      {!signedIn && (
         <p className="wb-muted">
-          Deploying needs an account. <Link to="/login" target="_blank" rel="noopener">Sign in</Link>, then reload this tab.
+          <Link to="/login" target="_blank" rel="noopener">Sign in</Link>, then reload this tab. The flow stays in the browser only
+          until you save it.
         </p>
-      ) : (
-        access && !access.canRun && <p className="wb-muted">{access.reason}</p>
       )}
-      {blocker && <p className="wb-muted">{blocker}</p>}
       {message && (
         <div className={message.ok ? 'wb-note' : 'wb-error'} role={message.ok ? 'status' : 'alert'}>{message.text}</div>
       )}

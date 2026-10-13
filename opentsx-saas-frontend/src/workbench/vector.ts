@@ -223,6 +223,40 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
   };
 }
 
+/**
+ * The key a vector of this bucket most likely wants: the tag that puts several series into one vector and still
+ * tells the vectors apart (several channels of each turbine: `turbine`). `series` when no tag does that.
+ */
+export function suggestKey(bucket: Bucket): string {
+  const n = bucket.series.length;
+  let best = 'series';
+  let groups = n;
+  const keys = new Set(bucket.series.flatMap((s) => Object.keys(s.tags ?? {})));
+  for (const key of keys) {
+    if (!bucket.series.every((s) => s.tags?.[key] !== undefined)) continue;
+    const byValue = new Map<string, Set<string>>();
+    for (const s of bucket.series) {
+      const names = byValue.get(s.tags![key]) ?? new Set<string>();
+      names.add(s.metric ?? s.label);
+      byValue.set(s.tags![key], names);
+    }
+    // every series of a group must be another channel, or two of them would claim the same component
+    const distinct = [...byValue.values()].reduce((sum, names) => sum + names.size, 0) === n;
+    if (distinct && byValue.size < groups) {
+      best = key;
+      groups = byValue.size;
+    }
+  }
+  // one vector of everything says less than one per unit: prefer the finest tag that still groups
+  if (best !== 'series' && groups === 1 && n > 1) {
+    for (const key of keys) {
+      const values = new Set(bucket.series.map((s) => s.tags?.[key]));
+      if (!values.has(undefined) && values.size > 1 && values.size < n) return key;
+    }
+  }
+  return best;
+}
+
 export interface VectorRecord {
   schema: string;
   vector: string;

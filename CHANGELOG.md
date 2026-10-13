@@ -33,7 +33,8 @@ entries are grouped by date. The detailed progress log (German) is in
   (`GET /v1/dags`). The Java operator and the workbench pass the same test vectors
   (`docs/datamodel-2026/testvectors/`).
 - Deploying needs an account: the workbench has "Deploy" and "Stop" in the tab "Smart Topic" with the state the
-  processor reports. The SaaS backend checks the account (`POST /api/v1/dags/deploy`, `/stop`; administrators only
+  processor reports, a list of what a deployment needs (ready or missing, step by step) and a button that turns
+  the loaded series into a published vector. The SaaS backend checks the account (`POST /api/v1/dags/deploy`, `/stop`; administrators only
   unless `DAG_RUN_ROLE=user`) and forwards with the run token to the retrieval server (`POST /v1/dags/deploy`,
   `/stop`, only with `--kafscale`, `--dag-runs true` and the token `OPENTSX_DAG_RUN_TOKEN`). The frontend image
   does not proxy those write routes. `deploy/k3s`: `RETRIEVAL_DAG_RUNS`, `RETRIEVAL_DAG_RUN_TOKEN` (generated),
@@ -54,6 +55,11 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Vector processor: the first write to a new sink topic stopped the whole processor. The KafScale proxy answers a
+  produce request that mixes a topic nobody has written to yet with another one in a way the Kafka client cannot
+  parse, and the producer then sent nothing any more, not even status records. Every runner now has its own
+  producer and the status records have another; waiting for the broker's confirmation no longer blocks the loop,
+  and a producer that gets no answer is closed and replaced.
 - Readers no longer end when KafScale refuses fetches for a minute (`Unexpected error code 7 while fetching`): they
   wait it out (`org.opentsx.kafka.Patience`, used by `LogReader`, the statistics processor and `SeriesStatsLog`).
   Producers retry with pauses for up to three minutes instead of five quick attempts

@@ -16,6 +16,7 @@ import {
   SOURCE_ID,
   defaultSinkTopic,
   descendants,
+  deployChecks,
   evaluate,
   inputsOf,
   runBlocker,
@@ -27,7 +28,7 @@ import {
   validate,
   vectorComponents,
 } from '../workbench/flow';
-import { vectorRecords } from '../workbench/vector';
+import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
@@ -361,6 +362,17 @@ function Properties({ node }: { node: FlowNode }) {
 function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
   const state = useFlow();
   const blocker = runBlocker(state.nodes, state.sourceSeries);
+  // One step from loaded series to something the processor can run: a vector on the source, published.
+  const hasVector = state.nodes.some((n) => n.op === VECTOR_OP && n.sinkTopic);
+  const canMakeVector = !hasVector && state.sourceSeries.length > 0 && state.source?.xKind === 'time';
+  const makeVector = () => {
+    const s = useFlow.getState();
+    if (!s.source) return;
+    s.select(SOURCE_ID);
+    const id = s.applyOp(VECTOR_OP, { key: suggestKey(s.source) });
+    const made = useFlow.getState().nodes.find((n) => n.id === id);
+    if (id && made) s.setSink(id, defaultSinkTopic(useFlow.getState().domain, made.label, VECTOR_OP));
+  };
   const sinks = state.nodes.filter((n) => n.sinkTopic);
   const findings = validate(state.nodes);
   const blocked = findings.some((f) => f.level === 'error');
@@ -422,7 +434,12 @@ function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
         The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
         a proposal; the download hands the file over and does not deploy.
       </p>
-      <DeploymentsPanel base={base} blocker={blocked ? 'Fix what is marked as missing above first.' : blocker} />
+      <DeploymentsPanel
+        base={base}
+        blocker={blocker}
+        checks={deployChecks(state.nodes, state.sourceSeries)}
+        onMakeVector={canMakeVector ? makeVector : undefined}
+      />
     </div>
   );
 }

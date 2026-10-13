@@ -46,7 +46,7 @@ class VectorProcessorTest {
     static final SeriesKey SPEED = SeriesKeys.of("wind.met.wind_speed", Map.of("park", "p", "turbine", "T01"), "m/s");
     static final SeriesKey POWER = SeriesKeys.of("wind.turbine.power_active", Map.of("park", "p", "turbine", "T01"), "kW");
     static final VectorProcessor.Timing FAST = new VectorProcessor.Timing(Duration.ZERO, Duration.ofHours(1), Duration.ZERO,
-            Duration.ZERO, Duration.ofMillis(1));
+            Duration.ZERO, Duration.ofMillis(1), Duration.ofSeconds(30));
 
     /** Topics in memory. Every consumer it hands out sees what is appended, also after it was created. */
     static final class FakeBroker {
@@ -112,13 +112,23 @@ class VectorProcessorTest {
     }
 
     FakeBroker broker;
-    MockProducer<String, byte[]> producer;
+    /** Every producer the processor asked for, in the order it asked: one per runner and one for the status. */
+    final List<MockProducer<String, byte[]>> producers = new ArrayList<>();
+    /** How many of the next producers do not confirm their sends on their own (a broker that does not answer). */
+    int silentProducers;
     final OpenTsxAvro avro = new OpenTsxAvro();
 
     @BeforeEach
     void setUp() {
         broker = new FakeBroker();
-        producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+        producers.clear();
+        silentProducers = 0;
+    }
+
+    MockProducer<String, byte[]> newProducer() {
+        MockProducer<String, byte[]> m = new MockProducer<>(silentProducers-- <= 0, new StringSerializer(), new ByteArraySerializer());
+        producers.add(m);
+        return m;
     }
 
     /** Ten minutes of both series at 1 Hz, number {@code block}; the speed on partition 0, the power on partition 1. */
@@ -163,7 +173,11 @@ class VectorProcessorTest {
     }
 
     VectorProcessor processor(Path state) {
-        return new VectorProcessor(broker::consumer, producer, LAYOUT, state, FAST);
+        return processor(state, FAST);
+    }
+
+    VectorProcessor processor(Path state, VectorProcessor.Timing timing) {
+        return new VectorProcessor(broker::consumer, this::newProducer, LAYOUT, state, timing);
     }
 
     static void steps(VectorProcessor p, int n) {
@@ -172,23 +186,41 @@ class VectorProcessorTest {
         }
     }
 
-    List<JsonNode> written(MockProducer<String, byte[]> from, String topic) throws Exception {
+    /** What the processor sent to a topic, over all its producers. */
+    List<JsonNode> written(String topic) throws Exception {
         List<JsonNode> out = new ArrayList<>();
-        for (ProducerRecord<String, byte[]> r : from.history()) {
-            if (r.topic().equals(topic)) {
-                out.add(JSON.readTree(r.value()));
+        for (MockProducer<String, byte[]> from : producers) {
+            for (ProducerRecord<String, byte[]> r : from.history()) {
+                if (r.topic().equals(topic)) {
+                    out.add(JSON.readTree(r.value()));
+                }
             }
         }
         return out;
     }
 
-    List<JsonNode> vectors(MockProducer<String, byte[]> from) throws Exception {
-        return written(from, "tsx.wind.smart.turbine-state.vectors.v1");
+    List<JsonNode> vectors() throws Exception {
+        return written("tsx.wind.smart.turbine-state.vectors.v1");
     }
 
-    JsonNode lastStatus(MockProducer<String, byte[]> from) throws Exception {
-        List<JsonNode> all = written(from, LAYOUT.dagStatus());
-        return all.get(all.size() - 1);
+    /**
+     * The newest status of a sink ("dag/vector"), or of a DAG the processor refused ("dag"). All status records go
+     * through one producer after the other, so the last one found is the newest.
+     */
+    JsonNode lastStatus(String key) throws Exception {
+        JsonNode last = null;
+        for (MockProducer<String, byte[]> from : producers) {
+            for (ProducerRecord<String, byte[]> r : from.history()) {
+                if (r.topic().equals(LAYOUT.dagStatus()) && r.key().equals(key)) {
+                    last = JSON.readTree(r.value());
+                }
+            }
+        }
+        return last;
+    }
+
+    JsonNode lastStatus() throws Exception {
+        return lastStatus("wind-exp2-smart/turbine-state");
     }
 
     @Test
@@ -202,7 +234,7 @@ class VectorProcessorTest {
             steps(p, 5);
             assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
             assertEquals(List.of("turbine-state"), provisioned, "the sink topic is asked for once, before the first write");
-            List<JsonNode> first = vectors(producer);
+            List<JsonNode> first = vectors();
             assertEquals(20, first.size(), "twenty minutes, one measuring point per minute");
             assertEquals("opentsx.vector.v1", first.get(0).path("schema").asText());
             assertEquals("{\"turbine\":\"T01\"}", first.get(0).path("key").toString());
@@ -210,17 +242,17 @@ class VectorProcessorTest {
             assertEquals("[100.0,5.0]", first.get(0).path("values").toString());
             assertEquals("[200.0,6.0]", first.get(19).path("values").toString());
             assertEquals("2026-10-01T00:20:00Z", first.get(19).path("ts").asText());
-            assertEquals("turbine=T01", producer.history().stream().filter(r -> r.topic().endsWith(".vectors.v1")).findFirst()
-                    .orElseThrow().key());
+            assertEquals("turbine=T01", producers.stream().flatMap(m -> m.history().stream())
+                    .filter(r -> r.topic().endsWith(".vectors.v1")).findFirst().orElseThrow().key());
 
             // more data arrives: only the new ticks are written
             appendBlock(2);
             steps(p, 5);
-            List<JsonNode> all = vectors(producer);
+            List<JsonNode> all = vectors();
             assertEquals(30, all.size());
             assertEquals("[300.0,7.0]", all.get(29).path("values").toString());
 
-            JsonNode status = lastStatus(producer);
+            JsonNode status = lastStatus();
             assertEquals("running", status.path("state").asText());
             assertEquals("tsx.wind.smart.turbine-state.vectors.v1", status.path("topic").asText());
             assertEquals(30, status.path("records").asLong(), "the report follows what was written");
@@ -237,8 +269,8 @@ class VectorProcessorTest {
         try (VectorProcessor p = processor(state)) {
             steps(p, 5);
             assertEquals(Map.of("wind-exp2-smart/turbine-state", "waiting"), p.states());
-            assertEquals(0, vectors(producer).size());
-            JsonNode status = lastStatus(producer);
+            assertEquals(0, vectors().size());
+            JsonNode status = lastStatus();
             assertEquals("waiting", status.path("state").asText());
             assertEquals(POWER.getSeriesId(), status.path("waitingFor").get(0).asText());
 
@@ -246,8 +278,8 @@ class VectorProcessorTest {
             double[] power = new double[300];
             broker.append(LAYOUT.episodes(), 1, avro.encode(Episodes.regular(POWER, T0, SECOND, power).source("t").createdAt(T0).build()));
             steps(p, 5);
-            assertEquals(5, vectors(producer).size());
-            assertEquals("running", lastStatus(producer).path("state").asText());
+            assertEquals(5, vectors().size());
+            assertEquals("running", lastStatus().path("state").asText());
         }
     }
 
@@ -258,20 +290,18 @@ class VectorProcessorTest {
         try (VectorProcessor p = processor(state)) {
             steps(p, 5);
         }
-        assertEquals(10, vectors(producer).size());
+        assertEquals(10, vectors().size());
         assertTrue(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")));
 
         // a new process: same control topic, same state directory
-        MockProducer<String, byte[]> second = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
         appendBlock(1);
-        try (VectorProcessor p = new VectorProcessor(broker::consumer, second, LAYOUT, state, FAST)) {
+        try (VectorProcessor p = processor(state)) {
             steps(p, 5);
         }
-        List<JsonNode> after = vectors(second);
+        List<JsonNode> after = vectors().subList(10, vectors().size());
         assertEquals(10, after.size(), "only the ten new minutes");
         assertEquals("2026-10-01T00:11:00Z", after.get(0).path("ts").asText());
-        List<JsonNode> statuses = written(second, LAYOUT.dagStatus());
-        assertEquals(20, statuses.get(statuses.size() - 1).path("records").asLong(), "the count goes on from the checkpoint");
+        assertEquals(20, lastStatus().path("records").asLong(), "the count goes on from the checkpoint");
     }
 
     @Test
@@ -280,23 +310,60 @@ class VectorProcessorTest {
         deploy(goodDag());
         try (VectorProcessor p = processor(state)) {
             steps(p, 5);
-            assertEquals(10, vectors(producer).size());
+            assertEquals(10, vectors().size());
 
             broker.append(LAYOUT.dags(), 0, VectorProcessor.stopRecord("wind-exp2-smart", "test"));
             steps(p, 3);
             assertEquals(Map.of(), p.states());
-            assertEquals("stopped", lastStatus(producer).path("state").asText());
+            assertEquals("stopped", lastStatus().path("state").asText());
             assertFalse(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")), "the checkpoint goes with the DAG");
             appendBlock(1);
             steps(p, 3);
-            assertEquals(10, vectors(producer).size(), "a stopped DAG writes nothing");
+            assertEquals(10, vectors().size(), "a stopped DAG writes nothing");
 
             // deployed again with another clock: it starts from the beginning of the topic
             deploy(goodDag().replace("PT60S", "PT300S"));
             steps(p, 5);
-            List<JsonNode> all = vectors(producer);
+            List<JsonNode> all = vectors();
             assertEquals(14, all.size(), "twenty minutes in ticks of five");
             assertEquals("PT300S", all.get(13).path("clock").asText());
+        }
+    }
+
+    @Test
+    void aSinkTheBrokerDoesNotConfirmHoldsUpNeitherTheOthersNorTheStatus(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        String other = goodDag().replace("dag: wind-exp2-smart", "dag: wind-other-smart").replace("turbine-state", "other-state");
+        deploy(other);
+        // the first producer the processor asks for belongs to the runner of wind-exp2-smart: it never gets an answer
+        silentProducers = 1;
+        VectorProcessor.Timing impatient = new VectorProcessor.Timing(Duration.ZERO, Duration.ofHours(1), Duration.ZERO,
+                Duration.ZERO, Duration.ofMillis(1), Duration.ofMillis(150));
+        try (VectorProcessor p = processor(state, impatient)) {
+            steps(p, 5);
+            // the other sink is written, confirmed and checkpointed although the first one waits
+            assertEquals(10, written("tsx.wind.smart.other-state.vectors.v1").size());
+            assertTrue(Files.exists(state.resolve("wind-other-smart--other-state.json")));
+            assertEquals("running", lastStatus("wind-other-smart/other-state").path("state").asText());
+            // the silent sink sent its measuring points but may not checkpoint them
+            assertEquals(10, vectors().size());
+            assertFalse(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")), "no checkpoint without confirmation");
+            assertEquals("running", p.states().get("wind-exp2-smart/turbine-state"));
+
+            Thread.sleep(200);
+            steps(p, 1);
+            JsonNode failed = lastStatus("wind-exp2-smart/turbine-state");
+            assertEquals("failed", failed.path("state").asText(), "the status still gets out");
+            assertTrue(failed.path("error").asText().contains("has not confirmed"), failed.toString());
+            assertTrue(producers.get(0).closed(), "the producer that got no answer is given up");
+
+            // the next try starts at the last checkpoint (there is none: from the beginning) with a new producer
+            steps(p, 5);
+            assertEquals("running", lastStatus("wind-exp2-smart/turbine-state").path("state").asText());
+            assertEquals(20, vectors().size(), "written again; readers take the later measuring point");
+            assertTrue(Files.exists(state.resolve("wind-exp2-smart--turbine-state.json")));
+            assertEquals(10, written("tsx.wind.smart.other-state.vectors.v1").size(), "the other sink was not disturbed");
         }
     }
 
@@ -308,15 +375,15 @@ class VectorProcessorTest {
         try (VectorProcessor p = processor(state)) {
             steps(p, 3);
             assertEquals(Map.of(), p.states());
-            JsonNode status = lastStatus(producer);
+            JsonNode status = lastStatus("wind-exp2-smart");
             assertEquals("failed", status.path("state").asText());
             assertTrue(status.path("error").asText().contains("node n0 (norm.zscore) is not available"), status.toString());
 
             // without the series named there is no telling when a vector is complete
             deploy(dag("", "", "decode"));
             steps(p, 3);
-            assertTrue(lastStatus(producer).path("error").asText().contains("needs the ids of its series"));
-            assertEquals(0, vectors(producer).size());
+            assertTrue(lastStatus("wind-exp2-smart").path("error").asText().contains("needs the ids of its series"));
+            assertEquals(0, vectors().size());
         }
     }
 }
