@@ -31,6 +31,9 @@ export interface GradeSource {
   table?: string;
   /** False when a flow wrote the grade without the system document declaring it. */
   declared?: boolean;
+  /** True when the source comes from the working copy of the user, not from the system document. */
+  workingCopy?: boolean;
+  params?: Record<string, unknown>;
 }
 
 export interface GradeData {
@@ -174,9 +177,9 @@ export function stateText(s: Signal): string {
 
 /** What each next step means, and from which delivery stage it works. `live` steps work today. */
 export const NEXT: Record<NextStep, { label: string; hint: string; live: boolean }> = {
-  bind: { label: 'Bind', hint: 'Choose the series that carry this signal. Planned (stage L4); today the binding is written into the system document.', live: false },
-  simulate: { label: 'Simulate', hint: 'Generate the signal from its expectation. Planned (stage L4).', live: false },
-  generate: { label: 'Generate', hint: 'Run the generator of this signal. Planned (stage L4): no runtime writes generated series yet.', live: false },
+  bind: { label: 'Bind', hint: 'Choose the series that carry this signal, and confirm that they mean the same. The binding goes into your working copy.', live: true },
+  simulate: { label: 'Simulate', hint: 'Bind the signal to a demo generator preset from its expectation. Plausible single values, not a model of the system.', live: true },
+  generate: { label: 'Generate', hint: 'Run the demo generator of this signal over a period; it writes the series to the topic of generated series.', live: true },
   'check-source': { label: 'Check source', hint: 'A source is declared, but the server finds no series for it.', live: false },
   prepare: { label: 'Prepare', hint: 'Opens the raw series on the scope of the workbench, with the expected range drawn in. There the cleaning is built and published as the clean signal.', live: true },
   start: { label: 'Start', hint: 'A flow is declared for the clean data but nothing has written it. Opens the flows of the system, where it is started.', live: true },
@@ -253,7 +256,7 @@ export function sourceText(g: Grade | undefined): string {
     case 'topic':
       return `topic ${s.topic}: ${s.metric ?? ''} ${Object.entries(s.tags ?? {}).map(([k, v]) => `${k}=${v}`).join(' ')}`.trim();
     case 'generator':
-      return `generator ${s.processor}, seed ${s.seed ?? 'none'}`;
+      return `demo generator ${s.processor}, seed ${s.seed ?? 'none'}`;
     case 'flow':
       return `flow ${s.flow ?? 'unknown'}${s.output ? `, output ${s.output}` : ''}${g.names ? `: ${g.names.join(', ')}` : ''}${s.declared === false ? ' (published from the workbench; not in the system document)' : ''}`;
     case 'manual':
@@ -361,4 +364,93 @@ export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, fl
     flows: flows === null ? 'sign in' : flows === undefined ? '' : `${flows} flows`,
     models: 'none yet',
   };
+}
+
+// ---------------------------------------------------------------- binding and simulating (stage L4)
+
+/** A series of the TS inventory as far as a binding needs it. */
+export interface Candidate {
+  seriesId: string;
+  metric: string;
+  tags: Record<string, string>;
+  unit?: string;
+  samples: number;
+  from?: string;
+  to?: string;
+  min?: number;
+  max?: number;
+  labels: Record<string, string[]>;
+}
+
+/**
+ * Series a signal could be bound to, the likelier ones first: the same unit as the expectation, then a value range
+ * inside the plausible range. Series written for signals (clean, generated) are left out. This is a suggestion:
+ * the same unit does not mean the same quantity, so a person confirms the meaning before the binding is made.
+ */
+export function suggestSeries(signal: Signal, series: Candidate[], text = ''): Candidate[] {
+  const words = text.toLowerCase().split(/\s+/).filter(Boolean);
+  const score = (c: Candidate) => {
+    let n = 0;
+    if (signal.expect.unit && c.unit === signal.expect.unit) n += 2;
+    const inRange = c.min !== undefined && c.max !== undefined && (signal.expect.min === undefined || c.min >= signal.expect.min) && (signal.expect.max === undefined || c.max <= signal.expect.max);
+    if (inRange) n += 1;
+    return n;
+  };
+  return series
+    .filter((c) => !('signal' in c.tags) && !('vector' in c.tags))
+    .filter((c) => words.every((w) => `${c.metric} ${Object.values(c.tags).join(' ')} ${c.unit ?? ''}`.toLowerCase().includes(w)))
+    .map((c) => ({ c, n: score(c) }))
+    .sort((a, b) => b.n - a.n || a.c.metric.localeCompare(b.c.metric) || JSON.stringify(a.c.tags).localeCompare(JSON.stringify(b.c.tags)))
+    .map((x) => x.c);
+}
+
+/** The origin a series most likely has: synthetic when its episodes name a simulator scenario, else unknown. */
+export function guessOrigin(c: Candidate): string {
+  if ((c.labels.scenario ?? []).length > 0 || (c.labels.origin ?? []).includes('SYNTHETIC')) return 'SYNTHETIC';
+  return (c.labels.origin ?? [])[0] ?? '';
+}
+
+/** The topic source of a binding to one series: by metric and all its tags. */
+export function topicSource(topic: string, c: Candidate, origin: string): Record<string, unknown> {
+  return { kind: 'topic', topic, origin, select: { metric: c.metric, tags: c.tags } };
+}
+
+export const GENERATORS = ['gen.ou', 'gen.sine'] as const;
+
+/** Parameters of a demo generator preset from what the signal should look like: the middle of its range, a tenth of it as spread. */
+export function presetGenerator(processor: string, e: Expect): Record<string, number | string> {
+  const lo = e.operating?.min ?? e.min ?? 0;
+  const hi = e.operating?.max ?? e.max ?? lo + 1;
+  const mean = Number(((lo + hi) / 2).toPrecision(4));
+  const spread = Number(((hi - lo) / 10).toPrecision(3));
+  return processor === 'gen.sine'
+    ? { mean, amplitude: Number(((hi - lo) / 4).toPrecision(3)), period: 'P1D', sigma: Number((spread / 4).toPrecision(2)) }
+    : { mean, sigma: Number((spread / 3).toPrecision(2)), reversion: 0.1 };
+}
+
+/** The period the system has data for, so a generated series lies next to the measured ones; null when it has none. */
+export function dataExtent(status: SystemStatus): { from: string; to: string } | null {
+  const all = status.signals.flatMap((s) => Object.values(s.grades).map((g) => g?.data)).filter((d): d is GradeData => !!d && !!d.from && !!d.to);
+  if (all.length === 0) return null;
+  return { from: all.map((d) => d.from!).sort()[0], to: all.map((d) => d.to!).sort().pop()! };
+}
+
+function yamlValue(v: unknown): string {
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (v && typeof v === 'object') return `{ ${Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}: ${yamlValue(x)}`).join(', ')} }`;
+  const t = String(v);
+  return /^[A-Za-z0-9_./-]+$/.test(t) ? t : JSON.stringify(t);
+}
+
+/**
+ * The working copy as the lines to put into the system document: per binding the signal and the source of its
+ * grade. A person writes them into the file; the web application does not change the repository.
+ */
+export function bindingsYaml(bindings: { signal: string; grade: string; source: Record<string, unknown> }[]): string {
+  const lines = ['# Working copy: put each source under the grade of its signal in the system document.'];
+  for (const b of [...bindings].sort((x, y) => x.signal.localeCompare(y.signal) || x.grade.localeCompare(y.grade))) {
+    const source = Object.fromEntries(Object.entries(b.source).filter(([k]) => k !== 'workingCopy'));
+    lines.push(`- id: ${yamlValue(b.signal)}`, `  ${b.grade}:`, `    source: ${yamlValue(source)}`);
+  }
+  return lines.join('\n') + '\n';
 }

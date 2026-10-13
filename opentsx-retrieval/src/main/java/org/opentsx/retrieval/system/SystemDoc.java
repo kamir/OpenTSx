@@ -54,7 +54,14 @@ public final class SystemDoc {
     /** Where the data of one grade comes from; {@code kind} is topic, generator, flow or manual. */
     public record Source(String kind, String topic, String metric, Map<String, String> tags, List<String> series,
                          String origin, String processor, JsonNode params, Long seed, String flow, String output,
-                         Double value, String table) {
+                         Double value, String table, boolean workingCopy) {
+    }
+
+    /**
+     * A source a person set in the web application: it lies over the document until it is written into the file
+     * (decision D42). {@code source} has the form of {@code signals[].<grade>.source}.
+     */
+    public record Binding(String signal, String grade, JsonNode source) {
     }
 
     /**
@@ -167,8 +174,33 @@ public final class SystemDoc {
      * @param root directory its {@code ref} paths are relative to (the repository root)
      */
     public static SystemDoc load(Path file, Path root) {
+        return load(file, root, List.of());
+    }
+
+    /**
+     * Loads the document with the bindings of a working copy laid over it. A binding for a signal the document does
+     * not have, or for the grade features, is a problem of the result.
+     */
+    public static SystemDoc load(Path file, Path root, List<Binding> overlay) {
         JsonNode doc = read(file);
+        List<String> unknown = new ArrayList<>();
+        for (Binding b : overlay) {
+            JsonNode target = null;
+            for (JsonNode n : doc.path("signals")) {
+                if (b.signal().equals(n.path("id").asText())) {
+                    target = n;
+                }
+            }
+            if (target == null || !(b.grade().equals("raw") || b.grade().equals("clean")) || !b.source().isObject()) {
+                unknown.add("working copy: " + b.signal() + "@" + b.grade() + " is no grade of a signal of this system");
+                continue;
+            }
+            com.fasterxml.jackson.databind.node.ObjectNode source = b.source().deepCopy();
+            source.put("workingCopy", true);
+            ((com.fasterxml.jackson.databind.node.ObjectNode) target).putObject(b.grade()).set("source", source);
+        }
         SystemDoc s = new SystemDoc(doc);
+        s.problems.addAll(unknown);
         s.hashed.append(text(file));
         if (!SCHEMA.equals(doc.path("schema").asText())) {
             s.problems.add("schema must be " + SCHEMA);
@@ -418,7 +450,7 @@ public final class SystemDoc {
         return new Source(kind, s.path("topic").asText(null), metric, tags, series, origin, s.path("processor").asText(null),
                 s.path("params").isMissingNode() ? null : s.path("params"), s.has("seed") ? s.path("seed").asLong() : null,
                 s.path("flow").asText(null), s.path("output").asText(null), s.has("value") ? s.path("value").asDouble() : null,
-                s.path("table").asText(null));
+                s.path("table").asText(null), s.path("workingCopy").asBoolean(false));
     }
 
     private void origin(String id, String where, String origin) {

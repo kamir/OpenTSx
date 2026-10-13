@@ -6,7 +6,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SignalBindingDoc, systemsAPI } from '../services/api';
 import { useFlow } from '../workbench/flow';
+import SourcePanel from './SourcePanel';
 import {
   GradeName,
   NEXT,
@@ -14,6 +16,7 @@ import {
   Signal,
   SignalFilter,
   SystemStatus,
+  bindingsYaml,
   dataText,
   expectText,
   filterSignals,
@@ -36,16 +39,48 @@ interface Props {
   /** Set when the workbench has just published the clean grade of the focused signal: started or saved. */
   published: string | null;
   onReload: () => void;
+  /** Retrieval server, for the series a signal can be bound to. */
+  base: string;
+  /** The working copy of the signed-in user; empty when there is none. */
+  bindings: SignalBindingDoc[];
 }
 
-export default function SignalsPlace({ status, focusId, published, onReload }: Props) {
+export default function SignalsPlace({ status, focusId, published, onReload, base, bindings }: Props) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<SignalFilter>(NO_SIGNAL_FILTER);
   const [focus, setFocus] = useState<string | null>(focusId);
   /** A jump to the scope that waits for a yes, because the workbench holds unsaved work. */
   const [pending, setPending] = useState<string | null>(null);
+  /** The panel open in the details: binding, simulating or generating the focused signal. */
+  const [panel, setPanel] = useState<'bind' | 'simulate' | 'generate' | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => setFocus(focusId), [focusId]);
+  useEffect(() => setPanel(null), [focus]);
+
+  const changed = (message: string) => {
+    setPanel(null);
+    setNote(message);
+    onReload();
+  };
+  const unbind = async (signal: string, grade: string) => {
+    try {
+      await systemsAPI.unbind(status!.system, signal, grade);
+      changed(`${signal}: the source of your working copy is removed; the system document applies again.`);
+    } catch (e) {
+      setNote(`The source could not be removed: ${e instanceof Error ? e.message : e}.`);
+    }
+  };
+  const copyYaml = async () => {
+    try {
+      await navigator.clipboard.writeText(bindingsYaml(bindings));
+      setCopied(true);
+    } catch {
+      setCopied(false);
+      setNote('The browser did not allow copying. The lines are: ' + bindingsYaml(bindings));
+    }
+  };
 
   const rows = useMemo(() => filterSignals(status?.signals ?? [], filter), [status, filter]);
   const groups = useMemo(() => groupSignals(rows), [rows]);
@@ -65,7 +100,8 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
   const step = (s: Signal, n: Signal['next'][number]) => {
     const def = NEXT[n];
     const grade = scopeGrade(s);
-    const live = def.live && (n === 'start' || grade !== null);
+    const opensPanel = n === 'bind' || n === 'simulate' || n === 'generate';
+    const live = def.live && (n === 'start' || opensPanel || grade !== null);
     return (
       <button
         key={n}
@@ -73,7 +109,11 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
         title={def.hint}
         onClick={(e) => {
           e.stopPropagation();
-          if (n === 'start') navigate(`/systems/${status!.system}/flows`);
+          if (opensPanel) {
+            setFocus(s.id);
+            // after the focus effect has closed the panel of another signal
+            setTimeout(() => setPanel(n), 0);
+          } else if (n === 'start') navigate(`/systems/${status!.system}/flows`);
           else if (grade) openOnScope(s, n === 'prepare' ? 'raw' : grade);
         }}
       >
@@ -106,6 +146,7 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
               : `The flow for ${focusId} is saved as its clean source. It is not running: start it under Flows.`}
           </div>
         )}
+        {note && !pending && <div className="wb-note" role="status">{note}</div>}
         {pending && (
           <div className="wb-error" role="alert">
             The workbench holds a flow that is not saved. Opening the signal there replaces it.{' '}
@@ -225,6 +266,9 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
                   {focused.usedBy.length > 0 && [<dt key="uk">Used by</dt>, <dd key="uv">{focused.usedBy.join(', ')}</dd>]}
                 </dl>
                 {focused.note && <p className="wb-muted">{focused.note}</p>}
+                {panel && status && (
+                  <SourcePanel mode={panel} status={status} signal={focused} base={base} onChanged={changed} onClose={() => setPanel(null)} />
+                )}
                 {GRADES.map((g) => {
                   const grade = focused.grades[g];
                   if (!grade && g === 'features') return null;
@@ -236,6 +280,15 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
                         {grade && grade.source.kind !== 'manual' && <p className="wb-muted">{dataText(grade.data)}{grade.data?.from ? `, ${grade.data.from.slice(0, 16).replace('T', ' ')} to ${grade.data.to?.slice(0, 16).replace('T', ' ')} UTC` : ''}</p>}
                         {(grade?.data?.series.length ?? 0) > 0 && g !== 'features' && (
                           <button onClick={() => openOnScope(focused, g)}>Open on scope</button>
+                        )}
+                        {grade?.source.workingCopy && (
+                          <p className="warn">
+                            From your working copy, not from the system document.{' '}
+                            <button onClick={() => unbind(focused.id, g)}>Remove</button>
+                          </p>
+                        )}
+                        {g === 'raw' && grade?.source.kind === 'generator' && (
+                          <button onClick={() => setPanel('generate')}>{grade.data ? 'Generate again' : 'Generate'}</button>
                         )}
                       </div>
                     </div>
@@ -259,6 +312,15 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
         </div>
 
         <footer className="wb-inv-foot">
+          {bindings.length > 0 && (
+            <>
+              <span className="warn">
+                {bindings.length} {bindings.length === 1 ? 'source comes' : 'sources come'} from your working copy. The system document in the repository is unchanged.
+              </span>
+              <button onClick={copyYaml} title="The lines to put into the system document">{copied ? 'Copied' : 'Copy as YAML'}</button>
+              <span className="wb-grow" />
+            </>
+          )}
           <span className="wb-muted">
             {(status?.notes.length ?? 0) > 0 ? `Notes of the check: ${status!.notes.join('; ')}` : 'The state is computed from the system document and the TS inventory on every reload.'}
           </span>

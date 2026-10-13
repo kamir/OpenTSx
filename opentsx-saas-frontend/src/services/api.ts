@@ -172,6 +172,39 @@ export const authAPI = {
 /**
  * Flows API
  */
+/** One source of the working copy of a system document, as the backend keeps it per user. */
+export interface SignalBindingDoc {
+  signal: string;
+  grade: string;
+  source: Record<string, unknown>;
+  meaningConfirmed?: boolean;
+  baseHash?: string | null;
+}
+
+export const systemsAPI = {
+  /** The working copy of the signed-in user for a system. */
+  bindings: async (system: string): Promise<SignalBindingDoc[]> => {
+    const response = await apiClient.get(`/systems/${system}/bindings`);
+    return response.data.bindings;
+  },
+
+  /** Sets the source of one grade of one signal; an earlier one is replaced. */
+  bind: async (system: string, binding: SignalBindingDoc): Promise<void> => {
+    await apiClient.put(`/systems/${system}/bindings`, binding);
+  },
+
+  /** Takes a source out of the working copy; the system document applies again. */
+  unbind: async (system: string, signal: string, grade = 'raw'): Promise<void> => {
+    await apiClient.delete(`/systems/${system}/bindings`, { params: { signal, grade } });
+  },
+
+  /** Runs the demo generator a signal is bound to over a period. Administrators only. */
+  generate: async (system: string, signal: string, from: string, to: string): Promise<{ samples: number; episodes: number; topic: string }> => {
+    const response = await apiClient.post(`/systems/${system}/generate`, { signal, from, to });
+    return response.data;
+  },
+};
+
 export const dagsAPI = {
   /** Whether the signed-in user may deploy and stop DAGs on this installation, and if not, why. */
   capabilities: async (): Promise<{ canRun: boolean; reason: string | null }> => {

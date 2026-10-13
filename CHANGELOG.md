@@ -91,6 +91,11 @@ entries are grouped by date. The detailed progress log (German) is in
   5a). Signals carry a role, a meaning and an operating range next to the plausible range. Clean episodes carry an
   identity, so a restart is not counted twice. The user manual's chapter 16 is rewritten as eight steps from a
   decision to its effect.
+- Binding and simulating signals (TASK-014, stage L4). On the page "Signals" a signal is bound to a series of the TS
+  inventory after its meaning was confirmed, or to a demo generator preset from its expectation (`gen.ou`,
+  `gen.sine`), which an administrator runs over a period. Generated series go to `tsx.<domain>.synthetic.v2` and
+  carry `origin: SYNTHETIC` and `fidelity: demo`. What is set there is a working copy per account
+  (`/api/v1/systems/<id>/bindings`) laid over the system document; the page gives the lines for the file.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

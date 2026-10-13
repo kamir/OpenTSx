@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  Candidate,
+  bindingsYaml,
+  dataExtent,
+  guessOrigin,
+  presetGenerator,
+  suggestSeries,
+  topicSource,
   NO_SIGNAL_FILTER,
   Signal,
   countsText,
@@ -107,7 +114,7 @@ describe('words for a signal', () => {
 
   it('describes source and data of a grade', () => {
     expect(sourceText(base.grades.raw)).toBe('topic tsx.wind.episodes.v2: wind.turbine.power_active turbine=T02');
-    expect(sourceText(price.grades.raw)).toBe('generator gen.ou, seed 7');
+    expect(sourceText(price.grades.raw)).toBe('demo generator gen.ou, seed 7');
     expect(sourceText(avail.grades.clean)).toBe('flow park-power, output sum');
     expect(sourceText(setpoint.grades.raw)).toBe('set by hand: 5,000');
     expect(sourceText(undefined)).toBe('none');
@@ -207,5 +214,56 @@ describe('the shell around a system', () => {
     expect(feedOf({ name: 'limit_kw', kind: 'SIGNAL', from: 'rules.limit_kw' })).toEqual({ kind: 'wired', text: 'rules.limit_kw' });
     expect(feedOf({ name: 'p_avail_kw', kind: 'FLOW', signal: 'park.p_avail_kw', state: 'clean-not-running' })).toEqual({ kind: 'signal', text: 'clean not running' });
     expect(feedOf({ name: 'x', kind: 'FLOW' })).toEqual({ kind: 'missing', text: 'no signal declared' });
+  });
+});
+
+describe('binding and simulating a signal', () => {
+  const cand = (seriesId: string, metric: string, unit: string, min: number, max: number, tags: Record<string, string> = {}, labels: Record<string, string[]> = {}): Candidate => ({
+    seriesId, metric, unit, min, max, tags, labels, samples: 100, from: '2026-10-01T00:00:00Z', to: '2026-10-01T06:00:00Z',
+  });
+  const series = [
+    cand('a', 'wind.met.wind_speed', 'm/s', 2, 14, { turbine: 'T02' }, { scenario: ['ostsee-demo'] }),
+    cand('b', 'h2.demand', 'kg/h', 0, 80, { customer: 'c1' }),
+    cand('c', 'h2.flow', 'kg/h', 0, 900, { line: 'l1' }),
+    cand('d', 'wind.met.wind_speed', 'm/s', 2, 14, { turbine: 'T02', system: 'h2-chain', signal: 'park/T02/WMET.HorWdSpd' }),
+  ];
+  const open: Signal = { ...demand, expect: { unit: 'kg/h', min: 0, max: 120, interval: 'PT1M' } };
+
+  it('suggests series by unit and range, and leaves out what was written for signals', () => {
+    // same unit and inside the plausible range first, then same unit, then the rest
+    expect(suggestSeries(open, series).map((c) => c.seriesId)).toEqual(['b', 'c', 'a']);
+    expect(suggestSeries(open, series, 'wind t02').map((c) => c.seriesId)).toEqual(['a']);
+  });
+
+  it('builds the source of a binding and guesses where the data comes from', () => {
+    expect(guessOrigin(series[0])).toBe('SYNTHETIC');
+    expect(guessOrigin(series[1])).toBe('');
+    expect(topicSource('tsx.wind.episodes.v2', series[1], 'REPORTED')).toEqual({
+      kind: 'topic', topic: 'tsx.wind.episodes.v2', origin: 'REPORTED', select: { metric: 'h2.demand', tags: { customer: 'c1' } },
+    });
+  });
+
+  it('presets a demo generator from what the signal should look like', () => {
+    expect(presetGenerator('gen.ou', { min: 0, max: 120 })).toEqual({ mean: 60, sigma: 4, reversion: 0.1 });
+    // the operating range says more about normal values than the plausible range of the sensor
+    expect(presetGenerator('gen.ou', { min: -500, max: 3000, operating: { min: 0, max: 250 } })).toMatchObject({ mean: 125 });
+    expect(presetGenerator('gen.sine', { min: 0, max: 120 })).toEqual({ mean: 60, amplitude: 30, period: 'P1D', sigma: 3 });
+  });
+
+  it('takes the period the system has data for', () => {
+    const status = { signals: [base, { ...base, grades: { raw: { source: base.grades.raw!.source, data: { series: ['x'], samples: 1, missing: 0, from: '2026-10-01T00:00:00Z', to: '2026-10-01T06:00:00Z' } } } }, demand] } as never;
+    expect(dataExtent(status)).toEqual({ from: '2026-10-01T00:00:00Z', to: '2026-10-01T06:00:00Z' });
+    expect(dataExtent({ signals: [demand] } as never)).toBeNull();
+  });
+
+  it('writes the working copy as the lines for the system document', () => {
+    expect(bindingsYaml([
+      { signal: 'offtake.demand_kgph', grade: 'raw', source: { kind: 'generator', processor: 'gen.sine', seed: 1, params: { mean: 60, period: 'P1D' }, workingCopy: true } },
+      { signal: 'market.price_eur_mwh', grade: 'raw', source: { kind: 'manual', value: 62.8, origin: 'REPORTED' } },
+    ])).toBe(
+      '# Working copy: put each source under the grade of its signal in the system document.\n' +
+        '- id: market.price_eur_mwh\n  raw:\n    source: { kind: manual, value: 62.8, origin: REPORTED }\n' +
+        '- id: offtake.demand_kgph\n  raw:\n    source: { kind: generator, processor: gen.sine, seed: 1, params: { mean: 60, period: P1D } }\n'
+    );
   });
 });

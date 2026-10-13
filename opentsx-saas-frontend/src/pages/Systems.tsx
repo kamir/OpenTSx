@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { SignalBindingDoc, systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
@@ -43,6 +44,7 @@ export default function Systems() {
   const [reload, setReload] = useState(0);
   const [guide, setGuide] = useState(() => remembered('opentsx.guide'));
   const [flows, setFlows] = useState<{ all: number; running: number } | null>(null);
+  const [bindings, setBindings] = useState<SignalBindingDoc[]>([]);
   const signedIn = !!localStorage.getItem('access_token');
   const here = (PLACES.find((p) => p.id === place)?.id ?? 'signals') as Place;
 
@@ -73,7 +75,20 @@ export default function Systems() {
       if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
       return res.json();
     };
-    Promise.all([get('signals'), get('plan')])
+    // the working copy of the signed-in user lies over the system document
+    const withWorkingCopy = async () => {
+      const mine = signedIn ? await systemsAPI.bindings(system).catch(() => []) : [];
+      if (!cancelled) setBindings(mine);
+      if (mine.length === 0) return get('signals');
+      const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/signals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bindings: mine.map((b) => ({ signal: b.signal, grade: b.grade, source: b.source })) }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    };
+    Promise.all([withWorkingCopy(), get('plan')])
       .then(([signals, planDoc]) => {
         if (cancelled) return;
         setStatus(parseStatus(signals));
@@ -84,7 +99,7 @@ export default function Systems() {
     return () => {
       cancelled = true;
     };
-  }, [system, reload]);
+  }, [system, reload, signedIn]);
 
   const toggleGuide = () => {
     setGuide((g) => {
@@ -173,7 +188,7 @@ export default function Systems() {
         </nav>
 
         {here === 'system' && <SystemPlace plan={plan} system={system ?? ''} />}
-        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} published={searchParams.get('published')} onReload={() => setReload((n) => n + 1)} />}
+        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} published={searchParams.get('published')} onReload={() => setReload((n) => n + 1)} base={BASE} bindings={bindings} />}
         {here === 'flows' &&
           (signedIn && status ? (
             <FlowComposer

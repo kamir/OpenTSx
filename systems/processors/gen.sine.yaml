@@ -1,0 +1,29 @@
+# Processor description, schema opentsx.processor.v1. Runs in the retrieval server (org.opentsx.retrieval.generate).
+schema: opentsx.processor.v1
+id: gen.sine
+version: 1
+kind: generator
+fidelity: demo
+title: Cycle with noise
+description: >-
+  A sine around a mean with a period, for example a day, plus noise. A stand-in for a quantity with a daily shape.
+  A demo generator: it knows nothing of the rest of the system. Values are clipped to the plausible range of the
+  signal.
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: mean, type: number, required: true }
+  - { name: amplitude, type: number, required: true, min: 0 }
+  - { name: period, type: duration, default: P1D }
+  - { name: phase, type: number, default: 0, description: Share of the period the cycle is shifted by }
+  - { name: sigma, type: number, default: 0, min: 0, description: Standard deviation of the noise }
+  - { name: min, type: number, from: expect.min }
+  - { name: max, type: number, from: expect.max }
+  - { name: every, type: duration, required: true, from: expect.interval }
+  - { name: unit, type: string, from: expect.unit }
+semantics: { needs: point, deterministic: true, origin: SYNTHETIC }
+runtimes:
+  java: { status: available, class: org.opentsx.retrieval.generate.Generators, note: "One run over a period, started by a person; no continuous operation." }
+  workbench: { status: none }
+  processor: { status: none }
+ui: { group: source, label: Cycle with noise }

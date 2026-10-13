@@ -115,6 +115,7 @@ public final class SeriesStream {
         raw.getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
         tags.put("system", target.system());
         tags.put("signal", target.signal());
+        tags.put("grade", target.grade());
         String unit = chain.outputUnit() != null ? chain.outputUnit() : raw.getUnit() == null ? null : raw.getUnit().toString();
         return SeriesKeys.of(raw.getMetric().toString(), tags, unit);
     }

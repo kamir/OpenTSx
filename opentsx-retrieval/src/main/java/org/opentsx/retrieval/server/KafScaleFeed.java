@@ -66,8 +66,8 @@ final class KafScaleFeed implements AutoCloseable {
     private final Map<String, JsonNode> statuses = new TreeMap<>();
     private LogTail controlTail;
     private LogTail statusTail;
-    /** Follows the clean series of the domain once a flow has written the topic. */
-    private EpisodeLogTail cleanTail;
+    /** Follow the clean and the generated series of the domain, each once something has written its topic. */
+    private final Map<String, EpisodeLogTail> signalTails = new LinkedHashMap<>();
     private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "kafscale-feed");
         t.setDaemon(true);
@@ -123,10 +123,12 @@ final class KafScaleFeed implements AutoCloseable {
             written = store.write(batch).written();
             loaded += written;
         }
-        try {
-            written += pullClean();
-        } catch (RuntimeException e) {
-            System.err.println("kafscale feed: " + layout.clean() + " cannot be read now: " + e.getMessage());
+        for (String topic : List.of(layout.clean(), layout.synthetic())) {
+            try {
+                written += pullSignals(topic);
+            } catch (RuntimeException e) {
+                System.err.println("kafscale feed: " + topic + " cannot be read now: " + e.getMessage());
+            }
         }
         boolean vectorsChanged = pullVectors();
         try {
@@ -141,19 +143,56 @@ final class KafScaleFeed implements AutoCloseable {
     }
 
     /**
-     * Reads what flows appended to the clean series of the domain into the same store as the episodes: the clean
-     * series carry the tags {@code system} and {@code signal}, so they stay apart from the raw ones.
+     * Reads what flows or generators appended to a topic of series written for signals into the same store as the
+     * episodes: those series carry the tags {@code system} and {@code signal}, so they stay apart from the raw ones.
      */
-    private int pullClean() {
-        if (cleanTail == null) {
-            if (!consumer.listTopics(Duration.ofSeconds(30)).containsKey(layout.clean())) {
+    private int pullSignals(String topic) {
+        EpisodeLogTail tail = signalTails.get(topic);
+        if (tail == null) {
+            if (!consumer.listTopics(Duration.ofSeconds(30)).containsKey(topic)) {
                 return 0;
             }
-            cleanTail = new EpisodeLogTail(consumer, layout.clean(), Duration.ofMinutes(2));
+            tail = new EpisodeLogTail(consumer, topic, Duration.ofMinutes(2));
+            signalTails.put(topic, tail);
         }
         List<Episode> batch = new ArrayList<>();
-        cleanTail.poll(batch::add);
+        tail.poll(batch::add);
         return batch.isEmpty() ? 0 : store.write(batch).written();
+    }
+
+    /**
+     * Writes generated episodes to the topic of the generated series of the domain and to nowhere else: a generator
+     * must never write among measurements.
+     *
+     * @throws IllegalArgumentException when asked to write to another topic
+     * @throws IllegalStateException    when the broker does not confirm
+     */
+    synchronized void writeGenerated(String topic, List<Episode> episodes) {
+        if (!topic.equals(layout.synthetic())) {
+            throw new IllegalArgumentException("generated series go to " + layout.synthetic() + ", not to " + topic);
+        }
+        org.opentsx.model.OpenTsxAvro avro = new org.opentsx.model.OpenTsxAvro();
+        try (Admin admin = KafScaleClients.admin(bootstrap);
+             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
+            layout.provisionTopic(admin, topic, (short) 1);
+            List<java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata>> sent = new ArrayList<>();
+            for (Episode e : episodes) {
+                sent.add(producer.send(new ProducerRecord<>(topic, e.getSeries().getSeriesId(), avro.encode(e))));
+            }
+            for (var f : sent) {
+                f.get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("interrupted while writing to " + topic, e);
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            throw new IllegalStateException("the broker did not confirm every generated episode for " + topic + " ("
+                    + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "); try again", cause);
+        }
+        // so the caller sees the series at once
+        store.write(episodes);
+        onChange.run();
     }
 
     /** Reads what was appended to the vector topics of the domain; true when their series changed. */
@@ -347,6 +386,7 @@ final class KafScaleFeed implements AutoCloseable {
         Map<String, String> t = new LinkedHashMap<>();
         t.put("episodes", layout.episodes());
         t.put("clean", layout.clean());
+        t.put("synthetic", layout.synthetic());
         t.put("observations", layout.observations());
         t.put("seriesStats", layout.seriesStats());
         t.put("buckets", layout.buckets());

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.SeriesKeys;
@@ -139,6 +140,8 @@ public final class RetrievalServer implements AutoCloseable {
                 json(ex, 200, inventory.get());
             } else if (method.equals("GET") && (path.equals("/v1/systems") || path.startsWith("/v1/systems/"))) {
                 systems(ex, path);
+            } else if (method.equals("POST") && path.startsWith("/v1/systems/")) {
+                systemsPost(ex, path);
             } else if (method.equals("GET") && path.equals("/v1/dags")) {
                 if (dags == null) {
                     json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no DAGs (it needs --kafscale)"));
@@ -392,6 +395,48 @@ public final class RetrievalServer implements AutoCloseable {
         }
     }
 
+    /**
+     * {@code POST /v1/systems/<id>/signals}: the state of the signals with the bindings of a working copy laid over
+     * the document (body {@code {bindings: [...]}}); reads only. {@code POST /v1/systems/<id>/generate}: runs the demo
+     * generator of a signal and writes the series; a write, so it needs the run token.
+     */
+    private void systemsPost(HttpExchange ex, String path) throws IOException {
+        String[] p = path.substring("/v1/systems".length()).split("/");
+        if (systems == null || p.length != 3 || !systems.has(p[1])) {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
+            return;
+        }
+        byte[] raw = ex.getRequestBody().readNBytes(MAX_DAG_BYTES + 1);
+        if (raw.length > MAX_DAG_BYTES) {
+            json(ex, 413, EpisodeJson.JSON.createObjectNode().put("error", "the request is larger than " + MAX_DAG_BYTES + " bytes"));
+            return;
+        }
+        JsonNode body = raw.length == 0 ? EpisodeJson.JSON.createObjectNode() : EpisodeJson.JSON.readTree(raw);
+        if (p[2].equals("signals")) {
+            json(ex, 200, systems.signals(p[1], inventory.get(), Systems.bindings(body)));
+        } else if (p[2].equals("generate")) {
+            if (signalWriter == null) {
+                json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server cannot write generated series (it needs --kafscale and --dag-runs true)"));
+            } else if (!mayRun(ex)) {
+                json(ex, 401, EpisodeJson.JSON.createObjectNode().put("error",
+                        "this server writes for callers with its run token only (header " + RUN_TOKEN_HEADER + ")"));
+            } else {
+                json(ex, 200, systems.generate(p[1], body, syntheticTopic, signalWriter));
+            }
+        } else {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such route: " + path));
+        }
+    }
+
+    private volatile Systems.Writer signalWriter;
+    private volatile String syntheticTopic;
+
+    /** Lets the server write generated series: only to this topic, and only for callers the write routes admit. */
+    public void generatedSeries(String topic, Systems.Writer writer) {
+        this.syntheticTopic = topic;
+        this.signalWriter = writer;
+    }
+
     private static void send(HttpExchange ex, int status, String type, byte[] body) throws IOException {
         ex.getResponseHeaders().add("Content-Type", type);
         ex.sendResponseHeaders(status, body.length);
@@ -442,6 +487,8 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode scenario = yaml(a.get("scenario"));
         JsonNode catalog = yaml(a.get("catalog"));
         SeriesInventory inventory;
+        String[] generated = {null};
+        Systems.Writer[] writer = {null};
         Dags dags = null;
         boolean dagWrites = false;
         String envToken = System.getenv("OPENTSX_DAG_RUN_TOKEN");
@@ -489,6 +536,8 @@ public final class RetrievalServer implements AutoCloseable {
             };
             dagWrites = dagRuns;
             if (dagRuns) {
+                generated[0] = new TopicLayout(domain).synthetic();
+                writer[0] = feed::writeGenerated;
                 System.out.println(runToken.isBlank()
                         ? "dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)"
                         : "dag deployments: for callers with the run token");
@@ -507,6 +556,9 @@ public final class RetrievalServer implements AutoCloseable {
         }
         RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
                 inventory, dags, dagWrites, runToken, systems);
+        if (writer[0] != null) {
+            s.generatedSeries(generated[0], writer[0]);
+        }
         System.out.println("opentsx retrieval server on port " + s.port());
     }
 

@@ -206,8 +206,9 @@ nicht eines je Signal.
 Die Reihe darin ist bestimmt durch:
 
 * **Metrik:** die Metrik des Kanals, wenn das Signal auf einen verweist, sonst `<system>.<baustein>.<port>`.
-* **Tags:** `system` und `signal` (die Kennung); bei Sensorkanälen dazu die Tags der Rohreihe; bei Merkmalen dazu
-  `feature` mit dem Namen des Merkmals.
+* **Tags:** `system`, `signal` (die Kennung) und `grade` (`raw` für Erzeugtes, `clean`, `features`); bei
+  Sensorkanälen dazu die Tags der Rohreihe; bei Merkmalen dazu `feature` mit dem Namen des Merkmals. `grade` kam mit
+  L4 dazu, weil eine erzeugte Rohreihe und die bereinigte Reihe desselben Signals sonst dieselbe Reihe wären.
 * **Reihen-Id:** wie überall aus Metrik und Tags (`SeriesKeys`).
 * **Labels der Episoden:** `origin`, `grade`, Hash des Systems.
 
@@ -436,7 +437,7 @@ vom kleinsten Stand her gebaut, der die Idee von Anfang bis Ende zeigt.
 | L1 (**umgesetzt** 2026-10-13) | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfung im Build; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
 | L2 (**umgesetzt** 2026-10-13) | Hülle: Leiste, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System als Tabelle der Bausteine und Ports (statt des eingebetteten Prototyps, siehe 8.5); Ort Models als Vorschau | ein Rahmen statt drei Seiten |
 | L3 (**umgesetzt** 2026-10-13, mit Grenzen) | Topic `clean`, Senke für Reihen (`opentsx.dag.v2`), drei Operatoren im Prozessor (Plausibilitätsbereich, Einheit, Resampling), "Publish as clean signal". Nicht umgesetzt: die Schreibform `opentsx.flow.v1` mit Übersetzungsschritt (die Workbench schreibt den DAG direkt), das Zusammenführen mehrerer Reihen, das Zurückschreiben ins Systemdokument | Rohdaten einer Reihe werden fortlaufend zu einer bereinigten Reihe |
-| L4 (als Nächstes, D62) | Topic `synthetic`, Laufzeit für Demo-Generatoren mit eigenem Recht, erste Generatoren (D61); Aktionen Bind und Simulate, Binden erst nach bestätigter Bedeutung (D53) | offene Signale werden gebunden oder simuliert |
+| L4 (**umgesetzt** 2026-10-13, mit Grenzen) | Topic `synthetic`; zwei Demo-Generatoren (`gen.ou`, `gen.sine`) als Einmal-Lauf über einen Zeitraum, nur für Administratoren und nur in dieses Topic (D61); Aktionen Bind, Simulate und Generate auf der Seite Signals; Binden erst nach bestätigter Bedeutung (D53); Arbeitskopie je Konto über dem Systemdokument, mit Export der Zeilen für die Datei (D42). Nicht umgesetzt: ein Generator, der fortlaufend schreibt; das Zurückschreiben in die Datei | offene Signale werden gebunden oder simuliert |
 | L5 (danach, D62) | Models: Topic `features`, Prozessoren für Merkmale, Smart-Topic-Spezifikation mit `target.signal`, ein erstes Modell mit Gültigkeitsbereich und Nachweis (D59); Systembild und Vergleich in React | Prognose und Was-wäre-wenn im selben Rahmen |
 
 Prozessor-Beschreibungen kommen mit der Stufe, die sie braucht: L3 die Transformatoren der Bereinigung, L4 die

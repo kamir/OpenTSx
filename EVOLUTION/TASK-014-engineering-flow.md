@@ -106,7 +106,24 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
 - [x] 014.7 Entscheidungen D52 bis D63 (2026-10-13): zehn wie vorgeschlagen. **D57 geändert:** `clean` wird in zwei
       Varianten geschrieben, `marked` und `filtered`, im selben Topic. **D62 geändert:** erst L4 und L5 fertig
       bauen, dann neu planen und mit E1 bis E3 weitermachen
-- [ ] 014.8 L4 Demo-Generatoren: Topic, Laufzeit, Bind und Simulate
+- [x] 014.8 L4 (Stand 2026-10-13)
+      - Demo-Generatoren `gen.ou` und `gen.sine` (`opentsx-retrieval`, Paket `generate`): Der Wert eines Zeitpunkts
+        hängt nur von Startwert, Parametern und diesem Zeitpunkt ab; Episoden auf festem Raster mit Kennung, sodass
+        derselbe Zeitraum, noch einmal erzeugt, sich selbst ersetzt. Labels `origin: SYNTHETIC`, `fidelity: demo`
+      - `POST /v1/systems/<id>/generate` im Retrieval-Server (Schreibroute, braucht das Run-Token; schreibt
+        ausschließlich nach `tsx.<domain>.synthetic.v2`); der Feed liest das Topic mit
+      - Arbeitskopie (D42): Tabelle `signal_bindings` im SaaS-Backend, je Konto und System; Routen
+        `GET/PUT/DELETE /api/v1/systems/<id>/bindings` und `POST .../generate` (nur Administratoren, reicht die
+        Arbeitskopie mit). Der Retrieval-Server legt Bindungen aus dem Rumpf über das Dokument
+        (`POST /v1/systems/<id>/signals`) und kennzeichnet sie
+      - Seite Signals: Bind (Vorschläge aus dem TS-Inventar nach Einheit und Wertebereich, Herkunft wählen, Bedeutung
+        bestätigen, D53), Simulate (Generator aus der Erwartung vorbelegt, als Demo benannt, D61), Generate
+        (Zeitraum vorbelegt mit dem Datenzeitraum des Systems); Hinweis auf die Arbeitskopie mit "Copy as YAML"
+      - Reihen, die nach Regel geschrieben werden, tragen jetzt das Tag `grade`
+      - Grenzen: Generatoren laufen einmal über einen Zeitraum, nicht fortlaufend; die Arbeitskopie wird nicht in
+        die Datei geschrieben; die Sperre "Ergebnisse auf Demo-Generatoren taugen nicht für Strategievergleiche"
+        ist als Label da (`fidelity: demo`), geprüft wird sie erst, wenn es Vergleiche gibt (E3); die SQL-Ablage der
+        Arbeitskopie hat keinen eigenen Test (die Routen sind mit einer Ablage im Speicher getestet)
 - [ ] 014.9 L5 Models
 - [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)

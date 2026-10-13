@@ -117,10 +117,13 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
 * **Today:** the TS inventory of the retrieval server (`GET /v1/inventory`, [chapter 9](09-retrieval.md)) lists
   every series with period, range, missing values and the ground truth of the scenario. The page "Signals" puts
   expectation and data side by side: for every signal its origin, a state computed from the system document and
-  the inventory, and the next step; a signal whose data leaves the plausible range is flagged. Bindings are written
-  into the system document by hand. **Planned:** binding in the web application; a state in several dimensions
+  the inventory, and the next step; a signal whose data leaves the plausible range is flagged. "Bind" suggests
+  series by unit and value range and binds one after you confirmed that it is the quantity the signal means.
+  "Simulate" binds a signal to a demo generator preset from its expectation, and "Generate" runs it over a period;
+  the result is marked as generated and as a demo. Both go into a working copy of your account that lies over the
+  system document; the page gives you the lines to put into the file. **Planned:** a state in several dimensions
   (availability, validity of the measurement, operating state, freshness, preparation) instead of one word; a
-  scenario model for the outside influences.
+  scenario model for the outside influences; generators that keep writing.
 
 ### Step 5: Check the preparation and the analysis
 
@@ -227,7 +230,7 @@ column says what of each step you can do today.
 | 1 Decision | Which setpoint does the electrolyser run at, and does the battery charge or discharge, in the next hour? Aims: deliver the hydrogen, low energy cost, keep the announced feed-in. Limits: line pressure, state of charge. Reference: hold the setpoint. | as a file |
 | 2 System | Nine components. Nine inputs come from outside. | on the page "System" |
 | 3 Signals | Ten signals. Six of the nine outside inputs have one; three do not. What the park generated and what it could have generated are two signals: an observation and an estimate. | on the page "Signals" |
-| 4 Sources | The topic `tsx.wind.episodes.v2` holds power, wind speed and state per turbine; they are bound, with the origin synthetic, because the topic holds simulator output. The price is generated. Two commands are constants set by hand. Demand and marketing schedule are open. | on the page "Signals"; bindings by hand in the file |
+| 4 Sources | The topic `tsx.wind.episodes.v2` holds power, wind speed and state per turbine; they are bound, with the origin synthetic, because the topic holds simulator output. The price is bound to a demo generator. Two commands are constants set by hand. Demand and marketing schedule are open. | on the page "Signals", with Bind, Simulate and Generate |
 | 5 Preparation | Wind speed of a turbine: plausible range, then the mean per minute. | in the workbench |
 | 6 Shadow | That flow runs on the processor and writes the clean wind speed. The sum of the turbine power (actual generation) and the estimate of the available power over the power curve are declared and do not run: their operators do not exist yet. | the one flow runs |
 | 7 Options | Hold the setpoint against following the price. The recommendation is blocked: the demand has no source, the price is generated, the price-following analysis has no evidence. | as a file |
@@ -266,7 +269,6 @@ Before a result leaves the team:
 | 7 Compare and act | twins: shadow, what-if, forecast; records as a file | [appendix A](appendix-a-cli.md) |
 | 8 Judge the effect | records as a file | [`15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 8 |
 
-What does not exist yet: the decision card in the web application, binding from the page, a state of a signal in
-several dimensions, values that are marked instead of removed, operators with several inputs on the processor,
+What does not exist yet: the decision card in the web application, a state of a signal in several dimensions, values that are marked instead of removed, operators with several inputs on the processor,
 revisions for late data, the four records as events, and any comparison of strategies outside the twin. The guide
 in the web application (the switch "Guide") still shows the seven steps of the earlier version of this chapter.

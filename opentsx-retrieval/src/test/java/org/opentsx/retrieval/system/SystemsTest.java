@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SystemsTest {
 
     static final ObjectMapper JSON = new ObjectMapper();
-    static final Systems SYSTEMS = new Systems(List.of(SystemDoc.load(SystemDocTest.H2, SystemDocTest.ROOT)));
+    static final Systems SYSTEMS = Systems.load(SystemDocTest.ROOT.resolve("systems"), SystemDocTest.ROOT);
 
     /** An inventory as GET /v1/inventory gives it, reduced to what the state needs. */
     static ObjectNode inventory(String topic) {
@@ -209,6 +209,108 @@ class SystemsTest {
         JsonNode speed = signal(SYSTEMS.signals("h2-chain", inv), "park/T02/WMET.HorWdSpd");
         assertFalse(speed.path("grades").path("raw").has("data"));
         assertEquals("clean-not-running", speed.path("state").asText());
+    }
+
+    // ---------------------------------------------------------------- working copy and demo generators (stage L4)
+
+    static JsonNode body(String json) throws Exception {
+        return JSON.readTree(json);
+    }
+
+    @Test
+    void aBindingOfAWorkingCopyLiesOverTheDocument() throws Exception {
+        ObjectNode inv = windFarm();
+        ((ObjectNode) series(inv, "ggg", "h2.demand", 0, 80).get("tags")).put("customer", "c1");
+        // the demand has no source in the document; a person binds it to a series in the web application
+        JsonNode overlay = body("""
+                {"bindings":[{"signal":"offtake.demand_kgph","grade":"raw",
+                  "source":{"kind":"topic","topic":"tsx.wind.episodes.v2","origin":"REPORTED","select":{"metric":"h2.demand","tags":{"customer":"c1"}}}}]}""");
+        JsonNode demand = signal(SYSTEMS.signals("h2-chain", inv, Systems.bindings(overlay)), "offtake.demand_kgph");
+        assertEquals("raw-only", demand.path("state").asText());
+        assertEquals("REPORTED", demand.path("origin").asText());
+        assertTrue(demand.path("grades").path("raw").path("source").path("workingCopy").asBoolean());
+        assertEquals(List.of("ggg"), texts(demand.path("grades").path("raw").path("data").path("series")));
+        // the document itself is untouched
+        assertEquals("open", signal(SYSTEMS.signals("h2-chain", inv), "offtake.demand_kgph").path("state").asText());
+        // a binding for something the system does not have is named
+        JsonNode wrong = SYSTEMS.signals("h2-chain", inv, Systems.bindings(body(
+                "{\"bindings\":[{\"signal\":\"offtake.no_such\",\"grade\":\"raw\",\"source\":{\"kind\":\"manual\",\"value\":1}}]}")));
+        assertTrue(wrong.path("problems").get(0).asText().contains("offtake.no_such@raw is no grade of a signal"));
+    }
+
+    @Test
+    void aDemoGeneratorWritesTheSeriesOfItsSignalAndTheStateFollows() throws Exception {
+        List<org.opentsx.model.v2.Episode> written = new java.util.ArrayList<>();
+        List<String> topics = new java.util.ArrayList<>();
+        Systems.Writer writer = (topic, episodes) -> {
+            topics.add(topic);
+            written.addAll(episodes);
+        };
+        JsonNode answer = SYSTEMS.generate("h2-chain", body(
+                "{\"signal\":\"market.price_eur_mwh\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}"),
+                "tsx.wind.synthetic.v2", writer);
+        assertEquals(List.of("tsx.wind.synthetic.v2"), topics);
+        assertEquals(24, answer.path("samples").asInt());
+        assertEquals("demo", answer.path("fidelity").asText());
+        assertEquals("gen.ou", answer.path("generator").asText());
+        org.opentsx.model.v2.Episode first = written.get(0);
+        assertEquals("market.price_eur_mwh", first.getSeries().getTags().get("signal"));
+        assertEquals("raw", first.getSeries().getTags().get("grade"));
+
+        // the inventory then holds the series, and the signal is no longer "not generated yet"
+        ObjectNode inv = windFarm();
+        ObjectNode gen = series(inv, first.getSeries().getSeriesId(), first.getSeries().getMetric(), 40, 80);
+        first.getSeries().getTags().forEach(((ObjectNode) gen.get("tags"))::put);
+        JsonNode price = signal(SYSTEMS.signals("h2-chain", inv), "market.price_eur_mwh");
+        assertEquals("raw-only", price.path("state").asText());
+        assertEquals("simulated", price.path("via").asText());
+        assertEquals("SYNTHETIC", price.path("origin").asText());
+        // generated raw data is not mistaken for the clean grade of the same signal
+        assertFalse(price.path("grades").has("clean"));
+
+        // only a signal bound to a generator can be generated, and only with a period
+        assertTrue(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
+                body("{\"signal\":\"ely.setpoint_kw\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}"), "t", writer))
+                .getMessage().contains("is not bound to a generator"));
+        assertTrue(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
+                body("{\"signal\":\"market.price_eur_mwh\"}"), "t", writer)).getMessage().contains("from and to must be instants"));
+        // a signal bound to a generator in the working copy can be generated too
+        JsonNode viaOverlay = SYSTEMS.generate("h2-chain", body("""
+                {"signal":"offtake.demand_kgph","from":"2026-10-01T00:00:00Z","to":"2026-10-01T01:00:00Z",
+                 "bindings":[{"signal":"offtake.demand_kgph","grade":"raw","source":{"kind":"generator","processor":"gen.sine","seed":1,
+                   "params":{"mean":60,"amplitude":30,"period":"PT6H"}}}]}"""), "tsx.wind.synthetic.v2", writer);
+        assertEquals(60, viaOverlay.path("samples").asInt());
+    }
+
+    @Test
+    void generatingIsAWriteAndNeedsTheRunToken() throws Exception {
+        InMemorySeriesStore store = new InMemorySeriesStore();
+        SeriesInventory inventory = new SeriesInventory(store, SeriesInventory.Source.of("demo"), null, null, Duration.ofMinutes(1));
+        HttpClient http = HttpClient.newHttpClient();
+        List<String> topics = new java.util.ArrayList<>();
+        try (RetrievalServer server = new RetrievalServer(new EpisodeService(store), 0, inventory, null, false, "secret", SYSTEMS)) {
+            String base = "http://localhost:" + server.port() + "/v1/systems/h2-chain";
+            String gen = "{\"signal\":\"market.price_eur_mwh\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}";
+            // a server without a broker cannot write
+            assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(base + "/generate")).POST(HttpRequest.BodyPublishers.ofString(gen)).build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode());
+            server.generatedSeries("tsx.wind.synthetic.v2", (topic, episodes) -> topics.add(topic + ":" + episodes.size()));
+            assertEquals(401, http.send(HttpRequest.newBuilder(URI.create(base + "/generate")).POST(HttpRequest.BodyPublishers.ofString(gen)).build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode());
+            HttpResponse<String> ok = http.send(HttpRequest.newBuilder(URI.create(base + "/generate")).header(RetrievalServer.RUN_TOKEN_HEADER, "secret")
+                    .POST(HttpRequest.BodyPublishers.ofString(gen)).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, ok.statusCode(), ok.body());
+            assertEquals(1, topics.size());
+            HttpResponse<String> bad = http.send(HttpRequest.newBuilder(URI.create(base + "/generate")).header(RetrievalServer.RUN_TOKEN_HEADER, "secret")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"signal\":\"ely.setpoint_kw\"}")).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(400, bad.statusCode());
+            // the state with a working copy is a read and needs no token
+            HttpResponse<String> overlay = http.send(HttpRequest.newBuilder(URI.create(base + "/signals")).POST(HttpRequest.BodyPublishers.ofString(
+                    "{\"bindings\":[{\"signal\":\"offtake.demand_kgph\",\"grade\":\"raw\",\"source\":{\"kind\":\"manual\",\"value\":40,\"origin\":\"REPORTED\"}}]}")).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, overlay.statusCode());
+            assertEquals("constant", signal(JSON.readTree(overlay.body()), "offtake.demand_kgph").path("state").asText());
+        }
     }
 
     @Test
