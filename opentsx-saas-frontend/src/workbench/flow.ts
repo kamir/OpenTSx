@@ -288,11 +288,26 @@ export const useFlow = create<FlowState>((set, get) => ({
       selectedId: nodes[nodes.length - 1].id,
       counter: Math.max(0, ...numbers),
       savedId,
-      context: null,
+      context: contextOf(definition),
     });
     return true;
   },
 }));
+
+/** The signal a stored flow was made for, or null. */
+export function contextOf(definition: Record<string, unknown>): SignalContext | null {
+  const c = definition.signalContext as Partial<SignalContext> | undefined;
+  if (!c || typeof c.system !== 'string' || typeof c.signal !== 'string') return null;
+  return {
+    system: c.system,
+    systemTitle: typeof c.systemTitle === 'string' ? c.systemTitle : c.system,
+    signal: c.signal,
+    grade: typeof c.grade === 'string' ? c.grade : 'raw',
+    expect: typeof c.expect === 'object' && c.expect ? c.expect : {},
+    origin: typeof c.origin === 'string' ? c.origin : undefined,
+    synthetic: c.synthetic === true,
+  };
+}
 
 /** Checks a stored node list: known operators, one source, every input present, no cycles. */
 export function parseNodes(raw: unknown): FlowNode[] | null {
@@ -369,7 +384,8 @@ export function toDefinition(s: FlowDoc): Record<string, unknown> {
     domain: s.domain,
     sourceTopic: s.sourceTopic,
     sourceSeries: s.sourceSeries ?? [],
-    ...(s.context ? { system: s.context.system, signal: s.context.signal, grade: s.context.grade } : {}),
+    // the signal the flow was made for comes back with the flow
+    ...(s.context ? { system: s.context.system, signal: s.context.signal, grade: s.context.grade, signalContext: s.context } : {}),
     nodes: s.nodes,
     edges: s.nodes.flatMap((n) => inputsOf(n).map((i) => ({ id: `${i}-${n.id}`, source: i, target: n.id }))),
     dag: toDagYaml(s),
@@ -437,7 +453,9 @@ export function vectorComponents(nodes: FlowNode[], node: FlowNode): string[] {
 }
 
 /** Parameters as written into the DAG. Catalog operators get the shape of the catalog. */
-function dagParams(nodes: FlowNode[], node: FlowNode): Params | string {
+function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params | string {
+  // on the way to a series sink the x axis is time: a width in seconds is written as a duration
+  if (node.op === 'resample' && seconds) return `{ every: PT${node.params.every}S, agg: ${node.params.agg} }`;
   if (node.op === 'dq.plausible-range') {
     return `{ checks: [PLAUSIBLE_RANGE], min: ${node.params.min}, max: ${node.params.max}, mode: ${node.params.mode} }`;
   }
@@ -454,11 +472,80 @@ export interface Finding {
   text: string;
 }
 
+// ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
+
+/** Operators the processor runs before a series sink; everything else computes in the workbench only. */
+export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample'];
+export const EPISODE_SCHEMA = 'opentsx.episode.v2';
+
+/** Topic the clean series of a domain go to. */
+export function cleanTopic(domain: string): string {
+  return `tsx.${slug(domain)}.clean.v2`;
+}
+
+export function isCleanSink(n: FlowNode): boolean {
+  return /^tsx\.[a-z0-9_-]+\.clean\.v2$/.test(n.sinkTopic ?? '');
+}
+
+/** The nodes from the source to the node, source left out, when that is one chain; null when a node has several inputs. */
+export function chainTo(nodes: FlowNode[], id: string): FlowNode[] | null {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const chain: FlowNode[] = [];
+  let cur = byId.get(id);
+  for (let steps = 0; cur && cur.op !== 'source' && steps <= nodes.length; steps++) {
+    if (inputsOf(cur).length !== 1) return null;
+    chain.unshift(cur);
+    cur = byId.get(inputsOf(cur)[0]);
+  }
+  return cur?.op === 'source' ? chain : null;
+}
+
+/**
+ * What the processor needs to keep the clean grade of a signal up to date from this node, step by step. The node
+ * is the one that is, or would be, published as the clean signal.
+ */
+export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: SignalContext | null | undefined, nodeId: string): DeployCheck[] {
+  const node = nodes.find((n) => n.id === nodeId);
+  const chain = node ? chainTo(nodes, nodeId) : null;
+  const foreign = (chain ?? []).filter((n) => !CLEAN_OPS.includes(n.op));
+  const fromInventory = sourceSeries.length > 0;
+  return [
+    {
+      ok: !!context,
+      text: context ? `The flow is made for the signal ${context.signal} of ${context.systemTitle}.` : 'Open a signal from the page "Signals": the clean data belongs to a signal.',
+    },
+    {
+      ok: fromInventory,
+      text: fromInventory
+        ? `It reads ${sourceSeries.length} raw series of the topic.`
+        : 'Load the series from the page "Signals" or the TS inventory. A sample bucket or a file has no topic the processor could follow.',
+    },
+    {
+      ok: !!chain && chain.length > 0,
+      text:
+        chain && chain.length > 0
+          ? `${node!.label} is ${chain.length === 1 ? 'one step' : `a chain of ${chain.length} steps`} from the raw series.`
+          : node?.op === 'source'
+            ? 'Apply at least one operator: the raw series itself is not clean.'
+            : 'The clean series must be one chain from the raw series; a step with several inputs cannot be part of it.',
+    },
+    {
+      ok: !!chain && foreign.length === 0,
+      text:
+        chain && foreign.length === 0
+          ? 'Every step runs on the processor.'
+          : `These steps run in the workbench only: ${foreign.map((n) => OP_BY_ID[n.op]?.label ?? n.op).join(', ') || 'unknown'}. The processor runs plausible range, unit conversion and resampling.`,
+    },
+  ];
+}
+
 /**
  * Why the vector processor cannot run the flow, or null when it can. It executes align.vector on the series of the
  * source topic and nothing else, and it needs their ids (docs/datamodel-2026/11, sections 5a and 5b).
  */
-export function runBlocker(nodes: FlowNode[], sourceSeries?: string[]): string | null {
+export function runBlocker(nodes: FlowNode[], sourceSeries?: string[], context?: SignalContext | null): string | null {
+  const clean = nodes.find(isCleanSink);
+  if (clean) return cleanChecks(nodes, sourceSeries ?? [], context, clean.id).find((c) => !c.ok)?.text ?? null;
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
   if (vectors.length === 0) return 'Publish an "Align to vector" node first: the processor writes vector topics only.';
   if (sourceSeries && sourceSeries.length === 0) {
@@ -487,7 +574,10 @@ export interface DeployCheck {
  * What the vector processor needs of a flow, one line each, so a person sees which step is still open instead of
  * only the first obstacle ({@link runBlocker}).
  */
-export function deployChecks(nodes: FlowNode[], sourceSeries: string[]): DeployCheck[] {
+export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?: SignalContext | null): DeployCheck[] {
+  // a flow published as the clean grade of a signal has its own list
+  const clean = nodes.find(isCleanSink);
+  if (clean) return cleanChecks(nodes, sourceSeries, context, clean.id);
   const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
   const fromInventory = sourceSeries.length > 0;
   const onSource = vectors.length > 0 && vectors.every((v) => inputsOf(v).every((i) => i === SOURCE_ID));
@@ -567,8 +657,13 @@ export function toDagYaml(s: FlowDoc): string {
   for (const sink of sinks) for (const n of upstream(s.nodes, sink.id)) keep.add(n.id);
   // Without a sink the whole flow is written, so the draft can be read.
   const nodes = s.nodes.filter((n) => n.op !== 'source' && (sinks.length === 0 || keep.has(n.id)));
+  // a series sink makes the document an opentsx.dag.v2 (docs/datamodel-2026/14, section 6.3)
+  const series = sinks.filter((n) => isCleanSink(n) && s.context);
+  const toSeries = new Set<string>();
+  for (const sink of series) for (const n of upstream(s.nodes, sink.id)) toSeries.add(n.id);
   const lines = [
-    '# opentsx.dag.v1, written by the OpenTSx web workbench',
+    series.length > 0 ? '# opentsx.dag.v2, written by the OpenTSx web workbench' : '# opentsx.dag.v1, written by the OpenTSx web workbench',
+    ...(series.length > 0 ? ['schema: opentsx.dag.v2'] : []),
     `dag: ${yamlScalar(dagName(s.domain, s.track, s.savedId))}`,
     'version: 1',
     'source:',
@@ -582,7 +677,7 @@ export function toDagYaml(s: FlowDoc): string {
   ];
   for (const n of nodes) {
     const op = OP_BY_ID[n.op];
-    const params = dagParams(s.nodes, n);
+    const params = dagParams(s.nodes, n, toSeries.has(n.id));
     lines.push(`  - id: ${n.id}`);
     lines.push(`    op: ${op?.dagOp ?? n.op}${op?.inCatalog ? '' : '   # not in the stream operator catalog'}`);
     lines.push(`    in: [${inputsOf(n).map((i) => (i === SOURCE_ID ? 'decode' : i)).join(', ')}]`);
@@ -592,6 +687,14 @@ export function toDagYaml(s: FlowDoc): string {
   if (nodes.length === 0) lines.push('  # no operators yet');
   lines.push(sinks.length === 0 ? 'sinks: []' : 'sinks:');
   for (const sink of sinks) {
+    if (series.includes(sink)) {
+      const c = s.context!;
+      const origin = c.origin ? `, origin: ${c.origin}` : '';
+      lines.push(
+        `  - { from: ${sink.id}, topic: ${yamlScalar(sink.sinkTopic!)}, schema: ${EPISODE_SCHEMA}, signal: { system: ${yamlScalar(c.system)}, id: ${yamlScalar(c.signal)}, grade: clean }${origin} }`
+      );
+      continue;
+    }
     const schema = sink.op === VECTOR_OP ? `, schema: ${VECTOR_SCHEMA}` : '';
     lines.push(`  - { from: ${sink.id === SOURCE_ID ? 'decode' : sink.id}, topic: ${yamlScalar(sink.sinkTopic!)}${schema} }`);
   }

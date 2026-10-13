@@ -233,7 +233,7 @@ class VectorProcessorTest {
             p.sinkProvisioner(provisioned::add);
             steps(p, 5);
             assertEquals(Map.of("wind-exp2-smart/turbine-state", "running"), p.states());
-            assertEquals(List.of("turbine-state"), provisioned, "the sink topic is asked for once, before the first write");
+            assertEquals(List.of("tsx.wind.smart.turbine-state.vectors.v1"), provisioned, "the sink topic is asked for once, before the first write");
             List<JsonNode> first = vectors();
             assertEquals(20, first.size(), "twenty minutes, one measuring point per minute");
             assertEquals("opentsx.vector.v1", first.get(0).path("schema").asText());
@@ -384,6 +384,112 @@ class VectorProcessorTest {
             steps(p, 3);
             assertTrue(lastStatus("wind-exp2-smart").path("error").asText().contains("needs the ids of its series"));
             assertEquals(0, vectors().size());
+        }
+    }
+
+    // ---------------------------------------------------------------- series sinks: the clean grade of a signal
+
+    static final String CLEAN_SINK = "wind-flow-7/park-T01-WTUR.W";
+
+    /** An opentsx.dag.v2 document as the workbench writes it for "Publish as clean signal". */
+    static String cleanDag(String op, String extraSink) {
+        return """
+                schema: opentsx.dag.v2
+                dag: wind-flow-7
+                version: 1
+                source:
+                  kind: kafscale-broker
+                  topics: [tsx.wind.episodes.v2]
+                  series: ["%s"]
+                nodes:
+                  - id: decode
+                    op: decode.avro-soe
+                  - id: n1
+                    op: %s
+                    in: [decode]
+                    params: { checks: [PLAUSIBLE_RANGE], min: 0, max: 150, mode: gap }
+                  - id: n2
+                    op: resample
+                    in: [n1]
+                    params: { every: PT1M, agg: MEAN }
+                sinks:
+                  - { from: n2, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park/T01/WTUR.W, grade: clean }, origin: SYNTHETIC }
+                %s""".formatted(POWER.getSeriesId(), op, extraSink);
+    }
+
+    List<org.opentsx.model.v2.Episode> cleanEpisodes() {
+        List<org.opentsx.model.v2.Episode> out = new ArrayList<>();
+        for (MockProducer<String, byte[]> from : producers) {
+            for (ProducerRecord<String, byte[]> r : from.history()) {
+                if (r.topic().equals(LAYOUT.clean())) {
+                    out.add(avro.decode(r.value(), org.opentsx.model.v2.Episode.class));
+                }
+            }
+        }
+        return out;
+    }
+
+    @Test
+    void aSeriesSinkWritesTheCleanGradeOfASignalAndGoesOnAfterARestart(@TempDir Path state) throws Exception {
+        appendBlock(0);     // power 100: inside the range
+        appendBlock(1);     // power 200: outside, so every minute is a gap
+        deploy(cleanDag("dq.checks", ""));
+        List<String> provisioned = new ArrayList<>();
+        try (VectorProcessor p = processor(state)) {
+            p.sinkProvisioner(provisioned::add);
+            steps(p, 5);
+            assertEquals(Map.of(CLEAN_SINK, "running"), p.states());
+            assertEquals(List.of("tsx.wind.clean.v2"), provisioned);
+            List<org.opentsx.model.v2.Episode> clean = cleanEpisodes();
+            assertEquals(2, clean.size(), "one clean episode per raw episode");
+            org.opentsx.model.v2.Episode first = clean.get(0);
+            assertEquals("wind.turbine.power_active", first.getSeries().getMetric());
+            assertEquals("h2-chain", first.getSeries().getTags().get("system"));
+            assertEquals("park/T01/WTUR.W", first.getSeries().getTags().get("signal"));
+            assertEquals("T01", first.getSeries().getTags().get("turbine"));
+            assertEquals("clean", first.getLabels().get("grade"));
+            assertEquals("SYNTHETIC", first.getLabels().get("origin"));
+            assertEquals(10, first.getCount());
+            assertEquals(60 * SECOND, first.getIntervalMicros());
+            assertEquals(100.0, Episodes.values(first)[0]);
+            assertTrue(Double.isNaN(Episodes.values(clean.get(1))[0]), "a minute of implausible values is a gap");
+            JsonNode status = lastStatus(CLEAN_SINK);
+            assertEquals("series", status.path("kind").asText());
+            assertEquals(LAYOUT.clean(), status.path("topic").asText());
+            assertEquals(2, status.path("records").asInt());
+        }
+        appendBlock(2);
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+            assertEquals(3, cleanEpisodes().size(), "after the restart only the new block is written");
+            assertEquals(T0 + 1200 * SECOND, org.opentsx.model.Micros.of(cleanEpisodes().get(2).getTStart()));
+        }
+    }
+
+    @Test
+    void aDagMayCarryAVectorAndACleanSeriesAndWhatCannotRunIsRefused(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        String both = cleanDag("dq.checks", """
+                  - { from: v1, topic: tsx.wind.smart.turbine-state.vectors.v1, schema: opentsx.vector.v1 }
+                """).replace("sinks:", """
+                  - id: v1
+                    op: align.vector
+                    in: [decode]
+                    params: { every: PT60S, key: turbine, agg: MEAN, emit: any, names: [state] }
+                sinks:""");
+        deploy(both);
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+            assertEquals(Map.of(CLEAN_SINK, "running", "wind-flow-7/turbine-state", "running"), p.states());
+            assertEquals(1, cleanEpisodes().size());
+            assertEquals(10, vectors().size());
+
+            // an operator the runtime does not run before a series sink: the whole document is refused, with the node
+            deploy(cleanDag("norm.zscore", ""));
+            steps(p, 3);
+            assertEquals(Map.of(), p.states());
+            assertTrue(lastStatus("wind-flow-7").path("error").asText().contains("node n1 (norm.zscore) is not available"),
+                    lastStatus("wind-flow-7").toString());
         }
     }
 }

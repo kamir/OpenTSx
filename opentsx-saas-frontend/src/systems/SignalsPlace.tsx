@@ -32,10 +32,12 @@ interface Props {
   status: SystemStatus | null;
   /** Signal to show at once, from a link out of the plan. */
   focusId: string | null;
+  /** Set when the workbench has just published the clean grade of the focused signal: started or saved. */
+  published: string | null;
   onReload: () => void;
 }
 
-export default function SignalsPlace({ status, focusId, onReload }: Props) {
+export default function SignalsPlace({ status, focusId, published, onReload }: Props) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<SignalFilter>(NO_SIGNAL_FILTER);
   const [focus, setFocus] = useState<string | null>(focusId);
@@ -62,7 +64,7 @@ export default function SignalsPlace({ status, focusId, onReload }: Props) {
   const step = (s: Signal, n: Signal['next'][number]) => {
     const def = NEXT[n];
     const grade = scopeGrade(s);
-    const live = def.live && grade !== null;
+    const live = def.live && (n === 'start' || grade !== null);
     return (
       <button
         key={n}
@@ -70,7 +72,8 @@ export default function SignalsPlace({ status, focusId, onReload }: Props) {
         title={def.hint}
         onClick={(e) => {
           e.stopPropagation();
-          if (grade) openOnScope(s, n === 'prepare' ? 'raw' : grade);
+          if (n === 'start') navigate(`/systems/${status!.system}/flows`);
+          else if (grade) openOnScope(s, n === 'prepare' ? 'raw' : grade);
         }}
       >
         {def.label}
@@ -95,6 +98,13 @@ export default function SignalsPlace({ status, focusId, onReload }: Props) {
             <span className="warn">The system document has {status!.problems.length} problems: {status!.problems.join('; ')}</span>
           )}
         </div>
+        {published && focusId && !pending && (
+          <div className="wb-note" role="status">
+            {published === 'started'
+              ? `The flow for ${focusId} is started. The processor computes the clean series from the beginning; it shows here within a minute. Press Reload.`
+              : `The flow for ${focusId} is saved as its clean source. It is not running: start it under Flows.`}
+          </div>
+        )}
         {pending && (
           <div className="wb-error" role="alert">
             The workbench holds a flow that is not saved. Opening the signal there replaces it.{' '}

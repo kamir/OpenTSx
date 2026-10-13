@@ -54,8 +54,8 @@ public final class VectorProcessorApp {
                 String spec = Files.readString(Path.of(a.get("dag")));
                 String name = VectorProcessor.dagName(spec);
                 // refuse here what the processor would refuse, so the caller sees the reason at once
-                VectorJob.of(new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory())
-                        .readTree(spec), layout.domain(), layout.episodes());
+                DagPlan.of(new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory())
+                        .readTree(spec), layout, VectorProcessor.sha256(spec));
                 send(bootstrap, layout, name, VectorProcessor.deployRecord(name, spec, by));
                 System.out.println("deployed " + name + " (control topic " + layout.dags() + ")");
             }
@@ -82,9 +82,9 @@ public final class VectorProcessorApp {
         }
         VectorProcessor p = new VectorProcessor(() -> KafScaleClients.consumer(bootstrap), () -> KafScaleClients.producer(bootstrap),
                 layout, state, VectorProcessor.Timing.standard());
-        p.sinkProvisioner(name -> {
+        p.sinkProvisioner(topic -> {
             try (Admin admin = KafScaleClients.admin(bootstrap)) {
-                layout.provisionSmartVectors(admin, name, (short) 1);
+                layout.provisionTopic(admin, topic, (short) 1);
             }
         });
         AtomicBoolean stop = new AtomicBoolean();

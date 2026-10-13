@@ -6,8 +6,10 @@
 - **Status**: Freigegeben am 2026-10-13, Umsetzung läuft (L1)
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-shell` (L2 und L3), Worktree `../OpenTSx-worktrees/engineering-flow`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182)
+- **Delivery-Branch**: `opentsx/2026-task014-clean-signals` (L3 und die Überarbeitung nach dem Review-Briefing), Worktree
+  `../OpenTSx-worktrees/engineering-flow`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+  `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
 ## Ziel
@@ -63,7 +65,32 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         Zustandsspalte im Composer, "Align series to a common clock"
       - Abweichungen vom Entwurf: Ort System als Tabelle statt eingebettetem Prototyp; "Input bucket" und der
         Reiter "TS-Model" bleiben (Konzept, Abschnitte 8.4 und 8.5)
-- [ ] 014.6 L3 Topic für bereinigte Reihen, Senke für Reihen, Operatoren im Prozessor, "Publish as clean signal"
+- [x] 014.6 L3 (Stand 2026-10-13)
+      - `TopicLayout`: Topics `clean`, `synthetic`, `features` je Domain
+      - `opentsx-retrieval`, Paket `clean`: `CleanChain` (Plausibilitätsbereich als Lücke oder begrenzt,
+        Einheitenumrechnung, Resampling auf Fenster am Epochen-Raster) und `SeriesStream` (je Rohreihe eine
+        bereinigte Reihe mit den Tags `system` und `signal`, Labels `grade`, `origin`, `flow`, `specHash`;
+        Zustand für den Wiederanlauf)
+      - `opentsx.dag.v2`: Senke für Reihen (`schema: opentsx.episode.v2`, `signal: {system, id, grade}`).
+        `SeriesJob` und `DagPlan` lesen sie; der Prozessor führt Vektor- und Reihen-Senken mit demselben Läufer
+        aus (Checkpoint, Status, eigener Producer je Senke)
+      - Retrieval-Server liest das Topic der bereinigten Reihen mit; `Systems` findet eine bereinigte Reihe an
+        ihren Tags, auch wenn das Systemdokument sie nicht deklariert
+      - Workbench: Kontextzeile mit "Publish as clean signal" (ein Schritt statt drei: prüfen, speichern,
+        starten), Operatoren aus der Erwartung des Signals vorbelegt, Fenster am Epochen-Raster wie im Prozessor;
+        ein gespeicherter Flow bringt sein Signal wieder mit
+      - Gemeinsame Testvektoren `docs/datamodel-2026/testvectors/clean-ops.v1.json` für Java und TypeScript, als
+        Ganzes und als Strom in beliebigen Stücken
+      - **Befund beim Lauf auf master2:** Dem bereinigten Signal fehlte die erste von 36 Episoden. Sehr
+        wahrscheinliche Ursache: Verweigert der Broker eine Partition, wirft der Kafka-Client die Ablehnung aus
+        der Mitte eines Abrufs und verliert dabei die schon geholten Datensätze der anderen Partitionen, deren
+        Lesepositionen bereits weitergerückt sind. Aus dem Quelltext des Clients ist das nicht belegt, nur aus dem
+        Verhalten. Behoben in `Patience`: nach einer Ablehnung zurück auf die Positionen vor dem Abruf; das gilt
+        für Prozessor, Retrieval-Feed und Statistik. Der Nachweis auf master2 steht aus, weil der Broker danach
+        minutenlang Lesen und Schreiben verweigerte
+      - Grenzen: Der Prozessor führt vor einer Reihen-Senke genau drei Operatoren aus; eine Kette, kein
+        Zusammenführen mehrerer Reihen (die Summe über Turbinen läuft also nicht); "Publish" schreibt nichts ins
+        Systemdokument (D42 offen); die Sperre "ein Signal, ein Schreiber" sitzt im Frontend
 - [ ] 014.7 L4 Generatoren: Topic, Laufzeit, Bind und Simulate
 - [ ] 014.8 L5 Models
 

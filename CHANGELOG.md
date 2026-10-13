@@ -78,6 +78,12 @@ entries are grouped by date. The detailed progress log (German) is in
   input (`GET /v1/systems/<id>/plan`); "Flows" is the Flow Composer for the flows of the system; "Models" previews
   which signals are ready for a model. The optional guide shows the seven steps of the engineering method with the
   state of the system in each. A flow built from a signal remembers its system and signal.
+- Clean signals (TASK-014, stage L3). The vector processor also runs series sinks (`opentsx.dag.v2`): a chain of
+  plausible range, unit conversion and resampling from a raw series to the clean grade of a signal, written as v2
+  episodes to `tsx.<domain>.clean.v2` with the tags `system` and `signal`. The workbench has "Publish as clean
+  signal" (check, save and start in one step) when it was opened for a signal; the page "Signals" then shows the
+  signal as clean. Shared test vectors for the cleaning operators in Java and TypeScript
+  (`docs/datamodel-2026/testvectors/clean-ops.v1.json`).
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.
@@ -94,6 +100,9 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Readers on KafScale could skip records when the broker refused a fetch: the Kafka client throws the refusal of one
+  partition out of the middle of a poll and drops what it had already taken from the others. `Patience` now puts
+  the consumer back to where it stood before the refused poll. Seen as a clean series that lacked its first episode.
 - Vector processor: the first write to a new sink topic stopped the whole processor. The KafScale proxy answers a
   produce request that mixes a topic nobody has written to yet with another one in a way the Kafka client cannot
   parse, and the producer then sent nothing any more, not even status records. Every runner now has its own

@@ -1,0 +1,452 @@
+{
+ "schema": "opentsx.testvectors.clean-ops.v1",
+ "description": "Cleaning operators on one series. times are seconds relative to t0; null is a gap (NaN). Every case ends on the boundary of a window, so a run over all the data and a stream that has passed the end give the same. nodes is the form of the DAG (CleanChain, Java), workbench the form of the web workbench (ops.ts).",
+ "cases": [
+  {
+   "name": "plausible range, gaps",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 10,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "dq.checks",
+     "params": {
+      "checks": [
+       "PLAUSIBLE_RANGE"
+      ],
+      "min": 0,
+      "max": 100,
+      "mode": "gap"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "dq.plausible-range",
+     "params": {
+      "min": 0,
+      "max": 100,
+      "mode": "gap"
+     }
+    }
+   ],
+   "values": [
+    5,
+    -1,
+    50,
+    101,
+    100,
+    0,
+    null,
+    42
+   ],
+   "expect": {
+    "times": [
+     0,
+     10,
+     20,
+     30,
+     40,
+     50,
+     60,
+     70
+    ],
+    "values": [
+     5,
+     null,
+     50,
+     null,
+     100,
+     0,
+     null,
+     42
+    ]
+   }
+  },
+  {
+   "name": "plausible range, clipped",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 10,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "dq.checks",
+     "params": {
+      "checks": [
+       "PLAUSIBLE_RANGE"
+      ],
+      "min": 0,
+      "max": 100,
+      "mode": "clip"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "dq.plausible-range",
+     "params": {
+      "min": 0,
+      "max": 100,
+      "mode": "clip"
+     }
+    }
+   ],
+   "values": [
+    5,
+    -1,
+    50,
+    101,
+    null
+   ],
+   "expect": {
+    "times": [
+     0,
+     10,
+     20,
+     30,
+     40
+    ],
+    "values": [
+     5,
+     0,
+     50,
+     100,
+     null
+    ]
+   }
+  },
+  {
+   "name": "unit conversion",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 10,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "convert.unit",
+     "params": {
+      "factor": 0.001,
+      "offset": 0,
+      "unit": "MW"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "convert.unit",
+     "params": {
+      "factor": 0.001,
+      "offset": 0,
+      "unit": "MW"
+     }
+    }
+   ],
+   "values": [
+    1000,
+    2500,
+    null,
+    0
+   ],
+   "expect": {
+    "times": [
+     0,
+     10,
+     20,
+     30
+    ],
+    "values": [
+     1,
+     2.5,
+     null,
+     0
+    ],
+    "unit": "MW"
+   }
+  },
+  {
+   "name": "resample to the minute, mean; a window without values is a gap",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 20,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "resample",
+     "params": {
+      "every": "PT1M",
+      "agg": "MEAN"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "resample",
+     "params": {
+      "every": 60,
+      "agg": "MEAN"
+     }
+    }
+   ],
+   "values": [
+    1,
+    2,
+    3,
+    10,
+    null,
+    20,
+    null,
+    null,
+    null,
+    4,
+    4,
+    4
+   ],
+   "expect": {
+    "times": [
+     0,
+     60,
+     120,
+     180
+    ],
+    "values": [
+     2,
+     15,
+     null,
+     4
+    ]
+   }
+  },
+  {
+   "name": "resample, windows follow the epoch, not the first sample",
+   "t0": "2026-10-01T00:00:40Z",
+   "intervalSeconds": 20,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "resample",
+     "params": {
+      "every": "PT1M",
+      "agg": "MAX"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "resample",
+     "params": {
+      "every": 60,
+      "agg": "MAX"
+     }
+    }
+   ],
+   "values": [
+    7,
+    1,
+    2,
+    3,
+    9,
+    8,
+    7
+   ],
+   "expect": {
+    "times": [
+     -40,
+     20,
+     80
+    ],
+    "values": [
+     7,
+     3,
+     9
+    ]
+   }
+  },
+  {
+   "name": "resample, min and last",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 30,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "resample",
+     "params": {
+      "every": "PT1M",
+      "agg": "LAST"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "resample",
+     "params": {
+      "every": 60,
+      "agg": "LAST"
+     }
+    }
+   ],
+   "values": [
+    1,
+    2,
+    3,
+    null,
+    5,
+    6
+   ],
+   "expect": {
+    "times": [
+     0,
+     60,
+     120
+    ],
+    "values": [
+     2,
+     3,
+     6
+    ]
+   }
+  },
+  {
+   "name": "the cleaning of the example: range as gaps, then the mean per minute",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 20,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "dq.checks",
+     "params": {
+      "checks": [
+       "PLAUSIBLE_RANGE"
+      ],
+      "min": -100,
+      "max": 10000,
+      "mode": "gap"
+     }
+    },
+    {
+     "id": "n2",
+     "op": "resample",
+     "params": {
+      "every": "PT1M",
+      "agg": "MEAN"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "dq.plausible-range",
+     "params": {
+      "min": -100,
+      "max": 10000,
+      "mode": "gap"
+     }
+    },
+    {
+     "op": "resample",
+     "params": {
+      "every": 60,
+      "agg": "MEAN"
+     }
+    }
+   ],
+   "values": [
+    100,
+    200,
+    99999,
+    300,
+    -500,
+    500,
+    20000,
+    30000,
+    40000
+   ],
+   "expect": {
+    "times": [
+     0,
+     60,
+     120
+    ],
+    "values": [
+     150,
+     400,
+     null
+    ]
+   }
+  },
+  {
+   "name": "range, conversion and resampling in one chain",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 30,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "dq.checks",
+     "params": {
+      "checks": [
+       "PLAUSIBLE_RANGE"
+      ],
+      "min": 0,
+      "max": 5000,
+      "mode": "clip"
+     }
+    },
+    {
+     "id": "n2",
+     "op": "convert.unit",
+     "params": {
+      "factor": 0.001,
+      "offset": 0,
+      "unit": "MW"
+     }
+    },
+    {
+     "id": "n3",
+     "op": "resample",
+     "params": {
+      "every": "PT1M",
+      "agg": "MIN"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "dq.plausible-range",
+     "params": {
+      "min": 0,
+      "max": 5000,
+      "mode": "clip"
+     }
+    },
+    {
+     "op": "convert.unit",
+     "params": {
+      "factor": 0.001,
+      "offset": 0,
+      "unit": "MW"
+     }
+    },
+    {
+     "op": "resample",
+     "params": {
+      "every": 60,
+      "agg": "MIN"
+     }
+    }
+   ],
+   "values": [
+    1000,
+    9000,
+    -5,
+    3000
+   ],
+   "expect": {
+    "times": [
+     0,
+     60
+    ],
+    "values": [
+     1,
+     0
+    ],
+    "unit": "MW"
+   }
+  }
+ ]
+}

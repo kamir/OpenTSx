@@ -1,6 +1,6 @@
 /** What the Flow Composer shows of the flows stored in the account. */
 
-import { FlowDoc, WORKBENCH_KIND, dagName, deployChecks, parseNodes, toDagYaml } from './flow';
+import { FlowDoc, WORKBENCH_KIND, contextOf, dagName, deployChecks, parseNodes, toDagYaml } from './flow';
 import { VECTOR_OP } from './vector';
 
 /** A flow as the backend lists it (GET /api/v1/flows). */
@@ -74,11 +74,12 @@ export function summarize(flow: StoredFlow): FlowSummary {
     return { ...base, ...none, openable: false, reason: 'Its node list cannot be read by this version of the workbench.' };
   }
   const published = nodes.filter((n) => n.sinkTopic).map((n) => n.sinkTopic!);
-  const doc = { track: base.track, domain: base.domain, sourceTopic: base.sourceTopic, sourceSeries: base.sourceSeries, nodes, savedId: flow.id };
+  const context = contextOf(def);
+  const doc = { track: base.track, domain: base.domain, sourceTopic: base.sourceTopic, sourceSeries: base.sourceSeries, nodes, savedId: flow.id, context };
   return {
     ...base,
     openable: true,
-    runnable: deployChecks(nodes, base.sourceSeries).every((c) => c.ok),
+    runnable: deployChecks(nodes, base.sourceSeries, context).every((c) => c.ok),
     steps: nodes.filter((n) => n.op !== 'source').map((n) => n.label),
     published,
     vectors: nodes.filter((n) => n.op === VECTOR_OP).length,
@@ -93,7 +94,7 @@ export function summarize(flow: StoredFlow): FlowSummary {
  */
 export function runPlan(f: FlowSummary): { yaml: string; dag: string } | { blocker: string } {
   if (!f.doc) return { blocker: f.reason ?? 'The workbench cannot read this flow.' };
-  const missing = deployChecks(f.doc.nodes, f.doc.sourceSeries ?? []).find((c) => !c.ok);
+  const missing = deployChecks(f.doc.nodes, f.doc.sourceSeries ?? [], f.doc.context).find((c) => !c.ok);
   if (missing) return { blocker: missing.text };
   return { yaml: toDagYaml(f.doc), dag: f.dag };
 }

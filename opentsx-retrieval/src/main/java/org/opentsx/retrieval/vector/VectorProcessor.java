@@ -20,6 +20,7 @@ import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
+import org.opentsx.retrieval.clean.SeriesStream;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -277,14 +278,13 @@ public final class VectorProcessor implements AutoCloseable {
             return;
         }
         try {
-            VectorJob.Plan plan = VectorJob.of(YAML.readTree(spec), layout.domain(), layout.episodes());
-            for (VectorJob job : plan.jobs()) {
-                if (job.seriesIds().isEmpty()) {
-                    throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)");
-                }
-                Runner r = new Runner(job, hash);
-                runners.put(dag + "/" + job.name(), r);
-                System.out.println("vector processor: " + dag + "/" + job.name() + " deployed, writes " + job.topic());
+            DagPlan plan = DagPlan.of(YAML.readTree(spec), layout, hash);
+            List<Sink> sinks = new ArrayList<>();
+            plan.vectors().forEach(job -> sinks.add(new VectorSink(job, hash)));
+            plan.series().forEach(job -> sinks.add(new SeriesSink(job, avro)));
+            for (Sink sink : sinks) {
+                runners.put(dag + "/" + sink.name(), new Runner(sink, hash));
+                System.out.println("vector processor: " + dag + "/" + sink.name() + " deployed, writes " + sink.topic());
             }
         } catch (IllegalArgumentException | IOException e) {
             deployed.put(dag, "");
@@ -300,10 +300,184 @@ public final class VectorProcessor implements AutoCloseable {
         status(dag, bytes(n));
     }
 
-    // ---- one vector sink -------------------------------------------------------------------------------------------
+    // ---- what a runner computes ------------------------------------------------------------------------------------
+
+    /** One sink of a deployed DAG: what it reads, where it writes, and the stream that computes it. */
+    private interface Sink {
+        String dag();
+
+        String name();
+
+        String topic();
+
+        /** vector or series. */
+        String kind();
+
+        List<String> seriesIds();
+
+        boolean fromStart();
+
+        /** @param saved the stream state of a checkpoint, or null to begin anew */
+        Work open(JsonNode saved);
+    }
+
+    /** The stream of one sink: takes the episodes of the source and hands out the records to write. */
+    private interface Work {
+        void add(Episode e, java.util.function.BiConsumer<String, byte[]> out);
+
+        JsonNode state();
+
+        long watermark();
+
+        List<String> waitingFor();
+
+        long skippedBlocks();
+    }
+
+    /** {@code align.vector} on the series of the source: measuring points as JSON ({@code opentsx.vector.v1}). */
+    private record VectorSink(VectorJob job, String hash) implements Sink {
+        @Override
+        public String dag() {
+            return job.dag();
+        }
+
+        @Override
+        public String name() {
+            return job.name();
+        }
+
+        @Override
+        public String topic() {
+            return job.topic();
+        }
+
+        @Override
+        public String kind() {
+            return "vector";
+        }
+
+        @Override
+        public List<String> seriesIds() {
+            return job.seriesIds();
+        }
+
+        @Override
+        public boolean fromStart() {
+            return job.fromStart();
+        }
+
+        @Override
+        public Work open(JsonNode saved) {
+            long lateness = job.lateness().toNanos() / 1000;
+            VectorStream stream = saved == null
+                    ? new VectorStream(job.inputNames(), job.params(), new LinkedHashSet<>(job.seriesIds()), lateness)
+                    : VectorStream.restore(job.inputNames(), job.params(), new LinkedHashSet<>(job.seriesIds()), lateness, saved);
+            return new Work() {
+                @Override
+                public void add(Episode e, java.util.function.BiConsumer<String, byte[]> out) {
+                    Map<String, String> tags = new TreeMap<>();
+                    e.getSeries().getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
+                    for (VectorAligner.Point p : stream.add(e.getSeries().getSeriesId(), e.getSeries().getMetric(), tags,
+                            Episodes.timestampsMicros(e), Episodes.values(e), Micros.of(e.getTEnd()))) {
+                        out.accept(VectorJson.keyText(p.key()), VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash)));
+                    }
+                }
+
+                @Override
+                public JsonNode state() {
+                    return stream.state();
+                }
+
+                @Override
+                public long watermark() {
+                    return stream.watermark();
+                }
+
+                @Override
+                public List<String> waitingFor() {
+                    return stream.waitingFor();
+                }
+
+                @Override
+                public long skippedBlocks() {
+                    return stream.skippedBlocks();
+                }
+            };
+        }
+    }
+
+    /** A chain of cleaning operators on the series of the source: v2 episodes of the clean grade of a signal. */
+    private record SeriesSink(SeriesJob job, OpenTsxAvro avro) implements Sink {
+        @Override
+        public String dag() {
+            return job.dag();
+        }
+
+        @Override
+        public String name() {
+            return job.name();
+        }
+
+        @Override
+        public String topic() {
+            return job.topic();
+        }
+
+        @Override
+        public String kind() {
+            return "series";
+        }
+
+        @Override
+        public List<String> seriesIds() {
+            return job.seriesIds();
+        }
+
+        @Override
+        public boolean fromStart() {
+            return job.fromStart();
+        }
+
+        @Override
+        public Work open(JsonNode saved) {
+            SeriesStream stream = saved == null
+                    ? new SeriesStream(job.chain(), job.target(), job.seriesIds())
+                    : SeriesStream.restore(job.chain(), job.target(), job.seriesIds(), saved);
+            return new Work() {
+                @Override
+                public void add(Episode e, java.util.function.BiConsumer<String, byte[]> out) {
+                    for (Episode clean : stream.add(e)) {
+                        out.accept(clean.getSeries().getSeriesId().toString(), avro.encode(clean));
+                    }
+                }
+
+                @Override
+                public JsonNode state() {
+                    return stream.state();
+                }
+
+                @Override
+                public long watermark() {
+                    return stream.watermark();
+                }
+
+                @Override
+                public List<String> waitingFor() {
+                    return stream.waitingFor();
+                }
+
+                @Override
+                public long skippedBlocks() {
+                    return stream.skippedBlocks();
+                }
+            };
+        }
+    }
+
+    // ---- one sink --------------------------------------------------------------------------------------------------
 
     private final class Runner {
-        final VectorJob job;
+        final Sink job;
         final String hash;
         final Path file;
         final Map<TopicPartition, Long> positions = new HashMap<>();
@@ -313,7 +487,7 @@ public final class VectorProcessor implements AutoCloseable {
         Producer<String, byte[]> producer;
         /** A checkpoint that waits for the broker to confirm what was written before it; null when none is under way. */
         Snapshot waiting;
-        VectorStream stream;
+        Work stream;
         long records;
         long undecodable;
         long lastCheckpoint = System.nanoTime();
@@ -325,7 +499,7 @@ public final class VectorProcessor implements AutoCloseable {
         long reportedRecords = -1;
         String error;
 
-        Runner(VectorJob job, String hash) {
+        Runner(Sink job, String hash) {
             this.job = job;
             this.hash = hash;
             this.file = stateDir.resolve((job.dag() + "--" + job.name()).replaceAll("[^A-Za-z0-9._-]", "_") + ".json");
@@ -366,17 +540,14 @@ public final class VectorProcessor implements AutoCloseable {
         }
 
         private void open() {
-            sinkProvisioner.accept(job.name());
+            sinkProvisioner.accept(job.topic());
             positions.clear();
             pending.clear();
             waiting = null;
             producer = producers.get();
             records = 0;
             JsonNode saved = load();
-            stream = saved == null
-                    ? new VectorStream(job.inputNames(), job.params(), new LinkedHashSet<>(job.seriesIds()), job.lateness().toNanos() / 1000)
-                    : VectorStream.restore(job.inputNames(), job.params(), new LinkedHashSet<>(job.seriesIds()),
-                            job.lateness().toNanos() / 1000, saved.path("stream"));
+            stream = job.open(saved == null ? null : saved.path("stream"));
             consumer = consumers.get();
             List<TopicPartition> tps = new ArrayList<>();
             for (PartitionInfo p : consumer.partitionsFor(layout.episodes(), Duration.ofSeconds(30))) {
@@ -415,15 +586,10 @@ public final class VectorProcessor implements AutoCloseable {
                     || (e.getSegmentation() != null && e.getSegmentation().getSourceEpisodeId() != null)) {
                 return;
             }
-            Map<String, String> tags = new TreeMap<>();
-            e.getSeries().getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
-            List<VectorAligner.Point> points = stream.add(e.getSeries().getSeriesId(), e.getSeries().getMetric(), tags,
-                    Episodes.timestampsMicros(e), Episodes.values(e), Micros.of(e.getTEnd()));
-            for (VectorAligner.Point p : points) {
-                pending.add(producer.send(new ProducerRecord<>(job.topic(), VectorJson.keyText(p.key()),
-                        VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash)))));
+            stream.add(e, (key, value) -> {
+                pending.add(producer.send(new ProducerRecord<>(job.topic(), key, value)));
                 records++;
-            }
+            });
         }
 
         /**
@@ -578,7 +744,7 @@ public final class VectorProcessor implements AutoCloseable {
 
         void report() {
             ObjectNode n = JSON.createObjectNode();
-            n.put("schema", STATUS_SCHEMA).put("dag", job.dag()).put("vector", job.name()).put("topic", job.topic())
+            n.put("schema", STATUS_SCHEMA).put("dag", job.dag()).put("vector", job.name()).put("kind", job.kind()).put("topic", job.topic())
                     .put("state", state).put("specHash", hash).put("records", records);
             if (stream != null) {
                 n.put("skippedBlocks", stream.skippedBlocks());

@@ -122,6 +122,17 @@ public final class Systems {
             for (String grade : SystemDoc.GRADES) {
                 Source src = s.source(grade);
                 if (src == null) {
+                    // not declared in the document, but a flow may write it: the data is found by its tags (D42: the
+                    // workbench publishes a clean signal without changing the document)
+                    JsonNode written = grade.equals("raw") ? null : find(d, s, grade, null, inventory);
+                    if (written != null) {
+                        ObjectNode g = grades.putObject(grade);
+                        ObjectNode by = g.putObject("source");
+                        by.put("kind", "flow").put("declared", false);
+                        put(by, "flow", written.path("flow").asText(null));
+                        g.set("data", written);
+                        data.put(grade, written);
+                    }
                     continue;
                 }
                 ObjectNode g = grades.putObject(grade);
@@ -278,11 +289,11 @@ public final class Systems {
     }
 
     private static String state(Signal s, Map<String, JsonNode> data) {
-        if (s.raw() == null && s.clean() == null) {
-            return "open";
-        }
         if (data.containsKey("clean")) {
             return "clean";
+        }
+        if (s.raw() == null && s.clean() == null) {
+            return "open";
         }
         if (s.clean() != null) {
             return "clean-not-running";
@@ -328,17 +339,18 @@ public final class Systems {
      * metric and tags; a generator or a flow writes by rule (concept, section 6.1) with the tags system and signal.
      */
     private static JsonNode find(SystemDoc d, Signal s, String grade, Source src, JsonNode inventory) {
-        if (inventory == null || "manual".equals(src.kind())) {
+        boolean byTopic = src != null && "topic".equals(src.kind());
+        if (inventory == null || (src != null && "manual".equals(src.kind()))) {
             return null;
         }
-        if ("topic".equals(src.kind()) && !reads(inventory, src.topic())) {
+        if (byTopic && !reads(inventory, src.topic())) {
             return null;
         }
         List<JsonNode> hits = new ArrayList<>();
         for (JsonNode e : inventory.path("series")) {
             JsonNode tags = e.path("tags");
             boolean hit;
-            if ("topic".equals(src.kind())) {
+            if (byTopic) {
                 // series written by rule for a signal keep the tags of the raw series; they are not the raw data
                 hit = tags.has("signal") ? false : src.series().isEmpty()
                         ? (src.metric() == null || src.metric().equals(e.path("metric").asText()))
@@ -384,6 +396,11 @@ public final class Systems {
         }
         o.put("samples", samples);
         o.put("missing", missing);
+        // the flow that wrote the series says so in the labels of its episodes
+        JsonNode flow = hits.get(0).path("labels").path("flow");
+        if (flow.isArray() && !flow.isEmpty()) {
+            o.put("flow", flow.get(flow.size() - 1).asText());
+        }
         put(o, "from", from);
         put(o, "to", to);
         put(o, "min", min);

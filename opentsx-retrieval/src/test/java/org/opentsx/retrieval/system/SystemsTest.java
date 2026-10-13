@@ -174,6 +174,25 @@ class SystemsTest {
     }
 
     @Test
+    void aCleanSeriesAFlowWroteCountsAlsoWhenTheDocumentDoesNotDeclareIt() {
+        ObjectNode inv = windFarm();
+        // the workbench published the clean grade of the wind speed; the document only binds its raw grade
+        ObjectNode clean = series(inv, "fff", "wind.met.wind_speed", 2.4, 13.9);
+        ((ObjectNode) clean.get("tags")).put("system", "h2-chain").put("signal", "park/T02/WMET.HorWdSpd").put("turbine", "T02");
+        ((ObjectNode) clean.get("labels")).putArray("grade").add("clean");
+        ((ObjectNode) clean.get("labels")).putArray("flow").add("wind-flow-19");
+        JsonNode speed = signal(SYSTEMS.signals("h2-chain", inv), "park/T02/WMET.HorWdSpd");
+        assertEquals("clean", speed.path("state").asText());
+        assertEquals(0, speed.path("next").size());
+        JsonNode grade = speed.path("grades").path("clean");
+        assertEquals(List.of("fff"), texts(grade.path("data").path("series")));
+        assertEquals("wind-flow-19", grade.path("source").path("flow").asText());
+        assertFalse(grade.path("source").path("declared").asBoolean(true));
+        // the raw gust of 70 m/s is still there, but the clean series is what is judged now
+        assertFalse(speed.has("outOfRange"));
+    }
+
+    @Test
     void aServerThatReadsAnotherTopicHasNoDataForTheSignal() {
         ObjectNode inv = windFarm();
         ((ObjectNode) inv.path("source").path("topics")).put("episodes", "tsx.solar.episodes.v2");

@@ -27,6 +27,8 @@ export interface GradeSource {
   output?: string;
   value?: number;
   table?: string;
+  /** False when a flow wrote the grade without the system document declaring it. */
+  declared?: boolean;
 }
 
 export interface GradeData {
@@ -162,8 +164,8 @@ export const NEXT: Record<NextStep, { label: string; hint: string; live: boolean
   simulate: { label: 'Simulate', hint: 'Generate the signal from its expectation. Planned (stage L4).', live: false },
   generate: { label: 'Generate', hint: 'Run the generator of this signal. Planned (stage L4): no runtime writes generated series yet.', live: false },
   'check-source': { label: 'Check source', hint: 'A source is declared, but the server finds no series for it.', live: false },
-  prepare: { label: 'Prepare', hint: 'Opens the raw series on the scope of the workbench, with the expected range drawn in.', live: true },
-  start: { label: 'Start', hint: 'Runs the flow that produces the clean data. Planned (stage L3): the processor cannot run it yet.', live: false },
+  prepare: { label: 'Prepare', hint: 'Opens the raw series on the scope of the workbench, with the expected range drawn in. There the cleaning is built and published as the clean signal.', live: true },
+  start: { label: 'Start', hint: 'A flow is declared for the clean data but nothing has written it. Opens the flows of the system, where it is started.', live: true },
 };
 
 /** The grade to look at on the scope: clean data when there is some, else raw data; null without data. */
@@ -239,7 +241,7 @@ export function sourceText(g: Grade | undefined): string {
     case 'generator':
       return `generator ${s.processor}, seed ${s.seed ?? 'none'}`;
     case 'flow':
-      return `flow ${s.flow}${s.output ? `, output ${s.output}` : ''}${g.names ? `: ${g.names.join(', ')}` : ''}`;
+      return `flow ${s.flow ?? 'unknown'}${s.output ? `, output ${s.output}` : ''}${g.names ? `: ${g.names.join(', ')}` : ''}${s.declared === false ? ' (published from the workbench; not in the system document)' : ''}`;
     case 'manual':
       return s.value !== undefined ? `set by hand: ${num(s.value)}` : `table ${s.table}`;
     default:

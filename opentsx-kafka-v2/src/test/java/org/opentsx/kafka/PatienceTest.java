@@ -56,6 +56,50 @@ class PatienceTest {
         assertFalse(Patience.isRefusal(new IllegalArgumentException("x")));
     }
 
+    /**
+     * What kafka-clients does when one partition is refused: the poll has already taken the records of the other
+     * partitions and moved their positions on, and then the refusal is thrown. The caller gets no records.
+     */
+    static final class DropsWhatItTook extends MockConsumer<byte[], byte[]> {
+        boolean refuseNext = true;
+
+        DropsWhatItTook() {
+            super(OffsetResetStrategy.EARLIEST);
+        }
+
+        @Override
+        public synchronized ConsumerRecords<byte[], byte[]> poll(Duration timeout) {
+            ConsumerRecords<byte[], byte[]> taken = super.poll(timeout);
+            if (refuseNext && !taken.isEmpty()) {
+                refuseNext = false;
+                throw refusal();
+            }
+            return taken;
+        }
+    }
+
+    @Test
+    void recordsTheClientTookBeforeARefusalAreReadAgain() {
+        TopicPartition tp = new TopicPartition("tsx.wind.episodes.v2", 0);
+        DropsWhatItTook c = new DropsWhatItTook();
+        c.assign(List.of(tp));
+        c.updateBeginningOffsets(Map.of(tp, 0L));
+        c.seek(tp, 0);
+        for (int i = 0; i < 3; i++) {
+            c.addRecord(new ConsumerRecord<>(tp.topic(), 0, i, new byte[0], new byte[]{(byte) i}));
+        }
+        Patience patience = new Patience(Duration.ofSeconds(30), Duration.ofMillis(1));
+        assertEquals(0, patience.poll(c, Duration.ofMillis(1)).count(), "the refused poll gives nothing");
+        assertEquals(0, c.position(tp), "and the consumer is back where it was");
+        // a MockConsumer hands a record out once: what was taken has to be put there again, as a broker would on a fetch
+        for (int i = 0; i < 3; i++) {
+            c.addRecord(new ConsumerRecord<>(tp.topic(), 0, i, new byte[0], new byte[]{(byte) i}));
+        }
+        ConsumerRecords<byte[], byte[]> again = patience.poll(c, Duration.ofMillis(1));
+        assertEquals(3, again.count());
+        assertEquals(0, again.iterator().next().offset(), "the first record is not skipped");
+    }
+
     @Test
     void waitsOutRefusalsAndThenDeliversFromTheSamePosition() {
         TopicPartition tp = new TopicPartition("t", 0);

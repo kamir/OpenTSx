@@ -7,10 +7,11 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DeploymentsPanel from '../workbench/DeploymentsPanel';
 import FlowGraph from '../workbench/FlowGraph';
 import FlowComposer from '../workbench/FlowComposer';
+import PublishClean from '../workbench/PublishClean';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import { fetchFlowSeries } from '../workbench/inventoryLoad';
 import { GradeName, expectText, isSynthetic, parseStatus } from '../systems/signals';
@@ -144,6 +145,21 @@ function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; se
   const applyOp = useFlow((s) => s.applyOp);
   const nodes = useFlow((s) => s.nodes);
   const source = useFlow((s) => s.source);
+  const context = useFlow((s) => s.context);
+  // Opened for a signal, the cleaning operators start from what the system expects of it: the plausible range is
+  // the expected range, and the resampling goes to the minute (the clock of the example systems).
+  useEffect(() => {
+    if (!context) return;
+    setParams((p) => ({
+      ...p,
+      'dq.plausible-range': {
+        ...p['dq.plausible-range'],
+        ...(context.expect.min !== undefined ? { min: context.expect.min } : {}),
+        ...(context.expect.max !== undefined ? { max: context.expect.max } : {}),
+      },
+      resample: { ...p.resample, every: 60 },
+    }));
+  }, [context]);
   const selectedId = useFlow((s) => s.selectedId);
   const selected = nodes.find((n) => n.id === selectedId);
   const current = TABS.find((t) => t.id === tab)!;
@@ -364,7 +380,7 @@ function Properties({ node }: { node: FlowNode }) {
 
 function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSave: () => Promise<number | null> }) {
   const state = useFlow();
-  const blocker = runBlocker(state.nodes, state.sourceSeries);
+  const blocker = runBlocker(state.nodes, state.sourceSeries, state.context);
   // One step from loaded series to something the processor can run: a vector on the source, published.
   const hasVector = state.nodes.some((n) => n.op === VECTOR_OP && n.sinkTopic);
   const canMakeVector = !hasVector && state.sourceSeries.length > 0 && state.source?.xKind === 'time';
@@ -440,7 +456,7 @@ function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSa
       <DeploymentsPanel
         base={base}
         blocker={blocker}
-        checks={deployChecks(state.nodes, state.sourceSeries)}
+        checks={deployChecks(state.nodes, state.sourceSeries, state.context)}
         onMakeVector={canMakeVector ? makeVector : undefined}
         onSave={onSave}
       />
@@ -520,6 +536,8 @@ export default function Workbench() {
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [flowsOpen, setFlowsOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const navigate = useNavigate();
   const [sideTab, setSideTab] = useState('tree');
   const remoteBase = useRef(remote.base);
   remoteBase.current = remote.base;
@@ -660,7 +678,7 @@ export default function Workbench() {
         // a stored flow keeps the name and description it was given in the composer
         ...(s.savedId === null
           ? {
-              name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
+              name: s.context ? `Clean ${s.context.signal}` : `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
               description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
             }
           : {}),
@@ -813,7 +831,30 @@ export default function Workbench() {
             {state.context.synthetic ? ': generated data, not a measurement' : ''}
           </span>
           {nodes.length > 1 && state.savedId === null && <span className="wb-muted">unsaved changes</span>}
+          <span className="wb-grow" />
+          {state.context.grade === 'raw' && (
+            <button
+              className="wb-primary"
+              disabled={!selected || selected.op === 'source'}
+              title={selected && selected.op !== 'source' ? `Makes ${selected.label} the clean data of the signal` : 'Apply an operator to the raw series first, then select the step that is clean'}
+              onClick={() => setPublishOpen(true)}
+            >
+              Publish as clean signal
+            </button>
+          )}
         </div>
+      )}
+      {publishOpen && state.context && (
+        <PublishClean
+          base={remote.base}
+          onSave={saveFlow}
+          onClose={() => setPublishOpen(false)}
+          onDone={(started) => {
+            const c = useFlow.getState().context!;
+            setPublishOpen(false);
+            navigate(`/systems/${c.system}/signals?focus=${encodeURIComponent(c.signal)}&published=${started ? 'started' : 'saved'}`);
+          }}
+        />
       )}
       {remote.open && (
         <div className="wb-remote">

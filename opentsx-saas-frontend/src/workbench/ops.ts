@@ -584,7 +584,10 @@ function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
       const xs: number[] = [];
       const ys: number[] = [];
       if (s.x.length === 0 || !(every > 0)) return { ...s, x: new Float64Array(0), y: new Float64Array(0) };
-      let start = Math.floor(s.x[0] / every) * every;
+      // On a time axis with a known start the windows follow the epoch, as in the processor: 00:01:00 is a
+      // boundary of a minute whatever the first sample is. x is in seconds from t0.
+      const origin = b.xKind === 'time' && b.t0Ms !== undefined ? b.t0Ms / 1000 : 0;
+      let start = Math.floor((s.x[0] + origin) / every) * every - origin;
       let pool: number[] = [];
       for (let i = 0; i < s.x.length; i++) {
         while (s.x[i] >= start + every) {

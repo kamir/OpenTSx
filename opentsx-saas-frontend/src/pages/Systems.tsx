@@ -173,7 +173,7 @@ export default function Systems() {
         </nav>
 
         {here === 'system' && <SystemPlace plan={plan} system={system ?? ''} />}
-        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} onReload={() => setReload((n) => n + 1)} />}
+        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} published={searchParams.get('published')} onReload={() => setReload((n) => n + 1)} />}
         {here === 'flows' &&
           (signedIn && status ? (
             <FlowComposer

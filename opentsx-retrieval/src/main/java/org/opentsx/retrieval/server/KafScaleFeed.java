@@ -12,7 +12,7 @@ import org.opentsx.kafka.KafScaleClients;
 import org.opentsx.kafka.LogTail;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.v2.Episode;
-import org.opentsx.retrieval.vector.VectorJob;
+import org.opentsx.retrieval.vector.DagPlan;
 import org.opentsx.retrieval.vector.VectorJson;
 import org.opentsx.retrieval.vector.VectorProcessor;
 import org.opentsx.retrieval.vector.VectorStoreBridge;
@@ -66,6 +66,8 @@ final class KafScaleFeed implements AutoCloseable {
     private final Map<String, JsonNode> statuses = new TreeMap<>();
     private LogTail controlTail;
     private LogTail statusTail;
+    /** Follows the clean series of the domain once a flow has written the topic. */
+    private EpisodeLogTail cleanTail;
     private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "kafscale-feed");
         t.setDaemon(true);
@@ -121,6 +123,11 @@ final class KafScaleFeed implements AutoCloseable {
             written = store.write(batch).written();
             loaded += written;
         }
+        try {
+            written += pullClean();
+        } catch (RuntimeException e) {
+            System.err.println("kafscale feed: " + layout.clean() + " cannot be read now: " + e.getMessage());
+        }
         boolean vectorsChanged = pullVectors();
         try {
             pullDags();
@@ -131,6 +138,22 @@ final class KafScaleFeed implements AutoCloseable {
             onChange.run();
         }
         return written;
+    }
+
+    /**
+     * Reads what flows appended to the clean series of the domain into the same store as the episodes: the clean
+     * series carry the tags {@code system} and {@code signal}, so they stay apart from the raw ones.
+     */
+    private int pullClean() {
+        if (cleanTail == null) {
+            if (!consumer.listTopics(Duration.ofSeconds(30)).containsKey(layout.clean())) {
+                return 0;
+            }
+            cleanTail = new EpisodeLogTail(consumer, layout.clean(), Duration.ofMinutes(2));
+        }
+        List<Episode> batch = new ArrayList<>();
+        cleanTail.poll(batch::add);
+        return batch.isEmpty() ? 0 : store.write(batch).written();
     }
 
     /** Reads what was appended to the vector topics of the domain; true when their series changed. */
@@ -183,18 +206,14 @@ final class KafScaleFeed implements AutoCloseable {
      */
     synchronized ObjectNode deploy(JsonNode dag, String text, String by) {
         String name = VectorProcessor.dagName(text);
-        VectorJob.Plan plan = VectorJob.of(dag, layout.domain(), layout.episodes());
-        for (VectorJob job : plan.jobs()) {
-            if (job.seriesIds().isEmpty()) {
-                throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)."
-                        + " Load the series from the TS inventory, then build the vector.");
-            }
-        }
+        DagPlan plan = DagPlan.of(dag, layout, "");
         control(name, VectorProcessor.deployRecord(name, text, by));
         ObjectNode out = EpisodeJson.JSON.createObjectNode();
         out.put("dag", name).put("state", "deployed");
         ArrayNode sinks = out.putArray("sinks");
-        plan.jobs().forEach(j -> sinks.addObject().put("vector", j.name()).put("topic", j.topic()).put("series", j.seriesIds().size()));
+        plan.vectors().forEach(j -> sinks.addObject().put("vector", j.name()).put("kind", "vector").put("topic", j.topic()).put("series", j.seriesIds().size()));
+        plan.series().forEach(j -> sinks.addObject().put("vector", j.name()).put("kind", "series").put("topic", j.topic())
+                .put("signal", j.target().signal()).put("series", j.seriesIds().size()));
         ArrayNode skipped = out.putArray("skipped");
         plan.skipped().forEach(skipped::add);
         return out;
@@ -327,6 +346,7 @@ final class KafScaleFeed implements AutoCloseable {
         TopicLayout layout = new TopicLayout(domain);
         Map<String, String> t = new LinkedHashMap<>();
         t.put("episodes", layout.episodes());
+        t.put("clean", layout.clean());
         t.put("observations", layout.observations());
         t.put("seriesStats", layout.seriesStats());
         t.put("buckets", layout.buckets());

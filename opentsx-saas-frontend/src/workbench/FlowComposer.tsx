@@ -416,7 +416,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                   <div className="wb-flow-run-box">
                     <p>This flow cannot run as a Smart Topic yet. The processor needs:</p>
                     <ul className="wb-findings">
-                      {deployChecks(focused.doc.nodes, focused.sourceSeries).map((c, i) => (
+                      {deployChecks(focused.doc.nodes, focused.sourceSeries, focused.doc.context).map((c, i) => (
                         <li key={i} className={c.ok ? 'ok' : 'error'}><b>{c.ok ? 'Ready' : 'Missing'}</b> {c.text}</li>
                       ))}
                     </ul>
