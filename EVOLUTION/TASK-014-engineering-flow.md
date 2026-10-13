@@ -23,6 +23,10 @@ den Lieferstufen L1 bis L5 des Konzepts. **Vor der Freigabe wird nichts umgesetz
 - [x] 014.1 Konzept und Entwurf (Stand 2026-10-13): Signal als Schlüssel, zwei Schemas, Beispiele für `h2-chain`
       (System, drei Prozessoren, zwei Flows)
 - [x] 014.2 Review Engineering und UX (Stand 2026-10-13), Befunde eingearbeitet: zweite Fassung des Konzepts
+- [x] 014.2a Methodik-Leitfaden im Benutzerhandbuch (Stand 2026-10-13):
+      [`docs/user-manual/16-engineering-method.md`](../docs/user-manual/16-engineering-method.md), englisch wie das
+      Handbuch. Sieben Schritte, Regeln, Beispiel, Checkliste; je Schritt, was heute geht und was geplant ist.
+      Kapitel 14 dabei auf den Stand gebracht (Flow Composer, Workbench, CI)
 - [ ] 014.3 Freigabe der Entscheidungen D40 bis D50
 - [ ] 014.4 L1 Systemdokument, Prüfwerkzeug, Signalzustand, Ort Signals mit Sprung auf den Schirm
 - [ ] 014.5 L2 Hülle, Beschriftungen, Orte Flows und System

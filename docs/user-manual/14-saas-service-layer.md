@@ -1,17 +1,30 @@
 # 14. SaaS stack and personal service layer
 
 > **Status: experimental.** `opentsx-saas-backend` (FastAPI, PostgreSQL, JWT) and `opentsx-saas-frontend`
-> (React/Vite) are not part of the Maven build and are not covered by CI. Their own docs are in
-> `opentsx-saas-backend/README.md`, `opentsx-saas-backend/docs/` and `opentsx-saas-frontend/README.md`.
+> (React/Vite) are not part of the Maven build. CI runs their own jobs ("SaaS frontend": types, lint, tests, build;
+> "SaaS backend": pytest). Their own docs are in `opentsx-saas-backend/README.md`, `opentsx-saas-backend/docs/` and
+> `opentsx-saas-frontend/README.md`.
 
 ## 14.1 What exists today
 
 * **Backend:**
   * users, organizations and teams with JWT login,
-  * a `Flow` model: a JSON definition with owner, status, tags and an execution history (`FlowExecution`),
+  * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status,
+  * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it (administrators only
+    unless configured otherwise),
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
-* **Frontend:** login, dashboard and a visual flow builder.
-* **API:** only the authentication router is wired today. The flow API is not exposed yet.
+* **Frontend:**
+  * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
+    it in the workbench, create, rename, copy and delete flows, and start and stop the Smart Topic of a flow the
+    processor can run.
+  * **Workbench** (`/workbench`): load series from the TS inventory, a file or a sample, apply time series
+    operators, inspect every result on an oscilloscope view (time base, cursors, trigger, measurements,
+    ground-truth bands), build the processing flow as a graph, publish a node as a Smart Topic and deploy it. The
+    limits are in [`EVOLUTION/TASK-013-web-workbench.md`](../../EVOLUTION/TASK-013-web-workbench.md): of all
+    operators, the processor runs only the alignment of series to a common clock.
+  * the earlier visual flow builder (`/flow-builder`); its flows cannot be opened in the workbench.
+* How the pieces are meant to be used together is described as a method in
+  [chapter 16](16-engineering-method.md).
 * **Run it:** `docker compose -f docker-compose.local.yml --profile full up`, or see `opentsx-saas-backend/LOCAL-DEVELOPMENT.md`.
 
 ## 14.2 Planned role: personal service layer

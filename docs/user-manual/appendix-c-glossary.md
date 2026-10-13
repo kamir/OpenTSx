@@ -26,3 +26,4 @@
 | **ES** | event synchronization between two series |
 | **RIS** | return-interval statistics: distribution of times between extreme events |
 | **TimeSeriesObject / TSBucket** | 2.x data structures of `opentsx-core` (legacy) |
+| **System / Signal / Grade / Origin** | terms of the engineering method: the plant; a quantity the system expects; `raw` or `clean` data of a signal; how data came to be (measured, reported, forecast, estimated, synthetic). See [chapter 16](16-engineering-method.md) |
