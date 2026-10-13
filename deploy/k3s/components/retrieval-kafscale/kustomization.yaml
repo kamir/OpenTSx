@@ -5,6 +5,7 @@
 # It also reads the vector topics of the domain and the state of the vector processor. With RETRIEVAL_DAG_RUNS=true it
 # deploys and stops DAGs for that processor (POST /v1/dags/deploy, /stop: records in the control topic), for callers
 # with the run token (the SaaS backend, which checks the account).
+# It hands out the system documents of the image and the state of their signals (GET /v1/systems).
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 patches:
@@ -16,7 +17,8 @@ patches:
         path: /spec/template/spec/containers/0/args
         value: [retrieval-server, --port, "8080", --kafscale, $(KAFSCALE_BOOTSTRAP), --domain, $(OPENTSX_DOMAIN),
                 --scenario, $(OPENTSX_SCENARIO), --catalog, /opt/opentsx/share/windpark/channel-catalog.yaml,
-                --dag-runs, $(RETRIEVAL_DAG_RUNS)]
+                --dag-runs, $(RETRIEVAL_DAG_RUNS),
+                --systems, /opt/opentsx/share/repo/systems, --systems-root, /opt/opentsx/share/repo]
       - op: add
         path: /spec/template/spec/containers/0/env
         value:

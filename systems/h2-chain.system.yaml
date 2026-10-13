@@ -1,0 +1,84 @@
+# System document, schema opentsx.system.v1 (docs/datamodel-2026/schemas). Concept:
+# docs/datamodel-2026/14-ENGINEERING-FLOW.md. Read by the retrieval server (--systems) and checked in the build.
+#
+# The plan is the twin scenario h2-chain. Its six inputs bound from outside are signals a person has to provide.
+# The wind farm stands on the data of the simulator scenario ostsee-demo in tsx.wind.episodes.v2, which is why its
+# origin is SYNTHETIC. One turbine of six is written out; a template for all assets of a kind is not part of the
+# draft. opentsx-market has price sources; this example assumes none is connected, to show a simulated signal.
+schema: opentsx.system.v1
+system: h2-chain
+version: 1
+title: Wasserstoffkette am Windpark
+example: true
+domain: wind
+plan: { ref: opentsx-twin/src/main/resources/twin/h2-chain.yaml }
+inventory: { ref: opentsx-twin/src/main/resources/twin/inventar-beispiel.yaml, system: h2-chain }
+catalogs:
+  - { id: wind, ref: opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml, version: 1.0.0 }
+
+signals:
+  # ---- sensor channels below the atom "park" (asset h2-chain/park/T02 of the inventory)
+  - id: park/T02/WTUR.W
+    title: Wirkleistung WEA T02
+    channel: wind/WTUR.W
+    raw:
+      source:
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: SYNTHETIC
+        select: { metric: wind.turbine.power_active, tags: { turbine: T02 } }
+    clean:
+      source: { kind: flow, flow: turbine-power-clean, output: clean }
+    features:
+      source: { kind: flow, flow: turbine-power-features }
+      names: [lag_1, lag_10, mean_1h, std_1h]
+  - id: park/T02/WMET.HorWdSpd
+    title: Windgeschwindigkeit WEA T02
+    channel: wind/WMET.HorWdSpd
+    raw:
+      source:
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: SYNTHETIC
+        select: { metric: wind.met.wind_speed, tags: { turbine: T02 } }
+    # raw only: the preparation is open
+
+  # ---- inputs of the plan (the id is the port)
+  - id: park.p_avail_kw
+    title: Verfügbare Leistung des Windparks
+    expect: { unit: kW, min: 0, max: 12000, interval: PT1M, kind: ANALOG, origin: MEASURED }
+    clean:
+      source: { kind: flow, flow: park-power, output: sum }
+  - id: market.price_eur_mwh
+    title: Strompreis
+    expect: { unit: EUR/MWh, min: -500, max: 3000, interval: PT15M, kind: ANALOG, origin: REPORTED }
+    raw:
+      source:
+        kind: generator
+        processor: gen.ou
+        seed: 7
+        params: { mean: 62.8, reversion: 0.08, sigma: 9.0 }
+    note: Kein Marktdaten-Topic angebunden; simuliert, bis eines da ist.
+  - id: offtake.demand_kgph
+    title: Wasserstoffbedarf des Abnehmers
+    expect: { unit: kg/h, min: 0, max: 120, interval: PT1M, kind: ANALOG, origin: REPORTED }
+    # open: no source
+  - id: ely.setpoint_kw
+    title: Sollwert Elektrolyseur
+    expect: { unit: kW, min: 0, max: 5000, interval: PT1M, kind: ANALOG, origin: REPORTED }
+    raw:
+      source: { kind: manual, value: 5000, origin: REPORTED }
+  - id: battery.power_kw
+    title: Fahrplan Batterie
+    expect: { unit: kW, min: -1000, max: 1000, interval: PT1M, kind: ANALOG, origin: REPORTED }
+    raw:
+      source: { kind: manual, value: 0, origin: REPORTED }
+  - id: marketer.schedule_kw
+    title: Fahrplan Direktvermarktung
+    expect: { unit: kW, min: 0, max: 12000, interval: PT15M, kind: ANALOG, origin: REPORTED }
+    # open: no source
+
+flows:
+  - { id: turbine-power-clean, ref: systems/flows/turbine-power-clean.flow.yaml }
+  - { id: turbine-power-features, ref: systems/flows/turbine-power-features.flow.yaml }
+  - { id: park-power, ref: systems/flows/park-power.flow.yaml }

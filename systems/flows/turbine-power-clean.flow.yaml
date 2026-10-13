@@ -1,0 +1,17 @@
+# Example flow in the form a person writes, opentsx.flow.v1 (proposal, no schema yet): it names signals, not
+# series ids or topics. A translation step turns it into the DAG of the processor (concept, section 6.2).
+# The processor cannot run it today: it runs align.vector only and writes vectors only (section 6.3).
+schema: opentsx.flow.v1
+flow: turbine-power-clean
+reads: ["park/T02/WTUR.W@raw"]
+nodes:
+  - id: range
+    op: dq.plausible-range
+    in: [source]
+    params: { mode: gap }                   # min and max come from the expectation of the signal
+  - id: clean
+    op: resample
+    in: [range]
+    params: { every: PT1M, agg: MEAN }
+writes:
+  - { from: clean, signal: "park/T02/WTUR.W@clean" }

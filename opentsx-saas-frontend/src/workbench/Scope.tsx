@@ -158,9 +158,11 @@ interface ScopeProps {
   showLabels: boolean;
   /** Called when the trigger settings are taken over as a segmenter node. */
   onUseTrigger: (level: number, rising: boolean) => void;
+  /** The range the signal on the screen should stay in; drawn as two lines on the scale of the active channel. */
+  expected?: { min?: number; max?: number; unit?: string };
 }
 
-export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) {
+export default function Scope({ bucket, showLabels, onUseTrigger, expected }: ScopeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 420 });
@@ -368,6 +370,29 @@ export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) 
     g.font = '11px ui-monospace, Menlo, Consolas, monospace';
     g.textBaseline = 'top';
 
+    // The expected range of the signal: what lies outside these lines is not plausible.
+    if (expected && isTime && active) {
+      g.strokeStyle = '#7fd0ff';
+      g.fillStyle = '#7fd0ff';
+      g.setLineDash([2, 5]);
+      for (const [name, value] of [['max', expected.max], ['min', expected.min]] as const) {
+        if (value === undefined) continue;
+        const y = Y(value, view.active);
+        const text = `expected ${name} ${fmt(value)}${expected.unit ? ' ' + expected.unit : ''}`;
+        if (y < 0 || y > h) {
+          // outside the screen: say on which side it lies, so the range is never silently out of view
+          g.fillText(`${text}, ${y < 0 ? 'above' : 'below'} the screen`, 6, y < 0 ? 18 : h - 30);
+          continue;
+        }
+        g.beginPath();
+        g.moveTo(0, Math.round(y) + 0.5);
+        g.lineTo(w, Math.round(y) + 0.5);
+        g.stroke();
+        g.fillText(text, 6, name === 'max' ? y + 3 : y - 14);
+      }
+      g.setLineDash([]);
+    }
+
     if (view.trigger && active) {
       const y = Y(view.level, view.active);
       g.strokeStyle = '#ff9d45';
@@ -422,7 +447,7 @@ export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) 
         row++;
       });
     }
-  }, [bucket, view, size, running, showLabels, active, xRight, isTime, marks]);
+  }, [bucket, view, size, running, showLabels, active, xRight, isTime, marks, expected]);
 
   // ---------------------------------------------------------------- interaction
 

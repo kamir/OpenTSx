@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import FlowBuilder from './pages/FlowBuilder';
 import Workbench from './pages/Workbench';
+import Systems from './pages/Systems';
 
 /**
  * Protected route wrapper that requires authentication
@@ -105,6 +106,10 @@ function App() {
 
         {/* The workbench computes in the browser and needs no account */}
         <Route path="/workbench" element={<Workbench />} />
+
+        {/* The signals of a system are read from the retrieval server and need no account */}
+        <Route path="/systems" element={<Systems />} />
+        <Route path="/systems/:system/signals" element={<Systems />} />
 
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

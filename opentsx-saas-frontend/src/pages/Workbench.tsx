@@ -13,6 +13,7 @@ import FlowGraph from '../workbench/FlowGraph';
 import FlowComposer from '../workbench/FlowComposer';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import { fetchFlowSeries } from '../workbench/inventoryLoad';
+import { GradeName, expectText, isSynthetic, parseStatus } from '../systems/signals';
 import Scope from '../workbench/Scope';
 import {
   SOURCE_ID,
@@ -35,7 +36,7 @@ import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '..
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
-import { FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
+import { Bucket, FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
 
 function download(name: string, text: string, type = 'text/plain') {
@@ -526,6 +527,9 @@ export default function Workbench() {
   const [searchParams, setSearchParams] = useSearchParams();
   const signedIn = !!localStorage.getItem('access_token');
   const flowParam = searchParams.get('flow');
+  const systemParam = searchParams.get('system');
+  const signalParam = searchParams.get('signal');
+  const gradeParam = searchParams.get('grade') ?? 'raw';
 
   // /workbench?flow=<id> opens a flow stored in the account and loads the series it was built on.
   useEffect(() => {
@@ -567,6 +571,53 @@ export default function Workbench() {
       cancelled = true;
     };
   }, [flowParam]);
+
+  // /workbench?system=<id>&signal=<id>&grade=raw opens the series of a signal, with what the system expects of it.
+  useEffect(() => {
+    if (!systemParam || !signalParam) return;
+    const now = useFlow.getState().context;
+    if (now && now.system === systemParam && now.signal === signalParam && now.grade === gradeParam) return;
+    let cancelled = false;
+    const root = remoteBase.current.replace(/\/$/, '');
+    setStatus(`Opening the signal ${signalParam}`);
+    fetch(`${root}/v1/systems/${encodeURIComponent(systemParam)}/signals`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${systemParam}"` : `HTTP ${res.status}`);
+        return parseStatus(await res.json());
+      })
+      .then(async (doc) => {
+        const signal = doc.signals.find((x) => x.id === signalParam);
+        const series = signal?.grades[gradeParam as GradeName]?.data?.series ?? [];
+        if (!signal) throw new Error(`the system has no signal "${signalParam}"`);
+        if (series.length === 0) throw new Error(`the server holds no ${gradeParam} data for it`);
+        const { load } = await fetchFlowSeries(root, series);
+        if (cancelled) return;
+        const flow = useFlow.getState();
+        flow.clear();
+        flow.setDomain(doc.domain);
+        if (load.topic) flow.setSourceTopic(load.topic);
+        flow.loadBucket(load.bucket, { kind: 'inventory', detail: load.detail });
+        flow.setSourceSeries(load.seriesIds);
+        flow.setContext({
+          system: doc.system,
+          systemTitle: doc.title,
+          signal: signal.id,
+          grade: gradeParam,
+          expect: signal.expect,
+          origin: signal.origin,
+          synthetic: isSynthetic(signal),
+        });
+        setError(null);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setStatus('Ready');
+        setError(`The signal ${signalParam} could not be opened: ${e instanceof Error ? e.message : e}.`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [systemParam, signalParam, gradeParam]);
 
   const openFlows = (ids: number[]) => {
     setFlowsOpen(false);
@@ -648,6 +699,14 @@ export default function Workbench() {
       setStatus(`${bucket.name}: ${bucket.series.length} series, ${points} points`);
     }
   }, [bucket]);
+
+  /** The expected range belongs on the screen while the bucket still carries the quantity of the signal. */
+  const expectedOn = (b: Bucket) => {
+    const c = state.context;
+    if (!c || b.xKind !== 'time' || (c.expect.min === undefined && c.expect.max === undefined)) return undefined;
+    const sameQuantity = selected?.op === 'source' || (!!c.expect.unit && b.series.every((x) => x.unit === c.expect.unit));
+    return sameQuantity ? c.expect : undefined;
+  };
 
   const loadSample = () => {
     setError(null);
@@ -738,9 +797,24 @@ export default function Workbench() {
         ) : (
           <Link to="/login" target="_blank" rel="noopener">Sign in to save flows</Link>
         )}
+        <Link to="/systems" title="The signals a system expects, and what is there for each">Signals</Link>
         <Link to="/dashboard" title="The page with the flows of your account">Composer page</Link>
       </header>
 
+      {state.context && (
+        <div className="wb-context" role="status" aria-label="Signal on the workbench">
+          <Link to={`/systems/${state.context.system}/signals`}>&lt; Signals</Link>
+          <span>
+            {state.context.systemTitle} &gt; <b>{state.context.signal}</b> &gt; {state.context.grade}
+          </span>
+          <span>expected {expectText(state.context.expect)}</span>
+          <span className={`wb-origin ${state.context.synthetic ? 'synthetic' : ''}`}>
+            {state.context.origin ? state.context.origin.toLowerCase() : 'origin not stated'}
+            {state.context.synthetic ? ': generated data, not a measurement' : ''}
+          </span>
+          {nodes.length > 1 && state.savedId === null && <span className="wb-muted">unsaved changes</span>}
+        </div>
+      )}
       {remote.open && (
         <div className="wb-remote">
           <label className="wb-param">retrieval server<input type="text" value={remote.base} onChange={(e) => setRemote({ ...remote, base: e.target.value })} /></label>
@@ -783,7 +857,7 @@ export default function Workbench() {
             }}
           >
             {bucket && bucket.series.length > 0 ? (
-              <Scope bucket={bucket} showLabels={showLabels} onUseTrigger={useTrigger} />
+              <Scope bucket={bucket} showLabels={showLabels} onUseTrigger={useTrigger} expected={expectedOn(bucket)} />
             ) : (
               <div className="wb-empty">
                 {source ? (

@@ -15,6 +15,7 @@ import org.opentsx.retrieval.EpisodeService;
 import org.opentsx.retrieval.Resampling;
 import org.opentsx.retrieval.pattern.Distance;
 import org.opentsx.retrieval.segment.Segmenter;
+import org.opentsx.retrieval.system.Systems;
 import org.opentsx.store.InMemorySeriesStore;
 import org.opentsx.store.SeriesStore;
 
@@ -65,6 +66,7 @@ public final class RetrievalServer implements AutoCloseable {
     private final Dags dags;
     private final boolean dagWrites;
     private final byte[] dagRunToken;
+    private final Systems systems;
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
 
@@ -99,7 +101,14 @@ public final class RetrievalServer implements AutoCloseable {
      */
     public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, Dags dags, boolean dagWrites,
                            String dagRunToken) throws IOException {
+        this(service, port, inventory, dags, dagWrites, dagRunToken, null);
+    }
+
+    /** @param systems the system documents behind {@code /v1/systems}; null when the server has none */
+    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, Dags dags, boolean dagWrites,
+                           String dagRunToken, Systems systems) throws IOException {
         this.service = service;
+        this.systems = systems;
         this.inventory = inventory;
         this.dags = dags;
         this.dagWrites = dagWrites && dags != null;
@@ -128,6 +137,8 @@ public final class RetrievalServer implements AutoCloseable {
                 json(ex, 200, EpisodeJson.JSON.createObjectNode().put("status", "ok"));
             } else if (method.equals("GET") && path.equals("/v1/inventory")) {
                 json(ex, 200, inventory.get());
+            } else if (method.equals("GET") && (path.equals("/v1/systems") || path.startsWith("/v1/systems/"))) {
+                systems(ex, path);
             } else if (method.equals("GET") && path.equals("/v1/dags")) {
                 if (dags == null) {
                     json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no DAGs (it needs --kafscale)"));
@@ -360,6 +371,22 @@ public final class RetrievalServer implements AutoCloseable {
         send(ex, status, "application/json", EpisodeJson.JSON.writeValueAsBytes(n));
     }
 
+    /** {@code /v1/systems}: the list; {@code /v1/systems/<id>/signals}: every signal of one system with its state. */
+    private void systems(HttpExchange ex, String path) throws IOException {
+        if (systems == null) {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server has no system documents (it needs --systems)"));
+            return;
+        }
+        String[] p = path.substring("/v1/systems".length()).split("/");
+        if (p.length <= 1) {
+            json(ex, 200, systems.list(inventory.get()));
+        } else if (p.length == 3 && p[2].equals("signals") && systems.has(p[1])) {
+            json(ex, 200, systems.signals(p[1], inventory.get()));
+        } else {
+            json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
+        }
+    }
+
     private static void send(HttpExchange ex, int status, String type, byte[] body) throws IOException {
         ex.getResponseHeaders().add("Content-Type", type);
         ex.sendResponseHeaders(status, body.length);
@@ -372,7 +399,8 @@ public final class RetrievalServer implements AutoCloseable {
     /**
      * {@code RetrievalServer --port 8080 (--demo true | --iceberg k=v,... [--namespace tsx] | --kafscale host:port
      * [--domain wind] [--refresh PT30S] [--max-episodes 20000] [--dag-runs true]) [--scenario file.yaml]
-     * [--catalog file.yaml]}.
+     * [--catalog file.yaml] [--systems dir [--systems-root dir]]}. {@code --systems} names a directory of system documents
+     * ({@code *.system.yaml}, {@code opentsx.system.v1}); their references are relative to {@code --systems-root}.
      *
      * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
      * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
@@ -463,8 +491,17 @@ public final class RetrievalServer implements AutoCloseable {
         } else {
             inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));
         }
+        Systems systems = null;
+        if (a.containsKey("systems")) {
+            java.nio.file.Path dir = java.nio.file.Path.of(a.get("systems"));
+            systems = Systems.load(dir, java.nio.file.Path.of(a.getOrDefault("systems-root", ".")));
+            for (org.opentsx.retrieval.system.SystemDoc d : systems.docs()) {
+                System.out.println("system " + d.system() + ": " + d.signals().size() + " signals, " + d.problems().size() + " problems");
+                d.problems().forEach(pr -> System.out.println("  problem: " + pr));
+            }
+        }
         RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
-                inventory, dags, dagWrites, runToken);
+                inventory, dags, dagWrites, runToken, systems);
         System.out.println("opentsx retrieval server on port " + s.port());
     }
 

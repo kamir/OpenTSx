@@ -1,0 +1,24 @@
+# Example processor description, schema opentsx.processor.v1 (draft). No runtime implements it yet.
+schema: opentsx.processor.v1
+id: gen.ou
+version: 1
+kind: generator
+title: Mean-reverting noise
+description: >-
+  Ornstein-Uhlenbeck process: values wander around a mean and are pulled back to it. A stand-in for a price or a
+  demand where no data is connected. Values are clipped to the expected range of the signal.
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: mean, type: number, required: true, description: Level the values return to }
+  - { name: reversion, type: number, default: 0.1, min: 0, max: 1, description: Share of the distance to the mean taken back per step }
+  - { name: sigma, type: number, required: true, min: 0, description: Standard deviation of one step }
+  - { name: min, type: number, from: expect.min }
+  - { name: max, type: number, from: expect.max }
+  - { name: every, type: duration, required: true, from: expect.interval }
+  - { name: unit, type: string, from: expect.unit }
+semantics: { needs: point, deterministic: true, origin: SYNTHETIC }
+runtimes:
+  workbench: { status: planned }
+  processor: { status: planned, note: Needs the generator runtime of stage L4 }
+ui: { group: source, label: Mean-reverting noise }

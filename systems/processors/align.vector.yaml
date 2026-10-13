@@ -1,0 +1,28 @@
+# Example processor description, schema opentsx.processor.v1 (draft), for the one operator that runs continuously.
+# Parameters as in the DAG (docs/datamodel-2026/11, section 5a); the workbench enters durations in seconds.
+schema: opentsx.processor.v1
+id: align.vector
+version: 1
+kind: transformer
+title: Align to vector
+description: Brings several inputs onto one clock; one measuring point per tick with a component per input.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: out, type: vector }
+params:
+  - { name: every, type: duration, required: true, default: PT60S, editAs: seconds, from: expect.interval }
+  - { name: key, type: string, default: series, description: "series, all, or the name of a tag" }
+  - { name: agg, type: enum, values: [MEAN, MIN, MAX, FIRST, LAST, SUM, COUNT], default: MEAN }
+  - { name: fill, type: enum, values: [none, as-of], default: none }
+  - { name: maxAge, type: duration, default: PT60S, editAs: seconds }
+  - { name: emit, type: enum, values: [any, complete], default: any }
+  - { name: names, type: list, description: Names of the components in the order of the inputs }
+  - { name: lateness, type: duration, default: PT0S, editAs: seconds }
+semantics: { needs: window, deterministic: true, keeps: [unit], origin: INHERIT }
+runtimes:
+  workbench: { status: available }
+  java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner }
+  processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor }
+ui: { group: stream, label: Align to vector }
+testvectors: docs/datamodel-2026/testvectors/align-vector.v1.json

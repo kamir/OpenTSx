@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { OP_BY_ID, defaultParams } from './ops';
-import { Bucket, FlowNode, Params, SourceInfo } from './types';
+import { Bucket, FlowNode, Params, SignalContext, SourceInfo } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
 
 export const SOURCE_ID = 'source';
@@ -26,6 +26,8 @@ export interface FlowState {
   counter: number;
   /** Id of the flow in the backend once it was saved or loaded from there. */
   savedId: number | null;
+  /** The signal the workbench was opened for, if it was. */
+  context: SignalContext | null;
 
   setTrack: (track: string) => void;
   setDomain: (domain: string) => void;
@@ -42,6 +44,7 @@ export interface FlowState {
   moveNode: (id: string, pos: { x: number; y: number }) => void;
   setSink: (id: string, topic: string | null) => void;
   setSavedId: (id: number | null) => void;
+  setContext: (context: SignalContext | null) => void;
   /** Empties the workbench for a new flow; track and domain stay. */
   clear: () => void;
   restore: (definition: Record<string, unknown>, savedId: number) => boolean;
@@ -149,6 +152,7 @@ export const useFlow = create<FlowState>((set, get) => ({
   selectedId: null,
   counter: 0,
   savedId: null,
+  context: null,
 
   setTrack: (track) => set({ track }),
   setDomain: (domain) =>
@@ -180,6 +184,8 @@ export const useFlow = create<FlowState>((set, get) => ({
       selectedId: SOURCE_ID,
       counter: 0,
       savedId: null,
+      // another bucket is not the signal the workbench was opened for
+      context: null,
     });
   },
 
@@ -257,10 +263,11 @@ export const useFlow = create<FlowState>((set, get) => ({
     set((s) => ({ nodes: s.nodes.map((n) => (n.id === id ? { ...n, sinkTopic: topic ?? undefined } : n)) })),
 
   setSavedId: (savedId) => set({ savedId }),
+  setContext: (context) => set({ context }),
 
   clear: () => {
     cache.clear();
-    set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null });
+    set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null, context: null });
   },
 
   restore: (definition, savedId) => {
@@ -281,6 +288,7 @@ export const useFlow = create<FlowState>((set, get) => ({
       selectedId: nodes[nodes.length - 1].id,
       counter: Math.max(0, ...numbers),
       savedId,
+      context: null,
     });
     return true;
   },

@@ -44,6 +44,7 @@ export default function Dashboard() {
         <h1>OpenTSx Flow Composer</h1>
         <span className="wb-grow" />
         <span className="wb-muted">{user?.full_name || user?.email}</span>
+        <Link to="/systems" title="The signals a system expects, and what is there for each">Signals</Link>
         <Link to="/workbench">Editor</Link>
         <Link to="/flow-builder" title="The earlier visual flow builder; its flows cannot be opened in the editor">Flow builder</Link>
         <button onClick={handleLogout}>Logout</button>
