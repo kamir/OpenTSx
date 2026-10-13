@@ -678,7 +678,7 @@ const nodeOf = id => SC.graph.nodes.find(n => n.id === id);
 const nodeTitle = id => atomDoc(id).title || id;
 
 // events in plain language; the raw attributes stay available under "Technische Details"
-const REASON = { "valve closed": "Abnehmer schließt den Schieber", "valve reopened": "Abnehmer öffnet den Schieber wieder" };
+const REASON = { "valve closed": "Übergabestation schließt das Ventil", "valve reopened": "Übergabestation öffnet das Ventil wieder" };
 const CRIT = ["pressure_limit", "protective_shutdown", "tank_empty", "fuel_out", "supply_short", "schedule_deviation"];
 function evText(e) {
   const a = e.attrs || {}, n = x => num(parseFloat(x));

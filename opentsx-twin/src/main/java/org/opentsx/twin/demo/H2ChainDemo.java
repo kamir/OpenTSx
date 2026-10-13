@@ -20,8 +20,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Scenario S1 (H2 chain) in all three modes: the offtake closes its valve after one hour, the line fills, the
- * electrolyzer trips, the marketer has to sell more. Prints the event timeline and KPIs of
+ * Scenario S1 (H2 chain) in all three modes: the handover station closes its valve after one hour, the pipeline
+ * stops taking gas, the buffer fills, the electrolyzer trips, the marketer has to sell more. Prints the event timeline and KPIs of
  * <ol>
  *   <li>shadow: the observed history,</li>
  *   <li>what-if: the valve reopens after two hours,</li>
@@ -46,24 +46,27 @@ public final class H2ChainDemo {
         return TwinPlan.resource("twin/h2-chain.yaml");
     }
 
-    /** Observed history: wind 8 MW, electrolyzer schedule 5 MW, feed-in schedule 3 MW, battery idle, matching offtake. */
+    /**
+     * Observed history: wind 8 MW, electrolyzer schedule 5 MW, battery idle, matching offtake. The feed-in schedule is
+     * 2.93 MW: what is left after the electrolyzer and the compressor (about 70 kW at 120 bar).
+     */
     public static SeriesInputs observed() {
         double[] price = new double[STEPS / 15];
         for (int i = 0; i < price.length; i++) {
             price[i] = 60 + 20 * Math.sin(i / 4.0);
         }
         return new SeriesInputs()
-                .bind("park.p_avail_kw", T0, MIN, constant(STEPS, 8000), Origin.MEASURED)
+                .bind("park.p_potential_kw", T0, MIN, constant(STEPS, 8000), Origin.MEASURED)
                 .bind("ely.setpoint_kw", T0, MIN, constant(STEPS, ELY_KW), Origin.REPORTED)
                 .bind("offtake.demand_kgph", T0, MIN, constant(STEPS, OFFTAKE_KGPH), Origin.MEASURED)
-                .bind("marketer.schedule_kw", T0, MIN, constant(STEPS, 3000), Origin.REPORTED)
+                .bind("marketer.schedule_kw", T0, MIN, constant(STEPS, 2930), Origin.REPORTED)
                 .bind("battery.power_kw", T0, MIN, constant(STEPS, 0), Origin.REPORTED)
                 .bind("market.price_eur_mwh", T0, 15 * MIN, price, Origin.MEASURED);
     }
 
-    /** The offtake closes its valve after one hour. */
+    /** The handover station closes its valve after one hour. */
     public static List<Intervention> valveClosed() {
-        return List.of(Intervention.set(START.plusSeconds(3600), "offtake", "valve", 0, "h2-offtake", "valve closed"));
+        return List.of(Intervention.set(START.plusSeconds(3600), "handover", "valve", 0, "h2-handover", "valve closed"));
     }
 
     static double[] constant(int n, double v) {
@@ -89,7 +92,7 @@ public final class H2ChainDemo {
         report(out, "1. Shadow: observed history (valve closed at 01:00)", shadow);
 
         List<Intervention> reopened = new ArrayList<>(valveClosed());
-        reopened.add(Intervention.set(START.plusSeconds(7200), "offtake", "valve", 1, "h2-offtake", "valve reopened"));
+        reopened.add(Intervention.set(START.plusSeconds(7200), "handover", "valve", 1, "h2-handover", "valve reopened"));
         Twin.WhatIf w = twin.whatIf(observed(), valveClosed(), reopened);
         report(out, "2. What-if: valve reopened at 02:00", w.alternative());
         out.println("   KPI delta (what-if minus baseline):");
@@ -115,8 +118,8 @@ public final class H2ChainDemo {
             out.printf(Locale.ROOT, "   %s  %-10s %-24s %s%n", Micros.toInstant(e.tMicros()).toString().substring(11, 19),
                     e.atom(), e.type(), e.attrs());
         }
-        out.printf(Locale.ROOT, "   max line pressure %.2f bar, electrolyzer trips %.0f, H2 %.1f kg, extra feed-in %.0f kWh%n",
-                r.max("line.p_bar"), r.kpis().get("ely.trips"), r.kpis().get("ely.h2_kg"),
+        out.printf(Locale.ROOT, "   max buffer pressure %.2f bar, electrolyzer trips %.0f, H2 %.1f kg, extra feed-in %.0f kWh%n",
+                r.max("buffer.p_bar"), r.kpis().get("ely.trips"), r.kpis().get("ely.h2_kg"),
                 r.kpis().get("marketer.extra_kwh"));
     }
 }

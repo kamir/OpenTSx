@@ -1,4 +1,9 @@
-# Scenario S1 (H2 chain): wind farm, electrolyzer, H2 line, offtake, battery, grid balance and direct marketing.
+# Scenario S1 (H2 chain), second form: wind farm, electrolyzer, compressor, high-pressure buffer, pipeline, handover
+# station, customer, battery, grid balance and direct marketing.
+#
+# The order compressor > buffer > pipeline is an ASSUMPTION (decided 2026-10-13, no real plant behind it): the
+# electrolyzer delivers at 30 bar, the compressor fills a buffer of 50 to 200 bar, a regulator feeds the pipeline at
+# 30 bar, the handover station delivers at 20 bar or more. All sizes and pressures are assumed values.
 # Inputs (measurements, schedules, forecasts) are bound per run; see Twin / SeriesInputs.
 twin: h2-chain
 start: 2026-10-01T00:00:00Z
@@ -11,34 +16,56 @@ atoms:
     type: market
     params: { every: 15 }
   - id: offtake
-    type: h2-offtake
+    type: h2-consumer
   - id: park
-    type: generation
+    type: wind-park
     params: { ratedKw: 12000 }
   - id: ely
     type: electrolyzer
-    params: { ratedKw: 5000, minLoad: 0.1, rampKwPerMin: 500, kwhPerKg: 55, pTripBar: 40, pResumeBar: 36, initialKw: 5000 }
+    params: { ratedKw: 5000, minLoad: 0.1, rampKwPerMin: 500, kwhPerKg: 55, pTripBar: 200, pResumeBar: 180, initialKw: 5000 }
+  - id: compressor
+    type: h2-compressor
+    params: { pInBar: 30, etaIs: 0.75, tempK: 288, ratedKgph: 120 }
+  - id: handover
+    type: h2-handover
+    params: { pMinBar: 20, maxKgph: 150 }
   - id: battery
     type: battery
     params: { capacityKwh: 2000, powerKw: 1000, soc0: 0.5 }
   - id: grid
     type: balance
     params: { priority: [self, ely, bat] }
+  - id: buffer
+    type: h2-buffer
+    params: { volumeM3: 20, tempK: 288, p0Bar: 120, pMinBar: 50, pMaxBar: 200, warnMin: 60, lineSetBar: 30, gainKgphPerBar: 20, maxOutKgph: 200, initialOutKgph: 90.9090909090909 }
   - id: line
-    type: h2-line
-    params: { volumeM3: 157, tempK: 288, p0Bar: 30, pMinBar: 20, pMaxBar: 40, warnMin: 60 }
+    type: h2-pipeline
+    params: { volumeM3: 157, tempK: 288, p0Bar: 30, pMinBar: 20, pMaxBar: 40, dropBar: 1.5, dropRefKgph: 100, initialOutKgph: 90.9090909090909 }
   - id: marketer
     type: direct-marketer
     params: { toleranceKw: 100 }
 wiring:
+  # electricity
   - rules.limit_kw -> park.limit_kw
   - park.p_gen_kw -> grid.p_gen_kw
   - ely.p_el_kw -> grid.p_ely_kw
+  - compressor.p_el_kw -> grid.p_self_kw
   - battery.p_bat_kw -> grid.p_bat_kw
-  - ely.m_h2_kgph -> line.m_in_kgph
-  - offtake.m_out_kgph -> line.m_out_kgph
-  - offtake.m_out_kgph -> ely.m_offtake_kgph
-  - line.p_bar -> ely.p_downstream_bar
-  - line.headroom_kg -> ely.headroom_kg
+  # hydrogen, as gas
+  - ely.m_h2_kgph -> compressor.m_in_kgph
+  - compressor.m_out_kgph -> buffer.m_in_kgph
+  - buffer.m_out_kgph -> line.m_in_kgph
+  - handover.m_out_kgph -> line.m_out_kgph
+  - handover.m_out_kgph -> offtake.m_in_kgph
+  # hydrogen, as information
+  - offtake.request_kgph -> handover.request_kgph
+  - line.p_out_bar -> handover.p_in_bar
+  - line.p_in_bar -> buffer.p_line_bar
+  - handover.m_out_kgph -> buffer.m_draw_kgph
+  - buffer.p_bar -> compressor.p_out_bar
+  - buffer.p_bar -> ely.p_downstream_bar
+  - buffer.headroom_kg -> ely.headroom_kg
+  - buffer.m_out_kgph -> ely.m_offtake_kgph
+  # market: the contract (schedule_kw, bound per run) and the physical feed-in are two things
   - grid.p_grid_kw -> marketer.p_grid_kw
   - market.price_eur_mwh -> marketer.price_eur_mwh

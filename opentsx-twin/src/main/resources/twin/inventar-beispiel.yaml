@@ -84,10 +84,10 @@ systems:
         access: { visibility: partner, owner: elektrolyseurbetreiber }
       - id: h2-chain/line
         atom: line
-        type: h2-line
+        type: h2-pipeline
         name: H2-Leitung (Druckmessstelle)
         location: { plan: park, lat: 54.4410, lon: 13.9930 }
-        series: [ { metric: line.p_bar } ]
+        series: [ { metric: line.p_in_bar } ]
         maintenance:
           intervals: [ { id: dichtheit, kind: time, every: P1Y, last: 2026-04-20 } ]
       - id: h2-chain/market                        # atoms without a location appear in the tray below the map

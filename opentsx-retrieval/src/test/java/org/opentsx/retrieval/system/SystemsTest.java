@@ -94,12 +94,12 @@ class SystemsTest {
         assertEquals("bound-no-data", turbineState.path("state").asText());
         assertEquals(List.of("check-source"), texts(turbineState.path("next")));
 
-        // what was generated is an observation; what was available is an estimate (15, section 9)
+        // what was generated is an observation; what the weather would give is an estimate (15, sections 9 and 13.2)
         assertEquals("observation", signal(st, "park.p_gen_kw").path("role").asText());
-        assertEquals("estimate", signal(st, "park.p_avail_kw").path("role").asText());
+        assertEquals("estimate", signal(st, "park.p_potential_kw").path("role").asText());
 
         // derived: no raw grade; its origin is the worst of what its flow reads
-        JsonNode avail = signal(st, "park.p_avail_kw");
+        JsonNode avail = signal(st, "park.p_potential_kw");
         assertEquals("clean-not-running", avail.path("state").asText());
         assertEquals("derived", avail.path("via").asText());
         assertEquals("SYNTHETIC", avail.path("origin").asText());
@@ -124,36 +124,36 @@ class SystemsTest {
         assertEquals(5000.0, setpoint.path("grades").path("raw").path("source").path("value").asDouble());
 
         JsonNode counts = st.path("counts");
-        assertEquals(10, counts.path("signals").asInt());
+        assertEquals(13, counts.path("signals").asInt());
         assertEquals(3, counts.path("topic").asInt());
         assertEquals(2, counts.path("derived").asInt());
         assertEquals(1, counts.path("simulated").asInt());
-        assertEquals(2, counts.path("manual").asInt());
-        assertEquals(2, counts.path("open").asInt());
-        assertEquals(2, st.path("states").path("open").asInt());
+        assertEquals(4, counts.path("manual").asInt());
+        assertEquals(3, counts.path("open").asInt());
+        assertEquals(3, st.path("states").path("open").asInt());
     }
 
     @Test
     void thePlanSaysWhatFeedsEveryInput() {
         JsonNode plan = SYSTEMS.plan("h2-chain", windFarm());
-        assertEquals(9, plan.path("atoms").size());
-        assertEquals(9, plan.path("counts").path("atoms").asInt());
+        assertEquals(12, plan.path("atoms").size());
+        assertEquals(12, plan.path("counts").path("atoms").asInt());
         JsonNode park = null;
         JsonNode grid = null;
         for (JsonNode a : plan.path("atoms")) {
             park = a.path("id").asText().equals("park") ? a : park;
             grid = a.path("id").asText().equals("grid") ? a : grid;
         }
-        assertEquals("generation", park.path("type").asText());
+        assertEquals("wind-park", park.path("type").asText());
         assertEquals(3, park.path("channels").asInt());
         JsonNode avail = null;
         JsonNode limit = null;
         for (JsonNode in : park.path("inputs")) {
-            avail = in.path("name").asText().equals("p_avail_kw") ? in : avail;
+            avail = in.path("name").asText().equals("p_potential_kw") ? in : avail;
             limit = in.path("name").asText().equals("limit_kw") ? in : limit;
         }
         // an input from outside with a signal declared for it, and one wired inside the plan
-        assertEquals("park.p_avail_kw", avail.path("signal").asText());
+        assertEquals("park.p_potential_kw", avail.path("signal").asText());
         assertEquals("clean-not-running", avail.path("state").asText());
         assertEquals("kW", avail.path("unit").asText());
         assertFalse(avail.has("from"));
@@ -164,7 +164,9 @@ class SystemsTest {
             wired |= "park.p_gen_kw".equals(in.path("from").asText());
         }
         assertTrue(wired);
-        assertTrue(plan.path("counts").path("inputsFromOutside").asInt() >= 6);
+        // every input from outside has a signal; three of the signals are still open
+        assertEquals(9, plan.path("counts").path("inputsFromOutside").asInt());
+        assertEquals(0, plan.path("counts").path("inputsWithoutSignal").asInt());
     }
 
     @Test
@@ -325,12 +327,12 @@ class SystemsTest {
             assertEquals(200, list.statusCode());
             JsonNode first = JSON.readTree(list.body()).path("systems").get(0);
             assertEquals("h2-chain", first.path("system").asText());
-            assertEquals(10, first.path("counts").path("signals").asInt());
+            assertEquals(13, first.path("counts").path("signals").asInt());
             assertEquals(0, first.path("problems").asInt());
 
             HttpResponse<String> signals = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/signals")).build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, signals.statusCode());
-            assertEquals(10, JSON.readTree(signals.body()).path("signals").size());
+            assertEquals(13, JSON.readTree(signals.body()).path("signals").size());
 
             assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
             HttpResponse<String> decisions = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/decisions")).build(), HttpResponse.BodyHandlers.ofString());

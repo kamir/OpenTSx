@@ -3,7 +3,7 @@
 # figures and evidence are invented.
 schema: opentsx.decision.v1
 decision: h2-dispatch
-version: 1
+version: 2
 example: true
 system: h2-chain
 title: Fahrplan für Elektrolyseur und Batterie
@@ -21,10 +21,11 @@ levers:
   - { signal: ely.setpoint_kw, title: Setpoint of the electrolyser, min: 0, max: 5000, delay: PT1M }
   - { signal: battery.power_kw, title: Battery power, min: -1000, max: 1000, delay: PT1M }
 constraints:
-  - { id: line-pressure, title: Pressure of the hydrogen line, signal: line.p_bar, min: 20, max: 40, note: The electrolyser trips at 40 bar. }
+  - { id: buffer-pressure, title: Pressure of the hydrogen buffer, signal: buffer.p_bar, min: 50, max: 200, note: The electrolyser trips at 200 bar. }
+  - { id: delivery-pressure, title: Pressure at the handover station, signal: handover.p_delivery_bar, min: 20 }
   - { id: battery-soc, title: State of charge of the battery, signal: battery.soc, min: 0.1, max: 0.9 }
 needs:
-  - { signal: park.p_avail_kw, grade: clean, maxAge: PT5M, origins: [MEASURED, ESTIMATED, FORECAST] }
+  - { signal: park.p_potential_kw, grade: clean, maxAge: PT5M, origins: [ESTIMATED, FORECAST] }
   - { signal: market.price_eur_mwh, grade: raw, maxAge: PT1H, origins: [REPORTED, FORECAST], for: [price-following] }
   - { signal: offtake.demand_kgph, grade: clean, maxAge: PT15M, origins: [REPORTED, FORECAST] }
   - { signal: park.p_gen_kw, grade: clean, maxAge: PT5M, optional: true }
@@ -40,7 +41,7 @@ analyses:
     kind: twin
     ref: opentsx-twin/src/main/resources/twin/h2-chain.yaml
     validity:
-      - { signal: park.p_avail_kw, min: 0, max: 12000 }
+      - { signal: park.p_potential_kw, min: 0, max: 12000 }
       - { signal: market.price_eur_mwh, min: -100, max: 400, note: Not checked for price spikes. }
     evidence: []
     uncertainty: { method: none yet, blockAbove: 500, unit: EUR }

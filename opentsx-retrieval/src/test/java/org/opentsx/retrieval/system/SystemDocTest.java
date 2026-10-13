@@ -63,7 +63,7 @@ class SystemDocTest {
         assertEquals(List.of(), d.problems());
         assertEquals("h2-chain", d.system());
         assertEquals("wind", d.domain());
-        assertEquals(10, d.signals().size());
+        assertEquals(13, d.signals().size());
         assertEquals(5, d.flows().size());
         // the expectation of a sensor channel comes from the catalog, where the interval is called sampling
         SystemDoc.Signal power = d.signals().get(0);
@@ -80,7 +80,7 @@ class SystemDocTest {
         assertTrue(power.meaning().contains("curtailed"));
         // actual generation and available power are two signals with two roles (15, section 9)
         assertEquals("observation", d.signals().stream().filter(s -> s.id().equals("park.p_gen_kw")).findFirst().orElseThrow().role());
-        assertEquals("estimate", d.signals().stream().filter(s -> s.id().equals("park.p_avail_kw")).findFirst().orElseThrow().role());
+        assertEquals("estimate", d.signals().stream().filter(s -> s.id().equals("park.p_potential_kw")).findFirst().orElseThrow().role());
         // D47: the inventory lists the power of T02 but not its wind speed or its state; that is a note, not a problem
         assertEquals(List.of("park/T02/WMET.HorWdSpd: the inventory does not list this series for h2-chain/park/T02",
                 "park/T02/WTUR.TurSt: the inventory does not list this series for h2-chain/park/T02"), d.notes());
@@ -112,7 +112,7 @@ class SystemDocTest {
         assertProblem(changed(dir, "operating: { min: 0, max: 3300 }", "operating: { min: 5000, max: 3300 }"), "operating range has its min above its max");
         assertProblem(changed(dir, "flow: park-power, output: sum", "flow: park-power, output: total"), "does not write it from total");
         assertProblem(changed(dir, "names: [lag_1, lag_10", "names: [lag_2, lag_10"), "does not write it from lag_2");
-        assertProblem(changed(dir, "id: ely.setpoint_kw", "id: park.p_avail_kw"), "used twice");
+        assertProblem(changed(dir, "id: ely.setpoint_kw", "id: park.p_potential_kw"), "used twice");
         assertProblem(changed(dir, "kind: ANALOG, origin: ESTIMATED", "kind: STATE, origin: ESTIMATED"), "kind must be one of");
         assertProblem(changed(dir, "interval: PT1M, kind: ANALOG, origin: ESTIMATED", "interval: 1min, kind: ANALOG, origin: ESTIMATED"), "is no duration");
         assertProblem(changed(dir, "origin: SYNTHETIC\n        select: { metric: wind.met.wind_speed", "origin: REAL\n        select: { metric: wind.met.wind_speed"), "origin REAL");

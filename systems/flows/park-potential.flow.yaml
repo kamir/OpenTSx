@@ -1,6 +1,7 @@
-# Flow, opentsx.flow.v1 (proposal): the available power of the park, estimated from the clean wind speed over the
-# power curve of the turbines. An estimate: it does not fall when the park is curtailed, as the measured power does.
-# The processor "model.power-curve" does not exist yet. The power curve of opentsx-windpark is the model to use.
+# Flow, opentsx.flow.v1 (proposal): the potential of the park, estimated from the clean wind speed over the power
+# curve of the turbines. An estimate: it does not fall when the park is restricted or curtailed, as the measured
+# power does. The curve is a demo model: no hub height, no air density, no wake losses.
+# The processor "model.power-curve" runs it in the vector processor; this authoring form is not read by code yet.
 schema: opentsx.flow.v1
 flow: park-potential
 reads: ["park/T02/WMET.HorWdSpd@clean"]
@@ -10,4 +11,4 @@ nodes:
     in: [source]
     params: { ratedKw: 12000, turbines: 6 }
 writes:
-  - { from: potential, signal: "park.p_avail_kw@clean" }
+  - { from: potential, signal: "park.p_potential_kw@clean" }

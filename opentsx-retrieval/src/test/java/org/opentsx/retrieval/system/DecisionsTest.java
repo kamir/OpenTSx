@@ -53,9 +53,9 @@ class DecisionsTest {
         assertTrue(d.path("example").asBoolean());
         assertEquals(2, d.path("levers").size());
 
-        JsonNode avail = byId(d.path("needs"), "signal", "park.p_avail_kw");
+        JsonNode avail = byId(d.path("needs"), "signal", "park.p_potential_kw");
         assertFalse(avail.path("ok").asBoolean());
-        assertTrue(texts(avail.path("reasons")).get(0).startsWith("park.p_avail_kw has no clean data"));
+        assertTrue(texts(avail.path("reasons")).get(0).startsWith("park.p_potential_kw has no clean data"));
 
         // both analyses need the available power and the demand; only one needs the price
         JsonNode hold = byId(d.path("analyses"), "id", "hold");
@@ -73,11 +73,11 @@ class DecisionsTest {
     @Test
     void cleanInputsAreAConditionAndNotAProof() {
         ObjectNode inv = windFarm();
-        clean(inv, "p1", "park.p_avail_kw", "h2-chain.park.p_avail_kw", 0, 9000, "ESTIMATED", "SYNTHETIC");
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 9000, "ESTIMATED", "SYNTHETIC");
         clean(inv, "p2", "offtake.demand_kgph", "h2-chain.offtake.demand_kgph", 20, 80, "REPORTED", null);
         JsonNode d = dispatch(inv);
-        assertTrue(byId(d.path("needs"), "signal", "park.p_avail_kw").path("ok").asBoolean());
-        assertTrue(byId(d.path("needs"), "signal", "park.p_avail_kw").path("containsSynthetic").asBoolean());
+        assertTrue(byId(d.path("needs"), "signal", "park.p_potential_kw").path("ok").asBoolean());
+        assertTrue(byId(d.path("needs"), "signal", "park.p_potential_kw").path("containsSynthetic").asBoolean());
 
         // the inputs are there, but the estimate was made of simulated wind, and the rule was only checked on a scenario
         JsonNode hold = byId(d.path("analyses"), "id", "hold");
@@ -93,7 +93,7 @@ class DecisionsTest {
     @Test
     void anOriginTheDecisionDoesNotAcceptBlocks() {
         ObjectNode inv = windFarm();
-        clean(inv, "p1", "park.p_avail_kw", "h2-chain.park.p_avail_kw", 0, 9000, "ESTIMATED", null);
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 9000, "ESTIMATED", null);
         clean(inv, "p2", "offtake.demand_kgph", "h2-chain.offtake.demand_kgph", 20, 80, "SYNTHETIC", null);
         JsonNode demand = byId(dispatch(inv).path("needs"), "signal", "offtake.demand_kgph");
         assertFalse(demand.path("ok").asBoolean());
@@ -103,22 +103,22 @@ class DecisionsTest {
     @Test
     void anInputThatLagsBehindTheOthersIsTooOld() {
         ObjectNode inv = windFarm();
-        clean(inv, "p1", "park.p_avail_kw", "h2-chain.park.p_avail_kw", 0, 9000, "ESTIMATED", null).put("to", "2026-10-01T05:00:00Z");
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 9000, "ESTIMATED", null).put("to", "2026-10-01T05:00:00Z");
         clean(inv, "p2", "offtake.demand_kgph", "h2-chain.offtake.demand_kgph", 20, 80, "REPORTED", null);
         JsonNode st = SYSTEMS.decisions("h2-chain", inv, List.of());
         assertEquals("2026-10-01T06:00:00Z", st.path("asOf").asText());
-        JsonNode avail = byId(st.path("decisions").get(0).path("needs"), "signal", "park.p_avail_kw");
+        JsonNode avail = byId(st.path("decisions").get(0).path("needs"), "signal", "park.p_potential_kw");
         assertEquals(3600, avail.path("found").path("ageSeconds").asLong());
-        assertEquals("park.p_avail_kw ends 60 min before the newest data of the system; allowed are 5 min", texts(avail.path("reasons")).get(0));
+        assertEquals("park.p_potential_kw ends 60 min before the newest data of the system; allowed are 5 min", texts(avail.path("reasons")).get(0));
     }
 
     @Test
     void valuesOutsideTheCheckedRangeRestrict() {
         ObjectNode inv = windFarm();
-        clean(inv, "p1", "park.p_avail_kw", "h2-chain.park.p_avail_kw", 0, 13000, "ESTIMATED", null);
+        clean(inv, "p1", "park.p_potential_kw", "h2-chain.park.p_potential_kw", 0, 13000, "ESTIMATED", null);
         clean(inv, "p2", "offtake.demand_kgph", "h2-chain.offtake.demand_kgph", 20, 80, "REPORTED", null);
         JsonNode follow = byId(dispatch(inv).path("analyses"), "id", "price-following");
-        JsonNode range = byId(follow.path("validity"), "signal", "park.p_avail_kw");
+        JsonNode range = byId(follow.path("validity"), "signal", "park.p_potential_kw");
         assertFalse(range.path("inside").asBoolean());
         assertEquals(13000.0, range.path("observedMax").asDouble());
         assertTrue(String.join(" | ", texts(follow.path("reasons"))).contains("outside the range the analysis was checked in"));

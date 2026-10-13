@@ -1,0 +1,117 @@
+{
+  "type" : "record",
+  "name" : "WindParkSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one wind-park atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "WindParkState",
+      "doc" : "State variables of wind-park",
+      "fields" : [ {
+        "name" : "potential_kwh",
+        "type" : "double"
+      }, {
+        "name" : "energy_kwh",
+        "type" : "double"
+      }, {
+        "name" : "curtailed_rules_kwh",
+        "type" : "double"
+      }, {
+        "name" : "curtailed_dispatch_kwh",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "WindParkOutputs",
+      "doc" : "Output ports of wind-park",
+      "fields" : [ {
+        "name" : "p_avail_kw",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kW]"
+      }, {
+        "name" : "p_gen_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "WindParkControls",
+      "doc" : "Controls of wind-park overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "limit_kw",
+        "type" : [ "null", "double" ],
+        "doc" : "default 10000.0",
+        "default" : null
+      }, {
+        "name" : "dispatch_kw",
+        "type" : [ "null", "double" ],
+        "doc" : "default 10000.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "wind-park",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "p_potential_kw",
+    "kind" : "FLOW",
+    "unit" : "kW"
+  }, {
+    "name" : "limit_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  }, {
+    "name" : "dispatch_kw",
+    "kind" : "SIGNAL",
+    "unit" : "kW"
+  } ]
+}
