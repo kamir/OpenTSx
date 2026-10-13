@@ -1,5 +1,6 @@
 # Decision card, schema opentsx.decision.v1 (draft). Concept: docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md.
-# Not read by code yet. An example: persons, figures and evidence are invented.
+# Read by the retrieval server for the place "Models" (GET /v1/systems/h2-chain/decisions). An example: persons,
+# figures and evidence are invented.
 schema: opentsx.decision.v1
 decision: h2-dispatch
 version: 1

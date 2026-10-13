@@ -109,6 +109,7 @@ public final class SystemDoc {
     private final List<Signal> signals = new ArrayList<>();
     private final Map<String, Flow> flows = new LinkedHashMap<>();
     private final List<PlanAtom> atoms = new ArrayList<>();
+    private final Map<String, JsonNode> decisions = new LinkedHashMap<>();
     private final List<String> problems = new ArrayList<>();
     private final List<String> notes = new ArrayList<>();
     private final StringBuilder hashed = new StringBuilder();
@@ -147,6 +148,11 @@ public final class SystemDoc {
 
     public Map<String, Flow> flows() {
         return flows;
+    }
+
+    /** The decision cards of the system ({@code opentsx.decision.v1}) by id, as they stand in their files. */
+    public Map<String, JsonNode> decisions() {
+        return decisions;
     }
 
     /** The atoms of the plan in its order; empty when the document names no plan or the plan cannot be read. */
@@ -213,6 +219,16 @@ public final class SystemDoc {
         Map<String, JsonNode> assets = s.assets(doc, root);
         for (JsonNode f : doc.path("flows")) {
             s.flow(f, root);
+        }
+        for (JsonNode c : doc.path("decisions")) {
+            Path cardFile = s.ref(c, root, "decision " + c.path("id").asText());
+            if (cardFile != null) {
+                JsonNode card = read(cardFile);
+                if (!s.system.equals(card.path("system").asText())) {
+                    s.problems.add("decision " + c.path("id").asText() + " is a card of the system " + card.path("system").asText());
+                }
+                s.decisions.put(c.path("id").asText(), card);
+            }
         }
         Set<String> seen = new TreeSet<>();
         for (JsonNode n : doc.path("signals")) {

@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { dagsAPI, flowsAPI } from '../services/api';
 import { DagList, topicConflict } from './deployments';
-import { cleanChecks, cleanTopic, dagName, isCleanSink, toDagYaml, useFlow } from './flow';
+import { chainTo, cleanChecks, cleanTopic, dagName, isCleanSink, toDagYaml, useFlow } from './flow';
 import { summarize } from './flows';
 
 interface Props {
@@ -37,6 +37,19 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const signedIn = !!localStorage.getItem('access_token');
   const context = flow.context;
+  /** The other signals of the system, for a flow that computes one signal from the clean data of another. */
+  const [others, setOthers] = useState<{ id: string; title: string; port: boolean; role?: string }[]>([]);
+  const system = context?.system;
+  const signalId = context?.signal;
+  useEffect(() => {
+    if (!system || context?.grade === 'raw') return;
+    fetch(`${base.replace(/\/$/, '')}/v1/systems/${encodeURIComponent(system)}/signals`)
+      .then((res) => (res.ok ? res.json() : { signals: [] }))
+      .then((doc) => setOthers((doc.signals ?? []).filter((s: { id: string }) => s.id !== signalId)))
+      .catch(() => setOthers([]));
+    // the grade of the context does not change while the panel is open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, system, signalId]);
   const node = flow.nodes.find((n) => n.id === flow.selectedId);
 
   useEffect(() => {
@@ -45,6 +58,16 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
   }, [signedIn]);
 
   if (!context || !node) return null;
+  const derives = context.grade !== 'raw';
+  // an estimate of another quantity: a model in the chain makes the result an estimate, whatever it was made of
+  const modelled = (chainTo(flow.nodes, node.id) ?? []).some((n) => n.op.startsWith('model.'));
+  const choose = (id: string) => {
+    const s = others.find((x) => x.id === id);
+    flow.setContext({
+      ...context,
+      target: s ? { signal: s.id, title: s.title, metric: s.port ? `${context.system}.${s.id}`.replace(/[^A-Za-z0-9._-]/g, '_') : undefined, origin: modelled ? 'ESTIMATED' : (context.origin ?? 'ESTIMATED') } : undefined,
+    });
+  };
   const checks = cleanChecks(flow.nodes, flow.sourceSeries, context, node.id);
   const ready = checks.every((c) => c.ok);
   const topic = cleanTopic(flow.domain);
@@ -76,10 +99,32 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
 
   return (
     <div className="wb-publish" role="dialog" aria-label="Publish as clean signal">
-      <h2>Publish as clean signal</h2>
-      <p>
-        <b>{node.label}</b> becomes the clean data of <b>{context.signal}</b> ({context.systemTitle}).
-      </p>
+      <h2>{derives ? 'Publish as another signal' : 'Publish as clean signal'}</h2>
+      {derives ? (
+        <>
+          <p>
+            <b>{node.label}</b> is computed from the clean data of <b>{context.signal}</b>. Which signal of {context.systemTitle} is it?
+          </p>
+          <label className="wb-param">
+            signal
+            <select value={context.target?.signal ?? ''} onChange={(e) => choose(e.target.value)}>
+              <option value="">choose</option>
+              {others.map((s) => <option key={s.id} value={s.id}>{s.id}{s.role ? ` (${s.role})` : ''}: {s.title}</option>)}
+            </select>
+          </label>
+          {context.target && (
+            <p className="wb-muted">
+              It is written with the origin {context.target.origin.toLowerCase()}
+              {modelled ? ': a model computes it, so it is an estimate and not a measurement' : ''}, and it says that it was made
+              of {context.signal}{context.origin ? ` (${context.origin.toLowerCase()})` : ''}.
+            </p>
+          )}
+        </>
+      ) : (
+        <p>
+          <b>{node.label}</b> becomes the clean data of <b>{context.signal}</b> ({context.systemTitle}).
+        </p>
+      )}
       <ul className="wb-findings" aria-label="What the processor needs">
         {checks.map((c, i) => (
           <li key={i} className={c.ok ? 'ok' : 'error'}>

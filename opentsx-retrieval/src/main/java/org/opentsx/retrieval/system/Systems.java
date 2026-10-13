@@ -345,6 +345,12 @@ public final class Systems {
         return n;
     }
 
+    /** The decision cards of the system with what each analysis may claim today ({@link Decisions}). */
+    public JsonNode decisions(String system, JsonNode inventory, List<SystemDoc.Binding> overlay) {
+        SystemDoc d = doc(system, overlay);
+        return Decisions.status(d, signals(system, inventory, overlay));
+    }
+
     /** How a person would say where the signal comes from. */
     private static String via(Signal s) {
         Source first = s.raw() != null ? s.raw() : s.clean();
@@ -497,10 +503,12 @@ public final class Systems {
         }
         o.put("samples", samples);
         o.put("missing", missing);
-        // the flow that wrote the series says so in the labels of its episodes
-        JsonNode flow = hits.get(0).path("labels").path("flow");
-        if (flow.isArray() && !flow.isEmpty()) {
-            o.put("flow", flow.get(flow.size() - 1).asText());
+        // the flow that wrote the series says so in the labels of its episodes, and what the series is and was made of
+        for (String label : List.of("flow", "origin", "madeOf", "fidelity")) {
+            JsonNode v = hits.get(0).path("labels").path(label);
+            if (v.isArray() && !v.isEmpty()) {
+                o.put(label, v.get(v.size() - 1).asText());
+            }
         }
         put(o, "from", from);
         put(o, "to", to);

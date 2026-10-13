@@ -390,6 +390,8 @@ public final class RetrievalServer implements AutoCloseable {
             json(ex, 200, systems.signals(p[1], inventory.get()));
         } else if (p.length == 3 && p[2].equals("plan") && systems.has(p[1])) {
             json(ex, 200, systems.plan(p[1], inventory.get()));
+        } else if (p.length == 3 && p[2].equals("decisions") && systems.has(p[1])) {
+            json(ex, 200, systems.decisions(p[1], inventory.get(), List.of()));
         } else {
             json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
         }
@@ -414,6 +416,8 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode body = raw.length == 0 ? EpisodeJson.JSON.createObjectNode() : EpisodeJson.JSON.readTree(raw);
         if (p[2].equals("signals")) {
             json(ex, 200, systems.signals(p[1], inventory.get(), Systems.bindings(body)));
+        } else if (p[2].equals("decisions")) {
+            json(ex, 200, systems.decisions(p[1], inventory.get(), Systems.bindings(body)));
         } else if (p[2].equals("generate")) {
             if (signalWriter == null) {
                 json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "this server cannot write generated series (it needs --kafscale and --dag-runs true)"));

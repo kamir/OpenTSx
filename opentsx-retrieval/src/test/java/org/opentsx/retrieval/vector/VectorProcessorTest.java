@@ -492,4 +492,78 @@ class VectorProcessorTest {
                     lastStatus("wind-flow-7").toString());
         }
     }
+
+    @Test
+    void aSinkMayReadCleanSeriesAndWriteAnEstimateOfAnotherSignalAndFeatures(@TempDir Path state) throws Exception {
+        // the clean wind speed of one turbine, as a flow before this one wrote it: ten minutes at 8 m/s
+        SeriesKey clean = SeriesKeys.of("wind.met.wind_speed", Map.of("turbine", "T01", "system", "h2-chain",
+                "signal", "park/T01/WMET.HorWdSpd", "grade", "clean"), "m/s");
+        broker.log.put(new TopicPartition(LAYOUT.clean(), 0), new ArrayList<>());
+        double[] wind = new double[10];
+        java.util.Arrays.fill(wind, 8);
+        broker.append(LAYOUT.clean(), 0, avro.encode(Episodes.regular(clean, T0, 60 * SECOND, wind).source("t").createdAt(T0).build()));
+        deploy("""
+                schema: opentsx.dag.v2
+                dag: wind-flow-9
+                version: 1
+                source:
+                  kind: kafscale-broker
+                  topics: [tsx.wind.clean.v2]
+                  series: ["%s"]
+                nodes:
+                  - id: decode
+                    op: decode.avro-soe
+                  - id: n1
+                    op: model.power-curve
+                    in: [decode]
+                    params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: 4 }
+                  - id: lag_1
+                    op: feature.lag
+                    in: [decode]
+                    params: { steps: 1 }
+                sinks:
+                  - { from: n1, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park.p_avail_kw, grade: clean, metric: h2-chain.park.p_avail_kw }, origin: ESTIMATED, madeOf: "park/T01/WMET.HorWdSpd@clean (SYNTHETIC)" }
+                  - { from: lag_1, topic: tsx.wind.features.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park/T01/WMET.HorWdSpd, grade: features } }
+                """.formatted(clean.getSeriesId()));
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+            assertEquals(Map.of("wind-flow-9/park.p_avail_kw", "running", "wind-flow-9/park-T01-WMET.HorWdSpd--lag_1", "running"), p.states());
+        }
+        org.opentsx.model.v2.Episode estimate = null;
+        org.opentsx.model.v2.Episode feature = null;
+        for (MockProducer<String, byte[]> from : producers) {
+            for (ProducerRecord<String, byte[]> r : from.history()) {
+                if (r.topic().equals(LAYOUT.clean())) {
+                    estimate = avro.decode(r.value(), org.opentsx.model.v2.Episode.class);
+                } else if (r.topic().equals(LAYOUT.features())) {
+                    feature = avro.decode(r.value(), org.opentsx.model.v2.Episode.class);
+                }
+            }
+        }
+        // the estimate is a series of its own: the metric of the port, no tags of the sensor it was made of
+        assertEquals("h2-chain.park.p_avail_kw", estimate.getSeries().getMetric());
+        assertEquals("{grade=clean, signal=park.p_avail_kw, system=h2-chain}", new TreeMap<>(estimate.getSeries().getTags()).toString());
+        assertEquals("kW", estimate.getSeries().getUnit());
+        assertEquals("ESTIMATED", estimate.getLabels().get("origin"));
+        assertEquals("park/T01/WMET.HorWdSpd@clean (SYNTHETIC)", estimate.getLabels().get("madeOf"));
+        assertEquals(4 * 3000 * (512.0 - 27) / (1953.125 - 27), Episodes.values(estimate)[0], 1e-9);
+        // the feature keeps the quantity of its signal and is named after its node
+        assertEquals("wind.met.wind_speed", feature.getSeries().getMetric());
+        assertEquals("lag_1", feature.getSeries().getTags().get("feature"));
+        assertEquals("features", feature.getSeries().getTags().get("grade"));
+        assertTrue(Double.isNaN(Episodes.values(feature)[0]));
+        assertEquals(8.0, Episodes.values(feature)[1]);
+    }
+
+    @Test
+    void featuresAreComputedFromCleanSeriesOnly(@TempDir Path state) throws Exception {
+        deploy(cleanDag("dq.checks", "").replace("topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park/T01/WTUR.W, grade: clean }",
+                "topic: tsx.wind.features.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park/T01/WTUR.W, grade: features }"));
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 3);
+            assertEquals(Map.of(), p.states());
+            assertTrue(lastStatus("wind-flow-7").path("error").asText().contains("the node of a feature gives it its name")
+                    || lastStatus("wind-flow-7").path("error").asText().contains("features are computed from clean series"), lastStatus("wind-flow-7").toString());
+        }
+    }
 }

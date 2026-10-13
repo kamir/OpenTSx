@@ -306,6 +306,7 @@ export function contextOf(definition: Record<string, unknown>): SignalContext | 
     expect: typeof c.expect === 'object' && c.expect ? c.expect : {},
     origin: typeof c.origin === 'string' ? c.origin : undefined,
     synthetic: c.synthetic === true,
+    ...(c.target && typeof c.target.signal === 'string' ? { target: c.target } : {}),
   };
 }
 
@@ -456,6 +457,7 @@ export function vectorComponents(nodes: FlowNode[], node: FlowNode): string[] {
 function dagParams(nodes: FlowNode[], node: FlowNode, seconds = false): Params | string {
   // on the way to a series sink the x axis is time: a width in seconds is written as a duration
   if (node.op === 'resample' && seconds) return `{ every: PT${node.params.every}S, agg: ${node.params.agg} }`;
+  if (node.op === 'feature.rolling' && seconds) return `{ window: PT${node.params.window}S, fn: ${node.params.fn} }`;
   if (node.op === 'dq.plausible-range') {
     return `{ checks: [PLAUSIBLE_RANGE], min: ${node.params.min}, max: ${node.params.max}, mode: ${node.params.mode} }`;
   }
@@ -475,7 +477,7 @@ export interface Finding {
 // ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
 
 /** Operators the processor runs before a series sink; everything else computes in the workbench only. */
-export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample'];
+export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample', 'model.power-curve', 'feature.lag', 'feature.rolling'];
 export const EPISODE_SCHEMA = 'opentsx.episode.v2';
 
 /** Topic the clean series of a domain go to. */
@@ -511,20 +513,26 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
   const fromInventory = sourceSeries.length > 0;
   return [
     {
-      ok: !!context,
-      text: context ? `The flow is made for the signal ${context.signal} of ${context.systemTitle}.` : 'Open a signal from the page "Signals": the clean data belongs to a signal.',
+      ok: !!context && (context.grade === 'raw' || !!context.target),
+      text: !context
+        ? 'Open a signal from the page "Signals": the clean data belongs to a signal.'
+        : context.target
+          ? `The flow computes ${context.target.signal} from the ${context.grade} data of ${context.signal}.`
+          : context.grade === 'raw'
+            ? `The flow is made for the signal ${context.signal} of ${context.systemTitle}.`
+            : `This is the clean data of ${context.signal} already. Choose the signal the flow computes from it.`,
     },
     {
       ok: fromInventory,
       text: fromInventory
-        ? `It reads ${sourceSeries.length} raw series of the topic.`
+        ? `It reads ${sourceSeries.length} ${context?.grade ?? 'raw'} series of the topic.`
         : 'Load the series from the page "Signals" or the TS inventory. A sample bucket or a file has no topic the processor could follow.',
     },
     {
       ok: !!chain && chain.length > 0,
       text:
         chain && chain.length > 0
-          ? `${node!.label} is ${chain.length === 1 ? 'one step' : `a chain of ${chain.length} steps`} from the raw series.`
+          ? `${node!.label} is ${chain.length === 1 ? 'one step' : `a chain of ${chain.length} steps`} from the ${context?.grade ?? 'raw'} series.`
           : node?.op === 'source'
             ? 'Apply at least one operator: the raw series itself is not clean.'
             : 'The clean series must be one chain from the raw series; a step with several inputs cannot be part of it.',
@@ -534,7 +542,7 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
       text:
         chain && foreign.length === 0
           ? 'Every step runs on the processor.'
-          : `These steps run in the workbench only: ${foreign.map((n) => OP_BY_ID[n.op]?.label ?? n.op).join(', ') || 'unknown'}. The processor runs plausible range, unit conversion and resampling.`,
+          : `These steps run in the workbench only: ${foreign.map((n) => OP_BY_ID[n.op]?.label ?? n.op).join(', ') || 'unknown'}. The processor runs plausible range, unit conversion, resampling, the power curve, lag and rolling.`,
     },
   ];
 }
@@ -689,6 +697,14 @@ export function toDagYaml(s: FlowDoc): string {
   for (const sink of sinks) {
     if (series.includes(sink)) {
       const c = s.context!;
+      if (c.target) {
+        // another signal than the one read: it gets a metric of its own and says what it was made of
+        const metric = c.target.metric ? `, metric: ${yamlScalar(c.target.metric)}` : '';
+        lines.push(
+          `  - { from: ${sink.id}, topic: ${yamlScalar(sink.sinkTopic!)}, schema: ${EPISODE_SCHEMA}, signal: { system: ${yamlScalar(c.system)}, id: ${yamlScalar(c.target.signal)}, grade: clean${metric} }, origin: ${c.target.origin}, madeOf: ${yamlScalar(`${c.signal}@${c.grade}${c.origin ? ` (${c.origin})` : ''}`)} }`
+        );
+        continue;
+      }
       const origin = c.origin ? `, origin: ${c.origin}` : '';
       lines.push(
         `  - { from: ${sink.id}, topic: ${yamlScalar(sink.sinkTopic!)}, schema: ${EPISODE_SCHEMA}, signal: { system: ${yamlScalar(c.system)}, id: ${yamlScalar(c.signal)}, grade: clean }${origin} }`

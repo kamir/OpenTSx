@@ -313,6 +313,133 @@ export function feedOf(p: PlanPort): { kind: 'wired' | 'signal' | 'missing'; tex
   return { kind: 'missing', text: 'no signal declared' };
 }
 
+/** An atom of the plan placed in a picture: its column, its row, and what its inputs from outside are missing. */
+export interface GraphNode {
+  id: string;
+  type: string;
+  layer: number;
+  row: number;
+  /** ok: every input is fed; todo: a signal is not clean yet; missing: an input from outside has no signal. */
+  mark: 'ok' | 'todo' | 'missing';
+  outside: number;
+}
+
+export interface GraphEdge {
+  id: string;
+  from: string;
+  to: string;
+  /** The output and the input the wire joins. */
+  label: string;
+  /** A wire back to an atom that comes earlier in the plan: the value of the step before. */
+  back: boolean;
+}
+
+/**
+ * The plan as a graph from left to right. An atom stands one column right of the last atom that feeds it; a wire
+ * back to an earlier atom (a loop, as between the electrolyser and the line) does not move anything.
+ */
+export function planGraph(plan: PlanDoc): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  const order = new Map(plan.atoms.map((a, i) => [a.id, i]));
+  const layer = new Map<string, number>();
+  const edges: GraphEdge[] = [];
+  for (const a of plan.atoms) {
+    let l = 0;
+    for (const p of a.inputs) {
+      if (!p.from) continue;
+      const src = p.from.split('.')[0];
+      if (!order.has(src)) continue;
+      const back = order.get(src)! >= order.get(a.id)!;
+      if (!back) l = Math.max(l, (layer.get(src) ?? 0) + 1);
+      const port = p.from.slice(src.length + 1);
+      edges.push({ id: `${p.from}>${a.id}.${p.name}`, from: src, to: a.id, label: port === p.name ? port : `${port} > ${p.name}`, back });
+    }
+    layer.set(a.id, l);
+  }
+  const rows = new Map<number, number>();
+  const nodes = plan.atoms.map((a) => {
+    const l = layer.get(a.id)!;
+    const row = rows.get(l) ?? 0;
+    rows.set(l, row + 1);
+    const outside = a.inputs.filter((p) => !p.from);
+    const mark: GraphNode['mark'] = outside.some((p) => !p.signal)
+      ? 'missing'
+      : outside.some((p) => p.state !== 'clean' && p.state !== 'constant')
+        ? 'todo'
+        : 'ok';
+    return { id: a.id, type: a.type, layer: l, row, mark, outside: outside.length };
+  });
+  return { nodes, edges };
+}
+
+// ---------------------------------------------------------------- decisions (GET /v1/systems/<id>/decisions)
+
+export type Usability = 'usable' | 'restricted' | 'blocked';
+
+export interface NeedDoc {
+  signal: string;
+  grade?: string;
+  maxAge?: string;
+  origins?: string[];
+  for?: string[];
+  optional?: boolean;
+  ok: boolean;
+  containsSynthetic: boolean;
+  reasons: string[];
+  found?: { state: SignalState; origin?: string; ageSeconds?: number; data?: GradeData };
+}
+
+export interface AnalysisDoc {
+  id: string;
+  title: string;
+  kind?: string;
+  ref?: string;
+  status: Usability;
+  reasons: string[];
+  validity: { signal: string; min?: number; max?: number; note?: string; observedMin?: number; observedMax?: number; inside: boolean }[];
+  evidence?: { what: string; period?: string; result?: string; date?: string; synthetic?: boolean }[];
+}
+
+export interface DecisionDoc {
+  id: string;
+  title: string;
+  question?: string;
+  example?: boolean;
+  responsibility?: { decides?: string; approves?: string; executes?: string };
+  cadence?: { every?: string; horizon?: string; leadTime?: string };
+  objectives?: { id: string; title: string; kpi?: string; unit?: string; direction?: string }[];
+  levers?: { signal: string; title: string; min?: number; max?: number }[];
+  constraints?: { id: string; title: string; signal?: string; min?: number; max?: number; note?: string }[];
+  needs: NeedDoc[];
+  analyses: AnalysisDoc[];
+  alternatives: { id: string; title: string; analysis: string; reference?: boolean; note?: string; status: Usability }[];
+}
+
+export interface DecisionStatus {
+  schema: string;
+  system: string;
+  asOf?: string;
+  decisions: DecisionDoc[];
+}
+
+/** How many analyses of the system are in each state. */
+export function usability(d: DecisionStatus | null): Record<Usability, number> & { analyses: number } {
+  const out = { usable: 0, restricted: 0, blocked: 0, analyses: 0 };
+  for (const dec of d?.decisions ?? []) {
+    for (const a of dec.analyses) {
+      out[a.status] += 1;
+      out.analyses += 1;
+    }
+  }
+  return out;
+}
+
+/** An ISO duration as a person reads it: PT15M is 15 min. Only what decision cards use. */
+export function durationText(iso: string | undefined): string {
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso ?? '');
+  if (!m) return iso ?? '';
+  return [m[1] && `${m[1]} h`, m[2] && `${m[2]} min`, m[3] && `${m[3]} s`].filter(Boolean).join(' ');
+}
+
 // ---------------------------------------------------------------- guided mode
 
 export type Place = 'system' | 'signals' | 'flows' | 'models';
@@ -331,7 +458,7 @@ export interface GuideStep {
  * The seven steps of the engineering method (user manual, chapter 16) with the state of this system in each. The
  * guide shows the next sensible step; it does not enforce an order.
  */
-export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, running: number | null): GuideStep[] {
+export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, running: number | null, decisions: DecisionStatus | null = null): GuideStep[] {
   const signals = status?.signals ?? [];
   const n = signals.length;
   const open = signals.filter((s) => s.state === 'open').length;
@@ -342,6 +469,11 @@ export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, ru
   const clean = signals.filter((s) => s.state === 'clean').length;
   const problems = status?.problems.length ?? 0;
   const uncovered = plan?.counts.inputsWithoutSignal ?? 0;
+  const use = usability(decisions);
+  const model: Pick<GuideStep, 'state' | 'mark'> =
+    use.analyses === 0
+      ? { state: clean === 0 ? 'needs clean signals' : 'none declared', mark: 'later' }
+      : { state: `${use.usable} usable, ${use.restricted} restricted, ${use.blocked} blocked`, mark: use.blocked + use.restricted === 0 ? 'done' : 'todo' };
   return [
     { n: 1, title: 'System', place: 'system', state: plan ? `${plan.counts.atoms} atoms${problems > 0 ? `, ${problems} problems` : ''}` : 'no plan', mark: plan && problems === 0 ? 'done' : 'todo' },
     { n: 2, title: 'Signals', place: 'signals', state: uncovered > 0 ? `${n} expected, ${uncovered} inputs without a signal` : `${n} expected`, mark: n > 0 && uncovered === 0 ? 'done' : 'todo' },
@@ -349,20 +481,21 @@ export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, ru
     { n: 4, title: 'Bind', place: 'signals', state: open > 0 ? `${open} open` : 'none open', mark: open > 0 ? 'todo' : 'done' },
     { n: 5, title: 'Prepare', place: 'signals', state: `${prepared} of ${needClean} prepared`, mark: needClean > 0 && prepared >= needClean ? 'done' : withRaw > 0 ? 'todo' : 'later' },
     { n: 6, title: 'Run', place: 'flows', state: running === null ? `${clean} clean` : `${running} running, ${clean} clean`, mark: prepared === 0 ? 'later' : clean >= prepared ? 'done' : 'todo' },
-    { n: 7, title: 'Model', place: 'models', state: clean === 0 ? 'needs clean signals' : 'none declared', mark: 'later' },
+    { n: 7, title: 'Model', place: 'models', ...model },
   ];
 }
 
 /** The number each place shows in the rail: what there is, or what is left to do. */
-export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, flows: number | null | undefined): Record<Place, string> {
+export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, flows: number | null | undefined, decisions: DecisionStatus | null = null): Record<Place, string> {
   const open = status?.states.open ?? 0;
   const todo = (status?.signals ?? []).filter((s) => s.next.length > 0).length;
+  const use = usability(decisions);
   return {
     system: plan ? `${plan.counts.atoms} atoms` : '',
     signals: status ? (todo > 0 ? `${open} open, ${todo} to do` : `${status.signals.length} signals`) : '',
     // null: not signed in; undefined: signed in, not counted yet
     flows: flows === null ? 'sign in' : flows === undefined ? '' : `${flows} flows`,
-    models: 'none yet',
+    models: use.analyses === 0 ? 'none yet' : use.blocked > 0 ? `${use.blocked} of ${use.analyses} blocked` : `${use.usable} of ${use.analyses} usable`,
   };
 }
 

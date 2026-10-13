@@ -23,6 +23,7 @@ import {
   deployChecks,
   evaluate,
   inputsOf,
+  cleanTopic,
   runBlocker,
   toDagYaml,
   toDefinition,
@@ -613,7 +614,9 @@ export default function Workbench() {
         const flow = useFlow.getState();
         flow.clear();
         flow.setDomain(doc.domain);
-        if (load.topic) flow.setSourceTopic(load.topic);
+        // clean series live in the topic of the clean series of the domain, raw ones in the episodes topic
+        if (gradeParam === 'clean') flow.setSourceTopic(cleanTopic(doc.domain));
+        else if (load.topic) flow.setSourceTopic(load.topic);
         flow.loadBucket(load.bucket, { kind: 'inventory', detail: load.detail });
         flow.setSourceSeries(load.seriesIds);
         flow.setContext({
@@ -678,7 +681,7 @@ export default function Workbench() {
         // a stored flow keeps the name and description it was given in the composer
         ...(s.savedId === null
           ? {
-              name: s.context ? `Clean ${s.context.signal}` : `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
+              name: s.context ? (s.context.target ? `${s.context.target.signal} from ${s.context.signal}` : `Clean ${s.context.signal}`) : `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
               description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
             }
           : {}),
@@ -832,14 +835,14 @@ export default function Workbench() {
           </span>
           {nodes.length > 1 && state.savedId === null && <span className="wb-muted">unsaved changes</span>}
           <span className="wb-grow" />
-          {state.context.grade === 'raw' && (
+          {(state.context.grade === 'raw' || state.context.grade === 'clean') && (
             <button
               className="wb-primary"
               disabled={!selected || selected.op === 'source'}
               title={selected && selected.op !== 'source' ? `Makes ${selected.label} the clean data of the signal` : 'Apply an operator to the raw series first, then select the step that is clean'}
               onClick={() => setPublishOpen(true)}
             >
-              Publish as clean signal
+              {state.context.grade === 'raw' ? 'Publish as clean signal' : 'Publish as another signal'}
             </button>
           )}
         </div>
@@ -852,7 +855,7 @@ export default function Workbench() {
           onDone={(started) => {
             const c = useFlow.getState().context!;
             setPublishOpen(false);
-            navigate(`/systems/${c.system}/signals?focus=${encodeURIComponent(c.signal)}&published=${started ? 'started' : 'saved'}`);
+            navigate(`/systems/${c.system}/signals?focus=${encodeURIComponent(c.target?.signal ?? c.signal)}&published=${started ? 'started' : 'saved'}`);
           }}
         />
       )}

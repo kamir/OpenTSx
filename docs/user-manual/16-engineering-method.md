@@ -260,15 +260,15 @@ Before a result leaves the team:
 
 | Step | Tool today | Reference |
 |---|---|---|
-| 1 Describe the decision | a file in the draft format | [`15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 3 |
+| 1 Describe the decision | a file in the draft format, listed in the system document; shown on the place "Models" | [`15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 3 |
 | 2 Mark out the system | twin plan (YAML); page "System" (`/systems`); Smart Topics Studio prototype | `opentsx-twin/README.md`, [appendix B](appendix-b-rest.md) |
 | 3 Define the signals | system document; channel catalog | [chapter 6](06-windpark.md) |
 | 4 Connect the sources | page "Signals"; TS inventory; wind farm simulator; `opentsx-market` | [appendix B](appendix-b-rest.md), [chapter 9](09-retrieval.md), [chapter 6](06-windpark.md) |
-| 5 Check preparation and analysis | workbench: operators and oscilloscope; twins | [chapter 14](14-saas-service-layer.md), [appendix A](appendix-a-cli.md) |
+| 5 Check preparation and analysis | workbench: operators and oscilloscope; place "Models": what each analysis may claim today; twins | [chapter 14](14-saas-service-layer.md), [appendix A](appendix-a-cli.md) |
 | 6 Run in the shadow | "Publish as clean signal"; place "Flows"; vector processor | [chapter 14](14-saas-service-layer.md) |
 | 7 Compare and act | twins: shadow, what-if, forecast; records as a file | [appendix A](appendix-a-cli.md) |
 | 8 Judge the effect | records as a file | [`15-ENTSCHEIDUNGSKREIS.md`](../datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 8 |
 
-What does not exist yet: the decision card in the web application, a state of a signal in several dimensions, values that are marked instead of removed, operators with several inputs on the processor,
+What does not exist yet: editing a decision card in the web application, a state of a signal in several dimensions, values that are marked instead of removed, operators with several inputs on the processor,
 revisions for late data, the four records as events, and any comparison of strategies outside the twin. The guide
 in the web application (the switch "Guide") still shows the seven steps of the earlier version of this chapter.

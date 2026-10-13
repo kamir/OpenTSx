@@ -1467,3 +1467,96 @@
 .wb-source-list p {
   margin: 6px;
 }
+
+/* ---- the plan of a system as a picture, and the decisions on the place "Models" ---- */
+.wb-plan {
+  display: grid;
+  grid-template-rows: minmax(220px, 38%) minmax(0, 1fr);
+  min-height: 0;
+}
+.wb-plan-picture {
+  min-height: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--field);
+}
+.wb-plan-picture .react-flow__node.wb-plan-node {
+  width: 150px;
+  padding: 5px 8px;
+  border-radius: 2px;
+  border: 1px solid #7fae7f;
+  border-left-width: 5px;
+  background: var(--panel);
+  color: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: default;
+}
+.wb-plan-picture .react-flow__node.wb-plan-node.todo { border-color: #c9a655; }
+.wb-plan-picture .react-flow__node.wb-plan-node.missing { border-color: #b3392b; }
+.wb-plan-node b {
+  display: block;
+  font-family: var(--mono);
+}
+.wb-plan-node span {
+  color: var(--muted, #5b6672);
+  font-size: 11px;
+}
+.wb-plan-picture .react-flow__edge-text {
+  font-size: 9px;
+}
+.wb-flow-status.blocked {
+  background: #ffe1dc;
+  border-color: #b3392b;
+}
+.wb-flow-status.restricted {
+  background: #f3e6c8;
+  border-color: #c9a655;
+}
+.wb-flow-status.usable {
+  background: #d9ecd9;
+  border-color: #7fae7f;
+}
+.wb-place-body.wide {
+  max-width: 130ch;
+}
+.wb-decision {
+  display: grid;
+  gap: 7px;
+  padding: 9px 11px;
+  background: var(--field);
+  border: 1px solid var(--line);
+}
+.wb-decision h3 {
+  font-size: 15px;
+}
+.wb-decision h3 .wb-muted {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+  margin: 0 6px;
+}
+.wb-decision h4 {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.wb-decision .wb-question {
+  font-size: 14px;
+}
+.wb-decision .wb-table td.l,
+.wb-decision .wb-table th {
+  text-align: left;
+}
+.wb-decision .wb-table td .wb-flow-status {
+  white-space: normal;
+  display: inline-block;
+}
+.wb-reasons {
+  margin: 3px 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+.wb-decision .wb-table td {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+}

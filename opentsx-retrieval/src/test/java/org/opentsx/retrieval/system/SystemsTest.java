@@ -333,6 +333,9 @@ class SystemsTest {
             assertEquals(10, JSON.readTree(signals.body()).path("signals").size());
 
             assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+            HttpResponse<String> decisions = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/decisions")).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, decisions.statusCode());
+            assertEquals("h2-dispatch", JSON.readTree(decisions.body()).path("decisions").get(0).path("id").asText());
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(base + "/no-such/signals")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
             String none = "http://localhost:" + without.port() + "/v1/systems";
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(none)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());

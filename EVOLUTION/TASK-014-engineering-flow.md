@@ -124,7 +124,24 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         die Datei geschrieben; die Sperre "Ergebnisse auf Demo-Generatoren taugen nicht für Strategievergleiche"
         ist als Label da (`fidelity: demo`), geprüft wird sie erst, wenn es Vergleiche gibt (E3); die SQL-Ablage der
         Arbeitskopie hat keinen eigenen Test (die Routen sind mit einer Ablage im Speicher getestet)
-- [ ] 014.9 L5 Models
+- [x] 014.9 L5 Models (2026-10-13, mit Grenzen)
+      - Prozessor: Operatoren `model.power-curve` (Leistungskurve als Stützstellen, linear dazwischen),
+        `feature.lag` und `feature.rolling` in der Kette für Reihen; eine Senke darf die bereinigte Reihe eines
+        Signals lesen und in ein anderes Signal schreiben (`signal.metric`, `origin`, `madeOf`), oder Merkmale in
+        `tsx.<domain>.features.v2` (Tag `feature`); gemeinsame Testvektoren für Java und TypeScript (14 Fälle)
+      - Workbench: "Publish as another signal" für einen Kontext mit bereinigter Reihe; die drei Operatoren im
+        Baukasten
+      - Modellfreigabe je Zweck (D59): der Server liest die Entscheidungskarten des Systemdokuments
+        (`decisions:`) und gibt je Analyse `usable`, `restricted` oder `blocked` mit Gründen aus
+        (`GET` und `POST /v1/systems/<id>/decisions`, Schema `opentsx.decision-status.v1`); geprüft werden Stufe,
+        Alter gegen die neuesten Daten des Systems, zugelassene Herkunft, Gültigkeitsbereich und Nachweis
+      - Ort Models: die Karten mit benötigten Signalen, Analysen und Alternativen; Leiste und Guide zählen mit
+      - Ort System: das Systembild als Graph (reactflow) über der Tabelle; Rückführungen gestrichelt
+      - Grenzen: der Vergleich von Alternativen über einen Zeitraum ist nicht gebaut (E3); die Analyse
+        `price-following` ist eine Karte ohne ausführbares Modell dahinter; der Gültigkeitsbereich wird gegen
+        Minimum und Maximum der ganzen Reihe geprüft, nicht je Zeitpunkt; das Alter gegen die neuesten Daten des
+        Systems, nicht gegen die Uhr; die Karte `h2-dispatch` ist ein Beispiel mit erfundenen Nachweisen; eine
+        Karte hat kein Schema im Build, nur ihr Entwurf
 - [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis

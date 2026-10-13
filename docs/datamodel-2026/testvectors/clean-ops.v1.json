@@ -1,6 +1,6 @@
 {
  "schema": "opentsx.testvectors.clean-ops.v1",
- "description": "Cleaning operators on one series. times are seconds relative to t0; null is a gap (NaN). Every case ends on the boundary of a window, so a run over all the data and a stream that has passed the end give the same. nodes is the form of the DAG (CleanChain, Java), workbench the form of the web workbench (ops.ts).",
+ "description": "Operators on one series: cleaning, the power curve model and features. times are seconds relative to t0; null is a gap (NaN). Every case ends on the boundary of a window, so a run over all the data and a stream that has passed the end give the same. nodes is the form of the DAG (CleanChain, Java), workbench the form of the web workbench (ops.ts).",
  "cases": [
   {
    "name": "plausible range, gaps",
@@ -446,6 +446,317 @@
      0
     ],
     "unit": "MW"
+   }
+  },
+  {
+   "name": "power curve of a turbine: nothing below cut-in and above cut-out, rated power from the rated wind",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 60,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 1
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 1
+     }
+    }
+   ],
+   "values": [
+    2,
+    3,
+    8,
+    12.5,
+    20,
+    26,
+    null,
+    10.4
+   ],
+   "expect": {
+    "times": [
+     0,
+     60,
+     120,
+     180,
+     240,
+     300,
+     360,
+     420
+    ],
+    "values": [
+     0,
+     0.0,
+     755.4026867415147,
+     3000.0,
+     3000.0,
+     0,
+     null,
+     1709.957557271725
+    ],
+    "unit": "kW"
+   }
+  },
+  {
+   "name": "power curve for four turbines that see the same wind",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 60,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 4
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 4
+     }
+    }
+   ],
+   "values": [
+    8,
+    13
+   ],
+   "expect": {
+    "times": [
+     0,
+     60
+    ],
+    "values": [
+     3021.6107469660587,
+     12000
+    ],
+    "unit": "kW"
+   }
+  },
+  {
+   "name": "feature: the value two samples earlier",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 60,
+   "nodes": [
+    {
+     "id": "lag_2",
+     "op": "feature.lag",
+     "params": {
+      "steps": 2
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "feature.lag",
+     "params": {
+      "steps": 2
+     }
+    }
+   ],
+   "values": [
+    1,
+    2,
+    3,
+    null,
+    5
+   ],
+   "expect": {
+    "times": [
+     0,
+     60,
+     120,
+     180,
+     240
+    ],
+    "values": [
+     null,
+     null,
+     1,
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "name": "feature: mean of the last minute, the current value included; gaps are left out",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 20,
+   "nodes": [
+    {
+     "id": "mean_1m",
+     "op": "feature.rolling",
+     "params": {
+      "window": "PT1M",
+      "fn": "MEAN"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "feature.rolling",
+     "params": {
+      "window": 60,
+      "fn": "MEAN"
+     }
+    }
+   ],
+   "values": [
+    3,
+    6,
+    9,
+    12,
+    null,
+    6
+   ],
+   "expect": {
+    "times": [
+     0,
+     20,
+     40,
+     60,
+     80,
+     100
+    ],
+    "values": [
+     3,
+     4.5,
+     6,
+     9,
+     10.5,
+     9
+    ]
+   }
+  },
+  {
+   "name": "feature: spread of the last two samples",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 20,
+   "nodes": [
+    {
+     "id": "std_40s",
+     "op": "feature.rolling",
+     "params": {
+      "window": "PT40S",
+      "fn": "STD"
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "feature.rolling",
+     "params": {
+      "window": 40,
+      "fn": "STD"
+     }
+    }
+   ],
+   "values": [
+    2,
+    4,
+    4,
+    8
+   ],
+   "expect": {
+    "times": [
+     0,
+     20,
+     40,
+     60
+    ],
+    "values": [
+     0,
+     1,
+     0,
+     2
+    ]
+   }
+  },
+  {
+   "name": "the estimate of the example: clean wind speed, then the power curve",
+   "t0": "2026-10-01T00:00:00Z",
+   "intervalSeconds": 20,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "resample",
+     "params": {
+      "every": "PT1M",
+      "agg": "MEAN"
+     }
+    },
+    {
+     "id": "n2",
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 1
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "resample",
+     "params": {
+      "every": 60,
+      "agg": "MEAN"
+     }
+    },
+    {
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 1
+     }
+    }
+   ],
+   "values": [
+    7,
+    8,
+    9,
+    13,
+    13,
+    13
+   ],
+   "expect": {
+    "times": [
+     0,
+     60
+    ],
+    "values": [
+     755.4026867415147,
+     3000
+    ],
+    "unit": "kW"
    }
   }
  ]

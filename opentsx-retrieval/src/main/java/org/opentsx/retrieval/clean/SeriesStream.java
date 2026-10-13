@@ -37,8 +37,18 @@ import java.util.TreeMap;
  */
 public final class SeriesStream {
 
-    /** What every clean episode says about where it comes from. */
-    public record Target(String system, String signal, String grade, String origin, String flow, String specHash) {
+    /**
+     * What every written episode says about where it belongs and comes from.
+     *
+     * @param metric  metric of the written series; null to keep that of the input (a sensor channel stays what it is)
+     * @param feature name of the feature when the grade is features, else null
+     */
+    public record Target(String system, String signal, String grade, String origin, String flow, String specHash,
+                         String metric, String feature, String madeOf) {
+
+        public Target(String system, String signal, String grade, String origin, String flow, String specHash) {
+            this(system, signal, grade, origin, flow, specHash, null, null, null);
+        }
     }
 
     private static final class Raw {
@@ -112,12 +122,20 @@ public final class SeriesStream {
 
     private SeriesKey key(SeriesKey raw) {
         Map<String, String> tags = new TreeMap<>();
-        raw.getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
+        if (target.metric() == null) {
+            // the same quantity as the input: its tags say which sensor it is
+            raw.getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
+        }
         tags.put("system", target.system());
         tags.put("signal", target.signal());
         tags.put("grade", target.grade());
+        if (target.feature() != null) {
+            tags.put("feature", target.feature());
+        } else {
+            tags.remove("feature");
+        }
         String unit = chain.outputUnit() != null ? chain.outputUnit() : raw.getUnit() == null ? null : raw.getUnit().toString();
-        return SeriesKeys.of(raw.getMetric().toString(), tags, unit);
+        return SeriesKeys.of(target.metric() != null ? target.metric() : raw.getMetric().toString(), tags, unit);
     }
 
     /**
@@ -132,6 +150,10 @@ public final class SeriesStream {
                 .label("specHash", target.specHash());
         if (target.origin() != null && !target.origin().isBlank()) {
             d.label("origin", target.origin());
+        }
+        // where the series comes from is a path, not a rank: the label names the step before this one
+        if (target.madeOf() != null && !target.madeOf().isBlank()) {
+            d.label("madeOf", target.madeOf());
         }
         return d;
     }

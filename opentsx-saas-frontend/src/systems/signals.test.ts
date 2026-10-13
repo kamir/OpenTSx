@@ -15,7 +15,13 @@ import {
   feedOf,
   filterSignals,
   guideSteps,
+  DecisionStatus,
+  PlanAtom,
   PlanDoc,
+  PlanPort,
+  durationText,
+  planGraph,
+  usability,
   railCounts,
   SystemStatus,
   groupSignals,
@@ -265,5 +271,47 @@ describe('binding and simulating a signal', () => {
         '- id: market.price_eur_mwh\n  raw:\n    source: { kind: manual, value: 62.8, origin: REPORTED }\n' +
         '- id: offtake.demand_kgph\n  raw:\n    source: { kind: generator, processor: gen.sine, seed: 1, params: { mean: 60, period: P1D } }\n'
     );
+  });
+});
+
+describe('plan as a picture and decisions', () => {
+  const port = (name: string, from?: string, signal?: string, state?: string) => ({ name, kind: 'ANALOG', from, signal, state }) as PlanPort;
+  const atom = (id: string, inputs: PlanPort[]): PlanAtom => ({ id, type: id, inputs, outputs: [], channels: 0 });
+  const loop: PlanDoc = {
+    schema: 'opentsx.system-plan.v1',
+    system: 'x',
+    title: 'x',
+    counts: { atoms: 4, inputsFromOutside: 3, inputsWithoutSignal: 1 },
+    atoms: [
+      atom('offtake', [port('demand', undefined, 'offtake.demand', 'open'), port('valve')]),
+      atom('park', [port('p_avail', undefined, 'park.p_avail', 'clean')]),
+      atom('ely', [port('p_bar', 'line.p_bar'), port('m_offtake', 'offtake.m_out'), port('p_in', 'park.p_gen')]),
+      atom('line', [port('m_in', 'ely.m_h2')]),
+    ],
+  };
+
+  it('puts an atom one column right of what feeds it and leaves a wire back where it is', () => {
+    const g = planGraph(loop);
+    expect(g.nodes.map((n) => `${n.id} ${n.layer}/${n.row} ${n.mark}`)).toEqual(['offtake 0/0 missing', 'park 0/1 ok', 'ely 1/0 ok', 'line 2/0 ok']);
+    expect(g.edges.filter((e) => e.back).map((e) => `${e.from}>${e.to}`)).toEqual(['line>ely']);
+    expect(g.edges.find((e) => e.to === 'line')!.label).toBe('m_h2 > m_in');
+    expect(g.edges.find((e) => e.back)!.label).toBe('p_bar');
+  });
+
+  it('counts what the analyses may claim, for the rail and the guide', () => {
+    const analysis = (id: string, status: 'usable' | 'restricted' | 'blocked') => ({ id, title: id, status, reasons: [], validity: [] });
+    const doc: DecisionStatus = {
+      schema: 'opentsx.decision-status.v1',
+      system: 'x',
+      decisions: [{ id: 'd', title: 'd', needs: [], alternatives: [], analyses: [analysis('a', 'restricted'), analysis('b', 'blocked')] }],
+    };
+    expect(usability(doc)).toEqual({ usable: 0, restricted: 1, blocked: 1, analyses: 2 });
+    expect(usability(null).analyses).toBe(0);
+    expect(railCounts(null, null, null, doc).models).toBe('1 of 2 blocked');
+    expect(guideSteps(null, null, null, doc)[6]).toMatchObject({ state: '0 usable, 1 restricted, 1 blocked', mark: 'todo' });
+    expect(guideSteps(null, null, null)[6]).toMatchObject({ state: 'needs clean signals', mark: 'later' });
+    expect(durationText('PT15M')).toBe('15 min');
+    expect(durationText('PT1H30M')).toBe('1 h 30 min');
+    expect(durationText('P1D')).toBe('P1D');
   });
 });

@@ -62,7 +62,8 @@ export function summarize(flow: StoredFlow): FlowSummary {
     domain: str(def.domain),
     sourceTopic: str(def.sourceTopic),
     system: str(def.system),
-    signal: str(def.signal),
+    // the signal the flow writes: its target when it computes another signal than the one it reads
+    signal: str((def.signalContext as { target?: { signal?: string } } | undefined)?.target?.signal) || str(def.signal),
     sourceSeries: Array.isArray(def.sourceSeries) ? def.sourceSeries.filter((i): i is string => typeof i === 'string') : [],
   };
   const none = { steps: [], published: [], vectors: 0, dag: '', runnable: false };

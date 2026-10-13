@@ -120,6 +120,11 @@ export interface SignalContext {
   origin?: string;
   /** Generated or modelled data: shown so it is never taken for a measurement. */
   synthetic: boolean;
+  /**
+   * Another signal the flow is published as: the estimate of one quantity from the clean data of another. Without
+   * it the flow writes the clean grade of the signal it reads.
+   */
+  target?: { signal: string; title: string; metric?: string; origin: string };
 }
 
 export interface SourceInfo {

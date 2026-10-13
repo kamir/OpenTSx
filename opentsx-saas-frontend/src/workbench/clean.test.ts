@@ -33,7 +33,9 @@ describe('cleaning operators against the test vectors shared with the processor'
       for (const step of c.workbench) bucket = OP_BY_ID[step.op].apply(bucket, step.params);
       const s = bucket.series[0];
       expect(Array.from(s.x)).toEqual(c.expect.times);
-      expect(Array.from(s.y, (v) => (Number.isNaN(v) ? null : Number(v.toPrecision(12))))).toEqual(c.expect.values);
+      // both sides to ten digits: the processor and the browser may differ in the last bit
+      const round = (v: number | null) => (v === null || Number.isNaN(v) ? null : Number(v.toPrecision(10)));
+      expect(Array.from(s.y, round)).toEqual(c.expect.values.map(round));
       if (c.expect.unit) expect(s.unit).toBe(c.expect.unit);
     });
   }
@@ -99,6 +101,28 @@ describe('a flow published as the clean grade of a signal', () => {
     expect(summary).toMatchObject({ runnable: true, system: 'h2-chain', signal: 'park/T02/WTUR.W', published: ['tsx.wind.clean.v2'], dag: 'wind-flow-23' });
     const plan = runPlan(summary);
     expect('yaml' in plan && plan.yaml).toContain('schema: opentsx.episode.v2');
+  });
+
+  it('can be published as another signal: an estimate computed from the clean data of one', () => {
+    const curve: FlowNode = { id: 'n1', op: 'model.power-curve', label: 'Potential_wind', params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: 4 }, input: 'source', sinkTopic: cleanTopic('wind') };
+    const fromClean: SignalContext = {
+      ...context,
+      signal: 'park/T02/WMET.HorWdSpd',
+      grade: 'clean',
+      target: { signal: 'park.p_avail_kw', title: 'Available power', metric: 'h2-chain.park.p_avail_kw', origin: 'ESTIMATED' },
+    };
+    const flow = { ...doc, sourceTopic: cleanTopic('wind'), nodes: [source, curve], context: fromClean };
+    const yaml = toDagYaml(flow);
+    expect(yaml).toContain('topics: [tsx.wind.clean.v2]');
+    expect(yaml).toContain('op: model.power-curve');
+    expect(yaml).toContain(
+      'signal: { system: h2-chain, id: park.p_avail_kw, grade: clean, metric: h2-chain.park.p_avail_kw }, origin: ESTIMATED, madeOf: "park/T02/WMET.HorWdSpd@clean (SYNTHETIC)" }'
+    );
+    expect(cleanChecks(flow.nodes, ['abc123'], fromClean, 'n1').every((c) => c.ok)).toBe(true);
+    // without a target, clean data of a signal is not published as itself again
+    expect(cleanChecks(flow.nodes, ['abc123'], { ...fromClean, target: undefined }, 'n1')[0]).toMatchObject({ ok: false, text: expect.stringMatching(/Choose the signal/) });
+    // the flow is listed under the signal it writes
+    expect(summarize({ id: 30, name: 'x', definition: toDefinition(flow) })).toMatchObject({ signal: 'park.p_avail_kw', runnable: true });
   });
 
   it('shares the clean topic with other signals, but one signal has one writer', () => {

@@ -16,6 +16,9 @@ import java.util.Locale;
  * ({@code opentsx-saas-frontend/src/workbench/ops.ts}); both are checked against
  * {@code docs/datamodel-2026/testvectors/clean-ops.v1.json}.
  *
+ * <p>Besides cleaning, the chain runs the first model and the features: {@code model.power-curve} (what the wind
+ * offers a turbine), {@code feature.lag} and {@code feature.rolling}.
+ *
  * <ul>
  *   <li>{@code dq.checks} with the check {@code PLAUSIBLE_RANGE}: a value outside [min, max] becomes a gap
  *   ({@code mode: gap}) or the bound ({@code mode: clip}).</li>
@@ -28,15 +31,48 @@ import java.util.Locale;
 public final class CleanChain {
 
     /** Operators this runtime executes before a series sink, by their name in the DAG. */
-    public static final List<String> OPS = List.of("dq.checks", "convert.unit", "resample");
+    public static final List<String> OPS = List.of("dq.checks", "convert.unit", "resample", "model.power-curve", "feature.lag", "feature.rolling");
+
+    /** Values a rolling window may hold; a feature over more is no feature for a stream. */
+    static final int MAX_WINDOW_VALUES = 100_000;
 
     /** Windows a series may skip before the stream starts a new run instead of filling the gap. */
     static final long MAX_EMPTY_WINDOWS = 10_000;
 
     public enum Agg { MEAN, MIN, MAX, LAST }
 
-    sealed interface Step permits Range, Convert, Resample {
+    sealed interface Step permits Range, Convert, Resample, PowerCurve, Lag, Rolling {
     }
+
+    /**
+     * Reference power curve of a wind turbine: zero below cut-in and above cut-out, rated power from the rated wind,
+     * cubic in between; times {@code count} turbines. A model, not a measurement: it says what the wind offers.
+     */
+    record PowerCurve(double ratedKw, double cutIn, double ratedWind, double cutOut, double count) implements Step {
+        double kw(double wind) {
+            if (Double.isNaN(wind)) {
+                return Double.NaN;
+            }
+            if (wind < cutIn || wind > cutOut) {
+                return 0;
+            }
+            if (wind >= ratedWind) {
+                return ratedKw * count;
+            }
+            double ci3 = cutIn * cutIn * cutIn;
+            return count * ratedKw * (wind * wind * wind - ci3) / (ratedWind * ratedWind * ratedWind - ci3);
+        }
+    }
+
+    /** The value {@code steps} samples earlier; a gap until that many samples have passed. */
+    record Lag(int steps) implements Step {
+    }
+
+    /** Aggregate of the values of the last {@code windowMicros}, the current one included. */
+    record Rolling(long windowMicros, Fn fn) implements Step {
+    }
+
+    public enum Fn { MEAN, STD, MIN, MAX }
 
     record Range(double min, double max, boolean clip) implements Step {
     }
@@ -98,6 +134,31 @@ public final class CleanChain {
                     }
                     steps.add(new Resample(every, agg));
                 }
+                case "model.power-curve" -> {
+                    PowerCurve c = new PowerCurve(p.path("ratedKw").asDouble(Double.NaN), p.path("cutIn").asDouble(Double.NaN),
+                            p.path("ratedWind").asDouble(Double.NaN), p.path("cutOut").asDouble(Double.NaN), p.path("count").asDouble(1));
+                    if (!(c.ratedKw() > 0) || !(c.cutIn() >= 0) || !(c.ratedWind() > c.cutIn()) || !(c.cutOut() >= c.ratedWind()) || !(c.count() > 0)) {
+                        throw new IllegalArgumentException("node " + id + ": a power curve needs ratedKw above zero and cutIn below"
+                                + " ratedWind, which is at most cutOut");
+                    }
+                    steps.add(c);
+                }
+                case "feature.lag" -> {
+                    int k = p.path("steps").asInt(0);
+                    if (k < 1 || k > MAX_WINDOW_VALUES) {
+                        throw new IllegalArgumentException("node " + id + ": steps must be between 1 and " + MAX_WINDOW_VALUES);
+                    }
+                    steps.add(new Lag(k));
+                }
+                case "feature.rolling" -> {
+                    Fn fn;
+                    try {
+                        fn = Fn.valueOf(p.path("fn").asText("MEAN").toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("node " + id + ": fn must be one of " + List.of(Fn.values()));
+                    }
+                    steps.add(new Rolling(micros(id, p.path("window")), fn));
+                }
                 default -> throw new IllegalArgumentException("node " + id + " (" + n.path("op").asText() + ") is not available in this"
                         + " runtime before a series sink: it runs " + OPS + ". Keep other operators for the workbench.");
             }
@@ -137,6 +198,9 @@ public final class CleanChain {
             if (s instanceof Convert c && !c.unit().isBlank()) {
                 unit = c.unit();
             }
+            if (s instanceof PowerCurve) {
+                unit = "kW";
+            }
         }
         return unit;
     }
@@ -145,8 +209,13 @@ public final class CleanChain {
         return steps.size();
     }
 
-    /** What one series carries from block to block: the open window of every resample step. */
+    /**
+     * What one series carries from block to block: the open window of every resample step, and the recent samples a
+     * lag or a rolling window still needs.
+     */
     public static final class State {
+        /** Per step the samples kept: {time, value} pairs, oldest first. */
+        final List<java.util.ArrayDeque<double[]>> kept = new ArrayList<>();
         final long[] start;
         final double[] sum;
         final long[] count;
@@ -162,6 +231,9 @@ public final class CleanChain {
             max = new double[steps];
             last = new double[steps];
             java.util.Arrays.fill(start, Long.MIN_VALUE);
+            for (int i = 0; i < steps; i++) {
+                kept.add(new java.util.ArrayDeque<>());
+            }
         }
 
         void reset(int i) {
@@ -179,6 +251,13 @@ public final class CleanChain {
                 if (start[i] != Long.MIN_VALUE) {
                     a.addObject().put("step", i).put("start", start[i]).put("sum", text(sum[i])).put("count", count[i])
                             .put("min", text(min[i])).put("max", text(max[i])).put("last", text(last[i]));
+                }
+            }
+            ArrayNode k = o.putArray("kept");
+            for (int i = 0; i < kept.size(); i++) {
+                if (!kept.get(i).isEmpty()) {
+                    ArrayNode samples = k.addObject().put("step", i).putArray("samples");
+                    kept.get(i).forEach(tv -> samples.addArray().add((long) tv[0]).add(text(tv[1])));
                 }
             }
             return o;
@@ -210,6 +289,12 @@ public final class CleanChain {
                 st.last[i] = Double.parseDouble(w.path("last").asText("NaN"));
             }
         }
+        for (JsonNode k : json.path("kept")) {
+            int i = k.path("step").asInt(-1);
+            if (i >= 0 && i < steps.size()) {
+                k.path("samples").forEach(tv -> st.kept.get(i).add(new double[]{tv.get(0).asLong(), Double.parseDouble(tv.get(1).asText("NaN"))}));
+            }
+        }
         return st;
     }
 
@@ -238,6 +323,16 @@ public final class CleanChain {
                 b = new Block(b.times(), v);
             } else if (s instanceof Resample r) {
                 b = resample(st, i, r, b, tEndMicros);
+            } else if (s instanceof PowerCurve c) {
+                double[] v = new double[b.size()];
+                for (int k = 0; k < v.length; k++) {
+                    v[k] = c.kw(b.values()[k]);
+                }
+                b = new Block(b.times(), v);
+            } else if (s instanceof Lag l) {
+                b = lag(st.kept.get(i), l, b);
+            } else if (s instanceof Rolling r) {
+                b = rolling(st.kept.get(i), r, b);
             }
         }
         return b;
@@ -286,6 +381,53 @@ public final class CleanChain {
             st.reset(i);
         }
         return new Block(java.util.Arrays.copyOf(t, n), java.util.Arrays.copyOf(v, n));
+    }
+
+    private static Block lag(java.util.ArrayDeque<double[]> kept, Lag l, Block in) {
+        double[] v = new double[in.size()];
+        for (int k = 0; k < v.length; k++) {
+            v[k] = kept.size() < l.steps() ? Double.NaN : kept.peekFirst()[1];
+            kept.addLast(new double[]{in.times()[k], in.values()[k]});
+            if (kept.size() > l.steps()) {
+                kept.removeFirst();
+            }
+        }
+        return new Block(in.times(), v);
+    }
+
+    private static Block rolling(java.util.ArrayDeque<double[]> kept, Rolling r, Block in) {
+        double[] v = new double[in.size()];
+        for (int k = 0; k < v.length; k++) {
+            long t = in.times()[k];
+            kept.addLast(new double[]{t, in.values()[k]});
+            // the window reaches back windowMicros from this sample, this sample included
+            while (!kept.isEmpty() && ((long) kept.peekFirst()[0] <= t - r.windowMicros() || kept.size() > MAX_WINDOW_VALUES)) {
+                kept.removeFirst();
+            }
+            double sum = 0;
+            double sq = 0;
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            int n = 0;
+            for (double[] tv : kept) {
+                if (!Double.isNaN(tv[1])) {
+                    sum += tv[1];
+                    sq += tv[1] * tv[1];
+                    min = Math.min(min, tv[1]);
+                    max = Math.max(max, tv[1]);
+                    n++;
+                }
+            }
+            double mean = n == 0 ? Double.NaN : sum / n;
+            v[k] = n == 0 ? Double.NaN : switch (r.fn()) {
+                case MEAN -> mean;
+                case MIN -> min;
+                case MAX -> max;
+                // of the values in the window, as a population: no value, no spread
+                case STD -> Math.sqrt(Math.max(0, sq / n - mean * mean));
+            };
+        }
+        return new Block(in.times(), v);
     }
 
     private static double value(State st, int i, Agg agg) {

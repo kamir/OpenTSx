@@ -96,6 +96,14 @@ entries are grouped by date. The detailed progress log (German) is in
   `gen.sine`), which an administrator runs over a period. Generated series go to `tsx.<domain>.synthetic.v2` and
   carry `origin: SYNTHETIC` and `fidelity: demo`. What is set there is a working copy per account
   (`/api/v1/systems/<id>/bindings`) laid over the system document; the page gives the lines for the file.
+- Models (TASK-014, stage L5). The series chain of the vector processor has a first model and features:
+  `model.power-curve` (wind speed to power by a curve of points), `feature.lag` and `feature.rolling`. A sink may
+  read the clean series of one signal and write another signal, with `origin` and `madeOf` in its labels, or
+  features to `tsx.<domain>.features.v2`; the workbench has "Publish as another signal" for that. The retrieval
+  server reads the decision cards a system document lists and says per analysis whether it is usable, restricted
+  or blocked today, with the reasons (`GET /v1/systems/<id>/decisions`): grade, age against the newest data,
+  accepted origin, the range the analysis was checked in, and its evidence. The place "Models" shows the cards; the
+  place "System" shows the plan as a graph above the table. Comparing alternatives over a period is not built.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

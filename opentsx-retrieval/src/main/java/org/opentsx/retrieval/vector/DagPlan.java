@@ -18,7 +18,7 @@ public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<Stri
         if (dag == null || !dag.isObject() || !dag.path("nodes").isArray()) {
             throw new IllegalArgumentException("the document is no opentsx.dag DAG (no nodes)");
         }
-        List<SeriesJob> series = SeriesJob.of(dag, layout.episodes(), layout.clean(), specHash);
+        List<SeriesJob> series = SeriesJob.of(dag, layout.episodes(), layout.clean(), layout.features(), specHash);
         boolean vectors = false;
         for (JsonNode sink : dag.path("sinks")) {
             vectors |= VectorJob.SCHEMA.equals(sink.path("schema").asText());

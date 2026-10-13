@@ -313,6 +313,9 @@ public final class VectorProcessor implements AutoCloseable {
         /** vector or series. */
         String kind();
 
+        /** The topic the sink reads its series from. */
+        String sourceTopic();
+
         List<String> seriesIds();
 
         boolean fromStart();
@@ -354,6 +357,11 @@ public final class VectorProcessor implements AutoCloseable {
         @Override
         public String kind() {
             return "vector";
+        }
+
+        @Override
+        public String sourceTopic() {
+            return null;    // the episodes topic of the domain
         }
 
         @Override
@@ -426,6 +434,11 @@ public final class VectorProcessor implements AutoCloseable {
         @Override
         public String kind() {
             return "series";
+        }
+
+        @Override
+        public String sourceTopic() {
+            return job.sourceTopic();
         }
 
         @Override
@@ -550,7 +563,12 @@ public final class VectorProcessor implements AutoCloseable {
             stream = job.open(saved == null ? null : saved.path("stream"));
             consumer = consumers.get();
             List<TopicPartition> tps = new ArrayList<>();
-            for (PartitionInfo p : consumer.partitionsFor(layout.episodes(), Duration.ofSeconds(30))) {
+            String source = job.sourceTopic() == null ? layout.episodes() : job.sourceTopic();
+            List<PartitionInfo> partitions = consumer.partitionsFor(source, Duration.ofSeconds(30));
+            if (partitions == null || partitions.isEmpty()) {
+                throw new IllegalStateException("the source topic " + source + " does not exist yet; nothing has written it");
+            }
+            for (PartitionInfo p : partitions) {
                 tps.add(new TopicPartition(p.topic(), p.partition()));
             }
             Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, Duration.ofSeconds(30));
