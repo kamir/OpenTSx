@@ -109,6 +109,19 @@ export interface FlowNode {
   sinkTopic?: string;
 }
 
+/** The signal of a system the workbench was opened for (concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md). */
+export interface SignalContext {
+  system: string;
+  systemTitle: string;
+  signal: string;
+  grade: string;
+  /** What the signal should look like; min and max are drawn on the scope. */
+  expect: { unit?: string; min?: number; max?: number; interval?: string };
+  origin?: string;
+  /** Generated or modelled data: shown so it is never taken for a measurement. */
+  synthetic: boolean;
+}
+
 export interface SourceInfo {
   /** 'generator' | 'file' | 'retrieval' | 'inventory' */
   kind: string;

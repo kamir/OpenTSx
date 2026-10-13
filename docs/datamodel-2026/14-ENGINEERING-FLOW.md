@@ -1,8 +1,8 @@
 # OpenTSx: Engineering-Ablauf vom System zum Modell (Konzept und Entwurf)
 
 > Stand: 2026-10-13, dritte Fassung. **Freigegeben am 2026-10-13** mit zwei Änderungen gegenüber dem Vorschlag
-> (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt sind bisher die Beispieldokumente
-> und die zwei JSON-Schemas in diesem Verzeichnis; die Lieferstufen stehen in Abschnitt 10. Arbeitspaket:
+> (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt ist die Lieferstufe L1 (Abschnitt
+> 10): Systemdokument mit Prüfung, Zustand der Signale, Seite "Signals", Sprung auf den Schirm. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md); dort stehen auch die Befunde der beiden Reviews.
 
 ## 1. Kurzfassung
@@ -129,7 +129,7 @@ Startwert, eine gestrichelte Kurve, und die Marke vererbt sich auf jedes abgelei
 ## 5. Deklarative Darstellung des Systems: `opentsx.system.v1`
 
 Ein Dokument je System. Schema: [`schemas/opentsx.system.v1.schema.json`](schemas/opentsx.system.v1.schema.json),
-Beispiel: [`examples/h2-chain.system.yaml`](examples/h2-chain.system.yaml).
+Beispiel: [`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml).
 
 ```yaml
 schema: opentsx.system.v1
@@ -163,8 +163,8 @@ signals:
     raw:
       source: { kind: manual, value: 5000, origin: REPORTED }
 flows:
-  - { id: turbine-power-clean, ref: docs/datamodel-2026/examples/flows/turbine-power-clean.flow.yaml }
-  - { id: park-power, ref: docs/datamodel-2026/examples/flows/park-power.flow.yaml }
+  - { id: turbine-power-clean, ref: systems/flows/turbine-power-clean.flow.yaml }
+  - { id: park-power, ref: systems/flows/park-power.flow.yaml }
 ```
 
 Regeln:
@@ -250,8 +250,8 @@ Bis dahin bleiben Flows mit Transformatoren interaktiv, und die Oberfläche sagt
 Heute steht die Bedeutung eines Operators an drei Stellen: in `ops.ts`, im Java-Code und in der Tabelle in
 [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), Abschnitt 6. Schema:
 [`schemas/opentsx.processor.v1.schema.json`](schemas/opentsx.processor.v1.schema.json), Beispiele:
-[`gen.ou`](examples/processors/gen.ou.yaml), [`dq.plausible-range`](examples/processors/dq.plausible-range.yaml),
-[`align.vector`](examples/processors/align.vector.yaml).
+[`gen.ou`](../../systems/processors/gen.ou.yaml), [`dq.plausible-range`](../../systems/processors/dq.plausible-range.yaml),
+[`align.vector`](../../systems/processors/align.vector.yaml).
 
 | `kind` | Eingänge | Beispiele |
 |---|---|---|
@@ -425,7 +425,7 @@ vom kleinsten Stand her gebaut, der die Idee von Anfang bis Ende zeigt.
 
 | Stufe | Inhalt | Sichtbar |
 |---|---|---|
-| L1 | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfwerkzeug in der CI; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
+| L1 (**umgesetzt** 2026-10-13) | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfung im Build; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
 | L2 | Hülle: Leiste, Pfad, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System mit eingebettetem Prototyp | ein Rahmen statt drei Seiten |
 | L3 | Topic `clean`, Senke für Reihen, Operatoren im Prozessor (013.5), Übersetzung Flow zu DAG; "Publish as clean signal" | Rohdaten werden fortlaufend zu bereinigten Reihen |
 | L4 | Topic `synthetic`, Generator-Laufzeit mit eigenem Recht, erste Generatoren; Aktionen Bind und Simulate | offene Signale werden gebunden oder simuliert |

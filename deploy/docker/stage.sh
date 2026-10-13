@@ -85,6 +85,13 @@ cp "$ROOT"/opentsx-windpark/scenarios/*.yaml "$H/share/scenarios/"
 # channel catalog as a file: the retrieval server hands it out in the series inventory (--catalog)
 cp "$ROOT"/opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml "$H/share/windpark/"
 cp -R "$ROOT"/opentsx-twin/src/main/resources/twin/. "$H/share/twin/"   # including subdirectories (beispiel/)
+# system documents (opentsx.system.v1) and what they refer to, under their repository paths: the retrieval server
+# reads them with --systems share/repo/systems --systems-root share/repo
+R="$H/share/repo"
+mkdir -p "$R/systems" "$R/opentsx-twin/src/main/resources/twin" "$R/opentsx-windpark/src/main/resources/windpark"
+cp -R "$ROOT"/systems/. "$R/systems/"
+cp "$ROOT"/opentsx-twin/src/main/resources/twin/*.yaml "$R/opentsx-twin/src/main/resources/twin/"
+cp "$ROOT"/opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml "$R/opentsx-windpark/src/main/resources/windpark/"
 cp "$ROOT"/opentsx-modbus/src/main/resources/modbus/*.yaml "$H/share/modbus/"
 # small DWD test fixtures (real file layout, a few KB): offline mode of the dwd demo Job and the probe
 cp "$ROOT"/opentsx-dwd/src/test/resources/dwd/MOSMIX_L_2026101209_10578.kml \

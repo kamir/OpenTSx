@@ -67,6 +67,12 @@ entries are grouped by date. The detailed progress log (German) is in
   whole system: which signal comes from where) and `opentsx.processor.v1` (generators, transformers, models),
   with examples for the system `h2-chain`. Signed off on 2026-10-13 with three grades of a signal (raw, clean,
   features) and an optional guided mode; the implementation follows in delivery stages.
+- Signals of a system (TASK-014, stage L1). System documents (`opentsx.system.v1`) live in `systems/`; the
+  retrieval server reads them (`--systems`), checks every reference against the twin plan, the channel catalog and
+  the inventory, and hands out the state of each signal computed from the TS inventory (`GET /v1/systems`,
+  `/v1/systems/<id>/signals`). The web application has the page "Signals" (`/systems`): expectation, origin, state
+  and next step per signal. "Prepare" opens the raw series of a signal in the workbench, with a context line and
+  the expected range on the scope. `deploy/k3s`: the retrieval server on KafScale serves the documents of the image.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

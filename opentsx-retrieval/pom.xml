@@ -43,6 +43,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- ports of a twin plan, for checking the signals of a system document -->
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-twin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.opentsx</groupId>
             <artifactId>opentsx-windpark</artifactId>
             <version>${project.version}</version>
@@ -56,6 +62,13 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- validates the system documents against their JSON schemas in the build -->
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>1.5.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

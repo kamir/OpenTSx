@@ -22,6 +22,9 @@
     ground-truth bands), build the processing flow as a graph, publish a node as a Smart Topic and deploy it. The
     limits are in [`EVOLUTION/TASK-013-web-workbench.md`](../../EVOLUTION/TASK-013-web-workbench.md): of all
     operators, the processor runs only the alignment of series to a common clock.
+  * **Signals** (`/systems`): the signals a system expects, each with its expectation, origin, state and next
+    step, read from the retrieval server (`GET /v1/systems`). "Prepare" opens the raw series of a signal in the
+    workbench with the expected range on the screen.
   * the earlier visual flow builder (`/flow-builder`); its flows cannot be opened in the workbench.
 * How the pieces are meant to be used together is described as a method in
   [chapter 16](16-engineering-method.md).

@@ -31,7 +31,22 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       Güten (`raw`, `clean`, `features`); **D50 ergänzt** um einen wahlweisen geführten Modus mit nummerierten
       Schritten. Folge: D51, ein Topic für Merkmale je Domain (nicht eigens entschieden). Konzept, Schema, Beispiel
       und Leitfaden sind nachgezogen
-- [ ] 014.4 L1 Systemdokument, Prüfwerkzeug, Signalzustand, Ort Signals mit Sprung auf den Schirm
+- [x] 014.4 L1 (Stand 2026-10-13)
+      - Systemdokumente liegen unter `systems/` (`h2-chain.system.yaml`, `flows/`, `processors/`), nicht mehr als
+        Beispiele unter `docs/`
+      - `opentsx-retrieval`, Paket `system`: `SystemDoc` lädt das Dokument mit Schaltplan, Katalogen und Inventar
+        und sammelt Fehler (Port fehlt, Einheit weicht ab, Kanal oder Asset unbekannt, Flow schreibt die Güte nicht,
+        Kennung doppelt und weitere); `Systems` berechnet je Signal Quelle, Herkunft, Zustand und nächsten Schritt
+        aus dem TS-Inventar
+      - Routen `GET /v1/systems` und `/v1/systems/<id>/signals` (`opentsx.signal-status.v1`); Schalter `--systems`
+        und `--systems-root`; das Image bringt die Dokumente mit (`deploy/docker/stage.sh`)
+      - Prüfung im Maven-Build: beide JSON-Schemas gegen die Dokumente, 15 gezielte Fehlerfälle, Zustände, Routen
+      - Oberfläche: Seite "Signals" (`/systems`), gruppiert nach Baustein und Asset, mit Filtern und Details;
+        "Prepare" und "Open on scope" öffnen die Workbench mit Kontextzeile und erwartetem Wertebereich auf dem
+        Schirm; Nachfrage, bevor ein ungespeicherter Flow ersetzt wird
+      - Grenzen: Die Zustände "running" und "stale" gibt es noch nicht (nichts läuft); Bind, Simulate, Generate
+        und Start sind sichtbar, aber gesperrt, mit Hinweis auf die Lieferstufe; die Bindung wird von Hand ins
+        Dokument geschrieben; Schreibform der Flows (`opentsx.flow.v1`) ohne Schema
 - [ ] 014.5 L2 Hülle, Beschriftungen, Orte Flows und System
 - [ ] 014.6 L3 Topic für bereinigte Reihen, Senke für Reihen, Operatoren im Prozessor, "Publish as clean signal"
 - [ ] 014.7 L4 Generatoren: Topic, Laufzeit, Bind und Simulate
@@ -44,10 +59,9 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
 * Ein Hinweis bleibt stehen und ist gewollt: Das Inventar nennt für das Asset `h2-chain/park/T02` die Reihe der
   Windgeschwindigkeit nicht, das Systemdokument bindet sie. Das ist der Fall, den D47 entscheidet.
 * 13 Gegenproben (je eine Änderung, die das Schema ablehnen muss) werden abgelehnt.
-* Das Prüfskript liegt nicht im Repository; es wird in L1 Teil der CI. Für `opentsx.flow.v1` gibt es noch kein
-  Schema, nur die beiden Beispiele.
-* Nicht geprüft: ob der Schaltplan die genannten Ports hat (die Portliste kennt nur der Java-Code; der Engineering-
-  Review hat die sechs Eingänge und ihre Einheiten gegen `PortSpec` bestätigt).
+* Seit L1 läuft diese Prüfung im Maven-Build (`SystemDocTest`); das Skript aus der Entwurfsphase ist damit
+  abgelöst. Für `opentsx.flow.v1` gibt es noch kein Schema, nur die drei Flows unter `systems/flows/`.
+* Ports und ihre Einheiten prüft `SystemDoc` seit L1 gegen den Schaltplan (`AtomCatalog`).
 
 ## Review
 

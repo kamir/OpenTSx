@@ -1,10 +1,11 @@
 # 16. Engineering method: from the system to the model
 
 > **Status: method described, tooling partial.** This chapter describes a way of working. Each step says what
-> OpenTSx supports today and what is planned. The planned parts are a draft waiting for sign-off:
-> [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../datamodel-2026/14-ENGINEERING-FLOW.md) (German) with the
-> work item [`EVOLUTION/TASK-014-engineering-flow.md`](../../EVOLUTION/TASK-014-engineering-flow.md). Where this
-> chapter and the draft differ after sign-off, the draft is the source and this chapter follows.
+> OpenTSx supports today and what is planned. The design behind it was signed off on 2026-10-13:
+> [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../datamodel-2026/14-ENGINEERING-FLOW.md) (German), with the
+> work item [`EVOLUTION/TASK-014-engineering-flow.md`](../../EVOLUTION/TASK-014-engineering-flow.md). Its first
+> delivery stage exists: the system document and the page "Signals". Where this chapter and the design differ,
+> the design is the source and this chapter follows.
 
 ## 16.1 What the method is for
 
@@ -62,8 +63,10 @@ are in.
 * **Result:** the signal list of the system.
 * **Done when:** every signal has an expectation a stranger could check data against.
 * **Pitfall:** deriving the range from the data you have. Then nothing is ever out of range.
-* **Today:** the wind farm channel catalog ([chapter 6](06-windpark.md)); port units in the twin plan.
-  **Planned:** the signal list as part of a system document (`opentsx.system.v1`).
+* **Today:** the wind farm channel catalog ([chapter 6](06-windpark.md)); port units in the twin plan; the signal
+  list as part of a system document (`opentsx.system.v1`, for example
+  [`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml)). The build checks every reference of the
+  document: atoms and ports against the plan, channels against the catalog, assets against the inventory.
 
 ### Step 3: Take stock: expected against available
 
@@ -76,8 +79,10 @@ are in.
 * **Pitfall:** counting a series as available because its name matches. Check unit and range.
 * **Today:** the TS inventory of the retrieval server (`GET /v1/inventory`) and the "TS Inventory" dialog of the
   workbench list every series with period, range, missing values and the ground truth of the scenario
-  ([chapter 9](09-retrieval.md)). The comparison with the expectation is done by eye. **Planned:** the place
-  "Signals", which computes the state of each signal and names the next action.
+  ([chapter 9](09-retrieval.md)). The page "Signals" of the web application (`/systems`) puts the two side by
+  side: for every signal of a system the expectation, the origin, a state computed from the system document and
+  the inventory, and the next step. A signal whose data leaves the expected range is flagged. **Planned:** the
+  states "running" and "stale", which need flows that run.
 
 ### Step 4: Bind or simulate
 
@@ -91,9 +96,9 @@ are in.
   data.
 * **Today:** the twin binds series to input ports per run and carries the origin (`MEASURED`, `REPORTED`,
   `FORECAST`, `ESTIMATED`, `SYNTHETIC`); the wind farm simulator and `opentsx-market` provide data; series loaded
-  into the workbench from the inventory keep the labels of their scenario. **Planned:** bindings declared in the
-  system document; generators described as processors and preset from the expectation; a runtime that writes
-  generated series to a topic.
+  into the workbench from the inventory keep the labels of their scenario; bindings are declared in the system
+  document, written by hand. **Planned:** binding and simulating as actions of the page "Signals"; generators
+  described as processors and preset from the expectation; a runtime that writes generated series to a topic.
 
 ### Step 5: Prepare: from raw to clean
 
@@ -108,8 +113,9 @@ are in.
 * **Pitfall:** tuning the preparation on one stretch of data. Check a second period and the known events.
 * **Today:** the workbench ([chapter 14](14-saas-service-layer.md)): load series from the TS inventory, apply
   operators, inspect on the oscilloscope with cursors, measurements and ground-truth bands, save the flow. This
-  works interactively in the browser. **Planned:** the workbench opened for one signal with its expectation on the
-  screen, and "Publish as clean signal".
+  works interactively in the browser. "Prepare" on the page "Signals" opens the workbench for one signal: its raw
+  series, a line that names system, signal, expectation and origin, and the expected range drawn on the screen.
+  **Planned:** "Publish as clean signal", which makes the flow the source of the clean grade.
 
 ### Step 6: Run
 
@@ -156,8 +162,7 @@ are in.
 
 The system `h2-chain`: a wind farm feeds an electrolyser, a hydrogen line with an offtaker, a battery, the grid
 connection and a direct marketer. The example document is
-[`docs/datamodel-2026/examples/h2-chain.system.yaml`](../datamodel-2026/examples/h2-chain.system.yaml) (a draft
-format, not read by code yet).
+[`systems/h2-chain.system.yaml`](../../systems/h2-chain.system.yaml).
 
 | Step | In the example |
 |---|---|
@@ -191,12 +196,12 @@ Before a model result leaves the team:
 |---|---|---|
 | 1 Define the system | twin plan (YAML), Smart Topics Studio prototype | `opentsx-twin/README.md`, `docs/prototypes/smart-topics-studio.html` |
 | 2 Expected signals | channel catalog; port units in the plan | [chapter 6](06-windpark.md) |
-| 3 Take stock | TS inventory (REST and workbench dialog); streaming statistics and data quality | [chapter 9](09-retrieval.md), [chapter 7](07-stats-quality.md) |
+| 3 Take stock | page "Signals" (`/systems`); TS inventory (REST and workbench dialog); streaming statistics and data quality | [appendix B](appendix-b-rest.md), [chapter 9](09-retrieval.md), [chapter 7](07-stats-quality.md) |
 | 4 Bind or simulate | twin inputs per run; wind farm simulator; `opentsx-market` | [chapter 6](06-windpark.md), [appendix A](appendix-a-cli.md) |
 | 5 Prepare | workbench: operators and oscilloscope | [chapter 14](14-saas-service-layer.md) |
 | 6 Run | Flow Composer: start and stop; vector processor | [chapter 14](14-saas-service-layer.md) |
 | 7 Model | twins: shadow, what-if, forecast | [appendix A](appendix-a-cli.md) |
 
-What does not exist yet: one place that holds the signal list of a system with its states, generators that write
-continuously, preparation flows that run on the processor, and models fed from clean series. Those are the
-delivery stages of the draft named at the top of this chapter.
+What does not exist yet: binding and simulating from the page, generators that write continuously, preparation
+flows that run on the processor, and models fed from clean series. Those are the remaining delivery stages of the
+design named at the top of this chapter.

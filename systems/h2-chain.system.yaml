@@ -1,5 +1,5 @@
-# Example system document, schema opentsx.system.v1 (draft).
-# Concept: docs/datamodel-2026/14-ENGINEERING-FLOW.md. Not read by code yet.
+# System document, schema opentsx.system.v1 (docs/datamodel-2026/schemas). Concept:
+# docs/datamodel-2026/14-ENGINEERING-FLOW.md. Read by the retrieval server (--systems) and checked in the build.
 #
 # The plan is the twin scenario h2-chain. Its six inputs bound from outside are signals a person has to provide.
 # The wind farm stands on the data of the simulator scenario ostsee-demo in tsx.wind.episodes.v2, which is why its
@@ -79,6 +79,6 @@ signals:
     # open: no source
 
 flows:
-  - { id: turbine-power-clean, ref: docs/datamodel-2026/examples/flows/turbine-power-clean.flow.yaml }
-  - { id: turbine-power-features, ref: docs/datamodel-2026/examples/flows/turbine-power-features.flow.yaml }
-  - { id: park-power, ref: docs/datamodel-2026/examples/flows/park-power.flow.yaml }
+  - { id: turbine-power-clean, ref: systems/flows/turbine-power-clean.flow.yaml }
+  - { id: turbine-power-features, ref: systems/flows/turbine-power-features.flow.yaml }
+  - { id: park-power, ref: systems/flows/park-power.flow.yaml }
