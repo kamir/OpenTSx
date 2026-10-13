@@ -1133,3 +1133,33 @@
   border: 0;
   box-shadow: none;
 }
+
+.wb-flow-run {
+  white-space: nowrap;
+}
+.wb .wb-flow-run button {
+  margin-left: 6px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+.wb-flow-status.running {
+  background: #d9ecd9;
+  border-color: #7fae7f;
+}
+.wb-flow-status.starting {
+  background: #dbe7f3;
+  border-color: #7d9dbd;
+}
+.wb-flow-status.failed {
+  background: #ffe1dc;
+  border-color: #b3392b;
+}
+.wb-flow-run-box {
+  display: grid;
+  gap: 5px;
+  padding: 6px 8px;
+  justify-items: start;
+}
+.wb-flow-run-box p {
+  margin: 0;
+}
