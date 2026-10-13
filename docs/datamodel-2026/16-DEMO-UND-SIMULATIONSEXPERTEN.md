@@ -1,6 +1,6 @@
 # 16. Demo der Wasserstoffkette und Simulations-Experten als Agenten
 
-> Stand: 2026-10-13. **Entwurf, nichts davon ist entschieden.** Dieses Dokument plant eine Demo am System
+> Stand: 2026-10-13. **Entschieden am 2026-10-13 sind D70 bis D73 (Abschnitt 6); D74 ist offen.** Dieses Dokument plant eine Demo am System
 > `h2-chain`, beschreibt die Rollen von Simulations-Experten als Agenten und listet, was für beides fehlt. Es baut
 > auf [14](14-ENGINEERING-FLOW.md) und [15](15-ENTSCHEIDUNGSKREIS.md) auf. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md), 014.15.
@@ -154,12 +154,17 @@ Geordnet nach dem, was die Demo B und das Produkt am stärksten aufhält.
 Das verschiebt die Reihenfolge aus [15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 13.4: Dort folgt auf S1 das Jahr 2025
 (J1) und dann E1a. Ob Lauf-Dienst und Rollen vor J1 kommen, ist zu entscheiden.
 
-## 6. Offene Entscheidungen
+## 6. Entscheidungen
 
-| Nr. | Frage | Vorschlag |
-|---|---|---|
-| D70 | Demo A zuerst, oder gleich auf Demo B hinarbeiten? | Demo A zuerst: Sie kostet fast nichts und zeigt, was der Fachperson fehlt |
-| D71 | Wo entstehen die Rollen zuerst? | beim Anbieter, als Agenten-Definitionen im Repository; das Produkt folgt mit dem Werkzeugvertrag |
-| D72 | Fünf Rollen oder weniger? | fünf als Rollen, aber ein Assistent als Gesicht: Die Fachperson spricht mit einem, die Prüfer arbeiten dahinter |
-| D73 | Lauf-Dienst und Rollen vor J1? | ja für den Lauf-Dienst, J1 daneben; ohne Lauf-Dienst kann kein Assistent rechnen, ohne J1 kann er es, nur eben auf simulierten Daten |
-| D74 | Wo läuft das Sprachmodell, und was darf das Haus des Betreibers verlassen? | vor Demo B mit dem Betreiber klären; bis dahin nur Beispieldaten |
+Entschieden vom Auftraggeber am 2026-10-13.
+
+| Nr. | Frage | Entscheidung | Stand |
+|---|---|---|---|
+| D70 | Womit beginnt die Demo? | **Demo A zuerst:** mit dem, was da ist | wie vorgeschlagen |
+| D71 | Wo entstehen die Rollen zuerst? | beim Anbieter, als Agenten-Definitionen im Repository (`.claude/agents/sim-*.md`) | wie vorgeschlagen |
+| D72 | Wie viele Rollen? | fünf: Szenario-Assistent, Datenprüfer, Modellprüfer, Betriebsstratege, Berichter. Im Produkt später ein Assistent als Gesicht, die Prüfer dahinter | wie vorgeschlagen |
+| D73 | Was kommt nach S1? | **erst Demo A ausrollen** und durchspielen; die nächste Baustufe wird danach entschieden | **geändert** (Vorschlag war: Lauf-Dienst, J1 daneben) |
+| D74 | Wo läuft das Sprachmodell, und was darf das Haus des Betreibers verlassen? | offen; vor Demo B mit dem Betreiber zu klären, bis dahin nur Beispieldaten | offen |
+
+Die fünf Definitionen liegen unter `.claude/agents/`. Sie arbeiten mit der Kommandozeile und den Schnittstellen,
+die es gibt, und sagen, wenn eine Frage ein Werkzeug braucht, das fehlt (Abschnitt 3.2).
