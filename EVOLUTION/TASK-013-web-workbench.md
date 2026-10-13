@@ -6,7 +6,8 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-vector-runtime` (013.11, baut auf 013.10 auf);
+- **Delivery-Branch**: `opentsx/2026-task013-secure-dag-runs` (013.12), Worktree `../OpenTSx-worktrees/secure-dag-runs`;
+  `opentsx/2026-task013-vector-runtime` (013.11, PR #168, gemergt, baut auf 013.10 auf);
   `opentsx/2026-task013-vector-sink` (013.10, PR #166, baut auf 013.8 auf); `opentsx/2026-task013-ts-inventory`
   (013.8, PR #165); davor `opentsx/2026-task013-web-workbench`
   (013.1 bis 013.4, gemergt mit PR #161 am 2026-10-12)
@@ -120,6 +121,14 @@ Beobachtungen am Swing-Code:
       - Workbench: der DAG nennt die geladenen Reihen (`source.series`); Reiter "Smart Topic" hat "Run once and
         write to KafScale" mit Ergebnis oder Ablehnungsgrund
       - k3s: `RETRIEVAL_DAG_RUNS=true`
+- [x] 013.12 Schreibweg absichern und Tests in die CI (Stand 2026-10-13)
+      - Retrieval-Server: Läufe nur mit Lauf-Token (`OPENTSX_DAG_RUN_TOKEN`, Header `X-OpenTSx-Run-Token`)
+      - SaaS-Backend: `POST /api/v1/dags/run` prüft das Konto und reicht den DAG mit dem Token weiter;
+        `DAG_RUN_ROLE` legt fest, wer schreiben darf (Standard: nur Administratoren)
+      - Frontend-Image: `/retrieval/v1/dags/` ist gesperrt; die Workbench ruft das Backend
+      - Ein Lauf schlägt fehl, wenn der Broker nicht jeden Messpunkt bestätigt (vorher blieb das unbemerkt); ein
+        nicht lesbares Vektor-Topic hält die übrigen Topics nicht mehr auf
+      - CI: Jobs "SaaS frontend" (Typen, Lint, Tests, Build) und "SaaS backend" (pytest)
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
       Eingängen gibt es seit 013.10
@@ -147,9 +156,13 @@ Beobachtungen am Swing-Code:
   Ein zweiter Lauf hängt erneut an; beim Lesen gilt der spätere Messpunkt.
 * **Nur Vektoren direkt auf der Quelle.** Steht ein anderer Operator vor dem Vektor (Normierung, Glättung,
   Resampling), lehnt der Server ab und nennt den Knoten. Solche Flüsse rechnet weiterhin nur die Workbench.
-* **Schreibzugriff ohne Anmeldung.** `POST /v1/dags/run` ist wie die ganze Retrieval-Schnittstelle ohne Anmeldung
-  erreichbar. Wer den Port erreicht, kann Vektor-Topics der Domäne beschreiben. Deshalb ist der Schalter
-  standardmäßig aus (`RETRIEVAL_DAG_RUNS=false`).
+* **Schreiben nur mit Konto, Lesen ohne.** Seit 013.12 läuft das Schreiben über das Backend und ist auf
+  Administratoren beschränkt (`SAAS_DAG_RUN_ROLE=superuser`). Mit `user` darf jedes Konto schreiben; weil sich
+  jeder registrieren kann, ist das praktisch offen. Das Lesen über `/retrieval/` braucht weiterhin kein Konto.
+  Das Lauf-Token schützt nur, solange der Retrieval-Server nicht auf anderem Weg ohne Token erreichbar gemacht wird
+  (im Cluster ist sein Port für alle Pods offen; eine NetworkPolicy gibt es nicht).
+* **Kein Alles-oder-nichts.** Bestätigt der Broker nur einen Teil der Messpunkte, schlägt der Lauf fehl, und der
+  bestätigte Teil bleibt im Topic. Ein neuer Lauf schreibt alles erneut.
 * **Ein Quell-Bucket.** Alle Eingänge stammen aus dem einen geladenen Bucket. Vektoren über mehrere Topics sind
   nicht abgedeckt.
 * **Nur Zeitachsen.** FFT, Histogramm, DFA und ähnliche Knoten sind keine Komponenten; der Operator lehnt sie ab.
@@ -214,3 +227,10 @@ curl -s localhost:8080/v1/inventory | head -c 400
   laden. Der Endoffset des Topics ist 7200, weil der Lauf zweimal lief (der zweite nach der Korrektur der
   Komponentenreihenfolge). Retrieval-Server `opentsx/tools:3.0.0-task013-8` mit `--dag-runs true`, Frontend
   `3.0.0-task013-9`.
+* 2026-10-13: Absicherung (013.12) auf master2 ausgerollt und geprüft: anonym und mit normalem Konto wird der Lauf
+  abgewiesen, der direkte Weg über `/retrieval/v1/dags/` antwortet mit 403. Beim ersten Lauf als Administrator
+  (08:46 UTC) wies der Broker Schreiben und Lesen eine gute Minute lang mit REQUEST_TIMED_OUT ab: KafScale stuft
+  seinen Objektspeicher nach einem einzelnen langsamen Schreibzugriff für 60 Sekunden als "degraded" ein und lehnt
+  dann alles ab (Befund KOI-2026-10-13-01 in den KafScale-Ops-Insights). Von 3600 Messpunkten kamen 280 an; die
+  Partition ist intakt. Daraus: Der Lauf wiederholt Schreibversuche jetzt bis zu drei Minuten mit Pausen und
+  schlägt fehl, wenn nicht alles bestätigt ist.

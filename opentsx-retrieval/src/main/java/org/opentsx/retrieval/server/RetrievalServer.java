@@ -58,6 +58,7 @@ public final class RetrievalServer implements AutoCloseable {
     private final EpisodeService service;
     private final SeriesInventory inventory;
     private final DagRunner dagRunner;
+    private final byte[] dagRunToken;
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
 
@@ -76,11 +77,24 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode run(JsonNode dag, String text);
     }
 
+    /** Header a caller of {@code POST /v1/dags/run} proves itself with when the server has a run token. */
+    public static final String RUN_TOKEN_HEADER = "X-OpenTSx-Run-Token";
+
     /** @param dagRunner behind {@code POST /v1/dags/run}; null when the server does not run DAGs */
     public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, DagRunner dagRunner) throws IOException {
+        this(service, port, inventory, dagRunner, null);
+    }
+
+    /**
+     * @param dagRunner   behind {@code POST /v1/dags/run}; null when the server does not run DAGs
+     * @param dagRunToken when not blank, a run needs this value in the header {@link #RUN_TOKEN_HEADER}
+     */
+    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory, DagRunner dagRunner,
+                           String dagRunToken) throws IOException {
         this.service = service;
         this.inventory = inventory;
         this.dagRunner = dagRunner;
+        this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
         http.createContext("/v1/", this::handle);
@@ -109,6 +123,9 @@ public final class RetrievalServer implements AutoCloseable {
                 if (dagRunner == null) {
                     json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error",
                             "this server does not run DAGs (it needs --kafscale and --dag-runs true)"));
+                } else if (!mayRun(ex)) {
+                    json(ex, 401, EpisodeJson.JSON.createObjectNode().put("error",
+                            "this server runs DAGs for callers with its run token only (header " + RUN_TOKEN_HEADER + ")"));
                 } else {
                     json(ex, 200, runDag(ex));
                 }
@@ -153,6 +170,15 @@ public final class RetrievalServer implements AutoCloseable {
             eq.resample(Duration.parse(q.get("resample")), Resampling.Agg.valueOf(q.getOrDefault("agg", "MEAN")));
         }
         return eq.fetch();
+    }
+
+    private boolean mayRun(HttpExchange ex) {
+        if (dagRunToken == null) {
+            return true;
+        }
+        String given = ex.getRequestHeaders().getFirst(RUN_TOKEN_HEADER);
+        // constant time, so the answer does not tell how much of a guess was right
+        return given != null && java.security.MessageDigest.isEqual(dagRunToken, given.getBytes(StandardCharsets.UTF_8));
     }
 
     /** A DAG document is small; anything larger is not one. */
@@ -326,8 +352,9 @@ public final class RetrievalServer implements AutoCloseable {
      * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
      * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
      * {@code tsx.<domain>.episodes.v2} into memory and follows it, and it reads the vector topics of the domain.
-     * {@code --dag-runs true} lets {@code POST /v1/dags/run} write vector topics: the API has no authentication, so
-     * switch it on in a trusted network only. {@code --scenario} and {@code --catalog} are handed out unchanged in
+     * {@code --dag-runs true} lets {@code POST /v1/dags/run} write vector topics. With a run token
+     * ({@code --dag-run-token} or the environment variable {@code OPENTSX_DAG_RUN_TOKEN}) a run needs it in the header
+     * {@code X-OpenTSx-Run-Token}; without one, anyone who reaches the port can write. {@code --scenario} and {@code --catalog} are handed out unchanged in
      * {@code GET /v1/inventory}.
      */
     public static void main(String[] args) throws Exception {
@@ -357,6 +384,8 @@ public final class RetrievalServer implements AutoCloseable {
         JsonNode catalog = yaml(a.get("catalog"));
         SeriesInventory inventory;
         DagRunner runner = null;
+        String envToken = System.getenv("OPENTSX_DAG_RUN_TOKEN");
+        String runToken = a.getOrDefault("dag-run-token", envToken == null ? "" : envToken);
         if (a.containsKey("kafscale")) {
             String domain = a.getOrDefault("domain", "wind");
             boolean dagRuns = Boolean.parseBoolean(a.getOrDefault("dag-runs", "false"));
@@ -372,17 +401,27 @@ public final class RetrievalServer implements AutoCloseable {
             inventory.truncatedWhen(feed::truncated);
             inventory.sourceDetails(src -> {
                 src.put("dagRuns", dagRuns);
+                if (dagRuns) {
+                    src.put("dagRunAuth", runToken.isBlank() ? "none" : "token");
+                }
                 ArrayNode vt = src.putArray("vectorTopics");
                 feed.vectorTopics().forEach(vt::add);
+                if (!feed.unreadableVectorTopics().isEmpty()) {
+                    ArrayNode bad = src.putArray("unreadableVectorTopics");
+                    feed.unreadableVectorTopics().forEach(bad::add);
+                }
             });
             if (dagRuns) {
                 runner = feed::run;
+                System.out.println(runToken.isBlank()
+                        ? "dag runs: OPEN, anyone who reaches this port can write vector topics (set OPENTSX_DAG_RUN_TOKEN)"
+                        : "dag runs: for callers with the run token");
             }
         } else {
             inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));
         }
         RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
-                inventory, runner);
+                inventory, runner, runToken);
         System.out.println("opentsx retrieval server on port " + s.port());
     }
 

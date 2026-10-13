@@ -51,6 +51,11 @@ final class KafScaleFeed implements AutoCloseable {
 
     /** A run that would write more measuring points than this is refused. */
     static final int MAX_POINTS_PER_RUN = 500_000;
+    /** How long reading one vector topic may take, and how long a topic that failed is left alone. */
+    private static final Duration VECTOR_READ_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration VECTOR_RETRY = Duration.ofSeconds(90);
+    /** How long a run keeps retrying a send before it gives up. */
+    static final Duration DELIVERY_TIMEOUT = Duration.ofMinutes(3);
 
     private final String bootstrap;
     private final TopicLayout layout;
@@ -61,6 +66,8 @@ final class KafScaleFeed implements AutoCloseable {
     private final Runnable onChange;
     private final Map<String, LogTail> vectorTails = new LinkedHashMap<>();
     private final Map<String, Map<String, VectorJson.Row>> vectorRows = new TreeMap<>();
+    /** Vector topics whose last read failed, with the time (nanoTime) of the next try. */
+    private final Map<String, Long> unreadable = new java.util.concurrent.ConcurrentHashMap<>();
     private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "kafscale-feed");
         t.setDaemon(true);
@@ -128,16 +135,28 @@ final class KafScaleFeed implements AutoCloseable {
         List<String> topics = consumer.listTopics(Duration.ofSeconds(30)).keySet().stream()
                 .filter(t -> layout.smartVectorName(t) != null).sorted().toList();
         boolean changed = !topics.equals(vectorTopics);
+        long now = System.nanoTime();
         for (String topic : topics) {
-            LogTail t = vectorTails.computeIfAbsent(topic, name -> new LogTail(consumer, name, Duration.ofMinutes(2)));
+            Long retryAt = unreadable.get(topic);
+            if (retryAt != null && now - retryAt < 0) {
+                continue;       // failed a short while ago: do not spend every round waiting for it
+            }
+            LogTail t = vectorTails.computeIfAbsent(topic, name -> new LogTail(consumer, name, VECTOR_READ_TIMEOUT));
             Map<String, VectorJson.Row> rows = vectorRows.computeIfAbsent(topic, name -> new LinkedHashMap<>());
-            int n = t.poll(r -> {
-                VectorJson.Row row = VectorJson.parse(r.value());
-                if (row != null) {
-                    rows.put(VectorJson.keyText(row.key()) + "@" + row.fromMicros(), row);
-                }
-            });
-            changed |= n > 0;
+            try {
+                int n = t.poll(r -> {
+                    VectorJson.Row row = VectorJson.parse(r.value());
+                    if (row != null) {
+                        rows.put(VectorJson.keyText(row.key()) + "@" + row.fromMicros(), row);
+                    }
+                });
+                changed |= n > 0;
+                changed |= unreadable.remove(topic) != null;
+            } catch (RuntimeException e) {
+                // one topic the broker does not hand out must not keep the others, or the episodes, from being read
+                changed |= unreadable.put(topic, now + VECTOR_RETRY.toNanos()) == null;
+                System.err.println("kafscale feed: " + topic + " cannot be read, next try in " + VECTOR_RETRY + ": " + e.getMessage());
+            }
         }
         if (changed) {
             InMemorySeriesStore next = new InMemorySeriesStore();
@@ -167,7 +186,9 @@ final class KafScaleFeed implements AutoCloseable {
         out.put("specHash", hash);
         ArrayNode sinks = out.putArray("sinks");
         try (Admin admin = KafScaleClients.admin(bootstrap);
-             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
+             KafkaProducer<String, byte[]> producer = new KafkaProducer<>(patientProducerProps(bootstrap),
+                     new org.apache.kafka.common.serialization.StringSerializer(),
+                     new org.apache.kafka.common.serialization.ByteArraySerializer())) {
             for (VectorJob job : plan.jobs()) {
                 List<VectorAligner.Input> inputs = VectorStoreBridge.inputs(store, job);
                 List<VectorAligner.Point> points = VectorAligner.align(inputs, job.params());
@@ -178,13 +199,14 @@ final class KafScaleFeed implements AutoCloseable {
                 layout.provisionSmartVectors(admin, job.name(), (short) 1);
                 long missing = 0;
                 java.util.Set<String> keys = new java.util.TreeSet<>();
+                List<ProducerRecord<String, byte[]>> records = new ArrayList<>(points.size());
                 for (VectorAligner.Point p : points) {
                     String key = VectorJson.keyText(p.key());
                     keys.add(key);
                     missing += p.missing();
-                    producer.send(new ProducerRecord<>(job.topic(), key, VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash))));
+                    records.add(new ProducerRecord<>(job.topic(), key, VectorJson.bytes(VectorJson.record(job.name(), p, job.dag(), hash))));
                 }
-                producer.flush();
+                sendAll(producer, records);
                 ObjectNode s = sinks.addObject();
                 s.put("topic", job.topic());
                 s.put("vector", job.name());
@@ -203,10 +225,67 @@ final class KafScaleFeed implements AutoCloseable {
         ArrayNode skipped = out.putArray("skipped");
         plan.skipped().forEach(skipped::add);
         // read the new records back at once, so the inventory shows the topic without waiting for the next round
-        if (pullVectors()) {
-            onChange.run();
+        try {
+            if (pullVectors()) {
+                onChange.run();
+            }
+            out.put("readBack", unreadable.isEmpty() ? "done" : "pending: " + unreadable.keySet());
+        } catch (RuntimeException e) {
+            // the records are written; reading them back is the business of the next round
+            out.put("readBack", "pending: " + e.getMessage());
         }
         return out;
+    }
+
+    /**
+     * Producer settings of a run. KafScale refuses every produce and fetch with REQUEST_TIMED_OUT while it rates its
+     * object store as degraded, which lasts about a minute after one slow write. Five quick retries are over long
+     * before that, so a run retries with pauses for up to {@link #DELIVERY_TIMEOUT}.
+     */
+    static java.util.Properties patientProducerProps(String bootstrap) {
+        java.util.Properties p = KafScaleClients.producerProps(bootstrap);
+        p.remove(org.apache.kafka.clients.producer.ProducerConfig.RETRIES_CONFIG);      // client default: until the delivery timeout
+        p.put(org.apache.kafka.clients.producer.ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, (int) DELIVERY_TIMEOUT.toMillis());
+        p.put(org.apache.kafka.clients.producer.ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000L);
+        p.put(org.apache.kafka.clients.producer.ProducerConfig.RETRY_BACKOFF_MAX_MS_CONFIG, 10_000L);
+        return p;
+    }
+
+    /**
+     * Sends the records and waits for the broker to confirm every one. A send that fails after the retries of the
+     * client makes the run fail; records sent before stay in the topic (a later run repeats them, and readers take
+     * the later measuring point).
+     *
+     * @throws IllegalStateException when the broker did not confirm every record, with the number it confirmed
+     */
+    static void sendAll(org.apache.kafka.clients.producer.Producer<String, byte[]> producer,
+                        List<ProducerRecord<String, byte[]>> records) {
+        List<java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata>> pending = new ArrayList<>(records.size());
+        for (ProducerRecord<String, byte[]> r : records) {
+            pending.add(producer.send(r));
+        }
+        producer.flush();
+        int confirmed = 0;
+        Throwable first = null;
+        for (java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata> f : pending) {
+            try {
+                f.get(DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
+                confirmed++;
+            } catch (java.util.concurrent.ExecutionException e) {
+                first = first == null ? e.getCause() : first;
+            } catch (java.util.concurrent.TimeoutException e) {
+                first = first == null ? e : first;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                first = first == null ? e : first;
+            }
+        }
+        if (first != null) {
+            String topic = records.isEmpty() ? "" : records.get(0).topic();
+            throw new IllegalStateException("the broker confirmed only " + confirmed + " of " + records.size()
+                    + " measuring points for " + topic + " (" + first.getClass().getSimpleName() + ": " + first.getMessage()
+                    + "). What it confirmed stays in the topic; run again once the broker answers.");
+        }
     }
 
     private static String sha256(String text) {
@@ -229,6 +308,11 @@ final class KafScaleFeed implements AutoCloseable {
     /** The vector topics of the domain found on the broker. */
     List<String> vectorTopics() {
         return vectorTopics;
+    }
+
+    /** Vector topics the broker did not hand out at the last try; their series may be out of date. */
+    List<String> unreadableVectorTopics() {
+        return unreadable.keySet().stream().sorted().toList();
     }
 
     /** Topic names by role, as shown in the inventory. */

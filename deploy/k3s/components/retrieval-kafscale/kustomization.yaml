@@ -3,7 +3,7 @@
 # module ("TS Inventory") loads them. The server keeps the episodes in memory (up to --max-episodes, default 20000);
 # for more data use the lake profile, which reads Iceberg.
 # It also reads the vector topics of the domain. With RETRIEVAL_DAG_RUNS=true it runs vector DAGs once and WRITES
-# their topics (POST /v1/dags/run); the API has no authentication.
+# their topics (POST /v1/dags/run), for callers with the run token (the SaaS backend, which checks the account).
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 patches:
@@ -27,6 +27,8 @@ patches:
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
           - name: RETRIEVAL_DAG_RUNS
             valueFrom: {configMapKeyRef: {name: opentsx-config, key: RETRIEVAL_DAG_RUNS}}
+          - name: OPENTSX_DAG_RUN_TOKEN     # set when RETRIEVAL_DAG_RUNS=true: runs need it in X-OpenTSx-Run-Token
+            valueFrom: {secretKeyRef: {name: opentsx-secrets, key: DAG_RUN_TOKEN, optional: true}}
           - name: JAVA_OPTS      # the Kafka client logs every seek of the feed at INFO
             value: -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
       - op: replace

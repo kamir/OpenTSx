@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_EMAIL: str = "admin@opentsx.com"
     FIRST_SUPERUSER_PASSWORD: str = "admin123"
 
+    # DAG runs (app/api/dags.py): the retrieval server that writes vector topics, and who may ask for it
+    RETRIEVAL_URL: Optional[str] = None       # e.g. http://opentsx-retrieval:8080; unset: no runs
+    DAG_RUN_TOKEN: Optional[str] = None       # sent as X-OpenTSx-Run-Token; must match the server's token
+    DAG_RUN_ROLE: str = "superuser"           # "superuser": administrators only; "user": every signed-in user
+
     # Features
     ENABLE_SIGNUP: bool = True
     ENABLE_INVITATIONS: bool = True

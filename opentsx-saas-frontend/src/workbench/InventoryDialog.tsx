@@ -237,6 +237,12 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
             {(inv.source.vectorTopics ?? []).length > 0 && (
               <span>Smart Topics (vectors): {(inv.source.vectorTopics ?? []).join(', ')}. Their components are the series with the tag "vector".</span>
             )}
+            {(inv.source.unreadableVectorTopics ?? []).length > 0 && (
+              <span className="warn">
+                The broker does not hand out {(inv.source.unreadableVectorTopics ?? []).join(', ')} at the moment. Its series may be
+                out of date; the server tries again every few minutes.
+              </span>
+            )}
             {inv.source.truncated && <span className="warn">The server holds only a part of the topic (its episode limit was reached).</span>}
           </div>
         )}

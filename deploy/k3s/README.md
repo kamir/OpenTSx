@@ -41,9 +41,19 @@ deploy/k3s/30-deploy.sh --restart
 ```
 
 With `RETRIEVAL_DAG_RUNS=true` the server also accepts `POST /v1/dags/run` and writes vector topics
-(`tsx.<domain>.smart.<name>.vectors.v1`); the workbench uses that for "Run once and write to KafScale". The API has
-no authentication, so whoever reaches the node port of the SaaS frontend (it proxies `/retrieval/`) can write those
-topics. Leave it off outside a trusted network.
+(`tsx.<domain>.smart.<name>.vectors.v1`); the workbench uses that for "Run once and write to KafScale".
+
+Who may write:
+
+* `20-configure.sh` generates `RETRIEVAL_DAG_RUN_TOKEN` (kept in `.env` and the Secret `opentsx-secrets`). The
+  retrieval server runs DAGs only for callers that send it.
+* The SaaS backend knows the token and forwards runs of signed-in accounts (`POST /api/v1/dags/run`).
+  `SAAS_DAG_RUN_ROLE=superuser` (default) allows administrators only. `user` allows every account; anyone can
+  register, so that opens writing to everyone who reaches the page.
+* The frontend image answers `/retrieval/v1/dags/` with 403, so the write path of the retrieval server is not
+  reachable through the node port. Reading through `/retrieval/` needs no account.
+* Inside the cluster every pod can reach the retrieval Service; the token is what keeps them from writing. There is
+  no NetworkPolicy.
 
 Limits: at most 20000 episodes in memory (the inventory then says `truncated`), memory limit 2Gi, no
 authentication. `LAKE=true` and `RETRIEVAL_SOURCE=kafscale` exclude each other: with the lake profile the server

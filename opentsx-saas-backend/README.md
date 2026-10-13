@@ -114,6 +114,18 @@ Key dependencies:
 - `POST /api/v1/auth/refresh` - Refresh access token
 - `GET /api/v1/auth/me` - Get current user
 
+### DAG runs
+
+| Route | What |
+|-------|------|
+| `GET /api/v1/dags/capabilities` | whether the signed-in user may run DAGs here, and if not, why |
+| `POST /api/v1/dags/run` | body: an `opentsx.dag.v1` document as YAML. The backend checks the account and forwards the document to the retrieval server, which runs its vector sinks once and writes their topics |
+
+Settings: `RETRIEVAL_URL` (the retrieval server; unset means no runs), `DAG_RUN_TOKEN` (sent as
+`X-OpenTSx-Run-Token`, must match `OPENTSX_DAG_RUN_TOKEN` of the retrieval server) and `DAG_RUN_ROLE`
+(`superuser`, the default: administrators only; `user`: every account). Sign-up is open, so `user` lets everyone
+who can register write topics.
+
 See full API documentation at: `/docs` (Swagger UI)
 
 ## Database Setup
@@ -147,15 +159,13 @@ alembic upgrade head
 ## Running Tests
 
 ```bash
-# Install pytest
-pip install pytest pytest-asyncio pytest-cov
-
-# Run tests
-pytest
-
-# With coverage
-pytest --cov=app tests/
+pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest tests
 ```
+
+`tests/test_dags.py` covers the DAG run route without a database or a network: the user comes from a dependency
+override, the retrieval server from an httpx mock transport. Accounts and stored flows are checked against a running
+instance with `smoke-flows.sh`.
 
 ## Production Deployment
 

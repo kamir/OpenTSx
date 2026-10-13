@@ -29,7 +29,7 @@ import {
 import { vectorRecords } from '../workbench/vector';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
-import { flowsAPI } from '../services/api';
+import { DagRunResult, dagsAPI, flowsAPI } from '../services/api';
 import { NOT_PORTED, OPS, OP_BY_ID, defaultParams, fmt, stats } from '../workbench/ops';
 import { FlowNode, OpDef, OpGroup, ParamDef, Params, ParamValue } from '../workbench/types';
 import '../workbench/workbench.css';
@@ -357,26 +357,39 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-interface RunResult {
-  sinks: { topic: string; records: number; keys: number; series: number; missingValues: number; components: string[]; from?: string; to?: string }[];
-  skipped: string[];
-}
-
-function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
+function SmartTopic({ node }: { node: FlowNode }) {
   const state = useFlow();
-  const [run, setRun] = useState<{ busy: boolean; result?: RunResult; error?: string }>({ busy: false });
+  const [run, setRun] = useState<{ busy: boolean; result?: DagRunResult; error?: string }>({ busy: false });
+  const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
+  const signedIn = !!localStorage.getItem('access_token');
   const blocker = runBlocker(state.nodes);
 
+  // Writing topics needs an account that is allowed to: the backend says whether this one is.
+  useEffect(() => {
+    if (!signedIn) return;
+    let cancelled = false;
+    dagsAPI
+      .capabilities()
+      .then((c) => !cancelled && setAccess(c))
+      .catch(() => !cancelled && setAccess({ canRun: false, reason: 'Your session has expired or the backend cannot be reached. Sign in again.' }));
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn]);
+
   const runOnce = async () => {
-    const url = `${base.replace(/\/$/, '')}/v1/dags/run`;
     setRun({ busy: true });
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/yaml' }, body: toDagYaml(useFlow.getState()) });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setRun({ busy: false, result: body as RunResult });
+      setRun({ busy: false, result: await dagsAPI.run(toDagYaml(useFlow.getState())) });
     } catch (e) {
-      setRun({ busy: false, error: `The run failed at ${url}: ${e instanceof Error ? e.message : e}` });
+      const detail = axios.isAxiosError(e) ? e.response?.data?.detail : null;
+      const expired = axios.isAxiosError(e) && e.response?.status === 401;
+      setRun({
+        busy: false,
+        error: expired
+          ? 'Your session has expired. Sign in again (the link above opens a new tab), then run: the flow stays here.'
+          : `The run failed: ${typeof detail === 'string' ? detail : e instanceof Error ? e.message : e}`,
+      });
     }
   };
   const sinks = state.nodes.filter((n) => n.sinkTopic);
@@ -444,12 +457,23 @@ function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
         <legend>Run on KafScale</legend>
         <p className="wb-muted">
           The retrieval server can run vector sinks once over the episodes it holds and append the measuring points to
-          their topic. It is one pass, not a processor that keeps running; a second run appends again and the later
+          their topic. The request goes through the backend, which checks your account. It is one pass, not a processor that keeps running; a second run appends again and the later
           measuring point wins. The topic then shows in the TS inventory.
         </p>
-        <button className="wb-primary" disabled={!!blocker || blocked || run.busy} onClick={runOnce}>
+        <button
+          className="wb-primary"
+          disabled={!signedIn || !access?.canRun || !!blocker || blocked || run.busy}
+          onClick={runOnce}
+        >
           {run.busy ? 'Running' : 'Run once and write to KafScale'}
         </button>
+        {!signedIn ? (
+          <p className="wb-muted">
+            Writing topics needs an account. <Link to="/login" target="_blank" rel="noopener">Sign in</Link>, then reload this tab.
+          </p>
+        ) : (
+          access && !access.canRun && <p className="wb-muted">{access.reason}</p>
+        )}
         {blocker && <p className="wb-muted">{blocker}</p>}
         {run.error && <div className="wb-error" role="alert">{run.error}</div>}
         {run.result && (
@@ -461,6 +485,12 @@ function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
               </li>
             ))}
             {run.result.skipped.map((s) => <li key={s} className="info"><b>Skipped</b> {s}</li>)}
+            {run.result.readBack?.startsWith('pending') && (
+              <li className="warning">
+                <b>Check</b> The records are written, but the broker has not handed them out again yet. The inventory shows
+                them once it does.
+              </li>
+            )}
           </ul>
         )}
       </fieldset>
@@ -468,7 +498,7 @@ function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
   );
 }
 
-function Inspector({ base }: { base: string }) {
+function Inspector() {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -500,7 +530,7 @@ function Inspector({ base }: { base: string }) {
         ) : tab === 'dag' ? (
           <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} base={base} />
+          <SmartTopic node={node} />
         )}
       </div>
     </aside>
@@ -734,7 +764,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector base={remote.base} />
+        <Inspector />
       </main>
 
       <footer className="wb-status">

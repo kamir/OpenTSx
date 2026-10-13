@@ -252,7 +252,8 @@ sich wie jede andere Reihe laden.
 | Welche Reihen | `source.series` nennt die Reihen (seriesId) des Quell-Topics; fehlt die Angabe, alle. Die Workbench schreibt die im Inventar gewählten Reihen hinein. |
 | Sink | nur `tsx.<domain>.smart.<name>.vectors.v1` der Domäne des Servers; das Topic wird bei Bedarf angelegt. |
 | Wiederholung | Ein zweiter Lauf hängt erneut an (KafScale kompaktiert nicht). Beim Lesen gilt je Schlüssel und Tick der spätere Messpunkt. Messpunkte eines früheren Laufs mit anderem Takt oder anderen Komponenten zählen nicht zur Reihe. |
-| Grenzen | höchstens 500000 Messpunkte je Lauf; kein Checkpoint, kein Folgen des Quell-Topics; die Schnittstelle hat **keine Anmeldung**, also nur in vertrauenswürdigen Netzen einschalten. |
+| Grenzen | höchstens 500000 Messpunkte je Lauf; kein Checkpoint, kein Folgen des Quell-Topics; kein Alles-oder-nichts (bestätigt der Broker nur einen Teil, schlägt der Lauf fehl, und der Teil bleibt im Topic). |
+| Zugriff | Mit Lauf-Token (`OPENTSX_DAG_RUN_TOKEN`) nimmt der Server Läufe nur mit dem Header `X-OpenTSx-Run-Token` an. Das SaaS-Backend kennt das Token, prüft das Konto und reicht weiter (`POST /api/v1/dags/run`). Ohne Token kann jeder schreiben, der den Port erreicht. |
 
 **Für eine Stream-Laufzeit folgt aus den Regeln:**
 
@@ -347,8 +348,7 @@ Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angest
 
 * **Vektor-Messpunkte (5a):** Avro-Fassung von `opentsx.vector.v1` und ihr Platz im Modell v2; Qualitätsbyte je
   Komponente statt nur `null`; Einheiten der Komponenten (heute nur in der Workbench bekannt); die Testvektoren
-  auch für Go; Vektoren über mehrere Quell-Topics; fortlaufender Betrieb mit Checkpoint statt Einmal-Lauf;
-  Anmeldung für `POST /v1/dags/run`.
+  auch für Go; Vektoren über mehrere Quell-Topics; fortlaufender Betrieb mit Checkpoint statt Einmal-Lauf.
 * **Latenz:** Reichen Sekunden bis Minuten (nur abgeschlossene Segmente)? Sonst ist der Broker-Eingang (Kafka-Protokoll)
   für den Go-Prozessor der Standard.
 * **ONNX in Go:** onnxruntime über cgo (größere Images, plattformabhängig) oder zunächst nur reine Go-Modelle
