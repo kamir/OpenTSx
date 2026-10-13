@@ -45,6 +45,13 @@ Dokument-Reiter. Details zu einem Baustein oder einer Verbindung werden von rech
 geschlossen. Die Statusleiste unten trägt den Hinweis „Beispieldaten“, Zeitraum und Zeitschritt. Die Zusammenfassung
 steht seitdem nur noch im Überblick. Tastatur: Alt+1 bis Alt+4 für die Ansichten, Strg+B für die Icon-Leiste.
 
+Die Dokument-Reiter gehören zum gewählten Szenario; gewechselt wird es im Menü „Szenario“. Neben dem Szenario selbst
+stehen dort ein Link auf seine Seite im Anlagen-Explorer (`anlagen-explorer.html?sys=<twin>`, aus einem Baustein
+heraus mit `&open=<twin>/<atom>`) und die Ansicht **Ereignis-Topic**. Sie spielt die Ereignisse des Referenzlaufs im
+Zeitraffer als Datensätze ab (Schlüssel: Baustein). Eine Live-Verbindung gibt es noch nicht: `MessageSink` kennt nur
+das In-Memory-Log, für `TwinEvent` ist kein Topic festgelegt, und der Browser braucht eine Brücke zum Broker. Der
+angezeigte Name `twin.<id>.<run>.events` ist ein Vorschlag nach dem Muster der Avro-Kontrakte.
+
 Regeln, die der Prototyp schon umsetzt:
 
 * **Herkunft:** Jede Reihe zeigt, wie sie entstanden ist. Modellierte Werte sehen nie aus wie Messungen.
