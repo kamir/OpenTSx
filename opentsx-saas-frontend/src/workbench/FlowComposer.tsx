@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, DagState } from './deployments';
+import { DagList, DagState, topicConflict } from './deployments';
 import { FlowFilter, FlowSummary, NO_FLOW_FILTER, copyName, domainFacets, filterFlows, runPlan, stamp, summarize } from './flows';
 
 interface Props {
@@ -131,6 +131,11 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
         return `"${f.name}" is marked active. Nothing computes it: ${plan.blocker}`;
       }
       if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not deploy');
+      // read anew: a flow activated a moment ago in this run counts too
+      const res = await fetch(`${root}/v1/dags`);
+      const running = res.ok ? ((await res.json()) as DagList).dags : [...dags.values()];
+      const conflict = topicConflict(running, plan.dag, f.published, (await flowsAPI.list()).map(summarize));
+      if (conflict) throw new Error(conflict);
       await dagsAPI.deploy(plan.yaml);
       await flowsAPI.patch(f.id, { status: 'active' });
       return `"${f.name}" is active: deployed as ${plan.dag}, the processor takes it up within a few seconds.`;
@@ -160,7 +165,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
   const remove = async () => {
     const gone: number[] = [];
     await forEach('Delete', async (f) => {
-      if (f.dag && dags.get(f.dag)?.desired === 'deployed' && f.status === 'active') {
+      if (f.dag && dags.get(f.dag)?.desired === 'deployed') {
         throw new Error(`it is deployed as ${f.dag}; pause it first`);
       }
       await flowsAPI.delete(f.id);

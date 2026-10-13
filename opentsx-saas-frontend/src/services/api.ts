@@ -230,7 +230,7 @@ export const flowsAPI = {
    */
   save: async (
     id: number | null,
-    data: { name?: string; description: string; definition: Record<string, unknown> }
+    data: { name?: string; description?: string; definition: Record<string, unknown> }
   ): Promise<{ id: number; name: string }> => {
     const response = id === null ? await apiClient.post('/flows', data) : await apiClient.put(`/flows/${id}`, data);
     return response.data.flow;

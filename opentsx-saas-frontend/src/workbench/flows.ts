@@ -1,6 +1,6 @@
 /** What the Flow Composer shows of the flows stored in the account. */
 
-import { FlowDoc, WORKBENCH_KIND, deployChecks, parseNodes, slug, toDagYaml } from './flow';
+import { FlowDoc, WORKBENCH_KIND, dagName, deployChecks, parseNodes, toDagYaml } from './flow';
 import { VECTOR_OP } from './vector';
 
 /** A flow as the backend lists it (GET /api/v1/flows). */
@@ -32,8 +32,10 @@ export interface FlowSummary {
   steps: string[];
   published: string[];
   vectors: number;
-  /** Name under which the flow is deployed, when it publishes a topic. */
+  /** Name under which the flow is deployed, when it publishes a topic: it carries the number of the flow. */
   dag: string;
+  /** True when the vector processor can run the flow: activating it deploys it. */
+  runnable: boolean;
   /** The stored flow as the exports read it; absent when it cannot be opened. */
   doc?: FlowDoc;
   /** The stored definition, for a copy. */
@@ -58,7 +60,7 @@ export function summarize(flow: StoredFlow): FlowSummary {
     sourceTopic: str(def.sourceTopic),
     sourceSeries: Array.isArray(def.sourceSeries) ? def.sourceSeries.filter((i): i is string => typeof i === 'string') : [],
   };
-  const none = { steps: [], published: [], vectors: 0, dag: '' };
+  const none = { steps: [], published: [], vectors: 0, dag: '', runnable: false };
   if (def.kind !== WORKBENCH_KIND) {
     return { ...base, ...none, openable: false, reason: 'Made in the flow builder, not in the workbench.' };
   }
@@ -67,14 +69,16 @@ export function summarize(flow: StoredFlow): FlowSummary {
     return { ...base, ...none, openable: false, reason: 'Its node list cannot be read by this version of the workbench.' };
   }
   const published = nodes.filter((n) => n.sinkTopic).map((n) => n.sinkTopic!);
+  const doc = { track: base.track, domain: base.domain, sourceTopic: base.sourceTopic, sourceSeries: base.sourceSeries, nodes, savedId: flow.id };
   return {
     ...base,
     openable: true,
+    runnable: deployChecks(nodes, base.sourceSeries).every((c) => c.ok),
     steps: nodes.filter((n) => n.op !== 'source').map((n) => n.label),
     published,
     vectors: nodes.filter((n) => n.op === VECTOR_OP).length,
-    dag: published.length > 0 ? `${slug(base.domain)}-${slug(base.track)}-smart` : '',
-    doc: { track: base.track, domain: base.domain, sourceTopic: base.sourceTopic, sourceSeries: base.sourceSeries, nodes },
+    dag: published.length > 0 ? dagName(base.domain, base.track, flow.id) : '',
+    doc,
   };
 }
 

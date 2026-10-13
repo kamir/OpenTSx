@@ -53,3 +53,33 @@ export function hasProcessor(d: DagState, now: string): boolean {
   const newest = Math.max(Date.parse(d.at), ...d.sinks.map((s) => Date.parse(s.at)));
   return (Date.parse(now) - newest) / 1000 <= STALE_SECONDS;
 }
+
+/** A flow of the account, as far as its deployment goes. */
+export interface DeployedFlow {
+  dag: string;
+  published: string[];
+  status?: string;
+  /** True when activating the flow deploys it. */
+  runnable?: boolean;
+}
+
+/**
+ * Says which other running deployment already writes one of the topics. Two deployments on one topic would
+ * write every measuring point twice. The topics of a deployment come from the reports of the processor and,
+ * before it has reported, from the flow the deployment belongs to.
+ */
+export function topicConflict(dags: DagState[], own: string, topics: string[], flows: DeployedFlow[] = []): string | null {
+  for (const d of dags) {
+    if (d.dag === own || d.desired !== 'deployed') continue;
+    const written = [...d.sinks.map((s) => s.topic), ...flows.filter((f) => f.dag === d.dag).flatMap((f) => f.published)];
+    const shared = written.find((t) => topics.includes(t));
+    if (shared) return `${shared} is already written by the deployment ${d.dag}; stop that one or publish to another topic`;
+  }
+  // the list of deployments lags a few seconds behind: an active flow counts before its deployment shows there
+  for (const f of flows) {
+    if (f.dag === own || f.status !== 'active' || !f.runnable) continue;
+    const shared = f.published.find((t) => topics.includes(t));
+    if (shared) return `${shared} is already written by the deployment ${f.dag}; pause that flow or publish to another topic`;
+  }
+  return null;
+}

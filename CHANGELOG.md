@@ -50,6 +50,10 @@ entries are grouped by date. The detailed progress log (German) is in
   others in tabs of their own), created, renamed, copied, deleted, activated and paused. Activating a flow the
   vector processor can run deploys it, pausing stops it; any other flow is only marked. An opened flow loads the
   series it was built on from the TS inventory, over their whole range.
+- Workbench: a deployment belongs to its flow. It is named `<domain>-flow-<id>` (was `<domain>-<track>-smart`),
+  so flows of one track no longer replace each other. "Deploy" saves the flow first and marks it active, "Stop"
+  marks it paused. A deployment is refused while another running one writes the same topic. Deployments under
+  the old name keep running and belong to no flow.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the

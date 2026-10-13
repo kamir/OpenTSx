@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toDefinition } from './flow';
+import { dagName, flowIdOfDag, toDagYaml, toDefinition } from './flow';
 import { NO_FLOW_FILTER, StoredFlow, copyName, domainFacets, filterFlows, runPlan, stamp, summarize } from './flows';
 import { InventorySeries, MANY_POINTS, estimatePoints, wholeRange } from './inventory';
 
@@ -31,7 +31,7 @@ describe('summarize', () => {
       steps: ['Vector_T01'],
       published: ['tsx.wind.smart.t01.vectors.v1'],
       vectors: 1,
-      dag: 'wind-exp2-smart',
+      dag: 'wind-flow-7',
     });
   });
 
@@ -77,7 +77,7 @@ describe('filterFlows', () => {
 describe('runPlan', () => {
   it('gives the DAG of a published vector on inventory series', () => {
     const plan = runPlan(summarize(published));
-    expect(plan).toMatchObject({ dag: 'wind-exp2-smart' });
+    expect(plan).toMatchObject({ dag: 'wind-flow-7' });
     expect('yaml' in plan && plan.yaml).toContain('tsx.wind.smart.t01.vectors.v1');
     expect('yaml' in plan && plan.yaml).toContain('series: [a, b]');
   });
@@ -87,6 +87,25 @@ describe('runPlan', () => {
     expect(runPlan(summarize(builder))).toMatchObject({ blocker: expect.stringMatching(/flow builder/) });
     const noData = stored(12, 'x', toDefinition({ track: 'X', domain: 'wind', sourceTopic: 't', nodes: [source, vector] }));
     expect(runPlan(summarize(noData))).toMatchObject({ blocker: expect.stringMatching(/TS inventory/) });
+  });
+});
+
+describe('deployment name', () => {
+  it('carries the number of a stored flow, so flows of one track do not share a deployment', () => {
+    expect(dagName('Wind', 'EXP2', 7)).toBe('wind-flow-7');
+    expect(dagName('Wind', 'EXP2', 8)).toBe('wind-flow-8');
+    expect(flowIdOfDag('wind-flow-7')).toBe(7);
+    const copy = summarize({ ...published, id: 8 });
+    expect(copy.dag).not.toBe(summarize(published).dag);
+    const plan = runPlan(copy);
+    expect('yaml' in plan && plan.yaml).toContain('dag: wind-flow-8');
+  });
+
+  it('is the track for a flow that is not stored', () => {
+    expect(dagName('Wind', 'EXP2')).toBe('wind-exp2-smart');
+    expect(flowIdOfDag('wind-exp2-smart')).toBeNull();
+    expect(toDagYaml({ track: 'EXP2', domain: 'wind', sourceTopic: 't', nodes: [source, vector] })).toContain('dag: wind-exp2-smart');
+    expect(toDagYaml({ track: 'EXP2', domain: 'wind', sourceTopic: 't', nodes: [source, vector], savedId: 5 })).toContain('dag: wind-flow-5');
   });
 });
 

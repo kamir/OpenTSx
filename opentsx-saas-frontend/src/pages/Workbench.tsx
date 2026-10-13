@@ -361,7 +361,7 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
+function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSave: () => Promise<number | null> }) {
   const state = useFlow();
   const blocker = runBlocker(state.nodes, state.sourceSeries);
   // One step from loaded series to something the processor can run: a vector on the source, published.
@@ -441,12 +441,13 @@ function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
         blocker={blocker}
         checks={deployChecks(state.nodes, state.sourceSeries)}
         onMakeVector={canMakeVector ? makeVector : undefined}
+        onSave={onSave}
       />
     </div>
   );
 }
 
-function Inspector({ base }: { base: string }) {
+function Inspector({ base, onSave }: { base: string; onSave: () => Promise<number | null> }) {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -478,7 +479,7 @@ function Inspector({ base }: { base: string }) {
         ) : tab === 'dag' ? (
           <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} base={base} />
+          <SmartTopic node={node} base={base} onSave={onSave} />
         )}
       </div>
     </aside>
@@ -577,20 +578,25 @@ export default function Workbench() {
     setStatus(`Flow ${id} is deleted in your account. What you see here is unsaved.`);
   };
 
-  const saveFlow = async () => {
+  const saveFlow = async (): Promise<number | null> => {
     const s = useFlow.getState();
     const published = s.nodes.filter((n) => n.sinkTopic).length;
     try {
       const flow = await flowsAPI.save(s.savedId, {
-        // a stored flow keeps the name it was given in the composer
-        ...(s.savedId === null ? { name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}` } : {}),
-        description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
+        // a stored flow keeps the name and description it was given in the composer
+        ...(s.savedId === null
+          ? {
+              name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
+              description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
+            }
+          : {}),
         definition: toDefinition(s),
       });
       s.setSavedId(flow.id);
       setSearchParams({ flow: String(flow.id) }, { replace: true });
       setError(null);
       setStatus(`Saved to your account as flow ${flow.id}`);
+      return flow.id;
     } catch (e) {
       const expired = axios.isAxiosError(e) && e.response?.status === 401;
       setError(
@@ -598,6 +604,7 @@ export default function Workbench() {
           ? 'Your session has expired. Sign in again (the link opens a new tab), then save: the flow stays here.'
           : `The flow could not be saved: ${e instanceof Error ? e.message : e}`
       );
+      return null;
     }
   };
 
@@ -786,7 +793,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector base={remote.base} />
+        <Inspector base={remote.base} onSave={saveFlow} />
       </main>
 
       <footer className="wb-status">

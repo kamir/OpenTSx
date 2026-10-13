@@ -176,8 +176,12 @@ Beobachtungen am Swing-Code:
       - Aktivieren und Pausieren: setzt den Status des Flows. Kann der Vektor-Prozessor den Flow ausführen, wird
         er dabei bereitgestellt beziehungsweise gestoppt (nur Administratoren); sonst wird er nur markiert, und
         das Fenster sagt, warum
-      - Grenze: Der Name der Bereitstellung kommt aus Domain und Track. Zwei Flows mit demselben Track teilen sich
-        eine Bereitstellung; die Kopie eines aktiven Flows ersetzt beim Aktivieren die des Originals
+      - Bereitstellung an die Flow-Id gebunden: Sie heißt `<domain>-flow-<id>` statt `<domain>-<track>-smart`.
+        Zwei Flows desselben Tracks teilen sich keine Bereitstellung mehr, und eine Kopie hat ihre eigene. "Deploy"
+        im Editor speichert den Flow deshalb zuerst und setzt seinen Status auf aktiv, "Stop" auf pausiert. Ein
+        bereitgestellter Flow lässt sich nicht löschen. Schreibt eine andere laufende Bereitstellung schon in
+        dasselbe Topic, wird abgelehnt. Der Export eines ungespeicherten Flows trägt weiter den Namen des Tracks;
+        Bereitstellungen mit altem Namen laufen weiter und gehören zu keinem Flow
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren

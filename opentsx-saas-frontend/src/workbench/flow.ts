@@ -331,7 +331,25 @@ export function parseNodes(raw: unknown): FlowNode[] | null {
 }
 
 /** What the exports read of the flow. */
-export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & { sourceSeries?: string[] };
+export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & {
+  sourceSeries?: string[];
+  /** Number of the flow in the account, once it is stored. */
+  savedId?: number | null;
+};
+
+/**
+ * Name of the deployment of a flow. A stored flow is deployed under its number, so two flows never share a
+ * deployment; an export of an unsaved flow is named after its track.
+ */
+export function dagName(domain: string, track: string, flowId?: number | null): string {
+  return flowId === null || flowId === undefined ? `${slug(domain)}-${slug(track)}-smart` : `${slug(domain)}-flow-${flowId}`;
+}
+
+/** The flow a deployment belongs to, or null for one named after a track. */
+export function flowIdOfDag(dag: string): number | null {
+  const m = /-flow-(\d+)$/.exec(dag);
+  return m ? Number(m[1]) : null;
+}
 
 /** The flow as stored in the backend: the node list plus the rendered DAG for readers without the workbench. */
 export function toDefinition(s: FlowDoc): Record<string, unknown> {
@@ -540,7 +558,7 @@ export function toDagYaml(s: FlowDoc): string {
   const nodes = s.nodes.filter((n) => n.op !== 'source' && (sinks.length === 0 || keep.has(n.id)));
   const lines = [
     '# opentsx.dag.v1, written by the OpenTSx web workbench',
-    `dag: ${yamlScalar(`${slug(s.domain)}-${slug(s.track)}-smart`)}`,
+    `dag: ${yamlScalar(dagName(s.domain, s.track, s.savedId))}`,
     'version: 1',
     'source:',
     '  kind: kafscale-broker',
