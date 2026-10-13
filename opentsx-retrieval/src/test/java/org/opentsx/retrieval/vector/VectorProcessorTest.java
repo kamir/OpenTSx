@@ -494,6 +494,47 @@ class VectorProcessorTest {
     }
 
     @Test
+    void aSinkMayReadAGeneratedSeriesAsTheRawGradeOfItsSignal(@TempDir Path state) throws Exception {
+        // what a demo generator wrote for an open signal lives in the topic of the generated series
+        SeriesKey raw = SeriesKeys.of("h2-chain.offtake.demand_kgph", Map.of("system", "h2-chain", "signal", "offtake.demand_kgph", "grade", "raw"), "kg/h");
+        broker.log.put(new TopicPartition(LAYOUT.synthetic(), 0), new ArrayList<>());
+        broker.append(LAYOUT.synthetic(), 0, avro.encode(Episodes.regular(raw, T0, 60 * SECOND, new double[]{80, 90, 500, 85}).source("gen.sine").createdAt(T0).build()));
+        deploy("""
+                schema: opentsx.dag.v2
+                dag: wind-flow-11
+                version: 1
+                source:
+                  kind: kafscale-broker
+                  topics: [tsx.wind.synthetic.v2]
+                  series: ["%s"]
+                nodes:
+                  - id: decode
+                    op: decode.avro-soe
+                  - id: n1
+                    op: dq.checks
+                    in: [decode]
+                    params: { checks: [PLAUSIBLE_RANGE], min: 0, max: 120, mode: gap }
+                sinks:
+                  - { from: n1, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: offtake.demand_kgph, grade: clean }, origin: SYNTHETIC }
+                """.formatted(raw.getSeriesId()));
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+            assertEquals(Map.of("wind-flow-11/offtake.demand_kgph", "running"), p.states());
+        }
+        org.opentsx.model.v2.Episode clean = null;
+        for (MockProducer<String, byte[]> from : producers) {
+            for (ProducerRecord<String, byte[]> r : from.history()) {
+                clean = r.topic().equals(LAYOUT.clean()) ? avro.decode(r.value(), org.opentsx.model.v2.Episode.class) : clean;
+            }
+        }
+        assertEquals("clean", clean.getSeries().getTags().get("grade"));
+        assertEquals("SYNTHETIC", clean.getLabels().get("origin"), "cleaning does not make a generated series a measurement");
+        double[] v = Episodes.values(clean);
+        assertEquals(80.0, v[0]);
+        assertTrue(Double.isNaN(v[2]), "the value outside the plausible range is a gap");
+    }
+
+    @Test
     void aSinkMayReadCleanSeriesAndWriteAnEstimateOfAnotherSignalAndFeatures(@TempDir Path state) throws Exception {
         // the clean wind speed of one turbine, as a flow before this one wrote it: ten minutes at 8 m/s
         SeriesKey clean = SeriesKeys.of("wind.met.wind_speed", Map.of("turbine", "T01", "system", "h2-chain",

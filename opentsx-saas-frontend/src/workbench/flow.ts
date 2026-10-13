@@ -480,6 +480,11 @@ export interface Finding {
 export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample', 'model.power-curve', 'feature.lag', 'feature.rolling'];
 export const EPISODE_SCHEMA = 'opentsx.episode.v2';
 
+/** The topic the generated series of a domain live in. */
+export function syntheticTopic(domain: string): string {
+  return `tsx.${slug(domain)}.synthetic.v2`;
+}
+
 /** Topic the clean series of a domain go to. */
 export function cleanTopic(domain: string): string {
   return `tsx.${slug(domain)}.clean.v2`;
