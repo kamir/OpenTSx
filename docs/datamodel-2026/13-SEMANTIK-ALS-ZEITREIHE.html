@@ -368,6 +368,25 @@ footer.colophon p + p { margin-top: 0.7rem; }
         es entscheidet sie nicht. Eine Metrikstrecke, die klassifiziert, entscheidet. Siehe Familie G.
       </p>
     </div>
+    <div class="rule-card warn">
+      <h4>4 · Die Kontrollreihe ist modellfrei, nicht kanalfrei</h4>
+      <p>
+        Regel 2 schließt das <em>Modell</em> als Ursache aus, nicht den <em>Aufzeichnungskanal</em>. Eine
+        Diktiergerät-Feldnotiz hat anderes Vokabular als ein Koordinationsitem. Bei einem Kanalwechsel
+        schlagen die modellabhängige und die modellfreie Reihe darum gleichermaßen aus und bestätigen sich
+        gegenseitig, ohne dass ein Themenwechsel im Spiel sein muss. Es braucht eine dritte Kontrolle,
+        geschichtet nach dem erklärten Kanal, etwa <code>content_type</code>.
+      </p>
+      <p style="margin-top:0.6rem">
+        Diese Regel ist aus einer Messung entstanden und nicht aus einem Prinzip. Am 2026-10-13 war Regel 2
+        über 20 benachbarte Wochenpaare erfüllt, Drift gegen Kontrollreihe <code>+0,514</code> bei
+        <code>p=0,020</code>. Die drei größten Driftspitzen fielen sichtbar mit einem Kanalwechsel zusammen,
+        über alle Paare ließ sich das aber weder bestätigen noch ausräumen: Drift gegen Kanalwechsel
+        <code>+0,272</code> bei <code>p=0,246</code>. Die Gegenprobe innerhalb eines Kanals blieb kraftlos,
+        weil nur ein Kanal genug Wochen füllt und sein eigener Rauschboden dort über der Gesamtdrift liegt.
+        Offen, und deshalb als Regel notiert statt als Befund.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -960,12 +979,12 @@ agree_d = Streuung aus Mehrfachbewertung derselben Items</div>
 <section>
   <h2>Was dieses Dokument nicht behauptet</h2>
   <ul class="tight">
-    <li>Keine der sieben Familien ist implementiert. Es gibt keinen Code, auf den hier verwiesen wird, außer dem bereits vorhandenen <code>align.vector</code> und <code>ESCalc</code>.</li>
-    <li>Die Formeln sind Spezifikation, nicht Messung. Kein Wert in diesem Dokument stammt aus einem Lauf über ER1-Daten, weil es derzeit keine gibt.</li>
-    <li>Die Eignung der Verfahren für diesen Korpus ist unbelegt. Ob Ankerprojektionen über 5120 Notizen etwas zeigen, ist eine empirische Frage, die erst die Messung beantwortet.</li>
+    <li><strong>Stand 2026-10-13, überholt:</strong> fünf der sieben Familien sind inzwischen implementiert und über den ER1-Korpus gelaufen. A, B, C, E und F liegen als Werkzeuge in <code>kamir/mirkos-braindump</code>, Familie D als Querschnitt. Offen sind die zweite D-Variante mit Verweildauern, der die Zustandsübergänge im Export fehlen, und Familie G, der die Reviewer-Stufe fehlt.</li>
+    <li><strong>Überholt:</strong> die Latenztabelle in Familie F und die Zahlen in der vierten Regel stammen aus Läufen über 5119 ER1-Items. Alles andere in diesem Dokument ist weiterhin Spezifikation und nicht Messung. Wo ein Wert gemessen ist, steht sein Datum dabei.</li>
+    <li><strong>Beantwortet, und zwar überwiegend verneinend.</strong> Über acht Monate und 25 ISO-Wochen zeigt keine der neun Ankerreihen einen Trend, und auch Drift, Streuung und Participation Ratio zeigen keinen. Ankerprojektionen tragen erst nach einer Zentrierung je Item: rohe Werte messen zu 95,9 % einen gemeinsamen Faktor, nämlich die Textlänge. Gesichert ist ein Befund, nämlich dass Drift und Streuung unkorreliert sind, die Wolke sich also verschiebt und nicht weitet.</li>
     <li>Die Einordnung der ER1-Memory-Schicht selbst, also <code>doc_id</code>, Kontexte und die Link-Konvention, stammt aus den Werkzeugbeschreibungen und ist nicht gegen den Quellcode von aims-core geprüft. Der Avro-Vertrag dagegen ist aus der laufenden Schema Registry gelesen.</li>
     <li>Die Ereignis-Taxonomie in Familie G und im Kanalabschnitt ist aus einer Entwurfsnotiz übernommen, nicht aus einer Spezifikation. Sie ist noch nirgends implementiert, und die Namen können sich ändern. Was bleibt, ist die Aufteilung: klassifizieren gehört in eine eigene Stufe mit eigenem Ereignis, nicht in die Metrikstrecke.</li>
-    <li>Für den in diesem Zusammenhang genannten Begriff „JEV" liegt keine Definition im Korpus. Belegt sind drei Fundstellen vom 2026-09-28, zwei davon YouTube-Items mit dem Tag, eine Entwurfsnotiz mit der Formulierung „ER1 → Kafka/KafScale → JEV-artiger Klassifikation → Topics". Familie G ist deshalb über die <b>Anforderung</b> beschrieben, nämlich eine extern definierte, nachweisbare Klassifikationsstufe, und nicht über ein bestimmtes Verfahren. Sobald die Quelle benannt ist, gehört sie hier hinein.</li>
+    <li>Für den in diesem Zusammenhang genannten Begriff „JEV" liegt keine Definition im Korpus. Belegt sind drei Fundstellen: eine Entwurfsnotiz vom 2026-09-22 mit der Formulierung „ER1 → Kafka/KafScale → JEV-artiger Klassifikation → Topics", und zwei YouTube-Items vom 2026-09-28, die den Tag tragen. Deren Transkript beschreibt ein billiges, schnelles <em>Entscheidungsmodell</em>, dessen Entscheidung von den Schichten abgelesen statt erzeugt wird. Die automatischen Untertitel schreiben denselben gesprochenen Namen abwechselnd „Laya" und „LLaMA", die Schreibweise im Korpus ist also kein verlässlicher Beleg. Familie G bleibt deshalb über die Anforderung beschrieben, nämlich eine extern definierte, nachweisbare Klassifikationsstufe, und nicht über ein bestimmtes Verfahren.</li>
   </ul>
 </section>
 
