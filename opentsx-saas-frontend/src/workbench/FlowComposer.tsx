@@ -1,13 +1,14 @@
 /**
  * OpenTSx Flow Composer: the flows stored in the account, with what each one reads, computes and publishes.
- * From here a flow is opened in the editor (the workbench), created, renamed, copied, deleted, activated and
- * paused. Activating a flow the vector processor can run deploys it; pausing stops it.
+ * From here a flow is opened in the editor (the workbench), created, renamed, copied and deleted, and its Smart
+ * Topic is started and stopped on the vector processor.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, DagState, topicConflict } from './deployments';
+import { DagList, DagState, describeSink, topicConflict } from './deployments';
+import { deployChecks } from './flow';
 import { FlowFilter, FlowSummary, NO_FLOW_FILTER, copyName, domainFacets, filterFlows, runPlan, stamp, summarize } from './flows';
 
 interface Props {
@@ -30,7 +31,7 @@ const STATUSES = ['draft', 'active', 'paused', 'archived'];
 function deployment(d: DagState | undefined): string {
   if (!d) return '';
   if (d.desired !== 'deployed') return 'stopped';
-  return d.sinks.length > 0 && d.sinks.every((s) => s.state === 'running') ? 'running' : d.sinks.some((s) => s.state === 'failed') ? 'failed' : 'deployed';
+  return d.sinks.length > 0 && d.sinks.every((s) => s.state === 'running') ? 'running' : d.sinks.some((s) => s.state === 'failed') ? 'failed' : 'starting';
 }
 
 function reasonOf(e: unknown): string {
@@ -69,7 +70,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
     }
     // The deployment column is an extra: without a retrieval server it stays empty.
     try {
-      const res = await fetch(`${root}/v1/dags`);
+      const res = await fetch(`${root}/v1/dags`, { signal: AbortSignal.timeout(10_000) });
       if (res.ok) setDags(new Map(((await res.json()) as DagList).dags.map((d) => [d.dag, d])));
     } catch {
       // the list works without it
@@ -106,12 +107,12 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
     setPicked((p) => (allShown ? p.filter((i) => !rows.some((f) => f.id === i)) : [...new Set([...p, ...rows.map((f) => f.id)])]));
 
   /** Runs one step per flow and reports each outcome; a failure of one flow does not stop the others. */
-  const forEach = async (what: string, step: (f: FlowSummary) => Promise<string>) => {
+  const forEach = async (what: string, step: (f: FlowSummary) => Promise<string>, list: FlowSummary[] = targets) => {
     setBusy(what);
     setMessage(null);
     const lines: string[] = [];
     let ok = true;
-    for (const f of targets) {
+    for (const f of list) {
       try {
         lines.push(await step(f));
       } catch (e) {
@@ -119,39 +120,47 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
         lines.push(`"${f.name}": ${what.toLowerCase()} failed, ${reasonOf(e)}.`);
       }
     }
-    await refresh();
+    // the outcome first: reading the lists again can take a while when the broker is slow
     setMessage({ ok, lines });
+    await refresh();
     setBusy(null);
   };
 
-  const activate = () =>
-    forEach('Activate', async (f) => {
-      const plan = runPlan(f);
-      if ('blocker' in plan) {
+  /** Starts the Smart Topic of a flow: hands its DAG to the vector processor. */
+  const start = (list?: FlowSummary[]) =>
+    forEach(
+      'Start',
+      async (f) => {
+        const plan = runPlan(f);
+        if ('blocker' in plan) throw new Error(`the processor cannot run this flow yet. ${plan.blocker} Open it in the editor to change that`);
+        if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not deploy');
+        // read anew: a flow started a moment ago in this run counts too
+        const res = await fetch(`${root}/v1/dags`, { signal: AbortSignal.timeout(10_000) }).catch(() => null);
+        const running = res?.ok ? ((await res.json()) as DagList).dags : [...dags.values()];
+        const conflict = topicConflict(running, plan.dag, f.published, (await flowsAPI.list()).map(summarize));
+        if (conflict) throw new Error(conflict);
+        await dagsAPI.deploy(plan.yaml);
         await flowsAPI.patch(f.id, { status: 'active' });
-        return `"${f.name}" is marked active. Nothing computes it: ${plan.blocker}`;
-      }
-      if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not deploy');
-      // read anew: a flow activated a moment ago in this run counts too
-      const res = await fetch(`${root}/v1/dags`);
-      const running = res.ok ? ((await res.json()) as DagList).dags : [...dags.values()];
-      const conflict = topicConflict(running, plan.dag, f.published, (await flowsAPI.list()).map(summarize));
-      if (conflict) throw new Error(conflict);
-      await dagsAPI.deploy(plan.yaml);
-      await flowsAPI.patch(f.id, { status: 'active' });
-      return `"${f.name}" is active: deployed as ${plan.dag}, the processor takes it up within a few seconds.`;
-    });
+        return `"${f.name}" is started as ${plan.dag}: the processor takes it up within a few seconds and writes ${f.published.join(', ')}.`;
+      },
+      list
+    );
 
-  const pause = () =>
-    forEach('Pause', async (f) => {
-      const running = f.dag && dags.get(f.dag)?.desired === 'deployed';
-      if (running) {
-        if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not stop a deployment');
-        await dagsAPI.stop(f.dag);
-      }
-      await flowsAPI.patch(f.id, { status: 'paused' });
-      return running ? `"${f.name}" is paused: ${f.dag} is stopped. Its topic keeps what was written.` : `"${f.name}" is paused.`;
-    });
+  /** Stops the Smart Topic of a flow. What was written stays in the topic. */
+  const stop = (list?: FlowSummary[]) =>
+    forEach(
+      'Stop',
+      async (f) => {
+        const running = f.dag && dags.get(f.dag)?.desired === 'deployed';
+        if (running) {
+          if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not stop a deployment');
+          await dagsAPI.stop(f.dag);
+        }
+        if (running || f.status === 'active') await flowsAPI.patch(f.id, { status: 'paused' });
+        return running ? `"${f.name}" is stopped. Its topic keeps what was written.` : `"${f.name}" was not running.`;
+      },
+      list
+    );
 
   const duplicate = () => {
     const taken = (flows ?? []).map((f) => f.name);
@@ -191,6 +200,9 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
     setBusy(null);
   };
 
+  const isOn = (f: FlowSummary) => dags.get(f.dag)?.desired === 'deployed';
+  /** What the Smart Topic of a runnable flow is doing. */
+  const state = (f: FlowSummary) => (isOn(f) ? deployment(dags.get(f.dag)) : dags.get(f.dag) ? 'stopped' : 'not started');
   const changed = !!focused && (draft.name.trim() !== focused.name || draft.description !== focused.description);
   const plan = focused ? runPlan(focused) : null;
   const none = targets.length === 0;
@@ -210,10 +222,10 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
             {flows === null && !error
               ? 'Reading the flows of your account'
               : `${flows?.length ?? 0} flows in your account, ${flows?.filter((f) => f.status === 'active').length ?? 0} active.`}{' '}
-            Select a flow, then open it in the editor, copy, delete, activate or pause it.
+            Select a flow, then open it in the editor, copy or delete it, or start and stop its Smart Topic.
           </span>
           <span>
-            Activating a flow the vector processor can run deploys it; pausing stops it.{' '}
+            Start runs a flow as a Smart Topic on the vector processor: it writes the topic and follows new data. Stop ends that.{' '}
             {access && !access.canRun ? `Deploying is not open to this account: ${access.reason ?? 'administrators only'}` : ''}
           </span>
         </div>
@@ -290,8 +302,8 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                     <th>domain</th>
                     <th>buckets</th>
                     <th>series</th>
-                    <th>Smart Topics</th>
-                    <th>processor</th>
+                    <th>topics</th>
+                    <th>Smart Topic</th>
                     <th>changed (UTC)</th>
                   </tr>
                 </thead>
@@ -320,7 +332,20 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                       <td>{f.openable ? f.steps.length : ''}</td>
                       <td>{f.sourceSeries.length || ''}</td>
                       <td>{f.published.length || ''}</td>
-                      <td className="l">{deployment(dags.get(f.dag))}</td>
+                      <td className="l wb-flow-run">
+                        {f.runnable ? (
+                          <>
+                            <span className={`wb-flow-status ${state(f)}`}>{state(f)}</span>
+                            {isOn(f) ? (
+                              <button disabled={!!busy} onClick={(e) => { e.stopPropagation(); stop([f]); }} title="Stops writing the Smart Topic">Stop</button>
+                            ) : (
+                              <button disabled={!!busy} onClick={(e) => { e.stopPropagation(); start([f]); }} title="Starts the vector processor on this flow">Start</button>
+                            )}
+                          </>
+                        ) : (
+                          deployment(dags.get(f.dag))
+                        )}
+                      </td>
                       <td className="l">{stamp(f.updatedAt)}</td>
                     </tr>
                   ))}
@@ -367,12 +392,34 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
                   ]}
                   <dt>Changed</dt><dd>{stamp(focused.updatedAt)} UTC</dd>
                 </dl>
-                {plan && (
-                  <p className={'blocker' in plan ? 'wb-muted' : ''}>
-                    {'blocker' in plan
-                      ? `Activating marks this flow only; the processor cannot run it. ${plan.blocker}`
-                      : `Activating deploys this flow as ${plan.dag}.`}
-                  </p>
+                <h3>Smart Topic</h3>
+                {plan && 'yaml' in plan ? (
+                  <div className="wb-flow-run-box">
+                    <p>
+                      <span className={`wb-flow-status ${state(focused)}`}>{state(focused)}</span> as {plan.dag}
+                    </p>
+                    {(dags.get(focused.dag)?.sinks ?? []).map((sink) => (
+                      <p key={sink.topic} className="wb-muted">{sink.topic}: {describeSink(sink)}</p>
+                    ))}
+                    <button className="wb-primary" disabled={!!busy || isOn(focused)} onClick={() => start([focused])}>Start</button>{' '}
+                    <button disabled={!!busy || !isOn(focused)} onClick={() => stop([focused])}>Stop</button>
+                    <p className="wb-muted">
+                      Start hands the flow to the vector processor: it computes the topic from the beginning of the source and
+                      follows it. Stop ends that; the topic keeps what was written.
+                    </p>
+                  </div>
+                ) : focused.doc ? (
+                  <div className="wb-flow-run-box">
+                    <p>This flow cannot run as a Smart Topic yet. The processor needs:</p>
+                    <ul className="wb-findings">
+                      {deployChecks(focused.doc.nodes, focused.sourceSeries).map((c, i) => (
+                        <li key={i} className={c.ok ? 'ok' : 'error'}><b>{c.ok ? 'Ready' : 'Missing'}</b> {c.text}</li>
+                      ))}
+                    </ul>
+                    <button onClick={() => onOpen([focused.id])}>Open in the editor</button>
+                  </div>
+                ) : (
+                  <p className="wb-muted">Only flows made in the editor can run as a Smart Topic.</p>
                 )}
                 {focused.steps.length > 0 && (
                   <>
@@ -408,8 +455,10 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
             </>
           ) : (
             <>
-              <button disabled={none || !!busy} onClick={activate} title="Marks the flow active and deploys it when the processor can run it">Activate</button>
-              <button disabled={none || !!busy} onClick={pause} title="Marks the flow paused and stops its deployment">Pause</button>
+              <span className="wb-muted">Smart Topic:</span>
+              <button disabled={none || !!busy} onClick={() => start()} title="Starts the vector processor on the selected flows">Start</button>
+              <button disabled={none || !!busy} onClick={() => stop()} title="Stops writing the Smart Topics of the selected flows">Stop</button>
+              <span className="wb-sep" />
               <button disabled={none || !!busy} onClick={duplicate}>Copy</button>
               <button disabled={none || !!busy} onClick={() => setConfirmDelete(true)}>Delete</button>
             </>

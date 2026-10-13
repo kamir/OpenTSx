@@ -1,7 +1,7 @@
 /**
  * OpenTSx Flow Composer: the page a signed-in user lands on. It lists the flows of the account and is the place
- * to open one in the editor (the workbench), to create, rename, copy and delete flows, and to activate and pause
- * them.
+ * to open one in the editor (the workbench), to create, rename, copy and delete flows, and to start and stop the
+ * Smart Topic of a flow.
  */
 
 import { Link, useNavigate } from 'react-router-dom';

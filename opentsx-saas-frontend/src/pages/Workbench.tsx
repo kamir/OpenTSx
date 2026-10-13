@@ -727,7 +727,7 @@ export default function Workbench() {
         </button>
         <span className="wb-grow" />
         {signedIn && (
-          <button onClick={() => setFlowsOpen(true)} title="The flows of your account: open, create, copy, delete, activate, pause">
+          <button onClick={() => setFlowsOpen(true)} title="The flows of your account: open, create, copy, delete, start and stop their Smart Topics">
             Flow Composer
           </button>
         )}

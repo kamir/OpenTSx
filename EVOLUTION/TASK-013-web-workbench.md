@@ -6,7 +6,7 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-composer-page` (013.21), Worktree
+- **Delivery-Branch**: `opentsx/2026-task013-start-stop` (013.21, Start und Stop), Worktree
   `../OpenTSx-worktrees/composer-page`
 - **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task013-web-workbench` (013.1 bis 013.4, PR #161),
   `opentsx/2026-task013-ts-inventory` (013.8, PR #165), `opentsx/2026-task013-vector-sink` (013.10, PR #166),
@@ -14,7 +14,8 @@
   `opentsx/2026-task013-ground-truth` (013.13, PR #173), `opentsx/2026-task013-broker-patience` (013.14, PR #175),
   `opentsx/2026-task013-vector-ops` (013.15 und 013.16, PR #177),
   `opentsx/2026-task013-processor-resilience` (013.17 bis 013.19, PR #178),
-  `opentsx/2026-task013-side-tabs` (013.20, PR #179).
+  `opentsx/2026-task013-side-tabs` (013.20, PR #179),
+  `opentsx/2026-task013-composer-page` (013.21, PR #180).
   `opentsx/2026-task013-vector-processor` (013.15, PR #176) wurde in seinen Basis-Branch statt nach `master`
   gemergt; sein Inhalt kommt mit PR #177.
 
@@ -191,6 +192,9 @@ Beobachtungen am Swing-Code:
       der Kacheln den Composer aus 013.19 als ganze Seite, mit Auswahl, Öffnen im Editor, Anlegen, Umbenennen,
       Kopieren, Löschen, Aktivieren und Pausieren. Gemeint war mit dem Namen diese Seite; 013.19 hatte ihn nur
       dem Fenster in der Workbench gegeben, das als Abkürzung bleibt
+      - "Start" und "Stop" für den Smart Topic eines Flows, in jeder Zeile, in den Details und für die Auswahl;
+        sie ersetzen "Activate" und "Pause". Ein Flow, den der Prozessor nicht ausführen kann, zeigt die Liste
+        dessen, was fehlt, und wird nicht mehr nur als aktiv markiert
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
