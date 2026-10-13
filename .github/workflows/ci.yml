@@ -129,10 +129,10 @@ jobs:
             nohup "$RUNNER_TEMP/kafscale-broker" > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
           for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/39092) 2>/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/kafscale-broker.log"; exit 1
-      - name: Run conformance suite, episode-log, wind-farm and statistics integration tests
+      - name: Run conformance suite, episode-log, wind-farm, statistics and event-topic integration tests
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
-        run: mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-windpark,opentsx-stats -am test
+        run: mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-windpark,opentsx-stats,opentsx-twin-live -am test
       - name: Capability report
         if: always()
         run: |

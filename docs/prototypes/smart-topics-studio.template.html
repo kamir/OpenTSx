@@ -448,23 +448,42 @@ dialog.drawer::backdrop { background: rgba(10, 8, 59, 0.35); }
   <section id="view-topic" role="tabpanel" aria-label="Ereignis-Topic" class="stack" hidden>
     <div class="card">
       <h2>Ereignis-Topic <span class="chip" id="tp-name"></span></h2>
-      <p class="prose">Die Ereignisse des Referenzlaufs im Zeitraffer, in der Reihenfolge und Form, in der sie in einem Topic ankämen: ein Datensatz je Ereignis, der Schlüssel ist der Baustein.</p>
-      <p class="decision"><span>Noch keine Live-Verbindung</span>Der Zwilling schreibt seine Ereignisse bisher nicht nach KafScale, und für den Browser fehlt eine Brücke zum Broker. Diese Ansicht spielt deshalb den gerechneten Lauf ab. Der Topic-Name ist ein Vorschlag nach dem Muster der übrigen Zwillings-Topics.</p>
-      <div class="btnrow">
-        <button class="btn primary" id="tp-play">Wiedergabe starten</button>
-        <button class="btn" id="tp-reset">Von vorn</button>
-        <label class="ctl inline" for="tp-speed">Dauer des Durchlaufs
-          <select id="tp-speed"><option value="30">30 Sekunden</option><option value="120">2 Minuten</option><option value="600">10 Minuten</option></select>
-        </label>
-        <span class="timepill" id="tp-clock"></span>
-        <span class="note" id="tp-count" role="status"></span>
+      <p class="prose">Ein Datensatz je Ereignis des Zwillings, in der Reihenfolge des Laufs. Der Schlüssel ist der Baustein, der Wert beschreibt das Ereignis.</p>
+      <div class="seg" role="group" aria-label="Quelle der Datensätze">
+        <button id="tp-src-live" aria-pressed="false">Live aus dem Topic</button>
+        <button id="tp-src-replay" aria-pressed="true">Wiedergabe ohne Broker</button>
       </div>
-      <div class="progress" aria-hidden="true"><div id="tp-bar"></div></div>
+      <div class="sec" id="tp-live" hidden>
+        <div class="btnrow">
+          <label class="ctl inline" for="tp-url">Adresse der Brücke
+            <input type="text" id="tp-url" style="width:24ch" spellcheck="false" autocomplete="off">
+          </label>
+          <label class="ctl inline" for="tp-from">Lesen
+            <select id="tp-from"><option value="earliest">von Anfang an</option><option value="latest">ab jetzt</option></select>
+          </label>
+          <button class="btn primary" id="tp-connect">Verbinden</button>
+          <span class="chip org" id="tp-state">nicht verbunden</span>
+        </div>
+        <p class="note" id="tp-hint" role="status"></p>
+        <p class="note">Die Brücke liest das Topic aus KafScale und gibt es an den Browser weiter. Starten: <span class="mono">bin/opentsx twin-live bridge --bootstrap host:9092</span>. Ereignisse schreibt <span class="mono">bin/opentsx twin-live publish --bootstrap host:9092 --duration 120</span> in das Topic. Ohne Broker startet <span class="mono">bin/opentsx twin-live demo</span> beides mit Topics im Speicher.</p>
+      </div>
+      <div class="sec" id="tp-replay">
+        <div class="btnrow">
+          <button class="btn primary" id="tp-play">Wiedergabe starten</button>
+          <button class="btn" id="tp-reset">Von vorn</button>
+          <label class="ctl inline" for="tp-speed">Dauer des Durchlaufs
+            <select id="tp-speed"><option value="30">30 Sekunden</option><option value="120">2 Minuten</option><option value="600">10 Minuten</option></select>
+          </label>
+          <span class="timepill" id="tp-clock"></span>
+        </div>
+        <div class="progress" aria-hidden="true"><div id="tp-bar"></div></div>
+        <p class="note">Spielt den gerechneten Referenzlauf im Browser ab. Dabei wird nichts aus KafScale gelesen.</p>
+      </div>
     </div>
     <div class="card">
-      <h2>Datensätze, neueste zuerst</h2>
+      <h2>Datensätze, neueste zuerst <span class="note" id="tp-count" role="status"></span></h2>
       <div class="scroll"><table id="tp-rows"></table></div>
-      <p class="note" id="tp-empty">Noch kein Datensatz. Starte die Wiedergabe.</p>
+      <p class="note" id="tp-empty"></p>
     </div>
   </section>
 </main>
@@ -1141,11 +1160,14 @@ $("tech").addEventListener("click", () => setTech(!document.documentElement.data
 let tech0 = false; try { tech0 = localStorage.getItem("opentsx.studio.tech") === "1"; } catch (e) {}
 setTech(tech0);
 
-// event topic: replay of the events of the reference run as records (key = atom); there is no live source yet
-const tp = { pos: 0, timer: null, shown: -1 };
+// event topic: records of twin.<id>.<run>.events, either live through the bridge (server-sent events) or as a replay
+// of the reference run in the browser
+const tp = { mode: "replay", pos: 0, timer: null, shown: -1, es: null, state: "idle", rows: [] };
 const tpTotal = () => N * SC.stepMinutes;
+const tpTopic = () => `twin.${SC.plan.twin}.${SC.reference.runId}.events`;
 function tpStop() { if (!tp.timer) return; clearInterval(tp.timer); tp.timer = null; renderTopic(); }
-function tpReset() { clearInterval(tp.timer); tp.timer = null; tp.pos = 0; tp.shown = -1; }
+function tpDisconnect() { if (tp.es) tp.es.close(); tp.es = null; tp.state = "idle"; }
+function tpReset() { clearInterval(tp.timer); tp.timer = null; tp.pos = 0; tp.shown = -1; tpDisconnect(); tp.rows = []; }
 function tpPlay() {
   if (tp.pos >= tpTotal()) { tp.pos = 0; tp.shown = -1; }
   let last = performance.now();
@@ -1153,26 +1175,64 @@ function tpPlay() {
     if (tp.pos >= tpTotal()) { clearInterval(tp.timer); tp.timer = null; } renderTopic(); }, 100);
   renderTopic();
 }
+function tpConnect() {
+  tpDisconnect(); tp.rows = []; tp.shown = -1; $("tp-hint").textContent = "";
+  let base; try { base = new URL($("tp-url").value.trim()); if (!/^https?:$/.test(base.protocol)) throw 0; } catch (e) { $("tp-hint").textContent = "Die Adresse muss mit http:// oder https:// beginnen."; renderTopic(true); return; }
+  try { localStorage.setItem("opentsx.studio.bridge", base.href); } catch (e) {}
+  const es = tp.es = new EventSource(base.href.replace(/\/+$/, "") + "/v1/topics/" + encodeURIComponent(tpTopic()) + "/events?from=" + $("tp-from").value);
+  tp.state = "connecting";
+  es.onopen = () => { if (tp.es !== es) return; tp.state = "open"; $("tp-hint").textContent = ""; renderTopic(true); };
+  es.onmessage = m => { if (tp.es !== es) return; let d; try { d = JSON.parse(m.data); } catch (e) { return; }
+    const v = d.value && typeof d.value === "object" ? d.value : {};
+    tp.rows.push({ offset: d.offset, received: d.timestamp, json: JSON.stringify(d.value),
+      e: { t: (Date.parse(v.t) - Date.parse(SC.t0)) / 60000, atom: String(v.atom || d.key || ""), type: String(v.type || "unbekannt"), attrs: v.attrs || {} } });
+    if (tp.rows.length > 500) tp.rows.shift();
+    renderTopic(); };
+  es.onerror = () => { if (tp.es !== es) return;
+    if (es.readyState === 2) { tp.es = null; tp.state = "failed"; $("tp-hint").textContent = "Keine Verbindung. Läuft die Brücke unter dieser Adresse, und hat schon jemand in dieses Topic geschrieben?"; }
+    else { tp.state = "connecting"; $("tp-hint").textContent = "Die Brücke antwortet nicht; der Browser versucht es weiter."; }
+    renderTopic(true); };
+  renderTopic(true);
+}
+function tpMode(m) { tp.mode = m; tpStop(); tp.shown = -1; renderTopic(true); }
+const TP_STATE = { idle: ["nicht verbunden", ""], connecting: ["verbinde …", "FORECAST"], open: ["verbunden", "MEASURED"], failed: ["keine Verbindung", ""] };
 function renderTopic(force) {
-  const evs = SC.reference.events, n = evs.filter(e => e.t <= tp.pos).length, done = tp.pos >= tpTotal();
-  $("tp-name").textContent = `twin.${SC.plan.twin}.${SC.reference.runId}.events`;
+  const live = tp.mode === "live", evs = SC.reference.events;
+  $("tp-name").textContent = tpTopic();
+  $("tp-src-live").setAttribute("aria-pressed", live); $("tp-src-replay").setAttribute("aria-pressed", !live);
+  $("tp-live").hidden = !live; $("tp-replay").hidden = live;
+  $("tp-state").textContent = TP_STATE[tp.state][0]; $("tp-state").className = "chip org " + TP_STATE[tp.state][1];
+  $("tp-connect").textContent = tp.es ? "Trennen" : "Verbinden";
+  const done = tp.pos >= tpTotal();
   $("tp-play").textContent = tp.timer ? "Anhalten" : done ? "Noch einmal abspielen" : tp.pos > 0 ? "Fortsetzen" : "Wiedergabe starten";
   $("tp-clock").textContent = tLabel(Math.min(N - 1, Math.floor(tp.pos / SC.stepMinutes)), true) + " UTC";
   $("tp-bar").style.width = (100 * tp.pos / tpTotal()) + "%";
+  const recs = live ? tp.rows : evs.filter(e => e.t <= tp.pos).map((e, i) => ({ offset: i, e, json: JSON.stringify({ t: tAt(evIndex(e.t)).toISOString(), atom: e.atom, type: e.type, attrs: e.attrs }) }));
+  const n = recs.length;
   if (n === tp.shown && !force) return;
   const fresh = n > tp.shown && tp.shown >= 0 ? n - tp.shown : 0; tp.shown = n;
-  $("tp-count").textContent = `${n} von ${evs.length} Datensätzen` + (SC.reference.eventCount > evs.length ? ` (der Lauf hat ${SC.reference.eventCount})` : "");
+  $("tp-count").textContent = live ? `${n} empfangen` : `${n} von ${evs.length}` + (SC.reference.eventCount > evs.length ? ` (der Lauf hat ${SC.reference.eventCount})` : "");
   $("tp-empty").hidden = n > 0;
-  $("tp-rows").innerHTML = n ? `<tr class="h"><th scope="col" class="n">Offset</th><th scope="col">Zeit (UTC)</th><th scope="col">Schlüssel</th><th scope="col">Ereignis</th><th scope="col"></th></tr>`
-    + evs.slice(0, n).map((e, i) => ({ e, i })).reverse().map(({ e, i }, r) => `<tr class="${r < fresh ? "new" : ""}"><td class="n">${i}</td><td class="k">${tLabel(Math.round(evIndex(e.t)), true)}</td>
-      <td class="k">${esc(e.atom)}<div class="note" style="font-family:var(--font-body)">${esc(nodeTitle(e.atom))}</div></td>
-      <td class="doc">${esc(evText(e))}<div class="v tech">${esc(JSON.stringify({ t: tAt(evIndex(e.t)).toISOString(), atom: e.atom, type: e.type, attrs: e.attrs }))}</div></td>
-      <td><button class="btn link" data-ev="${i}">Im Systembild zeigen</button></td></tr>`).join("") : "";
-  $("tp-rows").querySelectorAll("[data-ev]").forEach(b => b.addEventListener("click", () => { const e = evs[+b.dataset.ev];
+  $("tp-empty").textContent = live ? (tp.state === "open" ? "Verbunden. Noch kein Datensatz im Topic angekommen." : "Noch kein Datensatz. Verbinde dich mit der Brücke.") : "Noch kein Datensatz. Starte die Wiedergabe.";
+  const clock = ms => { const d = new Date(ms); return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); };
+  const when = t => Number.isFinite(t) ? tLabel(Math.max(0, Math.min(N - 1, Math.round(evIndex(t)))), true) : NA;
+  $("tp-rows").innerHTML = n ? `<tr class="h"><th scope="col" class="n">Offset</th><th scope="col">Zeit im Lauf (UTC)</th><th scope="col">Schlüssel</th><th scope="col">Ereignis</th><th scope="col"></th></tr>`
+    + recs.map((r, i) => ({ r, i })).reverse().map(({ r, i }, row) => `<tr class="${row < fresh ? "new" : ""}"><td class="n">${r.offset}</td>
+      <td class="k">${when(r.e.t)}${r.received ? `<div class="note" style="font-family:var(--font-body)">empfangen ${clock(r.received)}</div>` : ""}</td>
+      <td class="k">${esc(r.e.atom)}<div class="note" style="font-family:var(--font-body)">${esc(nodeTitle(r.e.atom))}</div></td>
+      <td class="doc">${esc(evText(r.e))}<div class="v tech">${esc(r.json)}</div></td>
+      <td>${Number.isFinite(r.e.t) ? `<button class="btn link" data-ev="${i}">Im Systembild zeigen</button>` : ""}</td></tr>`).join("") : "";
+  $("tp-rows").querySelectorAll("[data-ev]").forEach(b => b.addEventListener("click", () => { const e = recs[+b.dataset.ev].e;
     $("scrub").value = Math.max(0, Math.min(N - 1, Math.round(evIndex(e.t)))); selNode = nodeOf(e.atom) ? e.atom : selNode; selWire = null; show("graph"); }));
 }
 $("tp-play").addEventListener("click", () => tp.timer ? tpStop() : tpPlay());
-$("tp-reset").addEventListener("click", () => { tpReset(); renderTopic(true); });
+$("tp-reset").addEventListener("click", () => { clearInterval(tp.timer); tp.timer = null; tp.pos = 0; tp.shown = -1; renderTopic(true); });
+$("tp-src-live").addEventListener("click", () => tpMode("live")); $("tp-src-replay").addEventListener("click", () => tpMode("replay"));
+$("tp-connect").addEventListener("click", () => { if (tp.es) { tpDisconnect(); renderTopic(true); } else tpConnect(); });
+let bridge0 = "http://localhost:8090";
+try { bridge0 = new URLSearchParams(location.search).get("bridge") || localStorage.getItem("opentsx.studio.bridge") || bridge0; } catch (e) {}
+$("tp-url").value = bridge0;
+if (new URLSearchParams(location.search).get("bridge")) tp.mode = "live";
 
 // rail: icons only or with labels; the diagram is measured again once the width has settled
 function setRail(open) { if (open) document.documentElement.dataset.rail = "open"; else delete document.documentElement.dataset.rail;

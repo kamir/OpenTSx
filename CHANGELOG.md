@@ -66,8 +66,11 @@ entries are grouped by date. The detailed progress log (German) is in
   that expands and collapses, scenarios as document tabs, detail panel for blocks and connections sliding in from the
   right, status bar. Keyboard: Alt+1 to Alt+4 for the views, Ctrl+B for the rail, Esc closes the detail panel.
   The document tabs belong to the current scenario: the scenario itself, a link to its page in the Anlagen-Explorer,
-  and an event topic view that replays the events of the reference run as topic records. The twin does not publish to
-  KafScale yet, so that view is a replay and says so.
+  and an event topic view.
+- Event topic of a twin run (`opentsx-twin-live`): `EventPublisher` writes the events of a run to
+  `twin.<id>.<run>.events` (key: atom, value: JSON `twin.event.v1`), at once or played over a given duration;
+  `EventBridge` serves such a topic to browsers as server-sent events; `bin/opentsx twin-live publish|bridge|demo`.
+  The Studio follows the topic live through the bridge and keeps a replay that needs no broker.
 - Retrieval (`opentsx-retrieval`, P5): segmentation, pattern engine (MASS, SAX, DTW), retrieval API, REST server,
   Python client, power-curve analysis.
 - DevOps guide for k3s against an existing KafScale cluster (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`).
