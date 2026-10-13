@@ -112,6 +112,41 @@ public final class TopicLayout {
         return SMART_NAME.matcher(name).matches() ? name : null;
     }
 
+    /**
+     * Control topic of the vector processor: one record per deployment or stop of a DAG, key = name of the DAG,
+     * the latest record of a key counts ({@code opentsx.dag-control.v1}, JSON).
+     */
+    public String dags() {
+        return "tsx." + domain + ".dags.v1";
+    }
+
+    /** What the vector processor reports per sink ({@code opentsx.dag-status.v1}, JSON); the latest record counts. */
+    public String dagStatus() {
+        return "tsx." + domain + ".dag-status.v1";
+    }
+
+    /** Creates the control and status topics when they are missing, one partition each. */
+    public void provisionDagTopics(Admin admin, short replicationFactor) {
+        try {
+            Set<String> existing = admin.listTopics().names().get(30, TimeUnit.SECONDS);
+            List<NewTopic> missing = new ArrayList<>();
+            for (String t : List.of(dags(), dagStatus())) {
+                if (!existing.contains(t)) {
+                    missing.add(new NewTopic(t, 1, replicationFactor).configs(Map.of("compression.type", "zstd", "cleanup.policy", "delete")));
+                }
+            }
+            if (!missing.isEmpty()) {
+                admin.createTopics(missing).all().get(30, TimeUnit.SECONDS);
+            }
+        } catch (ExecutionException e) {
+            if (!(e.getCause() instanceof TopicExistsException)) {
+                throw new IllegalStateException("could not create the DAG topics of domain " + domain, e.getCause());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("could not create the DAG topics of domain " + domain, e);
+        }
+    }
+
     /** Creates the vector topic when it is missing: one partition, so a scan reads the measuring points in order. */
     public void provisionSmartVectors(Admin admin, String name, short replicationFactor) {
         String topic = smartVectors(name);

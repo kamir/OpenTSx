@@ -268,6 +268,41 @@ sich wie jede andere Reihe laden.
 
 ---
 
+## 5b. Fortlaufender Betrieb der Vektor-Sinks (Vektor-Prozessor)
+
+> Stand: 2026-10-13. Umgesetzt in `opentsx-retrieval` (`VectorStream`, `VectorProcessor`, `VectorProcessorApp`,
+> Kommando `opentsx vectors`), mit Tests und einem Lauf gegen den Labor-Broker. Die k3s-Komponente, der Deploy-Weg
+> über das Backend und die Anzeige in der Workbench folgen (TASK-013, 013.16).
+
+Der Einmal-Lauf aus 5a rechnet, was gerade da ist. Der Vektor-Prozessor hält einen Vektor-Sink dauerhaft aktuell: Er
+folgt `tsx.<domain>.episodes.v2` und hängt die Messpunkte an, sobald sie endgültig sind.
+
+**Steuerung über Topics.**
+
+| Topic | Inhalt | Regel |
+|-------|--------|-------|
+| `tsx.<domain>.dags.v1` | `opentsx.dag-control.v1`: `dag`, `state` (`deployed` oder `stopped`), `spec` (das DAG-Dokument), `by`, `at` | Schlüssel ist der DAG-Name; je Name gilt der letzte Eintrag. Ein Deployment überlebt damit jeden Neustart des Prozessors. |
+| `tsx.<domain>.dag-status.v1` | `opentsx.dag-status.v1`: `dag`, `vector`, `topic`, `state` (`waiting`, `running`, `failed`, `stopped`), `records`, `watermark`, `waitingFor`, `skippedBlocks`, `error`, `at` | Schlüssel `<dag>/<vector>`; der letzte Eintrag gilt. Bei Zustandswechsel und alle 30 s. |
+
+**Semantik.**
+
+| Punkt | Regel |
+|-------|-------|
+| Läufer | Je Vektor-Sink ein Läufer mit eigenem Consumer, eigenen Lesepositionen und eigenem Zustand. Ein neuer oder geänderter DAG beginnt am Anfang des Quell-Topics (`source.start: earliest`, Voreinstellung) oder mit dem, was ab jetzt kommt (`latest`), ohne die anderen zu berühren. |
+| Reihen | `source.series` ist Pflicht. Solange eine genannte Reihe noch nie gesehen wurde, wird nichts geschrieben (`waiting`): Erst dann steht fest, welche Reihen einen Vektor bilden und wie die Komponenten heißen. |
+| Abschluss eines Ticks | Ein Tick ist endgültig, wenn **jede** genannte Reihe sein Ende erreicht hat, plus `lateness` (Parameter des Knotens, Voreinstellung keine). Maßgeblich ist das Ende der Episode (`tEnd`), nicht der letzte Messwert. Bei Episoden von 10 Minuten und 60 s Takt erscheinen also je Schlüssel zehn Messpunkte auf einmal. |
+| Reihenfolge je Reihe | Eine Episode muss dort beginnen, wo die vorige derselben Reihe endete, oder später. Sonst wird sie übersprungen und gezählt (`skippedBlocks`): ein Duplikat nach einem wiederholten Schreibversuch oder Daten außer der Reihe. `lateness` gleicht also den Versatz **zwischen** Reihen aus, nicht verspätete Episoden einer Reihe. |
+| Checkpoint | Je Läufer eine Datei im Zustandsverzeichnis: Lesepositionen und Zustand (offene Ticks, letzter Wert je Reihe für `as-of`, Fortschritt). Geschrieben wird sie erst, wenn der Broker alle Messpunkte bestätigt hat. Nach einem Absturz wiederholt der Läufer höchstens, was er seit dem letzten Checkpoint geschrieben hat; die Werte sind dieselben, und Leser nehmen den späteren Messpunkt. |
+| Broker-Fenster | Lesen wartet (`Patience`), Schreiben wiederholt bis zum Delivery-Timeout. Bestätigt der Broker nicht alles, geht der Läufer in `failed` und setzt nach einer Minute am letzten Checkpoint neu an. |
+| Gleichheit mit dem Einmal-Lauf | Mit allen Daten gefüttert liefert `VectorStream` dieselben Messpunkte wie `VectorAligner`, unabhängig davon, in welcher Folge die Reihen eintreffen (Test `VectorStreamTest`). |
+
+**Grenzen.** Genau ein Prozessor je Domäne (kein Lease, keine Gruppe). Eine Reihe, die verstummt, hält ihren
+Vektor an: Es gibt keinen Leerlauf-Timeout, der Status zeigt aber, worauf gewartet wird. Vektoren wie in 5a nur
+direkt auf den Reihen der Quelle. Der Zustand eines Läufers liegt im Arbeitsspeicher und im Checkpoint; bei sehr
+vielen Reihen mit großem Versatz wächst er mit der Zahl offener Ticks.
+
+---
+
 ## 6. Operator-Katalog und Laufzeiten
 
 | Operator | Go (Kern) | Java | Python | Parität |
@@ -279,7 +314,7 @@ sich wie jede andere Reihe laden.
 | `dq.checks` | ja | ja | – | Golden Files |
 | `segment.threshold`, `segment.extremum` (inkrementell) | ja | ja (`opentsx-retrieval`) | – | Streaming = Batch, Testsuite vorhanden |
 | `resample` | ja | ja | – | Golden Files |
-| `align.vector` (Abschnitt 5a) | geplant | ja, als Einmal-Lauf (`opentsx-retrieval`, `VectorAligner`) | n/a | **gemeinsame Testvektoren vorhanden** (Java und TypeScript, `testvectors/align-vector.v1.json`) |
+| `align.vector` (Abschnitte 5a, 5b) | geplant | ja: Einmal-Lauf (`VectorAligner`) und fortlaufend (`VectorProcessor`), beide in `opentsx-retrieval` | n/a | **gemeinsame Testvektoren vorhanden** (Java und TypeScript, `testvectors/align-vector.v1.json`) |
 | `score.onnx` | ja (onnxruntime über cgo) **oder** reine Go-Modelle (linear, ES, konforme Intervalle) | ja (ONNX Runtime) | Training | Toleranz statt Bytegleichheit (Fließkomma) |
 | `train.trigger` | ja | ja | – | – |
 | `twin.step` (Zwilling) | später, für Variante L | ja (`opentsx-twin`) | – | L(0) = T |
@@ -342,13 +377,15 @@ Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angest
 | D28 | Training | nie im Strom; `train.trigger` → Trainingsanfrage → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
 | D29 | Semantik | at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen statt Verwerfen |
 | D37 | Vektor-Messpunkte | `align.vector` als Operator mit mehreren Eingängen, Nachricht `opentsx.vector.v1`, Takt an der Epoche ausgerichtet, Werte als geordnete Liste (Abschnitt 5a) |
+| D39 | Fortlaufender Betrieb | eigener Vektor-Prozessor nach dem Muster des Stats-Prozessors; Deployments über das Steuer-Topic `tsx.<domain>.dags.v1`, Status über `tsx.<domain>.dag-status.v1`; ein Läufer je Sink mit Checkpoint-Datei (Abschnitt 5b) |
 | D38 | Erste Ausführung | Vektor-Sinks laufen als Einmal-Lauf im Retrieval-Server (Java), bis es den Stream-Prozessor gibt; Parität über gemeinsame Testvektoren (Abschnitt 5a) |
 
 ## 11. Offene Punkte
 
 * **Vektor-Messpunkte (5a):** Avro-Fassung von `opentsx.vector.v1` und ihr Platz im Modell v2; Qualitätsbyte je
   Komponente statt nur `null`; Einheiten der Komponenten (heute nur in der Workbench bekannt); die Testvektoren
-  auch für Go; Vektoren über mehrere Quell-Topics; fortlaufender Betrieb mit Checkpoint statt Einmal-Lauf.
+  auch für Go; Vektoren über mehrere Quell-Topics; im fortlaufenden Betrieb (5b) ein Leerlauf-Timeout für
+  verstummte Reihen und ein Lease, das eine zweite Instanz verhindert.
 * **Latenz:** Reichen Sekunden bis Minuten (nur abgeschlossene Segmente)? Sonst ist der Broker-Eingang (Kafka-Protokoll)
   für den Go-Prozessor der Standard.
 * **ONNX in Go:** onnxruntime über cgo (größere Images, plattformabhängig) oder zunächst nur reine Go-Modelle

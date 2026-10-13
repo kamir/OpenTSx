@@ -32,6 +32,10 @@ entries are grouped by date. The detailed progress log (German) is in
   has "Run once and write to KafScale". The Java operator `VectorAligner` and the workbench pass the same test
   vectors (`docs/datamodel-2026/testvectors/`). It is one pass, not a stream processor, and the endpoint has no
   authentication.
+- Vector processor (`opentsx vectors`): keeps vector sinks up to date. It follows the episodes topic, writes a
+  measuring point when every series has passed its tick, checkpoints per sink and reports its status. DAGs are
+  deployed and stopped through the control topic `tsx.<domain>.dags.v1`. Not yet part of the k3s deployment and not
+  yet operated from the workbench.
 - DAG runs need an account: the retrieval server accepts `POST /v1/dags/run` only with its run token
   (`OPENTSX_DAG_RUN_TOKEN`), the SaaS backend forwards runs of signed-in users (`POST /api/v1/dags/run`,
   administrators only unless `DAG_RUN_ROLE=user`), and the frontend image no longer proxies the write path.
