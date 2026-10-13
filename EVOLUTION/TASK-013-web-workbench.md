@@ -166,11 +166,18 @@ Beobachtungen am Swing-Code:
 - [x] 013.18 Testbetrieb für die Anmeldung (Stand 2026-10-13): `SAAS_TEST_LOGIN=true` lässt `admin` mit dem Passwort
       `admin` als ersten Administrator hinein; die Login-Seite zeigt es an. Das gespeicherte Passwort bleibt
       unverändert. Voreinstellung aus; eingeschaltet ist jeder, der die Seite erreicht, Administrator
-- [x] 013.19 Gespeicherte Flows aus der Workbench öffnen (Stand 2026-10-13): Auswahlfenster "Open flow" nach dem
-      Muster des TS-Inventars (`FlowsDialog.tsx`, `flows.ts`): Filter nach Text, Domain und Art, Vorschau mit
-      Quelle, Buckets, Smart Topics und Zustand der Bereitstellung, Mehrfachauswahl (der erste Flow öffnet in der
-      Workbench, die weiteren in eigenen Tabs). Ein geöffneter Flow lädt die Reihen, auf denen er gebaut wurde,
-      über ihren ganzen Zeitraum; das Zeitfenster der ursprünglichen Auswahl ist nicht gespeichert
+- [x] 013.19 "OpenTSx Flow Composer": gespeicherte Flows auswählen und verwalten (Stand 2026-10-13)
+      - Auswahlfenster nach dem Muster des TS-Inventars (`FlowComposer.tsx`, `flows.ts`): Filter nach Text,
+        Domain, Status und Art, Vorschau mit Quelle, Buckets, Smart Topics und Zustand im Prozessor
+      - Öffnen im Editor (der Workbench), auch mehrere: der erste Flow hier, die weiteren in eigenen Tabs. Ein
+        geöffneter Flow lädt die Reihen, auf denen er gebaut wurde, über ihren ganzen Zeitraum; das Zeitfenster der
+        ursprünglichen Auswahl ist nicht gespeichert
+      - Anlegen, Umbenennen (Name, Beschreibung), Kopieren, Löschen (mit Rückfrage im Fenster)
+      - Aktivieren und Pausieren: setzt den Status des Flows. Kann der Vektor-Prozessor den Flow ausführen, wird
+        er dabei bereitgestellt beziehungsweise gestoppt (nur Administratoren); sonst wird er nur markiert, und
+        das Fenster sagt, warum
+      - Grenze: Der Name der Bereitstellung kommt aus Domain und Track. Zwei Flows mit demselben Track teilen sich
+        eine Bereitstellung; die Kopie eines aktiven Flows ersetzt beim Aktivieren die des Originals
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren

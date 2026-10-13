@@ -42,6 +42,8 @@ export interface FlowState {
   moveNode: (id: string, pos: { x: number; y: number }) => void;
   setSink: (id: string, topic: string | null) => void;
   setSavedId: (id: number | null) => void;
+  /** Empties the workbench for a new flow; track and domain stay. */
+  clear: () => void;
   restore: (definition: Record<string, unknown>, savedId: number) => boolean;
 }
 
@@ -255,6 +257,11 @@ export const useFlow = create<FlowState>((set, get) => ({
     set((s) => ({ nodes: s.nodes.map((n) => (n.id === id ? { ...n, sinkTopic: topic ?? undefined } : n)) })),
 
   setSavedId: (savedId) => set({ savedId }),
+
+  clear: () => {
+    cache.clear();
+    set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null });
+  },
 
   restore: (definition, savedId) => {
     const nodes = parseNodes(definition.nodes);

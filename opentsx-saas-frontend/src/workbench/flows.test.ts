@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toDefinition } from './flow';
-import { NO_FLOW_FILTER, StoredFlow, domainFacets, filterFlows, stamp, summarize } from './flows';
+import { NO_FLOW_FILTER, StoredFlow, copyName, domainFacets, filterFlows, runPlan, stamp, summarize } from './flows';
 import { InventorySeries, MANY_POINTS, estimatePoints, wholeRange } from './inventory';
 
 const source = { id: 'source', op: 'source', label: 'T01', params: {}, input: null, position: { x: 0, y: 0 } };
@@ -71,6 +71,37 @@ describe('filterFlows', () => {
   it('shortens the timestamp of the backend', () => {
     expect(stamp('2026-10-13T10:02:11.123456')).toBe('2026-10-13 10:02');
     expect(stamp('')).toBe('');
+  });
+});
+
+describe('runPlan', () => {
+  it('gives the DAG of a published vector on inventory series', () => {
+    const plan = runPlan(summarize(published));
+    expect(plan).toMatchObject({ dag: 'wind-exp2-smart' });
+    expect('yaml' in plan && plan.yaml).toContain('tsx.wind.smart.t01.vectors.v1');
+    expect('yaml' in plan && plan.yaml).toContain('series: [a, b]');
+  });
+
+  it('says what keeps the processor from running a flow', () => {
+    expect(runPlan(summarize(plain))).toMatchObject({ blocker: expect.stringMatching(/TS inventory/) });
+    expect(runPlan(summarize(builder))).toMatchObject({ blocker: expect.stringMatching(/flow builder/) });
+    const noData = stored(12, 'x', toDefinition({ track: 'X', domain: 'wind', sourceTopic: 't', nodes: [source, vector] }));
+    expect(runPlan(summarize(noData))).toMatchObject({ blocker: expect.stringMatching(/TS inventory/) });
+  });
+});
+
+describe('status and copies', () => {
+  it('reads the status and filters by it', () => {
+    const all = [{ ...published, status: 'active' }, plain].map(summarize);
+    expect(all.map((f) => f.status)).toEqual(['active', 'draft']);
+    expect(filterFlows(all, { ...NO_FLOW_FILTER, status: 'active' }).map((f) => f.id)).toEqual([7]);
+  });
+
+  it('names a copy with the next free number', () => {
+    expect(copyName('A', ['A'])).toBe('A (copy)');
+    expect(copyName('A', ['A', 'A (copy)'])).toBe('A (copy 2)');
+    expect(copyName('A (copy)', ['A', 'A (copy)'])).toBe('A (copy 2)');
+    expect(copyName('A (copy 2)', ['A (copy)', 'A (copy 2)'])).toBe('A (copy 3)');
   });
 });
 

@@ -230,7 +230,7 @@ export const flowsAPI = {
    */
   save: async (
     id: number | null,
-    data: { name: string; description: string; definition: Record<string, unknown> }
+    data: { name?: string; description: string; definition: Record<string, unknown> }
   ): Promise<{ id: number; name: string }> => {
     const response = id === null ? await apiClient.post('/flows', data) : await apiClient.put(`/flows/${id}`, data);
     return response.data.flow;
@@ -242,6 +242,13 @@ export const flowsAPI = {
   getDefinition: async (id: number): Promise<{ id: number; name: string; definition: Record<string, unknown> }> => {
     const response = await apiClient.get(`/flows/${id}`);
     return response.data;
+  },
+
+  /**
+   * Change name, description or status (draft, active, paused, archived) of a flow
+   */
+  patch: async (id: number, data: { name?: string; description?: string; status?: string }): Promise<void> => {
+    await apiClient.put(`/flows/${id}`, data);
   },
 
   /**

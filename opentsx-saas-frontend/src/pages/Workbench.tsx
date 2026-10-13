@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import DeploymentsPanel from '../workbench/DeploymentsPanel';
 import FlowGraph from '../workbench/FlowGraph';
-import FlowsDialog from '../workbench/FlowsDialog';
+import FlowComposer from '../workbench/FlowComposer';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import { fetchFlowSeries } from '../workbench/inventoryLoad';
 import Scope from '../workbench/Scope';
@@ -560,12 +560,30 @@ export default function Workbench() {
     );
   };
 
+  const newFlow = () => {
+    setFlowsOpen(false);
+    useFlow.getState().clear();
+    setSearchParams({}, { replace: true });
+    setError(null);
+    setStatus('New flow. Load a bucket to begin.');
+  };
+
+  /** A flow deleted in the composer stays in the editor as an unsaved one. */
+  const forgetFlows = (ids: number[]) => {
+    const id = useFlow.getState().savedId;
+    if (id === null || !ids.includes(id)) return;
+    useFlow.getState().setSavedId(null);
+    setSearchParams({}, { replace: true });
+    setStatus(`Flow ${id} is deleted in your account. What you see here is unsaved.`);
+  };
+
   const saveFlow = async () => {
     const s = useFlow.getState();
     const published = s.nodes.filter((n) => n.sinkTopic).length;
     try {
       const flow = await flowsAPI.save(s.savedId, {
-        name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}`,
+        // a stored flow keeps the name it was given in the composer
+        ...(s.savedId === null ? { name: `${s.track}: ${s.nodes[0]?.label ?? 'flow'}` } : {}),
         description: `Workbench flow, ${s.nodes.length - 1} operators, ${published} published topics`,
         definition: toDefinition(s),
       });
@@ -679,8 +697,8 @@ export default function Workbench() {
         </button>
         <span className="wb-grow" />
         {signedIn && (
-          <button onClick={() => setFlowsOpen(true)} title="Choose among the flows stored in your account">
-            Open flow
+          <button onClick={() => setFlowsOpen(true)} title="The flows of your account: open, create, copy, delete, activate, pause">
+            Flow Composer
           </button>
         )}
         {signedIn ? (
@@ -709,12 +727,13 @@ export default function Workbench() {
         />
       )}
       {flowsOpen && (
-        <FlowsDialog
+        <FlowComposer
           base={remote.base}
           currentId={state.savedId}
           replaces={nodes.length > 0}
-          list={flowsAPI.list}
           onOpen={openFlows}
+          onNew={newFlow}
+          onDeleted={forgetFlows}
           onClose={() => setFlowsOpen(false)}
         />
       )}
@@ -750,12 +769,12 @@ export default function Workbench() {
                     <p>No bucket loaded.</p>
                     <p>
                       Pick series from the TS inventory, load the sample bucket, open a CSV, TSV or episode JSON file,
-                      or drop a file here. Then apply operations and watch each result on the scope. A flow saved
-                      earlier opens with its series.
+                      or drop a file here. Then apply operations and watch each result on the scope. The Flow
+                      Composer holds the flows saved earlier; they open with their series.
                     </p>
                     <button className="wb-primary" onClick={() => setInventoryOpen(true)}>Open TS inventory</button>{' '}
                     <button onClick={loadSample}>Load sample bucket</button>
-                    {signedIn && <> <button onClick={() => setFlowsOpen(true)}>Open a saved flow</button></>}
+                    {signedIn && <> <button onClick={() => setFlowsOpen(true)}>Open the Flow Composer</button></>}
                   </>
                 )}
               </div>

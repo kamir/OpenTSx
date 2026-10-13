@@ -1,6 +1,6 @@
-/** What the "Open flow" dialog shows of the flows stored in the account. */
+/** What the Flow Composer shows of the flows stored in the account. */
 
-import { WORKBENCH_KIND, parseNodes, slug } from './flow';
+import { FlowDoc, WORKBENCH_KIND, deployChecks, parseNodes, slug, toDagYaml } from './flow';
 import { VECTOR_OP } from './vector';
 
 /** A flow as the backend lists it (GET /api/v1/flows). */
@@ -18,6 +18,8 @@ export interface FlowSummary {
   name: string;
   description: string;
   updatedAt: string;
+  /** draft, active, paused or archived: what the account says the flow should be doing. */
+  status: string;
   /** False for flows the workbench cannot open; `reason` then says why. */
   openable: boolean;
   reason?: string;
@@ -32,6 +34,10 @@ export interface FlowSummary {
   vectors: number;
   /** Name under which the flow is deployed, when it publishes a topic. */
   dag: string;
+  /** The stored flow as the exports read it; absent when it cannot be opened. */
+  doc?: FlowDoc;
+  /** The stored definition, for a copy. */
+  definition: Record<string, unknown>;
 }
 
 function str(v: unknown): string {
@@ -45,6 +51,8 @@ export function summarize(flow: StoredFlow): FlowSummary {
     name: flow.name,
     description: flow.description ?? '',
     updatedAt: flow.updated_at ?? '',
+    status: flow.status ?? 'draft',
+    definition: def,
     track: str(def.track),
     domain: str(def.domain),
     sourceTopic: str(def.sourceTopic),
@@ -66,7 +74,28 @@ export function summarize(flow: StoredFlow): FlowSummary {
     published,
     vectors: nodes.filter((n) => n.op === VECTOR_OP).length,
     dag: published.length > 0 ? `${slug(base.domain)}-${slug(base.track)}-smart` : '',
+    doc: { track: base.track, domain: base.domain, sourceTopic: base.sourceTopic, sourceSeries: base.sourceSeries, nodes },
   };
+}
+
+/**
+ * What activating a flow can start: the DAG for the vector processor, or the reason the processor cannot run
+ * this flow. Such a flow can still be marked active; nothing computes it then.
+ */
+export function runPlan(f: FlowSummary): { yaml: string; dag: string } | { blocker: string } {
+  if (!f.doc) return { blocker: f.reason ?? 'The workbench cannot read this flow.' };
+  const missing = deployChecks(f.doc.nodes, f.doc.sourceSeries ?? []).find((c) => !c.ok);
+  if (missing) return { blocker: missing.text };
+  return { yaml: toDagYaml(f.doc), dag: f.dag };
+}
+
+/** Name of a copy: "name (copy)", then "(copy 2)" and so on, whatever is free. */
+export function copyName(name: string, taken: string[]): string {
+  const base = name.replace(/ \(copy(?: \d+)?\)$/, '');
+  for (let n = 1; ; n++) {
+    const candidate = `${base} (copy${n > 1 ? ` ${n}` : ''})`;
+    if (!taken.includes(candidate)) return candidate;
+  }
 }
 
 export interface FlowFilter {
@@ -74,9 +103,10 @@ export interface FlowFilter {
   domain: string | null;
   /** 'published': flows with a Smart Topic; 'data': flows that name their series. */
   only: 'published' | 'data' | null;
+  status: string | null;
 }
 
-export const NO_FLOW_FILTER: FlowFilter = { text: '', domain: null, only: null };
+export const NO_FLOW_FILTER: FlowFilter = { text: '', domain: null, only: null, status: null };
 
 export function domainFacets(flows: FlowSummary[]): string[] {
   return [...new Set(flows.map((f) => f.domain).filter(Boolean))].sort();
@@ -86,6 +116,7 @@ export function filterFlows(flows: FlowSummary[], f: FlowFilter): FlowSummary[] 
   const words = f.text.toLowerCase().split(/\s+/).filter(Boolean);
   return flows.filter((s) => {
     if (f.domain && s.domain !== f.domain) return false;
+    if (f.status && s.status !== f.status) return false;
     if (f.only === 'published' && s.published.length === 0) return false;
     if (f.only === 'data' && s.sourceSeries.length === 0) return false;
     if (words.length === 0) return true;
