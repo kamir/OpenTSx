@@ -105,18 +105,32 @@ class SystemsTest {
         assertEquals("SYNTHETIC", avail.path("origin").asText());
         assertTrue(avail.path("port").asBoolean());
 
+        // the price is the published one of 2025, bound to the topic; this inventory holds no such series
         JsonNode price = signal(st, "market.price_eur_mwh");
         assertEquals("bound-no-data", price.path("state").asText());
-        assertEquals("simulated", price.path("via").asText());
-        assertEquals("SYNTHETIC", price.path("origin").asText());
-        assertEquals(7, price.path("grades").path("raw").path("source").path("seed").asInt());
-        // nothing has run the generator; that is the step, not a wrong source
-        assertEquals(List.of("generate"), texts(price.path("next")));
+        assertEquals("topic", price.path("via").asText());
+        assertEquals("REPORTED", price.path("origin").asText());
+        assertEquals(List.of("check-source"), texts(price.path("next")));
 
+        // the demand has no profile of an operator: a demo generator, which nothing has run yet
         JsonNode demand = signal(st, "offtake.demand_kgph");
-        assertEquals("open", demand.path("state").asText());
-        assertEquals(List.of("bind", "simulate"), texts(demand.path("next")));
-        assertFalse(demand.has("origin"));
+        assertEquals("bound-no-data", demand.path("state").asText());
+        assertEquals("simulated", demand.path("via").asText());
+        assertEquals("SYNTHETIC", demand.path("origin").asText());
+        assertEquals(1, demand.path("grades").path("raw").path("source").path("seed").asInt());
+        // that is the step, not a wrong source
+        assertEquals(List.of("generate"), texts(demand.path("next")));
+
+        // a signal without any source
+        JsonNode schedule = signal(st, "marketer.schedule_kw");
+        assertEquals("open", schedule.path("state").asText());
+        assertEquals(List.of("bind", "simulate"), texts(schedule.path("next")));
+        assertFalse(schedule.has("origin"));
+
+        // the weather of the site is a series below the park that is no channel of the catalog
+        JsonNode wind = signal(st, "park/DWD-01759/wind_speed");
+        assertEquals("MEASURED", wind.path("origin").asText());
+        assertEquals("m/s", wind.path("expect").path("unit").asText());
 
         JsonNode setpoint = signal(st, "ely.setpoint_kw");
         assertEquals("constant", setpoint.path("state").asText());
@@ -124,13 +138,13 @@ class SystemsTest {
         assertEquals(5000.0, setpoint.path("grades").path("raw").path("source").path("value").asDouble());
 
         JsonNode counts = st.path("counts");
-        assertEquals(13, counts.path("signals").asInt());
-        assertEquals(3, counts.path("topic").asInt());
+        assertEquals(16, counts.path("signals").asInt());
+        assertEquals(7, counts.path("topic").asInt());
         assertEquals(2, counts.path("derived").asInt());
         assertEquals(1, counts.path("simulated").asInt());
         assertEquals(4, counts.path("manual").asInt());
-        assertEquals(3, counts.path("open").asInt());
-        assertEquals(3, st.path("states").path("open").asInt());
+        assertEquals(2, counts.path("open").asInt());
+        assertEquals(2, st.path("states").path("open").asInt());
     }
 
     @Test
@@ -163,7 +177,7 @@ class SystemsTest {
         for (JsonNode in : grid.path("inputs")) {
             assertFalse(in.path("delayed").asBoolean(false), in.toString());
         }
-        assertEquals(3, park.path("channels").asInt());
+        assertEquals(6, park.path("channels").asInt());
         JsonNode avail = null;
         JsonNode limit = null;
         for (JsonNode in : park.path("inputs")) {
@@ -241,7 +255,7 @@ class SystemsTest {
     void aBindingOfAWorkingCopyLiesOverTheDocument() throws Exception {
         ObjectNode inv = windFarm();
         ((ObjectNode) series(inv, "ggg", "h2.demand", 0, 80).get("tags")).put("customer", "c1");
-        // the demand has no source in the document; a person binds it to a series in the web application
+        // the demand is a demo generator in the document; a person binds it to a series in the web application
         JsonNode overlay = body("""
                 {"bindings":[{"signal":"offtake.demand_kgph","grade":"raw",
                   "source":{"kind":"topic","topic":"tsx.wind.episodes.v2","origin":"REPORTED","select":{"metric":"h2.demand","tags":{"customer":"c1"}}}}]}""");
@@ -251,7 +265,7 @@ class SystemsTest {
         assertTrue(demand.path("grades").path("raw").path("source").path("workingCopy").asBoolean());
         assertEquals(List.of("ggg"), texts(demand.path("grades").path("raw").path("data").path("series")));
         // the document itself is untouched
-        assertEquals("open", signal(SYSTEMS.signals("h2-chain", inv), "offtake.demand_kgph").path("state").asText());
+        assertEquals("simulated", signal(SYSTEMS.signals("h2-chain", inv), "offtake.demand_kgph").path("via").asText());
         // a binding for something the system does not have is named
         JsonNode wrong = SYSTEMS.signals("h2-chain", inv, Systems.bindings(body(
                 "{\"bindings\":[{\"signal\":\"offtake.no_such\",\"grade\":\"raw\",\"source\":{\"kind\":\"manual\",\"value\":1}}]}")));
@@ -267,21 +281,21 @@ class SystemsTest {
             written.addAll(episodes);
         };
         JsonNode answer = SYSTEMS.generate("h2-chain", body(
-                "{\"signal\":\"market.price_eur_mwh\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}"),
+                "{\"signal\":\"offtake.demand_kgph\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}"),
                 "tsx.wind.synthetic.v2", writer);
         assertEquals(List.of("tsx.wind.synthetic.v2"), topics);
-        assertEquals(24, answer.path("samples").asInt());
+        assertEquals(360, answer.path("samples").asInt());
         assertEquals("demo", answer.path("fidelity").asText());
-        assertEquals("gen.ou", answer.path("generator").asText());
+        assertEquals("gen.sine", answer.path("generator").asText());
         org.opentsx.model.v2.Episode first = written.get(0);
-        assertEquals("market.price_eur_mwh", first.getSeries().getTags().get("signal"));
+        assertEquals("offtake.demand_kgph", first.getSeries().getTags().get("signal"));
         assertEquals("raw", first.getSeries().getTags().get("grade"));
 
         // the inventory then holds the series, and the signal is no longer "not generated yet"
         ObjectNode inv = windFarm();
         ObjectNode gen = series(inv, first.getSeries().getSeriesId(), first.getSeries().getMetric(), 40, 80);
         first.getSeries().getTags().forEach(((ObjectNode) gen.get("tags"))::put);
-        JsonNode price = signal(SYSTEMS.signals("h2-chain", inv), "market.price_eur_mwh");
+        JsonNode price = signal(SYSTEMS.signals("h2-chain", inv), "offtake.demand_kgph");
         assertEquals("raw-only", price.path("state").asText());
         assertEquals("simulated", price.path("via").asText());
         assertEquals("SYNTHETIC", price.path("origin").asText());
@@ -293,13 +307,13 @@ class SystemsTest {
                 body("{\"signal\":\"ely.setpoint_kw\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}"), "t", writer))
                 .getMessage().contains("is not bound to a generator"));
         assertTrue(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SYSTEMS.generate("h2-chain",
-                body("{\"signal\":\"market.price_eur_mwh\"}"), "t", writer)).getMessage().contains("from and to must be instants"));
+                body("{\"signal\":\"offtake.demand_kgph\"}"), "t", writer)).getMessage().contains("from and to must be instants"));
         // a signal bound to a generator in the working copy can be generated too
         JsonNode viaOverlay = SYSTEMS.generate("h2-chain", body("""
-                {"signal":"offtake.demand_kgph","from":"2026-10-01T00:00:00Z","to":"2026-10-01T01:00:00Z",
-                 "bindings":[{"signal":"offtake.demand_kgph","grade":"raw","source":{"kind":"generator","processor":"gen.sine","seed":1,
-                   "params":{"mean":60,"amplitude":30,"period":"PT6H"}}}]}"""), "tsx.wind.synthetic.v2", writer);
-        assertEquals(60, viaOverlay.path("samples").asInt());
+                {"signal":"marketer.schedule_kw","from":"2026-10-01T00:00:00Z","to":"2026-10-01T01:00:00Z",
+                 "bindings":[{"signal":"marketer.schedule_kw","grade":"raw","source":{"kind":"generator","processor":"gen.sine","seed":1,
+                   "params":{"mean":3000,"amplitude":500,"period":"PT6H"}}}]}"""), "tsx.wind.synthetic.v2", writer);
+        assertEquals(4, viaOverlay.path("samples").asInt());
     }
 
     @Test
@@ -310,7 +324,7 @@ class SystemsTest {
         List<String> topics = new java.util.ArrayList<>();
         try (RetrievalServer server = new RetrievalServer(new EpisodeService(store), 0, inventory, null, false, "secret", SYSTEMS)) {
             String base = "http://localhost:" + server.port() + "/v1/systems/h2-chain";
-            String gen = "{\"signal\":\"market.price_eur_mwh\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}";
+            String gen = "{\"signal\":\"offtake.demand_kgph\",\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-10-01T06:00:00Z\"}";
             // a server without a broker cannot write
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(base + "/generate")).POST(HttpRequest.BodyPublishers.ofString(gen)).build(),
                     HttpResponse.BodyHandlers.ofString()).statusCode());
@@ -345,12 +359,12 @@ class SystemsTest {
             assertEquals(200, list.statusCode());
             JsonNode first = JSON.readTree(list.body()).path("systems").get(0);
             assertEquals("h2-chain", first.path("system").asText());
-            assertEquals(13, first.path("counts").path("signals").asInt());
+            assertEquals(16, first.path("counts").path("signals").asInt());
             assertEquals(0, first.path("problems").asInt());
 
             HttpResponse<String> signals = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/signals")).build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, signals.statusCode());
-            assertEquals(13, JSON.readTree(signals.body()).path("signals").size());
+            assertEquals(16, JSON.readTree(signals.body()).path("signals").size());
 
             assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
             // the plan with a working copy laid over it: the open demand is bound, and the input says so

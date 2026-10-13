@@ -1,7 +1,7 @@
 # Scenario S1 in its first form (2026-10): the line is the only buffer. Kept for the tests of the twin; the plan in
 # use is src/main/resources/twin/h2-chain.yaml.
 twin: h2-chain
-start: 2026-10-01T00:00:00Z
+start: 2025-10-01T00:00:00Z
 baseStep: PT1M
 steps: 360
 atoms:

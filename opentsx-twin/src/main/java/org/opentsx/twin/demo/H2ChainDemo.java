@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public final class H2ChainDemo {
 
-    public static final Instant START = Instant.parse("2026-10-01T00:00:00Z");
+    public static final Instant START = Instant.parse("2025-10-01T00:00:00Z");
     public static final long T0 = Micros.of(START);
     public static final long MIN = 60_000_000L;
     public static final int STEPS = 360;

@@ -4,10 +4,11 @@
 #
 # The plan is the twin scenario h2-chain in its second form (compressor, high-pressure buffer, pipeline with two
 # pressures, handover station; the order is an assumption, see the plan). Nine of its inputs come from outside, and
-# each has a signal here; three of the signals are open. The wind farm stands on the data of the simulator scenario
+# each has a signal here; two of the signals are open, and the demand of the customer is a demo generator. The wind farm stands on the data of the simulator scenario
 # ostsee-demo in tsx.wind.episodes.v2, which is why its origin is SYNTHETIC. One turbine of six is written out; a
-# template for all assets of a kind is not part of the format. opentsx-market has price sources; this document
-# assumes none is connected, to show a simulated signal.
+# template for all assets of a kind is not part of the format. The price and the weather of the site are the year
+# 2025 from the archive of opentsx-market, written to the episodes topic; the turbines are still those of the
+# simulator and of another day.
 #
 # The park has three powers (15, section 13.2). The potential is what the weather would give, before any
 # restriction: an estimate from the wind speed and an input of the plan. The available power is what may be
@@ -16,7 +17,7 @@
 # output and serves the comparison with the twin.
 schema: opentsx.system.v1
 system: h2-chain
-version: 3
+version: 4
 title: Wasserstoffkette am Windpark
 example: true
 domain: wind
@@ -74,6 +75,41 @@ signals:
         origin: SYNTHETIC
         select: { metric: wind.turbine.state, tags: { turbine: T02 } }
 
+  # ---- weather of the site: observations of a DWD station, not of the park itself
+  - id: park/DWD-01759/wind_speed
+    title: Windgeschwindigkeit DWD Greifswalder Oie
+    role: exogenous
+    meaning: Mean wind speed of ten minutes at the DWD station Greifswalder Oie, 23 km from the park, measured 10 m above ground. Not the wind at hub height; a model has to carry it there before a power curve may use it.
+    expect: { unit: m/s, min: 0, max: 70, interval: PT10M, kind: ANALOG, origin: MEASURED, operating: { min: 0, max: 30 } }
+    raw:
+      source:
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: MEASURED
+        select: { metric: weather.wind_speed_10min, tags: { station: "01759" } }
+  - id: park/DWD-01759/air_temperature
+    title: Lufttemperatur DWD Greifswalder Oie
+    role: exogenous
+    meaning: Air temperature 2 m above ground at the DWD station Greifswalder Oie, hourly. Needed for the air density and for rules that depend on temperature.
+    expect: { unit: Cel, min: -45, max: 45, interval: PT1H, kind: ANALOG, origin: MEASURED }
+    raw:
+      source:
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: MEASURED
+        select: { metric: weather.air_temperature, tags: { station: "01759" } }
+  - id: park/DWD-01759/pressure
+    title: Luftdruck DWD Greifswalder Oie
+    role: exogenous
+    meaning: Air pressure at station level at the DWD station Greifswalder Oie, hourly. Needed for the air density.
+    expect: { unit: hPa, min: 850, max: 1090, interval: PT1H, kind: ANALOG, origin: MEASURED }
+    raw:
+      source:
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: MEASURED
+        select: { metric: weather.pressure, tags: { station: "01759" } }
+
   # ---- ports of the plan (the id is the port)
   - id: park.p_gen_kw
     title: Tatsächliche Erzeugung des Windparks
@@ -99,21 +135,27 @@ signals:
   - id: market.price_eur_mwh
     title: Strompreis
     role: exogenous
-    meaning: Day-ahead price of the quarter hour.
+    meaning: Day-ahead price of the bidding zone DE-LU as published; hourly until the delivery day 2025-09-30, quarter-hourly after.
     expect: { unit: EUR/MWh, min: -500, max: 3000, interval: PT15M, kind: ANALOG, origin: REPORTED, operating: { min: 0, max: 250 } }
     raw:
       source:
-        kind: generator
-        processor: gen.ou
-        seed: 7
-        params: { mean: 62.8, reversion: 0.08, sigma: 9.0 }
-    note: Kein Marktdaten-Topic angebunden. gen.ou ist ein Demo-Generator, kein Szenariomodell; Ergebnisse darauf taugen nicht für den Vergleich von Strategien.
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: REPORTED
+        select: { metric: market.price.day_ahead, tags: { area: DE-LU, source: smard } }
+    note: Archiv des Jahres 2025 (SMARD, Bundesnetzagentur, CC BY 4.0), am 2026-10-13 in das Topic geschrieben. Ein Stundenwert wird durch Wiederholung keine Viertelstundenmessung.
   - id: offtake.demand_kgph
     title: Wasserstoffbedarf des Abnehmers
     role: exogenous
     meaning: Hydrogen the customer asks for at the handover station. Information, not a flow of gas.
     expect: { unit: kg/h, min: 0, max: 120, interval: PT1M, kind: ANALOG, origin: REPORTED }
-    # open: no source
+    raw:
+      source:
+        kind: generator
+        processor: gen.sine
+        seed: 1
+        params: { mean: 60, amplitude: 30, period: PT6H }
+    note: Kein Abnahmeprofil eines Betreibers angebunden. gen.sine ist ein Demo-Generator, kein Szenariomodell; Ergebnisse darauf taugen nicht für den Vergleich von Strategien.
   - id: ely.setpoint_kw
     title: Sollwert Elektrolyseur
     role: command

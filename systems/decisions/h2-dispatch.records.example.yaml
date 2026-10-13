@@ -6,16 +6,16 @@
   id: rec-h2-dispatch-20261001T0200-v1
   decision: h2-dispatch
   decisionVersion: 1
-  period: { from: "2026-10-01T02:00:00Z", to: "2026-10-01T03:00:00Z" }
-  at: "2026-10-01T01:55:00Z"
+  period: { from: "2025-10-01T02:00:00Z", to: "2025-10-01T03:00:00Z" }
+  at: "2025-10-01T01:55:00Z"
   final: true
   shadow: true
   informationState:
-    asOf: "2026-10-01T01:55:00Z"
+    asOf: "2025-10-01T01:55:00Z"
     systemHash: 8747aeb3eea7299a
     inputs:
-      - { signal: park.p_potential_kw, grade: clean, upTo: "2026-10-01T01:54:00Z", origin: ESTIMATED, flow: park-potential }
-      - { signal: market.price_eur_mwh, grade: raw, upTo: "2026-10-01T01:45:00Z", origin: SYNTHETIC }
+      - { signal: park.p_potential_kw, grade: clean, upTo: "2025-10-01T01:54:00Z", origin: ESTIMATED, flow: park-potential }
+      - { signal: market.price_eur_mwh, grade: raw, upTo: "2025-10-01T01:45:00Z", origin: SYNTHETIC }
     analysis: { id: price-following, version: "1", initialState: snapshot-20261001T0155 }
   usability:
     status: blocked
@@ -29,14 +29,14 @@
     - { id: follow-price, kpis: { grid-energy-cost: 268.0, schedule-deviation: 40.0 }, uncertainty: { grid-energy-cost: [240.0, 300.0] } }
   recommended: follow-price
   setpoints:
-    - { signal: ely.setpoint_kw, value: 3500, from: "2026-10-01T02:00:00Z", to: "2026-10-01T03:00:00Z" }
-    - { signal: battery.power_kw, value: -400, from: "2026-10-01T02:00:00Z", to: "2026-10-01T03:00:00Z" }
+    - { signal: ely.setpoint_kw, value: 3500, from: "2025-10-01T02:00:00Z", to: "2025-10-01T03:00:00Z" }
+    - { signal: battery.power_kw, value: -400, from: "2025-10-01T02:00:00Z", to: "2025-10-01T03:00:00Z" }
 - schema: opentsx.decision-record.v1
   kind: approval
   id: apr-h2-dispatch-20261001T0200-v1
   decision: h2-dispatch
-  period: { from: "2026-10-01T02:00:00Z", to: "2026-10-01T03:00:00Z" }
-  at: "2026-10-01T01:57:00Z"
+  period: { from: "2025-10-01T02:00:00Z", to: "2025-10-01T03:00:00Z" }
+  at: "2025-10-01T01:57:00Z"
   follows: rec-h2-dispatch-20261001T0200-v1
   verdict: changed
   by: plant operator on shift
@@ -48,18 +48,18 @@
   kind: action
   id: act-h2-dispatch-20261001T0200-v1
   decision: h2-dispatch
-  period: { from: "2026-10-01T02:00:00Z", to: "2026-10-01T03:00:00Z" }
-  at: "2026-10-01T02:03:00Z"
+  period: { from: "2025-10-01T02:00:00Z", to: "2025-10-01T03:00:00Z" }
+  at: "2025-10-01T02:03:00Z"
   follows: apr-h2-dispatch-20261001T0200-v1
   by: plant control system, set by the operator
   setpoints:
-    - { signal: ely.setpoint_kw, value: 3500, from: "2026-10-01T02:03:00Z", to: "2026-10-01T03:00:00Z" }
+    - { signal: ely.setpoint_kw, value: 3500, from: "2025-10-01T02:03:00Z", to: "2025-10-01T03:00:00Z" }
 - schema: opentsx.decision-record.v1
   kind: outcome
   id: out-h2-dispatch-20261001T0200-v1
   decision: h2-dispatch
-  period: { from: "2026-10-01T02:00:00Z", to: "2026-10-01T03:00:00Z" }
-  at: "2026-10-01T03:10:00Z"
+  period: { from: "2025-10-01T02:00:00Z", to: "2025-10-01T03:00:00Z" }
+  at: "2025-10-01T03:10:00Z"
   follows: act-h2-dispatch-20261001T0200-v1
   final: false
   observed: { grid-energy-cost: 291.0, schedule-deviation: 12.0 }

@@ -130,6 +130,16 @@ entries are grouped by date. The detailed progress log (German) is in
 - `opentsx-market`, weather backfill: six more DWD quantities per station (relative humidity, wind direction,
   10-minute wind speed, the highest gust of the hour, pressure, precipitation) next to temperature, hourly wind
   speed and global radiation. `opentsx-dwd` knows the variable `weather.wind_gust`.
+- The year 2025 in the system (TASK-014, stage J1). `bin/opentsx market publish` writes archived series as raw
+  episodes into the episodes topic of a domain, in batches with a pause, and stops at the first refusal of the
+  broker. The system document of the H2 chain (version 4) binds the day-ahead price to the published series
+  (`REPORTED`) and has three signals for the weather of the site from a DWD station (10-minute wind, temperature,
+  pressure); a series below an atom may state its own unit and kind without a channel of a catalog. The demand of
+  the customer is declared as a demo generator. The night of the scenario is 2025-10-01. A decision measures the
+  age of an input against the newest data among the signals it needs, not against every series of the system.
+- Draft: notebooks as a further application
+  ([`docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md`](docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md), German):
+  load the series directly, look at them, test a new series against what the system expects. Not built.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

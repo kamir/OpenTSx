@@ -172,6 +172,15 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         mit dem Zwilling auf Historie läuft (Plan in der ersten Fassung). Stand und fünf offene Punkte in 15,
         Abschnitt 13.5. Entschieden am selben Tag: Die Sprachen der Oberflächen bleiben, wie sie sind (Web-Anwendung
         Englisch, Studio Deutsch)
+      - 2026-10-13, zweiter Schritt (D75 bis D77): Szenario auf den 2025-10-01 gelegt; sechs weitere Wettergrößen
+        im Abruf und für die Station des Windparks geladen; `market publish` gebaut und 1463 Episoden in den Broker
+        des Labors geschrieben; Systemdokument Fassung 4 mit Preis aus dem Topic und drei Wettersignalen; Alter
+        einer Entscheidung gegen ihre eigenen Eingänge
+      - offen: der Plan der zweiten Fassung im Viertelstundenschritt über das Jahr (D78); das Potenzial aus dem
+        Wind der Station (Operator für die Höhenübertragung); ein Lauf auf den Reihen der Signale
+- [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
+      (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; Entscheidungen D80 bis
+      D83 stehen aus
 - [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
       [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
       Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository

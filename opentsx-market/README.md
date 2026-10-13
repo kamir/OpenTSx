@@ -110,6 +110,11 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   `Retry-After`. A failing year is reported and the run continues (exit code 3 if any year failed).
 * **Credentials:** a source without credentials is skipped with the reason. Tokens come only from the environment
   and are never written to the manifest.
+* **Publish:** `publish --series source/name,... --kafscale host:port --domain wind` writes archived series as raw
+  episodes into `tsx.<domain>.episodes.v2`, where the retrieval server and the flows of the domain read them. It
+  sends a batch (`--batch`, default 100), waits for every confirmation, pauses (`--pause-ms`, default 3000) and
+  stops at the first batch the broker does not confirm. An episode has an identity that follows from its series
+  and the time it begins at, so a repeat writes the same episodes again. `--dry-run` only counts.
 * **Load:** `load` maps the archive to REGULAR episodes, one per UTC day. Episodes split where the resolution
   changes or data is missing, so a gap is never filled. They are written to Iceberg (same `--iceberg` options as
   `bin/opentsx windpark-sim`) or to an in-memory store (dry run with counts).

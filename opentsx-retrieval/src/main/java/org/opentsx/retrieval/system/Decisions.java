@@ -26,8 +26,8 @@ import java.util.TreeMap;
  * </ul>
  *
  * Clean inputs are a condition, not a proof: an analysis without evidence is restricted however good its inputs are.
- * Age is measured against the newest data of the system, not against the clock: the question is whether an input
- * lags behind the others.
+ * Age is measured against the newest data among the signals the decision needs, not against the clock and not
+ * against series of the system the decision does not use: the question is whether an input lags behind the others.
  */
 public final class Decisions {
 
@@ -43,23 +43,29 @@ public final class Decisions {
     public static JsonNode status(SystemDoc d, JsonNode signals) {
         Map<String, JsonNode> byId = new TreeMap<>();
         signals.path("signals").forEach(s -> byId.put(s.path("id").asText(), s));
-        String asOf = null;
-        for (JsonNode s : signals.path("signals")) {
-            for (JsonNode g : s.path("grades")) {
-                String to = g.path("data").path("to").asText(null);
-                asOf = to != null && (asOf == null || to.compareTo(asOf) > 0) ? to : asOf;
-            }
-        }
         ObjectNode out = JSON.objectNode();
         out.put("schema", SCHEMA);
         out.put("system", d.system());
         out.put("title", d.title());
-        if (asOf != null) {
-            out.put("asOf", asOf);
-        }
         ArrayNode list = out.putArray("decisions");
+        String newest = null;
         for (Map.Entry<String, JsonNode> e : d.decisions().entrySet()) {
-            list.add(decision(e.getKey(), e.getValue(), byId, asOf));
+            // the newest data among what this decision needs: a system may hold series of other periods
+            String asOf = null;
+            for (JsonNode n : e.getValue().path("needs")) {
+                JsonNode s = byId.get(n.path("signal").asText());
+                String to = s == null ? null : s.path("grades").path(n.path("grade").asText("clean")).path("data").path("to").asText(null);
+                asOf = to != null && (asOf == null || to.compareTo(asOf) > 0) ? to : asOf;
+            }
+            ObjectNode one = decision(e.getKey(), e.getValue(), byId, asOf);
+            if (asOf != null) {
+                one.put("asOf", asOf);
+                newest = newest == null || asOf.compareTo(newest) > 0 ? asOf : newest;
+            }
+            list.add(one);
+        }
+        if (newest != null) {
+            out.put("asOf", newest);
         }
         return out;
     }
@@ -132,7 +138,7 @@ public final class Decisions {
                     long allowed = Duration.parse(n.path("maxAge").asText()).getSeconds();
                     found.put("ageSeconds", age);
                     if (age > allowed) {
-                        reasons.add(id + " ends " + minutes(age) + " before the newest data of the system; allowed are " + minutes(allowed));
+                        reasons.add(id + " ends " + minutes(age) + " before the newest data the decision needs; allowed are " + minutes(allowed));
                     }
                 }
                 made = "SYNTHETIC".equals(signal.path("origin").asText()) || data.path("madeOf").asText("").contains("SYNTHETIC")

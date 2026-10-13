@@ -552,19 +552,29 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
 
 **Was zu J1 noch fehlt.**
 
-1. **Die Reihen im Broker und an den Signalen.** Es gibt kein Werkzeug, das ein Archiv in ein Topic schreibt
-   (`market load` schreibt nach Iceberg oder in den Speicher). Das Schreiben eines Jahres in den gemeinsamen Broker
-   des Labors ist ein Eingriff, der vorher abzustimmen ist.
-2. **Der Zeitraum.** Das Szenario der Demo spielt am 2026-10-01, die Daten sind von 2025. Solange beides
-   nebeneinander steht, hält die Prüfung "Alter gegen die neuesten Daten des Systems" das Wetter für veraltet. Das
-   Szenario gehört auf einen Tag des Jahres 2025 gelegt, oder das System bekommt einen Zeitraum, den es betrachtet.
+1. **Die Reihen im Broker und an den Signalen.** **Erledigt (D76):** `bin/opentsx market publish` schreibt
+   archivierte Reihen als rohe Episoden in das Episoden-Topic einer Domäne, in Paketen mit Pause, und hält beim
+   ersten Paket an, das der Broker nicht bestätigt. Am 2026-10-13 gingen 1463 Episoden des Jahres 2025 in den
+   Broker des Labors (Wind in 10 Minuten, Temperatur und Luftdruck der Station 01759, Day-Ahead-Preis); zwei
+   Pakete brauchten einen zweiten Anlauf, alle wurden bestätigt. Das Systemdokument (Fassung 4) bindet den Preis
+   an diese Reihe (Herkunft `REPORTED`) und führt die drei Wetterreihen als Signale des Standorts. Die sechs
+   weiteren Wettergrößen liegen im Archiv und nicht im Broker; sie kommen, wenn eine Regel sie liest.
+2. **Der Zeitraum.** **Erledigt (D75):** Das Szenario spielt am 2025-10-01, dem ersten Liefertag mit
+   viertelstündlichem Preis. Die Reihen der Turbinen im Broker sind weiter die des Simulators vom 2026-10-01. Damit
+   das nicht jede Entscheidung veralten lässt, misst die Freigabe das Alter eines Eingangs jetzt gegen die
+   neuesten Daten dessen, was die Entscheidung braucht, und nicht mehr gegen alle Reihen des Systems. Die Eingänge
+   des Szenarios selbst sind weiter erfunden; an die Reihen der Signale bindet ein Lauf noch nicht.
 3. **Die Größen.** Geladen waren zunächst drei: Temperatur, Windgeschwindigkeit als Stundenmittel,
    Globalstrahlung. **Nachgezogen (D77):** Der Abruf kennt jetzt auch Windrichtung, Luftdruck, Niederschlag,
    Feuchte, Böen (höchste Böe der Stunde) und Wind in 10 Minuten. Für die Station des Windparks (01759) sind sie
    für 2025 geladen, Abdeckung 99,60 bis 99,74 Prozent, 2 bis 4 Lücken je Reihe. Die täglichen Abrufe im Cluster
    holen weiter nur die drei ersten Größen; die neuen werden mit `--stations <id>:<größe>` angefordert.
 4. **Der Plan.** Der Jahreslauf rechnet mit der ersten Fassung des Plans. Die zweite Fassung (S1) rechnet in
-   Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte.
+   Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte. **Entschieden (D78), noch nicht
+   gebaut:** die zweite Fassung im Viertelstundenschritt, nach einer Prüfung von Regler und Rampen.
+6. **Das Potenzial aus dem Wind der Station.** Der Wind der Station ist in 10 m Höhe gemessen. Ein Operator, der
+   ihn auf Nabenhöhe überträgt, fehlt in der Kette der Flows; `opentsx-market` hat diese Rechnung für den
+   Jahreslauf, die Workbench nicht.
 5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
    MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
    nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.

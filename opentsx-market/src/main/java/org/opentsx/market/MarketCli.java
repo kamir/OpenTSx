@@ -64,6 +64,10 @@ public final class MarketCli {
                         (forward archive of raw MOSMIX_L forecasts; run every 6 h)
               load      [--archive data/history] [--series ...] [--from-year Y --to-year Y]
                         [--iceberg k=v,... --namespace tsx]
+              publish   --series source/name,... --kafscale host:port --domain wind [--archive data/history]
+                        [--from-year Y --to-year Y] [--batch 100] [--pause-ms 3000] [--dry-run]
+                        (archived series as raw episodes into tsx.<domain>.episodes.v2; stops at the first
+                        refusal of the broker; an episode keeps its identity, so reading tools can tell a repeat)
               catalog
 
               D = local date (Europe/Berlin, start of day) or an ISO instant; --to is exclusive.
@@ -168,6 +172,9 @@ public final class MarketCli {
             }
             case "load" -> {
                 return load(archive, o, out);
+            }
+            case "publish" -> {
+                return org.opentsx.market.archive.BrokerPublish.run(archive, o, out);
             }
             default -> throw new IllegalArgumentException("unknown command " + cmd + "\n" + USAGE);
         }
