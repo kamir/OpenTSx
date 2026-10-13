@@ -13,6 +13,7 @@
 #   boat               boat twin (Etap 22)                             (org.opentsx.twin.demo.BoatDemo)
 #   dwd                DWD Open Data collector                         (org.opentsx.dwd.DwdCli)
 #   modbus             Modbus meters: check|read|poll|simulate         (org.opentsx.modbus.ModbusCli; maps in share/modbus)
+#   twin-live          event topic of a twin: publish|bridge|demo      (org.opentsx.twin.live.TwinLive)
 #   studio-export      scenario data for the Smart Topics Studio       (org.opentsx.twin.studio.StudioExport <out.json>)
 #   market             market data, history archive, backfill          (org.opentsx.market.MarketCli)
 #   history-twin       twin|house|boat on the history archive          (org.opentsx.market.twin.HistoryTwins)
@@ -63,6 +64,7 @@ case "$cmd" in
   boat)             run "opentsx-twin" org.opentsx.twin.demo.BoatDemo "$@" ;;
   dwd)              run "opentsx-dwd" org.opentsx.dwd.DwdCli "$@" ;;
   modbus)           run "opentsx-modbus" org.opentsx.modbus.ModbusCli "$@" ;;
+  twin-live)        run "opentsx-twin-live" org.opentsx.twin.live.TwinLive "$@" ;;
   studio-export)    run "opentsx-twin" org.opentsx.twin.studio.StudioExport "$@" ;;
   market)           run "opentsx-market" org.opentsx.market.MarketCli "$@" ;;
   history-twin)     run "opentsx-market" org.opentsx.market.twin.HistoryTwins "$@" ;;

@@ -49,7 +49,7 @@ can be passed as `?bridge=http://host:8090`.
   answers every origin unless `--allow-origin` narrows that. Run it inside the trusted network.
 - Every open stream holds one reader on the log (no consumer group, see `KafScaleClients`); `--max-streams` limits
   their number.
-- There is no k3s component for the bridge yet.
+- On k3s the bridge is the component `event-bridge` (`deploy/k3s/20-configure.sh EVENT_BRIDGE=true`, NodePort 30312).
 
 ## Tests
 

@@ -1,0 +1,8 @@
+# EVENT_BRIDGE=true: the event bridge of opentsx-twin-live as Deployment + Service opentsx-event-bridge, NodePort
+# 30312. It reads the event topics of twins (twin.<id>.<run>.events) from KafScale and hands them to browsers as
+# server-sent events; the Smart Topics Studio follows a topic through it (?bridge=http://<node>:30312).
+# Read-only and without authentication: keep the node port inside the trusted network.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - event-bridge.yaml

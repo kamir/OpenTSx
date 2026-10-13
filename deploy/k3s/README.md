@@ -22,7 +22,7 @@ deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into th
 | `env.example` | all configuration keys with defaults |
 | `base/` | ConfigMap, PVCs, stats processor, retrieval server, Studio |
 | `jobs/` | demo Jobs (`40-demo.sh`) |
-| `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring`, `saas` |
+| `components/` | `hostnetwork`, `lake`, `lake-minio`, `lake-jobs`, `ingress`, `modbus-sim`, `dwd-forward`, `monitoring`, `saas`, `event-bridge` |
 | `overlays/local/` | rendered by `20-configure.sh` (not in Git) |
 | `lib.sh` | shared shell helpers |
 | `../docker/` | Dockerfiles, staging script, image entrypoint, deployment helper |
@@ -43,6 +43,22 @@ deploy/k3s/30-deploy.sh --restart
 Limits: at most 20000 episodes in memory (the inventory then says `truncated`), memory limit 2Gi, no
 authentication. `LAKE=true` and `RETRIEVAL_SOURCE=kafscale` exclude each other: with the lake profile the server
 reads Iceberg.
+
+## Event bridge: twin event topics for the browser
+
+`20-configure.sh EVENT_BRIDGE=true` adds the component `event-bridge`: Deployment and Service `opentsx-event-bridge`
+(image `opentsx/tools`, `opentsx twin-live bridge`), NodePort 30312. It reads the topics `twin.<id>.<run>.events`
+from the configured KafScale and serves them as server-sent events:
+
+```
+curl http://<node>:30312/v1/health
+curl -N "http://<node>:30312/v1/topics/<topic>/events?from=earliest"
+```
+
+The Smart Topics Studio follows a topic through it: open the page with `?bridge=http://<node>:30312`, tab
+"Ereignis-Topic", "Verbinden". Events get into the topics with `opentsx twin-live publish` (see
+`opentsx-twin-live/README.md`). The bridge is read-only, serves only event topics of twins and has no authentication;
+`EVENT_BRIDGE_ALLOW_ORIGIN` narrows the origin it answers browsers from.
 
 ## SaaS module: web workbench, accounts, stored flows
 

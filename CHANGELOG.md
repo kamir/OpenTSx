@@ -80,6 +80,8 @@ entries are grouped by date. The detailed progress log (German) is in
   `EventBridge` serves such a topic to browsers as server-sent events; `bin/opentsx twin-live publish|bridge|demo`.
   The Studio follows the topic live through the bridge and keeps a replay that needs no broker. The publisher creates
   the topic before the first event, so a reader can connect while the run has not reported anything yet.
+- k3s component `event-bridge` (`EVENT_BRIDGE=true`): the event bridge as Deployment and Service on NodePort 30312;
+  `twin-live` is part of the tools image and takes the broker from `KAFSCALE_BOOTSTRAP`.
 - Retrieval (`opentsx-retrieval`, P5): segmentation, pattern engine (MASS, SAX, DTW), retrieval API, REST server,
   Python client, power-curve analysis.
 - DevOps guide for k3s against an existing KafScale cluster (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`).

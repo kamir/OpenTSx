@@ -1229,7 +1229,8 @@ $("tp-play").addEventListener("click", () => tp.timer ? tpStop() : tpPlay());
 $("tp-reset").addEventListener("click", () => { clearInterval(tp.timer); tp.timer = null; tp.pos = 0; tp.shown = -1; renderTopic(true); });
 $("tp-src-live").addEventListener("click", () => tpMode("live")); $("tp-src-replay").addEventListener("click", () => tpMode("replay"));
 $("tp-connect").addEventListener("click", () => { if (tp.es) { tpDisconnect(); renderTopic(true); } else tpConnect(); });
-let bridge0 = "http://localhost:8090";
+// default address of the bridge: next to a local page the local bridge, otherwise the node port of the k3s component
+let bridge0 = /^(localhost|127\.|\[::1\]|$)/.test(location.hostname) ? "http://localhost:8090" : `http://${location.hostname}:30312`;
 try { bridge0 = new URLSearchParams(location.search).get("bridge") || localStorage.getItem("opentsx.studio.bridge") || bridge0; } catch (e) {}
 $("tp-url").value = bridge0;
 if (new URLSearchParams(location.search).get("bridge")) tp.mode = "live";
