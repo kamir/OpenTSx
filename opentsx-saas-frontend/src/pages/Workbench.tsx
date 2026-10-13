@@ -10,7 +10,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import DeploymentsPanel from '../workbench/DeploymentsPanel';
 import FlowGraph from '../workbench/FlowGraph';
+import FlowsDialog from '../workbench/FlowsDialog';
 import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
+import { fetchFlowSeries } from '../workbench/inventoryLoad';
 import Scope from '../workbench/Scope';
 import {
   SOURCE_ID,
@@ -493,25 +495,47 @@ export default function Workbench() {
   const [error, setError] = useState<string | null>(null);
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [flowsOpen, setFlowsOpen] = useState(false);
+  const remoteBase = useRef(remote.base);
+  remoteBase.current = remote.base;
   const fileRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const signedIn = !!localStorage.getItem('access_token');
   const flowParam = searchParams.get('flow');
 
-  // /workbench?flow=<id> opens a flow stored in the account.
+  // /workbench?flow=<id> opens a flow stored in the account and loads the series it was built on.
   useEffect(() => {
     const id = Number(flowParam);
     if (!flowParam || !Number.isInteger(id) || useFlow.getState().savedId === id) return;
     let cancelled = false;
+    const current = () => !cancelled && useFlow.getState().savedId === id;
     flowsAPI
       .getDefinition(id)
-      .then((flow) => {
+      .then(async (flow) => {
         if (cancelled) return;
-        if (useFlow.getState().restore(flow.definition, flow.id)) {
-          setError(null);
-          setStatus(`Flow "${flow.name}" opened. Load a bucket to run it.`);
-        } else {
+        if (!useFlow.getState().restore(flow.definition, flow.id)) {
           setError(`Flow ${id} was not saved from the workbench and cannot be opened here.`);
+          return;
+        }
+        setError(null);
+        const wanted = useFlow.getState().sourceSeries;
+        if (wanted.length === 0) {
+          setStatus(`Flow "${flow.name}" opened. Load a bucket to run it.`);
+          return;
+        }
+        setStatus(`Flow "${flow.name}" opened. Loading its ${wanted.length} series`);
+        try {
+          const { load, missing } = await fetchFlowSeries(remoteBase.current.replace(/\/$/, ''), wanted);
+          if (!current()) return;
+          useFlow.getState().loadBucket(load.bucket, { kind: 'inventory', detail: load.detail });
+          // a flow of the source alone is loaded like a new bucket: it stays the stored flow
+          useFlow.getState().setSavedId(id);
+          useFlow.getState().setSourceSeries(load.seriesIds);
+          if (missing > 0) setError(`${missing} of the ${wanted.length} series of flow "${flow.name}" are no longer in the TS inventory; it runs on the others.`);
+        } catch (e) {
+          if (!current()) return;
+          setStatus(`Flow "${flow.name}" opened without data.`);
+          setError(`The series of flow "${flow.name}" could not be loaded: ${e instanceof Error ? e.message : e}. Load a bucket to run it.`);
         }
       })
       .catch((e) => !cancelled && setError(`Flow ${id} could not be opened: ${e instanceof Error ? e.message : e}`));
@@ -519,6 +543,22 @@ export default function Workbench() {
       cancelled = true;
     };
   }, [flowParam]);
+
+  const openFlows = (ids: number[]) => {
+    setFlowsOpen(false);
+    const [here, ...others] = ids;
+    const blocked = others.filter((id) => !window.open(`/workbench?flow=${id}`, '_blank')).length;
+    if (here === useFlow.getState().savedId) {
+      // the stored state replaces what is on the workbench
+      useFlow.getState().setSavedId(null);
+    }
+    setSearchParams({ flow: String(here) });
+    setError(
+      blocked > 0
+        ? `The browser kept ${blocked} of the flows from opening in tabs of their own. Allow pop-ups for this page, or open them one at a time.`
+        : null
+    );
+  };
 
   const saveFlow = async () => {
     const s = useFlow.getState();
@@ -638,6 +678,11 @@ export default function Workbench() {
           Load episodes
         </button>
         <span className="wb-grow" />
+        {signedIn && (
+          <button onClick={() => setFlowsOpen(true)} title="Choose among the flows stored in your account">
+            Open flow
+          </button>
+        )}
         {signedIn ? (
           <button disabled={nodes.length === 0} onClick={saveFlow} title="Stores the flow in your account; it appears on the dashboard">
             {state.savedId === null ? 'Save flow' : `Save flow ${state.savedId}`}
@@ -661,6 +706,16 @@ export default function Workbench() {
           onBase={(base) => setRemote((r) => ({ ...r, base }))}
           onLoad={loadInventory}
           onClose={() => setInventoryOpen(false)}
+        />
+      )}
+      {flowsOpen && (
+        <FlowsDialog
+          base={remote.base}
+          currentId={state.savedId}
+          replaces={nodes.length > 0}
+          list={flowsAPI.list}
+          onOpen={openFlows}
+          onClose={() => setFlowsOpen(false)}
         />
       )}
       {(error || result.error) && <div className="wb-error" role="alert">{error ?? `The operation failed: ${result.error}`}</div>}
@@ -695,10 +750,12 @@ export default function Workbench() {
                     <p>No bucket loaded.</p>
                     <p>
                       Pick series from the TS inventory, load the sample bucket, open a CSV, TSV or episode JSON file,
-                      or drop a file here. Then apply operations and watch each result on the scope.
+                      or drop a file here. Then apply operations and watch each result on the scope. A flow saved
+                      earlier opens with its series.
                     </p>
                     <button className="wb-primary" onClick={() => setInventoryOpen(true)}>Open TS inventory</button>{' '}
                     <button onClick={loadSample}>Load sample bucket</button>
+                    {signedIn && <> <button onClick={() => setFlowsOpen(true)}>Open a saved flow</button></>}
                   </>
                 )}
               </div>

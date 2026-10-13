@@ -280,8 +280,7 @@ export const useFlow = create<FlowState>((set, get) => ({
 }));
 
 /** Checks a stored node list: known operators, one source, every input present, no cycles. */
-export 
-function parseNodes(raw: unknown): FlowNode[] | null {
+export function parseNodes(raw: unknown): FlowNode[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > 500) return null;
   const nodes: FlowNode[] = [];
   for (const r of raw as Partial<FlowNode>[]) {

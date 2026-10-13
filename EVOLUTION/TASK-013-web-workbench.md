@@ -166,6 +166,11 @@ Beobachtungen am Swing-Code:
 - [x] 013.18 Testbetrieb für die Anmeldung (Stand 2026-10-13): `SAAS_TEST_LOGIN=true` lässt `admin` mit dem Passwort
       `admin` als ersten Administrator hinein; die Login-Seite zeigt es an. Das gespeicherte Passwort bleibt
       unverändert. Voreinstellung aus; eingeschaltet ist jeder, der die Seite erreicht, Administrator
+- [x] 013.19 Gespeicherte Flows aus der Workbench öffnen (Stand 2026-10-13): Auswahlfenster "Open flow" nach dem
+      Muster des TS-Inventars (`FlowsDialog.tsx`, `flows.ts`): Filter nach Text, Domain und Art, Vorschau mit
+      Quelle, Buckets, Smart Topics und Zustand der Bereitstellung, Mehrfachauswahl (der erste Flow öffnet in der
+      Workbench, die weiteren in eigenen Tabs). Ein geöffneter Flow lädt die Reihen, auf denen er gebaut wurde,
+      über ihren ganzen Zeitraum; das Zeitfenster der ursprünglichen Auswahl ist nicht gespeichert
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren

@@ -44,6 +44,10 @@ entries are grouped by date. The detailed progress log (German) is in
   on, and "Segment at threshold" says how many crossings lie inside an event.
 - SaaS module, test operation: `TEST_LOGIN=true` (`deploy/k3s`: `SAAS_TEST_LOGIN=true`) lets `admin` with the
   password `admin` sign in as the first administrator; the login page shows it. Off by default.
+- Workbench: "Open flow" lists the flows stored in the account in a selection window like the TS inventory:
+  filter by text, domain or kind, see what a flow reads, computes and publishes and whether it is deployed, and
+  open one or several (the first on the workbench, the others in tabs of their own). An opened flow loads the
+  series it was built on from the TS inventory, over their whole range.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the

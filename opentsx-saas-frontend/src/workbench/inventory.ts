@@ -254,6 +254,24 @@ export function estimatePoints(series: InventorySeries[], o: LoadOptions): numbe
   return Math.round(n);
 }
 
+/** More points than this make the scope slow. */
+export const MANY_POINTS = 400_000;
+
+/**
+ * The whole time range of a selection, at the finest resolution that keeps the scope fast. Used when a flow is
+ * opened and brings its series along without a person choosing a window.
+ */
+export function wholeRange(series: InventorySeries[]): LoadOptions | null {
+  const from = series.map((s) => s.from ?? '').filter(Boolean).sort()[0];
+  const to = series.map((s) => s.to ?? '').filter(Boolean).sort().pop();
+  if (!from || !to || !(Date.parse(to) > Date.parse(from))) return null;
+  for (const resample of RESAMPLE_STEPS) {
+    const o = { from, to, resample, agg: 'MEAN' };
+    if (estimatePoints(series, o) <= MANY_POINTS) return o;
+  }
+  return { from, to, resample: RESAMPLE_STEPS[RESAMPLE_STEPS.length - 1], agg: 'MEAN' };
+}
+
 /** Legend labels of a selection: only what tells its series apart. */
 export function shortLabels(series: InventorySeries[]): Map<string, string> {
   const sameMetric = new Set(series.map((s) => s.metric)).size === 1;
