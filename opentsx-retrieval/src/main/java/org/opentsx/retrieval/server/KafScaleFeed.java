@@ -54,8 +54,6 @@ final class KafScaleFeed implements AutoCloseable {
     /** How long reading one vector topic may take, and how long a topic that failed is left alone. */
     private static final Duration VECTOR_READ_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration VECTOR_RETRY = Duration.ofSeconds(90);
-    /** How long a run keeps retrying a send before it gives up. */
-    static final Duration DELIVERY_TIMEOUT = Duration.ofMinutes(3);
 
     private final String bootstrap;
     private final TopicLayout layout;
@@ -186,9 +184,7 @@ final class KafScaleFeed implements AutoCloseable {
         out.put("specHash", hash);
         ArrayNode sinks = out.putArray("sinks");
         try (Admin admin = KafScaleClients.admin(bootstrap);
-             KafkaProducer<String, byte[]> producer = new KafkaProducer<>(patientProducerProps(bootstrap),
-                     new org.apache.kafka.common.serialization.StringSerializer(),
-                     new org.apache.kafka.common.serialization.ByteArraySerializer())) {
+             KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap)) {
             for (VectorJob job : plan.jobs()) {
                 List<VectorAligner.Input> inputs = VectorStoreBridge.inputs(store, job);
                 List<VectorAligner.Point> points = VectorAligner.align(inputs, job.params());
@@ -238,20 +234,6 @@ final class KafScaleFeed implements AutoCloseable {
     }
 
     /**
-     * Producer settings of a run. KafScale refuses every produce and fetch with REQUEST_TIMED_OUT while it rates its
-     * object store as degraded, which lasts about a minute after one slow write. Five quick retries are over long
-     * before that, so a run retries with pauses for up to {@link #DELIVERY_TIMEOUT}.
-     */
-    static java.util.Properties patientProducerProps(String bootstrap) {
-        java.util.Properties p = KafScaleClients.producerProps(bootstrap);
-        p.remove(org.apache.kafka.clients.producer.ProducerConfig.RETRIES_CONFIG);      // client default: until the delivery timeout
-        p.put(org.apache.kafka.clients.producer.ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, (int) DELIVERY_TIMEOUT.toMillis());
-        p.put(org.apache.kafka.clients.producer.ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000L);
-        p.put(org.apache.kafka.clients.producer.ProducerConfig.RETRY_BACKOFF_MAX_MS_CONFIG, 10_000L);
-        return p;
-    }
-
-    /**
      * Sends the records and waits for the broker to confirm every one. A send that fails after the retries of the
      * client makes the run fail; records sent before stay in the topic (a later run repeats them, and readers take
      * the later measuring point).
@@ -269,7 +251,7 @@ final class KafScaleFeed implements AutoCloseable {
         Throwable first = null;
         for (java.util.concurrent.Future<org.apache.kafka.clients.producer.RecordMetadata> f : pending) {
             try {
-                f.get(DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
+                f.get(KafScaleClients.DELIVERY_TIMEOUT.toSeconds() + 30, TimeUnit.SECONDS);
                 confirmed++;
             } catch (java.util.concurrent.ExecutionException e) {
                 first = first == null ? e.getCause() : first;

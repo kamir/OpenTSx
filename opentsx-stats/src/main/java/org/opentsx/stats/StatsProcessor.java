@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.opentsx.kafka.Patience;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.Micros;
 import org.opentsx.model.OpenTsxAvro;
@@ -62,6 +63,8 @@ public final class StatsProcessor {
     private final List<Future<?>> pending = new ArrayList<>();
     private long undecodable;
     private long statsWritten;
+    /** KafScale refuses reads for about a minute at a time; the processor waits instead of ending. */
+    private Patience patience = Patience.standard();
 
     /**
      * @param checkpoint   checkpoint file; restored if it exists, null for none (always start from the beginning)
@@ -78,6 +81,11 @@ public final class StatsProcessor {
         if (checkpoint != null && Files.exists(checkpoint)) {
             restore();
         }
+    }
+
+    /** How long refused reads are waited out; the default is {@link Patience#standard()}. */
+    public void patience(Patience patience) {
+        this.patience = patience;
     }
 
     public StatsEngine engine() {
@@ -102,7 +110,7 @@ public final class StatsProcessor {
                 if (System.nanoTime() > deadline) {
                     throw new IllegalStateException("timed out computing statistics");
                 }
-                for (ConsumerRecord<byte[], byte[]> r : consumer.poll(Duration.ofMillis(500))) {
+                for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     TopicPartition tp = new TopicPartition(r.topic(), r.partition());
                     if (r.offset() >= end.get(tp)) {
                         continue;
@@ -125,7 +133,7 @@ public final class StatsProcessor {
         long next = System.nanoTime() + checkpointEvery.toNanos();
         try {
             while (!stop.getAsBoolean()) {
-                for (ConsumerRecord<byte[], byte[]> r : consumer.poll(Duration.ofMillis(500))) {
+                for (ConsumerRecord<byte[], byte[]> r : patience.poll(consumer, Duration.ofMillis(500))) {
                     handle(r);
                 }
                 if (System.nanoTime() >= next) {
