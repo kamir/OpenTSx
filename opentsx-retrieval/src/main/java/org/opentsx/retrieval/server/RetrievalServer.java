@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
  * POST /v1/episodes/similar  {"episodeId", "metric","tags","from","to","distance","band","topK"}
  * POST /v1/segments          {"strategy":"FIXED_DURATION|FIXED_COUNT|FEATURE_EXTREMUM|FEATURE_THRESHOLD", "params":{..},
  *                             "metric","tags","from","to"}
+ * GET  /v1/inventory          every series with extent, labels and ground-truth marks, see {@link SeriesInventory}
  * GET  /v1/health
  * </pre>
  * Episode responses are JSON by default; with {@code Accept: application/x-opentsx-avro-stream} they are a stream of
@@ -53,11 +54,18 @@ public final class RetrievalServer implements AutoCloseable {
     public static final String AVRO_STREAM = "application/x-opentsx-avro-stream";
 
     private final EpisodeService service;
+    private final SeriesInventory inventory;
     private final HttpServer http;
     private final OpenTsxAvro avro = new OpenTsxAvro();
 
     public RetrievalServer(EpisodeService service, int port) throws IOException {
+        this(service, port, new SeriesInventory(service.primary(), SeriesInventory.Source.of("store"), null, null,
+                Duration.ofSeconds(60)));
+    }
+
+    public RetrievalServer(EpisodeService service, int port, SeriesInventory inventory) throws IOException {
         this.service = service;
+        this.inventory = inventory;
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));
         http.createContext("/v1/", this::handle);
@@ -80,6 +88,8 @@ public final class RetrievalServer implements AutoCloseable {
         try {
             if (method.equals("GET") && path.equals("/v1/health")) {
                 json(ex, 200, EpisodeJson.JSON.createObjectNode().put("status", "ok"));
+            } else if (method.equals("GET") && path.equals("/v1/inventory")) {
+                json(ex, 200, inventory.get());
             } else if (method.equals("GET") && path.equals("/v1/episodes")) {
                 episodes(ex, listEpisodes(query(ex)));
             } else if (method.equals("GET") && path.startsWith("/v1/episodes/")) {
@@ -269,9 +279,13 @@ public final class RetrievalServer implements AutoCloseable {
     // ---- main ------------------------------------------------------------------------------------------------------
 
     /**
-     * {@code RetrievalServer --port 8080 (--demo | --iceberg k=v,... [--namespace tsx])}. The demo store holds three
-     * deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted pattern; used by the Python
-     * client tests in CI.
+     * {@code RetrievalServer --port 8080 (--demo true | --iceberg k=v,... [--namespace tsx] | --kafscale host:port
+     * [--domain wind] [--refresh PT30S] [--max-episodes 20000]) [--scenario file.yaml] [--catalog file.yaml]}.
+     *
+     * <p>The demo store holds three deterministic synthetic series (6 h at 1 Hz, 10-minute episodes) with a planted
+     * pattern; used by the Python client tests in CI. With {@code --kafscale} the server reads the episodes topic
+     * {@code tsx.<domain>.episodes.v2} into memory and follows it. {@code --scenario} and {@code --catalog} are
+     * handed out unchanged in {@code GET /v1/inventory}.
      */
     public static void main(String[] args) throws Exception {
         Map<String, String> a = new LinkedHashMap<>();
@@ -279,6 +293,7 @@ public final class RetrievalServer implements AutoCloseable {
             a.put(args[i].replaceFirst("^--", ""), args[i + 1]);
         }
         SeriesStore store;
+        SeriesInventory.Source source;
         if (a.containsKey("iceberg")) {
             Map<String, String> props = new LinkedHashMap<>();
             for (String kv : a.get("iceberg").split(",")) {
@@ -287,11 +302,40 @@ public final class RetrievalServer implements AutoCloseable {
             }
             store = (SeriesStore) Class.forName("org.opentsx.store.iceberg.IcebergSeriesStore")
                     .getMethod("open", Map.class, String.class).invoke(null, props, a.getOrDefault("namespace", "tsx"));
+            source = SeriesInventory.Source.of("iceberg");
+        } else if (a.containsKey("kafscale")) {
+            source = null;      // built below, with the topic names of the domain
+            store = new InMemorySeriesStore();
         } else {
             store = demoStore();
+            source = SeriesInventory.Source.of("demo");
         }
-        RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")));
+        JsonNode scenario = yaml(a.get("scenario"));
+        JsonNode catalog = yaml(a.get("catalog"));
+        SeriesInventory inventory;
+        if (a.containsKey("kafscale")) {
+            String domain = a.getOrDefault("domain", "wind");
+            // the feed invalidates the inventory whenever it adds episodes, so the cache may live long
+            inventory = new SeriesInventory(store, new SeriesInventory.Source("kafscale", domain, KafScaleFeed.topics(domain)),
+                    scenario, catalog, Duration.ofMinutes(10));
+            KafScaleFeed feed = KafScaleFeed.start(a.get("kafscale"), domain, Duration.parse(a.getOrDefault("refresh", "PT30S")),
+                    (InMemorySeriesStore) store, Integer.parseInt(a.getOrDefault("max-episodes", "20000")), inventory::invalidate);
+            inventory.truncatedWhen(feed::truncated);
+        } else {
+            inventory = new SeriesInventory(store, source, scenario, catalog, Duration.ofSeconds(60));
+        }
+        RetrievalServer s = new RetrievalServer(new EpisodeService(store), Integer.parseInt(a.getOrDefault("port", "8080")),
+                inventory);
         System.out.println("opentsx retrieval server on port " + s.port());
+    }
+
+    /** Reads a YAML (or JSON) file as a tree; null when no file is given. */
+    private static JsonNode yaml(String file) throws IOException {
+        if (file == null || file.isBlank()) {
+            return null;
+        }
+        return new com.fasterxml.jackson.databind.ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory())
+                .readTree(java.nio.file.Path.of(file).toFile());
     }
 
     /** Planted pattern of the demo store: 120 samples starting at sample 5000 of series "demo.signal{n=1}". */

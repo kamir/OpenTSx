@@ -27,6 +27,23 @@ deploy/k3s/71-restore.sh ./opentsx-backup-<time>                  # back into th
 | `lib.sh` | shared shell helpers |
 | `../docker/` | Dockerfiles, staging script, image entrypoint, deployment helper |
 
+## Retrieval server on the episodes topic
+
+By default the retrieval server serves a synthetic demo store. `20-configure.sh RETRIEVAL_SOURCE=kafscale` adds the
+component `retrieval-kafscale`: the server reads `tsx.<domain>.episodes.v2` from KafScale into memory and follows the
+topic, and `GET /v1/inventory` lists the real series with their scenario metadata. The workbench of the SaaS module
+uses that in its "TS Inventory" dialog.
+
+```bash
+deploy/k3s/40-demo.sh windpark-sim                      # fills the episodes topic with the demo scenario
+deploy/k3s/20-configure.sh RETRIEVAL_SOURCE=kafscale SAAS=true
+deploy/k3s/30-deploy.sh --restart
+```
+
+Limits: at most 20000 episodes in memory (the inventory then says `truncated`), memory limit 2Gi, no
+authentication. `LAKE=true` and `RETRIEVAL_SOURCE=kafscale` exclude each other: with the lake profile the server
+reads Iceberg.
+
 ## SaaS module: web workbench, accounts, stored flows
 
 `20-configure.sh SAAS=true` adds the component `saas`:

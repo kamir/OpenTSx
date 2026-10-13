@@ -32,12 +32,15 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    // A 401 from the sign-in itself is a wrong password, not an expired session: the form reports it.
+    const signingIn = /\/auth\/(login|register)$/.test(error.config?.url ?? '');
+    if (error.response?.status === 401 && !signingIn) {
       // Token expired, clear storage and redirect to login
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       // The workbench keeps its flow in memory: it reports the expired session instead of leaving the page.
-      if (!window.location.pathname.startsWith('/workbench')) {
+      const path = window.location.pathname;
+      if (!path.startsWith('/workbench') && path !== '/login') {
         window.location.href = '/login';
       }
     }

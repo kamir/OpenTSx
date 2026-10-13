@@ -64,7 +64,9 @@ The benchmark below measures how the two compare. It plants gusts in simulated 1
 ## 9.4 REST and Python
 
 Start the server with `bin/opentsx retrieval-server --port 8080 --iceberg …`, or with `--demo true` to serve a
-synthetic store. The endpoints are listed in [Appendix B](appendix-b-rest.md).
+synthetic store. With `--kafscale <host:port> --domain wind` it reads the topic `tsx.wind.episodes.v2` into memory
+and follows it. `GET /v1/inventory` lists every series with its metadata; the web workbench uses it to pick series.
+The endpoints are listed in [Appendix B](appendix-b-rest.md).
 
 ```python
 from opentsx import model as m

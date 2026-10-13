@@ -31,6 +31,18 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
+            <!-- scenario and channel catalog files of the series inventory (GET /v1/inventory) -->
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <!-- only for the KafScale mode of RetrievalServer: episodes straight from the episodes topic -->
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-kafka-v2</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.opentsx</groupId>
             <artifactId>opentsx-windpark</artifactId>
             <version>${project.version}</version>

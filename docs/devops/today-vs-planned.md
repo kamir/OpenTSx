@@ -13,7 +13,7 @@ two and shows where the planned parts will fit into the same namespace, images a
 | wind-farm simulator (`windpark-sim`) | done | Job |
 | statistics processor (`stats`) | done | Deployment, one replica, checkpoint PVC |
 | OpenMetadata publisher (`metadata`) | done | Job (dry run or publish) |
-| retrieval server (`retrieval-server`) | done | Deployment + Service, demo store or Iceberg |
+| retrieval server (`retrieval-server`) | done | Deployment + Service; demo store, Iceberg, or the episodes topic on KafScale (`RETRIEVAL_SOURCE=kafscale`) |
 | Iceberg store (`opentsx-store-iceberg`) | done | lake profile; S3 needs `--with-s3` |
 | digital twin, variant T (one process): H2 chain, house, boat | proof of concept (P9) | Jobs |
 | Modbus poller (`modbus poll`, `opentsx-modbus`) | tested against the in-JVM simulator; real meter and register sheets pending | Job `opentsx-modbus-poll` (`40-demo.sh modbus`): episodes as JSON lines on the data PVC; simulator `opentsx-modbus-sim` as Deployment + Service :1502 (component `modbus-sim`, `MODBUS_SIM=true`). **Planned:** a long-running poller Deployment close to the converter (the `hostnetwork` pattern if the meter network is only reachable from the node) and a KafScale sink - neither exists yet |

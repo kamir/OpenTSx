@@ -110,15 +110,18 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <p className="text-xs text-gray-500 text-center">
-              <strong>Demo Account:</strong>
-              <br />
-              Email: admin@opentsx.com
-              <br />
-              Password: admin123
-            </p>
-          </div>
+          {/* The default administrator of a local backend; a deployment generates its own password. */}
+          {import.meta.env.DEV && (
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <p className="text-xs text-gray-500 text-center">
+                <strong>Local development account:</strong>
+                <br />
+                Email: admin@opentsx.com
+                <br />
+                Password: admin123
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>

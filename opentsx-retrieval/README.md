@@ -98,7 +98,26 @@ GET  /v1/episodes/{id}
 POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "metric","tags","from","to","distance","band","topK"}
 POST /v1/episodes/similar  {"episodeId", …}
 POST /v1/segments          {"strategy","params":{…}, "metric","tags","from","to"}
+GET  /v1/inventory         every series of the store with its metadata
 ```
+
+### Series inventory
+
+`GET /v1/inventory` answers with an `opentsx.ts-inventory.v1` document:
+
+| Part | Content |
+|------|---------|
+| `source` | `kind` (`kafscale`, `iceberg`, `demo`), `domain`, topic names by role, `truncated` when the store holds only a part |
+| `totals` | series, episodes, samples, time range, scenario names found in the labels |
+| `series[]` | `seriesId`, `metric`, `tags`, `unit`, episodes, samples, `from`, `to`, `intervalMicros`, `min`, `mean`, `max`, `missing`, `labels` (distinct values per episode label, at most 8), `marks` |
+| `scenario`, `channels` | the files given with `--scenario` and `--catalog`, unchanged |
+
+`marks` are the ground-truth labels of the episodes (`gt.operation`, `gt.sensor_fault`) as time ranges; adjacent
+episodes with the same value are joined. They are as fine as the episodes are long. Episodes cut out of other
+episodes (with a parent or source episode) count as `segments`, not as samples.
+
+The inventory is derived by reading every episode, so it is cached (60 s; with `--kafscale` until the feed adds
+episodes). On a large Iceberg table the first request after that is slow.
 
 Episodes come back as JSON by default.
 
@@ -110,7 +129,13 @@ Start the server:
 ```bash
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --iceberg type=rest,uri=…,warehouse=… [--namespace tsx]
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --demo true      # synthetic demo store
+java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --kafscale host:9092 --domain wind \
+     [--refresh PT30S] [--max-episodes 20000]                                         # episodes topic on KafScale
 ```
+
+With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual
+assignment without a consumer group and writes nothing. Loading stops at `--max-episodes`. `--scenario <file>` and
+`--catalog <file>` (YAML) work with every source and are handed out in the inventory.
 
 Use it from Python:
 

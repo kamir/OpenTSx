@@ -6,7 +6,8 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-web-workbench`
+- **Delivery-Branch**: `opentsx/2026-task013-ts-inventory` (013.8); davor `opentsx/2026-task013-web-workbench`
+  (013.1 bis 013.4, gemergt mit PR #161 am 2026-10-12)
 - **Delivery-Worktree**: `../OpenTSx-worktrees/web-workbench`
 
 ## Ziel
@@ -90,9 +91,34 @@ Beobachtungen am Swing-Code:
 - [x] 013.4 Backend: Flows je Benutzer in der Datenbank (`app/api/flows.py`: anlegen, lesen, ändern, löschen,
       Ausführungen), Workbench speichert (`Save flow`) und öffnet (`/workbench?flow=<id>`, Dashboard) die
       Definition `opentsx.workbench.v1` (Knotenliste plus gerendertes `opentsx.dag.v1`)
+- [x] 013.8 TS-Inventar: Reihen der Smart Topics nach Namen auswählen (Stand 2026-10-13)
+      - Retrieval-Server liest `tsx.<domain>.episodes.v2` von KafScale (`--kafscale`, Klasse `EpisodeLogTail` in
+        `opentsx-kafka-v2`, `KafScaleFeed` in `opentsx-retrieval`) und folgt dem Topic
+      - `GET /v1/inventory` (`opentsx.ts-inventory.v1`): je Reihe Umfang, Wertebereich, Labels der Episoden
+        (Szenario, Seed, Katalog, IEC-Bezug) und Ground Truth (`gt.operation`, `gt.sensor_fault`) als Zeitbereiche;
+        dazu Szenariodatei und Kanal-Katalog, wenn der Server sie bekommt (`--scenario`, `--catalog`)
+      - Workbench: Dialog "TS Inventory" (`src/workbench/InventoryDialog.tsx`, Logik `inventory.ts`): filtern nach
+        Tag, Kanal, Szenario-Ereignis und Text; Zeitfenster und Auflösung wählen; Auswahl wird der Bucket, Domäne
+        und Quell-Topic des Flows folgen dem Inventar
+      - k3s: `RETRIEVAL_SOURCE=kafscale` (Komponente `retrieval-kafscale`)
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
 - [ ] 013.6 Knoten mit mehreren Eingängen, Kontext-Topics, `score.onnx`, `train.trigger`
 - [ ] 013.7 MF-DFA und Normalverteilungstest portieren; Paritätsvektoren Java gegen TypeScript
+- [ ] 013.9 Experimentierschleife schließen: Ground-Truth-Marken auf dem Oszilloskop einblenden; Ergebnis eines
+      Knotens als Episoden in ein Smart Topic schreiben (`tsx.<domain>.smart.<name>.metrics.v2`), das dann selbst
+      im Inventar erscheint; Asset-Register `opentsx.inventory.v1` (12) über `series` an das TS-Inventar binden
+
+## Grenzen des TS-Inventars
+
+* **Nur lesen.** Die Workbench holt Reihen aus dem Topic. Sie schreibt nichts nach KafScale; "als Smart Topic
+  anwenden" bleibt Export und Speichern, bis 013.5 und 013.9 umgesetzt sind.
+* **Das Inventar ist abgeleitet.** Das Topic `tsx.<domain>.series.v2` ist im Layout vorgesehen, wird aber von keinem
+  Schreiber gefüllt. Das Inventar entsteht deshalb aus den Episoden selbst.
+* **Im Speicher.** Der Server hält die Episoden im Heap, höchstens `--max-episodes` (Standard 20000). Bei mehr
+  meldet das Inventar `truncated`. Für größere Bestände ist das Lake-Profil (Iceberg) gedacht.
+* **Ground Truth in Episodenschritten.** Die Marken kommen aus den Labels der Episoden, also im Raster der
+  Episodendauer (im Demo-Szenario 10 Minuten). Ein Ereignis von 15 Minuten erscheint als 20 Minuten.
+* **Kein Zugriffsschutz.** `/retrieval/` ist ohne Anmeldung erreichbar, wie bisher.
 
 ## Prüfung
 
@@ -101,6 +127,16 @@ cd opentsx-saas-frontend
 npm ci
 npx tsc --noEmit && npx vitest run && npm run build
 npm run dev          # http://localhost:3000/workbench
+```
+
+TS-Inventar gegen einen Broker (liest nur, ohne Consumer-Gruppe):
+
+```bash
+mvn -q -pl opentsx-kafka-v2,opentsx-retrieval -am test
+bin/opentsx retrieval-server --port 8080 --kafscale <host:port> --domain wind \
+    --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
+    --catalog opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml
+curl -s localhost:8080/v1/inventory | head -c 400
 ```
 
 ## Notes
@@ -126,4 +162,10 @@ npm run dev          # http://localhost:3000/workbench
   `kubectl -n opentsx delete deploy,svc opentsx-saas-frontend opentsx-saas-backend opentsx-saas-db`, danach
   `kubectl -n opentsx delete pvc opentsx-saas-db` und `kubectl -n opentsx delete secret opentsx-saas-secrets`.
   Der frühere Eintrag zum Rollout nur des Frontends ist damit überholt.
-
+* 2026-10-13: TS-Inventar (013.8). Gegen KafScale auf master2 geprüft: 100 Reihen, 3600 Episoden, 2.160.000
+  Messwerte aus `tsx.wind.episodes.v2`; die Marken decken sich mit `ostsee-demo.yaml` (zum Beispiel STUCK am
+  Windmesser von T05, 01:30 bis 01:50). Im Browser: Ereignis wählen, Reihe laden, die hängende Messung steht als
+  flache Linie bei 4,16 m/s auf dem Schirm; zehn Leistungsreihen mit PT1M geladen; keine Konsolenfehler.
+  Auf master2 ausgerollt: `opentsx-retrieval` liest jetzt das Topic (Image `opentsx/tools:3.0.0-task013-4`,
+  vorher Demo-Store), Frontend `3.0.0-task013-4`. Stand vor der Änderung auf dem Host unter
+  `~/opentsx-builds/task013/retrieval-before-task013-4.yaml`.

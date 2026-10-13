@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import FlowGraph from '../workbench/FlowGraph';
+import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import Scope from '../workbench/Scope';
 import {
   SOURCE_ID,
@@ -417,6 +418,7 @@ export default function Workbench() {
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
+  const [inventoryOpen, setInventoryOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const signedIn = !!localStorage.getItem('access_token');
@@ -515,6 +517,18 @@ export default function Workbench() {
     }
   };
 
+  const loadInventory = (l: InventoryLoad) => {
+    const s = useFlow.getState();
+    // A flow opened from the account keeps its own domain and source topic.
+    if (!(s.source === null && s.nodes.length > 1)) {
+      if (l.domain) s.setDomain(l.domain);
+      if (l.topic) s.setSourceTopic(l.topic);
+    }
+    setError(null);
+    loadBucket(l.bucket, { kind: 'inventory', detail: l.detail });
+    setInventoryOpen(false);
+  };
+
   const useTrigger = (level: number, rising: boolean) => {
     state.applyOp('segment.threshold', { enter: Number(level.toPrecision(6)), direction: rising ? 'ABOVE' : 'BELOW' });
   };
@@ -540,6 +554,9 @@ export default function Workbench() {
             e.target.value = '';
           }}
         />
+        <button onClick={() => setInventoryOpen(true)} title="Browse the series of the Smart Topics by scenario, turbine, channel and event">
+          TS Inventory
+        </button>
         <button aria-expanded={remote.open} onClick={() => setRemote((r) => ({ ...r, open: !r.open }))}>
           Load episodes
         </button>
@@ -560,6 +577,14 @@ export default function Workbench() {
           <label className="wb-param grow">query (metric, series, from, to, limit, resample)<input type="text" value={remote.query} onChange={(e) => setRemote({ ...remote, query: e.target.value })} /></label>
           <button onClick={loadRemote}>Load</button>
         </div>
+      )}
+      {inventoryOpen && (
+        <InventoryDialog
+          base={remote.base}
+          onBase={(base) => setRemote((r) => ({ ...r, base }))}
+          onLoad={loadInventory}
+          onClose={() => setInventoryOpen(false)}
+        />
       )}
       {(error || result.error) && <div className="wb-error" role="alert">{error ?? `The operation failed: ${result.error}`}</div>}
 
@@ -592,10 +617,11 @@ export default function Workbench() {
                   <>
                     <p>No bucket loaded.</p>
                     <p>
-                      Load the sample bucket, open a CSV, TSV or episode JSON file, or drop a file here. Then apply
-                      operations and watch each result on the scope.
+                      Pick series from the TS inventory, load the sample bucket, open a CSV, TSV or episode JSON file,
+                      or drop a file here. Then apply operations and watch each result on the scope.
                     </p>
-                    <button className="wb-primary" onClick={loadSample}>Load sample bucket</button>
+                    <button className="wb-primary" onClick={() => setInventoryOpen(true)}>Open TS inventory</button>{' '}
+                    <button onClick={loadSample}>Load sample bucket</button>
                   </>
                 )}
               </div>

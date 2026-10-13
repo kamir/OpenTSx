@@ -15,6 +15,11 @@ entries are grouped by date. The detailed progress log (German) is in
   a graph and export it as `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor or Java code. See
   [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the limits: no runtime executes
   the DAG yet.
+- TS inventory: the retrieval server reads the episodes topic of a domain from KafScale (`--kafscale <host:port>
+  --domain <d>`) and lists every series with extent, value range, episode labels and the ground truth of the
+  scenario as time ranges (`GET /v1/inventory`, `opentsx.ts-inventory.v1`). The workbench has a "TS Inventory"
+  dialog: filter by tag, channel, scenario event or text, choose window and resolution, load the selection as the
+  bucket. `deploy/k3s`: `RETRIEVAL_SOURCE=kafscale`.
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the
   dashboard. `opentsx-saas-backend/smoke-flows.sh` checks accounts and flows against a running instance.
@@ -27,6 +32,9 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- SaaS frontend: the login page showed the default administrator password of a local backend on every
+  installation, also where the deployment generates another one. The hint now appears in the dev server only.
+  A wrong password reloaded the page instead of showing the error; the form now reports it.
 - SaaS backend: registration failed against a real database (`MissingGreenlet`), every authenticated request
   answered 401 (numeric token subject), and a refresh token was accepted as access token.
 
