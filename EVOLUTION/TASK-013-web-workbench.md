@@ -9,6 +9,8 @@
 - **Delivery-Branch**: `opentsx/2026-task013-vector-processor` (013.15, baut auf 013.14 auf), Worktree
   `../OpenTSx-worktrees/vector-processor`; davor: `opentsx/2026-task013-broker-patience` (013.14), Worktree `../OpenTSx-worktrees/broker-patience`;
   davor: `opentsx/2026-task013-secure-dag-runs` (013.12), Worktree `../OpenTSx-worktrees/secure-dag-runs`;
+- **Delivery-Branch**: `opentsx/2026-task013-ground-truth` (013.13), Worktree `../OpenTSx-worktrees/ground-truth`;
+  `opentsx/2026-task013-secure-dag-runs` (013.12, PR #172, gemergt);
   `opentsx/2026-task013-vector-runtime` (013.11, PR #168, gemergt, baut auf 013.10 auf);
   `opentsx/2026-task013-vector-sink` (013.10, PR #166, baut auf 013.8 auf); `opentsx/2026-task013-ts-inventory`
   (013.8, PR #165); davor `opentsx/2026-task013-web-workbench`
@@ -147,10 +149,17 @@ Beobachtungen am Swing-Code:
       TS-Inventar; der Einmal-Lauf des Retrieval-Servers entfällt dann
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
+- [x] 013.13 Ground Truth auf dem Oszilloskop (Stand 2026-10-13)
+      - Die Szenario-Ereignisse der geladenen Reihen wandern als Marken mit dem Bucket (`Bucket.marks`); Operatoren,
+        die die Zeitachse behalten, reichen sie weiter, Spektren und Histogramme haben keine
+      - Der Schirm zeichnet sie als Bänder (Betriebsereignis gelb, Sensorfehler rot) mit Namen am unteren Rand;
+        Feld "Ground truth" schaltet sie und springt zu einem Ereignis
+      - "Segment at threshold" zählt, wie viele Schwellenübergänge in ein Ereignis fallen
+- [ ] 013.5 Laufzeit für `opentsx.dag.v1` (11, D25 bis D27) oder Brücke zum `StatsProcessor`
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
       Eingängen gibt es seit 013.10
 - [ ] 013.7 MF-DFA und Normalverteilungstest portieren; Paritätsvektoren Java gegen TypeScript
-- [ ] 013.9 Ground-Truth-Marken auf dem Oszilloskop einblenden; Ergebnis eines einzelnen Knotens als Episoden in ein
+- [ ] 013.9 Ergebnis eines einzelnen Knotens als Episoden in ein
       Smart Topic schreiben (`tsx.<domain>.smart.<name>.metrics.v2`); Asset-Register `opentsx.inventory.v1` (12) über
       `series` an das TS-Inventar binden. Für Vektoren ist die Schleife seit 013.11 geschlossen.
 
@@ -257,3 +266,8 @@ curl -s localhost:8080/v1/inventory | head -c 400
   Danach beendet und der DAG per Steuer-Topic gestoppt: Auf dem Broker läuft kein Prozessor, bis 013.16 ihn
   ausliefert. Neue Episoden kamen während des Laufs nicht dazu; das Nachführen ist durch die Tests belegt
   (`VectorProcessorTest`), nicht durch diesen Lauf.
+* 2026-10-13: Ground Truth auf dem Schirm (013.13). Im Browser mit den Daten von master2: Windmesser von T05 und
+  T07 über sechs Stunden geladen, die Bänder CURTAILMENT (01:00 bis 01:40) und STUCK T05 (01:30 bis 01:50) stehen
+  an der richtigen Stelle; nach dem Sprung auf STUCK liegt die flache Strecke von T05 im roten Band, T07 läuft
+  weiter. Ein abgeleiteter Bucket (Diffs) behält die Marken, die FFT hat keine. Keine Konsolenfehler.
+  Die Marken sind so fein wie die Episoden lang sind (10 Minuten), also Näherungen des Ereignisses.

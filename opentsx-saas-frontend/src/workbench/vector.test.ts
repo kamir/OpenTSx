@@ -171,6 +171,12 @@ describe('align.vector', () => {
     expect(vectorRecords(a, 'v')).toEqual([]);
   });
 
+  it('hands the ground truth of its first input on', () => {
+    const marks = [{ kind: 'sensor_fault', type: 'STUCK', from: 60, to: 120, scope: '' }];
+    const a = { ...timeBucket('a_s', [series('s', [0, 60], [1, 2])]), marks };
+    expect(align(a, [timeBucket('b_s', [series('s', [0], [9])])], { every: 60 }).marks).toEqual(marks);
+  });
+
   it('refuses inputs without a time axis and a clock of zero', () => {
     const a = timeBucket('a', [series('s', [0], [1])]);
     const spectrum: Bucket = { ...timeBucket('FFT_a', [series('s', [0], [1])]), xKind: 'frequency' };

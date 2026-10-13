@@ -168,6 +168,35 @@ describe('operators', () => {
   });
 });
 
+describe('ground truth', () => {
+  const marked = (): Bucket => ({
+    name: 'B',
+    xKind: 'time',
+    xLabel: 't [s]',
+    yLabel: 'y',
+    series: [{ id: 's', label: 's', x: Float64Array.from({ length: 100 }, (_, i) => i), y: Float64Array.from({ length: 100 }, (_, i) => (i % 20 === 10 ? 5 : 0)) }],
+    marks: [{ kind: 'sensor_fault', type: 'SPIKES', from: 40, to: 80, scope: '' }],
+  });
+
+  it('stays with operators that keep the time axis and goes where the axis changes', () => {
+    expect(run('norm.zscore', marked()).marks).toHaveLength(1);
+    expect(run('resample', marked(), { every: 10 }).marks).toHaveLength(1);
+    expect(run('smooth.movavg', marked(), { window: 3 }).marks).toHaveLength(1);
+    expect(run('shuffle', marked()).marks).toBeUndefined();
+    expect(run('fft', marked()).marks).toBeUndefined();
+    expect(run('histogram', marked()).marks).toBeUndefined();
+  });
+
+  it('counts the threshold crossings that lie inside an event', () => {
+    // spikes at 10, 30, 50, 70, 90; the event covers 40 to 80, so two of five
+    const out = run('segment.threshold', marked(), { enter: 2, direction: 'ABOVE', pre: 2, post: 2 });
+    expect(out.note).toContain('5 episodes at level 2');
+    expect(out.note).toContain('2 of 5 crossings lie inside a ground-truth event (SPIKES)');
+    const plain = { ...marked(), marks: undefined };
+    expect(run('segment.threshold', plain, { enter: 2, direction: 'ABOVE', pre: 2, post: 2 }).note).not.toContain('ground-truth');
+  });
+});
+
 describe('loaders', () => {
   it('generates the MacroRecorder sine mix deterministically', () => {
     const a = generateSineMix();

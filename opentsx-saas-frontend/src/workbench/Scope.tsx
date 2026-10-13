@@ -26,6 +26,8 @@ interface View {
   trigger: boolean;
   level: number;
   rising: boolean;
+  /** Draw the ground-truth events of the bucket. */
+  marks: boolean;
 }
 
 /** Next value of the 1-2-5 sequence above (dir > 0) or below (dir < 0) v. */
@@ -99,6 +101,7 @@ function autoset(b: Bucket, prev?: View): View {
     trigger: prev?.trigger ?? false,
     level: (ref[0] + ref[1]) / 2,
     rising: prev?.rising ?? true,
+    marks: prev?.marks ?? true,
   };
 }
 
@@ -166,6 +169,11 @@ export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) 
   const viewRef = useRef(view);
   viewRef.current = view;
   const isTime = bucket.xKind === 'time';
+  // Ground truth belongs to the time axis; a spectrum or a histogram has none.
+  const marks = useMemo(() => (isTime ? (bucket.marks ?? []) : []), [bucket, isTime]);
+  // Clock time (UTC) where the data has absolute time, otherwise the offset on the x axis.
+  const when = (x: number) =>
+    bucket.t0Ms === undefined ? span(x, true) : `${new Date(bucket.t0Ms + x * 1000).toISOString().slice(11, 19)} UTC`;
 
   // A new bucket gets a fresh auto set; channel visibility is kept by position.
   useEffect(() => {
@@ -267,6 +275,30 @@ export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) 
       g.lineTo(w / 2 + 3, y);
     }
     g.stroke();
+
+    // Ground truth behind the traces: a band over the full height, its name on a lane at the bottom.
+    if (view.marks && marks.length > 0) {
+      g.font = '11px ui-monospace, Menlo, Consolas, monospace';
+      g.textBaseline = 'top';
+      const laneEnd: number[] = [];
+      for (const m of marks) {
+        const x0 = Math.max(0, X(m.from));
+        const x1 = Math.min(w, X(m.to));
+        if (x1 <= 0 || x0 >= w || x1 <= x0) continue;
+        const fault = m.kind === 'sensor_fault';
+        g.fillStyle = fault ? 'rgba(239, 143, 143, 0.16)' : 'rgba(232, 214, 107, 0.11)';
+        g.fillRect(x0, 17, x1 - x0, h - 17);
+        const text = `${m.type}${m.scope ? ' ' + m.scope : ''}`;
+        const width = Math.max(x1 - x0, g.measureText(text).width + 6);
+        let lane = laneEnd.findIndex((end) => end <= x0);
+        if (lane < 0) lane = laneEnd.length;
+        laneEnd[lane] = x0 + width + 4;
+        const y = h - 16 - lane * 15;
+        g.fillStyle = fault ? '#ef8f8f' : '#e8d66b';
+        g.fillRect(x0, y + 12, x1 - x0, 2);
+        g.fillText(text, x0 + 2, y);
+      }
+    }
 
     // Traces. Dense records are drawn as one min/max column per pixel.
     bucket.series.forEach((s, c) => {
@@ -390,7 +422,7 @@ export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) 
         row++;
       });
     }
-  }, [bucket, view, size, running, showLabels, active, xRight, isTime]);
+  }, [bucket, view, size, running, showLabels, active, xRight, isTime, marks]);
 
   // ---------------------------------------------------------------- interaction
 
@@ -611,6 +643,31 @@ export default function Scope({ bucket, showLabels, onUseTrigger }: ScopeProps) 
             </dl>
           )}
         </fieldset>
+
+        {marks.length > 0 && (
+          <fieldset>
+            <legend>Ground truth</legend>
+            <label className="wb-check">
+              <input type="checkbox" checked={view.marks} onChange={(e) => setView((v) => ({ ...v, marks: e.target.checked }))} />
+              Show scenario events
+            </label>
+            <ul className="wb-marks">
+              {marks.map((m, i) => (
+                <li key={i}>
+                  <button
+                    title="Brings the event onto the screen"
+                    onClick={() => setView((v) => ({ ...v, marks: true, xPerDiv: ((m.to - m.from) * 1.6) / HDIV, xLeft: m.from - (m.to - m.from) * 0.3 }))}
+                  >
+                    <i className={m.kind} />
+                    {m.type}
+                    {m.scope ? ` ${m.scope}` : ''}
+                  </button>
+                  <span>{when(m.from)} to {when(m.to)}</span>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
+        )}
 
         <fieldset>
           <legend>Trigger</legend>

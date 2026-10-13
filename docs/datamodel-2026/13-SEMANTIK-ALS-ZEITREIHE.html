@@ -518,7 +518,7 @@ newterm_t = | Terme in t, nie zuvor gesehen | / | Terme in t |</div>
         <dt>Eingabe</dt><dd><code>title</code>, <code>text</code>, <code>event_ts</code></dd>
         <dt>Ausgabe</dt><dd>mehrere Skalare je Fenster, JS in [0, 1]</dd>
         <dt>Frage</dt><dd>Wie stark hat sich das Vokabular verändert, unabhängig von jedem Modell?</dd>
-        <dt>Schwäche</dt><dd class="weak">Oberflächlich: Synonyme und Umformulierungen sieht sie nicht. Sprachabhängig bei der Tokenisierung, also Tokenizer-Version mitschreiben. Und JS ist bei dünn besetzten Verteilungen nach oben verzerrt, siehe die Bucketbreite unten.</dd>
+        <dt>Schwäche</dt><dd class="weak">Oberflächlich: Synonyme und Umformulierungen sieht sie nicht. Sprachabhängig bei der Tokenisierung, also Tokenizer-Version mitschreiben. Und die Verzerrung bei Dünnbesetzung ist nicht theoretisch: am Korpus gemessen beträgt die Rangkorrelation zwischen Tokenmasse und JS <b>−0,79</b> über 29 Monate. Ohne Angleichung der Tokenmasse misst diese Reihe vor allem, wie viel geschrieben wurde.</dd>
       </dl>
       <p class="maps">
         <b>Mapping</b> Reguläre Reihe. <b>Dies ist die Kontrollreihe aus Regel 2.</b> Deterministisch, billig,
@@ -538,18 +538,42 @@ newterm_t = | Terme in t, nie zuvor gesehen | / | Terme in t |</div>
         Anteil Followups gegen Wurzelitems.
       </p>
       <p class="prose">
-        Die wertvollste daraus ist die <b>Followup-Latenz</b>: die Zeit zwischen einem Elternitem und seinem
-        ersten Kind. Das ist eine echte Dauer in Sekunden, braucht kein Semantikmodell und ist trotzdem
-        inhaltlich, denn sie misst, wie schnell auf Festgehaltenes reagiert wird.
+        Die wertvollste daraus ist eine <b>Latenz</b>: die Zeit zwischen einem Item und dem ersten Item, das
+        darauf verweist. Das ist eine echte Dauer, braucht kein Semantikmodell und ist trotzdem inhaltlich,
+        denn sie misst, wie schnell auf Festgehaltenes reagiert wird.
       </p>
-      <div class="formula">parent(i) aus tags: link/parent/&lt;ctx&gt;/&lt;doc_id&gt;
-latency_p = min( event_ts_c - event_ts_p : c Kind von p )
-depth_t   = längste Kette, die in Tick t endet</div>
+      <p class="prose">
+        <b>Die Kantenart entscheidet, und sie ist nicht die, die der Name verspricht.</b> Gemessen am Korpus
+        am 2026-10-13, 5111 Items über 30 Monate:
+      </p>
+      <div class="scroll" style="margin-top:0.6rem">
+        <table>
+          <thead><tr><th class="mono">Kantenart</th><th class="num">Kanten</th><th class="num">am selben Tag</th><th class="num">Median</th><th class="num">p90</th><th>taugt als Dauer</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">link/parent</td><td class="num">874</td><td class="num">78 %</td><td class="num">0</td><td class="num">7</td><td>nein, Kommentarkante</td></tr>
+            <tr><td class="mono">link/continues</td><td class="num">159</td><td class="num">99 %</td><td class="num">0</td><td class="num">0</td><td>nein, Sitzungsfortsetzung</td></tr>
+            <tr><td class="mono">link/followup</td><td class="num">75</td><td class="num">96 %</td><td class="num">0</td><td class="num">0</td><td><b>nein</b>, trotz des Namens</td></tr>
+            <tr><td class="mono">link/step</td><td class="num">110</td><td class="num">11 %</td><td class="num"><b>7</b></td><td class="num">25</td><td><b>ja</b></td></tr>
+            <tr><td class="mono">link/gegenfrage</td><td class="num">35</td><td class="num">9 %</td><td class="num"><b>9</b></td><td class="num">25</td><td><b>ja</b></td></tr>
+            <tr><td class="mono">link/artifact</td><td class="num">54</td><td class="num">33 %</td><td class="num">2</td><td class="num">15</td><td>bedingt</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="prose" style="margin-top:0.6rem">
+        <code>link/parent</code> ist eine <b>Kommentarkante</b>: Kind und Eltern entstehen in derselben Sitzung,
+        die Latenz ist dort strukturell null und sagt nichts über Handeln. <code>link/followup</code> trägt
+        trotz seines Namens <b>keine</b> Latenz, 96 Prozent am selben Tag. Die Dauer steckt in
+        <code>link/step</code> und <code>link/gegenfrage</code>.
+      </p>
+      <div class="formula">EDGE = link/&lt;kind&gt;/&lt;ctx&gt;/&lt;doc_id&gt;,  kind aus {step, gegenfrage}
+latency_e = event_ts_kind - event_ts_ziel       je KANTE, nicht je Item
+depth_t   = längste Kette, die in Tick t endet
+synced-from ist Sync-Maschinerie und wird ausgeschlossen</div>
       <dl class="spec">
-        <dt>Eingabe</dt><dd><code>tags</code> mit Präfix <code>link/</code>, <code>event_ts</code></dd>
-        <dt>Ausgabe</dt><dd>Dauer in Sekunden je Elternitem, Strukturgrößen je Fenster</dd>
+        <dt>Eingabe</dt><dd><code>tags</code> mit <code>link/step</code> oder <code>link/gegenfrage</code>, <code>event_ts</code></dd>
+        <dt>Ausgabe</dt><dd>Dauer je Kante, Strukturgrößen je Fenster</dd>
         <dt>Frage</dt><dd>Wie schnell wird aus einer Notiz eine Handlung, und wird der Rückstand größer?</dd>
-        <dt>Schwäche</dt><dd class="weak">Zensiert: Items ohne Kind haben keine Latenz, nicht eine unendliche. Wer das ignoriert, rechnet den Mittelwert systematisch zu klein. Überlebenszeitanalyse statt arithmetischem Mittel.</dd>
+        <dt>Schwäche</dt><dd class="weak">Zensiert, und der Denominator ist nicht die Itemzahl: die meisten Items sollen nie ein Kind haben. Eine Quote „Anteil mit Kind" über alle Items ist bedeutungslos. Ausgewertet wird je Kantenart über die Kanten selbst. Dazu ist n klein, 110 und 35 im gemessenen Korpus, das trägt einen Median und keine Wochenreihe.</dd>
       </dl>
       <p class="maps">
         <b>Mapping</b> Latenz als irreguläre <code>Observation</code> mit Einheit <code>s</code>, Strukturgrößen
@@ -660,6 +684,21 @@ agree_d = Streuung aus Mehrfachbewertung derselben Items</div>
     erfasst. Das ist nützlicher als Clustern um des Clusterns willen, und es umgeht die Achsenfalle, weil kein
     historischer Wert von der Clusterung abhängt.
   </p>
+  <div class="note">
+    <h4>Gemessen am 2026-10-13: die Projektbindung ist jünger und dünner als der Korpus</h4>
+    <p>
+      Über 5111 Items tragen <b>629 ein <code>project:</code>-Tag, also 12,3 Prozent</b>, und zwar erst ab
+      2026-05; davor liegen 1529 Items ohne jede Projektbindung. <code>link/project</code> kommt dreimal vor.
+      Die Bindung läuft also über <code>context_id</code> und das Export-Manifest, nicht über Tags.
+    </p>
+    <p>
+      Im geprüften Export sind es zwei Kontexte und <b>ein</b> PLM-Projekt, und einer der beiden Kontexte
+      erscheint praktisch nur als einmaliger Massenimport in einem Monat. Die Kanaldimension ist damit auf
+      diesem Export entartet. <b>Voraussetzung für Familie D ist deshalb ein Export je PLM-Projekt</b>, je
+      einer in einen eigenen Ordner mit eigenem Deskriptor. Ohne diesen Schritt gibt es einen Kanal, keine
+      Kanalmenge.
+    </p>
+  </div>
   <div class="note flow">
     <h4>Nebeneffekt für Familie A</h4>
     <p>
@@ -865,8 +904,9 @@ agree_d = Streuung aus Mehrfachbewertung derselben Items</div>
         <tr><th>Reihenfolge</th><th>Familie</th><th>Warum gerade diese</th><th class="mono">Voraussetzung</th></tr>
       </thead>
       <tbody>
-        <tr><td class="num">1</td><td><b>D</b> Kanalbelegung, PLM-Projekte</td><td>Mit deklarierten Kanälen braucht sie weder Embeddings noch Volltext, nur <code>event_ts</code> und die Projekt-Tags. Billigste Familie und sofort interpretierbar.</td><td class="mono">project:-Tags</td></tr>
-        <tr><td class="num">2</td><td><b>F</b> Followup-Latenz</td><td>Ebenfalls modellfrei, nutzt den vorhandenen Graphen, liefert das Verhaltenssignal.</td><td class="mono">link/-Tags</td></tr>
+        <tr><td class="num">0</td><td><b>Vorbedingung</b></td><td>Export je PLM-Projekt. Ohne ihn ist D nicht lauffähig, siehe die Messung oben.</td><td class="mono">plm-export full</td></tr>
+        <tr><td class="num">1</td><td><b>D</b> Kanalbelegung, PLM-Projekte</td><td>Mit deklarierten Kanälen braucht sie weder Embeddings noch Volltext, nur <code>event_ts</code> und die Kontext-zu-Projekt-Auflösung. Billigste Familie, sobald Schritt 0 steht.</td><td class="mono">Export je Projekt</td></tr>
+        <tr><td class="num">2</td><td><b>F</b> Latenz</td><td>Modellfrei, nutzt den vorhandenen Graphen. Auf <code>link/step</code> und <code>link/gegenfrage</code>, nicht auf <code>parent</code> oder <code>followup</code>.</td><td class="mono">link/step, link/gegenfrage</td></tr>
         <tr><td class="num">3</td><td><b>E</b> Lexikalisch</td><td>Die Kontrollreihe nach Regel 2. Muss stehen, bevor eine modellabhängige Familie interpretiert wird.</td><td class="mono">nur Volltext</td></tr>
         <tr><td class="num">4</td><td><b>A</b> Ankerprojektionen</td><td>Erste inhaltliche Familie. Anker aus den Projektbeschreibungen, dann teilt sie die Taxonomie mit D.</td><td class="mono">Embeddings</td></tr>
         <tr><td class="num">5</td><td><b>D</b> Lebenszyklus-Kanäle</td><td>Verweildauern statt Zählwerte, beantwortet „wo bleibt Arbeit hängen". Braucht die Ereignis-Taxonomie im Fluss.</td><td class="mono">Ereignisstrom</td></tr>
@@ -937,7 +977,10 @@ agree_d = Streuung aus Mehrfachbewertung derselben Items</div>
     der Konfiguration und dem Zustand des lokalen RAG-Index, Stand 2026-10-12. <code>opentsx.vector.v1</code>,
     <code>align.vector</code> und <code>VectorAligner</code> sind der Stand von TASK-013 auf <code>master</code>.
     <code>ESCalc</code>, <code>ESCalc2</code> und <code>event_sync.py</code> tragen seit PR #110 das lokale τ
-    nach Quiroga.
+    nach Quiroga. <b>Revision 2 vom 2026-10-13</b> ersetzt die Annahmen zu Familie F und E durch Messungen an
+    5111 Items über 30 Monate: die Latenzkanten, die Rangkorrelation von Tokenmasse und JS, und die
+    Projektabdeckung. Die ursprüngliche Fassung nannte <code>link/parent</code> als Latenzkante; das war
+    falsch.
   </p>
   <p>
     <b>Weiterlesen.</b> Modell v2 in <a href="04-MODELL-V2-SPEC.md">04-MODELL-V2-SPEC</a>, Smart Topics in

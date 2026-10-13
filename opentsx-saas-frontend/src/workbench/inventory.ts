@@ -7,7 +7,7 @@
  * faults) arrives as `marks`, time ranges in steps of one episode.
  */
 
-import { Bucket } from './types';
+import { Bucket, Mark } from './types';
 
 export const INVENTORY_SCHEMA = 'opentsx.ts-inventory.v1';
 
@@ -280,6 +280,42 @@ export function bucketName(series: InventorySeries[]): string {
 export function relabel(bucket: Bucket, series: InventorySeries[], name: string): Bucket {
   const labels = shortLabels(series);
   return { ...bucket, name, series: bucket.series.map((s) => ({ ...s, label: labels.get(s.id) ?? s.label })) };
+}
+
+/**
+ * The ground truth of a selection as marks on the time axis of its bucket: equal events of several series are one
+ * mark, events outside the loaded window are left out, and the rest is cut to the window.
+ *
+ * @param t0Ms epoch milliseconds of x = 0 of the bucket
+ * @param fromS, toS the loaded window in the x unit of the bucket (seconds)
+ */
+export function marksOf(series: InventorySeries[], t0Ms: number, fromS: number, toS: number): Mark[] {
+  const labels = shortLabels(series);
+  const groups = new Map<string, { mark: InventoryMark; ids: string[] }>();
+  for (const s of series) {
+    for (const m of s.marks) {
+      const id = `${m.kind}|${m.type}|${m.from}|${m.to}`;
+      const g = groups.get(id) ?? { mark: m, ids: [] };
+      g.ids.push(s.seriesId);
+      groups.set(id, g);
+    }
+  }
+  const out: Mark[] = [];
+  for (const g of groups.values()) {
+    const from = Math.max(fromS, (Date.parse(g.mark.from) - t0Ms) / 1000);
+    const to = Math.min(toS, (Date.parse(g.mark.to) - t0Ms) / 1000);
+    if (!(to > from)) continue;
+    const all = g.ids.length === series.length;
+    const names = g.ids.map((id) => labels.get(id) ?? id);
+    out.push({
+      kind: g.mark.kind,
+      type: g.mark.type,
+      from,
+      to,
+      scope: all ? '' : names.length <= 3 ? names.join(', ') : `${names.length} series`,
+    });
+  }
+  return out.sort((a, b) => a.from - b.from || a.kind.localeCompare(b.kind) || a.type.localeCompare(b.type));
 }
 
 /** HH:MM of a timestamp in UTC, with the date when the range spans more than one day. */

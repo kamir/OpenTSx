@@ -18,6 +18,7 @@ import {
   episodesQuery,
   estimatePoints,
   filterSeries,
+  marksOf,
   metricFacets,
   parseInventory,
   relabel,
@@ -186,7 +187,12 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const name = bucketName(selection);
-      const bucket = relabel(parseEpisodes(await res.json(), name), selection, name);
+      const parsed = relabel(parseEpisodes(await res.json(), name), selection, name);
+      const t0Ms = parsed.t0Ms ?? Date.parse(options.from);
+      const bucket = {
+        ...parsed,
+        marks: marksOf(selection, t0Ms, (Date.parse(options.from) - t0Ms) / 1000, (Date.parse(options.to) - t0Ms) / 1000),
+      };
       const topic = topicOf(inv, selection);
       onLoad({
         bucket,
