@@ -62,6 +62,12 @@ entries are grouped by date. The detailed progress log (German) is in
   beside the diagram, connections coloured by energy carrier and routed around the blocks, events in plain language,
   larger units from a threshold on, limit lines in charts, a switch for technical details. Engineering corrections
   in both guides.
+- Smart Topics Studio as a tool shell: title bar with menus (Datei, Ansicht, Szenario, Hilfe), icon rail on the left
+  that expands and collapses, scenarios as document tabs, detail panel for blocks and connections sliding in from the
+  right, status bar. Keyboard: Alt+1 to Alt+4 for the views, Ctrl+B for the rail, Esc closes the detail panel.
+  The document tabs belong to the current scenario: the scenario itself, a link to its page in the Anlagen-Explorer,
+  and an event topic view that replays the events of the reference run as topic records. The twin does not publish to
+  KafScale yet, so that view is a replay and says so.
 - Retrieval (`opentsx-retrieval`, P5): segmentation, pattern engine (MASS, SAX, DTW), retrieval API, REST server,
   Python client, power-curve analysis.
 - DevOps guide for k3s against an existing KafScale cluster (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`).
