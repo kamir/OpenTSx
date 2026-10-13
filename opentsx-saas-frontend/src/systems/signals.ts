@@ -13,6 +13,8 @@ export interface Expect {
   interval?: string;
   kind?: string;
   origin?: string;
+  /** What normal operation gives; outside it the system is in a special state and the measurement may be right. */
+  operating?: { min?: number; max?: number };
 }
 
 export interface GradeSource {
@@ -27,6 +29,11 @@ export interface GradeSource {
   output?: string;
   value?: number;
   table?: string;
+  /** False when a flow wrote the grade without the system document declaring it. */
+  declared?: boolean;
+  /** True when the source comes from the working copy of the user, not from the system document. */
+  workingCopy?: boolean;
+  params?: Record<string, unknown>;
 }
 
 export interface GradeData {
@@ -58,6 +65,10 @@ export interface Signal {
   name: string;
   title: string;
   port: boolean;
+  /** observation, estimate, command, limit or exogenous: the same unit does not mean the same quantity. */
+  role?: string;
+  /** One sentence that says what the quantity is. */
+  meaning?: string;
   channel?: string;
   expect: Expect;
   grades: Partial<Record<GradeName, Grade>>;
@@ -122,6 +133,14 @@ export function expectText(e: Expect): string {
   return [head, intervalText(e.interval)].filter(Boolean).join(', ') || 'not stated';
 }
 
+/** The operating range in one line, or an empty string when none is stated. */
+export function operatingText(e: Expect): string {
+  const o = e.operating;
+  if (!o || (o.min === undefined && o.max === undefined)) return '';
+  const range = o.min !== undefined && o.max !== undefined ? `${num(o.min)}..${num(o.max)}` : o.min !== undefined ? `from ${num(o.min)}` : `up to ${num(o.max!)}`;
+  return `${range}${e.unit ? ` ${e.unit}` : ''}`;
+}
+
 /**
  * The origin as the list shows it. Simulated data is written in capitals so it is never taken for a measurement;
  * synthetic data from a topic (the output of a simulator) is named as such.
@@ -158,12 +177,12 @@ export function stateText(s: Signal): string {
 
 /** What each next step means, and from which delivery stage it works. `live` steps work today. */
 export const NEXT: Record<NextStep, { label: string; hint: string; live: boolean }> = {
-  bind: { label: 'Bind', hint: 'Choose the series that carry this signal. Planned (stage L4); today the binding is written into the system document.', live: false },
-  simulate: { label: 'Simulate', hint: 'Generate the signal from its expectation. Planned (stage L4).', live: false },
-  generate: { label: 'Generate', hint: 'Run the generator of this signal. Planned (stage L4): no runtime writes generated series yet.', live: false },
+  bind: { label: 'Bind', hint: 'Choose the series that carry this signal, and confirm that they mean the same. The binding goes into your working copy.', live: true },
+  simulate: { label: 'Simulate', hint: 'Bind the signal to a demo generator preset from its expectation. Plausible single values, not a model of the system.', live: true },
+  generate: { label: 'Generate', hint: 'Run the demo generator of this signal over a period; it writes the series to the topic of generated series.', live: true },
   'check-source': { label: 'Check source', hint: 'A source is declared, but the server finds no series for it.', live: false },
-  prepare: { label: 'Prepare', hint: 'Opens the raw series on the scope of the workbench, with the expected range drawn in.', live: true },
-  start: { label: 'Start', hint: 'Runs the flow that produces the clean data. Planned (stage L3): the processor cannot run it yet.', live: false },
+  prepare: { label: 'Prepare', hint: 'Opens the raw series on the scope of the workbench, with the expected range drawn in. There the cleaning is built and published as the clean signal.', live: true },
+  start: { label: 'Start', hint: 'A flow is declared for the clean data but nothing has written it. Opens the flows of the system, where it is started.', live: true },
 };
 
 /** The grade to look at on the scope: clean data when there is some, else raw data; null without data. */
@@ -237,9 +256,9 @@ export function sourceText(g: Grade | undefined): string {
     case 'topic':
       return `topic ${s.topic}: ${s.metric ?? ''} ${Object.entries(s.tags ?? {}).map(([k, v]) => `${k}=${v}`).join(' ')}`.trim();
     case 'generator':
-      return `generator ${s.processor}, seed ${s.seed ?? 'none'}`;
+      return `demo generator ${s.processor}, seed ${s.seed ?? 'none'}`;
     case 'flow':
-      return `flow ${s.flow}${s.output ? `, output ${s.output}` : ''}${g.names ? `: ${g.names.join(', ')}` : ''}`;
+      return `flow ${s.flow ?? 'unknown'}${s.output ? `, output ${s.output}` : ''}${g.names ? `: ${g.names.join(', ')}` : ''}${s.declared === false ? ' (published from the workbench; not in the system document)' : ''}`;
     case 'manual':
       return s.value !== undefined ? `set by hand: ${num(s.value)}` : `table ${s.table}`;
     default:
@@ -294,6 +313,133 @@ export function feedOf(p: PlanPort): { kind: 'wired' | 'signal' | 'missing'; tex
   return { kind: 'missing', text: 'no signal declared' };
 }
 
+/** An atom of the plan placed in a picture: its column, its row, and what its inputs from outside are missing. */
+export interface GraphNode {
+  id: string;
+  type: string;
+  layer: number;
+  row: number;
+  /** ok: every input is fed; todo: a signal is not clean yet; missing: an input from outside has no signal. */
+  mark: 'ok' | 'todo' | 'missing';
+  outside: number;
+}
+
+export interface GraphEdge {
+  id: string;
+  from: string;
+  to: string;
+  /** The output and the input the wire joins. */
+  label: string;
+  /** A wire back to an atom that comes earlier in the plan: the value of the step before. */
+  back: boolean;
+}
+
+/**
+ * The plan as a graph from left to right. An atom stands one column right of the last atom that feeds it; a wire
+ * back to an earlier atom (a loop, as between the electrolyser and the line) does not move anything.
+ */
+export function planGraph(plan: PlanDoc): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  const order = new Map(plan.atoms.map((a, i) => [a.id, i]));
+  const layer = new Map<string, number>();
+  const edges: GraphEdge[] = [];
+  for (const a of plan.atoms) {
+    let l = 0;
+    for (const p of a.inputs) {
+      if (!p.from) continue;
+      const src = p.from.split('.')[0];
+      if (!order.has(src)) continue;
+      const back = order.get(src)! >= order.get(a.id)!;
+      if (!back) l = Math.max(l, (layer.get(src) ?? 0) + 1);
+      const port = p.from.slice(src.length + 1);
+      edges.push({ id: `${p.from}>${a.id}.${p.name}`, from: src, to: a.id, label: port === p.name ? port : `${port} > ${p.name}`, back });
+    }
+    layer.set(a.id, l);
+  }
+  const rows = new Map<number, number>();
+  const nodes = plan.atoms.map((a) => {
+    const l = layer.get(a.id)!;
+    const row = rows.get(l) ?? 0;
+    rows.set(l, row + 1);
+    const outside = a.inputs.filter((p) => !p.from);
+    const mark: GraphNode['mark'] = outside.some((p) => !p.signal)
+      ? 'missing'
+      : outside.some((p) => p.state !== 'clean' && p.state !== 'constant')
+        ? 'todo'
+        : 'ok';
+    return { id: a.id, type: a.type, layer: l, row, mark, outside: outside.length };
+  });
+  return { nodes, edges };
+}
+
+// ---------------------------------------------------------------- decisions (GET /v1/systems/<id>/decisions)
+
+export type Usability = 'usable' | 'restricted' | 'blocked';
+
+export interface NeedDoc {
+  signal: string;
+  grade?: string;
+  maxAge?: string;
+  origins?: string[];
+  for?: string[];
+  optional?: boolean;
+  ok: boolean;
+  containsSynthetic: boolean;
+  reasons: string[];
+  found?: { state: SignalState; origin?: string; ageSeconds?: number; data?: GradeData };
+}
+
+export interface AnalysisDoc {
+  id: string;
+  title: string;
+  kind?: string;
+  ref?: string;
+  status: Usability;
+  reasons: string[];
+  validity: { signal: string; min?: number; max?: number; note?: string; observedMin?: number; observedMax?: number; inside: boolean }[];
+  evidence?: { what: string; period?: string; result?: string; date?: string; synthetic?: boolean }[];
+}
+
+export interface DecisionDoc {
+  id: string;
+  title: string;
+  question?: string;
+  example?: boolean;
+  responsibility?: { decides?: string; approves?: string; executes?: string };
+  cadence?: { every?: string; horizon?: string; leadTime?: string };
+  objectives?: { id: string; title: string; kpi?: string; unit?: string; direction?: string }[];
+  levers?: { signal: string; title: string; min?: number; max?: number }[];
+  constraints?: { id: string; title: string; signal?: string; min?: number; max?: number; note?: string }[];
+  needs: NeedDoc[];
+  analyses: AnalysisDoc[];
+  alternatives: { id: string; title: string; analysis: string; reference?: boolean; note?: string; status: Usability }[];
+}
+
+export interface DecisionStatus {
+  schema: string;
+  system: string;
+  asOf?: string;
+  decisions: DecisionDoc[];
+}
+
+/** How many analyses of the system are in each state. */
+export function usability(d: DecisionStatus | null): Record<Usability, number> & { analyses: number } {
+  const out = { usable: 0, restricted: 0, blocked: 0, analyses: 0 };
+  for (const dec of d?.decisions ?? []) {
+    for (const a of dec.analyses) {
+      out[a.status] += 1;
+      out.analyses += 1;
+    }
+  }
+  return out;
+}
+
+/** An ISO duration as a person reads it: PT15M is 15 min. Only what decision cards use. */
+export function durationText(iso: string | undefined): string {
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso ?? '');
+  if (!m) return iso ?? '';
+  return [m[1] && `${m[1]} h`, m[2] && `${m[2]} min`, m[3] && `${m[3]} s`].filter(Boolean).join(' ');
+}
+
 // ---------------------------------------------------------------- guided mode
 
 export type Place = 'system' | 'signals' | 'flows' | 'models';
@@ -312,7 +458,7 @@ export interface GuideStep {
  * The seven steps of the engineering method (user manual, chapter 16) with the state of this system in each. The
  * guide shows the next sensible step; it does not enforce an order.
  */
-export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, running: number | null): GuideStep[] {
+export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, running: number | null, decisions: DecisionStatus | null = null): GuideStep[] {
   const signals = status?.signals ?? [];
   const n = signals.length;
   const open = signals.filter((s) => s.state === 'open').length;
@@ -323,6 +469,11 @@ export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, ru
   const clean = signals.filter((s) => s.state === 'clean').length;
   const problems = status?.problems.length ?? 0;
   const uncovered = plan?.counts.inputsWithoutSignal ?? 0;
+  const use = usability(decisions);
+  const model: Pick<GuideStep, 'state' | 'mark'> =
+    use.analyses === 0
+      ? { state: clean === 0 ? 'needs clean signals' : 'none declared', mark: 'later' }
+      : { state: `${use.usable} usable, ${use.restricted} restricted, ${use.blocked} blocked`, mark: use.blocked + use.restricted === 0 ? 'done' : 'todo' };
   return [
     { n: 1, title: 'System', place: 'system', state: plan ? `${plan.counts.atoms} atoms${problems > 0 ? `, ${problems} problems` : ''}` : 'no plan', mark: plan && problems === 0 ? 'done' : 'todo' },
     { n: 2, title: 'Signals', place: 'signals', state: uncovered > 0 ? `${n} expected, ${uncovered} inputs without a signal` : `${n} expected`, mark: n > 0 && uncovered === 0 ? 'done' : 'todo' },
@@ -330,19 +481,109 @@ export function guideSteps(status: SystemStatus | null, plan: PlanDoc | null, ru
     { n: 4, title: 'Bind', place: 'signals', state: open > 0 ? `${open} open` : 'none open', mark: open > 0 ? 'todo' : 'done' },
     { n: 5, title: 'Prepare', place: 'signals', state: `${prepared} of ${needClean} prepared`, mark: needClean > 0 && prepared >= needClean ? 'done' : withRaw > 0 ? 'todo' : 'later' },
     { n: 6, title: 'Run', place: 'flows', state: running === null ? `${clean} clean` : `${running} running, ${clean} clean`, mark: prepared === 0 ? 'later' : clean >= prepared ? 'done' : 'todo' },
-    { n: 7, title: 'Model', place: 'models', state: clean === 0 ? 'needs clean signals' : 'none declared', mark: 'later' },
+    { n: 7, title: 'Model', place: 'models', ...model },
   ];
 }
 
 /** The number each place shows in the rail: what there is, or what is left to do. */
-export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, flows: number | null | undefined): Record<Place, string> {
+export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, flows: number | null | undefined, decisions: DecisionStatus | null = null): Record<Place, string> {
   const open = status?.states.open ?? 0;
   const todo = (status?.signals ?? []).filter((s) => s.next.length > 0).length;
+  const use = usability(decisions);
   return {
     system: plan ? `${plan.counts.atoms} atoms` : '',
     signals: status ? (todo > 0 ? `${open} open, ${todo} to do` : `${status.signals.length} signals`) : '',
     // null: not signed in; undefined: signed in, not counted yet
     flows: flows === null ? 'sign in' : flows === undefined ? '' : `${flows} flows`,
-    models: 'none yet',
+    models: use.analyses === 0 ? 'none yet' : use.blocked > 0 ? `${use.blocked} of ${use.analyses} blocked` : `${use.usable} of ${use.analyses} usable`,
   };
+}
+
+// ---------------------------------------------------------------- binding and simulating (stage L4)
+
+/** A series of the TS inventory as far as a binding needs it. */
+export interface Candidate {
+  seriesId: string;
+  metric: string;
+  tags: Record<string, string>;
+  unit?: string;
+  samples: number;
+  from?: string;
+  to?: string;
+  min?: number;
+  max?: number;
+  labels: Record<string, string[]>;
+}
+
+/**
+ * Series a signal could be bound to, the likelier ones first: the same unit as the expectation, then a value range
+ * inside the plausible range. Series written for signals (clean, generated) are left out. This is a suggestion:
+ * the same unit does not mean the same quantity, so a person confirms the meaning before the binding is made.
+ */
+export function suggestSeries(signal: Signal, series: Candidate[], text = ''): Candidate[] {
+  const words = text.toLowerCase().split(/\s+/).filter(Boolean);
+  const score = (c: Candidate) => {
+    let n = 0;
+    if (signal.expect.unit && c.unit === signal.expect.unit) n += 2;
+    const inRange = c.min !== undefined && c.max !== undefined && (signal.expect.min === undefined || c.min >= signal.expect.min) && (signal.expect.max === undefined || c.max <= signal.expect.max);
+    if (inRange) n += 1;
+    return n;
+  };
+  return series
+    .filter((c) => !('signal' in c.tags) && !('vector' in c.tags))
+    .filter((c) => words.every((w) => `${c.metric} ${Object.values(c.tags).join(' ')} ${c.unit ?? ''}`.toLowerCase().includes(w)))
+    .map((c) => ({ c, n: score(c) }))
+    .sort((a, b) => b.n - a.n || a.c.metric.localeCompare(b.c.metric) || JSON.stringify(a.c.tags).localeCompare(JSON.stringify(b.c.tags)))
+    .map((x) => x.c);
+}
+
+/** The origin a series most likely has: synthetic when its episodes name a simulator scenario, else unknown. */
+export function guessOrigin(c: Candidate): string {
+  if ((c.labels.scenario ?? []).length > 0 || (c.labels.origin ?? []).includes('SYNTHETIC')) return 'SYNTHETIC';
+  return (c.labels.origin ?? [])[0] ?? '';
+}
+
+/** The topic source of a binding to one series: by metric and all its tags. */
+export function topicSource(topic: string, c: Candidate, origin: string): Record<string, unknown> {
+  return { kind: 'topic', topic, origin, select: { metric: c.metric, tags: c.tags } };
+}
+
+export const GENERATORS = ['gen.ou', 'gen.sine'] as const;
+
+/** Parameters of a demo generator preset from what the signal should look like: the middle of its range, a tenth of it as spread. */
+export function presetGenerator(processor: string, e: Expect): Record<string, number | string> {
+  const lo = e.operating?.min ?? e.min ?? 0;
+  const hi = e.operating?.max ?? e.max ?? lo + 1;
+  const mean = Number(((lo + hi) / 2).toPrecision(4));
+  const spread = Number(((hi - lo) / 10).toPrecision(3));
+  return processor === 'gen.sine'
+    ? { mean, amplitude: Number(((hi - lo) / 4).toPrecision(3)), period: 'P1D', sigma: Number((spread / 4).toPrecision(2)) }
+    : { mean, sigma: Number((spread / 3).toPrecision(2)), reversion: 0.1 };
+}
+
+/** The period the system has data for, so a generated series lies next to the measured ones; null when it has none. */
+export function dataExtent(status: SystemStatus): { from: string; to: string } | null {
+  const all = status.signals.flatMap((s) => Object.values(s.grades).map((g) => g?.data)).filter((d): d is GradeData => !!d && !!d.from && !!d.to);
+  if (all.length === 0) return null;
+  return { from: all.map((d) => d.from!).sort()[0], to: all.map((d) => d.to!).sort().pop()! };
+}
+
+function yamlValue(v: unknown): string {
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (v && typeof v === 'object') return `{ ${Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}: ${yamlValue(x)}`).join(', ')} }`;
+  const t = String(v);
+  return /^[A-Za-z0-9_./-]+$/.test(t) ? t : JSON.stringify(t);
+}
+
+/**
+ * The working copy as the lines to put into the system document: per binding the signal and the source of its
+ * grade. A person writes them into the file; the web application does not change the repository.
+ */
+export function bindingsYaml(bindings: { signal: string; grade: string; source: Record<string, unknown> }[]): string {
+  const lines = ['# Working copy: put each source under the grade of its signal in the system document.'];
+  for (const b of [...bindings].sort((x, y) => x.signal.localeCompare(y.signal) || x.grade.localeCompare(y.grade))) {
+    const source = Object.fromEntries(Object.entries(b.source).filter(([k]) => k !== 'workingCopy'));
+    lines.push(`- id: ${yamlValue(b.signal)}`, `  ${b.grade}:`, `    source: ${yamlValue(source)}`);
+  }
+  return lines.join('\n') + '\n';
 }

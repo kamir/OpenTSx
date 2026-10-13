@@ -1,0 +1,16 @@
+# Flow, opentsx.flow.v1 (proposal): the wind speed of one turbine on the minute. This chain runs on the processor
+# today (plausible range, then the mean per minute); published from the workbench it is an opentsx.dag.v2.
+schema: opentsx.flow.v1
+flow: wind-speed-clean
+reads: ["park/T02/WMET.HorWdSpd@raw"]
+nodes:
+  - id: range
+    op: dq.plausible-range
+    in: [source]
+    params: { mode: gap }                   # min and max come from the expectation of the signal
+  - id: clean
+    op: resample
+    in: [range]
+    params: { every: PT1M, agg: MEAN }
+writes:
+  - { from: clean, signal: "park/T02/WMET.HorWdSpd@clean" }

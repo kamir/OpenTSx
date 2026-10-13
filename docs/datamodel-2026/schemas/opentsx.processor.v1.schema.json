@@ -160,6 +160,13 @@
           "description": "Parameters of the DAG operator that are fixed for this processor."
         }
       }
+    },
+    "fidelity": {
+      "enum": [
+        "demo",
+        "scenario"
+      ],
+      "description": "For a generator: demo gives plausible single values of one signal and knows nothing of the rest of the system; scenario generates several quantities together from assumptions and dependencies. Results that rest on a demo generator are not for comparing strategies (decision D61)."
     }
   },
   "allOf": [

@@ -147,9 +147,31 @@ public final class TopicLayout {
         }
     }
 
+    /**
+     * Topic of the clean series of the domain: v2 episodes written by flows, one series per signal with the tags
+     * {@code system} and {@code signal}. See docs/datamodel-2026/14-ENGINEERING-FLOW.md, section 6.1.
+     */
+    public String clean() {
+        return topic("clean");
+    }
+
+    /** Topic of the generated series of the domain (v2 episodes, written by generators). */
+    public String synthetic() {
+        return topic("synthetic");
+    }
+
+    /** Topic of the features of the domain (v2 episodes, one series per feature, tag {@code feature}). */
+    public String features() {
+        return topic("features");
+    }
+
     /** Creates the vector topic when it is missing: one partition, so a scan reads the measuring points in order. */
     public void provisionSmartVectors(Admin admin, String name, short replicationFactor) {
-        String topic = smartVectors(name);
+        provisionTopic(admin, smartVectors(name), replicationFactor);
+    }
+
+    /** Creates a topic a flow writes when it is missing: one partition, so a scan reads it in order. */
+    public void provisionTopic(Admin admin, String topic, short replicationFactor) {
         try {
             if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
                 admin.createTopics(List.of(new NewTopic(topic, 1, replicationFactor)

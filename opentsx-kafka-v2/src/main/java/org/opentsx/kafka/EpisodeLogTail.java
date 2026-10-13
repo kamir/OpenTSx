@@ -19,7 +19,12 @@ public final class EpisodeLogTail {
     private long undecodable;
 
     public EpisodeLogTail(Consumer<byte[], byte[]> consumer, TopicLayout layout, Duration timeout) {
-        this.tail = new LogTail(consumer, layout.episodes(), timeout);
+        this(consumer, layout.episodes(), timeout);
+    }
+
+    /** Follows another topic of v2 episodes, for example {@link TopicLayout#clean()}. */
+    public EpisodeLogTail(Consumer<byte[], byte[]> consumer, String topic, Duration timeout) {
+        this.tail = new LogTail(consumer, topic, timeout);
     }
 
     public String topic() {

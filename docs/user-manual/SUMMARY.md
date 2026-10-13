@@ -16,7 +16,7 @@
 * [13. Migration from 2.x and archived components](13-migration.md)
 * [14. SaaS stack and personal service layer](14-saas-service-layer.md)
 * [15. Status and roadmap](15-roadmap.md)
-* [16. Engineering method: from the system to the model](16-engineering-method.md)
+* [16. Engineering method: from a decision to its effect](16-engineering-method.md)
 * [Appendix A: Command-line tools](appendix-a-cli.md)
 * [Appendix B: REST API](appendix-b-rest.md)
 * [Appendix C: Glossary](appendix-c-glossary.md)

@@ -6,13 +6,14 @@
 
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { SignalBindingDoc, systemsAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
 import ModelsPlace from '../systems/ModelsPlace';
 import SignalsPlace from '../systems/SignalsPlace';
 import SystemPlace from '../systems/SystemPlace';
-import { Place, PlanDoc, SystemEntry, SystemStatus, countsText, guideSteps, parseStatus, railCounts } from '../systems/signals';
+import { DecisionStatus, Place, PlanDoc, SystemEntry, SystemStatus, countsText, guideSteps, parseStatus, railCounts } from '../systems/signals';
 import '../workbench/workbench.css';
 
 const BASE = '/retrieval';
@@ -39,10 +40,12 @@ export default function Systems() {
   const [systems, setSystems] = useState<SystemEntry[] | null>(null);
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [plan, setPlan] = useState<PlanDoc | null>(null);
+  const [decisions, setDecisions] = useState<DecisionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [guide, setGuide] = useState(() => remembered('opentsx.guide'));
   const [flows, setFlows] = useState<{ all: number; running: number } | null>(null);
+  const [bindings, setBindings] = useState<SignalBindingDoc[]>([]);
   const signedIn = !!localStorage.getItem('access_token');
   const here = (PLACES.find((p) => p.id === place)?.id ?? 'signals') as Place;
 
@@ -73,10 +76,27 @@ export default function Systems() {
       if (!res.ok) throw new Error(res.status === 404 ? `the server knows no system "${system}"` : `HTTP ${res.status}`);
       return res.json();
     };
-    Promise.all([get('signals'), get('plan')])
-      .then(([signals, planDoc]) => {
+    // the working copy of the signed-in user lies over the system document
+    const withWorkingCopy = async () => {
+      const mine = signedIn ? await systemsAPI.bindings(system).catch(() => []) : [];
+      if (!cancelled) setBindings(mine);
+      if (mine.length === 0) return Promise.all([get('signals'), get('decisions').catch(() => null)]);
+      const post = async (what: string) => {
+        const res = await fetch(`${BASE}/v1/systems/${encodeURIComponent(system)}/${what}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bindings: mine.map((b) => ({ signal: b.signal, grade: b.grade, source: b.source })) }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      };
+      return Promise.all([post('signals'), post('decisions').catch(() => null)]);
+    };
+    Promise.all([withWorkingCopy(), get('plan')])
+      .then(([[signals, decisionDoc], planDoc]) => {
         if (cancelled) return;
         setStatus(parseStatus(signals));
+        setDecisions(decisionDoc as DecisionStatus | null);
         setPlan(planDoc as PlanDoc);
         setError(null);
       })
@@ -84,7 +104,7 @@ export default function Systems() {
     return () => {
       cancelled = true;
     };
-  }, [system, reload]);
+  }, [system, reload, signedIn]);
 
   const toggleGuide = () => {
     setGuide((g) => {
@@ -113,8 +133,8 @@ export default function Systems() {
     if (id !== null && ids.includes(id)) useFlow.getState().clear();
   };
 
-  const counts = railCounts(status, plan, signedIn ? flows?.all : null);
-  const steps = guideSteps(status, plan, flows?.running ?? null);
+  const counts = railCounts(status, plan, signedIn ? flows?.all : null, decisions);
+  const steps = guideSteps(status, plan, flows?.running ?? null, decisions);
   const next = steps.find((s) => s.mark === 'todo');
 
   return (
@@ -173,7 +193,7 @@ export default function Systems() {
         </nav>
 
         {here === 'system' && <SystemPlace plan={plan} system={system ?? ''} />}
-        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} onReload={() => setReload((n) => n + 1)} />}
+        {here === 'signals' && <SignalsPlace status={status} focusId={searchParams.get('focus')} published={searchParams.get('published')} onReload={() => setReload((n) => n + 1)} base={BASE} bindings={bindings} />}
         {here === 'flows' &&
           (signedIn && status ? (
             <FlowComposer
@@ -193,7 +213,7 @@ export default function Systems() {
               </p>
             </main>
           ))}
-        {here === 'models' && <ModelsPlace status={status} />}
+        {here === 'models' && <ModelsPlace status={status} decisions={decisions} />}
       </div>
 
       <footer className="wb-status">

@@ -24,8 +24,12 @@
     operators, the processor runs only the alignment of series to a common clock.
   * **Systems** (`/systems`): a shell around one system with four places. "System": the atoms of its plan and what
     feeds each input. "Signals": the signals the system expects, each with its expectation, origin, state and next
-    step; "Prepare" opens the raw series of a signal in the workbench with the expected range on the screen.
-    "Flows": the Flow Composer for the flows of the system. "Models": which signals are ready for a model. The
+    step; "Prepare" opens the raw series of a signal in the workbench with the expected range on the screen;
+    "Bind", "Simulate" and "Generate" give an open signal a series or a demo generator, kept as a working copy of
+    the account.
+    "Flows": the Flow Composer for the flows of the system. "Models": the decisions of the system, the signals each
+    needs, and whether each analysis is usable, restricted or blocked today, with the reasons. "System" shows the
+    plan as a picture with its wires above the table. The
     switch "Guide" shows the seven steps of the method of [chapter 16](16-engineering-method.md) with the state of
     the system in each. The data comes from the retrieval server (`GET /v1/systems`).
   * the earlier visual flow builder (`/flow-builder`); its flows cannot be opened in the workbench.

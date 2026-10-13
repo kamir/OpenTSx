@@ -78,6 +78,32 @@ entries are grouped by date. The detailed progress log (German) is in
   input (`GET /v1/systems/<id>/plan`); "Flows" is the Flow Composer for the flows of the system; "Models" previews
   which signals are ready for a model. The optional guide shows the seven steps of the engineering method with the
   state of the system in each. A flow built from a signal remembers its system and signal.
+- Clean signals (TASK-014, stage L3). The vector processor also runs series sinks (`opentsx.dag.v2`): a chain of
+  plausible range, unit conversion and resampling from a raw series to the clean grade of a signal, written as v2
+  episodes to `tsx.<domain>.clean.v2` with the tags `system` and `signal`. The workbench has "Publish as clean
+  signal" (check, save and start in one step) when it was opened for a signal; the page "Signals" then shows the
+  signal as clean. Shared test vectors for the cleaning operators in Java and TypeScript
+  (`docs/datamodel-2026/testvectors/clean-ops.v1.json`).
+- Plan revised after an external review ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
+  German, decided on 2026-10-13: stages L4 and L5 are built first, then E1 to E3): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
+  card) and `opentsx.decision-record.v1` (recommendation, approval, action, outcome) and an example; a streaming
+  contract with what holds today and what is the aim (11, section 7a); release of a model for a purpose (05, section
+  5a). Signals carry a role, a meaning and an operating range next to the plausible range. Clean episodes carry an
+  identity, so a restart is not counted twice. The user manual's chapter 16 is rewritten as eight steps from a
+  decision to its effect.
+- Binding and simulating signals (TASK-014, stage L4). On the page "Signals" a signal is bound to a series of the TS
+  inventory after its meaning was confirmed, or to a demo generator preset from its expectation (`gen.ou`,
+  `gen.sine`), which an administrator runs over a period. Generated series go to `tsx.<domain>.synthetic.v2` and
+  carry `origin: SYNTHETIC` and `fidelity: demo`. What is set there is a working copy per account
+  (`/api/v1/systems/<id>/bindings`) laid over the system document; the page gives the lines for the file.
+- Models (TASK-014, stage L5). The series chain of the vector processor has a first model and features:
+  `model.power-curve` (wind speed to power by a curve of points), `feature.lag` and `feature.rolling`. A sink may
+  read the clean series of one signal and write another signal, with `origin` and `madeOf` in its labels, or
+  features to `tsx.<domain>.features.v2`; the workbench has "Publish as another signal" for that. The retrieval
+  server reads the decision cards a system document lists and says per analysis whether it is usable, restricted
+  or blocked today, with the reasons (`GET /v1/systems/<id>/decisions`): grade, age against the newest data,
+  accepted origin, the range the analysis was checked in, and its evidence. The place "Models" shows the cards; the
+  place "System" shows the plan as a graph above the table. Comparing alternatives over a period is not built.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.
@@ -94,6 +120,12 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Example system `h2-chain`: the available power of the wind farm was bound to the sum of the measured turbine power.
+  Under curtailment that is the actual generation, not what the wind offers. They are two signals now: an
+  observation (`park.p_gen_kw`) and an estimate from the wind speed (`park.p_avail_kw`).
+- Readers on KafScale could skip records when the broker refused a fetch: the Kafka client throws the refusal of one
+  partition out of the middle of a poll and drops what it had already taken from the others. `Patience` now puts
+  the consumer back to where it stood before the refused poll. Seen as a clean series that lacked its first episode.
 - Vector processor: the first write to a new sink topic stopped the whole processor. The KafScale proxy answers a
   produce request that mixes a topic nobody has written to yet with another one in a way the Kafka client cannot
   parse, and the producer then sent nothing any more, not even status records. Every runner now has its own

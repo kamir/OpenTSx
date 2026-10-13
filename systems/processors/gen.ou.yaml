@@ -1,12 +1,14 @@
-# Example processor description, schema opentsx.processor.v1 (draft). No runtime implements it yet.
+# Processor description, schema opentsx.processor.v1. Runs in the retrieval server (org.opentsx.retrieval.generate).
 schema: opentsx.processor.v1
 id: gen.ou
 version: 1
 kind: generator
+fidelity: demo
 title: Mean-reverting noise
 description: >-
-  Ornstein-Uhlenbeck process: values wander around a mean and are pulled back to it. A stand-in for a price or a
-  demand where no data is connected. Values are clipped to the expected range of the signal.
+  Values wander around a mean and are pulled back to it. A stand-in for a price or a demand where no data is
+  connected. A demo generator: it knows nothing of the rest of the system. Values are clipped to the plausible range
+  of the signal.
 outputs:
   - { name: out, type: series }
 params:
@@ -17,8 +19,9 @@ params:
   - { name: max, type: number, from: expect.max }
   - { name: every, type: duration, required: true, from: expect.interval }
   - { name: unit, type: string, from: expect.unit }
-semantics: { needs: point, deterministic: true, origin: SYNTHETIC }
+semantics: { needs: window, deterministic: true, origin: SYNTHETIC }
 runtimes:
-  workbench: { status: planned }
-  processor: { status: planned, note: Needs the generator runtime of stage L4 }
+  java: { status: available, class: org.opentsx.retrieval.generate.Generators, note: "One run over a period, started by a person; no continuous operation." }
+  workbench: { status: none }
+  processor: { status: none }
 ui: { group: source, label: Mean-reverting noise }

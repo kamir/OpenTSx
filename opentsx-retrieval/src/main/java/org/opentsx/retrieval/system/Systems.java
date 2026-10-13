@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.opentsx.retrieval.system.SystemDoc.Flow;
 import org.opentsx.retrieval.system.SystemDoc.Signal;
 import org.opentsx.retrieval.system.SystemDoc.Source;
+import org.opentsx.model.Micros;
+import org.opentsx.model.v2.Episode;
+import org.opentsx.retrieval.generate.Generators;
 import org.opentsx.twin.Origin;
 
 import java.io.IOException;
@@ -33,9 +36,17 @@ public final class Systems {
     private static final JsonNodeFactory JSON = JsonNodeFactory.instance;
 
     private final Map<String, SystemDoc> docs = new LinkedHashMap<>();
+    /** Where each document was read from, so it can be read again with a working copy laid over it. */
+    private final Map<String, Path> files = new LinkedHashMap<>();
+    private Path root;
 
     public Systems(List<SystemDoc> docs) {
         docs.forEach(d -> this.docs.put(d.system(), d));
+    }
+
+    /** Writes generated episodes to a topic; given by a server that has a broker. */
+    public interface Writer {
+        void write(String topic, List<Episode> episodes);
     }
 
     /**
@@ -44,9 +55,15 @@ public final class Systems {
      * @param root directory the references in the documents are relative to
      */
     public static Systems load(Path dir, Path root) {
-        try (Stream<Path> files = Files.list(dir)) {
-            return new Systems(files.filter(f -> f.getFileName().toString().endsWith(".system.yaml")).sorted()
-                    .map(f -> SystemDoc.load(f, root)).toList());
+        try (Stream<Path> found = Files.list(dir)) {
+            List<Path> paths = found.filter(f -> f.getFileName().toString().endsWith(".system.yaml")).sorted().toList();
+            Systems s = new Systems(paths.stream().map(f -> SystemDoc.load(f, root)).toList());
+            s.root = root;
+            int i = 0;
+            for (SystemDoc d : s.docs()) {
+                s.files.put(d.system(), paths.get(i++));
+            }
+            return s;
         } catch (IOException e) {
             throw new UncheckedIOException(dir + " cannot be read", e);
         }
@@ -75,9 +92,82 @@ public final class Systems {
         return out;
     }
 
+    /** The document of a system with the bindings of a working copy laid over it. */
+    private SystemDoc doc(String system, List<SystemDoc.Binding> overlay) {
+        if (overlay.isEmpty() || !files.containsKey(system)) {
+            return docs.get(system);
+        }
+        return SystemDoc.load(files.get(system), root, overlay);
+    }
+
+    /** The bindings in the body of a request: {@code {bindings: [{signal, grade, source}]}}. */
+    public static List<SystemDoc.Binding> bindings(JsonNode body) {
+        List<SystemDoc.Binding> out = new ArrayList<>();
+        for (JsonNode b : body == null ? JSON.arrayNode() : body.path("bindings")) {
+            out.add(new SystemDoc.Binding(b.path("signal").asText(""), b.path("grade").asText(""), b.path("source")));
+        }
+        return out;
+    }
+
+    /**
+     * Runs the demo generator a signal is bound to over a period and writes the series to the topic of the generated
+     * series of the domain.
+     *
+     * @param body {@code {signal, from, to, bindings?}}; from and to are instants
+     * @throws IllegalArgumentException with a message for the user when the request cannot be served
+     */
+    public JsonNode generate(String system, JsonNode body, String topic, Writer writer) {
+        SystemDoc d = doc(system, bindings(body));
+        if (!d.problems().isEmpty()) {
+            throw new IllegalArgumentException("the system document has problems: " + d.problems());
+        }
+        String id = body.path("signal").asText("");
+        Signal s = d.signals().stream().filter(x -> x.id().equals(id)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("the system has no signal \"" + id + "\""));
+        if (s.raw() == null || !"generator".equals(s.raw().kind())) {
+            throw new IllegalArgumentException(id + " is not bound to a generator");
+        }
+        if (s.expect().interval() == null) {
+            throw new IllegalArgumentException(id + " needs a sampling interval to be generated (expect.interval)");
+        }
+        long from;
+        long to;
+        try {
+            from = Micros.of(Instant.parse(body.path("from").asText("")));
+            to = Micros.of(Instant.parse(body.path("to").asText("")));
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("from and to must be instants like 2026-10-01T00:00:00Z");
+        }
+        long interval = java.time.Duration.parse(s.expect().interval()).toNanos() / 1000;
+        Generators.Target target = new Generators.Target(d.system(), s.id(), metric(d, s), s.expect().unit(), s.raw().processor(),
+                s.raw().seed() == null ? 0 : s.raw().seed(), s.expect().min(), s.expect().max(), d.hash());
+        List<Episode> episodes = Generators.episodes(target, s.raw().params() == null ? JSON.objectNode() : s.raw().params(),
+                interval, from, to);
+        writer.write(topic, episodes);
+        ObjectNode out = JSON.objectNode();
+        out.put("system", d.system()).put("signal", s.id()).put("topic", topic).put("generator", s.raw().processor())
+                .put("fidelity", "demo").put("episodes", episodes.size())
+                .put("samples", episodes.stream().mapToLong(Episode::getCount).sum())
+                .put("from", body.path("from").asText()).put("to", body.path("to").asText());
+        return out;
+    }
+
+    /** Metric of a series written by rule: that of the channel, else {@code <system>.<atom>.<port>}. */
+    private static String metric(SystemDoc d, Signal s) {
+        if (s.raw() != null && s.raw().metric() != null) {
+            return s.raw().metric();
+        }
+        return (d.system() + "." + s.id()).replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
     /** Every signal of the system with its expectation, its sources, what the inventory holds for it and its state. */
     public JsonNode signals(String system, JsonNode inventory) {
-        SystemDoc d = docs.get(system);
+        return signals(system, inventory, List.of());
+    }
+
+    /** As {@link #signals(String, JsonNode)}, with the bindings of a working copy laid over the document. */
+    public JsonNode signals(String system, JsonNode inventory, List<SystemDoc.Binding> overlay) {
+        SystemDoc d = doc(system, overlay);
         ObjectNode out = JSON.objectNode();
         out.put("schema", STATUS_SCHEMA);
         out.put("system", d.system());
@@ -116,12 +206,30 @@ public final class Systems {
             put(e, "interval", s.expect().interval());
             put(e, "kind", s.expect().kind());
             put(e, "origin", s.expect().origin());
+            if (s.expect().operatingMin() != null || s.expect().operatingMax() != null) {
+                ObjectNode op = e.putObject("operating");
+                put(op, "min", s.expect().operatingMin());
+                put(op, "max", s.expect().operatingMax());
+            }
+            put(o, "role", s.role());
+            put(o, "meaning", s.meaning());
 
             ObjectNode grades = o.putObject("grades");
             Map<String, JsonNode> data = new TreeMap<>();
             for (String grade : SystemDoc.GRADES) {
                 Source src = s.source(grade);
                 if (src == null) {
+                    // not declared in the document, but a flow may write it: the data is found by its tags (D42: the
+                    // workbench publishes a clean signal without changing the document)
+                    JsonNode written = grade.equals("raw") ? null : find(d, s, grade, null, inventory);
+                    if (written != null) {
+                        ObjectNode g = grades.putObject(grade);
+                        ObjectNode by = g.putObject("source");
+                        by.put("kind", "flow").put("declared", false);
+                        put(by, "flow", written.path("flow").asText(null));
+                        g.set("data", written);
+                        data.put(grade, written);
+                    }
                     continue;
                 }
                 ObjectNode g = grades.putObject(grade);
@@ -237,6 +345,12 @@ public final class Systems {
         return n;
     }
 
+    /** The decision cards of the system with what each analysis may claim today ({@link Decisions}). */
+    public JsonNode decisions(String system, JsonNode inventory, List<SystemDoc.Binding> overlay) {
+        SystemDoc d = doc(system, overlay);
+        return Decisions.status(d, signals(system, inventory, overlay));
+    }
+
     /** How a person would say where the signal comes from. */
     private static String via(Signal s) {
         Source first = s.raw() != null ? s.raw() : s.clean();
@@ -278,11 +392,11 @@ public final class Systems {
     }
 
     private static String state(Signal s, Map<String, JsonNode> data) {
-        if (s.raw() == null && s.clean() == null) {
-            return "open";
-        }
         if (data.containsKey("clean")) {
             return "clean";
+        }
+        if (s.raw() == null && s.clean() == null) {
+            return "open";
         }
         if (s.clean() != null) {
             return "clean-not-running";
@@ -320,6 +434,9 @@ public final class Systems {
         put(o, "output", src.output());
         put(o, "value", src.value());
         put(o, "table", src.table());
+        if (src.workingCopy()) {
+            o.put("workingCopy", true);
+        }
         return o;
     }
 
@@ -328,25 +445,27 @@ public final class Systems {
      * metric and tags; a generator or a flow writes by rule (concept, section 6.1) with the tags system and signal.
      */
     private static JsonNode find(SystemDoc d, Signal s, String grade, Source src, JsonNode inventory) {
-        if (inventory == null || "manual".equals(src.kind())) {
+        boolean byTopic = src != null && "topic".equals(src.kind());
+        if (inventory == null || (src != null && "manual".equals(src.kind()))) {
             return null;
         }
-        if ("topic".equals(src.kind()) && !reads(inventory, src.topic())) {
+        if (byTopic && !reads(inventory, src.topic())) {
             return null;
         }
         List<JsonNode> hits = new ArrayList<>();
         for (JsonNode e : inventory.path("series")) {
             JsonNode tags = e.path("tags");
             boolean hit;
-            if ("topic".equals(src.kind())) {
+            if (byTopic) {
                 // series written by rule for a signal keep the tags of the raw series; they are not the raw data
                 hit = tags.has("signal") ? false : src.series().isEmpty()
                         ? (src.metric() == null || src.metric().equals(e.path("metric").asText()))
                         && src.tags().entrySet().stream().allMatch(t -> t.getValue().equals(tags.path(t.getKey()).asText(null)))
                         : src.series().contains(e.path("seriesId").asText());
             } else {
+                // new series carry their grade as a tag; older ones only as a label of their episodes
                 JsonNode g = e.path("labels").path("grade");
-                boolean ofGrade = g.isMissingNode() || contains(g, grade);
+                boolean ofGrade = tags.has("grade") ? grade.equals(tags.path("grade").asText()) : g.isMissingNode() || contains(g, grade);
                 hit = d.system().equals(tags.path("system").asText(null)) && s.id().equals(tags.path("signal").asText(null))
                         && tags.has("feature") == grade.equals("features") && ofGrade;
             }
@@ -384,6 +503,13 @@ public final class Systems {
         }
         o.put("samples", samples);
         o.put("missing", missing);
+        // the flow that wrote the series says so in the labels of its episodes, and what the series is and was made of
+        for (String label : List.of("flow", "origin", "madeOf", "fidelity")) {
+            JsonNode v = hits.get(0).path("labels").path(label);
+            if (v.isArray() && !v.isEmpty()) {
+                o.put(label, v.get(v.size() - 1).asText());
+            }
+        }
         put(o, "from", from);
         put(o, "to", to);
         put(o, "min", min);

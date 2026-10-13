@@ -1,0 +1,418 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.decision.v1.schema.json",
+  "title": "opentsx.decision.v1",
+  "description": "A decision card: a recurring question on a system, who answers it, what it aims at, what it may change, what it must respect, which signals and analyses it needs and which alternatives are compared. Draft, see docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md.",
+  "type": "object",
+  "required": [
+    "schema",
+    "decision",
+    "version",
+    "system",
+    "question",
+    "responsibility",
+    "cadence",
+    "objectives",
+    "levers",
+    "needs",
+    "alternatives"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "opentsx.decision.v1"
+    },
+    "decision": {
+      "$ref": "#/$defs/slug"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "example": {
+      "type": "boolean"
+    },
+    "system": {
+      "$ref": "#/$defs/slug",
+      "description": "The system the decision is taken on (opentsx.system.v1)."
+    },
+    "title": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string",
+      "description": "What is decided, in one sentence."
+    },
+    "responsibility": {
+      "type": "object",
+      "required": [
+        "decides"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decides": {
+          "type": "string"
+        },
+        "approves": {
+          "type": "string"
+        },
+        "executes": {
+          "type": "string",
+          "description": "Who or what carries the action out. OpenTSx does not."
+        }
+      }
+    },
+    "cadence": {
+      "type": "object",
+      "required": [
+        "every",
+        "horizon"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "every": {
+          "$ref": "#/$defs/duration",
+          "description": "How often the decision is taken."
+        },
+        "horizon": {
+          "$ref": "#/$defs/duration",
+          "description": "The period a decision covers."
+        },
+        "leadTime": {
+          "$ref": "#/$defs/duration",
+          "description": "How long before the period begins the decision must stand."
+        }
+      }
+    },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "direction"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/slug"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kpi": {
+            "type": "string",
+            "description": "The figure it is measured by."
+          },
+          "unit": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "min",
+              "max",
+              "target"
+            ]
+          },
+          "target": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "levers": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The ports of the system the decision acts through.",
+      "items": {
+        "type": "object",
+        "required": [
+          "signal"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "signal": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "delay": {
+            "$ref": "#/$defs/duration",
+            "description": "Time between an approved action and its effect on the plant."
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "description": "What must never be violated.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/slug"
+          },
+          "title": {
+            "type": "string"
+          },
+          "signal": {
+            "type": "string"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "needs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The signals the decision needs, each with what makes it fit for this purpose.",
+      "items": {
+        "$ref": "#/$defs/need"
+      }
+    },
+    "analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/analysis"
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "minItems": 2,
+      "description": "The strategies that are compared; exactly one is the reference.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/slug"
+          },
+          "title": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "boolean",
+            "description": "The simple strategy every other one is compared with."
+          },
+          "analysis": {
+            "$ref": "#/$defs/slug"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "contains": {
+        "type": "object",
+        "required": [
+          "reference"
+        ],
+        "properties": {
+          "reference": {
+            "const": true
+          }
+        }
+      },
+      "minContains": 1,
+      "maxContains": 1
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^P(\\d+D(T(\\d+H)?(\\d+M)?(\\d+(\\.\\d+)?S)?)?|T(\\d+H(\\d+M)?(\\d+(\\.\\d+)?S)?|\\d+M(\\d+(\\.\\d+)?S)?|\\d+(\\.\\d+)?S))$"
+    },
+    "need": {
+      "type": "object",
+      "required": [
+        "signal",
+        "grade"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signal": {
+          "type": "string",
+          "description": "Id of a signal of the system."
+        },
+        "grade": {
+          "enum": [
+            "raw",
+            "clean",
+            "features"
+          ]
+        },
+        "maxAge": {
+          "$ref": "#/$defs/duration",
+          "description": "How old the newest value may be when the decision is taken."
+        },
+        "maxQuestionable": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Share of values with a questionable measurement that is still acceptable."
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "MEASURED",
+              "REPORTED",
+              "FORECAST",
+              "ESTIMATED",
+              "SYNTHETIC"
+            ]
+          },
+          "description": "Origins the decision accepts for this signal. Without the entry every origin is accepted and shown."
+        },
+        "for": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          },
+          "description": "Analyses that need it; without the entry all do. A missing signal blocks exactly these."
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "kind",
+        "validity",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "title": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "rule",
+            "model",
+            "optimizer",
+            "twin"
+          ]
+        },
+        "ref": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "validity": {
+          "type": "array",
+          "description": "The range of its inputs in which the analysis was checked. Outside it a result is shown as not supported.",
+          "items": {
+            "type": "object",
+            "required": [
+              "signal"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "signal": {
+                "type": "string"
+              },
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "description": "What the analysis was checked with. Empty means: not validated; its results are restricted.",
+          "items": {
+            "type": "object",
+            "required": [
+              "what",
+              "result"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "what": {
+                "type": "string"
+              },
+              "period": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string"
+              },
+              "against": {
+                "type": "string",
+                "description": "The reference it was compared with."
+              },
+              "date": {
+                "type": "string"
+              },
+              "synthetic": {
+                "type": "boolean",
+                "description": "True when the check ran on generated data: it shows that the mechanism works, not that the analysis is right."
+              }
+            }
+          }
+        },
+        "uncertainty": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "string"
+            },
+            "blockAbove": {
+              "type": "number",
+              "description": "Width of the interval above which a result does not carry the decision."
+            },
+            "unit": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

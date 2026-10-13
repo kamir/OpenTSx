@@ -584,7 +584,10 @@ function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
       const xs: number[] = [];
       const ys: number[] = [];
       if (s.x.length === 0 || !(every > 0)) return { ...s, x: new Float64Array(0), y: new Float64Array(0) };
-      let start = Math.floor(s.x[0] / every) * every;
+      // On a time axis with a known start the windows follow the epoch, as in the processor: 00:01:00 is a
+      // boundary of a minute whatever the first sample is. x is in seconds from t0.
+      const origin = b.xKind === 'time' && b.t0Ms !== undefined ? b.t0Ms / 1000 : 0;
+      let start = Math.floor((s.x[0] + origin) / every) * every - origin;
       let pool: number[] = [];
       for (let i = 0; i < s.x.length; i++) {
         while (s.x[i] >= start + every) {
@@ -600,6 +603,64 @@ function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
       return { ...s, x: Float64Array.from(xs), y: Float64Array.from(ys) };
     }),
   };
+}
+
+/**
+ * Reference power curve of a wind turbine, times `count` turbines: what the wind offers. A model, not a measurement.
+ * The same as CleanChain.PowerCurve in the processor.
+ */
+function powerCurve(b: Bucket, p: Params): Bucket {
+  const rated = num(p, 'ratedKw', 3000);
+  const cutIn = num(p, 'cutIn', 3);
+  const ratedWind = num(p, 'ratedWind', 12.5);
+  const cutOut = num(p, 'cutOut', 25);
+  const count = num(p, 'count', 1);
+  const ci3 = cutIn * cutIn * cutIn;
+  const kw = (w: number) =>
+    Number.isNaN(w) ? NaN : w < cutIn || w > cutOut ? 0 : w >= ratedWind ? rated * count : (count * rated * (w * w * w - ci3)) / (ratedWind * ratedWind * ratedWind - ci3);
+  return {
+    ...b,
+    name: `Potential_${b.name}`,
+    note: undefined,
+    yLabel: 'kW',
+    series: b.series.map((s) => ({ ...s, unit: 'kW', y: Float64Array.from(s.y, kw) })),
+  };
+}
+
+/** The value `steps` samples earlier; a gap until that many samples have passed. */
+function featureLag(b: Bucket, p: Params): Bucket {
+  const steps = Math.max(1, Math.round(num(p, 'steps', 1)));
+  return mapY(b, `Lag${steps}_${b.name}`, (s) => ({ label: s.label, y: Float64Array.from(s.y, (_, i) => (i < steps ? NaN : s.y[i - steps])) }));
+}
+
+/** Aggregate of the values of the last `window` (in units of the x axis), the current one included; gaps are left out. */
+function featureRolling(b: Bucket, p: Params): Bucket {
+  const window = num(p, 'window', 60);
+  const fn = String(p.fn ?? 'MEAN');
+  return mapY(b, `Roll${fn}_${b.name}`, (s) => {
+    const y = new Float64Array(s.y.length);
+    let first = 0;
+    for (let i = 0; i < y.length; i++) {
+      while (s.x[first] <= s.x[i] - window) first++;
+      let sum = 0;
+      let sq = 0;
+      let min = Infinity;
+      let max = -Infinity;
+      let n = 0;
+      for (let k = first; k <= i; k++) {
+        const v = s.y[k];
+        if (Number.isNaN(v)) continue;
+        sum += v;
+        sq += v * v;
+        min = Math.min(min, v);
+        max = Math.max(max, v);
+        n++;
+      }
+      const mean = sum / n;
+      y[i] = n === 0 ? NaN : fn === 'MIN' ? min : fn === 'MAX' ? max : fn === 'STD' ? Math.sqrt(Math.max(0, sq / n - mean * mean)) : mean;
+    }
+    return { label: s.label, y };
+  });
 }
 
 function resample(b: Bucket, p: Params): Bucket {
@@ -771,6 +832,24 @@ export const OPS: OpDef[] = [
       { key: 'every', label: 'every', type: 'number', default: 0.05, min: 0 },
       { key: 'agg', label: 'agg', type: 'select', default: 'MEAN', options: ['MEAN', 'MIN', 'MAX', 'LAST'] },
     ], apply: resample },
+  { id: 'model.power-curve', label: 'Power curve', group: 'stream', prefix: 'Potential_', pfdOperation: 'MODEL', inCatalog: false,
+    hint: 'From wind speed to the power the wind offers a turbine: zero below cut-in and above cut-out, rated power from the rated wind. A model, not a measurement: it does not fall when the turbine is curtailed.',
+    params: [
+      { key: 'ratedKw', label: 'rated [kW]', type: 'number', default: 3000, min: 0 },
+      { key: 'cutIn', label: 'cut-in [m/s]', type: 'number', default: 3, min: 0 },
+      { key: 'ratedWind', label: 'rated wind [m/s]', type: 'number', default: 12.5, min: 0 },
+      { key: 'cutOut', label: 'cut-out [m/s]', type: 'number', default: 25, min: 0 },
+      { key: 'count', label: 'turbines', type: 'number', default: 1, min: 0 },
+    ], apply: powerCurve },
+  { id: 'feature.lag', label: 'Lag', group: 'stream', prefix: 'Lag_', pfdOperation: 'FEATURE', inCatalog: false,
+    hint: 'A feature for models: the value a number of samples earlier.',
+    params: [{ key: 'steps', label: 'samples', type: 'number', default: 1, min: 1 }], apply: featureLag },
+  { id: 'feature.rolling', label: 'Rolling', group: 'stream', prefix: 'Roll_', pfdOperation: 'FEATURE', inCatalog: false,
+    hint: 'A feature for models: mean, spread, minimum or maximum of the last window, in units of the x axis.',
+    params: [
+      { key: 'window', label: 'window', type: 'number', default: 3600, min: 0 },
+      { key: 'fn', label: 'fn', type: 'select', default: 'MEAN', options: ['MEAN', 'STD', 'MIN', 'MAX'] },
+    ], apply: featureRolling },
   { id: 'smooth.movavg', label: 'Moving average', group: 'stream', prefix: 'Smooth_', pfdOperation: 'SMOOTH', inCatalog: false,
     hint: 'Trailing moving average over the given number of samples.',
     params: [{ key: 'window', label: 'samples', type: 'number', default: 25, min: 1 }], apply: movingAverage },

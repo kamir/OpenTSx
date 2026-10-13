@@ -19,7 +19,7 @@ import uvicorn
 from pathlib import Path
 
 from app.core.config import settings
-from app.api import auth, dags, flows
+from app.api import auth, dags, flows, systems
 from app.db.session import async_engine
 from app.db.base import Base  # Import from base.py to ensure all models are loaded
 from app.db.init_db import init_db
@@ -353,6 +353,9 @@ app.include_router(flows.router, prefix=settings.API_V1_STR)
 
 # DAG runs: forwarded to the retrieval server for signed-in users (app/api/dags.py)
 app.include_router(dags.router, prefix=settings.API_V1_STR)
+
+# Systems: the working copy of signal bindings per user, and demo generators (app/api/systems.py)
+app.include_router(systems.router, prefix=settings.API_V1_STR)
 
 
 # Payment routes (stub)

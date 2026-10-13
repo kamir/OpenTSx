@@ -41,8 +41,16 @@ def _allowed(user: User) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only administrators may deploy or stop DAGs on this installation.")
 
 
-async def _forward(user: User, what: str, path: str, body: bytes = b"", params: dict | None = None):
-    headers = {"Content-Type": "application/yaml", BY_HEADER: user.email}
+async def forward_json(user: User, what: str, path: str, document: dict):
+    """Forwards a JSON request to a write route of the retrieval server, with the run token."""
+    import json
+
+    return await _forward(user, what, path, json.dumps(document).encode("utf-8"), content_type="application/json")
+
+
+async def _forward(user: User, what: str, path: str, body: bytes = b"", params: dict | None = None,
+                   content_type: str = "application/yaml"):
+    headers = {"Content-Type": content_type, BY_HEADER: user.email}
     if settings.DAG_RUN_TOKEN:
         headers[RUN_TOKEN_HEADER] = settings.DAG_RUN_TOKEN
     url = settings.RETRIEVAL_URL.rstrip("/") + path
@@ -58,7 +66,8 @@ async def _forward(user: User, what: str, path: str, body: bytes = b"", params: 
     except ValueError:
         payload = {}
     if answer.status_code == 200:
-        log.info("%s by user %s: %s", what, user.id, payload.get("dag") if isinstance(payload, dict) else "")
+        log.info("%s by user %s: %s", what, user.id,
+                 (payload.get("dag") or payload.get("signal")) if isinstance(payload, dict) else "")
         return payload
     reason = payload.get("error") if isinstance(payload, dict) else None
     log.warning("%s by user %s refused by the retrieval server: HTTP %s", what, user.id, answer.status_code)
@@ -70,7 +79,8 @@ async def _forward(user: User, what: str, path: str, body: bytes = b"", params: 
                             "The retrieval server did not accept the run token of this installation.")
     if answer.status_code == 404:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
-                            "The retrieval server of this installation does not deploy DAGs.")
+                            "The retrieval server of this installation does not deploy DAGs." if path.startswith("/v1/dags")
+                            else reason or "The retrieval server of this installation does not offer this.")
     raise HTTPException(status.HTTP_502_BAD_GATEWAY, reason or f"The retrieval server answered HTTP {answer.status_code}.")
 
 

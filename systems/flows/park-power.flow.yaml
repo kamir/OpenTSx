@@ -1,6 +1,6 @@
-# Example flow, opentsx.flow.v1 (proposal): the clean power of the turbines becomes the available power of the
-# park. It reads the topic of the clean series only. A processor "agg.sum" over several series does not exist yet;
-# with one turbine written out in the example the sum is that turbine.
+# Flow, opentsx.flow.v1 (proposal): the clean active power of the turbines becomes the actual generation of the park.
+# This is what was generated, not what was available: under curtailment the two differ (15, section 9).
+# A processor "agg.sum" over several series does not exist yet; with one turbine written out the sum is that turbine.
 schema: opentsx.flow.v1
 flow: park-power
 reads: ["park/T02/WTUR.W@clean"]
@@ -10,4 +10,4 @@ nodes:
     in: [source]
     params: { every: PT1M }
 writes:
-  - { from: sum, signal: "park.p_avail_kw@clean" }
+  - { from: sum, signal: "park.p_gen_kw@clean" }
