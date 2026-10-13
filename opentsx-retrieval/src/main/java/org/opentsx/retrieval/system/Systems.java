@@ -116,6 +116,13 @@ public final class Systems {
             put(e, "interval", s.expect().interval());
             put(e, "kind", s.expect().kind());
             put(e, "origin", s.expect().origin());
+            if (s.expect().operatingMin() != null || s.expect().operatingMax() != null) {
+                ObjectNode op = e.putObject("operating");
+                put(op, "min", s.expect().operatingMin());
+                put(op, "max", s.expect().operatingMax());
+            }
+            put(o, "role", s.role());
+            put(o, "meaning", s.meaning());
 
             ObjectNode grades = o.putObject("grades");
             Map<String, JsonNode> data = new TreeMap<>();

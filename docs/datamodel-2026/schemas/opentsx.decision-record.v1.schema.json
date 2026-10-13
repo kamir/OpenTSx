@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.decision-record.v1.schema.json",
+  "title": "opentsx.decision-record.v1",
+  "description": "One event in the life of a decision: a recommendation, what a person made of it, what was carried out, and what was observed afterwards. Every record names its predecessor. Draft, see docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, section 8.",
+  "type": "object",
+  "required": [
+    "schema",
+    "kind",
+    "id",
+    "decision",
+    "period",
+    "at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "opentsx.decision-record.v1"
+    },
+    "kind": {
+      "enum": [
+        "recommendation",
+        "approval",
+        "action",
+        "outcome"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Identity of the record: the same logical record written twice has the same id."
+    },
+    "decision": {
+      "type": "string"
+    },
+    "decisionVersion": {
+      "type": "integer"
+    },
+    "period": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "description": "The period the decision covers.",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/ts"
+        },
+        "to": {
+          "$ref": "#/$defs/ts"
+        }
+      }
+    },
+    "at": {
+      "$ref": "#/$defs/ts",
+      "description": "When the record was made."
+    },
+    "follows": {
+      "type": "string",
+      "description": "Id of the record this one answers: an approval a recommendation, an action an approval, an outcome an action or a recommendation in shadow operation."
+    },
+    "revises": {
+      "type": "string",
+      "description": "Id of an earlier record of the same kind this one replaces, because data arrived later."
+    },
+    "final": {
+      "type": "boolean",
+      "description": "False while data for the period may still arrive."
+    },
+    "shadow": {
+      "type": "boolean",
+      "description": "True in shadow operation: nobody acts on the recommendation."
+    },
+    "informationState": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What was known when the record was made: enough to compute it again.",
+      "properties": {
+        "asOf": {
+          "$ref": "#/$defs/ts",
+          "description": "Arrival time up to which data was taken into account."
+        },
+        "systemHash": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "signal",
+              "grade"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "signal": {
+                "type": "string"
+              },
+              "grade": {
+                "enum": [
+                  "raw",
+                  "clean",
+                  "features"
+                ]
+              },
+              "upTo": {
+                "$ref": "#/$defs/ts"
+              },
+              "topic": {
+                "type": "string"
+              },
+              "offsets": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              },
+              "origin": {
+                "type": "string"
+              },
+              "flow": {
+                "type": "string"
+              },
+              "specHash": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "seed": {
+              "type": "integer"
+            },
+            "initialState": {
+              "type": "string",
+              "description": "Reference to the state the analysis started from."
+            }
+          }
+        }
+      }
+    },
+    "usability": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "usable",
+            "restricted",
+            "blocked"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "synthetic": {
+          "type": "boolean",
+          "description": "True when any input is generated: the record shows the mechanism, not an effect."
+        }
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kpis"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "boolean"
+          },
+          "kpis": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "uncertainty": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "violates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "recommended": {
+      "type": "string",
+      "description": "Id of the alternative the analysis recommends."
+    },
+    "setpoints": {
+      "type": "array",
+      "description": "What is recommended, approved or carried out, per lever.",
+      "items": {
+        "type": "object",
+        "required": [
+          "signal",
+          "value"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "signal": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "from": {
+            "$ref": "#/$defs/ts"
+          },
+          "to": {
+            "$ref": "#/$defs/ts"
+          }
+        }
+      }
+    },
+    "verdict": {
+      "enum": [
+        "accepted",
+        "changed",
+        "rejected"
+      ]
+    },
+    "by": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "observed": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Figures observed in the period."
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "What the recommendation expected for the same figures."
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "What the reference strategy gives for the same period, where that can be computed."
+    },
+    "attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Why observed and expected differ, as far as it can be told apart.",
+      "properties": {
+        "execution": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "recommendation"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "informationState",
+          "usability",
+          "alternatives",
+          "recommended"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "approval"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "follows",
+          "verdict",
+          "by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "action"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "follows",
+          "setpoints",
+          "by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "outcome"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "follows",
+          "observed",
+          "final"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "ts": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    }
+  }
+}

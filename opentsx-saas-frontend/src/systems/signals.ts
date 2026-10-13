@@ -13,6 +13,8 @@ export interface Expect {
   interval?: string;
   kind?: string;
   origin?: string;
+  /** What normal operation gives; outside it the system is in a special state and the measurement may be right. */
+  operating?: { min?: number; max?: number };
 }
 
 export interface GradeSource {
@@ -60,6 +62,10 @@ export interface Signal {
   name: string;
   title: string;
   port: boolean;
+  /** observation, estimate, command, limit or exogenous: the same unit does not mean the same quantity. */
+  role?: string;
+  /** One sentence that says what the quantity is. */
+  meaning?: string;
   channel?: string;
   expect: Expect;
   grades: Partial<Record<GradeName, Grade>>;
@@ -122,6 +128,14 @@ export function expectText(e: Expect): string {
   const range = e.min !== undefined && e.max !== undefined ? `${num(e.min)}..${num(e.max)}` : e.min !== undefined ? `from ${num(e.min)}` : e.max !== undefined ? `up to ${num(e.max)}` : '';
   const head = [e.unit, range].filter(Boolean).join(' ');
   return [head, intervalText(e.interval)].filter(Boolean).join(', ') || 'not stated';
+}
+
+/** The operating range in one line, or an empty string when none is stated. */
+export function operatingText(e: Expect): string {
+  const o = e.operating;
+  if (!o || (o.min === undefined && o.max === undefined)) return '';
+  const range = o.min !== undefined && o.max !== undefined ? `${num(o.min)}..${num(o.max)}` : o.min !== undefined ? `from ${num(o.min)}` : `up to ${num(o.max!)}`;
+  return `${range}${e.unit ? ` ${e.unit}` : ''}`;
 }
 
 /**

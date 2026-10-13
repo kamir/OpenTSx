@@ -91,13 +91,50 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       - Grenzen: Der Prozessor führt vor einer Reihen-Senke genau drei Operatoren aus; eine Kette, kein
         Zusammenführen mehrerer Reihen (die Summe über Turbinen läuft also nicht); "Publish" schreibt nichts ins
         Systemdokument (D42 offen); die Sperre "ein Signal, ein Schreiber" sitzt im Frontend
-- [ ] 014.7 L4 Generatoren: Topic, Laufzeit, Bind und Simulate
-- [ ] 014.8 L5 Models
+- [x] 014.6a Review-Briefing verarbeitet (Stand 2026-10-13): externes Review (Engineering und komplexe Systeme) zum
+      Leitfaden und zum Plan. Ergebnis ist
+      [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md): die
+      Entscheidung als zentrale Einheit, das Signal mit Rolle und zwei Wertebereichen, `clean` als Kennzeichnen statt
+      Entfernen, ein Streaming-Vertrag, Modellfreigabe je Zweck, vier Datensätze für den Kreis, ein neuer Plan.
+      Befunde und was aus jedem wurde: unten, Abschnitt "Review-Briefing"
+      - sofort umgesetzt: Korrektur des H2-Beispiels (tatsächliche Erzeugung und verfügbare Leistung sind zwei
+        Signale; Systemdokument Fassung 2 mit zehn Signalen und fünf Flows); `role`, `meaning` und `operating` im
+        Schema, im Server und in den Details eines Signals; Kennung für bereinigte Episoden, damit ein Wiederanlauf
+        nicht doppelt zählt; Schema-Entwürfe `opentsx.decision.v1` und `opentsx.decision-record.v1` mit Beispiel,
+        im Build geprüft; Streaming-Vertrag in 11, Abschnitt 7a, mit "Heute" und "Ziel" je Punkt; Modellfreigabe in
+        05, Abschnitt 5a; Leitfaden (Kapitel 16) auf acht Schritte umgeschrieben
+- [ ] 014.7 Freigabe der Entscheidungen D52 bis D63
+- [ ] 014.8 E1 Entscheidungskarte und fachliche Verträge (ersetzt mit E2 und E3 die früheren Stufen L4 und L5)
+- [ ] 014.9 E2 Durchgängiger Streaming- und Replay-Pfad
+- [ ] 014.10 E3 Handlungs- und Lernkreis
+
+## Review-Briefing (extern, 2026-10-13)
+
+Ein Review aus Engineering-Sicht und aus Sicht komplexer Systeme, auf Grundlage des Leitfadens, ohne Einsicht in
+den Code. Kernsatz: Die zentrale Einheit sollte eine überprüfbare Entscheidung sein. Die Tabelle steht ausführlich
+in [15](../docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), Abschnitt 2; hier die Kurzform.
+
+| Befund | Einschätzung | Was daraus wurde |
+|---|---|---|
+| Der Entscheidungsbezug fehlt; der Einstieg ist das System | stimmt | Entscheidungskarte, neuer erster Schritt (D52, E1) |
+| "Clean meets the expectation" kann Ereignisse wegputzen | stimmt, L3 tut das | `clean` neu definiert, Modus `flag`, zwei Wertebereiche (D54, D57, E2) |
+| Ein exklusiver Signalstatus | stimmt | fünf Dimensionen, Verwendbarkeit je Entscheidung (D55, E1) |
+| "Worst origin" ist keine Rangfolge | stimmt | Ableitungsweg mit Anteilen (D56, E1) |
+| Plausible Einzelwerte ergeben kein plausibles System | stimmt | Demo-Generator und Szenariomodell getrennt (D61, E2) |
+| Streaming-Semantik offen | stimmt teilweise; am selben Tag durch eine verlorene Episode bestätigt | Vertrag mit "Heute" und "Ziel" (D58, E2); Kennung für Episoden sofort |
+| Saubere Eingänge beweisen keine Modellgüte | stimmt | Freigabe je Analyse (D59, E3) |
+| Kein geschlossener Handlungskreis | stimmt | vier Datensätze (D60, E3) |
+| H2-Beispiel: gemessene Leistung ist nicht die verfügbare | stimmt, fachlicher Fehler | sofort korrigiert |
+| "Ein Writer pro Topic" zu grob | schon anders: ein Signal, ein Schreiber | Prüfung gehört in den Server (E2) |
+| Beispiel zeigt Flows, die nicht laufen; Zahlen widersprüchlich | stimmt; die Zahl der Eingänge von außen war falsch (neun, nicht sechs) | Leitfaden nennt je Schritt, was läuft |
+
+Nicht nachgeprüft: die beiden Quellenverweise des Briefings (NIST, Apache Beam).
 
 ## Stand der Prüfung
 * Die Beispieldokumente sind gegen die beiden Schemas geprüft, dazu die Verweise im Systemdokument: Bausteine im
   Schaltplan, Kanäle im Katalog, Assets im Inventar, Flows in der Liste und mit passendem Ausgang, Generatoren mit
-  Beschreibung und Pflichtparametern. Ergebnis: 8 Signale, 2 offen, 3 Prozessoren, 3 Flows, kein Fehler.
+  Beschreibung und Pflichtparametern. Ergebnis seit der Korrektur des Beispiels: 10 Signale, 2 offen, 3 Prozessoren, 5 Flows, 1 Entscheidungskarte mit 4
+  Datensätzen, kein Fehler.
 * Ein Hinweis bleibt stehen und ist gewollt: Das Inventar nennt für das Asset `h2-chain/park/T02` die Reihe der
   Windgeschwindigkeit nicht, das Systemdokument bindet sie. Das ist der Fall, den D47 entscheidet.
 * 13 Gegenproben (je eine Änderung, die das Schema ablehnen muss) werden abgelehnt.

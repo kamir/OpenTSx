@@ -84,6 +84,13 @@ entries are grouped by date. The detailed progress log (German) is in
   signal" (check, save and start in one step) when it was opened for a signal; the page "Signals" then shows the
   signal as clean. Shared test vectors for the cleaning operators in Java and TypeScript
   (`docs/datamodel-2026/testvectors/clean-ops.v1.json`).
+- Plan revised after an external review ([`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md),
+  German, waits for sign-off): the decision as the central unit, with draft schemas `opentsx.decision.v1` (decision
+  card) and `opentsx.decision-record.v1` (recommendation, approval, action, outcome) and an example; a streaming
+  contract with what holds today and what is the aim (11, section 7a); release of a model for a purpose (05, section
+  5a). Signals carry a role, a meaning and an operating range next to the plausible range. Clean episodes carry an
+  identity, so a restart is not counted twice. The user manual's chapter 16 is rewritten as eight steps from a
+  decision to its effect.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.
@@ -100,6 +107,9 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- Example system `h2-chain`: the available power of the wind farm was bound to the sum of the measured turbine power.
+  Under curtailment that is the actual generation, not what the wind offers. They are two signals now: an
+  observation (`park.p_gen_kw`) and an estimate from the wind speed (`park.p_avail_kw`).
 - Readers on KafScale could skip records when the broker refused a fetch: the Kafka client throws the refusal of one
   partition out of the middle of a poll and drops what it had already taken from the others. `Patience` now puts
   the consumer back to where it stood before the refused poll. Seen as a clean series that lacked its first episode.

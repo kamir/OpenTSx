@@ -97,6 +97,13 @@
       "items": {
         "$ref": "#/$defs/named"
       }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/named"
+      },
+      "description": "Decisions taken on this system (opentsx.decision.v1)."
     }
   },
   "$defs": {
@@ -172,6 +179,20 @@
         },
         "features": {
           "$ref": "#/$defs/featureStage"
+        },
+        "role": {
+          "enum": [
+            "observation",
+            "estimate",
+            "command",
+            "limit",
+            "exogenous"
+          ],
+          "description": "What kind of quantity the signal is: what was (observation), what could be or is assumed (estimate), what was asked for (command), what must not be exceeded (limit), what comes from outside and is not influenced (exogenous). The same unit does not mean the same quantity."
+        },
+        "meaning": {
+          "type": "string",
+          "description": "One sentence that says what the quantity is. A binding is confirmed against this, not against a name."
         }
       },
       "anyOf": [
@@ -195,10 +216,12 @@
           "type": "string"
         },
         "min": {
-          "type": "number"
+          "type": "number",
+          "description": "Lower bound of what the sensor can deliver (plausibility). A value below it puts the measurement in question."
         },
         "max": {
-          "type": "number"
+          "type": "number",
+          "description": "Upper bound of what the sensor can deliver (plausibility)."
         },
         "interval": {
           "$ref": "#/$defs/duration",
@@ -221,6 +244,20 @@
             "SYNTHETIC"
           ],
           "description": "Where the data is expected to come from once the system is complete."
+        },
+        "operating": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "description": "Range to be expected in normal operation. A value outside it says something about the system, not about the measurement: it is an event and never a reason to correct the value.",
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          }
         }
       },
       "minProperties": 1

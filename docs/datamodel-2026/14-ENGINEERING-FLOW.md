@@ -3,7 +3,9 @@
 > Stand: 2026-10-13, dritte Fassung. **Freigegeben am 2026-10-13** mit zwei Änderungen gegenüber dem Vorschlag
 > (D43: drei Güten statt zwei; D50: zusätzlich ein geführter Modus). Umgesetzt sind die Lieferstufen L1 und L2
 > (Abschnitt 10): Systemdokument mit Prüfung, Zustand der Signale, die Hülle mit ihren vier Orten und dem geführten
-> Modus, Sprung auf den Schirm. Arbeitspaket:
+> Modus, Sprung auf den Schirm, dazu L3 mit Grenzen. **Der Plan ab L4 und mehrere Festlegungen dieses Dokuments sind
+> durch [15](15-ENTSCHEIDUNGSKREIS.md) überarbeitet** (Zustand des Signals, Herkunft, Bedeutung von `clean`,
+> Reihenfolge der Stufen); dort steht, was gilt, sobald es freigegeben ist. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md); dort stehen auch die Befunde der beiden Reviews.
 
 ## 1. Kurzfassung
@@ -434,8 +436,8 @@ vom kleinsten Stand her gebaut, der die Idee von Anfang bis Ende zeigt.
 | L1 (**umgesetzt** 2026-10-13) | Systemdokument mit an Topics gebundenen und offenen Signalen; Prüfung im Build; `GET /v1/systems` und `/v1/systems/<id>/signals` mit berechnetem Zustand; Ort Signals; "Open on scope" mit Kontextzeile und erwartetem Wertebereich | Katalog "erwartet gegen vorhanden" für `h2-chain`, mit Sprung auf den Schirm |
 | L2 (**umgesetzt** 2026-10-13) | Hülle: Leiste, Statuszeile, gemeinsame Farben; geführter Modus; Beschriftungen nach 8.4; Ort Flows (Composer mit Filter); Ort System als Tabelle der Bausteine und Ports (statt des eingebetteten Prototyps, siehe 8.5); Ort Models als Vorschau | ein Rahmen statt drei Seiten |
 | L3 (**umgesetzt** 2026-10-13, mit Grenzen) | Topic `clean`, Senke für Reihen (`opentsx.dag.v2`), drei Operatoren im Prozessor (Plausibilitätsbereich, Einheit, Resampling), "Publish as clean signal". Nicht umgesetzt: die Schreibform `opentsx.flow.v1` mit Übersetzungsschritt (die Workbench schreibt den DAG direkt), das Zusammenführen mehrerer Reihen, das Zurückschreiben ins Systemdokument | Rohdaten einer Reihe werden fortlaufend zu einer bereinigten Reihe |
-| L4 | Topic `synthetic`, Generator-Laufzeit mit eigenem Recht, erste Generatoren; Aktionen Bind und Simulate | offene Signale werden gebunden oder simuliert |
-| L5 | Models: Topic `features`, Prozessoren für Merkmale, Smart-Topic-Spezifikation mit `target.signal`; Systembild und Vergleich in React | Prognose und Was-wäre-wenn im selben Rahmen |
+| ~~L4~~ | ~~Topic `synthetic`, Generator-Laufzeit, Bind und Simulate~~ | ersetzt durch E1 (Binden in der Oberfläche) und E2 (Szenariomodell) in [15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 10 |
+| ~~L5~~ | ~~Models~~ | ersetzt durch E3 (Handlungs- und Lernkreis) in [15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 10 |
 
 Prozessor-Beschreibungen kommen mit der Stufe, die sie braucht: L3 die Transformatoren der Bereinigung, L4 die
 Generatoren.

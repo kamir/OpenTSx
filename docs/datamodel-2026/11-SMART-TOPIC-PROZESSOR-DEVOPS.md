@@ -350,6 +350,35 @@ Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angest
 * **Backfill:** Weil der Prozessor aus S3 liest, ist Backfill nur ein Lauf derselben Version über alte Segmente,
   ohne Sonderpfad.
 
+Dieser Abschnitt beschreibt das Ziel. Was davon der Vektor-Prozessor heute hält, steht in 7a, Punkt für Punkt.
+
+---
+
+## 7a. Streaming-Vertrag: Zeit, Endgültigkeit, Identität, Wiederanlauf, Revision (Entwurf)
+
+> Stand: 2026-10-13. Ausgelöst durch das Review-Briefing in
+> [15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 6. Die Spalte "Heute" gilt für den Vektor-Prozessor mit seinen beiden
+> Senken, Vektoren (`opentsx.vector.v1`) und bereinigte Reihen (`opentsx.episode.v2` im Topic `clean`). "Ziel" ist
+> zur Freigabe vorgeschlagen (D58) und nicht umgesetzt, wo es von "Heute" abweicht.
+
+| Punkt | Heute | Ziel |
+|-------|-------|------|
+| **Ereigniszeit** | Jede Episode und jeder Messpunkt trägt die Zeit, zu der es war (`tStart`, `tEnd`, `ts`). Fenster und Ticks liegen auf dem Raster seit der Epoche, nicht am ersten Wert | bleibt |
+| **Eingangszeit** | Nur `createdAt` der Episode: wann sie gebaut wurde. Wann ein Rohwert ankam, steht nirgends | Jede Ausgabe nennt, bis zu welcher Eingangszeit Daten berücksichtigt sind (`asOf`). Erst damit lässt sich sagen, was zu einem früheren Zeitpunkt bekannt war |
+| **Prognosen** | keine | Erstellungszeit und Zielzeit getrennt; eine Prognose ist eine Reihe über die Zielzeit mit der Erstellungszeit als zweiter Achse |
+| **Abschluss** | Vektor: ein Tick ist endgültig, wenn jede genannte Reihe sein Ende erreicht hat, plus `lateness`. Reihe: ein Fenster ist endgültig, wenn die Daten seiner Reihe sein Ende überschritten haben. Geschrieben wird nur Endgültiges | bleibt; dazu ein Kennzeichen `final` in der Ausgabe, damit eine Senke auch Vorläufiges schreiben darf, wo ein Zweck es braucht |
+| **Verspätete Daten** | Eine Episode, die vor dem Ende der vorigen ihrer Reihe beginnt, wird übersprungen und gezählt (`skippedBlocks`). Sie geht in kein Ergebnis ein | Sie erzeugt eine **Revision** des betroffenen Ergebnisses mit Verweis auf das frühere (`revision`, `revises`). Nichts wird still überschrieben und nichts still verworfen |
+| **Identität** | Bereinigte Episoden: Kennung aus Reihe, Zeitraum und Hash des DAG-Dokuments; dasselbe Stück, noch einmal gerechnet, hat dieselbe Kennung, und ein Leser, der je Kennung eine Episode hält, zählt es einmal. Vektoren: keine Kennung; Leser nehmen je Schlüssel und Tick den späteren Satz | Jede Ausgabe hat eine Kennung aus dem, was sie logisch ist (Signal, Güte, Zeitraum, Fassung). Vektoren ziehen nach |
+| **Doppelte in der Quelle** | Dieselbe Rohepisode zweimal im Topic fällt unter "verspätet" und wird übersprungen. Zwei verschiedene Episoden über denselben Zeitraum (eine Korrektur der Quelle) ebenso: die zweite verliert | Die Quelle sagt mit `revision`, welche gilt; der Prozessor nimmt die höhere und revidiert sein Ergebnis |
+| **Wiederanlauf** | Checkpoint je Senke: Lesepositionen und Zustand, geschrieben erst, wenn der Broker alles davor bestätigt hat. Nach einem Absturz wird ab dem Checkpoint wiederholt; was danach schon geschrieben war, steht doppelt im Topic (bei Reihen mit gleicher Kennung) | bleibt; das ist "mindestens einmal" mit Kennung, also für Leser genau einmal |
+| **Verweigerter Abruf** | Der Kafka-Client verliert bei einer verweigerten Partition, was er im selben Abruf von anderen schon geholt hatte (beobachtet am 2026-10-13: einer bereinigten Reihe fehlte eine Episode; aus dem Verhalten erschlossen, nicht aus dem Quelltext). `Patience` setzt den Consumer nach einer Ablehnung auf die Positionen vor dem Abruf zurück. Nachweis auf dem Labor-Broker steht aus | Ein Test, der genau das gegen einen Broker einspielt, nicht nur gegen einen nachgebauten Consumer |
+| **Zuständigkeit** | Im Topic `clean` schreibt ein Flow je Signal; in ein Vektor-Topic ein Flow. Geprüft wird das in der Oberfläche, nicht im Server | Der Server lehnt einen Start ab, wenn ein anderer laufender Flow dasselbe logische Ergebnis schreibt. "Ein Schreiber je Topic" ist nicht die Regel; die Regel gilt je Signal und Güte |
+| **Replay** | Ein neuer oder geänderter DAG beginnt am Anfang des Quell-Topics (oder mit `source.start: latest` am Ende). Die Ausgabe nennt den Hash des Dokuments | Ein Lauf ist beschrieben durch Eingangsdaten mit Offsets, Anfangszustand, Parameter, Fassung von Flow und System und den Informationsstand (`asOf`). Damit lässt er sich wiederholen |
+| **Neue Fassung** | Ein geändertes Dokument ersetzt das laufende sofort und beginnt von vorn; die alte Ausgabe bleibt im Topic, mit anderem Hash | Die neue Fassung schreibt zuerst in den Schatten, wird gegen die laufende verglichen und dann umgeschaltet; der Rückweg bleibt |
+| **Gleichheit von Vorschau und Betrieb** | Für `align.vector` und für Plausibilitätsbereich, Einheit und Resampling durch gemeinsame Testvektoren von Java und TypeScript belegt, als Ganzes und als Strom in beliebigen Stücken. Für alle anderen Operatoren der Workbench gibt es keine zweite Laufzeit | bleibt die Bedingung dafür, dass ein Operator in den Prozessor kommt |
+| **Qualität je Wert** | Das Qualitätsbyte der v2-Episode wird gelesen und nicht weitergegeben. Der Plausibilitätsbereich macht Werte zur Lücke oder begrenzt sie | Modus `flag` als Vorgabe: der Wert bleibt, das Byte sagt `IMPLAUSIBLE`; Resampling gibt den Anteil fraglicher Werte je Fenster weiter ([15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 5.1) |
+| **Art der Größe** | Der Prozessor mittelt, was man ihm gibt | Die Art des Signals (`ANALOG`, `STATUS`, `COUNTER`) bestimmt die erlaubte Aggregation; ein Mittel über einen Zähler wird abgelehnt |
+
 ---
 
 ## 8. DevOps-Lebenszyklus

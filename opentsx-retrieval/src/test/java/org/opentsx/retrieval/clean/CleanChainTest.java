@@ -216,6 +216,23 @@ class CleanChainTest {
     }
 
     @Test
+    void theSamePieceComputedAgainHasTheSameIdentity() throws Exception {
+        List<String> ids = List.of(POWER.getSeriesId().toString());
+        Episode first = new SeriesStream(exampleChain(), TARGET, ids).add(raw(0)).get(0);
+        // a restart computes the block again: a reader that keeps one episode per id does not count it twice
+        Episode again = new SeriesStream(exampleChain(), TARGET, ids).add(raw(0)).get(0);
+        assertEquals(first.getEpisodeId(), again.getEpisodeId());
+        assertTrue(!first.getEpisodeId().equals(new SeriesStream(exampleChain(), TARGET, ids).add(raw(1)).get(0).getEpisodeId()), "another piece");
+        SeriesStream.Target changed = new SeriesStream.Target("h2-chain", "park/T02/WTUR.W", "clean", "SYNTHETIC", "wind-flow-7", "other-document");
+        assertTrue(!first.getEpisodeId().equals(new SeriesStream(exampleChain(), changed, ids).add(raw(0)).get(0).getEpisodeId()),
+                "another document is another result");
+        org.opentsx.store.InMemorySeriesStore store = new org.opentsx.store.InMemorySeriesStore();
+        store.write(List.of(first));
+        store.write(List.of(again));
+        assertEquals(1, store.read(org.opentsx.store.EpisodeQuery.of(org.opentsx.store.SeriesSelector.all(), Long.MIN_VALUE, Long.MAX_VALUE)).size());
+    }
+
+    @Test
     void aChainWithoutResamplingKeepsTheTimeAxisOfTheRawSeries() throws Exception {
         CleanChain chain = CleanChain.of(List.of(JSON.readTree("{\"id\":\"n1\",\"op\":\"convert.unit\",\"params\":{\"factor\":0.001,\"unit\":\"MW\"}}")));
         SeriesStream stream = new SeriesStream(chain, TARGET, List.of());

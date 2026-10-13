@@ -1,0 +1,48 @@
+# Decision card, schema opentsx.decision.v1 (draft). Concept: docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md.
+# Not read by code yet. An example: persons, figures and evidence are invented.
+schema: opentsx.decision.v1
+decision: h2-dispatch
+version: 1
+example: true
+system: h2-chain
+title: Fahrplan für Elektrolyseur und Batterie
+question: Which setpoint does the electrolyser run at, and does the battery charge or discharge, in the next hour?
+responsibility:
+  decides: plant operator on shift
+  approves: plant operator on shift
+  executes: plant control system, set by the operator
+cadence: { every: PT15M, horizon: PT1H, leadTime: PT5M }
+objectives:
+  - { id: h2-delivery, title: Meet the hydrogen demand of the offtaker, kpi: undelivered hydrogen, unit: kg, direction: min }
+  - { id: energy-cost, title: Low cost of the electricity drawn from the grid, kpi: grid energy cost, unit: EUR, direction: min }
+  - { id: schedule, title: Keep the feed-in announced to the direct marketer, kpi: schedule deviation, unit: kWh, direction: min }
+levers:
+  - { signal: ely.setpoint_kw, title: Setpoint of the electrolyser, min: 0, max: 5000, delay: PT1M }
+  - { signal: battery.power_kw, title: Battery power, min: -1000, max: 1000, delay: PT1M }
+constraints:
+  - { id: line-pressure, title: Pressure of the hydrogen line, signal: line.p_bar, min: 20, max: 40, note: The electrolyser trips at 40 bar. }
+  - { id: battery-soc, title: State of charge of the battery, signal: battery.soc, min: 0.1, max: 0.9 }
+needs:
+  - { signal: park.p_avail_kw, grade: clean, maxAge: PT5M, origins: [MEASURED, ESTIMATED, FORECAST] }
+  - { signal: market.price_eur_mwh, grade: raw, maxAge: PT1H, origins: [REPORTED, FORECAST], for: [price-following] }
+  - { signal: offtake.demand_kgph, grade: clean, maxAge: PT15M, origins: [REPORTED, FORECAST] }
+  - { signal: park.p_gen_kw, grade: clean, maxAge: PT5M, optional: true }
+analyses:
+  - id: hold
+    title: Keep the setpoint, battery idle
+    kind: rule
+    validity: []
+    evidence:
+      - { what: Runs through the twin without violating a constraint, period: scenario ostsee-demo, result: no violation, date: "2026-10-13", synthetic: true }
+  - id: price-following
+    title: Run the electrolyser where the price is low, bridge with the battery
+    kind: twin
+    ref: opentsx-twin/src/main/resources/twin/h2-chain.yaml
+    validity:
+      - { signal: park.p_avail_kw, min: 0, max: 12000 }
+      - { signal: market.price_eur_mwh, min: -100, max: 400, note: Not checked for price spikes. }
+    evidence: []
+    uncertainty: { method: none yet, blockAbove: 500, unit: EUR }
+alternatives:
+  - { id: hold-setpoint, title: Hold the setpoint, reference: true, analysis: hold }
+  - { id: follow-price, title: Follow the price, analysis: price-following, note: Not validated; its results are restricted. }

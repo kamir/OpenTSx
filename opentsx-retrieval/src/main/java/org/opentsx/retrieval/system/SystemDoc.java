@@ -39,10 +39,16 @@ public final class SystemDoc {
     private static final Pattern CHANNEL_ID = Pattern.compile("[a-z0-9][a-z0-9_-]*(/[A-Za-z0-9_-]+)+/[A-Za-z0-9_.-]+");
     private static final Pattern DURATION = Pattern.compile("P(\\d+D(T(\\d+H)?(\\d+M)?(\\d+(\\.\\d+)?S)?)?|T(\\d+H(\\d+M)?(\\d+(\\.\\d+)?S)?|\\d+M(\\d+(\\.\\d+)?S)?|\\d+(\\.\\d+)?S))");
     private static final Set<String> KINDS = Set.of("ANALOG", "STATUS", "COUNTER");
+    private static final Set<String> ROLES = Set.of("observation", "estimate", "command", "limit", "exogenous");
     public static final List<String> GRADES = List.of("raw", "clean", "features");
 
-    /** What a signal should look like. Null fields are not stated. */
-    public record Expect(String unit, Double min, Double max, String interval, String kind, String origin) {
+    /**
+     * What a signal should look like. Null fields are not stated. {@code min} and {@code max} are what the sensor can
+     * deliver (plausibility: outside, the measurement is in question); {@code operatingMin} and {@code operatingMax}
+     * are what normal operation gives (outside, the system is in a special state and the measurement may be right).
+     */
+    public record Expect(String unit, Double min, Double max, String interval, String kind, String origin,
+                         Double operatingMin, Double operatingMax) {
     }
 
     /** Where the data of one grade comes from; {@code kind} is topic, generator, flow or manual. */
@@ -51,8 +57,12 @@ public final class SystemDoc {
                          Double value, String table) {
     }
 
+    /**
+     * @param role    what kind of quantity it is: observation, estimate, command, limit or exogenous; null when not stated
+     * @param meaning one sentence that says what the quantity is
+     */
     public record Signal(String id, String title, String channel, Expect expect, Source raw, Source clean, Source features,
-                         List<String> featureNames, String note) {
+                         List<String> featureNames, String note, String role, String meaning) {
 
         /** True for a port of the plan ({@code atom.port}), false for a sensor channel below an atom. */
         public boolean isPort() {
@@ -317,13 +327,18 @@ public final class SystemDoc {
         } else if (own.isMissingNode() || own.isEmpty()) {
             problems.add(id + ": needs channel or expect");
         }
+        String role = n.path("role").asText(null);
+        if (role != null && !ROLES.contains(role)) {
+            problems.add(id + ": role must be one of " + new TreeSet<>(ROLES));
+        }
         Expect expect = new Expect(
                 first(own.path("unit"), cat == null ? null : cat.path("unit")),
                 number(own.path("min"), cat == null ? null : cat.path("min")),
                 number(own.path("max"), cat == null ? null : cat.path("max")),
                 first(own.path("interval"), cat == null ? null : cat.path("sampling")),
                 first(own.path("kind"), cat == null ? null : cat.path("kind")),
-                first(own.path("origin"), null));
+                first(own.path("origin"), null),
+                number(own.path("operating").path("min"), null), number(own.path("operating").path("max"), null));
         if (expect.interval() != null && !DURATION.matcher(expect.interval()).matches()) {
             problems.add(id + ": interval " + expect.interval() + " is no duration like PT1M");
         }
@@ -348,7 +363,11 @@ public final class SystemDoc {
         if (raw != null && "flow".equals(raw.kind())) {
             problems.add(id + "@raw: a flow gives clean data or features");
         }
-        return new Signal(id, n.path("title").asText(id), channel, expect, raw, clean, features, names, n.path("note").asText(null));
+        if (expect.operatingMin() != null && expect.operatingMax() != null && expect.operatingMin() > expect.operatingMax()) {
+            problems.add(id + ": the operating range has its min above its max");
+        }
+        return new Signal(id, n.path("title").asText(id), channel, expect, raw, clean, features, names, n.path("note").asText(null),
+                role, n.path("meaning").asText(null));
     }
 
     private Source source(String id, String grade, JsonNode stage) {

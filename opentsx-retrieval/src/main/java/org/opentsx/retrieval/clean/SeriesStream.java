@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
 import org.opentsx.model.SeriesKeys;
+import org.opentsx.model.XxHash64;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.model.v2.TimeEncoding;
@@ -93,7 +94,7 @@ public final class SeriesStream {
             Episodes.Draft d = e.getTimeEncoding() == TimeEncoding.REGULAR
                     ? Episodes.regular(key, out.times()[0], e.getIntervalMicros(), out.values())
                     : Episodes.irregular(key, out.times(), out.values());
-            episodes.add(label(d.tEnd(tEnd)).build());
+            episodes.add(label(d.tEnd(tEnd), key, out.times()[0], tEnd).build());
             return episodes;
         }
         // windows on a grid: one episode per run without a break
@@ -101,7 +102,8 @@ public final class SeriesStream {
         for (int k = 1; k <= out.size(); k++) {
             if (k == out.size() || out.times()[k] - out.times()[k - 1] != every) {
                 double[] v = java.util.Arrays.copyOfRange(out.values(), from, k);
-                episodes.add(label(Episodes.regular(key, out.times()[from], every, v)).build());
+                episodes.add(label(Episodes.regular(key, out.times()[from], every, v), key, out.times()[from],
+                        out.times()[k - 1] + every).build());
                 from = k;
             }
         }
@@ -117,7 +119,14 @@ public final class SeriesStream {
         return SeriesKeys.of(raw.getMetric().toString(), tags, unit);
     }
 
-    private Episodes.Draft label(Episodes.Draft d) {
+    /**
+     * Labels the episode and gives it its identity: the same piece of the same clean series, computed by the same
+     * document, has the same id. A reader that sees it twice (a restart writes again what lay after the last
+     * checkpoint) keeps one.
+     */
+    private Episodes.Draft label(Episodes.Draft d, SeriesKey key, long from, long to) {
+        String identity = key.getSeriesId() + "|" + from + "|" + to + "|" + target.specHash();
+        d.episodeId("c" + XxHash64.hex(XxHash64.hash(identity.getBytes(java.nio.charset.StandardCharsets.UTF_8))));
         d.source("opentsx-processor").pipeline(target.flow()).label("grade", target.grade()).label("flow", target.flow())
                 .label("specHash", target.specHash());
         if (target.origin() != null && !target.origin().isBlank()) {

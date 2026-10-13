@@ -19,6 +19,7 @@ import {
   filterSignals,
   groupSignals,
   isSynthetic,
+  operatingText,
   originText,
   scopeGrade,
   scopeLink,
@@ -206,8 +207,14 @@ export default function SignalsPlace({ status, focusId, published, onReload }: P
               <>
                 <h3>{focused.id}</h3>
                 <p>{focused.title}</p>
+                {focused.meaning && <p>{focused.meaning}</p>}
                 <dl className="wb-readout wide">
-                  <dt>Expected</dt><dd>{expectText(focused.expect)}{focused.expect.kind ? `, ${focused.expect.kind.toLowerCase()}` : ''}</dd>
+                  {focused.role && [<dt key="rk">Role</dt>, <dd key="rv">{focused.role}</dd>]}
+                  <dt>Plausible</dt><dd>{expectText(focused.expect)}{focused.expect.kind ? `, ${focused.expect.kind.toLowerCase()}` : ''}</dd>
+                  {operatingText(focused.expect) && [
+                    <dt key="opk">Operating</dt>,
+                    <dd key="opv" title="What normal operation gives. A value outside it is an event, not a wrong measurement.">{operatingText(focused.expect)}</dd>,
+                  ]}
                   {focused.channel && [<dt key="ck">Channel</dt>, <dd key="cv">{focused.channel}</dd>]}
                   <dt>Origin</dt><dd>{originText(focused)}{focused.expect.origin ? ` (expected: ${focused.expect.origin.toLowerCase()})` : ''}</dd>
                   <dt>State</dt><dd>{stateText(focused)}</dd>

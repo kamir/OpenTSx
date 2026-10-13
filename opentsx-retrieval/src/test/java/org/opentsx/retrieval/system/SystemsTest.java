@@ -84,9 +84,19 @@ class SystemsTest {
         assertEquals(List.of("turbine-power-clean", "turbine-power-features", "park-power"), texts(power.path("usedBy")));
 
         JsonNode speed = signal(st, "park/T02/WMET.HorWdSpd");
-        assertEquals("raw-only", speed.path("state").asText());
-        assertEquals(List.of("prepare"), texts(speed.path("next")));
+        assertEquals("clean-not-running", speed.path("state").asText());
         assertEquals(70.0, speed.path("outOfRange").path("max").asDouble());
+        assertEquals("exogenous", speed.path("role").asText());
+        assertEquals(25.0, speed.path("expect").path("operating").path("max").asDouble());
+
+        // bound to the topic, but the server holds no series for it
+        JsonNode turbineState = signal(st, "park/T02/WTUR.TurSt");
+        assertEquals("bound-no-data", turbineState.path("state").asText());
+        assertEquals(List.of("check-source"), texts(turbineState.path("next")));
+
+        // what was generated is an observation; what was available is an estimate (15, section 9)
+        assertEquals("observation", signal(st, "park.p_gen_kw").path("role").asText());
+        assertEquals("estimate", signal(st, "park.p_avail_kw").path("role").asText());
 
         // derived: no raw grade; its origin is the worst of what its flow reads
         JsonNode avail = signal(st, "park.p_avail_kw");
@@ -114,9 +124,9 @@ class SystemsTest {
         assertEquals(5000.0, setpoint.path("grades").path("raw").path("source").path("value").asDouble());
 
         JsonNode counts = st.path("counts");
-        assertEquals(8, counts.path("signals").asInt());
-        assertEquals(2, counts.path("topic").asInt());
-        assertEquals(1, counts.path("derived").asInt());
+        assertEquals(10, counts.path("signals").asInt());
+        assertEquals(3, counts.path("topic").asInt());
+        assertEquals(2, counts.path("derived").asInt());
         assertEquals(1, counts.path("simulated").asInt());
         assertEquals(2, counts.path("manual").asInt());
         assertEquals(2, counts.path("open").asInt());
@@ -135,7 +145,7 @@ class SystemsTest {
             grid = a.path("id").asText().equals("grid") ? a : grid;
         }
         assertEquals("generation", park.path("type").asText());
-        assertEquals(2, park.path("channels").asInt());
+        assertEquals(3, park.path("channels").asInt());
         JsonNode avail = null;
         JsonNode limit = null;
         for (JsonNode in : park.path("inputs")) {
@@ -176,19 +186,18 @@ class SystemsTest {
     @Test
     void aCleanSeriesAFlowWroteCountsAlsoWhenTheDocumentDoesNotDeclareIt() {
         ObjectNode inv = windFarm();
-        // the workbench published the clean grade of the wind speed; the document only binds its raw grade
-        ObjectNode clean = series(inv, "fff", "wind.met.wind_speed", 2.4, 13.9);
-        ((ObjectNode) clean.get("tags")).put("system", "h2-chain").put("signal", "park/T02/WMET.HorWdSpd").put("turbine", "T02");
+        // the workbench published the clean grade of the turbine state; the document only binds its raw grade
+        ObjectNode clean = series(inv, "fff", "wind.turbine.state", 1, 4);
+        ((ObjectNode) clean.get("tags")).put("system", "h2-chain").put("signal", "park/T02/WTUR.TurSt").put("turbine", "T02");
         ((ObjectNode) clean.get("labels")).putArray("grade").add("clean");
         ((ObjectNode) clean.get("labels")).putArray("flow").add("wind-flow-19");
-        JsonNode speed = signal(SYSTEMS.signals("h2-chain", inv), "park/T02/WMET.HorWdSpd");
+        JsonNode speed = signal(SYSTEMS.signals("h2-chain", inv), "park/T02/WTUR.TurSt");
         assertEquals("clean", speed.path("state").asText());
         assertEquals(0, speed.path("next").size());
         JsonNode grade = speed.path("grades").path("clean");
         assertEquals(List.of("fff"), texts(grade.path("data").path("series")));
         assertEquals("wind-flow-19", grade.path("source").path("flow").asText());
         assertFalse(grade.path("source").path("declared").asBoolean(true));
-        // the raw gust of 70 m/s is still there, but the clean series is what is judged now
         assertFalse(speed.has("outOfRange"));
     }
 
@@ -196,7 +205,10 @@ class SystemsTest {
     void aServerThatReadsAnotherTopicHasNoDataForTheSignal() {
         ObjectNode inv = windFarm();
         ((ObjectNode) inv.path("source").path("topics")).put("episodes", "tsx.solar.episodes.v2");
-        assertEquals("bound-no-data", signal(SYSTEMS.signals("h2-chain", inv), "park/T02/WMET.HorWdSpd").path("state").asText());
+        // the wind speed has a flow declared for its clean grade; its raw data is not on this server
+        JsonNode speed = signal(SYSTEMS.signals("h2-chain", inv), "park/T02/WMET.HorWdSpd");
+        assertFalse(speed.path("grades").path("raw").has("data"));
+        assertEquals("clean-not-running", speed.path("state").asText());
     }
 
     @Test
@@ -211,12 +223,12 @@ class SystemsTest {
             assertEquals(200, list.statusCode());
             JsonNode first = JSON.readTree(list.body()).path("systems").get(0);
             assertEquals("h2-chain", first.path("system").asText());
-            assertEquals(8, first.path("counts").path("signals").asInt());
+            assertEquals(10, first.path("counts").path("signals").asInt());
             assertEquals(0, first.path("problems").asInt());
 
             HttpResponse<String> signals = http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/signals")).build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, signals.statusCode());
-            assertEquals(8, JSON.readTree(signals.body()).path("signals").size());
+            assertEquals(10, JSON.readTree(signals.body()).path("signals").size());
 
             assertEquals(200, http.send(HttpRequest.newBuilder(URI.create(base + "/h2-chain/plan")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
             assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(base + "/no-such/signals")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());

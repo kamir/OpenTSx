@@ -14,6 +14,7 @@ import {
   groupSignals,
   intervalText,
   isSynthetic,
+  operatingText,
   originText,
   parseStatus,
   scopeGrade,
@@ -79,6 +80,12 @@ describe('words for a signal', () => {
     expect(expectText({})).toBe('not stated');
     expect(intervalText('PT1H30M')).toBe('1 h 30 min');
     expect(intervalText('P1D')).toBe('P1D');
+  });
+
+  it('keeps what the sensor can deliver apart from what operation gives', () => {
+    expect(operatingText({ unit: 'm/s', min: 0, max: 60, operating: { min: 0, max: 25 } })).toBe('0..25 m/s');
+    expect(operatingText({ unit: 'kW', operating: { max: 3300 } })).toBe('up to 3,300 kW');
+    expect(operatingText({ unit: 'kW', min: 0, max: 60 })).toBe('');
   });
 
   it('never lets simulated data look like a measurement', () => {

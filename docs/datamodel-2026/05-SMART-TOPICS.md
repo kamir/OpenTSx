@@ -175,6 +175,25 @@ KafScale hat keine Compaction. Leser nehmen deshalb je (seriesId, ts, horizon, k
   * Auf dem KafScale-Topic `…smart.<name>.models.v2` erscheinen nur **Ereignisse** („Version x ist Champion für …“).
     Sie dienen Nachvollziehbarkeit und Replay; die Registry selbst bleibt MLflow.
 
+## 5a. Freigabe eines Modells für einen Zweck (Entwurf)
+
+> Stand: 2026-10-13, aus dem Review-Briefing in [15](15-ENTSCHEIDUNGSKREIS.md), Abschnitt 7. Nicht umgesetzt.
+
+Die Auswahl in Abschnitt 5 (`select: { by: MAE, mustBeat: persistence }`) sagt, welches Modell das beste der
+Kandidaten ist. Sie sagt nicht, ob es für eine bestimmte Entscheidung trägt. Dafür deklariert die Entscheidungskarte
+(`opentsx.decision.v1`) je Analyse:
+
+* die **Eingänge** als Signale mit Güte, höchstem Alter und zulässiger Herkunft. Die Spezifikation bekommt dafür
+  `target.signal` neben der Auswahl nach Metrik und Tags; ihr eigenes `resample` entfällt, wenn das Signal bereinigt
+  vorliegt,
+* den **Gültigkeitsbereich**: den Bereich der Eingänge, in dem das Modell geprüft ist,
+* den **Nachweis**: Zeitraum, Kennzahl, Vergleich mit der Referenz, und ob er auf erzeugten Daten beruht,
+* die **Unsicherheit** und die Breite, ab der ein Ergebnis die Entscheidung nicht mehr trägt.
+
+Jedes Ergebnis trägt daraus einen Verwendbarkeitsstatus (verwendbar, eingeschränkt, gesperrt) mit Gründen. Ein
+Ergebnis außerhalb des Gültigkeitsbereichs wird gezeigt und als nicht gestützt gekennzeichnet. Vollständige Herkunft
+der Eingänge ist Voraussetzung, kein Beleg für Güte.
+
 ## 6. Prediction-API
 
 ```java

@@ -1,13 +1,20 @@
 # System document, schema opentsx.system.v1 (docs/datamodel-2026/schemas). Concept:
-# docs/datamodel-2026/14-ENGINEERING-FLOW.md. Read by the retrieval server (--systems) and checked in the build.
+# docs/datamodel-2026/14-ENGINEERING-FLOW.md and 15-ENTSCHEIDUNGSKREIS.md. Read by the retrieval server (--systems)
+# and checked in the build.
 #
-# The plan is the twin scenario h2-chain. Its six inputs bound from outside are signals a person has to provide.
-# The wind farm stands on the data of the simulator scenario ostsee-demo in tsx.wind.episodes.v2, which is why its
-# origin is SYNTHETIC. One turbine of six is written out; a template for all assets of a kind is not part of the
-# draft. opentsx-market has price sources; this example assumes none is connected, to show a simulated signal.
+# The plan is the twin scenario h2-chain. Nine of its inputs come from outside; six have a signal here, three do not
+# (offtake.valve, grid.p_self_kw, grid.p_grid_meas_kw). The wind farm stands on the data of the simulator scenario
+# ostsee-demo in tsx.wind.episodes.v2, which is why its origin is SYNTHETIC. One turbine of six is written out; a
+# template for all assets of a kind is not part of the format. opentsx-market has price sources; this document
+# assumes none is connected, to show a simulated signal.
+#
+# Actual generation and available power are two quantities (15, section 9): the turbines measure what was generated,
+# and under curtailment that is less than what the wind would give. The available power is an estimate from the wind
+# speed; the sum of the measured power is an observation of the output of the park and serves the comparison with
+# what the twin computes.
 schema: opentsx.system.v1
 system: h2-chain
-version: 1
+version: 2
 title: Wasserstoffkette am Windpark
 example: true
 domain: wind
@@ -20,7 +27,10 @@ signals:
   # ---- sensor channels below the atom "park" (asset h2-chain/park/T02 of the inventory)
   - id: park/T02/WTUR.W
     title: Wirkleistung WEA T02
+    role: observation
+    meaning: Active power the turbine actually fed in; lower than the wind would give while the turbine is curtailed.
     channel: wind/WTUR.W
+    expect: { operating: { min: 0, max: 3300 } }
     raw:
       source:
         kind: topic
@@ -34,51 +44,89 @@ signals:
       names: [lag_1, lag_10, mean_1h, std_1h]
   - id: park/T02/WMET.HorWdSpd
     title: Windgeschwindigkeit WEA T02
+    role: exogenous
+    meaning: Horizontal wind speed at hub height, measured on the nacelle behind the rotor.
     channel: wind/WMET.HorWdSpd
+    expect: { operating: { min: 0, max: 25 } }
     raw:
       source:
         kind: topic
         topic: tsx.wind.episodes.v2
         origin: SYNTHETIC
         select: { metric: wind.met.wind_speed, tags: { turbine: T02 } }
-    # raw only: the preparation is open
+    clean:
+      source: { kind: flow, flow: wind-speed-clean, output: clean }
+  - id: park/T02/WTUR.TurSt
+    title: Betriebszustand WEA T02
+    role: observation
+    meaning: Operating state of the turbine; needed to tell a turbine that stands still from one that has no wind.
+    channel: wind/WTUR.TurSt
+    raw:
+      source:
+        kind: topic
+        topic: tsx.wind.episodes.v2
+        origin: SYNTHETIC
+        select: { metric: wind.turbine.state, tags: { turbine: T02 } }
 
-  # ---- inputs of the plan (the id is the port)
-  - id: park.p_avail_kw
-    title: Verfügbare Leistung des Windparks
-    expect: { unit: kW, min: 0, max: 12000, interval: PT1M, kind: ANALOG, origin: MEASURED }
+  # ---- ports of the plan (the id is the port)
+  - id: park.p_gen_kw
+    title: Tatsächliche Erzeugung des Windparks
+    role: observation
+    meaning: Power the park actually generated after curtailment. An output of the plan; the measurement is compared with what the twin computes.
+    expect: { unit: kW, min: -600, max: 13000, interval: PT1M, kind: ANALOG, origin: MEASURED, operating: { min: 0, max: 12000 } }
     clean:
       source: { kind: flow, flow: park-power, output: sum }
+  - id: park.p_avail_kw
+    title: Verfügbare Leistung des Windparks
+    role: estimate
+    meaning: Power the park could generate with the wind there is, without curtailment. Not measurable while curtailed; estimated from the wind speed.
+    expect: { unit: kW, min: 0, max: 12000, interval: PT1M, kind: ANALOG, origin: ESTIMATED }
+    clean:
+      source: { kind: flow, flow: park-potential, output: potential }
   - id: market.price_eur_mwh
     title: Strompreis
-    expect: { unit: EUR/MWh, min: -500, max: 3000, interval: PT15M, kind: ANALOG, origin: REPORTED }
+    role: exogenous
+    meaning: Day-ahead price of the quarter hour.
+    expect: { unit: EUR/MWh, min: -500, max: 3000, interval: PT15M, kind: ANALOG, origin: REPORTED, operating: { min: 0, max: 250 } }
     raw:
       source:
         kind: generator
         processor: gen.ou
         seed: 7
         params: { mean: 62.8, reversion: 0.08, sigma: 9.0 }
-    note: Kein Marktdaten-Topic angebunden; simuliert, bis eines da ist.
+    note: Kein Marktdaten-Topic angebunden. gen.ou ist ein Demo-Generator, kein Szenariomodell; Ergebnisse darauf taugen nicht für den Vergleich von Strategien.
   - id: offtake.demand_kgph
     title: Wasserstoffbedarf des Abnehmers
+    role: exogenous
+    meaning: Hydrogen the offtaker asks for.
     expect: { unit: kg/h, min: 0, max: 120, interval: PT1M, kind: ANALOG, origin: REPORTED }
     # open: no source
   - id: ely.setpoint_kw
     title: Sollwert Elektrolyseur
+    role: command
+    meaning: Electrical power the electrolyser is asked to draw.
     expect: { unit: kW, min: 0, max: 5000, interval: PT1M, kind: ANALOG, origin: REPORTED }
     raw:
       source: { kind: manual, value: 5000, origin: REPORTED }
   - id: battery.power_kw
     title: Fahrplan Batterie
+    role: command
+    meaning: Power the battery is asked to charge (negative) or discharge (positive).
     expect: { unit: kW, min: -1000, max: 1000, interval: PT1M, kind: ANALOG, origin: REPORTED }
     raw:
       source: { kind: manual, value: 0, origin: REPORTED }
   - id: marketer.schedule_kw
     title: Fahrplan Direktvermarktung
+    role: command
+    meaning: Feed-in announced to the direct marketer for the quarter hour.
     expect: { unit: kW, min: 0, max: 12000, interval: PT15M, kind: ANALOG, origin: REPORTED }
     # open: no source
 
 flows:
   - { id: turbine-power-clean, ref: systems/flows/turbine-power-clean.flow.yaml }
   - { id: turbine-power-features, ref: systems/flows/turbine-power-features.flow.yaml }
+  - { id: wind-speed-clean, ref: systems/flows/wind-speed-clean.flow.yaml }
   - { id: park-power, ref: systems/flows/park-power.flow.yaml }
+  - { id: park-potential, ref: systems/flows/park-potential.flow.yaml }
+decisions:
+  - { id: h2-dispatch, ref: systems/decisions/h2-dispatch.decision.yaml }
