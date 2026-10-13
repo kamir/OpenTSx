@@ -17,6 +17,8 @@ export interface FlowState {
   track: string;
   domain: string;
   sourceTopic: string;
+  /** Ids of the series read from the source topic (set when the bucket comes from the TS inventory); empty for all. */
+  sourceSeries: string[];
   source: Bucket | null;
   sourceInfo: SourceInfo | null;
   nodes: FlowNode[];
@@ -28,6 +30,7 @@ export interface FlowState {
   setTrack: (track: string) => void;
   setDomain: (domain: string) => void;
   setSourceTopic: (topic: string) => void;
+  setSourceSeries: (ids: string[]) => void;
   loadBucket: (bucket: Bucket, info: SourceInfo) => void;
   select: (id: string) => void;
   applyOp: (opId: string, params?: Params) => string | null;
@@ -137,6 +140,7 @@ export const useFlow = create<FlowState>((set, get) => ({
   track: 'EXP2',
   domain: 'lab',
   sourceTopic: 'tsx.lab.observations.v2',
+  sourceSeries: [],
   source: null,
   sourceInfo: null,
   nodes: [],
@@ -152,6 +156,7 @@ export const useFlow = create<FlowState>((set, get) => ({
         s.sourceTopic === `tsx.${slug(s.domain)}.observations.v2` ? `tsx.${slug(domain)}.observations.v2` : s.sourceTopic,
     })),
   setSourceTopic: (sourceTopic) => set({ sourceTopic }),
+  setSourceSeries: (sourceSeries) => set({ sourceSeries }),
 
   loadBucket: (bucket, info) => {
     cache.clear();
@@ -168,6 +173,7 @@ export const useFlow = create<FlowState>((set, get) => ({
     set({
       source: bucket,
       sourceInfo: info,
+      sourceSeries: [],
       nodes: [{ id: SOURCE_ID, op: 'source', params: {}, input: null, label: bucket.name }],
       selectedId: SOURCE_ID,
       counter: 0,
@@ -259,6 +265,9 @@ export const useFlow = create<FlowState>((set, get) => ({
       track: typeof definition.track === 'string' ? definition.track : get().track,
       domain: typeof definition.domain === 'string' ? definition.domain : get().domain,
       sourceTopic: typeof definition.sourceTopic === 'string' ? definition.sourceTopic : get().sourceTopic,
+      sourceSeries: Array.isArray(definition.sourceSeries)
+        ? definition.sourceSeries.filter((i): i is string => typeof i === 'string' && /^[A-Za-z0-9_.-]+$/.test(i))
+        : [],
       source: null,
       sourceInfo: null,
       nodes,
@@ -315,13 +324,17 @@ function parseNodes(raw: unknown): FlowNode[] | null {
   return nodes;
 }
 
+/** What the exports read of the flow. */
+export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & { sourceSeries?: string[] };
+
 /** The flow as stored in the backend: the node list plus the rendered DAG for readers without the workbench. */
-export function toDefinition(s: Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'>): Record<string, unknown> {
+export function toDefinition(s: FlowDoc): Record<string, unknown> {
   return {
     kind: WORKBENCH_KIND,
     track: s.track,
     domain: s.domain,
     sourceTopic: s.sourceTopic,
+    sourceSeries: s.sourceSeries ?? [],
     nodes: s.nodes,
     edges: s.nodes.flatMap((n) => inputsOf(n).map((i) => ({ id: `${i}-${n.id}`, source: i, target: n.id }))),
     dag: toDagYaml(s),
@@ -406,6 +419,26 @@ export interface Finding {
   text: string;
 }
 
+/**
+ * Why the retrieval server cannot run the flow, or null when it can. Its runtime executes align.vector on the series
+ * of the source topic and nothing else (docs/datamodel-2026/11, section 5a).
+ */
+export function runBlocker(nodes: FlowNode[]): string | null {
+  const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
+  if (vectors.length === 0) return 'Publish an "Align to vector" node first: the runtime writes vector topics only.';
+  for (const v of vectors) {
+    const other = inputsOf(v).find((i) => i !== SOURCE_ID);
+    if (other) {
+      const label = nodes.find((n) => n.id === other)?.label ?? other;
+      return `${v.label} reads ${label}. The runtime executes vectors built from the source bucket only; operators before the vector need the stream processor, which does not exist yet.`;
+    }
+    if (!/^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? '')) {
+      return `Topic ${v.sinkTopic} must have the form tsx.<domain>.smart.<name>.vectors.v1.`;
+    }
+  }
+  return null;
+}
+
 /** Checks whether the flow can be handed over as a Smart Topic definition. */
 export function validate(nodes: FlowNode[]): Finding[] {
   const out: Finding[] = [];
@@ -445,7 +478,7 @@ export function validate(nodes: FlowNode[]): Finding[] {
 }
 
 /** The flow as opentsx.dag.v1 (docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5). */
-export function toDagYaml(s: Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'>): string {
+export function toDagYaml(s: FlowDoc): string {
   const sinks = s.nodes.filter((n) => n.sinkTopic);
   const keep = new Set<string>();
   for (const sink of sinks) for (const n of upstream(s.nodes, sink.id)) keep.add(n.id);
@@ -458,6 +491,7 @@ export function toDagYaml(s: Pick<FlowState, 'track' | 'domain' | 'sourceTopic' 
     'source:',
     '  kind: kafscale-broker',
     `  topics: [${yamlScalar(s.sourceTopic)}]`,
+    ...(s.sourceSeries && s.sourceSeries.length > 0 ? [`  series: [${s.sourceSeries.map(yamlScalar).join(', ')}]`] : []),
     'checkpoint: { backend: file }',
     'nodes:',
     '  - id: decode',

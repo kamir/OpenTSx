@@ -23,6 +23,7 @@ import {
   relabel,
   scenarioEvents,
   tagFacets,
+  topicOf,
   windowError,
 } from './inventory';
 import { parseEpisodes } from './loaders';
@@ -37,6 +38,8 @@ export interface InventoryLoad {
   /** Topic the series were read from, when the server reads a log. */
   topic?: string;
   domain?: string;
+  /** Ids of the loaded series in the source topic. */
+  seriesIds: string[];
   detail: string;
 }
 
@@ -184,11 +187,12 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const name = bucketName(selection);
       const bucket = relabel(parseEpisodes(await res.json(), name), selection, name);
-      const topic = inv.source.topics.episodes;
+      const topic = topicOf(inv, selection);
       onLoad({
         bucket,
         topic,
         domain: inv.source.domain,
+        seriesIds: selection.map((s) => s.seriesId),
         detail: `${topic ?? inv.source.kind}, ${selection.length} series, ${clock(options.from, true)} to ${clock(options.to, true)} UTC${options.resample ? `, ${options.agg} per ${options.resample}` : ''}`,
       });
     } catch (e) {
@@ -229,6 +233,9 @@ export default function InventoryDialog({ base, onBase, onLoad, onClose }: Props
             </span>
             {(scenarioLine(inv.scenario) || inv.totals.scenarios.length > 0) && (
               <span>Scenario: {scenarioLine(inv.scenario) || inv.totals.scenarios.join(', ')}</span>
+            )}
+            {(inv.source.vectorTopics ?? []).length > 0 && (
+              <span>Smart Topics (vectors): {(inv.source.vectorTopics ?? []).join(', ')}. Their components are the series with the tag "vector".</span>
             )}
             {inv.source.truncated && <span className="warn">The server holds only a part of the topic (its episode limit was reached).</span>}
           </div>

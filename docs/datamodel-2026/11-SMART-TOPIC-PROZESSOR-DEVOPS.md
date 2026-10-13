@@ -180,9 +180,12 @@ Regeln:
 
 ## 5a. Vektor-Messpunkte: `align.vector` und `opentsx.vector.v1` (Entwurf)
 
-> Stand: Entwurf vom 2026-10-13. Umgesetzt ist die Semantik in der Web-Workbench (`opentsx-saas-frontend`,
-> `src/workbench/vector.ts`, mit Tests). Eine Stream-Laufzeit, die den Operator ausführt und das Topic schreibt,
-> gibt es noch nicht. Das Nachrichtenformat ist JSON; eine Avro-Fassung ist offen.
+> Stand: Entwurf vom 2026-10-13. Den Operator gibt es zweimal: in der Web-Workbench (`opentsx-saas-frontend`,
+> `src/workbench/vector.ts`) und in Java (`opentsx-retrieval`, `VectorAligner`). Beide bestehen dieselben
+> Testvektoren ([`testvectors/align-vector.v1.json`](testvectors/align-vector.v1.json)). Der Retrieval-Server führt
+> Vektor-Sinks als **Einmal-Lauf** aus und schreibt das Topic (`POST /v1/dags/run`, siehe unten). Eine
+> Stream-Laufzeit, die fortlaufend rechnet, gibt es noch nicht. Das Nachrichtenformat ist JSON; eine Avro-Fassung
+> ist offen.
 
 **Wozu.** Ein Sink schreibt bisher das Ergebnis genau eines Knotens, und jede Nachricht trägt einen Wert einer
 Reihe. Wer "alle Werte zum Zeitpunkt t" braucht (Modell-Eingang, Zustandsvektor einer Anlage, Vergleich von Roh- und
@@ -208,7 +211,7 @@ sinks:
 | Begriff | Regel |
 |---------|-------|
 | **Takt** (`every`) | Ticks sind Vielfache von `every` seit 1970-01-01T00:00:00Z. Tick *k* deckt das halboffene Intervall [k · every, (k + 1) · every). Der Takt hängt damit nicht vom ersten Messwert ab; zwei Läufe und zwei Laufzeiten schneiden gleich. |
-| **Komponente** | Jeder Eingang (`in`) ist eine Komponente, benannt über `names`. Ihr Wert im Tick ist das Aggregat (`agg`: `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM`, `COUNT`) der Werte des Eingangs im Tick; NaN zählt nicht. Trägt ein Eingang je Schlüssel mehrere Reihen, entsteht je Reihe eine Komponente `<name>.<metrik>` (bei nur einem Eingang ohne Präfix). |
+| **Komponente** | Jeder Eingang (`in`) ist eine Komponente, benannt über `names`. Ihr Wert im Tick ist das Aggregat (`agg`: `MEAN`, `LAST`, `FIRST`, `MIN`, `MAX`, `SUM`, `COUNT`) der Werte des Eingangs im Tick; NaN zählt nicht. Trägt ein Eingang je Schlüssel mehrere Reihen, entsteht je Reihe eine Komponente `<name>.<metrik>` (bei nur einem Eingang ohne Präfix), in Namensordnung. Die Reihenfolge hängt so nicht davon ab, in welcher Folge die Reihen eintreffen. |
 | **Schlüssel** (`key`) | Was zusammen einen Vektor bildet. `series`: dieselbe Reihe (seriesId) in allen Eingängen. Ein Tag-Name wie `turbine`: alle Reihen mit demselben Wert dieses Tags, also verschiedene Kanäle einer Anlage. `all`: alles in einem Vektor. |
 | **Fehlende Werte** | Eine Komponente ohne Wert im Tick ist `null`. Mit `fill: as-of` übernimmt sie den letzten Wert, wenn er nicht älter als `maxAge` ist (dieselbe Regel wie die Kontext-Joins in 05). |
 | **Ausgabe** (`emit`) | `any`: ein Messpunkt, sobald mindestens eine Komponente einen Wert hat. `complete`: nur Ticks, in denen alle Komponenten einen Wert haben. |
@@ -236,7 +239,22 @@ eine feste Ordnung, und ein Modell liest ihn ohne Namensauflösung. Die Liste `c
 Nachricht, damit ein Leser ohne DAG auskommt. Der Kafka-Schlüssel der Nachricht ist der kanonische Text von `key`,
 damit alle Messpunkte einer Anlage in einer Partition und in Zeitordnung liegen.
 
-**Für eine Laufzeit folgt daraus:**
+**Einmal-Lauf im Retrieval-Server.** Mit `--kafscale` und `--dag-runs true` nimmt der Retrieval-Server unter
+`POST /v1/dags/run` einen DAG als YAML entgegen. Er rechnet dessen Vektor-Sinks über die Episoden, die er aus
+`tsx.<domain>.episodes.v2` im Speicher hält, und hängt die Messpunkte an das Sink-Topic an (eine Partition,
+Kafka-Schlüssel = `key`, Provenienz mit DAG-Name und Hash des Dokuments). Danach liest er das Topic zurück: Jede
+Komponente erscheint im TS-Inventar als Reihe `smart.<name>.<komponente>` mit dem Tag `vector=<name>` und lässt
+sich wie jede andere Reihe laden.
+
+| Punkt | Regel des Einmal-Laufs |
+|-------|------------------------|
+| Was läuft | `align.vector`, dessen Eingänge alle direkt die Quelle sind (`in: [decode]`). Steht ein anderer Operator davor, lehnt der Server den DAG ab und nennt den Knoten. |
+| Welche Reihen | `source.series` nennt die Reihen (seriesId) des Quell-Topics; fehlt die Angabe, alle. Die Workbench schreibt die im Inventar gewählten Reihen hinein. |
+| Sink | nur `tsx.<domain>.smart.<name>.vectors.v1` der Domäne des Servers; das Topic wird bei Bedarf angelegt. |
+| Wiederholung | Ein zweiter Lauf hängt erneut an (KafScale kompaktiert nicht). Beim Lesen gilt je Schlüssel und Tick der spätere Messpunkt. Messpunkte eines früheren Laufs mit anderem Takt oder anderen Komponenten zählen nicht zur Reihe. |
+| Grenzen | höchstens 500000 Messpunkte je Lauf; kein Checkpoint, kein Folgen des Quell-Topics; die Schnittstelle hat **keine Anmeldung**, also nur in vertrauenswürdigen Netzen einschalten. |
+
+**Für eine Stream-Laufzeit folgt aus den Regeln:**
 
 * **Zustand:** je Schlüssel und Komponente das Aggregat des offenen Ticks und der letzte Wert mit Zeit (für
   `as-of`). Das ist beschränkt und kommt in den Checkpoint wie bei `stats.welford-ddsketch`.
@@ -260,7 +278,7 @@ damit alle Messpunkte einer Anlage in einer Partition und in Zeitordnung liegen.
 | `dq.checks` | ja | ja | – | Golden Files |
 | `segment.threshold`, `segment.extremum` (inkrementell) | ja | ja (`opentsx-retrieval`) | – | Streaming = Batch, Testsuite vorhanden |
 | `resample` | ja | ja | – | Golden Files |
-| `align.vector` (Abschnitt 5a) | geplant | geplant | n/a | Referenz ist die Workbench (TypeScript, `vector.test.ts`); gemeinsame Testvektoren offen |
+| `align.vector` (Abschnitt 5a) | geplant | ja, als Einmal-Lauf (`opentsx-retrieval`, `VectorAligner`) | n/a | **gemeinsame Testvektoren vorhanden** (Java und TypeScript, `testvectors/align-vector.v1.json`) |
 | `score.onnx` | ja (onnxruntime über cgo) **oder** reine Go-Modelle (linear, ES, konforme Intervalle) | ja (ONNX Runtime) | Training | Toleranz statt Bytegleichheit (Fließkomma) |
 | `train.trigger` | ja | ja | – | – |
 | `twin.step` (Zwilling) | später, für Variante L | ja (`opentsx-twin`) | – | L(0) = T |
@@ -323,12 +341,14 @@ Historie sucht, optimiert oder lernt, bleibt in Java oder Python und wird angest
 | D28 | Training | nie im Strom; `train.trigger` → Trainingsanfrage → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
 | D29 | Semantik | at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen statt Verwerfen |
 | D37 | Vektor-Messpunkte | `align.vector` als Operator mit mehreren Eingängen, Nachricht `opentsx.vector.v1`, Takt an der Epoche ausgerichtet, Werte als geordnete Liste (Abschnitt 5a) |
+| D38 | Erste Ausführung | Vektor-Sinks laufen als Einmal-Lauf im Retrieval-Server (Java), bis es den Stream-Prozessor gibt; Parität über gemeinsame Testvektoren (Abschnitt 5a) |
 
 ## 11. Offene Punkte
 
 * **Vektor-Messpunkte (5a):** Avro-Fassung von `opentsx.vector.v1` und ihr Platz im Modell v2; Qualitätsbyte je
-  Komponente statt nur `null`; Einheiten der Komponenten (heute nur in der Workbench bekannt); gemeinsame
-  Testvektoren für Go, Java und TypeScript; Vektoren über mehrere Quell-Topics.
+  Komponente statt nur `null`; Einheiten der Komponenten (heute nur in der Workbench bekannt); die Testvektoren
+  auch für Go; Vektoren über mehrere Quell-Topics; fortlaufender Betrieb mit Checkpoint statt Einmal-Lauf;
+  Anmeldung für `POST /v1/dags/run`.
 * **Latenz:** Reichen Sekunden bis Minuten (nur abgeschlossene Segmente)? Sonst ist der Broker-Eingang (Kafka-Protokoll)
   für den Go-Prozessor der Standard.
 * **ONNX in Go:** onnxruntime über cgo (größere Images, plattformabhängig) oder zunächst nur reine Go-Modelle

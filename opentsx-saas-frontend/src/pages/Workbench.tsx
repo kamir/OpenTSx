@@ -17,6 +17,7 @@ import {
   descendants,
   evaluate,
   inputsOf,
+  runBlocker,
   toDagYaml,
   toDefinition,
   toJavaCode,
@@ -356,8 +357,28 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-function SmartTopic({ node }: { node: FlowNode }) {
+interface RunResult {
+  sinks: { topic: string; records: number; keys: number; series: number; missingValues: number; components: string[]; from?: string; to?: string }[];
+  skipped: string[];
+}
+
+function SmartTopic({ node, base }: { node: FlowNode; base: string }) {
   const state = useFlow();
+  const [run, setRun] = useState<{ busy: boolean; result?: RunResult; error?: string }>({ busy: false });
+  const blocker = runBlocker(state.nodes);
+
+  const runOnce = async () => {
+    const url = `${base.replace(/\/$/, '')}/v1/dags/run`;
+    setRun({ busy: true });
+    try {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/yaml' }, body: toDagYaml(useFlow.getState()) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+      setRun({ busy: false, result: body as RunResult });
+    } catch (e) {
+      setRun({ busy: false, error: `The run failed at ${url}: ${e instanceof Error ? e.message : e}` });
+    }
+  };
   const sinks = state.nodes.filter((n) => n.sinkTopic);
   const findings = validate(state.nodes);
   const blocked = findings.some((f) => f.level === 'error');
@@ -417,13 +438,37 @@ function SmartTopic({ node }: { node: FlowNode }) {
       </button>
       <p className="wb-muted">
         The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
-        a proposal; nothing in this repository runs the file yet, so this step hands it over and does not deploy.
+        a proposal; the download hands the file over and does not deploy.
       </p>
+      <fieldset>
+        <legend>Run on KafScale</legend>
+        <p className="wb-muted">
+          The retrieval server can run vector sinks once over the episodes it holds and append the measuring points to
+          their topic. It is one pass, not a processor that keeps running; a second run appends again and the later
+          measuring point wins. The topic then shows in the TS inventory.
+        </p>
+        <button className="wb-primary" disabled={!!blocker || blocked || run.busy} onClick={runOnce}>
+          {run.busy ? 'Running' : 'Run once and write to KafScale'}
+        </button>
+        {blocker && <p className="wb-muted">{blocker}</p>}
+        {run.error && <div className="wb-error" role="alert">{run.error}</div>}
+        {run.result && (
+          <ul className="wb-findings" role="status">
+            {run.result.sinks.map((s) => (
+              <li key={s.topic} className="ok">
+                <b>Written</b> {s.records.toLocaleString('en')} measuring points for {s.keys} key(s) from {s.series} series to{' '}
+                <code>{s.topic}</code>; components {s.components.join(', ')}; {s.missingValues} missing values. Open the TS inventory to load them.
+              </li>
+            ))}
+            {run.result.skipped.map((s) => <li key={s} className="info"><b>Skipped</b> {s}</li>)}
+          </ul>
+        )}
+      </fieldset>
     </div>
   );
 }
 
-function Inspector() {
+function Inspector({ base }: { base: string }) {
   const [tab, setTab] = useState('props');
   const state = useFlow();
   const node = state.nodes.find((n) => n.id === state.selectedId);
@@ -455,7 +500,7 @@ function Inspector() {
         ) : tab === 'dag' ? (
           <CodeBlock text={toDagYaml(state)} file={`${state.domain}-${state.track}.dag.yaml`} mime="text/yaml" />
         ) : (
-          <SmartTopic node={node} />
+          <SmartTopic node={node} base={base} />
         )}
       </div>
     </aside>
@@ -579,6 +624,9 @@ export default function Workbench() {
     }
     setError(null);
     loadBucket(l.bucket, { kind: 'inventory', detail: l.detail });
+    // the DAG then names the series it reads, so a runtime works on the same selection
+    if (l.topic) useFlow.getState().setSourceSeries(l.seriesIds);
+    else if (l.domain) setStatus('The selection spans several topics: the flow keeps its source topic.');
     setInventoryOpen(false);
   };
 
@@ -686,7 +734,7 @@ export default function Workbench() {
           </section>
         </div>
 
-        <Inspector />
+        <Inspector base={remote.base} />
       </main>
 
       <footer className="wb-status">
