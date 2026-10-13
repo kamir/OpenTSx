@@ -522,12 +522,12 @@ class VectorProcessorTest {
                     in: [decode]
                     params: { steps: 1 }
                 sinks:
-                  - { from: n1, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park.p_avail_kw, grade: clean, metric: h2-chain.park.p_avail_kw }, origin: ESTIMATED, madeOf: "park/T01/WMET.HorWdSpd@clean (SYNTHETIC)" }
+                  - { from: n1, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park.p_potential_kw, grade: clean, metric: h2-chain.park.p_potential_kw }, origin: ESTIMATED, madeOf: "park/T01/WMET.HorWdSpd@clean (SYNTHETIC)" }
                   - { from: lag_1, topic: tsx.wind.features.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park/T01/WMET.HorWdSpd, grade: features } }
                 """.formatted(clean.getSeriesId()));
         try (VectorProcessor p = processor(state)) {
             steps(p, 5);
-            assertEquals(Map.of("wind-flow-9/park.p_avail_kw", "running", "wind-flow-9/park-T01-WMET.HorWdSpd--lag_1", "running"), p.states());
+            assertEquals(Map.of("wind-flow-9/park.p_potential_kw", "running", "wind-flow-9/park-T01-WMET.HorWdSpd--lag_1", "running"), p.states());
         }
         org.opentsx.model.v2.Episode estimate = null;
         org.opentsx.model.v2.Episode feature = null;
@@ -541,8 +541,8 @@ class VectorProcessorTest {
             }
         }
         // the estimate is a series of its own: the metric of the port, no tags of the sensor it was made of
-        assertEquals("h2-chain.park.p_avail_kw", estimate.getSeries().getMetric());
-        assertEquals("{grade=clean, signal=park.p_avail_kw, system=h2-chain}", new TreeMap<>(estimate.getSeries().getTags()).toString());
+        assertEquals("h2-chain.park.p_potential_kw", estimate.getSeries().getMetric());
+        assertEquals("{grade=clean, signal=park.p_potential_kw, system=h2-chain}", new TreeMap<>(estimate.getSeries().getTags()).toString());
         assertEquals("kW", estimate.getSeries().getUnit());
         assertEquals("ESTIMATED", estimate.getLabels().get("origin"));
         assertEquals("park/T01/WMET.HorWdSpd@clean (SYNTHETIC)", estimate.getLabels().get("madeOf"));

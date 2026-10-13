@@ -15,9 +15,13 @@ bin/opentsx twin                     # scenario S1 in shadow, what-if and foreca
 bin/opentsx twin --plan my-site.yaml
 ```
 
-Scenario S1, the H2 chain: the hydrogen offtake closes its valve at 01:00. The line fills up, and the twin warns
-when less than an hour of buffer is left. At 40 bar the electrolyzer shuts down to protect itself. Its schedule is
-then violated, and the direct marketer has to sell about 5 MW more.
+Scenario S1, the H2 chain: the electrolyzer feeds a compressor, a high-pressure buffer, a pipeline and a handover
+station (this order is an assumption; no real plant stands behind it). The handover station closes its valve at
+01:00. The regulator stops feeding the pipeline, the buffer fills up, and the twin warns when less than an hour of
+buffer is left. At 200 bar the electrolyzer shuts down to protect itself. Its schedule is then violated, and the
+direct marketer has to sell about 5 MW more. The first form of the scenario, where the line is the only buffer, is
+kept for the tests (`src/test/resources/twin/h2-chain-1.yaml`); its atoms `generation`, `h2-line` and `h2-offtake`
+stay in the catalog.
 
 The what-if reopens the valve at 02:00, which avoids the shutdown. The forecast from 01:10 compares two policies
 for the electrolyzer: following its schedule, and `pressure-aware`. The `pressure-aware` policy avoids the shutdown

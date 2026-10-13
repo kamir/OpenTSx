@@ -1,0 +1,100 @@
+{
+  "type" : "record",
+  "name" : "H2CompressorSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one h2-compressor atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "H2CompressorState",
+      "doc" : "State variables of h2-compressor",
+      "fields" : [ {
+        "name" : "h2_kg",
+        "type" : "double"
+      }, {
+        "name" : "energy_kwh",
+        "type" : "double"
+      }, {
+        "name" : "over",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "H2CompressorOutputs",
+      "doc" : "Output ports of h2-compressor",
+      "fields" : [ {
+        "name" : "m_out_kgph",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kg/h]"
+      }, {
+        "name" : "p_el_kw",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kW]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "H2CompressorControls",
+      "doc" : "Controls of h2-compressor overridden by interventions (null: policy decides)",
+      "fields" : [ ]
+    }
+  } ],
+  "opentsx.atomType" : "h2-compressor",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "m_in_kgph",
+    "kind" : "FLOW",
+    "unit" : "kg/h"
+  }, {
+    "name" : "p_out_bar",
+    "kind" : "SIGNAL",
+    "unit" : "bar"
+  } ]
+}

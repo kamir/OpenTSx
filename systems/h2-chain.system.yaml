@@ -2,19 +2,21 @@
 # docs/datamodel-2026/14-ENGINEERING-FLOW.md and 15-ENTSCHEIDUNGSKREIS.md. Read by the retrieval server (--systems)
 # and checked in the build.
 #
-# The plan is the twin scenario h2-chain. Nine of its inputs come from outside; six have a signal here, three do not
-# (offtake.valve, grid.p_self_kw, grid.p_grid_meas_kw). The wind farm stands on the data of the simulator scenario
+# The plan is the twin scenario h2-chain in its second form (compressor, high-pressure buffer, pipeline with two
+# pressures, handover station; the order is an assumption, see the plan). Nine of its inputs come from outside, and
+# each has a signal here; three of the signals are open. The wind farm stands on the data of the simulator scenario
 # ostsee-demo in tsx.wind.episodes.v2, which is why its origin is SYNTHETIC. One turbine of six is written out; a
 # template for all assets of a kind is not part of the format. opentsx-market has price sources; this document
 # assumes none is connected, to show a simulated signal.
 #
-# Actual generation and available power are two quantities (15, section 9): the turbines measure what was generated,
-# and under curtailment that is less than what the wind would give. The available power is an estimate from the wind
-# speed; the sum of the measured power is an observation of the output of the park and serves the comparison with
-# what the twin computes.
+# The park has three powers (15, section 13.2). The potential is what the weather would give, before any
+# restriction: an estimate from the wind speed and an input of the plan. The available power is what may be
+# generated after the operating rules, and the generated power what runs after the dispatch: both are outputs the
+# twin computes. The turbines measure what was generated; the sum of the measured power is an observation of that
+# output and serves the comparison with the twin.
 schema: opentsx.system.v1
 system: h2-chain
-version: 2
+version: 3
 title: Wasserstoffkette am Windpark
 example: true
 domain: wind
@@ -72,17 +74,24 @@ signals:
   - id: park.p_gen_kw
     title: Tatsächliche Erzeugung des Windparks
     role: observation
-    meaning: Power the park actually generated after curtailment. An output of the plan; the measurement is compared with what the twin computes.
+    meaning: Power the park actually generated, after the operating rules and the dispatch. An output of the plan; the measurement is compared with what the twin computes.
     expect: { unit: kW, min: -600, max: 13000, interval: PT1M, kind: ANALOG, origin: MEASURED, operating: { min: 0, max: 12000 } }
     clean:
       source: { kind: flow, flow: park-power, output: sum }
-  - id: park.p_avail_kw
-    title: Verfügbare Leistung des Windparks
+  - id: park.p_potential_kw
+    title: Windpotenzial des Parks
     role: estimate
-    meaning: Power the park could generate with the wind there is, without curtailment. Not measurable while curtailed; estimated from the wind speed.
+    meaning: Power the park could generate with the weather there is, before any restriction or dispatch. Not measurable while the park is restricted; estimated from the wind speed.
     expect: { unit: kW, min: 0, max: 12000, interval: PT1M, kind: ANALOG, origin: ESTIMATED }
     clean:
       source: { kind: flow, flow: park-potential, output: potential }
+  - id: park.dispatch_kw
+    title: Fahrbefehl Windpark
+    role: command
+    meaning: Power the operator allows the park to generate, for example a curtailment at negative prices. Not a restriction from the operating rules.
+    expect: { unit: kW, min: 0, max: 12000, interval: PT1M, kind: ANALOG, origin: REPORTED }
+    raw:
+      source: { kind: manual, value: 12000, origin: REPORTED }
   - id: market.price_eur_mwh
     title: Strompreis
     role: exogenous
@@ -98,7 +107,7 @@ signals:
   - id: offtake.demand_kgph
     title: Wasserstoffbedarf des Abnehmers
     role: exogenous
-    meaning: Hydrogen the offtaker asks for.
+    meaning: Hydrogen the customer asks for at the handover station. Information, not a flow of gas.
     expect: { unit: kg/h, min: 0, max: 120, interval: PT1M, kind: ANALOG, origin: REPORTED }
     # open: no source
   - id: ely.setpoint_kw
@@ -115,10 +124,23 @@ signals:
     expect: { unit: kW, min: -1000, max: 1000, interval: PT1M, kind: ANALOG, origin: REPORTED }
     raw:
       source: { kind: manual, value: 0, origin: REPORTED }
+  - id: handover.valve
+    title: Regelventil der Übergabestation
+    role: command
+    meaning: Position of the regulating valve at the handover station, from 0 (closed) to 1 (open).
+    expect: { unit: "1", min: 0, max: 1, interval: PT1M, kind: ANALOG, origin: REPORTED }
+    raw:
+      source: { kind: manual, value: 1, origin: REPORTED }
+  - id: grid.p_grid_meas_kw
+    title: Zähler am Netzanschlusspunkt
+    role: observation
+    meaning: Power the meter at the grid connection point measured, positive for feed-in. The physical delivery, as opposed to the schedule sold to the market.
+    expect: { unit: kW, min: -6000, max: 12000, interval: PT1M, kind: ANALOG, origin: MEASURED }
+    # open: no source
   - id: marketer.schedule_kw
     title: Fahrplan Direktvermarktung
     role: command
-    meaning: Feed-in announced to the direct marketer for the quarter hour.
+    meaning: Feed-in announced to the direct marketer for the quarter hour. The contract with the market, as opposed to what the meter at the grid connection point measures.
     expect: { unit: kW, min: 0, max: 12000, interval: PT15M, kind: ANALOG, origin: REPORTED }
     # open: no source
 

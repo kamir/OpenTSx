@@ -6,9 +6,9 @@
 - **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-clean-signals` (L3 und die Überarbeitung nach dem Review-Briefing), Worktree
-  `../OpenTSx-worktrees/engineering-flow`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Delivery-Branch**: `opentsx/2026-task014-system-plan` (S1 Systemplan, 014.13), Worktree
+  `../OpenTSx-worktrees/system-plan`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
@@ -148,8 +148,31 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       - Entschieden am 2026-10-13 nach einem zweiten Briefing (15, Abschnitt 13; D64 bis D66): der Durchstich
         bleibt, der Systemplan (S1) und das reale Jahr 2025 als Daten (J1) kommen vor E1; der Optimierer folgt
         nach E3 als Analyse
-- [ ] 014.13 S1 Systemplan `h2-chain` in neuer Fassung (15, Abschnitt 13.4)
+- [x] 014.13 S1 Systemplan `h2-chain` in neuer Fassung (15, Abschnitt 13.4; 2026-10-13, mit Grenzen)
+      - Entschieden: Hochdruckpuffer hinter dem Verdichter als Annahme; Physik einfach und benannt; der bisherige
+        Plan bleibt als Testfall (`opentsx-twin/src/test/resources/twin/h2-chain-1.yaml`)
+      - Zwilling: Bausteine `wind-park` (drei Leistungen, Abregelung je Ursache gezählt), `h2-compressor`,
+        `h2-buffer` (mit Druckregler zur Leitung), `h2-pipeline` (Druck am Anfang und am Ende), `h2-handover`
+        (Regelventil, Mindestlieferdruck, Fehlmenge), `h2-consumer` (Bedarf als Information); Plan mit 12 Bausteinen
+        und 20 Verbindungen; Tests `H2ChainTest` (Ruhezustand, Kausalkette mit analytischer Zeit, Bilanz für Strom
+        und Wasserstoff, Verdichterleistung, Was-wäre-wenn, Fahrweise, Abregelung je Ursache)
+      - Studio: Szenario, Erklärtexte (`h2-chain.guide.yaml`) und Seite neu erzeugt
+      - Systemdokument Fassung 3: 13 Signale, jeder der neun Eingänge von außen hat ein Signal (drei davon offen);
+        `park.p_potential_kw` ersetzt `park.p_avail_kw` als Eingang, dazu `park.dispatch_kw`, `handover.valve`,
+        `grid.p_grid_meas_kw`; Entscheidungskarte Fassung 2 mit den Grenzen an Puffer und Übergabe
+      - Grenzen: ideales Gas ohne Realgasfaktor; Verdichter einstufig ohne Zwischenkühlung und ohne Kennfeld;
+        Druckverlust der Leitung als Quadrat des Durchflusses; die Übergabestation liefert unter dem Mindestdruck
+        nichts; Wasseraufbereitung und weitere Nebenaggregate fehlen; Übergaben zwischen Bausteinen derselben Phase
+        kommen einen Schritt später an (Masse bleibt erhalten); `opentsx-market` rechnet weiter mit seinem eigenen
+        Plan in der ersten Fassung (wird mit J1 umgestellt); die verfügbare Leistung nach Auflagen ist ein Ausgang
+        des Zwillings und kein Signal mehr
 - [ ] 014.14 J1 Das Jahr 2025 als Daten (15, Abschnitt 13.4)
+- [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
+      [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
+      Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository
+      (`.claude/agents/sim-*.md`, angelegt), nach S1 erst Demo A ausrollen und durchspielen.
+      Erster Durchlauf am 2026-10-13 mit neun Befunden (16, Abschnitt 7); die nächste Baustufe ist danach zu
+      entscheiden
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 

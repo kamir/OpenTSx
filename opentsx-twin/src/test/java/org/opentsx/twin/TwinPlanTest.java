@@ -67,9 +67,15 @@ class TwinPlanTest {
         TwinPlan p = S1.plan();
         assertEquals("h2-chain", p.twin());
         assertEquals(60_000_000L, p.baseStepMicros());
-        assertEquals(p.hash(), TwinPlan.resource("twin/h2-chain.yaml").hash());
-        assertTrue(AtomCatalog.standard().types().containsAll(
-                p.atoms().stream().map(TwinPlan.AtomSpec::type).toList()));
+        assertEquals(p.hash(), TwinPlan.resource("twin/h2-chain-1.yaml").hash());
+        // the plan in use is another one: same twin, more atoms
+        TwinPlan now = TwinPlan.resource("twin/h2-chain.yaml");
+        assertEquals("h2-chain", now.twin());
+        assertTrue(!now.hash().equals(p.hash()));
+        for (TwinPlan plan : List.of(p, now)) {
+            assertTrue(AtomCatalog.standard().types().containsAll(
+                    plan.atoms().stream().map(TwinPlan.AtomSpec::type).toList()));
+        }
     }
 
     @Test

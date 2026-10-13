@@ -1,0 +1,44 @@
+# Scenario S1 in its first form (2026-10): the line is the only buffer. Kept for the tests of the twin; the plan in
+# use is src/main/resources/twin/h2-chain.yaml.
+twin: h2-chain
+start: 2026-10-01T00:00:00Z
+baseStep: PT1M
+steps: 360
+atoms:
+  - id: rules
+    type: operating-rules
+  - id: market
+    type: market
+    params: { every: 15 }
+  - id: offtake
+    type: h2-offtake
+  - id: park
+    type: generation
+    params: { ratedKw: 12000 }
+  - id: ely
+    type: electrolyzer
+    params: { ratedKw: 5000, minLoad: 0.1, rampKwPerMin: 500, kwhPerKg: 55, pTripBar: 40, pResumeBar: 36, initialKw: 5000 }
+  - id: battery
+    type: battery
+    params: { capacityKwh: 2000, powerKw: 1000, soc0: 0.5 }
+  - id: grid
+    type: balance
+    params: { priority: [self, ely, bat] }
+  - id: line
+    type: h2-line
+    params: { volumeM3: 157, tempK: 288, p0Bar: 30, pMinBar: 20, pMaxBar: 40, warnMin: 60 }
+  - id: marketer
+    type: direct-marketer
+    params: { toleranceKw: 100 }
+wiring:
+  - rules.limit_kw -> park.limit_kw
+  - park.p_gen_kw -> grid.p_gen_kw
+  - ely.p_el_kw -> grid.p_ely_kw
+  - battery.p_bat_kw -> grid.p_bat_kw
+  - ely.m_h2_kgph -> line.m_in_kgph
+  - offtake.m_out_kgph -> line.m_out_kgph
+  - offtake.m_out_kgph -> ely.m_offtake_kgph
+  - line.p_bar -> ely.p_downstream_bar
+  - line.headroom_kg -> ely.headroom_kg
+  - grid.p_grid_kw -> marketer.p_grid_kw
+  - market.price_eur_mwh -> marketer.price_eur_mwh

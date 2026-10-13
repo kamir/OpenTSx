@@ -132,27 +132,27 @@ deploy/k3s/40-demo.sh twin
 
 ```text
 1. Shadow: observed history (valve closed at 01:00)
-   run h2-chain-32d17d33b237bf6b  mode SHADOW  hash 25903cf900753ca0
-   01:00:00  offtake    intervention             {control=valve, reason=valve closed, author=h2-offtake, value=0.0}
-   01:28:00  line       time_to_limit_warning    {ttl_min=59.239, p_bar=33.210}
-   02:27:14  line       pressure_limit           {p_max_bar=40.000}
-   02:28:00  ely        protective_shutdown      {p_el_kw=5000.000, p_bar=40.087}
-   02:28:00  marketer   schedule_deviation       {deviation_kw=500.000}
-   max line pressure 40.60 bar, electrolyzer trips 1, H2 231.1 kg, extra feed-in 17292 kWh
+   run h2-chain-1a7d8816f5e90a30  mode SHADOW  hash 8b7910ccc91b45d8
+   01:00:00  handover   intervention             {author=h2-handover, reason=valve closed, control=valve, value=0.0}
+   01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
+   02:28:54  buffer     pressure_limit           {p_max_bar=200.000}
+   02:29:00  ely        protective_shutdown      {p_bar=200.084, p_el_kw=5000.000}
+   02:29:00  marketer   schedule_deviation       {deviation_kw=467.897}
+   max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 17446 kWh
 
 2. What-if: valve reopened at 02:00
-   run h2-chain-7fd4f14f51c0f5ca  mode WHAT_IF  hash 299c21b19951a549
+   run h2-chain-92e7c6c283524e98  mode WHAT_IF  hash d760cb94cbf64c62
    ...
-   max line pressure 36.88 bar, electrolyzer trips 0, H2 545.5 kg, extra feed-in 0 kWh
+   max buffer pressure 174.01 bar, electrolyzer trips 0, H2 545.5 kg, extra feed-in 1 kWh
 
 3a. Forecast from 01:10, electrolyzer follows its schedule
-   max line pressure 40.60 bar, electrolyzer trips 1, H2 231.1 kg, extra feed-in 17292 kWh
+   max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 17446 kWh
 
 3b. Forecast from 01:10, electrolyzer policy pressure-aware
-   run h2-chain-a8bf2147d88896f7  mode FORECAST  hash 1a3f20d7918c309c
-   01:28:00  line       time_to_limit_warning    {ttl_min=59.239, p_bar=33.210}
-   01:29:00  marketer   schedule_deviation       {deviation_kw=145.681}
-   max line pressure 39.66 bar, electrolyzer trips 0, H2 218.7 kg, extra feed-in 17974 kWh
+   run h2-chain-b50f8c7a90fc58aa  mode FORECAST  hash 31ef43a9a3a6c29b
+   01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
+   01:31:00  marketer   schedule_deviation       {deviation_kw=164.005}
+   max buffer pressure 197.43 bar, electrolyzer trips 0, H2 219.8 kg, extra feed-in 18143 kWh
 ```
 
 Own wiring plan: put it into a ConfigMap, mount it (edit `deploy/k3s/jobs/twin.yaml`) and pass

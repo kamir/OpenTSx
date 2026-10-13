@@ -5,7 +5,10 @@ import org.opentsx.twin.demo.H2ChainDemo;
 import java.time.Instant;
 import java.util.List;
 
-/** Scenario S1 (H2 chain) for the tests; data from {@link H2ChainDemo}. */
+/**
+ * Scenario S1 (H2 chain) in its first form, where the line is the only buffer: the plan and the observed history the
+ * tests of the runner were written against. The plan in use is tested in {@code H2ChainTest}.
+ */
 final class S1 {
 
     static final Instant START = H2ChainDemo.START;
@@ -19,15 +22,25 @@ final class S1 {
     }
 
     static TwinPlan plan() {
-        return H2ChainDemo.plan();
+        return TwinPlan.resource("twin/h2-chain-1.yaml");
     }
 
     static SeriesInputs observed() {
-        return H2ChainDemo.observed();
+        double[] price = new double[STEPS / 15];
+        for (int i = 0; i < price.length; i++) {
+            price[i] = 60 + 20 * Math.sin(i / 4.0);
+        }
+        return new SeriesInputs()
+                .bind("park.p_avail_kw", T0, MIN, constant(STEPS, 8000), Origin.MEASURED)
+                .bind("ely.setpoint_kw", T0, MIN, constant(STEPS, ELY_KW), Origin.REPORTED)
+                .bind("offtake.demand_kgph", T0, MIN, constant(STEPS, OFFTAKE_KGPH), Origin.MEASURED)
+                .bind("marketer.schedule_kw", T0, MIN, constant(STEPS, 3000), Origin.REPORTED)
+                .bind("battery.power_kw", T0, MIN, constant(STEPS, 0), Origin.REPORTED)
+                .bind("market.price_eur_mwh", T0, 15 * MIN, price, Origin.MEASURED);
     }
 
     static List<Intervention> valveClosed() {
-        return H2ChainDemo.valveClosed();
+        return List.of(Intervention.set(START.plusSeconds(3600), "offtake", "valve", 0, "h2-offtake", "valve closed"));
     }
 
     static long at(double minutes) {

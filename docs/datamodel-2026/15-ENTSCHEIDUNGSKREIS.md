@@ -510,9 +510,17 @@ Entschieden vom Auftraggeber am 2026-10-13.
 gewählt ist: erst der Plan, dann die Daten, weil der Plan festlegt, welche Signale es gibt und woran das Jahr
 gebunden wird.
 
+Für S1 hat der Auftraggeber am selben Tag drei Dinge entschieden:
+
+| Nr. | Thema | Entscheidung |
+|---|---|---|
+| D67 | Reihenfolge auf der Wasserstoffseite | Elektrolyseur (30 bar), Verdichter, Puffer (50 bis 200 bar), Leitung (20 bis 40 bar), Übergabestation (mindestens 20 bar), Abnehmer. Eine Annahme, solange keine echte Anlage vorliegt; sie steht als solche im Plan |
+| D68 | Tiefe der Physik in S1 | einfach und benannt: Massenbilanz und ideales Gas für Puffer und Leitung, Verdichterleistung aus Druckverhältnis und Wirkungsgrad, Druckverlust als einfache Funktion des Durchflusses. Jede Vereinfachung steht im Baustein. Realgas und Kennfelder folgen mit dem Prüfmodell nach E3 |
+| D69 | Der bisherige Plan | wird ersetzt und bleibt als Datei für die Tests des Zwillings erhalten |
+
 | Stufe | Inhalt | Abgenommen, wenn |
 |---|---|---|
-| **S1 Systemplan** | Zwilling und Systemdokument `h2-chain` in neuer Fassung: Puffer, Verdichter, Übergabestation; getrennte Drücke; `headroom_kg` am Speicher; Bedarf als Informationsverbindung; Marktvertrag getrennt von der Netzabgabe; Signal für das wetterbedingte Potenzial; die Annahme zur Reihenfolge im Plan vermerkt | der Plan hat keinen Eingang von außen ohne Signal; der Zwilling läuft mit dem neuen Plan durch seine Tests; das Systembild zeigt die neuen Bausteine |
+| **S1 Systemplan** (**umgesetzt** 2026-10-13, mit Grenzen: [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md), 014.13) | Zwilling und Systemdokument `h2-chain` in neuer Fassung: Puffer, Verdichter, Übergabestation; getrennte Drücke; `headroom_kg` am Speicher; Bedarf als Informationsverbindung; Marktvertrag getrennt von der Netzabgabe; Signal für das wetterbedingte Potenzial; die Annahme zur Reihenfolge im Plan vermerkt | der Plan hat keinen Eingang von außen ohne Signal; der Zwilling läuft mit dem neuen Plan durch seine Tests; das Systembild zeigt die neuen Bausteine |
 | **J1 Das Jahr 2025 als Daten** | Preise und Wetter des Jahres 2025 aus dem Archiv als Reihen im Topic, an die Signale des Systems gebunden, mit Herkunft `REPORTED` und `MEASURED`; der Bruch der Auflösung im Preis und die Tage der Zeitumstellung geprüft; die Quelle des Windes benannt (Station, Höhe) und als nicht auf Nabenhöhe übertragen gekennzeichnet | `market.price_eur_mwh` hat Daten für 2025 mit Herkunft `REPORTED`; die Seite Signals zeigt Abdeckung und Lücken des Jahres; kein Wert ist erfunden, um eine Lücke zu schließen |
 | danach | E1a, E2a, E1b, E2b, E2c, E3a, E3b aus 10.3. E2c schrumpft auf das, was J1 nicht liefert (Bedarf des Abnehmers, Zusammenhang der äußeren Größen) | wie in 10.3 |
 

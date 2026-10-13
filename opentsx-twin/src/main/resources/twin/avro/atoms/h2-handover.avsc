@@ -1,0 +1,113 @@
+{
+  "type" : "record",
+  "name" : "H2HandoverSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one h2-handover atom after superstep k (phase ASSETS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "H2HandoverState",
+      "doc" : "State variables of h2-handover",
+      "fields" : [ {
+        "name" : "delivered_kg",
+        "type" : "double"
+      }, {
+        "name" : "shortfall_kg",
+        "type" : "double"
+      }, {
+        "name" : "interrupted",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "H2HandoverOutputs",
+      "doc" : "Output ports of h2-handover",
+      "fields" : [ {
+        "name" : "m_out_kgph",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "FLOW [kg/h]"
+      }, {
+        "name" : "p_delivery_bar",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [bar]"
+      }, {
+        "name" : "shortfall_kgph",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kg/h]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "H2HandoverControls",
+      "doc" : "Controls of h2-handover overridden by interventions (null: policy decides)",
+      "fields" : [ {
+        "name" : "valve",
+        "type" : [ "null", "double" ],
+        "doc" : "default 1.0",
+        "default" : null
+      } ]
+    }
+  } ],
+  "opentsx.atomType" : "h2-handover",
+  "opentsx.phase" : "ASSETS",
+  "opentsx.inputs" : [ {
+    "name" : "request_kgph",
+    "kind" : "SIGNAL",
+    "unit" : "kg/h"
+  }, {
+    "name" : "p_in_bar",
+    "kind" : "SIGNAL",
+    "unit" : "bar"
+  }, {
+    "name" : "valve",
+    "kind" : "SIGNAL",
+    "unit" : "1"
+  } ]
+}

@@ -8,14 +8,20 @@ import org.opentsx.twin.atoms.DirectMarketer;
 import org.opentsx.twin.atoms.Electrolyzer;
 import org.opentsx.twin.atoms.ElectricityMeter;
 import org.opentsx.twin.atoms.Generation;
+import org.opentsx.twin.atoms.H2Buffer;
+import org.opentsx.twin.atoms.H2Compressor;
+import org.opentsx.twin.atoms.H2Consumer;
+import org.opentsx.twin.atoms.H2Handover;
 import org.opentsx.twin.atoms.H2Line;
 import org.opentsx.twin.atoms.H2Offtake;
+import org.opentsx.twin.atoms.H2Pipeline;
 import org.opentsx.twin.atoms.HotWater;
 import org.opentsx.twin.atoms.Market;
 import org.opentsx.twin.atoms.OilBoiler;
 import org.opentsx.twin.atoms.OilTank;
 import org.opentsx.twin.atoms.OperatingRules;
 import org.opentsx.twin.atoms.Weather;
+import org.opentsx.twin.atoms.WindPark;
 import org.opentsx.twin.atoms.WoodStore;
 import org.opentsx.twin.atoms.WoodStove;
 import org.opentsx.twin.boat.BoatMode;
@@ -48,6 +54,12 @@ public final class AtomCatalog {
                 .register("h2-line", H2Line::new)
                 .register("direct-marketer", DirectMarketer::new)
                 .register("operating-rules", OperatingRules::new)
+                .register("wind-park", WindPark::new)
+                .register("h2-compressor", H2Compressor::new)
+                .register("h2-buffer", H2Buffer::new)
+                .register("h2-pipeline", H2Pipeline::new)
+                .register("h2-handover", H2Handover::new)
+                .register("h2-consumer", H2Consumer::new)
                 .register("weather", Weather::new)
                 .register("building", Building::new)
                 .register("oil-boiler", OilBoiler::new)

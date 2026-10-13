@@ -104,6 +104,15 @@ entries are grouped by date. The detailed progress log (German) is in
   or blocked today, with the reasons (`GET /v1/systems/<id>/decisions`): grade, age against the newest data,
   accepted origin, the range the analysis was checked in, and its evidence. The place "Models" shows the cards; the
   place "System" shows the plan as a graph above the table. Comparing alternatives over a period is not built.
+- System plan of the H2 chain in a second form (TASK-014, stage S1, after a second briefing; decisions D64 to D66 in
+  [`docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md`](docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md), section 13). The
+  twin has six new atoms: `wind-park` (potential, available and generated power, with the energy not generated
+  counted per cause), `h2-compressor`, `h2-buffer` with the regulator that feeds the pipeline, `h2-pipeline` with a
+  pressure at each end, `h2-handover` (regulating valve, lowest delivery pressure, shortfall) and `h2-consumer`
+  (the demand is information, the delivery is gas). The order compressor, buffer, pipeline is an assumption and
+  says so in the plan; every simplification is named in its atom. The system document has a signal for every input
+  from outside. The scenario now tells: the handover station closes, the buffer fills, the electrolyzer trips at
+  200 bar. The first form of the plan is kept for the tests of the twin, and its atoms stay in the catalog.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

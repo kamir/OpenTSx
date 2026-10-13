@@ -14,7 +14,7 @@
     asOf: "2026-10-01T01:55:00Z"
     systemHash: 8747aeb3eea7299a
     inputs:
-      - { signal: park.p_avail_kw, grade: clean, upTo: "2026-10-01T01:54:00Z", origin: ESTIMATED, flow: park-potential }
+      - { signal: park.p_potential_kw, grade: clean, upTo: "2026-10-01T01:54:00Z", origin: ESTIMATED, flow: park-potential }
       - { signal: market.price_eur_mwh, grade: raw, upTo: "2026-10-01T01:45:00Z", origin: SYNTHETIC }
     analysis: { id: price-following, version: "1", initialState: snapshot-20261001T0155 }
   usability:

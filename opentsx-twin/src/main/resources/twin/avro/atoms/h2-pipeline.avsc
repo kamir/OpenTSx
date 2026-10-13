@@ -1,0 +1,117 @@
+{
+  "type" : "record",
+  "name" : "H2PipelineSnapshot",
+  "namespace" : "org.opentsx.twin.v1.atoms",
+  "doc" : "Snapshot of one h2-pipeline atom after superstep k (phase FLOWS)",
+  "fields" : [ {
+    "name" : "run_id",
+    "type" : "string"
+  }, {
+    "name" : "atom",
+    "type" : "string",
+    "doc" : "instance id, the record key"
+  }, {
+    "name" : "k",
+    "type" : "int"
+  }, {
+    "name" : "t",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-micros"
+    }
+  }, {
+    "name" : "state",
+    "type" : {
+      "type" : "record",
+      "name" : "H2PipelineState",
+      "doc" : "State variables of h2-pipeline",
+      "fields" : [ {
+        "name" : "mass_kg",
+        "type" : "double"
+      }, {
+        "name" : "p_bar",
+        "type" : "double"
+      }, {
+        "name" : "p_max_bar",
+        "type" : "double"
+      }, {
+        "name" : "p_min_bar",
+        "type" : "double"
+      }, {
+        "name" : "out_kgph",
+        "type" : "double"
+      }, {
+        "name" : "low",
+        "type" : "double"
+      } ]
+    }
+  }, {
+    "name" : "state_extra",
+    "type" : {
+      "type" : "map",
+      "values" : "double"
+    },
+    "doc" : "state variables that depend on the instance's parameters, e.g. one counter per configured appliance",
+    "default" : { }
+  }, {
+    "name" : "outputs",
+    "type" : {
+      "type" : "record",
+      "name" : "H2PipelineOutputs",
+      "doc" : "Output ports of h2-pipeline",
+      "fields" : [ {
+        "name" : "p_in_bar",
+        "type" : {
+          "type" : "record",
+          "name" : "PortValue",
+          "namespace" : "org.opentsx.twin.v1",
+          "doc" : "Value with origin.",
+          "fields" : [ {
+            "name" : "value",
+            "type" : "double"
+          }, {
+            "name" : "origin",
+            "type" : {
+              "type" : "enum",
+              "name" : "Origin",
+              "doc" : "Origin ladder, best first; a value is as good as its worst input.",
+              "symbols" : [ "MEASURED", "REPORTED", "FORECAST", "ESTIMATED", "SYNTHETIC" ]
+            }
+          } ]
+        },
+        "doc" : "SIGNAL [bar]"
+      }, {
+        "name" : "p_out_bar",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [bar]"
+      }, {
+        "name" : "linepack_kg",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "SIGNAL [kg]"
+      }, {
+        "name" : "m_net_kgph",
+        "type" : "org.opentsx.twin.v1.PortValue",
+        "doc" : "FLOW [kg/h]"
+      } ]
+    }
+  }, {
+    "name" : "controls",
+    "type" : {
+      "type" : "record",
+      "name" : "H2PipelineControls",
+      "doc" : "Controls of h2-pipeline overridden by interventions (null: policy decides)",
+      "fields" : [ ]
+    }
+  } ],
+  "opentsx.atomType" : "h2-pipeline",
+  "opentsx.phase" : "FLOWS",
+  "opentsx.inputs" : [ {
+    "name" : "m_in_kgph",
+    "kind" : "FLOW",
+    "unit" : "kg/h"
+  }, {
+    "name" : "m_out_kgph",
+    "kind" : "FLOW",
+    "unit" : "kg/h"
+  } ]
+}
