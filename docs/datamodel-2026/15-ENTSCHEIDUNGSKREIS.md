@@ -524,6 +524,49 @@ Für S1 hat der Auftraggeber am selben Tag drei Dinge entschieden:
 | **J1 Das Jahr 2025 als Daten** | Preise und Wetter des Jahres 2025 aus dem Archiv als Reihen im Topic, an die Signale des Systems gebunden, mit Herkunft `REPORTED` und `MEASURED`; der Bruch der Auflösung im Preis und die Tage der Zeitumstellung geprüft; die Quelle des Windes benannt (Station, Höhe) und als nicht auf Nabenhöhe übertragen gekennzeichnet | `market.price_eur_mwh` hat Daten für 2025 mit Herkunft `REPORTED`; die Seite Signals zeigt Abdeckung und Lücken des Jahres; kein Wert ist erfunden, um eine Lücke zu schließen |
 | danach | E1a, E2a, E1b, E2b, E2c, E3a, E3b aus 10.3. E2c schrumpft auf das, was J1 nicht liefert (Bedarf des Abnehmers, Zusammenhang der äußeren Größen) | wie in 10.3 |
 
+### 13.5 J1, erster Schritt: das Jahr 2025 im Archiv
+
+Am 2026-10-13 geladen, mit den Werkzeugen, die es gibt (`bin/opentsx market weather-backfill` und `backfill`), in
+ein Archiv außerhalb des Repositorys. Nichts davon liegt im Repository und nichts im Broker.
+
+| Reihe | Station | Werte | Abdeckung | Lücken | Herkunft |
+|---|---|---|---|---|---|
+| Windgeschwindigkeit, Stundenmittel | Greifswalder Oie 01759 (Windpark, 23 km, Messhöhe 10 m) | 8727 | 99,62 % | 2 (33 h) | `MEASURED` |
+| Lufttemperatur, stündlich | Greifswalder Oie 01759 | 8726 | 99,61 % | 3 (34 h) | `MEASURED` |
+| Globalstrahlung, 10 Minuten | Arkona 00183 (42 km) | 52546 | 99,97 % | 2 (2,3 h) | `MEASURED` |
+| Wind und Temperatur | Marienberg 03166 (Haus) | je 8753 | 99,92 % | 1 (7 h) | `MEASURED` |
+| Globalstrahlung | Fichtelberg 01358 (Haus) | 52493 | 99,87 % | 4 (11,2 h) | `MEASURED` |
+| Wind und Temperatur | Kiel-Holtenau 02564 (Boot) | 8757 und 8756 | 99,97 % und 99,95 % | 1 (3 h) und 2 (4 h) | `MEASURED` |
+| Globalstrahlung | Dörnick 06163 (Boot) | 52541 | 99,96 % | 3 (3,2 h) | `MEASURED` |
+| Day-Ahead-Preis DE-LU (SMARD) | n/a | 15390 | 100 % | 0 | `REPORTED` |
+
+Die Lücken sind ausgewiesen und nicht gefüllt. Der Preis hat den erwarteten Bruch: 6550 Stundenwerte bis zum
+Liefertag 2025-09-30, danach 8840 Viertelstundenwerte. Beide Tage der Zeitumstellung sind vollständig.
+
+**Ein Lauf über das Jahr** ist mit dem Zwilling auf Historie möglich
+(`bin/opentsx twin --history <archiv> --year 2025 --wind dwd`): 365 Tage im Viertelstundenschritt, Wind der Station
+01759 über das Windmodell von `opentsx-market` (Höhenübertragung von 10 m auf 120 m mit dem Exponenten des
+Standorts, dann Leistungskurve), Preis aus dem Archiv. Der Park kommt auf 36.078 MWh, das sind 34 Prozent seiner
+Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fassung (ohne Verdichter, Puffer und
+Übergabestation) und einer Fahrregel nach Preisgrenze; er trägt selbst die Zeile "Modelled, not proven".
+
+**Was zu J1 noch fehlt.**
+
+1. **Die Reihen im Broker und an den Signalen.** Es gibt kein Werkzeug, das ein Archiv in ein Topic schreibt
+   (`market load` schreibt nach Iceberg oder in den Speicher). Das Schreiben eines Jahres in den gemeinsamen Broker
+   des Labors ist ein Eingriff, der vorher abzustimmen ist.
+2. **Der Zeitraum.** Das Szenario der Demo spielt am 2026-10-01, die Daten sind von 2025. Solange beides
+   nebeneinander steht, hält die Prüfung "Alter gegen die neuesten Daten des Systems" das Wetter für veraltet. Das
+   Szenario gehört auf einen Tag des Jahres 2025 gelegt, oder das System bekommt einen Zeitraum, den es betrachtet.
+3. **Die Größen.** Geladen werden drei: Temperatur, Windgeschwindigkeit als Stundenmittel, Globalstrahlung. Das
+   zweite Briefing nennt dazu Windrichtung, Luftdruck, Niederschlag, Feuchte, Böen und Wind in 10 Minuten. Der
+   Abruf kennt sie noch nicht.
+4. **Der Plan.** Der Jahreslauf rechnet mit der ersten Fassung des Plans. Die zweite Fassung (S1) rechnet in
+   Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte.
+5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
+   MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
+   nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.
+
 Offen bleibt nach diesem Briefing: Standort und Koordinaten, Kennwerte der Anlagen, Druckbereiche der
 Wasserstoffseite, das Abnahmeprofil, die Bedingungen für Import, Export und Vermarktung. Ohne sie sind die Werte
 des Plans Annahmen und als solche geführt.

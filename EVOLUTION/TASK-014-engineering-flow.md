@@ -6,9 +6,9 @@
 - **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-demo-ui` (Demo A zeigbar machen, 014.16), Worktree
-  `../OpenTSx-worktrees/demo-ui`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Delivery-Branch**: `opentsx/2026-task014-dwd-2025` (J1, das Jahr 2025, 014.14), Worktree
+  `../OpenTSx-worktrees/dwd-2025`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
@@ -167,6 +167,11 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         Plan in der ersten Fassung (wird mit J1 umgestellt); die verfügbare Leistung nach Auflagen ist ein Ausgang
         des Zwillings und kein Signal mehr
 - [ ] 014.14 J1 Das Jahr 2025 als Daten (15, Abschnitt 13.4)
+      - 2026-10-13, erster Schritt: DWD-Beobachtungen 2025 der sechs Stationen der Standorte und der Day-Ahead-Preis
+        2025 im Archiv außerhalb des Repositorys; Abdeckung über 99,6 Prozent, Lücken ausgewiesen; ein Jahreslauf
+        mit dem Zwilling auf Historie läuft (Plan in der ersten Fassung). Stand und fünf offene Punkte in 15,
+        Abschnitt 13.5. Entschieden am selben Tag: Die Sprachen der Oberflächen bleiben, wie sie sind (Web-Anwendung
+        Englisch, Studio Deutsch)
 - [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
       [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
       Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository
