@@ -358,6 +358,39 @@ Abnahmekriterien der ersten Version, je mit der Stufe, die sie erfüllt:
 * Keine Vollständigkeit des Systems als Voraussetzung: Was fehlt, sperrt nur, was davon abhängt.
 * Nichts Geplantes wird als heute durchspielbar gezeigt.
 
+### 10.3 Stand nach L4 und L5, Neuplanung vor E1
+
+Stand 2026-10-13. L4 und L5 sind gebaut (14, Abschnitt 11). Damit ist ein Teil von E1 und ein Stück von E2 schon
+da. Die Tabelle sagt je Inhalt der Stufen, was steht und was bleibt. **Die Schnitte darunter sind ein Vorschlag;
+entschieden ist davon nichts.**
+
+| Stufe | Schon da durch L4 und L5 | Bleibt |
+|---|---|---|
+| E1 | Entscheidungskarte wird gelesen und am Ort Models gezeigt (eine Ansicht, nur lesend); Rolle, Bedeutung und Betriebsbereich am Signal; Verwendbarkeit je Analyse mit Gründen und Sprung zum Signal; Binden in der Oberfläche als Arbeitskopie | Zustand eines Signals in fünf Dimensionen (D55); die zwei weiteren Ansichten der Karte; Ableitungsweg mit Anteilen statt nur `madeOf` (D56); der geführte Modus mit acht Schritten; Schema der Karte im Build geprüft; "ein Signal, ein Schreiber" im Server geprüft; Arbeitskopie in die Datei schreiben |
+| E2 | Leistungskurve; Kennung der Episoden, die einen Neustart übersteht | zwei Varianten von `clean` (D57) mit Qualitätsbyte durch die Kette; Kennzeichen vorläufig, endgültig, revidiert; Replay mit damaligem Stand; neue Fassung im Schatten; Mehrfach-Eingang (`agg.sum`); Szenariomodell; Generator, der fortlaufend schreibt; der Nachweis der Korrektur am Lesen nach einer Ablehnung auf dem Labor-Broker |
+| E3 | nichts | alles; dazu: eine Analyse, hinter der ein Modell läuft (`price-following` ist heute nur eine Karte), und die Prüfung des Gültigkeitsbereichs je Zeitpunkt statt über die ganze Reihe |
+
+Vorgeschlagene Schnitte, je ein Pull-Request gegen `master`, nacheinander:
+
+| Schnitt | Inhalt | Abgenommen, wenn |
+|---|---|---|
+| E1a | Zustand in fünf Dimensionen im Server und auf der Seite Signals; Schema der Karte im Build; Zuständigkeit im Server geprüft | die Seite Signals zeigt je Signal, woran es fehlt, getrennt nach Dimension; ein zweiter Schreiber wird vom Server abgelehnt, belegt durch einen Test |
+| E1b | Karte in drei Ansichten; geführter Modus mit acht Schritten; Ableitungsweg | das erste Abnahmekriterium von E1 aus der Tabelle oben |
+| E2a | `clean` in zwei Varianten mit Qualitätsbyte; `agg.sum` | eine echte Grenzverletzung bleibt in `marked` sichtbar und fehlt in `filtered`; `park.p_gen_kw` entsteht aus den Turbinen |
+| E2b | Kennzeichen und Replay; Schatten | die Abnahme von E2 aus der Tabelle oben |
+| E2c | Szenariomodell für Wind, Preis und Bedarf | die drei äußeren Signale hängen im Szenario zusammen; Ergebnisse darauf sind als Szenario benannt, nicht als Demo |
+| E3a | die vier Datensätze als Ereignisse; `price-following` als laufendes Modell im Zwilling | eine Empfehlung entsteht, wird bestätigt und steht im Protokoll |
+| E3b | Vergleich zweier Alternativen gegen die Referenz; Wirkung gegen Erwartung | der Durchstich aus 10.1 |
+
+Offen für den Auftraggeber:
+
+1. Reihenfolge. Vorschlag: E1a, E2a, dann E1b. Grund: Die Dimensionen und die zwei Varianten ändern, was in den
+   Topics steht und was der Server meldet; die Ansichten bauen darauf auf und müssten sonst zweimal angefasst werden.
+2. Szenariomodell (E2c) vor oder nach E3a. Ohne es bleibt jeder Vergleich in E3 gesperrt (D61), weil Preis und
+   Bedarf nur als Demo vorliegen. Vorschlag: E2c vor E3b, E3a darf vorher laufen.
+3. Echte Daten. Solange nur Simulator-Daten da sind, kann keine Analyse den Status `usable` erreichen. Das ist
+   gewollt (10.2), heißt aber: Der Durchstich endet bei `restricted`, bis Messdaten angebunden sind.
+
 ## 11. Entscheidungen
 
 Entschieden vom Auftraggeber am 2026-10-13.

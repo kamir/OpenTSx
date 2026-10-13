@@ -142,7 +142,9 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         Minimum und Maximum der ganzen Reihe geprüft, nicht je Zeitpunkt; das Alter gegen die neuesten Daten des
         Systems, nicht gegen die Uhr; die Karte `h2-dispatch` ist ein Beispiel mit erfundenen Nachweisen; eine
         Karte hat kein Schema im Build, nur ihr Entwurf
-- [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge
+- [ ] 014.10 Neu planen, dann E1 Entscheidungskarte und fachliche Verträge. Neuplanung als Vorschlag in 15,
+      Abschnitt 10.3 (2026-10-13): was L4 und L5 von E1 und E2 schon liefern, sieben Schnitte, drei offene Fragen;
+      die Entscheidung des Auftraggebers steht aus
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 
