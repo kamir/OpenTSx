@@ -9,6 +9,7 @@ import {
   episodesQuery,
   estimatePoints,
   filterSeries,
+  marksOf,
   metricFacets,
   parseInventory,
   relabel,
@@ -156,6 +157,26 @@ describe('TS inventory', () => {
     expect(bucket.name).toBe('wind_speed_2x');
     expect(bucket.series.map((s) => s.label)).toEqual(['T10', 'T02']);
     expect(bucket.yLabel).toBe('[m/s]');
+  });
+
+  it('turns the ground truth of a selection into marks on the time axis of its bucket', () => {
+    const inv = inventory();
+    const t0 = Date.parse(FROM);
+    const speed = inv.series.filter((s) => s.metric === 'wind.met.wind_speed');     // T10, T02, T05; T05 is also stuck
+    expect(marksOf(speed, t0, 0, 6 * 3600)).toEqual([
+      { kind: 'operation', type: 'CURTAILMENT', from: 3600, to: 6000, scope: '' },
+      { kind: 'sensor_fault', type: 'STUCK', from: 5400, to: 6600, scope: 'T05' },
+    ]);
+    // a bucket that starts later counts from its own origin, and events are cut to the loaded window
+    const later = Date.parse('2026-10-01T01:30:00Z');
+    expect(marksOf(speed, later, 0, 600)).toEqual([
+      { kind: 'operation', type: 'CURTAILMENT', from: 0, to: 600, scope: '' },
+      { kind: 'sensor_fault', type: 'STUCK', from: 0, to: 600, scope: 'T05' },
+    ]);
+    expect(marksOf(speed, Date.parse('2026-10-01T03:00:00Z'), 0, 600)).toEqual([]);
+    // of two channels of one turbine only the anemometer is stuck
+    const t05 = inv.series.filter((s) => s.tags.turbine === 'T05');
+    expect(marksOf(t05, t0, 0, 6 * 3600).map((m) => `${m.type}:${m.scope}`)).toEqual(['CURTAILMENT:', 'STUCK:wind_speed']);
   });
 
   it('names the topic a selection comes from', () => {

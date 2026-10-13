@@ -32,6 +32,9 @@ entries are grouped by date. The detailed progress log (German) is in
   has "Run once and write to KafScale". The Java operator `VectorAligner` and the workbench pass the same test
   vectors (`docs/datamodel-2026/testvectors/`). It is one pass, not a stream processor, and the endpoint has no
   authentication.
+- Workbench: the ground truth of the scenario shows on the scope. Series loaded from the TS inventory bring their
+  events (operations, sensor faults) along as bands on the time axis; operators that keep the time axis hand them
+  on, and "Segment at threshold" says how many crossings lie inside an event.
 - DAG runs need an account: the retrieval server accepts `POST /v1/dags/run` only with its run token
   (`OPENTSX_DAG_RUN_TOKEN`), the SaaS backend forwards runs of signed-in users (`POST /api/v1/dags/run`,
   administrators only unless `DAG_RUN_ROLE=user`), and the frontend image no longer proxies the write path.

@@ -105,6 +105,8 @@ frontend/
 - TS Inventory: browse the series of a retrieval server (`GET /v1/inventory`) by tag, channel and scenario event,
   pick series, window and resolution; needs a retrieval server started with `--kafscale`, `--iceberg` or `--demo`
 - Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
+- Ground truth: the scenario events of series loaded from the inventory are drawn as bands on the time axis
+  (yellow: operation, red: sensor fault); the field "Ground truth" jumps to an event
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
   `src/workbench/vector.ts`)
 - Run once and write to KafScale (tab "Smart Topic"): sends the DAG to the retrieval server, which writes the
