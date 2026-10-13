@@ -24,6 +24,7 @@ public final class TopicLayout {
     public static final String HEADER_BUCKET = "tsx-bucket";
 
     private static final Pattern DOMAIN = Pattern.compile("[a-z0-9][a-z0-9_-]*");
+    private static final Pattern SMART_NAME = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
     private final String domain;
 
@@ -85,6 +86,46 @@ public final class TopicLayout {
             }
         } catch (Exception e) {
             throw new IllegalStateException("topic provisioning failed for domain " + domain, e);
+        }
+    }
+
+    /**
+     * Topic of a vector Smart Topic: {@code tsx.<domain>.smart.<name>.vectors.v1}, records
+     * {@code opentsx.vector.v1} (JSON). See docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md, section 5a.
+     */
+    public String smartVectors(String name) {
+        if (!SMART_NAME.matcher(name).matches()) {
+            throw new IllegalArgumentException("smart topic name must match " + SMART_NAME + ": " + name);
+        }
+        return "tsx." + domain + ".smart." + name + ".vectors.v1";
+    }
+
+    /** The name part of a vector topic of this domain, or null when the topic is not one. */
+    public String smartVectorName(String topic) {
+        String prefix = "tsx." + domain + ".smart.";
+        String suffix = ".vectors.v1";
+        if (topic == null || !topic.startsWith(prefix) || !topic.endsWith(suffix)
+                || topic.length() <= prefix.length() + suffix.length()) {
+            return null;
+        }
+        String name = topic.substring(prefix.length(), topic.length() - suffix.length());
+        return SMART_NAME.matcher(name).matches() ? name : null;
+    }
+
+    /** Creates the vector topic when it is missing: one partition, so a scan reads the measuring points in order. */
+    public void provisionSmartVectors(Admin admin, String name, short replicationFactor) {
+        String topic = smartVectors(name);
+        try {
+            if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(topic)) {
+                admin.createTopics(List.of(new NewTopic(topic, 1, replicationFactor)
+                        .configs(Map.of("compression.type", "zstd", "cleanup.policy", "delete")))).all().get(30, TimeUnit.SECONDS);
+            }
+        } catch (ExecutionException e) {
+            if (!(e.getCause() instanceof TopicExistsException)) {
+                throw new IllegalStateException("could not create " + topic, e.getCause());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("could not create " + topic, e);
         }
     }
 

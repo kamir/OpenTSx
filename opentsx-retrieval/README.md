@@ -99,7 +99,30 @@ POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "me
 POST /v1/episodes/similar  {"episodeId", …}
 POST /v1/segments          {"strategy","params":{…}, "metric","tags","from","to"}
 GET  /v1/inventory         every series of the store with its metadata
+POST /v1/dags/run          opentsx.dag.v1 (YAML): runs its vector sinks once and writes their topics
 ```
+
+### Vector topics
+
+With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,
+records `opentsx.vector.v1`). Every component of a vector is offered as a series `smart.<name>.<component>` with the
+tags of the vector key plus `vector=<name>`; the inventory lists the topics under `source.vectorTopics`.
+
+`POST /v1/dags/run` exists only with `--dag-runs true`. It takes an `opentsx.dag.v1` document as YAML, runs every
+vector sink (`schema: opentsx.vector.v1` on an `align.vector` node) once over the episodes the server holds, and
+appends the measuring points to the sink topic. The answer says what was written per sink.
+
+* It runs `align.vector` on the series of the source topic only (`in: [decode]`). Any other operator before the
+  vector is refused with the id of the node.
+* `source.series` names the series ids to read; without it, all series of the topic.
+* A second run appends again. Readers take the later measuring point per key and tick.
+* It is one pass: no checkpoint, no following of the source topic. At most 500000 measuring points per run.
+* **No authentication.** Whoever reaches the port can write vector topics of the domain. Keep `--dag-runs` off
+  outside a trusted network.
+
+The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
+workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
+`docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5a.
 
 ### Series inventory
 
@@ -130,7 +153,7 @@ Start the server:
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --iceberg type=rest,uri=…,warehouse=… [--namespace tsx]
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --demo true      # synthetic demo store
 java -cp … org.opentsx.retrieval.server.RetrievalServer --port 8080 --kafscale host:9092 --domain wind \
-     [--refresh PT30S] [--max-episodes 20000]                                         # episodes topic on KafScale
+     [--refresh PT30S] [--max-episodes 20000] [--dag-runs true]                       # episodes topic on KafScale
 ```
 
 With `--kafscale` the server reads `tsx.<domain>.episodes.v2` into memory and follows the topic. It uses manual

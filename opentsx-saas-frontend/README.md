@@ -107,6 +107,8 @@ frontend/
 - Oscilloscope view: time base, vertical scale, cursors, trigger, measurements
 - Align to vector: several nodes on one clock, one measuring point per tick (`opentsx.vector.v1`, a draft;
   `src/workbench/vector.ts`)
+- Run once and write to KafScale (tab "Smart Topic"): sends the DAG to the retrieval server, which writes the
+  vector topic; needs a server started with `--kafscale` and `--dag-runs true`
 - Time series operations as buttons, recorded as a processing flow graph
 - Export: `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor, Java code
 - Code in `src/workbench/`; limits in `../EVOLUTION/TASK-013-web-workbench.md`

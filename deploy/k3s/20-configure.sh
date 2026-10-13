@@ -56,13 +56,16 @@ fi
 if [[ "$KAFSCALE_BOOTSTRAP" == "192.168.1.50:9092" ]]; then
   warn "KAFSCALE_BOOTSTRAP is still the example value 192.168.1.50:9092"
 fi
-for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS; do
+for b in LAKE LAKE_MINIO INGRESS DWD_FORWARD MODBUS_SIM MONITORING SAAS RETRIEVAL_DAG_RUNS; do
   [[ "${!b,,}" =~ ^(true|false|yes|no|1|0|on|off)$ ]] || die "$b must be true or false"
 done
 [[ "$DWD_MODE" =~ ^(online|offline)$ ]] || die "DWD_MODE must be online or offline"
 [[ "$RETRIEVAL_SOURCE" =~ ^(demo|kafscale)$ ]] || die "RETRIEVAL_SOURCE must be demo or kafscale"
 if is_true "$LAKE" && [[ "$RETRIEVAL_SOURCE" == kafscale ]]; then
   die "LAKE=true lets the retrieval server read Iceberg; set RETRIEVAL_SOURCE=demo or LAKE=false"
+fi
+if is_true "$RETRIEVAL_DAG_RUNS" && [[ "$RETRIEVAL_SOURCE" != kafscale ]]; then
+  die "RETRIEVAL_DAG_RUNS=true needs RETRIEVAL_SOURCE=kafscale (the runs read and write KafScale)"
 fi
 [[ "$DWD_STATIONS" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || die "DWD_STATIONS=$DWD_STATIONS: expected MOSMIX ids like 10578,10579"
 read -r -a cron_fields <<< "$DWD_SCHEDULE"
@@ -138,6 +141,7 @@ DWD_MODE=$DWD_MODE
 MODBUS_HOST=$MODBUS_HOST
 MODBUS_PORT=$MODBUS_PORT
 MODBUS_MAP=$MODBUS_MAP
+RETRIEVAL_DAG_RUNS=$(is_true "$RETRIEVAL_DAG_RUNS" && echo true || echo false)
 EOF
 
 {
@@ -301,7 +305,7 @@ EOF
 # ---- check the rendering -------------------------------------------------------------------------------------------
 info "configuration written: $ENV_FILE, $OVERLAY/"
 echo "  namespace $OPENTSX_NS | KafScale $KAFSCALE_BOOTSTRAP ($KAFSCALE_NETWORK; pods use $POD_BOOTSTRAP) | domain $OPENTSX_DOMAIN"
-echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | retrieval $RETRIEVAL_SOURCE | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"
+echo "  images $OPENTSX_IMAGE_REPO/{tools,studio}:$OPENTSX_TAG | lake $LAKE (minio $LAKE_MINIO) | retrieval $RETRIEVAL_SOURCE (dag runs $RETRIEVAL_DAG_RUNS) | ingress $INGRESS | OpenMetadata ${OM_URL:-off}"
 echo "  modbus-sim $MODBUS_SIM (poll $MODBUS_HOST:$MODBUS_PORT, map $MODBUS_MAP) | dwd-forward $DWD_FORWARD ($DWD_MODE, $DWD_STATIONS, '$DWD_SCHEDULE') | monitoring $MONITORING | saas $SAAS"
 if kc version --client >/dev/null 2>&1; then
   n="$(kc kustomize "$OVERLAY" | grep -c '^kind:')" || die "kubectl kustomize $OVERLAY failed"

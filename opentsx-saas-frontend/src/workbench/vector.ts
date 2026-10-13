@@ -6,7 +6,7 @@
  *
  * - Clock: ticks are multiples of `every` seconds since the epoch. Tick k covers [k * every, (k + 1) * every).
  * - Component: one per input node, in the order of the inputs. Its value in a tick is the aggregate of the samples
- *   of that node in the tick. An input with several series per key gives one component per series.
+ *   of that node in the tick. An input with several series per key gives one component per series, in name order.
  * - Key: what forms one vector per tick. `series`: the same series id in every input. `all`: everything in one
  *   vector. A tag name (`turbine`): the series with the same value of that tag.
  * - Missing: a component without a sample in the tick is missing, or (fill as-of) takes its last value when that is
@@ -110,10 +110,15 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
     const perKey = new Map<string, number>();
     for (const s of b.series) perKey.set(keyOf(s), (perKey.get(keyOf(s)) ?? 0) + 1);
     const several = [...perKey.values()].some((n) => n > 1);
+    const componentOf = (s: Series): string =>
+      !several ? names[c] : inputs.length === 1 ? seriesName(s) : `${names[c]}.${seriesName(s)}`;
+    // the components of one input in name order, so the vector does not depend on the order the series arrive in
+    for (const name of [...new Set(b.series.map(componentOf))].sort()) {
+      if (!components.includes(name)) components.push(name);
+    }
     for (const s of b.series) {
       const key = keyOf(s);
-      const component = !several ? names[c] : inputs.length === 1 ? seriesName(s) : `${names[c]}.${seriesName(s)}`;
-      if (!components.includes(component)) components.push(component);
+      const component = componentOf(s);
       let k = keys.get(key);
       if (!k) {
         k = { sample: s, cells: new Map(), units: new Map() };
@@ -146,7 +151,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
   const series: Series[] = [];
   let ticksOut = 0;
   let missing = 0;
-  for (const [key, k] of keys) {
+  for (const [key, k] of [...keys].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))) {
     let lo = Infinity;
     let hi = -Infinity;
     for (const cells of k.cells.values()) {

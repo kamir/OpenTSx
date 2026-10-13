@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SOURCE_ID, evaluate, parseNodes, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate, vectorComponents } from './flow';
+import { SOURCE_ID, evaluate, parseNodes, runBlocker, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate, vectorComponents } from './flow';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, Series } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, alignVector, componentNames, vectorRecords } from './vector';
@@ -125,24 +125,24 @@ describe('align.vector', () => {
       series(id, [0], [y], { label: `${metric} ${turbine}`, metric: `wind.x.${metric}`, tags: { park: 'p', turbine } });
     const raw = timeBucket('2metrics_4x', [s('a', 'wind_speed', 'T01', 5), s('b', 'power_active', 'T01', 400), s('c', 'wind_speed', 'T02', 7), s('d', 'power_active', 'T02', 900)]);
     const byTurbine = align(raw, [], { every: 60, key: 'turbine' });
-    expect(byTurbine.vector).toEqual({ clock: 60, components: ['wind_speed', 'power_active'], keyBy: 'turbine' });
+    expect(byTurbine.vector).toEqual({ clock: 60, components: ['power_active', 'wind_speed'], keyBy: 'turbine' });
     expect(vectorRecords(byTurbine, 'v').map((r) => [r.key, r.values])).toEqual([
-      [{ turbine: 'T01' }, [5, 400]],
-      [{ turbine: 'T02' }, [7, 900]],
+      [{ turbine: 'T01' }, [400, 5]],
+      [{ turbine: 'T02' }, [900, 7]],
     ]);
-    expect(byTurbine.series.map((x) => x.label)).toEqual(['wind_speed T01', 'power_active T01', 'wind_speed T02', 'power_active T02']);
+    expect(byTurbine.series.map((x) => x.label)).toEqual(['power_active T01', 'wind_speed T01', 'power_active T02', 'wind_speed T02']);
 
     // a second input adds its own components, prefixed with the name of the input
     const doubled: Bucket = { ...raw, name: 'Double_2metrics_4x', series: raw.series.map((x) => ({ ...x, y: x.y.map((v) => 2 * v) })) };
     const two = align(raw, [doubled], { every: 60, key: 'turbine' });
-    expect(two.vector?.components).toEqual(['raw.wind_speed', 'raw.power_active', 'double.wind_speed', 'double.power_active']);
-    expect(vectorRecords(two, 'v')[1].values).toEqual([7, 900, 14, 1800]);
+    expect(two.vector?.components).toEqual(['raw.power_active', 'raw.wind_speed', 'double.power_active', 'double.wind_speed']);
+    expect(vectorRecords(two, 'v')[1].values).toEqual([900, 7, 1800, 14]);
 
     const t01 = timeBucket('t01', raw.series.slice(0, 2));
     const all = align(t01, [], { every: 60, key: 'all' });
     expect(vectorRecords(all, 'v')).toHaveLength(1);
-    expect(vectorRecords(all, 'v')[0]).toMatchObject({ key: {}, components: ['wind_speed', 'power_active'], values: [5, 400] });
-    expect(all.series.map((x) => x.label)).toEqual(['wind_speed', 'power_active']);
+    expect(vectorRecords(all, 'v')[0]).toMatchObject({ key: {}, components: ['power_active', 'wind_speed'], values: [400, 5] });
+    expect(all.series.map((x) => x.label)).toEqual(['power_active', 'wind_speed']);
 
     expect(() => align(raw, [], { key: 'rotor' })).toThrow(/No series carries the tag "rotor". Use series, all, or one of: park, turbine/);
   });
@@ -179,6 +179,43 @@ describe('align.vector', () => {
   });
 });
 
+interface VectorCase {
+  name: string;
+  params: Record<string, string | number>;
+  inputs: { name: string; series: { id: string; metric: string; tags: Record<string, string>; t: number[]; v: (number | null)[] }[] }[];
+  expect: { key: Record<string, string>; from: number; components: string[]; values: (number | null)[] }[];
+  also?: Record<string, number[]>;
+}
+
+/** The test vectors shared with the Java operator (opentsx-retrieval, VectorAlignerTest). */
+describe('align.vector, shared test vectors', () => {
+  const file = resolve(process.cwd(), '../docs/datamodel-2026/testvectors/align-vector.v1.json');
+  const cases: VectorCase[] = JSON.parse(readFileSync(file, 'utf8')).cases;
+
+  const run = (c: VectorCase, agg: string) => {
+    const buckets = c.inputs.map((input) => ({
+      ...timeBucket(input.name, input.series.map((x) => series(x.id, x.t, x.v.map((v) => v ?? NaN), { metric: x.metric, tags: x.tags })), 0),
+    }));
+    const params = { ...defaultParams(OP_BY_ID[VECTOR_OP]), ...c.params, agg, names: c.inputs.map((i) => i.name).join(',') };
+    return vectorRecords(alignVector(buckets[0], params, buckets.slice(1)), 'v');
+  };
+
+  it('has cases', () => expect(cases.length).toBeGreaterThanOrEqual(6));
+
+  for (const c of cases) {
+    it(c.name, () => {
+      const got = run(c, String(c.params.agg)).map((r) => ({
+        key: r.key,
+        from: Date.parse(String(r.window.from)) / 1000,
+        components: r.components,
+        values: r.values,
+      }));
+      expect(got).toEqual(c.expect);
+      for (const [agg, values] of Object.entries(c.also ?? {})) expect(run(c, agg)[0].values).toEqual(values);
+    });
+  }
+});
+
 describe('flow with a vector node', () => {
   const state = () => useFlow.getState();
   let z: string;
@@ -186,7 +223,8 @@ describe('flow with a vector node', () => {
   let v: string;
 
   beforeEach(() => {
-    useFlow.setState({ track: 'EXP2', domain: 'wind', sourceTopic: 'tsx.wind.episodes.v2' });
+    // an empty flow first: loadBucket fills a flow that was restored without data instead of replacing it
+    useFlow.setState({ track: 'EXP2', domain: 'wind', sourceTopic: 'tsx.wind.episodes.v2', nodes: [], source: null });
     const x = Array.from({ length: 240 }, (_, i) => i);
     state().loadBucket(timeBucket('ws_T05', [series('s', x, x.map((i) => Math.sin(i / 10)))]), { kind: 'test', detail: '' });
     z = state().applyOp('norm.zscore')!;
@@ -251,6 +289,29 @@ describe('flow with a vector node', () => {
     state().updateParams(v, { fill: 'as-of', maxAge: 120 });
     expect(toDagYaml(state())).toContain('agg: MEAN, fill: as-of, maxAge: PT120S, emit: any');
     expect(validate(state().nodes).filter((f) => f.level === 'error')).toEqual([]);
+  });
+
+  it('names the source series in the DAG and says whether the retrieval server can run it', () => {
+    expect(runBlocker(state().nodes)).toMatch(/Publish an "Align to vector" node first/);
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    expect(runBlocker(state().nodes)).toBeNull();
+    expect(toDagYaml(state())).not.toContain('  series:');
+    state().setSourceSeries(['6e803ad522510511', 'bf9fb54cca74b30a']);
+    expect(toDagYaml(state())).toContain('  topics: [tsx.wind.episodes.v2]\n  series: ["6e803ad522510511", bf9fb54cca74b30a]\n');
+    expect(toDefinition(state()).sourceSeries).toEqual(['6e803ad522510511', 'bf9fb54cca74b30a']);
+
+    state().setSink(v, 'tsx.wind.smart.Turbine_State.vectors.v1');
+    expect(runBlocker(state().nodes)).toMatch(/must have the form/);
+    state().setSink(v, 'tsx.wind.smart.turbine-state.vectors.v1');
+    state().addInput(v, z);
+    expect(runBlocker(state().nodes)).toMatch(/reads Standardized_ws_T05. The runtime executes vectors built from the source bucket only/);
+
+    // a new bucket forgets the series of the old one; a stored flow brings its own back
+    const stored = JSON.parse(JSON.stringify(toDefinition(state())));
+    state().loadBucket(timeBucket('other', [series('s', [0], [1])]), { kind: 'test', detail: '' });
+    expect(state().sourceSeries).toEqual([]);
+    expect(state().restore(stored, 3)).toBe(true);
+    expect(state().sourceSeries).toEqual(['6e803ad522510511', 'bf9fb54cca74b30a']);
   });
 
   it('names the further inputs in the descriptor and the Java export', () => {
