@@ -54,6 +54,8 @@ entries are grouped by date. The detailed progress log (German) is in
   so flows of one track no longer replace each other. "Deploy" saves the flow first and marks it active, "Stop"
   marks it paused. A deployment is refused while another running one writes the same topic. Deployments under
   the old name keep running and belong to no flow.
+- Workbench: the left side has two tabs. "Input bucket" is the tree of the loaded bucket and the buckets made
+  of it; "Smart Topic" (moved there from the inspector) holds publishing, the DAG download and the deployments.
 - CI: jobs "SaaS frontend" (types, lint, tests, build) and "SaaS backend" (pytest).
 - SaaS backend: flows are stored per user in the database (`app/api/flows.py`: create, read, update, delete,
   executions), replacing the placeholder routes. The workbench saves a flow to the account and reopens it from the

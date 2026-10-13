@@ -6,13 +6,14 @@
 - **Status**: In Progress
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task013-processor-resilience` (013.17), Worktree
+- **Delivery-Branch**: `opentsx/2026-task013-side-tabs` (013.20), Worktree
   `../OpenTSx-worktrees/processor-resilience`
 - **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task013-web-workbench` (013.1 bis 013.4, PR #161),
   `opentsx/2026-task013-ts-inventory` (013.8, PR #165), `opentsx/2026-task013-vector-sink` (013.10, PR #166),
   `opentsx/2026-task013-vector-runtime` (013.11, PR #168), `opentsx/2026-task013-secure-dag-runs` (013.12, PR #172),
   `opentsx/2026-task013-ground-truth` (013.13, PR #173), `opentsx/2026-task013-broker-patience` (013.14, PR #175),
-  `opentsx/2026-task013-vector-ops` (013.15 und 013.16, PR #177).
+  `opentsx/2026-task013-vector-ops` (013.15 und 013.16, PR #177),
+  `opentsx/2026-task013-processor-resilience` (013.17 bis 013.19, PR #178).
   `opentsx/2026-task013-vector-processor` (013.15, PR #176) wurde in seinen Basis-Branch statt nach `master`
   gemergt; sein Inhalt kommt mit PR #177.
 
@@ -182,6 +183,9 @@ Beobachtungen am Swing-Code:
         bereitgestellter Flow lässt sich nicht löschen. Schreibt eine andere laufende Bereitstellung schon in
         dasselbe Topic, wird abgelehnt. Der Export eines ungespeicherten Flows trägt weiter den Namen des Tracks;
         Bereitstellungen mit altem Namen laufen weiter und gehören zu keinem Flow
+- [x] 013.20 Linke Seite mit zwei Reitern (Stand 2026-10-13): "Input bucket" (der bisherige Baum) und "Smart Topic"
+      (aus dem Inspektor dorthin verlegt; die Spalte wird dabei breiter). Ältere Einträge, die den Reiter im
+      Inspektor nennen, meinen diesen
 - [ ] 013.5 Laufzeit für `opentsx.dag.v1` über Vektoren hinaus (11, D25 bis D27): Operatoren vor dem Vektor
       (`resample`, `dq.checks`), weitere Sink-Arten
 - [ ] 013.6 Kontext-Topics (Eingänge aus anderen Topics), `score.onnx`, `train.trigger`; Knoten mit mehreren
