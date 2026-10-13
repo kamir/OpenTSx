@@ -1,0 +1,37 @@
+# Retrieval server on the episodes topic of the domain (tsx.<domain>.episodes.v2 on KafScale) instead of the demo
+# store: GET /v1/inventory then lists the real series with their scenario metadata, and the workbench of the SaaS
+# module ("TS Inventory") loads them. The server keeps the episodes in memory (up to --max-episodes, default 20000);
+# for more data use the lake profile, which reads Iceberg.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Deployment
+      name: opentsx-retrieval
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args
+        value: [retrieval-server, --port, "8080", --kafscale, $(KAFSCALE_BOOTSTRAP), --domain, $(OPENTSX_DOMAIN),
+                --scenario, $(OPENTSX_SCENARIO), --catalog, /opt/opentsx/share/windpark/channel-catalog.yaml]
+      - op: add
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: KAFSCALE_BOOTSTRAP
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: KAFSCALE_BOOTSTRAP}}
+          - name: OPENTSX_DOMAIN
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_DOMAIN}}
+          - name: OPENTSX_SCENARIO
+            valueFrom: {configMapKeyRef: {name: opentsx-config, key: OPENTSX_SCENARIO}}
+          - name: JAVA_OPTS      # the Kafka client logs every seek of the feed at INFO
+            value: -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: {cpu: 250m, memory: 768Mi}
+          limits: {cpu: "2", memory: 2Gi}
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/initialDelaySeconds
+        value: 10
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
+        value: 120

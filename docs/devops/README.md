@@ -63,7 +63,7 @@ flowchart LR
 | Component | Kind | Image | Command (inside the image) |
 |-----------|------|-------|---------------------------|
 | statistics processor | Deployment (1 replica, `Recreate`) | `opentsx/tools` | `opentsx stats --kafscale … --checkpoint /state/stats.ckpt` |
-| retrieval server | Deployment + Service | `opentsx/tools` | `opentsx retrieval-server --port 8080 --demo true` (lake: `--iceberg …`) |
+| retrieval server | Deployment + Service | `opentsx/tools` | `opentsx retrieval-server --port 8080 --demo true` (lake: `--iceberg …`; `RETRIEVAL_SOURCE=kafscale`: `--kafscale …`) |
 | Smart Topics Studio | Deployment + Service | `opentsx/studio` | nginx serving the page generated during the image build |
 | KafScale check / topic provisioning | Job | `opentsx/tools` | `opentsx kafscale-check --kafscale … --provision true` |
 | wind-farm simulator | Job | `opentsx/tools` | `opentsx windpark-sim --scenario … --kafscale …` |

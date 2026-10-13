@@ -233,7 +233,8 @@ step_retrieval() {
   body="$(curl -s --max-time 10 "http://localhost:$port/v1/health" || true)"
   echo "GET /v1/health -> $body"
   [[ "$body" == *'"ok"'* ]] || { note "/v1/health answered '${body:0:80}'"; rc=1; }
-  if is_true "$LAKE"; then q="metric=wind.met.wind_speed&tag.turbine=T07&limit=1"; else q="metric=demo.signal&limit=1"; fi
+  if is_true "$LAKE"; then q="metric=wind.met.wind_speed&tag.turbine=T07&limit=1"
+  elif [[ "$RETRIEVAL_SOURCE" == kafscale ]]; then q="limit=1"; else q="metric=demo.signal&limit=1"; fi
   body="$(curl -s --max-time 30 "http://localhost:$port/v1/episodes?$q" || true)"
   echo "GET /v1/episodes?$q -> ${body:0:400}"
   if (( rc == 0 )); then

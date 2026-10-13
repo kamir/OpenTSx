@@ -33,7 +33,7 @@ ICEBERG_VERSION="$(cd "$ROOT" && mvn -q -B -pl opentsx-store-iceberg help:evalua
 
 H="$OUT/opt/opentsx"
 rm -rf "$OUT"
-mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/twin" "$H/share/modbus" "$H/share/dwd" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
+mkdir -p "$H/bin" "$H/lib/m2" "$H/cp" "$H/share/scenarios" "$H/share/windpark" "$H/share/twin" "$H/share/modbus" "$H/share/dwd" "$OUT/studio/tools" "$OUT/studio/docs/prototypes"
 
 add_jar() {   # absolute jar path -> prints the classpath entry relative to OPENTSX_HOME, copies the jar once
   local jar="$1" rel
@@ -82,6 +82,8 @@ jar --create --file "$H/lib/opentsx-deploy-tools.jar" -C "$tmp/classes" .
 cp "$ROOT/deploy/docker/opentsx-entrypoint.sh" "$H/bin/opentsx"
 chmod 0755 "$H/bin/opentsx"
 cp "$ROOT"/opentsx-windpark/scenarios/*.yaml "$H/share/scenarios/"
+# channel catalog as a file: the retrieval server hands it out in the series inventory (--catalog)
+cp "$ROOT"/opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml "$H/share/windpark/"
 cp -R "$ROOT"/opentsx-twin/src/main/resources/twin/. "$H/share/twin/"   # including subdirectories (beispiel/)
 cp "$ROOT"/opentsx-modbus/src/main/resources/modbus/*.yaml "$H/share/modbus/"
 # small DWD test fixtures (real file layout, a few KB): offline mode of the dwd demo Job and the probe

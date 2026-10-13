@@ -81,7 +81,7 @@ export interface FlowNode {
 }
 
 export interface SourceInfo {
-  /** 'generator' | 'file' | 'retrieval' */
+  /** 'generator' | 'file' | 'retrieval' | 'inventory' */
   kind: string;
   detail: string;
 }
