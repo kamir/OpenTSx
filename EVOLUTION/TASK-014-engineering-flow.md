@@ -170,7 +170,9 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
 - [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
       [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
       Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository
-      (`.claude/agents/sim-*.md`, angelegt), nach S1 erst Demo A ausrollen und durchspielen
+      (`.claude/agents/sim-*.md`, angelegt), nach S1 erst Demo A ausrollen und durchspielen.
+      Erster Durchlauf am 2026-10-13 mit neun Befunden (16, Abschnitt 7); die nächste Baustufe ist danach zu
+      entscheiden
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 

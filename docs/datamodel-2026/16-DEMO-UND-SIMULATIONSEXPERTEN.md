@@ -168,3 +168,30 @@ Entschieden vom Auftraggeber am 2026-10-13.
 
 Die fünf Definitionen liegen unter `.claude/agents/`. Sie arbeiten mit der Kommandozeile und den Schnittstellen,
 die es gibt, und sagen, wenn eine Frage ein Werkzeug braucht, das fehlt (Abschnitt 3.2).
+
+## 7. Erster Durchlauf von Demo A
+
+Am 2026-10-13 auf dem Laborsystem, nach dem Ausrollen von S1 (Retrieval-Server und Studio mit dem neuen Plan).
+Durchgespielt sind die Akte 1 bis 4; die Akte 5 und 6 nur so weit, wie das Studio sie vorgerechnet zeigt.
+
+**Was trägt.** Das Systembild zeigt zwölf Bausteine und meldet "9 inputs from outside, each with a signal". Die
+Seite Signals zeigt dreizehn Signale mit Herkunft und nächstem Schritt. Die Entscheidungskarte nennt je Analyse,
+woran es fehlt. Das Studio erzählt die neue Kette: Ventil zu um 01:00, Warnung 01:29, Druckgrenze im Puffer 02:29,
+Schutzabschaltung, Mehreinspeisung.
+
+**Wo es hakt.**
+
+| Nr. | Befund | Folge für die Demo |
+|---|---|---|
+| 1 | Das Systembild der Web-Anwendung ist mit zwölf Bausteinen schwer zu lesen: Der Weg des Wasserstoffs ist nicht als Kette zu erkennen, Beschriftungen überlappen, Strom, Gas und Information sehen gleich aus. Die Annahme zur Reihenfolge steht nur im Plan, nicht im Bild | Akt 1 im Studio zeigen (dort sind die Spalten die Phasen und die Flüsse farbig), bis das Bild der Web-Anwendung nachgezogen ist |
+| 2 | Das Studio ist von außen nicht erreichbar (Dienst nur im Cluster) und aus der Web-Anwendung nicht verlinkt. Zwei Fenster, zwei Adressen | vor der Demo eine Weiterleitung einrichten; auf Dauer ein Weg vom Ort System ins Studio |
+| 3 | Die Web-Anwendung spricht Englisch, das Studio Deutsch | für ein deutsches Publikum im Ablauf ansagen; eine Sprache je Publikum ist eine Entscheidung |
+| 4 | Beide Analysen stehen auf `blocked`: Der Preis ist gebunden, aber nicht erzeugt; der Bedarf hat nur Rohdaten; das Potenzial des Parks ist nicht veröffentlicht | vor der Demo drei Schritte: Preis erzeugen, Bedarf bereinigen, Potenzial aus der Windgeschwindigkeit veröffentlichen. Danach steht `restricted`, und genau das ist die Aussage der Demo |
+| 5 | Die Reihe, die vor S1 als `park.p_avail_kw` veröffentlicht wurde, zählt nicht mehr: Das Signal heißt jetzt `park.p_potential_kw`, und der laufende Flow schreibt weiter unter dem alten Namen | den Flow auf das neue Signal umstellen und neu starten; ein umbenanntes Signal braucht einen beschriebenen Weg |
+| 6 | Der Lauf des Studios hat mit dem neuen Plan eine neue Kennung. Das Ereignis-Topic dieses Laufs ist nicht veröffentlicht | den Lauf einmal ins Topic veröffentlichen, sonst bleibt die Ansicht "Ereignis-Topic" leer |
+| 7 | Das Studio zeigt nur vorgerechnete Alternativen (Ventil wieder offen zu neun festen Zeiten, zwei Fahrweisen). Eine Frage dazwischen lässt sich nicht stellen | die Fragen der Demo auf die vorgerechneten legen; das ist die Lücke 1 aus Abschnitt 4 |
+| 8 | Akt 6 hat nichts zu zeigen: Im Lauf der Demo wird nichts abgeregelt, Potenzial, verfügbare und erzeugte Leistung sind gleich | dem Szenario ein Fenster mit einer Auflage und einen Fahrbefehl geben, damit die drei Leistungen auseinanderlaufen |
+| 9 | Der Abnehmer steht im Systembild der Web-Anwendung auf "to do", obwohl sein Bedarf gebunden ist: Die Marke unterscheidet nicht zwischen "Rohdaten da" und "offen" | die Marke am Baustein auf den Zustand des Signals abbilden, nicht nur auf "bereinigt oder nicht" |
+
+Die Befunde 4, 5 und 6 sind Vorbereitung und brauchen keinen Code. Die Befunde 1, 2, 8 und 9 sind kleine Arbeiten
+an Oberfläche und Szenario. Befund 7 ist der Lauf-Dienst.
