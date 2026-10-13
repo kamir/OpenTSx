@@ -120,6 +120,13 @@ entries are grouped by date. The detailed progress log (German) is in
   copy (`POST /v1/systems/<id>/plan`) and links to the Smart Topics Studio, which the frontend image now serves
   under `/studio/`. The scenario has a rule window (04:00 to 05:00) and a dispatch (05:00 to 05:30), so potential,
   available and generated power differ and the energy not generated shows per cause.
+- Runs of the twin on request (TASK-014, run service and run register). The retrieval server computes a run of the
+  scenario of a system for the decisions a person asks for (`POST /v1/systems/<id>/runs`: controls set at a time, a
+  policy, optionally a forecast that continues the reference), keeps the last hundred runs in memory and hands out
+  a run, its series and a comparison of two runs by their identity. Every run names the origin of its inputs and
+  its status, which is `restricted` as long as the inputs are those of the scenario. The web application has the
+  place "Simulate": a question on the left, the run next to the reference on the right. Also: a signal bound in the
+  working copy opens in the workbench, and a flow may read a generated series as the raw grade of its signal.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

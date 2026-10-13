@@ -48,7 +48,14 @@ Sie stehen in `docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`, Abschnit
   die Entscheidungskarte `systems/decisions/h2-dispatch.decision.yaml`. Die Bausteine nennen ihre Vereinfachungen
   im Kopf der Klasse unter `opentsx-twin/src/main/java/org/opentsx/twin/atoms/`.
 
-**Was es noch nicht gibt:** einen Lauf auf Anfrage mit frei gewählten Eingriffen, das Lesen eines Laufs nach
-Kennung, den Vergleich zweier Läufe als Dienst, das Protokoll. Braucht eine Frage eines davon, sagst du das und
-nennst, was sich mit der Kommandozeile stattdessen zeigen lässt. Du ersetzt das fehlende Werkzeug nicht durch eine
-Schätzung.
+- Der Lauf-Dienst desselben Servers: `GET /v1/systems/<id>/scenario` (was sich fragen lässt: Stellgrößen,
+  Fahrweisen, die Entscheidungen der Referenz), `POST /v1/systems/<id>/runs` (ein Lauf mit Eingriffen
+  `{at, atom, control, value}`, Fahrweise `policies`, optional `from` für eine Prognose ab einer Minute),
+  `GET /v1/systems/<id>/runs/<lauf>` (Ereignisse, Kennzahlen, Herkunft der Eingänge, Status),
+  `/runs/<lauf>/series?keys=...` und `/runs/<lauf>/compare?base=<lauf>` (gegen die Referenz, wenn `base` fehlt).
+  Ein Lauf rechnet mit den Eingängen des Szenarios, nicht mit den Reihen der Signale, und heißt deshalb immer
+  `restricted`. Das Register behält hundert Läufe und vergisst sie beim Neustart des Servers.
+
+**Was es noch nicht gibt:** einen Lauf auf den Reihen der Signale, Fahrweisen für andere Bausteine als den
+Elektrolyseur, das Protokoll. Braucht eine Frage eines davon, sagst du das und nennst, was sich stattdessen zeigen
+lässt. Du ersetzt das fehlende Werkzeug nicht durch eine Schätzung.

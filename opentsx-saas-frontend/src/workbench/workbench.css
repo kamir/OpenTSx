@@ -1625,3 +1625,160 @@
   margin: 3px 0 0;
   padding-left: 18px;
 }
+
+/* ---- the place "Simulate": a question on the left, the run next to the reference on the right ---- */
+.wb-simulate {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+.wb-ask,
+.wb-answer {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 10px 12px;
+  overflow: auto;
+  min-height: 0;
+}
+.wb-ask {
+  border-right: 1px solid var(--line);
+  background: var(--field);
+}
+.wb-ask h3,
+.wb-answer h3,
+.wb-answer h4 {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+.wb-answer h3 .wb-muted {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  margin-left: 6px;
+}
+.wb-decisions,
+.wb-runs,
+.wb-events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.wb-decisions li,
+.wb-events li {
+  padding: 2px 0;
+}
+.wb-decisions b,
+.wb-events b {
+  font-family: var(--mono);
+  margin-right: 4px;
+}
+.wb-check {
+  font-size: 12px;
+}
+.wb-ask-row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) 82px auto;
+  gap: 5px;
+  align-items: end;
+}
+.wb-ask-row input,
+.wb-ask-row select {
+  width: 100%;
+}
+.wb-ask-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.wb-runs li button {
+  width: 100%;
+  text-align: left;
+  padding: 3px 5px;
+  border: 1px solid transparent;
+  background: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+.wb-runs li.here button {
+  border-color: var(--line);
+  background: var(--panel);
+}
+.wb-run-status {
+  padding: 5px 8px;
+  border: 1px solid #c9a655;
+  background: #f8f0d8;
+  font-size: 12px;
+}
+.wb-run-status .wb-flow-status {
+  margin-right: 6px;
+}
+.wb-kpis {
+  max-width: 760px;
+}
+.wb-kpis td.better { color: #2f6b38; font-weight: 600; }
+.wb-kpis td.worse { color: #a3301f; font-weight: 600; }
+.wb-kpis td.l,
+.wb-kpis th:first-child,
+.wb-run-source .wb-table td.l,
+.wb-run-source .wb-table th {
+  text-align: left;
+}
+.wb-run-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 8px;
+}
+.wb-run-chart {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  background: var(--field);
+}
+.wb-run-chart figcaption {
+  font-size: 12px;
+  font-weight: 600;
+}
+.wb-run-chart figcaption .wb-muted {
+  font-weight: 400;
+  margin-left: 6px;
+}
+.wb-run-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.wb-run-chart polyline {
+  fill: none;
+  stroke-width: 2;
+}
+.wb-run-chart polyline.base { stroke: #8a949e; }
+.wb-run-chart polyline.run { stroke: #1f6fb3; }
+.wb-run-chart line.grid { stroke: #d8dde2; stroke-width: 1; }
+.wb-run-chart line.limit { stroke: #b3392b; stroke-width: 1; stroke-dasharray: 4 3; }
+.wb-run-chart text {
+  font-size: 9px;
+  fill: #5b6672;
+}
+.wb-legend {
+  margin: 0;
+  font-size: 11px;
+}
+.wb-legend i {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  margin: 0 4px 0 10px;
+  vertical-align: middle;
+}
+.wb-legend i.base { background: #8a949e; margin-left: 0; }
+.wb-legend i.run { background: #1f6fb3; }
+.wb-run-source {
+  font-size: 12px;
+}
+.wb-run-source summary {
+  cursor: pointer;
+  font-weight: 600;
+}

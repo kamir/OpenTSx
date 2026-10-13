@@ -213,7 +213,7 @@ describe('the shell around a system', () => {
   });
 
   it('gives each place of the rail its number', () => {
-    expect(railCounts(status(all), plan, 2)).toEqual({ system: '9 atoms', signals: '1 open, 4 to do', flows: '2 flows', models: 'none yet' });
+    expect(railCounts(status(all), plan, 2)).toEqual({ system: '9 atoms', signals: '1 open, 4 to do', flows: '2 flows', models: 'none yet', simulate: 'ask the twin' });
     expect(railCounts(status([setpoint]), plan, null)).toMatchObject({ signals: '1 signals', flows: 'sign in' });
   });
 

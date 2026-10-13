@@ -486,7 +486,7 @@ export function durationText(iso: string | undefined): string {
 
 // ---------------------------------------------------------------- guided mode
 
-export type Place = 'system' | 'signals' | 'flows' | 'models';
+export type Place = 'system' | 'signals' | 'flows' | 'models' | 'simulate';
 
 export interface GuideStep {
   n: number;
@@ -539,6 +539,7 @@ export function railCounts(status: SystemStatus | null, plan: PlanDoc | null, fl
     signals: status ? (todo > 0 ? `${open} open, ${todo} to do` : `${status.signals.length} signals`) : '',
     // null: not signed in; undefined: signed in, not counted yet
     flows: flows === null ? 'sign in' : flows === undefined ? '' : `${flows} flows`,
+    simulate: 'ask the twin',
     models: use.analyses === 0 ? 'none yet' : use.blocked > 0 ? `${use.blocked} of ${use.analyses} blocked` : `${use.usable} of ${use.analyses} usable`,
   };
 }

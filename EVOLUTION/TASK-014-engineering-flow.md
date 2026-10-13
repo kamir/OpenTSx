@@ -173,8 +173,23 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       (`.claude/agents/sim-*.md`, angelegt), nach S1 erst Demo A ausrollen und durchspielen.
       Erster Durchlauf am 2026-10-13 mit neun Befunden (16, Abschnitt 7); die nächste Baustufe ist danach zu
       entscheiden
-- [ ] 014.16 Demo A zeigbar machen: Befunde 1, 2, 4, 5, 6, 8 und 9 aus 16, Abschnitt 7
-- [ ] 014.17 Lauf-Dienst und Lauf-Register (16, Abschnitt 4, Punkte 1 und 2; entschieden am 2026-10-13)
+- [x] 014.16 Demo A zeigbar machen (2026-10-13): Befunde 1, 2, 4, 5, 6, 8 und 9 aus 16, Abschnitt 7
+      - Ort System: Bild in den Phasen eines Zeitschritts, Strom, Wasserstoff und Information in drei Farben,
+        Annahmen des Systemdokuments (`assumptions`), Arbeitskopie im Bild, Verweis ins Studio
+      - Studio unter `/studio/` am Frontend-Image; Szenario mit Auflage (04:00 bis 05:00) und Fahrbefehl
+      - gefunden und behoben: ein Signal aus der Arbeitskopie ließ sich nicht in der Workbench öffnen; eine
+        erzeugte Reihe (Topic `synthetic`) ließ sich nicht bereinigen
+      - Laborsystem vorbereitet: Preis erzeugt, Bedarf bereinigt, Potenzial veröffentlicht, Ereignisse des neuen
+        Laufs im Topic. Beide Analysen stehen weiter auf `blocked`, weil Preis und Bedarf aus Demo-Generatoren
+        stammen und die Entscheidung nur gemeldete Werte oder Prognosen annimmt (D61)
+- [x] 014.17 Lauf-Dienst und Lauf-Register (16, Abschnitt 4, Punkte 1 und 2; 2026-10-13, mit Grenzen)
+      - Server: `Runs` (Szenario lesen, Lauf rechnen, behalten, lesen, vergleichen), Routen unter
+        `/v1/systems/<id>/scenario` und `/runs`; Tests `RunsTest`
+      - Oberfläche: Ort "Simulate" (Frage links, Lauf neben der Referenz rechts, Ereignisse, Herkunft der Zahlen)
+      - Grenzen: ein Lauf rechnet mit den Eingängen des Szenarios, nicht mit den Reihen der Signale, und heißt
+        deshalb immer `restricted`; das Register liegt im Speicher (hundert Läufe, weg nach Neustart); Fahrweisen
+        gibt es nur für den Elektrolyseur; kein Protokolleintrag; die Agenten nutzen den Dienst über die
+        Schnittstelle, ein eigener Werkzeugvertrag mit Rechten fehlt
 - [ ] 014.11 E2 Durchgängiger Streaming- und Replay-Pfad (darin die zwei Varianten von `clean`)
 - [ ] 014.12 E3 Handlungs- und Lernkreis
 

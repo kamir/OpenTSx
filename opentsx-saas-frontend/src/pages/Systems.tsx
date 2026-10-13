@@ -11,6 +11,7 @@ import { useAuthStore } from '../store/authStore';
 import FlowComposer from '../workbench/FlowComposer';
 import { useFlow } from '../workbench/flow';
 import ModelsPlace from '../systems/ModelsPlace';
+import SimulatePlace from '../systems/SimulatePlace';
 import SignalsPlace from '../systems/SignalsPlace';
 import SystemPlace from '../systems/SystemPlace';
 import { DecisionStatus, Place, PlanDoc, SystemEntry, SystemStatus, countsText, guideSteps, parseStatus, railCounts } from '../systems/signals';
@@ -22,6 +23,7 @@ const PLACES: { id: Place; title: string; hint: string }[] = [
   { id: 'signals', title: 'Signals', hint: 'What the system expects, what is there, what to do next' },
   { id: 'flows', title: 'Flows', hint: 'What prepares the data, and what runs' },
   { id: 'models', title: 'Models', hint: 'What the system predicts' },
+  { id: 'simulate', title: 'Simulate', hint: 'Ask the twin what happens when a decision changes' },
 ];
 
 function remembered(key: string): boolean {
@@ -215,6 +217,7 @@ export default function Systems() {
             </main>
           ))}
         {here === 'models' && <ModelsPlace status={status} decisions={decisions} />}
+        {here === 'simulate' && <SimulatePlace system={system ?? ''} base={BASE} />}
       </div>
 
       <footer className="wb-status">
