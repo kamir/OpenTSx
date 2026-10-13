@@ -32,6 +32,9 @@ entries are grouped by date. The detailed progress log (German) is in
   Without a local `config/opentsx-local.props` (git-ignored), `OpenTSxClusterLink` falls back to this template.
 
 ### Fixed
+- SaaS frontend: the login page showed the default administrator password of a local backend on every
+  installation, also where the deployment generates another one. The hint now appears in the dev server only.
+  A wrong password reloaded the page instead of showing the error; the form now reports it.
 - SaaS backend: registration failed against a real database (`MissingGreenlet`), every authenticated request
   answered 401 (numeric token subject), and a refresh token was accepted as access token.
 
