@@ -1,0 +1,23 @@
+# Strategic merge patch for the Deployment "jupyter" of a stack (see README.md). Set the tag of the image.
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: opentsx
+          image: opentsx/notebook-content:3.0.0-notebook-1
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "rm -rf /home/jovyan/opentsx && cp -r /opentsx /home/jovyan/opentsx"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { cpu: 500m, memory: 128Mi }
+          volumeMounts:
+            - { name: home, mountPath: /home/jovyan }
+      containers:
+        - name: jupyter
+          env:
+            - { name: PYTHONPATH, value: /home/jovyan/opentsx/site-packages }
+            - { name: OPENTSX_RETRIEVAL, value: "http://opentsx-retrieval.opentsx.svc:8080" }
+            - { name: OPENTSX_DOMAIN, value: wind }
