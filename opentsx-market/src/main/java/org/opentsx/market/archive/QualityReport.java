@@ -55,6 +55,12 @@ public record QualityReport(long rows, double coveragePct, long missingMicros, i
         PLAUSIBLE.put("weather.air_temperature", new double[]{-45, 45});
         PLAUSIBLE.put("weather.wind_speed", new double[]{0, 70});
         PLAUSIBLE.put("weather.global_radiation", new double[]{0, 1400});
+        PLAUSIBLE.put("weather.wind_speed_10min", new double[]{0, 70});
+        PLAUSIBLE.put("weather.wind_gust", new double[]{0, 90});
+        PLAUSIBLE.put("weather.wind_direction", new double[]{0, 360});
+        PLAUSIBLE.put("weather.relative_humidity", new double[]{0, 100});
+        PLAUSIBLE.put("weather.pressure", new double[]{850, 1090});
+        PLAUSIBLE.put("weather.precipitation", new double[]{0, 150});
     }
 
     public boolean dstOk() {

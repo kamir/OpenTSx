@@ -109,7 +109,7 @@ class DecisionsTest {
         assertEquals("2026-10-01T06:00:00Z", st.path("asOf").asText());
         JsonNode avail = byId(st.path("decisions").get(0).path("needs"), "signal", "park.p_potential_kw");
         assertEquals(3600, avail.path("found").path("ageSeconds").asLong());
-        assertEquals("park.p_potential_kw ends 60 min before the newest data of the system; allowed are 5 min", texts(avail.path("reasons")).get(0));
+        assertEquals("park.p_potential_kw ends 60 min before the newest data the decision needs; allowed are 5 min", texts(avail.path("reasons")).get(0));
     }
 
     @Test

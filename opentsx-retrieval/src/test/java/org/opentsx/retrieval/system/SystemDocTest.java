@@ -63,7 +63,7 @@ class SystemDocTest {
         assertEquals(List.of(), d.problems());
         assertEquals("h2-chain", d.system());
         assertEquals("wind", d.domain());
-        assertEquals(13, d.signals().size());
+        assertEquals(16, d.signals().size());
         assertEquals(5, d.flows().size());
         // the expectation of a sensor channel comes from the catalog, where the interval is called sampling
         SystemDoc.Signal power = d.signals().get(0);
@@ -158,6 +158,6 @@ class SystemDocTest {
 
     @Test
     void theHashFollowsTheDocument(@TempDir Path dir) throws IOException {
-        assertNotEquals(SystemDoc.load(H2, ROOT).hash(), changed(dir, "seed: 7", "seed: 8").hash());
+        assertNotEquals(SystemDoc.load(H2, ROOT).hash(), changed(dir, "seed: 1", "seed: 8").hash());
     }
 }

@@ -110,6 +110,11 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   `Retry-After`. A failing year is reported and the run continues (exit code 3 if any year failed).
 * **Credentials:** a source without credentials is skipped with the reason. Tokens come only from the environment
   and are never written to the manifest.
+* **Publish:** `publish --series source/name,... --kafscale host:port --domain wind` writes archived series as raw
+  episodes into `tsx.<domain>.episodes.v2`, where the retrieval server and the flows of the domain read them. It
+  sends a batch (`--batch`, default 100), waits for every confirmation, pauses (`--pause-ms`, default 3000) and
+  stops at the first batch the broker does not confirm. An episode has an identity that follows from its series
+  and the time it begins at, so a repeat writes the same episodes again. `--dry-run` only counts.
 * **Load:** `load` maps the archive to REGULAR episodes, one per UTC day. Episodes split where the resolution
   changes or data is missing, so a gap is never filled. They are written to Iceberg (same `--iceberg` options as
   `bin/opentsx windpark-sim`) or to an in-memory store (dry run with counts).
@@ -136,6 +141,15 @@ The weather backfill reads the DWD CDC observations of the twin sites' stations
 | `air_temperature` | hourly `TT_TU` (`hourly/air_temperature/{historical,recent}`) | °C, stored as the hour starting at the measurement |
 | `wind_speed` | hourly mean `F` (`hourly/wind/...`) | m/s, interval start |
 | `global_radiation` | 10-minute `GS_10` (`10_minutes/solar/...`), J/cm² converted to the mean W/m² | W/m², interval start |
+| `relative_humidity` | hourly `RF_TU` (same files as the temperature) | % |
+| `wind_direction` | hourly mean `D` (same files as the wind speed) | deg |
+| `wind_speed_10min` | 10-minute mean `FF_10` (`10_minutes/wind/...`) | m/s, interval start |
+| `wind_gust` | highest gust of the hour `FX_911` (`hourly/extreme_wind/...`) | m/s |
+| `pressure` | hourly `P0` at station level (`hourly/pressure/...`) | hPa |
+| `precipitation` | hourly sum `R1` (`hourly/precipitation/...`) | mm, interval start |
+
+The sites file names a station for temperature, wind and radiation; the other six parameters are asked for with
+`--stations <id>:<parameter>,...`.
 
 The zips come from the directory listings. A `historical` file name carries its date range, so only the zips
 overlapping the requested years are read, and nothing is downloaded when every year is already complete. `recent`

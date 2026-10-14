@@ -524,6 +524,71 @@ Für S1 hat der Auftraggeber am selben Tag drei Dinge entschieden:
 | **J1 Das Jahr 2025 als Daten** | Preise und Wetter des Jahres 2025 aus dem Archiv als Reihen im Topic, an die Signale des Systems gebunden, mit Herkunft `REPORTED` und `MEASURED`; der Bruch der Auflösung im Preis und die Tage der Zeitumstellung geprüft; die Quelle des Windes benannt (Station, Höhe) und als nicht auf Nabenhöhe übertragen gekennzeichnet | `market.price_eur_mwh` hat Daten für 2025 mit Herkunft `REPORTED`; die Seite Signals zeigt Abdeckung und Lücken des Jahres; kein Wert ist erfunden, um eine Lücke zu schließen |
 | danach | E1a, E2a, E1b, E2b, E2c, E3a, E3b aus 10.3. E2c schrumpft auf das, was J1 nicht liefert (Bedarf des Abnehmers, Zusammenhang der äußeren Größen) | wie in 10.3 |
 
+### 13.5 J1, erster Schritt: das Jahr 2025 im Archiv
+
+Am 2026-10-13 geladen, mit den Werkzeugen, die es gibt (`bin/opentsx market weather-backfill` und `backfill`), in
+ein Archiv außerhalb des Repositorys. Nichts davon liegt im Repository und nichts im Broker.
+
+| Reihe | Station | Werte | Abdeckung | Lücken | Herkunft |
+|---|---|---|---|---|---|
+| Windgeschwindigkeit, Stundenmittel | Greifswalder Oie 01759 (Windpark, 23 km, Messhöhe 10 m) | 8727 | 99,62 % | 2 (33 h) | `MEASURED` |
+| Lufttemperatur, stündlich | Greifswalder Oie 01759 | 8726 | 99,61 % | 3 (34 h) | `MEASURED` |
+| Globalstrahlung, 10 Minuten | Arkona 00183 (42 km) | 52546 | 99,97 % | 2 (2,3 h) | `MEASURED` |
+| Wind und Temperatur | Marienberg 03166 (Haus) | je 8753 | 99,92 % | 1 (7 h) | `MEASURED` |
+| Globalstrahlung | Fichtelberg 01358 (Haus) | 52493 | 99,87 % | 4 (11,2 h) | `MEASURED` |
+| Wind und Temperatur | Kiel-Holtenau 02564 (Boot) | 8757 und 8756 | 99,97 % und 99,95 % | 1 (3 h) und 2 (4 h) | `MEASURED` |
+| Globalstrahlung | Dörnick 06163 (Boot) | 52541 | 99,96 % | 3 (3,2 h) | `MEASURED` |
+| Day-Ahead-Preis DE-LU (SMARD) | n/a | 15390 | 100 % | 0 | `REPORTED` |
+
+Die Lücken sind ausgewiesen und nicht gefüllt. Der Preis hat den erwarteten Bruch: 6550 Stundenwerte bis zum
+Liefertag 2025-09-30, danach 8840 Viertelstundenwerte. Beide Tage der Zeitumstellung sind vollständig.
+
+**Ein Lauf über das Jahr** ist mit dem Zwilling auf Historie möglich
+(`bin/opentsx twin --history <archiv> --year 2025 --wind dwd`): 365 Tage im Viertelstundenschritt, Wind der Station
+01759 über das Windmodell von `opentsx-market` (Höhenübertragung von 10 m auf 120 m mit dem Exponenten des
+Standorts, dann Leistungskurve), Preis aus dem Archiv. Der Park kommt auf 36.078 MWh, das sind 34 Prozent seiner
+Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fassung (ohne Verdichter, Puffer und
+Übergabestation) und einer Fahrregel nach Preisgrenze; er trägt selbst die Zeile "Modelled, not proven".
+
+**Was zu J1 noch fehlt.**
+
+1. **Die Reihen im Broker und an den Signalen.** **Erledigt (D76):** `bin/opentsx market publish` schreibt
+   archivierte Reihen als rohe Episoden in das Episoden-Topic einer Domäne, in Paketen mit Pause, und hält beim
+   ersten Paket an, das der Broker nicht bestätigt. Am 2026-10-13 gingen 1463 Episoden des Jahres 2025 in den
+   Broker des Labors (Wind in 10 Minuten, Temperatur und Luftdruck der Station 01759, Day-Ahead-Preis); zwei
+   Pakete brauchten einen zweiten Anlauf, alle wurden bestätigt. Das Systemdokument (Fassung 4) bindet den Preis
+   an diese Reihe (Herkunft `REPORTED`) und führt die drei Wetterreihen als Signale des Standorts. Die sechs
+   weiteren Wettergrößen liegen im Archiv und nicht im Broker; sie kommen, wenn eine Regel sie liest.
+2. **Der Zeitraum.** **Erledigt (D75):** Das Szenario spielt am 2025-10-01, dem ersten Liefertag mit
+   viertelstündlichem Preis. Die Reihen der Turbinen im Broker sind weiter die des Simulators vom 2026-10-01. Damit
+   das nicht jede Entscheidung veralten lässt, misst die Freigabe das Alter eines Eingangs jetzt gegen die
+   neuesten Daten dessen, was die Entscheidung braucht, und nicht mehr gegen alle Reihen des Systems. Die Eingänge
+   des Szenarios selbst sind weiter erfunden; an die Reihen der Signale bindet ein Lauf noch nicht.
+3. **Die Größen.** Geladen waren zunächst drei: Temperatur, Windgeschwindigkeit als Stundenmittel,
+   Globalstrahlung. **Nachgezogen (D77):** Der Abruf kennt jetzt auch Windrichtung, Luftdruck, Niederschlag,
+   Feuchte, Böen (höchste Böe der Stunde) und Wind in 10 Minuten. Für die Station des Windparks (01759) sind sie
+   für 2025 geladen, Abdeckung 99,60 bis 99,74 Prozent, 2 bis 4 Lücken je Reihe. Die täglichen Abrufe im Cluster
+   holen weiter nur die drei ersten Größen; die neuen werden mit `--stations <id>:<größe>` angefordert.
+4. **Der Plan.** Der Jahreslauf rechnet mit der ersten Fassung des Plans. Die zweite Fassung (S1) rechnet in
+   Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte. **Entschieden (D78), noch nicht
+   gebaut:** die zweite Fassung im Viertelstundenschritt, nach einer Prüfung von Regler und Rampen.
+6. **Das Potenzial aus dem Wind der Station.** Der Wind der Station ist in 10 m Höhe gemessen. Ein Operator, der
+   ihn auf Nabenhöhe überträgt, fehlt in der Kette der Flows; `opentsx-market` hat diese Rechnung für den
+   Jahreslauf, die Workbench nicht.
+5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
+   MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
+   nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.
+
+**Entschieden vom Auftraggeber am 2026-10-13.**
+
+| Nr. | Thema | Entscheidung | Stand |
+|---|---|---|---|
+| D75 | Zeitraum | das Szenario der Wasserstoffkette wird auf einen Tag im Jahr 2025 gelegt, damit Demo, Wetter und Preis zusammenpassen | wie vorgeschlagen |
+| D76 | Weg der Daten | die Reihen des Jahres 2025 werden **in den Broker des Labors geschrieben** und an die Signale gebunden | **geändert** (Vorschlag war: Läufe direkt aus dem Archiv, der Broker bleibt unberührt) |
+| D77 | Wettergrößen | die sechs fehlenden Größen werden **jetzt** nachgezogen | **geändert** (Vorschlag war: mit den Regeln, die sie brauchen) |
+| D78 | Plan für das Jahr | die zweite Fassung des Plans (S1) rechnet das Jahr im Viertelstundenschritt; vorher wird geprüft, ob Regler und Rampen bei diesem Schritt stabil bleiben | wie vorgeschlagen |
+| D79 | Sprache | die Oberflächen bleiben, wie sie sind: Web-Anwendung Englisch, Studio Deutsch | entschieden |
+
 Offen bleibt nach diesem Briefing: Standort und Koordinaten, Kennwerte der Anlagen, Druckbereiche der
 Wasserstoffseite, das Abnahmeprofil, die Bedingungen für Import, Export und Vermarktung. Ohne sie sind die Werte
 des Plans Annahmen und als solche geführt.

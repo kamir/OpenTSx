@@ -132,49 +132,49 @@ deploy/k3s/40-demo.sh twin
 
 ```text
 1. Shadow: observed history (valve closed at 01:00)
-   run h2-chain-afee4f96bafe47fc  mode SHADOW  hash a0e598a9003fc434
-   01:00:00  handover   intervention             {control=valve, value=0.0, author=h2-handover, reason=valve closed}
+   run h2-chain-6734f91571b28b83  mode SHADOW  hash f2d8da6decd0a083
+   01:00:00  handover   intervention             {author=h2-handover, reason=valve closed, control=valve, value=0.0}
    01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
    02:28:54  buffer     pressure_limit           {p_max_bar=200.000}
-   02:29:00  ely        protective_shutdown      {p_bar=200.084, p_el_kw=5000.000}
+   02:29:00  ely        protective_shutdown      {p_el_kw=5000.000, p_bar=200.084}
    02:29:00  marketer   schedule_deviation       {deviation_kw=467.897}
-   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
-   05:00:00  park       intervention             {control=dispatch_kw, value=5000.0, author=operator, reason=dispatch reduced}
+   04:00:00  rules      restriction_start        {reason=bat curtailment, limit_kw=6000.000}
+   05:00:00  park       intervention             {author=operator, reason=dispatch reduced, control=dispatch_kw, value=5000.0}
    05:00:00  rules      restriction_end          {}
-   05:30:00  park       intervention             {control=dispatch_kw, value=release, author=operator, reason=dispatch released}
+   05:30:00  park       intervention             {author=operator, reason=dispatch released, control=dispatch_kw, value=release}
    max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 13946 kWh
    not generated: 2000 kWh by the operating rules, 1500 kWh by the dispatch
 
 2. What-if: valve reopened at 02:00
-   run h2-chain-e4b63e3af776a88a  mode WHAT_IF  hash 3f6ef095fddae0e8
-   01:00:00  handover   intervention             {control=valve, value=0.0, author=h2-handover, reason=valve closed}
+   run h2-chain-9e1f6e72166e2fc1  mode WHAT_IF  hash ee64f62e6e3c754a
+   01:00:00  handover   intervention             {author=h2-handover, reason=valve closed, control=valve, value=0.0}
    01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
-   02:00:00  handover   intervention             {control=valve, value=1.0, author=h2-handover, reason=valve reopened}
-   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   02:00:00  handover   intervention             {author=h2-handover, reason=valve reopened, control=valve, value=1.0}
+   04:00:00  rules      restriction_start        {reason=bat curtailment, limit_kw=6000.000}
    04:00:00  marketer   schedule_deviation       {deviation_kw=-2022.516}
-   05:00:00  park       intervention             {control=dispatch_kw, value=5000.0, author=operator, reason=dispatch reduced}
+   05:00:00  park       intervention             {author=operator, reason=dispatch reduced, control=dispatch_kw, value=5000.0}
    05:00:00  rules      restriction_end          {}
-   05:30:00  park       intervention             {control=dispatch_kw, value=release, author=operator, reason=dispatch released}
+   05:30:00  park       intervention             {author=operator, reason=dispatch released, control=dispatch_kw, value=release}
    05:30:00  marketer   schedule_back            {deviation_kw=-22.515}
    max buffer pressure 174.01 bar, electrolyzer trips 0, H2 545.5 kg, extra feed-in 1 kWh
    not generated: 2000 kWh by the operating rules, 1500 kWh by the dispatch
 
 3a. Forecast from 01:10, electrolyzer follows its schedule
-   run h2-chain-8fab981d5ddf4fea  mode FORECAST  hash a1b54c399aff2182
+   run h2-chain-fcf23e8e9fb5fd26  mode FORECAST  hash 913e4cd1f68b5869
    01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
    02:28:54  buffer     pressure_limit           {p_max_bar=200.000}
-   02:29:00  ely        protective_shutdown      {p_bar=200.084, p_el_kw=5000.000}
+   02:29:00  ely        protective_shutdown      {p_el_kw=5000.000, p_bar=200.084}
    02:29:00  marketer   schedule_deviation       {deviation_kw=467.897}
-   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   04:00:00  rules      restriction_start        {reason=bat curtailment, limit_kw=6000.000}
    05:00:00  rules      restriction_end          {}
    max buffer pressure 205.03 bar, electrolyzer trips 1, H2 232.6 kg, extra feed-in 15446 kWh
    not generated: 2000 kWh by the operating rules, 0 kWh by the dispatch
 
 3b. Forecast from 01:10, electrolyzer policy pressure-aware
-   run h2-chain-80ebf0dc98522ea9  mode FORECAST  hash a25ab27516e72bc8
+   run h2-chain-19f17fe9eb9b3547  mode FORECAST  hash 3561c591c5e6ff06
    01:29:00  buffer     time_to_limit_warning    {ttl_min=59.906, p_bar=146.095}
    01:31:00  marketer   schedule_deviation       {deviation_kw=164.005}
-   04:00:00  rules      restriction_start        {limit_kw=6000.000, reason=bat curtailment}
+   04:00:00  rules      restriction_start        {reason=bat curtailment, limit_kw=6000.000}
    05:00:00  rules      restriction_end          {}
    max buffer pressure 197.43 bar, electrolyzer trips 0, H2 219.8 kg, extra feed-in 16143 kWh
    not generated: 2000 kWh by the operating rules, 0 kWh by the dispatch

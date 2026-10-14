@@ -4,9 +4,11 @@
 # The order compressor > buffer > pipeline is an ASSUMPTION (decided 2026-10-13, no real plant behind it): the
 # electrolyzer delivers at 30 bar, the compressor fills a buffer of 50 to 200 bar, a regulator feeds the pipeline at
 # 30 bar, the handover station delivers at 20 bar or more. All sizes and pressures are assumed values.
+# The night of the scenario is 2025-10-01 (decided 2026-10-13): the year the archived weather and prices are of, and
+# the first delivery day with a quarter-hourly day-ahead price. The inputs of the scenario itself are still invented.
 # Inputs (measurements, schedules, forecasts) are bound per run; see Twin / SeriesInputs.
 twin: h2-chain
-start: 2026-10-01T00:00:00Z
+start: 2025-10-01T00:00:00Z
 baseStep: PT1M
 steps: 360
 atoms:
@@ -15,7 +17,7 @@ atoms:
     params:
       windows:
         # an assumed restriction, so that potential and available power differ for an hour
-        - { from: "2026-10-01T04:00:00Z", to: "2026-10-01T05:00:00Z", limitKw: 6000, reason: bat curtailment }
+        - { from: "2025-10-01T04:00:00Z", to: "2025-10-01T05:00:00Z", limitKw: 6000, reason: bat curtailment }
   - id: market
     type: market
     params: { every: 15 }

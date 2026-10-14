@@ -516,7 +516,11 @@ public final class SystemDoc {
             return;
         }
         if (s.channel() == null) {
-            problems.add(s.id() + ": a sensor channel needs channel");
+            // a series below an atom that is no channel of a catalog, such as the weather of a station: it says what
+            // it expects itself
+            if (s.expect().unit() == null || s.expect().kind() == null) {
+                problems.add(s.id() + ": a sensor channel needs channel, or a unit and a kind of its own");
+            }
             return;
         }
         String asset = system + "/" + s.id().substring(0, s.id().lastIndexOf('/'));

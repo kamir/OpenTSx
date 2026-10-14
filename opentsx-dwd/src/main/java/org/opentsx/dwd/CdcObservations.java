@@ -76,7 +76,9 @@ public final class CdcObservations {
             new Column("P0", Variable.PRESSURE, 1, null),
             new Column("FG_LBERG", Variable.GLOBAL_IRRADIANCE, 10_000.0 / 3600, "mean"), // J/cm² in 1 h -> W/m²
             new Column("FD_LBERG", Variable.DIFFUSE_IRRADIANCE, 10_000.0 / 3600, "mean"),
-            new Column("R1", Variable.PRECIPITATION, 1, "sum"));
+            new Column("R1", Variable.PRECIPITATION, 1, "sum"),
+            // hourly extreme wind: the highest gust of the hour
+            new Column("FX_911", Variable.WIND_GUST, 1, "max"));
 
     private CdcObservations() {
     }

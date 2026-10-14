@@ -198,7 +198,8 @@ Strom, Wasserstoff und Information, Annahmen neben dem Bild), 2 (das Studio hän
 Web-Anwendung und ist vom Ort System verlinkt), 8 (eine Auflage von 04:00 bis 05:00 und ein Fahrbefehl von 05:00
 bis 05:30 im Szenario) und 9 (das Bild folgt der Arbeitskopie und unterscheidet "offen" von "noch nicht
 bereinigt"). Befund 7 ist mit dem Lauf-Dienst bearbeitet (Arbeitspaket 014.17): Der Ort "Simulate" rechnet eine
-Frage auf Anfrage. Offen bleibt 3 (Sprache).
+Frage auf Anfrage. Befund 3 ist entschieden: Die Sprachen bleiben, wie sie sind (Web-Anwendung Englisch, Studio
+Deutsch).
 
 Die Befunde 4, 5 und 6 sind Vorbereitung und brauchen keinen Code. Die Befunde 1, 2, 8 und 9 sind kleine Arbeiten
 an Oberfläche und Szenario. Befund 7 ist der Lauf-Dienst.
