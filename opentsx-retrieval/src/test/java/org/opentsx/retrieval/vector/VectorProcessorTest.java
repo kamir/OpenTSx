@@ -583,7 +583,7 @@ class VectorProcessorTest {
         }
         // the estimate is a series of its own: the metric of the port, no tags of the sensor it was made of
         assertEquals("h2-chain.park.p_potential_kw", estimate.getSeries().getMetric());
-        assertEquals("{grade=clean, signal=park.p_potential_kw, system=h2-chain}", new TreeMap<>(estimate.getSeries().getTags()).toString());
+        assertEquals("{flow=wind-flow-9, grade=clean, signal=park.p_potential_kw, system=h2-chain}", new TreeMap<>(estimate.getSeries().getTags()).toString());
         assertEquals("kW", estimate.getSeries().getUnit());
         assertEquals("ESTIMATED", estimate.getLabels().get("origin"));
         assertEquals("park/T01/WMET.HorWdSpd@clean (SYNTHETIC)", estimate.getLabels().get("madeOf"));

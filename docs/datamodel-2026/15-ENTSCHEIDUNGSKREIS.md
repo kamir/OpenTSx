@@ -582,8 +582,10 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
    2026-10-01) und der neue schreiben dieselbe Reihe, weil die Identität einer abgeleiteten Reihe nur aus System
    und Signal folgt. Die 350 Werte des alten Flows bleiben im Log und hängen am Ende des Jahres 2025; `madeOf` nennt
    beide Herkünfte. Folge: Das Potenzial endet am 2026-10-01, der Preis am 2025-12-31, und die Freigabe meldet den
-   Preis als veraltet. Abhilfe ist zu entscheiden: die Identität einer abgeleiteten Reihe um den Flow erweitern,
-   oder die Freigabe auf den Zeitraum einer Entscheidung beziehen (etwa die Nacht des Szenarios).
+   Preis als veraltet. **Entschieden am 2026-10-14 (D84): der Flow gehört zur Identität einer abgeleiteten Reihe.**
+   Jede Reihe, die ein Flow schreibt, trägt das Tag `flow`; die Ansicht eines Signals zeigt die Reihe des laufenden
+   Flows und nennt die anderen. Die Reihe von vorher (ohne das Tag) bleibt im Log und wird nicht mehr gezählt,
+   sobald ein Flow des Signals mit dem Tag läuft.
 5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
    MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
    nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.

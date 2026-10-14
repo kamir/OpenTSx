@@ -6,9 +6,9 @@
 - **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-notebook` (Notebook-Arbeitsplatz N1, 014.18), Worktree
-  `../OpenTSx-worktrees/notebook`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Delivery-Branch**: `opentsx/2026-task014-flow-identity` (Flow in der Identität einer abgeleiteten Reihe, dann
+  der Jahresplan im Viertelstundenschritt, 014.14), Worktree `../OpenTSx-worktrees/flow-identity`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-notebook` (N1 und Potenzial aus dem Stationswind, PR #190), `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
@@ -178,6 +178,8 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         einer Entscheidung gegen ihre eigenen Eingänge
       - offen: der Plan der zweiten Fassung im Viertelstundenschritt über das Jahr (D78); das Potenzial aus dem
         Wind der Station (Operator für die Höhenübertragung); ein Lauf auf den Reihen der Signale
+      - 2026-10-14 (D84): der Flow gehört zur Identität einer abgeleiteten Reihe; die Ansicht eines Signals zeigt die
+        Reihe des laufenden Flows
 - [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
       (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; entschieden D80 bis D82
       - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen
