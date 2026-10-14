@@ -23,5 +23,6 @@ def test_every_code_cell_compiles_and_no_output_is_shipped():
 def test_the_notebooks_write_nothing():
     for p in NOTEBOOKS:
         text = p.read_text(encoding="utf-8")
-        for forbidden in ("Producer(", ".produce(", "method=\\\"POST\\\"", "client.run("):
-            assert forbidden not in text.replace("`client.run(...)`", ""), f"{p.name} contains {forbidden}"
+        # a run computes on the server and is kept there; nothing goes to the broker
+        for forbidden in ("Producer(", ".produce(", "KafkaProducer"):
+            assert forbidden not in text, f"{p.name} contains {forbidden}"

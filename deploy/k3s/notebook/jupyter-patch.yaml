@@ -4,7 +4,7 @@ spec:
     spec:
       initContainers:
         - name: opentsx
-          image: opentsx/notebook-content:3.0.0-notebook-1
+          image: opentsx/notebook-content:3.0.0-notebook-2
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c", "rm -rf /home/jovyan/opentsx && cp -r /opentsx /home/jovyan/opentsx"]
           securityContext:

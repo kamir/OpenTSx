@@ -164,6 +164,10 @@ entries are grouped by date. The detailed progress log (German) is in
   signals instead of the invented inputs of the scenario (`inputs: "signals"`): each input says where its values
   came from, its origin and how much of the run it covers, and the run is compared with the decisions of the
   scenario on the same inputs. The place "Simulate" lets a person choose.
+- Notebooks 2 and 4 for the notebook of a stack (TASK-014, N2): "Ein Signal" puts the raw and clean series of a
+  signal next to its expectation and operating range, and shows what the decision says about its inputs; "Den
+  Zwilling fragen" asks the twin a question on the signals of the system and then the same question over many
+  times of day. The Python client asks for runs on the signals and gives the operating range of a signal.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.
