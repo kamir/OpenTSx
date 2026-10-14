@@ -219,3 +219,9 @@ config/opentsx-local.props
 
 ### OpenTSx history archive (opentsx-market backfill): bulk data stays local, see opentsx-market/README.md
 data/history/
+
+### Agent tooling directories: local only, never tracked
+.claude/
+.cursor/
+.codex/
+.grok/
