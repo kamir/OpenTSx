@@ -166,7 +166,7 @@ Entschieden vom Auftraggeber am 2026-10-13.
 | D73 | Was kommt nach S1? | **erst Demo A ausrollen** und durchspielen; die nächste Baustufe wird danach entschieden | **geändert** (Vorschlag war: Lauf-Dienst, J1 daneben) |
 | D74 | Wo läuft das Sprachmodell, und was darf das Haus des Betreibers verlassen? | offen; vor Demo B mit dem Betreiber zu klären, bis dahin nur Beispieldaten | offen |
 
-Die fünf Definitionen liegen unter `.claude/agents/`. Sie arbeiten mit der Kommandozeile und den Schnittstellen,
+Die fünf Definitionen lagen unter `.claude/agents/`; seit PR #193 (2026-10-14) ist das Verzeichnis für Werkzeuge von Agenten nicht mehr Teil des Repositorys, die Definitionen liegen lokal bei denen, die sie nutzen. Sie arbeiten mit der Kommandozeile und den Schnittstellen,
 die es gibt, und sagen, wenn eine Frage ein Werkzeug braucht, das fehlt (Abschnitt 3.2).
 
 ## 7. Erster Durchlauf von Demo A

@@ -8,6 +8,9 @@ NOTEBOOKS = sorted((pathlib.Path(__file__).parent.parent / "notebooks").glob("*.
 
 def test_there_are_notebooks():
     assert [p.name for p in NOTEBOOKS][:1] == ["01-zeitreihen-inventar.ipynb"]
+    # the example notebook 3 tests against ships with it, and says what it is
+    example = NOTEBOOKS[0].parent / "beispiel-windmessung.csv"
+    assert example.exists() and "Keine Messung eines Betreibers" in example.read_text(encoding="utf-8")
 
 
 def test_every_code_cell_compiles_and_no_output_is_shipped():

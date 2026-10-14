@@ -164,4 +164,11 @@ Verzeichnis `~/opentsx` wird bei jedem Start ersetzt.
   Schutzabschaltung geht es, wenn das Ventil bis 01:50 wieder offen ist. Jeder Lauf heißt `restricted`, weil der
   Bedarf ein Demo-Generator ist und Fahrplan und Netzzähler fehlen.
 * Ein Lauf rechnet auf dem Server und wird dort im Speicher gehalten; in den Broker schreiben die Hefte nichts.
-* Heft 3 (Verproben einer eigenen Datei) fehlt noch.
+* **Heft 3 "Verproben"** (`03-verproben.ipynb`, 2026-10-14): eine CSV-Datei gegen ein Signal. Es liest
+  Ortszeit mit Zeitumstellung, Dezimalkomma und zwei Zeitspalten, prüft Einheit, Takt, Zeitzone, Bedeutung des
+  Zeitpunkts, doppelte Zeitpunkte, plausiblen und Betriebsbereich und Lücken, legt die Datei neben die Reihe des
+  Signals (Korrelation, mittlere Abweichung) und fällt ein Urteil. Es schreibt eine aufbereitete Kopie in UTC und
+  der Einheit des Signals in sein eigenes Verzeichnis und nennt die Befehle für Archiv und Topic und die Zeilen
+  der Bindung; ausführen muss sie jemand, der es darf. Mitgeliefert ist `beispiel-windmessung.csv`: Wind der
+  DWD-Station im Oktober 2025 in km/h, Ortszeit, mit einem Ausreißer und einer Lücke. Das Heft findet alle
+  Eigenheiten und sagt "bindbar, mit Warnungen".
