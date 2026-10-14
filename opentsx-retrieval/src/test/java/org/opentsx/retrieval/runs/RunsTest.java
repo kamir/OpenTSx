@@ -233,6 +233,8 @@ class RunsTest {
         assertEquals("SYNTHETIC", in.get("offtake.demand_kgph").path("origin").asText(), "a demo generator stays what it is");
         assertEquals(0.5, in.get("offtake.demand_kgph").path("coverage").asDouble(), 1e-9);
         assertEquals("constant of the system document", in.get("ely.setpoint_kw").path("source").asText());
+        // a price of a quarter hour holds for its quarter hour: six hours of prices cover the six hours of the run
+        assertEquals(1.0, in.get("market.price_eur_mwh").path("coverage").asDouble(), 1e-9);
         assertEquals(0.0, in.get("marketer.schedule_kw").path("coverage").asDouble());
         String reasons = run.path("status").path("reasons").toString();
         assertTrue(reasons.contains("generated, not measured: offtake.demand_kgph"), reasons);

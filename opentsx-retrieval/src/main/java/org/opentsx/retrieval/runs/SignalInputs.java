@@ -18,7 +18,8 @@ import java.util.TreeMap;
  * The inputs of a run taken from the series of the signals of a system instead of the inputs of its scenario. For
  * every input of the plan that comes from outside and has a signal, the clean grade counts when it has data, else the
  * raw grade; a constant of the system document is bound as a constant. The values are put on the grid of the plan:
- * a step takes the newest value at or before its start, held for at most the interval of its series. What is missing
+ * a step takes the newest value at or before its start, held for at most the interval of the episode it comes from
+ * (a price of a quarter hour holds for a quarter hour, an hourly one for an hour). What is missing
  * stays missing: the atom then uses its default, and the input says how much it covered.
  */
 public final class SignalInputs {
@@ -70,23 +71,27 @@ public final class SignalInputs {
             JsonNode data = s.path("grades").path(grade).path("data");
             List<String> ids = new ArrayList<>();
             data.path("series").forEach(x -> ids.add(x.asText()));
-            long hold = Math.max(step, data.path("intervalMicros").asLong(step));
-            TreeMap<Long, Double> samples = new TreeMap<>();
-            for (Episode e : read.read(ids, t0 - hold, t0 + n * step)) {
+            long lookBack = Math.max(step, data.path("intervalMicros").asLong(step)) + 24L * 3_600_000_000L;
+            // a value with the time until which it holds: the end of its interval in its episode
+            TreeMap<Long, double[]> samples = new TreeMap<>();
+            for (Episode e : read.read(ids, t0 - lookBack, t0 + n * step)) {
                 long[] ts = Episodes.timestampsMicros(e);
                 double[] v = Episodes.values(e);
+                long interval = e.getIntervalMicros() != null && e.getIntervalMicros() > 0 ? e.getIntervalMicros() : step;
                 for (int i = 0; i < ts.length; i++) {
                     if (!Double.isNaN(v[i])) {
-                        samples.put(ts[i], v[i]);
+                        long until = i + 1 < ts.length && e.getIntervalMicros() == null ? ts[i + 1] : ts[i] + interval;
+                        samples.put(ts[i], new double[]{v[i], until});
                     }
                 }
             }
             double[] values = new double[n];
             int covered = 0;
             for (int k = 0; k < n; k++) {
-                Map.Entry<Long, Double> at = samples.floorEntry(t0 + k * step);
-                boolean fresh = at != null && t0 + k * step - at.getKey() < hold;
-                values[k] = fresh ? at.getValue() : Double.NaN;
+                long t = t0 + k * step;
+                Map.Entry<Long, double[]> at = samples.floorEntry(t);
+                boolean fresh = at != null && t < (long) at.getValue()[1];
+                values[k] = fresh ? at.getValue()[0] : Double.NaN;
                 covered += fresh ? 1 : 0;
             }
             String originName = data.path("origin").asText(s.path("origin").asText("SYNTHETIC"));
