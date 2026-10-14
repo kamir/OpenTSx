@@ -1,6 +1,6 @@
 {
  "schema": "opentsx.testvectors.clean-ops.v1",
- "description": "Operators on one series: cleaning, the power curve model and features. times are seconds relative to t0; null is a gap (NaN). Every case ends on the boundary of a window, so a run over all the data and a stream that has passed the end give the same. nodes is the form of the DAG (CleanChain, Java), workbench the form of the web workbench (ops.ts).",
+ "description": "Operators on one series: cleaning, the models for wind shear and power curve, and features. times are seconds relative to t0; null is a gap (NaN). Every case ends on the boundary of a window, so a run over all the data and a stream that has passed the end give the same. nodes is the form of the DAG (CleanChain, Java), workbench the form of the web workbench (ops.ts).",
  "cases": [
   {
    "name": "plausible range, gaps",
@@ -755,6 +755,77 @@
     "values": [
      755.4026867415147,
      3000
+    ],
+    "unit": "kW"
+   }
+  },
+  {
+   "name": "wind shear from 10 m to 120 m with alpha 0.11, then the power curve of four turbines",
+   "t0": "2025-10-01T00:00:00Z",
+   "intervalSeconds": 600,
+   "nodes": [
+    {
+     "id": "n1",
+     "op": "model.wind-shear",
+     "params": {
+      "fromM": 10,
+      "toM": 120,
+      "alpha": 0.11
+     }
+    },
+    {
+     "id": "n2",
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 4
+     }
+    }
+   ],
+   "workbench": [
+    {
+     "op": "model.wind-shear",
+     "params": {
+      "fromM": 10,
+      "toM": 120,
+      "alpha": 0.11
+     }
+    },
+    {
+     "op": "model.power-curve",
+     "params": {
+      "ratedKw": 3000,
+      "cutIn": 3,
+      "ratedWind": 12.5,
+      "cutOut": 25,
+      "count": 4
+     }
+    }
+   ],
+   "values": [
+    0,
+    5,
+    null,
+    8.2,
+    30
+   ],
+   "expect": {
+    "times": [
+     0,
+     600,
+     1200,
+     1800,
+     2400
+    ],
+    "values": [
+     0,
+     1600.0078542936867,
+     null,
+     7631.311470185451,
+     0
     ],
     "unit": "kW"
    }

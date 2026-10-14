@@ -98,11 +98,11 @@ class SystemsTest {
         assertEquals("observation", signal(st, "park.p_gen_kw").path("role").asText());
         assertEquals("estimate", signal(st, "park.p_potential_kw").path("role").asText());
 
-        // derived: no raw grade; its origin is the worst of what its flow reads
+        // derived: no raw grade; its origin is the worst of what its flow reads, here the measured wind of a station
         JsonNode avail = signal(st, "park.p_potential_kw");
         assertEquals("clean-not-running", avail.path("state").asText());
         assertEquals("derived", avail.path("via").asText());
-        assertEquals("SYNTHETIC", avail.path("origin").asText());
+        assertEquals("MEASURED", avail.path("origin").asText());
         assertTrue(avail.path("port").asBoolean());
 
         // the price is the published one of 2025, bound to the topic; this inventory holds no such series

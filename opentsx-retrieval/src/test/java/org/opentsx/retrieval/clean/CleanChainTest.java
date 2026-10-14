@@ -72,6 +72,21 @@ class CleanChainTest {
         return new CleanChain.Block(t, Arrays.copyOfRange(c.values(), from, to));
     }
 
+    /**
+     * Equal up to the last bits a power function may differ in between platforms: 1e-12 relative to the value, at
+     * least 1e-12. A gap must be a gap.
+     */
+    static void close(double[] expected, double[] actual, String what) {
+        assertEquals(expected.length, actual.length, what);
+        for (int i = 0; i < expected.length; i++) {
+            if (Double.isNaN(expected[i]) || Double.isNaN(actual[i])) {
+                assertEquals(Double.isNaN(expected[i]), Double.isNaN(actual[i]), what + " at " + i);
+            } else {
+                assertEquals(expected[i], actual[i], 1e-12 * Math.max(1, Math.abs(expected[i])), what + " at " + i);
+            }
+        }
+    }
+
     @Test
     void theSharedTestVectorsHoldInOnePiece() throws Exception {
         List<Case> cases = cases();
@@ -80,7 +95,7 @@ class CleanChainTest {
             int n = c.values().length;
             CleanChain.Block out = c.chain().apply(c.chain().newState(), block(c, 0, n), c.t0() + n * c.interval());
             assertArrayEquals(c.expectTimes(), out.times(), c.name());
-            assertArrayEquals(c.expectValues(), out.values(), 1e-12, c.name());
+            close(c.expectValues(), out.values(), c.name());
             assertEquals(c.unit(), c.chain().outputUnit(), c.name());
         }
     }
@@ -104,7 +119,7 @@ class CleanChainTest {
                     }
                 }
                 assertArrayEquals(c.expectTimes(), times.stream().mapToLong(Long::longValue).toArray(), c.name() + ", pieces of " + piece);
-                assertArrayEquals(c.expectValues(), values.stream().mapToDouble(Double::doubleValue).toArray(), 1e-12, c.name() + ", pieces of " + piece);
+                close(c.expectValues(), values.stream().mapToDouble(Double::doubleValue).toArray(), c.name() + ", pieces of " + piece);
             }
         }
     }

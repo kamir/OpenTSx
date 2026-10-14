@@ -16,8 +16,9 @@ import java.util.Locale;
  * ({@code opentsx-saas-frontend/src/workbench/ops.ts}); both are checked against
  * {@code docs/datamodel-2026/testvectors/clean-ops.v1.json}.
  *
- * <p>Besides cleaning, the chain runs the first model and the features: {@code model.power-curve} (what the wind
- * offers a turbine), {@code feature.lag} and {@code feature.rolling}.
+ * <p>Besides cleaning, the chain runs the first models and the features: {@code model.wind-shear} (the wind of a
+ * measuring height carried to the hub height by the power law, {@code v * (toM / fromM)^alpha}), {@code model.power-curve}
+ * (what the wind offers a turbine), {@code feature.lag} and {@code feature.rolling}.
  *
  * <ul>
  *   <li>{@code dq.checks} with the check {@code PLAUSIBLE_RANGE}: a value outside [min, max] becomes a gap
@@ -31,7 +32,7 @@ import java.util.Locale;
 public final class CleanChain {
 
     /** Operators this runtime executes before a series sink, by their name in the DAG. */
-    public static final List<String> OPS = List.of("dq.checks", "convert.unit", "resample", "model.power-curve", "feature.lag", "feature.rolling");
+    public static final List<String> OPS = List.of("dq.checks", "convert.unit", "resample", "model.wind-shear", "model.power-curve", "feature.lag", "feature.rolling");
 
     /** Values a rolling window may hold; a feature over more is no feature for a stream. */
     static final int MAX_WINDOW_VALUES = 100_000;
@@ -41,13 +42,21 @@ public final class CleanChain {
 
     public enum Agg { MEAN, MIN, MAX, LAST }
 
-    sealed interface Step permits Range, Convert, Resample, PowerCurve, Lag, Rolling {
+    sealed interface Step permits Range, Convert, Resample, WindShear, PowerCurve, Lag, Rolling {
     }
 
     /**
      * Reference power curve of a wind turbine: zero below cut-in and above cut-out, rated power from the rated wind,
      * cubic in between; times {@code count} turbines. A model, not a measurement: it says what the wind offers.
      */
+    /**
+     * The wind of one height carried to another by the power law. A model with one exponent for every weather: it
+     * knows neither stability nor the direction of the wind. The exponent belongs to the site (about 0.1 over open
+     * sea, 0.14 over flat land, 0.2 and more over rough land).
+     */
+    record WindShear(double factor) implements Step {
+    }
+
     record PowerCurve(double ratedKw, double cutIn, double ratedWind, double cutOut, double count) implements Step {
         double kw(double wind) {
             if (Double.isNaN(wind)) {
@@ -133,6 +142,16 @@ public final class CleanChain {
                         throw new IllegalArgumentException("node " + id + ": agg must be one of " + List.of(Agg.values()));
                     }
                     steps.add(new Resample(every, agg));
+                }
+                case "model.wind-shear" -> {
+                    double from = p.path("fromM").asDouble(Double.NaN);
+                    double to = p.path("toM").asDouble(Double.NaN);
+                    double alpha = p.path("alpha").asDouble(Double.NaN);
+                    if (!(from > 0) || !(to > 0) || !(alpha >= 0 && alpha <= 0.6)) {
+                        throw new IllegalArgumentException("node " + id + ": a wind shear needs fromM and toM above zero and alpha"
+                                + " between 0 and 0.6");
+                    }
+                    steps.add(new WindShear(Math.pow(to / from, alpha)));
                 }
                 case "model.power-curve" -> {
                     PowerCurve c = new PowerCurve(p.path("ratedKw").asDouble(Double.NaN), p.path("cutIn").asDouble(Double.NaN),
@@ -323,6 +342,12 @@ public final class CleanChain {
                 b = new Block(b.times(), v);
             } else if (s instanceof Resample r) {
                 b = resample(st, i, r, b, tEndMicros);
+            } else if (s instanceof WindShear w) {
+                double[] v = new double[b.size()];
+                for (int k = 0; k < v.length; k++) {
+                    v[k] = b.values()[k] * w.factor();
+                }
+                b = new Block(b.times(), v);
             } else if (s instanceof PowerCurve c) {
                 double[] v = new double[b.size()];
                 for (int k = 0; k < v.length; k++) {
