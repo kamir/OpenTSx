@@ -167,6 +167,86 @@ class RunsTest {
         assertThrows(NoSuchElementException.class, () -> runs.doc("h2-chain", "h2-chain-0000"));
     }
 
+    /** The state of three signals and their series, as a server holds them: price and potential measured, demand generated. */
+    static SignalInputs.Source signalsOfTheNight() {
+        long t0 = java.time.Instant.parse("2025-10-01T00:00:00Z").toEpochMilli() * 1000;
+        long min = 60_000_000L;
+        org.opentsx.model.v2.SeriesKey price = org.opentsx.model.SeriesKeys.of("market.price.day_ahead", java.util.Map.of("area", "DE-LU"), "EUR/MWh");
+        org.opentsx.model.v2.SeriesKey wind = org.opentsx.model.SeriesKeys.of("h2-chain.park.p_potential_kw", java.util.Map.of("signal", "park.p_potential_kw"), "kW");
+        org.opentsx.model.v2.SeriesKey demand = org.opentsx.model.SeriesKeys.of("h2-chain.offtake.demand_kgph", java.util.Map.of("signal", "offtake.demand_kgph"), "kg/h");
+        double[] p = new double[24];
+        for (int i = 0; i < p.length; i++) {
+            p[i] = i < 8 ? -10 : 80;   // negative prices in the first two hours
+        }
+        double[] w = new double[36];
+        java.util.Arrays.fill(w, 9000);
+        double[] d = new double[180];   // only the first three hours of demand
+        java.util.Arrays.fill(d, 70);
+        java.util.List<org.opentsx.model.v2.Episode> eps = java.util.List.of(
+                org.opentsx.model.Episodes.regular(price, t0, 15 * min, p).source("t").build(),
+                org.opentsx.model.Episodes.regular(wind, t0, 10 * min, w).source("t").build(),
+                org.opentsx.model.Episodes.regular(demand, t0, min, d).source("t").build());
+        String status = """
+                {"signals":[
+                 {"id":"market.price_eur_mwh","origin":"REPORTED","grades":{"raw":{"source":{"kind":"topic"},"data":{"series":["%s"],"intervalMicros":900000000,"origin":"REPORTED"}}}},
+                 {"id":"park.p_potential_kw","origin":"MEASURED","grades":{"clean":{"source":{"kind":"flow"},"data":{"series":["%s"],"intervalMicros":600000000,"origin":"ESTIMATED","madeOf":"park/DWD-01759/wind_speed@clean (MEASURED)"}}}},
+                 {"id":"offtake.demand_kgph","origin":"SYNTHETIC","grades":{"raw":{"source":{"kind":"generator"},"data":{"series":["%s"],"intervalMicros":60000000,"origin":"SYNTHETIC","fidelity":"demo"}}}},
+                 {"id":"ely.setpoint_kw","origin":"REPORTED","grades":{"raw":{"source":{"kind":"manual","value":5000,"origin":"REPORTED"}}}},
+                 {"id":"marketer.schedule_kw","grades":{}}
+                ]}""".formatted(price.getSeriesId(), wind.getSeriesId(), demand.getSeriesId());
+        return new SignalInputs.Source() {
+            @Override
+            public JsonNode signals(String system, JsonNode bindings) {
+                try {
+                    return JSON.readTree(status);
+                } catch (java.io.IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public java.util.List<org.opentsx.model.v2.Episode> read(java.util.List<String> ids, long from, long to) {
+                return eps.stream().filter(e -> ids.contains(e.getSeries().getSeriesId())).toList();
+            }
+        };
+    }
+
+    @Test
+    void aRunMayTakeItsInputsFromTheSignalsOfTheSystem() throws Exception {
+        Runs runs = Runs.standard();
+        assertThrows(IllegalArgumentException.class, () -> runs.run("h2-chain", body("{\"inputs\":\"signals\"}")), "no source yet");
+        runs.signals(signalsOfTheNight());
+        JsonNode run = runs.run("h2-chain", body("""
+                {"inputs": "signals", "interventions": [{"at": "02:00", "atom": "handover", "control": "valve", "value": 1}]}"""));
+        assertEquals("signals", run.path("inputsFrom").asText());
+        // the baseline is the reference on the same inputs, not the invented night of the scenario
+        assertNotEquals(runs.reference("h2-chain"), run.path("baseline").asText());
+        JsonNode base = runs.doc("h2-chain", run.path("baseline").asText());
+        assertEquals("signals", base.path("inputsFrom").asText());
+        assertTrue(base.path("label").asText().startsWith("Reference on the signals"));
+
+        java.util.Map<String, JsonNode> in = new java.util.TreeMap<>();
+        run.path("inputs").forEach(x -> in.put(x.path("port").asText(), x));
+        assertEquals("REPORTED", in.get("market.price_eur_mwh").path("origin").asText());
+        assertEquals("ESTIMATED", in.get("park.p_potential_kw").path("origin").asText());
+        assertEquals(1.0, in.get("park.p_potential_kw").path("coverage").asDouble(), 1e-9);
+        assertEquals("SYNTHETIC", in.get("offtake.demand_kgph").path("origin").asText(), "a demo generator stays what it is");
+        assertEquals(0.5, in.get("offtake.demand_kgph").path("coverage").asDouble(), 1e-9);
+        assertEquals("constant of the system document", in.get("ely.setpoint_kw").path("source").asText());
+        // a price of a quarter hour holds for its quarter hour: six hours of prices cover the six hours of the run
+        assertEquals(1.0, in.get("market.price_eur_mwh").path("coverage").asDouble(), 1e-9);
+        assertEquals(0.0, in.get("marketer.schedule_kw").path("coverage").asDouble());
+        String reasons = run.path("status").path("reasons").toString();
+        assertTrue(reasons.contains("generated, not measured: offtake.demand_kgph"), reasons);
+        assertTrue(reasons.contains("offtake.demand_kgph covers 50 % of the run"), reasons);
+        assertFalse(reasons.contains("invented"), reasons);
+
+        // the values of the signals drive the run: the wind of the station, not the 8 MW of the scenario
+        JsonNode gen = runs.series("h2-chain", run.path("run").asText(), List.of("park.p_gen_kw")).path("series").path("park.p_gen_kw").path("values");
+        assertEquals(9000.0, gen.get(10).asDouble(), 1e-9);
+        assertThrows(IllegalArgumentException.class, () -> runs.run("h2-chain", body("{\"inputs\":\"signals\",\"from\":70}")));
+    }
+
     @Test
     void theServerOffersRunsOfASystem() throws Exception {
         InMemorySeriesStore store = new InMemorySeriesStore();

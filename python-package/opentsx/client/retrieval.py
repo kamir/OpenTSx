@@ -200,6 +200,9 @@ class RetrievalClient:
             rows.append({"id": s.get("id"), "title": s.get("title"), "role": s.get("role"), "state": s.get("state"),
                          "origin": s.get("origin"), "via": s.get("via"), "unit": e.get("unit"), "min": e.get("min"),
                          "max": e.get("max"), "interval": e.get("interval"),
+                         "operating_min": (e.get("operating") or {}).get("min"),
+                         "operating_max": (e.get("operating") or {}).get("max"),
+                         "meaning": s.get("meaning"),
                          "raw_series": ",".join(raw.get("series", [])) or None,
                          "clean_series": ",".join(clean.get("series", [])) or None,
                          "next": ",".join(s.get("next", [])) or None})
@@ -216,8 +219,13 @@ class RetrievalClient:
         return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/scenario")
 
     def run(self, system: str, interventions: Sequence[Mapping[str, Any]] = (), policies: Optional[Mapping[str, str]] = None,
-            start_minute: Optional[int] = None, on_reference: bool = True, label: Optional[str] = None) -> dict:
+            start_minute: Optional[int] = None, on_reference: bool = True, label: Optional[str] = None,
+            inputs: str = "scenario") -> dict:
         """Computes a run of the twin; ``interventions`` are ``{at: "HH:MM" | minute, atom, control, value}``.
+
+        ``inputs="signals"`` takes the inputs from the series of the signals of the system instead of the invented
+        inputs of its scenario; the run is then compared with the decisions of the scenario on the same inputs
+        (``baseline``). A run computes on the server and is kept there in memory; it writes nothing to the broker.
 
         The answer carries the identity of the run (``run``) and its ``status``: a run on the inputs of the scenario
         is ``restricted``, and the reasons say why.
@@ -229,6 +237,8 @@ class RetrievalClient:
             body["from"] = int(start_minute)
         if label:
             body["label"] = label
+        if inputs != "scenario":
+            body["inputs"] = inputs
         return self._json("POST", f"/v1/systems/{urllib.parse.quote(system)}/runs", body)
 
     def runs(self, system: str) -> pd.DataFrame:

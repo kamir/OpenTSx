@@ -89,6 +89,8 @@ def test_systems_signals_and_runs(server):
     assert seen["post"][0] == "/v1/systems/h2-chain/runs"
     assert seen["post"][1] == {"base": "reference", "interventions": [{"at": "02:00", "atom": "handover", "control": "valve", "value": 1}],
                                "policies": {"ely": "pressure-aware"}}
+    c.run("h2-chain", inputs="signals")
+    assert seen["post"][1] == {"base": "reference", "interventions": [], "inputs": "signals"}
     df = c.run_series("h2-chain", "r1", ["buffer.p_bar"])
     assert df.attrs["run"] == "r1"
     assert np.isnan(df["buffer.p_bar"].iloc[1])

@@ -149,5 +149,19 @@ Gebaut und am 2026-10-14 im Stack der Demo eingehängt.
   Werten und zwei Lücken im Juni, zusammen 200 fehlende Werte; 724 Intervalle mit negativem Preis). Weg B erreicht
   den Broker und hält bei einer Grenze von 10 Datensätzen an, ohne zu lesen.
 
-**Grenzen.** Der Retrieval-Server hat keine Konten: Wer das Notebook öffnen kann, liest jede Reihe. Die Hefte 2
-bis 4 fehlen. Das Verzeichnis `~/opentsx` wird bei jedem Start ersetzt.
+**Grenzen.** Der Retrieval-Server hat keine Konten: Wer das Notebook öffnen kann, liest jede Reihe. Das
+Verzeichnis `~/opentsx` wird bei jedem Start ersetzt.
+
+**Hefte 2 und 4 (2026-10-14).**
+
+* **Heft 2 "Ein Signal"** (`02-ein-signal.ipynb`): die Signale der Wasserstoffkette mit Erwartung und
+  Betriebsbereich; für ein gewähltes Signal (vorgewählt der Wind der DWD-Station) Roh- und bereinigte Reihe
+  übereinander, der Betriebsbereich als Band, Werte außerhalb des plausiblen Bereichs markiert, was die Bereinigung
+  geändert hat; zuletzt der Stand der Entscheidung mit ihren Eingängen.
+* **Heft 4 "Den Zwilling fragen"** (`04-den-zwilling-fragen.ipynb`): das Szenario, eine Frage auf den Reihen der
+  Signale ("Ventil um 02:00 wieder offen") mit Kennzahlen und Verläufen gegen die Referenz auf denselben Eingängen,
+  dann dieselbe Frage von 01:10 bis 03:00 in Schritten von zehn Minuten. Ergebnis auf dem Laborsystem: Ohne
+  Schutzabschaltung geht es, wenn das Ventil bis 01:50 wieder offen ist. Jeder Lauf heißt `restricted`, weil der
+  Bedarf ein Demo-Generator ist und Fahrplan und Netzzähler fehlen.
+* Ein Lauf rechnet auf dem Server und wird dort im Speicher gehalten; in den Broker schreiben die Hefte nichts.
+* Heft 3 (Verproben einer eigenen Datei) fehlt noch.

@@ -138,6 +138,17 @@ public final class Generators {
      * @param intervalMicros the sampling interval of the signal
      */
     public static List<Episode> episodes(Target target, JsonNode params, long intervalMicros, long fromMicros, long toMicros) {
+        return episodes(target, params, intervalMicros, fromMicros, toMicros, null);
+    }
+
+    /**
+     * As {@link #episodes(Target, JsonNode, long, long, long)}, with the time of the run in the label
+     * {@code generatedAt}. A run is part of the identity of its series (tag {@code run}, decision D85): the same
+     * generator with the same parameters over the same period gives the same series and replaces itself; another
+     * period or other parameters give another series, so two runs never mix in one series.
+     */
+    public static List<Episode> episodes(Target target, JsonNode params, long intervalMicros, long fromMicros, long toMicros,
+                                         java.time.Instant generatedAt) {
         if (intervalMicros <= 0) {
             throw new IllegalArgumentException("the signal needs a sampling interval to be generated (expect.interval)");
         }
@@ -154,6 +165,8 @@ public final class Generators {
         tags.put("system", target.system());
         tags.put("signal", target.signal());
         tags.put("grade", "raw");
+        String run = target.signal() + "|" + target.processor() + "|" + target.seed() + "|" + params + "|" + fromMicros + "|" + toMicros;
+        tags.put("run", "gen-" + XxHash64.hex(XxHash64.hash(run.getBytes(StandardCharsets.UTF_8))).substring(0, 12));
         SeriesKey key = SeriesKeys.of(target.metric(), tags, target.unit());
         List<Episode> out = new ArrayList<>();
         for (long chunk = Math.floorDiv(first, CHUNK); chunk * CHUNK <= last; chunk++) {
@@ -163,12 +176,15 @@ public final class Generators {
             double[] v = values(target.processor(), params, target.seed(), intervalMicros, a, n, target.min(), target.max());
             // the same piece of the same series has the same id: generated again, it replaces itself for a reader
             String identity = key.getSeriesId() + "|" + a * intervalMicros + "|" + (b + 1) * intervalMicros;
-            out.add(Episodes.regular(key, a * intervalMicros, intervalMicros, v)
+            var draft = Episodes.regular(key, a * intervalMicros, intervalMicros, v)
                     .episodeId("g" + XxHash64.hex(XxHash64.hash(identity.getBytes(StandardCharsets.UTF_8))))
                     .source("opentsx-generator").pipeline(target.processor())
                     .label("grade", "raw").label("origin", "SYNTHETIC").label("generator", target.processor())
-                    .label("seed", Long.toString(target.seed())).label("fidelity", "demo").label("systemHash", target.systemHash())
-                    .build());
+                    .label("seed", Long.toString(target.seed())).label("fidelity", "demo").label("systemHash", target.systemHash());
+            if (generatedAt != null) {
+                draft.label("generatedAt", generatedAt.toString());
+            }
+            out.add(draft.build());
         }
         return out;
     }

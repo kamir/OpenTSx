@@ -6,9 +6,9 @@
 - **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-flow-identity` (Flow in der Identität einer abgeleiteten Reihe, dann
-  der Jahresplan im Viertelstundenschritt, 014.14), Worktree `../OpenTSx-worktrees/flow-identity`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-notebook` (N1 und Potenzial aus dem Stationswind, PR #190), `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Delivery-Branch**: `opentsx/2026-task014-notebooks-2-4` (Hefte 2 und 4 im Notebook, 014.18), Worktree
+  `../OpenTSx-worktrees/notebooks-2-4`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-generator-identity` (D85, Läufe auf den Signalen, PR #192, als Squash), `opentsx/2026-task014-flow-identity` (D84, D78, PR #191), `opentsx/2026-task014-notebook` (N1 und Potenzial aus dem Stationswind, PR #190), `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
@@ -182,11 +182,16 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         Reihe des laufenden Flows
       - 2026-10-14 (D78): Jahreslauf mit der zweiten Fassung des Plans im Viertelstundenschritt; Befund: ein
         Generator schreibt jeden Lauf in dieselbe Reihe (15, Abschnitt 13.5, Punkt 8)
+      - 2026-10-14 (D85): der Lauf eines Generators gehört zur Identität seiner Reihe
+      - 2026-10-14: Läufe auf den Reihen der Signale (`inputs: "signals"`), mit eigener Referenz auf denselben
+        Eingängen; eine Prognose auf den Signalen fehlt noch
 - [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
       (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; entschieden D80 bis D82
       - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen
         und Topic-Leser; Heft 1; Image `opentsx/notebook-content`; Patch und Netzwerkregel unter
         `deploy/k3s/notebook/`. Offen: Hefte 2 bis 4, Konten am Retrieval-Server, D83
+      - 2026-10-14: Hefte 2 (ein Signal) und 4 (den Zwilling fragen) gebaut, gegen das Laborsystem ausgeführt und
+        im Notebook des Stacks eingehängt (Image `3.0.0-notebook-2`); offen: Heft 3
       - J1 weiter auf demselben Branch (2026-10-14): Operator `model.wind-shear`; Systemdokument Fassung 5 mit
         dem Flow `site-wind-clean` und dem Potenzial aus dem Wind der Station; auf dem Laborsystem beide Flows
         gestartet. Befund: zwei Flows schreiben dieselbe abgeleitete Reihe (15, Abschnitt 13.5, Punkt 7)

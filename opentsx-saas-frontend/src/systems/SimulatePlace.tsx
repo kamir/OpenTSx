@@ -47,6 +47,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
   const [policy, setPolicy] = useState('follow');
   const [from, setFrom] = useState('');
   const [onReference, setOnReference] = useState(true);
+  const [inputsFrom, setInputsFrom] = useState<'scenario' | 'signals'>('scenario');
   const [run, setRun] = useState<RunDoc | null>(null);
   const [compare, setCompare] = useState<CompareDoc | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,8 +65,10 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
   const list = useCallback(() => get('/runs').then((d) => setRuns(d.runs ?? [])).catch(() => setRuns([])), [get]);
   const show = useCallback(
     async (id: string) => {
-      const [doc, cmp] = await Promise.all([get(`/runs/${id}`), get(`/runs/${id}/compare`)]);
-      setRun(doc as RunDoc);
+      const doc = (await get(`/runs/${id}`)) as RunDoc;
+      // a run is compared with its own reference: on the signals, the decisions of the scenario on the same inputs
+      const cmp = await get(`/runs/${id}/compare${doc.baseline ? `?base=${encodeURIComponent(doc.baseline)}` : ''}`);
+      setRun(doc);
       setCompare(cmp as CompareDoc);
     },
     [get],
@@ -92,7 +95,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
 
   const ask = async () => {
     if (!scenario) return;
-    const req = runRequest(scenario, asks, policy, from, onReference);
+    const req = runRequest(scenario, asks, policy, from, onReference, inputsFrom);
     if (req.error) {
       setError(req.error);
       return;
@@ -120,7 +123,7 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
       </main>
     );
   }
-  const isReference = run?.run === scenario.reference;
+  const isReference = run?.kind === 'reference';
   return (
     <main className="wb-place" aria-label="Simulate the system">
       <header className="wb-inv-head">
@@ -135,6 +138,15 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
       </div>
       <div className="wb-simulate">
         <section className="wb-ask" aria-label="The question">
+          <h3>Inputs</h3>
+          <label className="wb-param">
+            the run reads
+            <select value={inputsFrom} onChange={(e) => setInputsFrom(e.target.value as 'scenario' | 'signals')}>
+              <option value="scenario">the invented inputs of the scenario</option>
+              <option value="signals">the series of the signals of the system</option>
+            </select>
+          </label>
+
           <h3>The night of the scenario</h3>
           <ul className="wb-decisions">
             {scenario.referenceDecisions.map((d) => (
@@ -259,10 +271,15 @@ export default function SimulatePlace({ system, base }: { system: string; base: 
                   {run.kind === 'forecast' ? ` A forecast from step ${run.firstStep}: the minutes before are those of the reference.` : ''}
                 </p>
                 <table className="wb-table">
-                  <thead><tr><th>input</th><th>comes from</th><th>origin</th></tr></thead>
+                  <thead><tr><th>input</th><th>comes from</th><th>origin</th><th>covers</th></tr></thead>
                   <tbody>
                     {run.inputs.map((i) => (
-                      <tr key={i.port}><td className="l">{i.port}</td><td className="l">{i.source}</td><td className="l">{(i.origin ?? '').toLowerCase()}</td></tr>
+                      <tr key={i.port}>
+                        <td className="l">{i.port}</td>
+                        <td className="l">{i.source}</td>
+                        <td className="l">{(i.origin ?? '').toLowerCase()}</td>
+                        <td>{i.coverage === undefined ? '' : `${Math.round(100 * i.coverage)} %`}</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>

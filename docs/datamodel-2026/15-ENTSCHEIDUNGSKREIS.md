@@ -595,7 +595,10 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
    Bedarf des Abnehmers liegt deshalb mit Werten vom 2026-10-01 und, seit 2026-10-14, vom Oktober 2025 in einer
    Reihe. Ein Flow, der sie bereinigt, überspringt die Werte von 2025, weil sie im Log nach denen von 2026 stehen.
    Folge: Die Freigabe misst das Alter weiter gegen den Bedarf von 2026 und hält Preis und Potenzial für veraltet.
-   Abhilfe wie bei den Flows: Der Lauf eines Generators gehört zur Identität seiner Reihe. Noch nicht gebaut.
+   **Gebaut (D85, 2026-10-14):** Der Lauf eines Generators gehört zur Identität seiner Reihe (Tag `run`, aus
+   Signal, Generator, Startwert, Parametern und Zeitraum). Derselbe Lauf ersetzt sich selbst, ein anderer Zeitraum
+   gibt eine eigene Reihe. Die Ansicht eines Signals zählt den Lauf, der zuletzt erzeugt wurde (Label
+   `generatedAt`), und nennt die anderen.
 5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
    MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
    nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.

@@ -157,6 +157,17 @@ entries are grouped by date. The detailed progress log (German) is in
   (compressor, buffer, pipeline, handover station) at a 15-minute step, with the potential of the park as its wind
   input and the compressor in the schedule. It prints the pressures of buffer and pipeline, the energy of the
   compressor and the hydrogen not delivered.
+- A generated series carries the run of its generator (tag `run`, decision D85): the same generator over the same
+  period replaces itself, another period gives another series. The state of a signal counts the run generated
+  last (label `generatedAt`) and names the others.
+- Runs on the signals of a system (TASK-014, J1). A run of the twin may take its inputs from the series of the
+  signals instead of the invented inputs of the scenario (`inputs: "signals"`): each input says where its values
+  came from, its origin and how much of the run it covers, and the run is compared with the decisions of the
+  scenario on the same inputs. The place "Simulate" lets a person choose.
+- Notebooks 2 and 4 for the notebook of a stack (TASK-014, N2): "Ein Signal" puts the raw and clean series of a
+  signal next to its expectation and operating range, and shows what the decision says about its inputs; "Den
+  Zwilling fragen" asks the twin a question on the signals of the system and then the same question over many
+  times of day. The Python client asks for runs on the signals and gives the operating range of a signal.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

@@ -142,14 +142,23 @@ public final class Systems {
         Generators.Target target = new Generators.Target(d.system(), s.id(), metric(d, s), s.expect().unit(), s.raw().processor(),
                 s.raw().seed() == null ? 0 : s.raw().seed(), s.expect().min(), s.expect().max(), d.hash());
         List<Episode> episodes = Generators.episodes(target, s.raw().params() == null ? JSON.objectNode() : s.raw().params(),
-                interval, from, to);
+                interval, from, to, Instant.now());
         writer.write(topic, episodes);
         ObjectNode out = JSON.objectNode();
         out.put("system", d.system()).put("signal", s.id()).put("topic", topic).put("generator", s.raw().processor())
                 .put("fidelity", "demo").put("episodes", episodes.size())
                 .put("samples", episodes.stream().mapToLong(Episode::getCount).sum())
                 .put("from", body.path("from").asText()).put("to", body.path("to").asText());
+        if (!episodes.isEmpty()) {
+            out.put("run", episodes.get(0).getSeries().getTags().get("run").toString());
+        }
         return out;
+    }
+
+    /** When a generated series was written; empty for a series that does not say. */
+    private static String generatedAt(JsonNode series) {
+        JsonNode v = series.path("labels").path("generatedAt");
+        return v.isArray() && !v.isEmpty() ? v.get(v.size() - 1).asText("") : "";
     }
 
     /** Metric of a series written by rule: that of the channel, else {@code <system>.<atom>.<port>}. */
@@ -517,6 +526,17 @@ public final class Systems {
                 }
             }
         }
+        // several runs of a generator wrote this grade: the run generated last counts, the others are named (D85)
+        if (!byTopic && hits.stream().map(e -> e.path("tags").path("run").asText("")).distinct().count() > 1) {
+            String newest = hits.stream().map(Systems::generatedAt).max(String::compareTo).orElse("");
+            String keep = hits.stream().filter(e -> generatedAt(e).equals(newest)).findFirst().orElseThrow().path("tags").path("run").asText("");
+            for (JsonNode e : List.copyOf(hits)) {
+                if (!e.path("tags").path("run").asText("").equals(keep)) {
+                    hits.remove(e);
+                    others.add(e);
+                }
+            }
+        }
         ObjectNode o = JSON.objectNode();
         if (!others.isEmpty()) {
             ArrayNode put = o.putArray("others");
@@ -524,6 +544,7 @@ public final class Systems {
                 ObjectNode x = put.addObject();
                 x.put("seriesId", e.path("seriesId").asText());
                 put(x, "flow", e.path("tags").path("flow").asText(null));
+                put(x, "run", e.path("tags").path("run").asText(null));
                 put(x, "from", e.path("from").asText(null));
                 put(x, "to", e.path("to").asText(null));
                 x.put("samples", e.path("samples").asLong());

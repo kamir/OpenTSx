@@ -218,6 +218,22 @@ class SystemsTest {
     }
 
     @Test
+    void aSignalGeneratedTwiceShowsTheRunGeneratedLast() {
+        ObjectNode inv = windFarm();
+        ObjectNode autumn26 = series(inv, "g26", "h2-chain.offtake.demand_kgph", 30, 90);
+        ((ObjectNode) autumn26.get("tags")).put("system", "h2-chain").put("signal", "offtake.demand_kgph").put("grade", "raw").put("run", "gen-a");
+        ((ObjectNode) autumn26.get("labels")).putArray("generatedAt").add("2026-10-13T20:00:00Z");
+        ObjectNode autumn25 = series(inv, "g25", "h2-chain.offtake.demand_kgph", 30, 90);
+        ((ObjectNode) autumn25.get("tags")).put("system", "h2-chain").put("signal", "offtake.demand_kgph").put("grade", "raw").put("run", "gen-b");
+        ((ObjectNode) autumn25.get("labels")).putArray("generatedAt").add("2026-10-14T09:00:00Z");
+        autumn25.put("from", "2025-10-01T00:00:00Z").put("to", "2026-01-01T00:00:00Z");
+        JsonNode raw = signal(SYSTEMS.signals("h2-chain", inv), "offtake.demand_kgph").path("grades").path("raw").path("data");
+        assertEquals(List.of("g25"), texts(raw.path("series")));
+        assertEquals("2026-01-01T00:00:00Z", raw.path("to").asText());
+        assertEquals("gen-a", raw.path("others").get(0).path("run").asText());
+    }
+
+    @Test
     void aSignalWrittenByTwoFlowsShowsTheSeriesOfTheFlowThatRuns() {
         // the potential, first from the simulated wind of a turbine (stopped), then from the wind of a station (running)
         ObjectNode inv = windFarm();
