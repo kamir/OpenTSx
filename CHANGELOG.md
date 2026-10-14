@@ -168,6 +168,10 @@ entries are grouped by date. The detailed progress log (German) is in
   signal next to its expectation and operating range, and shows what the decision says about its inputs; "Den
   Zwilling fragen" asks the twin a question on the signals of the system and then the same question over many
   times of day. The Python client asks for runs on the signals and gives the operating range of a signal.
+- Notebook 3 "Verproben" (TASK-014, N2): tests a CSV file of an operator against a signal (unit, step, time zone,
+  meaning of the time stamp, duplicates, plausible and operating range, gaps), puts it next to the series of the
+  signal, gives a verdict, writes a prepared copy in UTC and the unit of the signal, and names the commands and
+  binding lines. An example file derived from DWD data ships with it.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

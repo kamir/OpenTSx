@@ -15,7 +15,7 @@ FROM ${PYTHON_IMAGE} AS build
 COPY . /src
 RUN pip install --no-cache-dir --target /opentsx/site-packages --no-deps /src \
  && pip install --no-cache-dir --target /opentsx/site-packages "fastavro>=1.9,<2" "xxhash>=3,<4" \
- && mkdir -p /opentsx/notebooks && cp /src/notebooks/*.ipynb /opentsx/notebooks/ \
+ && mkdir -p /opentsx/notebooks && cp /src/notebooks/*.ipynb /src/notebooks/*.csv /opentsx/notebooks/ \
  && printf 'OpenTSx package and notebooks, copied on every start of the notebook.\nCopy a notebook before you change it: this folder is replaced.\n' > /opentsx/README.txt
 
 FROM ${BASE_IMAGE}
