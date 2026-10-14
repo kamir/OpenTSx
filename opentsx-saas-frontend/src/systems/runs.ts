@@ -61,7 +61,9 @@ export interface RunDoc {
   steps: number;
   decisions: RunDecision[];
   policies: Record<string, string>;
-  inputs: { port: string; source: string; origin?: string }[];
+  inputs: { port: string; source: string; origin?: string; coverage?: number; series?: string[] }[];
+  /** scenario: the invented inputs of the scenario; signals: the series of the signals of the system */
+  inputsFrom?: 'scenario' | 'signals';
   status: { usability: 'usable' | 'restricted' | 'blocked'; reasons: string[] };
   events: RunEvent[];
   kpis: Record<string, number>;
@@ -130,6 +132,7 @@ export function runRequest(
   policy: string,
   from: string,
   onReference: boolean,
+  inputsFrom: 'scenario' | 'signals' = 'scenario',
 ): { body?: Record<string, unknown>; error?: string } {
   const interventions: Record<string, unknown>[] = [];
   const start = from.trim() === '' ? null : minuteOf(from);
@@ -148,7 +151,9 @@ export function runRequest(
     if (start !== null && minute < start) return { error: `A forecast from ${clockOf(start)} cannot change what was decided at ${a.at}.` };
     interventions.push({ at: clockOf(minute), atom, control, value: release ? 'release' : value });
   }
+  if (inputsFrom === 'signals' && start !== null) return { error: 'A forecast on the signals is not offered yet; ask for the whole night.' };
   const body: Record<string, unknown> = { base: onReference ? 'reference' : 'empty', interventions };
+  if (inputsFrom === 'signals') body.inputs = 'signals';
   if (policy !== '' && policy !== 'follow') body.policies = { ely: policy };
   if (start !== null) body.from = start;
   return { body };

@@ -49,7 +49,20 @@ public final class Runs {
 
     /** A run with what was asked for. */
     record Kept(RunResult result, String label, String kind, List<Intervention> log, Map<String, String> policies, String baseline,
-                Instant createdAt) {
+                Instant createdAt, List<ObjectNode> inputs) {
+
+        Kept(RunResult result, String label, String kind, List<Intervention> log, Map<String, String> policies, String baseline,
+             Instant createdAt) {
+            this(result, label, kind, log, policies, baseline, createdAt, null);
+        }
+    }
+
+    /** Where runs on the series of the signals read from; null while the server has not said. */
+    private SignalInputs.Source source;
+
+    /** Lets runs read the state of the signals and their episodes ({@code inputs: "signals"}). */
+    public synchronized void signals(SignalInputs.Source source) {
+        this.source = source;
     }
 
     private final Map<String, StudioScenario> scenarios = new TreeMap<>();
@@ -141,6 +154,25 @@ public final class Runs {
         StudioScenario s = scenarios.get(system);
         String ref = reference(system);
         boolean onReference = !"empty".equals(body.path("base").asText("reference"));
+        String inputsFrom = body.path("inputs").asText("scenario");
+        if (!inputsFrom.equals("scenario") && !inputsFrom.equals("signals")) {
+            throw new IllegalArgumentException("inputs is \"scenario\" or \"signals\"");
+        }
+        Inputs inputs = s.observed();
+        List<ObjectNode> described = null;
+        if (inputsFrom.equals("signals")) {
+            if (source == null) {
+                throw new IllegalArgumentException("this server cannot read the series of the signals for a run");
+            }
+            SignalInputs.Bound bound = SignalInputs.bind(source.signals(system, body.path("bindings")), s.plan(), outside(s), source::read);
+            inputs = bound.inputs();
+            described = bound.described();
+            // the reference for this run: the decisions of the scenario on the same inputs
+            RunResult base = new TwinRunner(s.plan()).run(new TwinRunner.RunSpec(Mode.SHADOW, inputs, s.reference(), null, 0, Map.of(), null));
+            keep(system, new Kept(base, "Reference on the signals: the decisions of the scenario, the series of the system", "reference",
+                    s.reference(), Map.of(), null, Instant.now(), described));
+            ref = base.runId();
+        }
         List<Intervention> asked = interventions(s, body.path("interventions"));
         Map<String, String> policies = new TreeMap<>();
         body.path("policies").fields().forEachRemaining(e -> policies.put(e.getKey(), e.getValue().asText()));
@@ -156,6 +188,9 @@ public final class Runs {
                 throw new IllegalArgumentException("from is a minute inside the run: 1 to " + (s.plan().steps() - 1));
             }
             Snapshot at = kept.get(system).get(ref).result().snapshotAfter(from - 1);
+            if (inputsFrom.equals("signals")) {
+                throw new IllegalArgumentException("a forecast on the signals is not offered yet; ask for the whole night");
+            }
             long t = Micros.of(s.plan().start()) + from * s.plan().baseStepMicros();
             List<Intervention> planned = asked.stream().filter(iv -> iv.tMicros() >= t).toList();
             if (planned.size() != asked.size()) {
@@ -166,11 +201,12 @@ public final class Runs {
             log = planned;
             kind = "forecast";
         } else {
-            r = runner.run(new TwinRunner.RunSpec(Mode.WHAT_IF, s.observed(), log, null, 0, policies, null));
+            r = runner.run(new TwinRunner.RunSpec(Mode.WHAT_IF, inputs, log, null, 0, policies, null));
             kind = "what-if";
         }
         String label = body.path("label").asText("").strip();
-        keep(system, new Kept(r, label.isEmpty() ? describe(asked, policies, body) : label, kind, log, policies, ref, Instant.now()));
+        keep(system, new Kept(r, label.isEmpty() ? describe(asked, policies, body) + (described != null ? "; on the signals" : "") : label,
+                kind, log, policies, ref, Instant.now(), described));
         return doc(system, r.runId());
     }
 
@@ -252,6 +288,22 @@ public final class Runs {
         return k;
     }
 
+    /** The inputs of the plan that come from outside, as {@code atom.port}. */
+    private static Map<String, Boolean> outside(StudioScenario s) {
+        Map<String, Boolean> out = new TreeMap<>();
+        java.util.Set<String> wired = new java.util.TreeSet<>();
+        List<Atom> atoms = s.plan().instantiate(AtomCatalog.standard());
+        s.plan().resolve(atoms).forEach(w -> wired.add(w.toAtom() + "." + w.toPort()));
+        for (Atom a : atoms) {
+            a.inputs().forEach(p -> {
+                if (!wired.contains(a.id() + "." + p.name())) {
+                    out.put(a.id() + "." + p.name(), true);
+                }
+            });
+        }
+        return out;
+    }
+
     /** The runs kept for a system, newest first. */
     public synchronized JsonNode list(String system) {
         reference(system);
@@ -302,22 +354,41 @@ public final class Runs {
         k.log().forEach(iv -> decisions.add(intervention(iv, s)));
         ObjectNode policies = o.putObject("policies");
         k.policies().forEach(policies::put);
-        // where the inputs come from: the scenario, with the origin it gives each
+        // where the inputs come from: the scenario, with the origin it gives each, or the series of the signals
         ArrayNode inputs = o.putArray("inputs");
-        long t0 = r.timeMicros(0);
-        for (String port : new java.util.TreeSet<>(s.observed().ports())) {
-            ObjectNode in = inputs.addObject();
-            in.put("port", port);
-            in.put("source", "scenario " + s.id());
-            String origin = s.observed().value(port, t0).map(v -> v.origin().name()).orElse(null);
-            if (origin != null) {
-                in.put("origin", r.mode() == Mode.FORECAST ? Origin.FORECAST.name() : origin);
-            }
-        }
         ObjectNode status = o.putObject("status");
         status.put("usability", "restricted");
         ArrayNode reasons = status.putArray("reasons");
-        reasons.add("the inputs are those of the scenario, which are invented: the run shows the mechanism, not an effect");
+        if (k.inputs() != null) {
+            o.put("inputsFrom", "signals");
+            List<String> generated = new ArrayList<>();
+            for (ObjectNode in : k.inputs()) {
+                inputs.add(in);
+                if ("SYNTHETIC".equals(in.path("origin").asText())) {
+                    generated.add(in.path("port").asText());
+                }
+                if (in.path("coverage").asDouble(1) < 1) {
+                    reasons.add(String.format(Locale.ROOT, "%s covers %.0f %% of the run; where it is missing the atom uses its default",
+                            in.path("port").asText(), 100 * in.path("coverage").asDouble()));
+                }
+            }
+            if (!generated.isEmpty()) {
+                reasons.add("generated, not measured: " + String.join(", ", generated) + "; the run shows the mechanism, not an effect");
+            }
+        } else {
+            o.put("inputsFrom", "scenario");
+            long t0 = r.timeMicros(0);
+            for (String port : new java.util.TreeSet<>(s.observed().ports())) {
+                ObjectNode in = inputs.addObject();
+                in.put("port", port);
+                in.put("source", "scenario " + s.id());
+                String origin = s.observed().value(port, t0).map(v -> v.origin().name()).orElse(null);
+                if (origin != null) {
+                    in.put("origin", r.mode() == Mode.FORECAST ? Origin.FORECAST.name() : origin);
+                }
+            }
+            reasons.add("the inputs are those of the scenario, which are invented: the run shows the mechanism, not an effect");
+        }
         reasons.add("sizes, pressures and the order on the hydrogen side are assumed values of the plan");
         ArrayNode events = o.putArray("events");
         for (TwinEvent e : r.events()) {

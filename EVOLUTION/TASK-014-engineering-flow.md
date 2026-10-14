@@ -183,6 +183,8 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       - 2026-10-14 (D78): Jahreslauf mit der zweiten Fassung des Plans im Viertelstundenschritt; Befund: ein
         Generator schreibt jeden Lauf in dieselbe Reihe (15, Abschnitt 13.5, Punkt 8)
       - 2026-10-14 (D85): der Lauf eines Generators gehört zur Identität seiner Reihe
+      - 2026-10-14: Läufe auf den Reihen der Signale (`inputs: "signals"`), mit eigener Referenz auf denselben
+        Eingängen; eine Prognose auf den Signalen fehlt noch
 - [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
       (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; entschieden D80 bis D82
       - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen

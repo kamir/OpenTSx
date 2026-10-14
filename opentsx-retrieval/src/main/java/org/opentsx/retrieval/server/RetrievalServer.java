@@ -115,6 +115,21 @@ public final class RetrievalServer implements AutoCloseable {
         this.inventory = inventory;
         this.dags = dags;
         this.dagWrites = dagWrites && dags != null;
+        if (systems != null) {
+            // runs on the series of the signals read what this server holds
+            runs.signals(new org.opentsx.retrieval.runs.SignalInputs.Source() {
+                @Override
+                public JsonNode signals(String system, JsonNode bindings) {
+                    return systems.signals(system, inventory.get(), Systems.bindings(EpisodeJson.JSON.createObjectNode().set("bindings", bindings)));
+                }
+
+                @Override
+                public List<org.opentsx.model.v2.Episode> read(List<String> seriesIds, long fromMicros, long toMicros) {
+                    return service.episodes().series(seriesIds.toArray(String[]::new))
+                            .between(org.opentsx.model.Micros.toInstant(fromMicros), org.opentsx.model.Micros.toInstant(toMicros)).fetch();
+                }
+            });
+        }
         if (systems != null && dags != null) {
             // which flows run, so that a signal written by several flows shows the one that runs (D84)
             systems.runningFlows(() -> {
