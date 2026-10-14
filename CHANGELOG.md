@@ -157,6 +157,9 @@ entries are grouped by date. The detailed progress log (German) is in
   (compressor, buffer, pipeline, handover station) at a 15-minute step, with the potential of the park as its wind
   input and the compressor in the schedule. It prints the pressures of buffer and pipeline, the energy of the
   compressor and the hydrogen not delivered.
+- A generated series carries the run of its generator (tag `run`, decision D85): the same generator over the same
+  period replaces itself, another period gives another series. The state of a signal counts the run generated
+  last (label `generatedAt`) and names the others.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.
