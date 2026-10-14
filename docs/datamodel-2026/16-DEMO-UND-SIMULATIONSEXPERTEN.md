@@ -102,7 +102,7 @@ Ein Agent ist so gut wie seine Werkzeuge. Die Tabelle ist der Werkzeugvertrag un
 | Entscheidungsstatus lesen | wissen, was gesperrt ist und warum | **da** (`GET /v1/systems/<id>/decisions`) |
 | Reihen lesen | Eingänge und Ergebnisse ansehen | **da** (`/v1/inventory`, `/v1/episodes`) |
 | Signal binden, Generator laufen lassen | eine Quelle anschließen | **da**, als Arbeitskopie je Konto; Generatoren nur für Administratoren |
-| **Lauf starten** | Was-wäre-wenn und Prognose mit Eingriffen und Fahrweisen | **da** seit 014.17 (`POST /v1/systems/<id>/runs`), mit den Eingängen des Szenarios; die Reihen der Signale liest ein Lauf noch nicht |
+| **Lauf starten** | Was-wäre-wenn und Prognose mit Eingriffen und Fahrweisen | **da** seit 014.17 (`POST /v1/systems/<id>/runs`); seit 2026-10-14 wahlweise auf den Reihen der Signale (`inputs: "signals"`), mit Herkunft und Abdeckung je Eingang; eine Prognose auf den Signalen fehlt noch |
 | **Lauf lesen** | Reihen, Ereignisse, Kennzahlen eines Laufs nach Kennung | **da** (`GET /runs/<lauf>`, `/series`); das Register liegt im Speicher und vergisst beim Neustart |
 | **Läufe vergleichen** | Alternative gegen Referenz, unter gleichen Eingängen | **da** (`GET /runs/<lauf>/compare`), mit den Endbeständen der Speicher neben den Kennzahlen |
 | **Bilanzen prüfen** | Strom und Wasserstoff, Grenzen, Gültigkeit | **fehlt** als Werkzeug; die Prüfungen stehen in den Tests |

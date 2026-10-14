@@ -211,7 +211,8 @@ Die Reihe darin ist bestimmt durch:
   L4 dazu, weil eine erzeugte Rohreihe und die bereinigte Reihe desselben Signals sonst dieselbe Reihe wären.
   `flow` (der Name der Bereitstellung) kam am 2026-10-14 dazu (D84, 15, Abschnitt 13.5): Schreiben zwei Flows
   nacheinander dasselbe Signal, entstehen zwei Reihen. Die Ansicht eines Signals zeigt die Reihe des Flows, der
-  läuft, und nennt die anderen, ohne sie mitzuzählen.
+  läuft, und nennt die anderen, ohne sie mitzuzählen. Ebenso trägt eine erzeugte Rohreihe den Lauf ihres
+  Generators (`run`, D85); gezählt wird der zuletzt erzeugte Lauf.
 * **Reihen-Id:** wie überall aus Metrik und Tags (`SeriesKeys`).
 * **Labels der Episoden:** `origin`, `grade`, Hash des Systems.
 

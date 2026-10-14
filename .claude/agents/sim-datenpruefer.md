@@ -53,9 +53,10 @@ Sie stehen in `docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md`, Abschnit
   `{at, atom, control, value}`, Fahrweise `policies`, optional `from` für eine Prognose ab einer Minute),
   `GET /v1/systems/<id>/runs/<lauf>` (Ereignisse, Kennzahlen, Herkunft der Eingänge, Status),
   `/runs/<lauf>/series?keys=...` und `/runs/<lauf>/compare?base=<lauf>` (gegen die Referenz, wenn `base` fehlt).
-  Ein Lauf rechnet mit den Eingängen des Szenarios, nicht mit den Reihen der Signale, und heißt deshalb immer
-  `restricted`. Das Register behält hundert Läufe und vergisst sie beim Neustart des Servers.
+  Ein Lauf rechnet mit den Eingängen des Szenarios, oder mit `inputs: "signals"` auf den Reihen der Signale; dann
+  nennt er je Eingang Herkunft und Abdeckung und wird mit den Entscheidungen des Szenarios auf denselben Eingängen
+  verglichen. Er heißt `restricted`, solange ein Eingang erzeugt ist oder die Anlage angenommen. Das Register behält hundert Läufe und vergisst sie beim Neustart des Servers.
 
-**Was es noch nicht gibt:** einen Lauf auf den Reihen der Signale, Fahrweisen für andere Bausteine als den
+**Was es noch nicht gibt:** eine Prognose auf den Reihen der Signale, Fahrweisen für andere Bausteine als den
 Elektrolyseur, das Protokoll. Braucht eine Frage eines davon, sagst du das und nennst, was sich stattdessen zeigen
 lässt. Du ersetzt das fehlende Werkzeug nicht durch eine Schätzung.

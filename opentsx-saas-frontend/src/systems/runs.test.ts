@@ -30,6 +30,11 @@ describe('asking the twin', () => {
     });
   });
 
+  it('asks for the signals of the system as inputs', () => {
+    expect(runRequest(scenario, [], 'follow', '', true, 'signals').body).toEqual({ base: 'reference', interventions: [], inputs: 'signals' });
+    expect(runRequest(scenario, [], 'follow', '01:10', true, 'signals').error).toContain('not offered yet');
+  });
+
   it('says why a question cannot be asked', () => {
     expect(runRequest(scenario, [{ at: '07:00', target: 'handover.valve', value: '1' }], '', '', true).error).toContain('no time of the run');
     expect(runRequest(scenario, [{ at: '02:00', target: '', value: '1' }], '', '', true).error).toBe('Choose what to set.');

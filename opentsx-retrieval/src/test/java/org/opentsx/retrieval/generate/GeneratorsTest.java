@@ -75,7 +75,11 @@ class GeneratorsTest {
         assertEquals(24, six.stream().mapToInt(Episode::getCount).sum());
         Episode e = six.get(0);
         assertEquals("h2-chain.market.price_eur_mwh", e.getSeries().getMetric());
-        assertEquals("{grade=raw, signal=market.price_eur_mwh, system=h2-chain}", new java.util.TreeMap<>(e.getSeries().getTags()).toString());
+        java.util.Map<String, String> tags = new java.util.TreeMap<>();
+        e.getSeries().getTags().forEach((k, v) -> tags.put(k.toString(), v.toString()));
+        assertEquals("raw", tags.get("grade"));
+        assertEquals("market.price_eur_mwh", tags.get("signal"));
+        assertTrue(tags.get("run").startsWith("gen-"), tags.toString());
         assertEquals("EUR/MWh", e.getSeries().getUnit());
         assertEquals("SYNTHETIC", e.getLabels().get("origin"));
         assertEquals("gen.ou", e.getLabels().get("generator"));
@@ -93,6 +97,11 @@ class GeneratorsTest {
             List<Episode> second = Generators.episodes(price(), p, 15 * MINUTE, boundary, T0 + 360 * MINUTE);
             assertEquals(six.size(), first.size() + second.size());
         }
+        // another period is another run, and another series: two runs never mix in one series (D85)
+        List<Episode> later = Generators.episodes(price(), p, 15 * MINUTE, T0 + 1440 * MINUTE, T0 + 1800 * MINUTE,
+                java.time.Instant.parse("2026-10-14T12:00:00Z"));
+        assertNotEquals(e.getSeries().getSeriesId(), later.get(0).getSeries().getSeriesId());
+        assertEquals("2026-10-14T12:00:00Z", later.get(0).getLabels().get("generatedAt"));
     }
 
     @Test
