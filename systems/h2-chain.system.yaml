@@ -17,7 +17,7 @@
 # output and serves the comparison with the twin.
 schema: opentsx.system.v1
 system: h2-chain
-version: 4
+version: 5
 title: Wasserstoffkette am Windpark
 example: true
 domain: wind
@@ -87,6 +87,8 @@ signals:
         topic: tsx.wind.episodes.v2
         origin: MEASURED
         select: { metric: weather.wind_speed_10min, tags: { station: "01759" } }
+    clean:
+      source: { kind: flow, flow: site-wind-clean, output: clean }
   - id: park/DWD-01759/air_temperature
     title: Lufttemperatur DWD Greifswalder Oie
     role: exogenous
@@ -196,5 +198,6 @@ flows:
   - { id: wind-speed-clean, ref: systems/flows/wind-speed-clean.flow.yaml }
   - { id: park-power, ref: systems/flows/park-power.flow.yaml }
   - { id: park-potential, ref: systems/flows/park-potential.flow.yaml }
+  - { id: site-wind-clean, ref: systems/flows/site-wind-clean.flow.yaml }
 decisions:
   - { id: h2-dispatch, ref: systems/decisions/h2-dispatch.decision.yaml }

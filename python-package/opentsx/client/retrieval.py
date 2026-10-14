@@ -146,3 +146,111 @@ class RetrievalClient:
         body = self._selection(metric, tags, None, start, end)
         body.update(strategy=strategy, params=dict(params))
         return decode_stream(self._request("POST", "/v1/segments", body, accept=AVRO_STREAM))
+
+    # ---- what the server knows: inventory, systems, signals, decisions -----------------------------------------
+
+    def _json(self, method: str, path: str, body: Optional[dict] = None) -> Any:
+        return json.loads(self._request(method, path, body))
+
+    def inventory(self) -> pd.DataFrame:
+        """The series the server holds, one row each: identity, quantity, period, values, gaps and origin.
+
+        Tags become columns ``tag.<name>``. ``origin`` comes from the labels of the series (MEASURED, REPORTED,
+        ESTIMATED, FORECAST, SYNTHETIC); a series without that label has none.
+        """
+        doc = self._json("GET", "/v1/inventory")
+        rows = []
+        for s in doc.get("series", []):
+            labels = s.get("labels") or {}
+            origin = labels.get("origin") or labels.get("dwd.origin") or labels.get("twin.origin")
+            row = {
+                "series_id": s.get("seriesId"),
+                "metric": s.get("metric"),
+                "unit": s.get("unit"),
+                "from": pd.to_datetime(s.get("from"), utc=True),
+                "to": pd.to_datetime(s.get("to"), utc=True),
+                "samples": s.get("samples"),
+                "missing": s.get("missing"),
+                "min": s.get("min"),
+                "max": s.get("max"),
+                "interval_s": (s["intervalMicros"] / 1e6) if s.get("intervalMicros") else None,
+                "origin": origin[-1] if isinstance(origin, list) and origin else origin,
+            }
+            for k, v in (s.get("tags") or {}).items():
+                row[f"tag.{k}"] = v
+            rows.append(row)
+        df = pd.DataFrame(rows)
+        if not df.empty:
+            df = df.sort_values(["metric", "series_id"]).reset_index(drop=True)
+        df.attrs["source"] = doc.get("source")
+        return df
+
+    def systems(self) -> pd.DataFrame:
+        """The systems the server has documents for."""
+        return pd.DataFrame(self._json("GET", "/v1/systems").get("systems", []))
+
+    def signals(self, system: str) -> pd.DataFrame:
+        """The signals of a system with what is expected, where each grade comes from and the state."""
+        doc = self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/signals")
+        rows = []
+        for s in doc.get("signals", []):
+            e = s.get("expect") or {}
+            raw = ((s.get("grades") or {}).get("raw") or {}).get("data") or {}
+            clean = ((s.get("grades") or {}).get("clean") or {}).get("data") or {}
+            rows.append({"id": s.get("id"), "title": s.get("title"), "role": s.get("role"), "state": s.get("state"),
+                         "origin": s.get("origin"), "via": s.get("via"), "unit": e.get("unit"), "min": e.get("min"),
+                         "max": e.get("max"), "interval": e.get("interval"),
+                         "raw_series": ",".join(raw.get("series", [])) or None,
+                         "clean_series": ",".join(clean.get("series", [])) or None,
+                         "next": ",".join(s.get("next", [])) or None})
+        return pd.DataFrame(rows)
+
+    def decisions(self, system: str) -> dict:
+        """The decision cards of a system with what each analysis may claim today (``opentsx.decision-status.v1``)."""
+        return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/decisions")
+
+    # ---- the twin: scenario and runs ---------------------------------------------------------------------------
+
+    def scenario(self, system: str) -> dict:
+        """What can be asked of the twin of a system: controls, policies, reference decisions, KPIs."""
+        return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/scenario")
+
+    def run(self, system: str, interventions: Sequence[Mapping[str, Any]] = (), policies: Optional[Mapping[str, str]] = None,
+            start_minute: Optional[int] = None, on_reference: bool = True, label: Optional[str] = None) -> dict:
+        """Computes a run of the twin; ``interventions`` are ``{at: "HH:MM" | minute, atom, control, value}``.
+
+        The answer carries the identity of the run (``run``) and its ``status``: a run on the inputs of the scenario
+        is ``restricted``, and the reasons say why.
+        """
+        body: Dict[str, Any] = {"base": "reference" if on_reference else "empty", "interventions": [dict(i) for i in interventions]}
+        if policies:
+            body["policies"] = dict(policies)
+        if start_minute is not None:
+            body["from"] = int(start_minute)
+        if label:
+            body["label"] = label
+        return self._json("POST", f"/v1/systems/{urllib.parse.quote(system)}/runs", body)
+
+    def runs(self, system: str) -> pd.DataFrame:
+        """The runs the server keeps for a system, newest first."""
+        doc = self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs")
+        return pd.DataFrame([{k: r.get(k) for k in ("run", "kind", "label", "createdAt")} for r in doc.get("runs", [])])
+
+    def run_series(self, system: str, run: str, keys: Sequence[str]) -> pd.DataFrame:
+        """Series of a run as a wide frame indexed by UTC time; one column per key, the run id in ``attrs``."""
+        doc = self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs/{urllib.parse.quote(run)}/series?keys="
+                         + urllib.parse.quote(",".join(keys), safe=","))
+        start = pd.Timestamp(doc["start"])
+        step = pd.Timedelta(seconds=doc["stepSeconds"])
+        cols = {k: [float("nan") if v is None else v for v in s["values"]] for k, s in doc["series"].items()}
+        n = max((len(v) for v in cols.values()), default=0)
+        df = pd.DataFrame(cols, index=pd.date_range(start, periods=n, freq=step, name="ts"))
+        df.attrs["run"] = run
+        df.attrs["origin"] = {k: s.get("origin") for k, s in doc["series"].items()}
+        return df
+
+    def compare(self, system: str, run: str, base: Optional[str] = None) -> dict:
+        """A run next to another (by default the reference): KPIs with difference and verdict, end stocks, series."""
+        q = "" if base is None else "?base=" + urllib.parse.quote(base)
+        return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs/{urllib.parse.quote(run)}/compare{q}")
+

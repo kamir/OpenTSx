@@ -13,7 +13,7 @@ pip install -e "python-package[kafka,viz]"       # + confluent-kafka, matplotlib
 | `opentsx.model` | v2 data model, byte-identical to Java: `series_key`, `series_id`, `regular`, `irregular`, `values`, `encode`/`decode`, `summarize`/`merge_summaries`, ULIDs; pandas I/O in `opentsx.model.pandas_io` |
 | `opentsx.store.iceberg` | `load_catalog`, `read_episodes`, `read_frame`: read the Iceberg tables written by Java |
 | `opentsx.stats` | `QuantileSketch` (same format as Java), `stats_to_frame` for `SeriesStats` records |
-| `opentsx.client` | `RetrievalClient` for the REST API (episodes, patterns, segments) |
+| `opentsx.client` | `RetrievalClient` for the REST API (episodes, patterns, segments; the inventory, systems, signals, decisions; the scenario and runs of the twin); `TopicReader` reads the episodes of a topic directly from the broker, once, with a limit |
 | `opentsx` (top level) | classic algorithms: `DFA`, `MFDFA`, `EventSynchronization`, `RIS`, plus `TimeSeriesObject`, `TSBucket` (see [chapter 11](11-classic-analytics.md)) |
 
 ## Typical notebook flow

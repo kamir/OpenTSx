@@ -477,7 +477,7 @@ export interface Finding {
 // ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
 
 /** Operators the processor runs before a series sink; everything else computes in the workbench only. */
-export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample', 'model.power-curve', 'feature.lag', 'feature.rolling'];
+export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample', 'model.wind-shear', 'model.power-curve', 'feature.lag', 'feature.rolling'];
 export const EPISODE_SCHEMA = 'opentsx.episode.v2';
 
 /** The topic the generated series of a domain live in. */

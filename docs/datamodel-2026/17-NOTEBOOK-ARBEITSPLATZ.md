@@ -1,6 +1,7 @@
 # 17. Notebook-Arbeitsplatz: Reihen laden, ansehen, verproben
 
-> Stand: 2026-10-13. **Entwurf, nichts davon ist entschieden und nichts davon ist gebaut.** Dieses Dokument plant
+> Stand: 2026-10-14. **Entschieden am 2026-10-13 sind D80 bis D82 (Abschnitt 7); Stufe N1 ist gebaut und im Stack
+> der Demo eingehängt (Abschnitt 8).** Dieses Dokument plant
 > ein Subsystem: Notebooks als weitere OpenTSx-Anwendung, in denen jemand die Reihen des Systems direkt lädt und von
 > Hand damit arbeitet. Es baut auf [16](16-DEMO-UND-SIMULATIONSEXPERTEN.md) auf. Arbeitspaket:
 > [TASK-014](../../EVOLUTION/TASK-014-engineering-flow.md), 014.18.
@@ -119,11 +120,34 @@ Heft 1 ist das erste, das gebaut wird: Es braucht am wenigsten, und es ist das, 
 
 N1 kommt ohne Änderung am Stack aus, wenn Heft 1 über Weg B liest. Das ist der Grund, es zuerst zu bauen.
 
-## 7. Offene Entscheidungen
+## 7. Entscheidungen
 
-| Nr. | Frage | Vorschlag |
-|---|---|---|
-| D80 | Womit beginnt das Subsystem? | mit N1: Inventar im Notebook, gelesen über Weg B, ohne Änderung am Stack |
-| D81 | Wie kommen Paket und Hefte ins Notebook? | als eigenes kleines Image, das der Stack einhängt; für die erste Demo von Hand ins Verzeichnis des Notebooks gelegt |
-| D82 | Wird Weg A freigegeben, obwohl der Server keine Konten hat? | ja für die Demo, mit dem Hinweis im Heft; vor einem Betrieb beim Betreiber braucht der Server Konten oder das Notebook einen eigenen Zugang |
-| D83 | Darf ein Notebook schreiben? | in N1 und N2 nein; in N3 nur über die Web-Anwendung mit Konto, nie direkt ins Topic |
+| Nr. | Frage | Entscheidung | Stand |
+|---|---|---|---|
+| D80 | Womit beginnt das Subsystem? | mit N1: Inventar im Notebook | wie vorgeschlagen |
+| D81 | Wie kommen Paket und Hefte ins Notebook? | **gleich als eigenes Image**, das der Stack beim Start einhängt | **geändert** (Vorschlag war: für die erste Demo von Hand ins Verzeichnis gelegt) |
+| D82 | Wird Weg A freigegeben, obwohl der Server keine Konten hat? | **jetzt**, mit einer Netzwerkregel im Namensraum des Notebooks | **geändert** (Vorschlag war: mit N2) |
+| D83 | Darf ein Notebook schreiben? | offen; Vorschlag: in N1 und N2 nein, in N3 nur über die Web-Anwendung mit Konto, nie direkt ins Topic | offen |
+
+## 8. Stand von N1
+
+Gebaut und am 2026-10-14 im Stack der Demo eingehängt.
+
+* **Paket `opentsx`:** `RetrievalClient` hat `inventory()`, `systems()`, `signals()`, `decisions()`,
+  `scenario()`, `run()`, `runs()`, `run_series()` und `compare()`. `TopicReader` liest die Episoden eines Topics
+  einmal von vorn bis zum Ende, ohne Konsumentengruppe und ohne Commit, filtert nach Metrik, Tags und Zeitraum,
+  behält jede Episode einmal und hält vor dem Lesen an, wenn das Topic mehr Datensätze hat, als er lesen darf.
+* **Heft 1** (`python-package/notebooks/01-zeitreihen-inventar.ipynb`): Inventar als Tabelle, die gemessenen und
+  gemeldeten Reihen, eine Reihe als Kurve mit Tagesmittel, Abdeckung je Tag als Karte, Lückenliste, der Preis 2025
+  mit dem Wechsel der Auflösung. Wählt Weg A und fällt auf Weg B zurück.
+* **Image** `opentsx/notebook-content` (`deploy/docker/notebook-content.Dockerfile`): Paket mit fastavro und
+  xxhash für Python 3.13 und die Hefte; ein Init-Container kopiert sie bei jedem Start nach `~/opentsx`.
+* **Im Stack** (`deploy/k3s/notebook/`): Patch der Notebook-Bereitstellung und eine Netzwerkregel, die nur den
+  Retrieval-Server zusätzlich erlaubt. Die vorherige Bereitstellung ist gesichert; zurück geht es mit
+  `rollout undo` und dem Löschen der Regel.
+* **Geprüft im Notebook des Stacks:** Heft 1 läuft über Weg A durch (154 Reihen; Wind der Station 2025 mit 52.360
+  Werten und zwei Lücken im Juni, zusammen 200 fehlende Werte; 724 Intervalle mit negativem Preis). Weg B erreicht
+  den Broker und hält bei einer Grenze von 10 Datensätzen an, ohne zu lesen.
+
+**Grenzen.** Der Retrieval-Server hat keine Konten: Wer das Notebook öffnen kann, liest jede Reihe. Die Hefte 2
+bis 4 fehlen. Das Verzeichnis `~/opentsx` wird bei jedem Start ersetzt.

@@ -572,9 +572,18 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
 4. **Der Plan.** Der Jahreslauf rechnet mit der ersten Fassung des Plans. Die zweite Fassung (S1) rechnet in
    Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte. **Entschieden (D78), noch nicht
    gebaut:** die zweite Fassung im Viertelstundenschritt, nach einer Prüfung von Regler und Rampen.
-6. **Das Potenzial aus dem Wind der Station.** Der Wind der Station ist in 10 m Höhe gemessen. Ein Operator, der
-   ihn auf Nabenhöhe überträgt, fehlt in der Kette der Flows; `opentsx-market` hat diese Rechnung für den
-   Jahreslauf, die Workbench nicht.
+6. **Das Potenzial aus dem Wind der Station.** **Gebaut (2026-10-14):** Der Operator `model.wind-shear` überträgt
+   den Wind einer Messhöhe nach dem Potenzgesetz auf die Nabenhöhe, im Prozessor und in der Workbench. Auf dem
+   Laborsystem laufen zwei Flows: der bereinigte Wind der Station (52.360 Werte) und daraus das Potenzial des Parks
+   (Höhenübertragung von 10 m auf 120 m mit dem Exponenten 0,11, dann die Leistungskurve von vier Anlagen mit je
+   3 MW). Das Potenzial des Jahres 2025 reicht von 0 bis 12.000 kW und heißt geschätzt, gemacht aus gemessenen
+   Daten.
+7. **Eine Reihe, zwei Herkünfte.** Der frühere Flow für das Potenzial (aus dem simulierten Wind einer Turbine vom
+   2026-10-01) und der neue schreiben dieselbe Reihe, weil die Identität einer abgeleiteten Reihe nur aus System
+   und Signal folgt. Die 350 Werte des alten Flows bleiben im Log und hängen am Ende des Jahres 2025; `madeOf` nennt
+   beide Herkünfte. Folge: Das Potenzial endet am 2026-10-01, der Preis am 2025-12-31, und die Freigabe meldet den
+   Preis als veraltet. Abhilfe ist zu entscheiden: die Identität einer abgeleiteten Reihe um den Flow erweitern,
+   oder die Freigabe auf den Zeitraum einer Entscheidung beziehen (etwa die Nacht des Szenarios).
 5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
    MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
    nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.

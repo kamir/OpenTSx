@@ -609,6 +609,16 @@ function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
  * Reference power curve of a wind turbine, times `count` turbines: what the wind offers. A model, not a measurement.
  * The same as CleanChain.PowerCurve in the processor.
  */
+function windShear(b: Bucket, p: Params): Bucket {
+  const factor = Math.pow(num(p, 'toM', 120) / num(p, 'fromM', 10), num(p, 'alpha', 0.11));
+  return {
+    ...b,
+    name: `Hub_${b.name}`,
+    note: undefined,
+    series: b.series.map((s) => ({ ...s, y: Float64Array.from(s.y, (v) => v * factor) })),
+  };
+}
+
 function powerCurve(b: Bucket, p: Params): Bucket {
   const rated = num(p, 'ratedKw', 3000);
   const cutIn = num(p, 'cutIn', 3);
@@ -832,6 +842,13 @@ export const OPS: OpDef[] = [
       { key: 'every', label: 'every', type: 'number', default: 0.05, min: 0 },
       { key: 'agg', label: 'agg', type: 'select', default: 'MEAN', options: ['MEAN', 'MIN', 'MAX', 'LAST'] },
     ], apply: resample },
+  { id: 'model.wind-shear', label: 'Wind shear', group: 'stream', prefix: 'Hub_', pfdOperation: 'MODEL', inCatalog: false,
+    hint: 'Carries the wind of a measuring height to the hub height by the power law: v * (to / from)^alpha. A model with one exponent for every weather; about 0.1 over open sea, 0.14 over flat land.',
+    params: [
+      { key: 'fromM', label: 'from [m]', type: 'number', default: 10, min: 0 },
+      { key: 'toM', label: 'to [m]', type: 'number', default: 120, min: 0 },
+      { key: 'alpha', label: 'alpha', type: 'number', default: 0.11, min: 0 },
+    ], apply: windShear },
   { id: 'model.power-curve', label: 'Power curve', group: 'stream', prefix: 'Potential_', pfdOperation: 'MODEL', inCatalog: false,
     hint: 'From wind speed to the power the wind offers a turbine: zero below cut-in and above cut-out, rated power from the rated wind. A model, not a measurement: it does not fall when the turbine is curtailed.',
     params: [

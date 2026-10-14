@@ -1,0 +1,22 @@
+# Lets the notebook of a stack read the OpenTSx retrieval server (see README.md). Additive: one more allowed target.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-opentsx-retrieval
+  labels:
+    app.kubernetes.io/part-of: opentsx
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: jupyter
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: opentsx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: opentsx-retrieval
+      ports:
+        - { port: 8080, protocol: TCP }

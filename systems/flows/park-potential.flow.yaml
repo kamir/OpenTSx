@@ -1,14 +1,20 @@
-# Flow, opentsx.flow.v1 (proposal): the potential of the park, estimated from the clean wind speed over the power
-# curve of the turbines. An estimate: it does not fall when the park is restricted or curtailed, as the measured
-# power does. The curve is a demo model: no hub height, no air density, no wake losses.
-# The processor "model.power-curve" runs it in the vector processor; this authoring form is not read by code yet.
+# Flow, opentsx.flow.v1 (proposal): the potential of the park from the measured wind of the DWD station near it. The
+# station measures at 10 m; the power law with the exponent of the site (0.11, coast) carries it to the hub height of
+# 120 m, and the power curve of four turbines of 3 MW turns it into power. An estimate: it does not fall when the
+# park is restricted or curtailed, as the measured power does. Both models are simple and named: one exponent for
+# every weather, no air density, no wake losses, a station 23 km away. Runs in the vector processor
+# ("model.wind-shear", "model.power-curve"); this authoring form is not read by code yet.
 schema: opentsx.flow.v1
 flow: park-potential
-reads: ["park/T02/WMET.HorWdSpd@clean"]
+reads: ["park/DWD-01759/wind_speed@clean"]
 nodes:
+  - id: hub
+    op: model.wind-shear
+    in: [source]
+    params: { fromM: 10, toM: 120, alpha: 0.11 }
   - id: potential
     op: model.power-curve
-    in: [source]
-    params: { ratedKw: 12000, turbines: 6 }
+    in: [hub]
+    params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: 4 }
 writes:
   - { from: potential, signal: "park.p_potential_kw@clean" }

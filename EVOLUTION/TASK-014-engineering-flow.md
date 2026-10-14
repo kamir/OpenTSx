@@ -6,9 +6,9 @@
 - **Status**: L1 bis L3 umgesetzt; Plan nach dem Review-Briefing entschieden am 2026-10-13; als Nächstes L4
 - **Priority**: High
 - **Epic**: P7e Personal Service Layer / Studio
-- **Delivery-Branch**: `opentsx/2026-task014-dwd-2025` (J1, das Jahr 2025, 014.14), Worktree
-  `../OpenTSx-worktrees/dwd-2025`
-- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
+- **Delivery-Branch**: `opentsx/2026-task014-notebook` (Notebook-Arbeitsplatz N1, 014.18), Worktree
+  `../OpenTSx-worktrees/notebook`
+- **Frühere Delivery-Branches** (gemergt): `opentsx/2026-task014-dwd-2025` (J1, PR #189), `opentsx/2026-task014-demo-ui` (Demo zeigbar, Lauf-Dienst, PR #188), `opentsx/2026-task014-system-plan` (S1, Demo-Entwurf, Agenten, PR #187), `opentsx/2026-task014-clean-signals` (L3, L4, L5, Neuplanung, PR #186), `opentsx/2026-task014-engineering-flow` (Konzept, Freigabe, L1, PR #182),
   `opentsx/2026-task014-shell` (L2, PR #185)
 - **Konzept**: [`docs/datamodel-2026/14-ENGINEERING-FLOW.md`](../docs/datamodel-2026/14-ENGINEERING-FLOW.md)
 
@@ -179,8 +179,13 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       - offen: der Plan der zweiten Fassung im Viertelstundenschritt über das Jahr (D78); das Potenzial aus dem
         Wind der Station (Operator für die Höhenübertragung); ein Lauf auf den Reihen der Signale
 - [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
-      (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; Entscheidungen D80 bis
-      D83 stehen aus
+      (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; entschieden D80 bis D82
+      - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen
+        und Topic-Leser; Heft 1; Image `opentsx/notebook-content`; Patch und Netzwerkregel unter
+        `deploy/k3s/notebook/`. Offen: Hefte 2 bis 4, Konten am Retrieval-Server, D83
+      - J1 weiter auf demselben Branch (2026-10-14): Operator `model.wind-shear`; Systemdokument Fassung 5 mit
+        dem Flow `site-wind-clean` und dem Potenzial aus dem Wind der Station; auf dem Laborsystem beide Flows
+        gestartet. Befund: zwei Flows schreiben dieselbe abgeleitete Reihe (15, Abschnitt 13.5, Punkt 7)
 - [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
       [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
       Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository

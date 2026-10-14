@@ -140,6 +140,16 @@ entries are grouped by date. The detailed progress log (German) is in
 - Draft: notebooks as a further application
   ([`docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md`](docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md), German):
   load the series directly, look at them, test a new series against what the system expects. Not built.
+- Notebooks as an OpenTSx application, stage N1 (TASK-014). The Python package reads the inventory, systems,
+  signals, decisions and runs of the twin from the retrieval server, and `TopicReader` reads the episodes of a
+  topic directly from the broker, once, without a consumer group and with a limit it does not pass silently.
+  Notebook 1 shows the time series inventory, a series with its coverage and gaps, and the price of 2025. The image
+  `opentsx/notebook-content` carries package and notebooks into the notebook of a stack (`deploy/k3s/notebook/`:
+  a patch for the notebook's Deployment and a network rule for the retrieval server).
+- The operator `model.wind-shear` (TASK-014, J1): the wind of a measuring height carried to the hub height by the
+  power law, in the processor and the workbench, checked by the shared test vectors. The potential of the park in
+  the system document of the H2 chain is now made of the measured wind of the DWD station: cleaned, carried from
+  10 m to 120 m, then the power curve of four turbines.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

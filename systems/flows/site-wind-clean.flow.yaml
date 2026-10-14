@@ -1,0 +1,12 @@
+# Flow, opentsx.flow.v1 (proposal): the wind of the DWD station near the park, cleaned. The station measures at 10 m;
+# the clean series stays at that height and in its 10-minute step. Values outside the plausible range become gaps.
+schema: opentsx.flow.v1
+flow: site-wind-clean
+reads: ["park/DWD-01759/wind_speed@raw"]
+nodes:
+  - id: clean
+    op: dq.plausible-range
+    in: [source]
+    params: { min: 0, max: 60, mode: gap }
+writes:
+  - { from: clean, signal: "park/DWD-01759/wind_speed@clean" }

@@ -64,7 +64,7 @@ class SystemDocTest {
         assertEquals("h2-chain", d.system());
         assertEquals("wind", d.domain());
         assertEquals(16, d.signals().size());
-        assertEquals(5, d.flows().size());
+        assertEquals(6, d.flows().size());
         // the expectation of a sensor channel comes from the catalog, where the interval is called sampling
         SystemDoc.Signal power = d.signals().get(0);
         assertEquals("park/T02/WTUR.W", power.id());
