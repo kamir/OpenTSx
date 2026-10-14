@@ -570,8 +570,13 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
    für 2025 geladen, Abdeckung 99,60 bis 99,74 Prozent, 2 bis 4 Lücken je Reihe. Die täglichen Abrufe im Cluster
    holen weiter nur die drei ersten Größen; die neuen werden mit `--stations <id>:<größe>` angefordert.
 4. **Der Plan.** Der Jahreslauf rechnet mit der ersten Fassung des Plans. Die zweite Fassung (S1) rechnet in
-   Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte. **Entschieden (D78), noch nicht
-   gebaut:** die zweite Fassung im Viertelstundenschritt, nach einer Prüfung von Regler und Rampen.
+   Minuten über sechs Stunden; ein Jahr in Minuten sind 525.600 Schritte. **Gebaut (D78, 2026-10-14):** Der
+   Jahreslauf rechnet die zweite Fassung im Viertelstundenschritt (35.040 Schritte). Zwei Parameter weichen vom
+   Minutenplan ab: Der Elektrolyseur darf in einem Schritt um seine Nennleistung springen, und der Regler des
+   Puffers hat die halbe Verstärkung (10 kg/h je bar), weil der Leitungsdruck eine Viertelstunde später zurückkommt.
+   Ergebnis 2025 mit dem Wind der Station und der Fahrregel "immer": keine Schutzabschaltung, der Puffer zwischen 93
+   und 119 bar, die Leitung zwischen 27,0 und 31,7 bar, keine Fehlmenge, 271 MWh für den Verdichter, 434 t
+   Wasserstoff. Die Fahrregel und alle Anlagengrößen sind Annahmen.
 6. **Das Potenzial aus dem Wind der Station.** **Gebaut (2026-10-14):** Der Operator `model.wind-shear` überträgt
    den Wind einer Messhöhe nach dem Potenzgesetz auf die Nabenhöhe, im Prozessor und in der Workbench. Auf dem
    Laborsystem laufen zwei Flows: der bereinigte Wind der Station (52.360 Werte) und daraus das Potenzial des Parks
@@ -586,6 +591,11 @@ Nennleistung im Jahresmittel. Der Lauf rechnet mit dem Plan in der **ersten** Fa
    Jede Reihe, die ein Flow schreibt, trägt das Tag `flow`; die Ansicht eines Signals zeigt die Reihe des laufenden
    Flows und nennt die anderen. Die Reihe von vorher (ohne das Tag) bleibt im Log und wird nicht mehr gezählt,
    sobald ein Flow des Signals mit dem Tag läuft.
+8. **Dasselbe bei Generatoren.** Ein Demo-Generator schreibt jeden Lauf in dieselbe Rohreihe seines Signals. Der
+   Bedarf des Abnehmers liegt deshalb mit Werten vom 2026-10-01 und, seit 2026-10-14, vom Oktober 2025 in einer
+   Reihe. Ein Flow, der sie bereinigt, überspringt die Werte von 2025, weil sie im Log nach denen von 2026 stehen.
+   Folge: Die Freigabe misst das Alter weiter gegen den Bedarf von 2026 und hält Preis und Potenzial für veraltet.
+   Abhilfe wie bei den Flows: Der Lauf eines Generators gehört zur Identität seiner Reihe. Noch nicht gebaut.
 5. **Historische Prognosen gibt es nicht.** Der DWD hält auf seinem Server nur die jeweils neuesten
    MOSMIX-Läufe; das Archiv der Rohdateien beginnt am 2026-10-12. Eine rollierende Planung für 2025 kann deshalb
    nur mit simulierten Prognosen rechnen, deren Fehlerverhalten benannt ist.

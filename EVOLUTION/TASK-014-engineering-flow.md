@@ -180,6 +180,8 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
         Wind der Station (Operator für die Höhenübertragung); ein Lauf auf den Reihen der Signale
       - 2026-10-14 (D84): der Flow gehört zur Identität einer abgeleiteten Reihe; die Ansicht eines Signals zeigt die
         Reihe des laufenden Flows
+      - 2026-10-14 (D78): Jahreslauf mit der zweiten Fassung des Plans im Viertelstundenschritt; Befund: ein
+        Generator schreibt jeden Lauf in dieselbe Reihe (15, Abschnitt 13.5, Punkt 8)
 - [ ] 014.18 Notebook-Arbeitsplatz: Entwurf in [17](../docs/datamodel-2026/17-NOTEBOOK-ARBEITSPLATZ.md)
       (2026-10-13): drei Tätigkeiten, zwei Wege zu den Daten, vier Hefte, Stufen N1 bis N3; entschieden D80 bis D82
       - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen

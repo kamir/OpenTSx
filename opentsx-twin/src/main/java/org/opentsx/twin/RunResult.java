@@ -130,6 +130,11 @@ public final class RunResult {
         return w;
     }
 
+    /** The smallest value of a series, gaps left out; NaN for a series without values. */
+    public double min(String key) {
+        return java.util.Arrays.stream(series(key)).filter(Double::isFinite).min().orElse(Double.NaN);
+    }
+
     public double max(String key) {
         return Arrays.stream(series(key)).filter(v -> !Double.isNaN(v)).max().orElse(Double.NaN);
     }

@@ -87,7 +87,13 @@ class HistoryTwinsTest {
         Map<String, Double> k = H2History.kpis(always, r);
         assertTrue(k.get("h2_kg") > 0);
         assertEquals(0, k.get("trips"));
-        assertTrue(k.get("p_max_bar") < 40);
+        // the second form of the plan at a 15-minute step: the buffer stays inside its range and the pipeline
+        // near its set point; the buyer gets what the plan produces
+        assertTrue(k.get("p_max_bar") < 200);
+        assertTrue(k.get("buffer_min_bar") > 50);
+        assertTrue(k.get("line_min_bar") > 20 && k.get("line_max_bar") < 40, k.toString());
+        assertEquals(0, k.get("h2_shortfall_kg"), 1e-6);
+        assertTrue(k.get("compressor_mwh") > 0);
 
         H2History.Run cheap = s.inputs(plan, "smard", 0.2);
         RunResult rc = H2History.run(cheap, Mode.WHAT_IF);
