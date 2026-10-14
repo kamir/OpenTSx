@@ -183,6 +183,9 @@ den Lieferstufen L1 bis L5 des Konzepts. Die Freigabe liegt seit 2026-10-13 vor.
       - N1 gebaut und im Stack der Demo eingehängt (2026-10-14): Paket mit Inventar, Systemen, Signalen, Läufen
         und Topic-Leser; Heft 1; Image `opentsx/notebook-content`; Patch und Netzwerkregel unter
         `deploy/k3s/notebook/`. Offen: Hefte 2 bis 4, Konten am Retrieval-Server, D83
+      - J1 weiter auf demselben Branch (2026-10-14): Operator `model.wind-shear`; Systemdokument Fassung 5 mit
+        dem Flow `site-wind-clean` und dem Potenzial aus dem Wind der Station; auf dem Laborsystem beide Flows
+        gestartet. Befund: zwei Flows schreiben dieselbe abgeleitete Reihe (15, Abschnitt 13.5, Punkt 7)
 - [ ] 014.15 Demo der Wasserstoffkette und Simulations-Experten als Agenten: Entwurf in
       [16](../docs/datamodel-2026/16-DEMO-UND-SIMULATIONSEXPERTEN.md) (2026-10-13): Demo in acht Akten, fünf Rollen,
       Werkzeugvertrag, 15 Lücken. Entschieden (D70 bis D73): Demo A zuerst, fünf Rollen als Agenten im Repository
