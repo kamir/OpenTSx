@@ -45,6 +45,8 @@ export interface GradeData {
   min?: number;
   max?: number;
   intervalMicros?: number;
+  /** Series of the same grade that another flow wrote earlier; named, not counted (D84). */
+  others?: { seriesId: string; flow?: string; from?: string; to?: string; samples: number }[];
 }
 
 export interface Grade {
@@ -271,7 +273,10 @@ export function dataText(d: GradeData | undefined): string {
   if (!d) return 'no data found';
   const share = d.samples > 0 ? (100 * d.missing) / d.samples : 0;
   const range = d.min !== undefined && d.max !== undefined ? `, ${num(d.min)}..${num(d.max)}` : '';
-  return `${d.series.length} series, ${d.samples.toLocaleString('en')} samples, ${Number(share.toFixed(1))} % missing${range}`;
+  const others = d.others?.length
+    ? `; not counted: ${d.others.map((o) => `${o.samples.toLocaleString('en')} samples of ${o.flow ?? 'an earlier flow'}`).join(', ')}`
+    : '';
+  return `${d.series.length} series, ${d.samples.toLocaleString('en')} samples, ${Number(share.toFixed(1))} % missing${range}${others}`;
 }
 
 // ---------------------------------------------------------------- plan of a system (GET /v1/systems/<id>/plan)

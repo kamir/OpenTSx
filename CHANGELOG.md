@@ -150,6 +150,13 @@ entries are grouped by date. The detailed progress log (German) is in
   power law, in the processor and the workbench, checked by the shared test vectors. The potential of the park in
   the system document of the H2 chain is now made of the measured wind of the DWD station: cleaned, carried from
   10 m to 120 m, then the power curve of four turbines.
+- A derived series carries the flow that writes it (tag `flow`, decision D84). Two flows that write the same signal
+  one after the other write two series; the state of the signal counts the series of the flow that runs and names
+  the others. Before, a stopped flow and its successor wrote into one series and mixed two periods.
+- The year run on history (`bin/opentsx twin --history ... --year 2025`) computes the H2 chain in its second form
+  (compressor, buffer, pipeline, handover station) at a 15-minute step, with the potential of the park as its wind
+  input and the compressor in the schedule. It prints the pressures of buffer and pipeline, the energy of the
+  compressor and the hydrogen not delivered.
 - User manual, chapter 16: the engineering method from the system to the model in seven steps (define the system,
   list the expected signals, take stock, bind or simulate, prepare, run, model), with the rules that hold across
   them, a worked example, a checklist, and for each step what OpenTSx supports today and what is planned.

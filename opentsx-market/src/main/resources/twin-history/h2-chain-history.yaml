@@ -1,14 +1,20 @@
-# Scenario S1 (H2 chain) for runs on archived history: the plan of opentsx-twin twin/h2-chain.yaml with a
-# 15-minute base step (the market steps every superstep, MTU 15 min; hourly prices before 2025-10-01 are held).
+# Scenario S1 (H2 chain) for runs on archived history: the plan of opentsx-twin twin/h2-chain.yaml in its second
+# form (compressor, high-pressure buffer, pipeline with two pressures, handover station) with a 15-minute base step
+# (decided 2026-10-13, D78). The market steps every superstep, MTU 15 min; hourly prices before 2025-10-01 are held.
 # Start and number of steps are replaced per run (HistoryTwins); inputs come from the history archive:
 #   market.price_eur_mwh   day-ahead DE-LU (REPORTED)
-#   park.p_avail_kw        wind: national onshore generation scaled to the park, or a DWD station through a
-#                          power curve (ESTIMATED)
-#   marketer.schedule_kw   schedule from the day-ahead wind forecast minus the electrolyzer plan (FORECAST)
+#   park.p_potential_kw    wind: national onshore generation scaled to the park, or a DWD station carried to hub
+#                          height and through a power curve (ESTIMATED)
+#   marketer.schedule_kw   schedule from the day-ahead wind forecast minus the electrolyzer plan and the compressor
+#                          (FORECAST, or ESTIMATED without a forecast)
 #   ely.setpoint_kw        price-limit dispatch rule (SYNTHETIC: a rule, not a real operator schedule)
-#   offtake.demand_kgph    the buyer takes what the plan produces
+#   offtake.demand_kgph    the buyer takes what the plan produces (SYNTHETIC)
+# Differences to the plan with a one-minute step, for the 15-minute step: the electrolyzer may change by its rated
+# power in one step (a ramp of 500 kW per minute is 7.5 MW in 15 minutes); the regulator of the buffer has a gain of
+# 10 kg/h per bar, which settles without overshoot when the pressure of the pipeline comes back one step late.
+# All sizes and pressures are assumed values, as in the plan with a one-minute step.
 twin: h2-chain-history
-start: 2024-01-01T00:00:00Z
+start: 2025-01-01T00:00:00Z
 baseStep: PT15M
 steps: 96
 atoms:
@@ -18,22 +24,31 @@ atoms:
     type: market
     params: { every: 1 }
   - id: offtake
-    type: h2-offtake
+    type: h2-consumer
   - id: park
-    type: generation
+    type: wind-park
     params: { ratedKw: 12000 }
   - id: ely
     type: electrolyzer
-    params: { ratedKw: 5000, minLoad: 0.1, rampKwPerMin: 500, kwhPerKg: 55, pTripBar: 40, pResumeBar: 36, initialKw: 0 }
+    params: { ratedKw: 5000, minLoad: 0.1, rampKwPerMin: 500, kwhPerKg: 55, pTripBar: 200, pResumeBar: 180, initialKw: 0 }
+  - id: compressor
+    type: h2-compressor
+    params: { pInBar: 30, etaIs: 0.75, tempK: 288, ratedKgph: 120 }
+  - id: handover
+    type: h2-handover
+    params: { pMinBar: 20, maxKgph: 150 }
   - id: battery
     type: battery
     params: { capacityKwh: 2000, powerKw: 1000, soc0: 0.5 }
   - id: grid
     type: balance
     params: { priority: [self, ely, bat] }
+  - id: buffer
+    type: h2-buffer
+    params: { volumeM3: 20, tempK: 288, p0Bar: 120, pMinBar: 50, pMaxBar: 200, warnMin: 60, lineSetBar: 30, gainKgphPerBar: 10, maxOutKgph: 200, initialOutKgph: 0 }
   - id: line
-    type: h2-line
-    params: { volumeM3: 157, tempK: 288, p0Bar: 30, pMinBar: 20, pMaxBar: 40, warnMin: 60 }
+    type: h2-pipeline
+    params: { volumeM3: 157, tempK: 288, p0Bar: 30, pMinBar: 20, pMaxBar: 40, dropBar: 1.5, dropRefKgph: 100, initialOutKgph: 0 }
   - id: marketer
     type: direct-marketer
     params: { toleranceKw: 500 }
@@ -41,11 +56,20 @@ wiring:
   - rules.limit_kw -> park.limit_kw
   - park.p_gen_kw -> grid.p_gen_kw
   - ely.p_el_kw -> grid.p_ely_kw
+  - compressor.p_el_kw -> grid.p_self_kw
   - battery.p_bat_kw -> grid.p_bat_kw
-  - ely.m_h2_kgph -> line.m_in_kgph
-  - offtake.m_out_kgph -> line.m_out_kgph
-  - offtake.m_out_kgph -> ely.m_offtake_kgph
-  - line.p_bar -> ely.p_downstream_bar
-  - line.headroom_kg -> ely.headroom_kg
+  - ely.m_h2_kgph -> compressor.m_in_kgph
+  - compressor.m_out_kgph -> buffer.m_in_kgph
+  - buffer.m_out_kgph -> line.m_in_kgph
+  - handover.m_out_kgph -> line.m_out_kgph
+  - handover.m_out_kgph -> offtake.m_in_kgph
+  - offtake.request_kgph -> handover.request_kgph
+  - line.p_out_bar -> handover.p_in_bar
+  - line.p_in_bar -> buffer.p_line_bar
+  - handover.m_out_kgph -> buffer.m_draw_kgph
+  - buffer.p_bar -> compressor.p_out_bar
+  - buffer.p_bar -> ely.p_downstream_bar
+  - buffer.headroom_kg -> ely.headroom_kg
+  - buffer.m_out_kgph -> ely.m_offtake_kgph
   - grid.p_grid_kw -> marketer.p_grid_kw
   - market.price_eur_mwh -> marketer.price_eur_mwh

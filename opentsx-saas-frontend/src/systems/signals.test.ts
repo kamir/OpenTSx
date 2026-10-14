@@ -275,6 +275,14 @@ describe('binding and simulating a signal', () => {
   });
 });
 
+describe('a grade written by several flows', () => {
+  it('names the series of another flow and does not count them', () => {
+    expect(dataText({ series: ['now'], samples: 52560, missing: 0, others: [{ seriesId: 'old', flow: 'wind-flow-22', samples: 350 }] })).toBe(
+      '1 series, 52,560 samples, 0 % missing; not counted: 350 samples of wind-flow-22',
+    );
+  });
+});
+
 describe('plan as a picture and decisions', () => {
   const port = (name: string, from?: string, signal?: string, state?: string) => ({ name, kind: 'ANALOG', from, signal, state }) as PlanPort;
   const atom = (id: string, inputs: PlanPort[]): PlanAtom => ({ id, type: id, inputs, outputs: [], channels: 0 });

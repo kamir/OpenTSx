@@ -218,6 +218,36 @@ class SystemsTest {
     }
 
     @Test
+    void aSignalWrittenByTwoFlowsShowsTheSeriesOfTheFlowThatRuns() {
+        // the potential, first from the simulated wind of a turbine (stopped), then from the wind of a station (running)
+        ObjectNode inv = windFarm();
+        ObjectNode old = series(inv, "old", "h2-chain.park.p_potential_kw", 0, 7300);
+        ((ObjectNode) old.get("tags")).put("system", "h2-chain").put("signal", "park.p_potential_kw").put("grade", "clean").put("flow", "wind-flow-22");
+        old.put("from", "2026-10-01T00:00:00Z").put("to", "2026-10-01T06:00:00Z");
+        ObjectNode now = series(inv, "now", "h2-chain.park.p_potential_kw", 0, 12000);
+        ((ObjectNode) now.get("tags")).put("system", "h2-chain").put("signal", "park.p_potential_kw").put("grade", "clean").put("flow", "wind-flow-26");
+        now.put("from", "2025-01-01T00:00:00Z").put("to", "2026-01-01T00:00:00Z");
+        Systems systems = Systems.load(SystemDocTest.ROOT.resolve("systems"), SystemDocTest.ROOT);
+
+        // nobody has said which flows run: both count, as before
+        JsonNode both = signal(systems.signals("h2-chain", inv), "park.p_potential_kw").path("grades").path("clean").path("data");
+        assertEquals(2, both.path("series").size());
+        assertEquals("2026-10-01T06:00:00Z", both.path("to").asText());
+
+        // the running flow counts, the other one is named and not added
+        systems.runningFlows(() -> java.util.Set.of("wind-flow-26", "wind-flow-23"));
+        JsonNode one = signal(systems.signals("h2-chain", inv), "park.p_potential_kw").path("grades").path("clean").path("data");
+        assertEquals(List.of("now"), texts(one.path("series")));
+        assertEquals("2026-01-01T00:00:00Z", one.path("to").asText());
+        assertEquals(12000.0, one.path("max").asDouble());
+        assertEquals("wind-flow-22", one.path("others").get(0).path("flow").asText());
+
+        // when no flow of the signal runs, nothing is hidden
+        systems.runningFlows(() -> java.util.Set.of("wind-flow-99"));
+        assertEquals(2, signal(systems.signals("h2-chain", inv), "park.p_potential_kw").path("grades").path("clean").path("data").path("series").size());
+    }
+
+    @Test
     void aCleanSeriesAFlowWroteCountsAlsoWhenTheDocumentDoesNotDeclareIt() {
         ObjectNode inv = windFarm();
         // the workbench published the clean grade of the turbine state; the document only binds its raw grade

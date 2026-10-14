@@ -160,6 +160,17 @@ public final class Systems {
         return (d.system() + "." + s.id()).replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
+    /** The deployments that run now, by name; null while nobody has said (then every series of a signal counts). */
+    private java.util.function.Supplier<java.util.Set<String>> running = () -> null;
+
+    /**
+     * Tells which deployments run. A signal written by several flows, one after the other, then shows the series of
+     * the flow that runs and names the others (decision D84).
+     */
+    public void runningFlows(java.util.function.Supplier<java.util.Set<String>> running) {
+        this.running = running;
+    }
+
     /** Every signal of the system with its expectation, its sources, what the inventory holds for it and its state. */
     public JsonNode signals(String system, JsonNode inventory) {
         return signals(system, inventory, List.of());
@@ -221,7 +232,7 @@ public final class Systems {
                 if (src == null) {
                     // not declared in the document, but a flow may write it: the data is found by its tags (D42: the
                     // workbench publishes a clean signal without changing the document)
-                    JsonNode written = grade.equals("raw") ? null : find(d, s, grade, null, inventory);
+                    JsonNode written = grade.equals("raw") ? null : find(d, s, grade, null, inventory, running.get());
                     if (written != null) {
                         ObjectNode g = grades.putObject(grade);
                         ObjectNode by = g.putObject("source");
@@ -238,7 +249,7 @@ public final class Systems {
                     ArrayNode names = g.putArray("names");
                     s.featureNames().forEach(names::add);
                 }
-                JsonNode found = find(d, s, grade, src, inventory);
+                JsonNode found = find(d, s, grade, src, inventory, running.get());
                 if (found != null) {
                     g.set("data", found);
                     data.put(grade, found);
@@ -462,7 +473,7 @@ public final class Systems {
      * What the inventory holds for one grade of a signal, or null when it holds nothing. A topic source is matched by
      * metric and tags; a generator or a flow writes by rule (concept, section 6.1) with the tags system and signal.
      */
-    private static JsonNode find(SystemDoc d, Signal s, String grade, Source src, JsonNode inventory) {
+    private static JsonNode find(SystemDoc d, Signal s, String grade, Source src, JsonNode inventory, java.util.Set<String> running) {
         boolean byTopic = src != null && "topic".equals(src.kind());
         if (inventory == null || (src != null && "manual".equals(src.kind()))) {
             return null;
@@ -494,7 +505,30 @@ public final class Systems {
         if (hits.isEmpty()) {
             return null;
         }
+        // several flows wrote this grade, one after the other: the series of the flow that runs counts, and the others
+        // are named, not added to it (D84). A series from before the flow became part of its identity has no tag.
+        List<JsonNode> others = new ArrayList<>();
+        if (!byTopic && running != null && hits.stream().anyMatch(e -> running.contains(e.path("tags").path("flow").asText(""))
+                && hits.stream().anyMatch(x -> !running.contains(x.path("tags").path("flow").asText(""))))) {
+            for (JsonNode e : List.copyOf(hits)) {
+                if (!running.contains(e.path("tags").path("flow").asText(""))) {
+                    hits.remove(e);
+                    others.add(e);
+                }
+            }
+        }
         ObjectNode o = JSON.objectNode();
+        if (!others.isEmpty()) {
+            ArrayNode put = o.putArray("others");
+            for (JsonNode e : others) {
+                ObjectNode x = put.addObject();
+                x.put("seriesId", e.path("seriesId").asText());
+                put(x, "flow", e.path("tags").path("flow").asText(null));
+                put(x, "from", e.path("from").asText(null));
+                put(x, "to", e.path("to").asText(null));
+                x.put("samples", e.path("samples").asLong());
+            }
+        }
         ArrayNode ids = o.putArray("series");
         long samples = 0;
         long missing = 0;

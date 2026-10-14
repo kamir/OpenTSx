@@ -108,7 +108,8 @@ public final class HistoryTwins {
         out.println("run " + shadow.runId() + "  hash " + shadow.hash());
         table(out, rows, List.of("price_limit_eur_mwh", "h2_kg", "ely_full_load_h", "ely_cost_eur",
                 "power_cost_eur_per_kg", "park_mwh", "feed_in_revenue_eur", "feed_in_at_negative_price_mwh",
-                "deviation_extra_mwh", "deviation_short_mwh", "trips"));
+                "deviation_extra_mwh", "deviation_short_mwh", "trips", "p_max_bar", "buffer_min_bar", "line_min_bar", "line_max_bar",
+                "compressor_mwh", "h2_shortfall_kg"));
         out.println("Modelled, not proven: the dispatch rule and the park scaling are assumptions; prices and the wind "
                 + "situation are real.");
         return 0;

@@ -195,7 +195,7 @@ class CleanChainTest {
         assertEquals(1, out.size());
         Episode e = out.get(0);
         assertEquals("wind.turbine.power_active", e.getSeries().getMetric().toString());
-        assertEquals("{grade=clean, park=ost-01, signal=park/T02/WTUR.W, system=h2-chain, turbine=T02}", new java.util.TreeMap<>(strings(e.getSeries().getTags())).toString());
+        assertEquals("{flow=wind-flow-7, grade=clean, park=ost-01, signal=park/T02/WTUR.W, system=h2-chain, turbine=T02}", new java.util.TreeMap<>(strings(e.getSeries().getTags())).toString());
         assertEquals("kW", e.getSeries().getUnit().toString());
         assertTrue(!e.getSeries().getSeriesId().toString().equals(POWER.getSeriesId().toString()), "a series of its own");
         assertEquals(TimeEncoding.REGULAR, e.getTimeEncoding());

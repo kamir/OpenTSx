@@ -115,6 +115,18 @@ public final class RetrievalServer implements AutoCloseable {
         this.inventory = inventory;
         this.dags = dags;
         this.dagWrites = dagWrites && dags != null;
+        if (systems != null && dags != null) {
+            // which flows run, so that a signal written by several flows shows the one that runs (D84)
+            systems.runningFlows(() -> {
+                java.util.Set<String> names = new java.util.TreeSet<>();
+                dags.list().path("dags").forEach(x -> {
+                    if ("deployed".equals(x.path("desired").asText())) {
+                        names.add(x.path("dag").asText());
+                    }
+                });
+                return names;
+            });
+        }
         this.dagRunToken = dagRunToken == null || dagRunToken.isBlank() ? null : dagRunToken.getBytes(StandardCharsets.UTF_8);
         this.http = HttpServer.create(new InetSocketAddress(port), 0);
         http.setExecutor(Executors.newFixedThreadPool(4));

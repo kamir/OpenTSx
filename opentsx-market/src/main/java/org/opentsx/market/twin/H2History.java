@@ -18,11 +18,13 @@ import java.util.Map;
 
 /**
  * Scenario S1 (H2 chain) on archived history: real day-ahead prices and real wind of a chosen period drive the
- * wind park, the electrolyzer and the direct marketer (plan {@code twin-history/h2-chain-history.yaml}).
+ * wind park, the electrolyzer, the compressor, buffer, pipeline and handover station, and the direct marketer (plan
+ * {@code twin-history/h2-chain-history.yaml}, the second form of the plan with a 15-minute step).
  * <p>
  * The electrolyzer follows a <b>price-limit rule</b> (a modelled operator, origin SYNTHETIC): it runs on the
  * forecast wind, up to its rated power, in every step whose day-ahead price is at or below the limit. The marketer's
- * schedule is the forecast feed-in (forecast wind minus the electrolyzer plan), so its deviation is the real
+ * schedule is the forecast feed-in (forecast wind minus the electrolyzer plan and an estimate of the compressor), so
+ * its deviation is the real
  * forecast error of that period. What-ifs compare price limits (always, 60/40/20 % cheapest steps).
  */
 public final class H2History {
@@ -61,6 +63,8 @@ public final class H2History {
         double elyKw = HouseScenario.param(plan, "ely", "ratedKw", 5_000);
         double minLoad = HouseScenario.param(plan, "ely", "minLoad", 0.1);
         double kwhPerKg = HouseScenario.param(plan, "ely", "kwhPerKg", 55);
+        // what the compressor draws per kg against a buffer of about 120 bar: part of the schedule, an estimate
+        double compressorKwhPerKg = 0.757;
 
         Map<String, Double> cov = new LinkedHashMap<>();
         double[] price = history.resampled("smard/day_ahead_price", t0, step, n);
@@ -107,11 +111,11 @@ public final class H2History {
             }
             setpoint[i] = sp;
             offtake[i] = sp / kwhPerKg;
-            schedule[i] = Double.isFinite(fw) ? fw - sp : Double.NaN;
+            schedule[i] = Double.isFinite(fw) ? fw - sp - offtake[i] * compressorKwhPerKg : Double.NaN;
         }
         SeriesInputs in = new SeriesInputs()
                 .bind("market.price_eur_mwh", t0, step, price, Origin.REPORTED)
-                .bind("park.p_avail_kw", t0, step, avail, Origin.ESTIMATED)
+                .bind("park.p_potential_kw", t0, step, avail, Origin.ESTIMATED)
                 .bind("ely.setpoint_kw", t0, step, setpoint, Origin.SYNTHETIC)
                 .bind("offtake.demand_kgph", t0, step, offtake, Origin.SYNTHETIC)
                 .bind("marketer.schedule_kw", t0, step, schedule, forecast != null ? Origin.FORECAST : Origin.ESTIMATED)
@@ -152,7 +156,13 @@ public final class H2History {
         out.put("deviation_extra_mwh", k.get("marketer.extra_kwh") / 1000);
         out.put("deviation_short_mwh", k.get("marketer.short_kwh") / 1000);
         out.put("trips", k.get("ely.trips"));
-        out.put("p_max_bar", r.max("line.p_bar"));
+        out.put("p_max_bar", r.max("buffer.p_bar"));
+        out.put("buffer_min_bar", r.min("buffer.p_bar"));
+        out.put("line_min_bar", r.min("line.p_out_bar"));
+        out.put("line_max_bar", r.max("line.p_in_bar"));
+        out.put("compressor_mwh", k.get("compressor.energy_kwh") / 1000);
+        out.put("h2_delivered_kg", k.get("handover.delivered_kg"));
+        out.put("h2_shortfall_kg", k.get("handover.shortfall_kg"));
         return out;
     }
 
