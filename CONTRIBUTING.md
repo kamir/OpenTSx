@@ -44,24 +44,26 @@ fixture) and `OPENTSX_RETRIEVAL_URL` (Python client against a running retrieval 
 | Job | What it does |
 |-----|--------------|
 | Java 17, Java 21 | `mvn -B -ntp verify` |
-| Python 3.10–3.13 | `pip install -e . pytest`, `pytest -q`; on 3.12 also `tools/check_links.py` |
+| Python 3.10 to 3.13 | `pip install -e . pytest`, `pytest -q`; on 3.12 also `tools/check_links.py` |
 | k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
 | KafScale conformance | builds the KafScale broker from source (in-memory S3) and runs the conformance suite plus the `opentsx-kafka-v2`, `opentsx-windpark` and `opentsx-stats` tests against it |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
 
-Pull requests are merged when CI is green.
+Pull requests are squash-merged when every required check is green.
 
 ## Branches, commits and pull requests
 
-* Branch from `master`. Name the branch `opentsx/<year>-<topic>`, for example `opentsx/2026-p6-gapfill`.
+* Branch from `master`. Name the branch `<type>/<name>` with the type `feat`, `fix`, `chore`, `docs`, `test` or
+  `refactor`, for example `feat/publish-from-day`.
 * Keep a pull request to one topic. Describe what changed, why, and how you tested it.
-* Write commit messages in the imperative mood ("Add replay filter"), with a short first line.
+* Write the commit subject as `<type>(<scope>): <what changed>`, for example `fix(market): skip empty days`, then a
+  few lines of why.
 * Add or update tests with every code change. Changes to the Avro schemas or the wire format need shared test vectors
   for Java and Python (see `opentsx-model` and `python-package/tests/test_model_v2.py`).
 * Update the documentation that your change affects (module README, `docs/user-manual/`) and add an entry to
   [CHANGELOG.md](CHANGELOG.md) under "Unreleased".
-* User-facing documentation is in English; the design documents in `docs/datamodel-2026/` and `EVOLUTION/` are in
-  German.
+* Everything you write is in English. The design documents in `docs/datamodel-2026/` and `EVOLUTION/` are still in
+  German; a German document you change is translated to English in the same pull request.
 
 ## Configuration and data
 
