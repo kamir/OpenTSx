@@ -6,14 +6,14 @@
     <parent>
         <artifactId>opentsx</artifactId>
         <groupId>org.opentsx</groupId>
-        <version>3.0.0</version>
+        <version>3.0.1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
     <name>opentsx-lg</name>
     <artifactId>opentsx-lg</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
 
     <dependencies>
         <dependency>

@@ -182,7 +182,7 @@ public final class OpenTsdbSeriesStore implements SeriesStore {
             regular = ts[i] - ts[i - 1] == ts[1] - ts[0];
         }
         Episodes.Draft d = regular ? Episodes.regular(key, ts[0], ts[1] - ts[0], v) : Episodes.irregular(key, ts, v);
-        return d.source("opentsdb:" + base.getHost()).producer("opentsx-store-opentsdb-v2/3.0.0").build();
+        return d.source("opentsdb:" + base.getHost()).producer("opentsx-store-opentsdb-v2/3.0.1").build();
     }
 
     private static SeriesKey key(String metric, JsonNode tagsNode) {

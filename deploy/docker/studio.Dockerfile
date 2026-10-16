@@ -3,7 +3,7 @@
 # The page is generated during the image build from the same jars as the tools image:
 #   StudioExport (all twin scenarios) -> studio.json -> tools/build_studio.py -> index.html
 #
-#   docker build -f deploy/docker/studio.Dockerfile -t opentsx/studio:3.0.0-local deploy/docker/.stage
+#   docker build -f deploy/docker/studio.Dockerfile -t opentsx/studio:3.0.1-local deploy/docker/.stage
 #
 # The two generator stages run on the build platform ($BUILDPLATFORM) and only produce HTML, so an arm64 image
 # (docker buildx build --platform linux/arm64 ...) needs no emulation either.

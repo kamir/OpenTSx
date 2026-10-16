@@ -56,7 +56,7 @@ bootstrap address and, once the image context is staged (after step 1), the **ad
 ```bash
 deploy/k3s/10-build.sh                       # mvn -q install -DskipTests, stage, build both images
 deploy/k3s/10-build.sh --with-s3             # lake profile: adds S3FileIO (iceberg-aws + AWS SDK bundle)
-deploy/k3s/10-build.sh --platform linux/arm64 --tag 3.0.0-pi   # for a Raspberry Pi
+deploy/k3s/10-build.sh --platform linux/arm64 --tag 3.0.1-pi   # for a Raspberry Pi
 ```
 
 What happens:
@@ -76,8 +76,8 @@ What happens:
 **Verify:**
 
 ```bash
-docker run --rm opentsx/tools:3.0.0-local help          # list of commands
-docker run --rm opentsx/tools:3.0.0-local twin | head    # H2 chain demo output
+docker run --rm opentsx/tools:3.0.1-local help          # list of commands
+docker run --rm opentsx/tools:3.0.1-local twin | head    # H2 chain demo output
 docker images | grep opentsx                            # tools ~ 0.4-0.5 GB (JRE + ~120 MB jars), studio ~ 50 MB
 ```
 
@@ -154,7 +154,7 @@ advertised address, then the topics of the domain with record counts, and `OK`.
 | `KAFSCALE_NETWORK` | `direct` | `direct`, `hostnetwork`, `service` |
 | `OPENTSX_DOMAIN` | `wind` | topics `tsx.<domain>.{episodes,buckets,series,observations,series-stats}.v2` |
 | `OPENTSX_PARTITIONS` | `6` | data partitions when OpenTSx creates the topics |
-| `OPENTSX_IMAGE_REPO`, `OPENTSX_TAG` | `opentsx`, `3.0.0-local` | image names `<repo>/tools:<tag>`, `<repo>/studio:<tag>` |
+| `OPENTSX_IMAGE_REPO`, `OPENTSX_TAG` | `opentsx`, `3.0.1-local` | image names `<repo>/tools:<tag>`, `<repo>/studio:<tag>` |
 | `OPENTSX_PLATFORM` | native | `linux/arm64` for a Pi |
 | `IMAGE_METHOD` | `docker` | see step 2 |
 | `LAKE` | `false` | Iceberg REST catalog; retrieval server and windpark-sim on Iceberg |

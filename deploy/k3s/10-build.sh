@@ -9,7 +9,7 @@
 #   --builder      image builder (default: first of docker, podman, nerdctl, buildah)
 #   --platform     target platform, e.g. linux/arm64 for a Raspberry Pi (docker buildx / podman --platform);
 #                  no emulation needed: the images have no RUN step for the target platform
-#   --tag          image tag (default OPENTSX_TAG from .env, 3.0.0-local)
+#   --tag          image tag (default OPENTSX_TAG from .env, 3.0.1-local)
 #   --no-images    build and stage only
 #
 # Images: <OPENTSX_IMAGE_REPO>/tools:<tag> (JRE + all jars + entrypoint) and <OPENTSX_IMAGE_REPO>/studio:<tag>

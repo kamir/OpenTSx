@@ -25,7 +25,7 @@ import java.util.Vector;
  */
 public final class LegacyBridge {
 
-    public static final String PRODUCER = "opentsx-legacy-bridge/3.0.0";
+    public static final String PRODUCER = "opentsx-legacy-bridge/3.0.1";
 
     private LegacyBridge() {
     }

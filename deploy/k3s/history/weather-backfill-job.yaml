@@ -23,7 +23,7 @@ spec:
         fsGroup: 10001
       containers:
         - name: weather-backfill
-          image: opentsx/tools:3.0.0-local   # applied without kustomize, so the tag is set here
+          image: opentsx/tools:3.0.1-local   # applied without kustomize, so the tag is set here
           imagePullPolicy: IfNotPresent
           args: ["market", "weather-backfill", "--archive", "/data/history", "--from-year", "2019"]
           envFrom:

@@ -90,7 +90,7 @@ Criticality is for a lab installation: **high** = data is lost or results go sta
 | purpose | try it once, reproduce bugs | shared installation for the project, real data | rehearsal of a real operation |
 | hosts | one machine (laptop, mini PC) with k3s and docker | one node (mini PC, Raspberry Pi 5) | 3+ nodes, or one well-sized node; KafScale separate |
 | KafScale | `docker-compose.kafscale.yml` on the same host (`--local-kafscale`) | existing cluster in the LAN (`direct`) | managed cluster, own S3 bucket with versioning |
-| images | built locally, imported (`IMAGE_METHOD=docker`) | built on a build machine, `ssh` or `registry` | registry, one immutable tag per build (`3.0.0-<git sha>`) |
+| images | built locally, imported (`IMAGE_METHOD=docker`) | built on a build machine, `ssh` or `registry` | registry, one immutable tag per build (`3.0.1-<git sha>`) |
 | DWD | offline fixture (`dwd`) | `DWD_FORWARD=true`, online | online, with a proxy if required |
 | Modbus | simulator | converter at the meter (`MODBUS_HOST`, real register map) | poller close to the converter, isolated network |
 | lake | off (or `LAKE=true` with in-cluster MinIO) | `LAKE=true`, MinIO in the cluster | external S3, hardened Iceberg catalog (Polaris, Lakekeeper, Nessie) |
@@ -233,7 +233,7 @@ deploy/k3s/71-restore.sh DIR --only stats-state --yes
 
 * **Images:** one tag per build. `20-configure.sh OPENTSX_TAG=3.0.1-local`, `10-build.sh`, `11-import-images.sh`,
   `30-deploy.sh`. A new tag needs no restart tricks; re-importing the **same** tag needs `30-deploy.sh --restart`.
-  For production-like environments use `3.0.0-<git sha>` and a registry.
+  For production-like environments use `3.0.1-<git sha>` and a registry.
 * **Configuration:** `20-configure.sh KEY=VALUE` re-renders the overlay; check with
   `kubectl diff -k deploy/k3s/overlays/local`, apply with `30-deploy.sh --restart` (the Deployments read the
   ConfigMap at start).
