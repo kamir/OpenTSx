@@ -55,6 +55,8 @@ public final class BrokerPublish {
         long pauseMs = Long.parseLong(o.getOrDefault("pause-ms", "3000"));
         Instant fromDay = o.containsKey("from-day")
                 ? LocalDate.parse(o.get("from-day")).atStartOfDay(ZoneOffset.UTC).toInstant() : Instant.MIN;
+        Instant toDay = o.containsKey("to-day")
+                ? LocalDate.parse(o.get("to-day")).atStartOfDay(ZoneOffset.UTC).toInstant() : Instant.MAX;
         String topic = new TopicLayout(domain).episodes();
 
         List<Episode> all = new ArrayList<>();
@@ -69,7 +71,7 @@ public final class BrokerPublish {
                     continue;
                 }
                 for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.0.0")) {
-                    if (e.getTStart().isBefore(fromDay)) {
+                    if (e.getTStart().isBefore(fromDay) || !e.getTStart().isBefore(toDay)) {
                         continue;
                     }
                     all.add(identified(e));

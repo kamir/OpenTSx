@@ -115,8 +115,8 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   sends a batch (`--batch`, default 100), waits for every confirmation, pauses (`--pause-ms`, default 3000) and
   stops at the first batch the broker does not confirm. An episode has an identity that follows from its series
   and the time it begins at, so a repeat writes the same episodes again. `--from-day YYYY-MM-DD` skips episodes
-  that begin before that UTC day, so a daily job writes only the days it has not written yet. `--dry-run` only
-  counts.
+  that begin before that UTC day, `--to-day YYYY-MM-DD` (exclusive) those that begin on or after it. A daily job
+  with `--to-day` set to the current day writes complete days only. `--dry-run` only counts.
 * **Load:** `load` maps the archive to REGULAR episodes, one per UTC day. Episodes split where the resolution
   changes or data is missing, so a gap is never filled. They are written to Iceberg (same `--iceberg` options as
   `bin/opentsx windpark-sim`) or to an in-memory store (dry run with counts).

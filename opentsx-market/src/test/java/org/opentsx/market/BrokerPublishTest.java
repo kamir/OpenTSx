@@ -52,13 +52,16 @@ class BrokerPublishTest {
         return a;
     }
 
-    static String dryRun(Archive a, String fromDay) {
+    static String dryRun(Archive a, String fromDay, String toDay) {
         Map<String, String> o = new HashMap<>();
         o.put("series", MarketCatalog.dwd("03166", "air_temperature").path());
         o.put("domain", "test");
         o.put("dry-run", "");
         if (fromDay != null) {
             o.put("from-day", fromDay);
+        }
+        if (toDay != null) {
+            o.put("to-day", toDay);
         }
         ByteArrayOutputStream b = new ByteArrayOutputStream();
         assertEquals(0, BrokerPublish.run(a, o, new PrintStream(b, true, StandardCharsets.UTF_8)));
@@ -68,9 +71,16 @@ class BrokerPublishTest {
     @Test
     void fromDaySkipsEpisodesThatBeginBeforeThatUtcDay(@TempDir Path dir) {
         Archive a = threeDays(dir);
-        String all = dryRun(a, null);
+        String all = dryRun(a, null, null);
         assertTrue(all.contains("dry run: 3 episodes would go to tsx.test.episodes.v2"), all);
-        String last = dryRun(a, "2024-01-03");
+        String last = dryRun(a, "2024-01-03", null);
         assertTrue(last.contains("dry run: 1 episodes would go to tsx.test.episodes.v2"), last);
+    }
+
+    @Test
+    void toDayIsExclusiveSoTheRunningDayIsNotPublished(@TempDir Path dir) {
+        Archive a = threeDays(dir);
+        String complete = dryRun(a, "2024-01-01", "2024-01-03");
+        assertTrue(complete.contains("dry run: 2 episodes would go to tsx.test.episodes.v2"), complete);
     }
 }
