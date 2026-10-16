@@ -62,10 +62,10 @@ public final class MarketCli {
               weather-forward [--archive data/history] [--stations ...]   (daily job: running and previous year)
               mosmix-archive [--archive data/history] [--stations 10579,10097,10046,E5411]
                         (forward archive of raw MOSMIX_L forecasts; run every 6 h)
-              load      [--archive data/history] [--series ...] [--from-year Y --to-year Y]
+              load      [--archive data/history] [--series ...] [--from-year Y --to-year Y] [--from-day D --to-day D]
                         [--iceberg k=v,... --namespace tsx]
               publish   --series source/name,... --kafscale host:port --domain wind [--archive data/history]
-                        [--from-year Y --to-year Y] [--batch 100] [--pause-ms 3000] [--dry-run]
+                        [--from-year Y --to-year Y] [--from-day D --to-day D] [--batch 100] [--pause-ms 3000] [--dry-run]
                         (archived series as raw episodes into tsx.<domain>.episodes.v2; stops at the first
                         refusal of the broker; an episode keeps its identity, so reading tools can tell a repeat)
               catalog
@@ -309,6 +309,8 @@ public final class MarketCli {
     private static int load(Archive archive, Map<String, String> o, PrintStream out) {
         int y0 = Integer.parseInt(o.getOrDefault("from-year", "2000"));
         int y1 = Integer.parseInt(o.getOrDefault("to-year", "2100"));
+        Instant fromDay = org.opentsx.market.archive.BrokerPublish.day(o, "from-day", Instant.MIN);
+        Instant toDay = org.opentsx.market.archive.BrokerPublish.day(o, "to-day", Instant.MAX);
         SeriesStore store = o.containsKey("iceberg")
                 ? IcebergSeriesStore.open(props(o.get("iceberg")), o.getOrDefault("namespace", "tsx"))
                 : new InMemorySeriesStore();
@@ -323,7 +325,9 @@ public final class MarketCli {
                         continue;
                     }
                     List<Episode> eps = EpisodeMapper.episodes(new MarketSeries(d, archive.read(d, year)),
-                            "opentsx-market/3.0.0");
+                                    "opentsx-market/3.0.0").stream()
+                            .filter(e -> !e.getTStart().isBefore(fromDay) && e.getTStart().isBefore(toDay))
+                            .map(org.opentsx.market.archive.BrokerPublish::identified).toList();
                     store.write(eps);
                     episodes += eps.size();
                     values += eps.stream().mapToLong(Episode::getCount).sum();
