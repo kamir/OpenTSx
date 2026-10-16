@@ -12,6 +12,9 @@ entries are grouped by date. The detailed progress log (German) is in
 - `bin/opentsx market publish --from-day D --to-day D` publishes only the episodes that begin in that range of
   UTC days (`--to-day` exclusive). A daily job publishes the last complete days instead of the whole year again.
 - `bin/opentsx market load` takes the same `--from-day` and `--to-day`.
+- Workflow `.github/workflows/image.yml` builds `opentsx-tools` for `linux/amd64` and `linux/arm64` with SBOM and
+  provenance. On a tag `v<version>` it pushes `ghcr.io/kamir/opentsx-tools:<version>`; the tag must match the
+  project version and be a stable version. On a pull request that changes `deploy/docker/` it only builds.
 
 ### Fixed
 - `bin/opentsx market load` wrote every episode again on each run, because each run gave it a new random id. It now
