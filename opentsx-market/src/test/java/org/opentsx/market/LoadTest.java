@@ -83,6 +83,23 @@ class LoadTest {
         assertEquals(3, priceEpisodes(iceberg));
     }
 
+    @Test
+    void loadTakesAnArchivedWeatherSeriesByPath(@TempDir Path dir) {
+        Archive a = new Archive(dir.resolve("history"));
+        Backfill b = new Backfill(a, null, Map.of(), new PrintStream(new ByteArrayOutputStream()));
+        Instant now = Instant.parse("2026-10-12T00:00:00Z");
+        List<Point> temp = new ArrayList<>();
+        for (int i = 0; i < 24; i++) {
+            temp.add(new Point(t("2024-03-30T00:00:00Z") + i * Micro.HOUR, Micro.HOUR, 5 + i));
+        }
+        SeriesDef d = MarketCatalog.dwd("02878", "wind_speed");
+        b.store(d, 2024, new MarketSeries(d, temp), List.of("fixture"), now, t("2024-03-31T00:00:00Z"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        assertEquals(0, MarketCli.run("load", Map.of("archive", a.root().toString(), "series", "dwd-cdc/02878/wind_speed"),
+                new PrintStream(out, true, StandardCharsets.UTF_8), Map.of(), now));
+        assertTrue(out.toString(StandardCharsets.UTF_8).contains("loaded 1 episodes, 24 values"), out.toString(StandardCharsets.UTF_8));
+    }
+
     static int priceEpisodes(String iceberg) {
         try (var store = IcebergSeriesStore.open(MarketCli.props(iceberg), "tsx")) {
             return store.read(EpisodeQuery.of(SeriesSelector.metric("market.price.day_ahead"), 0, Long.MAX_VALUE)).size();

@@ -378,14 +378,22 @@ public final class MarketCli {
 
     /**
      * Series selection: {@code market}, {@code all} (catalog), {@code all-archived} (every series with a manifest in
-     * the archive, including weather and partner series), or a comma list of catalog paths.
+     * the archive, including weather and partner series), or a comma list of paths, each taken from the archive
+     * when it is archived there and from the catalog otherwise.
      */
     static List<SeriesDef> select(String spec, Archive archive) {
         return switch (spec) {
             case "market" -> MARKET.stream().map(MarketCatalog::require).toList();
             case "all" -> MarketCatalog.all();
             case "all-archived" -> archive == null ? MarketCatalog.all() : archive.archivedSeries();
-            default -> java.util.Arrays.stream(spec.split(",")).map(String::trim).map(MarketCatalog::require).toList();
+            default -> {
+                Map<String, SeriesDef> archived = new java.util.HashMap<>();
+                if (archive != null) {
+                    archive.archivedSeries().forEach(d -> archived.put(d.path(), d));
+                }
+                yield java.util.Arrays.stream(spec.split(",")).map(String::trim)
+                        .map(p -> archived.containsKey(p) ? archived.get(p) : MarketCatalog.require(p)).toList();
+            }
         };
     }
 
