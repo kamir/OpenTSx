@@ -94,6 +94,9 @@ Hard rules. No exceptions. If a rule blocks you, stop and ask. Do not work aroun
 ## 12. Tags and releases
 - Tags go on main after the release commit is merged and green.
 - Lockstep repos release from the same tag. Verify every repo actually released the right version.
+- NEVER cut a stable release while any dependency on an internal module is untagged (pseudo-version), a prerelease (-rc, -beta) or replaced by a replace directive.
+- Every pinned version (go.mod, images, charts, binaries, docs) MUST point to a real stable tag.
+- Releases MUST have an automated gate that fails on these before anything is published.
 - Release notes: what changed, upgrade steps, breaking changes. No AI mentions.
 - After a release, delete RC artifacts only when asked. Keep tags and release pages as history.
 
