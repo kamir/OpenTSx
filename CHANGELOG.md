@@ -9,6 +9,8 @@ entries are grouped by date. The detailed progress log (German) is in
 ## [Unreleased]
 
 ### Added
+- `bin/opentsx market publish --from-day YYYY-MM-DD` skips episodes that begin before that UTC day. A daily job
+  publishes the new days only instead of the whole year again.
 - Web workbench in `opentsx-saas-frontend` (route `/workbench`): the Swing bucket analyser in the browser. Load a
   bucket (sample, CSV/TSV, episode JSON, retrieval server), apply the time series operations, inspect every result
   on an oscilloscope view (time base, vertical scale, cursors, trigger, measurements), build the processing flow as

@@ -15,6 +15,9 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
@@ -50,6 +53,8 @@ public final class BrokerPublish {
         int y1 = Integer.parseInt(o.getOrDefault("to-year", "2100"));
         int batch = Integer.parseInt(o.getOrDefault("batch", "100"));
         long pauseMs = Long.parseLong(o.getOrDefault("pause-ms", "3000"));
+        Instant fromDay = o.containsKey("from-day")
+                ? LocalDate.parse(o.get("from-day")).atStartOfDay(ZoneOffset.UTC).toInstant() : Instant.MIN;
         String topic = new TopicLayout(domain).episodes();
 
         List<Episode> all = new ArrayList<>();
@@ -64,6 +69,9 @@ public final class BrokerPublish {
                     continue;
                 }
                 for (Episode e : EpisodeMapper.episodes(new MarketSeries(def, archive.read(def, year)), "opentsx-market/3.0.0")) {
+                    if (e.getTStart().isBefore(fromDay)) {
+                        continue;
+                    }
                     all.add(identified(e));
                     values += e.getCount();
                 }

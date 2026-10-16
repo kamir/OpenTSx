@@ -65,7 +65,7 @@ public final class MarketCli {
               load      [--archive data/history] [--series ...] [--from-year Y --to-year Y]
                         [--iceberg k=v,... --namespace tsx]
               publish   --series source/name,... --kafscale host:port --domain wind [--archive data/history]
-                        [--from-year Y --to-year Y] [--batch 100] [--pause-ms 3000] [--dry-run]
+                        [--from-year Y --to-year Y] [--from-day YYYY-MM-DD] [--batch 100] [--pause-ms 3000] [--dry-run]
                         (archived series as raw episodes into tsx.<domain>.episodes.v2; stops at the first
                         refusal of the broker; an episode keeps its identity, so reading tools can tell a repeat)
               catalog
