@@ -53,10 +53,8 @@ public final class BrokerPublish {
         int y1 = Integer.parseInt(o.getOrDefault("to-year", "2100"));
         int batch = Integer.parseInt(o.getOrDefault("batch", "100"));
         long pauseMs = Long.parseLong(o.getOrDefault("pause-ms", "3000"));
-        Instant fromDay = o.containsKey("from-day")
-                ? LocalDate.parse(o.get("from-day")).atStartOfDay(ZoneOffset.UTC).toInstant() : Instant.MIN;
-        Instant toDay = o.containsKey("to-day")
-                ? LocalDate.parse(o.get("to-day")).atStartOfDay(ZoneOffset.UTC).toInstant() : Instant.MAX;
+        Instant fromDay = day(o, "from-day", Instant.MIN);
+        Instant toDay = day(o, "to-day", Instant.MAX);
         String topic = new TopicLayout(domain).episodes();
 
         List<Episode> all = new ArrayList<>();
@@ -121,8 +119,13 @@ public final class BrokerPublish {
         return 0;
     }
 
+    /** Start of the UTC day given as option {@code key} (YYYY-MM-DD), or {@code absent}. */
+    public static Instant day(Map<String, String> o, String key, Instant absent) {
+        return o.containsKey(key) ? LocalDate.parse(o.get(key)).atStartOfDay(ZoneOffset.UTC).toInstant() : absent;
+    }
+
     /** The episode with an identity that follows from its series and the time it begins at. */
-    static Episode identified(Episode e) {
+    public static Episode identified(Episode e) {
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-256");
             sha.update((e.getSeries().getSeriesId() + "|" + e.getTStart() + "|" + e.getCount()).getBytes(StandardCharsets.UTF_8));

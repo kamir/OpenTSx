@@ -118,7 +118,8 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
   that begin before that UTC day, `--to-day YYYY-MM-DD` (exclusive) those that begin on or after it. A daily job
   with `--to-day` set to the current day writes complete days only. `--dry-run` only counts.
 * **Load:** `load` maps the archive to REGULAR episodes, one per UTC day. Episodes split where the resolution
-  changes or data is missing, so a gap is never filled. They are written to Iceberg (same `--iceberg` options as
+  changes or data is missing, so a gap is never filled. An episode gets the same identity as in `publish`, so a
+  repeated load skips the episodes the table already holds. `--from-day` and `--to-day` limit it as in `publish`. They are written to Iceberg (same `--iceberg` options as
   `bin/opentsx windpark-sim`) or to an in-memory store (dry run with counts).
 
 The default set `market` is: SMARD price, load, residual load, wind onshore/offshore, solar, and their forecasts

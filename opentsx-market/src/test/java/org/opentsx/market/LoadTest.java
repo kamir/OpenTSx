@@ -58,4 +58,36 @@ class LoadTest {
             throw new IllegalStateException(e);
         }
     }
+
+    @Test
+    void aRepeatedLoadAddsNothingAndTheDayWindowLimitsIt(@TempDir Path dir) {
+        Archive a = new Archive(dir.resolve("history"));
+        Backfill b = new Backfill(a, null, Map.of(), new PrintStream(new ByteArrayOutputStream()));
+        Instant now = Instant.parse("2026-10-12T00:00:00Z");
+        List<Point> price = new ArrayList<>();
+        for (int i = 0; i < 72; i++) {   // three UTC days, hourly
+            price.add(new Point(t("2024-03-29T00:00:00Z") + i * Micro.HOUR, Micro.HOUR, 50 + i));
+        }
+        SeriesDef p = MarketCatalog.require("smard/day_ahead_price");
+        b.store(p, 2024, new MarketSeries(p, price), List.of("fixture"), now, t("2024-04-01T00:00:00Z"));
+        String iceberg = "catalog-impl=org.apache.iceberg.jdbc.JdbcCatalog,uri=jdbc:sqlite:" + dir.resolve("c.db")
+                + ",jdbc.schema-version=V1,warehouse=" + dir.resolve("wh").toUri();
+        PrintStream quiet = new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8);
+        Map<String, String> window = Map.of("archive", a.root().toString(), "iceberg", iceberg,
+                "from-day", "2024-03-30", "to-day", "2024-03-31");
+        assertEquals(0, MarketCli.run("load", window, quiet, Map.of(), now));
+        assertEquals(1, priceEpisodes(iceberg));
+        Map<String, String> all = Map.of("archive", a.root().toString(), "iceberg", iceberg);
+        assertEquals(0, MarketCli.run("load", all, quiet, Map.of(), now));
+        assertEquals(0, MarketCli.run("load", all, quiet, Map.of(), now));
+        assertEquals(3, priceEpisodes(iceberg));
+    }
+
+    static int priceEpisodes(String iceberg) {
+        try (var store = IcebergSeriesStore.open(MarketCli.props(iceberg), "tsx")) {
+            return store.read(EpisodeQuery.of(SeriesSelector.metric("market.price.day_ahead"), 0, Long.MAX_VALUE)).size();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }
