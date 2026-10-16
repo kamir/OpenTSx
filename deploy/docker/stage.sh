@@ -70,6 +70,13 @@ if $WITH_S3; then
     rel="$(add_jar "$REPO/org/apache/iceberg/$a/$ICEBERG_VERSION/$a-$ICEBERG_VERSION.jar")"
     for m in "${ICEBERG_MODULES[@]}"; do echo "$rel" >> "$H/cp/$m.txt"; done
   done
+  # iceberg-aws reads S3 through failsafe (a runtime dependency in its POM), which -Dtransitive=false leaves out.
+  aws_pom="$REPO/org/apache/iceberg/iceberg-aws/$ICEBERG_VERSION/iceberg-aws-$ICEBERG_VERSION.pom"
+  fs_version="$(grep -A2 '<artifactId>failsafe</artifactId>' "$aws_pom" | sed -n 's#.*<version>\(.*\)</version>.*#\1#p' | head -1)"
+  [[ -n "$fs_version" ]] || { echo "stage.sh: no failsafe version in $aws_pom" >&2; exit 1; }
+  (cd "$ROOT" && mvn -q -B dependency:get -Dartifact="dev.failsafe:failsafe:$fs_version" -Dtransitive=false >/dev/null)
+  rel="$(add_jar "$REPO/dev/failsafe/failsafe/$fs_version/failsafe-$fs_version.jar")"
+  for m in "${ICEBERG_MODULES[@]}"; do echo "$rel" >> "$H/cp/$m.txt"; done
 fi
 
 # deployment helper (KafScaleCheck), compiled against the kafka-v2 classpath
