@@ -38,6 +38,6 @@ generatorOptions:
   disableNameSuffixHash: true   # Jobs refer to opentsx-config by name; 30-deploy.sh restarts pods on config changes
 images:
   - name: opentsx/tools
-    newTag: 3.0.0-local
+    newTag: 3.0.1-local
   - name: opentsx/studio
-    newTag: 3.0.0-local
+    newTag: 3.0.1-local

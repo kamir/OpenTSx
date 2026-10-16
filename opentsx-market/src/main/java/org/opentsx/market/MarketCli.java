@@ -325,7 +325,7 @@ public final class MarketCli {
                         continue;
                     }
                     List<Episode> eps = EpisodeMapper.episodes(new MarketSeries(d, archive.read(d, year)),
-                                    "opentsx-market/3.0.0").stream()
+                                    "opentsx-market/3.0.1").stream()
                             .filter(e -> !e.getTStart().isBefore(fromDay) && e.getTStart().isBefore(toDay))
                             .map(org.opentsx.market.archive.BrokerPublish::identified).toList();
                     store.write(eps);

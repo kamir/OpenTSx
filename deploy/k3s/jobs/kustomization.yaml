@@ -19,4 +19,4 @@ resources:
   - modbus-poll.yaml
 images:
   - name: opentsx/tools
-    newTag: 3.0.0-local
+    newTag: 3.0.1-local

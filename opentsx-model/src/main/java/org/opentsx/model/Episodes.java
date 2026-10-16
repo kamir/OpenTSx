@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public final class Episodes {
 
-    public static final String PRODUCER = "opentsx-model/3.0.0";
+    public static final String PRODUCER = "opentsx-model/3.0.1";
 
     private Episodes() {
     }

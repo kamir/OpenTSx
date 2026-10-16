@@ -55,7 +55,7 @@
   },
 
   "variables": {
-    "version": "3.0.0",
+    "version": "3.0.1",
     "pythonVersion": "1.0.0",
     "javaVersion": "1.8+",
     "kafkaVersion": "2.3.0"

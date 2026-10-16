@@ -2,7 +2,7 @@
 # OpenTSx SaaS backend (FastAPI: accounts, organizations, stored flows), unprivileged, port 8000.
 # The build context is the backend directory:
 #
-#   docker build -f deploy/docker/saas-backend.Dockerfile -t opentsx/saas-backend:3.0.0-local opentsx-saas-backend
+#   docker build -f deploy/docker/saas-backend.Dockerfile -t opentsx/saas-backend:3.0.1-local opentsx-saas-backend
 #
 # Configuration comes from the environment (app/core/config.py): POSTGRES_*, SECRET_KEY, FIRST_SUPERUSER_*.
 # The defaults in config.py are for local development only; a deployment must set SECRET_KEY and the passwords.

@@ -3,10 +3,10 @@
 # twin, house, boat, dwd, modbus, studio-export, kafscale-check). Build context = the staged directory:
 #
 #   deploy/docker/stage.sh [--with-s3]                                   # after mvn install -DskipTests
-#   docker build -f deploy/docker/opentsx-tools.Dockerfile -t opentsx/tools:3.0.0-local deploy/docker/.stage
+#   docker build -f deploy/docker/opentsx-tools.Dockerfile -t opentsx/tools:3.0.1-local deploy/docker/.stage
 #
 # There is no RUN step, so cross-building for the Raspberry Pi needs no emulation:
-#   docker buildx build --platform linux/arm64 -f ... -t opentsx/tools:3.0.0-local-arm64 --load deploy/docker/.stage
+#   docker buildx build --platform linux/arm64 -f ... -t opentsx/tools:3.0.1-local-arm64 --load deploy/docker/.stage
 # (the jars are platform-independent; eclipse-temurin publishes amd64 and arm64 variants).
 ARG JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble
 FROM ${JRE_IMAGE}

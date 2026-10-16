@@ -8,6 +8,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-10-16
+
 ### Fixed
 - `bin/opentsx market load --series <path>` refused an archived series that is not in the catalog, such as
   `dwd-cdc/<station>/<parameter>`. It now takes a path from the archive when it is archived there.

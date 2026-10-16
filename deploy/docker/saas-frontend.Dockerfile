@@ -2,7 +2,7 @@
 # OpenTSx SaaS frontend (React, including the web workbench at /workbench) as static files behind nginx
 # (unprivileged, port 8080). The build context is the frontend directory:
 #
-#   docker build -f deploy/docker/saas-frontend.Dockerfile -t opentsx/saas-frontend:3.0.0-local opentsx-saas-frontend
+#   docker build -f deploy/docker/saas-frontend.Dockerfile -t opentsx/saas-frontend:3.0.1-local opentsx-saas-frontend
 #
 # The build stage runs on the build platform ($BUILDPLATFORM) and only produces static files, so an arm64 image
 # needs no emulation. VITE_API_BASE_URL is the address of the SaaS backend as seen from the BROWSER; the workbench

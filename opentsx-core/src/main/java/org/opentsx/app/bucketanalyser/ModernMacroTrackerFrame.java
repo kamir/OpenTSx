@@ -228,7 +228,7 @@ public class ModernMacroTrackerFrame extends JFrame {
         statusLabel.setForeground(new Color(187, 187, 187));
         statusLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
 
-        JLabel versionLabel = new JLabel("OpenTSx v3.0.0 | Task-005");
+        JLabel versionLabel = new JLabel("OpenTSx v3.0.1 | Task-005");
         versionLabel.setForeground(new Color(128, 128, 128));
         versionLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
 
