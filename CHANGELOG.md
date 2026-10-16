@@ -2,11 +2,13 @@
 
 All notable changes to OpenTSx are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). There are no tagged releases yet;
-entries are grouped by date. The detailed progress log (German) is in
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
+entries before 3.0.0 are grouped by date. The detailed progress log (German) is in
 [`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md).
 
 ## [Unreleased]
+
+## [3.0.0] - 2026-10-16
 
 ### Added
 - `bin/opentsx market publish --from-day D --to-day D` publishes only the episodes that begin in that range of
