@@ -8,6 +8,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ## [Unreleased]
 
+### Fixed
+- The `opentsx-tools` image staged with `--with-s3` lacked `dev.failsafe:failsafe`, a runtime dependency of
+  `iceberg-aws`, so reading an `s3://` table failed with `NoClassDefFoundError: dev/failsafe/FailsafeException`.
+  `stage.sh` adds it, and the image workflow checks for it.
+
 ## [3.0.0] - 2026-10-16
 
 ### Added
