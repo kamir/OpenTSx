@@ -9,6 +9,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 ## [Unreleased]
 
 ### Fixed
+- `bin/opentsx market load --series <path>` refused an archived series that is not in the catalog, such as
+  `dwd-cdc/<station>/<parameter>`. It now takes a path from the archive when it is archived there.
 - The `opentsx-tools` image staged with `--with-s3` lacked `dev.failsafe:failsafe`, a runtime dependency of
   `iceberg-aws`, so reading an `s3://` table failed with `NoClassDefFoundError: dev/failsafe/FailsafeException`.
   `stage.sh` adds it, and the image workflow checks for it.
