@@ -28,11 +28,11 @@ emails==0.6.0
 python-socketio==5.17.0
 
 # Time series (use local opentsx package)
-numpy==2.5.3
+numpy==2.5.4
 pandas==3.0.6
 
 # Utilities
-pydantic==2.14.0
+pydantic==2.14.1
 pydantic-settings==2.15.0
 httpx==0.28.1
 
