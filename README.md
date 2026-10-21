@@ -64,6 +64,9 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
 * **Streaming statistics and data quality.** Mergeable sketches; profiles and DQ results are published to
   **OpenMetadata**.
 * **Retrieval.** Segmentation, pattern search (MASS, SAX, DTW), a fluent Java API, REST, and a Python client.
+* **Kafka-native Smart Topics.** Supported vector and series projections run through Kafka clients on KafScale,
+  with strict DAG validation, control/status topics and local checkpoints. See the
+  [streaming operating guide](docs/devops/kafka-native-streaming.md).
 * **Classic analytics.** DFA, MFDFA, event synchronization, return-interval statistics.
 
 ## Quick start
@@ -131,7 +134,7 @@ The 2025 documentation and old demos are in [`archive/`](archive/). Retired modu
 |-------|---------|--------|
 | P0–P5 | foundation, data model v2, KafScale storage, stores, wind farm, statistics, OpenMetadata, retrieval | **done** |
 | P6 | analytics gaps (alignment, gap filling, change points, spectral analysis) | planned |
-| P7 | Smart Topics (declarative model training, smart metrics, prediction API, federated models); personal service layer; Go stream processor with a declarative DAG ([11](docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md)) | designed; Studio prototype |
+| P7 | Kafka-native vector and series projections; broader Smart Topic design ([11](docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md)) | Java streaming subset implemented; broader design and Studio prototype remain separate |
 | P8 | Interplay & coordination potential of the local energy system: dependencies, constraints, reference vs. coordinated operation. Methods (proposal): system reconstruction from time series (Kämpf 2017 + causal discovery), simulation, optimization (classical; quantum as experiment) | concept ([06](docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)) |
 | P9 | Digital twin: atoms (MVC + policy), wiring plan, bulk-synchronous execution (variant T), three modes; energy system, house ([08](docs/datamodel-2026/08-HAUS-ZWILLING.md)) and boat ([10](docs/datamodel-2026/10-BOOT-ZWILLING.md)) with calibration on simulated data | **proof of concept** ([07](docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)); loosely coupled variant L and real data next |
 
