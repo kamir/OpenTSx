@@ -3,10 +3,19 @@
 All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
-entries before 3.0.0 are grouped by date. The detailed progress log (German) is in
+entries before 3.0.0 are grouped by date. The detailed progress log is in
 [`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md).
 
 ## [Unreleased]
+
+### Fixed
+- Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
+  decoders and cycles before publishing control records. Supported sinks are accepted together.
+
+### Added
+- Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
+  stop, rejection before control publication, and a series checkpoint restart. The existing KafScale CI job runs
+  retrieval acceptance and retains its reports. See [the operating guide](docs/devops/kafka-native-streaming.md).
 
 ## [3.0.1] - 2026-10-16
 
@@ -34,8 +43,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
   bucket (sample, CSV/TSV, episode JSON, retrieval server), apply the time series operations, inspect every result
   on an oscilloscope view (time base, vertical scale, cursors, trigger, measurements), build the processing flow as
   a graph and export it as `opentsx.dag.v1` Smart Topic definition, Processing Flow Descriptor or Java code. See
-  [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the limits: no runtime executes
-  the DAG yet.
+  [`EVOLUTION/TASK-013-web-workbench.md`](EVOLUTION/TASK-013-web-workbench.md) for the editor context. The Java processor executes the supported vector and series subset.
 - TS inventory: the retrieval server reads the episodes topic of a domain from KafScale (`--kafscale <host:port>
   --domain <d>`) and lists every series with extent, value range, episode labels and the ground truth of the
   scenario as time ranges (`GET /v1/inventory`, `opentsx.ts-inventory.v1`). The workbench has a "TS Inventory"
@@ -45,7 +53,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
   gives one record per tick and key with one value per component (`opentsx.vector.v1`, JSON schema in
   `docs/datamodel-2026/schemas/`, rules in `docs/datamodel-2026/11`, section 5a). The workbench has the operator as
   "Align to vector": nodes can have several inputs, the scope shows the components on one time base, and the DAG
-  export writes the node with all inputs and a vector sink. No runtime executes it yet.
+  export writes the node with all inputs and a vector sink. The Java processor executes source-vector alignment.
 - Vector topics are written and read back. The vector processor (`opentsx vectors`, `deploy/k3s`:
   `VECTOR_PROCESSOR=true`) keeps them up to date: it follows the episodes topic, writes a measuring point to
   `tsx.<domain>.smart.<name>.vectors.v1` when every series has passed its tick, checkpoints per sink and reports

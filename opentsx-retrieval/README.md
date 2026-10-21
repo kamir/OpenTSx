@@ -92,7 +92,7 @@ Reading the table:
 
 `RetrievalServer` is a thin JDK HTTP server with these endpoints:
 
-```
+```text
 GET  /v1/episodes?metric=&tag.turbine=T07&from=ISO&to=ISO&limit=&clip=true&resample=PT1M&agg=MEAN
 GET  /v1/episodes/{id}
 POST /v1/patterns/search   {"pattern":[…] | "episodeId","offset","length", "metric","tags","from","to","distance","band","topK"}
@@ -126,6 +126,9 @@ Vector topics are written by the vector processor (below). The server is its fro
 The operator is `org.opentsx.retrieval.vector.VectorAligner`. It passes the test vectors shared with the web
 workbench (`docs/datamodel-2026/testvectors/align-vector.v1.json`); the rules are in
 `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5a.
+
+See the [Kafka-native streaming operating guide](../docs/devops/kafka-native-streaming.md) for the supported
+series and vector operators, strict deployment checks, restart semantics and broker acceptance.
 
 ### Vector processor
 
