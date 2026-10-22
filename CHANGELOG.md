@@ -8,6 +8,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ## [Unreleased]
 
+### Fixed
+- A Maven download that failed with HTTP 502 failed the build, because Maven retries only 429 and 503 by default.
+  `.mvn/maven.config` now retries a download up to five times, 3 seconds apart, on 429, 500, 502, 503 and 504.
+
 ## [3.0.1] - 2026-10-16
 
 ### Fixed
