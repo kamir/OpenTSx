@@ -8,6 +8,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ## [Unreleased]
 
+### Fixed
+- Hourly solar observations (`FG_LBERG`, `FD_LBERG`) sat up to almost an hour early (56 minutes at Arkona in October): `MESS_DATUM` of that product is
+  the UTC moment at which the hour in true solar time ends (`hh:mm`), and the parser cut off the minutes. It now
+  rounds to the nearest full hour.
+
+### Added
+- Tests for the weather collection: hourly wind, gusts, pressure, precipitation and solar on excerpts of real DWD
+  files; every parameter of `market weather-backfill` against its CDC directory, column, unit and time
+  convention; the default stations and the years of the daily jobs.
+- CI renders and validates `deploy/k3s/history/` (kustomization and the one-off Jobs) with kubeconform.
+
 ## [3.0.1] - 2026-10-16
 
 ### Fixed

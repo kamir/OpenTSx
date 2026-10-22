@@ -41,7 +41,7 @@ Fichtelberg, `03166` Marienberg, `00183` Arkona). Look them up with `stations --
 |--------|--------|--------------------------------------|--------|
 | MOSMIX_L, `weather/local_forecasts/mos/MOSMIX_L/single_stations/<id>/kml/MOSMIX_L_LATEST_<id>.kmz` | KMZ (zip) containing a KML. `dwd:IssueTime`, `dwd:ForecastTimeSteps` (UTC), one `dwd:Forecast` per element with one value per step (`-` = undefined) | `FF` wind speed (m/s), `DD` direction (deg), `TTT` K → °C, `PPPP` Pa → hPa, `N` cloud cover (%), `Rad1h` kJ/m² per hour → mean W/m², `RR1c` kg/m² per hour → mm | FORECAST |
 | CDC 10 minutes, `climate_environment/CDC/observations_germany/climate/10_minutes/{wind,air_temperature,solar,precipitation}/now/` | zip with `produkt_*.txt`: `STATIONS_ID;MESS_DATUM;QN;...;eor`, `MESS_DATUM` = `yyyyMMddHHmm` UTC (MEZ before 2000), `-999` = missing | `FF_10`, `DD_10`, `TT_10`, `RF_10`, `PP_10`, `GS_10`/`DS_10` J/cm² → W/m², `RWS_10` | MEASURED |
-| CDC hourly, `.../hourly/{air_temperature,wind}/recent/` | the same, `MESS_DATUM` = `yyyyMMddHH` | `TT_TU`, `RF_TU`, `F`, `D`, `P0`; `FG_LBERG`/`FD_LBERG` (solar) J/cm² → W/m², `R1` | MEASURED |
+| CDC hourly, `.../hourly/{air_temperature,wind,extreme_wind,pressure,precipitation}/{historical,recent}/`, `.../hourly/solar/` | the same, `MESS_DATUM` = `yyyyMMddHH`; the solar product measures in true solar time and stamps the UTC moment its hour ends, `yyyyMMddHH:mm` (rounded to the nearest full hour, so up to 30 minutes off) | `TT_TU`, `RF_TU`, `F`, `D`, `FX_911` (gust, max), `P0`; `FG_LBERG`/`FD_LBERG` (solar) J/cm² → W/m², `R1` | MEASURED |
 | MOSMIX station catalog (`mosmix_stationskatalog.cfg`) | fixed-width `ID ICAO NAME LAT LON ELEV`; LAT/LON in **degrees.minutes** (50.26 = 50°26′), converted to decimal degrees | – | – |
 | CDC station list (`*_Beschreibung_Stationen.txt`) | ISO-8859-1, `Stations_id von_datum bis_datum Stationshoehe geoBreite geoLaenge Stationsname Bundesland Abgabe` | – | – |
 
@@ -94,14 +94,16 @@ The CSV exports match the import formats the twin demos already have:
 The tests run offline against small hand-made fixtures in `src/test/resources/dwd/`. These fixtures follow the real
 file layouts: a MOSMIX KML with 6 steps (also zipped into a KMZ in the test), 10-minute wind, temperature and solar
 files with `-999` values and a missing row, two days of hourly temperatures, and excerpts of both station lists.
+Unchanged excerpts of real files (CC BY 4.0, Deutscher Wetterdienst) cover the other hourly products: wind
+(`F`, `D`), gusts (`FX_911`), pressure (`P0`) and precipitation (`R1`) of 01759 on 2025-10-01, and global and
+diffuse radiation in true solar time (`FG_LBERG`, `FD_LBERG`) of 00183 on 2025-07-01.
 They cover parsing, unit and time conversion, nearest-station search, series identity, episodes, the twin bindings
 (including a shadow run of the house twin with origin FORECAST) and the CLI.
 
 The parsers were also checked against live downloads from opendata.dwd.de in October 2026: MOSMIX_L for 10578 and
 10579 (247 hourly steps), the MOSMIX catalog (5649 stations; it contains one entry whose minutes are 60 or more,
 which is accepted), the CDC 10-minute wind, temperature and solar files and the hourly temperature and wind files
-for 01358, and the CDC station list. The hourly solar format (`FG_LBERG`, `MESS_DATUM` with `:mm`) is only covered
-by the column table, not by a fixture.
+for 01358, and the CDC station list.
 
 ## Not yet
 
