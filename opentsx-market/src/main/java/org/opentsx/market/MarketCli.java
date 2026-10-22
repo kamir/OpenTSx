@@ -131,9 +131,9 @@ public final class MarketCli {
                 storeYears(archive, s, List.of("file:" + o.get("file")), now, env, out);
             }
             case "backfill", "forward" -> {
-                int current = now.atZone(ZoneOffset.UTC).getYear();
-                int from = cmd.equals("forward") ? current - 1 : Integer.parseInt(o.getOrDefault("from-year", "2019"));
-                int to = Integer.parseInt(o.getOrDefault("to-year", Integer.toString(current)));
+                int[] years = years(cmd, o, now);
+                int from = years[0];
+                int to = years[1];
                 Collector c = Collector.online(Long.parseLong(o.getOrDefault("delay-ms", "500")));
                 List<Backfill.Outcome> r = new Backfill(archive, c, env, out).run(select(o.getOrDefault("series", "market")),
                         from, to, o.containsKey("force"), now);
@@ -147,9 +147,9 @@ public final class MarketCli {
             case "report" -> report(archive, select(o.getOrDefault("series", "all-archived"), archive), out,
                     o.containsKey("requality") ? now : null);
             case "weather-backfill", "weather-forward" -> {
-                int current = now.atZone(ZoneOffset.UTC).getYear();
-                int from = cmd.equals("weather-forward") ? current - 1 : Integer.parseInt(o.getOrDefault("from-year", "2019"));
-                int to = Integer.parseInt(o.getOrDefault("to-year", Integer.toString(current)));
+                int[] years = years(cmd, o, now);
+                int from = years[0];
+                int to = years[1];
                 WeatherBackfill w = new WeatherBackfill(archive, new Http(Long.parseLong(o.getOrDefault("delay-ms", "500")), 4),
                         WeatherBackfill.CDC, out);
                 long failed = 0;
@@ -340,6 +340,18 @@ public final class MarketCli {
         out.printf("loaded %d episodes, %d values into %s%n", episodes, values,
                 o.containsKey("iceberg") ? "Iceberg namespace " + o.getOrDefault("namespace", "tsx") : "an in-memory store");
         return 0;
+    }
+
+    /**
+     * Years of a backfill run, {@code [from, to]}: the daily jobs ({@code forward}, {@code weather-forward}) take the
+     * previous and the running UTC year, so a year that settles after New Year is fetched once more; the backfills
+     * take {@code --from-year} (default 2019) to {@code --to-year} (default the running year).
+     */
+    static int[] years(String cmd, Map<String, String> o, Instant now) {
+        int current = now.atZone(ZoneOffset.UTC).getYear();
+        int from = cmd.endsWith("forward") ? current - 1 : Integer.parseInt(o.getOrDefault("from-year", "2019"));
+        int to = Integer.parseInt(o.getOrDefault("to-year", Integer.toString(current)));
+        return new int[]{from, to};
     }
 
     /** Station/parameter pairs of the weather backfill: {@code --stations id:param,...} or every station of the sites. */
