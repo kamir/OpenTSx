@@ -36,6 +36,9 @@ Tests that need an external service run only when its variable is set: `KAFSCALE
 `OPENTSDB_URL` (real OpenTSDB instead of the embedded emulator), `OPENTSX_EXPORT_DIR` (Java to Iceberg to Python
 fixture) and `OPENTSX_RETRIEVAL_URL` (Python client against a running retrieval server).
 
+[`.mvn/maven.config`](.mvn/maven.config) makes Maven retry a download up to five times when the repository answers
+HTTP 429, 500, 502, 503 or 504.
+
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and on pushes to `master` and
