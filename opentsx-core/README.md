@@ -22,6 +22,14 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Check bucket workflow support
+
+`TSBucket.loadViaContext` throws `UnsupportedOperationException` with
+`Context-based bucket loading is not implemented`. `TSBucket.processBucket` throws the same exception type with
+`Named bucket processing is not implemented`. Neither entry point reads input or returns a processed bucket.
+`MacroRunner` and the Java/Scala workflow export call these entry points, so executing those workflows stops at
+the unsupported call. The separate `BucketLoader` and `loadFromSequenceFile` APIs are not routed through these methods.
+
 ## Inspect FFT coordinates
 
 `TimeSeriesObjectFFT.convertToMessreiheFFT` copies both coordinate arrays into independent vectors.

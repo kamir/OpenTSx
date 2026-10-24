@@ -55,7 +55,7 @@ public class TSBucket {
     public static boolean useHDFS = false;
 
     public static TSBucket loadViaContext(Object sc, String tsbaseexP1Collectiontsbvecseq) {
-        return TSBucket.createEmptyBucket();
+        throw new UnsupportedOperationException("Context-based bucket loading is not implemented");
     }
 
     public void setInMemory(boolean b) {
@@ -148,23 +148,8 @@ public class TSBucket {
         setConfig(conf);
     }
 
-    /**
-     * Processing results are stored in CSV files.
-     *
-     * This processing mode is just for testing. Large scale processing is done
-     * via Crunch.TS and scalable pipelines.
-     *
-     * @param fn
-     * @param t
-     * @param ids
-     * @throws IOException
-     */
-    String mode = "local";
-    // String mode = "cluster";  
-
     public TSBucket processBucket(String t, Object parameter) throws IOException {
-        System.out.println("[" + mode + "] > Operation: " + t + "  { PARAMETER: " + parameter + " } ");
-        return TSBucket.createEmptyBucket();
+        throw new UnsupportedOperationException("Named bucket processing is not implemented");
     }
 
     /**
@@ -195,10 +180,7 @@ public class TSBucket {
     }
 
     /**
-     * Im sourceFolder wird eine komplette Gruppe gewählt und in einen TS Bucket
-     * überführt.
-     *
-     * ==> ist nur eine SAVE Funktion ...
+     * Writes the files of a source group into a bucket without retaining it in memory.
      *
      * @param groupFolder
      * @param limit
@@ -222,12 +204,12 @@ public class TSBucket {
         // write a SequenceFile form a Vector
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
 
-        File[] liste = f.listFiles();
-        System.out.println(liste.length);
-        System.out.println("--> process bucket : " + f.getAbsolutePath() + " (" + liste.length + ")");
+        File[] files = f.listFiles();
+        System.out.println(files.length);
+        System.out.println("--> process bucket : " + f.getAbsolutePath() + " (" + files.length + ")");
 
         int c = 0;
-        for (File file : liste) {
+        for (File file : files) {
             c++;
             if (c < LIMIT) {
                 TSData data = new TSData(file);
@@ -297,7 +279,6 @@ public class TSBucket {
 
             boolean skipped = false;
 
-            // bearbeite nur die, die im FILTER file stehen ...
             if (ids != null) {
                 if (ids.contains(seriesID)) {
                     skipped = false;

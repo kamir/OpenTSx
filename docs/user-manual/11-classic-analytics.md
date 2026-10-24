@@ -92,6 +92,10 @@ standalone programs with a `main` method:
 
 To use them with v2 data, convert episodes with the legacy bridge ([chapter 13](13-migration.md)).
 
+Executing a `MacroRunner` or an exported Java/Scala bucket workflow stops with `UnsupportedOperationException`:
+context-based loading and named bucket processing are not implemented. See
+[bucket workflow support](../../opentsx-core/README.md#check-bucket-workflow-support) for the exact error messages.
+
 The desktop FFT action derives its sampling rate from uniformly spaced coordinates. For integer index coordinates
 with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
 See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
