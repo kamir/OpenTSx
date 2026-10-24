@@ -9,6 +9,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 ## [Unreleased]
 
 ### Fixed
+
+- Classic FFT conversion preserves the input coordinates and the frequency coordinates of FFT results.
+  `TimeSeriesObjectFFT` headers, diagnostics and error messages use English; averaged series use the `Mean_` prefix.
+- Desktop FFT derives sampling rates from uniformly spaced coordinates and requests an explicit rate for integer
+  index axes. Invalid data and rates produce an error; cancelling the rate dialog leaves the flow unchanged.
 - A Maven download that failed with HTTP 502 failed the build, because Maven retries only 429 and 503 by default.
   `.mvn/maven.config` now retries a download up to five times, 3 seconds apart, on 429, 500, 502, 503 and 504.
 
