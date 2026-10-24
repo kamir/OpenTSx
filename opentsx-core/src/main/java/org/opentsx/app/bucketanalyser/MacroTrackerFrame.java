@@ -142,7 +142,7 @@ public class MacroTrackerFrame extends javax.swing.JFrame implements TreeSelecti
         javax.swing.JScrollPane scroll = new javax.swing.JScrollPane(jTextAreaPFD);
         pfdPanel.add(scroll, java.awt.BorderLayout.CENTER);
 
-        javax.swing.JButton refreshBtn = new javax.swing.JButton("Refresh / Export JSON");
+        javax.swing.JButton refreshBtn = new javax.swing.JButton("Show PFD");
         refreshBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 String json = org.opentsx.app.bucketanalyser.PFDRecorder.getInstance().toJSON();

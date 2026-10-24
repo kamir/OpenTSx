@@ -13,7 +13,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 - The exercise runner uses the Maven classpath, propagates failed assertions and rejects invalid modes.
   Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
 - Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
-  The modern tracker's JSON display action is labelled `Show PFD`.
+  Both trackers label their JSON display action `Show PFD`.
 - Local SequenceFile loaders stop at EOF, handle empty buckets and close readers. The file loader reads
   at most the configured record limit. Failed processing stops loading and retains the original error cause.
 - Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
@@ -29,6 +29,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 - PFD file export, schema and runtime accept Kafka input, centering and log output. Unsupported operations,
   normalization methods and sinks fail explicitly. Topics and brokers require configuration; event-time
   watermarks advance from observation timestamps. The missing Flink connector-base dependency is included.
+- The modern desktop tracker starts with an empty transformation tree instead of Swing sample items.
 
 ## [3.0.1] - 2026-10-16
 

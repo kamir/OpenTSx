@@ -62,6 +62,32 @@ class UnavailableControlsTest {
         });
     }
 
+    @Test
+    void classicPfdButtonDescribesItsDisplayAction() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            MacroTrackerFrame frame = new MacroTrackerFrame();
+            try {
+                JButton button = findButton(frame.getContentPane(), "Show PFD");
+                assertTrue(button.isEnabled());
+                assertEquals(1, button.getActionListeners().length);
+            } finally {
+                frame.dispose();
+            }
+        });
+    }
+
+    @Test
+    void modernTrackerDoesNotDisplaySampleTreeItems() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            ModernMacroTrackerFrame frame = new ModernMacroTrackerFrame();
+            try {
+                assertNull(frame.getTransformationTree().getModel().getRoot());
+            } finally {
+                frame.dispose();
+            }
+        });
+    }
+
     private JButton findButton(Container parent, String label) {
         JButton button = searchButton(parent, label);
         assertNotNull(button, "Missing button: " + label);
