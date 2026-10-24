@@ -22,6 +22,17 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Supply bucket analysis inputs
+
+`org.opentsx.app.bucketanalyser.BucketAnalyserTool` accepts four required positional arguments:
+input folder, legacy label, raw-DFA boolean and normalized-DFA boolean. The label position is retained
+for compatibility and does not change output names. Both booleans accept only `true` or `false`.
+
+An optional fifth argument filters bucket filenames by substring. An omitted filter selects all
+`.tsb.vec.seq` files. An optional sixth argument sets a nonnegative record limit. The default comes from
+`BucketLoader.default_LIMIT`, initially 50. `BucketLoader.setLimit` applies to data loading and processing.
+Missing folders, unreadable directory listings, invalid booleans and invalid limits stop the invocation.
+
 ## Identify unavailable desktop actions
 
 The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an explanatory tooltip.
