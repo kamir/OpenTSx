@@ -33,6 +33,17 @@ An optional fifth argument filters bucket filenames by substring. An omitted fil
 `BucketLoader.default_LIMIT`, initially 50. `BucketLoader.setLimit` applies to data loading and processing.
 Missing folders, unreadable directory listings, invalid booleans and invalid limits stop the invocation.
 
+## Export a supported processing flow
+
+`PFDRecorder.toJSON()` displays a recording preview, which can contain unsupported desktop actions.
+`saveToFile` validates the flow before opening the destination. An invalid flow cannot overwrite an export.
+Set `opentsx.pfd.input.topic` through the existing `ConfigManager` before resetting the recorder.
+The recorder uses that Kafka input topic and `LOG` output; it does not supply placeholder topics.
+
+An executable export supports only `NORMALIZE` with an omitted method or `method: center`.
+Other operations, methods and parameters fail with `IllegalArgumentException`.
+See [PFD validation](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for the schema and runtime contract.
+
 ## Identify unavailable desktop actions
 
 The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an explanatory tooltip.
