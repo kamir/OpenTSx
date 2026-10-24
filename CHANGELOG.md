@@ -10,6 +10,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
+  The modern tracker's JSON display action is labelled `Show PFD`.
 - Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
   instead of reporting success with empty results. `MacroRunner` propagates the unsupported-load error.
 - Classic FFT conversion preserves the input coordinates and the frequency coordinates of FFT results.

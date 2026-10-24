@@ -16,7 +16,7 @@ concurrency:
 jobs:
   java:
     name: Java ${{ matrix.java }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +29,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: maven
       - name: Build and test
-        run: mvn -B -ntp verify
+        run: xvfb-run --auto-servernum mvn -B -ntp verify
 
   python:
     name: Python ${{ matrix.python }}

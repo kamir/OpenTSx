@@ -70,7 +70,12 @@ public class ModernMacroTrackerFrame extends JFrame {
 
         JButton exportJavaBtn = createStyledButton("Export Java", new Color(75, 110, 175));
         JButton exportScalaBtn = createStyledButton("Export Scala", new Color(220, 50, 47));
-        JButton exportPFDBtn = createStyledButton("Export PFD", new Color(38, 139, 210));
+        JButton exportPFDBtn = createStyledButton("Show PFD", new Color(38, 139, 210));
+
+        exportJavaBtn.setEnabled(false);
+        exportJavaBtn.setToolTipText("This export is not implemented");
+        exportScalaBtn.setEnabled(false);
+        exportScalaBtn.setToolTipText("This export is not implemented");
 
         exportPFDBtn.addActionListener(e -> refreshPFD());
 

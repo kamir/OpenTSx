@@ -22,6 +22,12 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Identify unavailable desktop actions
+
+The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an explanatory tooltip.
+The modern tracker disables Java and Scala export. Its `Show PFD` button displays the recorded JSON.
+Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
+
 ## Check bucket workflow support
 
 `TSBucket.loadViaContext` throws `UnsupportedOperationException` with
