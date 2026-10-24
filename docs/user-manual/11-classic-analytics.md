@@ -92,6 +92,9 @@ standalone programs with a `main` method:
 
 To use them with v2 data, convert episodes with the legacy bridge ([chapter 13](13-migration.md)).
 
+`BucketAnalyserTool` uses the supplied input folder and DFA flags. Optional arguments select a filename
+substring and record limit. See [bucket analysis inputs](../../opentsx-core/README.md#supply-bucket-analysis-inputs).
+
 The desktop AR, MA, ARMA, ARIMA, SARIMA and CARIMA actions are disabled because they have no implementation.
 The modern tracker also disables Java and Scala export; `Show PFD` displays JSON in the window.
 
