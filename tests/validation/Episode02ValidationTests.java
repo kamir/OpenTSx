@@ -1,9 +1,7 @@
 package org.opentsx.tests.validation;
 
 import org.opentsx.data.series.TimeSeriesObject;
-import org.opentsx.data.loader.MessreihenLoader;
-import org.opentsx.tsa.rng.RNGWrapper;
-import java.io.File;
+import org.opentsx.data.generator.RNGWrapper;
 
 /**
  * Validation tests for Episode 2: Creating Time Series
@@ -13,6 +11,7 @@ import java.io.File;
 public class Episode02ValidationTests {
 
     public static void main(String[] args) {
+        org.opentsx.data.generator.RNGWrapper.init();
         System.out.println("\n" + "═".repeat(70));
         System.out.println("  Episode 2 Validation Test Suite");
         System.out.println("  Testing: Creating Time Series Exercises");
@@ -48,6 +47,7 @@ public class Episode02ValidationTests {
             System.out.println("  Status: ✓ ALL EXERCISES VALIDATED");
         } else {
             System.out.println("  Status: ✗ SOME EXERCISES NEED REVIEW");
+            throw new IllegalStateException("Exercise validation failed");
         }
         System.out.println("═".repeat(70) + "\n");
     }
@@ -121,7 +121,7 @@ public class Episode02ValidationTests {
             // Test Exponential distribution
             TimeSeriesObject exponential = TimeSeriesObject.getExpDistribution(numPoints, 0.05);
             double expMean = 1.0 / 0.05;  // Expected: 20.0
-            validator.checkStatistic("Exponential mean", exponential.getAvarage(), expMean, 2.0);
+            validator.checkStatistic("Exponential mean", exponential.getAvarage2(), expMean, 2.0);
 
             // Check min/max ranges for uniform
             validator.checkRange("Uniform min", uniform.getMinY(), 0.0, 10.0);
@@ -183,7 +183,7 @@ public class Episode02ValidationTests {
 
             // Check filtered mean is higher than original
             validator.check("Filtered mean > original mean",
-                filtered.getAvarage() > testData.getAvarage());
+                filtered.getAvarage2() > testData.getAvarage2());
 
         } catch (Exception e) {
             validator.check("Execution without errors: " + e.getMessage(), false);
@@ -210,8 +210,9 @@ public class Episode02ValidationTests {
             TimeSeriesObject combined = new TimeSeriesObject();
             combined.setLabel("trend_seasonal_noise");
 
-            RNGWrapper.init(42);  // Fixed seed for reproducibility
+            stdlib.StdRandom.initRandomGen(42);  // Fixed seed for reproducibility
 
+            TimeSeriesObject signal = new TimeSeriesObject();
             for (int t = 0; t < numPoints; t++) {
                 double trend = 0.1 * t;
                 double seasonal = 10.0 * Math.sin(2.0 * Math.PI * t / seasonalPeriod);
@@ -219,6 +220,7 @@ public class Episode02ValidationTests {
 
                 double y = trend + seasonal + noise;
                 combined.addValuePair(t, y);
+                signal.addValuePair(t, trend + seasonal);
             }
 
             // Validate basic properties
@@ -231,7 +233,8 @@ public class Episode02ValidationTests {
 
             // Check variance is reasonable (not just flat noise)
             double stddev = combined.getStddev();
-            validator.checkRange("Standard deviation reasonable", stddev, 5.0, 20.0);
+            double expectedStddev = Math.sqrt(Math.pow(signal.getStddev(), 2) + 4.0);
+            validator.checkStatistic("Signal and noise standard deviation", stddev, expectedStddev, 1.0);
 
             // Check range spans expected values
             double expectedMin = -20.0;  // Roughly: trend_start + seasonal_min + noise

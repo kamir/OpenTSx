@@ -10,6 +10,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- The exercise runner uses the Maven classpath, propagates failed assertions and rejects invalid modes.
+  Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
 - Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
   The modern tracker's JSON display action is labelled `Show PFD`.
 - Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
