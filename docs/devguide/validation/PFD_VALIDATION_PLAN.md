@@ -1,59 +1,44 @@
-# Validation Plan for Process Flow Descriptors (PFD)
+# Validate processing-flow descriptors
 
-This document outlines the validation strategy for the Process Flow Descriptor (PFD) feature (Task 005), covering unit tests, integration tests, and end-to-end validation.
+Check recording exports against the executable PFD contract in the current checkout.
+You need JDK 17 or later and Maven 3.8 or later.
 
-## 1. Unit Tests
+## Check supported flows
 
-### 1.1 JSON Schema Validation
-**Goal**: Ensure the generated JSON matches the official Schema.
-*   **Test Class**: `org.opentsx.app.bucketanalyser.PFDSchemaTest`
-*   **Test Cases**:
-    *   `testValidPFD`: Create a standard PFD and validate it against `processing-flow-descriptor-schema.json`.
-    *   `testMissingRequiredFields`: Assert validation failure if `input` or `steps` are missing.
-    *   `testInvalidEnum`: Assert failure if an invalid operation (e.g., "UNKNOWN_OP") is used.
+The [JSON schema](../schemas/processing-flow-descriptor-schema.json), recorder file export and dynamic Flink runtime
+support Kafka input, zero or more `NORMALIZE` centering steps and `LOG` output.
+A flow needs a nonblank name and Kafka input topic; every step needs a nonblank id.
+`params.method` can be omitted or set to `center`. Other operation parameters are rejected.
+DFA, smoothing, filtering, z-score normalization and Kafka output are rejected.
 
-### 1.2 Serialization / Deserialization
-**Goal**: Ensure `PFDRecorder` produces correct JSON and the Flink Job can parse it.
-*   **Test Class**: `org.opentsx.app.bucketanalyser.PFDRecorderTest`
-*   **Test Cases**:
-    *   `testRecorderSingleton`: Verify state persistence across multiple `addStep` calls.
-    *   `testParameterSerialization`: Ensure complex parameters (maps, lists) are correctly serialized.
+`PFDRecorder.toJSON()` produces a recording preview. Previews can contain unsupported desktop operations and do not
+imply that the runtime can execute them. `saveToFile` checks compatibility before creating or replacing a file.
+A missing topic or unsupported step leaves an existing destination unchanged.
 
-### 1.3 Flink Dynamic Graph Construction
-**Goal**: Ensure `DynamicTopologyJob` creates the correct topology.
-*   **Test Class**: `org.opentsx.flink.DynamicTopologyTest` (MiniCluster)
-*   **Test Cases**:
-    *   `testGraphBuilder`: Mock input JSON and verify that the Flink StreamExecutionEnvironment contains the expected nodes (Source -> Filter -> Map -> Sink).
-    *   *Note*: Use `env.getExecutionPlan()` to inspect the JSON plan Flink generates.
+## Configure input and brokers
 
-## 2. Integration Tests ("The Lab")
+Set `opentsx.pfd.input.topic` through the existing core `ConfigManager` before resetting the recorder.
+The recorder uses this topic instead of a placeholder and sets output type `LOG`.
+`DynamicTopologyJob` reads its input topic from the descriptor and brokers from `bootstrap.servers`
+through the same configuration manager. Blank broker configuration fails instead of selecting localhost.
 
-### 2.1 Swing UI -> JSON Export
-**Goal**: Verify the end-user experience in the legacy app.
-*   **Step**: Launch `MacroRecorder2`.
-*   **Action**: Load a sample dataset -> Apply "Smooth" -> Apply "DFA".
-*   **Assertion**:
-    *   Switch to "PFD (JSON)" tab.
-    *   JSON text must be present.
-    *   JSON must contain "SMOOTH" and "DFA" steps in order.
+The runtime aggregates five-minute event-time windows. Observation timestamps drive watermarks with ten seconds
+of out-of-order tolerance. The source and watermark checks build a graph and invoke the generator directly;
+they do not contact Kafka or start a Flink cluster.
 
-### 2.2 Flink Job Execution
-**Goal**: Verify a real Flink job can run the generated plan.
-*   **Step**:
-    1.  Save the JSON from 2.1 to `flow.json`.
-    2.  Start "The Lab" (`docker-compose.onboarding.yml`).
-    3.  Submit job: `flink run -c org.opentsx.flink.DynamicTopologyJob opentsx-flink-core.jar --pfd flow.json`
-*   **Assertion**: Job runs, consumes from Input Topic, and produces to Output Topic.
+## Run the regressions
 
-## 3. End-to-End Validation (Task 007)
+From the repository root, run:
 
-This will be covered by the future **Validation Framework**.
-*   **Scenario**: "Anomaly Detection Pipeline"
-*   **Input**: Kafka Topic with synthetic sine wave + spikes.
-*   **Flow**: Window(5m) -> Z-Score -> Filter(>3.0).
-*   **Output**: Kafka Topic "anomalies".
-*   **Success**: The Output topic contains only the spike events.
+```bash
+mvn -B -ntp -pl opentsx-flink-core -am test \
+  -Dtest=PFDRecorderContractTest,PFDRuntimeContractTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
 
-## 4. Test Data Strategy
-*   Use `TSGeneratorFINAL` (existing in Core) to generate deterministic JUnit test data.
-*   Use `Welcome.ipynb` (Notebook) to verify Kafka contents for Integration tests.
+`PFDRecorderContractTest` checks explicit topics, schema capability fields and refusal to overwrite a file
+for unsupported operations or methods. `PFDRuntimeContractTest` checks parser rejection, a recorder export parsed
+by the runtime, the configured broker address, watermark advancement and actual centered values with an updated
+cached mean. The tests run in the Java CI matrix.
+
+These are offline contract and graph tests. They do not verify a deployed Kafka-to-Flink job.

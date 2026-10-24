@@ -9,6 +9,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.opentsx.data.model.Observation;
+import org.opentsx.core.config.ConfigManager;
+import org.opentsx.core.pfd.PFDValidation;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.flink.functions.TimeSeriesAggregateFunction;
 import org.opentsx.flink.serdes.ObservationSchema;
@@ -68,25 +70,52 @@ public class DynamicTopologyJob {
 
     private static PFDDefinition parsePFD(String path) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(new File(path), PFDDefinition.class);
+        return validate(mapper.readValue(new File(path), PFDDefinition.class));
     }
 
     private static PFDDefinition parsePFDString(String content) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(content, PFDDefinition.class);
+        return validate(mapper.readValue(content, PFDDefinition.class));
+    }
+
+    private static PFDDefinition validate(PFDDefinition flow) {
+        if (flow == null || flow.input == null || flow.output == null || flow.steps == null) {
+            throw new IllegalArgumentException("PFD input, steps and output are required");
+        }
+        PFDValidation.requireText(flow.name, "Flow name");
+        if (!"KAFKA".equals(flow.input.type)) {
+            throw new IllegalArgumentException("Unsupported input type: " + flow.input.type);
+        }
+        PFDValidation.requireText(flow.input.topic, "Kafka input topic");
+        if (!"LOG".equals(flow.output.type)) {
+            throw new IllegalArgumentException("Unsupported output type: " + flow.output.type);
+        }
+        for (PFDStep step : flow.steps) {
+            if (step == null) {
+                throw new IllegalArgumentException("PFD step is required");
+            }
+            PFDValidation.requireText(step.id, "Step id");
+            PFDValidation.validateOperation(step.operation, step.params);
+        }
+        return flow;
     }
 
     private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input) {
         if ("KAFKA".equalsIgnoreCase(input.type)) {
+            String brokers = ConfigManager.getInstance().getString("bootstrap.servers", null);
+            PFDValidation.requireText(brokers, "bootstrap.servers");
             KafkaSource<Observation> source = KafkaSource.<Observation>builder()
-                    .setBootstrapServers("localhost:9092") // Should come from config
+                    .setBootstrapServers(brokers)
                     .setTopics(input.topic)
                     .setGroupId("opentsx-dynamic-job")
                     .setStartingOffsets(OffsetsInitializer.earliest())
                     .setDeserializer(new ObservationSchema())
                     .build();
 
-            return env.fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
+            WatermarkStrategy<Observation> watermarks = WatermarkStrategy
+                    .<Observation>forBoundedOutOfOrderness(Duration.ofSeconds(10))
+                    .withTimestampAssigner((observation, timestamp) -> observation.getTimestamp());
+            return env.fromSource(source, watermarks, "Kafka Source");
         } else {
             throw new UnsupportedOperationException("Unsupported input type: " + input.type);
         }
@@ -96,8 +125,7 @@ public class DynamicTopologyJob {
         if ("LOG".equalsIgnoreCase(output.type)) {
             stream.map(ts -> ts.toString()).print();
         } else {
-            // Default to print
-            stream.map(ts -> "Output to " + output.type + ": " + ts.getLabel()).print();
+            throw new IllegalArgumentException("Unsupported output type: " + output.type);
         }
     }
 }

@@ -26,6 +26,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
   `.mvn/maven.config` now retries a download up to five times, 3 seconds apart, on 429, 500, 502, 503 and 504.
 - The bucket analysis CLI honors its input arguments, accepts an optional filename filter and record limit,
   and rejects invalid input. `BucketLoader.setLimit` applies to all three load and process entry points.
+- PFD file export, schema and runtime accept Kafka input, centering and log output. Unsupported operations,
+  normalization methods and sinks fail explicitly. Topics and brokers require configuration; event-time
+  watermarks advance from observation timestamps. The missing Flink connector-base dependency is included.
 
 ## [3.0.1] - 2026-10-16
 
