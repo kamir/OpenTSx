@@ -1,12 +1,17 @@
 package org.opentsx.app.bucketanalyser;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.file.Path;
 import java.nio.file.Files;
+import org.opentsx.core.TSBucket;
+import org.opentsx.tsbucket.BucketLoader;
+import org.opentsx.experimental.SimpleFilteredBucketTool;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,6 +19,33 @@ class BucketAnalyserToolTest {
 
     @TempDir
     Path directory;
+    int loaderLimit;
+    int bucketLimit;
+    int processingMode;
+    boolean hdfs;
+    String extension;
+    String parserFactory;
+
+    @BeforeEach
+    void saveConfiguration() {
+        loaderLimit = BucketLoader.default_LIMIT;
+        bucketLimit = TSBucket.default_LIMIT;
+        processingMode = SimpleFilteredBucketTool.procm;
+        hdfs = TSBucket.useHDFS;
+        extension = TSBucket.FN_EXT;
+        parserFactory = System.getProperty("javax.xml.parsers.DocumentBuilderFactory");
+    }
+
+    @AfterEach
+    void restoreConfiguration() {
+        BucketLoader.default_LIMIT = loaderLimit;
+        TSBucket.default_LIMIT = bucketLimit;
+        SimpleFilteredBucketTool.procm = processingMode;
+        TSBucket.useHDFS = hdfs;
+        TSBucket.FN_EXT = extension;
+        if (parserFactory == null) System.clearProperty("javax.xml.parsers.DocumentBuilderFactory");
+        else System.setProperty("javax.xml.parsers.DocumentBuilderFactory", parserFactory);
+    }
 
     @Test
     void usesTheSuppliedInputFolder() {
