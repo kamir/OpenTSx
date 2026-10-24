@@ -96,7 +96,8 @@ To use them with v2 data, convert episodes with the legacy bridge ([chapter 13](
 substring and record limit. See [bucket analysis inputs](../../opentsx-core/README.md#supply-bucket-analysis-inputs).
 
 The desktop AR, MA, ARMA, ARIMA, SARIMA and CARIMA actions are disabled because they have no implementation.
-The modern tracker also disables Java and Scala export; `Show PFD` displays JSON in the window.
+The modern tracker also disables Java and Scala export. Both trackers use `Show PFD` to display JSON in the window.
+The modern tracker starts without sample tree items.
 
 Local SequenceFile loading reads the actual records, handles empty buckets and respects the file loader's
 record limit. Processing errors stop the load with their cause retained. The format stores labels and Y values;

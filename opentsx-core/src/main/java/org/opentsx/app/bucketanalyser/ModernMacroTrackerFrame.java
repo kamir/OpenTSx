@@ -3,6 +3,7 @@ package org.opentsx.app.bucketanalyser;
 import com.formdev.flatlaf.FlatDarkLaf;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 
 /**
@@ -138,7 +139,7 @@ public class ModernMacroTrackerFrame extends JFrame {
         header.setForeground(new Color(200, 200, 200)); // Lighter
         header.setBorder(new EmptyBorder(0, 0, 10, 0));
 
-        transformationTree = new JTree();
+        transformationTree = new JTree(new DefaultTreeModel(null));
         transformationTree.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         transformationTree.setRowHeight(24);
 

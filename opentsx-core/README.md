@@ -47,7 +47,8 @@ See [PFD validation](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for the
 ## Identify unavailable desktop actions
 
 The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an explanatory tooltip.
-The modern tracker disables Java and Scala export. Its `Show PFD` button displays the recorded JSON.
+The modern tracker disables Java and Scala export. Both trackers use `Show PFD` to display recorded JSON;
+these buttons do not write a file. The modern tracker starts with an empty transformation tree.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 
 ## Reload local SequenceFile buckets
