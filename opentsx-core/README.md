@@ -28,6 +28,16 @@ The AR, MA, ARMA, ARIMA, SARIMA and CARIMA buttons are disabled and show an expl
 The modern tracker disables Java and Scala export. Its `Show PFD` button displays the recorded JSON.
 Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubuntu 24.04.
 
+## Reload local SequenceFile buckets
+
+The file and string loaders stop at the actual end of a SequenceFile, including empty buckets.
+The file loader reads at most `LIMIT` records; a zero limit reads no records.
+Readers close after loading or failure. A failing `TSOperation` stops loading with `IOException`
+and retains the original exception as its cause. Processing output writers close on failure.
+
+The SequenceFile writer stores each series label and Y values. Loading reconstructs sequential X values;
+arbitrary input X coordinates and other metadata are not persisted by this format.
+
 ## Check bucket workflow support
 
 `TSBucket.loadViaContext` throws `UnsupportedOperationException` with
