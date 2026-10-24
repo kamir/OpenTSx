@@ -168,13 +168,11 @@ public class TSBucket {
         File f = new File(fn + ".proc." + FN_EXT + ".csv");
         File fe = new File(fn + ".proc.explode." + FN_EXT + ".csv");
 
-        fw = new FileWriter(f);
-        fwe = new FileWriter(fe);
-
-        loadFromSequenceFile(fn, ids, t);
-
-        fw.close();
-        fwe.close();
+        try (FileWriter output = new FileWriter(f); FileWriter exploded = new FileWriter(fe)) {
+            fw = output;
+            fwe = exploded;
+            loadFromSequenceFile(fn, ids, t);
+        }
 
         System.out.println("**** #### ****" + f.getAbsolutePath() + " created ... ");
     }
@@ -252,82 +250,83 @@ public class TSBucket {
         Path path = new Path(fn);
 
         // write a SequenceFile form a Vector
-        SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, config);
+        try (SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, config)) {
 
-        System.out.println("--> process bucket    : " + fn);
-        System.out.println("--> compression-codes : " + reader.getCompressionCodec());
-        System.out.println("--> key-classename    : " + reader.getKeyClassName());
-        System.out.println("--> value-classname   : " + reader.getValueClassName());
+            System.out.println("--> process bucket    : " + fn);
+            System.out.println("--> compression-codes : " + reader.getCompressionCodec());
+            System.out.println("--> key-classename    : " + reader.getKeyClassName());
+            System.out.println("--> value-classname   : " + reader.getValueClassName());
 
-        // TSBucket.setRecordMode( "page-id" );
-        TSBucket.setRecordMode("counter");
+            // TSBucket.setRecordMode( "page-id" );
+            TSBucket.setRecordMode("counter");
 
-        boolean goOn = true;
-        int i = 1;
-        while (goOn && i <= LIMIT) {
+            int i = 1;
+            while (i <= LIMIT) {
 
-            Text key = new Text();
+                Text key = new Text();
 
-            VectorWritable vec = new VectorWritable();
-            goOn = reader.next(key);
-
-            String seriesID = key.toString();
-
-            if (processSeriesLabelOnLoad) {
-                seriesID = "" + TSBucket.getRecordID(key.toString());
-            }
-
-            boolean skipped = false;
-
-            if (ids != null) {
-                if (ids.contains(seriesID)) {
-                    skipped = false;
-                } else {
-                    skipped = true;
+                VectorWritable vec = new VectorWritable();
+                if (!reader.next(key)) {
+                    break;
                 }
-            }
 
-            reader.getCurrentValue(vec);
+                String seriesID = key.toString();
 
-            TimeSeriesObject mr = new TimeSeriesObject();
-            mr.setDescription(i + " ) " + fn + "_[" + key.toString() + "]");
-            mr.setLabel(seriesID);
-
-            int c = 0;
-            NamedVector vector = (NamedVector) vec.get();
-
-            while (c < vector.size()) {
-
-                double value = vector.get(c);
-                //System.out.println( c + "\t" + value  );
-
-                mr.addValue(value);
-
-                c++;
-            }
-            try {
-                TimeSeriesObject m = null;
-                if (tst != null) {
-                    m = tst.processReihe(fw, mr, fwe);
+                if (processSeriesLabelOnLoad) {
+                    seriesID = "" + TSBucket.getRecordID(key.toString());
                 }
-            } catch (Exception ex) {
-                Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
+
+                boolean skipped = false;
+
+                if (ids != null) {
+                    if (ids.contains(seriesID)) {
+                        skipped = false;
+                    } else {
+                        skipped = true;
+                    }
+                }
+
+                reader.getCurrentValue(vec);
+
+                TimeSeriesObject mr = new TimeSeriesObject();
+                mr.setDescription(i + " ) " + fn + "_[" + key.toString() + "]");
+                mr.setLabel(seriesID);
+
+                int c = 0;
+                NamedVector vector = (NamedVector) vec.get();
+
+                while (c < vector.size()) {
+
+                    double value = vector.get(c);
+                    //System.out.println( c + "\t" + value  );
+
+                    mr.addValue(value);
+
+                    c++;
+                }
+                try {
+                    if (tst != null) {
+                        tst.processReihe(fw, mr, fwe);
+                    }
+                } catch (Exception ex) {
+                    throw new IOException("Failed to process series " + seriesID, ex);
+                }
+
+                i = i + 1;
+
+                int code = 1;
+                if (skipped) {
+                    code = 0;
+                }
+
+                if (inMEM) {
+                    bucketData.add(mr);
+                }
+
+                //System.out.println( code + "\t" + mr.getLabel() + "\t" + mr.xValues.size() + "\t" + mr.summeY() );
             }
-
-            i = i + 1;
-
-            int code = 1;
-            if (skipped) {
-                code = 0;
-            }
-
-            if (inMEM) {
-                bucketData.add(mr);
-            }
-
-            //System.out.println( code + "\t" + mr.getLabel() + "\t" + mr.xValues.size() + "\t" + mr.summeY() );
+            System.out.println("--> nr of records     : " + (i - 1));
         }
-        System.out.println("--> nr of records     : " + (i - 1));
     }
 
     Configuration config = null;
@@ -834,47 +833,49 @@ public class TSBucket {
         Path path = new Path(f.getAbsolutePath());
 
         // read NamedVectors from a SequenceFile 
-        SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, config);
+        try (SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, config)) {
 
-        System.out.println("--> process bucket    : " + f.getAbsolutePath());
-        System.out.println("--> compression-codes : " + reader.getCompressionCodec());
-        System.out.println("--> key-classename    : " + reader.getKeyClassName());
-        System.out.println("--> value-classname   : " + reader.getValueClassName());
-        System.out.println("--> LIMIT             : " + LIMIT);
-        System.out.println("--> IN MEM MODE       : " + inMEM);
+            System.out.println("--> process bucket    : " + f.getAbsolutePath());
+            System.out.println("--> compression-codes : " + reader.getCompressionCodec());
+            System.out.println("--> key-classename    : " + reader.getKeyClassName());
+            System.out.println("--> value-classname   : " + reader.getValueClassName());
+            System.out.println("--> LIMIT             : " + LIMIT);
+            System.out.println("--> IN MEM MODE       : " + inMEM);
 
-        boolean goOn = true;
-        int i = 0;
-        while (goOn && i <= LIMIT) {
-            i = i + 1;
-            Text key = new Text();
+            int i = 0;
+            while (i < LIMIT) {
+                Text key = new Text();
 
-            VectorWritable vec = new VectorWritable();
-            goOn = reader.next(key);
+                VectorWritable vec = new VectorWritable();
+                if (!reader.next(key)) {
+                    break;
+                }
+                i++;
 
-            String tsKey = key.toString();
+                String tsKey = key.toString();
 
-            reader.getCurrentValue(vec);
+                reader.getCurrentValue(vec);
 
-            TimeSeriesObject mr = new TimeSeriesObject();
-            mr.setDescription(i + " ) " + f.getName() + "_[" + key.toString() + "]");
-            mr.setLabel(i + " " + key.toString());
+                TimeSeriesObject mr = new TimeSeriesObject();
+                mr.setDescription(i + " ) " + f.getName() + "_[" + key.toString() + "]");
+                mr.setLabel(i + " " + key.toString());
 
-            System.out.println("-> " + i + " " + key.toString());
+                System.out.println("-> " + i + " " + key.toString());
 
-            int c = 0;
-            NamedVector vector = (NamedVector) vec.get();
-            while (c < vector.size()) {
-                double value = vector.get(c);
-                mr.addValue(value);
-                c++;
+                int c = 0;
+                NamedVector vector = (NamedVector) vec.get();
+                while (c < vector.size()) {
+                    double value = vector.get(c);
+                    mr.addValue(value);
+                    c++;
+                }
+
+                if (inMEM) {
+                    bucketData.add(mr);
+                }
             }
-
-            if (inMEM) {
-                bucketData.add(mr);
-            }
+            System.out.println("--> nr of records     : " + i);
         }
-        System.out.println("--> nr of records     : " + (i - 1));
     }
 
     public void createBucketFromFilesViaWordLength(File[] folder, String s, String experiment) throws IOException {

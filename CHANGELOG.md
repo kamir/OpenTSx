@@ -14,6 +14,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
   Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
 - Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
   The modern tracker's JSON display action is labelled `Show PFD`.
+- Local SequenceFile loaders stop at EOF, handle empty buckets and close readers. The file loader reads
+  at most the configured record limit. Failed processing stops loading and retains the original error cause.
 - Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
   instead of reporting success with empty results. `MacroRunner` propagates the unsupported-load error.
 - Classic FFT conversion preserves the input coordinates and the frequency coordinates of FFT results.
