@@ -92,6 +92,9 @@ standalone programs with a `main` method:
 
 To use them with v2 data, convert episodes with the legacy bridge ([chapter 13](13-migration.md)).
 
+The desktop AR, MA, ARMA, ARIMA, SARIMA and CARIMA actions are disabled because they have no implementation.
+The modern tracker also disables Java and Scala export; `Show PFD` displays JSON in the window.
+
 Executing a `MacroRunner` or an exported Java/Scala bucket workflow stops with `UnsupportedOperationException`:
 context-based loading and named bucket processing are not implemented. See
 [bucket workflow support](../../opentsx-core/README.md#check-bucket-workflow-support) for the exact error messages.

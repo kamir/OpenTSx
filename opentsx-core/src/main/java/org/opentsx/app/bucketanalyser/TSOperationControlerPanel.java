@@ -47,6 +47,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
      */
     public TSOperationControlerPanel() {
         initComponents();
+        for (JButton button : new JButton[]{jButton17, jButton23, jButton24, jButton25, jButton26, jButton27}) {
+            button.setEnabled(false);
+            button.setToolTipText("This operation is not implemented");
+        }
     }
 
     public Vector<TimeSeriesObject> rows;
