@@ -10,6 +10,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- The PFD runtime accepts `--out-of-orderness` in milliseconds with a ten-second default and permits zero delay.
+  It validates both runtime options in either order and rejects invalid values and duplicates before graph creation.
+
 - The PFD runtime accepts `--window-size` in milliseconds, matching `TimeSeriesAnalysisJob`, with a five-minute
   default. Invalid window values and unexpected trailing arguments fail before graph construction.
 

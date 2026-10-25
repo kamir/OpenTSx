@@ -7,8 +7,10 @@ and [classic analytics manual](../docs/user-manual/11-classic-analytics.md).
 `pfd.DynamicTopologyJob` requires an explicit input topic and the existing `bootstrap.servers` configuration key.
 It defaults to five-minute event-time windows with ten seconds of allowed out-of-order arrival.
 Append `--window-size <milliseconds>` after the descriptor filename or inline JSON to choose a positive integer
-window size. The default is `300000` milliseconds, matching `TimeSeriesAnalysisJob`. Invalid values and extra
-arguments fail before the Flink graph is built.
+window size. The default is `300000` milliseconds, matching `TimeSeriesAnalysisJob`.
+Set `--out-of-orderness <milliseconds>` to a non-negative integer for the watermark tolerance; its default is
+`10000`. Zero removes the configured delay. Both options can appear once, in either order, after the descriptor.
+Invalid values, duplicate options and unknown arguments fail before the Flink graph is built.
 `NORMALIZE` centers values and updates the cached mean. Unsupported steps and output types fail before execution.
 The Kafka source includes `flink-connector-base` at the same pinned Flink version.
 Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.

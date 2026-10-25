@@ -26,8 +26,17 @@ The runtime defaults to five-minute event-time windows. Append `--window-size <m
 filename or after `--json` and its JSON argument to select a positive integer window size in milliseconds.
 The default is `300000`, matching the existing `TimeSeriesAnalysisJob` option. Zero, negative, non-integer,
 out-of-range, missing and duplicate values are rejected before graph construction. Unknown trailing arguments
-are rejected. Observation timestamps drive watermarks with ten seconds
-of out-of-order tolerance. The source and watermark checks build a graph and invoke the generator directly;
+are rejected.
+
+Set `--out-of-orderness <milliseconds>` after the descriptor to configure the watermark tolerance.
+It accepts a non-negative integer and defaults to `10000` milliseconds. Zero removes the configured delay.
+It can be combined with `--window-size` in either order; each option can occur once. Invalid or missing values
+and duplicate options fail before graph construction. Observation timestamps drive watermarks.
+Watermarks trail the maximum observed timestamp by the tolerance plus one millisecond, bounded below by the
+minimum long value. Older observations do not move them backwards. Before the first observation the watermark
+stays at the minimum long value.
+This option controls watermark generation; it does not configure Flink allowed lateness.
+The source and watermark checks build a graph and invoke the generator directly;
 they do not contact Kafka or start a Flink cluster.
 
 ## Run the regressions
@@ -47,7 +56,9 @@ cached mean. The tests run in the Java CI matrix.
 
 `PFDWindowSizeTest` invokes the actual entry point for file and inline JSON descriptors in an offline graph
 execution environment. It checks the five-minute default, configured windows, exact boundary membership,
-negative timestamps and rejection before execution. It never starts a Kafka consumer or a Flink cluster.
+negative timestamps and rejection before execution. It also verifies zero and configured watermark tolerance,
+the initial watermark, out-of-order events and advancement to the actual window end boundary.
+Both options are checked together in either order. It never starts a Kafka consumer or a Flink cluster.
 
 The JUnit cases are offline contract and graph tests. The log cases exercise zero, one, two and five points
 through the actual sink mapping function and verify all coordinates and values.
