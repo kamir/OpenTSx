@@ -8,6 +8,7 @@ and [classic analytics manual](../docs/user-manual/11-classic-analytics.md).
 It aggregates five-minute event-time windows with ten seconds of allowed out-of-order arrival.
 `NORMALIZE` centers values and updates the cached mean. Unsupported steps and output types fail before execution.
 The Kafka source includes `flink-connector-base` at the same pinned Flink version.
+Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.
 
 Apache Flink integration for OpenTSx time series analysis framework.
 

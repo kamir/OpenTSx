@@ -41,4 +41,32 @@ for unsupported operations or methods. `PFDRuntimeContractTest` checks parser re
 by the runtime, the configured broker address, watermark advancement and actual centered values with an updated
 cached mean. The tests run in the Java CI matrix.
 
-These are offline contract and graph tests. They do not verify a deployed Kafka-to-Flink job.
+The JUnit cases are offline contract and graph tests. The log cases exercise zero, one, two and five points
+through the actual sink mapping function and verify all coordinates and values.
+
+## Check the broker-backed acceptance result
+
+A manual acceptance run uses KafScale 1.6.0 with in-memory storage and Flink 1.20.5.
+A recorder-exported flow reads one Kafka partition, centers each completed window and writes JSON to `LOG`.
+Three acknowledged Avro observations for `quality-series` have timestamps 1000, 2000 and 600000 milliseconds
+and values 2, 4 and 100. The third observation advances the watermark beyond the first five-minute window.
+The completed first window contains timestamps 1000 and 2000 and centered values -1 and 1.
+The unbounded job is stopped after verifying that output.
+
+The verified output is:
+
+```json
+{
+  "values": [
+    -1.0,
+    1.0
+  ],
+  "timestamps": [
+    1000.0,
+    2000.0
+  ],
+  "label": "quality-series"
+}
+```
+
+This broker-backed acceptance run is separate from the offline JUnit suite.

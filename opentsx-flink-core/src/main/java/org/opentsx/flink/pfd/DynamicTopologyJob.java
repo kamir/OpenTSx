@@ -1,6 +1,7 @@
 package org.opentsx.flink.pfd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -19,6 +20,7 @@ import org.opentsx.flink.serdes.TimeSeriesObjectTypeInfo;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Flink Job that builds a topology dynamically from a Processing Flow
@@ -123,7 +125,8 @@ public class DynamicTopologyJob {
 
     private static void buildSink(DataStream<TimeSeriesObject> stream, PFDDefinition.PFDOutput output) {
         if ("LOG".equalsIgnoreCase(output.type)) {
-            stream.map(ts -> ts.toString()).print();
+            stream.map(ts -> new Gson().toJson(Map.of(
+                    "label", ts.getLabel(), "timestamps", ts.xValues, "values", ts.yValues))).print();
         } else {
             throw new IllegalArgumentException("Unsupported output type: " + output.type);
         }

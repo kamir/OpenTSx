@@ -32,6 +32,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 - The modern desktop tracker starts with an empty transformation tree instead of Swing sample items.
 - The Flink null-field aggregation test runs with nullable getter fixtures and preserves its result assertions.
 - Z-score normalization rejects malformed, non-finite and zero-variance inputs before producing invalid values.
+- PFD log output writes JSON coordinates and values for every window, including fewer than five points.
 
 ## [3.0.1] - 2026-10-16
 
