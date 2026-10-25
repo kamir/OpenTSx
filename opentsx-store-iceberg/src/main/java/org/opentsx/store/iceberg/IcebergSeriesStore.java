@@ -50,9 +50,22 @@ public final class IcebergSeriesStore implements SeriesStore {
     private final Catalog catalog;
     private final Table episodes;
     private final Table series;
+    private final boolean readOnly;
+    private final boolean ownsCatalog;
 
     public IcebergSeriesStore(Catalog catalog, Namespace namespace) {
+        this(catalog, namespace, false, true);
+    }
+
+    private IcebergSeriesStore(Catalog catalog, Namespace namespace, boolean readOnly, boolean ownsCatalog) {
         this.catalog = catalog;
+        this.readOnly = readOnly;
+        this.ownsCatalog = ownsCatalog;
+        if (readOnly) {
+            this.episodes = catalog.loadTable(TableIdentifier.of(namespace, Tables.EPISODES));
+            this.series = catalog.loadTable(TableIdentifier.of(namespace, Tables.SERIES));
+            return;
+        }
         createNamespace(catalog, namespace);
         this.episodes = loadOrCreate(catalog, TableIdentifier.of(namespace, Tables.EPISODES), () -> catalog
                 .buildTable(TableIdentifier.of(namespace, Tables.EPISODES), Tables.EPISODE_SCHEMA)
@@ -72,6 +85,27 @@ public final class IcebergSeriesStore implements SeriesStore {
         return new IcebergSeriesStore(catalog(catalogProperties), Namespace.of(namespace));
     }
 
+    /** Borrows a catalog; the caller retains ownership on success and failure. */
+    public static IcebergSeriesStore openExisting(Catalog catalog, Namespace namespace) {
+        return new IcebergSeriesStore(catalog, namespace, true, false);
+    }
+
+    /** Owns the created catalog and closes it if loading the existing tables fails. */
+    public static IcebergSeriesStore openExisting(Map<String, String> catalogProperties, String namespace) {
+        Catalog catalog = catalog(catalogProperties);
+        try {
+            return new IcebergSeriesStore(catalog, Namespace.of(namespace), true, true);
+        } catch (RuntimeException | Error failure) {
+            try {
+                closeCatalog(catalog);
+            } catch (RuntimeException | Error closeFailure) {
+                failure.addSuppressed(closeFailure instanceof UncheckedIOException
+                        ? closeFailure.getCause() : closeFailure);
+            }
+            throw failure;
+        }
+    }
+
     static Catalog catalog(Map<String, String> props) {
         Configuration conf = new Configuration();
         return CatalogUtil.buildIcebergCatalog(props.getOrDefault("name", "opentsx"), props, conf);
@@ -85,6 +119,9 @@ public final class IcebergSeriesStore implements SeriesStore {
 
     @Override
     public synchronized WriteResult write(Collection<Episode> batch) {
+        if (readOnly) {
+            throw new UnsupportedOperationException("existing-only store does not accept writes");
+        }
         Map<String, Episode> unique = new LinkedHashMap<>();
         batch.forEach(e -> unique.putIfAbsent(e.getEpisodeId(), e));
         Set<String> existing = existingEpisodeIds(unique.keySet());
@@ -167,11 +204,20 @@ public final class IcebergSeriesStore implements SeriesStore {
 
     /** The underlying episodes table, e.g. for snapshot-based (time-travel) reads. */
     public Table episodesTable() {
+        if (readOnly) {
+            throw new UnsupportedOperationException("existing-only store does not expose a mutable table");
+        }
         return episodes;
     }
 
     @Override
     public void close() {
+        if (ownsCatalog) {
+            closeCatalog(catalog);
+        }
+    }
+
+    private static void closeCatalog(Catalog catalog) {
         if (catalog instanceof Closeable c) {
             try {
                 c.close();
