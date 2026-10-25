@@ -10,6 +10,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- The PFD runtime accepts `--window-size` in milliseconds, matching `TimeSeriesAnalysisJob`, with a five-minute
+  default. Invalid window values and unexpected trailing arguments fail before graph construction.
+
 - CI verifies recorder-exported PFDs through Kafka and Flink, including completed event-time window values.
   The opt-in `pfd-acceptance` profile retains the descriptor, Flink log and verified result as artifacts.
 

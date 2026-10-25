@@ -22,7 +22,11 @@ The recorder uses this topic instead of a placeholder and sets output type `LOG`
 `DynamicTopologyJob` reads its input topic from the descriptor and brokers from `bootstrap.servers`
 through the same configuration manager. Blank broker configuration fails instead of selecting localhost.
 
-The runtime aggregates five-minute event-time windows. Observation timestamps drive watermarks with ten seconds
+The runtime defaults to five-minute event-time windows. Append `--window-size <milliseconds>` after the descriptor
+filename or after `--json` and its JSON argument to select a positive integer window size in milliseconds.
+The default is `300000`, matching the existing `TimeSeriesAnalysisJob` option. Zero, negative, non-integer,
+out-of-range, missing and duplicate values are rejected before graph construction. Unknown trailing arguments
+are rejected. Observation timestamps drive watermarks with ten seconds
 of out-of-order tolerance. The source and watermark checks build a graph and invoke the generator directly;
 they do not contact Kafka or start a Flink cluster.
 
@@ -32,7 +36,7 @@ From the repository root, run:
 
 ```bash
 mvn -B -ntp -pl opentsx-flink-core -am test \
-  -Dtest=PFDRecorderContractTest,PFDRuntimeContractTest \
+  -Dtest=PFDRecorderContractTest,PFDRuntimeContractTest,PFDWindowSizeTest \
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
@@ -40,6 +44,10 @@ mvn -B -ntp -pl opentsx-flink-core -am test \
 for unsupported operations or methods. `PFDRuntimeContractTest` checks parser rejection, a recorder export parsed
 by the runtime, the configured broker address, watermark advancement and actual centered values with an updated
 cached mean. The tests run in the Java CI matrix.
+
+`PFDWindowSizeTest` invokes the actual entry point for file and inline JSON descriptors in an offline graph
+execution environment. It checks the five-minute default, configured windows, exact boundary membership,
+negative timestamps and rejection before execution. It never starts a Kafka consumer or a Flink cluster.
 
 The JUnit cases are offline contract and graph tests. The log cases exercise zero, one, two and five points
 through the actual sink mapping function and verify all coordinates and values.

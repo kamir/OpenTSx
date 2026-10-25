@@ -30,7 +30,8 @@ public class DynamicTopologyJob {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
-            System.err.println("Usage: DynamicTopologyJob <path-to-pfd.json> OR --json <json-content>");
+            System.err.println("Usage: DynamicTopologyJob (<path-to-pfd.json> OR --json <json-content>)"
+                    + " [--window-size <milliseconds>]");
             System.exit(1);
         }
 
@@ -43,6 +44,22 @@ public class DynamicTopologyJob {
             pfdPath = args[0];
         }
 
+        int optionIndex = pfdContent != null ? 2 : 1;
+        long windowSizeMs = 300000L;
+        if (args.length > optionIndex) {
+            if (args.length != optionIndex + 2 || !"--window-size".equals(args[optionIndex])) {
+                throw new IllegalArgumentException("Expected --window-size <milliseconds> after the descriptor");
+            }
+            try {
+                windowSizeMs = Long.parseLong(args[optionIndex + 1]);
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException("--window-size must be a positive integer in milliseconds", failure);
+            }
+            if (windowSizeMs <= 0) {
+                throw new IllegalArgumentException("--window-size must be a positive integer in milliseconds");
+            }
+        }
+
         PFDDefinition pfd = (pfdContent != null) ? parsePFDString(pfdContent) : parsePFD(pfdPath);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -51,10 +68,9 @@ public class DynamicTopologyJob {
         DataStream<Observation> sourceStream = buildSource(env, pfd.input);
 
         // 2. Initial Aggregation (Observation -> TimeSeriesObject)
-        // Hardcoded 5-minute tumbling window for now, could be parameterized
         DataStream<TimeSeriesObject> timeSeriesStream = sourceStream
                 .keyBy(obs -> obs.getUri() != null ? obs.getUri().toString() : "unknown")
-                .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+                .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSizeMs)))
                 .aggregate(new TimeSeriesAggregateFunction())
                 .returns(new TimeSeriesObjectTypeInfo());
 
