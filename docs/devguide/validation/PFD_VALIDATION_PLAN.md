@@ -44,29 +44,34 @@ cached mean. The tests run in the Java CI matrix.
 The JUnit cases are offline contract and graph tests. The log cases exercise zero, one, two and five points
 through the actual sink mapping function and verify all coordinates and values.
 
-## Check the broker-backed acceptance result
+## Run the broker-backed acceptance
 
-A manual acceptance run uses KafScale 1.6.0 with in-memory storage and Flink 1.20.5.
+You need a running broker and `KAFSCALE_BOOTSTRAP` set to its host and port.
+The CI KafScale conformance job provides KafScale 1.6.0 with in-memory storage and Flink 1.20.5.
+From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-flink-core -am verify -Ppfd-acceptance
+```
+
+The profile fails if `KAFSCALE_BOOTSTRAP` is missing. It creates a unique single-partition topic in the supplied
+broker, publishes three acknowledged observations and exports the flow through `PFDRecorder.saveToFile`.
+It starts `DynamicTopologyJob` in a separate process and checks its actual JSON output.
+The 90-second deadline bounds failure detection; values and window membership depend only on event timestamps.
 A recorder-exported flow reads one Kafka partition, centers each completed window and writes JSON to `LOG`.
 Three acknowledged Avro observations for `quality-series` have timestamps 1000, 2000 and 600000 milliseconds
 and values 2, 4 and 100. The third observation advances the watermark beyond the first five-minute window.
 The completed first window contains timestamps 1000 and 2000 and centered values -1 and 1.
-The unbounded job is stopped after verifying that output.
+The unbounded job is stopped after verification or failure.
+The profile writes `flow.json`, `flink.log` and the verified `result.json` under
+`opentsx-flink-core/target/pfd-acceptance/`. CI uploads this directory with its integration artifacts.
+Use an isolated broker: the acceptance topic remains until the broker is discarded.
 
 The verified output is:
 
 ```json
-{
-  "values": [
-    -1.0,
-    1.0
-  ],
-  "timestamps": [
-    1000.0,
-    2000.0
-  ],
-  "label": "quality-series"
-}
+{"label":"quality-series","timestamps":[1000.0,2000.0],"values":[-1.0,1.0]}
 ```
 
-This broker-backed acceptance run is separate from the offline JUnit suite.
+This broker-backed acceptance runs in the KafScale CI job and is separate from the offline JUnit suite.
+A mismatch, missing output, early process exit or timeout fails the Maven build. Inspect `flink.log` on failure.

@@ -173,6 +173,10 @@ jobs:
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
         run: mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-windpark,opentsx-stats,opentsx-twin-live -am test
+      - name: Verify recorder PFD through Kafka and Flink
+        env:
+          KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
+        run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-flink-core -am verify -Ppfd-acceptance
       - name: Capability report
         if: always()
         run: |
@@ -190,6 +194,7 @@ jobs:
             opentsx-kafka-v2/target/surefire-reports/
             opentsx-windpark/target/surefire-reports/
             opentsx-stats/target/surefire-reports/
+            opentsx-flink-core/target/pfd-acceptance/
 
   cross-language:
     name: Java -> Iceberg -> Python

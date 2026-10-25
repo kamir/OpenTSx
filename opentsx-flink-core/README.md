@@ -9,6 +9,8 @@ It aggregates five-minute event-time windows with ten seconds of allowed out-of-
 `NORMALIZE` centers values and updates the cached mean. Unsupported steps and output types fail before execution.
 The Kafka source includes `flink-connector-base` at the same pinned Flink version.
 Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.
+The `pfd-acceptance` Maven profile verifies a recorder-exported flow through a real Kafka-compatible broker and
+Flink in the KafScale CI job. See the PFD contract for prerequisites, commands and result artifacts.
 
 Apache Flink integration for OpenTSx time series analysis framework.
 
