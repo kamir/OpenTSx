@@ -2,6 +2,10 @@
 
 Module: `opentsx-retrieval` ([README](../../opentsx-retrieval/README.md)).
 
+The HTTP server's `--iceberg` mode requires existing `episodes` and `series` tables. It uses the existing-only
+store path and does not provision missing namespaces or tables. The writer/ingestion path remains responsible
+for provisioning. Existing-only store access does not authenticate HTTP callers or enforce per-user resource grants.
+
 ## 9.1 The retrieval API
 
 ```java

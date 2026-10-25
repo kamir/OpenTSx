@@ -170,6 +170,11 @@ episodes). On a large Iceberg table the first request after that is slow.
 
 Episodes come back as JSON by default.
 
+The `--iceberg` mode opens existing `episodes` and `series` tables through `IcebergSeriesStore.openExisting`.
+Missing tables or namespaces fail startup without creating them. The store rejects writes and does not expose
+its mutable episodes table. Provision and populate the tables through the existing writer path before starting
+Retrieval. This mode does not add user authentication or resource authorization to the HTTP endpoints.
+
 With `Accept: application/x-opentsx-avro-stream` they come back as an Avro single-object stream. This gives
 identical objects in Java and Python.
 

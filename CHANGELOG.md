@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- Iceberg-backed Retrieval opens existing episode and series tables without creating missing namespaces or
+  tables. Its store rejects writes, including empty batches, and does not expose a mutable episodes table.
+  The existing writer path retains provisioning behavior. The new properties-based reader factory closes its
+  owned catalog if table loading fails; the catalog-taking overload leaves ownership with the caller.
+
 - The Python topic reader closes consumers on failures, validates time filters before creating a consumer,
   disables automatic offset storage, and shares one finite timeout across metadata, watermarks and polling.
   Assigned reads tolerate at most 32 nonfatal unsupported FindCoordinator notices within that deadline;
