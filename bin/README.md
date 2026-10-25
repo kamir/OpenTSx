@@ -9,7 +9,7 @@
 | `005_minimal_no_kafka_demo.sh`, `120_run_demo.sh` | 2.x demos (sine-wave generator, without/with Kafka) |
 | `000_launch_tsa_workbench.sh` | 2.x GUI (MacroRecorder2) |
 | `episode_02/03/09/10_*.sh` | 2.x guided demos (`org.opentsx.demo.onboarding.*`), used with `exercises/` |
-| `run_all_tests.sh` | compiles and runs the 2.x exercise validations (`tests/`) |
+| `run_all_tests.sh` | runs Maven exercise regressions; full mode also checks demo syntax and required docs |
 
 Tests for the current modules run with `mvn verify` and `pytest` (see the [user manual, chapter 12](../docs/user-manual/12-operations.md)).
 Obsolete scripts (Kudu, Spark 2, Cloudera deployment) are in `archive/bin/`.

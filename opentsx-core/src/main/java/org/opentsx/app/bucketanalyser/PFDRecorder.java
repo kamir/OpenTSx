@@ -2,6 +2,8 @@ package org.opentsx.app.bucketanalyser;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.opentsx.core.config.ConfigManager;
+import org.opentsx.core.pfd.PFDValidation;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,14 +37,12 @@ public class PFDRecorder {
         currentFlow.name = name;
         currentFlow.version = "1.0.0";
         currentFlow.steps = new ArrayList<>();
-        // Default Input/Output placeholders - to be configured via UI later
         currentFlow.input = new Input();
         currentFlow.input.type = "KAFKA";
-        currentFlow.input.topic = "default-input";
+        currentFlow.input.topic = ConfigManager.getInstance().getString("opentsx.pfd.input.topic", null);
 
         currentFlow.output = new Output();
-        currentFlow.output.type = "KAFKA";
-        currentFlow.output.topic = "default-output";
+        currentFlow.output.type = "LOG";
     }
 
     public void addStep(String operation, Map<String, Object> params) {
@@ -60,12 +60,15 @@ public class PFDRecorder {
     }
 
     public void saveToFile(String filepath) throws IOException {
+        PFDValidation.requireText(currentFlow.name, "Flow name");
+        PFDValidation.requireText(currentFlow.input.topic, "Kafka input topic");
+        for (Step step : currentFlow.steps) {
+            PFDValidation.validateOperation(step.operation, step.params);
+        }
         try (FileWriter writer = new FileWriter(filepath)) {
             writer.write(toJSON());
         }
     }
-
-    // --- Data Structures ---
 
     public static class ProcessingFlowDescriptor {
         public String name;

@@ -17,6 +17,39 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stop, rejection before control publication, and a series checkpoint restart. The existing KafScale CI job runs
   retrieval acceptance and retains its reports. See [the operating guide](docs/devops/kafka-native-streaming.md).
 
+- The PFD runtime accepts `--out-of-orderness` in milliseconds with a ten-second default and permits zero delay.
+  It validates both runtime options in either order and rejects invalid values and duplicates before graph creation.
+
+- The PFD runtime accepts `--window-size` in milliseconds, matching `TimeSeriesAnalysisJob`, with a five-minute
+  default. Invalid window values and unexpected trailing arguments fail before graph construction.
+
+- CI verifies recorder-exported PFDs through Kafka and Flink, including completed event-time window values.
+  The opt-in `pfd-acceptance` profile retains the descriptor, Flink log and verified result as artifacts.
+
+- The exercise runner uses the Maven classpath, propagates failed assertions and rejects invalid modes.
+  Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
+- Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
+  Both trackers label their JSON display action `Show PFD`.
+- Local SequenceFile loaders stop at EOF, handle empty buckets and close readers. The file loader reads
+  at most the configured record limit. Failed processing stops loading and retains the original error cause.
+- Classic bucket workflow entry points `loadViaContext` and `processBucket` throw `UnsupportedOperationException`
+  instead of reporting success with empty results. `MacroRunner` propagates the unsupported-load error.
+- Classic FFT conversion preserves the input coordinates and the frequency coordinates of FFT results.
+  `TimeSeriesObjectFFT` headers, diagnostics and error messages use English; averaged series use the `Mean_` prefix.
+- Desktop FFT derives sampling rates from uniformly spaced coordinates and requests an explicit rate for integer
+  index axes. Invalid data and rates produce an error; cancelling the rate dialog leaves the flow unchanged.
+- A Maven download that failed with HTTP 502 failed the build, because Maven retries only 429 and 503 by default.
+  `.mvn/maven.config` now retries a download up to five times, 3 seconds apart, on 429, 500, 502, 503 and 504.
+- The bucket analysis CLI honors its input arguments, accepts an optional filename filter and record limit,
+  and rejects invalid input. `BucketLoader.setLimit` applies to all three load and process entry points.
+- PFD file export, schema and runtime accept Kafka input, centering and log output. Unsupported operations,
+  normalization methods and sinks fail explicitly. Topics and brokers require configuration; event-time
+  watermarks advance from observation timestamps. The missing Flink connector-base dependency is included.
+- The modern desktop tracker starts with an empty transformation tree instead of Swing sample items.
+- The Flink null-field aggregation test runs with nullable getter fixtures and preserves its result assertions.
+- Z-score normalization rejects malformed, non-finite and zero-variance inputs before producing invalid values.
+- PFD log output writes JSON coordinates and values for every window, including fewer than five points.
+
 ## [3.0.1] - 2026-10-16
 
 ### Fixed

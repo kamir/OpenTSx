@@ -40,12 +40,20 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
     
     public static void main(String[] args) throws Exception {
         
-        args = new String[4];
-        args[0] = "tstest/sample";
-        args[1] = "b2";
-        args[2] = "false";
-        args[3] = "true";
-        
+        if (args == null || args.length < 4 || args.length > 6) {
+            throw new IllegalArgumentException(
+                    "Usage: BucketAnalyserTool <folder> <label> <raw:true|false> <normalized:true|false> [filter] [limit]");
+        }
+        for (int i = 2; i <= 3; i++) {
+            if (!args[i].equalsIgnoreCase("true") && !args[i].equalsIgnoreCase("false")) {
+                throw new IllegalArgumentException("Expected true or false at argument " + i);
+            }
+        }
+        File folder = new File(args[0]);
+        if (!folder.isDirectory()) {
+            throw new IllegalArgumentException("Input folder does not exist or is not a directory: " + args[0]);
+        }
+
 //       int mode = mode_RIS;
         int mode = mode_DFA;
         
@@ -54,16 +62,25 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
         TSBucket.useHDFS = false;
         
 //        int LIMIT = Integer.MAX_VALUE;
-        int LIMIT = 50;
+        int LIMIT = org.opentsx.tsbucket.BucketLoader.default_LIMIT;
+        if (args.length == 6) {
+            try {
+                LIMIT = Integer.parseInt(args[5]);
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Record limit must be a nonnegative integer", ex);
+            }
+            if (LIMIT < 0) {
+                throw new IllegalArgumentException("Record limit must be a nonnegative integer");
+            }
+        }
         
         TSBucketFileFilter tsbf = new TSBucketFileFilter();
-        String filter = "LRC_beta_0.9";
+        String filter = args.length >= 5 ? args[4] : "";
 //        String filter = "alpha_0.5";   
         
         tsbf.setFilter(filter);
 
         // default settings 
-        File folder = new File( args[0] );
                      
         System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
         
@@ -133,6 +150,9 @@ public class BucketAnalyserTool extends SimpleFilteredBucketTool {
         // get a file-listing of the default input folder 
         // (a folder in the local FS)
         File[] files = folder.listFiles( tsbf );
+        if (files == null) {
+            throw new java.io.IOException("Cannot list input folder: " + folder.getAbsolutePath());
+        }
         tool.workOnBucketFolder( files );
 
         //

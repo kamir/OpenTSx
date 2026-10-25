@@ -92,9 +92,31 @@ standalone programs with a `main` method:
 
 To use them with v2 data, convert episodes with the legacy bridge ([chapter 13](13-migration.md)).
 
+`BucketAnalyserTool` uses the supplied input folder and DFA flags. Optional arguments select a filename
+substring and record limit. See [bucket analysis inputs](../../opentsx-core/README.md#supply-bucket-analysis-inputs).
+
+The desktop AR, MA, ARMA, ARIMA, SARIMA and CARIMA actions are disabled because they have no implementation.
+The modern tracker also disables Java and Scala export. Both trackers use `Show PFD` to display JSON in the window.
+The modern tracker starts without sample tree items.
+
+Local SequenceFile loading reads the actual records, handles empty buckets and respects the file loader's
+record limit. Processing errors stop the load with their cause retained. The format stores labels and Y values;
+loading reconstructs sequential X values. See [local bucket loading](../../opentsx-core/README.md#reload-local-sequencefile-buckets).
+
+Executing a `MacroRunner` or an exported Java/Scala bucket workflow stops with `UnsupportedOperationException`:
+context-based loading and named bucket processing are not implemented. See
+[bucket workflow support](../../opentsx-core/README.md#check-bucket-workflow-support) for the exact error messages.
+
+The desktop FFT action derives its sampling rate from uniformly spaced coordinates. For integer index coordinates
+with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
+See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
+
 ### Flink jobs (`opentsx-flink-core`, Flink 1.18, 2.x model)
 
 * `TimeSeriesAnalysisJob` aggregates observation streams into windowed `TimeSeriesObject`s.
+* `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,
+  `NORMALIZE` centering and `LOG` output. Topics and broker addresses require explicit configuration.
+  See [PFD validation](../devguide/validation/PFD_VALIDATION_PLAN.md).
 * `pfd.DynamicTopologyJob` builds a Flink topology from a JSON processing-flow descriptor; the schema is in
   [`docs/devguide/schemas`](../devguide/schemas/).
 * A Flink adapter for the v2 statistics engine is planned (see [chapter 15](15-roadmap.md)).

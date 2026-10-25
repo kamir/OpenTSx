@@ -6,7 +6,9 @@
     "properties": {
         "name": {
             "type": "string",
-            "description": "Name of the processing flow"
+            "description": "Name of the processing flow",
+            "minLength": 1,
+            "pattern": "\\S"
         },
         "version": {
             "type": "string",
@@ -18,20 +20,21 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "KAFKA",
-                        "FILE",
-                        "GENERATOR"
+                        "KAFKA"
                     ]
                 },
                 "topic": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
                 },
                 "schema": {
                     "type": "string"
                 }
             },
             "required": [
-                "type"
+                "type",
+                "topic"
             ]
         },
         "steps": {
@@ -40,23 +43,27 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "\\S"
                     },
                     "operation": {
                         "type": "string",
                         "enum": [
-                            "WINDOW_AGGREGATE",
-                            "NORMALIZE",
-                            "FILTER",
-                            "DECOMPOSE",
-                            "DETECT_ANOMALY",
-                            "SMOOTH",
-                            "DFA"
+                            "NORMALIZE"
                         ]
                     },
                     "params": {
                         "type": "object",
-                        "additionalProperties": true
+                        "properties": {
+                            "method": {
+                                "type": "string",
+                                "enum": [
+                                    "center"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false
                     }
                 },
                 "required": [
@@ -71,10 +78,7 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "KAFKA",
-                        "FILE",
-                        "LOG",
-                        "OPENTSDB"
+                        "LOG"
                     ]
                 },
                 "topic": {

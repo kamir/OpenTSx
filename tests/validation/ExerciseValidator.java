@@ -139,7 +139,7 @@ public class ExerciseValidator {
         pass("TimeSeriesObject has " + ts.yValues.size() + " points");
 
         if (expectedMean != null) {
-            checkStatistic("Mean", ts.getAvarage(), expectedMean, tolerance);
+            checkStatistic("Mean", ts.getAvarage2(), expectedMean, tolerance);
         }
 
         if (expectedStddev != null) {

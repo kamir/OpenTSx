@@ -1,8 +1,26 @@
-> **Status:** Flink 1.18 jobs on the 2.x model (`TimeSeriesObject`). This module also contains `pfd.DynamicTopologyJob`, which builds a topology from a JSON processing-flow descriptor (schema: [`docs/devguide/schemas`](../docs/devguide/schemas/)). A Flink adapter for the v2 statistics engine (`opentsx-stats`) is planned with the Flink upgrade. See the [user manual, chapter 11](../docs/user-manual/11-classic-analytics.md).
-
 # OpenTSx Flink Integration
 
+Flink 1.20.5 jobs use the legacy `TimeSeriesObject` API. The PFD runtime accepts Kafka input,
+centering and log output. See the [PFD contract](../docs/devguide/validation/PFD_VALIDATION_PLAN.md)
+and [classic analytics manual](../docs/user-manual/11-classic-analytics.md).
+
+`pfd.DynamicTopologyJob` requires an explicit input topic and the existing `bootstrap.servers` configuration key.
+It defaults to five-minute event-time windows with ten seconds of allowed out-of-order arrival.
+Append `--window-size <milliseconds>` after the descriptor filename or inline JSON to choose a positive integer
+window size. The default is `300000` milliseconds, matching `TimeSeriesAnalysisJob`.
+Set `--out-of-orderness <milliseconds>` to a non-negative integer for the watermark tolerance; its default is
+`10000`. Zero removes the configured delay. Both options can appear once, in either order, after the descriptor.
+Invalid values, duplicate options and unknown arguments fail before the Flink graph is built.
+`NORMALIZE` centers values and updates the cached mean. Unsupported steps and output types fail before execution.
+The Kafka source includes `flink-connector-base` at the same pinned Flink version.
+Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.
+The `pfd-acceptance` Maven profile verifies a recorder-exported flow through a real Kafka-compatible broker and
+Flink in the KafScale CI job. See the PFD contract for prerequisites, commands and result artifacts.
+
 Apache Flink integration for OpenTSx time series analysis framework.
+
+The aggregation tests exercise nullable getters with local Observation fixtures. Avro timestamp and value
+fields remain required; the generated setters cannot construct null primitive fields.
 
 ## Overview
 

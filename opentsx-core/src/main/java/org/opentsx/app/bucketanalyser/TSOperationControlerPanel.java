@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.OptionalDouble;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,6 +47,10 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
      */
     public TSOperationControlerPanel() {
         initComponents();
+        for (JButton button : new JButton[]{jButton17, jButton23, jButton24, jButton25, jButton26, jButton27}) {
+            button.setEnabled(false);
+            button.setToolTipText("This operation is not implemented");
+        }
     }
 
     public Vector<TimeSeriesObject> rows;
@@ -427,28 +432,84 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-
-        String operationLabel = "FFT of ";
-        String operationPrefix = "FFT_";
-
-        String source = this.label;
-        String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject r : this.rows) {
-
-            TimeSeriesObjectFFT rFFT = TimeSeriesObjectFFT.convertToMessreiheFFT(r);
-            
-            v.add(rFFT.getFFT(EntropieTest.samplingRate));
-
+        try {
+            if (rows == null || rows.isEmpty()) {
+                throw new IllegalArgumentException("Select at least one series for FFT");
+            }
+            for (TimeSeriesObject row : rows) {
+                OptionalDouble inferred = fftSamplingRate(row);
+                double rate;
+                if (inferred.isPresent()) {
+                    rate = inferred.getAsDouble();
+                } else {
+                    String answer = requestFftSamplingRate(row);
+                    if (answer == null) return;
+                    try {
+                        rate = Double.parseDouble(answer.trim());
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Sampling rate must be a finite positive number", e);
+                    }
+                    if (!Double.isFinite(rate) || rate <= 0) {
+                        throw new IllegalArgumentException("Sampling rate must be a finite positive number");
+                    }
+                }
+                v.add(TimeSeriesObjectFFT.convertToMessreiheFFT(row).getFFT(rate));
+            }
+        } catch (IllegalArgumentException e) {
+            showFftError(e.getMessage());
+            return;
         }
-
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "FFT of " + this.label);
-
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(this.label, "FFT_" + this.label, "FFT of "));
+        showFftResults(v);
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private static OptionalDouble fftSamplingRate(TimeSeriesObject row) {
+        int count = row.yValues.size();
+        if (count < 3 || row.xValues.size() != count) {
+            throw new IllegalArgumentException("FFT needs at least three samples with matching coordinates");
+        }
+        for (int i = 0; i < count; i++) {
+            if (!(row.xValues.get(i) instanceof Number) || !(row.yValues.get(i) instanceof Number)
+                    || !Double.isFinite(((Number) row.xValues.get(i)).doubleValue())
+                    || !Double.isFinite(((Number) row.yValues.get(i)).doubleValue())) {
+                throw new IllegalArgumentException("FFT values and coordinates must be finite");
+            }
+        }
+        double first = ((Number) row.xValues.get(0)).doubleValue();
+        double step = ((Number) row.xValues.get(1)).doubleValue() - first;
+        if (!Double.isFinite(step) || step <= 0) {
+            throw new IllegalArgumentException("FFT coordinates must increase at a uniform interval");
+        }
+        double previous = first;
+        for (int i = 1; i < count; i++) {
+            double current = ((Number) row.xValues.get(i)).doubleValue();
+            double interval = current - previous;
+            double tolerance = Math.max(step * 1e-6, 4 * Math.max(Math.ulp(previous), Math.ulp(current)));
+            if (!Double.isFinite(interval) || interval <= 0 || Math.abs(interval - step) > tolerance) {
+                throw new IllegalArgumentException("FFT coordinates must increase at a uniform interval");
+            }
+            previous = current;
+        }
+        if (step == 1.0 && first == Math.rint(first)) return OptionalDouble.empty();
+        double rate = 1.0 / step;
+        if (!Double.isFinite(rate) || rate <= 0) {
+            throw new IllegalArgumentException("Sampling rate must be a finite positive number");
+        }
+        return OptionalDouble.of(rate);
+    }
+
+    String requestFftSamplingRate(TimeSeriesObject row) {
+        return JOptionPane.showInputDialog("Sampling rate (samples per time unit) for index series: " + row.getLabel());
+    }
+
+    void showFftError(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+
+    void showFftResults(Vector<TimeSeriesObject> values) {
+        MultiChart.open(values, this.jRadioButton1.isSelected(), "FFT of " + this.label);
+    }
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
 
@@ -480,10 +541,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
                 order = dfa.getPara().getGradeOfPolynom();
                 dfa.getPara().setzSValues(nrOfSValues);
 
-                // Anzahl der Werte in der Zeitreihe
                 dfa.setNrOfValues(N);
 
-                // die Werte für die Fensterbreiten sind zu wählen ...
                 dfa.initIntervalS();
 //                dfa.initIntervalSlog();
 
