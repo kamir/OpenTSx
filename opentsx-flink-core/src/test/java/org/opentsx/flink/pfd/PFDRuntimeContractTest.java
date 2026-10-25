@@ -1,6 +1,8 @@
 package org.opentsx.flink.pfd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.StreamMap;
@@ -31,6 +33,29 @@ class PFDRuntimeContractTest {
 
     @TempDir
     Path directory;
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 5})
+    void logOutputIncludesEveryCoordinateAndValue(int size) throws Exception {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("Window output");
+        for (int i = 0; i < size; i++) row.addValuePair(1000.0 + i, -1.0 + i);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        DataStream<TimeSeriesObject> input = env.fromCollection(List.of(row), new TimeSeriesObjectTypeInfo());
+        invoke("buildSink", new Class<?>[]{DataStream.class, PFDDefinition.PFDOutput.class}, input, flow().output);
+        var sink = env.getTransformations().get(env.getTransformations().size() - 1);
+        OneInputTransformation<TimeSeriesObject, String> transformation =
+                (OneInputTransformation<TimeSeriesObject, String>) sink.getInputs().get(0);
+        StreamMap<TimeSeriesObject, String> operator = (StreamMap<TimeSeriesObject, String>) transformation.getOperator();
+        JsonObject output = JsonParser.parseString(operator.getUserFunction().map(row)).getAsJsonObject();
+        assertEquals("Window output", output.get("label").getAsString());
+        assertEquals(size, output.getAsJsonArray("timestamps").size());
+        assertEquals(size, output.getAsJsonArray("values").size());
+        for (int i = 0; i < size; i++) {
+            assertEquals(1000.0 + i, output.getAsJsonArray("timestamps").get(i).getAsDouble());
+            assertEquals(-1.0 + i, output.getAsJsonArray("values").get(i).getAsDouble());
+        }
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"DFA", "SMOOTH", "LOAD_DATA", "CACHE", "FILTER", "WINDOW_AGGREGATE",
