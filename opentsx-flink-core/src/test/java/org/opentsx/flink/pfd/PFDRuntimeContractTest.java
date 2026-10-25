@@ -121,8 +121,8 @@ class PFDRuntimeContractTest {
             System.setProperty("bootstrap.servers", "fixture-broker:19092");
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
             DataStream<?> stream = (DataStream<?>) invoke("buildSource",
-                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class},
-                    env, flow().input);
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    env, flow().input, 10000L);
             SourceTransformation<?, ?, ?> transformation = (SourceTransformation<?, ?, ?>) stream.getTransformation();
             KafkaSource<?> source = (KafkaSource<?>) transformation.getSource();
             Method configuration = KafkaSource.class.getDeclaredMethod("getConfiguration");
@@ -142,8 +142,8 @@ class PFDRuntimeContractTest {
         try {
             System.setProperty("bootstrap.servers", " ");
             assertThrows(IllegalArgumentException.class, () -> invoke("buildSource",
-                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class},
-                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input));
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input, 10000L));
         } finally {
             if (original == null) System.clearProperty("bootstrap.servers");
             else System.setProperty("bootstrap.servers", original);
@@ -156,8 +156,8 @@ class PFDRuntimeContractTest {
         try {
             System.setProperty("bootstrap.servers", "fixture-broker:19092");
             DataStream<?> stream = (DataStream<?>) invoke("buildSource",
-                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class},
-                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input);
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input, 10000L);
             SourceTransformation<Observation, ?, ?> source =
                     (SourceTransformation<Observation, ?, ?>) stream.getTransformation();
             WatermarkStrategy<Observation> strategy = source.getWatermarkStrategy();

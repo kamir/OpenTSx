@@ -31,7 +31,7 @@ public class DynamicTopologyJob {
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
             System.err.println("Usage: DynamicTopologyJob (<path-to-pfd.json> OR --json <json-content>)"
-                    + " [--window-size <milliseconds>]");
+                    + " [--window-size <milliseconds>] [--out-of-orderness <milliseconds>]");
             System.exit(1);
         }
 
@@ -46,17 +46,37 @@ public class DynamicTopologyJob {
 
         int optionIndex = pfdContent != null ? 2 : 1;
         long windowSizeMs = 300000L;
-        if (args.length > optionIndex) {
-            if (args.length != optionIndex + 2 || !"--window-size".equals(args[optionIndex])) {
-                throw new IllegalArgumentException("Expected --window-size <milliseconds> after the descriptor");
+        long outOfOrdernessMs = 10000L;
+        boolean windowConfigured = false;
+        boolean toleranceConfigured = false;
+        for (int i = optionIndex; i < args.length; i += 2) {
+            String option = args[i];
+            boolean window = "--window-size".equals(option);
+            if (!window && !"--out-of-orderness".equals(option)) {
+                throw new IllegalArgumentException("Expected --window-size or --out-of-orderness after the descriptor");
             }
+            if (i + 1 >= args.length) {
+                throw new IllegalArgumentException("Missing value for " + option);
+            }
+            if ((window && windowConfigured) || (!window && toleranceConfigured)) {
+                throw new IllegalArgumentException("Duplicate option: " + option);
+            }
+            long value;
             try {
-                windowSizeMs = Long.parseLong(args[optionIndex + 1]);
+                value = Long.parseLong(args[i + 1]);
             } catch (NumberFormatException failure) {
-                throw new IllegalArgumentException("--window-size must be a positive integer in milliseconds", failure);
+                throw new IllegalArgumentException(option + " must be an integer in milliseconds", failure);
             }
-            if (windowSizeMs <= 0) {
-                throw new IllegalArgumentException("--window-size must be a positive integer in milliseconds");
+            if (value < 0 || (window && value == 0)) {
+                throw new IllegalArgumentException(option + " must be "
+                        + (window ? "positive" : "non-negative") + " in milliseconds");
+            }
+            if (window) {
+                windowSizeMs = value;
+                windowConfigured = true;
+            } else {
+                outOfOrdernessMs = value;
+                toleranceConfigured = true;
             }
         }
 
@@ -65,7 +85,7 @@ public class DynamicTopologyJob {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 1. Source
-        DataStream<Observation> sourceStream = buildSource(env, pfd.input);
+        DataStream<Observation> sourceStream = buildSource(env, pfd.input, outOfOrdernessMs);
 
         // 2. Initial Aggregation (Observation -> TimeSeriesObject)
         DataStream<TimeSeriesObject> timeSeriesStream = sourceStream
@@ -118,7 +138,8 @@ public class DynamicTopologyJob {
         return flow;
     }
 
-    private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input) {
+    private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input,
+                                                        long outOfOrdernessMs) {
         if ("KAFKA".equalsIgnoreCase(input.type)) {
             String brokers = ConfigManager.getInstance().getString("bootstrap.servers", null);
             PFDValidation.requireText(brokers, "bootstrap.servers");
@@ -131,7 +152,7 @@ public class DynamicTopologyJob {
                     .build();
 
             WatermarkStrategy<Observation> watermarks = WatermarkStrategy
-                    .<Observation>forBoundedOutOfOrderness(Duration.ofSeconds(10))
+                    .<Observation>forBoundedOutOfOrderness(Duration.ofMillis(outOfOrdernessMs))
                     .withTimestampAssigner((observation, timestamp) -> observation.getTimestamp());
             return env.fromSource(source, watermarks, "Kafka Source");
         } else {
