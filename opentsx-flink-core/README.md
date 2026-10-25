@@ -11,6 +11,9 @@ The Kafka source includes `flink-connector-base` at the same pinned Flink versio
 
 Apache Flink integration for OpenTSx time series analysis framework.
 
+The aggregation tests exercise nullable getters with local Observation fixtures. Avro timestamp and value
+fields remain required; the generated setters cannot construct null primitive fields.
+
 ## Overview
 
 This module provides a comprehensive integration between OpenTSx and Apache Flink, enabling scalable, distributed time series analysis with exactly-once processing guarantees.
