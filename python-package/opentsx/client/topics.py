@@ -147,6 +147,7 @@ class TopicReader:
             c.assign(assign)
             remaining()
             open_parts = set(ends)
+            starts = {partition.partition: partition.offset for partition in assign}
             coordinator_events = 0
             while open_parts:
                 msg = c.poll(remaining())
@@ -172,8 +173,14 @@ class TopicReader:
                             )
                         continue
                     raise RuntimeError(f"reading {topic}: {error}")
-                if msg.offset() + 1 >= ends.get(msg.partition(), 0):
-                    open_parts.discard(msg.partition())
+                partition, offset = msg.partition(), msg.offset()
+                if partition not in open_parts or offset < starts[partition]:
+                    continue
+                if offset >= ends[partition]:
+                    open_parts.discard(partition)
+                    continue
+                if offset + 1 >= ends[partition]:
+                    open_parts.discard(partition)
                 name, rec = m.decode(msg.value())
                 remaining()
                 if name == "Episode" and _matches(rec, metric, tags, lo, hi):

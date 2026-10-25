@@ -33,6 +33,7 @@ See the [user manual](../docs/user-manual/10-python.md) (chapters 10 and 11).
 You need the `kafka` extra and a reachable Kafka endpoint or KafScale proxy.
 `TopicReader.episodes()` explicitly assigns partitions and disables automatic commits and offset storage.
 It reads up to the initial partition watermarks, filters episodes and keeps one episode per identity.
+Records outside each initial low/high offset range and records from completed partitions are not decoded.
 `max_records` defaults to 20,000 and rejects an initial snapshot above that limit.
 
 `timeout_s` defaults to 30 seconds and must be finite and positive. One monotonic deadline covers

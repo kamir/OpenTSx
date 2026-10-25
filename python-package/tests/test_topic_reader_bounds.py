@@ -165,3 +165,43 @@ def test_metadata_error_before_assignment_is_not_filtered(clock):
         TopicReader("broker:9092", consumer_factory=lambda conf: consumer).episodes("episodes")
     assert not consumer.assigned
     assert consumer.closed == 1
+
+
+@pytest.mark.parametrize(
+    "offsets", [[(0, 5), (0, 6), (1, 5)], [(0, 4), (0, 5), (1, 5)], [(0, 6), (1, 5)]]
+)
+def test_two_partitions_keep_only_the_initial_watermark_range(clock, monkeypatch, offsets):
+    events = [
+        SimpleNamespace(
+            error=lambda: None,
+            partition=lambda p=p: p,
+            offset=lambda o=o: o,
+            value=lambda p=p, o=o: (p, o),
+        )
+        for p, o in offsets
+    ]
+    consumer = Consumer(clock, events)
+    consumer.list_topics = lambda topic, timeout: SimpleNamespace(
+        topics={topic: SimpleNamespace(error=None, partitions={0: None, 1: None})}
+    )
+    consumer.get_watermark_offsets = lambda partition, timeout: (5, 6)
+    decoded = []
+
+    def decode(payload):
+        decoded.append(payload)
+        return "Episode", {
+            "episodeId": str(payload),
+            "series": {"seriesId": "synthetic"},
+            "tStart": 0,
+            "tEnd": 1,
+        }
+
+    monkeypatch.setattr(topics.m, "decode", decode)
+    got = TopicReader("broker:9092", consumer_factory=lambda conf: consumer).episodes(
+        "episodes", max_records=2
+    )
+    expected = [(p, o) for p, o in offsets if o == 5]
+    assert decoded == expected
+    assert {e["episodeId"] for e in got} == {str(payload) for payload in expected}
+    assert len(got) <= 2
+    assert consumer.closed == 1
