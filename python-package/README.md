@@ -23,10 +23,28 @@ pip install -e "python-package[kafka,viz]"    # + confluent-kafka, plotting
 | `opentsx.model` | series identity, episodes, Avro single-object encode/decode, summaries, pandas I/O (`opentsx.model.pandas_io`) |
 | `opentsx.store.iceberg` | `load_catalog`, `read_episodes`, `read_frame` for tables written by the Java Iceberg store |
 | `opentsx.stats` | `QuantileSketch` (same bytes as Java), `stats_to_frame` |
-| `opentsx.client` | `RetrievalClient`: episodes, pattern search, similar episodes, segments |
+| `opentsx.client` | `RetrievalClient`: episodes, pattern search, similar episodes, segments; `TopicReader`: bounded direct topic reads |
 | `opentsx` | classic algorithms `DFA`, `MFDFA`, `EventSynchronization`, `RIS`; `TimeSeriesObject`, `TSBucket` |
 
 See the [user manual](../docs/user-manual/10-python.md) (chapters 10 and 11).
+
+## Read a topic
+
+You need the `kafka` extra and a reachable Kafka endpoint or KafScale proxy.
+`TopicReader.episodes()` explicitly assigns partitions and disables automatic commits and offset storage.
+It reads up to the initial partition watermarks, filters episodes and keeps one episode per identity.
+`max_records` defaults to 20,000 and rejects an initial snapshot above that limit.
+
+`timeout_s` defaults to 30 seconds and must be finite and positive. One monotonic deadline covers
+metadata, watermark calls and polling. It also detects a deadline exceeded by a returned call;
+it does not interrupt consumer construction, cleanup or an unresponsive native call.
+Invalid time filters fail before consumer creation. Start and end values require a timezone.
+
+After explicit assignment, only nonfatal `_UNSUPPORTED_FEATURE` events whose text starts with
+`FindCoordinator response error:` are ignored. The 33rd such event raises `RuntimeError`.
+These events consume the same deadline. Other broker errors propagate; partition EOF ends that partition.
+The consumer closes on success and failure. These rules have deterministic local regression tests;
+they do not establish compatibility with every broker deployment.
 
 ## Quick Start
 

@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- The Python topic reader closes consumers on failures, validates time filters before creating a consumer,
+  disables automatic offset storage, and shares one finite timeout across metadata, watermarks and polling.
+  Assigned reads tolerate at most 32 nonfatal unsupported FindCoordinator notices within that deadline;
+  other broker errors propagate.
+
 - The PFD runtime accepts `--out-of-orderness` in milliseconds with a ten-second default and permits zero delay.
   It validates both runtime options in either order and rejects invalid values and duplicates before graph creation.
 
