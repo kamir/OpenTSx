@@ -10,6 +10,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ### Fixed
 
+- CI verifies recorder-exported PFDs through Kafka and Flink, including completed event-time window values.
+  The opt-in `pfd-acceptance` profile retains the descriptor, Flink log and verified result as artifacts.
+
 - The exercise runner uses the Maven classpath, propagates failed assertions and rejects invalid modes.
   Seeded exercise checks recalculate means and test the actual scaling and daily-window behavior.
 - Unavailable desktop analysis and modern Java/Scala export buttons are disabled with explanatory tooltips.
