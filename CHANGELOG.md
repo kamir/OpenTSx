@@ -10,6 +10,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `pair.xcorr` in the web workbench (TASK-015 phase 1c, operator "Cross-correlation"): per pair window the lagged
+  cross-correlation CC(k) for k = -lags..lags clock ticks, with the fields `max` (peak of |CC|, sign kept), `lag` (in
+  seconds, > 0 when B follows A) and `strength` ((|max| - mean) / std of CC). Ported from `KreuzKorrelation` and
+  `CCFunction` of kamir/WikiExplorer.NG (Apache License 2.0); `tools/pair_xcorr_vectors.sh` runs the original code
+  for the test vectors `docs/datamodel-2026/testvectors/pair-xcorr.v1.json`, which the port matches to 12 decimals.
+
 - Pair windows in the web workbench (TASK-015 phase 1b, `src/workbench/pairs.ts`): a pair method compares two series
   window by window and stamps each result at the window centre. Episodes of A and B are paired by the same range or
   on their intersection; `window: episode` gives one point per pair range, a width and step give a regular series per

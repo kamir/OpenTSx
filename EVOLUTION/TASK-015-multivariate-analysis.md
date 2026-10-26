@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-015-multivariate-analysis
 - **Created**: 2026-10-26
-- **Status**: In progress (pair windows: phases 1a and 1b done)
+- **Status**: In progress (pair windows: phases 1a to 1c done)
 - **Priority**: High
 - **Epic**: P8 System reconstruction, simulation and optimization
 - **Origin**: split out of [TASK-011](TASK-011-datamodel-refresher-2026.md) on 2026-10-26 (D90, [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md))
@@ -102,6 +102,27 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 | `pair.scatter` | `slope`, `r` | least squares line and Pearson correlation of the aligned values |
 | `pair.granger` | `p` | p-value of the F test, `GrangerCausality.grangerCausalityTest` (opentsx-core/src/main/java/org/opentsx/algorithms/statistics/GrangerCausality.java:19 to 53) |
 
+`pair.xcorr` as ported (phase 1c, opentsx-saas-frontend/src/workbench/xcorr.ts):
+
+- Per window CC(k) for k = -lags..lags clock ticks (parameter `lags`, default 10, recorded as the label
+  `pair.lags`), computed as `KreuzKorrelation.calcKRCoeffizient` does: both series minus their mean, B shifted by k
+  and filled with 0, divided by (N - 1) sA sB with sample standard deviations, so CC(0) is the Pearson correlation.
+  `strength` is `CCFunction.calcStrength_VERSION_A` over that function.
+- Lag sign: CC(k) pairs A at t with B at t - k, so B following A by d peaks at k = -d. `lag` is -k times the clock, in
+  seconds: lag > 0 means B follows A.
+- `max` and `lag` are taken at the extreme of |CC| that `strength` measures, with its sign. The old `t_max` only looks
+  at values above 0 (`KreuzKorrelation.java:230` to `:233`); for an anti-correlated pair it named a positive side
+  peak (0.19 at k = 5 in the vectors) while the strength measured the negative one (-0.98).
+- Gaps, which the old code never had: a tick without a value counts as the mean of its series (0 after centring, the
+  value the old code shifts in); mean and standard deviation come from the ticks that have a value.
+- `calcKR_SLIDINGWINDOW` stops one window early (`while (bis < size)`, `KreuzKorrelation.java:465`); the framework
+  computes every window that fits. With `lags: 0`, step one tick and the same width, the first n - 1 values equal
+  the old output.
+- Test vectors from the original code: docs/datamodel-2026/testvectors/pair-xcorr.v1.json, written by
+  tools/pair_xcorr_vectors.sh. The script compiles `KreuzKorrelation` and `CCFunction` of WikiExplorer.NG at 7b56e3d
+  unchanged except for the import of `TimeSeriesObject`, which it takes from opentsx-core, the renamed successor of
+  hadoop-ts-ng; the chart, FFT and shuffle classes they import are stubbed and not called.
+
 **Browser first, processor later**
 
 - The pair operators run in the workbench. Their OpDef has `multiInput: true` and `inCatalog: false`
@@ -129,7 +150,10 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
   `windowsOf`), `seriesKeys.ts` (canonical form and xxHash64), the diagnostic method `pair.coverage` (fields
   `coverage` and `ticks`) as the operator "Pair coverage", `Series.quality`, `EpisodeRange.labels` and `parent`;
   tests in pairs.test.ts.*
-- [ ] 1c: `pair.xcorr`, ported from kamir/WikiExplorer.NG, with test vectors from the old implementation.
+- [x] 1c: `pair.xcorr`, ported from kamir/WikiExplorer.NG, with test vectors from the old implementation. *Done
+  2026-10-26: `xcorr.ts` (`crossCorrelation`, `peakOf`, `PAIR_XCORR`), operator "Cross-correlation", vectors from
+  the original code (5 cases, CC function, peak, strength and calcKR_SLIDINGWINDOW, equal to 12 decimals), tests in
+  xcorr.test.ts. Pair methods read the operator parameters and label their own settings (`PairMethod.settings`).*
 - [ ] 1d: `pair.es` with `q_rand`, test vectors shared with python-package/tests/test_event_sync.py.
 - [ ] 1e: `pair.scatter`.
 - [ ] 1f: `pair.granger`.
