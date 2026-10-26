@@ -20,7 +20,7 @@ Where:
 | TASK-018 | [Analytics, retrieval, storage and data-source extensions](TASK-018-analytics-storage-extensions.md): analytics gaps (P6), Matrix Profile, iSAX, D6, records/s on real S3, vendor exports | planned | 2026-10-26 |
 | TASK-017 | [Digital twin of the energy system](TASK-017-digital-twin.md): atoms, wiring plan, layered BSP, three modes, house and boat twins, plant explorer (P9) | in progress | 2026-10-26 |
 | TASK-016 | [Smart Topics](TASK-016-smart-topics.md): derived topics, training outside the stream, processor and DevOps (P7) | in progress | 2026-10-26 |
-| TASK-015 | [Multivariate analysis](TASK-015-multivariate-analysis.md): pair windows, system reconstruction, simulation and optimization (P8) | planned | 2026-10-26 |
+| TASK-015 | [Multivariate analysis](TASK-015-multivariate-analysis.md): pair windows, system reconstruction, simulation and optimization (P8) | in progress | 2026-10-26 |
 | TASK-013 | [Web workbench](TASK-013-web-workbench.md): Swing bucket analyser in the browser, oscilloscope, flow graph, export as `opentsx.dag.v1` | in progress | 2026-10-12 |
 | TASK-012 | [Briefing for the local agent](TASK-012-lokaler-agent.md) (German): repository hygiene, local test installation (k3s, KafScale, images), market history with credentials, private data, Modbus | open | 2026-10-12 |
 | TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | completed 2026-10-26 ([closing](../docs/datamodel-2026/18-CLOSING-TASK-011.md), section 9); phases 6 to 9 and the backlog continue in TASK-015 to TASK-019 and TASK-010 | 2026-10-09 |

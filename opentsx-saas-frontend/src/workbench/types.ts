@@ -20,6 +20,11 @@ export interface Series {
   component?: string;
   x: Float64Array;
   y: Float64Array;
+  /**
+   * One byte per value as in the v2 episode, 0 = ok. Pair methods set 1 where the window coverage is below the
+   * minimum. It belongs to this x: an operator that builds a new x array drops it (flow.ts, `evaluate`).
+   */
+  quality?: Uint8Array;
 }
 
 /**
@@ -48,6 +53,10 @@ export interface EpisodeRange {
   end: number;
   /** Segmentation strategy of the episode (FIXED_DURATION, FEATURE_THRESHOLD, ...) when it carries one. */
   strategy?: string;
+  /** Episode labels; a pair result names its input episodes and settings here (`pair.a`, `pair.b`, ...). */
+  labels?: Record<string, string>;
+  /** The episode this one was computed from (`Provenance.parentEpisodeId`); for a pair result the episode of A. */
+  parent?: string;
 }
 
 export interface Bucket {
@@ -85,7 +94,7 @@ export interface ParamDef {
 }
 
 /** Tabs of TSOperationControlerPanel, plus the stream operators of opentsx.dag.v1. */
-export type OpGroup = 'transform' | 'univariate' | 'group' | 'stream';
+export type OpGroup = 'transform' | 'univariate' | 'multivariate' | 'group' | 'stream';
 
 export interface OpDef {
   /** Operator id as written into the DAG (`op:`). */
@@ -108,6 +117,8 @@ export interface OpDef {
   params: ParamDef[];
   /** True when the operator reads further inputs besides its first one (`FlowNode.inputs`). */
   multiInput?: boolean;
+  /** Most inputs of a multi-input operator, the first one included; no limit when unset. A pair method reads two. */
+  maxInputs?: number;
   apply: (input: Bucket, params: Params, others?: Bucket[]) => Bucket;
 }
 
