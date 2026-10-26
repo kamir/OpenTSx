@@ -93,7 +93,7 @@ WP1 goes ahead. The source runs with `commit.offsets.on.checkpoint=false`, becau
 |------|-------|----------------|
 | Parity | `opentsx-flink-core`, Java 17 and 21 jobs | The same episodes through `StatsEngine` directly and through `StatsJob` on a mini cluster give the same set of `SeriesStats`. Bounded source from a list, no network. |
 | State | same | Stop after half the input, restore from the checkpoint, finish: the same set as an uninterrupted run. |
-| KafScale | KafScale conformance job (`ci.yml:175` gains `opentsx-flink-core`) | Episodes written to KafScale come back as `SeriesStats` on the series-stats topic. Runs only with `KAFSCALE_BOOTSTRAP`. |
+| KafScale | KafScale conformance job | Episodes written to KafScale come back as `SeriesStats` on the series-stats topic. Runs only with `KAFSCALE_BOOTSTRAP`. Corrected on 2026-10-26: `ci.yml` needs no change, because the step "Verify recorder PFD through Kafka and Flink" (`ci.yml:176-179`) runs the tests of `opentsx-flink-core` with `KAFSCALE_BOOTSTRAP` set. |
 
 Documentation in the same pull request: `opentsx-flink-core/README.md`, `opentsx-stats/README.md`,
 `docs/user-manual/07-stats-quality.md` section 7.2, `CHANGELOG.md` under Unreleased.
@@ -126,12 +126,15 @@ TASK-011 line 407 also names a CI test against an Iceberg REST catalog with MinI
 ## 4. Remove the 2.x Flink example (WP3)
 
 TASK-011 line 90 asks to move `TimeSeriesAggregateFunction` and `TimeSeriesAnalysisJob` to the v2 serde or to
-deprecate them. Nothing outside `opentsx-flink-core` uses them: the only references are their own test
-(`opentsx-flink-core/src/test/java/org/opentsx/flink/functions/TimeSeriesAggregateFunctionTest.java`) and the module
-README.
+deprecate them. Nothing outside `opentsx-flink-core` uses them.
 
-The design deletes both classes, their test and the README sections in the WP1 pull request (D89). `StatsJob` is the
-v2 Flink job. The processing-flow-descriptor job (`DynamicTopologyJob`, TASK-005) stays.
+Corrected on 2026-10-26, while building WP1: inside the module, the processing-flow-descriptor job uses
+`TimeSeriesAggregateFunction` (`opentsx-flink-core/src/main/java/org/opentsx/flink/pfd/DynamicTopologyJob.java:16`
+and `:94`). This design said that only its own test and the README refer to it, which was wrong. The PFD job
+(`DynamicTopologyJob`, TASK-005) stays, so the function stays with it.
+
+The WP1 pull request deletes `TimeSeriesAnalysisJob` and the README sections about it (D89, narrowed as above).
+`StatsJob` is the v2 Flink job and the main class of the module's shaded jar.
 
 ## 5. Move the later phases out (WP4)
 
@@ -190,7 +193,7 @@ Decided on 2026-10-26. The alternatives are kept for the record.
 | D86 | Accept 2.18 bytes per value as meeting criterion 4. The criterion says the measurement decides, and the number is measured and documented. | Keep the criterion open until a codec change reaches 2.0. |
 | D87 | Add a recall@10 assertion to `PatternBenchmarkTest` with 10 planted patterns and keep the recall@12 report. | Change the wording of criterion 7 to recall@k with k equal to the planted count. |
 | D88 | `StatsJob` lives in `opentsx-flink-core`. | A new module `opentsx-flink-stats` without the 2.x dependencies of `opentsx-flink-core`. |
-| D89 | Delete `TimeSeriesAggregateFunction` and `TimeSeriesAnalysisJob`. | Mark them deprecated and keep them one release. |
+| D89 | Delete `TimeSeriesAggregateFunction` and `TimeSeriesAnalysisJob`. Narrowed on 2026-10-26 to `TimeSeriesAnalysisJob`: the PFD job uses the function (section 4). | Mark them deprecated and keep them one release. |
 | D90 | Split the open items as in section 5. | Keep phases 6 to 9 in TASK-011 and close only the phases 0 to 5 part. |
 | D91 | The OpenMetadata smoke test runs nightly, by hand and on pull requests that change the publisher. | Nightly and by hand only. |
 
