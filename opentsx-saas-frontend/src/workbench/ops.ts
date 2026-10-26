@@ -7,7 +7,8 @@
  * deviates from the Java code, the operator hint says so.
  */
 
-import { Bucket, OpDef, Params, Series } from './types';
+import { PAIRINGS, PAIR_COVERAGE, pairWindows } from './pairs';
+import { Bucket, OpDef, ParamDef, Params, Series } from './types';
 import { VECTOR_AGGREGATIONS, VECTOR_OP, alignVector } from './vector';
 
 // ---------------------------------------------------------------- helpers
@@ -766,6 +767,25 @@ const HIST_PARAMS = [
   { key: 'bins', label: 'bins', type: 'number' as const, default: 50, min: 2 },
 ];
 
+/** Parameters of every pair method (pairs.ts); `minCoverage` differs between them. */
+function pairParams(minCoverage: number): ParamDef[] {
+  return [
+    { key: 'pairing', label: 'pairing', type: 'select', default: 'same', options: PAIRINGS },
+    { key: 'window', label: 'window [s]', type: 'text', default: 'episode' },
+    { key: 'step', label: 'step [s]', type: 'number', default: 0, min: 0 },
+    { key: 'every', label: 'clock [s]', type: 'number', default: 0, min: 0 },
+    { key: 'agg', label: 'agg', type: 'select', default: 'MEAN', options: VECTOR_AGGREGATIONS },
+    { key: 'fill', label: 'fill', type: 'select', default: 'none', options: ['none', 'as-of'] },
+    { key: 'maxAge', label: 'max age [s]', type: 'number', default: 60, min: 0 },
+    { key: 'minCoverage', label: 'min coverage', type: 'number', default: minCoverage, min: 0, step: 0.05 },
+  ];
+}
+
+const PAIR_HINT =
+  'Compares series A and B window by window, one result per window at its centre. One input: every pair of its series; a second input (Properties tab, or a connection onto the node): each series of the first with each of the second. ' +
+  'pairing same: episodes with the same start and end; intersect: overlapping episodes on their overlap. window: episode (one point per pair range) or a width in seconds; step 0 puts the windows side by side. ' +
+  'A and B are put on one clock as in "Align to vector"; clock 0 takes the larger sampling interval of the two. Below "min coverage" (share of ticks where both have a value) the result is a gap with quality 1.';
+
 export const OPS: OpDef[] = [
   // Tab "Transformations" of the Swing panel
   { id: 'shuffle', label: 'Shuffle', group: 'transform', prefix: 'Shuffle_', pfdOperation: 'shuffleYValues', inCatalog: false,
@@ -813,6 +833,11 @@ export const OPS: OpDef[] = [
       { key: 'order', label: 'order', type: 'number', default: 2, min: 1 },
       { key: 'scales', label: 'scales', type: 'number', default: 40, min: 4 },
     ], apply: dfaOp },
+
+  // Tab "Multi-variate Analysis": pair methods (EVOLUTION/TASK-015-multivariate-analysis.md, "Pair windows")
+  { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', inCatalog: false, multiInput: true, maxInputs: 2,
+    hint: `${PAIR_HINT} This method gives the coverage itself and the number of ticks per window: what the other pair methods will see.`,
+    params: pairParams(0), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },
 
   // Tab "Group Operations"
   { id: 'sigma.band', label: 'Sigma Band', group: 'group', prefix: 'AVG_', pfdOperation: 'AVG', inCatalog: false,

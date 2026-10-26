@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-015-multivariate-analysis
 - **Created**: 2026-10-26
-- **Status**: Planned
+- **Status**: In progress (pair windows: phases 1a and 1b done)
 - **Priority**: High
 - **Epic**: P8 System reconstruction, simulation and optimization
 - **Origin**: split out of [TASK-011](TASK-011-datamodel-refresher-2026.md) on 2026-10-26 (D90, [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md))
@@ -20,7 +20,8 @@ the ground truth of the wind farm simulator.
 ## Pair windows
 A pair method compares two series A and B inside a window and gives one result item per window. The result items
 of one pair range form an episode with a time index of its own: the window centres. That episode is stored, plotted
-and cut into slices again like any other episode. Designed on 2026-10-26, not implemented yet.
+and cut into slices again like any other episode. Designed on 2026-10-26. The framework runs in the workbench
+(phase 1b, opentsx-saas-frontend/src/workbench/pairs.ts); the methods follow in 1c to 1f.
 
 **Pairing**
 
@@ -29,7 +30,12 @@ and cut into slices again like any other episode. Designed on 2026-10-26, not im
   (`pairing: same`): the two episodes have the same start and the same end, which is what a `FIXED_DURATION`
   segmentation (opentsx-model/src/main/avro/Segmentation.avsc:9) gives both series. Option `pairing: intersect`:
   overlapping episodes of A and B are paired on their intersection; an intersection shorter than the window is
-  dropped.
+  dropped. Two times closer than half a microsecond are the same time.
+- A series without episode ranges (a generated or file bucket) counts as one range from its first sample to its last
+  plus one sampling interval, as the loader derives a range (opentsx-saas-frontend/src/workbench/loaders.ts:142).
+- Pairs: with one input, every pair of its series in bucket order (A before B); with a second input, each series of
+  A with each series of B, B on the time axis of A. At most 200 pairs (`MAX_PAIRS`); above that the operator asks
+  for a selection first.
 - Today the workbench joins all episodes of one series into one series and drops their ranges
   (opentsx-saas-frontend/src/workbench/loaders.ts:123 to 158). Keeping the ranges is the first step (phase 1a below,
   done: `Bucket.episodes`).
@@ -49,7 +55,7 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
   (opentsx-model/src/main/avro/Episode.avsc:12), because the centres of the ranges need not be evenly spaced.
 - A window that would end after `t0 + L` is not computed.
 - The time values of the result are window centres, not sample times of A or B. The existing window operator stamps
-  the window start (opentsx-saas-frontend/src/workbench/ops.ts:578 to 606, `xs.push(start)` at 594 and 601); pair methods do not reuse it.
+  the window start (opentsx-saas-frontend/src/workbench/ops.ts:579 to 607, `xs.push(start)` at 595 and 602); pair methods do not reuse it.
 - Slices: the result series is cut into new episodes with the existing segmenters. The new episode names the result
   episode in `Segmentation.sourceEpisodeId` (opentsx-model/src/main/avro/Segmentation.avsc:16).
 
@@ -61,13 +67,25 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 - Coverage of a window: the share of ticks in which both A and B have a value. Below `minCoverage` (default 0.8)
   the result item is kept with the value NaN and the quality byte 1 (Episode.avsc:16, one byte per value,
   0 = ok), so the time index stays regular.
+- Only the ticks that lie entirely inside a window count, and the fill does not reach back across the start of the
+  pair range: a pair range is computed from its own samples. The tick and fill code is the one of `align.vector`
+  (`addSamples`, `fillColumn` in vector.ts).
+- In the workbench the quality bytes are `Series.quality` (types.ts:27). They belong to the x values they were
+  computed for: an operator that builds a new x array (resample, FFT, histogram) drops them (`keepQuality`,
+  flow.ts:407).
 
 **Result series**
 
 - A method gives one or more fields per window. Each field is a series of its own with the SeriesKey metric
   `pair.<method>.<field>` and the tags `a` (series id of A), `b` (series id of B), `window` and `step`
   (opentsx-model/src/main/avro/SeriesKey.avsc:7 to 10). Its series id follows from metric and tags as for any other
-  series.
+  series; the workbench computes it with xxHash64 in the browser (seriesKeys.ts), checked against the shared vectors
+  opentsx-model/src/test/resources/testvectors/series-id.json. `window` and `step` are ISO-8601 durations in seconds
+  (`PT120S`), or `episode`.
+- Each pair range gives a result episode of its own in both window settings: with sliding windows
+  `[t0 + W/2, t0 + W/2 + n*S)`, with `window: episode` the single point, one microsecond long. So `pair.a` and
+  `pair.b` always name one episode each. Whether the export writes the points of `window: episode` as one
+  `IRREGULAR_DELTA` episode per series instead is decided in phase 2.
 - Lag sign: a lag `tau > 0` means B follows A by `tau`.
 - Lineage: `Provenance.parentEpisodeId` holds one id (opentsx-model/src/main/avro/Provenance.avsc:11). It names the
   episode of A; the labels `pair.a`, `pair.b`, `pair.method`, `pair.window` and `pair.step` (Episode.avsc:19) name
@@ -87,15 +105,17 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 **Browser first, processor later**
 
 - The pair operators run in the workbench. Their OpDef has `multiInput: true` and `inCatalog: false`
-  (opentsx-saas-frontend/src/workbench/types.ts:87 and 91).
+  (opentsx-saas-frontend/src/workbench/types.ts:115 and 119), and `maxInputs: 2`. They sit in the tab
+  "Multi-variate Analysis", which the Swing panel has but never filled
+  (opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java:368 to 369).
 - The plan export marks them: the DAG writes `# not in the stream operator catalog` next to every operator outside
-  the catalog (opentsx-saas-frontend/src/workbench/flow.ts:695), and a pair node gets `experimental: true`.
+  the catalog (opentsx-saas-frontend/src/workbench/flow.ts:713), and a pair node gets `experimental: true`.
 - The processor reads nodes only through `in`, from a sink back to the source
   (opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/SeriesJob.java:106 to 122). A pair node that no sink
   reads is never looked at. A sink behind a pair node is refused: a series chain must have one input per node
   (SeriesJob.java:117 to 119), and a vector reads `decode.*` nodes only (VectorJob.java:85 to 91). This fails closed,
   so the processor needs no skip rule. The workbench says so before publishing: `runBlocker`
-  (opentsx-saas-frontend/src/workbench/flow.ts:559) gets a reason for pair nodes.
+  (opentsx-saas-frontend/src/workbench/flow.ts:577) gets a reason for pair nodes.
 - Stream phase: `align.vector` already joins several inputs on one event-time clock. A pair runtime puts its window
   on top of that join: it collects the aligned ticks of a window, runs the method when the watermark passes the
   window end and writes the result at the window centre. No second join operator is needed.
@@ -103,8 +123,12 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 **Phases**
 
 - [x] 1a: workbench keeps episode ranges when it loads episodes (loaders.ts:123 to 158), with tests. *Done 2026-10-26: `Bucket.episodes` (`EpisodeRange`: series, episode id, [start, end) in seconds from x = 0, segmentation strategy), read from `tStart`/`tEnd` to the microsecond or derived as the v2 model does; time-axis operators hand them on like `marks`, a new axis drops them; `episodes.ts` (`episodesOf`, `episodeSummary`), Properties row "Episodes".*
-- [ ] 1b: pair framework in the workbench: pairing, windows, centre stamps, alignment, coverage, quality, result
-  bucket with its own time index, series keys and labels as above, with tests for both window settings.
+- [x] 1b: pair framework in the workbench: pairing, windows, centre stamps, alignment, coverage, quality, result
+  bucket with its own time index, series keys and labels as above, with tests for both window settings. *Done
+  2026-10-26: `pairs.ts` (`pairWindows` runs a `PairMethod` over the pairs of one or two inputs; `pairRanges`,
+  `windowsOf`), `seriesKeys.ts` (canonical form and xxHash64), the diagnostic method `pair.coverage` (fields
+  `coverage` and `ticks`) as the operator "Pair coverage", `Series.quality`, `EpisodeRange.labels` and `parent`;
+  tests in pairs.test.ts.*
 - [ ] 1c: `pair.xcorr`, ported from kamir/WikiExplorer.NG, with test vectors from the old implementation.
 - [ ] 1d: `pair.es` with `q_rand`, test vectors shared with python-package/tests/test_event_sync.py.
 - [ ] 1e: `pair.scatter`.

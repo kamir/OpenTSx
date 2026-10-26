@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Pair windows in the web workbench (TASK-015 phase 1b, `src/workbench/pairs.ts`): a pair method compares two series
+  window by window and stamps each result at the window centre. Episodes of A and B are paired by the same range or
+  on their intersection; `window: episode` gives one point per pair range, a width and step give a regular series per
+  pair range. A and B go onto one clock by the rules of `align.vector`; a window below the minimum coverage keeps its
+  place as NaN with quality 1. Results carry the metric `pair.<method>.<field>`, the tags a, b, window and step, the
+  series id from xxHash64 in the browser (`seriesKeys.ts`, checked against the shared vectors) and episodes labelled
+  with both inputs. First method: "Pair coverage" in the new tab "Multi-variate Analysis".
 - The web workbench keeps the episode ranges of loaded episodes (`Bucket.episodes`): series, episode id, [start, end)
   from `tStart`/`tEnd` to the microsecond, and the segmentation strategy. Operators that keep the time axis hand them
   on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows of TASK-015.
