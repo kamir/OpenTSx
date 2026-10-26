@@ -42,6 +42,7 @@ public class BucketLoader {
     public void loadBucketData( String fn ) throws IOException {
                 
         TSBucket bucket = TSBucket.createEmptyBucketFull();
+        bucket.setLimitTo(default_LIMIT);
         bucket.inMEM = default_INMEM;
         
         // no ID-vector, no TSOperation
@@ -60,6 +61,7 @@ public class BucketLoader {
     public TSBucket loadBucket( String fn ) throws IOException {
         
         TSBucket bucket = TSBucket.createEmptyBucketFull();
+        bucket.setLimitTo(default_LIMIT);
         bucket.inMEM = default_INMEM;
         
         bucket.loadFromSequenceFile( fn, ids, null );
@@ -82,6 +84,7 @@ public class BucketLoader {
     public TSBucket _processBucket( String fn, TSOperation tst ) throws IOException {
 
         TSBucket bucket = TSBucket.createEmptyBucketFull();
+        bucket.setLimitTo(default_LIMIT);
         
         bucket.isProcessed = true;
         

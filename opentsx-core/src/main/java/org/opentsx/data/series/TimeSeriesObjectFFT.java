@@ -72,7 +72,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         System.out.println( ">>    MAX " + MAX );
 
         
-        // We have to handle symetrie here ...
+        // Conjugate frequency pairs must be modified together.
         
         /**
          * Randomize by multipling complex part with a random number
@@ -95,7 +95,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 //            
         }
 
-        // NULLPUNKT SETZEN
+        // Remove the constant component.
         mod[0] = new Complex(0.0D, 0.0D);
 //        mod[c.length - 1] = new Complex(0.0D, 0.0D);
 
@@ -194,7 +194,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         
         }
 
-        // NULLPUNKT SETZEN => kein konstanter Anteil
+        // Remove the constant component.
         mod[0] = new Complex(0.0D, 0.0D);
 
         // transform back to 
@@ -327,7 +327,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 
         int size = this.xValues.size();
 
-        sb.append("#\n# M e s s r e i h e \n# Klasse : " + getClass() + " \n# Label  : " + this.label + "\n#\n# Anzahl Wertepaare = " + size + "\n#\n");
+        sb.append("#\n# Time series \n# Class : " + getClass() + " \n# Label  : " + this.label + "\n#\n# Number of value pairs = " + size + "\n#\n");
         sb.append("#\n#" + this.addinfo + "\n#\n");
         sb.append(getStatisticData("# "));
         sb.append("\n");
@@ -525,15 +525,15 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         mr.binning = bin;
         mr.setLabel(getLabel() + "BIN=" + bin + "_");
         Enumeration en = this.yValues.elements();
-        int anzahl = this.yValues.size();
+        int count = this.yValues.size();
 
-        int rest = anzahl % bin;
-        int elements = anzahl - rest;
+        int remainder = count % bin;
+        int elements = count - remainder;
         int blocks = elements / bin;
 
-        double summeA = summeY();
+        double originalSum = summeY();
 
-        mr.addStatusInfo("[BINNING] bin=" + bin + "\tRest=" + rest + "\tBlöcke=" + blocks);
+        mr.addStatusInfo("[BINNING] bin=" + bin + "\tRemainder=" + remainder + "\tBlocks=" + blocks);
 
         int i = 0;
         int j = 0;
@@ -553,10 +553,10 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public TimeSeriesObject setBinningX_average(int bin) {
-        TimeSeriesObject resultat = new TimeSeriesObject();
-        resultat.setLabel(getLabel() + "_AV");
+        TimeSeriesObject result = new TimeSeriesObject();
+        result.setLabel(getLabel() + "_AV");
 
-        double summe = 0.0D;
+        double sum = 0.0D;
 
         Enumeration en = this.yValues.elements();
         int c = 0;
@@ -564,19 +564,19 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         while (en.hasMoreElements()) {
             z++;
             c++;
-            summe += ((Double) en.nextElement()).doubleValue();
+            sum += ((Double) en.nextElement()).doubleValue();
 
             if (z == bin - 1) {
-                double wert = summe / bin;
+                double value = sum / bin;
 
-                resultat.addValuePair(c, wert);
-                summe = 0.0D;
+                result.addValuePair(c, value);
+                sum = 0.0D;
                 z = -1;
             }
 
         }
 
-        return resultat;
+        return result;
     }
 
     public void divide_Y_by(double divBy) {
@@ -589,16 +589,16 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public double summeY() {
-        double summe = 0.0D;
+        double sum = 0.0D;
         Enumeration en = this.yValues.elements();
         while (en.hasMoreElements()) {
-            summe += ((Double) en.nextElement()).doubleValue();
+            sum += ((Double) en.nextElement()).doubleValue();
         }
-        return summe;
+        return sum;
     }
 
     public TimeSeriesObject diff(TimeSeriesObject mr2) {
-        System.out.println("Differenz der Anzahl der Werte: " + (this.yValues.size() - mr2.yValues.size()));
+        System.out.println("Difference in value counts: " + (this.yValues.size() - mr2.yValues.size()));
         double difff = 0.0D;
         TimeSeriesObject mr = new TimeSeriesObject();
 
@@ -654,7 +654,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public TimeSeriesObject scaleX(int maxX) {
-        double summeOriginal = summeY();
+        double originalSum = summeY();
         TimeSeriesObject mr = new TimeSeriesObject();
         double a = this.yValues.size() * 1.0D;
         double b = maxX * 1.0D;
@@ -665,14 +665,14 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         Enumeration en = this.yValues.elements();
         int j = 0;
         while (en.hasMoreElements()) {
-            double wert = ((Double) en.nextElement()).doubleValue();
-            double v = wert / (fieldsPerBlock * 1.0D);
+            double value = ((Double) en.nextElement()).doubleValue();
+            double v = value / (fieldsPerBlock * 1.0D);
             for (int i = 0; i < fieldsPerBlock; i++) {
                 mr.addValuePair(j, v);
                 j++;
             }
         }
-        mr.addStatusInfo("[SCALE] \tError: " + (mr.summeY() - summeOriginal) + "\n");
+        mr.addStatusInfo("[SCALE] \tError: " + (mr.summeY() - originalSum) + "\n");
         return mr;
     }
 
@@ -698,7 +698,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 
     public TimeSeriesObject shift(int offset) throws Exception {
         if (Math.abs(offset) > this.yValues.size()) {
-            throw new Exception("TimeSeriesObject kürzer als SHIFT-Weite!");
+            throw new Exception("TimeSeriesObject is shorter than the shift distance");
         }
         if (offset < 0) {
             return shiftLeft(Math.abs(offset));
@@ -725,12 +725,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
     
     /**
-     * This may break RESULTS since it is not handling the x-values correct !!!
-     * 
-     * Use this method only for REAL series not for COMPLEX !!! 
-     * 
-     * @param m
-     * @return 
+     * Preserves coordinates when copying real-valued series; complex coefficients are not represented.
      */
     public static TimeSeriesObjectFFT convertToMessreiheFFT(TimeSeriesObject m) {
 
@@ -747,7 +742,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         int max = m.yValues.size();
 
         for (int i = 0; i < max; i++) {
-            mr.addValuePair(i, ((Double) m.yValues.elementAt(i)).doubleValue());
+            mr.addValuePair(((Double) m.xValues.elementAt(i)).doubleValue(), ((Double) m.yValues.elementAt(i)).doubleValue());
         }
         return mr;
     }
@@ -845,16 +840,16 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public static TimeSeriesObject averageForAll(TimeSeriesObject[] mrs) {
-        int anz = mrs.length;
+        int count = mrs.length;
 
         int shortestLength = getShortestLength(mrs);
 
-        TimeSeriesObject mr = new TimeSeriesObject("MW_" + anz);
+        TimeSeriesObject mr = new TimeSeriesObject("Mean_" + count);
 
-        for (int i = 0; i < anz; i++) {
+        for (int i = 0; i < count; i++) {
             mr = mr.add(mrs[i], shortestLength);
         }
-        mr.divide_Y_by(anz);
+        mr.divide_Y_by(count);
         return mr;
     }
 
@@ -881,10 +876,10 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         double m = 0.0D;
         int counter = 0;
 
-        double maks = getMaxX();
+        double maximumX = getMaxX();
 
-        if (x_max > maks) {
-            throw new Exception(" Reihe zu kurz. xMax=" + maks + ", x_max=" + x_max);
+        if (x_max > maximumX) {
+            throw new Exception("Series is too short. xMax=" + maximumX + ", x_max=" + x_max);
         }
 
         for (int i = 0; i < this.xValues.size(); i++) {
@@ -901,31 +896,31 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         return regression;
     }
 
-    public TimeSeriesObject[] split(int length, int anzahl) {
-        TimeSeriesObject[] rows = new TimeSeriesObject[anzahl];
+    public TimeSeriesObject[] split(int length, int count) {
+        TimeSeriesObject[] rows = new TimeSeriesObject[count];
         Enumeration en = this.yValues.elements();
 
         int c = 0;
-        for (int i = 0; i < anzahl; i++) {
+        for (int i = 0; i < count; i++) {
             TimeSeriesObject mr = new TimeSeriesObject(this.label + " (" + i + ")");
             mr.setLabel("" + i);
 
-            double puffer = 0.0D;
+            double buffer = 0.0D;
             double last = 0.0D;
 
             for (int j = 0; j < length; j++) {
                 try {
-                    puffer = ((Double) en.nextElement()).doubleValue();
-                    mr.addValue(puffer);
-                    last = puffer;
+                    buffer = ((Double) en.nextElement()).doubleValue();
+                    mr.addValue(buffer);
+                    last = buffer;
                 } catch (NoSuchElementException e) {
                     c++;
                 }
             }
             mr.calcAverage();
             if (c > 0) {
-                mr.addComment(c + " fehlende Werte mit RQ=" + mr.getAvarage() + " ersetzt.");
-                System.out.println(mr.getLabel() + " >>> " + c + " fehlende Werte mit RQ=" + mr.getAvarage() + " ersetzt.");
+                mr.addComment(c + " missing values replaced with mean=" + mr.getAvarage() + ".");
+                System.out.println(mr.getLabel() + " >>> " + c + " missing values replaced with mean=" + mr.getAvarage() + ".");
                 for (int d = 0; d < c; d++) {
                     mr.addValue(mr.getAvarage());
                 }
@@ -1026,7 +1021,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 //
 //        double cNN_R = c[(int) (N / 2.0D)].getReal();
 //        double cNN_I = c[(int) (N / 2.0D)].getImaginary();
-//        System.out.println("c[N/2]= ( " + cNN_R + ", i*" + cNN_I + ")  [Nyquist-Anteil]");
+//        System.out.println("c[N/2]= ( " + cNN_R + ", i*" + cNN_I + ")  [Nyquist component]");
 //
 //        double cbNN_R = c[((int) (N / 2.0D) + 1)].getReal();
 //        double cbNN_I = c[((int) (N / 2.0D) + 1)].getImaginary();
@@ -1049,17 +1044,17 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     static public void debugComplexSeries( Complex[] c, String label ) {
         
         TimeSeriesObject real = new TimeSeriesObject( "Re" );
-        TimeSeriesObject imaginaer = new TimeSeriesObject( "Im" );
+        TimeSeriesObject imaginary = new TimeSeriesObject( "Im" );
         
         // take only the real - value to build the transformed time series.
         for (int i = 0; i < c.length; i++) {
             real.addValuePair( i, c[i].getReal() );
-            imaginaer.addValuePair( i, c[i].getImaginary() );
+            imaginary.addValuePair( i, c[i].getImaginary() );
         }
         
         Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
         mrv2.add( real );
-        mrv2.add( imaginaer );
+        mrv2.add( imaginary );
  
         MultiChart.open(mrv2, "COMPLEX data check : " + label , "x", "y", true);
 
@@ -1101,11 +1096,11 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         double c0_R = c[0].getReal();
         double c0_I = c[0].getImaginary();
         
-        System.out.println("> L    = " + data2.length + " (Länge der Zeitreihe)" );
-        System.out.println("> L_exp= " + data.length + " (Expandiert)" );
-        System.out.println("> N    = " + N + " (Anzahl der Koeffizienten)" );
+        System.out.println("> L    = " + data2.length + " (time series length)" );
+        System.out.println("> L_exp= " + data.length + " (padded)" );
+        System.out.println("> N    = " + N + " (number of coefficients)" );
         
-        System.out.println("> SR   = " + samplingRate + " werte/s; // sampling rate" );
+        System.out.println("> SR   = " + samplingRate + " samples/s; // sampling rate" );
         
         System.out.println("> t    = " + ( N/samplingRate) + " s");
         
@@ -1122,7 +1117,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 
         double cNN_R = c[(int) (N / 2.0D)].getReal();
         double cNN_I = c[(int) (N / 2.0D)].getImaginary();
-        System.out.println("> c[N/2]= ( " + cNN_R + ", i*" + cNN_I + ")  [Nyquist-Anteil]");
+        System.out.println("> c[N/2]= ( " + cNN_R + ", i*" + cNN_I + ")  [Nyquist component]");
 
         double cbNN_R = c[((int) (N / 2.0D) + 1)].getReal();
         double cbNN_I = c[((int) (N / 2.0D) + 1)].getImaginary();
@@ -1156,14 +1151,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
             
         }
          
-        /** 
-         * 
-         * AN DER STELLE IST DER KOMPLEXE TEIL NICHT NULL !!!
-         * 
-         * DER KOMPLEXE ANTEIL WIRD ABER IGNORIERT. DAHER FÜHRT DIE FOLGENDE
-         * RÜCKTRANSFORMATION NICHT ZUR IDENTITÄT. !!! 
-         *
-         */
+        // Discarding imaginary coefficients prevents an exact inverse transform.
         return rFFT;
         
     }
@@ -1203,12 +1191,12 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
             
             Complex e = new Complex( Math.E , 0.0 );
             
-            Complex faktor = e.pow( Complex.I.multiply( randPhase ) );
+            Complex factor = e.pow( Complex.I.multiply( randPhase ) );
             
-            modCOMPLEX[i] = c[i].multiply(faktor);
+            modCOMPLEX[i] = c[i].multiply(factor);
             
             if (i < c.length / 2)
-               modCOMPLEX[c.length - i] = c[c.length - i].multiply( faktor.conjugate() );
+               modCOMPLEX[c.length - i] = c[c.length - i].multiply( factor.conjugate() );
         
         }
         
@@ -1221,8 +1209,8 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
             rFFT.addValuePair(i, modData[i].getReal());
         }
         
-        TimeSeriesObjectFFT.debugComplexSeries(modCOMPLEX, " <PR> : COMPLEX-Modifiziert" );
-        TimeSeriesObjectFFT.debugComplexSeries(modData, " <PR> : Transformiert" );
+        TimeSeriesObjectFFT.debugComplexSeries(modCOMPLEX, " <PR> : modified complex coefficients" );
+        TimeSeriesObjectFFT.debugComplexSeries(modData, " <PR> : transformed values" );
     }
 
     
@@ -1261,12 +1249,12 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
             
             double f = i * df;
             
-            double faktor = Math.pow(f, -0.500 * beta);
+            double factor = Math.pow(f, -0.500 * beta);
             
-            modCOMPLEX[i] = c[i].multiply(faktor);
+            modCOMPLEX[i] = c[i].multiply(factor);
             
             if (i < c.length / 2)
-                modCOMPLEX[c.length - i] = c[c.length - i].multiply(faktor);
+                modCOMPLEX[c.length - i] = c[c.length - i].multiply(factor);
         }
         
         modCOMPLEX[0] = new Complex(0.0D, 0.0D);
@@ -1279,8 +1267,8 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         }
 //        
 //        if( debug ) {
-//            TimeSeriesObjectFFT.debugComplexSeries(modCOMPLEX, beta + " : COMPLEX-Modifiziert" );
-//            TimeSeriesObjectFFT.debugComplexSeries(modData, beta + " : Transformiert" );
+//            TimeSeriesObjectFFT.debugComplexSeries(modCOMPLEX, beta + " : modified complex coefficients" );
+//            TimeSeriesObjectFFT.debugComplexSeries(modData, beta + " : transformed values" );
 //        }
     }
 
@@ -1306,7 +1294,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 
         //if ( debug ) 
         
-        System.out.println("l=" + i + " z_min=" + z_min + " z_max=" + z_max + " mit 0.0 aufgefüllt:" + (z_max - z));
+        System.out.println("l=" + i + " z_min=" + z_min + " z_max=" + z_max + " padded with 0.0: " + (z_max - z));
         
         double[] back = new double[z_max];
         for (int a = 0; a < z_max; a++) {
@@ -1331,7 +1319,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         TimeSeriesObjectFFT rFFT = new TimeSeriesObjectFFT();
         rFFT.setLabel("PhaseRandomized {" + getLabel() + "}" );
 
-        // WAS GENAU BEDEUTED DENN nun die 
         double band = 6283.1853071795858D; 
         calc_modified_PR(this, rFFT, band);
 
@@ -1350,7 +1337,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         TimeSeriesObjectFFT rFFT = new TimeSeriesObjectFFT();
         rFFT.setLabel("FourierFilterd (beta=" + beta + "){" + getLabel() + "}" );
 
-        // WAS GENAU BEDEUTED DENN nun die 
         double band = 6283.1853071795858D;
         calc_modified_FF(this, rFFT, beta, band);
 
@@ -1361,7 +1347,7 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 
 
 //    /**
-//     * Hier wird ein KNICK eingefügt ...
+//     * Introduces a slope change in the spectrum.
 //     * 
 //     * @param aThis
 //     * @param rFFT
@@ -1386,15 +1372,15 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
 //        double f0 = c0_R;
 //        double df = N / 6283.1853071795858D;
 //
-//        System.out.println( "Anzahl der Koefizienten: " +  c.length ) ;
+//        System.out.println( "Number of coefficients: " +  c.length ) ;
 //        
 //        
 //        for (int i = 1; i < c.length; i++) {
 //            double f = i * df;
-//            double faktor = Math.pow(f, -0.5D * beta);
+//            double factor = Math.pow(f, -0.5D * beta);
 //            
 //            if ( i < 4000 ) 
-//                mod[i] = c[i].multiply(faktor);
+//                mod[i] = c[i].multiply(factor);
 //            else 
 //                mod[i] = c[i];
 //        }

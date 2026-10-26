@@ -1,321 +1,92 @@
-> **Status:** Flink 1.18 jobs on the 2.x model (`TimeSeriesObject`). This module also contains `pfd.DynamicTopologyJob`, which builds a topology from a JSON processing-flow descriptor (schema: [`docs/devguide/schemas`](../docs/devguide/schemas/)). A Flink adapter for the v2 statistics engine (`opentsx-stats`) is planned with the Flink upgrade. See the [user manual, chapter 11](../docs/user-manual/11-classic-analytics.md).
-
 # OpenTSx Flink Integration
 
-Apache Flink integration for OpenTSx time series analysis framework.
+Flink 1.20.5 jobs for OpenTSx:
 
-## Overview
+* `stats.StatsJob` runs the v2 statistics engine of [`opentsx-stats`](../opentsx-stats/README.md) on the episode
+  and observation topics and writes `SeriesStats`, the same records as the KafScale processor.
+* `pfd.DynamicTopologyJob` runs processing-flow descriptors (TASK-005) on the legacy `TimeSeriesObject` API.
 
-This module provides a comprehensive integration between OpenTSx and Apache Flink, enabling scalable, distributed time series analysis with exactly-once processing guarantees.
-
-**Key Features:**
-
-- **Stream Processing**: Real-time analysis of time series streams from Kafka and other sources
-- **Windowed Aggregation**: Automatic conversion of observation streams to TimeSeriesObject windows
-- **Custom Serialization**: Efficient Flink serialization for TimeSeriesObject with RocksDB support
-- **Exactly-Once Semantics**: Fault-tolerant processing with Flink checkpointing
-- **Event-Time Processing**: Proper handling of out-of-order events with watermarks
-
-## Architecture
-
-```
-opentsx-flink-core/
-├── functions/           # Flink processing functions
-│   └── TimeSeriesAggregateFunction.java
-├── serdes/             # Serialization and deserialization
-│   ├── ObservationSchema.java
-│   ├── TimeSeriesObjectTypeInfo.java
-│   └── TimeSeriesObjectSerializer.java
-└── examples/           # Example Flink jobs
-    └── TimeSeriesAnalysisJob.java
-```
-
-## Quick Start
-
-### Dependencies
-
-Add to your `pom.xml`:
-
-```xml
-<dependency>
-    <groupId>org.opentsx</groupId>
-    <artifactId>opentsx-flink-core</artifactId>
-    <version>3.0.0</version>
-</dependency>
-```
-
-### Basic Example
-
-```java
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.time.Time;
-import org.opentsx.flink.functions.TimeSeriesAggregateFunction;
-import org.opentsx.flink.serdes.TimeSeriesObjectTypeInfo;
-
-StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-// Read observations from Kafka
-DataStream<Observation> observations = env
-    .fromSource(kafkaSource, watermarkStrategy, "Observations");
-
-// Aggregate into time series windows
-DataStream<TimeSeriesObject> timeSeries = observations
-    .keyBy(Observation::getLabel)
-    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
-    .aggregate(new TimeSeriesAggregateFunction())
-    .returns(new TimeSeriesObjectTypeInfo());
-
-// Apply OpenTSx analysis
-timeSeries.map(ts -> {
-    ts.normalize_zScore();
-    ts.calcAverage();
-    return ts;
-});
-
-env.execute("Time Series Analysis");
-```
-
-## Core Components
-
-### ObservationSchema
-
-Deserializes Avro-encoded Observation objects from Kafka topics with automatic watermark extraction.
-
-```java
-KafkaSource<Observation> source = KafkaSource.<Observation>builder()
-    .setBootstrapServers("localhost:9092")
-    .setTopics("observations")
-    .setDeserializer(new ObservationSchema())
-    .build();
-```
-
-### TimeSeriesAggregateFunction
-
-Accumulates observations into TimeSeriesObject instances within Flink windows.
-
-```java
-DataStream<TimeSeriesObject> timeSeries = observations
-    .keyBy(Observation::getLabel)
-    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
-    .aggregate(new TimeSeriesAggregateFunction())
-    .returns(new TimeSeriesObjectTypeInfo());
-```
-
-### TimeSeriesObjectSerializer
-
-Efficient binary serialization for TimeSeriesObject with support for large state in RocksDB.
-
-**Performance:**
-- ~16 bytes per data point (2 doubles)
-- O(n) serialization/deserialization
-- Works with state larger than memory
-
-## Running the Example Job
-
-### Prerequisites
-
-1. **Flink Cluster**: Local or remote Flink installation
-2. **Kafka Broker**: Running on localhost:9092
-3. **Input Topic**: Kafka topic "observations" with Avro-serialized Observation records
-
-### Build
+## StatsJob
 
 ```bash
-cd opentsx-flink-core
-mvn clean package
+bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
+    [--windows PT10M,PT1H] [--lateness PT0S] [--alpha 0.01] [--observations true] \
+    [--global-every PT30S] [--checkpoint-every PT30S] [--once true]
 ```
 
-### Run Locally
+`bin/opentsx stats-flink` runs the job in a local mini cluster. On a Flink cluster, `StatsJob` is the main class of
+the shaded jar:
 
 ```bash
-flink run -c org.opentsx.flink.examples.TimeSeriesAnalysisJob \
-  target/opentsx-flink-core-3.0.0.jar
+mvn -q -pl opentsx-flink-core -am package -DskipTests
+flink run opentsx-flink-core/target/opentsx-flink-core-<version>.jar --kafscale <bootstrap> --domain wind
 ```
 
-### Run with Custom Configuration
+| Step | What runs |
+|------|-----------|
+| Read | `KafkaSource` on `tsx.<domain>.episodes.v2` (and `observations.v2` with `--observations true`), from the earliest offset. `--once true` stops at the end offsets seen at start. |
+| Key | the record key, which is the series id (`BucketWriter` writes it); a record without key is decoded to find it |
+| Compute | `StatsFunction`: one `StatsEngine` per series in keyed state, the same `onEpisode` and `onObservation` calls as the processor |
+| GLOBAL | a processing-time timer per series every `--global-every`; `PT0S` emits GLOBAL only at the end of a bounded run |
+| End of a bounded run | the final watermark fires a timer that calls `flush()`: all open windows close |
+| Write | `KafkaSink` to `tsx.<domain>.series-stats.v2`, key series id, timestamp window end, header `tsx-schema` |
+
+Built for what KafScale supports (see the [conformance results](../opentsx-kafscale-conformance/README.md)):
+
+* The source commits no offsets (`commit.offsets.on.checkpoint=false`). KafScale rejects commits without group
+  membership; the positions live in Flink checkpoints, every `--checkpoint-every`.
+* The sink writes at least once with the producer settings of `KafScaleClients` (`enable.idempotence=false`,
+  `acks=all`, one request in flight). Readers keep the latest record per (seriesId, windowType, windowStart), as
+  `SeriesStatsLog` does.
+* A failed task restarts from the last checkpoint, up to 20 times with 15 s between attempts. KafScale refuses
+  reads for about a minute at a time.
+* The job emits no watermarks. The engine keeps event time per series and closes windows itself.
+
+Operation:
+
+* Use the heap state backend. `StatsEngineSerializer` writes the engine at checkpoints only; with RocksDB it would
+  write it on every record.
+* Keep the windows when restoring from a checkpoint or savepoint. Other windows are incompatible with the stored
+  state; the restore fails.
+* Stop a running job without `--drain`. Draining sends the final watermark, which closes all open windows.
+
+## PFD runtime
+
+`pfd.DynamicTopologyJob` requires an explicit input topic and the existing `bootstrap.servers` configuration key.
+It defaults to five-minute event-time windows with ten seconds of allowed out-of-order arrival.
+Append `--window-size <milliseconds>` after the descriptor filename or inline JSON to choose a positive integer
+window size. The default is `300000` milliseconds.
+Set `--out-of-orderness <milliseconds>` to a non-negative integer for the watermark tolerance; its default is
+`10000`. Zero removes the configured delay. Both options can appear once, in either order, after the descriptor.
+Invalid values, duplicate options and unknown arguments fail before the Flink graph is built.
+`NORMALIZE` centers values and updates the cached mean. Unsupported steps and output types fail before execution.
+The Kafka source includes `flink-connector-base` at the same pinned Flink version.
+Each `LOG` record is JSON with `label`, `timestamps` and `values`, including windows with fewer than five points.
+The `pfd-acceptance` Maven profile verifies a recorder-exported flow through a real Kafka-compatible broker and
+Flink in the KafScale CI job. See the [PFD contract](../docs/devguide/validation/PFD_VALIDATION_PLAN.md) for
+prerequisites, commands and result artifacts, and the [classic analytics manual](../docs/user-manual/11-classic-analytics.md).
+
+Components of the PFD runtime:
+
+* `functions.TimeSeriesAggregateFunction` collects the observations of a window into a `TimeSeriesObject`.
+  The aggregation tests exercise nullable getters with local Observation fixtures. Avro timestamp and value
+  fields remain required; the generated setters cannot construct null primitive fields.
+* `serdes.ObservationSchema` decodes 2.x Avro `Observation` records from Kafka.
+* `serdes.TimeSeriesObjectSerializer` and `TimeSeriesObjectTypeInfo` serialize `TimeSeriesObject` state
+  (about 16 bytes per data point).
+
+## Tests
 
 ```bash
-flink run -c org.opentsx.flink.examples.TimeSeriesAnalysisJob \
-  target/opentsx-flink-core-3.0.0.jar \
-  --kafka-brokers localhost:9092 \
-  --input-topic my-observations \
-  --window-size 300000
+mvn -pl opentsx-flink-core -am test
+KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-flink-core -am test    # also StatsJobKafScaleTest
 ```
 
-## Configuration
-
-### Checkpointing
-
-Enable checkpointing for fault tolerance:
-
-```java
-env.enableCheckpointing(60000); // Every 60 seconds
-env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
-```
-
-### State Backend
-
-For large state, use RocksDB:
-
-```java
-env.setStateBackend(new EmbeddedRocksDBStateBackend());
-env.getCheckpointConfig().setCheckpointStorage("hdfs:///flink/checkpoints");
-```
-
-### Watermarks
-
-Configure watermark generation for event-time processing:
-
-```java
-WatermarkStrategy<Observation> strategy = WatermarkStrategy
-    .<Observation>forBoundedOutOfOrderness(Duration.ofSeconds(10))
-    .withTimestampAssigner((obs, ts) -> obs.getTimestamp());
-```
-
-## Performance Tuning
-
-### Parallelism
-
-Set operator parallelism for throughput:
-
-```java
-env.setParallelism(4); // Global parallelism
-
-timeSeries
-    .map(...)
-    .setParallelism(8); // Operator-level parallelism
-```
-
-### Window Size
-
-Balance latency vs. throughput:
-
-- **Small windows** (seconds): Low latency, more overhead
-- **Large windows** (minutes/hours): Higher latency, better throughput
-
-### State TTL
-
-Clean up old state to prevent memory growth:
-
-```java
-StateTtlConfig ttlConfig = StateTtlConfig
-    .newBuilder(Time.hours(24))
-    .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
-    .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)
-    .build();
-```
-
-## Testing
-
-Run unit tests:
-
-```bash
-mvn test
-```
-
-Run integration tests (requires Kafka):
-
-```bash
-mvn verify
-```
-
-## Deployment
-
-### Standalone Cluster
-
-```bash
-# Submit to remote cluster
-flink run -m localhost:8081 \
-  -c org.opentsx.flink.examples.TimeSeriesAnalysisJob \
-  target/opentsx-flink-core-3.0.0.jar
-```
-
-### Kubernetes
-
-```bash
-# Deploy to Kubernetes via Flink Kubernetes Operator
-kubectl create -f flink-deployment.yaml
-```
-
-### YARN
-
-```bash
-# Submit to YARN cluster
-flink run -m yarn-cluster \
-  -c org.opentsx.flink.examples.TimeSeriesAnalysisJob \
-  target/opentsx-flink-core-3.0.0.jar
-```
-
-## Comparison with Kafka Streams
-
-| Feature | Flink | Kafka Streams |
-|---------|-------|---------------|
-| **Deployment** | Requires cluster | Embedded library |
-| **Scalability** | Excellent (thousands of cores) | Good (hundreds of cores) |
-| **State Size** | Unlimited (RocksDB) | Limited by disk |
-| **Exactly-Once** | Yes (across sources) | Yes (Kafka only) |
-| **Event Time** | Native support | Requires configuration |
-| **SQL Support** | Yes (Flink SQL) | No |
-| **Batch Processing** | Yes (unified API) | No |
-
-**When to Use Flink:**
-- Large-scale deployments (100+ nodes)
-- Complex event processing (CEP)
-- Need for SQL or batch processing
-- Multiple data sources (not just Kafka)
-- Advanced windowing requirements
-
-**When to Use Kafka Streams:**
-- Simple deployments
-- Kafka-centric architecture
-- Embedded processing in microservices
-- Lower operational overhead
-
-## Troubleshooting
-
-### ClassNotFoundException
-
-Ensure all dependencies are included in the fat JAR:
-
-```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-shade-plugin</artifactId>
-    <configuration>
-        <transformers>
-            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                <mainClass>org.opentsx.flink.examples.TimeSeriesAnalysisJob</mainClass>
-            </transformer>
-        </transformers>
-    </configuration>
-</plugin>
-```
-
-### Serialization Issues
-
-If you see serialization errors, ensure you're using `.returns()`:
-
-```java
-timeSeries
-    .map(...)
-    .returns(new TimeSeriesObjectTypeInfo())
-```
-
-### Out of Memory
-
-For large time series, increase memory:
-
-```bash
-flink run -m localhost:8081 \
-  -ytm 4096 \  # Task manager memory
-  -yjm 2048 \  # Job manager memory
-  target/opentsx-flink-core-3.0.0.jar
-```
-
-## Contributing
-
-Contributions: open an issue or pull request on GitHub.
+* `StatsJobTest`: the job on a mini cluster gives the same `SeriesStats` as one `StatsEngine` over the same
+  episodes; a restore from a checkpoint after half the input counts every value once; GLOBAL timers.
+* `StatsEngineSerializerTest`: round trip, independent copies, snapshot and compatibility rules.
+* `StatsJobKafScaleTest`: episodes written to KafScale come back as the same `SeriesStats` on the series-stats
+  topic. It runs in the KafScale CI job.
 
 ## License
 
@@ -323,11 +94,6 @@ Apache License 2.0.
 
 ## Related Documentation
 
-- [OpenTSx user manual](../docs/user-manual/README.md)
+- [OpenTSx user manual](../docs/user-manual/README.md), chapter 7 (statistics) and chapter 11 (classic analytics)
 - [TASK-003: Flink integration plan (archived)](../EVOLUTION/archive/TASK-003-flink-integration.md)
 - [Apache Flink Documentation](https://flink.apache.org/docs/)
-
----
-
-**Version:** 3.0.0
-**Last Updated:** 2025-12-20
