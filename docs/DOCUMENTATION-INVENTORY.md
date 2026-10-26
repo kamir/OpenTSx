@@ -22,6 +22,7 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | [`docs/devops/`](devops/README.md) | DevOps guide (English, German summary): setup plan, sizing plan, demos, today vs. planned, troubleshooting for k3s + an existing KafScale cluster; scripts and manifests in [`deploy/k3s/`](../deploy/k3s/README.md), images in `deploy/docker/` |
 | [`docs/roadmap/infographic-briefing.html`](roadmap/infographic-briefing.html) | briefing (German) for an infographic designer who visualizes the roadmap |
 | [`docs/business/kampagnen-briefing.html`](business/kampagnen-briefing.html) | campaign briefing (German) as a page: vendor matrix, target groups, message house, claims, 90-day plan |
+| [`docs/datamodel-2026/19-GRAPH-LAYERS.md`](datamodel-2026/19-GRAPH-LAYERS.md) | proposal (English): graph layers on KafScale and Iceberg, one node and edge table for wiring, inventory, measured dependencies, expert matrices, GeoQB context and architecture; sealed versions; serving to GIS and graph tools |
 | [`docs/datamodel-2026/13-SEMANTIK-ALS-ZEITREIHE.html`](datamodel-2026/13-SEMANTIK-ALS-ZEITREIHE.html) | tutorial (German) as a page: seven method families that turn ER1 semantics into numeric series, the versioning rule they depend on, channel-set choice (PLM projects, lifecycle events, embedding clusters), bucket width, and the mapping onto `opentsx.vector.v1` |
 
 ## 2. Updated

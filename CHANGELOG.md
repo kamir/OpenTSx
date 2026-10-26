@@ -10,6 +10,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Concept for graph layers on KafScale and Iceberg
+  ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
+  one node table and one edge table for twin wiring, inventory, measured dependencies, expert influence matrices,
+  GeoQB location context on H3 cells and software architecture; immutable layer versions sealed with a checksum and
+  Iceberg snapshot IDs; serving to QGIS, ArcGIS and graph tools; an eight-step implementation plan.
+
 - `pair.xcorr` in the web workbench (TASK-015 phase 1c, operator "Cross-correlation"): per pair window the lagged
   cross-correlation CC(k) for k = -lags..lags clock ticks, with the fields `max` (peak of |CC|, sign kept), `lag` (in
   seconds, > 0 when B follows A) and `strength` ((|max| - mean) / std of CC). Ported from `KreuzKorrelation` and
