@@ -89,7 +89,7 @@ The three open items are WP1 to WP3 of [18-CLOSING-TASK-011](../docs/datamodel-2
 - [x] Data quality on statistics (completeness, plausibility band via sketch, flatline, gaps, freshness); finds the simulator faults exactly in the affected windows.
 - [x] `opentsx-openmetadata`: glossary from the data point catalog, classifications (IEC LN, mapping status), custom properties, topics with Avro schema, Iceberg tables, signal view per park, pipelines + lineage, profiles per window, DQ test definitions/cases/results. Payloads validated against the JSON schemas of `openmetadata-spec 2.0.5`; dry-run mode.
 - [x] Flink wrapper around `StatsEngine` (KafkaSource without offset commits), not before the Flink upgrade. *Done 2026-10-26 (WP1): `StatsJob` in `opentsx-flink-core` (`org.opentsx.flink.stats`), parity, restore and KafScale tests.*
-- [ ] Smoke test against a real OpenMetadata 2.0.5 server (docker compose, nightly).
+- [x] Smoke test against a real OpenMetadata 2.0.5 server (docker compose, nightly). *Done 2026-10-26 (WP2): workflow `openmetadata-smoke.yml` and `OpenMetadataSmokeTest`.*
 - [x] Migrate the existing `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` to the v2 serde or deprecate them. *Done 2026-10-26 (WP3): `TimeSeriesAnalysisJob` deleted, `StatsJob` is the v2 job; `TimeSeriesAggregateFunction` stays with the PFD job, which uses it (D89 narrowed).*
 
 ### Phase 5: segmentation, retrieval and pattern matching (`opentsx-retrieval`)

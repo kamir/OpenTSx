@@ -116,8 +116,21 @@ The workflow `.github/workflows/openmetadata-smoke.yml` does this:
 Triggers: nightly, by hand (`workflow_dispatch`), and on pull requests that change `opentsx-openmetadata/` or the
 workflow itself (D91).
 
-Not known yet, to be read from the 2.0.5 API before the workflow is written: the exact release asset of the compose
-file, and the calls that return a bot token. Nothing here is guessed into the workflow.
+Read from the 2.0.5 release and its sources on 2026-10-26, before the workflow was written:
+
+* Compose file: release asset `docker-compose.yml` of tag `2.0.5-release`, SHA-256
+  `8383fbce0cbaea90bacda5c902d71d5ea18e52027c96f388a470dbdd9659452f`. Services `mysql`, `elasticsearch`,
+  `execute-migrate-all`, `openmetadata-server` (ports 8585 and 8586, health check `:8586/healthcheck`) and
+  `ingestion`. The workflow starts `openmetadata-server` and its dependencies, not the ingestion service.
+* Authentication: `AUTHENTICATION_PROVIDER=basic`, admin principal `admin`, principal domain `open-metadata.org`.
+  The bootstrap admin gets the password `admin` (`UserUtil.getPassword`, `Entity.ADMIN_USER_NAME`).
+* Bot token: `POST /api/v1/users/login` with `email` and the password in Base64 returns `accessToken`
+  (`UserResource.loginUserWithPassword`, `JwtResponse`). With it, `GET /api/v1/bots/name/ingestion-bot` returns
+  `botUser.id`, and `GET /api/v1/users/auth-mechanism/{id}` returns `config.JWTToken` (admin only). Bot users get an
+  unlimited JWT at bootstrap (`UserUtil.java:351`).
+* Read-back: `GET /v1/topics/name/{fqn}`, `/v1/tables/name/{fqn}`, `/v1/lineage/topic/name/{fqn}`,
+  `/v1/tables/{fqn}/tableProfile/latest?includeColumnProfile=true` and
+  `/v1/dataQuality/testCases/testCaseResults/{fqn}?startTs=&endTs=`.
 
 This cloud session has no Docker daemon. The workflow is verified by its own run on the pull request.
 
