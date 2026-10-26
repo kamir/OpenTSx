@@ -8,6 +8,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ## [Unreleased]
 
+### Added
+
+- Concept for graph layers on KafScale and Iceberg
+  ([`docs/datamodel-2026/18-GRAPH-LAYERS.md`](docs/datamodel-2026/18-GRAPH-LAYERS.md), proposal, not implemented):
+  one node table and one edge table for twin wiring, inventory, measured dependencies, expert influence matrices,
+  GeoQB location context on H3 cells and software architecture; immutable layer versions sealed with a checksum and
+  Iceberg snapshot IDs; serving to QGIS, ArcGIS and graph tools; an eight-step implementation plan.
+
 ### Fixed
 
 - Iceberg-backed Retrieval opens existing episode and series tables without creating missing namespaces or
