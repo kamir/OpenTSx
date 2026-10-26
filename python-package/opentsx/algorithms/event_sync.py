@@ -5,6 +5,40 @@ import numpy as np
 import numpy.typing as npt
 
 
+class Mulberry32:
+    """
+    Seeded generator of uniform numbers in [0, 1), bit for bit the generator of
+    the web workbench (``mulberry32`` in opentsx-saas-frontend/src/workbench/random.ts),
+    so a surrogate drawn here and one drawn in the browser are the same.
+    """
+
+    def __init__(self, seed: int):
+        self._a = int(seed) & 0xFFFFFFFF
+
+    def __call__(self) -> float:
+        self._a = (self._a + 0x6D2B79F5) & 0xFFFFFFFF
+        t = self._a
+        t = ((t ^ (t >> 15)) * (t | 1)) & 0xFFFFFFFF
+        t ^= (t + (((t ^ (t >> 7)) * (t | 61)) & 0xFFFFFFFF)) & 0xFFFFFFFF
+        return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 4294967296
+
+
+def isi_shuffle(events: npt.NDArray[np.float64], rand: Mulberry32) -> npt.NDArray[np.float64]:
+    """
+    The event times with their inter-event intervals in random order (Fisher-Yates,
+    from the last interval down). First and last event, event count and the set of
+    intervals stay; only the order of the intervals changes.
+    """
+    x = np.asarray(events, dtype=np.float64)
+    if len(x) < 3:
+        return x.copy()
+    gaps = list(np.diff(x))
+    for i in range(len(gaps) - 1, 0, -1):
+        j = int(rand() * (i + 1))
+        gaps[i], gaps[j] = gaps[j], gaps[i]
+    return x[0] + np.concatenate(([0.0], np.cumsum(gaps)))
+
+
 class EventSynchronization:
     """
     Event Synchronization for detecting synchronized events across time series.
@@ -136,6 +170,42 @@ class EventSynchronization:
         Q = (c_yx + c_xy) / normalization
 
         return float(Q), float(q_xy), float(q_yx)
+
+    def surrogate_sync(
+        self,
+        events_x: npt.NDArray[np.int32],
+        events_y: npt.NDArray[np.int32],
+        shuffles: int = 10,
+        seed: int = 1,
+        tau_max: Optional[float] = None
+    ) -> float:
+        """
+        Q_rand, the baseline against chance: the mean Q of x against ``shuffles``
+        copies of y whose inter-event intervals are shuffled (``isi_shuffle``).
+        One ``Mulberry32(seed)`` draws all copies in turn, so the value is the
+        same on every run and in the web workbench (``pair.es``).
+
+        A Q close to Q_rand says the coincidences are what the event rates and
+        intervals give by themselves.
+
+        Args:
+            events_x: Event times/indices from first series
+            events_y: Event times/indices from second series
+            shuffles: Number of shuffled copies
+            seed: Seed of the generator
+            tau_max: As in ``calculate_synchronization``
+
+        Returns:
+            Mean Q over the shuffled copies; 0 when a series has no events.
+        """
+        if shuffles < 1:
+            raise ValueError("shuffles must be at least 1")
+        y = np.unique(np.asarray(events_y, dtype=np.float64))
+        rand = Mulberry32(seed)
+        total = 0.0
+        for _ in range(shuffles):
+            total += self.calculate_synchronization(events_x, isi_shuffle(y, rand), tau_max)[0]
+        return total / shuffles
 
     @staticmethod
     def _half_min_gap(events: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:

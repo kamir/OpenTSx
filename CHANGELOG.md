@@ -10,6 +10,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
+  Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
+  after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.
+  The Python package gets the same surrogate (`EventSynchronization.surrogate_sync`, `Mulberry32`, `isi_shuffle`);
+  both run the shared vectors `docs/datamodel-2026/testvectors/pair-es.v1.json` (`tools/pair_es_vectors.py`).
+
 - Concept for graph layers on KafScale and Iceberg
   ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
   one node table and one edge table for twin wiring, inventory, measured dependencies, expert influence matrices,
@@ -55,6 +61,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- User manual 11.3 no longer lists `overall_sync` above 1 as a known issue of `EventSynchronization`: the local
+  window of Quiroga et al. fixed it (93499604). It describes the local window and `surrogate_sync` instead.
 - TASK-011 (data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval) is completed: all seven
   success criteria are met, criterion 4 by D86 (`docs/datamodel-2026/18-CLOSING-TASK-011.md`, section 9).
 - `EVOLUTION/TASK-011-datamodel-refresher-2026.md` is in English. Its phases 6 to 9 and its backlog moved to the new

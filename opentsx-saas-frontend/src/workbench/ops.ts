@@ -8,23 +8,15 @@
  */
 
 import { PAIRINGS, PAIR_COVERAGE, pairWindows } from './pairs';
+import { mulberry32 } from './random';
 import { PAIR_XCORR } from './xcorr';
+import { PAIR_ES } from './es';
 import { Bucket, OpDef, ParamDef, Params, Series } from './types';
 import { VECTOR_AGGREGATIONS, VECTOR_OP, alignVector } from './vector';
 
 // ---------------------------------------------------------------- helpers
 
-/** Deterministic PRNG, so a recorded flow gives the same result on every run. */
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+export { mulberry32 };
 
 export interface Stats {
   n: number;
@@ -843,6 +835,16 @@ export const OPS: OpDef[] = [
     hint: `${PAIR_HINT} Per window: CC(k) for k from -lags to lags clock ticks. max is the peak of |CC| with its sign, lag its shift in seconds (lag > 0: B follows A), strength (|max| - mean) / std of CC over the lags. Port of KreuzKorrelation and CCFunction of WikiExplorer.NG.`,
     params: [...pairParams(0.8), { key: 'lags', label: 'max lag [ticks]', type: 'number', default: 10, min: 0 }],
     apply: (b, p, others) => pairWindows(PAIR_XCORR, b, p, others) },
+  { id: PAIR_ES.id, label: 'Event synchronisation', group: 'multivariate', prefix: PAIR_ES.prefix, pfdOperation: 'PAIR_ES', inCatalog: false, multiInput: true, maxInputs: 2,
+    hint: `${PAIR_HINT} Per window: events are local maxima above mean + sigma std; two events count as synchronous within half the distance to their neighbours (capped by tauMax when set). q_total is the share of synchronous events, q_ab the share where B follows A, q_ba where A follows B, q_rand q_total for B with its event intervals shuffled: the level chance gives. Port of event_sync.py (Quiroga, Kreuz and Grassberger).`,
+    params: [
+      ...pairParams(0.8),
+      { key: 'sigma', label: 'events above [std]', type: 'number', default: 2, step: 0.5 },
+      { key: 'tauMax', label: 'tau max [s]', type: 'number', default: 0, min: 0 },
+      { key: 'shuffles', label: 'shuffles', type: 'number', default: 10, min: 1 },
+      { key: 'seed', label: 'seed', type: 'number', default: 1 },
+    ],
+    apply: (b, p, others) => pairWindows(PAIR_ES, b, p, others) },
 
   // Tab "Group Operations"
   { id: 'sigma.band', label: 'Sigma Band', group: 'group', prefix: 'AVG_', pfdOperation: 'AVG', inCatalog: false,
