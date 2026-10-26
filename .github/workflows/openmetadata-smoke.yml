@@ -1,0 +1,78 @@
+name: OpenMetadata smoke test
+
+# Publishes the simulated wind farm to a real OpenMetadata 2.0.5 and reads it back (OpenMetadataSmokeTest).
+# Design: docs/datamodel-2026/18-CLOSING-TASK-011.md, section 3 (D91).
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "opentsx-openmetadata/**"
+      - ".github/workflows/openmetadata-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openmetadata-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: OpenMetadata 2.0.5
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OM_RELEASE: 2.0.5-release
+      # docker-compose.yml of the release, read on 2026-10-26; a changed file fails the check below
+      OM_COMPOSE_SHA256: 8383fbce0cbaea90bacda5c902d71d5ea18e52027c96f388a470dbdd9659452f
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Download the compose file of OpenMetadata 2.0.5
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors -o "$RUNNER_TEMP/om-compose.yml" \
+            "https://github.com/open-metadata/OpenMetadata/releases/download/$OM_RELEASE/docker-compose.yml"
+          echo "$OM_COMPOSE_SHA256  $RUNNER_TEMP/om-compose.yml" | sha256sum -c -
+      - name: Start the server with MySQL and Elasticsearch
+        run: |
+          sudo sysctl -w vm.max_map_count=262144
+          # the ingestion service (Airflow) is not needed: the publisher writes through the REST API
+          docker compose -f "$RUNNER_TEMP/om-compose.yml" up -d openmetadata-server
+          for i in $(seq 1 90); do
+            curl -fsS http://localhost:8586/healthcheck && exit 0
+            sleep 10
+          done
+          docker compose -f "$RUNNER_TEMP/om-compose.yml" ps
+          docker compose -f "$RUNNER_TEMP/om-compose.yml" logs --tail 200
+          exit 1
+      - name: Token of the ingestion bot
+        run: |
+          # basic auth of the compose file: the bootstrap admin is admin@open-metadata.org with password "admin";
+          # /users/login takes the password in Base64 (UserResource.loginUserWithPassword in 2.0.5)
+          admin=$(curl -fsS -X POST http://localhost:8585/api/v1/users/login -H 'Content-Type: application/json' \
+            -d "{\"email\":\"admin@open-metadata.org\",\"password\":\"$(printf admin | base64)\"}" | jq -r .accessToken)
+          echo "::add-mask::$admin"
+          bot=$(curl -fsS -H "Authorization: Bearer $admin" http://localhost:8585/api/v1/bots/name/ingestion-bot | jq -r .botUser.id)
+          jwt=$(curl -fsS -H "Authorization: Bearer $admin" "http://localhost:8585/api/v1/users/auth-mechanism/$bot" | jq -r .config.JWTToken)
+          echo "::add-mask::$jwt"
+          test -n "$jwt" && test "$jwt" != null
+          echo "OPENMETADATA_JWT=$jwt" >> "$GITHUB_ENV"
+      - name: Publish the simulated wind farm and read it back
+        env:
+          OM_URL: http://localhost:8585/api
+        run: mvn -B -ntp -pl opentsx-openmetadata -am test -Dtest=OpenMetadataSmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Server log
+        if: failure()
+        run: docker compose -f "$RUNNER_TEMP/om-compose.yml" logs --tail 300 openmetadata-server
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: openmetadata-smoke
+          path: opentsx-openmetadata/target/surefire-reports/

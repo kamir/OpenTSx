@@ -3,12 +3,75 @@
 All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
-entries before 3.0.0 are grouped by date. The detailed progress log (German) is in
+entries before 3.0.0 are grouped by date. The detailed progress log is in
 [`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md).
 
 ## [Unreleased]
 
+### Added
+
+- `pair.xcorr` in the web workbench (TASK-015 phase 1c, operator "Cross-correlation"): per pair window the lagged
+  cross-correlation CC(k) for k = -lags..lags clock ticks, with the fields `max` (peak of |CC|, sign kept), `lag` (in
+  seconds, > 0 when B follows A) and `strength` ((|max| - mean) / std of CC). Ported from `KreuzKorrelation` and
+  `CCFunction` of kamir/WikiExplorer.NG (Apache License 2.0); `tools/pair_xcorr_vectors.sh` runs the original code
+  for the test vectors `docs/datamodel-2026/testvectors/pair-xcorr.v1.json`, which the port matches to 12 decimals.
+
+- Pair windows in the web workbench (TASK-015 phase 1b, `src/workbench/pairs.ts`): a pair method compares two series
+  window by window and stamps each result at the window centre. Episodes of A and B are paired by the same range or
+  on their intersection; `window: episode` gives one point per pair range, a width and step give a regular series per
+  pair range. A and B go onto one clock by the rules of `align.vector`; a window below the minimum coverage keeps its
+  place as NaN with quality 1. Results carry the metric `pair.<method>.<field>`, the tags a, b, window and step, the
+  series id from xxHash64 in the browser (`seriesKeys.ts`, checked against the shared vectors) and episodes labelled
+  with both inputs. First method: "Pair coverage" in the new tab "Multi-variate Analysis".
+- The web workbench keeps the episode ranges of loaded episodes (`Bucket.episodes`): series, episode id, [start, end)
+  from `tStart`/`tEnd` to the microsecond, and the segmentation strategy. Operators that keep the time axis hand them
+  on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows of TASK-015.
+
+- `WireRoundTripTest` (`opentsx-legacy-bridge`) checks success criterion 2 of TASK-011 in one chain:
+  `TimeSeriesObject` to `Episode` to Kafka in single-object and in Confluent framing to `Episode` to
+  `TimeSeriesObject`, regular and irregular, through the Kafka client records and, with `KAFSCALE_BOOTSTRAP`,
+  through KafScale (now part of the KafScale CI job).
+- `PatternBenchmarkTest.recallAtTenMeetsTheSuccessCriterion` asserts recall@10 of at least 0.95 for 10 planted gusts
+  with z-normalized Euclidean distance (criterion 7, D87). The recall@12 report stays.
+
+- `StatsJob` in `opentsx-flink-core` (`org.opentsx.flink.stats`) runs the v2 statistics engine as a Flink job:
+  `KafkaSource` without offset commits, one `StatsEngine` per series in keyed state with its own state serializer,
+  GLOBAL on a timer, all windows closed at the end of a bounded run, `KafkaSink` at least once. It writes the same
+  `SeriesStats` as `StatsProcessorApp`. Launcher verb `bin/opentsx stats-flink`; main class of the shaded jar.
+
+- Smoke test against a real OpenMetadata 2.0.5: the workflow `openmetadata-smoke.yml` (nightly, by hand, and on pull
+  requests that change `opentsx-openmetadata/`) starts the server from the pinned compose file of the release, gets
+  the token of `ingestion-bot`, and `OpenMetadataSmokeTest` publishes the simulated wind farm and reads back topics,
+  tables, lineage, the latest profile and data-quality results.
+
+- The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
+  which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
+
+### Changed
+
+- TASK-011 (data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval) is completed: all seven
+  success criteria are met, criterion 4 by D86 (`docs/datamodel-2026/18-CLOSING-TASK-011.md`, section 9).
+- `EVOLUTION/TASK-011-datamodel-refresher-2026.md` is in English. Its phases 6 to 9 and its backlog moved to the new
+  tasks TASK-015 to TASK-019 and to TASK-010 (D90 in `docs/datamodel-2026/18-CLOSING-TASK-011.md`). TASK-015 adds
+  the design of pair windows for multivariate analysis.
+
+### Removed
+
+- `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
+  stays, because the PFD runtime `DynamicTopologyJob` uses it.
+
 ### Fixed
+
+- Iceberg-backed Retrieval opens existing episode and series tables without creating missing namespaces or
+  tables. Its store rejects writes, including empty batches, and does not expose a mutable episodes table.
+  The existing writer path retains provisioning behavior. The new properties-based reader factory closes its
+  owned catalog if table loading fails; the catalog-taking overload leaves ownership with the caller.
+
+- The Python topic reader closes consumers on failures, validates time filters before creating a consumer,
+  disables automatic offset storage, and shares one finite timeout across metadata, watermarks and polling.
+  Assigned reads tolerate at most 32 nonfatal unsupported FindCoordinator notices within that deadline;
+  other broker errors propagate. Records outside the initial per-partition offset ranges are not decoded,
+  including records arriving on a completed partition while another partition is still being read.
 
 - The PFD runtime accepts `--out-of-orderness` in milliseconds with a ten-second default and permits zero delay.
   It validates both runtime options in either order and rejects invalid values and duplicates before graph creation.

@@ -68,6 +68,10 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
 
 ## Quick start
 
+The Iceberg-backed Retrieval server requires existing `episodes` and `series` tables. The writer in the sequence
+below populates them first; Retrieval loads them without provisioning and rejects writes through its store.
+This does not add HTTP authentication or resource-level authorization.
+
 ```bash
 mvn -q install -DskipTests                          # JDK 17+
 pip install -e "python-package[iceberg]"            # Python 3.10+

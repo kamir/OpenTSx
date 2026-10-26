@@ -11,8 +11,11 @@ of reading on silently.
 
 Needs ``confluent-kafka`` (``pip install opentsx[kafka]``).
 """
+
 from __future__ import annotations
 
+from math import isfinite
+from time import monotonic
 from typing import Any, Callable, List, Mapping, Optional
 
 import pandas as pd
@@ -44,8 +47,13 @@ def _micros(t: Any) -> Optional[int]:
     return int(ts.value // 1000)
 
 
-def _matches(ep: Mapping, metric: Optional[str], tags: Optional[Mapping[str, str]], start: Optional[int],
-             end: Optional[int]) -> bool:
+def _matches(
+    ep: Mapping,
+    metric: Optional[str],
+    tags: Optional[Mapping[str, str]],
+    start: Optional[int],
+    end: Optional[int],
+) -> bool:
     s = ep["series"]
     if metric is not None and s["metric"] != metric:
         return False
@@ -53,7 +61,7 @@ def _matches(ep: Mapping, metric: Optional[str], tags: Optional[Mapping[str, str
         return False
     t0 = to_us(ep["tStart"])
     t1 = to_us(ep["tEnd"])
-    if start is not None and t1 <= start:   # tEnd is the end of the last interval, not inside it
+    if start is not None and t1 <= start:  # tEnd is the end of the last interval, not inside it
         return False
     if end is not None and t0 >= end:
         return False
@@ -63,59 +71,118 @@ def _matches(ep: Mapping, metric: Optional[str], tags: Optional[Mapping[str, str
 class TopicReader:
     """Reads the episodes of a topic once, from the start to the end it found when it began."""
 
-    def __init__(self, bootstrap: str, consumer_factory: Optional[Callable[[dict], Any]] = None,
-                 timeout_s: float = 30.0):
+    def __init__(
+        self,
+        bootstrap: str,
+        consumer_factory: Optional[Callable[[dict], Any]] = None,
+        timeout_s: float = 30.0,
+    ):
+        if not isfinite(timeout_s) or timeout_s <= 0:
+            raise ValueError("timeout_s must be finite and positive")
         self.bootstrap = bootstrap
         self.timeout_s = timeout_s
         self._factory = consumer_factory
 
     def _consumer(self):
-        conf = {"bootstrap.servers": self.bootstrap, "group.id": "opentsx-notebook-reader", "enable.auto.commit": False,
-                "enable.partition.eof": True, "auto.offset.reset": "earliest"}
+        conf = {
+            "bootstrap.servers": self.bootstrap,
+            "group.id": "opentsx-notebook-reader",
+            "enable.auto.commit": False,
+            "enable.auto.offset.store": False,
+            "enable.partition.eof": True,
+            "auto.offset.reset": "earliest",
+        }
         if self._factory is not None:
             return self._factory(conf)
         try:
             from confluent_kafka import Consumer
         except ImportError as e:  # pragma: no cover - depends on the environment
-            raise ImportError("TopicReader needs confluent-kafka: pip install 'opentsx[kafka]'") from e
+            raise ImportError(
+                "TopicReader needs confluent-kafka: pip install 'opentsx[kafka]'"
+            ) from e
         return Consumer(conf)
 
-    def episodes(self, topic: str, metric: Optional[str] = None, tags: Optional[Mapping[str, str]] = None,
-                 start: Any = None, end: Any = None, max_records: int = 20_000) -> List[dict]:
+    def episodes(
+        self,
+        topic: str,
+        metric: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        start: Any = None,
+        end: Any = None,
+        max_records: int = 20_000,
+    ) -> List[dict]:
         """Episodes of ``topic`` that match; raises :class:`TopicLimitReached` past ``max_records`` records read."""
-        c = self._consumer()
         lo, hi = _micros(start), _micros(end)
+        deadline = monotonic() + self.timeout_s
+
+        def remaining():
+            budget = deadline - monotonic()
+            if budget <= 0:
+                raise TimeoutError(f"deadline exceeded while reading {topic}")
+            return budget
+
+        c = self._consumer()
         out: List[dict] = []
         try:
-            meta = c.list_topics(topic, timeout=self.timeout_s)
+            meta = c.list_topics(topic, timeout=remaining())
+            remaining()
             if topic not in meta.topics or meta.topics[topic].error is not None:
                 raise ValueError(f"the broker has no topic {topic}")
             parts = sorted(meta.topics[topic].partitions)
             ends = {}
             assign = []
             for p in parts:
-                low, high = c.get_watermark_offsets(TopicPartition(topic, p), timeout=self.timeout_s)
+                low, high = c.get_watermark_offsets(TopicPartition(topic, p), timeout=remaining())
+                remaining()
                 if high > low:
                     ends[p] = high
                     assign.append(TopicPartition(topic, p, low))
             total = sum(ends[p] - a.offset for a in assign for p in [a.partition])
             if total > max_records:
-                raise TopicLimitReached(f"{topic} holds {total} records, more than max_records={max_records}; "
-                                        "narrow the question or raise the limit on purpose")
+                raise TopicLimitReached(
+                    f"{topic} holds {total} records, more than max_records={max_records}; "
+                    "narrow the question or raise the limit on purpose"
+                )
+            remaining()
             c.assign(assign)
+            remaining()
             open_parts = set(ends)
+            starts = {partition.partition: partition.offset for partition in assign}
+            coordinator_events = 0
             while open_parts:
-                msg = c.poll(self.timeout_s)
+                msg = c.poll(remaining())
+                remaining()
                 if msg is None:
-                    raise TimeoutError(f"no answer from the broker for {self.timeout_s} s while reading {topic}")
-                if msg.error():
-                    if msg.error().code() == -191:  # _PARTITION_EOF
+                    raise TimeoutError(
+                        f"no answer from the broker for {self.timeout_s} s while reading {topic}"
+                    )
+                error = msg.error()
+                if error:
+                    if error.code() == -191:  # _PARTITION_EOF
                         open_parts.discard(msg.partition())
                         continue
-                    raise RuntimeError(f"reading {topic}: {msg.error()}")
-                if msg.offset() + 1 >= ends.get(msg.partition(), 0):
-                    open_parts.discard(msg.partition())
+                    if (
+                        error.code() == -165
+                        and not error.fatal()
+                        and error.str().startswith("FindCoordinator response error:")
+                    ):
+                        coordinator_events += 1
+                        if coordinator_events > 32:
+                            raise RuntimeError(
+                                f"coordinator event limit exceeded while reading {topic}"
+                            )
+                        continue
+                    raise RuntimeError(f"reading {topic}: {error}")
+                partition, offset = msg.partition(), msg.offset()
+                if partition not in open_parts or offset < starts[partition]:
+                    continue
+                if offset >= ends[partition]:
+                    open_parts.discard(partition)
+                    continue
+                if offset + 1 >= ends[partition]:
+                    open_parts.discard(partition)
                 name, rec = m.decode(msg.value())
+                remaining()
                 if name == "Episode" and _matches(rec, metric, tags, lo, hi):
                     out.append(rec)
         finally:

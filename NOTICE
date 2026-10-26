@@ -3,3 +3,7 @@ Copyright 2013–2026 the OpenTSx contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 It was developed as Hadoop.TS (2013–2018) and continued as OpenTSx.
+
+opentsx-saas-frontend/src/workbench/xcorr.ts ports the cross-correlation and link strength of
+KreuzKorrelation and CCFunction from WikiExplorer.NG (https://github.com/kamir/WikiExplorer.NG),
+Apache License, Version 2.0.
