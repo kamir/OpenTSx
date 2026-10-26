@@ -6,6 +6,7 @@
 # Commands:
 #   windpark-sim       run a wind-farm scenario -> KafScale and/or Iceberg   (org.opentsx.windpark.WindparkSim)
 #   stats              streaming statistics processor on KafScale            (org.opentsx.stats.StatsProcessorApp)
+#   stats-flink        the same statistics as a Flink job (local mini cluster) (org.opentsx.flink.stats.StatsJob)
 #   metadata           publish the metadata pool to OpenMetadata             (org.opentsx.openmetadata.WindparkMetadata)
 #   retrieval-server   REST API for episodes, patterns, segments             (org.opentsx.retrieval.server.RetrievalServer)
 #   vectors            vector processor: run | deploy | stop                 (org.opentsx.retrieval.vector.VectorProcessorApp)
@@ -47,6 +48,7 @@ cmd="$1"; shift
 case "$cmd" in
   windpark-sim)     exec java -cp "$(classpath opentsx-windpark)" org.opentsx.windpark.WindparkSim "$@" ;;
   stats)            exec java -cp "$(classpath opentsx-stats)" org.opentsx.stats.StatsProcessorApp "$@" ;;
+  stats-flink)      exec java -cp "$(classpath opentsx-flink-core)" org.opentsx.flink.stats.StatsJob "$@" ;;
   metadata)         exec java -cp "$(classpath opentsx-openmetadata)" org.opentsx.openmetadata.WindparkMetadata "$@" ;;
   retrieval-server) exec java -cp "$(classpath opentsx-retrieval opentsx-store-iceberg)" org.opentsx.retrieval.server.RetrievalServer "$@" ;;
   vectors) exec java -cp "$(classpath opentsx-retrieval)" org.opentsx.retrieval.vector.VectorProcessorApp "$@" ;;

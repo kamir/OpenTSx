@@ -111,15 +111,14 @@ The desktop FFT action derives its sampling rate from uniformly spaced coordinat
 with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
 See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
 
-### Flink jobs (`opentsx-flink-core`, Flink 1.18, 2.x model)
+### Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 
-* `TimeSeriesAnalysisJob` aggregates observation streams into windowed `TimeSeriesObject`s.
 * `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,
   `NORMALIZE` centering and `LOG` output. Topics and broker addresses require explicit configuration.
   See [PFD validation](../devguide/validation/PFD_VALIDATION_PLAN.md).
 * `pfd.DynamicTopologyJob` builds a Flink topology from a JSON processing-flow descriptor; the schema is in
   [`docs/devguide/schemas`](../devguide/schemas/).
-* A Flink adapter for the v2 statistics engine is planned (see [chapter 15](15-roadmap.md)).
+* `stats.StatsJob` runs the v2 statistics engine (see [chapter 7](07-stats-quality.md), section 7.2).
 
 ### Load generation and Kafka tools (`opentsx-lg`, `opentsx-connectors`)
 
