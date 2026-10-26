@@ -3,6 +3,7 @@ package org.opentsx.app.bucketanalyser;
 import com.formdev.flatlaf.FlatDarkLaf;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 
 /**
@@ -70,7 +71,12 @@ public class ModernMacroTrackerFrame extends JFrame {
 
         JButton exportJavaBtn = createStyledButton("Export Java", new Color(75, 110, 175));
         JButton exportScalaBtn = createStyledButton("Export Scala", new Color(220, 50, 47));
-        JButton exportPFDBtn = createStyledButton("Export PFD", new Color(38, 139, 210));
+        JButton exportPFDBtn = createStyledButton("Show PFD", new Color(38, 139, 210));
+
+        exportJavaBtn.setEnabled(false);
+        exportJavaBtn.setToolTipText("This export is not implemented");
+        exportScalaBtn.setEnabled(false);
+        exportScalaBtn.setToolTipText("This export is not implemented");
 
         exportPFDBtn.addActionListener(e -> refreshPFD());
 
@@ -133,7 +139,7 @@ public class ModernMacroTrackerFrame extends JFrame {
         header.setForeground(new Color(200, 200, 200)); // Lighter
         header.setBorder(new EmptyBorder(0, 0, 10, 0));
 
-        transformationTree = new JTree();
+        transformationTree = new JTree(new DefaultTreeModel(null));
         transformationTree.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         transformationTree.setRowHeight(24);
 

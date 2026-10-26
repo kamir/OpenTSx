@@ -548,7 +548,7 @@ public final class RetrievalServer implements AutoCloseable {
                 props.put(kv.substring(0, i), kv.substring(i + 1));
             }
             store = (SeriesStore) Class.forName("org.opentsx.store.iceberg.IcebergSeriesStore")
-                    .getMethod("open", Map.class, String.class).invoke(null, props, a.getOrDefault("namespace", "tsx"));
+                    .getMethod("openExisting", Map.class, String.class).invoke(null, props, a.getOrDefault("namespace", "tsx"));
             source = SeriesInventory.Source.of("iceberg");
         } else if (a.containsKey("kafscale")) {
             source = null;      // built below, with the topic names of the domain

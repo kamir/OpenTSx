@@ -20,7 +20,7 @@ export const VECTOR_SCHEMA = 'opentsx.vector.v1';
 export const VECTOR_AGGREGATIONS = ['MEAN', 'LAST', 'FIRST', 'MIN', 'MAX', 'SUM', 'COUNT'];
 
 /** Running aggregate of the samples of one component in one tick. */
-interface Cell {
+export interface Cell {
   n: number;
   sum: number;
   min: number;
@@ -29,7 +29,7 @@ interface Cell {
   last: number;
 }
 
-function cellValue(c: Cell | undefined, agg: string): number {
+export function cellValue(c: Cell | undefined, agg: string): number {
   if (!c) return NaN;
   switch (agg) {
     case 'LAST':
@@ -47,6 +47,49 @@ function cellValue(c: Cell | undefined, agg: string): number {
     default:
       return c.sum / c.n;
   }
+}
+
+/**
+ * Adds the finite samples of a series to the ticks they fall in. `shift` turns x into seconds since the epoch, so tick
+ * k covers [k * every, (k + 1) * every) of epoch time.
+ */
+export function addSamples(cells: Map<number, Cell>, s: Series, shift: number, every: number): void {
+  for (let i = 0; i < s.x.length; i++) {
+    const v = s.y[i];
+    if (!Number.isFinite(v)) continue;
+    const tick = Math.floor((s.x[i] + shift) / every);
+    const cell = cells.get(tick);
+    if (!cell) cells.set(tick, { n: 1, sum: v, min: v, max: v, first: v, last: v });
+    else {
+      cell.n++;
+      cell.sum += v;
+      if (v < cell.min) cell.min = v;
+      if (v > cell.max) cell.max = v;
+      cell.last = v;
+    }
+  }
+}
+
+/**
+ * The values of ticks lo to lo + n - 1, one aggregate per tick. A tick without a sample is NaN, or with
+ * `maxAgeTicks >= 0` (fill as-of) the last value when that is at most `maxAgeTicks` ticks old. Values before tick lo
+ * are not looked at.
+ */
+export function fillColumn(cells: Map<number, Cell> | undefined, lo: number, n: number, agg: string, maxAgeTicks: number): Float64Array {
+  const col = new Float64Array(Math.max(0, n));
+  let lastTick = -Infinity;
+  let lastValue = NaN;
+  for (let j = 0; j < n; j++) {
+    const v = cellValue(cells?.get(lo + j), agg);
+    if (Number.isFinite(v)) {
+      lastTick = j;
+      lastValue = v;
+      col[j] = v;
+    } else {
+      col[j] = j - lastTick <= maxAgeTicks ? lastValue : NaN;
+    }
+  }
+  return col;
 }
 
 function snake(text: string): string {
@@ -130,20 +173,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
         k.cells.set(component, cells);
         k.units.set(component, s.unit);
       }
-      for (let i = 0; i < s.x.length; i++) {
-        const v = s.y[i];
-        if (!Number.isFinite(v)) continue;
-        const tick = Math.floor((s.x[i] + shift) / every);
-        const cell = cells.get(tick);
-        if (!cell) cells.set(tick, { n: 1, sum: v, min: v, max: v, first: v, last: v });
-        else {
-          cell.n++;
-          cell.sum += v;
-          if (v < cell.min) cell.min = v;
-          if (v > cell.max) cell.max = v;
-          cell.last = v;
-        }
-      }
+      addSamples(cells, s, shift, every);
     }
   });
 
@@ -162,23 +192,7 @@ export function alignVector(first: Bucket, p: Params, others: Bucket[] = []): Bu
     }
     if (hi < lo) continue;
     const n = hi - lo + 1;
-    const columns = components.map((component) => {
-      const cells = k.cells.get(component);
-      const col = new Float64Array(n);
-      let lastTick = -Infinity;
-      let lastValue = NaN;
-      for (let j = 0; j < n; j++) {
-        const v = cellValue(cells?.get(lo + j), agg);
-        if (Number.isFinite(v)) {
-          lastTick = j;
-          lastValue = v;
-          col[j] = v;
-        } else {
-          col[j] = asOf && j - lastTick <= maxAgeTicks ? lastValue : NaN;
-        }
-      }
-      return col;
-    });
+    const columns = components.map((component) => fillColumn(k.cells.get(component), lo, n, agg, asOf ? maxAgeTicks : -1));
     const keep: number[] = [];
     for (let j = 0; j < n; j++) {
       let present = 0;

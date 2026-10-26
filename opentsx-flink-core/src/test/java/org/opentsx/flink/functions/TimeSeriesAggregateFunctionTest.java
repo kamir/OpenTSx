@@ -203,22 +203,29 @@ public class TimeSeriesAggregateFunctionTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("Avro-generated Observation class doesn't handle null primitive values well")
     public void testAdd_HandlesNullFields() {
         TimeSeriesObject accumulator = aggregateFunction.createAccumulator();
 
         // Observation with null timestamp
-        Observation obs1 = new Observation();
+        Observation obs1 = new Observation() {
+            @Override
+            public Long getTimestamp() {
+                return null;
+            }
+        };
         obs1.setUri("test");
-        obs1.setTimestamp(null);
         obs1.setValue(10.0);
         aggregateFunction.add(obs1, accumulator);
 
         // Observation with null value
-        Observation obs2 = new Observation();
+        Observation obs2 = new Observation() {
+            @Override
+            public Double getValue() {
+                return null;
+            }
+        };
         obs2.setUri("test");
         obs2.setTimestamp(1000L);
-        obs2.setValue(null);
         aggregateFunction.add(obs2, accumulator);
 
         // Valid observation

@@ -44,8 +44,8 @@ Java 21, and OpenTSx targets Java 17.
 
 ## Verification
 
-No OpenMetadata server runs in CI: it needs MySQL/Postgres and OpenSearch. `WindparkMetadataPublisherTest` therefore runs
-the publisher against `FakeOpenMetadata`. That stand-in does two things:
+The main CI runs no OpenMetadata server: it needs MySQL/Postgres and OpenSearch. `WindparkMetadataPublisherTest` therefore
+runs the publisher against `FakeOpenMetadata`; the smoke test below covers the real server. That stand-in does two things:
 
 * **Schema validation.** It validates **every request body against the JSON schema of its endpoint** as shipped in
   `org.open-metadata:openmetadata-spec:2.0.5`.
@@ -61,8 +61,32 @@ Two quirks of the 2.0.5 spec are handled in the test and documented there:
   accepts it.
 * `createTestCaseResult.json` declares a wrong `$id`.
 
+The server also checks rules in code that the schemas do not contain (`DatabaseUtil.validateColumns` in 2.0.5):
+`char`, `varchar`, `binary` and `varbinary` columns need a `dataLength`, arrays an `arrayDataType`, structs their
+children. `FakeOpenMetadata` checks them too. The smoke test found the first one: variable-length Iceberg `binary`
+columns (`time_deltas`, `quality`) are therefore published as `BYTES`, `fixed(n)` as `BINARY` with `dataLength` n.
+
 The test also checks content against the simulator's ground truth. The stuck anemometer of T02 fails `opentsxFlatline`
 in exactly the windows ending at minutes 70, 80 and 90. The power outage of T01 fails `opentsxCompleteness` at 130
 and 140.
 
-Open: a smoke test against a real OpenMetadata 2.0.5 (docker compose) in a nightly job.
+### Smoke test against a real server
+
+The workflow [`openmetadata-smoke.yml`](../.github/workflows/openmetadata-smoke.yml) runs nightly, by hand and on pull
+requests that change this module. It starts OpenMetadata 2.0.5 from the `docker-compose.yml` of the 2.0.5 release
+(pinned by SHA-256) without the ingestion service, gets the token of `ingestion-bot`, and runs
+`OpenMetadataSmokeTest` with `OM_URL` and `OPENMETADATA_JWT`. The test publishes the same simulated park as
+`WindparkMetadataPublisherTest` with the real HTTP client and reads back:
+
+* the episodes topic with its Avro schema and cleanup policy, the Iceberg `episodes` table and the signals view with
+  its columns and IEC tags;
+* the lineage from the episodes topic to the `episodes` table and to the series-stats topic;
+* the latest profile of the signals view (wind speed: 3 turbines × 3600 values);
+* the flatline results of the wind speed: 18 windows, 3 failed (minutes 70, 80 and 90).
+
+It then publishes again to check that every write is create-or-update. Locally, against your own server:
+
+```bash
+OM_URL=http://localhost:8585/api OPENMETADATA_JWT=<bot token> \
+  mvn -pl opentsx-openmetadata -am test -Dtest=OpenMetadataSmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+```

@@ -35,6 +35,7 @@ import {
   vectorComponents,
 } from '../workbench/flow';
 import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
+import { episodeSummary } from '../workbench/episodes';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
@@ -135,6 +136,7 @@ const TABS: { id: string; title: string; group?: OpGroup; border?: string }[] = 
   { id: 'tsb', title: 'TSB' },
   { id: 'transform', title: 'Transformations', group: 'transform', border: 'Single Time Series Transformations' },
   { id: 'univariate', title: 'Uni-variate Analysis', group: 'univariate', border: 'Univariate Analysis' },
+  { id: 'multivariate', title: 'Multi-variate Analysis', group: 'multivariate', border: 'Multi-variate analysis' },
   { id: 'group', title: 'Group Operations', group: 'group', border: 'Group Operations' },
   { id: 'model', title: 'TS-Model', border: 'Models' },
   { id: 'stream', title: 'Filter and conversion', group: 'stream', border: 'Stream operators for Smart Topics' },
@@ -284,9 +286,12 @@ function Properties({ node }: { node: FlowNode }) {
       return null;
     }
   }, [source, nodes, node.id]);
-  const components = op?.multiInput ? vectorComponents(nodes, node) : [];
+  // a vector names a component per input; a pair method reads A and B
+  const isVector = node.op === VECTOR_OP;
+  const components = isVector ? vectorComponents(nodes, node) : ['A', 'B'];
+  const full = op?.maxInputs !== undefined && inputs.length >= op.maxInputs;
   const downstream = op?.multiInput ? descendants(nodes, node.id, true) : new Set<string>();
-  const candidates = op?.multiInput ? nodes.filter((n) => !downstream.has(n.id) && !inputsOf(node).includes(n.id)) : [];
+  const candidates = op?.multiInput && !full ? nodes.filter((n) => !downstream.has(n.id) && !inputsOf(node).includes(n.id)) : [];
   const records = bucket?.vector ? vectorRecords(bucket, node.label, 2) : [];
 
   return (
@@ -304,6 +309,11 @@ function Properties({ node }: { node: FlowNode }) {
           </>
         )}
         <dt>Axes</dt><dd>{bucket?.xLabel} / {bucket?.yLabel}</dd>
+        {bucket && episodeSummary(bucket) && (
+          <>
+            <dt>Episodes</dt><dd>{episodeSummary(bucket)}</dd>
+          </>
+        )}
       </dl>
       {op && <p className="wb-muted">{op.hint}</p>}
       {op && op.params.length > 0 && (
@@ -318,7 +328,7 @@ function Properties({ node }: { node: FlowNode }) {
       )}
       {op?.multiInput && (
         <fieldset>
-          <legend>Components (one per input, in vector order)</legend>
+          <legend>{isVector ? 'Components (one per input, in vector order)' : 'Inputs (A, and B when the pairs run across two buckets)'}</legend>
           <ol className="wb-components">
             {inputs.map((n, i) => (
               <li key={n?.id ?? i}>
@@ -336,11 +346,11 @@ function Properties({ node }: { node: FlowNode }) {
             add input
             <select
               value=""
-              aria-label="Add an input to the vector"
+              aria-label={isVector ? 'Add an input to the vector' : 'Add input B'}
               disabled={candidates.length === 0}
               onChange={(e) => e.target.value && addInput(node.id, e.target.value)}
             >
-              <option value="">{candidates.length === 0 ? 'no further bucket in the flow' : 'choose a bucket'}</option>
+              <option value="">{full ? 'A and B are set' : candidates.length === 0 ? 'no further bucket in the flow' : 'choose a bucket'}</option>
               {candidates.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
             </select>
           </label>

@@ -10,6 +10,7 @@ import org.opentsx.data.series.TimeSeriesObject;
 public class Episode03ValidationTests {
 
     public static void main(String[] args) {
+        org.opentsx.data.generator.RNGWrapper.init();
         System.out.println("\n" + "═".repeat(70));
         System.out.println("  Episode 3 Validation Test Suite");
         System.out.println("  Testing: Basic Operations Exercises");
@@ -45,6 +46,7 @@ public class Episode03ValidationTests {
             System.out.println("  Status: ✓ ALL EXERCISES VALIDATED");
         } else {
             System.out.println("  Status: ✗ SOME EXERCISES NEED REVIEW");
+            throw new IllegalStateException("Exercise validation failed");
         }
         System.out.println("═".repeat(70) + "\n");
     }
@@ -65,13 +67,13 @@ public class Episode03ValidationTests {
 
             // Test centering
             TimeSeriesObject centered = original.subtractAverage();
-            validator.checkStatistic("Centered mean", centered.getAvarage(), 0.0, 0.5);
+            validator.checkStatistic("Centered mean", centered.getAvarage2(), 0.0, 0.5);
             validator.checkStatistic("Centered stddev preserved",
                 centered.getStddev(), original.getStddev(), 1.0);
 
             // Test z-score normalization
             TimeSeriesObject zscore = original.normalizeToStdevIsOne();
-            validator.checkStatistic("Z-score mean", zscore.getAvarage(), 0.0, 0.5);
+            validator.checkStatistic("Z-score mean", zscore.getAvarage2(), 0.0, 0.5);
             validator.checkStatistic("Z-score stddev", zscore.getStddev(), 1.0, 0.1);
 
             // Test min-max normalization
@@ -90,45 +92,46 @@ public class Episode03ValidationTests {
     /**
      * Test Exercise 2: Mutability
      * Requirements:
-     * - In-place operations modify original
-     * - Immutable operations return new object
+     * - add_to_Y modifies the original
+     * - scaleY_2 and normalization return new objects
      */
     private static boolean testExercise2() {
         ExerciseValidator validator = new ExerciseValidator("Episode 3, Exercise 2");
 
         try {
-            // Test in-place operation (scaleY_2)
             TimeSeriesObject copy1 = TimeSeriesObject.getGaussianDistribution(100, 50.0, 10.0);
-            double meanBefore = copy1.getAvarage();
+            double meanBefore = copy1.getAvarage2();
 
-            copy1.scaleY_2(2.0);  // In-place
+            TimeSeriesObject scaled = copy1.scaleY_2(2.0);
 
-            double meanAfter = copy1.getAvarage();
+            double meanAfter = scaled.getAvarage2();
             double expectedMean = meanBefore * 2.0;
 
-            validator.checkStatistic("scaleY_2 modifies original",
-                meanAfter, expectedMean, 1.0);
+            validator.checkStatistic("scaleY_2 scales the returned series",
+                meanAfter, expectedMean, 0.000001);
+            validator.checkStatistic("scaleY_2 preserves original",
+                copy1.getAvarage2(), meanBefore, 0.000001);
 
             // Test immutable operation (normalizeToStdevIsOne)
             TimeSeriesObject copy2 = TimeSeriesObject.getGaussianDistribution(100, 50.0, 10.0);
-            double originalMean = copy2.getAvarage();
+            double originalMean = copy2.getAvarage2();
 
             TimeSeriesObject normalized = copy2.normalizeToStdevIsOne();
 
             validator.checkStatistic("Original unchanged after normalize",
-                copy2.getAvarage(), originalMean, 0.1);
+                copy2.getAvarage2(), originalMean, 0.1);
             validator.checkStatistic("Normalized result has stddev=1",
                 normalized.getStddev(), 1.0, 0.1);
 
             // Test add_to_Y (in-place)
             TimeSeriesObject copy3 = TimeSeriesObject.getGaussianDistribution(100, 50.0, 10.0);
             double offset = 25.0;
-            double meanBeforeOffset = copy3.getAvarage();
+            double meanBeforeOffset = copy3.getAvarage2();
 
             copy3.add_to_Y(offset);
 
             validator.checkStatistic("add_to_Y modifies original",
-                copy3.getAvarage(), meanBeforeOffset + offset, 0.1);
+                copy3.getAvarage2(), meanBeforeOffset + offset, 0.1);
 
         } catch (Exception e) {
             validator.check("Execution without errors: " + e.getMessage(), false);
@@ -168,7 +171,7 @@ public class Episode03ValidationTests {
 
             validator.check("Comfort index created", comfort.yValues.size() == numPoints);
             validator.check("Comfort index > temperature",
-                comfort.getAvarage() > temperature.getAvarage());
+                comfort.getAvarage2() > temperature.getAvarage2());
 
             // Test deviation from baseline
             double baseline = 20.0;
@@ -176,7 +179,7 @@ public class Episode03ValidationTests {
             deviation.add_to_Y(-baseline);
 
             validator.checkStatistic("Deviation mean",
-                deviation.getAvarage(), temperature.getAvarage() - baseline, 0.1);
+                deviation.getAvarage2(), temperature.getAvarage2() - baseline, 0.1);
 
         } catch (Exception e) {
             validator.check("Execution without errors: " + e.getMessage(), false);
@@ -211,15 +214,14 @@ public class Episode03ValidationTests {
 
             // Verify afternoon is warmest (peak of sine wave)
             validator.check("Afternoon warmest",
-                afternoon.getAvarage() > morning.getAvarage());
+                afternoon.getAvarage2() > morning.getAvarage2());
             validator.check("Afternoon warmer than evening",
-                afternoon.getAvarage() > evening.getAvarage());
+                afternoon.getAvarage2() > evening.getAvarage2());
 
-            // Verify all windows combined equal full day
             int totalWindowSize = morning.yValues.size() +
                                 afternoon.yValues.size() +
                                 evening.yValues.size();
-            validator.checkStatistic("Windows cover full day", totalWindowSize, 1080, 0);
+            validator.checkStatistic("Windows cover the selected 18 hours", totalWindowSize, 1080, 0);
 
         } catch (Exception e) {
             validator.check("Execution without errors: " + e.getMessage(), false);
@@ -263,7 +265,7 @@ public class Episode03ValidationTests {
         for (int minute = 0; minute < points; minute++) {
             double hour = minute / 60.0;
             double baseTemp = 20.0;
-            double dailyCycle = 5.0 * Math.sin(2 * Math.PI * (hour - 6) / 24);
+            double dailyCycle = 5.0 * Math.sin(2 * Math.PI * (hour - 9) / 24);
             double temp = baseTemp + dailyCycle;
 
             ts.addValuePair(minute, temp);

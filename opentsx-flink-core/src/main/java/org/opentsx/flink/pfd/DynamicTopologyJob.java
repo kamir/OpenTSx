@@ -1,6 +1,7 @@
 package org.opentsx.flink.pfd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -9,6 +10,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.opentsx.data.model.Observation;
+import org.opentsx.core.config.ConfigManager;
+import org.opentsx.core.pfd.PFDValidation;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.flink.functions.TimeSeriesAggregateFunction;
 import org.opentsx.flink.serdes.ObservationSchema;
@@ -17,6 +20,7 @@ import org.opentsx.flink.serdes.TimeSeriesObjectTypeInfo;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Flink Job that builds a topology dynamically from a Processing Flow
@@ -26,7 +30,8 @@ public class DynamicTopologyJob {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
-            System.err.println("Usage: DynamicTopologyJob <path-to-pfd.json> OR --json <json-content>");
+            System.err.println("Usage: DynamicTopologyJob (<path-to-pfd.json> OR --json <json-content>)"
+                    + " [--window-size <milliseconds>] [--out-of-orderness <milliseconds>]");
             System.exit(1);
         }
 
@@ -39,18 +44,53 @@ public class DynamicTopologyJob {
             pfdPath = args[0];
         }
 
+        int optionIndex = pfdContent != null ? 2 : 1;
+        long windowSizeMs = 300000L;
+        long outOfOrdernessMs = 10000L;
+        boolean windowConfigured = false;
+        boolean toleranceConfigured = false;
+        for (int i = optionIndex; i < args.length; i += 2) {
+            String option = args[i];
+            boolean window = "--window-size".equals(option);
+            if (!window && !"--out-of-orderness".equals(option)) {
+                throw new IllegalArgumentException("Expected --window-size or --out-of-orderness after the descriptor");
+            }
+            if (i + 1 >= args.length) {
+                throw new IllegalArgumentException("Missing value for " + option);
+            }
+            if ((window && windowConfigured) || (!window && toleranceConfigured)) {
+                throw new IllegalArgumentException("Duplicate option: " + option);
+            }
+            long value;
+            try {
+                value = Long.parseLong(args[i + 1]);
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException(option + " must be an integer in milliseconds", failure);
+            }
+            if (value < 0 || (window && value == 0)) {
+                throw new IllegalArgumentException(option + " must be "
+                        + (window ? "positive" : "non-negative") + " in milliseconds");
+            }
+            if (window) {
+                windowSizeMs = value;
+                windowConfigured = true;
+            } else {
+                outOfOrdernessMs = value;
+                toleranceConfigured = true;
+            }
+        }
+
         PFDDefinition pfd = (pfdContent != null) ? parsePFDString(pfdContent) : parsePFD(pfdPath);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 1. Source
-        DataStream<Observation> sourceStream = buildSource(env, pfd.input);
+        DataStream<Observation> sourceStream = buildSource(env, pfd.input, outOfOrdernessMs);
 
         // 2. Initial Aggregation (Observation -> TimeSeriesObject)
-        // Hardcoded 5-minute tumbling window for now, could be parameterized
         DataStream<TimeSeriesObject> timeSeriesStream = sourceStream
                 .keyBy(obs -> obs.getUri() != null ? obs.getUri().toString() : "unknown")
-                .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+                .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSizeMs)))
                 .aggregate(new TimeSeriesAggregateFunction())
                 .returns(new TimeSeriesObjectTypeInfo());
 
@@ -68,25 +108,53 @@ public class DynamicTopologyJob {
 
     private static PFDDefinition parsePFD(String path) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(new File(path), PFDDefinition.class);
+        return validate(mapper.readValue(new File(path), PFDDefinition.class));
     }
 
     private static PFDDefinition parsePFDString(String content) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(content, PFDDefinition.class);
+        return validate(mapper.readValue(content, PFDDefinition.class));
     }
 
-    private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input) {
+    private static PFDDefinition validate(PFDDefinition flow) {
+        if (flow == null || flow.input == null || flow.output == null || flow.steps == null) {
+            throw new IllegalArgumentException("PFD input, steps and output are required");
+        }
+        PFDValidation.requireText(flow.name, "Flow name");
+        if (!"KAFKA".equals(flow.input.type)) {
+            throw new IllegalArgumentException("Unsupported input type: " + flow.input.type);
+        }
+        PFDValidation.requireText(flow.input.topic, "Kafka input topic");
+        if (!"LOG".equals(flow.output.type)) {
+            throw new IllegalArgumentException("Unsupported output type: " + flow.output.type);
+        }
+        for (PFDStep step : flow.steps) {
+            if (step == null) {
+                throw new IllegalArgumentException("PFD step is required");
+            }
+            PFDValidation.requireText(step.id, "Step id");
+            PFDValidation.validateOperation(step.operation, step.params);
+        }
+        return flow;
+    }
+
+    private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input,
+                                                        long outOfOrdernessMs) {
         if ("KAFKA".equalsIgnoreCase(input.type)) {
+            String brokers = ConfigManager.getInstance().getString("bootstrap.servers", null);
+            PFDValidation.requireText(brokers, "bootstrap.servers");
             KafkaSource<Observation> source = KafkaSource.<Observation>builder()
-                    .setBootstrapServers("localhost:9092") // Should come from config
+                    .setBootstrapServers(brokers)
                     .setTopics(input.topic)
                     .setGroupId("opentsx-dynamic-job")
                     .setStartingOffsets(OffsetsInitializer.earliest())
                     .setDeserializer(new ObservationSchema())
                     .build();
 
-            return env.fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source");
+            WatermarkStrategy<Observation> watermarks = WatermarkStrategy
+                    .<Observation>forBoundedOutOfOrderness(Duration.ofMillis(outOfOrdernessMs))
+                    .withTimestampAssigner((observation, timestamp) -> observation.getTimestamp());
+            return env.fromSource(source, watermarks, "Kafka Source");
         } else {
             throw new UnsupportedOperationException("Unsupported input type: " + input.type);
         }
@@ -94,10 +162,10 @@ public class DynamicTopologyJob {
 
     private static void buildSink(DataStream<TimeSeriesObject> stream, PFDDefinition.PFDOutput output) {
         if ("LOG".equalsIgnoreCase(output.type)) {
-            stream.map(ts -> ts.toString()).print();
+            stream.map(ts -> new Gson().toJson(Map.of(
+                    "label", ts.getLabel(), "timestamps", ts.xValues, "values", ts.yValues))).print();
         } else {
-            // Default to print
-            stream.map(ts -> "Output to " + output.type + ": " + ts.getLabel()).print();
+            throw new IllegalArgumentException("Unsupported output type: " + output.type);
         }
     }
 }
