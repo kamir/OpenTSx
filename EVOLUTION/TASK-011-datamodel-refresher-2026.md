@@ -1,7 +1,7 @@
 # TASK-011: Datamodel refresher 2026
 
 - **Branch:** `opentsx/2026-datamodel-refresher`
-- **Status:** In progress. Closing: phases 0 to 3 done; the open items of phases 4 and 5 and the close-out are planned in [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md) (D86 to D91).
+- **Status:** Completed on 2026-10-26. All seven success criteria are met, criterion 4 by D86; evidence in [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md), section 9. Phases 6 to 9 and the backlog continue in TASK-015 to TASK-019 and TASK-010.
 - **Priority:** High
 - **Created:** 2026-10-09
 - **Documents:** [`01-ANALYSE-Datenmodell.md`](../docs/datamodel-2026/01-ANALYSE-Datenmodell.md) · [`02-ZIELMODELL.md`](../docs/datamodel-2026/02-ZIELMODELL.md) · [`03-GAP-ANALYSE.md`](../docs/datamodel-2026/03-GAP-ANALYSE.md)
@@ -82,7 +82,7 @@ An explicit, versioned time series data model (v2) with reliable serialization, 
 
 ### Phase 4: streaming statistics and OpenMetadata (`opentsx-stats`, `opentsx-openmetadata`)
 
-The three open items are WP1 to WP3 of [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md).
+The last three items were WP1 to WP3 of [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md).
 
 - [x] `StatsEngine` (runtime-independent): per `seriesId` Welford + min/max + NaN + **quantile sketch** (DDSketch, 1 % relative error, Java/Python byte-identical) + gap detection; GLOBAL + epoch-aligned tumbling windows; event time per series (episode → `tEnd`); dedup by `episodeId`; checkpoint of the complete state.
 - [x] `StatsProcessor` on KafScale (manual assignment, no groups/commits, checkpoint file after confirmed outputs) → `series-stats.v2`. No compaction on KafScale → `SeriesStatsLog` reads "latest per key". Late data: counted, GLOBAL only. Green against KafScale v1.6.0.
@@ -207,6 +207,7 @@ The backlog moved on 2026-10-26 (D90) to the tasks in this table (line numbers r
 
 ## Progress Log
 
+- 2026-10-26: **Closed** (WP5 of [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md), section 9). #234: admin-client probe, `Admin.listOffsets` works on KafScale v1.6.0. #235: `StatsJob` writes `SeriesStats` from Flink, the same records as the KafScale processor (4,300 records for the demo scenario); `TimeSeriesAnalysisJob` deleted. #236: smoke test against a real OpenMetadata 2.0.5; it found and fixed the `dataLength` rule for binary columns. #237: one test for the wire round trip of criterion 2 and the recall@10 assertion of criterion 7 (D87).
 - 2026-10-26: **Split and translation** (D90 in [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md)): this document is in English; phases 6 to 9 and the backlog moved to TASK-015 to TASK-019 and TASK-010. TASK-015 adds the design of pair windows. Open here: the three items of phase 4 (WP1 to WP3).
 - 2026-10-12: **Archive slimmed down**: archived Maven modules (`archive/modules/`, `archive/opentsx-kstreams/`, 15 `pom.xml`) removed from `master`, because their old versions (sshd-core 0.8, Cassandra 3.11.4, Gson 2.7 …) kept producing security warnings and Dependabot PRs; also four dead submodule links in `archive/demos/`. Last state: commit `315f01d`; docs (manual chapters 1 and 13, README, inventory, CHANGELOG) updated.
 - 2026-10-12: **Market and weather history** (`opentsx-market`): collectors for SMARD, Energy-Charts, ENTSO-E (token) and netztransparenz.de (OAuth/CSV import), partner file import; local archive with manifest and quality report, resumable backfill (SMARD archived from 2019 to today; ENTSO-E and netztransparenz skipped without credentials), raw forward archive for MOSMIX, k3s CronJobs (`deploy/k3s/history/`); H2 chain, house and boat with `--history` on real years, standard demos unchanged and synthetic.
