@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `WireRoundTripTest` (`opentsx-legacy-bridge`) checks success criterion 2 of TASK-011 in one chain:
+  `TimeSeriesObject` to `Episode` to Kafka in single-object and in Confluent framing to `Episode` to
+  `TimeSeriesObject`, regular and irregular, through the Kafka client records and, with `KAFSCALE_BOOTSTRAP`,
+  through KafScale (now part of the KafScale CI job).
+- `PatternBenchmarkTest.recallAtTenMeetsTheSuccessCriterion` asserts recall@10 of at least 0.95 for 10 planted gusts
+  with z-normalized Euclidean distance (criterion 7, D87). The recall@12 report stays.
+
 - `StatsJob` in `opentsx-flink-core` (`org.opentsx.flink.stats`) runs the v2 statistics engine as a Flink job:
   `KafkaSource` without offset commits, one `StatsEngine` per series in keyed state with its own state serializer,
   GLOBAL on a timer, all windows closed at the end of a bounded run, `KafkaSink` at least once. It writes the same
