@@ -75,12 +75,17 @@ It runs two ways:
 
 ### 2.3 Risk: KafScale and the Flink Kafka source
 
-The Flink Kafka source discovers partitions and start offsets through the Kafka admin client. The KafScale conformance
-suite covers topic creation and listing (`opentsx-kafscale-conformance/src/test/java/org/opentsx/kafscale/KafScaleConformanceTest.java:87-89`),
-not describe-topics and list-offsets through the admin client. The plain consumer of the KafScale processor works
-against KafScale, and it uses the same metadata and list-offsets requests. The first step of WP1 adds both admin calls
-to the conformance suite and its capability report (`Capabilities.java`). If one is missing, WP1 stops and reports it
-before any job code is written.
+The Flink Kafka source (connector 3.4.0-1.20) reads partition metadata with `describeTopics` and, for
+`OffsetsInitializer.latest()` and a bounded run, end offsets with `Admin.listOffsets`; `OffsetsInitializer.earliest()`
+is resolved by its consumer. The KafScale conformance suite asserted `describeTopics` already
+(`opentsx-kafscale-conformance/src/test/java/org/opentsx/kafscale/KafScaleConformanceTest.java:89-94`), but not
+`Admin.listOffsets`. The first step of WP1 adds that call to the suite and its capability report (`Capabilities.java`).
+If it is missing, WP1 stops and reports it before any job code is written.
+
+Result (2026-10-26, KafScale v1.6.0 built from source): `admin.listoffsets.earliest.supported=true` and
+`admin.listoffsets.latest.supported=true` (earliest `0,0` and latest `7,3` for two partitions with 7 and 3 records).
+WP1 goes ahead. The source runs with `commit.offsets.on.checkpoint=false`, because KafScale rejects standalone commits
+(`offsetcommit.standalone.supported=false`).
 
 ### 2.4 Tests
 

@@ -8,6 +8,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ## [Unreleased]
 
+### Added
+
+- The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
+  which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
+
 ### Changed
 
 - `EVOLUTION/TASK-011-datamodel-refresher-2026.md` is in English. Its phases 6 to 9 and its backlog moved to the new
