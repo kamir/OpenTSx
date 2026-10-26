@@ -3,10 +3,16 @@
 All notable changes to OpenTSx are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases are tagged `v<version>`;
-entries before 3.0.0 are grouped by date. The detailed progress log (German) is in
+entries before 3.0.0 are grouped by date. The detailed progress log is in
 [`EVOLUTION/TASK-011-datamodel-refresher-2026.md`](EVOLUTION/TASK-011-datamodel-refresher-2026.md).
 
 ## [Unreleased]
+
+### Changed
+
+- `EVOLUTION/TASK-011-datamodel-refresher-2026.md` is in English. Its phases 6 to 9 and its backlog moved to the new
+  tasks TASK-015 to TASK-019 and to TASK-010 (D90 in `docs/datamodel-2026/18-CLOSING-TASK-011.md`). TASK-015 adds
+  the design of pair windows for multivariate analysis.
 
 ### Fixed
 
