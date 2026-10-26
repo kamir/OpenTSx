@@ -2,6 +2,7 @@
 
 This document plans the work that closes [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md). It was
 checked against `master` at `551815a3` (version 3.0.1). The owner decided D86 to D91 (section 7) on 2026-10-26.
+TASK-011 was closed on 2026-10-26; section 9 records the result.
 
 TASK-011 holds 117 open and 91 done items. Phases 0 to 3 are done. The goal and the seven success criteria of
 TASK-011 (lines 9 to 26) cover phases 0 to 5 only. Phases 6 to 9 and the backlog were added later and are a
@@ -224,3 +225,28 @@ The order matters. A page that links to another is merged after its target (`DOC
 
 Every pull request runs `mvn -B -ntp verify`. Pull requests that change documentation also run
 `python3 tools/check_links.py`. Each one is squash-merged when every check is green.
+
+## 9. Result
+
+All work packages are merged: WP4 with #233, the admin-client probe of section 2.3 with #234, WP1 and WP3 with #235,
+WP2 with #236, and the tests for criteria 2 and 7 with #237. The success criteria on `master` after #237:
+
+| # | Criterion | Evidence | Status |
+|---|-----------|----------|--------|
+| 1 | One Avro schema set, compatibility checked in CI | `opentsx-model/src/test/java/org/opentsx/model/SchemaCompatibilityTest.java:19` (unchanged) | Met |
+| 2 | Round trip through Kafka in both wire formats, time axis included | `opentsx-legacy-bridge/src/test/java/org/opentsx/bridge/WireRoundTripTest.java:111` (Kafka client records) and `:134` (KafScale, in the KafScale CI job): single-object and Confluent framing, a regular and an irregular series | Met |
+| 3 | Legacy `TSBucket` replayed completely with count and checksum | `BucketWriterTest.java:53`, `EpisodeLogIntegrationTest.java:74` (unchanged) | Met |
+| 4 | Bytes per value measured and documented | 2.18 bytes per value, accepted by D86 | Met by D86 |
+| 5 | Same `EpisodeQuery` result against OpenTSDB and Iceberg | `SeriesStoreContract.java:25` (unchanged) | Met |
+| 6 | A Flink job publishes `SeriesStats`; OpenMetadata shows topics, tables, lineage and profiles | `StatsJob` (`opentsx-flink-core/src/test/java/org/opentsx/flink/stats/StatsJobTest.java:30`, against KafScale `StatsJobKafScaleTest.java:28`); `OpenMetadataSmokeTest.java:36` against OpenMetadata 2.0.5 in `.github/workflows/openmetadata-smoke.yml` | Met |
+| 7 | `similarTo` finds planted patterns, recall@10 at least 0.95 with z-ED | `opentsx-retrieval/src/test/java/org/opentsx/retrieval/pattern/PatternBenchmarkTest.java:56`, 10 planted gusts (D87) | Met |
+
+The close conditions of section 6 hold. Found on the way and fixed in the same pull requests:
+
+* `TimeSeriesAggregateFunction` is used by the PFD job, so WP3 deleted `TimeSeriesAnalysisJob` only (section 4, D89).
+* The KafScale conformance suite asserted `describeTopics` already; only `Admin.listOffsets` was missing (section 2.3).
+* The first run against a real OpenMetadata 2.0.5 rejected `binary` columns without `dataLength`, a rule the server
+  checks in code. The publisher now writes variable-length `binary` as `BYTES` and `FakeOpenMetadata` checks the
+  column rules of the server (#236).
+* The KafScale CI step runs under `xvfb-run`, because `opentsx-legacy-bridge` pulls in the Swing tests of
+  `opentsx-core` (#237).

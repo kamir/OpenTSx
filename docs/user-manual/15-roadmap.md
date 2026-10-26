@@ -24,11 +24,9 @@ On 2026-10-26 the open items of TASK-011 moved into one task per topic:
 [TASK-017](../../EVOLUTION/TASK-017-digital-twin.md) (digital twin, P9),
 [TASK-018](../../EVOLUTION/TASK-018-analytics-storage-extensions.md) (P5 options, P6, storage and data sources),
 [TASK-019](../../EVOLUTION/TASK-019-major-upgrades.md) (major upgrades) and
-[TASK-010](../../EVOLUTION/TASK-010.md) (repository items and the credential rotation). TASK-011 keeps the three
-open items of P4; [18-CLOSING-TASK-011](../datamodel-2026/18-CLOSING-TASK-011.md) plans them. The main items:
+[TASK-010](../../EVOLUTION/TASK-010.md) (repository items and the credential rotation). TASK-011 itself was completed on
+2026-10-26 ([closing](../datamodel-2026/18-CLOSING-TASK-011.md), section 9). The main open items:
 
-* a Flink job for the statistics engine (TASK-011, WP1),
-* a smoke test against a real OpenMetadata server (TASK-011, WP2),
 * pair windows for cross-correlation and event synchronization in the workbench (TASK-015),
 * Avro 1.12.2+ (`SERIALIZABLE_PACKAGES`) (TASK-019),
 * real vendor exports in the catalog (TASK-018),

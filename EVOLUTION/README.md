@@ -23,7 +23,7 @@ Where:
 | TASK-015 | [Multivariate analysis](TASK-015-multivariate-analysis.md): pair windows, system reconstruction, simulation and optimization (P8) | planned | 2026-10-26 |
 | TASK-013 | [Web workbench](TASK-013-web-workbench.md): Swing bucket analyser in the browser, oscilloscope, flow graph, export as `opentsx.dag.v1` | in progress | 2026-10-12 |
 | TASK-012 | [Briefing for the local agent](TASK-012-lokaler-agent.md) (German): repository hygiene, local test installation (k3s, KafScale, images), market history with credentials, private data, Modbus | open | 2026-10-12 |
-| TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | Phases 0 to 3 and 5 done; three items of phase 4 open (WP1 to WP3 of [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md)); phases 6 to 9 and the backlog moved to TASK-015 to TASK-019 and TASK-010 | 2026-10-09 |
+| TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | completed 2026-10-26 ([closing](../docs/datamodel-2026/18-CLOSING-TASK-011.md), section 9); phases 6 to 9 and the backlog continue in TASK-015 to TASK-019 and TASK-010 | 2026-10-09 |
 | TASK-010 | [Open-source readiness](TASK-010.md): LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, link checker | partly done (CI, README, link check); repository items moved in from TASK-011 | 2025-12 |
 | TASK-005 | [Processing flow descriptor](TASK-005-processing-flow-descriptor.md) (Flink `DynamicTopologyJob`) | concept valid, not continued | 2025-12-21 |
 
