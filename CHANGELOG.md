@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Smoke test against a real OpenMetadata 2.0.5: the workflow `openmetadata-smoke.yml` (nightly, by hand, and on pull
+  requests that change `opentsx-openmetadata/`) starts the server from the pinned compose file of the release, gets
+  the token of `ingestion-bot`, and `OpenMetadataSmokeTest` publishes the simulated wind farm and reads back topics,
+  tables, lineage, the latest profile and data-quality results.
+
 - The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
   which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
 

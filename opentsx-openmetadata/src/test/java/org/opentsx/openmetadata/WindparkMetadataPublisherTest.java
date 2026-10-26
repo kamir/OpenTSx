@@ -6,18 +6,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.opentsx.kafka.TopicLayout;
 import org.opentsx.model.v2.SeriesStats;
-import org.opentsx.stats.StatsEngine;
 import org.opentsx.windpark.catalog.ChannelCatalog;
-import org.opentsx.windpark.catalog.Park;
-import org.opentsx.windpark.sim.Scenario;
-import org.opentsx.windpark.sim.WindparkSimulator;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,32 +24,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WindparkMetadataPublisherTest {
 
-    private static final Instant START = Instant.parse("2026-10-01T00:00:00Z");
-    private static final ChannelCatalog CATALOG = ChannelCatalog.standard();
-    private static Park park;
+    private static final Instant START = SimulatedPark.START;
+    private static final ChannelCatalog CATALOG = SimulatedPark.CATALOG;
+    private static SimulatedPark sim;
     private static List<SeriesStats> stats;
 
     @BeforeAll
     static void simulateAndComputeStatistics() {
-        Scenario scenario = new Scenario("om", 11, START, Duration.ofHours(3), Duration.ofSeconds(1), Duration.ofMinutes(10),
-                new Scenario.ParkSpec("ostsee-1", "Ostsee 1", 54.5, 13.6, "GENERIC-3MW", 1, 3, 5, 7, 0.05),
-                new Scenario.WindSpec(2.0, 10.0, 0.10, 240, 15, 0.1, 10), List.of(),
-                List.of(new Scenario.SensorFault(Scenario.SensorFaultType.STUCK, "T02", "wind.met.wind_speed",
-                                Duration.ofHours(1), Duration.ofMinutes(30), null, null, null),
-                        new Scenario.SensorFault(Scenario.SensorFaultType.GAP, "T01", "wind.turbine.power_active",
-                                Duration.ofHours(2), Duration.ofMinutes(15), null, null, null)));
-        WindparkSimulator sim = new WindparkSimulator(scenario, CATALOG);
-        park = sim.park();
-        StatsEngine engine = new StatsEngine(StatsEngine.Config.defaults());
-        List<SeriesStats> out = new ArrayList<>();
-        sim.run(e -> out.addAll(engine.onEpisode(e)));
-        out.addAll(engine.flush());
-        stats = out;
+        sim = SimulatedPark.simulate();
+        stats = sim.stats;
     }
 
     private static WindparkMetadataPublisher publisher(OmApi api) {
-        return new WindparkMetadataPublisher(api, CATALOG, park, new TopicLayout("wind"),
-                WindparkMetadataPublisher.Settings.defaults());
+        return sim.publisher(api);
     }
 
     @Test
