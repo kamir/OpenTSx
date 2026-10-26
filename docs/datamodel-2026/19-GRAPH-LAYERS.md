@@ -1,4 +1,4 @@
-# Concept 18: graph layers on KafScale and Iceberg
+# Concept 19: graph layers on KafScale and Iceberg
 
 > Status: **proposal**, 2026-10-26, not implemented. Checked against this repository at `551815a` and against
 > GeoQB ([`GeoQB/geoqb`](https://github.com/GeoQB/geoqb) at `393955c`). Related: [06](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)
