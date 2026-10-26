@@ -30,6 +30,25 @@ bin/opentsx stats --kafscale localhost:9092 --domain wind --checkpoint stats.ckp
 * Because KafScale has no compaction, `SeriesStatsLog.readLatest(...)` reads the topic and keeps the latest record
   per key.
 
+The same statistics run as a Flink job, `StatsJob` in `opentsx-flink-core`. It reads the same topics and writes the
+same records:
+
+```bash
+bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
+    [--windows PT10M,PT1H] [--lateness PT0S] [--alpha 0.01] [--observations true] \
+    [--global-every PT30S] [--checkpoint-every PT30S] [--once true]
+```
+
+* `bin/opentsx stats-flink` runs the job in a local mini cluster. On a Flink cluster:
+  `flink run -c org.opentsx.flink.stats.StatsJob opentsx-flink-core/target/opentsx-flink-core-<version>.jar ...`.
+* One `StatsEngine` per series lives in Flink keyed state. Input positions are in Flink checkpoints, not in a file;
+  `--checkpoint` does not apply. The source commits no offsets, because KafScale rejects commits without group
+  membership. The output is at least once, as with the processor.
+* GLOBAL is emitted every `--global-every` (`PT0S`: only at the end of a bounded run). `--once true` reads up to the
+  end offsets seen at start, closes all windows and ends.
+* Stop a running job without `--drain`. Draining sends the final watermark, which closes all open windows.
+* Use the heap state backend: with RocksDB the engine state is written on every record.
+
 In code (any runtime):
 
 ```java

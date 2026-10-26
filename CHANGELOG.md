@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `StatsJob` in `opentsx-flink-core` (`org.opentsx.flink.stats`) runs the v2 statistics engine as a Flink job:
+  `KafkaSource` without offset commits, one `StatsEngine` per series in keyed state with its own state serializer,
+  GLOBAL on a timer, all windows closed at the end of a bounded run, `KafkaSink` at least once. It writes the same
+  `SeriesStats` as `StatsProcessorApp`. Launcher verb `bin/opentsx stats-flink`; main class of the shaded jar.
+
 - The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
   which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
 
@@ -18,6 +23,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `EVOLUTION/TASK-011-datamodel-refresher-2026.md` is in English. Its phases 6 to 9 and its backlog moved to the new
   tasks TASK-015 to TASK-019 and to TASK-010 (D90 in `docs/datamodel-2026/18-CLOSING-TASK-011.md`). TASK-015 adds
   the design of pair windows for multivariate analysis.
+
+### Removed
+
+- `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
+  stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
 
