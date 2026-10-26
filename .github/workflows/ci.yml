@@ -172,11 +172,28 @@ jobs:
             nohup "$RUNNER_TEMP/kafscale-broker" > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
           for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/39092) 2>/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/kafscale-broker.log"; exit 1
-      - name: Run conformance suite, episode-log, wire round-trip, wind-farm, statistics and event-topic integration tests
+      - name: Run conformance suite, episode-log, wire round-trip, wind-farm, statistics, event-topic and streaming integration tests
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
-        run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live -am test
+        run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval -am test
+      - name: Require executed streaming acceptance
+        if: always()
+        run: |
+          python3 - <<'PYTHON'
+          import xml.etree.ElementTree as ET
+          path = "opentsx-retrieval/target/surefire-reports/TEST-org.opentsx.retrieval.server.KafkaStreamingIntegrationTest.xml"
+          suite = ET.parse(path).getroot()
+          expected = {
+              "httpDeploymentFollowsNewInputAndStopsItsVector",
+              "refusesPartialDeploymentBeforeWritingControlRecords",
+              "cleaningResumesAnOpenWindowFromItsCheckpoint",
+          }
+          executed = {case.attrib["name"].split("(", 1)[0] for case in suite.findall("testcase") if case.find("skipped") is None}
+          if not expected.issubset(executed) or any(int(suite.attrib[key]) for key in ("failures", "errors", "skipped")):
+              raise SystemExit("streaming acceptance is missing, skipped or failed")
+          print("All three streaming acceptance cases executed successfully")
+          PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
@@ -199,6 +216,7 @@ jobs:
             opentsx-legacy-bridge/target/surefire-reports/
             opentsx-windpark/target/surefire-reports/
             opentsx-stats/target/surefire-reports/
+            opentsx-retrieval/target/surefire-reports/
             opentsx-flink-core/target/pfd-acceptance/
 
   cross-language:
