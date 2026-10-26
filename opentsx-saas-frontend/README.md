@@ -112,7 +112,8 @@ frontend/
 - Pair windows (tab "Multi-variate Analysis"): a pair method compares two series window by window, paired by their
   episode ranges, one result per window at its centre; "Pair coverage" shows what the methods will see,
   "Cross-correlation" gives the peak of the lagged cross-correlation, its lag and link strength (`src/workbench/xcorr.ts`,
-  ported from WikiExplorer.NG). Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
+  ported from WikiExplorer.NG), "Event synchronisation" the share of synchronous events and the level of chance
+  (`src/workbench/es.ts`, ported from the Python package). Workbench only, not in the stream operator catalog (`src/workbench/pairs.ts`, design in
   `../EVOLUTION/TASK-015-multivariate-analysis.md`)
 - Deploy and Stop (tab "Smart Topic"): a list says what a deployment still needs, "Create a vector of the loaded
   series" builds the one thing the processor runs, and Deploy hands the flow to the vector processor, which keeps the vector topic up to

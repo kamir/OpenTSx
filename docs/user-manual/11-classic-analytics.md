@@ -50,14 +50,17 @@ leads (after Quiroga et al., 2002).
 
 ```python
 from opentsx import EventSynchronization
-r = EventSynchronization().analyze(x, y)   # events: local maxima above mean + 2·std (method="percentile": 95th)
+es = EventSynchronization()
+r = es.analyze(x, y)   # events: local maxima above mean + 2·std (method="percentile": 95th)
 r["overall_sync"], r["sync_1_to_2"], r["sync_2_to_1"], r["leader"], r["lead_lag_strength"], r["tau_max"]
+q_rand = es.surrogate_sync(r["events_1"], r["events_2"], shuffles=10, seed=1)
 ```
 
-> **Known issue.** With dense events and the automatically chosen `tau_max`, `overall_sync` can exceed 1.
-> The implementation uses an average inter-event interval rather than the local, pairwise τ of the original method.
-> Until this is fixed, set `tau_max` explicitly (smaller than half the typical inter-event interval) and compare
-> values only within one configuration.
+Every event pair gets its own window, half the smaller distance to a neighbouring event (the local τ of Quiroga et
+al.), so `overall_sync` stays in [0, 1]; `tau_max` caps that window when set. `surrogate_sync` gives the level chance
+reaches: the mean `overall_sync` against copies of `y` whose intervals between events are shuffled. Only an
+`overall_sync` clearly above it points to a coupling. The web workbench computes the same numbers per window with the
+operator "Event synchronisation" (`pair.es`, tab "Multi-variate Analysis").
 
 ## 11.4 Return-interval statistics (RIS)
 

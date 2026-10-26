@@ -1,9 +1,19 @@
 """Tests for EventSynchronization (Quiroga, Kreuz & Grassberger 2002)."""
 
+import json
+import pathlib
+
 import numpy as np
 import pytest
 
 from opentsx import EventSynchronization
+from opentsx.algorithms.event_sync import Mulberry32, isi_shuffle
+
+# shared with the web workbench (pair.es); written by tools/pair_es_vectors.py
+VECTORS = json.loads(
+    (pathlib.Path(__file__).resolve().parents[2] / "docs" / "datamodel-2026" / "testvectors" / "pair-es.v1.json")
+    .read_text(encoding="utf-8")
+)
 
 
 def poisson_events(rng, n, rate):
@@ -111,3 +121,57 @@ def test_result_keys_are_stable():
         "events_1", "events_2", "leader", "lead_lag_strength", "tau_max",
     ):
         assert key in r
+
+
+def test_mulberry32_draws_what_the_workbench_draws():
+    for seed, expected in VECTORS["mulberry32"].items():
+        rand = Mulberry32(int(seed))
+        assert [rand() for _ in expected] == expected
+
+
+@pytest.mark.parametrize("case", VECTORS["cases"], ids=lambda c: c["name"])
+def test_shared_vectors(case):
+    es = EventSynchronization()
+    if "a" in case:
+        events_a = es.detect_events(np.array(case["a"]))
+        events_b = es.detect_events(np.array(case["b"]))
+        assert events_a.tolist() == case["eventsA"]
+        assert events_b.tolist() == case["eventsB"]
+    else:
+        events_a = np.array(case["eventsA"])
+        events_b = np.array(case["eventsB"])
+    q, q_ab, q_ba = es.calculate_synchronization(events_a, events_b, case["tauMax"])
+    q_rand = es.surrogate_sync(events_a, events_b, VECTORS["shuffles"], VECTORS["seed"], case["tauMax"])
+    expected = case["expect"]
+    assert (q, q_ab, q_ba, q_rand) == pytest.approx(
+        (expected["q_total"], expected["q_ab"], expected["q_ba"], expected["q_rand"]), abs=1e-12
+    )
+
+
+def test_isi_shuffle_keeps_first_and_last_event_and_the_intervals():
+    events = np.array([2.0, 9.0, 15.0, 31.0, 47.0, 52.0, 70.0])
+    shuffled = isi_shuffle(events, Mulberry32(7))
+    assert shuffled[0] == events[0] and shuffled[-1] == events[-1]
+    assert sorted(np.diff(shuffled)) == sorted(np.diff(events))
+    assert not np.array_equal(shuffled, events)
+    # fewer than three events leave nothing to shuffle
+    assert isi_shuffle(np.array([4.0, 9.0]), Mulberry32(1)).tolist() == [4.0, 9.0]
+
+
+def test_surrogate_sync_is_repeatable_and_bounded():
+    rng = np.random.default_rng(11)
+    es = EventSynchronization()
+    for _ in range(50):
+        x = poisson_events(rng, 500, 0.05)
+        y = poisson_events(rng, 500, 0.05)
+        q_rand = es.surrogate_sync(x, y, shuffles=5, seed=3)
+        assert 0.0 <= q_rand <= 1.0 + 1e-12
+        assert q_rand == es.surrogate_sync(x, y, shuffles=5, seed=3)
+    with pytest.raises(ValueError):
+        es.surrogate_sync([1, 5], [2, 6], shuffles=0)
+
+
+def test_coupled_series_lie_above_their_surrogate_baseline():
+    case = next(c for c in VECTORS["cases"] if c["name"] == "B follows A by 2 ticks")
+    assert case["expect"]["q_total"] > case["expect"]["q_rand"] + 0.3
+    assert case["expect"]["q_ab"] > case["expect"]["q_ba"]

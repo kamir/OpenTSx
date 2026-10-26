@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-015-multivariate-analysis
 - **Created**: 2026-10-26
-- **Status**: In progress (pair windows: phases 1a to 1c done)
+- **Status**: In progress (pair windows: phases 1a to 1d done)
 - **Priority**: High
 - **Epic**: P8 System reconstruction, simulation and optimization
 - **Origin**: split out of [TASK-011](TASK-011-datamodel-refresher-2026.md) on 2026-10-26 (D90, [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md))
@@ -98,7 +98,7 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 | Method | Fields | Origin |
 |---|---|---|
 | `pair.xcorr` | `max`, `lag`, `strength` | port of `KreuzKorrelation.calcKR_SLIDINGWINDOW`, which already stamps the window centre (`experiments/crosscorrelation/KreuzKorrelation.java:455` and `:490`), and of `CCFunction.calcStrength_VERSION_A`, `strength = (max-mean)/std` (`experiments/linkstrength/CCFunction.java:76` to `:88`), from kamir/WikiExplorer.NG (Apache License 2.0) |
-| `pair.es` | `q_total`, `q_ab`, `q_ba`, `q_rand` | event synchronisation after Quiroga, Kreuz and Grassberger (python-package/opentsx/algorithms/event_sync.py:83 to 137); `q_rand` is `q_total` of shuffled event times, the baseline against chance |
+| `pair.es` | `q_total`, `q_ab`, `q_ba`, `q_rand` | event synchronisation after Quiroga, Kreuz and Grassberger (python-package/opentsx/algorithms/event_sync.py:117 to 172 and 219 to 261); `q_rand` is `q_total` of B with shuffled intervals between its events, the baseline against chance (`surrogate_sync`, :174 to 208) |
 | `pair.scatter` | `slope`, `r` | least squares line and Pearson correlation of the aligned values |
 | `pair.granger` | `p` | p-value of the F test, `GrangerCausality.grangerCausalityTest` (opentsx-core/src/main/java/org/opentsx/algorithms/statistics/GrangerCausality.java:19 to 53) |
 
@@ -122,6 +122,25 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
   tools/pair_xcorr_vectors.sh. The script compiles `KreuzKorrelation` and `CCFunction` of WikiExplorer.NG at 7b56e3d
   unchanged except for the import of `TimeSeriesObject`, which it takes from opentsx-core, the renamed successor of
   hadoop-ts-ng; the chart, FFT and shuffle classes they import are stubbed and not called.
+
+`pair.es` as ported (phase 1d, opentsx-saas-frontend/src/workbench/es.ts):
+
+- Events are local maxima above mean + `sigma` std of the window (default 2, population std), as `detect_events`
+  finds them (event_sync.py:73 to 115); the first and the last tick are never events, and a tick next to a gap is
+  none either. Event times are tick indices; `tauMax` (seconds, 0 for none) caps the local window of every event
+  pair and is converted to ticks with the clock.
+- `q_ab` is c(B|A) / sqrt(mA mB), B after A: q_ab > q_ba is the direction that `pair.xcorr` reports as lag > 0.
+- `q_rand` is measured per window, not taken from a formula: the mean `q_total` of A against `shuffles` copies of B
+  (default 10) whose intervals between events are shuffled, drawn in turn by `mulberry32(seed)` (default seed 1).
+  Rates and intervals stay, the timing relative to A goes. Strictly periodic events keep their timing under any
+  shuffle; there `q_rand` equals `q_total`, and the pair cannot be told from chance. The closed form of the thesis
+  for random events (`docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`, section 2) is not used.
+- The Python package draws the same copies: `Mulberry32`, `isi_shuffle` and `EventSynchronization.surrogate_sync`
+  (event_sync.py:8 to 41 and 174 to 208). `mulberry32` of the workbench moved to `random.ts` for that.
+- A window without events in A or B gives 0 in every field, as the Python code returns.
+- Shared test vectors: docs/datamodel-2026/testvectors/pair-es.v1.json, written by tools/pair_es_vectors.py from the
+  Python reference and run by python-package/tests/test_event_sync.py and es.test.ts: 8 cases, equal to 12
+  decimals, including a short series whose peak lies between the thresholds of the population and the sample std.
 
 **Browser first, processor later**
 
@@ -154,7 +173,9 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
   2026-10-26: `xcorr.ts` (`crossCorrelation`, `peakOf`, `PAIR_XCORR`), operator "Cross-correlation", vectors from
   the original code (5 cases, CC function, peak, strength and calcKR_SLIDINGWINDOW, equal to 12 decimals), tests in
   xcorr.test.ts. Pair methods read the operator parameters and label their own settings (`PairMethod.settings`).*
-- [ ] 1d: `pair.es` with `q_rand`, test vectors shared with python-package/tests/test_event_sync.py.
+- [x] 1d: `pair.es` with `q_rand`, test vectors shared with python-package/tests/test_event_sync.py. *Done
+  2026-10-26: `es.ts` (`detectEvents`, `eventSync`, `isiShuffle`, `surrogateSync`, `PAIR_ES`), operator "Event
+  synchronisation", `surrogate_sync` with `Mulberry32` in the Python package, shared vectors with 8 cases.*
 - [ ] 1e: `pair.scatter`.
 - [ ] 1f: `pair.granger`.
 - [ ] 1g: all pairs and the edge table for P8.0.
