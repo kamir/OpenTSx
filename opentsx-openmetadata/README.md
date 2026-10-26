@@ -61,6 +61,11 @@ Two quirks of the 2.0.5 spec are handled in the test and documented there:
   accepts it.
 * `createTestCaseResult.json` declares a wrong `$id`.
 
+The server also checks rules in code that the schemas do not contain (`DatabaseUtil.validateColumns` in 2.0.5):
+`char`, `varchar`, `binary` and `varbinary` columns need a `dataLength`, arrays an `arrayDataType`, structs their
+children. `FakeOpenMetadata` checks them too. The smoke test found the first one: variable-length Iceberg `binary`
+columns (`time_deltas`, `quality`) are therefore published as `BYTES`, `fixed(n)` as `BINARY` with `dataLength` n.
+
 The test also checks content against the simulator's ground truth. The stuck anemometer of T02 fails `opentsxFlatline`
 in exactly the windows ending at minutes 70, 80 and 90. The power outage of T01 fails `opentsxCompleteness` at 130
 and 140.

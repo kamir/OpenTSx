@@ -113,10 +113,35 @@ class WindparkMetadataPublisherTest {
             table.put("databaseSchema", "missing.db.schema");
             table.putArray("columns").addObject().put("name", "c").put("dataType", "DOUBLE");
             assertThrows(OmException.class, () -> api.put("/v1/tables", table));
-            assertEquals(2, om.violations.size(), om.violations::toString);
+            // a rule the server checks in code, found by the smoke test: varchar, char, binary need a length
+            publishEmptySchema(api);
+            ObjectNode varchar = new ObjectMapper().createObjectNode();
+            varchar.put("name", "v");
+            varchar.put("databaseSchema", "svc.db.s");
+            varchar.putArray("columns").addObject().put("name", "c").put("dataType", "VARCHAR");
+            OmException noLength = assertThrows(OmException.class, () -> api.put("/v1/tables", varchar));
+            assertTrue(noLength.getMessage().contains("dataLength must not be null"), noLength::getMessage);
+            assertEquals(3, om.violations.size(), om.violations::toString);
             assertEquals(401, assertThrows(OmException.class,
                     () -> new HttpOmApi(om.uri(), "wrong", 1).put("/v1/classifications", bad)).status());
         }
+    }
+
+    /** Service, database and schema {@code svc.db.s}, so that a table in it fails on its columns only. */
+    private static void publishEmptySchema(HttpOmApi api) {
+        ObjectMapper m = new ObjectMapper();
+        ObjectNode service = m.createObjectNode();
+        service.put("name", "svc");
+        service.put("serviceType", "CustomDatabase");
+        api.put("/v1/services/databaseServices", service);
+        ObjectNode db = m.createObjectNode();
+        db.put("name", "db");
+        db.put("service", "svc");
+        api.put("/v1/databases", db);
+        ObjectNode schema = m.createObjectNode();
+        schema.put("name", "s");
+        schema.put("database", "svc.db");
+        api.put("/v1/databaseSchemas", schema);
     }
 
     @Test
