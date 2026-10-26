@@ -208,5 +208,6 @@ assumptions; prices, wind situations, temperatures and irradiance are real.
 day), ENTSO-E (A03 blocks, two resolutions, acknowledgement, no DOCTYPE/XXE), reBAP (API and download formats
 across the end of DST), Marktwerte (local months), partner CSV (doubled hour), OAuth flow and token reuse,
 archive round trip and checksums, quality report (gaps, DST days, implausible values), episode mapping, backfill
-resume, weather backfill (listing, year filter, recent over historical, resume), MOSMIX raw archive, resampling, and the three twins on fixture slices
+resume, weather backfill (listing, year filter, recent over historical, resume; every parameter to its CDC
+directory, column, unit and time convention; default stations and years of the daily jobs), MOSMIX raw archive, resampling, and the three twins on fixture slices
 ([`src/test/resources/market/`](src/test/resources/market/README.md)).

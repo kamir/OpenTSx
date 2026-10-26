@@ -110,4 +110,74 @@ class CdcObservationsTest {
         assertEquals("https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/10minutenwerte_TU_01358_now.zip",
                 CdcObservations.nowUrl("air_temperature", "01358"));
     }
+
+    @Test
+    void hourlyWindIsAMeanOverTheHourBeforeTheStamp() {
+        List<WeatherSeries> s = CdcObservations.parse(Fixtures.lines(Fixtures.FF_HOURLY));
+        assertEquals(2, s.size());   // F, D (QN_3 ignored)
+        WeatherSeries f = MosmixTest.of(s, Variable.WIND_SPEED);
+        assertEquals("01759", f.station());
+        assertEquals("cdc-hourly", f.product());
+        assertEquals("mean.PT1H", f.aggregation());
+        assertEquals("F", f.sourceElement());
+        assertEquals(6, f.size());
+        assertEquals(t("2025-09-30T23:00:00Z"), f.timestamps()[0]);   // stamp 2025100100 = hour 23-24 UTC
+        assertEquals(3.6, f.values()[0], 1e-9);
+        assertEquals(3.4, f.values()[5], 1e-9);
+        WeatherSeries d = MosmixTest.of(s, Variable.WIND_DIRECTION);
+        assertEquals("deg", d.seriesKey().getUnit());
+        assertEquals(t("2025-09-30T23:00:00Z"), d.timestamps()[0]);
+        assertEquals(140, d.values()[0], 1e-9);
+    }
+
+    @Test
+    void hourlyGustPressureAndPrecipitation() {
+        WeatherSeries fx = MosmixTest.of(CdcObservations.parse(Fixtures.lines(Fixtures.FX_HOURLY)), Variable.WIND_GUST);
+        assertEquals("max.PT1H", fx.aggregation());
+        assertEquals("FX_911", fx.sourceElement());
+        assertEquals(t("2025-09-30T23:00:00Z"), fx.timestamps()[0]);
+        assertEquals(5.8, fx.values()[0], 1e-9);
+
+        List<WeatherSeries> p = CdcObservations.parse(Fixtures.lines(Fixtures.P0_HOURLY));
+        assertEquals(1, p.size());   // P0 at station level; P (sea level) is not mapped
+        WeatherSeries p0 = p.get(0);
+        assertEquals(Variable.PRESSURE, p0.variable());
+        assertNull(p0.aggregation());   // instantaneous: stays at its stamp
+        assertEquals(t("2025-10-01T00:00:00Z"), p0.timestamps()[0]);
+        assertEquals(1030.5, p0.values()[0], 1e-9);
+        assertEquals("hPa", p0.seriesKey().getUnit());
+
+        List<WeatherSeries> r = CdcObservations.parse(Fixtures.lines(Fixtures.RR_HOURLY));
+        assertEquals(1, r.size());   // R1; RS_IND and WRTR are not mapped
+        WeatherSeries r1 = r.get(0);
+        assertEquals(Variable.PRECIPITATION, r1.variable());
+        assertEquals("sum.PT1H", r1.aggregation());
+        assertEquals(t("2025-09-30T23:00:00Z"), r1.timestamps()[0]);
+        assertEquals(0.0, r1.values()[0], 1e-9);
+        assertEquals(6, r1.valid());
+    }
+
+    @Test
+    void hourlySolarIsStampedAtTheEndOfTheTrueSolarHour() {
+        // MESS_DATUM carries minutes: the UTC moment at which the hour in true solar time (MESS_DATUM_WOZ) ends;
+        // at Arkona on 2025-07-01 that is hh:10 UTC. It is rounded to the nearest full hour, then the hour before it.
+        List<WeatherSeries> s = CdcObservations.parse(Fixtures.lines(Fixtures.ST_HOURLY));
+        WeatherSeries g = MosmixTest.of(s, Variable.GLOBAL_IRRADIANCE);
+        assertEquals("cdc-hourly", g.product());
+        assertEquals("mean.PT1H", g.aggregation());
+        assertEquals(10, g.size());
+        assertEquals(t("2025-07-01T06:00:00Z"), g.timestamps()[0]);   // 07:10 -> 07:00 end -> 06:00 start
+        assertEquals(178.0 * 10_000 / 3600, g.values()[0], 1e-3);     // J/cm² per hour -> W/m²
+        // the brightest hours sit around solar noon (11:10 UTC there): 10-11 and 11-12 UTC
+        assertEquals(t("2025-07-01T10:00:00Z"), g.timestamps()[4]);
+        assertEquals(313.0 * 10_000 / 3600, g.values()[4], 1e-3);
+        assertEquals(314.0 * 10_000 / 3600, g.values()[5], 1e-3);
+        assertEquals(27.0 * 10_000 / 3600, MosmixTest.of(s, Variable.DIFFUSE_IRRADIANCE).values()[4], 1e-3);
+        // a stamp just before the full hour belongs to that hour, not to the one before
+        List<WeatherSeries> late = CdcObservations.parse(List.of(
+                "STATIONS_ID;MESS_DATUM;QN_592;ATMO_LBERG;FD_LBERG;FG_LBERG;SD_LBERG;ZENIT;MESS_DATUM_WOZ;eor",
+                "        183;2025100100:56;    1;  121.0;    0.0;    0.0;   0;   125.38;2025100102:00;eor",
+                "        183;2025100101:56;    1;  121.0;    0.0;    0.0;   0;   120.10;2025100103:00;eor"));
+        assertEquals(t("2025-10-01T00:00:00Z"), MosmixTest.of(late, Variable.GLOBAL_IRRADIANCE).timestamps()[0]);
+    }
 }

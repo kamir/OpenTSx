@@ -31,8 +31,10 @@ import java.util.zip.ZipInputStream;
  *        1358;202610120000;    2;  12.3; 290;eor
  * </pre>
  * <ul>
- *   <li>{@code MESS_DATUM}: {@code yyyyMMddHHmm} (10 minutes) or {@code yyyyMMddHH} (hourly; the solar product
- *   appends {@code :mm}), UTC. 10-minute data before 2000-01-01 are in MEZ (UTC+1) and are shifted to UTC.</li>
+ *   <li>{@code MESS_DATUM}: {@code yyyyMMddHHmm} (10 minutes) or {@code yyyyMMddHH} (hourly), UTC. 10-minute data
+ *   before 2000-01-01 are in MEZ (UTC+1) and are shifted to UTC. The hourly solar product measures in true solar
+ *   time and appends {@code :mm}: the UTC moment at which that hour ends (e.g. {@code 11:10} in July at Arkona,
+ *   {@code 00:56} in October); it is rounded to the nearest full hour, so a value may sit up to 30 minutes off.</li>
  *   <li>{@code -999} marks a missing value ({@code NaN}). Rows missing from the file become {@code NaN} as well, so
  *   every series is on a regular grid.</li>
  *   <li>Means and sums cover the interval <b>before</b> the time stamp; they are moved to the interval start and get
@@ -182,6 +184,9 @@ public final class CdcObservations {
             long t = Micros.of(LocalDateTime.parse(stamp, MIN).toInstant(ZoneOffset.UTC));
             if (res == TEN_MIN && t < Y2000) {
                 t -= HOUR;   // MEZ before 2000
+            }
+            if (colon >= 0 && Integer.parseInt(md.substring(colon + 1)) >= 30) {
+                t += HOUR;   // hourly solar: the end of the true-solar hour (hh:mm UTC), rounded to the nearest hour
             }
             double[] v = new double[used.size()];
             for (int k = 0; k < used.size(); k++) {

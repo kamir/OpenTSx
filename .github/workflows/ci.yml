@@ -108,7 +108,7 @@ jobs:
           command -v shellcheck || { sudo apt-get update -q && sudo apt-get install -y -q shellcheck; }
           shellcheck --version
           shellcheck -x -P SCRIPTDIR deploy/k3s/*.sh deploy/docker/*.sh
-      - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas, retrieval-kafscale, event-bridge)
+      - name: Render the kustomize overlays (default, hostnetwork, service, lake, modbus-sim, dwd-forward, monitoring, saas, retrieval-kafscale, event-bridge) and the history archive
         run: |
           kubectl version --client
           mkdir -p "$RUNNER_TEMP/rendered"
@@ -123,6 +123,9 @@ jobs:
             kubectl kustomize deploy/k3s/overlays/local > "$RUNNER_TEMP/rendered/overlay-$i.yaml"
             kubectl kustomize deploy/k3s/overlays/local/jobs > "$RUNNER_TEMP/rendered/jobs-$i.yaml"
           done
+          # history archive (opentsx-market): PVC + CronJobs as a kustomization, the one-off backfill Jobs as plain files
+          kubectl kustomize deploy/k3s/history > "$RUNNER_TEMP/rendered/history.yaml"
+          cp deploy/k3s/history/*-job.yaml "$RUNNER_TEMP/rendered/"
       - name: Validate the rendered manifests (kubeconform, Kubernetes 1.31 schemas)
         run: |
           # retried: a single 5xx from the release download must not fail the check
