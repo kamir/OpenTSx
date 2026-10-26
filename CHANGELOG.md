@@ -8,6 +8,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log (German) is 
 
 ## [Unreleased]
 
+### Added
+
+- The KafScale conformance suite probes `Admin.listOffsets` with `OffsetSpec.earliest()` and `OffsetSpec.latest()`,
+  which the Flink Kafka source uses for end offsets and bounded runs. Both answer correctly on KafScale v1.6.0.
+
 ### Fixed
 
 - Iceberg-backed Retrieval opens existing episode and series tables without creating missing namespaces or
