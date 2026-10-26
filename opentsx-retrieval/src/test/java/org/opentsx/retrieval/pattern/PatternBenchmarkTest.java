@@ -36,8 +36,8 @@ class PatternBenchmarkTest {
     private record Planted(String seriesId, int index) {
     }
 
-    @Test
-    void recallAndLatencyOnSimulatedWindData() throws IOException {
+    /** Wind speed of 4 turbines, 8 h at 1 Hz. */
+    private static List<Episode> wind() {
         Scenario scenario = new Scenario("bench", 21, Instant.parse("2026-10-01T00:00:00Z"), Duration.ofHours(8),
                 Duration.ofSeconds(1), Duration.ofMinutes(10),
                 new Scenario.ParkSpec("p1", "bench", 54, 13, "GENERIC-3MW", 1, 4, 5, 7, 0.05),
@@ -48,6 +48,25 @@ class PatternBenchmarkTest {
                 wind.add(e);
             }
         });
+        return wind;
+    }
+
+    /** Success criterion 7 of TASK-011 (D87): 10 planted gusts, the top 10 of similarTo with z-ED, recall at least 0.95. */
+    @Test
+    void recallAtTenMeetsTheSuccessCriterion() {
+        double[] shape = PatternEngineTest.gust(90);
+        List<Planted> planted = new ArrayList<>();
+        List<Episode> data = plant(wind(), shape, 0, 0.05, new Random(87), planted, 10);
+        assertEquals(10, planted.size());
+        List<PatternMatch> hits = new PatternSearch(shape, Distance.zNormalizedEuclidean(), 10).search(Run.of(data));
+        assertEquals(10, hits.size());
+        double recall = recall(planted, hits, data, 10);
+        assertTrue(recall >= 0.95, "recall@10 = " + recall);
+    }
+
+    @Test
+    void recallAndLatencyOnSimulatedWindData() throws IOException {
+        List<Episode> wind = wind();
         double[] shape = PatternEngineTest.gust(90);
         StringBuilder report = new StringBuilder("# Pattern search benchmark\n\n");
         report.append("4 turbines x 8 h at 1 Hz (115,200 samples), gust shape of 90 s planted 12 times, scale 1.5-3 m/s.\n\n");
@@ -57,7 +76,7 @@ class PatternBenchmarkTest {
             for (double noise : new double[]{0.05, 0.2, 0.4}) {
                 Random r = new Random(Double.hashCode(warp) * 31 + Double.hashCode(noise));
                 List<Planted> planted = new ArrayList<>();
-                List<Episode> data = plant(wind, shape, warp, noise, r, planted);
+                List<Episode> data = plant(wind, shape, warp, noise, r, planted, 12);
                 List<Run> runs = Run.of(data);
                 for (Distance d : List.of(Distance.zNormalizedEuclidean(), Distance.dtw(0.25))) {
                     PatternSearch s = new PatternSearch(shape, d, planted.size());
@@ -86,14 +105,15 @@ class PatternBenchmarkTest {
         assertTrue(recalls.get("zED/0.0/0.2") >= 0.75, report::toString);
     }
 
+    /** Plants up to 3 gusts per series, {@code count} in all. */
     private static List<Episode> plant(List<Episode> wind, double[] shape, double warp, double noise, Random r,
-                                       List<Planted> planted) {
+                                       List<Planted> planted, int count) {
         Map<String, List<Episode>> bySeries = new LinkedHashMap<>();
         wind.forEach(e -> bySeries.computeIfAbsent(e.getSeries().getSeriesId(), k -> new ArrayList<>()).add(e));
         List<Episode> out = new ArrayList<>();
         for (Map.Entry<String, List<Episode>> en : bySeries.entrySet()) {
             double[] x = en.getValue().stream().flatMapToDouble(e -> Arrays.stream(Episodes.values(e))).toArray();
-            for (int p = 0; p < 3; p++) {
+            for (int p = 0; p < 3 && planted.size() < count; p++) {
                 int at = 2000 + p * 9000 + r.nextInt(5000);
                 int len = (int) Math.round(shape.length * (1 + warp));
                 double scale = 1.5 + r.nextDouble() * 1.5;

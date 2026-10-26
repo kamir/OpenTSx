@@ -2,7 +2,9 @@ package org.opentsx.kafscale;
 
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -48,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Checks the Kafka-protocol features that OpenTSx episode storage and replay depend on.
  *
  * <p>REQUIRED features are asserted. OPTIONAL features (headers, CreateTime, timestamp seek,
- * idempotent producer, consumer-group rejoin, compaction config) are probed and written to {@code target/kafscale-capabilities.properties}
+ * idempotent producer, consumer-group rejoin, compaction config, admin list-offsets) are probed and written to {@code target/kafscale-capabilities.properties}
  * because KafScale does not guarantee them; OpenTSx must work without them.
  *
  * <p>Run against a broker with {@code KAFSCALE_BOOTSTRAP=host:port mvn -pl opentsx-kafscale-conformance test}.
@@ -304,6 +306,30 @@ class KafScaleConformanceTest {
         }
     }
 
+    /**
+     * The Flink Kafka source reads partition metadata with {@code describeTopics} and, for {@code latest()} and a
+     * bounded run, end offsets with {@code Admin.listOffsets}; {@code earliest()} is resolved by its consumer.
+     */
+    @Test
+    void probeAdminListOffsets() throws Exception {
+        String topic = createTopic("adminoffsets", 2);
+        try (KafkaProducer<String, String> producer = stringProducer("none")) {
+            for (int i = 0; i < 7; i++) {
+                producer.send(new ProducerRecord<>(topic, 0, "k", "v" + i));
+            }
+            for (int i = 0; i < 3; i++) {
+                producer.send(new ProducerRecord<>(topic, 1, "k", "v" + i));
+            }
+            producer.flush();
+        }
+        TopicPartition p0 = new TopicPartition(topic, 0);
+        TopicPartition p1 = new TopicPartition(topic, 1);
+        Capabilities.record("admin.listoffsets.earliest.supported",
+                adminOffsets(p0, p1, OffsetSpec.earliest(), "earliest", 0L, 0L));
+        Capabilities.record("admin.listoffsets.latest.supported",
+                adminOffsets(p0, p1, OffsetSpec.latest(), "latest", 7L, 3L));
+    }
+
     @Test
     void probeLogCompactionConfig() {
         String name = "tsx-conf-" + run + "-compact";
@@ -325,6 +351,22 @@ class KafScaleConformanceTest {
         String name = "tsx-conf-" + run + "-" + suffix;
         admin.createTopics(List.of(new NewTopic(name, partitions, (short) 1))).all().get(15, TimeUnit.SECONDS);
         return name;
+    }
+
+    /** Lists the offsets of two partitions through the admin client and compares them with the expected ones. */
+    private boolean adminOffsets(TopicPartition p0, TopicPartition p1, OffsetSpec spec, String name,
+                                 long expected0, long expected1) {
+        try {
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> found =
+                    admin.listOffsets(Map.of(p0, spec, p1, spec)).all().get(15, TimeUnit.SECONDS);
+            long o0 = found.get(p0).offset();
+            long o1 = found.get(p1).offset();
+            Capabilities.record("admin.listoffsets." + name + ".result", o0 + "," + o1);
+            return o0 == expected0 && o1 == expected1;
+        } catch (Exception e) {
+            Capabilities.record("admin.listoffsets." + name + ".error", e.getClass().getSimpleName());
+            return false;
+        }
     }
 
     private void produceValues(String topic, int n) {

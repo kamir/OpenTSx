@@ -2,7 +2,8 @@
 
 This module computes running and windowed statistics over the v2 episode and observation streams. It writes them as
 `SeriesStats` to `tsx.<domain>.series-stats.v2` and evaluates data-quality checks on them. The engine has no runtime
-dependency. It runs in the bundled KafScale processor and can be wrapped in Flink or Kafka Streams.
+dependency. It runs in the bundled KafScale processor and in the Flink job `StatsJob` of
+[`opentsx-flink-core`](../opentsx-flink-core/README.md).
 
 ## What is computed
 

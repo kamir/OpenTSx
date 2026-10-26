@@ -36,6 +36,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- v2 statistics engine, model and KafScale client settings for StatsJob -->
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-stats</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- JSON Parsing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -133,6 +140,14 @@
         </dependency>
 
         <dependency>
+            <!-- simulated wind-farm episodes for the StatsJob tests -->
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-windpark</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
@@ -179,7 +194,7 @@
                             </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.opentsx.flink.examples.TimeSeriesAnalysisJob</mainClass>
+                                    <mainClass>org.opentsx.flink.stats.StatsJob</mainClass>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>

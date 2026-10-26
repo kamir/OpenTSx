@@ -16,17 +16,22 @@ Where:
 
 | Task ID | Title | Status | Created |
 |---------|-------|--------|---------|
-| TASK-013 | [Web-Workbench](TASK-013-web-workbench.md): Swing-Bucket-Analyser im Browser, Oszilloskop, Flow-Graph, Export als `opentsx.dag.v1` | in progress | 2026-10-12 |
-| TASK-012 | [Briefing für den lokalen Agenten](TASK-012-lokaler-agent.md): Repo-Hygiene, lokale Testinstallation (k3s, KafScale, Images), Markthistorie mit Zugangsdaten, private Daten, Modbus | open | 2026-10-12 |
-| TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | P0–P5 done, P6/P7 planned | 2026-10-09 |
-| TASK-010 | [Open-source readiness](TASK-010.md): LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, link checker | partly done (CI, README, link check) | 2025-12 |
+| TASK-019 | [Planned major upgrades](TASK-019-major-upgrades.md): Avro 1.12.2+, Iceberg 1.11/1.12, JFreeChart 1.5, Confluent 8, JUnit 6, frontend, Flink 2.x | planned | 2026-10-26 |
+| TASK-018 | [Analytics, retrieval, storage and data-source extensions](TASK-018-analytics-storage-extensions.md): analytics gaps (P6), Matrix Profile, iSAX, D6, records/s on real S3, vendor exports | planned | 2026-10-26 |
+| TASK-017 | [Digital twin of the energy system](TASK-017-digital-twin.md): atoms, wiring plan, layered BSP, three modes, house and boat twins, plant explorer (P9) | in progress | 2026-10-26 |
+| TASK-016 | [Smart Topics](TASK-016-smart-topics.md): derived topics, training outside the stream, processor and DevOps (P7) | in progress | 2026-10-26 |
+| TASK-015 | [Multivariate analysis](TASK-015-multivariate-analysis.md): pair windows, system reconstruction, simulation and optimization (P8) | in progress | 2026-10-26 |
+| TASK-013 | [Web workbench](TASK-013-web-workbench.md): Swing bucket analyser in the browser, oscilloscope, flow graph, export as `opentsx.dag.v1` | in progress | 2026-10-12 |
+| TASK-012 | [Briefing for the local agent](TASK-012-lokaler-agent.md) (German): repository hygiene, local test installation (k3s, KafScale, images), market history with credentials, private data, Modbus | open | 2026-10-12 |
+| TASK-011 | [Datamodel refresher 2026](TASK-011-datamodel-refresher-2026.md): data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval, Smart Topics | completed 2026-10-26 ([closing](../docs/datamodel-2026/18-CLOSING-TASK-011.md), section 9); phases 6 to 9 and the backlog continue in TASK-015 to TASK-019 and TASK-010 | 2026-10-09 |
+| TASK-010 | [Open-source readiness](TASK-010.md): LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG, link checker | partly done (CI, README, link check); repository items moved in from TASK-011 | 2025-12 |
 | TASK-005 | [Processing flow descriptor](TASK-005-processing-flow-descriptor.md) (Flink `DynamicTopologyJob`) | concept valid, not continued | 2025-12-21 |
 
 ## Archived Tasks
 
 `archive/` holds the completed or superseded tasks: TASK-001 to TASK-004, TASK-005-PROGRESS, TASK-006, TASK-007,
 `T-B-DECIDED.md`, and the `DECISIONS/` folder. TASK-002/003/006/007 were not continued. The 2026 plan (TASK-011)
-supersedes them; the Flink upgrade is part of TASK-011.
+supersedes them. The Flink upgrade to 1.20.5 is done (#147); Flink 2.x is part of TASK-019.
 
 ## Task Lifecycle
 

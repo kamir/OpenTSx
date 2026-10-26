@@ -24,7 +24,7 @@ through the same configuration manager. Blank broker configuration fails instead
 
 The runtime defaults to five-minute event-time windows. Append `--window-size <milliseconds>` after the descriptor
 filename or after `--json` and its JSON argument to select a positive integer window size in milliseconds.
-The default is `300000`, matching the existing `TimeSeriesAnalysisJob` option. Zero, negative, non-integer,
+The default is `300000`. Zero, negative, non-integer,
 out-of-range, missing and duplicate values are rejected before graph construction. Unknown trailing arguments
 are rejected.
 

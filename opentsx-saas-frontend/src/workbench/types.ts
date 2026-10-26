@@ -20,6 +20,11 @@ export interface Series {
   component?: string;
   x: Float64Array;
   y: Float64Array;
+  /**
+   * One byte per value as in the v2 episode, 0 = ok. Pair methods set 1 where the window coverage is below the
+   * minimum. It belongs to this x: an operator that builds a new x array drops it (flow.ts, `evaluate`).
+   */
+  quality?: Uint8Array;
 }
 
 /**
@@ -36,6 +41,24 @@ export interface Mark {
   scope: string;
 }
 
+/**
+ * The time range of one loaded episode: [start, end) in the x unit of its bucket (seconds from x = 0), the end
+ * exclusive as in the v2 model. Pair methods (TASK-015) pair the episodes of two series by these ranges.
+ */
+export interface EpisodeRange {
+  /** `Series.id` of the series the episode belongs to. */
+  seriesId: string;
+  episodeId: string;
+  start: number;
+  end: number;
+  /** Segmentation strategy of the episode (FIXED_DURATION, FEATURE_THRESHOLD, ...) when it carries one. */
+  strategy?: string;
+  /** Episode labels; a pair result names its input episodes and settings here (`pair.a`, `pair.b`, ...). */
+  labels?: Record<string, string>;
+  /** The episode this one was computed from (`Provenance.parentEpisodeId`); for a pair result the episode of A. */
+  parent?: string;
+}
+
 export interface Bucket {
   name: string;
   xKind: AxisKind;
@@ -48,6 +71,11 @@ export interface Bucket {
   note?: string;
   /** Ground truth that came with the data. Operators that keep the time axis hand it on. */
   marks?: Mark[];
+  /**
+   * The episodes the series were joined from, sorted by series and start. Operators that keep the time axis hand them
+   * on, like `marks`; operators that build a new axis (FFT, histogram, lag) drop them.
+   */
+  episodes?: EpisodeRange[];
   /** Set by align.vector: clock in seconds and the component names in vector order. */
   vector?: { clock: number; components: string[]; keyBy: string };
 }
@@ -66,7 +94,7 @@ export interface ParamDef {
 }
 
 /** Tabs of TSOperationControlerPanel, plus the stream operators of opentsx.dag.v1. */
-export type OpGroup = 'transform' | 'univariate' | 'group' | 'stream';
+export type OpGroup = 'transform' | 'univariate' | 'multivariate' | 'group' | 'stream';
 
 export interface OpDef {
   /** Operator id as written into the DAG (`op:`). */
@@ -89,6 +117,8 @@ export interface OpDef {
   params: ParamDef[];
   /** True when the operator reads further inputs besides its first one (`FlowNode.inputs`). */
   multiInput?: boolean;
+  /** Most inputs of a multi-input operator, the first one included; no limit when unset. A pair method reads two. */
+  maxInputs?: number;
   apply: (input: Bucket, params: Params, others?: Bucket[]) => Bucket;
 }
 

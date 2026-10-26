@@ -223,7 +223,10 @@ final class FakeOpenMetadata implements AutoCloseable {
             case "/v1/topics" -> requireFqn(b.path("service").asText(), "messagingService");
             case "/v1/pipelines" -> requireFqn(b.path("service").asText(), "pipelineService");
             case "/v1/databaseSchemas" -> requireFqn(b.path("database").asText(), "database");
-            case "/v1/tables" -> requireFqn(b.path("databaseSchema").asText(), "databaseSchema");
+            case "/v1/tables" -> {
+                requireFqn(b.path("databaseSchema").asText(), "databaseSchema");
+                checkColumns(b.path("columns"));
+            }
             case "/v1/tags" -> requireFqn(b.path("classification").asText(), "classification");
             case "/v1/glossaryTerms" -> requireFqn(b.path("glossary").asText(), "glossary");
             case "/v1/dataQuality/testSuites/basic" -> requireFqn(b.path("basicEntityReference").asText(), "table");
@@ -279,6 +282,39 @@ final class FakeOpenMetadata implements AutoCloseable {
             throw new Violation(entityType + " " + fqn + " does not exist");
         }
         return e;
+    }
+
+    private static final Set<String> NEEDS_LENGTH = Set.of("CHAR", "VARCHAR", "BINARY", "VARBINARY");
+
+    /**
+     * Column rules the server checks in code, not in the JSON schema (DatabaseUtil.validateColumns in 2.0.5): unique
+     * names, dataLength for char, varchar, binary and varbinary, arrayDataType for arrays, children for structs, and
+     * precision for a scale. The smoke test against a real server found the dataLength rule.
+     */
+    private static void checkColumns(JsonNode columns) {
+        Set<String> names = new HashSet<>();
+        for (JsonNode c : columns) {
+            String name = c.path("name").asText();
+            String type = c.path("dataType").asText();
+            if (!names.add(name)) {
+                throw new Violation("Column name " + name + " is repeated");
+            }
+            if (NEEDS_LENGTH.contains(type) && !c.hasNonNull("dataLength")) {
+                throw new Violation("For column data types char, varchar, binary, varbinary dataLength must not be null: " + name);
+            }
+            if (type.equals("ARRAY") && !c.hasNonNull("arrayDataType")) {
+                throw new Violation("For column data type array, arrayDataType must not be null: " + name);
+            }
+            if (type.equals("STRUCT")) {
+                if (!c.hasNonNull("children")) {
+                    throw new Violation("For column data type struct, children must not be null: " + name);
+                }
+                checkColumns(c.path("children"));
+            }
+            if (c.hasNonNull("scale") && (!c.hasNonNull("precision") || c.path("scale").asInt() > c.path("precision").asInt())) {
+                throw new Violation("Scale needs a precision at least as large for the column " + name);
+            }
+        }
     }
 
     private void requireId(JsonNode ref) {

@@ -3,7 +3,7 @@
  */
 
 import { mulberry32 } from './ops';
-import { Bucket, Series } from './types';
+import { Bucket, EpisodeRange, Series } from './types';
 
 /**
  * The sine mix of MacroRecorder (track EXP2): six sine components plus their sum,
@@ -107,18 +107,45 @@ export function parseDelimited(text: string, name: string): Bucket {
 }
 
 interface EpisodeJson {
+  episodeId?: string;
   seriesId?: string;
   metric?: string;
   tags?: Record<string, string>;
   unit?: string;
+  /** ISO-8601 instants with up to six fraction digits, as the retrieval server writes them; tEnd is exclusive. */
+  tStart?: string;
+  tEnd?: string;
+  intervalMicros?: number;
+  segmentation?: { strategy?: string };
   timestampsMicros?: number[];
   values?: (number | null)[];
+}
+
+/** Epoch microseconds of an ISO-8601 instant such as `2026-10-01T00:00:00.123456Z`, or NaN. */
+export function isoMicros(iso: string): number {
+  const m = /^(.*T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})$/.exec(iso);
+  if (!m) return NaN;
+  const seconds = Date.parse(m[1] + m[3]);
+  const fraction = Math.round(Number(`0.${m[2] ?? '0'}`) * 1e6);
+  return Number.isFinite(seconds) ? seconds * 1000 + fraction : NaN;
+}
+
+/**
+ * The [start, end) of an episode in epoch microseconds: tStart and tEnd when it carries them, otherwise as the v2
+ * model defines them (end = last sample + interval for a regular episode, + 1 microsecond for an irregular one).
+ */
+function rangeMicros(e: EpisodeJson, t: number[]): [number, number] {
+  const first = Math.min(...t);
+  const last = Math.max(...t);
+  const start = e.tStart ? isoMicros(e.tStart) : NaN;
+  const end = e.tEnd ? isoMicros(e.tEnd) : NaN;
+  return [Number.isFinite(start) ? start : first, Number.isFinite(end) ? end : last + (e.intervalMicros ?? 1)];
 }
 
 /**
  * Reads episodes in the JSON form of the retrieval server (GET /v1/episodes):
  * an array of episodes or an object with an `episodes` array. Episodes of one
- * series are joined in time order.
+ * series are joined in time order; their ranges are kept in `Bucket.episodes`.
  */
 export function parseEpisodes(json: unknown, name: string): Bucket {
   const list: EpisodeJson[] = Array.isArray(json)
@@ -126,6 +153,7 @@ export function parseEpisodes(json: unknown, name: string): Bucket {
     : ((json as { episodes?: EpisodeJson[] } | null)?.episodes ?? []);
   if (!Array.isArray(list) || list.length === 0) throw new Error('No episodes found in the JSON.');
   const groups = new Map<string, { e: EpisodeJson; t: number[]; v: number[] }>();
+  const ranges: EpisodeRange[] = [];
   for (const e of list) {
     if (!e.timestampsMicros || !e.values) continue;
     const key = e.seriesId ?? e.metric ?? 'series';
@@ -135,10 +163,18 @@ export function parseEpisodes(json: unknown, name: string): Bucket {
       g.v.push(e.values[i] ?? NaN);
     }
     groups.set(key, g);
+    if (e.timestampsMicros.length > 0) {
+      const [start, end] = rangeMicros(e, e.timestampsMicros);
+      ranges.push({ seriesId: key, episodeId: e.episodeId ?? `${key}@${start}`, start, end, strategy: e.segmentation?.strategy });
+    }
   }
   if (groups.size === 0) throw new Error('The episodes carry no timestampsMicros and values.');
   let t0 = Infinity;
   for (const g of groups.values()) for (const t of g.t) if (t < t0) t0 = t;
+  for (const r of ranges) if (r.start < t0) t0 = r.start;
+  const episodes: EpisodeRange[] = ranges
+    .map((r) => ({ ...r, start: (r.start - t0) / 1e6, end: (r.end - t0) / 1e6 }))
+    .sort((p, q) => (p.seriesId === q.seriesId ? p.start - q.start : p.seriesId < q.seriesId ? -1 : 1));
   const series: Series[] = [...groups].map(([id, g]) => {
     const order = g.t.map((_, i) => i).sort((p, q) => g.t[p] - g.t[q]);
     const tags = Object.entries(g.e.tags ?? {}).map(([k, v]) => `${k}=${v}`).join(',');
@@ -153,7 +189,7 @@ export function parseEpisodes(json: unknown, name: string): Bucket {
     };
   });
   const unit = series[0].unit;
-  return { name, xKind: 'time', xLabel: 't [s]', yLabel: unit ? `[${unit}]` : 'y', series, t0Ms: t0 / 1000 };
+  return { name, xKind: 'time', xLabel: 't [s]', yLabel: unit ? `[${unit}]` : 'y', series, t0Ms: t0 / 1000, episodes };
 }
 
 /** Picks the parser from the content: JSON for episodes, otherwise delimited text. */
