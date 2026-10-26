@@ -47,8 +47,13 @@ export interface PairMethod {
   prefix: string;
   fields: string[];
   yLabel: string;
-  /** One value per field, in the order of `fields`. */
-  compute: (w: PairWindow) => number[];
+  /** One value per field, in the order of `fields`; `p` are the parameters of the operator. */
+  compute: (w: PairWindow, p: Params) => number[];
+  /**
+   * Settings of the method beyond the window, checked once per run: they are written into the result episodes as
+   * labels `pair.<key>` and into the note. Throws when a setting is invalid.
+   */
+  settings?: (p: Params) => Record<string, string>;
 }
 
 export interface PairSettings {
@@ -202,6 +207,7 @@ function pairsOf(first: Bucket, others: Bucket[]): [Side, Side][] {
 /** Runs a pair method over the pairs of the inputs. `first` is A, `others[0]` B when given. */
 export function pairWindows(method: PairMethod, first: Bucket, p: Params, others: Bucket[] = []): Bucket {
   const st = pairSettings(p);
+  const own = method.settings?.(p) ?? {};
   for (const b of [first, ...others]) {
     if (b.xKind !== 'time') throw new Error(`${b.name} has a ${b.xKind} axis. A pair method needs inputs with a time axis.`);
   }
@@ -263,7 +269,7 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
         const coverage = j1 > j0 ? both / (j1 - j0) : 0;
         const ok = j1 > j0 && coverage >= st.minCoverage - 1e-12;
         const values = ok
-          ? method.compute({ a: colA.subarray(j0, j1), b: colB.subarray(j0, j1), every, coverage })
+          ? method.compute({ a: colA.subarray(j0, j1), b: colB.subarray(j0, j1), every, coverage }, p)
           : method.fields.map(() => NaN);
         xs.push(w.centre);
         values.forEach((v, f) => ys[f].push(v));
@@ -299,6 +305,7 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
             'pair.method': method.id,
             'pair.window': windowTag,
             'pair.step': stepTag,
+            ...Object.fromEntries(Object.entries(own).map(([k, v]) => [`pair.${k}`, v])),
           },
         });
       }
@@ -316,7 +323,7 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
     marks: first.marks,
     episodes: episodes.sort((p, q) => (p.seriesId === q.seriesId ? p.start - q.start : p.seriesId < q.seriesId ? -1 : 1)),
     note:
-      `${method.id} over ${pairs} pair(s), pairing ${st.pairing}, window ${windowTag}, step ${stepTag}, clock ${[...clocks].map((c) => Number(c.toPrecision(6))).join(', ')} s\n` +
+      `${method.id}${Object.entries(own).map(([k, v]) => `, ${k} ${v}`).join('')} over ${pairs} pair(s), pairing ${st.pairing}, window ${windowTag}, step ${stepTag}, clock ${[...clocks].map((c) => Number(c.toPrecision(6))).join(', ')} s\n` +
       `${rangesUsed} pair range(s), ${items} item(s) per field, ${low} below the minimum coverage ${st.minCoverage}` +
       (rangesShort > 0 ? `; ${rangesShort} pair range(s) shorter than the window` : ''),
   };

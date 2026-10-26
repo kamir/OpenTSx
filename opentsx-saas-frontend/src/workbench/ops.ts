@@ -8,6 +8,7 @@
  */
 
 import { PAIRINGS, PAIR_COVERAGE, pairWindows } from './pairs';
+import { PAIR_XCORR } from './xcorr';
 import { Bucket, OpDef, ParamDef, Params, Series } from './types';
 import { VECTOR_AGGREGATIONS, VECTOR_OP, alignVector } from './vector';
 
@@ -838,6 +839,10 @@ export const OPS: OpDef[] = [
   { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', inCatalog: false, multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} This method gives the coverage itself and the number of ticks per window: what the other pair methods will see.`,
     params: pairParams(0), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },
+  { id: PAIR_XCORR.id, label: 'Cross-correlation', group: 'multivariate', prefix: PAIR_XCORR.prefix, pfdOperation: 'PAIR_XCORR', inCatalog: false, multiInput: true, maxInputs: 2,
+    hint: `${PAIR_HINT} Per window: CC(k) for k from -lags to lags clock ticks. max is the peak of |CC| with its sign, lag its shift in seconds (lag > 0: B follows A), strength (|max| - mean) / std of CC over the lags. Port of KreuzKorrelation and CCFunction of WikiExplorer.NG.`,
+    params: [...pairParams(0.8), { key: 'lags', label: 'max lag [ticks]', type: 'number', default: 10, min: 0 }],
+    apply: (b, p, others) => pairWindows(PAIR_XCORR, b, p, others) },
 
   // Tab "Group Operations"
   { id: 'sigma.band', label: 'Sigma Band', group: 'group', prefix: 'AVG_', pfdOperation: 'AVG', inCatalog: false,
