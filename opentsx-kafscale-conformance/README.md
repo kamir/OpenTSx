@@ -51,6 +51,13 @@ Same suite, same client (kafka-clients 3.9.1); the Apache Kafka column validates
 | `offsetcommit.standalone.supported` (commit without group membership, as Flink does) | ❌ false – `CommitFailedException` | ✅ true |
 | `group.rejoin.assigned` (a restarted group member gets partitions again) | ❌ false – no assignment within 20 s | ✅ true (49 ms) |
 | `topic.cleanup.policy.compact.accepted` | accepted, but KafScale does not compact | ✅ true |
+| `admin.listoffsets.earliest.supported` (`Admin.listOffsets`, `OffsetSpec.earliest()`) | true (v1.6.0, 2026-10-26) | not measured |
+| `admin.listoffsets.latest.supported` (`Admin.listOffsets`, `OffsetSpec.latest()`) | true (v1.6.0, 2026-10-26) | not measured |
+
+The two `admin.listoffsets` rows were added on 2026-10-26 and measured against KafScale v1.6.0 only. The Flink
+Kafka source (connector 3.4.0-1.20) needs them: it reads partition metadata with `describeTopics`, which
+`createsTopicsViaAdminApi` asserts, and end offsets for `OffsetsInitializer.latest()` and bounded runs with
+`Admin.listOffsets`. `OffsetsInitializer.earliest()` is resolved by its consumer.
 
 ### Root causes found in KafScale
 
@@ -74,3 +81,5 @@ Tracked in the fork: [kamir/kafscale#16](https://github.com/kamir/kafscale/issue
 * Replay/consumer positions are stored by OpenTSx (episode index / job state), not via standalone commits.
 * Consumers that use group management must use a **fresh group id per run** until the rejoin issue is fixed.
 * Producers set `enable.idempotence=false`; duplicates are removed downstream by `episodeId`.
+* The Flink Kafka source works against KafScale with `commit.offsets.on.checkpoint=false`: its positions live in
+  Flink checkpoints, because standalone commits fail.

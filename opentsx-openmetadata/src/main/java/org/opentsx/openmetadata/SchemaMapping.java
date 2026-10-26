@@ -98,6 +98,10 @@ final class SchemaMapping {
             if (t.isListType()) {
                 c.put("arrayDataType", omType(t.asListType().elementType()));
             }
+            if (t.typeId() == Type.TypeID.FIXED) {
+                // the server requires a length for BINARY (DatabaseUtil.validateColumnDataLength in 2.0.5)
+                c.put("dataLength", ((Types.FixedType) t).length());
+            }
             if (f.doc() != null) {
                 c.put("description", f.doc());
             }
@@ -115,7 +119,8 @@ final class SchemaMapping {
             case DOUBLE -> "DOUBLE";
             case FLOAT -> "FLOAT";
             case BOOLEAN -> "BOOLEAN";
-            case BINARY, FIXED -> "BINARY";
+            case BINARY -> "BYTES";     // variable length; BINARY and VARBINARY need a dataLength
+            case FIXED -> "BINARY";
             case TIMESTAMP -> ((Types.TimestampType) t).shouldAdjustToUTC() ? "TIMESTAMPZ" : "TIMESTAMP";
             case DATE -> "DATE";
             case TIME -> "TIME";

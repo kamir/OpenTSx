@@ -10,6 +10,14 @@ Tables in namespace `tsx` (configurable), Parquet + zstd, Iceberg format v2:
 
 * `IcebergSeriesStore.open(props, "tsx")` takes standard Iceberg catalog properties (`type=rest`, `uri`, `warehouse`, …;
   tests use the JDBC catalog on SQLite and a local warehouse).
+* `IcebergSeriesStore.openExisting(props, "tsx")` loads existing `episodes` and `series` tables without creating
+  namespaces or tables. Missing objects fail. This instance rejects all `write` calls, including empty batches,
+  and `episodesTable()` cannot expose a mutable Iceberg table. The properties overload owns its created catalog
+  and closes it on table-loading failure, retaining a cleanup failure as a suppressed exception.
+* `openExisting(catalog, namespace)` borrows an initialized catalog. The caller closes it on success or failure;
+  closing the borrowed store does not close the catalog. The existing writer constructor retains catalog ownership.
+  The properties overload initializes the configured catalog implementation; the implementation and its credentials
+  must also have the intended read privileges. This API is not an authentication or storage authorization boundary.
 * Writes are idempotent (existing episode ids are skipped) — safe for at-least-once input.
 * `EpisodeLogSync.sync(consumer, layout, store, positions, …)` copies the KafScale episodes topic into the store and
   returns the next positions; `IcebergEpisodeIndex` plugs into `BucketWriter` / `ReplayService` as the durable index.

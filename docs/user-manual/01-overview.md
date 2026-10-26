@@ -55,7 +55,7 @@ Active Maven modules (root `pom.xml`):
 | `opentsx-data` | 2.x Avro model (frozen) | legacy |
 | `opentsx-core` | Classic analysis library: TimeSeriesObject, TSBucket, DFA/MFDFA/RIS/ES, generators, GUI tools | legacy, maintained |
 | `opentsx-connectors`, `opentsx-lg` | 2.x Kafka producers, topic tools, load generator, latency probes | legacy |
-| `opentsx-flink-core` | Flink 1.18 jobs (2.x model) and processing-flow descriptors | legacy |
+| `opentsx-flink-core` | Flink 1.20.5: v2 statistics job `StatsJob`; processing-flow descriptors (2.x model) | current (`StatsJob`), legacy (PFD) |
 
 Outside the Maven build:
 
