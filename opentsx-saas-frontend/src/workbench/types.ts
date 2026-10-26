@@ -36,6 +36,20 @@ export interface Mark {
   scope: string;
 }
 
+/**
+ * The time range of one loaded episode: [start, end) in the x unit of its bucket (seconds from x = 0), the end
+ * exclusive as in the v2 model. Pair methods (TASK-015) pair the episodes of two series by these ranges.
+ */
+export interface EpisodeRange {
+  /** `Series.id` of the series the episode belongs to. */
+  seriesId: string;
+  episodeId: string;
+  start: number;
+  end: number;
+  /** Segmentation strategy of the episode (FIXED_DURATION, FEATURE_THRESHOLD, ...) when it carries one. */
+  strategy?: string;
+}
+
 export interface Bucket {
   name: string;
   xKind: AxisKind;
@@ -48,6 +62,11 @@ export interface Bucket {
   note?: string;
   /** Ground truth that came with the data. Operators that keep the time axis hand it on. */
   marks?: Mark[];
+  /**
+   * The episodes the series were joined from, sorted by series and start. Operators that keep the time axis hand them
+   * on, like `marks`; operators that build a new axis (FFT, histogram, lag) drop them.
+   */
+  episodes?: EpisodeRange[];
   /** Set by align.vector: clock in seconds and the component names in vector order. */
   vector?: { clock: number; components: string[]; keyBy: string };
 }

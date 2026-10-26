@@ -35,6 +35,7 @@ import {
   vectorComponents,
 } from '../workbench/flow';
 import { VECTOR_OP, suggestKey, vectorRecords } from '../workbench/vector';
+import { episodeSummary } from '../workbench/episodes';
 import { bucketToCsv, generateSineMix, parseBucketText, parseEpisodes } from '../workbench/loaders';
 import axios from 'axios';
 import { flowsAPI } from '../services/api';
@@ -304,6 +305,11 @@ function Properties({ node }: { node: FlowNode }) {
           </>
         )}
         <dt>Axes</dt><dd>{bucket?.xLabel} / {bucket?.yLabel}</dd>
+        {bucket && episodeSummary(bucket) && (
+          <>
+            <dt>Episodes</dt><dd>{episodeSummary(bucket)}</dd>
+          </>
+        )}
       </dl>
       {op && <p className="wb-muted">{op.hint}</p>}
       {op && op.params.length > 0 && (

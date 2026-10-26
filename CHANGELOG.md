@@ -10,6 +10,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- The web workbench keeps the episode ranges of loaded episodes (`Bucket.episodes`): series, episode id, [start, end)
+  from `tStart`/`tEnd` to the microsecond, and the segmentation strategy. Operators that keep the time axis hand them
+  on; the Properties tab shows how many episodes a bucket holds. First step of the pair windows of TASK-015.
+
 - `WireRoundTripTest` (`opentsx-legacy-bridge`) checks success criterion 2 of TASK-011 in one chain:
   `TimeSeriesObject` to `Episode` to Kafka in single-object and in Confluent framing to `Episode` to
   `TimeSeriesObject`, regular and irregular, through the Kafka client records and, with `KAFSCALE_BOOTSTRAP`,
