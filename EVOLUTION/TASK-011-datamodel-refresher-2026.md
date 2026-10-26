@@ -1,465 +1,244 @@
-# TASK-011 – Datamodel Refresher 2026
+# TASK-011: Datamodel refresher 2026
 
 - **Branch:** `opentsx/2026-datamodel-refresher`
-- **Status:** 🚧 in Umsetzung – P0–P5 umgesetzt, P6/P7 geplant
-- **Priorität:** Hoch
-- **Erstellt:** 2026-10-09
-- **Dokumente:** [`01-ANALYSE-Datenmodell.md`](../docs/datamodel-2026/01-ANALYSE-Datenmodell.md) · [`02-ZIELMODELL.md`](../docs/datamodel-2026/02-ZIELMODELL.md) · [`03-GAP-ANALYSE.md`](../docs/datamodel-2026/03-GAP-ANALYSE.md)
+- **Status:** In progress. Closing: phases 0 to 3 done; the open items of phases 4 and 5 and the close-out are planned in [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md) (D86 to D91).
+- **Priority:** High
+- **Created:** 2026-10-09
+- **Documents:** [`01-ANALYSE-Datenmodell.md`](../docs/datamodel-2026/01-ANALYSE-Datenmodell.md) · [`02-ZIELMODELL.md`](../docs/datamodel-2026/02-ZIELMODELL.md) · [`03-GAP-ANALYSE.md`](../docs/datamodel-2026/03-GAP-ANALYSE.md)
 
-## Ziel
+## Goal
 
-Ein explizites, versioniertes Zeitreihen-Datenmodell (v2) mit robuster Serialisierung, damit
+An explicit, versioned time series data model (v2) with reliable serialization, so that
 
-1. TimeSeriesBuckets **preiswert in KafScale-Topics** abgelegt und **per Replay** wieder eingespielt werden können,
-2. Metadaten nach **OpenMetadata** fließen, gespeist von einem **Streaming-Prozessor**, der laufende Statistiken über den Event- bzw. Episoden-Datenstrom berechnet,
-3. **OpenTSDB** und **Iceberg** über eine gemeinsame Store-Abstraktion angebunden sind,
-4. eine **einfache API für Episoden-Retrieval** und intern **Pattern-Matching / Pattern-based Retrieval** existiert.
+1. TimeSeriesBuckets can be stored **cheaply in KafScale topics** and loaded back **by replay**,
+2. metadata flows into **OpenMetadata**, fed by a **streaming processor** that computes running statistics over the event or episode data stream,
+3. **OpenTSDB** and **Iceberg** are connected through a common store abstraction,
+4. a **simple API for episode retrieval** and, internally, **pattern matching / pattern-based retrieval** exist.
 
-## Erfolgskriterien
+## Success criteria
 
-- Ein Avro-Schema-Satz (`org.opentsx.model.v2`) ist die einzige Modellquelle; CI prüft Kompatibilität gegen die Vorversion.
-- Roundtrip-Tests: `TimeSeriesObject → Episode → Kafka (beide Wire-Modi) → Episode → TimeSeriesObject` verlustfrei (Zeitachse inkl.).
-- Ein bestehender TSBucket (SequenceFile) wird nach KafScale geschrieben und vollständig per Replay rekonstruiert (Count + Checksum aus Manifest stimmen).
-- Bytes pro Messwert im Topic gemessen und dokumentiert (Ziel: ≤ 2 Byte/Wert bei regelmäßigen Reihen mit zstd – Messung entscheidet).
-- Dieselbe `EpisodeQuery` liefert gegen OpenTSDB- und Iceberg-Adapter fachlich gleiche Ergebnisse (Contract-Test-Suite).
-- Flink-Job publiziert `SeriesStats`; OpenMetadata zeigt Topics, Tabellen, Lineage und Profil-Metriken.
-- `similarTo(...)` findet in einem synthetischen Benchmark eingepflanzte Muster (Recall@10 ≥ 0.95, z-ED).
+- One Avro schema set (`org.opentsx.model.v2`) is the only model source; CI checks compatibility against the previous version.
+- Roundtrip tests: `TimeSeriesObject → Episode → Kafka (both wire modes) → Episode → TimeSeriesObject` lossless (time axis included).
+- An existing TSBucket (SequenceFile) is written to KafScale and fully reconstructed by replay (count + checksum from the manifest match).
+- Bytes per value in the topic measured and documented (target: ≤ 2 bytes/value for regular series with zstd; the measurement decides).
+- The same `EpisodeQuery` returns semantically equal results against the OpenTSDB and Iceberg adapters (contract test suite).
+- A Flink job publishes `SeriesStats`; OpenMetadata shows topics, tables, lineage and profile metrics.
+- `similarTo(...)` finds planted patterns in a synthetic benchmark (Recall@10 ≥ 0.95, z-ED).
 
-## Nicht-Ziele (für diese Iteration)
+## Non-goals (for this iteration)
 
-- Umbau der Algorithmen-Bibliothek / Zerlegung von `TimeSeriesObject` (nur Brücke).
-- Eigene Kompressionscodecs vor einer Messung mit zstd.
+- Rework of the algorithm library / decomposition of `TimeSeriesObject` (bridge only).
+- Custom compression codecs before a measurement with zstd.
 - UI.
 
-## Phasen & Aufgaben
+## Phases and tasks
 
-### Phase 0 – Fundament & Entscheidungen
-- [x] Entscheidungen werden in der Tabelle „Entscheidungen“ dieses Dokuments geführt (der alte Ordner `DECISIONS/` liegt in `EVOLUTION/archive/`).
-- [x] Toolchain: gesamtes Projekt auf `maven.compiler.release=17`, Versionen nur in `dependencyManagement`, Enforcer (JDK ≥ 17, kein log4j 1.x); Kafka 3.9.1 / Confluent 7.9.1 / Avro 1.12.1 (seit Windpark-PR; 1.12.0 dekodiert double-Arrays mit float-Präzision, 1.12.2 verlangt `org.apache.avro.SERIALIZABLE_PACKAGES` → Folgeaufgabe); `opentsx-core` + `-data` 65 statt 388 Artefakte.
-- [x] Legacy-Module nach `archive/modules/` (Cassandra-Store, KStreams-Cassandra-State-Store, Hive-UDF, ksqlDB-UDF).
-- [x] CI (GitHub Actions): Java 17 + 21, Python 3.10–3.13, KafScale-Conformance (Broker v1.6.0 aus Quellcode).
-- [x] Python-Tests mit echten Assertions (18 Tests + 1 dokumentierte Lücke als strict xfail).
-- [x] KafScale-Conformance-Suite + `docker-compose.kafscale.yml`; gemessen gegen KafScale v1.6.0 und Apache Kafka 3.9.1.
-- [x] Flink auf 1.20.5 gehoben (#147), läuft auf 17/21. Die Flink-Adapter bleiben offen (siehe P4 und Backlog).
-- [x] `opentsx-app-tools` nach `archive/modules/` verschoben (sshd-core 0.8.0, keine Abhängigen).
-- [x] Issues im KafScale-Fork angelegt: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) ListOffsets-Zeitstempel, [#17](https://github.com/kamir/kafscale/issues/17) LeaveGroup v4 / MEMBER_ID_REQUIRED, [#18](https://github.com/kamir/kafscale/issues/18) Standalone-OffsetCommit.
-- [x] Sofort-Fixes `TSOProducer`: Label `"123"`/URI `"URI"`, quadratische Zeitstempel, fehlendes Pflichtfeld `consumer_timestamp`. (Gemischte Formate auf `OpenTSx_Episodes` entfallen mit den v2-Topics in P2.)
+### Phase 0: foundation and decisions
+- [x] Decisions are kept in the "Decisions" table of this document (the old folder `DECISIONS/` is in `EVOLUTION/archive/`).
+- [x] Toolchain: whole project on `maven.compiler.release=17`, versions only in `dependencyManagement`, Enforcer (JDK ≥ 17, no log4j 1.x); Kafka 3.9.1 / Confluent 7.9.1 / Avro 1.12.1 (since the wind farm PR; 1.12.0 decodes double arrays with float precision, 1.12.2 requires `org.apache.avro.SERIALIZABLE_PACKAGES` → follow-up task); `opentsx-core` + `-data`: 65 instead of 388 artifacts.
+- [x] Legacy modules moved to `archive/modules/` (Cassandra store, KStreams Cassandra state store, Hive UDF, ksqlDB UDF).
+- [x] CI (GitHub Actions): Java 17 + 21, Python 3.10 to 3.13, KafScale conformance (broker v1.6.0 built from source).
+- [x] Python tests with real assertions (18 tests + 1 documented gap as strict xfail).
+- [x] KafScale conformance suite + `docker-compose.kafscale.yml`; measured against KafScale v1.6.0 and Apache Kafka 3.9.1.
+- [x] Flink raised to 1.20.5 (#147), runs on 17/21. The Flink adapters remain open (see P4).
+- [x] `opentsx-app-tools` moved to `archive/modules/` (sshd-core 0.8.0, no dependents).
+- [x] Issues filed in the KafScale fork: [kamir/kafscale#16](https://github.com/kamir/kafscale/issues/16) ListOffsets timestamps, [#17](https://github.com/kamir/kafscale/issues/17) LeaveGroup v4 / MEMBER_ID_REQUIRED, [#18](https://github.com/kamir/kafscale/issues/18) standalone OffsetCommit.
+- [x] Immediate fixes in `TSOProducer`: label `"123"`/URI `"URI"`, timestamps that grew quadratically (`t = t + i * 200`), missing required field `consumer_timestamp`. (Mixed formats on `OpenTSx_Episodes` go away with the v2 topics in P2.)
 
-### Phase 1 – Modell v2 & Serde (`opentsx-model`, `opentsx-serde`)
-- [x] Avro-Schemas: `SeriesKey`, `Observation`, `Episode` (+ `Segmentation`), `EpisodeSummary`, `Provenance`, `BucketManifest`, `SeriesStats`, `PatternMatch` – Spezifikation: [`04-MODELL-V2-SPEC.md`](../docs/datamodel-2026/04-MODELL-V2-SPEC.md).
-- [x] Code-Generierung nach `target/generated-sources` (nicht mehr eingecheckt).
-- [x] `SeriesId` (xxHash64, kanonische Form) inkl. gemeinsamer Testvektoren, identisch in Java & Python.
-- [x] `OpenTsxAvro`: Single-Object-Encoding (Standard), Confluent-Framing lesbar mit Resolver, Kafka-Serializer/-Deserializer; Python-Gegenstück byte-identisch. Flink-`DeserializationSchema` folgt mit der Flink-Umstellung (P4).
-- [x] Time-Encodings `REGULAR`, `IRREGULAR_DELTA` + Roundtrip-Tests und Testvektoren.
-- [x] Schema-Historie (`schema-history/v2.0`) + BACKWARD_TRANSITIVE-Prüfung im Build; Schemaänderung erzwingt neue Version.
-- [x] v1-Modell eingefroren und als veraltet dokumentiert (`opentsx-data/README.md`), `Event`-Konflikt dokumentiert.
-- [x] `opentsx-legacy-bridge`: `TimeSeriesObject ⇄ Episode` verlustfrei, `EpisodesRecord v1 → Episode`.
-- [x] Pandas-Anbindung mit UTC-`DatetimeIndex` (`opentsx.model.pandas_io`).
+### Phase 1: model v2 and serde (`opentsx-model`, `opentsx-serde`)
+- [x] Avro schemas: `SeriesKey`, `Observation`, `Episode` (+ `Segmentation`), `EpisodeSummary`, `Provenance`, `BucketManifest`, `SeriesStats`, `PatternMatch`. Specification: [`04-MODELL-V2-SPEC.md`](../docs/datamodel-2026/04-MODELL-V2-SPEC.md).
+- [x] Code generation into `target/generated-sources` (no longer checked in).
+- [x] `SeriesId` (xxHash64, canonical form) including shared test vectors, identical in Java and Python.
+- [x] `OpenTsxAvro`: single-object encoding (default), Confluent framing readable with a resolver, Kafka serializer/deserializer; Python counterpart byte-identical. The Flink `DeserializationSchema` follows with the Flink migration (P4).
+- [x] Time encodings `REGULAR`, `IRREGULAR_DELTA` + roundtrip tests and test vectors.
+- [x] Schema history (`schema-history/v2.0`) + BACKWARD_TRANSITIVE check in the build; a schema change forces a new version.
+- [x] v1 model frozen and documented as deprecated (`opentsx-data/README.md`), `Event` conflict documented.
+- [x] `opentsx-legacy-bridge`: `TimeSeriesObject ⇄ Episode` lossless, `EpisodesRecord v1 → Episode`.
+- [x] Pandas integration with a UTC `DatetimeIndex` (`opentsx.model.pandas_io`).
 
-### Phase 2 – Kafka/KafScale-Persistenz & Replay (`opentsx-connectors` bzw. `opentsx-kafka-v2`)
-- [x] Topic-Layout `tsx.<domain>.{observations,episodes,series,buckets,series-stats}.v2` + Provisioning (`TopicLayout.provision`), Client-Settings für KafScale (`KafScaleClients`).
-- [x] `BucketWriter` (Manifest OPEN → Episoden → SEALED + Checksum), asynchron, **nicht** idempotent (KafScale), `max.in.flight=1`, zstd, Header, Record-Timestamp = `tStart`; kein SEAL bei Sendefehlern.
-- [x] `ReplayService`: nach Bucket oder Serien + Zeitbereich über den **Episoden-Index** (statt `offsetsForTimes`), manuelle Zuweisung + seek, Ereigniszeit-Reihenfolge, Pacing, Dedup, Verifikation gegen Manifest, begrenzter Speicher. `EpisodeIndexer` baut den Index aus dem Log neu, `BucketCatalog` liest Manifeste. Sink: Callback (Topic-/TSBucket-Sinks bei Bedarf).
-- [x] `LegacyBucketImport`: TSBucket-SequenceFile → Episoden (→ `BucketWriter`); `EpisodesRecord` v1 → v2 über `LegacyBridge`.
-- [x] Kostenmessung: **2,18 B/Wert** (1 Hz, Sensorauflösung, regulär, zstd), 6,96 B/Wert bei voller Double-Präzision, 4,07 B/Wert mit Zeit-Jitter (`opentsx-kafka-v2/README.md`). Records/s gegen KafScale-S3 noch offen (lokal nur In-Memory-S3).
-- [x] `TSOWriter.persistBucket_Kafka`-Stub als veraltet markiert und auf den v2-Pfad verwiesen.
+### Phase 2: Kafka/KafScale persistence and replay (`opentsx-connectors` or rather `opentsx-kafka-v2`)
+- [x] Topic layout `tsx.<domain>.{observations,episodes,series,buckets,series-stats}.v2` + provisioning (`TopicLayout.provision`), client settings for KafScale (`KafScaleClients`).
+- [x] `BucketWriter` (manifest OPEN → episodes → SEALED + checksum), asynchronous, **not** idempotent (KafScale), `max.in.flight=1`, zstd, headers, record timestamp = `tStart`; no SEAL on send errors.
+- [x] `ReplayService`: by bucket, or by series + time range via the **episode index** (instead of `offsetsForTimes`), manual assignment + seek, event-time order, pacing, dedup, verification against the manifest, bounded memory. `EpisodeIndexer` rebuilds the index from the log, `BucketCatalog` reads manifests. Sink: callback (topic/TSBucket sinks when needed).
+- [x] `LegacyBucketImport`: TSBucket SequenceFile → episodes (→ `BucketWriter`); `EpisodesRecord` v1 → v2 via `LegacyBridge`.
+- [x] Cost measurement: **2.18 B/value** (1 Hz, sensor resolution, regular, zstd), 6.96 B/value at full double precision, 4.07 B/value with time jitter (`opentsx-kafka-v2/README.md`). Records/s against KafScale S3 still open (locally only in-memory S3).
+- [x] `TSOWriter.persistBucket_Kafka` stub marked as deprecated and pointed to the v2 path.
 
-### Phase 3 – Store-SPI, OpenTSDB, Iceberg (`opentsx-store-spi`, `opentsx-store-opentsdb`, `opentsx-store-iceberg`)
-- [x] `opentsx-store-spi`: `SeriesStore`, `EpisodeQuery`, `SeriesSelector`, `StoreCapabilities`, `EpisodeOps.clip`, `InMemorySeriesStore` (ersetzt leere `TSBucketStore`/`TSO*Interface`).
-- [x] Contract-Test-Suite (`SeriesStoreContract`, test-jar) – grün für In-Memory, Iceberg (JDBC/SQLite-Catalog) und OpenTSDB (Emulator). Offen: echter OpenTSDB-Server und Iceberg-REST-Catalog + MinIO in CI (kein Docker lokal).
-- [x] OpenTSDB-Adapter `opentsx-store-opentsdb-v2`: HTTP-API, Validierung metric/tags (≤ 8), Einheit als `_unit`, `/api/put` gebatcht, `/api/query` → Episoden; ms-Präzision, NaN wird gezählt verworfen.
-- [x] Iceberg-Adapter `opentsx-store-iceberg` (Iceberg 1.10): Tabellen `episodes` (verlustfrei, `day(t_start)` + `bucket(32, series_id)`), `series`, `episode_index`; idempotente Writes; Time-Travel. Python liest dieselben Tabellen mit PyIceberg byte-identisch (CI-Job `cross-language`).
-- [x] KafScale → Iceberg: `EpisodeLogSync` (manuelle Zuweisung, Positionen zurückgegeben, idempotent) + `IcebergEpisodeIndex` als dauerhafter Replay-Index; End-to-End-Test gegen KafScale v1.6.0.
+### Phase 3: store SPI, OpenTSDB, Iceberg (`opentsx-store-spi`, `opentsx-store-opentsdb`, `opentsx-store-iceberg`)
+- [x] `opentsx-store-spi`: `SeriesStore`, `EpisodeQuery`, `SeriesSelector`, `StoreCapabilities`, `EpisodeOps.clip`, `InMemorySeriesStore` (replaces the empty `TSBucketStore`/`TSO*Interface`).
+- [x] Contract test suite (`SeriesStoreContract`, test-jar), green for in-memory, Iceberg (JDBC/SQLite catalog) and OpenTSDB (emulator). Open: real OpenTSDB server and Iceberg REST catalog + MinIO in CI (no Docker locally).
+- [x] OpenTSDB adapter `opentsx-store-opentsdb-v2`: HTTP API, validation of metric/tags (≤ 8), unit as `_unit`, `/api/put` batched, `/api/query` → episodes; ms precision, NaN is dropped and counted.
+- [x] Iceberg adapter `opentsx-store-iceberg` (Iceberg 1.10): tables `episodes` (lossless, `day(t_start)` + `bucket(32, series_id)`), `series`, `episode_index`; idempotent writes; time travel. Python reads the same tables with PyIceberg byte-identically (CI job `cross-language`).
+- [x] KafScale → Iceberg: `EpisodeLogSync` (manual assignment, positions returned, idempotent) + `IcebergEpisodeIndex` as a durable replay index; end-to-end test against KafScale v1.6.0.
 
-### Windpark-Domäne (Gap-Roadmap P3, `opentsx-windpark`)
-- [x] Versionierter Datenpunktkatalog (`channel-catalog.yaml` v1.0.0) mit Zuordnung zu IEC 61400-25-2 (LD/LN/DO/DA, CDC, Edition), Einheit (UCUM), Auflösung, Plausibilität, Qualitätscodes, Herstellererweiterungen (`vendorSpecific`, `notes`).
-- [x] Quellsystem-Mappings: Originalname, Quelladresse, Skalierung/Offset/Vorzeichen, Quelleinheit, Zeitzone, Zeitbezug (INSTANT/START/END), Aggregation (`mean.PT10M` …), Status CONFIRMED/PROVISIONAL/UNMAPPED.
-- [x] Asset-Modell (`TurbineType`, `Turbine`, `Park`) + Inventar (erwartete Serien) als Eingabe für OpenMetadata.
-- [x] Normalisierer: Namen/Einheiten/UTC/Intervallbeginn/Quantisierung/Plausibilität → ausgerichtete 10-min-Episoden + Report (nichts wird geraten).
-- [x] Simulator: Weibull + OU-Turbulenz (exakt diskretisiert), Jensen-Wake, Leistungskurve, Pitch/Yaw/Temperatur, Betriebsereignisse, Sensorfehler mit Ground Truth; deterministisch inkl. Episoden-IDs.
-- [x] CLI `WindparkSim` → KafScale (versiegelter Bucket) und/oder Iceberg; End-to-End-Tests (Iceberg immer, KafScale mit `KAFSCALE_BOOTSTRAP`, in CI).
-- [ ] Folge: Avro 1.12.2+ mit `SERIALIZABLE_PACKAGES`; echte Herstellerexporte als weitere `sources` einpflegen.
+### Wind farm domain (gap roadmap P3, `opentsx-windpark`)
+- [x] Versioned data point catalog (`channel-catalog.yaml` v1.0.0) with mapping to IEC 61400-25-2 (LD/LN/DO/DA, CDC, edition), unit (UCUM), resolution, plausibility, quality codes, vendor extensions (`vendorSpecific`, `notes`).
+- [x] Source system mappings: original name, source address, scaling/offset/sign, source unit, time zone, time reference (INSTANT/START/END), aggregation (`mean.PT10M` …), status CONFIRMED/PROVISIONAL/UNMAPPED.
+- [x] Asset model (`TurbineType`, `Turbine`, `Park`) + inventory (expected series) as input for OpenMetadata.
+- [x] Normalizer: names/units/UTC/interval start/quantization/plausibility → aligned 10-min episodes + report (nothing is guessed).
+- [x] Simulator: Weibull + OU turbulence (exactly discretized), Jensen wake, power curve, pitch/yaw/temperature, operating events, sensor faults with ground truth; deterministic including episode IDs.
+- [x] CLI `WindparkSim` → KafScale (sealed bucket) and/or Iceberg; end-to-end tests (Iceberg always, KafScale with `KAFSCALE_BOOTSTRAP`, in CI).
+- Follow-up moved on 2026-10-26 (D90): Avro 1.12.2+ with `SERIALIZABLE_PACKAGES` to [TASK-019](TASK-019-major-upgrades.md), real vendor exports as further `sources` to [TASK-018](TASK-018-analytics-storage-extensions.md).
 
-### Phase 4 – Streaming-Statistik & OpenMetadata (`opentsx-stats`, `opentsx-openmetadata`)
-- [x] `StatsEngine` (laufzeitunabhängig): je `seriesId` Welford + min/max + NaN + **Quantil-Sketch** (DDSketch, 1 % rel. Fehler, Java/Python byte-identisch) + Gap-Erkennung; GLOBAL + epoch-ausgerichtete Tumbling-Fenster; Ereigniszeit je Serie (Episode → `tEnd`); Dedup per `episodeId`; Checkpoint des kompletten Zustands.
-- [x] `StatsProcessor` auf KafScale (manuelle Zuweisung, keine Gruppen/Commits, Checkpoint-Datei nach bestätigten Outputs) → `series-stats.v2`. Keine Compaction auf KafScale → `SeriesStatsLog` liest „latest per key“. Late Data: gezählt, nur GLOBAL. Grün gegen KafScale v1.6.0.
-- [x] Data Quality auf Statistiken (Vollständigkeit, Plausibilitätsband via Sketch, Flatline, Lücken, Aktualität); findet die Simulator-Fehler exakt in den betroffenen Fenstern.
-- [x] `opentsx-openmetadata`: Glossary aus dem Datenpunktkatalog, Klassifikationen (IEC-LN, Mapping-Status), Custom Properties, Topics mit Avro-Schema, Iceberg-Tabellen, Signal-View je Park, Pipelines + Lineage, Profile je Fenster, DQ-Testdefinitionen/-fälle/-ergebnisse. Payloads gegen die JSON-Schemas von `openmetadata-spec 2.0.5` validiert; Dry-Run-Modus.
-- [ ] Flink-Wrapper um `StatsEngine` (KafkaSource ohne Offset-Commits) – erst mit Flink-Upgrade.
-- [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly).
-- [ ] Bestehenden `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2-Serde umstellen oder deprecaten.
+### Phase 4: streaming statistics and OpenMetadata (`opentsx-stats`, `opentsx-openmetadata`)
 
-### Phase 5 – Segmentierung, Retrieval & Pattern-Matching (`opentsx-retrieval`)
-- [x] Segmentierer für alle vier Strategien (FIXED_DURATION, FIXED_COUNT, FEATURE_EXTREMUM, FEATURE_THRESHOLD), inkrementell → Streaming == Batch (getestet), deterministische Segment-IDs, Lineage.
-- [x] Pattern-Engine: MASS (zED), PAA/SAX inkl. MINDIST (exakter Prefilter, `EpisodeSummary.sax`), DTW mit Sakoe-Chiba, LB_Kim/LB_Keogh (UCR-Kaskade); exakte Top-k ohne Überlappung über Episodengrenzen; Ganz-Episoden-Ähnlichkeit.
-- [x] Benchmark auf simulierten Winddaten (eingepflanzte Böen, Warping, Rauschen) → Recall/Latenz-Report.
-- [x] `EpisodeService`: `episodes()` (+ Resampling), `episode(id)` (neu im Store-SPI), `similarTo`, `similarEpisodes`, `segments(...).writeTo(store)`.
-- [x] Dünne REST-Schicht (`RetrievalServer`, JSON oder Avro-Stream) + Python-Client `opentsx.client.RetrievalClient`; Live-Test Python ↔ Java in CI.
-- [x] Leistungskurven-Analyse (Methode der Bins, Performance-Index, Minderleistungsphasen) in `opentsx-windpark`.
-- [ ] 5c (optional): Matrix-Profile Motif/Discord über Buckets; Treffer als Annotationen zurückschreiben.
-- [ ] iSAX-Index für heiße Daten (aktuell: SAX-Prefilter je Episode, MASS je Serie).
+The three open items are WP1 to WP3 of [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md).
 
-### Phase 6 – Analytik-Lücken
-- [ ] Resampling/Alignment mehrerer Serien (gemeinsames Raster, As-of-Joins) – Grundlage für Smart Topics.
-- [ ] Gap-Filling (linear, saisonal, modellbasiert) mit Qualitätscode SUBSTITUTED.
-- [ ] Change-Point-Erkennung (CUSUM/PELT) als Segmentierer.
-- [ ] Welch-PSD/Kohärenz (Schwingungen), Feature-Extraktion je Episode.
+- [x] `StatsEngine` (runtime-independent): per `seriesId` Welford + min/max + NaN + **quantile sketch** (DDSketch, 1 % relative error, Java/Python byte-identical) + gap detection; GLOBAL + epoch-aligned tumbling windows; event time per series (episode → `tEnd`); dedup by `episodeId`; checkpoint of the complete state.
+- [x] `StatsProcessor` on KafScale (manual assignment, no groups/commits, checkpoint file after confirmed outputs) → `series-stats.v2`. No compaction on KafScale → `SeriesStatsLog` reads "latest per key". Late data: counted, GLOBAL only. Green against KafScale v1.6.0.
+- [x] Data quality on statistics (completeness, plausibility band via sketch, flatline, gaps, freshness); finds the simulator faults exactly in the affected windows.
+- [x] `opentsx-openmetadata`: glossary from the data point catalog, classifications (IEC LN, mapping status), custom properties, topics with Avro schema, Iceberg tables, signal view per park, pipelines + lineage, profiles per window, DQ test definitions/cases/results. Payloads validated against the JSON schemas of `openmetadata-spec 2.0.5`; dry-run mode.
+- [ ] Flink wrapper around `StatsEngine` (KafkaSource without offset commits), not before the Flink upgrade.
+- [ ] Smoke test against a real OpenMetadata 2.0.5 server (docker compose, nightly).
+- [ ] Migrate the existing `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` to the v2 serde or deprecate them.
 
-### Phase 7 – Smart Topics (`opentsx-smart`, Python `opentsx.smart`) – Entwurf: [`05-SMART-TOPICS.md`](../docs/datamodel-2026/05-SMART-TOPICS.md)
-- [ ] P7a: Spezifikation (YAML, versioniert) + Feature-Pipeline Java/Python mit Testvektoren; Schema v2.1 `SmartMetric`.
-- [ ] P7b: Python-Training (Kandidaten mit/ohne Kontext, zeitlicher Split, konforme Intervalle) → ONNX/JSON → MLflow (Alias `champion`).
-- [ ] P7c: Java-Scoring-Prozessor (KafScale, Checkpoint, ONNX Runtime) → Smart Metrics + Prediction-API (Java/REST).
-- [ ] P7f (Vorschlag, [`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`](../docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md)): **Go-TSx-Prozessor** auf Basis der KafScale-Processor-Vorlage (S3-Segmente, Lease je Partition) mit deklarativem DAG `opentsx.dag.v1`; Go-Stream-Kern (Dekodieren, Normalisieren, Episoden, Welford/DDSketch, DQ, inkrementelle Segmentierer, Resampling, Scoring reiner Go-Modelle, `train.trigger`) mit Go↔Java-Konformität über gemeinsame Testvektoren; Java-Sidecar für Mustersuche/Zwilling; Replay-Tests in CI; Schattenbetrieb und Umschalten; Rand-Betrieb (Pi, Labor-PC) mit Checkpoint-Datei.
-- [x] P7f-Betrieb (DevOps, heutiger Java-Stand): [`docs/devops/`](../docs/devops/README.md) mit Setup-Plan, Sizing-Plan (Formel + Rechenbeispiele, 2,18 B/Wert), Demos und Abgrenzung heute/geplant; Skripte `deploy/k3s/00…90`, Kustomize (Basis, Jobs, Komponenten hostnetwork/lake/ingress), Images `opentsx/tools` (JRE, alle Befehle) und `opentsx/studio` (Seite im Build erzeugt), Hilfswerkzeug `kafscale-check` (advertised addresses, Topic-Anlage); CI rendert die Overlays.
-  - [x] Betriebskonzept [`docs/devops/operations.md`](../docs/devops/operations.md): Dienstkatalog mit Kritikalität, Umgebungen (lokaler Probelauf, Labor, produktionsnah), Überwachung (was beobachten, `kubectl`-Stufe, Vorschlag kube-state-metrics + VictoriaMetrics/Prometheus + Grafana, Alarmregeln nur auf existierenden Metriken), Logging, Sicherung/Wiederherstellung, Update/Rollback (inkl. Avro-v2-Kompatibilität: Leser vor Schreibern aktualisieren), Secrets, Sicherheit, Runbooks R1–R8, Rollen, Labor-SLOs, Kapazitätsprüfung.
-  - [x] Lokaler Probelauf `deploy/k3s/60-probe.sh` (`--local-kafscale` mit LAN-IP als advertised address, `--skip-build`, `--online`, `--dry-run`): alle Schritte von Voraussetzungen bis Modbus mit PASS/FAIL-Bericht `probe-report-<Zeit>.md` und Hinweisen; `70-backup.sh` / `71-restore.sh` (Checkpoint-, Daten-, Katalog-, MinIO-PVC, Konfiguration; Prüfsummen, Rückfrage).
-  - [x] DWD und Modbus im Cluster: Job `dwd` (offline mit Fixture im Image, `dwd-online`), CronJob `dwd-forward` (täglicher MOSMIX-Abruf als CSV), Simulator `modbus-sim` (Deployment + Service :1502) und Job `modbus-poll` (Episoden als JSON-Zeilen auf dem Daten-PVC); Komponente `monitoring` (synthetischer Check + Alarmregeln); CI validiert zusätzlich mit kubeconform und führt den Probe-Plan aus.
-  - [ ] Erster echter Lauf `60-probe.sh --local-kafscale` auf einem Rechner mit Docker und k3s (hier ohne Container-Daemon nur Trockenlauf, Stub-Cluster und KafScale-Pfad über den Image-Einstiegspunkt geprüft); Lake-Pfad (S3FileIO, REST-Katalog) Ende-zu-Ende; Messungen aus dem Sizing-Plan.
-  - [ ] Metrik-Export aus den OpenTSx-Prozessen (`/metrics`: Lag je Partition und Checkpoint-Alter des Statistik-Prozessors, gelesene/geschriebene/nicht dekodierbare Datensätze, DQ-Verstöße, Retrieval-Latenz, Modbus-Zyklen/Timeouts, DWD-Ausgabezeit) samt Dashboards.
-  - [ ] KafScale-Senke für Modbus-Poller und DWD-Sammler (`tsx.weather.*`), dauerhafter Poller als Deployment nahe am Umsetzer; NetworkPolicies und Pod-Security-Labels als getestete Komponente; geplante Sicherung als CronJob mit S3-Ziel.
-- [ ] P7d: Föderiertes globales Modell je Target (Wayang-Ansatz: lokale Trainings je System zahlen ein, keine Rohdaten bewegen).
-- [ ] P7e (Vorschlag): Personal Service Layer auf dem SaaS-Stack – Control Plane für eigene Smart Series (`05-SMART-TOPICS.md` §11).
-- [x] P7e Studio-Prototyp ([`09-STUDIO-LABVIEW-STEUERPULT.md`](../docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md)): Statistik, Prognose & Was-wäre-wenn, Node-Graph; statische Seite `docs/prototypes/smart-topics-studio.html` aus `UiExport` + `tools/build_studio.py`.
-- [x] P7e Studio-Leitfaden (Branch `opentsx/2026-studio-guide`): `StudioGuide` + `twin/haus-erzgebirge.guide.yaml` und `twin/h2-chain.guide.yaml` (Prosa je Baustein, Port, Parameter, Stellgröße, Draht; Herkunft der Werte; Vergleichsquellen), gegen den Schaltplan getestet; Hover-Erläuterung je Draht und Port; eigene Angaben je Baustein mit Export als Inventar und als eigener Schaltplan. Offen: Leitfaden für das Boot.
-- [x] P7e Studio-Gestaltung (Branch `opentsx/2026-studio-design`): Produktoberfläche nach vier Gutachten (UI-Design, UX und Barrierefreiheit, Elektro- und Energietechnik, kaufmännische Sicht); Ansichten Überblick, Vergleich, Systembild, Messreihen; Inspektor neben dem Systembild; Verbindungen nach Energieträger; `headline()`, `decision()`, `limits()` am `StudioScenario`; fachliche Korrekturen in beiden Leitfäden. Offen aus den Gutachten: Schwelle der Schutzabschaltung unter dem Höchstdruck, Brennerlaufzeit im Ölkessel-Modell, Ausgleichsenergie und H₂-Erlös im Vermarkter, PDF-Export, gemeinsamer Zeitcursor in allen Diagrammen.
-- [x] P7e Studio-Hülle (Branch `opentsx/2026-studio-shell`, Worktree `OpenTSx-worktrees/studio-shell`): Titelleiste mit Menüs, ausklappbare Icon-Leiste links, Szenarien als Dokument-Reiter, Detailpanel von rechts, Statusleiste; nur Vorlage und erzeugte Seite, kein Java. Reiter je Szenario mit Link zum Anlagen-Explorer und Ansicht Ereignis-Topic (Wiedergabe des Referenzlaufs). Offen: andockbare Panels, Befehlspalette, Tabellenansicht der Diagramme.
-- [x] P7e Ereignis-Topic live (Branch `opentsx/2026-twin-event-topic`, Worktree `OpenTSx-worktrees/twin-event-topic`, baut auf `opentsx/2026-studio-shell` auf): Modul `opentsx-twin-live` mit `EventPublisher` (Ereignisse eines Laufs nach `twin.<id>.<run>.events`), `EventBridge` (SSE für den Browser) und `bin/opentsx twin-live`; Studio-Ansicht liest live über die Brücke. Nachtrag (Branch `opentsx/2026-event-topic-create`): Der Publisher legt das Topic vor dem ersten Ereignis an. Nachtrag (Branch `opentsx/2026-event-bridge-k3s`, Worktree `OpenTSx-worktrees/event-bridge-k3s`): k3s-Komponente `event-bridge` (NodePort 30312), auf master2 ausgerollt. Offen: Zwilling veröffentlicht während des Rechnens (`MessageSink`), Avro-Variante des Ereignis-Schemas, Authentifizierung der Brücke.
-- [ ] P7e Studio produktiv: Live-Daten über KafScale, Statistik aus P4, Prediction-API aus P7, Node-Graph bearbeitbar (Schaltplan mit Validierung), Eingriffe mit Freigabe-Workflow, zusammengesetzte Bausteine.
-- [x] Studio allgemein: `StudioScenario` (Schaltplan, Referenz, Alternativen, Prognosen, Smart Metrics, Kennzahlen) + `StudioExport`; Oberfläche mit Szenario-Auswahl ohne Sonderfälle.
-- [x] Haus- und Boot-Szenario als `StudioScenario` eingehängt (`HouseStudioScenario`, `BoatStudioScenario`, abgeleitete Kennzahlen über `derivedKpis`).
-- [ ] LabVIEW-Brücke (09 §4/§4a): Abbildungsdatei Sensor ↔ Smart Topic ↔ Aktor; JSON-Verträge `opentsx.smartmetric.v1`, `opentsx.command.v1`, `opentsx.command-ack.v1` als JSON-Schema + Normalizer + Tests; Feedback-Topic `tsx.<domain>.commands.v1` mit Quittungen, Spiegelung in infinimesh `desired`; Publisher-/Kommando-VIs (VIPM, BSD/MIT); Test Client-Zertifikat-TLS LabVIEW ↔ infinimesh. *(TDMS-Import zurückgestellt.)*
+### Phase 5: segmentation, retrieval and pattern matching (`opentsx-retrieval`)
+- [x] Segmenters for all four strategies (FIXED_DURATION, FIXED_COUNT, FEATURE_EXTREMUM, FEATURE_THRESHOLD), incremental → streaming == batch (tested), deterministic segment IDs, lineage.
+- [x] Pattern engine: MASS (zED), PAA/SAX including MINDIST (exact prefilter, `EpisodeSummary.sax`), DTW with Sakoe-Chiba, LB_Kim/LB_Keogh (UCR cascade); exact top-k without overlap across episode boundaries; whole-episode similarity.
+- [x] Benchmark on simulated wind data (planted gusts, warping, noise) → recall/latency report.
+- [x] `EpisodeService`: `episodes()` (+ resampling), `episode(id)` (new in the store SPI), `similarTo`, `similarEpisodes`, `segments(...).writeTo(store)`.
+- [x] Thin REST layer (`RetrievalServer`, JSON or Avro stream) + Python client `opentsx.client.RetrievalClient`; live test Python ↔ Java in CI.
+- [x] Power curve analysis (method of bins, performance index, underperformance phases) in `opentsx-windpark`.
+- The options 5c (Matrix Profile motif/discord) and the iSAX index moved on 2026-10-26 (D90) to [TASK-018](TASK-018-analytics-storage-extensions.md).
 
-### Phase 8 – Systemrekonstruktion, Simulation & Optimierung – Konzept: [`06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](../docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md)
+### Phases 6 to 9: moved
 
-Kette: *Quellen (Sensoren, Content-Interaktion wie ER1/Wikipedia mit Feedback) → Episoden → Netzwerkrekonstruktion
-(Kämpf 2017 + Stand 2026) → Simulation auf rekonstruierter Struktur → Optimierung (klassisch, Quanten nur als
-Messobjekt)*, gesteuert über den Personal Service Layer (P7e). Abnahme jeweils gegen die Ground Truth des
-Windpark-Simulators.
+Phases 6 to 9 moved on 2026-10-26 (D90) to their own tasks (line numbers refer to this file at commit 551815a3).
 
-**Kurztitel: Zusammenspiel & Koordinationspotenzial.** Leitfrage: *„Was verlieren wir durch getrennte
-Betriebsführung – und was gewinnen wir durch abgestimmtes Handeln?“* Gemeint ist das gemeinsame Optimum des lokalen
-Energieverbunds (Windpark, Batterie, Elektrolyseur, Energieabnehmer, Vermarktung). Einzubeziehen: Wetter und
-Erzeugungsprognosen, Strompreise und Vermarktungsfahrpläne, H2-Bedarf und Abnahmeverpflichtungen, Speicherstände,
-Kapazitäten und technische Grenzen, Netzrestriktionen, Ackerarbeit, Fledermausabschaltungen und weitere
-Betriebsvorgaben.
-- **Ergebnis:** überprüfbares Modell der Abhängigkeiten und Handlungsspielräume plus bezifferte Koordinationslücke.
-  Lieferobjekte: Abhängigkeitsmodell, Nebenbedingungen, Referenzbetrieb, Vergleichsszenarien, Potenzialbericht mit
-  Annahmen, Unsicherheiten und Sensitivitäten.
-- **Bewertungsprinzip:** Koordinationspotenzial = Ergebnis der koordinierten Alternative − Ergebnis des
-  Referenzbetriebs, unter denselben Randbedingungen und mit den zum Entscheidungszeitpunkt verfügbaren
-  Informationen; ein Vergleich mit perfekter Zukunftskenntnis nur als gekennzeichnete theoretische Obergrenze.
-  Ergebnisgrößen: Deckungsbeitrag, vermeidbare Abregelung, H2-Bedarfsdeckung, Speicherbeanspruchung, Nutzen und
-  Mehrkosten je Beteiligtem. Modelliertes Potenzial und nachgewiesener Mehrerlös bleiben getrennt.
-- **Grundsatz:** Statistische Abhängigkeit ist zunächst eine Hypothese, kein Kausalitätsnachweis. Die Verfahren in
-  P8.0–P8.5 sind **Methodenvorschläge** und werden erst nach fachlicher Abstimmung verbindlich.
-- **Kooperation:** Transparenz darüber, wer welche Daten bereitstellt, wer Änderungen entscheidet und verantwortet,
-  wer profitiert und wer Aufwand, Kosten und Risiken trägt.
-- **Brücke zu P9:** P8 identifiziert Abhängigkeiten und beziffert das Koordinationspotenzial; P9 macht daraus einen
-  ausführbaren Zwilling, in dem Entscheidungen kausal durchschlagen und Gegenmaßnahmen geprüft werden.
-- [ ] Betriebsvorgaben (Netzrestriktionen, Ackerarbeit, Fledermausabschaltungen) als Nebenbedingungen erfassen – im Zwilling als Baustein „Betriebsvorgaben“ (Kalender-/Regelquelle für Abregelung).
+| Phase | Moved to |
+|-------|----------|
+| Phase 6: analytics gaps (lines 102 to 107) | [TASK-018](TASK-018-analytics-storage-extensions.md) |
+| Phase 7: Smart Topics (lines 108 to 131) | [TASK-016](TASK-016-smart-topics.md) |
+| Phase 8: system reconstruction, simulation and optimization (lines 132 to 197) | [TASK-015](TASK-015-multivariate-analysis.md) |
+| Phase 9: digital twin of the energy system (lines 198 to 295) | [TASK-017](TASK-017-digital-twin.md) |
 
-**P8.0 – Fundament (Vertrag)**
-- [ ] *(niedrige Priorität, vorgemerkt)* Ground-Truth-Export: **der vom Simulator zur Datenerzeugung verwendete** gerichtete Wake-Graph je Windrichtungssektor aus `opentsx-windpark` (Jensen, `WakeModel`), gekennzeichnet als Simulationsreferenz (`gt.source=simulator`, `gt.kind=wake`). Festlegungen nach [07 §8](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md): meteorologische Konvention, 12 × 30°-Sektoren, Kante `A → B` = B im Wake-Kegel von A für mindestens eine Sektorrichtung, Gewichte (mittleres/maximales Defizit, Abdeckungsanteil, Abstand in D) bei Referenz-Ct (8 m/s) plus Ct-Tabelle 4/8/12 m/s; zusätzlich das **dynamische Kantenlog** des Laufs (aktive Paare je 10-s-Schritt), inkl. injizierter Fehler/Regime. Grenzen (keine Stabilität/Mäander) dokumentieren.
-- [ ] Iceberg-Schema der **Kantentabelle** (Multilayer, versioniert): Quelle/Ziel-Serie, Layer/Methode, Lag, Stärke, Signifikanzfelder (l_adj, l_norm, l_trans, p-Wert, Surrogattyp, Konfidenz aus Bagging), Fenster, Spezifikations-Hash, Provenienz (Episoden-Hash, Topic/Offsets).
-- [ ] OpenLineage-Facet „Replay-Provenienz“ in `opentsx-openmetadata`; Kantentabelle, Simulationsläufe und Optimierungsinstanzen als Lineage-Knoten in OpenMetadata.
-
-**P8.1 – Klassische Rekonstruktion (Kämpf-Methodik als Apache-lizenzierte Java-Bibliothek, Clean-Room)**
-- [ ] Lagged Cross-Correlation mit adjustierter (l_adj), normierter (l_norm) und Peak-Qualitäts-Linkstärke (l_trans).
-- [ ] Event Synchronization mit Q_rand-Kalibrierung **und** Event Coincidence Analysis (ECA) als robustere Alternative. Der Q>1-Fehler selbst ist mit #110 bereits behoben.
-- [ ] Surrogate: Shuffling, Phasenrandomisierung, Fourier-Filter + Rank-Reordering (erhalten Langzeitkorrelationen); KS-Test, adaptive Schwelle je Fenster, k-Means in Linkmaß-Ebenen, FDR-Korrektur; MST/PMFG-Filter.
-- [ ] Univariate Vorstufe: DFA, RIS, Wochenzyklus-Normalisierung (168 h) für Content-Daten.
-- [ ] Kontextmaße für Content-Netze: Context Cohesive Force (CCF), Relevanzindizes (lokal/global TRRI), Structure Induced Stress (SIS) als Struktur-vs.-Funktion-Maß.
-- [ ] Streaming-Screening: laufende Fenstersummen (CC/ECA) in `opentsx-stats`, Flink-Variante mit dem Flink-Upgrade; Precision/Recall gegen Ground Truth je Sektor, CC-Baseline immer mitberichten.
-
-**P8.2 – Kausale Bestätigung (Screen-then-Confirm)**
-- [ ] Python-Worker (`python-package/opentsx/algorithms`): liest Episoden via PyIceberg, ruft tigramite (PCMCI+, RPCMCI, J-PCMCI+) und IDTxl (multivariate TE) **hinter einer Prozessgrenze** (GPL), schreibt Kanten zurück; Bootstrap-Bagging für Konfidenzen.
-- [ ] Hawkes-Granger für Ereignisströme (Content-Interaktion: Zugriffe, Edits, Feedback).
-- [ ] Vergleichsbericht im CauseMe-Stil auf Simulator-Ground-Truth; Bestätigung wird nur Standard, wenn sie die CC-Baseline messbar schlägt.
-
-**P8.3 – Simulation auf rekonstruierter Struktur (Zwilling aus Daten)**
-- [ ] Netzwerkdynamik-Modelle auf bestätigten Kanten: VAR, Koopman/DMD; multivariater Hawkes auf Graph für Content-Daten; physikbasierter Wake-Pfad (FLORIS-artig) als Referenz.
-- [ ] Szenario- und Interventions-Replay gegen zurückgehaltene Episoden; SIS/Schwellwertparameter als Strukturbruch-Detektor; Abnahme: Out-of-sample besser als strukturfreies Modell.
-- [ ] Identifizierbarkeit: Regimevielfalt bzw. gezielte Anregung (Simulator-Interventionen, Feedback als quasi-Intervention).
-
-**P8.4 – Optimierung, klassisch**
-- [ ] Problem-Builder aus Kantentabelle/Simulation: graph-native Binärprobleme (Partitionierung, Sensor-/Turbinenauswahl, MIS) als QUBO im dimod-Format; Betriebsprobleme (Yaw/Wake-Steering, Wartung, Unit Commitment) als MILP.
-- [ ] Backends: HiGHS, OR-Tools CP-SAT (Java), Simulated Annealing/Parallel Tempering; Gurobi/CPLEX optional; Java exportiert, Python-Optimierungsdienst hinter einer Schnittstelle.
-- [ ] Ergebnisse als Smart-Topic-Ereignisse; Optimalitätslücke gegen MIP-Schranke; geschlossene Schleife im Simulator verbessert die Zielgröße.
-
-**P8.5 – Quanten- und föderierte Experimente (Messobjekt, kein Versprechen)**
-- [ ] Quantenbackends (D-Wave Leap Hybrid, Qiskit Functions, ggf. Neutralatome für MIS) nur über Python-Sidecar; Protokoll: Zeit-bis-Ziel inkl. Embedding und Warteschlange, beste getunte klassische Baseline (PT, GPU-Heuristiken), QOBLIB-Berichtsformat; „Parität/kein Vorteil“ ist ein gültiges Ergebnis.
-- [ ] Veröffentlichung versionierter, simulatorerzeugter QUBO/MILP-Instanzen mit bekannten Optima.
-- [ ] Föderierte Strukturentdeckung über Betreiber hinweg (Wayang, mergebare Sketches, gemeinsamer IEC-Katalog); vorher semantische Angleichung, da Inter-Farm-Lernen unter Heterogenität leidet.
-
-**P8.x – Content-Interaktion / ER1**
-- [ ] Klären, ob ein anonymisierter oder synthetischer Auszug ER1-artiger Daten (Zugriff, Edit, Feedback) als zweiter Prüfstein bereitgestellt werden kann; sonst Validierung mit öffentlichen Wikipedia-Pageviews/Clickstream.
-- [ ] Synthetischer Generator für Content-Interaktion mit bekannter Kopplung und Feedback (Gegenstück zum Windpark-Simulator).
-
-### Phase 9 – Digitaler Zwilling Energieverbund (BSP) – Konzept: [`07-DIGITAL-TWIN-BSP.md`](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
-
-Verbund aus Windpark, Elektrolyseur, H2-Leitung, Speicher, Eigenverbrauch/Direktabnehmer und Vermarktung als
-Schaltplan atomarer Elemente (MVC+P), ausgeführt als geschichtetes BSP; Smart Topics liefern gelernte Teilmodelle und
-publizieren den Zwilling. **Der Zwilling mit seinen drei Betriebsarten (Shadow, What-if, Prognose/MPC) ist die Essenz
-der Roadmap.** Alle drei werden in beiden Ausführungsvarianten ermöglicht: eng gekoppelt als ein Prozess (T) und lose
-gekoppelt über Smart Topics (L) (D20 entschieden). **Status: übrige Punkte Vorschlag (D18, D19, D21–D24).** Gestuft mit Wertschranken (A–D); P8.3/P8.4 liefern
-Simulation auf rekonstruierter Struktur und Optimierer-Policy.
-
-**P9.0 – Stufe A: Datenzugang & Potenzial (ohne Simulation)**
-- [x] Generisches **Modbus-Modul** (TCP/RTU), Registerkarten als YAML (Adresse, Typ, Skalierung, Einheit, OBIS), Pollintervall → `RawReading` → Normalizer → Episoden. – *`opentsx-modbus`: Modbus-TCP-Client nur mit JDK (MBAP, RTU über TCP mit CRC16), Registerkarte `opentsx.modbus.registermap.v1`, Blockbildung ≤ 125 Register, Zählerüberlauf/-reset als Qualitätscode, In-JVM-Zählersimulator, `bin/opentsx modbus`. Offen: echte Registerkarten (Beispielkarte ist markiert), serielles RTU direkt, KafScale-Senke im CLI.*
-- [ ] **IEC 60870-5-101/-104**-Adapter für die Parkrechner-Schnittstelle (Datenaustausch mit dem Elektrolyseurbetreiber, beide Richtungen).
-- [ ] Elektrolyseur-Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme) über die vereinbarte Schnittstelle (104, OPC UA oder Export) als Quelle `REPORTED`.
-- [x] **DWD-Sammler** (`opentsx-dwd`, nur JDK): MOSMIX_L-Prognosen (KMZ/KML: FF, DD, TTT, PPPP, N, Rad1h, RR1c; Ausgabezeit als `forecast.reference_time`, Herkunft FORECAST) und CDC-Messungen (10 min/stündlich, `-999`, UTC, Herkunft MEASURED) → v2-Serien/Episoden; Stationsauswahl je Standort (Haversine, MOSMIX-Katalog in Grad.Minuten, CDC-Stationsliste); Bindung an Wetter-Atom (Haus) und Solar (Boot), CSV für `house --weather` und `boat --data`; `bin/opentsx dwd stations|mosmix|obs|house`. Parser gegen Live-Abruf geprüft. Offen: zeitgesteuerter Abruf (→ KafScale `tsx.weather.*`), ICON-Gitter, deutschlandweite Vorhaltung, Wind → Leistungskurve. *Dazu in `opentsx-market`: CDC-Backfill der Zwillingsstandorte ins Historienarchiv auf Basis von `CdcObservations` und Roh-Vorwärtsarchiv MOSMIX_L (`bin/opentsx market mosmix-archive`, k3s-CronJob alle 6 h) seit 2026-10-12 – der DWD hält keine MOSMIX-Historie vor.*
-- [x] Marktdaten (öffentlich, `opentsx-market`): Day-Ahead DE-LU mit 15-min-MTU ab 2025-10-01 (SMARD, Energy-Charts als Gegenprobe, ENTSO-E A44 mit Token), Netzlast, Residuallast, Erzeugung und Prognosen Wind/PV (SMARD, ENTSO-E A65/A69), reBAP und Monatsmarktwerte (netztransparenz.de, OAuth-Client oder CSV-Import); Abbildung auf v2-Episoden mit Herkunft REPORTED/FORECAST; zeitgesteuerter Abruf (`market forward`, k3s-CronJob täglich).
-- [ ] Partnerdaten: Prognosen und Fahrpläne des Direktvermarkters, realisierte Intraday-Preise (EPEX lizenziert, kein Abruf), Leitsystem-API (Schnittstellenbeschreibung ausstehend) – *Dateiimport mit Offsets und Prüfung der Doppelstunde vorhanden (`market import`), Zugänge offen.*
-- [x] Batch-Import einzelner Datenpakete (historische Reihen) mit Herkunftsmetadaten: lokales Archiv `data/history/<quelle>/<reihe>/<jahr>.csv.gz` (nicht in git) mit `manifest.json` (Quelle, Abfragen, Lizenz, Abrufzeit, Zeilen, SHA-256, Qualitätsbericht: Lücken, Sommerzeit-Tage, Ausreißer, Statistik über `opentsx-stats`), fortsetzbarer Backfill ab 2019, Laden als Episoden nach Iceberg (`market load`). Lizenzen: SMARD und Energy-Charts CC BY 4.0 (Quellenangabe „Bundesnetzagentur | SMARD.de“ bzw. „Energy-Charts.info“), DWD CC BY 4.0 („Deutscher Wetterdienst“), ENTSO-E Nutzungsbedingungen mit Quellenangabe, netztransparenz.de Nutzungsbedingungen (Archiv lokal halten).
-- [ ] *(Vorschlag)* infinimesh als optionale Quelle: Kafka-Addon-Topic `infinimesh.shadows` → Normalizer → `tsx.<domain>.observations.v2` (Modul `opentsx-infinimesh`); lesend zuerst, Rückweg über `desired` erst mit Freigabe-Workflow.
-- [ ] Metrikkatalog für neue Kanäle (Zähler, Elektrolyse, Speicher, H2) analog zum IEC-Katalog, Veröffentlichung über den OpenMetadata-Publisher.
-- [ ] Kafka-Spiegelung über temporären SSH-Tunnel in eine lokale Umgebung; technische Validierung (Offsets, Anzahl, Bytes, Hash) und fachliche Validierung (je Metrik identische Sketches/Statistiken).
-- [ ] OpenTSDB als optionale Projektionsschicht (vorhandener Adapter).
-- [ ] Abnahme S2: Potenzialabschätzung (Überlappung Erzeugung/Verbrauch, Direktbelieferungsanteil vs. Einspeisung, Größenordnung €/a) mit Herkunftsanteilen → **Schranke A**.
-
-**P9.1 – Atomvertrag & Runner**
-- [ ] Screening Stand der Technik vor dem Bau: mosaik, HELICS, FMI 3.0 (Atome als FMUs?), pandapower, PyPSA, oemof → Entscheidung D24.
-- [x] Atomvertrag MVC+P in `opentsx-twin` (`Atom`: Modell = Zustand/Parameter, Dynamik `step`, austauschbare `Policy`, Ports mit Art und Einheit, Sensorsicht über Residuum im Bilanzknoten).
-- [x] Avro-Schemas je Atomtyp für Zustand und Ports: generiert aus dem Atomkatalog (`AtomSchemas`, `twin/avro/`, `bin/opentsx twin-schemas`), Umschläge `PortMessage`/`Barrier`/`Intervention`, `state_extra` für parameterabhängige Zustände; Rundlauf aller Szenario-Atome in Java, Lesetest in Python (fastavro).
-- [x] Schaltplan-YAML (`TwinPlan`, Beispiel `twin/h2-chain.yaml`), Validierung (Ports, Art/Einheit, eine Quelle je Eingang), Rückkopplungen automatisch über die Schrittgrenze; Plan-Hash in der Lauf-Id. *(Lineage nach OpenMetadata offen.)*
-- [x] **Variante T (eng, ein Prozess):** `TwinRunner` mit geschichtetem BSP (Phasen Quellen → Policy → Anlagen → Bilanz → Flüsse → Views), Basistakt 1 min, Mehrrate (`every`), Ereignisse mit exaktem Zeitpunkt, Snapshots zum Fortsetzen; bitgleiche Wiederholung über verketteten Zustands-Hash.
-- [x] **Variante L (lose, Smart Topics):** *umgesetzt als `LooseRunner` (eigene Uhr je Atom, Kopplung über `PortMessage`, Veraltung `s` von BSP über SSP bis async, simulierte Latenz/Jitter/Ausfälle, Prozessorgruppen und Kolokalisierung von Rückkopplungsschleifen); Messungen in 07 §10a; Bindung an KafScale offen.* Atomtyp als Smart-Topic-Prozessor (Instanzen als Schlüssel), Kopplung über Port-Topics, Ereigniszeit-Watermarks mit einstellbarer Veraltung (BSP ↔ SSP ↔ asynchron), Bilanzknoten als eigener Prozessor mit Ausgleichsschritt; Atome können bei verschiedenen Eigentümern laufen.
-- [x] Derselbe Atomcode läuft unverändert in T und L (gemeinsamer Atom-, Schaltplan- und Topic-Vertrag); Konformitätstest: L mit Veraltung 0 = T bitgleich.
-- [x] Topic-Vertrag als Code: `PortMessage` (deterministische Id `run/k/phase/atom/port`), `Barrier` (Phasenende mit Anzahl, Superschritt-Commit mit Zustands-Hash), `MessageSink`; Variante T schreibt ihn bereits mit.
-- [ ] Binding an KafScale-Topics `twin.<id>.<run>.msgs|barrier|interventions`; Zustandssnapshots in Iceberg (`twin_state`); Zustandsreihen als Episoden (`RunResult.toEpisodes`, umgesetzt) in einen Store schreiben.
-- [x] Herkunftsleiter `MEASURED > REPORTED > FORECAST > ESTIMATED > SYNTHETIC` (`Origin`) mit Taint-Propagation entlang des Datenflusses eines Schritts; Rückkopplungskanten färben nicht; Defaults für fehlende Eingänge zählen als SYNTHETIC.
-
-**P9.2 – Atomkatalog**
-- [ ] A1 WEA, A2 Wake-Kopplung (Relationsatom, Jensen; später rekonstruierter Graph aus P8), A3 Parkregler.
-- [ ] A4 Wetter, A5 Zähler/Messpunkt, A6 Bilanzknoten/Messkonzept (Prioritäten: Eigenverbrauch vor Markt), A7 Eigenverbraucher/Direktabnehmer.
-- [x] A8 Batteriespeicher, A9 Elektrolyseur (Zustandsautomat, Rampen, Schutzabregelung über Leitungsdruck), A10 H2-Leitung/Linepack (Zeit-bis-Grenze, Restkapazität), A11 H2-Abnehmer.
-- [x] A6 Bilanzknoten (Prioritäten, Direktbelieferung, Residuum zur Zählermessung), A12 Markt (15-min-Takt), A13 Direktvermarkter (Abweichung, Mehr-/Mindermengen, Erlös), A16 Betriebsvorgaben (Zeitfenster mit Leistungsgrenze, z. B. Fledermausabschaltung, Ackerarbeit), vereinfachte Erzeugung (A1/A3 als Park am Anschlusspunkt mit Abregelgrenze).
-- [ ] A14 Bediener als Freigabe-Workflow im Service Layer (Eingriffe als `Intervention` umgesetzt), A15 Optimierer als Policy-Atom (heute: Regel `pressure-aware` mit rollierendem Horizont), A13 Ausgleichsenergiepreise.
-
-**P9.3 – Betriebsarten & Abnahmeszenarien**
-- [ ] **Alle drei Betriebsarten in beiden Varianten** (Matrix 3 × 2) – *in Variante T umgesetzt (`Twin.shadow`, `whatIf`, `forecast` ab Snapshot mit Policy-Austausch); Variante L offen*: Shadow (Nowcast, Residuen Messung − Sensorsicht), Replay/What-if (Eingriffslog, Verzweigungen), Prognose/MPC – gleiche Atome, andere Bindung.
-- [ ] S3 PPA-Schattenbetrieb vor der offiziellen Umstellung des Messkonzepts (Fahrplan/Prognose des Vermarkters gegen Erzeugung) → **Schranke B**.
-- [x] S1 H2-Kette auf synthetischen Daten (Schieber zu → Druck → Zeit-bis-Grenze → Abregelung → Fahrplanabweichung → Mehrvermarktung): Reihenfolge, analytischer Grenzzeitpunkt, Bilanzen, Was-wäre-wenn und Prognose getestet; Demo `bin/opentsx twin`.
-- [x] S1 auf echter Markt- und Wetterhistorie (`bin/opentsx twin --history data/history --year 2024`): Day-Ahead-Preise REPORTED, Wind aus der Onshore-Erzeugung DE skaliert oder DWD-Station über Leistungskennlinie (ESTIMATED), Fahrplan aus der Day-Ahead-Prognose (echter Prognosefehler), Elektrolyseur mit Preisgrenzen-Regel; What-if Preisgrenzen (H2-Menge, Stromkosten je kg, Erlös).
-- [ ] S1 mit echten Betriebsdaten bestätigen → **Schranke C**.
-- [ ] S4 Wake-Referenz im Park-Atom reproduziert; rekonstruierter Graph (P8.1) dagegen geprüft.
-
-**P9.4 – Policy, Optimierung & Service Layer**
-- [ ] Smart Topics als Prognose-Ports und Schätzer für fehlende Daten; Zwilling als abgeleitetes Smart Topic mit What-if-Endpunkt der Prediction-API.
-- [ ] Optimierer als Policy-Atom (P8.4, rollierender Horizont); Vorschläge im Personal Service Layer vor Freigabe im Zwilling durchspielen; Mehrerlös gegen Referenzfahrweise → **Schranke D**.
-
-**P9.6 – Forschung: eng vs. lose gekoppelte Zwillinge (Paper)** – Skizze: [07 §10](../docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md)
-- [ ] Literaturstand: BSP/Pregel, SSP/Parameter-Server, PDES (Chandy-Misra-Bryant, Time Warp), HLA-Zeitmanagement, FMI/mosaik/HELICS, Dataflow-Watermarks.
-- [ ] Versuchsaufbau RQ1–RQ6: gleicher Schaltplan in T und L, S1/S3 plus synthetische Verbünde mit gesteuerter Kopplungsstärke und Störungen (Verzögerung, Verlust, Duplikate, Atomausfall).
-- [ ] Ergebnisse: Fehlerschranken in Abhängigkeit von Veraltung, Kopplungsstärke und Zeitkonstanten; Entwurfsregel „was muss eng gekoppelt sein“; reproduzierbares Artefakt.
-- [ ] Manuskript und Zielvenue festlegen.
-
-**P9.5 – Übertragbarkeit & Föderation**
-- [ ] Schaltplan-Vorlagen für neue Projekte (Park + Direktleitung + Abnehmerlastgang) zur Bewertung vor dem Bau.
-- [ ] Vergleich mehrerer Anlagen über generische Kenngrößen ohne Rohdatenexport (Wayang-Föderation, mergebare Sketches); vertikale Erweiterung (CMS-Daten, PV).
-- [ ] Edge-Sammler (Modbus/104/DWD) optional als Go/Rust-Binaries; kein Kern-Neubau vor Schranke B (D23).
-
-**P9.7 – Übertragung auf Hauseigentümer (Haus-Zwilling)** – Konzept: [`08-HAUS-ZWILLING.md`](../docs/datamodel-2026/08-HAUS-ZWILLING.md)
-- [x] Methode übertragen: gleicher Atomvertrag, drei Betriebsarten, Herkunftsleiter (Abrechnung = REPORTED), Stufen A–D mit Schranken, Bewertung Alternative − Referenz, modelliert ≠ nachgewiesen; Abbildung Haus ↔ Terawatt-Fall.
-- [x] Beispielhaus Erzgebirge (erfundene Annahmen): Räume, Hülle, 2 Bewohner mit Tagesablauf, Inventar (3 TV, Kühlschrank, Gefriertruhe, Herd, Radio, Licht …), Ölkessel + Kaminofen, keine PV/Wärmepumpe.
-- [x] Atome `weather`, `building` (1R1C, Thermostat), `oil-boiler`, `wood-stove`, `dhw`, `appliances`, `meter`, `oil-tank`, `wood-store`; Schaltplan `twin/haus-erzgebirge.yaml` (PT1H, ein Jahr).
-- [x] Kennzahlen (`HouseKpis`): Strom, Öl, Holz, Endenergie, kWh/m²a, witterungsbereinigt (G20/15), Kesselverluste, Standby, Grundlast, Spitze, Kosten, CO2.
-- [x] Kalibrierung an Abrechnungen (`BillCalibration`): CSV-Vorlage, Tankstände, Holz nach Heizgradtagen, DWD-Tagesmittel, LM/Broyden, Residuen, CV(RMSE)/NMBE, Identifizierbarkeit; echte Daten nur in `config/private/`.
-- [x] Demo `bin/opentsx house [--calibrate …]` mit neun Hebeln als What-if; Tests für Bilanzen, Determinismus, −1 K, leeren Tank, Identifizierbarkeit.
-- [x] Simulierte Beispielabrechnungen 2022–2025 (`SimulatedBills`, verdeckte wahre Parameter, Lücken und Ablesefehler) unter `twin/beispiel/`; `bin/opentsx house --simulated`; Test: H/η und Geräteskala gefunden, Warmwasser als nicht bestimmt gemeldet.
-- [ ] Mit echten Abrechnungen kalibrieren (Jahre, Tankstände, Holzmengen, Wohnfläche/Baujahr vom Hauseigentümer) → **Schranke B (Haus)**.
-- [ ] Nachweis einer Maßnahme: gemessene Zeiträume vor/nach, witterungsbereinigt, gegen Kalibrierunsicherheit.
-- [x] Haus und Boot auf echtem Wetter: `bin/opentsx house --history data/history --weather-year 2022-2025` (stündliche Lufttemperatur Marienberg 03166, 10-min-Globalstrahlung Fichtelberg 01358, MEASURED; Heizgradtage, Öl, Holz je Jahr, Hebel je Wetterjahr) und `bin/opentsx boat --history … --weather-year 2024` (10-min-Globalstrahlung Dörnick 06163 statt synthetischer Bewölkung); Wetterarchiv 2019 bis heute über `bin/opentsx market weather-backfill` (Parser aus `opentsx-dwd`).
-- [ ] Varianten: Pufferspeicher/wasserführender Ofen, Mehrzonenmodell, Prognose „Reicht das Öl?“, Optimierer als Policy (Bestellzeitpunkt, Holz/Öl-Aufteilung), DWD-Abruf statt CSV.
-
-**P9.8 – Boot (Etap 22): Insel-Energiesystem** – Konzept: [`10-BOOT-ZWILLING.md`](../docs/datamodel-2026/10-BOOT-ZWILLING.md)
-- [x] Konzept mit Annahmen (Powerstation ~1 kWh, 2 × 100 Wp, Landstrom; Laptops, Pixel 10, Starlink Mini, Raspberry Pi, UKW), Nutzungsmodi, KPIs, Hebel, Abbildung Boot ↔ H2-Kette ↔ Haus.
-- [x] Bausteine `boat-mode`, `solar`, `shore-power`, `device` (×6), `power-station` (Paket `org.opentsx.twin.boat`); Schaltplan `twin/boot-etap22.yaml` (15 min, 14 Tage).
-- [x] Demo `bin/opentsx boat`: Schatten des synthetischen Törns, Was-wäre-wenn (+100 Wp, Starlink 3 h/Tag, 2 kWh, Landstrom jeden 3. Tag, Laptops mittags laden, Wechselrichter, Starlink Standard, Wochenende) als Δ Alternative − Referenz (modelliert).
-- [x] CSV-Import echter Betriebsdaten (`BoatData`, Vorlage `twin/bootsdaten-vorlage.csv`, Herkunft MEASURED/REPORTED) und Kalibrierung per Kleinste-Quadrate (`Calibration`, `--calibrate`); Tests für Bilanz, Grenzen, Determinismus, Was-wäre-wenn, Import, Kalibrierung.
-- [x] Simulierte Betriebsdaten (`SimulatedLogs`, `twin/beispiel/boot-logs-simuliert.csv`: verdeckte Parameter, Bewölkung, Starlink-Pause, 5-min-Export, Rauschen, Lücken) und `bin/opentsx boat --simulated`; Kalibrierung findet die verdeckten Werte auf ~1 % wieder.
-- [ ] Echte Daten des Eigners (Powerstation-Export, Starlink, Logbuch) unter `config/private/bootsdaten.csv` einspielen; Annahmen aus §2 ersetzen.
-- [ ] Raspberry Pi als Edge-Publisher (`opentsx.smartmetric.v1` über MQTT → infinimesh → KafScale); Rückweg nur mit Freigabe.
-- [ ] Szenario im Studio (generischer Export über `BoatDemo.plan/observed/reference/alternatives`).
-
-**P9.9 – Anlage erkunden: visuelles Inventar & Wartung (Studio-Ansicht 4)** – Konzept: [`12-EXPLORATIVES-UI-INVENTAR.md`](../docs/datamodel-2026/12-EXPLORATIVES-UI-INVENTAR.md)
-- [x] E0: Konzept (Ebenen Karte/Grundriss/Decksplan, Level-of-Detail, Hover-Karte, Datenblatt, Bildherkunft, Normbezüge RDS-PP/IEC 61400-25/ZEUS/ISO 14224, Wartungskopplung, infinimesh-Anbindung) und statischer Prototyp `docs/prototypes/anlagen-explorer.html` für Windpark, Haus und Boot mit Atom-Ids der Schaltpläne; Beispielinventar `twin/inventar-beispiel.yaml` (`opentsx.inventory.v1`, erfundene Werte).
-- [ ] E1: `opentsx.inventory.v1` als JSON-Schema; Validierung gegen den Schaltplan (Atom existiert, Id-Präfix = Twin-Id); Inventar im `StudioExport`; Reiter „Anlage erkunden“ im Studio; `tools/build_explorer.py` (analog `build_studio.py`).
-- [ ] E1: Ablage – Iceberg `inventory.assets/media/documents` (versioniert), Objektspeicher mit SHA-256, Abbildung in OpenMetadata klären (kein Entitätstyp für physische Anlagen bekannt, zu prüfen).
-- [ ] E2: Livewerte aus Shadow/KafScale und infinimesh (`reported`, online/offline, Veraltung), Zeitregler über Replay/Iceberg-Zeitreise, Sprünge zu Statistik und Node-Graph.
-- [ ] E3: Wartungs-Topic `tsx.<domain>.maintenance.v1` (`opentsx.maintenance.v1`, deterministische `eventId`), Auftragsvorschläge aus Alarmen, Intervallen und Gerätestatus, Aufträge als Eingriffe im Zwilling (Verfügbarkeit), Was-wäre-wenn „Wartung verschieben“, CSV-Import/-Export.
-- [ ] E3: Kommando-Dialog nur mit Freigabe (`opentsx.command.v1` → infinimesh `desired`, `commandable: false` für Sicherheitsgeräte).
-- [ ] E4: Orthofoto-Grundkarten (Lizenzen je Land prüfen), 360°-Panoramen, glTF-Modelle; CMMS-Anbindung (z. B. openMAINT; SAP PM im Unternehmensumfeld) über API.
-- [ ] Recherche-Nacharbeit: RDS-PP-Anwendungsrichtlinie Wind (Dokumentnummer, Codes), FGW TR 7/ZEUS (Schlüsselaufbau, Lizenz), ISO-14224-Klassen für Haus/Boot, Lizenz und API von openMAINT, Namespace-/Gerätehierarchie und Online-Status in `infinimesh/core`.
-
-## Modulstruktur (umgesetzt, Stand 2026-10-12)
+## Module structure (implemented, as of 2026-10-12)
 
 ```
-opentsx-model                 Avro-v2-Schemas, SeriesId, Episoden, Wire-Format inkl. Kafka-Serdes (statt eigenem opentsx-serde)
+opentsx-model                 Avro v2 schemas, SeriesId, episodes, wire format including Kafka serdes (instead of a separate opentsx-serde)
 opentsx-legacy-bridge         TimeSeriesObject/TSBucket/EpisodesRecord <-> v2
-opentsx-store-spi             SeriesStore, EpisodeQuery, Contract-Tests, In-Memory
-opentsx-store-iceberg         Iceberg-Store, Episoden-Index, KafScale->Iceberg-Sync
-opentsx-store-opentsdb-v2     OpenTSDB-HTTP-Store (der alte Client liegt im Archiv)
-opentsx-kafka-v2              TopicLayout, BucketWriter, Index, ReplayService
-opentsx-kafscale-conformance  Broker-Fähigkeiten messen
-opentsx-windpark              Datenpunktkatalog (IEC 61400-25-2), Normalisierer, Simulator, Leistungskurve
-opentsx-stats                 Streaming-Statistik + DQ (laufzeitunabhängig; Flink-Adapter folgt mit Flink-Upgrade)
-opentsx-openmetadata          Metadaten-/Profil-/DQ-Publisher
-opentsx-retrieval             Segmentierung, Pattern-Engine, EpisodeService, REST
-opentsx-twin                  Digitaler Zwilling P9: Atomvertrag MVC+P, Schaltplan, Runner Variante T, 3 Betriebsarten
-opentsx-modbus                Modbus-TCP/RTU-über-TCP (nur JDK), Registerkarten (YAML), Poller, Normalisierer, Zählersimulator
-(geplant) opentsx-smart       Smart Topics (P7)
-(geplant) opentsx-network     Kantentabelle, Rekonstruktion (Kämpf-Signifikanzschicht, ECA), Problem-Builder (P8)
+opentsx-store-spi             SeriesStore, EpisodeQuery, contract tests, in-memory
+opentsx-store-iceberg         Iceberg store, episode index, KafScale->Iceberg sync
+opentsx-store-opentsdb-v2     OpenTSDB HTTP store (the old client is in the archive)
+opentsx-kafka-v2              TopicLayout, BucketWriter, index, ReplayService
+opentsx-kafscale-conformance  Measures broker capabilities
+opentsx-windpark              Data point catalog (IEC 61400-25-2), normalizer, simulator, power curve
+opentsx-stats                 Streaming statistics + DQ (runtime-independent; Flink adapter follows with the Flink upgrade)
+opentsx-openmetadata          Metadata/profile/DQ publisher
+opentsx-retrieval             Segmentation, pattern engine, EpisodeService, REST
+opentsx-twin                  Digital twin P9: atom contract MVC+P, wiring plan, runner variant T, 3 modes
+opentsx-modbus                Modbus TCP/RTU over TCP (JDK only), register maps (YAML), poller, normalizer, meter simulator
+(planned) opentsx-smart       Smart Topics (P7)
+(planned) opentsx-network     Edge table, reconstruction (Kämpf significance layer, ECA), problem builder (P8)
 ```
 
-## Entscheidungen (Stand 2026-10-12)
+## Decisions (as of 2026-10-12)
 
-| # | Frage | Status / Entscheidung |
-|---|-------|-----------------------|
-| D1 | KafScale-Fähigkeiten | **Geklärt (v1.6.0):** keine Compaction, kein idempotenter Producer/Transaktionen, **ListOffsets ignoriert Zeitstempel**, keine Schema Registry, zstd ok, Header-/CreateTime-Erhalt undokumentiert → Conformance-Test. Konsequenzen: 03-GAP-ANALYSE §5 |
-| D2 | Zeitpräzision | **Entschieden:** `timestamp-micros` |
-| D3 | SeriesId-Hash | **Entschieden:** xxHash64 (Seed 0) über kanonische Form, 16 Hex-Zeichen |
-| D4 | Episoden-Definition | **Entschieden:** feste Dauer, feste Länge **und** Feature-basiert (Extremum ± pre/post, Schwelle→Schwelle) → `Segmentation`-Record, 03-GAP-ANALYSE §7 |
-| D5 | Java-Baseline | **Entschieden: kein Java 8.** Baseline wie aktuelle Apache-Projekte: `release=17`, CI zusätzlich auf JDK 21 (Kafka 4.x, Flink 2.x, Spark 4.x, Iceberg 1.x laufen alle auf 17/21). Altbestand wird mit angehoben bzw. archiviert. **Python ≥ 3.10** gleichrangig (Pandas/Jupyter, PySpark) |
-| D6 | Iceberg-Catalog & Object Store | REST-Catalog + S3-kompatibel (MinIO lokal) – offen |
-| D7 | OpenMetadata | **2.0.5**, Push via SDK/REST (kein Airflow), Bot-JWT; Profile nur auf Tables → Stats auf Iceberg-Tabellen; Inventar über Glossary/Tags/Custom Properties |
-| D8 | Umgang mit v1-Topics | Read-only weiter unterstützen, Migration per Replay in v2 |
-| D9 | Werte-Kompression über zstd hinaus | **Gemessen:** 2,18 B/Wert reicht vorerst; quantisierte Integer-Kodierung (< 1 B/Wert) als Option für eine spätere Schemaversion |
-| D10 | Wire-Format-Default | `SELF_DESCRIBING` (Avro Single-Object-Encoding), da KafScale keine Registry mitbringt |
-| D11 | Zeitbasiertes Replay | Eigener Episoden-Index in Iceberg (`tsx.episode_index`) statt `offsetsForTimes` |
-| D12 | Smart Topics | **Entschieden (2026-10-12):** Python-Training zuerst (ONNX/JSON, Scoring in Java), MLflow als Registry, Modell je Serie + föderiertes globales Modell (Wayang-Ansatz), Umsetzung als P7 nach P6 |
-| D13 | Doku | **Entschieden (2026-10-12):** User-Manual englisch; SaaS-Stack bleibt (als künftiger Personal Service Layer); Module/Doku außerhalb des Builds archiviert |
-| D14 | P8: Methodenarchitektur | **Vorschlag:** Screen-then-Confirm – billiges Screening (CC/ECA/Kämpf-Signifikanz) im Stream (Java), kausale Bestätigung (PCMCI+/mTE/Hawkes) im Batch (Python); Kreuzkorrelation immer als Baseline |
-| D15 | P8: Lizenzen | **Vorschlag:** GPL-Bibliotheken (tigramite, JIDT, IDTxl) nur hinter Prozessgrenze; Kämpf-Maße und ECA als Clean-Room-Implementierung unter Apache 2.0 |
-| D16 | P8: Quantenrechnen | **Vorschlag:** klassische Solver sind Standard; Quantenbackends nur als Messobjekt mit vorab festgelegtem Benchmarkprotokoll (kein belegter Vorteil, Stand 2026) |
-| D17 | P8: Reihenfolge | **Vorschlag:** Benchmark mit Ground Truth zuerst (P8.0/P8.1), Quanten zuletzt (P8.5) |
-| D18 | P9: Atomvertrag | **Vorschlag:** MVC+P (Dynamik und Policy getrennt), Avro-Schema je Atomtyp, Atomkatalog als Standardbauteile, Schaltplan-YAML je Anlage |
-| D19 | P9: Ausführung | **Vorschlag:** geschichtetes BSP, Basistakt 1 min, Mehrrate als ganzzahlige Vielfache, deterministisch, Barriere-Topic |
-| D20 | P9: Einbettung | **Entschieden (2026-10-12):** beide Ausführungsvarianten gleichrangig – eng als ein Prozess (T) und lose über Smart Topics (L); alle drei Betriebsarten in beiden; Vergleich als Forschungsfrage (P9.6) |
-| D21 | P9: Datenqualität | **Vorschlag:** Herkunftsleiter mit Taint-Propagation; jede KPI zeigt ihren Messanteil |
-| D22 | P9: Vorgehen | **Vorschlag:** Stufen A–D mit Wertschranken; Stufe A (Daten & Potenzial) ohne Simulation |
-| D23 | P9: Sprache | **Vorschlag:** Kern bleibt Java; Edge-Sammler dürfen Go/Rust sein; kein Kern-Neubau vor Schranke B |
-| D25 | P7f: Stream-Laufzeit | **Vorschlag:** Go-TSx-Prozessor (KafScale-Processor-Muster) für die Datenebene; kein Kafka Streams (braucht Compaction/Transaktionen); Flink nur für große Joins |
-| D26 | P7f: Algorithmen in Go | **Vorschlag:** nur der Stream-Kern mit gemeinsamen Testvektoren; Mustersuche, Zwilling, Kausalanalyse bleiben Java/Python |
-| D27 | P7f: DAG-Spezifikation | **Vorschlag:** `opentsx.dag.v1` (YAML), gehasht, von Go und Java gelesen, im Studio bearbeitbar |
-| D28 | P7f: Training | **Vorschlag:** nie im Strom; Trigger → Python/MLflow → `model-events` → Austausch im laufenden Betrieb |
-| D29 | P7f: Semantik | **Vorschlag:** at-least-once + deterministische Ids = effektiv genau einmal; Ereigniszeit mit Revisionen |
-| D30 | P9.9: Anker des Inventars | **Vorschlag:** Asset-Id = Twin-Id/Atom-Id (+ Unterobjektpfad); keine zweite Anlagenstruktur |
-| D31 | P9.9: Bildpolitik | **Vorschlag:** echte Fotos bevorzugt; Herkunft, Lizenz und `reality` je Medium; Illustrationen immer gekennzeichnet |
-| D32 | P9.9: Ablage | **Vorschlag:** Inventar-YAML als Eingabe; Iceberg-Tabellen (versioniert) + Objektspeicher mit SHA-256; OpenMetadata als Katalog |
-| D33 | P9.9: Wartung | **Vorschlag:** leichtes Tracking als Ereignisprotokoll `tsx.<domain>.maintenance.v1`; CMMS bleibt führend, wo vorhanden; Aufträge = Eingriffe im Zwilling |
-| D34 | P9.9: Kennzeichen | **Vorschlag:** RDS-PP, IEC 61400-25, ZEUS optional für Wind; ISO 14224 generisch; keine Pflicht für Haus/Boot |
-| D35 | P9.9: infinimesh | **Vorschlag:** Gerätezustand aus infinimesh, Bedeutung aus dem Inventar; Kopplung über `{namespace, device}`; Kommandos nur mit Freigabe |
-| D36 | P9.9: Darstellung | **Vorschlag:** 2D (SVG/Canvas, Kacheln) zuerst, 3D erst in E4 |
-| D24 | P9: Kosimulation | **Vorschlag:** Screening (mosaik, HELICS, FMI 3.0) vor dem Bau eines eigenen Runners |
+| # | Question | Status / decision |
+|---|----------|-------------------|
+| D1 | KafScale capabilities | **Clarified (v1.6.0):** no compaction, no idempotent producer/transactions, **ListOffsets ignores timestamps**, no Schema Registry, zstd ok, preservation of headers/CreateTime undocumented → conformance test. Consequences: 03-GAP-ANALYSE §5 |
+| D2 | Time precision | **Decided:** `timestamp-micros` |
+| D3 | SeriesId hash | **Decided:** xxHash64 (seed 0) over the canonical form, 16 hex characters |
+| D4 | Episode definition | **Decided:** fixed duration, fixed length **and** feature-based (extremum ± pre/post, threshold→threshold) → `Segmentation` record, 03-GAP-ANALYSE §7 |
+| D5 | Java baseline | **Decided: no Java 8.** Baseline as in current Apache projects: `release=17`, CI additionally on JDK 21 (Kafka 4.x, Flink 2.x, Spark 4.x, Iceberg 1.x all run on 17/21). Existing code is raised along with it or archived. **Python ≥ 3.10** on equal footing (Pandas/Jupyter, PySpark) |
+| D6 | Iceberg catalog and object store | REST catalog + S3-compatible (MinIO locally); open |
+| D7 | OpenMetadata | **2.0.5**, push via SDK/REST (no Airflow), bot JWT; profiles only on tables → stats on Iceberg tables; inventory via glossary/tags/custom properties |
+| D8 | Handling of v1 topics | Keep supporting them read-only, migration to v2 by replay |
+| D9 | Value compression beyond zstd | **Measured:** 2.18 B/value is enough for now; quantized integer encoding (< 1 B/value) as an option for a later schema version |
+| D10 | Wire format default | `SELF_DESCRIBING` (Avro single-object encoding), since KafScale does not ship a registry |
+| D11 | Time-based replay | Own episode index in Iceberg (`tsx.episode_index`) instead of `offsetsForTimes` |
+| D12 | Smart Topics | **Decided (2026-10-12):** Python training first (ONNX/JSON, scoring in Java), MLflow as registry, model per series + federated global model (Wayang approach), implementation as P7 after P6 |
+| D13 | Documentation | **Decided (2026-10-12):** user manual in English; the SaaS stack stays (as a future Personal Service Layer); modules/docs outside the build archived |
+| D14 | P8: method architecture | **Proposal:** screen-then-confirm: cheap screening (CC/ECA/Kämpf significance) in the stream (Java), causal confirmation (PCMCI+/mTE/Hawkes) in batch (Python); cross-correlation always as baseline |
+| D15 | P8: licenses | **Proposal:** GPL libraries (tigramite, JIDT, IDTxl) only behind a process boundary; Kämpf measures and ECA as clean-room implementations under Apache 2.0 |
+| D16 | P8: quantum computing | **Proposal:** classical solvers are the default; quantum backends only as an object of measurement with a benchmark protocol fixed in advance (no proven advantage, as of 2026) |
+| D17 | P8: order | **Proposal:** benchmark with ground truth first (P8.0/P8.1), quantum last (P8.5) |
+| D18 | P9: atom contract | **Proposal:** MVC+P (dynamics and policy separated), Avro schema per atom type, atom catalog as standard components, wiring plan YAML per plant |
+| D19 | P9: execution | **Proposal:** layered BSP, base tick 1 min, multirate as integer multiples, deterministic, barrier topic |
+| D20 | P9: embedding | **Decided (2026-10-12):** both execution variants on equal footing: tightly coupled as one process (T) and loosely coupled via Smart Topics (L); all three modes in both; comparison as a research question (P9.6) |
+| D21 | P9: data quality | **Proposal:** provenance ladder with taint propagation; every KPI shows its measured share |
+| D22 | P9: approach | **Proposal:** stages A to D with value gates; stage A (data and potential) without simulation |
+| D23 | P9: language | **Proposal:** the core stays Java; edge collectors may be Go/Rust; no rebuild of the core before gate B |
+| D25 | P7f: stream runtime | **Proposal:** Go TSx processor (KafScale processor pattern) for the data plane; no Kafka Streams (needs compaction/transactions); Flink only for large joins |
+| D26 | P7f: algorithms in Go | **Proposal:** only the stream core, with shared test vectors; pattern search, twin and causal analysis stay Java/Python |
+| D27 | P7f: DAG specification | **Proposal:** `opentsx.dag.v1` (YAML), hashed, read by Go and Java, editable in the Studio |
+| D28 | P7f: training | **Proposal:** never in the stream; trigger → Python/MLflow → `model-events` → swap during operation |
+| D29 | P7f: semantics | **Proposal:** at-least-once + deterministic ids = effectively exactly once; event time with revisions |
+| D30 | P9.9: anchor of the inventory | **Proposal:** asset id = twin id/atom id (+ sub-object path); no second plant structure |
+| D31 | P9.9: image policy | **Proposal:** real photos preferred; provenance, license and `reality` per medium; illustrations always labeled |
+| D32 | P9.9: storage | **Proposal:** inventory YAML as input; Iceberg tables (versioned) + object storage with SHA-256; OpenMetadata as catalog |
+| D33 | P9.9: maintenance | **Proposal:** lightweight tracking as an event log `tsx.<domain>.maintenance.v1`; the CMMS stays the leading system where one exists; work orders = interventions in the twin |
+| D34 | P9.9: designations | **Proposal:** RDS-PP, IEC 61400-25, ZEUS optional for wind; ISO 14224 generic; not mandatory for house/boat |
+| D35 | P9.9: infinimesh | **Proposal:** device state from infinimesh, meaning from the inventory; coupling via `{namespace, device}`; commands only with approval |
+| D36 | P9.9: presentation | **Proposal:** 2D (SVG/Canvas, tiles) first, 3D only in E4 |
+| D24 | P9: co-simulation | **Proposal:** screening (mosaik, HELICS, FMI 3.0) before building a runner of our own |
 
-> **Hinweis:** Die Phasenreihenfolge folgt der Gap-Analyse
-> ([`03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md)), ergänzt um P7 (Smart Topics),
-> P8 (Systemrekonstruktion & Optimierung) und P9 (Digitaler Zwilling Energieverbund).
+> **Note:** The phase order follows the gap analysis
+> ([`03-GAP-ANALYSE.md` §10](../docs/datamodel-2026/03-GAP-ANALYSE.md)), extended by P7 (Smart Topics),
+> P8 (system reconstruction and optimization) and P9 (digital twin of the energy system).
 
-## Risiken
+## Risks
 
-- **Legacy-Module (2.x)** im Build (`opentsx-core`, `-connectors`, `-lg`, `-flink-core`, `-data`) → strikt getrennt, Brücke nur in eine Richtung (`opentsx-legacy-bridge`).
-- **Scheinlinks durch Autokorrelation/Langzeitkorrelation** (P8) → Surrogate, die Langzeitkorrelationen erhalten, FDR, Ground-Truth-Benchmarks, CC-Baseline.
-- **GPL-Kontamination** (tigramite, JIDT, IDTxl) → Prozessgrenze, Clean-Room-Implementierungen.
-- **Quanten-Hype** → nur Messobjekt mit festem Protokoll; „kein Vorteil“ ist ein gültiges Ergebnis.
-- **Identifizierbarkeit/Nicht-Stationarität** bei Rekonstruktion und Zwillingen → Regime-Segmentierung (P5), gezielte Anregung im Simulator.
-- **`offsetsForTimes` setzt monotone CreateTime je Partition voraus** – bei Out-of-Order-Produktion ist Zeit-Replay unscharf → Replay liest ab gefundenem Offset und filtert, Iceberg als präziser Index.
-- **Zwilling größer als sein Nutzen** (P9) → Stufen mit Wertschranken; Stufe A ohne Simulation; Screening bestehender Kosimulationswerkzeuge vor Eigenbau.
-- **Datenzugang hängt von Partnern ab** (Elektrolyseur, Vermarkter, Netzbetreiber-Zähler) (P9) → Herkunftsleiter mit Schätzern/Profilen, damit der Zwilling auch ohne diese Daten plausibel rechnet und den Messanteil ausweist.
-- **Algebraische Schleifen** in der Leistungsbilanz (P9) → geschichtetes BSP mit Bilanzknoten im selben Schritt; Zyklen nur über Schrittgrenzen.
-- **OpenMetadata-Last** bei Statistik pro Serie → Aggregation & Rate-Limit.
-- **Schema-Drift** zwischen Java und Python → gemeinsame `.avsc` + geteilte Testvektoren.
+- **Legacy modules (2.x)** in the build (`opentsx-core`, `-connectors`, `-lg`, `-flink-core`, `-data`) → strictly separated, bridge in one direction only (`opentsx-legacy-bridge`).
+- **Spurious links from autocorrelation/long-range correlation** (P8) → surrogates that preserve long-range correlations, FDR, ground truth benchmarks, CC baseline.
+- **GPL contamination** (tigramite, JIDT, IDTxl) → process boundary, clean-room implementations.
+- **Quantum hype** → only an object of measurement with a fixed protocol; "no advantage" is a valid result.
+- **Identifiability/non-stationarity** in reconstruction and twins → regime segmentation (P5), targeted excitation in the simulator.
+- **`offsetsForTimes` assumes a monotonic CreateTime per partition**: with out-of-order production, time replay is imprecise → replay reads from the found offset and filters, Iceberg as the precise index.
+- **Twin larger than its benefit** (P9) → stages with value gates; stage A without simulation; screening of existing co-simulation tools before building our own.
+- **Data access depends on partners** (electrolyzer, marketer, grid operator meters) (P9) → provenance ladder with estimators/profiles, so that the twin computes plausibly even without these data and reports the measured share.
+- **Algebraic loops** in the power balance (P9) → layered BSP with balance nodes in the same step; cycles only across step boundaries.
+- **OpenMetadata load** with statistics per series → aggregation and rate limit.
+- **Schema drift** between Java and Python → shared `.avsc` + shared test vectors.
 
-## Offene Punkte / Backlog (vollständig, Stand 2026-10-12)
+## Open items and backlog: moved
 
-Alles, was aus den Phasen, dem Doku-Refresh und der Deep Research offen ist – nichts bleibt liegen.
+The backlog moved on 2026-10-26 (D90) to the tasks in this table (line numbers refer to this file at commit 551815a3); the open items of phase 4 stay above; the open items of phase 5 and of the wind farm domain moved with them.
 
-**Entscheidungen beim Owner**
-- [ ] **Credentials:** Confluent-Cloud-Key in `config/private/ccloud.props` (trotz `.gitignore` versioniert), zuvor auch in `SECURITY.md` und archivierten Notebook-Ausgaben → Key rotieren; Datei aus dem Index nehmen und ggf. Historie bereinigen.
-- [ ] D6 Iceberg-Catalog/Object Store (REST + MinIO) final festlegen.
-- [ ] D14–D17 (P8-Vorschläge) bestätigen.
-- [ ] ER1: Bereitstellung anonymisierter/synthetischer Content-Interaktionsdaten (P8.x).
-- [ ] D18, D19, D21–D24 (P9-Vorschläge) bestätigen.
-- [ ] D30–D36 (P9.9 Explorer, Inventar, Wartung) bestätigen; echte Fotos/Datenblätter je System liefern (privat: `config/private/`).
-
-**Energieverbund / Projektumfeld (P9, organisatorisch – außerhalb des Codes)**
-- [ ] Zählerdaten: Umsetzer und Verkabelung am LWL-Abschluss beauftragen (Modbus der Netzbetreiber-Zähler; freie Faserpaare vorhanden), Registerkarten der Zähler beschaffen.
-- [ ] Datenaustausch mit dem Elektrolyseurbetreiber vereinbaren: Parkrechner-Daten über IEC 104 gegen Betriebsdaten (Last, Zustand, Leitungsdruck, Abnahme).
-- [ ] Prognose- und Fahrplandaten beim Direktvermarkter anfordern (für den PPA-Schattenbetrieb vor der Umstellung des Messkonzepts).
-- [ ] Schnittstellenbeschreibung (Swagger/OpenAPI) der Leitsystem-API beschaffen.
-- [ ] Abstimmung zum konkreten Aufsatzpunkt (wo werden Daten eingespielt, Hardware/VPN) – geplant für die kommende Woche.
-- [ ] Bewertung Direktleitung/Direktbelieferung (technische Machbarkeit hinter getrennten Netzanschlüssen) als Eingang für Schaltplan-Vorlagen (P9.5).
-
-**Repository & Open Source (TASK-010)**
-- [x] LICENSE (Apache 2.0, wie in Build und Python-Paket deklariert) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT (Contributor Covenant 2.1), SECURITY.md (Policy), CHANGELOG.
-- [ ] Python-Paket auf PyPI veröffentlichen (README nennt bislang nur lokale Installation).
-- [ ] `sample_data/` und `data/sample_datasets/` konsolidieren (gleiche Dateinamen, anderer Inhalt; von `opentsx-core`-Demos referenziert).
-- [x] `config/cpl*.props` und `config/mdc_c1.props` (private LAN-Hosts) entfernt, ersetzt durch die localhost/KafScale-Vorlage `config/opentsx-local.props.example` (lokale Kopie `config/opentsx-local.props` git-ignoriert); `opentsx.properties.example` an v2-Module angepasst.
-- [ ] Weitere Profile mit privaten Hosts in `opentsx-lg/src/main/resources/config/` (`cpl.props`, `mdc_c1.props`, `mdc_local_link.props`, im Docker-Assembly referenziert), `opentsx-lg/src/main/k8s/krake-app/` und hartkodierte Schema-Registry-Adressen in `FWL_TSA_*Application.java` bereinigen.
-- [ ] `tests/validation/*.java` und `bin/run_all_tests.sh` in einen Maven-Testpfad überführen oder archivieren; Java-Beispiele in `exercises/` gegen die echte 2.x-API prüfen.
-- [x] `opentsx-app-tools` archiviert (siehe Phase 0).
-
-**Fehler & Qualität**
-- [x] Event-Synchronisation (Python `event_sync.py` + Java `ESCalc`/`ESCalc2`): Q > 1 behoben, globales `tau_max` → lokales τ nach Quiroga (#110). Die Q_rand-Kalibrierung bleibt in P8.1 offen.
-- [ ] Avro 1.12.2+ mit `SERIALIZABLE_PACKAGES`.
-- [ ] Smoke-Test gegen echten OpenMetadata-2.0.5-Server (docker compose, nightly) und gegen Iceberg-REST-Catalog + MinIO in CI.
-- [ ] Records/s-Messung gegen KafScale mit echtem S3 (bisher nur In-Memory-S3).
-
-**Major-Upgrades (bewusst als Migration; Dependabot ignoriert Majors und die unten genannten Bremsen)**
-- [ ] Avro 1.12.2+: Klassen-Freigabe (`ClassSecurityValidator`) für das v2-Modell **und** die Legacy-2.x-Klassen (`org.opentsx.data.model`, schon beim Bauen von Records per Builder nötig); Legacy-Module hängen nicht an `opentsx-model` → Freigabe im Generator-Template oder per Systemeigenschaft in den Startskripten. Befund vom 12.10.: v2 mit `ClassSecurityValidator.setGlobal(composite(...))` lauffähig, Legacy-Bridge-Test scheitert ohne Legacy-Freigabe.
-- [ ] Iceberg 1.11/1.12: `GenericAppenderFactory` entfernt → `IcebergIO` auf die neue Writer-API umstellen.
-- [ ] JFreeChart 1.5 (Legacy-Charts in `opentsx-core`): `org.jfree.ui` entfernt → Charts migrieren oder Legacy-UI archivieren.
-- [ ] Confluent 8 (Kafka-4-Clients, gegen KafScale prüfen), JUnit 6, networknt json-schema-validator 3 (API-Änderungen).
-- [ ] Frontend: React 19, TypeScript 7, ESLint 10 (Flat Config), Tailwind 4, Vite 8, React Router 7, Plotly 4 – gemeinsam als Migration (Stand 12.10.: `npm ci` scheitert an Peer-Konflikten, `tsc` an veralteten Optionen). Offene Sicherheitsbefunde, die erst mit der Migration verschwinden (`npm audit`, Stand 12.10. nach `npm audit fix`: 18): XSS in `maplibre-gl` über Plotly ≤ 4.1 (Plotly 4.1.1+ oder Plotly-Basic-Bundle ohne Kartentypen), typescript-eslint 8, `postcss-selector-parser`/`micromatch`/`braces` über Tailwind 4, React Router 7.
-
-**Laufzeit & Integration**
-- [ ] Flink-Adapter für `StatsEngine` und P8.1-Streaming-Screening; `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` auf v2 umstellen oder deprecaten. Das Upgrade selbst ist mit #147 auf 1.20.5 erledigt; 2.x bleibt eine eigene Entscheidung.
-- [ ] Echte Herstellerexporte als weitere `sources` im Datenpunktkatalog.
-- [ ] Matrix-Profile (Motif/Discord) und iSAX-Index (P5-Optionen).
-
-**Recherche-Nacharbeit (aus 06-SYSTEMREKONSTRUKTION-OPTIMIERUNG, als ungeprüft markiert)**
-- [ ] Lizenzen von IDTxl, pyunicorn, netrd, causal-learn, Tetrad aus den LICENSE-Dateien verifizieren; Maven-Verfügbarkeit von JIDT.
-- [ ] CauseMe- und QOBLIB-Leaderboard-Zahlen, CausalTime-Ergebnisse einholen.
-- [ ] Offizieller AWS-Status von IoT TwinMaker; Primärdoku InfluxDB/Timescale/QuestDB/Grafana/Prometheus zu Kausal-/Netzwerkfunktionen.
-- [ ] Vergleich ES/ECA vs. Hawkes auf Clickstream-artigen Daten; Hawkes-Modell auf dem Wikipedia-Seitennetz (keine Quelle gefunden → eigener Beitrag).
-- [ ] Volltext Müller et al. (IEEE TPWRS 2025, Quanten-Unit-Commitment): Instanzgrößen und Laufzeiten.
-- [ ] Repository-Handle der Dissertation (MLU, vermutlich 1981185920/8878) verifizieren.
+| Backlog block | Source lines | Open items moved to |
+|---------------|--------------|---------------------|
+| Owner decisions | 379 to 385 | Credentials (line 380): [TASK-010](TASK-010.md). D6 (line 381): [TASK-018](TASK-018-analytics-storage-extensions.md). D14 to D17 and ER1 (lines 382 to 383): [TASK-015](TASK-015-multivariate-analysis.md). D18, D19, D21 to D24 and D30 to D36 (lines 384 to 385): [TASK-017](TASK-017-digital-twin.md). |
+| Energy system and project environment | 387 to 393 | [TASK-017](TASK-017-digital-twin.md) |
+| Repository and open source | 395 to 402 | Open items (lines 397, 398, 400, 401): [TASK-010](TASK-010.md). Lines 396, 399 and 402 were already done. |
+| Errors and quality | 404 to 408 | Line 405 was already done. Avro 1.12.2+ (line 406): [TASK-019](TASK-019-major-upgrades.md). Line 407: the OpenMetadata smoke test stays in phase 4 here; its Iceberg REST catalog and MinIO part: [TASK-018](TASK-018-analytics-storage-extensions.md). Line 408: [TASK-018](TASK-018-analytics-storage-extensions.md). |
+| Major upgrades | 410 to 415 | [TASK-019](TASK-019-major-upgrades.md) |
+| Runtime and integration | 417 to 420 | Line 418: the Flink adapter for `StatsEngine` and the migration of the 2.x job `TimeSeriesAggregateFunction`/`TimeSeriesAnalysisJob` stay in phase 4 here; its P8.1 streaming screening: [TASK-015](TASK-015-multivariate-analysis.md). Its remark that Flink 2.x is a separate decision: [TASK-019](TASK-019-major-upgrades.md). Lines 419 and 420: [TASK-018](TASK-018-analytics-storage-extensions.md). |
+| Research follow-up | 422 to 428 | [TASK-015](TASK-015-multivariate-analysis.md) |
 
 ## Progress Log
 
-- 2026-10-12: **Archiv entschlackt**: archivierte Maven-Module (`archive/modules/`, `archive/opentsx-kstreams/`, 15 `pom.xml`) aus `master` entfernt, weil ihre Altversionen (sshd-core 0.8, Cassandra 3.11.4, Gson 2.7 …) laufend Sicherheitswarnungen und Dependabot-PRs erzeugten; dazu vier tote Submodul-Links in `archive/demos/`. Letzter Stand: Commit `315f01d`; Doku (Handbuch Kap. 1 und 13, README, Inventar, CHANGELOG) angepasst.
-- 2026-10-12: **Markt- und Wetterhistorie** (`opentsx-market`): Sammler für SMARD, Energy-Charts, ENTSO-E (Token) und netztransparenz.de (OAuth/CSV-Import), Partnerdatei-Import; lokales Archiv mit Manifest und Qualitätsbericht, fortsetzbarer Backfill (SMARD 2019 bis heute archiviert; ENTSO-E und netztransparenz ohne Zugangsdaten übersprungen), Roh-Vorwärtsarchiv MOSMIX, k3s-CronJobs (`deploy/k3s/history/`); H2-Kette, Haus und Boot mit `--history` auf echten Jahren, Standarddemos unverändert synthetisch.
-- 2026-10-12: **Marktrecherche, Kunden und Kampagne** (`docs/business/`): Anbieter digitaler Zwillinge auf die Kopplung von Live- und Simulationsdaten geprüft (Kriterien a–h, Vergleichsmatrix mit Quellen, Abruf 12.10.2026; Kopplung selbst ist verbreitet, die OpenTSx-Kombination aus Herkunft je Wert, bitgleichem Replay, Föderation und Offenheit nicht gefunden); Kunden und Nutzen mit belegten Marktzahlen und Priorisierung (Verbund Wind/H2/Vermarktung, Stadtwerke, Forschung); Kampagne „Erst rechnen, dann schalten“ mit 90-Tage-Plan, Claims-Leitfaden, drei Beispielbeiträgen und Gliederung der Landingpage.
-- 2026-10-12: **Abhängigkeiten aufgeräumt**: Dependabot-Flut gebündelt (GitHub Actions auf aktuelle Majors, Backend-Pins, Backend auf Python 3.12), Maven-Minor/Patch-Gruppe ohne die vier Bremsen (Avro, Iceberg, JFreeChart, zstd-jni); Majors nur noch als geplante Migration (Backlog „Major-Upgrades“).
-- 2026-10-12: **DWD-Sammler** `opentsx-dwd`: MOSMIX_L und CDC-Stationsdaten als v2-Serien/Episoden mit Einheit und Herkunft, nächstgelegene Stationen (Haus Erzgebirge: Marienberg/Fichtelberg, Ostsee: Greifswalder Oie/Arkona), Bindung an Haus- und Boot-Zwilling, CLI `bin/opentsx dwd`; Tests offline mit handgebauten Fixtures, Parser zusätzlich gegen opendata.dwd.de geprüft.
-- 2026-10-12: **P9.0 Modbus-Modul** `opentsx-modbus`: Modbus-TCP-Client ohne Fremdbibliothek (MBAP, Transaktions-IDs, Timeouts, Reconnect, Exception-Antworten mit Klartext; RTU über TCP mit CRC16), Registerkarten als YAML mit Validierung (Überlappungen, Typen, OBIS, Herkunft), Blockbildung, Normalisierer → v2-Episoden mit Zählerüberlauf/-reset-Flags, In-JVM-Simulator und `bin/opentsx modbus check|read|poll|simulate`; Beispielkarte eines Netzanschlusszählers bis zum Eintreffen der echten Registerkarten.
-- 2026-10-12: **Repository-Hygiene**: LICENSE (Apache 2.0, Volltext) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (Meldeweg über GitHub Private Vulnerability Reporting), CHANGELOG (Keep a Changelog); private Client-Profile `config/cpl*.props`/`mdc_c1.props` durch `config/opentsx-local.props.example` ersetzt (Fallback in `OpenTSxClusterLink`), Referenzen in Code, Skripten und Doku angepasst; `opentsx.properties.example` auf tatsächlich gelesene Schlüssel und v2-Konfiguration reduziert. Keine Historienbereinigung.
-- 2026-10-12: **P9 Variante L** (`LooseRunner`, gemeinsamer Ausführungskern `RunSetup`): Konformität L(`s = 0`) = T bitgleich für alle drei Szenarien und Betriebsarten; Messprogramm `bin/opentsx twin-coupling`; Avro-Schemas je Atomtyp. Befund: Durchsatz begrenzen nur Rückkopplungsschleifen (Formel in 07 §10a), Veraltung in schnellen Regelkreisen verfälscht stark; Entwurfsregel „Schleifen in einen Prozessor, dazwischen BSP“ liefert T-Ergebnis bei voller Fließband-Leistung (H2-Kette ×5,9, Haus ×6).
-- 2026-10-12: **Anlage erkunden (P9.9, E0)** (`12-EXPLORATIVES-UI-INVENTAR.md`): vierte Studio-Ansicht als visuelles Inventar auf Karte (Windpark), Grundriss (Haus) und Decksplan (Boot) mit Level-of-Detail, Hover-Karte und Datenblatt; Inventarmodell `opentsx.inventory.v1` am Atom-Anker, Bildherkunft, Normbezüge, Wartungs-Topic `opentsx.maintenance.v1`, infinimesh als Geräteebene; statischer Prototyp `docs/prototypes/anlagen-explorer.html` und Beispielinventar; D30–D36 als Vorschläge.
-- 2026-10-12: **Aufräumen**: Sammel-PR #102 nach `master`; SaaS-Abhängigkeiten gebündelt (Vite 7, python-multipart, python-socketio); überholte Dependabot-PRs geschlossen; `opentsx-app-tools` archiviert; README neu positioniert ("from time series to decisions").
-- 2026-10-12: **Smart-Topic-Prozessor und DevOps-Konzept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go-Prozessor nach dem KafScale-Processor-Muster mit YAML-DAG, Stream-Kern in Go, Sidecar für Java/Python, Training außerhalb des Stroms, Lebenszyklus (CI-Replay, Schattenbetrieb, Modelltausch, Rand-Betrieb); D25–D29 als Vorschläge.
-- 2026-10-12: **P9.8 simulierte Bootsdaten**: Generator `SimulatedLogs`, Beispiel-Logs unter `twin/beispiel/`, Kalibrierung gegen SoC, Ausgangsleistung und Solar (mit Einstrahlung), `bin/opentsx boat --simulated`.
-- 2026-10-12: **P9.7 simulierte Abrechnungen**: Beispieldaten 2022–2025 mit verdeckten Parametern und realistischen Lücken, `--simulated`, Kalibrierung findet H/η und Geräteskala, meldet Warmwasser als nicht bestimmt.
-- 2026-10-12: **P9.8 Boot-Zwilling** (`10-BOOT-ZWILLING.md`): Etap 22 als Insel-Energiesystem mit 5 neuen Bausteinen, Schaltplan, Demo `bin/opentsx boat` mit Was-wäre-wenn, CSV-Import echter Daten und Kalibrierung gegen gemessenen SoC.
-- 2026-10-12: **Betriebskonzept und lokaler Probelauf** (`docs/devops/operations.md`, `deploy/k3s/60-probe.sh`, `70-backup.sh`, `71-restore.sh`): Probelauf mit PASS/FAIL-Bericht, DWD (Job + CronJob) und Modbus (Simulator + Poller) im Cluster, Überwachungskomponente, acht Runbooks; geprüft mit shellcheck, kubeconform (145 Ressourcen), Stub-Cluster und echtem KafScale-Broker über den Image-Einstiegspunkt (4.300 `series-stats`-Datensätze); ein Lauf auf echtem k3s mit Docker steht noch aus.
-- 2026-10-12: **DevOps-Leitfaden k3s + KafScale** (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`): Setup- und Sizing-Plan, alle Beispiele (Windpark → KafScale, Statistik, Retrieval, OpenMetadata, H2-Kette, Haus, Boot, Studio) als Deployments/Jobs mit Skripten 00–90; Befehle im Image lokal geprüft, Manifeste mit kubeconform validiert; Docker-Build und k3s-Lauf noch nicht ausgeführt.
-- 2026-10-12: **Studio-Prototyp und LabVIEW-Konzept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): drei Ansichten mit Zwillingsdaten, LabVIEW/Node-RED/NiFi-Analogie, Kreislauf LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → Freigabe → `desired`, JSON-Vertrag für Edge Smart Metrics.
-- 2026-10-12: **P9.7 Haus-Zwilling**: Methode auf Hauseigentümer übertragen (`08-HAUS-ZWILLING.md`), 9 Haus-Atome, Schaltplan `haus-erzgebirge.yaml`, Kennzahlen, Kalibrierung an Abrechnungen mit Identifizierbarkeitsbericht, Demo `bin/opentsx house`; alle Hauszahlen sind Beispielannahmen.
-- 2026-10-12: **P9-PoC** `opentsx-twin`: Atomvertrag MVC+P, Schaltplan-YAML, geschichteter BSP-Runner (Variante T) mit Topic-Vertrag, Herkunftsleiter, 9 Bausteine (inkl. Betriebsvorgaben), Schatten/Was-wäre-wenn/Prognose; S1 H2-Kette getestet, Demo `bin/opentsx twin`.
-- 2026-10-12: **P8 geschärft** (Kurztitel „Zusammenspiel & Koordinationspotenzial“, Leitfrage, Bewertungsprinzip, Betriebsvorgaben, Methoden als Vorschlag); Infografik-Briefing Fassung 2 mit zwei Sichten (Was/Wie, Warum/Für wen).
-- 2026-10-12: **Zwilling als Kern der Roadmap festgelegt**: drei Betriebsarten in beiden Varianten (eng/ein Prozess und lose/Smart Topics, D20); Vergleich als Forschungspaper (P9.6); Wake-Graph-Export auf niedrige Priorität.
-- 2026-10-12: **Phase 9 vorgeschlagen** (Digitaler Zwilling Energieverbund, Konzept `07-DIGITAL-TWIN-BSP.md`: Atome mit MVC+P, Schaltplan, geschichtetes BSP, Smart Topics als Einbettung, Stufen A–D); Wake-Ground-Truth in P8.0 präzisiert (Simulationsreferenz); Punkte aus dem Projektgespräch in den Backlog.
-- 2026-10-12: **Phase 8 aufgenommen** (Systemrekonstruktion → Simulation → Optimierung, Konzept `06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md` aus Deep Research mit Bezug auf Kämpf 2017); vollständiger Backlog aller offenen Punkte.
-- 2026-10-12: **Doku-Refresh**: neues englisches User-Manual (`docs/user-manual/`), Inventur (`docs/DOCUMENTATION-INVENTORY.md`), Archivierung veralteter Doku und Module außerhalb des Builds (`archive/`), Launcher `bin/opentsx`, Link-Check in CI.
-- 2026-10-12: **P5 umgesetzt** (`opentsx-retrieval`): Segmentierung, Pattern-Engine, Retrieval-API, REST + Python-Client, Leistungskurven-Analyse.
-- 2026-10-12: Smart Topics entworfen (`05-SMART-TOPICS.md`); Entscheidungen: Python-Training zuerst, MLflow, Modell je Serie + föderiertes globales Modell (Wayang), Umsetzung als P7 nach P6.
-- 2026-10-11: **P4 umgesetzt**: `opentsx-stats` (Streaming-Statistik, Quantil-Sketch, DQ, KafScale-Prozessor mit Checkpoints) und `opentsx-openmetadata` (Metadata-Pool, gegen OM-2.0.5-Schemas validiert); Python `opentsx.stats`.
-- 2026-10-11: **Windpark-Domäne umgesetzt** (`opentsx-windpark`): IEC-61400-25-2-Datenpunktkatalog, Normalisierer, Simulator mit Ground Truth, CLI → KafScale/Iceberg. Avro 1.12.1 zentral (Präzisionsfehler in 1.12.0 per Test abgesichert).
-- 2026-10-11: **P3 umgesetzt**: Store-SPI + Contract-Suite, Iceberg-Store (+ Index, Log-Sync), OpenTSDB-Adapter, PyIceberg-Reader mit Byte-Gleichheit Java↔Python.
-- 2026-10-11: **P2 umgesetzt**: `opentsx-kafka-v2` (TopicLayout, BucketWriter, Episoden-Index, Replay, Katalog), `LegacyBucketImport`; End-to-End-Tests grün gegen KafScale v1.6.0 und Apache Kafka 3.9.1; Speicherkosten gemessen.
-- 2026-10-09: **P1 umgesetzt**: `opentsx-model` (Java) + `opentsx.model` (Python) byte-identisch über gemeinsame Testvektoren; Entscheidungen D2 (`timestamp-micros`) und D3 (xxHash64) bestätigt; Legacy-Brücke; Schema-Historie mit Kompatibilitätsprüfung.
-- 2026-10-09: **P0 umgesetzt** (siehe Phase 0). KafScale-Messung: Header & CreateTime bleiben erhalten; `offsetsForTimes`, idempotenter Producer, Standalone-Commits und Gruppen-Wiederbeitritt funktionieren nicht (Ursachen im Conformance-README).
-- 2026-10-09: Gap-Analyse (Build, Tests, Analytik, Windpark, KafScale v1.6.0, OpenMetadata 2.0.5) → `03-GAP-ANALYSE.md`; Entscheidungen D1/D4/D5/D7 eingearbeitet.
-- 2026-10-09: Analyse des Bestandsmodells, Zielmodell-Entwurf und Phasenplan erstellt (dieses Dokument + `docs/datamodel-2026/`).
+- 2026-10-26: **Split and translation** (D90 in [18-CLOSING-TASK-011](../docs/datamodel-2026/18-CLOSING-TASK-011.md)): this document is in English; phases 6 to 9 and the backlog moved to TASK-015 to TASK-019 and TASK-010. TASK-015 adds the design of pair windows. Open here: the three items of phase 4 (WP1 to WP3).
+- 2026-10-12: **Archive slimmed down**: archived Maven modules (`archive/modules/`, `archive/opentsx-kstreams/`, 15 `pom.xml`) removed from `master`, because their old versions (sshd-core 0.8, Cassandra 3.11.4, Gson 2.7 …) kept producing security warnings and Dependabot PRs; also four dead submodule links in `archive/demos/`. Last state: commit `315f01d`; docs (manual chapters 1 and 13, README, inventory, CHANGELOG) updated.
+- 2026-10-12: **Market and weather history** (`opentsx-market`): collectors for SMARD, Energy-Charts, ENTSO-E (token) and netztransparenz.de (OAuth/CSV import), partner file import; local archive with manifest and quality report, resumable backfill (SMARD archived from 2019 to today; ENTSO-E and netztransparenz skipped without credentials), raw forward archive for MOSMIX, k3s CronJobs (`deploy/k3s/history/`); H2 chain, house and boat with `--history` on real years, standard demos unchanged and synthetic.
+- 2026-10-12: **Market research, customers and campaign** (`docs/business/`): vendors of digital twins checked for coupling of live and simulation data (criteria a to h, comparison matrix with sources, retrieved 2026-10-12; the coupling itself is common, the OpenTSx combination of provenance per value, bit-identical replay, federation and openness was not found); customers and benefits with sourced market figures and prioritization (wind/H2/marketing cluster, municipal utilities, research); campaign "Compute first, then switch" with a 90-day plan, a claims guide, three sample posts and an outline of the landing page.
+- 2026-10-12: **Dependencies cleaned up**: Dependabot flood bundled (GitHub Actions to current majors, backend pins, backend on Python 3.12), Maven minor/patch group without the four blockers (Avro, Iceberg, JFreeChart, zstd-jni); majors only as a planned migration (backlog "Major upgrades").
+- 2026-10-12: **DWD collector** `opentsx-dwd`: MOSMIX_L and CDC station data as v2 series/episodes with unit and provenance, nearest stations (house in the Erzgebirge: Marienberg/Fichtelberg, Baltic Sea: Greifswalder Oie/Arkona), binding to the house and boat twins, CLI `bin/opentsx dwd`; tests offline with hand-built fixtures, parser additionally checked against opendata.dwd.de.
+- 2026-10-12: **P9.0 Modbus module** `opentsx-modbus`: Modbus TCP client without a third-party library (MBAP, transaction IDs, timeouts, reconnect, exception responses in plain text; RTU over TCP with CRC16), register maps as YAML with validation (overlaps, types, OBIS, provenance), block grouping, normalizer → v2 episodes with meter overflow/reset flags, in-JVM simulator and `bin/opentsx modbus check|read|poll|simulate`; sample map of a grid connection meter until the real register maps arrive.
+- 2026-10-12: **Repository hygiene**: LICENSE (Apache 2.0, full text) + NOTICE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md (reporting via GitHub Private Vulnerability Reporting), CHANGELOG (Keep a Changelog); private client profiles `config/cpl*.props`/`mdc_c1.props` replaced by `config/opentsx-local.props.example` (fallback in `OpenTSxClusterLink`), references in code, scripts and docs updated; `opentsx.properties.example` reduced to the keys actually read and the v2 configuration. No history rewrite.
+- 2026-10-12: **P9 variant L** (`LooseRunner`, shared execution core `RunSetup`): conformance L(`s = 0`) = T bit-identical for all three scenarios and modes; measurement program `bin/opentsx twin-coupling`; Avro schemas per atom type. Finding: only feedback loops limit throughput (formula in 07 §10a), staleness in fast control loops distorts strongly; the design rule "loops into one processor, BSP in between" delivers the T result at full pipeline throughput (H2 chain ×5.9, house ×6).
+- 2026-10-12: **Explore the plant (P9.9, E0)** (`12-EXPLORATIVES-UI-INVENTAR.md`): fourth Studio view as a visual inventory on a map (wind farm), floor plan (house) and deck plan (boat) with level of detail, hover card and data sheet; inventory model `opentsx.inventory.v1` at the atom anchor, image provenance, references to standards, maintenance topic `opentsx.maintenance.v1`, infinimesh as the device layer; static prototype `docs/prototypes/anlagen-explorer.html` and sample inventory; D30 to D36 as proposals.
+- 2026-10-12: **Cleanup**: collective PR #102 to `master`; SaaS dependencies bundled (Vite 7, python-multipart, python-socketio); obsolete Dependabot PRs closed; `opentsx-app-tools` archived; README repositioned ("from time series to decisions").
+- 2026-10-12: **Smart Topic processor and DevOps concept** (`11-SMART-TOPIC-PROZESSOR-DEVOPS.md`): Go processor following the KafScale processor pattern with a YAML DAG, stream core in Go, sidecar for Java/Python, training outside the stream, lifecycle (CI replay, shadow operation, model swap, edge operation); D25 to D29 as proposals.
+- 2026-10-12: **P9.8 simulated boat data**: generator `SimulatedLogs`, sample logs under `twin/beispiel/`, calibration against SoC, output power and solar (with irradiance), `bin/opentsx boat --simulated`.
+- 2026-10-12: **P9.7 simulated utility bills**: sample data 2022 to 2025 with hidden parameters and realistic gaps, `--simulated`, calibration finds H/η and the appliance scale, reports hot water as not determined.
+- 2026-10-12: **P9.8 boat twin** (`10-BOOT-ZWILLING.md`): Etap 22 as an island energy system with 5 new building blocks, wiring plan, demo `bin/opentsx boat` with what-if, CSV import of real data and calibration against measured SoC.
+- 2026-10-12: **Operations concept and local probe run** (`docs/devops/operations.md`, `deploy/k3s/60-probe.sh`, `70-backup.sh`, `71-restore.sh`): probe run with a PASS/FAIL report, DWD (job + CronJob) and Modbus (simulator + poller) in the cluster, monitoring component, eight runbooks; checked with shellcheck, kubeconform (145 resources), a stub cluster and a real KafScale broker via the image entry point (4,300 `series-stats` records); a run on real k3s with Docker is still pending.
+- 2026-10-12: **DevOps guide k3s + KafScale** (`docs/devops/`, `deploy/k3s/`, `deploy/docker/`): setup and sizing plan, all examples (wind farm → KafScale, statistics, retrieval, OpenMetadata, H2 chain, house, boat, Studio) as deployments/jobs with scripts 00 to 90; commands checked locally in the image, manifests validated with kubeconform; Docker build and k3s run not yet executed.
+- 2026-10-12: **Studio prototype and LabVIEW concept** (`09-STUDIO-LABVIEW-STEUERPULT.md`): three views with twin data, LabVIEW/Node-RED/NiFi analogy, loop LabVIEW → MQTT → infinimesh → KafScale → OpenTSx → approval → `desired`, JSON contract for Edge Smart Metrics.
+- 2026-10-12: **P9.7 house twin**: method transferred to homeowners (`08-HAUS-ZWILLING.md`), 9 house atoms, wiring plan `haus-erzgebirge.yaml`, key figures, calibration on utility bills with an identifiability report, demo `bin/opentsx house`; all house figures are example assumptions.
+- 2026-10-12: **P9 PoC** `opentsx-twin`: atom contract MVC+P, wiring plan YAML, layered BSP runner (variant T) with topic contract, provenance ladder, 9 building blocks (including operating rules), shadow/what-if/forecast; S1 H2 chain tested, demo `bin/opentsx twin`.
+- 2026-10-12: **P8 sharpened** (short title "Interplay and coordination potential", guiding question, evaluation principle, operating rules, methods as a proposal); infographic briefing version 2 with two views (What/How, Why/For whom).
+- 2026-10-12: **Twin set as the core of the roadmap**: three modes in both variants (tightly coupled/one process and loosely coupled/Smart Topics, D20); comparison as a research paper (P9.6); wake graph export at low priority.
+- 2026-10-12: **Phase 9 proposed** (digital twin of the energy system, concept `07-DIGITAL-TWIN-BSP.md`: atoms with MVC+P, wiring plan, layered BSP, Smart Topics as embedding, stages A to D); wake ground truth in P8.0 made more precise (simulation reference); points from the project meeting added to the backlog.
+- 2026-10-12: **Phase 8 added** (system reconstruction → simulation → optimization, concept `06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md` from in-depth research with reference to Kämpf 2017); complete backlog of all open items.
+- 2026-10-12: **Docs refresh**: new English user manual (`docs/user-manual/`), inventory (`docs/DOCUMENTATION-INVENTORY.md`), archiving of outdated docs and of modules outside the build (`archive/`), launcher `bin/opentsx`, link check in CI.
+- 2026-10-12: **P5 implemented** (`opentsx-retrieval`): segmentation, pattern engine, retrieval API, REST + Python client, power curve analysis.
+- 2026-10-12: Smart Topics designed (`05-SMART-TOPICS.md`); decisions: Python training first, MLflow, model per series + federated global model (Wayang), implementation as P7 after P6.
+- 2026-10-11: **P4 implemented**: `opentsx-stats` (streaming statistics, quantile sketch, DQ, KafScale processor with checkpoints) and `opentsx-openmetadata` (metadata pool, validated against the OM 2.0.5 schemas); Python `opentsx.stats`.
+- 2026-10-11: **Wind farm domain implemented** (`opentsx-windpark`): IEC 61400-25-2 data point catalog, normalizer, simulator with ground truth, CLI → KafScale/Iceberg. Avro 1.12.1 set centrally (precision bug in 1.12.0 covered by a test).
+- 2026-10-11: **P3 implemented**: store SPI + contract suite, Iceberg store (+ index, log sync), OpenTSDB adapter, PyIceberg reader with byte equality Java↔Python.
+- 2026-10-11: **P2 implemented**: `opentsx-kafka-v2` (TopicLayout, BucketWriter, episode index, replay, catalog), `LegacyBucketImport`; end-to-end tests green against KafScale v1.6.0 and Apache Kafka 3.9.1; storage costs measured.
+- 2026-10-09: **P1 implemented**: `opentsx-model` (Java) + `opentsx.model` (Python) byte-identical via shared test vectors; decisions D2 (`timestamp-micros`) and D3 (xxHash64) confirmed; legacy bridge; schema history with compatibility check.
+- 2026-10-09: **P0 implemented** (see phase 0). KafScale measurement: headers and CreateTime are preserved; `offsetsForTimes`, the idempotent producer, standalone commits and group rejoin do not work (causes in the conformance README).
+- 2026-10-09: Gap analysis (build, tests, analytics, wind farm, KafScale v1.6.0, OpenMetadata 2.0.5) → `03-GAP-ANALYSE.md`; decisions D1/D4/D5/D7 incorporated.
+- 2026-10-09: Analysis of the existing model, draft of the target model and phase plan created (this document + `docs/datamodel-2026/`).
