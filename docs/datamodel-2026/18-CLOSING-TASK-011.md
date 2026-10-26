@@ -1,8 +1,7 @@
 # 18. Closing TASK-011: solution design
 
 This document plans the work that closes [TASK-011](../../EVOLUTION/TASK-011-datamodel-refresher-2026.md). It was
-checked against `master` at `551815a3` (version 3.0.1). Decisions D86 to D91 in section 7 are proposals until the
-owner confirms them.
+checked against `master` at `551815a3` (version 3.0.1). The owner decided D86 to D91 (section 7) on 2026-10-26.
 
 TASK-011 holds 117 open and 91 done items. Phases 0 to 3 are done. The goal and the seven success criteria of
 TASK-011 (lines 9 to 26) cover phases 0 to 5 only. Phases 6 to 9 and the backlog were added later and are a
@@ -179,7 +178,9 @@ Then the status in TASK-011 and in [EVOLUTION/README.md](../../EVOLUTION/README.
 
 ## 7. Decisions
 
-| D | Proposal | Alternative |
+Decided on 2026-10-26. The alternatives are kept for the record.
+
+| D | Decision | Alternative |
 |---|----------|-------------|
 | D86 | Accept 2.18 bytes per value as meeting criterion 4. The criterion says the measurement decides, and the number is measured and documented. | Keep the criterion open until a codec change reaches 2.0. |
 | D87 | Add a recall@10 assertion to `PatternBenchmarkTest` with 10 planted patterns and keep the recall@12 report. | Change the wording of criterion 7 to recall@k with k equal to the planted count. |
