@@ -246,7 +246,9 @@ export const useFlow = create<FlowState>((set, get) => ({
   addInput: (id, inputId) => {
     const s = get();
     const node = s.nodes.find((n) => n.id === id);
-    if (!node || !OP_BY_ID[node.op]?.multiInput || !s.nodes.some((n) => n.id === inputId)) return false;
+    const op = node && OP_BY_ID[node.op];
+    if (!node || !op?.multiInput || !s.nodes.some((n) => n.id === inputId)) return false;
+    if (op.maxInputs !== undefined && inputsOf(node).length >= op.maxInputs) return false;
     if (id === inputId || inputsOf(node).includes(inputId) || descendants(s.nodes, id, true).has(inputId)) return false;
     set({ nodes: s.nodes.map((n) => (n.id === id ? { ...n, inputs: [...(n.inputs ?? []), inputId] } : n)) });
     return true;
@@ -398,6 +400,21 @@ export function toDefinition(s: FlowDoc): Record<string, unknown> {
 const cache = new Map<string, Bucket>();
 
 /**
+ * Quality bytes (`Series.quality`) belong to the x values they were computed for. An operator that keeps the x array of
+ * a series keeps them; one that builds a new x (resample, FFT, histogram) would hand on bytes that no longer fit, so
+ * they are dropped. Bytes the operator made itself are not an input's and stay.
+ */
+export function keepQuality(out: Bucket, inputs: Bucket[]): Bucket {
+  const xOf = new Map<Uint8Array, Float64Array>();
+  for (const b of inputs) for (const s of b.series) if (s.quality) xOf.set(s.quality, s.x);
+  if (xOf.size === 0 || !out.series.some((s) => s.quality && xOf.has(s.quality) && xOf.get(s.quality) !== s.x)) return out;
+  return {
+    ...out,
+    series: out.series.map((s) => (s.quality && xOf.has(s.quality) && xOf.get(s.quality) !== s.x ? { ...s, quality: undefined } : s)),
+  };
+}
+
+/**
  * Runs the flow from the source down to the node. Results are cached per operator tree: the key of a node is its
  * operator, its parameters and the keys of its inputs.
  */
@@ -423,6 +440,7 @@ export function evaluate(source: Bucket | null, nodes: FlowNode[], id: string): 
       // A multi-input operator names its components after the buckets, so it gets them under their track names.
       const named = (i: string): Bucket => ({ ...results.get(i)!, name: nodes.find((m) => m.id === i)?.label ?? i });
       next = op.multiInput ? op.apply(named(ins[0]), n.params, ins.slice(1).map(named)) : op.apply(results.get(ins[0])!, n.params);
+      next = keepQuality(next, ins.map((i) => results.get(i)!));
       if (cache.size > 200) cache.clear();
       cache.set(key, next);
     }

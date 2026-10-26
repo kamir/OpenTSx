@@ -18,6 +18,10 @@ pip install -e "python-package[kafka,viz]"       # + confluent-kafka, matplotlib
 
 ## Typical notebook flow
 
+For direct broker reads, `TopicReader` uses explicit partition assignment, disables automatic commits and
+offset storage, and applies one `timeout_s` deadline across metadata, watermarks and polling.
+See the [topic reader limits and error handling](../../python-package/README.md#read-a-topic).
+
 ```python
 import pandas as pd
 from opentsx import model as m

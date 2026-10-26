@@ -32,6 +32,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <!-- Kafka clients and the KafScale client settings for the wire round trip of TASK-011 criterion 2 -->
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-kafka-v2</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>

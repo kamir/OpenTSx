@@ -1,6 +1,7 @@
 package org.opentsx.flink.pfd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -19,6 +20,7 @@ import org.opentsx.flink.serdes.TimeSeriesObjectTypeInfo;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Flink Job that builds a topology dynamically from a Processing Flow
@@ -28,7 +30,8 @@ public class DynamicTopologyJob {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
-            System.err.println("Usage: DynamicTopologyJob <path-to-pfd.json> OR --json <json-content>");
+            System.err.println("Usage: DynamicTopologyJob (<path-to-pfd.json> OR --json <json-content>)"
+                    + " [--window-size <milliseconds>] [--out-of-orderness <milliseconds>]");
             System.exit(1);
         }
 
@@ -41,18 +44,53 @@ public class DynamicTopologyJob {
             pfdPath = args[0];
         }
 
+        int optionIndex = pfdContent != null ? 2 : 1;
+        long windowSizeMs = 300000L;
+        long outOfOrdernessMs = 10000L;
+        boolean windowConfigured = false;
+        boolean toleranceConfigured = false;
+        for (int i = optionIndex; i < args.length; i += 2) {
+            String option = args[i];
+            boolean window = "--window-size".equals(option);
+            if (!window && !"--out-of-orderness".equals(option)) {
+                throw new IllegalArgumentException("Expected --window-size or --out-of-orderness after the descriptor");
+            }
+            if (i + 1 >= args.length) {
+                throw new IllegalArgumentException("Missing value for " + option);
+            }
+            if ((window && windowConfigured) || (!window && toleranceConfigured)) {
+                throw new IllegalArgumentException("Duplicate option: " + option);
+            }
+            long value;
+            try {
+                value = Long.parseLong(args[i + 1]);
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException(option + " must be an integer in milliseconds", failure);
+            }
+            if (value < 0 || (window && value == 0)) {
+                throw new IllegalArgumentException(option + " must be "
+                        + (window ? "positive" : "non-negative") + " in milliseconds");
+            }
+            if (window) {
+                windowSizeMs = value;
+                windowConfigured = true;
+            } else {
+                outOfOrdernessMs = value;
+                toleranceConfigured = true;
+            }
+        }
+
         PFDDefinition pfd = (pfdContent != null) ? parsePFDString(pfdContent) : parsePFD(pfdPath);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 1. Source
-        DataStream<Observation> sourceStream = buildSource(env, pfd.input);
+        DataStream<Observation> sourceStream = buildSource(env, pfd.input, outOfOrdernessMs);
 
         // 2. Initial Aggregation (Observation -> TimeSeriesObject)
-        // Hardcoded 5-minute tumbling window for now, could be parameterized
         DataStream<TimeSeriesObject> timeSeriesStream = sourceStream
                 .keyBy(obs -> obs.getUri() != null ? obs.getUri().toString() : "unknown")
-                .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+                .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSizeMs)))
                 .aggregate(new TimeSeriesAggregateFunction())
                 .returns(new TimeSeriesObjectTypeInfo());
 
@@ -100,7 +138,8 @@ public class DynamicTopologyJob {
         return flow;
     }
 
-    private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input) {
+    private static DataStream<Observation> buildSource(StreamExecutionEnvironment env, PFDDefinition.PFDInput input,
+                                                        long outOfOrdernessMs) {
         if ("KAFKA".equalsIgnoreCase(input.type)) {
             String brokers = ConfigManager.getInstance().getString("bootstrap.servers", null);
             PFDValidation.requireText(brokers, "bootstrap.servers");
@@ -113,7 +152,7 @@ public class DynamicTopologyJob {
                     .build();
 
             WatermarkStrategy<Observation> watermarks = WatermarkStrategy
-                    .<Observation>forBoundedOutOfOrderness(Duration.ofSeconds(10))
+                    .<Observation>forBoundedOutOfOrderness(Duration.ofMillis(outOfOrdernessMs))
                     .withTimestampAssigner((observation, timestamp) -> observation.getTimestamp());
             return env.fromSource(source, watermarks, "Kafka Source");
         } else {
@@ -123,7 +162,8 @@ public class DynamicTopologyJob {
 
     private static void buildSink(DataStream<TimeSeriesObject> stream, PFDDefinition.PFDOutput output) {
         if ("LOG".equalsIgnoreCase(output.type)) {
-            stream.map(ts -> ts.toString()).print();
+            stream.map(ts -> new Gson().toJson(Map.of(
+                    "label", ts.getLabel(), "timestamps", ts.xValues, "values", ts.yValues))).print();
         } else {
             throw new IllegalArgumentException("Unsupported output type: " + output.type);
         }

@@ -1,6 +1,8 @@
 package org.opentsx.flink.pfd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.StreamMap;
@@ -31,6 +33,29 @@ class PFDRuntimeContractTest {
 
     @TempDir
     Path directory;
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 5})
+    void logOutputIncludesEveryCoordinateAndValue(int size) throws Exception {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.setLabel("Window output");
+        for (int i = 0; i < size; i++) row.addValuePair(1000.0 + i, -1.0 + i);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        DataStream<TimeSeriesObject> input = env.fromCollection(List.of(row), new TimeSeriesObjectTypeInfo());
+        invoke("buildSink", new Class<?>[]{DataStream.class, PFDDefinition.PFDOutput.class}, input, flow().output);
+        var sink = env.getTransformations().get(env.getTransformations().size() - 1);
+        OneInputTransformation<TimeSeriesObject, String> transformation =
+                (OneInputTransformation<TimeSeriesObject, String>) sink.getInputs().get(0);
+        StreamMap<TimeSeriesObject, String> operator = (StreamMap<TimeSeriesObject, String>) transformation.getOperator();
+        JsonObject output = JsonParser.parseString(operator.getUserFunction().map(row)).getAsJsonObject();
+        assertEquals("Window output", output.get("label").getAsString());
+        assertEquals(size, output.getAsJsonArray("timestamps").size());
+        assertEquals(size, output.getAsJsonArray("values").size());
+        for (int i = 0; i < size; i++) {
+            assertEquals(1000.0 + i, output.getAsJsonArray("timestamps").get(i).getAsDouble());
+            assertEquals(-1.0 + i, output.getAsJsonArray("values").get(i).getAsDouble());
+        }
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"DFA", "SMOOTH", "LOAD_DATA", "CACHE", "FILTER", "WINDOW_AGGREGATE",
@@ -96,8 +121,8 @@ class PFDRuntimeContractTest {
             System.setProperty("bootstrap.servers", "fixture-broker:19092");
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
             DataStream<?> stream = (DataStream<?>) invoke("buildSource",
-                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class},
-                    env, flow().input);
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    env, flow().input, 10000L);
             SourceTransformation<?, ?, ?> transformation = (SourceTransformation<?, ?, ?>) stream.getTransformation();
             KafkaSource<?> source = (KafkaSource<?>) transformation.getSource();
             Method configuration = KafkaSource.class.getDeclaredMethod("getConfiguration");
@@ -117,8 +142,8 @@ class PFDRuntimeContractTest {
         try {
             System.setProperty("bootstrap.servers", " ");
             assertThrows(IllegalArgumentException.class, () -> invoke("buildSource",
-                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class},
-                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input));
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input, 10000L));
         } finally {
             if (original == null) System.clearProperty("bootstrap.servers");
             else System.setProperty("bootstrap.servers", original);
@@ -131,8 +156,8 @@ class PFDRuntimeContractTest {
         try {
             System.setProperty("bootstrap.servers", "fixture-broker:19092");
             DataStream<?> stream = (DataStream<?>) invoke("buildSource",
-                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class},
-                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input);
+                    new Class<?>[]{StreamExecutionEnvironment.class, PFDDefinition.PFDInput.class, long.class},
+                    StreamExecutionEnvironment.getExecutionEnvironment(), flow().input, 10000L);
             SourceTransformation<Observation, ?, ?> source =
                     (SourceTransformation<Observation, ?, ?>) stream.getTransformation();
             WatermarkStrategy<Observation> strategy = source.getWatermarkStrategy();

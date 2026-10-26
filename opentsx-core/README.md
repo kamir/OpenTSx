@@ -22,6 +22,16 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Normalize finite time series
+
+`TimeSeriesObject.normalizeToStdevIsOne` centers values and divides by their sample standard deviation.
+It returns a new series with the input coordinates and axis labels. Input values are unchanged.
+Normalization requires at least two finite coordinate-value pairs with matching lengths and a finite,
+positive standard deviation whose reciprocal is representable. Invalid inputs raise `IllegalArgumentException`.
+
+`TimeSeriesObjectStatisticsTest` also checks mean recalculation and half-open `cutOut` windows,
+including empty and truncated windows.
+
 ## Supply bucket analysis inputs
 
 `org.opentsx.app.bucketanalyser.BucketAnalyserTool` accepts four required positional arguments:
