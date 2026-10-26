@@ -31,7 +31,8 @@ and cut into slices again like any other episode. Designed on 2026-10-26, not im
   overlapping episodes of A and B are paired on their intersection; an intersection shorter than the window is
   dropped.
 - Today the workbench joins all episodes of one series into one series and drops their ranges
-  (opentsx-saas-frontend/src/workbench/loaders.ts:123 to 158). Keeping the ranges is the first step (phase 1a below).
+  (opentsx-saas-frontend/src/workbench/loaders.ts:123 to 158). Keeping the ranges is the first step (phase 1a below,
+  done: `Bucket.episodes`).
 
 **Windows and time index**
 
@@ -101,7 +102,7 @@ item is stamped at the centre `tc = t0 + k*S + W/2`.
 
 **Phases**
 
-- [ ] 1a: workbench keeps episode ranges when it loads episodes (loaders.ts:123 to 158), with tests.
+- [x] 1a: workbench keeps episode ranges when it loads episodes (loaders.ts:123 to 158), with tests. *Done 2026-10-26: `Bucket.episodes` (`EpisodeRange`: series, episode id, [start, end) in seconds from x = 0, segmentation strategy), read from `tStart`/`tEnd` to the microsecond or derived as the v2 model does; time-axis operators hand them on like `marks`, a new axis drops them; `episodes.ts` (`episodesOf`, `episodeSummary`), Properties row "Episodes".*
 - [ ] 1b: pair framework in the workbench: pairing, windows, centre stamps, alignment, coverage, quality, result
   bucket with its own time index, series keys and labels as above, with tests for both window settings.
 - [ ] 1c: `pair.xcorr`, ported from kamir/WikiExplorer.NG, with test vectors from the old implementation.

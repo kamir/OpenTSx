@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { OPS, OP_BY_ID, crossings, defaultParams, dfa, fftRadix2, linFit, mulberry32, profileOf, stats } from './ops';
-import { bucketToCsv, generateSineMix, parseBucketText, parseDelimited, parseEpisodes } from './loaders';
+import { bucketToCsv, generateSineMix, isoMicros, parseBucketText, parseDelimited, parseEpisodes } from './loaders';
+import { episodeSummary, episodesOf } from './episodes';
 import { SOURCE_ID, evaluate, toDagYaml, toDefinition, toJavaCode, toPfdJson, useFlow, validate } from './flow';
 import { Bucket } from './types';
 
@@ -231,6 +232,67 @@ describe('loaders', () => {
     expect(Array.from(b.series[0].x)).toEqual([0, 1, 2, 3]);
     expect(Array.from(b.series[0].y).slice(0, 3)).toEqual([1, 2, 3]);
     expect(Number.isNaN(b.series[0].y[3])).toBe(true);
+  });
+
+  it('keeps the range of every episode, sorted by series and start (TASK-015 phase 1a)', () => {
+    const t0 = Date.parse('2026-10-01T00:00:00Z') * 1000;
+    const b = parseEpisodes([
+      { episodeId: 'b2', seriesId: 'b', tStart: '2026-10-01T00:10:00Z', tEnd: '2026-10-01T00:20:00Z',
+        segmentation: { strategy: 'FIXED_DURATION' }, timestampsMicros: [t0 + 600e6, t0 + 1199e6], values: [1, 2] },
+      { episodeId: 'b1', seriesId: 'b', tStart: '2026-10-01T00:00:00Z', tEnd: '2026-10-01T00:10:00Z',
+        segmentation: { strategy: 'FIXED_DURATION' }, timestampsMicros: [t0, t0 + 599e6], values: [3, 4] },
+      { episodeId: 'a1', seriesId: 'a', tStart: '2026-10-01T00:00:00.000250Z', tEnd: '2026-10-01T00:00:01.500250Z',
+        timestampsMicros: [t0 + 250, t0 + 1_000_250], values: [5, 6] },
+    ], 'x');
+    expect(b.t0Ms).toBe(t0 / 1000);
+    expect(b.episodes).toEqual([
+      { seriesId: 'a', episodeId: 'a1', start: 0.00025, end: 1.50025, strategy: undefined },
+      { seriesId: 'b', episodeId: 'b1', start: 0, end: 600, strategy: 'FIXED_DURATION' },
+      { seriesId: 'b', episodeId: 'b2', start: 600, end: 1200, strategy: 'FIXED_DURATION' },
+    ]);
+    expect(episodesOf(b, 'b').map((e) => e.episodeId)).toEqual(['b1', 'b2']);
+    expect(episodesOf(b, 'missing')).toEqual([]);
+    expect(episodeSummary(b)).toBe('3 in 2 series, 1.5 s to 10 min');
+  });
+
+  it('derives an episode range as the v2 model does when tStart and tEnd are missing', () => {
+    const b = parseEpisodes([
+      { seriesId: 'r', intervalMicros: 1e6, timestampsMicros: [0, 1e6, 2e6], values: [1, 2, 3] },
+      { seriesId: 'i', timestampsMicros: [0, 10, 15], values: [1, 2, 3] },
+    ], 'x');
+    // regular: end = last sample + interval; irregular: last sample + 1 microsecond (exclusive end)
+    expect(b.episodes?.map((e) => [e.seriesId, e.start, e.end])).toEqual([['i', 0, 0.000016], ['r', 0, 3]]);
+    expect(b.episodes?.[0].episodeId).toBe('i@0');
+  });
+
+  it('starts the time axis at the earliest episode start, before the first sample', () => {
+    const t0 = Date.parse('2026-10-01T00:00:00Z') * 1000;
+    const b = parseEpisodes([{ episodeId: 'e', seriesId: 'a', tStart: '2026-10-01T00:00:00Z', tEnd: '2026-10-01T00:00:10Z',
+      timestampsMicros: [t0 + 1e6, t0 + 2e6], values: [1, 2] }], 'x');
+    expect(Array.from(b.series[0].x)).toEqual([1, 2]);
+    expect(b.episodes?.[0]).toMatchObject({ start: 0, end: 10 });
+  });
+
+  it('reads ISO instants to the microsecond', () => {
+    const base = Date.parse('2026-10-01T00:00:00Z') * 1000;
+    expect(isoMicros('2026-10-01T00:00:00Z')).toBe(base);
+    expect(isoMicros('2026-10-01T00:00:00.5Z')).toBe(base + 500_000);
+    expect(isoMicros('2026-10-01T00:00:00.000001Z')).toBe(base + 1);
+    expect(isoMicros('2026-10-01T02:00:00.123456789+02:00')).toBe(base + 123_457);
+    expect(isoMicros('yesterday')).toBeNaN();
+  });
+
+  it('hands episode ranges on where the time axis stays and drops them on a new axis', () => {
+    const t0 = Date.parse('2026-10-01T00:00:00Z') * 1000;
+    const ts = Array.from({ length: 64 }, (_, i) => t0 + i * 1e6);
+    const b = parseEpisodes([{ episodeId: 'e', seriesId: 'a', intervalMicros: 1e6, timestampsMicros: ts,
+      values: ts.map((_, i) => Math.sin(i)) }], 'x');
+    expect(run('norm.zscore', b).episodes).toEqual(b.episodes);
+    expect(run('resample', b).episodes).toEqual(b.episodes);
+    expect(run('select', b, { pattern: '.*' }).episodes).toEqual(b.episodes);
+    expect(run('fft', b).episodes).toBeUndefined();
+    expect(run('histogram', b).episodes).toBeUndefined();
+    expect(episodeSummary(bucketOf([1, 2]))).toBeNull();
   });
 
   it('rejects files without usable data', () => {
