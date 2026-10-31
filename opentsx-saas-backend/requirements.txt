@@ -1,11 +1,11 @@
 # FastAPI and server
-fastapi==0.156.4
+fastapi==0.162.0
 uvicorn[standard]==0.54.0
 python-multipart==0.0.32
 
 # Database
-sqlalchemy==2.1.5
-alembic==1.20.0
+sqlalchemy==2.1.6
+alembic==1.20.1
 psycopg2-binary==2.9.13
 asyncpg==0.32.0
 greenlet==3.5.6  # Required for SQLAlchemy async operations
@@ -29,7 +29,7 @@ python-socketio==5.17.0
 
 # Time series (use local opentsx package)
 numpy==2.5.4
-pandas==3.0.6
+pandas==3.1.0
 
 # Utilities
 pydantic==2.14.1
