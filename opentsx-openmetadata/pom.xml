@@ -18,7 +18,7 @@
 
     <properties>
         <!-- server version the payloads are validated against (JSON schemas of openmetadata-spec) -->
-        <openmetadata.version>2.0.5</openmetadata.version>
+        <openmetadata.version>2.0.7</openmetadata.version>
     </properties>
 
     <dependencies>
