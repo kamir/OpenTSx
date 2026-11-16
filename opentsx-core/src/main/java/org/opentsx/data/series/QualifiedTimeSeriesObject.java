@@ -231,6 +231,11 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
 
     @Override
     public String toString() {
+        return formatText(Integer.MAX_VALUE, null);
+    }
+
+    @Override
+    protected String formatText(int maxPoints, Character decimalSeparator) {
         StringBuffer sb = new StringBuffer();
 
         int size = xValues.size();
@@ -240,12 +245,13 @@ public class QualifiedTimeSeriesObject extends TimeSeriesObject {
         sb.append( getStatisticData("# ") );
         sb.append( getStatusInfo() );
         sb.append("\n");
-        for (int i = 0 ; i < size; i++  ) {
+        for (int i = 0 ; i < Math.min(size, maxPoints); i++  ) {
             double x = (Double)getXValues().elementAt(i);
             double y = (Double)getYValues().elementAt(i);
             String q = "-";
             if( correct.elementAt( i ) ) q = "+";
-            sb.append( "[" + q + "]  \t" + x + "\t " + y + "\n");
+            sb.append( "[" + q + "]  \t" + formatRawValue(x, decimalSeparator)
+                    + "\t " + formatRawValue(y, decimalSeparator) + "\n");
         }
         sb.append("#\n" + sbComments.toString() );
         return sb.toString();

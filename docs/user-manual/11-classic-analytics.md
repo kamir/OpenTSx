@@ -117,6 +117,11 @@ r["mean_ri"], r["median_ri"], r["risk_parameter"], r["risk_interpretation"], r["
 
 ## 11.5 Java tools in `opentsx-core` (2.x model)
 
+The base time-series text preview shows at most five points; legacy `writeToFile` exports every point and
+preserves existing files on preparation or I/O failure. See the
+[preview and export contract](../../opentsx-core/README.md#preview-and-export-a-time-series) for formats,
+exceptions and regression checks.
+
 The Java implementations work on `org.opentsx.data.series.TimeSeriesObject` and on TSBucket sequence files. Most are
 standalone programs with a `main` method:
 

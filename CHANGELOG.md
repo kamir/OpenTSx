@@ -147,6 +147,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
+  write every point, retain subtype formats and metadata, and report errors while preserving existing files
+  through atomic replacement.
+
 - The PFD runtime reads `group.id` through the existing core configuration manager, retaining
   `opentsx-dynamic-job` when absent and rejecting empty or whitespace-only configured values.
 

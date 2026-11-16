@@ -92,19 +92,25 @@ public class Zeitreihe extends TimeSeriesObject {
 
     @Override
     public String toString() {
+        return formatText(Integer.MAX_VALUE, null);
+    }
+
+    @Override
+    protected String formatText(int maxPoints, Character decimalSeparator) {
         StringBuffer sb = new StringBuffer();
         int size = xValues.size();
 
         sb.append("#\n# ZR: " + size + "\n#" +
                 this.getClass() + " : " + label + "\n#\n");
 
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < Math.min(size, maxPoints); i++) {
             Double d = (Double) getXValues().elementAt(i);
             long dd = d.longValue();
             String x = DateFormat.getDateTimeInstance().format(
                     new Date(dd));
             Double y = (Double) getYValues().elementAt(i);
-            sb.append(x + "\t" + y + "\t ("+ getXValues().elementAt(i) +")\n");
+            sb.append(x + "\t" + formatRawValue(y, decimalSeparator) + "\t ("
+                    + formatRawValue(d, decimalSeparator) + ")\n");
         }
         return sb.toString();
     }
