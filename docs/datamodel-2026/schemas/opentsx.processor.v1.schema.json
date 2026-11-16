@@ -119,6 +119,14 @@
         "processor": {
           "$ref": "#/$defs/runtime",
           "description": "Runs continuously on a topic."
+        },
+        "wayang": {
+          "$ref": "#/$defs/runtime",
+          "description": "Track A: a Java execution operator on Apache Wayang's Java platform (docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md)."
+        },
+        "rust": {
+          "$ref": "#/$defs/runtime",
+          "description": "Track B: the Rust runner tsx-runner."
         }
       }
     },
@@ -167,6 +175,70 @@
         "scenario"
       ],
       "description": "For a generator: demo gives plausible single values of one signal and knows nothing of the rest of the system; scenario generates several quantities together from assumptions and dependencies. Results that rest on a demo generator are not for comparing strategies (decision D61)."
+    },
+    "state": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "State the operator keeps between records (20-WAYANG-TS-OPERATORS-SPEC.md, S1.4).",
+      "properties": {
+        "kind": {
+          "enum": [
+            "none",
+            "keyed",
+            "windowed"
+          ]
+        },
+        "key": {
+          "type": "string",
+          "description": "For keyed and windowed: series (by seriesId) or a tag name."
+        }
+      }
+    },
+    "merge": {
+      "type": "object",
+      "required": [
+        "class"
+      ],
+      "additionalProperties": false,
+      "description": "Whether outputs of different sites can be merged (S1.5).",
+      "properties": {
+        "class": {
+          "enum": [
+            "exact",
+            "approximate",
+            "none"
+          ]
+        },
+        "function": {
+          "enum": [
+            "stats.chan-ddsketch",
+            "sum"
+          ],
+          "description": "Merge function of S4.3."
+        },
+        "bound": {
+          "type": "string",
+          "description": "For approximate: the error bound, for example relative error alpha for quantiles."
+        }
+      }
+    },
+    "tolerance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How results are compared with the test vectors (S1.6); absent means exact equality.",
+      "properties": {
+        "abs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rel": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
     }
   },
   "allOf": [

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.site-conformance.v1.schema.json",
+  "title": "opentsx.site-conformance.v1",
+  "description": "Draft. The report a site sends before it may receive a site plan: one result per conformance check, the runtime that ran them, and the values the driver compares with the job contract. Sent as the payload of a compact JWS signed with the site key. See docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md, S3.3.",
+  "type": "object",
+  "required": ["schema", "site", "at", "track", "artifact", "catalog", "checks", "topics", "series"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "opentsx.site-conformance.v1"},
+    "site": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
+    "at": {"type": "string", "format": "date-time"},
+    "track": {"enum": ["A", "B"]},
+    "artifact": {
+      "type": "object",
+      "required": ["version", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {"type": "string"},
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "catalog": {"type": "string", "pattern": "^tsx-catalog/[1-9][0-9]*$"},
+    "checks": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["id", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"enum": ["vectors.wire", "vectors.series-id", "vectors.operators", "kafscale.required", "topics.names", "topics.partitions", "topics.fingerprints", "partitioner.murmur2", "series.disjoint", "runtime.identity"]},
+          "result": {"enum": ["pass", "fail"]},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["topic", "partitions", "fingerprints"],
+        "additionalProperties": false,
+        "properties": {
+          "topic": {"type": "string"},
+          "partitions": {"type": "integer", "minimum": 1},
+          "fingerprints": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}}
+        }
+      }
+    },
+    "series": {
+      "type": "object",
+      "required": ["count", "ids"],
+      "additionalProperties": false,
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "ids": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}, "description": "The site's seriesId set, sorted ascending."}
+      }
+    }
+  }
+}

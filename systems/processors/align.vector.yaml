@@ -24,5 +24,9 @@ runtimes:
   workbench: { status: available }
   java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner }
   processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor }
+  wayang: { status: planned, note: "TASK-020, phase A3" }
+  rust: { status: planned, note: "TASK-020, phase B2" }
 ui: { group: stream, label: Align to vector }
+state: { kind: windowed, key: series }
+merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/align-vector.v1.json

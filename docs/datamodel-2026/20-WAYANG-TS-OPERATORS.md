@@ -5,6 +5,8 @@
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
 > [Kafka native streaming](../devops/kafka-native-streaming.md) (the Java processor that runs today).
+> Normative rules: [20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md) (S1 to S7). Tasks and acceptance
+> criteria: [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 ## 1. Goal
 
@@ -31,7 +33,8 @@ search, twin, causal analysis).
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
 | Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), sections 5, 6, 7, 10 |
-| Processor description | `opentsx.processor.v1`: operator id, kind, outputs, `runtimes` with `workbench`, `java`, `python` | `docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json:102-114` |
+| Processor description | `opentsx.processor.v1`: operator id, kind, ports, params, semantics, `runtimes` with `workbench`, `java`, `python`, `go`, `processor`; instances in `systems/processors/`, validated by `SystemDocTest` | `docs/datamodel-2026/schemas/opentsx.processor.v1.schema.json`; `opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java:49-57` |
+| DAG export | the workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` (with `schema: opentsx.dag.v2`) when the flow has a series sink; `source.kind: kafscale-broker`, `checkpoint: { backend: file }` | `opentsx-saas-frontend/src/workbench/flow.ts:684-745`; [14](14-ENGINEERING-FLOW.md), section 6.3; `EVOLUTION/TASK-013-web-workbench.md` |
 | Series identity | `seriesId` = lower-case hex of xxHash64, seed 0, over the canonical form of metric and tags | `SeriesKey.avsc`; `SeriesKeys.java:37-41` |
 | Episode | `[tStart, tEnd)` in microseconds, values, optional quality byte per value, mergeable `EpisodeSummary`, `revision`, `Provenance` | `Episode.avsc`, `EpisodeSummary.avsc`, `Provenance.avsc` |
 | Wire format | Avro single-object encoding, `C3 01` plus CRC-64-AVRO fingerprint, no schema registry; shared vectors | `OpenTsxAvro.java:71-123`; `opentsx-model/src/test/resources/testvectors/wire-format.json` (`Episode` = `8985f02b48c77195`) |
@@ -80,13 +83,13 @@ Checked in tag `wayang-1.1.1`. `B` is `wayang-commons/wayang-basic/src/main/java
 
 | Property | What the code does | Evidence | Fits KafScale and OpenTSx |
 |---|---|---|---|
-| Value format | `KafkaConsumer<String, String>`, `StringDeserializer`; the Java source emits `ConsumerRecord::value` as a `Stream<String>` | `B/KafkaTopicSource.java` `getDefaultProperties`; `J/JavaKafkaTopicSource.java:103-110` | no: episodes are binary Avro single-object records |
+| Value format | `KafkaConsumer<String, String>`, `StringDeserializer`; the Java source emits `ConsumerRecord::value` as a `Stream<String>` | `B/KafkaTopicSource.java:158-176`; `J/JavaKafkaTopicSource.java:103-110` | no: episodes are binary Avro single-object records |
 | Consumer group | fixed `group.id` `wayang-kafka-java-source-client-2`, `subscribe(topicName)` | `B/KafkaTopicSource.java:124`, `:175` | no: group rejoin and standalone commits fail on KafScale |
 | Offset commit | no explicit commit; with a group id the Kafka client default `enable.auto.commit=true` applies, so offsets are committed in the background | `B/KafkaTopicSource.java` (no commit call); [Kafka consumer configs](https://kafka.apache.org/documentation/#consumerconfigs_enable.auto.commit) | no: at-least-once needs commit after the sink acknowledged |
 | Read extent | one `poll(Duration.ofMillis(15000))` per execution | `J/JavaKafkaTopicSource.java:103` | no: a bounded read needs explicit start and end offsets |
 | Start position | `auto.offset.reset=earliest` | `B/KafkaTopicSource.java:176` | partly |
-| Client config | `getDefaultProperties()`: `SASL_SSL`, `PLAIN`, bootstrap and credentials from environment variables; `loadConfig(path)` reads a properties file instead | `B/KafkaTopicSource.java:139-201`; `B/KafkaTopicSink.java:160-215` | a properties file can carry the proxy address and `enable.idempotence=false` |
-| Sink record | `ProducerRecord<String, String>(topicName, value)`: no key; value formatted to a String by a `TransformationDescriptor` | `J/JavaKafkaTopicSink.java:101`; `B/KafkaTopicSink.java:63-91` | no: OpenTSx needs key `seriesId` and Avro bytes |
+| Client config | `getDefaultProperties()`: `SASL_SSL`, `PLAIN`, bootstrap and credentials from environment variables; `loadConfig(path)` reads a properties file instead | `B/KafkaTopicSource.java:139-158`; `B/KafkaTopicSink.java:160-218` | a properties file can carry the proxy address and `enable.idempotence=false` |
+| Sink record | `ProducerRecord<String, String>(topicName, value)`: no key; value formatted to a String by a `TransformationDescriptor` | `J/JavaKafkaTopicSink.java:101`; `B/KafkaTopicSink.java:47`, `:66` | no: OpenTSx needs key `seriesId` and Avro bytes |
 | Idempotence | not set; kafka-clients from 3.0 default to `enable.idempotence=true` ([KIP-679](https://cwiki.apache.org/confluence/display/KAFKA/KIP-679%3A+Producer+will+enable+the+strongest+delivery+guarantee+by+default)) | grep over the module | no without a properties file: KafScale has no `InitProducerId` |
 | Client version | `kafka-clients` 3.9.1 in `wayang-basic` | `wayang-commons/wayang-basic/pom.xml:94-95` | OpenTSx manages 3.9.2 (`pom.xml:49`); the root `dependencyManagement` wins |
 
@@ -101,32 +104,47 @@ properties.
 
 ### 3.3 Dependency footprint (AGENTS.md rule 5)
 
-Compile-scope dependencies declared in the Wayang 1.1.1 poms (direct only; the transitive tree is not resolved yet):
+Compile-scope dependencies declared in the poms of tag `wayang-1.1.1` (direct only; the transitive tree is not
+resolved yet):
 
 | Module | Declared compile dependencies |
 |---|---|
-| `wayang-core` | snakeyaml, commons-io, hadoop-hdfs, hadoop-common, juel-api, juel-impl, gson, commons-lang3, antlr4-runtime, log4j-api, log4j-core, wayang-utils-profile-db, jackson, aws-java-sdk-s3, httpclient |
-| `wayang-basic` | wayang-core, kafka-clients, parquet-hadoop, google-cloud-storage, Azure blob, key vault and identity, iceberg-core/api/parquet/data 1.6.0, hadoop-common, hadoop-client, **slf4j-simple** |
-| `wayang-java` | wayang-basic, opencsv, parquet-avro, parquet-hadoop, avro, slf4j-api |
+| `wayang-core` | snakeyaml, commons-io, hadoop-hdfs, hadoop-common, juel-api, juel-impl, gson, commons-lang3, antlr4-runtime, log4j-api, log4j-core, wayang-utils-profile-db, jackson-core, jackson-databind, jackson-annotations, aws-java-sdk-s3, httpclient |
+| `wayang-basic` | wayang-core, wayang-utils-profile-db, log4j-api, log4j-core, hadoop-common, parquet-hadoop, commons-lang3, kafka-clients, google-cloud-storage, google-cloud-storage-control, s3, json, azure-storage-blob, azure-security-keyvault-secrets, azure-identity |
+| `wayang-java` | wayang-core (provided), wayang-basic, hadoop-common, hadoop-hdfs, parquet-avro, avro, slf4j-api, **log4j-slf4j-impl** |
 
-Conflicts with OpenTSx: Hadoop 3.3.6 against 3.5.0, Iceberg 1.6.0 against 1.10.2 (`opentsx-store-iceberg/pom.xml:19`),
-`slf4j-simple` as a compile dependency next to the OpenTSx logging binding.
+Conflicts with OpenTSx:
+
+- Hadoop: Wayang 1.1.1 sets `hadoop.version` 3.3.6 (`pom.xml:132` of the tag); OpenTSx manages 3.5.0 (`pom.xml:54`),
+  and its `dependencyManagement` wins inside the OpenTSx reactor.
+- Logging: `log4j-slf4j-impl` is an SLF4J binding to Log4j 2; OpenTSx manages `slf4j-api` 2.0.20 and `slf4j-simple`
+  (`pom.xml:56`, `:256-262`). Two bindings on one classpath is a conflict.
+- `main` after 1.1.1 adds Iceberg 1.6.0 and `slf4j-simple` to `wayang-basic`
+  (`wayang-commons/wayang-basic/pom.xml:37` at `713faa7d`); OpenTSx uses Iceberg 1.10.2
+  (`opentsx-store-iceberg/pom.xml:19`). This matters at the next Wayang upgrade.
 
 Rule for Track A: `opentsx-wayang` depends on `wayang-core`, `wayang-basic` and `wayang-java` 1.1.1, pinned, with
-exclusions for the cloud-storage, Iceberg and `slf4j-simple` artifacts. It does not depend on `opentsx-store-iceberg`.
+exclusions for the cloud-storage artifacts and `log4j-slf4j-impl`. It does not depend on `opentsx-store-iceberg`.
 Phase A0 runs `mvn dependency:tree` and the Wayang Java platform tests with the exclusions in place. If Wayang's
-core classes need an excluded artifact at runtime, the exclusion is dropped and the conflict documented.
+classes need an excluded artifact at runtime, the exclusion is dropped and the conflict documented.
 
-### 3.4 Kafka Streams semantics on KafScale
+### 3.4 Programming model borrowed from Kafka Streams
 
-| Kafka Streams | Needs | On KafScale | Both tracks |
-|---|---|---|---|
-| `processing.guarantee=exactly_once_v2` | transactions, which need idempotence, which needs `InitProducerId` ([KIP-98](https://cwiki.apache.org/confluence/display/KAFKA/KIP-98+-+Exactly+Once+Delivery+and+Transactional+Messaging), [KIP-447](https://cwiki.apache.org/confluence/display/KAFKA/KIP-447%3A+Producer+scalability+for+exactly+once+semantics)) | not possible | at-least-once plus deterministic output ids |
-| state store changelogs | `cleanup.policy=compact` ([manage topics](https://kafka.apache.org/40/streams/developer-guide/manage-topics/)) | compaction not done | local checkpoint with offsets and operator state |
-| repartition topics | a key change before grouping or join ([DSL](https://kafka.apache.org/40/streams/developer-guide/dsl-api/)) | possible | explicit repartition sink (section 7) |
-| co-partitioning | same partition count, same partitioner | possible | checked in the site contract |
-| consumer groups | membership and rebalancing | rejoin broken | manual assignment |
-| stream time, grace | windows close after end plus grace ([core concepts](https://kafka.apache.org/40/streams/core-concepts/)) | possible | event time on the epoch grid, `lateness`, revisions ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 7a) |
+Kafka Streams is the orientation for the shape of the programming model only. Neither track builds a Kafka
+Streams-like runtime and neither is measured against Kafka Streams.
+
+| Taken over | Meaning here |
+|---|---|
+| topics in, topics out | every plan reads topics and writes topics; nothing else |
+| stateless against keyed or windowed operators | each catalog operator declares its state: none, keyed by `seriesId`, or windowed on the epoch grid (S1) |
+| flow shapes 1:1, 1:m, n:1, n:m | section 7 |
+
+| Not taken over | Reason |
+|---|---|
+| RocksDB state stores and changelog topics | changelogs rely on `cleanup.policy=compact` ([manage topics](https://kafka.apache.org/40/streams/developer-guide/manage-topics/)), which KafScale does not do; state lives in the local checkpoint (C6) |
+| automatic repartition topics | a key change is an explicit sink named in the plan, only for operators that need another key (section 7) |
+| exactly-once | needs transactions and idempotence, which need `InitProducerId` ([KIP-98](https://cwiki.apache.org/confluence/display/KAFKA/KIP-98+-+Exactly+Once+Delivery+and+Transactional+Messaging)); KafScale has none; at-least-once plus deterministic ids instead (C5) |
+| consumer groups and rebalancing | group rejoin and standalone commits fail on KafScale; manual assignment instead |
 
 ### 3.5 Rust crates for Track B
 
@@ -153,14 +171,14 @@ Materialize is BSL 1.1; Bytewax is community-maintained after its company stoppe
 
 | Id | Decision | Reason |
 |---|---|---|
-| C1 | One operator catalog: ids and versions of `opentsx.processor.v1`. The schema gets a runtime key `rust` next to `java`. | The workbench already writes these ids (`opentsx-saas-frontend/src/workbench/ops.ts:784-911`). |
+| C1 | One operator catalog: ids and versions of `opentsx.processor.v1`. The schema gets runtime keys `wayang` (Track A) and `rust` (Track B), a `state` and a `merge` field (S1). | The workbench already writes these ids (`opentsx-saas-frontend/src/workbench/ops.ts:784-911`). |
 | C2 | An operator version enters a track only when it passes the shared vectors that the reference implementation passes. | Rule of [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 7a, row "Equality of preview and operation". |
 | C3 | Topic names from `TopicLayout` (`tsx.<domain>.<kind>.v2`), records in Avro single-object encoding, key `seriesId`, Java-compatible murmur2 partitioning. | `TopicLayout.java:189-191`; `BucketWriter.java:107-108`. |
-| C4 | Clients connect to the KafScale proxy only, with `enable.idempotence=false`, `acks=all`, one request in flight. | `KafScaleClients.java:36-50`; CLAUDE.md. |
+| C4 | Clients connect to the KafScale proxy only, with `enable.idempotence=false`, `acks=all`, one request in flight. | `KafScaleClients.java:36-50`. |
 | C5 | At-least-once delivery, deterministic output ids, readers keep one record per id. | Section 3.4. |
 | C6 | Checkpoint per task with offsets and operator state, written after all output before it is acknowledged. | `VectorProcessor.java:56-59`. |
 | C7 | Event time on the epoch grid; episodes `[tStart, tEnd)`; late data creates a revision. | [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5a and 7a. |
-| C8 | One plan format for sites of both tracks: `opentsx.runner-plan.v1` (section 9.2), wrapping `opentsx.dag.v1`. | One federation path for JVM and Rust sites. |
+| C8 | One plan format for sites of both tracks: `opentsx.runner-plan.v1` (section 9.2), wrapping the `opentsx.dag.v1` or `opentsx.dag.v2` document the workbench exported. | One federation path for JVM and Rust sites. |
 | C9 | Each `seriesId` belongs to exactly one site. | Per-series stateful operators break when a series is split (section 10.3). |
 
 ## 5. Track A: TSOperators for Java
@@ -198,7 +216,7 @@ Source and sink, replacing Wayang's Kafka operators (section 3.2):
 |---|---|
 | `TsxTopicSource extends UnarySource<Episode>` and `JavaTsxTopicSource` | reads `[from, to)` per partition with manual assignment and seek, as `LogReader.java:21` does; `from` from the checkpoint, `to` from `endOffsets` at job start (`LogReader.java:68`); decodes with `OpenTsxAvro.decode`; refused fetches through `Patience.poll` |
 | `TsxTopicSink extends UnarySink<SpecificRecord>` and `JavaTsxTopicSink` | `KafScaleClients.producer`; key `seriesId`, value `OpenTsxAvro.encode`, header `tsx-schema` (`TopicLayout.HEADER_SCHEMA`); waits for all acknowledgements before the job reports success |
-| `TsxCheckpoint` | written by the executor after the sink succeeded: offsets per partition, operator state, `dagHash` |
+| `TsxCheckpoint` | written by the executor after the sink succeeded: offsets per partition, operator state, `specHash` |
 
 Wayang runs a plan once; its Java platform has no continuous mode (section 3.1). Track A therefore runs a
 continuous DAG as a series of **bounded increments**: each Wayang job processes the offsets between the last
@@ -224,7 +242,7 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 
 ```mermaid
 flowchart LR
-  WB["Web workbench<br/>opentsx.dag.v1"] --> BE["SaaS backend<br/>authorization"]
+  WB["Web workbench<br/>opentsx.dag.v1 / v2"] --> BE["SaaS backend<br/>authorization"]
   BE --> TR["DagToWayang<br/>(opentsx-wayang)"]
   TR --> WP["WayangPlan<br/>Java API"]
   WP --> OPT["Wayang optimizer<br/>mappings, costs"]
@@ -234,7 +252,8 @@ flowchart LR
   FED --> RA["Rust site agent<br/>Track B"]
 ```
 
-1. The workbench writes `opentsx.dag.v1`, as today.
+1. The workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` when the flow has a series sink, as today. There is no
+   second DAG format.
 2. `DagToWayang` builds a `WayangPlan` with the Java API: one logical operator per node, one `TsxTopicSource` per
    input topic, one `TsxTopicSink` per sink. It validates as `DagPlan` does today.
 3. The plugin does not use `wayang-api-json`: that API has no Kafka operator and compiles Scala source received in
@@ -368,25 +387,9 @@ in `tsx-runner`. Both report status to `tsx.<domain>.dag-status.v1`.
 
 ### 9.2 Plan envelope
 
-```json
-{
-  "schema": "opentsx.runner-plan.v1",
-  "job": "<job id>",
-  "planVersion": 7,
-  "expires": "2026-11-17T00:00:00Z",
-  "site": "<site id>",
-  "dagHash": "<xxHash64 hex of the canonical opentsx.dag.v1 document>",
-  "catalogVersion": "<operator catalog version>",
-  "inputs": [{"topic": "tsx.<domain>.episodes.v2", "fingerprint": "8985f02b48c77195", "partitions": 12}],
-  "outputs": [{"topic": "tsx.<domain>.aggregates.v2", "cluster": "site", "fingerprint": "<fingerprint>"}],
-  "start": "earliest",
-  "federation": {"route": "signal-cluster", "expectedSites": ["<site id>", "<site id>"]},
-  "dag": { }
-}
-```
-
-Signed as a JWS ([RFC 7515](https://www.rfc-editor.org/rfc/rfc7515.html)) over its canonical JSON. `dagHash` uses
-the canonical form and xxHash64 of the twin plan hash (`TwinPlan.java:116`). Field names are a proposal.
+The site plan is `opentsx.runner-plan.v1` ([schema](schemas/opentsx.runner-plan.v1.schema.json)), signed as a
+compact JWS. Its fields, the hash (`specHash`, SHA-256 of the DAG document text as `VectorProcessor.java:261`
+computes it today) and the rejection rules are in [S2.4 and S7.1](20-WAYANG-TS-OPERATORS-SPEC.md#s24-site-plan).
 
 ### 9.3 Routes
 
@@ -429,8 +432,8 @@ is written with `final=false` and the missing sites. Replayed site output carrie
 | Point | Rule |
 |---|---|
 | delivery | at-least-once; nothing is committed to the broker; progress is the checkpoint |
-| output id | derived episode: xxHash64 of `seriesId`, `tStart`, `tEnd`, `dagHash`, `revision` (same inputs as the clean-episode id in [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 7a). Aggregate: xxHash64 of `job`, `site`, `window`, `group`, `revision` |
-| checkpoint | per task: offsets, operator state, `dagHash`, catalog version; temporary file, fsync, rename, after all earlier deliveries are acknowledged |
+| output id | derived episode: `"c"` plus xxHash64 hex of `seriesId|from|to|specHash`, as `SeriesStream.java:152-153` does today. Aggregate: Kafka key `job|site|group series id|windowStart` plus header `tsx-revision` ([S4.2](20-WAYANG-TS-OPERATORS-SPEC.md#s42-aggregate-record), [S6.2](20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids)) |
+| checkpoint | per task: offsets, operator state, `specHash`, catalog version; temporary file, fsync, rename, after all earlier deliveries are acknowledged |
 | producer retries | unbounded within `delivery.timeout.ms=180000` (`KafScaleClients.DELIVERY_TIMEOUT`); KafScale refuses produce for about a minute when its object store is degraded (`KafScaleClients.java:19-22`) |
 | refused fetch | reset to the positions before the fetch and retry, as `Patience` does |
 | one writer | one instance per site and partition set; an agent refuses a second plan for the same job |
@@ -512,14 +515,13 @@ For an IEEE paper. Every number is measured, never estimated. Report hardware, v
 | recovery | time to resume, duplicate count after a kill | 30 kills at random points |
 | footprint | RSS, CPU, start time, artifact size | all runs |
 
-Comparisons:
+Baselines:
 
-| Comparison | Hardware | Purpose |
+| Baseline | Hardware | Purpose |
 |---|---|---|
-| Track A against Kafka Streams (`at_least_once`) | same server | the engine the owner names as counterpart. Kafka Streams needs compaction, so it runs on Apache Kafka 3.9, Track A on both Apache Kafka and KafScale; the paper states this |
-| Track A against the Java processor in `opentsx-retrieval` | same server | cost of the Wayang layer for the same operators |
-| Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
-| federated against centralized, mixed tracks | k sites, JVM and edge | equivalence and data moved |
+| (a) centralized against federated: the same operator plan once with all raw data moved to one site, once federated over k sites | k sites plus one central site | equality of results (section 9.4) and bytes moved |
+| (b) the existing OpenTSx Java streaming path (the processor in `opentsx-retrieval` and the statistics processor in `opentsx-stats`) | same server | in-repository reference for throughput and latency of the same operators |
+| (c) Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
 
 **Measurement protocol for Track B against Track A on small hardware:**
 
@@ -544,21 +546,8 @@ Comparisons:
 
 ## 16. Phased plan
 
-Track A first. Track B starts when phase A3 is accepted.
-
-| Phase | Content | Acceptance |
-|---|---|---|
-| A0 | decisions of section 18 made; KafScale security checked; `mvn dependency:tree` and Wayang Java tests with the exclusions of section 3.3 on Java 17 and 21 | written answer per decision; dependency tree in the pull request; tests green on 17 and 21 |
-| A1 | `opentsx-wayang`: `TsxTopicSource`, `TsxTopicSink`, `TsxCheckpoint`, increment runner; decode and encode | Avro and series id vectors pass; KafScale conformance job green; crash test passes; increment latency measured |
-| A2 | operators `dq.checks`, clean chain, `stats.welford-ddsketch`, mappings and cost functions; status topic | operator vectors pass; output equals the Java processor's record for record (ids and values) |
-| A3 | `align.vector`, segmentation, SAX, `pair.xcorr` (port), `pair.es` (port); vectors for segmentation and SAX added; **catalog and vectors frozen as version 1** | all operator vectors pass in Java and the workbench; frozen catalog published |
-| A4 | `DagToWayang`; JVM site agent; signed plans; `TsxSitePlatform`; route S and J; central merge | a workbench DAG runs through Wayang on two JVM sites; tampered, expired and old plans refused; federated-equals-centralized passes for k = 2, 4, 8 |
-| A5 | evaluation of Track A (section 14) | measured tables reproducible from a script in the repository |
-| B1 | `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds for the three targets | vectors pass on all targets; KafScale conformance port green; placement probe equal to Java |
-| B2 | edge operators of section 6.3 from catalog version 1 | operator vectors pass; Track A equals Track B on the same topic |
-| B3 | agent with outbound polling, plan verification, `conform`, forwarder, offline catch-up | section 6.2 offline and catch-up tests pass; signed conformance report accepted by the driver |
-| B4 | mixed federation and Track B evaluation on small hardware | federated-equals-centralized in mixed mode with the listed boundary gap; protocol of section 14 run on arm64 and armv7 |
-| B5 | WASM user operators | fuel and memory limits enforced by tests; one sample operator passes its vectors |
+Track A first (A0 to A5), Track B when A3 is accepted (B1 to B5). Milestones, numbered acceptance criteria and the
+owner decisions are in [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 ## 17. Relation to concept 11
 
@@ -579,17 +568,8 @@ Building both a Go and a Rust edge runtime doubles the parity work per operator.
 
 ## 18. Open decisions
 
-| Id | Question | Options |
-|---|---|---|
-| O1 | edge runtime | Rust (Track B); Go (concept 11); none, JVM only |
-| O2 | S3 segment input | not needed; Go template; Rust segment decoder after `kafscale-spec.md` |
-| O3 | default federation route | S; J; both |
-| O4 | launch path | agent with outbound polling; SSH only; both |
-| O5 | plan signature | JWS; COSE_Sign1 ([RFC 9052](https://www.rfc-editor.org/rfc/rfc9052.html)) |
-| O6 | Track A increment interval and whether a long-running Java operator outside Wayang's model is acceptable for lower latency | fixed interval; per DAG; long-running operator |
-| O7 | tolerance for federated mean and variance | fixed bound; bound from measured error |
-| O8 | new `TopicLayout` kinds | `aggregates`, `signals`, `repartition.<dag>.<node>` as proposed; other names |
-| O9 | Wayang dependency handling | exclusions as in section 3.3; a slimmer upstream module contributed to Wayang; accept the full footprint |
+The owner decisions, with options and a recommendation each, are D-T1 to D-T12 in
+[TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md#decisions-owner).
 
 ## 19. Risks
 
