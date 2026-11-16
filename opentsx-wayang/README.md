@@ -7,7 +7,30 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 
 Status: phase A2. The module reads and writes KafScale topics from Wayang plans, runs them in increments with a
 checkpoint, and runs the clean chain and the window statistics of OpenTSx as Wayang operators. It also contains the
-pure Java `TsxPairEs` kernel, which has no Wayang types and does not depend on `opentsx-core`.
+pure Java `TsxPairXcorr` and `TsxPairEs` kernels, whose APIs have no Wayang types and do not depend on
+`opentsx-core`. The kernels have no registered Wayang execution mappings yet. Shared reference vectors are checked
+by the statistics and retrieval modules.
+
+## Compute pair cross-correlation
+
+`org.opentsx.wayang.ops.TsxPairXcorr` computes lagged cross-correlation, the
+signed absolute peak, link strength, and centred pair windows. It follows
+`xcorr.ts` and `windowsOf` in `pairs.ts` in the web workbench. Positive output
+lag means that B follows A. Non-finite samples contribute zero after centring;
+constant inputs produce NaN. Invalid lags are rejected with the workbench's
+error message.
+
+`compute` consumes equal-length arrays already aligned to the epoch clock;
+the first sample must lie on that clock. Aggregation, filling, and episode
+pairing happen before this call. `pairSettings` parses the workbench settings,
+including the default coverage `0.8`, episode windows, and width-sized steps.
+Off-grid starts fail with
+`The first aligned sample must start on the epoch clock.` Align the first
+sample to a clock tick before calling `compute`.
+
+The regression tests load the repository's shared
+`docs/datamodel-2026/testvectors/pair-xcorr.v1.json` directly. All five cases
+use an absolute error below `5e-13`.
 
 ## Compute pair event synchronisation
 
@@ -34,8 +57,8 @@ new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new Way
 `Java.basicPlugin()` also registers Wayang's Amazon S3, Google Cloud Storage and Azure mappings. OpenTSx excludes
 those SDKs, so a plan built with `Java.basicPlugin()` fails with
 `NoClassDefFoundError: software/amazon/awssdk/core/ResponseInputStream`. `TsxJavaPlugin` registers the Java platform,
-its channel conversions and only the mappings OpenTSx uses: collection source, map, local callback sink,
-KafScale topic source and KafScale topic sink.
+its channel conversions and the mappings OpenTSx uses: collection source,
+map, local callback sink, and the OpenTSx topic source and sink.
 
 ## Run a plan in increments
 
@@ -114,3 +137,22 @@ KAFSCALE_BOOTSTRAP=127.0.0.1:39092 mvn -B -ntp -pl opentsx-wayang -am test
 Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`,
 `TsxFingerprintIntegrationTest`, `TsxCleanIncrementsIntegrationTest` and `TsxStatusIntegrationTest` must show
 executed tests with zero failures, errors and skips.
+
+## Check the shared Java references
+
+The shared files in `docs/datamodel-2026/testvectors/` capture existing
+statistics and retrieval behavior for TASK-020 A2 and A3:
+
+| Vector file | Owning-module test | Cases |
+| --- | --- | ---: |
+| `stats-window.v1.json` | `StatsWindowVectorsTest` | 5 |
+| `segment-threshold.v1.json` | `SegmentThresholdVectorsTest` | 6 |
+| `segment-extremum.v1.json` | `SegmentExtremumVectorsTest` | 6 |
+| `sax-word.v1.json` | `SaxWordVectorsTest` | 7 |
+| `dq-result.v1.json` | `DqResultVectorsTest` | 7 |
+
+These tests replay every case exactly in `opentsx-stats` and
+`opentsx-retrieval`. They read the repository files directly. Run
+`python tools/java_operator_vectors.py` from the repository root to
+regenerate all five files. You need JDK 17 or 21, Maven, and Python.
+The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.

@@ -86,7 +86,9 @@ failed.
 
 ### A2: clean chain, statistics, status
 - [x] Java execution operators, mappings and cost functions for `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling` (one operator `TsxSeriesChain`, S2.3) and `stats.welford-ddsketch` (`TsxStatsWindow`); operator state in the checkpoint; status writer `TsxStatus` and loop `TsxIncrement.loop` (2026-11-16).
-- [ ] New vector file `docs/datamodel-2026/testvectors/stats-window.v1.json` with its generator (in work as a separate pull request).
+- [x] New vector file `docs/datamodel-2026/testvectors/stats-window.v1.json`
+  with its generator, `tools/java_operator_vectors.py`; five exact cases in
+  `StatsWindowVectorsTest`.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -102,7 +104,7 @@ Status of A2 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 | # | Result |
 |---|---|
 | A2.1 | met: `TsxCleanVectorsTest`, 15 of 15 cases through the Java execution operator and 15 of 15 through a Wayang plan |
-| A2.2 | open: waits for `stats-window.v1.json` |
+| A2.2 | open for Track A: `stats-window.v1.json` exists (#262) and `StatsWindowVectorsTest` in `opentsx-stats` replays it through `StatsEngine.onObservation` and `flush`. `TsxStatsWindow` feeds `StatsEngine.onEpisode`, which these cases do not exercise; a Track A replay needs episode cases or an observation input |
 | A2.3 | met: `TsxStatsWindowTest`, the bytes of `QuantileSketchTest.testVector` from a closed window, also when the window spans two increments and its state passes through `TsxState` |
 | A2.4 | met with a narrower comparison than written above: `TsxCleanIncrementsIntegrationTest` runs `dq.checks` and `resample` (PT7M, so a window stays open across increments) over W in three increments on KafScale and compares with `SeriesStream`, the computation of `VectorProcessor`, over all of W in one pass: same episode ids, same values, no duplicates. A deployed `VectorProcessor` on the same topic is not part of the test |
 | A2.5 | met: `TsxStatusIntegrationTest`, 2 tests: states `running` after each increment and `stopped` at the end with `track` `A`, `job`, `planVersion`, `specHash`, records read; largest gap ≤ 31 s; a failed increment reports `failed` with the fingerprint message |
@@ -110,10 +112,15 @@ Status of A2 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 
 ### A3: remaining catalog 1, catalog freeze
 - [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).
+- [x] Pure Java `pair.xcorr` kernel: `TsxPairXcorrVectorsTest` loads all five
+  shared cases and checks absolute error below `5e-13` (A3.2).
 - [x] Pure Java `pair.es` kernel: `TsxPairEsVectorsTest` loads all eight shared
   cases, checks event lists and scores, and compares `Mulberry32` exactly
   (A3.3).
-- [ ] New vector files `segment-threshold.v1.json`, `segment-extremum.v1.json`, `sax-word.v1.json`, `dq-result.v1.json`, each with its generator over the existing Java code.
+- [x] New vector files `segment-threshold.v1.json`, `segment-extremum.v1.json`,
+  `sax-word.v1.json`, `dq-result.v1.json`, generated over the existing Java
+  code by `tools/java_operator_vectors.py`; 26 exact cases in the owning
+  modules.
 - [ ] Catalog `tsx-catalog/1` frozen.
 
 | # | Criterion | Proof | Data | Pass |

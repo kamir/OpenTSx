@@ -222,7 +222,7 @@ public final class QuantileSketch {
     }
 
     private double value(int index) {
-        return 2 * Math.pow(gamma, index) / (gamma + 1);
+        return 2 * StrictMath.pow(gamma, index) / (gamma + 1);
     }
 
     private void collapse(TreeMap<Integer, Long> store) {

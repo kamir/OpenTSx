@@ -114,4 +114,14 @@ class QuantileSketchTest {
         assertEquals("017b14ae47e17a843f020500015c0278012601ba0301024301ca0101",
                 HexFormat.of().formatHex(s.toBytes()));
     }
+
+    @Test
+    void quantileRepresentativesHaveIdenticalBitsAcrossPlatforms() {
+        QuantileSketch positive = new QuantileSketch(0.01);
+        positive.add(2.5);
+        assertEquals(0x4003dfcae03b66c2L, Double.doubleToLongBits(positive.quantile(0.5)));
+        QuantileSketch negative = new QuantileSketch(0.01);
+        negative.add(-2.5);
+        assertEquals(0xc003dfcae03b66c2L, Double.doubleToLongBits(negative.quantile(0.5)));
+    }
 }

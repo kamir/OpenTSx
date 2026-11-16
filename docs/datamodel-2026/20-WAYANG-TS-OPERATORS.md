@@ -1,7 +1,9 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-16. The module has its Java platform plugin and
-> the pure Java `TsxPairEs` kernel. Checked against Apache
+> Status: **concept**, 2026-11-16. The module has its Java platform plugin,
+> KafScale source and sink, checkpointed increments, and the pure Java
+> `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
+> segmentation, SAX, and data-quality results. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -29,7 +31,7 @@ search, twin, causal analysis).
 
 | Item | State | Evidence |
 |---|---|---|
-| Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform; `TsxPairEs` is a pure Java pair kernel. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java` |
+| Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. Shared vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
@@ -42,7 +44,7 @@ search, twin, causal analysis).
 | Record key and partitioning | episode records use key `seriesId` and record timestamp `tStart`; the Java default partitioner places them | `BucketWriter.java:26`, `:107-108`; `KafScaleFeed.java:180` |
 | KafScale client rules | `enable.idempotence=false`, `acks=all`, `max.in.flight.requests.per.connection=1`, zstd, delivery timeout three minutes; consumers without group id, manual assignment and seek, `Patience.poll` for refused fetches | `KafScaleClients.java:16-72`; `Patience.java:24-75` |
 | KafScale capabilities | no timestamp seek, no idempotent producer, no standalone commit, no group rejoin, compaction accepted but not done; `Admin.listOffsets` earliest and latest work (KafScale v1.6.0) | [`opentsx-kafscale-conformance/README.md`](../../opentsx-kafscale-conformance/README.md) |
-| Shared operator vectors | `align-vector.v1.json`, `clean-ops.v1.json`, `pair-es.v1.json`, `pair-xcorr.v1.json`; sketch bytes shared by Java and Python | `docs/datamodel-2026/testvectors/`; `QuantileSketchTest.java:105-115`; `python-package/tests/test_stats.py:10-17` |
+| Shared operator vectors | `align-vector.v1.json`, `clean-ops.v1.json`, `pair-es.v1.json`, `pair-xcorr.v1.json`, `stats-window.v1.json`, `segment-threshold.v1.json`, `segment-extremum.v1.json`, `sax-word.v1.json`, `dq-result.v1.json`; sketch bytes shared by Java and Python | `docs/datamodel-2026/testvectors/`; `tools/java_operator_vectors.py`; `QuantileSketchTest.java:105-115`; `python-package/tests/test_stats.py:10-17` |
 
 ## 3. Research findings
 
@@ -239,13 +241,14 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 | Operator id | Existing Java code | Shared vectors | Track A work |
 |---|---|---|---|
 | `decode.avro-soe`, encode | `OpenTsxAvro.java:36-123`; `SeriesKeys.java:37-41` | `wire-format.json`, `series-id.json`, `xxh64.json` | wrap |
-| `stats.welford-ddsketch` (`stats.window` in the workbench) | `StatsEngine.java:48-153` (`onEpisode`, `onObservation`), `StatsAccumulator.java:62-86` (merge), `QuantileSketch.java:101-110` (merge) | `QuantileSketchTest.testVector` | wrap |
-| `dq.checks` | `DataQuality.java:29-70` (`evaluate(SeriesStats, Expectation)`); clean chain `dq.checks` in `CleanChain.java:35` | `clean-ops.v1.json` | wrap |
+| `stats.welford-ddsketch` (`stats.window` in the workbench) | `StatsEngine.java:48-153` (`onEpisode`, `onObservation`), `StatsAccumulator.java:62-86` (merge), `QuantileSketch.java:101-110` (merge) | `stats-window.v1.json`, `QuantileSketchTest.testVector` | wrap |
+| `dq.checks` | clean chain `dq.checks` in `CleanChain.java:35` | `clean-ops.v1.json` | wrap |
+| `dq.result` | `DataQuality.java:66-70` (`evaluate`) | `dq-result.v1.json` | wrap |
 | `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling` | `CleanChain.java:35`, `:112` (`of`), `:290-326` (`newState`, `restore`, `apply`); `Resampling.java:20` | `clean-ops.v1.json` | wrap; `CleanChain` state already serializes to JSON (`restore`), which fits the checkpoint |
-| `segment.threshold`, `segment.extremum`, fixed duration and count | `Segmenter.java:38-92`, `StreamingSegmenter.java:43-72` (`onEpisode`, `flush`) | none shared; Java tests only | wrap; add vectors |
-| SAX word | `Sax.java:16-49` (`breakpoints`, `word`, `mindist`), `Paa.java:9`; fills `EpisodeSummary.sax` | none | wrap; add vectors |
+| `segment.threshold`, `segment.extremum`, fixed duration and count | `Segmenter.java:38-92`, `StreamingSegmenter.java:43-72` (`onEpisode`, `flush`) | `segment-threshold.v1.json`, `segment-extremum.v1.json` for threshold and extremum | wrap |
+| SAX word | `Sax.java:16-49` (`breakpoints`, `word`, `mindist`), `Paa.java:9`; fills `EpisodeSummary.sax` | `sax-word.v1.json` | wrap |
 | `align.vector` | `VectorAligner.java:99` (`align`); streaming in `VectorStream` | `align-vector.v1.json` | wrap |
-| `pair.xcorr` | **no Java code in OpenTSx.** The workbench port (`opentsx-saas-frontend/src/workbench/xcorr.ts`) follows `KreuzKorrelation` and `CCFunction` of kamir/WikiExplorer.NG, Apache License 2.0, which `tools/pair_xcorr_vectors.sh` runs to make the vectors | `pair-xcorr.v1.json` | port from the original Java, test against the vectors |
+| `pair.xcorr` | `TsxPairXcorr` in `opentsx-wayang` follows the workbench port of `KreuzKorrelation` and `CCFunction` of kamir/WikiExplorer.NG, Apache License 2.0 | `pair-xcorr.v1.json`, read directly by `TsxPairXcorrVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
 | `pair.es` | `TsxPairEs` and `Mulberry32` in `opentsx-wayang` port `event_sync.py` and `es.ts`, including surrogate shuffles, without depending on `opentsx-core` | `pair-es.v1.json`, read directly by `TsxPairEsVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
 | DFA | `opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFA.java:5` (`extends DFACore`, `calc()`), stateful legacy API | none | later; needs vectors and a stateless entry point |
 
