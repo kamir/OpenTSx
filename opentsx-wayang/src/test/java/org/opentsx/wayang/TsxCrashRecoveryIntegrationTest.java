@@ -39,7 +39,7 @@ class TsxCrashRecoveryIntegrationTest {
         for (int failAfter : new int[]{1, w.size() / 2, w.size() - 1}) {
             AtomicInteger seen = new AtomicInteger();
             TsxIncrementException e = assertThrows(TsxIncrementException.class, () -> TsxIncrement.run(
-                    k.config(ckpt, KafScaleFixture.EPISODE_ONLY), source -> {
+                    k.config(ckpt, KafScaleFixture.EPISODE_ONLY), (source, state) -> {
                         MapOperator<SpecificRecord, SpecificRecord> crash = new MapOperator<>(r -> {
                             if (seen.incrementAndGet() > failAfter) {
                                 throw new IllegalStateException("crash after " + failAfter);
@@ -56,7 +56,7 @@ class TsxCrashRecoveryIntegrationTest {
         }
 
         TsxIncrement.run(k.config(ckpt, KafScaleFixture.EPISODE_ONLY),
-                source -> TsxPassThroughIntegrationTest.connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean())));
+                (source, state) -> TsxPassThroughIntegrationTest.connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean())));
 
         OpenTsxAvro avro = new OpenTsxAvro();
         Map<String, byte[]> out = new HashMap<>();

@@ -43,6 +43,16 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-stats</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opentsx</groupId>
+            <artifactId>opentsx-retrieval</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>

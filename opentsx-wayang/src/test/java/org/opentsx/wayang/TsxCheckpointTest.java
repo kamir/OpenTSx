@@ -20,7 +20,8 @@ class TsxCheckpointTest {
     @Test
     void aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile(@TempDir Path dir) {
         Path f = dir.resolve("ckpt.json");
-        TsxCheckpoint c = new TsxCheckpoint("job", 3, "a".repeat(64), "tsx.d.episodes.v2", Map.of(0, 10L, 2, 7L));
+        TsxCheckpoint c = new TsxCheckpoint("job", 3, "a".repeat(64), "tsx.d.episodes.v2", Map.of(0, 10L, 2, 7L),
+                Map.of("n1", com.fasterxml.jackson.databind.node.TextNode.valueOf("open window")));
         c.write(f);
         assertEquals(Optional.of(c), TsxCheckpoint.load(f, "a".repeat(64)));
         assertFalse(Files.exists(dir.resolve("ckpt.json.tmp")));
@@ -29,7 +30,7 @@ class TsxCheckpointTest {
     @Test
     void aCheckpointOfAnotherDocumentIsNotUsed(@TempDir Path dir) {
         Path f = dir.resolve("ckpt.json");
-        new TsxCheckpoint("job", 1, "a".repeat(64), "t", Map.of(0, 5L)).write(f);
+        new TsxCheckpoint("job", 1, "a".repeat(64), "t", Map.of(0, 5L), Map.of()).write(f);
         assertTrue(TsxCheckpoint.load(f, "b".repeat(64)).isEmpty());
     }
 

@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `opentsx-wayang` phase A2 (TASK-020): the clean chain (`dq.checks`, `convert.unit`, `resample`,
+  `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) runs on Wayang as one operator per run
+  of consecutive nodes (`TsxSeriesChain`, through `SeriesStream`), and `stats.welford-ddsketch` as `TsxStatsWindow`
+  (through `StatsEngine`). Operator state passes from increment to increment in the checkpoint. `TsxStatus` writes
+  `opentsx.dag-status.v1` records with `track`, `job` and `planVersion`; `TsxIncrement.loop` runs increments at an
+  interval. Specification S2.3 states why a run of clean operators is one Wayang operator.
+
 - Five shared Java reference vector files for statistics windows, threshold
   and extremum segments, SAX words, and data-quality results. Owning-module
   tests replay all 31 cases exactly. `tools/java_operator_vectors.py`
