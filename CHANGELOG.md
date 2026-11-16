@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
+  Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
+  storage SDKs and the `log4j-slf4j-impl` binding; Hadoop from the managed shaded client 3.5.0; `TsxJavaPlugin`
+  registers the Java platform with only the mappings OpenTSx uses; `WayangSmokeTest` runs a plan on the Java
+  platform. The owner decisions D-T1 to D-T12 are recorded in TASK-020, and concept 20 documents the checked
+  security features of KafScale v1.6.0 (no TLS or SASL on the Kafka listener; KafScale ACLs).
+
 - `ESCalcTest` (`opentsx-core`) covers the event synchronization of `ESCalc` and `ESCalc2`: identical series give
   `(M - 2) / (M - 1)`, a series that follows the first gives a negative delay, an event halfway between two events of
   the other series is not matched twice, and sync and delay stay in [0, 1] and [-1, 1] on random event series.
@@ -33,6 +40,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.
   The Python package gets the same surrogate (`EventSynchronization.surrogate_sync`, `Mulberry32`, `isi_shuffle`);
   both run the shared vectors `docs/datamodel-2026/testvectors/pair-es.v1.json` (`tools/pair_es_vectors.py`).
+
+- Concept and draft specification for OpenTSx time-series operators on Apache Wayang
+  ([`docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md`](docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md),
+  [`20-WAYANG-TS-OPERATORS-SPEC.md`](docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), proposal, not implemented)
+  in two tracks with one operator catalog, one topic and schema contract and one set of test vectors. Track A,
+  TSOperators for Java: native Wayang operators on the Java platform in a new module `opentsx-wayang` that reuses
+  `opentsx-model`, `opentsx-stats` and `opentsx-retrieval`. Track B: a Rust runner for low-capacity hardware. The
+  specification covers the operator catalog (S1), plan translation from the workbench DAG with exact rejection
+  messages (S2), the site contract and conformance handshake (S3), federation and merge laws (S4), the runner
+  interface (S5), delivery and checkpoints on KafScale (S6) and security (S7). New draft schemas
+  `opentsx.runner-plan.v1`, `opentsx.site-conformance.v1` and `opentsx.signal.v1`; `opentsx.processor.v1` gains
+  the runtimes `wayang` and `rust` and the optional fields `state`, `merge` and `tolerance`. Tasks with numbered
+  acceptance criteria: [`EVOLUTION/TASK-020-wayang-ts-operators.md`](EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 - Concept for graph layers on KafScale and Iceberg
   ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
