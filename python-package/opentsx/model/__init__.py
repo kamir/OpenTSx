@@ -5,6 +5,8 @@ Cross-language equality is checked against the shared test vectors in
 ``opentsx-model/src/test/resources/testvectors``.
 """
 
+from opentsx.model.analysis import (analysis_result, curve, matrix, result_canonical, result_id, scalar,
+                                     verify_analysis_result)
 from opentsx.model.buckets import bucket_checksum
 from opentsx.model.series_key import canonical, series_id, series_key, verify_series_key
 from opentsx.model.time_axis import decode_deltas, encode_deltas, timestamps_us
@@ -21,4 +23,5 @@ __all__ = [
     "regular", "irregular", "values",
     "encode", "decode", "fingerprint", "schema",
     "new_ulid", "xxh64_hex", "bucket_checksum",
+    "analysis_result", "scalar", "curve", "matrix", "result_canonical", "result_id", "verify_analysis_result",
 ]

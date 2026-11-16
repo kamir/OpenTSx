@@ -29,7 +29,7 @@ search, twin, causal analysis).
 | Item | State | Evidence |
 |---|---|---|
 | Wayang in OpenTSx | Design prose only. No Wayang code and no Wayang dependency in any `pom.xml`. | `grep -rli wayang --include=pom.xml .` returns no file; mentions in [05](05-SMART-TOPICS.md) line 147, [06](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) line 231, [user manual 14](../user-manual/14-saas-service-layer.md) line 59, `EVOLUTION/TASK-015-multivariate-analysis.md` line 247, `TASK-016-smart-topics.md` line 34, `TASK-017-digital-twin.md` line 85 |
-| Build | Java release 17 (`pom.xml:38`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:49-54`) | `pom.xml` |
+| Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
 | Go processor proposal | `opentsx.dag.v1`, Go core on the KafScale processor template, shared vectors, at-least-once plus deterministic ids (D25 to D29) | [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), sections 5, 6, 7, 10 |
@@ -91,7 +91,7 @@ Checked in tag `wayang-1.1.1`. `B` is `wayang-commons/wayang-basic/src/main/java
 | Client config | `getDefaultProperties()`: `SASL_SSL`, `PLAIN`, bootstrap and credentials from environment variables; `loadConfig(path)` reads a properties file instead | `B/KafkaTopicSource.java:139-158`; `B/KafkaTopicSink.java:160-218` | a properties file can carry the proxy address and `enable.idempotence=false` |
 | Sink record | `ProducerRecord<String, String>(topicName, value)`: no key; value formatted to a String by a `TransformationDescriptor` | `J/JavaKafkaTopicSink.java:101`; `B/KafkaTopicSink.java:47`, `:66` | no: OpenTSx needs key `seriesId` and Avro bytes |
 | Idempotence | not set; kafka-clients from 3.0 default to `enable.idempotence=true` ([KIP-679](https://cwiki.apache.org/confluence/display/KAFKA/KIP-679%3A+Producer+will+enable+the+strongest+delivery+guarantee+by+default)) | grep over the module | no without a properties file: KafScale has no `InitProducerId` |
-| Client version | `kafka-clients` 3.9.1 in `wayang-basic` | `wayang-commons/wayang-basic/pom.xml:94-95` | OpenTSx manages 3.9.2 (`pom.xml:49`); the root `dependencyManagement` wins |
+| Client version | `kafka-clients` 3.9.1 in `wayang-basic` | `wayang-commons/wayang-basic/pom.xml:94-95` | OpenTSx manages 3.9.2 (`pom.xml:50`); the root `dependencyManagement` wins |
 
 **Conclusion.** The operators do not fit, and a properties file fixes only the client config. Track A adds its own
 source and sink operators (section 5.2). They build clients with `KafScaleClients`, so every connection goes to the
@@ -115,10 +115,10 @@ resolved yet):
 
 Conflicts with OpenTSx:
 
-- Hadoop: Wayang 1.1.1 sets `hadoop.version` 3.3.6 (`pom.xml:132` of the tag); OpenTSx manages 3.5.0 (`pom.xml:54`),
+- Hadoop: Wayang 1.1.1 sets `hadoop.version` 3.3.6 (`pom.xml:132` of the tag); OpenTSx manages 3.5.0 (`pom.xml:55`),
   and its `dependencyManagement` wins inside the OpenTSx reactor.
 - Logging: `log4j-slf4j-impl` is an SLF4J binding to Log4j 2; OpenTSx manages `slf4j-api` 2.0.20 and `slf4j-simple`
-  (`pom.xml:56`, `:256-262`). Two bindings on one classpath is a conflict.
+  (`pom.xml:57`, `:259-266`). Two bindings on one classpath is a conflict.
 - `main` after 1.1.1 adds Iceberg 1.6.0 and `slf4j-simple` to `wayang-basic`
   (`wayang-commons/wayang-basic/pom.xml:37` at `713faa7d`); OpenTSx uses Iceberg 1.10.2
   (`opentsx-store-iceberg/pom.xml:19`). This matters at the next Wayang upgrade.

@@ -1,0 +1,185 @@
+[
+  {
+    "method": "dfa",
+    "methodVersion": "1.0.0",
+    "params": {
+      "order": {
+        "long": "1"
+      },
+      "scales": {
+        "array": [
+          16,
+          32,
+          64,
+          128,
+          256
+        ]
+      },
+      "fitFrom": {
+        "double": 16.0
+      },
+      "fitTo": {
+        "double": 256.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "canonical": "dfa@1.0.0(fitFrom=d4030000000000000,fitTo=d4070000000000000,order=l1,scales=a4030000000000000;4040000000000000;4050000000000000;4060000000000000;4070000000000000)[01HF7Z1Y4X0000000000000000]",
+    "resultId": "869c57e7ea4d153c"
+  },
+  {
+    "method": "dfa",
+    "methodVersion": "1.0.0",
+    "params": {
+      "fitTo": {
+        "double": 256.0
+      },
+      "fitFrom": {
+        "double": 16.0
+      },
+      "scales": {
+        "array": [
+          16,
+          32,
+          64,
+          128,
+          256
+        ]
+      },
+      "order": {
+        "long": "1"
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "canonical": "dfa@1.0.0(fitFrom=d4030000000000000,fitTo=d4070000000000000,order=l1,scales=a4030000000000000;4040000000000000;4050000000000000;4060000000000000;4070000000000000)[01HF7Z1Y4X0000000000000000]",
+    "resultId": "869c57e7ea4d153c"
+  },
+  {
+    "method": "es",
+    "methodVersion": "1.0.0",
+    "params": {
+      "threshold": {
+        "string": "std"
+      },
+      "tauMax": {
+        "double": 5.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000010",
+      "01HF7Z1Y4X0000000000000011",
+      "01HF7Z1Y4X0000000000000012"
+    ],
+    "canonical": "es@1.0.0(tauMax=d4014000000000000,threshold=sstd)[01HF7Z1Y4X0000000000000010,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000012]",
+    "resultId": "4138beb7fb0cc410"
+  },
+  {
+    "method": "es",
+    "methodVersion": "1.0.0",
+    "params": {
+      "threshold": {
+        "string": "std"
+      },
+      "tauMax": {
+        "double": 5.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000012",
+      "01HF7Z1Y4X0000000000000011",
+      "01HF7Z1Y4X0000000000000010"
+    ],
+    "canonical": "es@1.0.0(tauMax=d4014000000000000,threshold=sstd)[01HF7Z1Y4X0000000000000012,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000010]",
+    "resultId": "6ff1ccaca9d75615"
+  },
+  {
+    "method": "es",
+    "methodVersion": "1.0.0",
+    "params": {
+      "tauMax": {
+        "long": "5"
+      },
+      "threshold": {
+        "string": "std"
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000010",
+      "01HF7Z1Y4X0000000000000011",
+      "01HF7Z1Y4X0000000000000012"
+    ],
+    "canonical": "es@1.0.0(tauMax=l5,threshold=sstd)[01HF7Z1Y4X0000000000000010,01HF7Z1Y4X0000000000000011,01HF7Z1Y4X0000000000000012]",
+    "resultId": "edf0c6b5265dae99"
+  },
+  {
+    "method": "a@b{c}",
+    "methodVersion": "1(2)",
+    "params": {
+      "k=1": {
+        "string": "x,y]"
+      },
+      "back\\slash": {
+        "string": "@"
+      }
+    },
+    "inputEpisodeIds": [
+      "e[1]",
+      "e,2"
+    ],
+    "canonical": "a\\@b\\{c\\}@1\\(2\\)(back\\\\slash=s\\@,k\\=1=sx\\,y\\])[e\\[1\\],e\\,2]",
+    "resultId": "bedcbd6822845e95"
+  },
+  {
+    "method": "dfa",
+    "methodVersion": "1.0.0",
+    "params": {
+      "Zone": {
+        "long": "-1"
+      },
+      "zone": {
+        "double": -0.0
+      },
+      "ä": {
+        "array": []
+      },
+      "a": {
+        "double": 0.0
+      }
+    },
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "canonical": "dfa@1.0.0(Zone=l-1,a=d0000000000000000,zone=d8000000000000000,ä=a)[01HF7Z1Y4X0000000000000000]",
+    "resultId": "789204459fe7abcd"
+  },
+  {
+    "method": "ris",
+    "methodVersion": "1.0.0",
+    "params": {
+      "cap": {
+        "double": "Infinity"
+      },
+      "big": {
+        "long": "9007199254740993"
+      }
+    },
+    "inputEpisodeIds": [
+      "x"
+    ],
+    "canonical": "ris@1.0.0(big=l9007199254740993,cap=d7ff0000000000000)[x]",
+    "resultId": "7fbf0cfd7cc01eab"
+  },
+  {
+    "method": "dfa",
+    "methodVersion": "1.0.0",
+    "params": {},
+    "inputEpisodeIds": [
+      "01HF7Z1Y4X0000000000000000"
+    ],
+    "canonical": "dfa@1.0.0()[01HF7Z1Y4X0000000000000000]",
+    "resultId": "85bb1632f41faf72"
+  }
+]
