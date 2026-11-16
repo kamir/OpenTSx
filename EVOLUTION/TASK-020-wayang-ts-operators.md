@@ -140,7 +140,22 @@ vector cases, and the four named parameter-message tests to execute successfully
   `sax-word.v1.json`, `dq-result.v1.json`, generated over the existing Java
   code by `tools/java_operator_vectors.py`; 26 exact cases in the owning
   modules.
+- [x] `align.vector` on Wayang: `TsxAlignVector` over `VectorStream` with named
+  inputs (each input is marked with `TsxTagged` and joined with a union),
+  state in `TsxState`, records `opentsx.vector.v1` through `TsxVectorSink`
+  (A3.1).
 - [ ] Catalog `tsx-catalog/1` frozen.
+
+Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
+`TsxVectorVectorsTest` runs all 6 shared cases through a Wayang plan with exact
+equality, the same 6 cases in two increments with the state carried between
+them, and an input the vector does not read (13 tests, 0 failures).
+`TsxVectorIntegrationTest` runs three increments between the episode topic and
+a vector topic: 9 points, then 0, then the tenth, each written once.
+`VectorStream` in `opentsx-retrieval` gained named inputs for this:
+`VectorStreamTest` compares them with `VectorAligner.align` for all 6 cases in
+blocks of 1, 2 and 3 samples and in two series orders.
+
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|

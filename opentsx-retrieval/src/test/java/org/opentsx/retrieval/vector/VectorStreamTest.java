@@ -193,4 +193,105 @@ class VectorStreamTest {
                 () -> v.add("b", "wind.met.wind_speed", Map.of("turbine", "T02"), new long[]{0}, new double[]{2}, 60 * S));
         assertTrue(e.getMessage().contains("both give the component \"wind_speed\""), e.getMessage());
     }
+
+    /**
+     * Every case of the shared vectors, inputs with series of their own, streamed in blocks of 1, 2 and 3 samples
+     * with the series taking turns, and in two orders of the series: the same points as the batch operator.
+     */
+    @Test
+    void namedInputsGiveWhatTheBatchOperatorGivesForEverySharedVector() throws Exception {
+        JsonNode root = VectorAlignerTest.JSON.readTree(VectorAlignerTest.VECTORS.toFile());
+        int cases = 0;
+        for (JsonNode c : root.path("cases")) {
+            VectorAligner.Params p = VectorAlignerTest.params(c.path("params"), c.path("params").path("agg").asText());
+            List<VectorAligner.Input> inputs = VectorAlignerTest.inputs(c);
+            List<String> expected = new ArrayList<>(text(VectorAligner.align(inputs, p)));
+            expected.sort(String::compareTo);
+            for (int block = 1; block <= 3; block++) {
+                for (boolean reversed : new boolean[]{false, true}) {
+                    Map<String, Set<String>> expectedByInput = new java.util.LinkedHashMap<>();
+                    List<String[]> order = new ArrayList<>();
+                    for (VectorAligner.Input in : inputs) {
+                        Set<String> ids = new LinkedHashSet<>();
+                        in.series().forEach(x -> ids.add(x.id()));
+                        expectedByInput.put(in.name(), ids);
+                        in.series().forEach(x -> order.add(new String[]{in.name(), x.id()}));
+                    }
+                    if (reversed) {
+                        java.util.Collections.reverse(order);
+                    }
+                    VectorStream v = new VectorStream(expectedByInput, p, 0);
+                    List<VectorAligner.Point> out = new ArrayList<>();
+                    int[] next = new int[order.size()];
+                    boolean more = true;
+                    while (more) {
+                        more = false;
+                        for (int k = 0; k < order.size(); k++) {
+                            VectorAligner.Series x = seriesOf(inputs, order.get(k)[0], order.get(k)[1]);
+                            int from = next[k];
+                            if (from >= x.timesMicros().length) {
+                                continue;
+                            }
+                            int to = Math.min(from + block, x.timesMicros().length);
+                            long end = to < x.timesMicros().length ? x.timesMicros()[to] : x.timesMicros()[to - 1] + 1;
+                            out.addAll(v.add(order.get(k)[0], x.id(), x.metric(), x.tags(),
+                                    Arrays.copyOfRange(x.timesMicros(), from, to), Arrays.copyOfRange(x.values(), from, to), end));
+                            next[k] = to;
+                            more = true;
+                        }
+                    }
+                    out.addAll(v.flush());
+                    List<String> streamed = new ArrayList<>(text(out));
+                    streamed.sort(String::compareTo);
+                    assertEquals(expected, streamed, c.path("name").asText() + ", blocks of " + block + (reversed ? ", reversed" : ""));
+                }
+            }
+            cases++;
+        }
+        assertEquals(6, cases);
+    }
+
+    private static VectorAligner.Series seriesOf(List<VectorAligner.Input> inputs, String input, String id) {
+        return inputs.stream().filter(i -> i.name().equals(input)).flatMap(i -> i.series().stream())
+                .filter(x -> x.id().equals(id)).findFirst().orElseThrow();
+    }
+
+    @Test
+    void namedInputsRestoreFromTheirState() throws Exception {
+        JsonNode c = VectorAlignerTest.JSON.readTree(VectorAlignerTest.VECTORS.toFile()).path("cases").get(0);
+        VectorAligner.Params p = VectorAlignerTest.params(c.path("params"), c.path("params").path("agg").asText());
+        List<VectorAligner.Input> inputs = VectorAlignerTest.inputs(c);
+        Map<String, Set<String>> expectedByInput = new java.util.LinkedHashMap<>();
+        inputs.forEach(in -> expectedByInput.put(in.name(), new LinkedHashSet<>(in.series().stream().map(VectorAligner.Series::id).toList())));
+        VectorStream first = new VectorStream(expectedByInput, p, 0);
+        List<VectorAligner.Point> out = new ArrayList<>();
+        for (VectorAligner.Input in : inputs) {
+            for (VectorAligner.Series x : in.series()) {
+                int half = x.timesMicros().length / 2;
+                out.addAll(first.add(in.name(), x.id(), x.metric(), x.tags(), Arrays.copyOfRange(x.timesMicros(), 0, half),
+                        Arrays.copyOfRange(x.values(), 0, half), x.timesMicros()[half]));
+            }
+        }
+        VectorStream second = VectorStream.restore(expectedByInput, p, 0, first.state());
+        for (VectorAligner.Input in : inputs) {
+            for (VectorAligner.Series x : in.series()) {
+                int half = x.timesMicros().length / 2;
+                out.addAll(second.add(in.name(), x.id(), x.metric(), x.tags(),
+                        Arrays.copyOfRange(x.timesMicros(), half, x.timesMicros().length),
+                        Arrays.copyOfRange(x.values(), half, x.values().length), x.timesMicros()[x.timesMicros().length - 1] + 1));
+            }
+        }
+        out.addAll(second.flush());
+        List<String> streamed = new ArrayList<>(text(out));
+        List<String> expected = new ArrayList<>(text(VectorAligner.align(inputs, p)));
+        streamed.sort(String::compareTo);
+        expected.sort(String::compareTo);
+        assertEquals(expected, streamed);
+    }
+
+    @Test
+    void aStreamWithNamedInputsRefusesAddWithoutAnInput() {
+        VectorStream v = new VectorStream(Map.of("x", Set.of("a")), params("series", VectorAligner.Agg.MEAN, false, 60, false), 0);
+        assertThrows(IllegalStateException.class, () -> v.add("a", "m.x", Map.of(), new long[]{0}, new double[]{1}, 1));
+    }
 }

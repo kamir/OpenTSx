@@ -225,7 +225,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1 and A2)
+      - name: Require executed Wayang acceptance (TASK-020 A1, A2 and A3.1)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -240,6 +240,8 @@ jobs:
               "TsxCleanVectorsTest": 3,
               "TsxStatsVectorsTest": 12,
               "DagToWayangErrorsTest": 4,
+              "TsxVectorVectorsTest": 13,
+              "TsxVectorIntegrationTest": 1,
           }
           for name, minimum in expected.items():
               suite = ET.parse(f"opentsx-wayang/target/surefire-reports/TEST-org.opentsx.wayang.{name}.xml").getroot()
@@ -258,7 +260,12 @@ jobs:
                              if case.attrib["name"].startswith("everySharedCaseMatchesThroughAWayangPlan()[")]
                   if len(vectors) != 5:
                       raise SystemExit("all five statistics vectors must execute through Wayang")
-          print("All nine Wayang acceptance classes executed successfully")
+              if name == "TsxVectorVectorsTest":
+                  vectors = [case for case in suite.findall("testcase")
+                             if case.attrib["name"].startswith("everySharedCaseMatchesThroughAWayangPlan()[")]
+                  if len(vectors) != 6:
+                      raise SystemExit("all six align.vector vectors must execute through Wayang")
+          print("All eleven Wayang acceptance classes executed successfully")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:
