@@ -338,9 +338,12 @@
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Sax.java#L28"
         ],
         "tests": [
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L49"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L49",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java#sharedVectors"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/sax-word.v1.json"
+        ]
       }
     },
     {
@@ -628,9 +631,12 @@
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L69"
         ],
         "tests": [
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L113"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L113",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java#sharedVectors"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/segment-extremum.v1.json"
+        ]
       }
     },
     {
@@ -676,9 +682,12 @@
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L92"
         ],
         "tests": [
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L123"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L123",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java#sharedVectors"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/segment-threshold.v1.json"
+        ]
       }
     },
     {
@@ -712,7 +721,8 @@
       "pitfalls": [
         "Floating-point merges are not bitwise associative.",
         "DDSketch relative-error claims exclude its zero bucket and collapsed tails unless separately qualified.",
-        "Duplicate suppression covers only episode IDs retained within Config.dedupCapacity; an evicted ID can be counted again."
+        "Duplicate suppression covers only episode IDs retained within Config.dedupCapacity; an evicted ID can be counted again.",
+        "The registered Wayang Java wrapper emits windows closed by input progress and saves open state; it does not call flush or emitGlobal automatically."
       ],
       "references": {
         "manual": [
@@ -723,13 +733,21 @@
           "docs/learning/library-operator-contracts.md#compute-window-statistics"
         ],
         "source": [
-          "opentsx-stats/src/main/java/org/opentsx/stats/StatsEngine.java#L132"
+          "opentsx-stats/src/main/java/org/opentsx/stats/StatsEngine.java#L132",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#TsxStatsWindow",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxStatsWindow.java#run",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#getMappings"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L54",
-          "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L86"
+          "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L86",
+          "opentsx-stats/src/test/java/org/opentsx/stats/StatsWindowVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#theSketchOfAClosedWindowHasTheBytesOfTheSharedVector",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#anOpenWindowContinuesInTheNextIncrementFromTheSavedState"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/stats-window.v1.json"
+        ]
       }
     },
     {
@@ -776,9 +794,12 @@
           "opentsx-stats/src/main/java/org/opentsx/stats/DataQuality.java#L70"
         ],
         "tests": [
-          "opentsx-stats/src/test/java/org/opentsx/stats/WindparkDataQualityTest.java#L30"
+          "opentsx-stats/src/test/java/org/opentsx/stats/WindparkDataQualityTest.java#L30",
+          "opentsx-stats/src/test/java/org/opentsx/stats/DqResultVectorsTest.java#sharedVectors"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/dq-result.v1.json"
+        ]
       }
     },
     {
@@ -960,13 +981,14 @@
       ],
       "starter": {
         "language": "java",
-        "code": "import java.nio.file.*;\nimport java.util.*;\nimport org.opentsx.wayang.TsxCheckpoint;\nvar directory = Files.createTempDirectory(\"tsx-learning\");\nvar path = directory.resolve(\"checkpoint.json\");\nvar hash = \"a\".repeat(64);\nnew TsxCheckpoint(\"learning\",1,hash,\"tsx.learning.episodes.v2\",Map.of(0,10L,1,7L)).write(path);\nvar loaded = TsxCheckpoint.load(path,hash);\nvar other = TsxCheckpoint.load(path,\"b\".repeat(64));\nFiles.delete(path);\nFiles.delete(directory);",
+        "code": "import java.nio.file.*;\nimport java.util.*;\nimport org.opentsx.wayang.TsxCheckpoint;\nvar directory = Files.createTempDirectory(\"tsx-learning\");\nvar path = directory.resolve(\"checkpoint.json\");\nvar hash = \"a\".repeat(64);\nnew TsxCheckpoint(\"learning\",1,hash,\"tsx.learning.episodes.v2\",Map.of(0,10L,1,7L),Map.of()).write(path);\nvar loaded = TsxCheckpoint.load(path,hash);\nvar other = TsxCheckpoint.load(path,\"b\".repeat(64));\nFiles.delete(path);\nFiles.delete(directory);",
         "data": {}
       },
       "expected": [
         "Matching load returns next positions {0:10,1:7}.",
         "Absence and a different specHash return an empty Optional in this local API.",
-        "Unreadable existing JSON raises IllegalStateException instead of being silently ignored."
+        "Unreadable existing JSON raises IllegalStateException instead of being silently ignored.",
+        "The sixth constructor argument is the per-node operator-state map; this starter uses an empty map, while the checkpoint regression preserves nonempty state."
       ],
       "pitfalls": [
         "Current hash-mismatch behavior is not the proposed fail-closed orchestration state-ABI policy.",
@@ -981,10 +1003,14 @@
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint"
         ],
         "source": [
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#L35"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#TsxCheckpoint",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxState.java#TsxState"
         ],
         "tests": [
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#L21"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aCheckpointOfAnotherDocumentIsNotUsed",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#anUnreadableCheckpointFailsInsteadOfStartingOver",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointLearningTest.java#checkpointStarterCompilesRunsAndCleansItsFiles"
         ],
         "vectors": []
       }

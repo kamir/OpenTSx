@@ -8,6 +8,14 @@ for a Python example. The [lesson manifest](library-operators.v1.json) contains 
 These families supplement the UI operator lessons. Helper methods belong to their family rather than becoming
 independent operators. A library implementation does not imply a deployed DAG, Wayang mapping or Rust kernel.
 
+The current Java Wayang plugin separately registers clean-chain and window-statistics mappings through
+[`TsxOperatorMappings`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxOperatorMappings.java).
+`TsxSeriesChain` delegates the seven clean operations to `SeriesStream`; `TsxStatsWindow` delegates statistics
+to `StatsEngine`. The
+[`clean vectors`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCleanVectorsTest.java)
+check clean values through an actual Wayang plan. Pair kernels and the SAX, segmentation and data-quality
+reference implementations remain separate from registered execution mappings.
+
 ## Analyze DFA
 
 Use exported `DFA(polynom_order=1).analyze(values, scales=scales)` or pass a `TimeSeriesObject`.
@@ -57,6 +65,8 @@ Pass already normalized values to `Sax.word(values, width, alphabet)`.
 The alphabet range is 2 through 26; the stored form includes width and alphabet, such as `2x4:ad`.
 `Sax.mindist` requires compatible word formats. Its lower bound supports pruning; it is not a replacement for
 the exact final distance. Normalization, PAA and breakpoint helpers are part of this family workflow.
+[`sax-word.v1.json`](../datamodel-2026/testvectors/sax-word.v1.json) is replayed by
+[`SaxWordVectorsTest`](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java).
 
 ## Compute a MASS distance profile
 
@@ -98,6 +108,8 @@ unlike partial duration windows. The lesson's seven samples therefore yield two 
 Prominence and distance control admission; `pre` and `post` describe the inclusive neighbourhood of the anchor.
 The fixed lesson peak produces values [1,4,1] anchored at three seconds. Streaming output waits for the required
 lookahead; an observed high value alone is not yet a finalized segment.
+[`segment-extremum.v1.json`](../datamodel-2026/testvectors/segment-extremum.v1.json) is replayed by
+[`extremum vectors`](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java).
 
 ## Segment threshold phases
 
@@ -105,6 +117,10 @@ lookahead; an observed high value alone is not yet a finalized segment.
 For `ABOVE`, exit cannot exceed enter. Zero maximum duration means unlimited.
 State crosses source episode boundaries. The learning test feeds a phase in two episodes and verifies exact
 agreement with bounded segmentation, including anchor and [0,5,5,2] output values.
+[`segment-threshold.v1.json`](../datamodel-2026/testvectors/segment-threshold.v1.json) covers the Java hysteresis
+contract and is replayed by
+[`threshold vectors`](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java).
+It does not define the browser's simpler sample-neighborhood threshold operator.
 
 ## Compute window statistics
 
@@ -115,12 +131,25 @@ Configure explicit windows and expected sampling intervals. Duplicate episode ID
 Counts, NaNs, axes and gaps have exact checks. Floating-point reductions and DDSketch quantiles require their
 declared numerical criteria; the zero bucket and collapsed tails do not support an unrestricted relative-error claim.
 
+[`stats-window.v1.json`](../datamodel-2026/testvectors/stats-window.v1.json) is replayed by
+[`StatsWindowVectorsTest`](../../opentsx-stats/src/test/java/org/opentsx/stats/StatsWindowVectorsTest.java).
+The registered Java Wayang `TsxStatsWindow` uses `StatsEngine.Config`, emits windows closed by episode progress,
+and saves open engine state by node ID in `TsxState`. Its current execution does not automatically call `flush()`
+or `emitGlobal()`. The direct library starter calls `emitGlobal()` explicitly. The browser's `stats.window`
+projection still has its own `window`/`field` parameter contract; a Java statistics mapping does not resolve that
+UI export translation. See
+[`TsxStatsWindowTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java)
+for sketch-byte and cross-increment state checks.
+
 ## Evaluate data quality
 
 `DataQuality.evaluate(stats, expectation)` evaluates statistics without reading raw samples.
 Checks include completeness, plausible range, flatline and gaps. Freshness additionally requires a maximum age
 and an explicit `nowMicros` in the three-argument overload. Use fixed time in examples and tests.
 Distinguish an implausible measurement from a valid measurement outside the system's operating range.
+[`dq-result.v1.json`](../datamodel-2026/testvectors/dq-result.v1.json) is replayed by
+[`DqResultVectorsTest`](../../opentsx-stats/src/test/java/org/opentsx/stats/DqResultVectorsTest.java).
+These checks evaluate `SeriesStats`; they are distinct from the raw-value `dq.checks` clean-chain transform.
 
 ## Decode Avro records
 
@@ -146,9 +175,13 @@ end-to-end production and crash tests need a disposable broker. Acknowledgements
 
 ## Persist an increment checkpoint
 
-`TsxCheckpoint(job, planVersion, specHash, topic, next).write(path)` persists next offsets to a temporary file,
+`TsxCheckpoint(job, planVersion, specHash, topic, next, state).write(path)` persists next offsets and per-node
+operator state to a temporary file,
 forces it, and atomically renames it. `load(path, hash)` returns empty for absence or a different hash, and rejects
 an unreadable file. These are the current local increment semantics.
+The starter passes `Map.of()` as its sixth argument. Nonempty state is covered by
+[`TsxCheckpointTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java): clean chains
+store `SeriesStream.state()` JSON and statistics store Base64 engine state in the per-node map.
 They do not implement the proposed orchestration state-ABI migration, fenced ownership or deployment grant policy.
 Each assigned whole topic retains all of its internal positions; the checkpoint file is not a partition scheduler.
 

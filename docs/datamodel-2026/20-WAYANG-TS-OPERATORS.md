@@ -219,20 +219,29 @@ No dependency on `opentsx-core`: it pulls Swing charting, Mahout, POI and Hadoop
 
 ### 5.2 Classes per operator
 
-Every OpenTSx operator becomes four pieces, following the Wayang pattern of section 3.1:
+Track A uses logical operators, Java execution operators, mappings and load estimators.
+A consecutive run of `CleanChain.OPS` nodes becomes one
+[`TsxSeriesChain`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSeriesChain.java#L12).
+The steps share per-series state and assign output keys and episode ids after the last step.
+The run's last DAG node id identifies its checkpoint state, as specified in S2.3.
+The implemented statistics operator is
+[`TsxStatsWindow`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#L8).
 
-| Piece | Track A class (proposed) | Wayang type |
+| Piece | Implemented Track A classes or keys | Wayang type |
 |---|---|---|
-| logical operator | `TsxOperator` subclasses, for example `StatsWindowOperator extends UnaryToUnaryOperator<Episode, SeriesStats>`; `PairXcorrOperator extends BinaryToUnaryOperator<Episode, Episode, Episode>` | logical |
-| Java execution operator | `JavaStatsWindowOperator extends StatsWindowOperator implements JavaExecutionOperator` | Java platform |
-| mapping | `StatsWindowMapping implements Mapping` | registered by `TsxJavaPlugin` |
-| cost function | `wayang.java.tsx.stats-window.load.main = {...}` in `wayang-tsx-defaults.properties` | `LoadProfileEstimators` |
+| logical operator | `TsxSeriesChain`, `TsxStatsWindow` | logical |
+| Java execution operator | `JavaTsxSeriesChain`, `JavaTsxStatsWindow` | Java platform |
+| mapping | `TsxOperatorMappings.SeriesChainMapping`, `TsxOperatorMappings.StatsWindowMapping` | registered by `TsxJavaPlugin` |
+| load estimator | `wayang.java.tsx.serieschain.load`, `wayang.java.tsx.statswindow.load` in `wayang-tsx-defaults.properties` | `LoadProfileEstimators` |
+
+See the [registered mappings](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#L29)
+and [load specifications](../../opentsx-wayang/src/main/resources/wayang-tsx-defaults.properties#L17).
 
 Source and sink, replacing Wayang's Kafka operators (section 3.2):
 
 | Class | Behaviour |
 |---|---|
-| `TsxTopicSource extends UnarySource<Episode>` and `JavaTsxTopicSource` | reads `[from, to)` per partition with manual assignment and seek, as `LogReader.java:21` does; `from` from the checkpoint, `to` from `endOffsets` at job start (`LogReader.java:68`); decodes with `OpenTsxAvro.decode`; refused fetches through `Patience.poll` |
+| `TsxTopicSource extends UnarySource<SpecificRecord>` and `JavaTsxTopicSource` | reads `[from, to)` per partition with manual assignment and seek, as `LogReader.java:21` does; `from` from the checkpoint, `to` from `endOffsets` at job start (`LogReader.java:68`); decodes with `OpenTsxAvro.decode`; refused fetches through `Patience.poll` |
 | `TsxTopicSink extends UnarySink<SpecificRecord>` and `JavaTsxTopicSink` | `KafScaleClients.producer`; key `seriesId`, value `OpenTsxAvro.encode`, header `tsx-schema` (`TopicLayout.HEADER_SCHEMA`); waits for all acknowledgements before the job reports success |
 | `TsxCheckpoint` | written by the executor after the sink succeeded: offsets per partition, operator state, `specHash` |
 
@@ -273,8 +282,9 @@ flowchart LR
 
 1. The workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` when the flow has a series sink, as today. There is no
    second DAG format.
-2. `DagToWayang` builds a `WayangPlan` with the Java API: one logical operator per node, one `TsxTopicSource` per
-   input topic, one `TsxTopicSink` per sink. It validates as `DagPlan` does today.
+2. The proposed `DagToWayang` builds a `WayangPlan` with the Java API: one `TsxTopicSource` per input topic and one
+   `TsxTopicSink` per sink. It lowers a consecutive run of `CleanChain.OPS` nodes to one `TsxSeriesChain`; other
+   nodes use their admitted logical operators. It validates as `DagPlan` does today and preserves S2.3 state identity.
 3. The plugin does not use `wayang-api-json`: that API has no Kafka operator and compiles Scala source received in
    the request (section 3.1), which a site must not accept.
 4. Single site: `WayangContext` with `TsxJavaPlugin` runs the plan in the driver JVM. The plugin registers only

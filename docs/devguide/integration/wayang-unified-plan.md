@@ -138,8 +138,9 @@ not substitute for the Rust deployment proof.
 
 This foundation branches from the exact PR #258 head and keeps its Wayang 1.1.1 dependency setup and
 `TsxJavaPlugin`. It does not replace them with the isolated research pilot's snapshot dependency or broad plugin.
-The feature branch integrates default-branch commit `bf71af4`, including merged PR #258, A1 topic I/O/checkpoints
-and the pair-event-synchronization kernel. Parallel operator and vector work remains independently owned.
+The feature branch integrates default-branch commit `9bcfbb5`, including merged PR #258, A1 topic I/O/checkpoints,
+A2 Java clean/statistics mappings, both pair kernels and the shared operator reference vectors.
+Parallel operator and vector work remains independently owned.
 Required CI must be green before merge; this work performs no production deployment.
 
 The parallel operator work owns `TsxPairXcorr`, `TsxPairEs`, their vectors and the statistics/segment/SAX/DQ
