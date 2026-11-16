@@ -1,0 +1,3 @@
+[submodule "external/wayang"]
+	path = external/wayang
+	url = https://github.com/apache/wayang.git
