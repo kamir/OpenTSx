@@ -176,7 +176,7 @@ jobs:
         env:
           KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
         # opentsx-legacy-bridge pulls in opentsx-core, whose Swing tests need a display
-        run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval -am test
+        run: xvfb-run --auto-servernum mvn -B -ntp -pl opentsx-kafscale-conformance,opentsx-kafka-v2,opentsx-legacy-bridge,opentsx-windpark,opentsx-stats,opentsx-twin-live,opentsx-retrieval,opentsx-wayang -am test
       - name: Require executed streaming acceptance
         if: always()
         run: |
@@ -193,6 +193,17 @@ jobs:
           if not expected.issubset(executed) or any(int(suite.attrib[key]) for key in ("failures", "errors", "skipped")):
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
+          PYTHON
+      - name: Require executed Wayang acceptance (TASK-020 A1.4 to A1.6)
+        if: always()
+        run: |
+          python3 - <<'PYTHON'
+          import xml.etree.ElementTree as ET
+          for name in ("TsxPassThroughIntegrationTest", "TsxCrashRecoveryIntegrationTest", "TsxFingerprintIntegrationTest"):
+              suite = ET.parse(f"opentsx-wayang/target/surefire-reports/TEST-org.opentsx.wayang.{name}.xml").getroot()
+              if int(suite.attrib["tests"]) < 1 or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
+                  raise SystemExit(f"{name} is missing, skipped or failed")
+          print("All three Wayang acceptance tests executed successfully")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:

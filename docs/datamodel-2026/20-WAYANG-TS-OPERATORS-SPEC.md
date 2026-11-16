@@ -250,7 +250,8 @@ Messages are plain English and MUST be returned exactly as below, with the place
 3. A runtime MUST stop a task with state `failed` when it reads a record whose fingerprint is not in the site plan,
    with the status `error`
    `record <topic>/<partition>@<offset> has schema fingerprint <fingerprint>, not in plan <job> version <planVersion>`.
-   It MUST NOT skip the record.
+   It MUST NOT skip the record. A record without the single-object header (`C3 01` and 8 fingerprint bytes) stops the
+   task the same way, with `record <topic>/<partition>@<offset> is not Avro single-object encoded`.
 
 ### S3.3 Conformance handshake
 
@@ -462,6 +463,10 @@ unreachable.
    fail the task.
 
 ### S6.2 Deterministic ids
+
+A runtime that writes an episode it has read MUST write its maps (`tags`, `labels`, `params`) in UTF-8 key order
+([04](04-MODELL-V2-SPEC.md), section 5). Avro decoding returns hash maps, so an episode that is read and written again
+changes its bytes otherwise; the same id would then carry different payloads.
 
 Every output record MUST carry an id that depends only on what it logically is:
 
