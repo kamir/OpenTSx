@@ -159,6 +159,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Remove the orphaned InfluxDB/Grafana demo gitlink, which has no `.gitmodules` entry and blocks checkout
+  credential cleanup. CI checks that every tracked gitlink has a configured path and URL.
+
 - The PFD runtime reads `group.id` through the existing core configuration manager, retaining
   `opentsx-dynamic-job` when absent and rejecting empty or whitespace-only configured values.
 

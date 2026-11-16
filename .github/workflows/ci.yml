@@ -22,8 +22,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Test learning material synchronization
-        run: python3 -m unittest discover -s tools -p test_operator_exercise_sync.py -v
+      - name: Test repository metadata and learning synchronization
+        run: python3 -m unittest discover -s tools -p 'test_*.py' -v
       - name: Generate and check the student material
         run: |
           mkdir -p "$RUNNER_TEMP/student-course"
