@@ -9,7 +9,8 @@ Status: phase A1. The module reads and writes KafScale topics from Wayang
 plans and runs them in increments with a checkpoint. It also contains the
 pure Java `TsxPairXcorr` and `TsxPairEs` kernels, whose APIs have no Wayang
 types and do not depend on `opentsx-core`. The kernels have no registered
-Wayang execution mappings.
+Wayang execution mappings. Shared reference vectors are checked by the
+statistics and retrieval modules.
 
 ## Compute pair cross-correlation
 
@@ -131,3 +132,22 @@ KAFSCALE_BOOTSTRAP=127.0.0.1:39092 mvn -B -ntp -pl opentsx-wayang -am test
 
 Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`
 and `TsxFingerprintIntegrationTest` must each show one executed test with zero failures, errors and skips.
+
+## Check the shared Java references
+
+The shared files in `docs/datamodel-2026/testvectors/` capture existing
+statistics and retrieval behavior for TASK-020 A2 and A3:
+
+| Vector file | Owning-module test | Cases |
+| --- | --- | ---: |
+| `stats-window.v1.json` | `StatsWindowVectorsTest` | 5 |
+| `segment-threshold.v1.json` | `SegmentThresholdVectorsTest` | 6 |
+| `segment-extremum.v1.json` | `SegmentExtremumVectorsTest` | 6 |
+| `sax-word.v1.json` | `SaxWordVectorsTest` | 7 |
+| `dq-result.v1.json` | `DqResultVectorsTest` | 7 |
+
+These tests replay every case exactly in `opentsx-stats` and
+`opentsx-retrieval`. They read the repository files directly. Run
+`python tools/java_operator_vectors.py` from the repository root to
+regenerate all five files. You need JDK 17 or 21, Maven, and Python.
+The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.
