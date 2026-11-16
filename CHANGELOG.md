@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `opentsx-wayang` phase A1 (TASK-020): Wayang source and sink for KafScale topics (`TsxTopicSource`,
+  `TsxTopicSink`) with manual assignment, a schema-fingerprint check per record and the KafScale client settings;
+  `TsxCheckpoint` and `TsxIncrement` run a plan over the offsets since the last checkpoint and write the new
+  checkpoint only after every record was acknowledged. The sink writes maps in UTF-8 key order, so an episode that is
+  read and written again keeps its bytes. `LogReader` in `opentsx-kafka-v2` is public. The CI job "KafScale
+  conformance" runs the three new integration tests and requires them to execute.
+
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
   storage SDKs and the `log4j-slf4j-impl` binding; Hadoop from the managed shaded client 3.5.0; `TsxJavaPlugin`
