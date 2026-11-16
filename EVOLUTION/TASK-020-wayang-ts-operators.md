@@ -110,6 +110,9 @@ Status of A2 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 
 ### A3: remaining catalog 1, catalog freeze
 - [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).
+- [x] Pure Java `pair.es` kernel: `TsxPairEsVectorsTest` loads all eight shared
+  cases, checks event lists and scores, and compares `Mulberry32` exactly
+  (A3.3).
 - [ ] New vector files `segment-threshold.v1.json`, `segment-extremum.v1.json`, `sax-word.v1.json`, `dq-result.v1.json`, each with its generator over the existing Java code.
 - [ ] Catalog `tsx-catalog/1` frozen.
 

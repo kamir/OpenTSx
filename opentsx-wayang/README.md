@@ -6,7 +6,22 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-16.
 
 Status: phase A2. The module reads and writes KafScale topics from Wayang plans, runs them in increments with a
-checkpoint, and runs the clean chain and the window statistics of OpenTSx as Wayang operators.
+checkpoint, and runs the clean chain and the window statistics of OpenTSx as Wayang operators. It also contains the
+pure Java `TsxPairEs` kernel, which has no Wayang types and does not depend on `opentsx-core`.
+
+## Compute pair event synchronisation
+
+`org.opentsx.wayang.ops.TsxPairEs` detects local maxima above a population
+standard-deviation threshold, computes directional event synchronisation,
+and calculates a surrogate baseline by shuffling inter-event intervals.
+`Mulberry32` supplies the repeatable shuffle sequence. The implementation
+follows `event_sync.py` and the web workbench's `es.ts`.
+
+The regression tests load the repository's shared
+`docs/datamodel-2026/testvectors/pair-es.v1.json` directly. All eight cases
+require identical event lists and an absolute error below `5e-13` for
+`q_total`, `q_ab`, `q_ba`, and `q_rand`. The random sequence is compared
+exactly.
 
 ## Use the plugin
 
@@ -19,7 +34,8 @@ new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new Way
 `Java.basicPlugin()` also registers Wayang's Amazon S3, Google Cloud Storage and Azure mappings. OpenTSx excludes
 those SDKs, so a plan built with `Java.basicPlugin()` fails with
 `NoClassDefFoundError: software/amazon/awssdk/core/ResponseInputStream`. `TsxJavaPlugin` registers the Java platform,
-its channel conversions and only the mappings OpenTSx uses: collection source, map and local callback sink.
+its channel conversions and only the mappings OpenTSx uses: collection source, map, local callback sink,
+KafScale topic source and KafScale topic sink.
 
 ## Run a plan in increments
 
