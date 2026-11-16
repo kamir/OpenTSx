@@ -57,7 +57,7 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 | A0.5 | met: decision table below |
 
 ### A1: KafScale source, sink, checkpoint, increments
-- [ ] `TsxTopicSource`, `TsxTopicSink`, `TsxCheckpoint` and the increment runner (S5.1, S6).
+- [x] `TsxTopicSource`, `TsxTopicSink`, `TsxCheckpoint` and the increment runner `TsxIncrement` (S5.1, S6), 2026-11-16.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -68,6 +68,21 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 | A1.5 | A crash repeats output only with identical ids | `TsxCrashRecoveryIntegrationTest`: stop the runner between produce and checkpoint at three points, restart | W on K | after deduplication by id, output equals an uninterrupted run; every duplicate has an identical id and payload; 3 of 3 points |
 | A1.6 | An unknown fingerprint stops the task | `TsxFingerprintIntegrationTest` writes one record with another schema | K | task state `failed`, status `error` equals the message of S3.2 exactly; no later record processed |
 | A1.7 | Increment latency is known | protocol of concept 20, section 14 | W on K | measured and reported with raw samples; no threshold |
+
+Status of A1 on 2026-11-16, run with JDK 21 against KafScale v1.6.0 built from source (in-memory S3, `127.0.0.1:39092`):
+
+| # | Result |
+|---|---|
+| A1.1 | met: `TsxWireVectorsTest`, both episodes of `wire-format.json` byte-identical after source and sink; fingerprints equal. The first run failed: Avro decodes maps into hash maps, so the sink changed the tag order. The sink now writes maps in UTF-8 key order (S6.2) |
+| A1.2 | met: `TsxWireVectorsTest` runs `series-id.json`; `xxh64.json`, `time-deltas.json` and `bucket-checksum.json` are run by `SeriesIdentityTest` and `TimeAxisAndSummaryTest` of `opentsx-model`, whose classes Track A uses unchanged |
+| A1.3 | met: `TsxClientSettingsTest`, 2 tests |
+| A1.4 | met: `TsxPassThroughIntegrationTest`, all episodes of W with identical bytes; a second increment reads 0 records |
+| A1.5 | met: `TsxCrashRecoveryIntegrationTest`, failures after 1, 150 and 299 of 300 episodes; no checkpoint after a failed increment; after the next increment every episode id present, every duplicate byte-identical |
+| A1.6 | met for the increment: `TsxFingerprintIntegrationTest`, `TsxIncrementException` carries the message of S3.2 exactly, no checkpoint, nothing written. The status record with state `failed` follows with the status writer in A2.5 |
+| A1.7 | open |
+
+The CI job "KafScale conformance" runs the three integration tests and fails when one of them is missing, skipped or
+failed.
 
 ### A2: clean chain, statistics, status
 - [ ] Java execution operators, mappings and cost functions for `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`, `stats.welford-ddsketch`.

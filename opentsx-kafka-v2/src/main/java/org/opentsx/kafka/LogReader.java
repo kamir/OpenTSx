@@ -13,13 +13,13 @@ import java.util.Map;
 import java.util.Set;
 
 /** Bounded reads with manual assignment (no consumer group), the only reliable way to read KafScale today. */
-final class LogReader {
+public final class LogReader {
 
     private LogReader() {
     }
 
     /** Reads [from, toExclusive) of every given partition, then unassigns. */
-    static void read(Consumer<byte[], byte[]> consumer, Map<TopicPartition, long[]> ranges,
+    public static void read(Consumer<byte[], byte[]> consumer, Map<TopicPartition, long[]> ranges,
                      java.util.function.Consumer<ConsumerRecord<byte[], byte[]>> sink, Duration timeout) {
         Map<TopicPartition, Long> until = new HashMap<>();
         ranges.forEach((tp, r) -> {
