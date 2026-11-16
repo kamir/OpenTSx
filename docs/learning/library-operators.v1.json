@@ -1265,9 +1265,9 @@
           "docs/learning/library-operator-contracts.md#inspect-legacy-real-fft-coefficients"
         ],
         "source": [
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L730",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L984",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L1075"
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L710",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L964",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L1055"
         ],
         "tests": [
           "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fourierStarterCodeCompilesAndRuns",
@@ -1341,8 +1341,8 @@
         ],
         "source": [
           "opentsx-core/src/main/java/org/opentsx/generators/FFTPhaseRandomizer.java#L234",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L30",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L130"
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L25",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L125"
         ],
         "tests": [
           "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fourierStarterCodeCompilesAndRuns",
