@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Related-work study for the IEEE paper ([`docs/research/01-RELATED-WORK-AND-POSITIONING.md`](docs/research/01-RELATED-WORK-AND-POSITIONING.md)):
+  188 candidates in nine clusters, high and medium candidates checked against primary sources on 2026-11-16, a comparison
+  matrix over 14 dimensions, a concept mapping to commercial historians and cloud services, a claim check of what
+  distinguishes OpenTSx, and the evaluation a federated variant would need before it can be claimed.
+
 - Data model `v2.1`: analysis results as records of their own. `AnalysisResult` holds method, version, typed
   parameters, input episodes and series, and the parts `ResultScalar` (for example a DFA exponent with its fit range),
   `ResultCurve` (for example F(s)) and `ResultMatrix` (for example an event-synchronization matrix over series ids).
