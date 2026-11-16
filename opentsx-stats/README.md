@@ -75,6 +75,10 @@ The encoding is canonical. Java (`QuantileSketch`) and Python (`opentsx.stats.Qu
 checked by a shared test vector. `opentsx.stats.stats_to_frame(records)` turns decoded records into a pandas frame
 with quantile columns.
 
+Quantile representatives use `StrictMath.pow` for identical bits across Java
+platforms. This fixes a one-ULP difference in the representative of `2.5`
+between ARM and x86 runtimes. Sketch bytes are unchanged.
+
 ## Tests
 
 * Sketch: accuracy, exact merge, canonical bytes, collapsing, and the test vector.

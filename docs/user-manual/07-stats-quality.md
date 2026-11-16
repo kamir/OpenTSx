@@ -93,6 +93,9 @@ sketch bytes as hex, quantiles, NaN values, and empty windows. An empty
 engine stream emits no records; an explicit empty accumulator window
 contains NaN moments and an empty sketch.
 
+Quantile representatives use `StrictMath.pow` for repeatable reconstruction
+from a sketch bin across Java platforms. Sketch bytes are unchanged.
+
 `dq-result.v1.json` records seven cases from `DataQuality.evaluate`,
 covering every check and status. Freshness uses a fixed clock; messages
 use `Locale.ROOT`. Non-finite values in both files are strings.
