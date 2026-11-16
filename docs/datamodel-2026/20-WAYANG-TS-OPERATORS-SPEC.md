@@ -504,24 +504,28 @@ deterministic through the `seed` parameter (`Mulberry32`).
 ### S7.2 Transport
 
 1. The plan service API (S5.3) MUST use TLS 1.3 with client certificates.
-2. Kafka connections SHOULD use TLS with client certificates or SASL OAUTHBEARER. Whether KafScale supports either is
-   not verified; until it is, a site MUST put a TLS-terminating proxy in front of KafScale or keep the broker on a
-   network only the runtime can reach.
+2. KafScale v1.6.0 accepts plain TCP only and has no server-side SASL
+   ([concept 20, section 11](20-WAYANG-TS-OPERATORS.md#11-security-model)). A site MUST put a TLS-terminating proxy
+   with client certificates in front of the KafScale proxy, and that proxy MUST pass the client identity with the
+   PROXY protocol (`KAFSCALE_PROXY_PROTOCOL`, `KAFSCALE_PRINCIPAL_SOURCE=proxy_addr`). A site without such a proxy
+   MUST keep the broker on a network only the runtime can reach.
 
 ### S7.3 Topic permissions
 
-Where the broker supports ACLs, each runtime principal SHOULD have:
+On KafScale, sites MUST enable KafScale ACLs (`KAFSCALE_ACL_ENABLED=true`, `KAFSCALE_ACL_FAIL_OPEN=false`) and give
+each runtime principal only:
 
-| Resource | Operations |
+| Resource | KafScale action |
 |---|---|
-| input topics of its plans | `READ`, `DESCRIBE` |
-| output topics of its plans | `WRITE`, `DESCRIBE` |
-| `tsx.<domain>.dag-status.v1` | `WRITE` |
-| `tsx.<domain>.dags.v1` | `READ` |
-| everything else | none |
+| input topics of its plans | `fetch` |
+| output topics of its plans | `produce` |
+| `tsx.<domain>.dag-status.v1` | `produce` |
+| `tsx.<domain>.dags.v1` | `fetch` |
+| everything else | none (default policy deny) |
 
-Prefixed ACLs on `tsx.<domain>.` ([KIP-290](https://cwiki.apache.org/confluence/display/KAFKA/KIP-290%3A+Support+for+Prefixed+ACLs))
-MAY replace the per-topic list.
+A rule name with a trailing `*` (`tsx.<domain>.*`) matches a prefix (`pkg/acl/acl.go:139-147` of KafScale v1.6.0)
+and MAY replace the per-topic list. On Apache Kafka the same rights are `READ`, `WRITE` and `DESCRIBE`, with
+prefixed ACLs ([KIP-290](https://cwiki.apache.org/confluence/display/KAFKA/KIP-290%3A+Support+for+Prefixed+ACLs)).
 
 ### S7.4 Site policy and refusals
 

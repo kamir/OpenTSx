@@ -123,6 +123,16 @@ Conflicts with OpenTSx:
   (`wayang-commons/wayang-basic/pom.xml:37` at `713faa7d`); OpenTSx uses Iceberg 1.10.2
   (`opentsx-store-iceberg/pom.xml:19`). This matters at the next Wayang upgrade.
 
+Found in phase A0 (`opentsx-wayang`, `WayangSmokeTest`):
+
+- Wayang declares Hadoop with `${external.platforms.scope}`, which is `provided` (`pom.xml:131` of the tag). The
+  Java platform still needs it at run time: `ChannelConversions` loads `org.apache.hadoop.io.Writable`. OpenTSx
+  supplies the shaded `hadoop-client-api` and `hadoop-client-runtime` 3.5.0 it already manages (`pom.xml:165-174`).
+- `Java.basicPlugin()` registers the Amazon S3, Google Cloud Storage and Azure mappings
+  (`wayang-java/.../mapping/Mappings.java:63-65` of the tag); building a plan with it fails with
+  `NoClassDefFoundError: software/amazon/awssdk/core/ResponseInputStream` once those SDKs are excluded. OpenTSx
+  therefore uses its own `TsxJavaPlugin` with only the mappings it needs.
+
 Rule for Track A: `opentsx-wayang` depends on `wayang-core`, `wayang-basic` and `wayang-java` 1.1.1, pinned, with
 exclusions for the cloud-storage artifacts and `log4j-slf4j-impl`. It does not depend on `opentsx-store-iceberg`.
 Phase A0 runs `mvn dependency:tree` and the Wayang Java platform tests with the exclusions in place. If Wayang's
@@ -459,12 +469,23 @@ Assets: raw episodes at each site, plans, the plan signing key, site credentials
 | code injection | plans name operator ids, never code; no Scala source compilation as in `wayang-api-json` |
 | tampered artifact | Track A: signed JAR or image from CI; Track B: `cargo-auditable`, CycloneDX SBOM, cosign signature, SLSA provenance; both report their digest in the conformance report |
 | compromised process reaches other hosts | systemd unit with `DynamicUser=yes`, `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX`, `IPAddressDeny=any`, `IPAddressAllow=` proxy and signal cluster ([systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), [systemd.resource-control](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)); optional Landlock (Linux 5.13 and later) |
-| stolen broker credentials | TLS client certificates or SASL OAUTHBEARER; prefixed ACLs on `tsx.<domain>.` ([KIP-290](https://cwiki.apache.org/confluence/display/KAFKA/KIP-290%3A+Support+for+Prefixed+ACLs)) |
+| stolen broker credentials | client certificates at the TLS-terminating proxy; KafScale ACLs with prefix rules on `tsx.<domain>.` and principal source `proxy_addr` (KafScale has no SASL, see below) |
 | WASM user operators (Track B, later) | `wasmtime` with fuel or epoch deadline, memory cap, no WASI sockets or filesystem |
 
-**Not verified:** whether KafScale or its proxy supports TLS, mTLS, SASL or ACLs; the KafScale README lists no
-security feature in scope. Until checked, transport security holds only with a TLS-terminating proxy in front of
-KafScale.
+**KafScale security, checked in [KafScale tag v1.6.0, commit `2809a3a`](https://github.com/KafScale/platform/tree/v1.6.0)** (phase A0):
+
+| Feature | Supported | Evidence |
+|---|---|---|
+| TLS on the Kafka listener | no; broker and proxy accept plain TCP | `pkg/broker/server.go:53` and `cmd/proxy/main.go:272` (`net.Listen("tcp", ...)`). TLS exists only for the LFS proxy's HTTP endpoint (`cmd/proxy/lfs_http_tls.go:26-40`) and its connection to the broker (`cmd/proxy/lfs_backend_tls.go:26-32`) |
+| SASL | no on the server side; the API key list has no `SaslHandshake` (17) or `SaslAuthenticate` (36) | `pkg/protocol/api.go:15-60`; SASL appears only as a client of the LFS proxy (`cmd/proxy/lfs_backend_auth.go:53-83`) |
+| Kafka ACL API | no; no `DescribeAcls`, `CreateAcls`, `DeleteAcls` (29 to 31) | `pkg/protocol/api.go:15-60` |
+| KafScale ACLs | yes, off by default: `KAFSCALE_ACL_ENABLED`, rules from `KAFSCALE_ACL_JSON` or `KAFSCALE_ACL_FILE`, `KAFSCALE_ACL_FAIL_OPEN`; actions `produce`, `fetch`, `group_read`, `group_write`, `group_admin`, `admin` on `topic`, `group`, `cluster`; a trailing `*` matches a prefix | `cmd/broker/main.go:2368-2385`; `pkg/acl/acl.go:1-148` |
+| Principal | `KAFSCALE_PRINCIPAL_SOURCE`: `client_id` (default; the broker warns that `client.id` is spoofable) or `proxy_addr` via the PROXY protocol (`KAFSCALE_PROXY_PROTOCOL`) | `cmd/broker/main.go:2283-2330` |
+| `InitProducerId` | no; API key 22 is not in the list, which confirms the missing idempotent producer | `pkg/protocol/api.go:15-60` |
+
+Consequence (D-T11): transport security comes from a TLS-terminating proxy in front of KafScale. Authorization uses
+KafScale ACLs with prefix rules on `tsx.<domain>.` and the principal from the PROXY protocol (`proxy_addr`), so that
+the identity comes from the terminating proxy and not from the spoofable `client.id`.
 
 ### 11.1 Launch: REST agent or SSH
 
@@ -577,7 +598,7 @@ The owner decisions, with options and a recommendation each, are D-T1 to D-T12 i
 |---|---|---|
 | Wayang's dependency footprint and version conflicts (Hadoop, Iceberg, `slf4j-simple`) | larger artifacts, classpath conflicts in OpenTSx | exclusions verified in A0; isolated module; O9 |
 | Wayang is batch and single-driver | continuous DAGs need increments; latency set by job start | measure in A1; route S for continuous federation; O6 |
-| KafScale transport security unknown | data and plans exposed on site networks | A0 check; TLS-terminating proxy |
+| KafScale has no TLS or SASL on its Kafka listener (checked in A0) | data exposed on site networks without the proxy | TLS-terminating proxy and KafScale ACLs (D-T11) |
 | floating-point differences between Java, Python and Rust | vectors fail; sketch bins differ at boundaries in mixed federations | tolerance where Java and Python already differ; boundary gap documented |
 | partitioner mismatch in Track B | Rust and Java writers place a series on different partitions | `murmur2_random`; placement probe in the site contract |
 | `pair.xcorr` has no Java code in OpenTSx | Track A port may diverge | port from the original Java used for the vectors; vectors to 12 decimals |

@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
+  Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
+  storage SDKs and the `log4j-slf4j-impl` binding; Hadoop from the managed shaded client 3.5.0; `TsxJavaPlugin`
+  registers the Java platform with only the mappings OpenTSx uses; `WayangSmokeTest` runs a plan on the Java
+  platform. The owner decisions D-T1 to D-T12 are recorded in TASK-020, and concept 20 documents the checked
+  security features of KafScale v1.6.0 (no TLS or SASL on the Kafka listener; KafScale ACLs).
+
 - `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.

@@ -31,6 +31,7 @@
         <module>opentsx-market</module>
         <module>opentsx-legacy-bridge</module>
         <module>opentsx-kafscale-conformance</module>
+        <module>opentsx-wayang</module>
     </modules>
 
     <properties>
@@ -55,6 +56,8 @@
         <mahout.version>0.9</mahout.version>
         <slf4j.version>2.0.20</slf4j.version>
         <log4j2.version>2.26.1</log4j2.version>
+        <!-- Apache Wayang: Track A of docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md; cloud storage and its log4j binding excluded (D-T9) -->
+        <wayang.version>1.1.1</wayang.version>
         <junit.jupiter.version>5.14.4</junit.jupiter.version>
 
         <jcuda.jcudaVersion>0.8.0</jcuda.jcudaVersion>
@@ -271,6 +274,59 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
                 <version>${log4j2.version}</version>
+            </dependency>
+                    <dependency>
+                <groupId>org.apache.wayang</groupId>
+                <artifactId>wayang-core</artifactId>
+                <version>${wayang.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-s3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.wayang</groupId>
+                <artifactId>wayang-basic</artifactId>
+                <version>${wayang.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.cloud</groupId>
+                        <artifactId>google-cloud-storage</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.cloud</groupId>
+                        <artifactId>google-cloud-storage-control</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>s3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.azure</groupId>
+                        <artifactId>azure-storage-blob</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.azure</groupId>
+                        <artifactId>azure-security-keyvault-secrets</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.azure</groupId>
+                        <artifactId>azure-identity</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.wayang</groupId>
+                <artifactId>wayang-java</artifactId>
+                <version>${wayang.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j-impl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

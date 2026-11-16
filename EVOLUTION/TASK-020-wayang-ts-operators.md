@@ -34,17 +34,27 @@ zero failures, errors and skips, as the existing streaming acceptance requires (
 Track A first. Track B starts when A3 is accepted.
 
 ### A0: foundation and decisions
-- [ ] Owner decisions D-T1 to D-T12 recorded in the decision table below.
-- [ ] Module `opentsx-wayang` with Wayang 1.1.1 and the exclusions of concept 20, section 3.3.
-- [ ] KafScale transport security checked.
+- [x] Owner decisions D-T1 to D-T12 recorded in the decision table below (2026-11-16: every recommendation accepted).
+- [x] Module `opentsx-wayang` with Wayang 1.1.1 and the exclusions of concept 20, section 3.3 (2026-11-16): versions and exclusions in the root `dependencyManagement`, Hadoop from the managed shaded client 3.5.0, `TsxJavaPlugin` instead of `Java.basicPlugin()`, `WayangSmokeTest`.
+- [x] KafScale transport security checked (2026-11-16, KafScale v1.6.0): no TLS and no SASL on the Kafka listener, KafScale ACLs with prefix rules, principal from `client.id` or the PROXY protocol ([concept 20, section 11](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#11-security-model)).
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | A0.1 | The dependency tree has no excluded artifact | `mvn -B -ntp -pl opentsx-wayang dependency:tree`, output attached to the pull request | none | zero lines matching `log4j-slf4j-impl`, `google-cloud-storage`, `azure-`, `aws-java-sdk-s3` |
-| A0.2 | Hadoop resolves to the OpenTSx version only | same output | none | `hadoop-common:jar:3.5.0` present, `3.3.6` absent |
-| A0.3 | A Wayang plan runs inside the OpenTSx build on both JDKs | `WayangSmokeTest` (collection source, map, local callback sink with `Java.basicPlugin()`), CI job "Java 17" and "Java 21" | fixed list of 1,000 integers | 1 test executed per JDK, output equals the input mapped, 0 failures |
+| A0.2 | Hadoop resolves to the OpenTSx version only | same output | none | `hadoop-client-api:jar:3.5.0` present; no Hadoop artifact in version 3.3.6 |
+| A0.3 | A Wayang plan runs inside the OpenTSx build on both JDKs | `WayangSmokeTest` (collection source, map, local callback sink with `TsxJavaPlugin`), CI job "Java 17" and "Java 21" | fixed list of 1,000 integers | 1 test executed per JDK, output equals the input mapped, 0 failures |
 | A0.4 | KafScale security is documented | concept 20, section 11, states for TLS, SASL and ACLs whether KafScale v1.6.0 supports them, each with `file:line` or command output | KafScale source at tag v1.6.0 | three answers, each with evidence |
 | A0.5 | Decisions are recorded | decision table of this file | none | D-T1 to D-T12 each have a decision and a date |
+
+Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`:
+
+| # | Result |
+|---|---|
+| A0.1 | met: `mvn -B -ntp -pl opentsx-wayang dependency:tree` lists 0 lines matching the excluded artifacts |
+| A0.2 | met: `hadoop-client-api:jar:3.5.0` (compile), `hadoop-client-runtime:jar:3.5.0` (runtime), no other Hadoop artifact |
+| A0.3 | met on Java 21 locally (`Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`); Java 17 runs in the CI job of the pull request |
+| A0.4 | met: concept 20, section 11, with `file:line` evidence from KafScale v1.6.0 |
+| A0.5 | met: decision table below |
 
 ### A1: KafScale source, sink, checkpoint, increments
 - [ ] `TsxTopicSource`, `TsxTopicSink`, `TsxCheckpoint` and the increment runner (S5.1, S6).
@@ -153,18 +163,18 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 
 | Id | Question | Options | Recommendation | Decision |
 |---|---|---|---|---|
-| D-T1 | Edge runtime | Rust (Track B); Go (concept 11, D25); none, JVM only | Rust: `apache-avro` supports single-object encoding, `wasmtime` for later user operators; one non-JVM runtime only | open |
-| D-T2 | Tolerance for federated `mean` and `m2` | fixed relative 1e-12; bound measured per data set in A4.5 | fixed 1e-12, revisited with the measured error of A4.5 | open |
-| D-T3 | Default federation route | signal cluster; job state; both | signal cluster: works with offline sites and continuous jobs | open |
-| D-T4 | Plan delivery | pull agent (S5.3); push agent with an inbound port; SSH only | pull agent; SSH for sites that require it | open |
-| D-T5 | Signature algorithm | EdDSA (Ed25519); ES256 | EdDSA: small keys, deterministic signatures | open |
-| D-T6 | Track A increment interval | one fixed interval; per DAG; a long-running Java operator outside Wayang's model | per DAG, default PT1M, decided again after A1.7 | open |
-| D-T7 | Default `maxDelay` | PT10M; PT1H; per job only | per job, no default: offline periods differ by site | open |
-| D-T8 | New `TopicLayout` kinds | `aggregates`, `signals`, `repartition.<dag>.<node>`; other names | as proposed | open |
-| D-T9 | Wayang dependencies | exclusions; contribute a slimmer module upstream; accept the full footprint | exclusions now, upstream contribution later | open |
-| D-T10 | S3 segment input | not needed; Go KafScale template; Rust segment decoder | not needed: both tracks read the Kafka protocol | open |
-| D-T11 | Kafka transport security until KafScale is checked | TLS-terminating proxy; isolated network; wait for KafScale support | TLS-terminating proxy | open |
-| D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | open |
+| D-T1 | Edge runtime | Rust (Track B); Go (concept 11, D25); none, JVM only | Rust: `apache-avro` supports single-object encoding, `wasmtime` for later user operators; one non-JVM runtime only | as recommended, owner, 2026-11-16 |
+| D-T2 | Tolerance for federated `mean` and `m2` | fixed relative 1e-12; bound measured per data set in A4.5 | fixed 1e-12, revisited with the measured error of A4.5 | as recommended, owner, 2026-11-16 |
+| D-T3 | Default federation route | signal cluster; job state; both | signal cluster: works with offline sites and continuous jobs | as recommended, owner, 2026-11-16 |
+| D-T4 | Plan delivery | pull agent (S5.3); push agent with an inbound port; SSH only | pull agent; SSH for sites that require it | as recommended, owner, 2026-11-16 |
+| D-T5 | Signature algorithm | EdDSA (Ed25519); ES256 | EdDSA: small keys, deterministic signatures | as recommended, owner, 2026-11-16 |
+| D-T6 | Track A increment interval | one fixed interval; per DAG; a long-running Java operator outside Wayang's model | per DAG, default PT1M, decided again after A1.7 | as recommended, owner, 2026-11-16 |
+| D-T7 | Default `maxDelay` | PT10M; PT1H; per job only | per job, no default: offline periods differ by site | as recommended, owner, 2026-11-16 |
+| D-T8 | New `TopicLayout` kinds | `aggregates`, `signals`, `repartition.<dag>.<node>`; other names | as proposed | as recommended, owner, 2026-11-16 |
+| D-T9 | Wayang dependencies | exclusions; contribute a slimmer module upstream; accept the full footprint | exclusions now, upstream contribution later | as recommended, owner, 2026-11-16 |
+| D-T10 | S3 segment input | not needed; Go KafScale template; Rust segment decoder | not needed: both tracks read the Kafka protocol | as recommended, owner, 2026-11-16 |
+| D-T11 | Kafka transport security until KafScale is checked | TLS-terminating proxy; isolated network; wait for KafScale support | TLS-terminating proxy | as recommended, owner, 2026-11-16 |
+| D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
 
 ## Non-goals
 - A Kafka Streams-like runtime: no RocksDB state stores, no changelog topics, no automatic repartition topics, no
