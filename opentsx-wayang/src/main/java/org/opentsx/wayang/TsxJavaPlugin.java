@@ -29,6 +29,7 @@ public final class TsxJavaPlugin implements Plugin {
     @Override
     public Collection<Mapping> getMappings() {
         return List.of(new CollectionSourceMapping(), new MapMapping(), new LocalCallbackSinkMapping(),
+                new TsxRetrievalMappings(),
                 new TsxTopicSourceMapping(), new TsxTopicSinkMapping(), new TsxOperatorMappings.SeriesChainMapping(),
                 new TsxOperatorMappings.StatsWindowMapping(), new UnionAllMapping(),
                 new TsxVectorMappings.AlignVectorMapping(), new TsxVectorMappings.VectorSinkMapping(),

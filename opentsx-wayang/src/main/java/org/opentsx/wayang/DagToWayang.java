@@ -106,7 +106,11 @@ public final class DagToWayang {
                 }
                 JsonNode value = params.get(name);
                 String type = param.path("type").asText();
-                if (!hasType(value, type)) throw new IllegalArgumentException(at + " must be a " + type);
+                boolean typed = type.equals("duration")
+                        ? validDuration(value, param.has("min") && param.path("min").isNumber()
+                                && param.path("min").decimalValue().signum() == 0)
+                        : hasType(value, type);
+                if (!typed) throw new IllegalArgumentException(at + " must be a " + type);
                 if (value.isNumber()) {
                     boolean below = param.has("min") && value.decimalValue().compareTo(param.path("min").decimalValue()) < 0;
                     boolean above = param.has("max") && value.decimalValue().compareTo(param.path("max").decimalValue()) > 0;
@@ -119,10 +123,15 @@ public final class DagToWayang {
                                 + " and " + param.path("max").asText("Infinity"));
                     }
                 }
-                if (type.equals("enum")) {
+                if (type.equals("enum") || type.equals("list") && param.has("values")) {
                     List<String> values = new ArrayList<>();
                     param.path("values").forEach(v -> values.add(v.asText()));
-                    if (!values.contains(value.asText())) throw new IllegalArgumentException(at + " must be one of " + values);
+                    Iterable<JsonNode> entries = type.equals("list") ? value : List.of(value);
+                    for (JsonNode entry : entries) {
+                        if (!entry.isTextual() || !values.contains(entry.asText())) {
+                            throw new IllegalArgumentException(at + " must be one of " + values);
+                        }
+                    }
                 }
                 if (op.equals("stats.welford-ddsketch") && name.equals("windows")) {
                     if (value.isEmpty()) throw new IllegalArgumentException(at + " must be a list");
@@ -161,16 +170,16 @@ public final class DagToWayang {
             case "boolean" -> value.isBoolean();
             case "string", "enum" -> value.isTextual();
             case "list" -> value.isArray();
-            case "duration" -> positiveDuration(value);
+            case "duration" -> validDuration(value, false);
             default -> throw new IllegalArgumentException("unknown catalog parameter type " + type);
         };
     }
 
-    private static boolean positiveDuration(JsonNode value) {
+    private static boolean validDuration(JsonNode value, boolean allowZero) {
         if (!value.isTextual()) return false;
         try {
             Duration duration = Duration.parse(value.asText());
-            return !duration.isNegative() && !duration.isZero() && duration.toNanos() % 1000 == 0;
+            return !duration.isNegative() && (allowZero || !duration.isZero()) && duration.toNanos() % 1000 == 0;
         } catch (DateTimeParseException | ArithmeticException e) {
             return false;
         }

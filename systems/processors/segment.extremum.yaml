@@ -1,0 +1,23 @@
+schema: opentsx.processor.v1
+id: segment.extremum
+version: 1
+kind: transformer
+title: Extremum segments
+description: Cuts episodes around local extrema using prominence and distance.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: feature, type: enum, values: [MAX, MIN], required: true }
+  - { name: prominence, type: number, min: 0, required: true }
+  - { name: window, type: duration, min: 0, required: true, description: Non-negative prominence neighbourhood }
+  - { name: distance, type: duration, min: 0, required: true, description: Non-negative extremum distance }
+  - { name: pre, type: duration, min: 0, default: PT0S, description: Non-negative context before the extremum }
+  - { name: post, type: duration, min: 0, default: PT0S, description: Non-negative context after the extremum }
+semantics: { needs: window, deterministic: true, keeps: [unit, series], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSegment }
+state: { kind: keyed, key: series }
+merge: { class: exact, function: sum }
+testvectors: docs/datamodel-2026/testvectors/segment-extremum.v1.json

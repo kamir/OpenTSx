@@ -1,0 +1,24 @@
+schema: opentsx.processor.v1
+id: segment.threshold
+version: 1
+kind: transformer
+title: Threshold segments
+description: Cuts episodes at threshold crossings with hysteresis and pre/post context.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: direction, type: enum, values: [ABOVE, BELOW], required: true }
+  - { name: enter, type: number, required: true }
+  - { name: exit, type: number, required: true }
+  - { name: pre, type: duration, min: 0, default: PT0S, description: Non-negative context before the crossing }
+  - { name: post, type: duration, min: 0, default: PT0S, description: Non-negative context after the crossing }
+  - { name: minDuration, type: duration, min: 0, default: PT0S, description: Non-negative minimum phase duration }
+  - { name: maxDuration, type: duration, min: 0, default: PT0S, description: Non-negative cap; PT0S means unlimited }
+semantics: { needs: window, deterministic: true, keeps: [unit, series], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSegment }
+state: { kind: keyed, key: series }
+merge: { class: exact, function: sum }
+testvectors: docs/datamodel-2026/testvectors/segment-threshold.v1.json

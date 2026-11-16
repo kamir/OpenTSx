@@ -225,7 +225,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1, A2, A3.1 and A3.2)
+      - name: Require executed Wayang acceptance (TASK-020 A1 to A3)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -243,6 +243,11 @@ jobs:
               "TsxVectorVectorsTest": 13,
               "TsxVectorIntegrationTest": 1,
               "TsxPairVectorsTest": 12,
+              "TsxSegmentVectorsTest": 13,
+              "TsxSaxVectorsTest": 8,
+              "TsxDqVectorsTest": 10,
+              "TsxStreamEqualsBatchTest": 26,
+              "TsxSignalSinkIntegrationTest": 2,
           }
           for name, minimum in expected.items():
               suite = ET.parse(f"opentsx-wayang/target/surefire-reports/TEST-org.opentsx.wayang.{name}.xml").getroot()
@@ -271,7 +276,17 @@ jobs:
                              if case.attrib["name"].startswith("everySharedCaseMatchesThroughAWayangPlan()[")]
                   if len(vectors) != 5:
                       raise SystemExit("all five pair.xcorr vectors must execute through Wayang")
-          print("All twelve Wayang acceptance classes executed successfully")
+              factories = {
+                  "TsxSegmentVectorsTest": ("sharedVectorsThroughRealWayangPlans()[", 12),
+                  "TsxSaxVectorsTest": ("allSharedWordsMatchThroughWayang()[", 7),
+                  "TsxDqVectorsTest": ("allSharedResultsMatchThroughWayang()[", 7),
+                  "TsxStreamEqualsBatchTest": ("everyVectorCaseMatchesInSixChunkAndSeriesOrders()[", 26),
+              }
+              if name in factories:
+                  prefix, count = factories[name]
+                  if sum(case.attrib["name"].startswith(prefix) for case in suite.findall("testcase")) != count:
+                      raise SystemExit(f"{name} did not execute every shared case")
+          print(f"All {len(expected)} Wayang acceptance classes executed successfully")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:

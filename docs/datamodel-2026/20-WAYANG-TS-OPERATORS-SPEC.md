@@ -61,7 +61,8 @@ Kafka they are:
 1. Parameters are the `params` of the description: `name`, `type`, `required`, `default`, `min`, `max`, `values`.
 2. A runtime MUST reject a plan in which a required parameter is missing, a value has the wrong type, a number lies
    outside `[min, max]`, or an enum value is not in `values`. The messages are in S2.5.
-3. A `duration` is an ISO 8601 duration (`PT1M`). It MUST be above zero unless the description says otherwise.
+3. A `duration` is an ISO 8601 duration (`PT1M`). It MUST be above zero unless
+   the description permits zero with `min: 0`. Negative durations are rejected.
 
 ### S1.4 State
 
@@ -136,9 +137,9 @@ The workbench operator `stats.window` maps to `stats.welford-ddsketch` (`ops.ts:
 parameters `window` (seconds) and `field`, not `windows` and `alpha`. The workbench MUST write the catalog
 parameters before a flow with this operator can be deployed.
 
-`sax.word` and `dq.result` are new DAG `op` names: `Sax` and `DataQuality.evaluate` exist (`Sax.java:44`,
-`DataQuality.java:66-70`) but have no DAG operator yet. Their descriptions MUST be added to `systems/processors/`
-before use.
+`sax.word` and `dq.result` have descriptions in `systems/processors/`. Their
+Wayang Java operators reuse `Sax`, `Paa`, and `DataQuality.evaluate` and are
+registered through `TsxRetrievalMappings`.
 
 ### S1.8 Limits on Track B
 
@@ -510,6 +511,17 @@ Every output record MUST carry an id that depends only on what it logically is:
 | partial aggregate | Kafka key of S4.2 plus `tsx-revision` |
 | merged aggregate | Kafka key of S4.2 plus `tsx-revision` |
 | signal | `id` of `opentsx.signal.v1`: `hex(xxHash64(job + "|" + site + "|" + seriesId + "|" + kind + "|" + at))` |
+
+Segment episodes keep the deterministic ULID of
+`StreamingSegmenter.materialize`: start time plus xxHash64 of series id,
+strategy, sorted parameters, and start time. The shared segment vectors
+preserve these identities.
+
+For `kind: dq`, the hash input is
+`job|site|seriesId|dq|at|check|window.from|window.to`. DQ identities include the
+check and window bounds so that distinct checks and overlapping window widths
+remain distinct findings. Hash the UTF-8 bytes of the strings exactly as
+written in the signal JSON, including ISO timestamps.
 
 Readers MUST keep one record per id; for aggregates the highest revision per key.
 
