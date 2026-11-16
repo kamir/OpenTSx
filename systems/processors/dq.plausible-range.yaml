@@ -18,7 +18,7 @@ semantics: { needs: point, deterministic: true, keeps: [time, unit, series], ori
 dag: { op: dq.checks, fixed: { checks: [PLAUSIBLE_RANGE] } }
 runtimes:
   workbench: { status: available }
-  processor: { status: planned, note: "TASK-013, 013.5" }
+  processor: { status: available, note: "Series DAG op dq.checks in CleanChain." }
   wayang: { status: planned, note: "TASK-020, phase A2" }
   rust: { status: planned, note: "TASK-020, phase B2" }
 state: { kind: none }

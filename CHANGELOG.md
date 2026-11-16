@@ -37,9 +37,16 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   conformance" runs the three new integration tests and requires them to execute.
 
 - Shared execution-assignment schema and offline Java/Rust validators for exact source/fragment identities,
-  decimal-string offsets, execution modes and static partition-ownership checks. Generated fixtures are consumed
-  directly by both runtimes. The unified delivery plan covers UI-to-Wayang-to-Rust orchestration and a separate
+  decimal-string offsets, execution modes and whole-topic ownership with complete internal cursor checks.
+  Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
+  UI-to-Wayang-to-Rust orchestration and a separate
   bounded storage profile; no runner, network deployment or production fencing is enabled.
+
+- Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
+  families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
+  are generated with source-content hashes; synchronization rejects missing, edited or stale material.
+  Manual chapter 17 links the contracts and verification commands. The project rules require coordinated
+  operator, manual, SPEC, exercise and test updates and preserve whole-topic deployment ownership.
 
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud

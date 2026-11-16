@@ -20,8 +20,10 @@
   * **Workbench** (`/workbench`): load series from the TS inventory, a file or a sample, apply time series
     operators, inspect every result on an oscilloscope view (time base, cursors, trigger, measurements,
     ground-truth bands), build the processing flow as a graph, publish a node as a Smart Topic and deploy it. The
-    limits are in [`EVOLUTION/TASK-013-web-workbench.md`](../../EVOLUTION/TASK-013-web-workbench.md): of all
-    operators, the processor runs only the alignment of series to a common clock.
+    series processor supports `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`,
+    `feature.lag` and `feature.rolling`; vector sinks support `align.vector`.
+    Workbench execution and deployment availability are separate. Use the
+    [operator lessons](17-learn-operators.md) and the actual runtime contract when choosing an execution surface.
   * **Systems** (`/systems`): a shell around one system with four places. "System": the atoms of its plan and what
     feeds each input. "Signals": the signals the system expects, each with its expectation, origin, state and next
     step; "Prepare" opens the raw series of a signal in the workbench with the expected range on the screen;

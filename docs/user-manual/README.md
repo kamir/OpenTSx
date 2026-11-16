@@ -28,6 +28,7 @@ OpenTSx is a toolkit for time-series data on event-streaming infrastructure. It 
 | an analyst or data scientist | [Retrieval & patterns](09-retrieval.md), [Python](10-python.md), [Classic analytics](11-classic-analytics.md) |
 | an operator | [Operations](12-operations.md), [DevOps guide: k3s + KafScale](../devops/README.md) |
 | coming from OpenTSx 2.x (TimeSeriesObject, TSBucket) | [Migration](13-migration.md) |
+| learning an implemented operator or maintaining its examples | [Operator lessons and alignment checks](17-learn-operators.md) |
 
 ## Conventions
 

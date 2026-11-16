@@ -14,6 +14,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  operator-learning:
+    name: Operator learning synchronization
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test learning material synchronization
+        run: python3 -m unittest discover -s tools -p test_operator_exercise_sync.py -v
+      - name: Generate and check the student material
+        run: |
+          mkdir -p "$RUNNER_TEMP/student-course"
+          python3 tools/sync_operator_exercises.py --opentsx-root . --student-root "$RUNNER_TEMP/student-course"
+          python3 tools/sync_operator_exercises.py --opentsx-root . --student-root "$RUNNER_TEMP/student-course" --check
+
   execution-contracts:
     name: Shared contract vectors and Rust
     runs-on: ubuntu-24.04
