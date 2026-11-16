@@ -11,6 +11,10 @@
 > Normative rules: [20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md) (S1 to S7). Tasks and acceptance
 > criteria: [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
 
+The [unified delivery plan](../devguide/integration/wayang-unified-plan.md) combines bounded storage and
+multi-node Rust orchestration. Its [shared-contract implementation](../devguide/integration/wayang-shared-contracts.md)
+validates assignment envelopes in Java and Rust; it does not deploy runners.
+
 ## 1. Goal
 
 OpenTSx time-series operators run as Apache Wayang operators on Kafka topics, at many sites, under one plan. Raw
@@ -21,9 +25,10 @@ Two implementation tracks share one operator catalog, one topic and schema contr
 | Track | What | Where it runs | Order |
 |---|---|---|---|
 | **A**, TSOperators for Java | native Wayang operators: logical operator, Java execution operator, mapping and cost function per OpenTSx operator; reuse of the existing OpenTSx Java code | JVM sites (servers, cluster nodes) | first |
-| **B**, Rust edge runner | the same operators, ported to a small Rust binary, reached from Wayang as a separate platform | low-capacity hardware: ARM gateways, a Raspberry Pi on board, meter and substation sites | second, after the catalog and vectors of Track A are stable |
+| **B**, Rust edge runner | the same operators, ported to a small Rust binary, reached from Wayang as a separate platform | low-capacity hardware: ARM gateways, a Raspberry Pi on board, meter and substation sites | a small deployment proof follows shared contracts; each operator still needs stable reference vectors before admission |
 
-Kafka is the only source and sink in both tracks. Out of scope: training (it stays a batch job,
+Kafka is the source and sink of this continuous edge profile. The unified plan defines bounded Iceberg work
+as a separate profile with immutable inputs and publication guarantees. Out of scope: training (it stays a batch job,
 [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), D28), joins over raw data of two sites, and history search (pattern
 search, twin, causal analysis).
 
@@ -391,9 +396,9 @@ Wayang has no federation (section 3.1). The plan adds it as a platform in the dr
 | Class | Role |
 |---|---|
 | `TsxSitePlatform extends Platform` | stands for "a set of sites"; its executor sends one plan per site |
-| `TopicChannel` with `ChannelDescriptor(TopicChannel.class, true, true)` | names a topic, fingerprint and partition count; carries no records, like `SqlQueryChannel` carries SQL |
+| `TopicChannel` | binds source identity, topic, schema, key and actual partitions; carries metadata rather than raw records. Reuse and breakpoint suitability require explicit qualified semantics; a live topic is not completed materialization. |
 | `AggregateChannel` | merged aggregates returned to the driver (route J) |
-| `TsxSiteExecutor extends PushExecutorTemplate` | builds, signs and sends site plans; polls status; collects route J results |
+| `TsxSiteExecutor extends ExecutorTemplate` | compiles a complete execution stage, performs bounded fragment fanout, verifies deployment handles and collects bounded route J results at an explicit completion boundary |
 
 The **JVM site agent** (Track A) is a small Java service in `opentsx-wayang`. It verifies the plan and runs it in a
 local `WayangContext` with the Java platform, increment by increment. The **Rust agent** (Track B) runs the same plan
@@ -571,7 +576,9 @@ Baselines:
 
 ## 16. Phased plan
 
-Track A first (A0 to A5), Track B when A3 is accepted (B1 to B5). Milestones, numbered acceptance criteria and the
+Use U00 to U09 of the unified plan to prove UI-to-Wayang-to-two-Rust-node deployment before full catalog expansion.
+Operator admission still requires its Java reference and cross-runtime vectors.
+Milestones, numbered acceptance criteria and the
 owner decisions are in [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 ## 17. Relation to concept 11

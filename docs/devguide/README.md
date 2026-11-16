@@ -5,6 +5,9 @@ The developer guide holds notes for contributors. User-facing documentation is i
 
 * [PDF generation](PDF-GENERATION.md): build the manual as PDF (Honkit / Docker).
 * [Local infrastructure](infrastructure/local-development.md): the local Docker stacks.
+* [Deploy UI DAGs through Wayang to Java and Rust nodes](integration/wayang-unified-plan.md): unified delivery
+  plan, [implemented shared contracts](integration/wayang-shared-contracts.md) and
+  [architecture assessment](integration/wayang-orchestration-review.md).
 * [Processing-flow descriptor schema](schemas/README.md) and its [validation plan](validation/README.md). The
   descriptor is used by `opentsx-flink-core` (`pfd.DynamicTopologyJob`).
 * Tests and CI: `mvn verify`, `pytest`, and the GitHub Actions workflow `.github/workflows/ci.yml` (see

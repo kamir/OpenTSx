@@ -126,6 +126,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
 | `opentsx-wayang` | Apache Wayang 1.1.1 plugin, KafScale transport, and pure Java `pair.xcorr` and `pair.es` kernels (TASK-020) |
+| `rust/tsx-contracts` | Offline execution-assignment validation shared with Java; [contract guide](docs/devguide/integration/wayang-shared-contracts.md) and [unified Wayang deployment plan](docs/devguide/integration/wayang-unified-plan.md) |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |
 | `python-package/` | Python library `opentsx` |
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |

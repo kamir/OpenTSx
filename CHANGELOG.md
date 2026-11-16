@@ -36,6 +36,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   read and written again keeps its bytes. `LogReader` in `opentsx-kafka-v2` is public. The CI job "KafScale
   conformance" runs the three new integration tests and requires them to execute.
 
+- Shared execution-assignment schema and offline Java/Rust validators for exact source/fragment identities,
+  decimal-string offsets, execution modes and static partition-ownership checks. Generated fixtures are consumed
+  directly by both runtimes. The unified delivery plan covers UI-to-Wayang-to-Rust orchestration and a separate
+  bounded storage profile; no runner, network deployment or production fencing is enabled.
+
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
   storage SDKs and the `log4j-slf4j-impl` binding; Hadoop from the managed shaded client 3.5.0; `TsxJavaPlugin`

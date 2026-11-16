@@ -31,7 +31,18 @@ zero failures, errors and skips, as the existing streaming acceptance requires (
 
 ## Phases and milestones
 
-Track A first. Track B starts when A3 is accepted.
+The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md) defines U00 to U09 for the
+UI-to-Wayang-to-multiple-Rust-node target and the separate bounded storage profile.
+The small Rust deployment proof follows shared contracts rather than waiting for the full A3 catalog.
+Each operator still requires its reference vectors and admission gate before use.
+
+- [x] U00 offline foundation: shared execution-assignment schema, exact source/fragment identities, Java/Rust
+  preflight validators and generated cross-runtime cases. This establishes no deployed runner or live fencing.
+- [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
+- [ ] U02/U03 stage compilation, fake-transport proof and durable control/delivery sequence.
+- [ ] U04/U05 minimal Rust runner and actual UI-to-two-node proof with static assignments.
+- [ ] U06 production stale-output enforcement, rollout, policy and operating qualification.
+- [ ] U08 bounded Iceberg snapshot/seal/publication profile.
 
 ### A0: foundation and decisions
 - [x] Owner decisions D-T1 to D-T12 recorded in the decision table below (2026-11-16: every recommendation accepted).

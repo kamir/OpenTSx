@@ -1,0 +1,54 @@
+@startuml
+!pragma layout smetana
+top to bottom direction
+title Target: UI DAG through Wayang to multiple Rust nodes
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam componentStyle uml2
+skinparam ArrowColor #34536F
+skinparam nodeBackgroundColor #F3F6FA
+skinparam componentBackgroundColor #E8F0F8
+skinparam noteBackgroundColor #FFF5D6
+
+actor User
+component "OpenTSx UI\nexisting DAG editor" as ui
+node "Control plane" {
+  component "SaaS admission\nplanned capability + policy checks" as backend
+  component "Wayang driver / site platform\nplanned fragment placement + fanout" as driver
+  component "ExecutionAssignments\nimplemented Java preflight" as java
+  database "Durable deployment journal\nplanned generations + delivery cursor" as journal
+}
+node "Site A / Rust node A" {
+  component "tsx-runner\nplanned operator execution + checkpoint" as runnerA
+  component "tsx-contracts\nimplemented Rust preflight" as contractsA
+}
+node "Site B / Rust node B" {
+  component "tsx-runner\nplanned operator execution + checkpoint" as runnerB
+  component "tsx-contracts\nimplemented Rust preflight" as contractsB
+}
+database "Approved Kafka channels\nexplicit bindings + partition ownership" as topics
+
+User --> ui
+ui --> backend : original DAG
+backend --> driver : admitted deployment request
+driver --> java : validate assignment set
+driver --> journal : prepare / activate / retire
+driver --> runnerA : fragment + partition set A
+driver --> runnerB : fragment + partition set B
+runnerA --> contractsA : validate envelope
+runnerB --> contractsB : validate envelope
+runnerA <--> topics : assigned channels
+runnerB <--> topics : assigned channels
+
+note bottom of java
+Offline schema, hash, offset and overlap checks exist.
+They do not authorize execution or fence live writers.
+end note
+note bottom of topics
+First prototype uses static ownership.
+Every cross-node edge needs an admitted data channel.
+Raw records do not pass through the driver.
+end note
+@enduml
