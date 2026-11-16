@@ -5,8 +5,30 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), tasks in
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-16.
 
-Status: phase A0. The module holds the Wayang dependency setup and `TsxJavaPlugin`. No OpenTSx operator runs on
-Wayang yet.
+The module contains the Wayang dependency setup, `TsxJavaPlugin`, and the pure
+Java `TsxPairXcorr` kernel. The kernel has no Wayang types. Its integration into
+a Wayang execution operator is outside this module's current execution path.
+
+## Compute pair cross-correlation
+
+`org.opentsx.wayang.ops.TsxPairXcorr` computes lagged cross-correlation, the
+signed absolute peak, link strength, and centred pair windows. It follows
+`xcorr.ts` and `windowsOf` in `pairs.ts` in the web workbench. Positive output
+lag means that B follows A. Non-finite samples contribute zero after centring;
+constant inputs produce NaN. Invalid lags are rejected with the workbench's
+error message.
+
+`compute` consumes equal-length arrays already aligned to the epoch clock;
+the first sample must lie on that clock. Aggregation, filling, and episode
+pairing happen before this call. `pairSettings` parses the workbench settings,
+including the default coverage `0.8`, episode windows, and width-sized steps.
+Off-grid starts fail with
+`The first aligned sample must start on the epoch clock.` Align the first
+sample to a clock tick before calling `compute`.
+
+The regression tests load the repository's shared
+`docs/datamodel-2026/testvectors/pair-xcorr.v1.json` directly. All five cases
+use an absolute error below `5e-13`.
 
 ## Use the plugin
 

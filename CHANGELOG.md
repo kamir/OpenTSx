@@ -10,6 +10,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Pure Java `pair.xcorr` in `opentsx-wayang`: lagged cross-correlation,
+  signed absolute peak, link strength, and centred pair windows. The five
+  shared vector cases and invalid-lag regression tests cover TASK-020 A3.2.
+
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
   storage SDKs and the `log4j-slf4j-impl` binding; Hadoop from the managed shaded client 3.5.0; `TsxJavaPlugin`
@@ -350,11 +354,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   signals instead of the invented inputs of the scenario (`inputs: "signals"`): each input says where its values
   came from, its origin and how much of the run it covers, and the run is compared with the decisions of the
   scenario on the same inputs. The place "Simulate" lets a person choose.
-- Notebooks 2 and 4 for the notebook of a stack (TASK-014, N2): "Ein Signal" puts the raw and clean series of a
-  signal next to its expectation and operating range, and shows what the decision says about its inputs; "Den
-  Zwilling fragen" asks the twin a question on the signals of the system and then the same question over many
+- Notebooks 2 and 4 for the notebook of a stack (TASK-014, N2): "A signal" puts the raw and clean series of a
+  signal next to its expectation and operating range, and shows what the decision says about its inputs; "Ask
+  the twin" asks the twin a question on the signals of the system and then the same question over many
   times of day. The Python client asks for runs on the signals and gives the operating range of a signal.
-- Notebook 3 "Verproben" (TASK-014, N2): tests a CSV file of an operator against a signal (unit, step, time zone,
+- Notebook 3 "Validate" (TASK-014, N2): tests a CSV file of an operator against a signal (unit, step, time zone,
   meaning of the time stamp, duplicates, plausible and operating range, gaps), puts it next to the series of the
   signal, gives a verdict, writes a prepared copy in UTC and the unit of the signal, and names the commands and
   binding lines. An example file derived from DWD data ships with it.
@@ -425,14 +429,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   parameter values) with export as inventory (`opentsx.inventory.v1`) and as an own wiring plan.
 - Smart Topics Studio redesigned as a product component after reviews from four viewpoints (UI design, UX and
   accessibility, electrical and energy engineering, commercial reader): app bar with scenario switch, scenario summary
-  with headline figures and the question behind it, views Überblick, Vergleich, Systembild and Messreihen, inspector
+  with headline figures and the question behind it, overview, comparison, system and time-series views, inspector
   beside the diagram, connections coloured by energy carrier and routed around the blocks, events in plain language,
   larger units from a threshold on, limit lines in charts, a switch for technical details. Engineering corrections
   in both guides.
-- Smart Topics Studio as a tool shell: title bar with menus (Datei, Ansicht, Szenario, Hilfe), icon rail on the left
+- Smart Topics Studio as a tool shell: title bar with menus (File, View, Scenario, Help), icon rail on the left
   that expands and collapses, scenarios as document tabs, detail panel for blocks and connections sliding in from the
   right, status bar. Keyboard: Alt+1 to Alt+4 for the views, Ctrl+B for the rail, Esc closes the detail panel.
-  The document tabs belong to the current scenario: the scenario itself, a link to its page in the Anlagen-Explorer,
+  The document tabs belong to the current scenario: the scenario itself, a link to its page in the asset explorer,
   and an event topic view.
 - Event topic of a twin run (`opentsx-twin-live`): `EventPublisher` writes the events of a run to
   `twin.<id>.<run>.events` (key: atom, value: JSON `twin.event.v1`), at once or played over a given duration;

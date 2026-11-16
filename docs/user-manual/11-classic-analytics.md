@@ -6,6 +6,9 @@ algorithms are still available:
 * in Python, through the `opentsx` top-level API (the recommended way, with verified examples below),
 * in Java, in `opentsx-core`, as tools on the 2.x `TimeSeriesObject` model.
 
+The pure Java pair cross-correlation kernel is in `opentsx-wayang`; see
+[section 11.6](#116-compute-pair-cross-correlation-in-java).
+
 ## 11.1 Detrended Fluctuation Analysis (DFA)
 
 DFA estimates the scaling exponent α of the fluctuation function F(s) ~ s^α after removing polynomial trends in
@@ -128,3 +131,27 @@ See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for 
 * `TSDataSineWaveGenerator` and the request/response latency probes.
 * Topic tools `TopicsUP`/`TopicsDOWN`/`TopicsCHECK` (they read `config/topiclist.def`).
 * These tools use the 2.x topics and Confluent serializers. For KafScale, use the v2 path ([chapter 4](04-kafscale-storage.md)).
+
+## 11.6 Compute pair cross-correlation in Java
+
+Use `org.opentsx.wayang.ops.TsxPairXcorr` for pair-window cross-correlation.
+Verified with JDK 21 on 2026-11-16. You need equal-length arrays aligned to
+the same epoch clock, with the first sample on a clock tick. Aggregation,
+filling, and episode pairing happen before this kernel call.
+
+`crossCorrelation` returns CC(k) for `k = -lags` through `+lags`.
+`peakOf` returns the signed absolute peak and its link strength.
+`compute` returns the window centre, peak, lag in seconds, strength,
+coverage, quality, and CC values. A positive lag means that B follows A.
+`pairSettings` parses the workbench defaults, including coverage `0.8`.
+
+Episode windows cover the whole input range. Sliding windows include every
+window that fits. Non-finite samples contribute zero after centring;
+constant inputs give NaN. A window below the minimum coverage retains its
+centre with NaN result fields and quality 1.
+
+`TsxPairXcorrVectorsTest` reads all five cases from the shared repository
+vector file and requires an absolute error below `5e-13`. It also checks
+invalid lags, gaps, constant inputs, peak signs, and window boundaries.
+See the [module guide](../../opentsx-wayang/README.md) for the test command
+and [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md) for A3.2.

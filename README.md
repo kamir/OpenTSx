@@ -125,7 +125,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-market` | electricity-market collector (SMARD, ENTSO-E, netztransparenz.de, Energy-Charts, partner files), history archive with manifests and quality reports, backfill, twins on real history |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
-| `opentsx-wayang` | Apache Wayang 1.1.1 on the Java platform for OpenTSx operators (TASK-020, phase A0: dependency setup and plugin) |
+| `opentsx-wayang` | Apache Wayang 1.1.1 plugin and pure Java `pair.xcorr` kernel (TASK-020) |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |
 | `python-package/` | Python library `opentsx` |
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |

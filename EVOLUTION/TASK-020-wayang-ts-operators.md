@@ -84,6 +84,8 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 
 ### A3: remaining catalog 1, catalog freeze
 - [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).
+- [x] Pure Java `pair.xcorr` kernel: `TsxPairXcorrVectorsTest` loads all five
+  shared cases and checks absolute error below `5e-13` (A3.2).
 - [ ] New vector files `segment-threshold.v1.json`, `segment-extremum.v1.json`, `sax-word.v1.json`, `dq-result.v1.json`, each with its generator over the existing Java code.
 - [ ] Catalog `tsx-catalog/1` frozen.
 
