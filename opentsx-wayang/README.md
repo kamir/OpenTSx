@@ -5,8 +5,8 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), tasks in
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-16.
 
-Status: phase A1. The module reads and writes KafScale topics from Wayang plans and runs them in increments with a
-checkpoint. No OpenTSx analysis operator runs on Wayang yet; they follow in phase A2.
+Status: phase A2. The module reads and writes KafScale topics from Wayang plans, runs them in increments with a
+checkpoint, and runs the clean chain and the window statistics of OpenTSx as Wayang operators.
 
 ## Use the plugin
 
@@ -42,7 +42,11 @@ TsxIncrement.run(config, source -> {
 | `TsxTopicSource`, `JavaTsxTopicSource` | reads fixed offset ranges with manual assignment (no consumer group), checks the schema fingerprint of every record against the plan, decodes Avro single-object records |
 | `TsxTopicSink`, `JavaTsxTopicSink` | writes with `KafScaleClients.producer` (no idempotence, `acks=all`), key `seriesId`, record time `tStart`, header `tsx-schema`; maps in UTF-8 key order; returns after every record is acknowledged |
 | `TsxCheckpoint` | next offset per partition, job, plan version and `specHash` in a JSON file, written to a temporary file and renamed; a checkpoint of another `specHash` is ignored, an unreadable one fails |
-| `TsxIncrement` | one increment as above |
+| `TsxIncrement` | one increment as above; `TsxIncrement.loop` runs increments at an interval and reports each |
+| `TsxSeriesChain`, `JavaTsxSeriesChain` | a run of clean operators (`dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) through `SeriesStream` of `opentsx-retrieval`, with its keys and episode ids |
+| `TsxStatsWindow`, `JavaTsxStatsWindow` | `stats.welford-ddsketch` through `StatsEngine` of `opentsx-stats`: `SeriesStats` per series and window |
+| `TsxState` | operator state by DAG node id, read from and written to the checkpoint |
+| `TsxStatus` | `opentsx.dag-status.v1` records on `tsx.<domain>.dag-status.v1` with `track` `A`, `job`, `planVersion` |
 
 The source holds the records of one increment in memory. Choose the increment so that one range fits.
 
@@ -55,6 +59,7 @@ The checkpoint file is JSON with these fields (`TsxCheckpoint.java`):
 | `specHash` | SHA-256 of the DAG document; a checkpoint with another value is ignored |
 | `topic` | the input topic |
 | `next` | partition number (as a string) to the first offset not yet processed |
+| `state` | DAG node id to the state of its operator: `SeriesStream.state()` for a clean chain, Base64 of `StatsEngine.writeState` for statistics |
 
 ## Dependencies
 
@@ -90,5 +95,6 @@ domains and do not remove their topics; use a disposable broker.
 KAFSCALE_BOOTSTRAP=127.0.0.1:39092 mvn -B -ntp -pl opentsx-wayang -am test
 ```
 
-Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`
-and `TsxFingerprintIntegrationTest` must each show one executed test with zero failures, errors and skips.
+Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`,
+`TsxFingerprintIntegrationTest`, `TsxCleanIncrementsIntegrationTest` and `TsxStatusIntegrationTest` must show
+executed tests with zero failures, errors and skips.

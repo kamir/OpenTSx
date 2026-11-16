@@ -162,6 +162,10 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 1. Each DAG node MUST become one Wayang logical operator: `UnarySource`, `UnaryToUnaryOperator`,
    `BinaryToUnaryOperator` or `UnarySink` subclass (package `org.apache.wayang.core.plan.wayangplan`, tag
    `wayang-1.1.1`), chosen by the number of inputs and outputs of the description.
+   Exception: a run of consecutive single-input nodes whose operators are all in `CleanChain.OPS`
+   (`CleanChain.java:35`) MUST become one operator (`TsxSeriesChain`). These steps share one state per series, and the
+   written series gets its key and episode ids once, after the last step (`SeriesStream.java`); separate operators
+   would key and label every intermediate series. The state of the run is stored under the id of its last node.
 2. `decode.avro-soe` with the DAG `source` MUST become one `TsxTopicSource` per source topic. Each sink MUST become
    one `TsxTopicSink`.
 3. The driver MUST NOT use `wayang-api-json`: it compiles Scala source received in the request

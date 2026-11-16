@@ -39,6 +39,7 @@ final class KafScaleFixture {
         try (Admin admin = KafScaleClients.admin(bootstrap)) {
             layout.provision(admin, 3, (short) 1);
             layout.provisionTopic(admin, layout.clean(), (short) 1);
+            layout.provisionDagTopics(admin, (short) 1);
         }
     }
 

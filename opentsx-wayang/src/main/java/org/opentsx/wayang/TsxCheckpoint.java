@@ -19,9 +19,11 @@ import java.util.TreeMap;
  * Where an increment stopped: the next offset per partition of the input topic, and the document and plan it belongs
  * to (S6.3 of docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md). The file format is private to Track A.
  *
- * @param next partition to the first offset not yet processed
+ * @param next  partition to the first offset not yet processed
+ * @param state operator state by DAG node id ({@link TsxState})
  */
-public record TsxCheckpoint(String job, int planVersion, String specHash, String topic, Map<Integer, Long> next) {
+public record TsxCheckpoint(String job, int planVersion, String specHash, String topic, Map<Integer, Long> next,
+                            Map<String, JsonNode> state) {
 
     static final String SCHEMA = "opentsx.wayang.checkpoint.v1";
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -46,8 +48,10 @@ public record TsxCheckpoint(String job, int planVersion, String specHash, String
             }
             Map<Integer, Long> next = new TreeMap<>();
             n.path("next").fields().forEachRemaining(f -> next.put(Integer.parseInt(f.getKey()), f.getValue().asLong()));
+            Map<String, JsonNode> state = new TreeMap<>();
+            n.path("state").fields().forEachRemaining(f -> state.put(f.getKey(), f.getValue()));
             return Optional.of(new TsxCheckpoint(n.path("job").asText(), n.path("planVersion").asInt(),
-                    n.path("specHash").asText(), n.path("topic").asText(), next));
+                    n.path("specHash").asText(), n.path("topic").asText(), next, state));
         } catch (IOException | RuntimeException e) {
             throw new IllegalStateException("checkpoint " + path + " cannot be read: " + e.getMessage(), e);
         }
@@ -59,6 +63,8 @@ public record TsxCheckpoint(String job, int planVersion, String specHash, String
                 .put("specHash", specHash).put("topic", topic);
         ObjectNode positions = n.putObject("next");
         new TreeMap<>(next).forEach((p, o) -> positions.put(Integer.toString(p), o));
+        ObjectNode operators = n.putObject("state");
+        new TreeMap<>(state).forEach(operators::set);
         Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
         try {
             Files.write(tmp, JSON.writerWithDefaultPrettyPrinter().writeValueAsBytes(n));
