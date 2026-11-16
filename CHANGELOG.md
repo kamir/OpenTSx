@@ -16,6 +16,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   The Python package gets the same surrogate (`EventSynchronization.surrogate_sync`, `Mulberry32`, `isi_shuffle`);
   both run the shared vectors `docs/datamodel-2026/testvectors/pair-es.v1.json` (`tools/pair_es_vectors.py`).
 
+- Concept for a Rust Kafka runner orchestrated by Apache Wayang
+  ([`docs/datamodel-2026/20-RUST-KAFKA-RUNNER.md`](docs/datamodel-2026/20-RUST-KAFKA-RUNNER.md), proposal, not
+  implemented): a Rust binary that runs `opentsx.dag.v1` operators on KafScale topics, a Wayang platform plugin
+  that sends signed runner plans to sites, flow shapes 1:1 to n:m keyed by `seriesId`, a site contract with schema
+  fingerprints and shared test vectors, federation with mergeable statistics only, delivery and recovery without
+  idempotence, a security model, an evaluation plan and a phased plan; relation to the Go processor of concept 11.
+
 - Concept for graph layers on KafScale and Iceberg
   ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
   one node table and one edge table for twin wiring, inventory, measured dependencies, expert influence matrices,
