@@ -16,12 +16,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   The Python package gets the same surrogate (`EventSynchronization.surrogate_sync`, `Mulberry32`, `isi_shuffle`);
   both run the shared vectors `docs/datamodel-2026/testvectors/pair-es.v1.json` (`tools/pair_es_vectors.py`).
 
-- Concept for a Rust Kafka runner orchestrated by Apache Wayang
-  ([`docs/datamodel-2026/20-RUST-KAFKA-RUNNER.md`](docs/datamodel-2026/20-RUST-KAFKA-RUNNER.md), proposal, not
-  implemented): a Rust binary that runs `opentsx.dag.v1` operators on KafScale topics, a Wayang platform plugin
-  that sends signed runner plans to sites, flow shapes 1:1 to n:m keyed by `seriesId`, a site contract with schema
-  fingerprints and shared test vectors, federation with mergeable statistics only, delivery and recovery without
-  idempotence, a security model, an evaluation plan and a phased plan; relation to the Go processor of concept 11.
+- Concept for OpenTSx time-series operators on Apache Wayang
+  ([`docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md`](docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), proposal, not
+  implemented) in two tracks with one operator catalog, one topic and schema contract and one set of test vectors.
+  Track A, TSOperators for Java: native Wayang operators on the Java platform in a new module `opentsx-wayang`,
+  reusing `opentsx-model`, `opentsx-stats` and `opentsx-retrieval`, with KafScale source and sink operators instead
+  of Wayang's Kafka operators. Track B: a Rust runner for low-capacity hardware. Shared: site contract, federation
+  with mergeable statistics, delivery without idempotence, security model, evaluation plan, phased plan and the
+  relation to the Go processor of concept 11.
 
 - Concept for graph layers on KafScale and Iceberg
   ([`docs/datamodel-2026/19-GRAPH-LAYERS.md`](docs/datamodel-2026/19-GRAPH-LAYERS.md), proposal, not implemented):
