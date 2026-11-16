@@ -84,3 +84,21 @@ like = c.similar(eps[0]["episodeId"], top_k=5)
 ```
 
 Episodes travel as an Avro single-object stream. The Python records are therefore exactly what Java wrote.
+
+## 9.5 Check segment and SAX reference vectors
+
+The shared `segment-threshold.v1.json` and `segment-extremum.v1.json` files
+contain six cases each. They cover hysteresis, duration caps, NaN samples,
+irregular timestamps, minima, maxima, ties, and pending output at flush.
+`SegmentThresholdVectorsTest` and `SegmentExtremumVectorsTest` compare
+the recorded segment fields exactly with batch output and streaming
+chunks of 1, 7, and all samples. Source episode references depend on
+chunk boundaries and are excluded from the comparison.
+
+`sax-word.v1.json` contains seven cases for `Paa` and `Sax`, with optional
+`ZNorm` normalization. `SaxWordVectorsTest` compares normalized values,
+PAA values, breakpoints, letters, and words exactly. All inputs are
+synthetic. See
+[section 7.5](07-stats-quality.md#75-check-the-java-reference-vectors)
+for the generator command and prerequisites, and the
+[module guide](../../opentsx-retrieval/README.md) for the implementation.

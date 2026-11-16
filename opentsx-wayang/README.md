@@ -5,9 +5,10 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), tasks in
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-16.
 
-The module reads and writes KafScale topics from Wayang plans and runs them in increments with a checkpoint
-(phase A1). It also contains the pure Java `TsxPairEs` kernel. The kernel has no Wayang types and does not depend
-on `opentsx-core`.
+The module reads and writes KafScale topics from Wayang plans and runs them
+in increments with a checkpoint (phase A1). It also contains the pure Java
+`TsxPairEs` kernel, whose API has no Wayang types or `opentsx-core` dependency.
+Shared reference vectors are checked by the statistics and retrieval modules.
 
 ## Compute pair event synchronisation
 
@@ -108,3 +109,22 @@ KAFSCALE_BOOTSTRAP=127.0.0.1:39092 mvn -B -ntp -pl opentsx-wayang -am test
 
 Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`
 and `TsxFingerprintIntegrationTest` must each show one executed test with zero failures, errors and skips.
+
+## Check the shared Java references
+
+The shared files in `docs/datamodel-2026/testvectors/` capture existing
+statistics and retrieval behavior for TASK-020 A2 and A3:
+
+| Vector file | Owning-module test | Cases |
+| --- | --- | ---: |
+| `stats-window.v1.json` | `StatsWindowVectorsTest` | 5 |
+| `segment-threshold.v1.json` | `SegmentThresholdVectorsTest` | 6 |
+| `segment-extremum.v1.json` | `SegmentExtremumVectorsTest` | 6 |
+| `sax-word.v1.json` | `SaxWordVectorsTest` | 7 |
+| `dq-result.v1.json` | `DqResultVectorsTest` | 7 |
+
+These tests replay every case exactly in `opentsx-stats` and
+`opentsx-retrieval`. They read the repository files directly. Run
+`python tools/java_operator_vectors.py` from the repository root to
+regenerate all five files. You need JDK 17 or 21, Maven, and Python.
+The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.

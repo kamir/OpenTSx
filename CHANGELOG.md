@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Five shared Java reference vector files for statistics windows, threshold
+  and extremum segments, SAX words, and data-quality results. Owning-module
+  tests replay all 31 cases exactly. `tools/java_operator_vectors.py`
+  regenerates the files from the existing implementations (TASK-020 A2/A3).
+
 - Pure Java `pair.es` in `opentsx-wayang`: local-maximum event detection,
   directional synchronisation, interval-shuffle surrogates, and `Mulberry32`.
   The eight shared vector cases and exact random sequence cover TASK-020 A3.3.
@@ -124,6 +129,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Quantile representatives use `StrictMath.pow` for identical bits across
+  platforms, removing a one-ULP ARM/x86 difference in the shared statistics
+  vectors. Sketch bytes are unchanged.
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
   decoders and cycles before publishing control records. Supported sinks are accepted together.
 
