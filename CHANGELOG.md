@@ -10,6 +10,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `ESCalcTest` (`opentsx-core`) covers the event synchronization of `ESCalc` and `ESCalc2`: identical series give
+  `(M - 2) / (M - 1)`, a series that follows the first gives a negative delay, an event halfway between two events of
+  the other series is not matched twice, and sync and delay stay in [0, 1] and [-1, 1] on random event series.
+
 - `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.

@@ -32,6 +32,16 @@ positive standard deviation whose reciprocal is representable. Invalid inputs ra
 `TimeSeriesObjectStatisticsTest` also checks mean recalculation and half-open `cutOut` windows,
 including empty and truncated windows.
 
+## Compute event synchronization
+
+`ESCalc.calc(ti, tj)` and `ESCalc2.calcES(tx, ty)` take sorted event times and return `{sync, delay}` after
+Quiroga, Kreuz and Grassberger (2002). Each event pair uses its own window, half the smallest distance to a
+neighbouring event. A pair counts 1 when its distance is strictly below that window and 1/2 in both directions when
+the events coincide. `sync` is in [0, 1] and `delay` in [-1, 1]. `delay` is negative when events of the second
+series follow events of the first. Only events with two neighbours are compared, and the result is divided by
+`sqrt((M1 - 1) * (M2 - 1))`, so identical series with M events give `(M - 2) / (M - 1)`, not 1.
+`ESCalcTest` checks these values and the bounds on random event series.
+
 ## Supply bucket analysis inputs
 
 `org.opentsx.app.bucketanalyser.BucketAnalyserTool` accepts four required positional arguments:
