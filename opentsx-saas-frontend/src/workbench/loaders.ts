@@ -116,7 +116,10 @@ interface EpisodeJson {
   tStart?: string;
   tEnd?: string;
   intervalMicros?: number;
-  segmentation?: { strategy?: string };
+  segmentation?: { strategy?: string; params?: Record<string, string>; anchorTs?: string };
+  labels?: Record<string, string>;
+  parentEpisodeId?: string;
+  quality?: number[];
   timestampsMicros?: number[];
   values?: (number | null)[];
 }
@@ -152,20 +155,43 @@ export function parseEpisodes(json: unknown, name: string): Bucket {
     ? json
     : ((json as { episodes?: EpisodeJson[] } | null)?.episodes ?? []);
   if (!Array.isArray(list) || list.length === 0) throw new Error('No episodes found in the JSON.');
-  const groups = new Map<string, { e: EpisodeJson; t: number[]; v: number[] }>();
+  const groups = new Map<string, { e: EpisodeJson; t: number[]; v: number[]; q: number[]; known: number[] }>();
   const ranges: EpisodeRange[] = [];
   for (const e of list) {
-    if (!e.timestampsMicros || !e.values) continue;
+    if (!e || typeof e !== 'object' || !Array.isArray(e.timestampsMicros) || !Array.isArray(e.values) || e.timestampsMicros.length !== e.values.length) {
+      throw new Error('Every episode needs equal-length timestampsMicros and values arrays.');
+    }
+    if (e.timestampsMicros.some((t) => !Number.isSafeInteger(t)) || e.values.some((v) => v !== null && (typeof v !== 'number' || !Number.isFinite(v)))) {
+      throw new Error('Episode timestamps must be safe integer microseconds and values must be finite numbers or null.');
+    }
+    if (e.quality != null && (!Array.isArray(e.quality) || e.quality.length !== e.values.length || e.quality.some((q) => !Number.isInteger(q) || q < -128 || q > 255))) {
+      throw new Error('Episode quality needs one byte per value.');
+    }
+    for (const [name, map] of Object.entries({ labels: e.labels, tags: e.tags, segmentationParams: e.segmentation?.params })) {
+      if (map != null && (typeof map !== 'object' || Array.isArray(map) || Object.values(map).some((v) => typeof v !== 'string'))) {
+        throw new Error(`Episode ${name} must contain string values.`);
+      }
+    }
+    for (const value of [e.episodeId, e.seriesId, e.metric, e.unit, e.parentEpisodeId, e.segmentation?.strategy, e.segmentation?.anchorTs]) {
+      if (value != null && typeof value !== 'string') throw new Error('Episode identity and metadata must be strings.');
+    }
     const key = e.seriesId ?? e.metric ?? 'series';
-    const g = groups.get(key) ?? { e, t: [], v: [] };
+    const g = groups.get(key) ?? { e, t: [], v: [], q: [], known: [] };
+    if (g.e.unit !== e.unit) throw new Error(`Episodes of series ${key} have conflicting units.`);
     for (let i = 0; i < e.values.length; i++) {
       g.t.push(e.timestampsMicros[i]);
       g.v.push(e.values[i] ?? NaN);
+      g.q.push(e.quality?.[i] ?? 0);
+      g.known.push(e.quality == null ? 0 : 1);
     }
     groups.set(key, g);
     if (e.timestampsMicros.length > 0) {
       const [start, end] = rangeMicros(e, e.timestampsMicros);
-      ranges.push({ seriesId: key, episodeId: e.episodeId ?? `${key}@${start}`, start, end, strategy: e.segmentation?.strategy });
+      ranges.push({ seriesId: key, episodeId: e.episodeId ?? `${key}@${start}`, start, end, strategy: e.segmentation?.strategy,
+        ...(e.labels ? { labels: { ...e.labels } } : {}),
+        ...(e.parentEpisodeId ? { parent: e.parentEpisodeId } : {}),
+        ...(e.segmentation?.params || e.segmentation?.anchorTs ? { segmentation: e.segmentation } : {}),
+      });
     }
   }
   if (groups.size === 0) throw new Error('The episodes carry no timestampsMicros and values.');
@@ -186,6 +212,7 @@ export function parseEpisodes(json: unknown, name: string): Bucket {
       tags: g.e.tags,
       x: Float64Array.from(order, (i) => (g.t[i] - t0) / 1e6),
       y: Float64Array.from(order, (i) => g.v[i]),
+      ...(g.known.some(Boolean) ? { quality: Uint8Array.from(order, (i) => g.q[i]), qualityKnown: Uint8Array.from(order, (i) => g.known[i]) } : {}),
     };
   });
   const unit = series[0].unit;
@@ -204,7 +231,8 @@ export function parseBucketText(text: string, fileName: string): Bucket {
 export function bucketToCsv(b: Bucket): string {
   const out = ['series_id,x,y'];
   for (const s of b.series) {
-    const id = s.label.replace(/[",\n]/g, '_');
+    const id = s.id;
+    if (/[",\r\n]/.test(id)) throw new Error('This series id requires an analysis bundle export instead of sample CSV.');
     for (let i = 0; i < s.y.length; i++) out.push(`${id},${s.x[i]},${s.y[i]}`);
   }
   return out.join('\n') + '\n';

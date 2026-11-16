@@ -10,6 +10,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Workbench pair-result tables and matrices, typed analysis-result JSON inspection, episode quality and lineage, and integrity-checked finite input/graph snapshots. Properties distinguish browser, Java processor and Wayang capabilities. Deployment preflight checks every published sink and path; browser-only pair drafts are marked experimental.
+
 - Five shared Java reference vector files for statistics windows, threshold
   and extremum segments, SAX words, and data-quality results. Owning-module
   tests replay all 31 cases exactly. `tools/java_operator_vectors.py`

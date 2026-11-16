@@ -35,6 +35,8 @@ Principles that hold throughout:
 * **Safety stays local.** Local safety logic always wins over a twin's suggestion.
 * **Open and vendor-neutral.** Apache 2.0; Kafka-protocol logs and open table formats.
 
+Read the [workbench analysis guide](docs/devguide/workbench-analysis.md) for pair-result tables, typed result inspection, episode quality, finite snapshots and deployment capability checks.
+
 ### Three systems, one set of building blocks
 
 The same atoms and modes, wired differently. All three run today on synthetic or simulated data:

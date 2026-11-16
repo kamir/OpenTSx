@@ -16,6 +16,12 @@ import InventoryDialog, { InventoryLoad } from '../workbench/InventoryDialog';
 import { fetchFlowSeries } from '../workbench/inventoryLoad';
 import { GradeName, expectText, isSynthetic, parseStatus } from '../systems/signals';
 import Scope from '../workbench/Scope';
+import PairResults from '../workbench/PairResults';
+import EpisodeInspector from '../workbench/EpisodeInspector';
+import RunBundlePanel from '../workbench/RunBundlePanel';
+import AnalysisResultsPanel from '../workbench/AnalysisResultsPanel';
+import { capabilityOf } from '../workbench/capabilities';
+import { restoreLocalRun } from '../workbench/restoreLocalRun';
 import {
   SOURCE_ID,
   defaultSinkTopic,
@@ -144,6 +150,7 @@ const TABS: { id: string; title: string; group?: OpGroup; border?: string }[] = 
 
 function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; setShowLabels: (v: boolean) => void }) {
   const [tab, setTab] = useState('transform');
+  const [csvError, setCsvError] = useState<string | null>(null);
   const [params, setParams] = useState<Record<string, Params>>(() =>
     Object.fromEntries(OPS.map((o) => [o.id, defaultParams(o)]))
   );
@@ -188,7 +195,12 @@ function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; se
 
   const persist = () => {
     const b = selected && evaluate(source, nodes, selected.id);
-    if (b) download(`${b.name}.csv`, bucketToCsv(b), 'text/csv');
+    setCsvError(null);
+    try {
+      if (b) download(`${b.name}.csv`, bucketToCsv(b), 'text/csv');
+    } catch (e) {
+      setCsvError(e instanceof Error ? e.message : 'CSV export failed.');
+    }
   };
 
   const savePng = () => {
@@ -209,12 +221,13 @@ function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; se
           </button>
         ))}
       </div>
+      {csvError && <p role="alert">{csvError}</p>}
       <div className={`wb-tabpanel wb-g-${tab}`} role="tabpanel">
         {tab === 'tsb' && (
           <div className="wb-oprow">
             <input className="wb-chartlabel" readOnly aria-label="Bucket name" value={selected?.label ?? ''} placeholder="ChartLabel" />
-            <button disabled={!ready} onClick={persist} title="Downloads the selected bucket as CSV (series_id, x, y)">
-              persist TSB
+            <button disabled={!ready} onClick={persist} title="Downloads sample CSV with stable series ids. Use Snapshot for units, absolute time, quality and provenance.">
+              Export sample CSV
             </button>
             <button disabled={!ready} onClick={savePng} title="Downloads the scope screen as PNG">
               save chart
@@ -301,7 +314,10 @@ function Properties({ node }: { node: FlowNode }) {
         {op ? (
           <>
             <dt>Transform</dt><dd>{node.label} = {op.label}( {inputs.map((n) => n?.label).join(', ')} )</dd>
-            <dt>Operator</dt><dd>{op.dagOp ?? op.id}{op.inCatalog ? ' (stream operator catalog)' : ' (workbench only)'}</dd>
+            <dt>Operator</dt><dd>{op.dagOp ?? op.id}</dd>
+            <dt>Browser preview</dt><dd>{capabilityOf(op.id).browser}</dd>
+            <dt>Java processor</dt><dd>{capabilityOf(op.id).processor}</dd>
+            <dt>Wayang</dt><dd>{capabilityOf(op.id).wayang}</dd>
           </>
         ) : (
           <>
@@ -316,6 +332,7 @@ function Properties({ node }: { node: FlowNode }) {
         )}
       </dl>
       {op && <p className="wb-muted">{op.hint}</p>}
+      {op && <p className="wb-muted">{capabilityOf(op.id).reason}</p>}
       {op && op.params.length > 0 && (
         <fieldset>
           <legend>Parameters</legend>
@@ -463,8 +480,8 @@ function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSa
         Download Smart Topic definition
       </button>
       <p className="wb-muted">
-        The definition is an opentsx.dag.v1 file for the processor described in docs/datamodel-2026/11. That processor is
-        a proposal; the download hands the file over and does not deploy.
+        Download creates a DAG draft. Deploy separately checks every published branch against the available Java processor.
+        Browser-only operations remain available for local analysis; exporting a draft does not make them executable.
       </p>
       <DeploymentsPanel
         base={base}
@@ -544,6 +561,7 @@ export default function Workbench() {
   const state = useFlow();
   const { source, nodes, selectedId, loadBucket } = state;
   const [showLabels, setShowLabels] = useState(true);
+  const [analysisView, setAnalysisView] = useState('scope');
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
   const [remote, setRemote] = useState({ open: false, base: '/retrieval', query: 'limit=50' });
@@ -904,15 +922,21 @@ export default function Workbench() {
 
         <div className="wb-center">
           <section
-            className="wb-scopewrap"
-            aria-label="Scope"
+            className="wb-scopewrap wb-analysis-workspace"
+            aria-label="Analysis workspace"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
               loadFile(e.dataTransfer.files[0]);
             }}
           >
-            {bucket && bucket.series.length > 0 ? (
+            <div className="wb-tabs" role="tablist" aria-label="Analysis views">
+              {[['scope', 'Scope'], ['pairs', 'Pair results'], ['episodes', 'Episodes and quality'], ['snapshot', 'Snapshot'], ['results', 'Analysis results']].map(([id, title]) => (
+                <button key={id} role="tab" aria-selected={analysisView === id} onClick={() => setAnalysisView(id)}>{title}</button>
+              ))}
+            </div>
+            <div className={analysisView === 'scope' ? 'wb-view-scope' : 'wb-data-pane'} role="tabpanel" aria-label="Selected analysis view">
+            {analysisView === 'scope' ? (bucket && bucket.series.length > 0 ? (
               <Scope bucket={bucket} showLabels={showLabels} onUseTrigger={useTrigger} expected={expectedOn(bucket)} />
             ) : (
               <div className="wb-empty">
@@ -938,7 +962,19 @@ export default function Workbench() {
                   </>
                 )}
               </div>
+            )) : analysisView === 'pairs' ? (
+              bucket?.series.some((s) => s.metric?.startsWith('pair.')) ? <PairResults bucket={bucket} /> : <p>Select a pair-analysis node in the flow to inspect its measured relationships.</p>
+            ) : analysisView === 'episodes' ? (
+              bucket ? <EpisodeInspector bucket={bucket} /> : <p>Load a bucket to inspect its episodes and quality.</p>
+            ) : analysisView === 'results' ? <AnalysisResultsPanel /> : (
+              <RunBundlePanel source={source} result={bucket} doc={{ track: state.track, domain: state.domain, sourceTopic: state.sourceTopic, sourceSeries: state.sourceSeries, nodes: state.nodes, context: state.context, savedId: state.savedId }} onImport={(input, doc) => {
+                restoreLocalRun(input, doc);
+                setSearchParams({});
+                setError(null);
+                setStatus('Verified local snapshot loaded on its source. Review a step before selecting it. No flow was published or deployed.');
+              }} />
             )}
+            </div>
           </section>
           <OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} />
           <section className="wb-graph" aria-label="Processing flow graph">

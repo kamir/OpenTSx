@@ -1,0 +1,71 @@
+.wb-pairs {
+  padding: 12px;
+  border-top: 1px solid #a3acb3;
+  background: #edf0f2;
+  color: #24323d;
+}
+.wb-pairs h2,
+.wb-pairs h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.wb-pairs p {
+  margin: 8px 0;
+}
+.wb-pair-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.wb-pair-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wb-pair-controls input,
+.wb-pair-controls select {
+  max-width: 230px;
+  padding: 5px;
+}
+.wb-pair-scroll {
+  max-height: 360px;
+  overflow: auto;
+  margin: 10px 0;
+}
+.wb-pair-matrix {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+}
+.wb-pair-matrix th,
+.wb-pair-matrix td {
+  padding: 4px;
+  border: 1px solid #c0c8ce;
+  max-width: 220px;
+  overflow-wrap: anywhere;
+}
+.wb-pair-matrix button {
+  width: 100%;
+  min-width: 85px;
+  padding: 8px;
+  color: #152837;
+  border: 1px solid #9aaab5;
+}
+.wb-pair-matrix caption {
+  text-align: left;
+  padding: 5px;
+}
+.wb-pair-detail {
+  padding: 10px;
+  border: 1px solid #aebac3;
+  overflow-wrap: anywhere;
+}
+.wb-pair-detail dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 12px;
+}
+.wb-pair-detail dd {
+  margin: 0;
+}
