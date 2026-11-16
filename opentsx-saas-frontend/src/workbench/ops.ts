@@ -933,15 +933,9 @@ export const OPS: OpDef[] = [
 export const OP_BY_ID: Record<string, OpDef> = Object.fromEntries(OPS.map((o) => [o.id, o]));
 
 /** Operations that have a button in the Swing panel but no implementation here. */
-export const NOT_PORTED: { label: string; group: 'univariate' | 'model'; reason: string }[] = [
+export const NOT_PORTED: { label: string; group: 'univariate'; reason: string }[] = [
   { label: 'TEST Normal Distribution', group: 'univariate', reason: 'Shapiro-Wilk test is not ported' },
   { label: 'MF-DFA', group: 'univariate', reason: 'MFDFAAnalyzer is not ported' },
-  { label: 'AR', group: 'model', reason: 'No handler in the Swing panel either' },
-  { label: 'MA', group: 'model', reason: 'No handler in the Swing panel either' },
-  { label: 'ARMA', group: 'model', reason: 'No handler in the Swing panel either' },
-  { label: 'ARIMA', group: 'model', reason: 'No handler in the Swing panel either' },
-  { label: 'SARIMA', group: 'model', reason: 'No handler in the Swing panel either' },
-  { label: 'CARIMA', group: 'model', reason: 'No handler in the Swing panel either' },
 ];
 
 export function defaultParams(op: OpDef): Params {

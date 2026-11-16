@@ -1,0 +1,9 @@
+{
+  "python_image": "python@sha256:16bf2b5c59a08523519d3c8589deca849285dee1d62a3653e124c3dba340f15e",
+  "node_image": "node@sha256:9bef0ef1e268f60627da9ba7d7605e8831d5b56ad07487d24d1aa386336d1944",
+  "platform": "linux/arm64",
+  "network": "cp-all-in-one-m4_default",
+  "bootstrap": "broker-1:29092,broker-2:29092,broker-3:29092",
+  "prefix": "tsx.workbench-demo.",
+  "port": 18081
+}

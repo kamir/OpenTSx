@@ -34,6 +34,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+forecasting = [
+    "statsmodels==0.14.6",
+]
 kafka = [
     "confluent-kafka[avro]>=2.3.0",
     "fastavro>=1.8.0",
@@ -58,7 +61,7 @@ performance = [
     "dask[complete]>=2023.10.0",
 ]
 all = [
-    "opentsx[kafka,viz,ml,storage,performance]",
+    "opentsx[kafka,viz,ml,storage,performance,forecasting]",
 ]
 dev = [
     "pytest>=7.4.0",

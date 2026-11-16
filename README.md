@@ -37,6 +37,11 @@ Principles that hold throughout:
 
 Read the [workbench analysis guide](docs/devguide/workbench-analysis.md) for pair-result tables, typed result inspection, episode quality, finite snapshots and deployment capability checks.
 
+Use the [local CP workbench](docs/devguide/local-cp-workbench.md) to build and run the browser and Python service
+against an existing Confluent Platform Docker network. The Modelling view fits ARIMA, SARIMA and SARIMAX on a
+finite regular target, compares naive, mean, drift and seasonal naive baselines, and reports chronological
+backtests and conditional Gaussian prediction intervals.
+
 ### Three systems, one set of building blocks
 
 The same atoms and modes, wired differently. All three run today on synthetic or simulated data:

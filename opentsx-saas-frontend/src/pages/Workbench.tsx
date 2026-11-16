@@ -20,6 +20,7 @@ import PairResults from '../workbench/PairResults';
 import EpisodeInspector from '../workbench/EpisodeInspector';
 import RunBundlePanel from '../workbench/RunBundlePanel';
 import AnalysisResultsPanel from '../workbench/AnalysisResultsPanel';
+import ModellingPanel from '../workbench/ModellingPanel';
 import { capabilityOf } from '../workbench/capabilities';
 import { restoreLocalRun } from '../workbench/restoreLocalRun';
 import {
@@ -144,11 +145,11 @@ const TABS: { id: string; title: string; group?: OpGroup; border?: string }[] = 
   { id: 'univariate', title: 'Uni-variate Analysis', group: 'univariate', border: 'Univariate Analysis' },
   { id: 'multivariate', title: 'Multi-variate Analysis', group: 'multivariate', border: 'Multi-variate analysis' },
   { id: 'group', title: 'Group Operations', group: 'group', border: 'Group Operations' },
-  { id: 'model', title: 'TS-Model', border: 'Models' },
+  { id: 'model', title: 'Modelling', border: 'Modelling workflow' },
   { id: 'stream', title: 'Filter and conversion', group: 'stream', border: 'Stream operators for Smart Topics' },
 ];
 
-function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; setShowLabels: (v: boolean) => void }) {
+function OperationPanel({ showLabels, setShowLabels, onModel }: { showLabels: boolean; setShowLabels: (v: boolean) => void; onModel: () => void }) {
   const [tab, setTab] = useState('transform');
   const [csvError, setCsvError] = useState<string | null>(null);
   const [params, setParams] = useState<Record<string, Params>>(() =>
@@ -249,7 +250,10 @@ function OperationPanel({ showLabels, setShowLabels }: { showLabels: boolean; se
                 </span>
               ))}
             </div>
-            {tab === 'model' && <p className="wb-muted">These buttons have no action in the Swing workbench either. Models belong to the Smart Topic training (Python, MLflow).</p>}
+            {tab === 'model' && <>
+              <p>Choose a target and training range, configure ARIMA, SARIMA or SARIMAX, compare baselines with chronological backtests, then inspect forecasts and prediction intervals.</p>
+              <button onClick={onModel}>Open modelling</button>
+            </>}
           </fieldset>
         )}
         {!ready && <p className="wb-muted">Load a bucket first, then every operation applies to the bucket selected in the track.</p>}
@@ -931,12 +935,15 @@ export default function Workbench() {
             }}
           >
             <div className="wb-tabs" role="tablist" aria-label="Analysis views">
-              {[['scope', 'Scope'], ['pairs', 'Pair results'], ['episodes', 'Episodes and quality'], ['snapshot', 'Snapshot'], ['results', 'Analysis results']].map(([id, title]) => (
+              {[['scope', 'Scope'], ['modelling', 'Modelling'], ['pairs', 'Pair results'], ['episodes', 'Episodes and quality'], ['snapshot', 'Snapshot'], ['results', 'Analysis results']].map(([id, title]) => (
                 <button key={id} role="tab" aria-selected={analysisView === id} onClick={() => setAnalysisView(id)}>{title}</button>
               ))}
             </div>
             <div className={analysisView === 'scope' ? 'wb-view-scope' : 'wb-data-pane'} role="tabpanel" aria-label="Selected analysis view">
-            {analysisView === 'scope' ? (bucket && bucket.series.length > 0 ? (
+            <div hidden={analysisView !== 'modelling'}>
+              <ModellingPanel bucket={bucket} />
+            </div>
+            {analysisView === 'modelling' ? null : analysisView === 'scope' ? (bucket && bucket.series.length > 0 ? (
               <Scope bucket={bucket} showLabels={showLabels} onUseTrigger={useTrigger} expected={expectedOn(bucket)} />
             ) : (
               <div className="wb-empty">
@@ -976,7 +983,7 @@ export default function Workbench() {
             )}
             </div>
           </section>
-          <OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} />
+          <OperationPanel showLabels={showLabels} setShowLabels={setShowLabels} onModel={() => setAnalysisView('modelling')} />
           <section className="wb-graph" aria-label="Processing flow graph">
             {nodes.length > 0 ? <FlowGraph /> : <p className="wb-muted pad">The processing flow appears here once a bucket is loaded.</p>}
           </section>

@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Workbench modelling for finite regular targets: ARIMA, SARIMA and SARIMAX, reference forecasts,
+  rolling-origin backtests, prediction intervals and JSON result export. Context values carry availability
+  times checked at each origin. The local CP Compose profile serves the UI and bounded Python forecasting
+  API from one locked bundle.
+
 - Workbench pair-result tables and matrices, typed analysis-result JSON inspection, episode quality and lineage, and integrity-checked finite input/graph snapshots. Properties distinguish browser, Java processor and Wayang capabilities. Deployment preflight checks every published sink and path; browser-only pair drafts are marked experimental.
 
 - Five shared Java reference vector files for statistics windows, threshold

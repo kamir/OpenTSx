@@ -1,0 +1,41 @@
+services:
+  workbench:
+    image: ${OPENTSX_PYTHON_IMAGE:?run the build command first}
+    platform: linux/arm64
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    command:
+      - serve
+      - --bootstrap
+      - ${KAFKA_BOOTSTRAP:?run the build command first}
+      - --prefix
+      - ${OPENTSX_TOPIC_PREFIX:?run the build command first}
+      - --web-root
+      - /artifacts/frontend
+      - --manifest
+      - /artifacts/manifest.json
+    volumes:
+      - ${OPENTSX_BUNDLE:?run the build command first}:/artifacts:ro
+      - ${OPENTSX_BUNDLE:?run the build command first}/entrypoint.sh:/entrypoint.sh:ro
+      - runtime:/runtime
+    ports:
+      - "127.0.0.1:${OPENTSX_WORKBENCH_PORT:?run the build command first}:8080"
+    networks: [cp]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/analysis/v1/health', timeout=3).read()"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 6
+    mem_limit: 1g
+    cpus: 2
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+networks:
+  cp:
+    external: true
+    name: ${OPENTSX_CP_NETWORK:?run the build command first}
+volumes:
+  runtime:

@@ -26,6 +26,14 @@ full provenance record. The UI does not invent missing provenance. Plausibility
 controls use the signal's expected range; they do not infer an operating
 constraint from observed values.
 
+## Fit and evaluate forecasts
+
+For forecasting, open **Modelling** and use the
+[local CP modelling workflow](local-cp-workbench.md). This view sends a bounded
+regular target to the numerical service and displays candidate forecasts,
+reference forecasts, prediction intervals and chronological backtests. A finite
+forecast result is separate from a deployed continuous operator.
+
 ## Compare pair measurements
 
 Apply **Pair coverage**, **Cross-correlation** or **Event synchronisation**
