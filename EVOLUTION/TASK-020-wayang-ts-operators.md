@@ -101,6 +101,8 @@ failed.
 
 ### A3: remaining catalog 1, catalog freeze
 - [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).
+- [x] Pure Java `pair.xcorr` kernel: `TsxPairXcorrVectorsTest` loads all five
+  shared cases and checks absolute error below `5e-13` (A3.2).
 - [x] Pure Java `pair.es` kernel: `TsxPairEsVectorsTest` loads all eight shared
   cases, checks event lists and scores, and compares `Mulberry32` exactly
   (A3.3).
