@@ -1,6 +1,6 @@
 # 3. Data model v2
 
-Normative specification: [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC.md) (German). Schemas:
+Normative specification: [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC.md). Schemas:
 `opentsx-model/src/main/avro/*.avsc` (namespace `org.opentsx.model.v2`). Python uses byte-identical copies.
 
 ## 3.1 Records
