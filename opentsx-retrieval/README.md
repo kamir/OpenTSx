@@ -206,6 +206,20 @@ segs = c.segments("FEATURE_THRESHOLD", {"direction": "ABOVE", "enter": 20, "exit
 
 CI starts the server in demo mode, and the Python client queries it (job "Java → Iceberg → Python").
 
+## Generate the operator chapter
+
+`org.opentsx.retrieval.system.OperatorCatalog` reads the operator descriptions `systems/processors/*.yaml` (schema
+`opentsx.processor.v1`) and writes [`docs/user-manual/17-operators.md`](../docs/user-manual/17-operators.md). It stops
+with a list of problems when a runtime marked `available` names a Java class, Python name or workbench operator that
+does not exist, when a planned runtime has no plan, or when an example, chart or link is missing.
+
+```bash
+java -cp "$(bin/opentsx classpath opentsx-retrieval)" org.opentsx.retrieval.system.OperatorCatalog
+```
+
+`OperatorCatalogTest` runs the same checks and fails when the committed chapter differs from the generated one. The
+operator examples of this module are in `src/test/java/org/opentsx/retrieval/examples/`.
+
 ## Related
 
 * **Power-curve analysis:** method of bins, performance index and underperformance periods. It lives in

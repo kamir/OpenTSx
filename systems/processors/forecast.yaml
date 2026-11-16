@@ -1,0 +1,38 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: forecast
+version: 1
+kind: model
+category: forecast
+title: Smart Topic forecast
+description: >-
+  Trains the candidates PERSISTENCE (the last value), SEASONAL_NAIVE (the value one season earlier), HOLT_WINTERS
+  (exponential smoothing of level, trend and season), LINEAR (ridge regression on lags, rolling windows, statistics,
+  calendar and context) and EXTERNAL (a Python entry point such as LightGBM) per target and horizon, on a temporal
+  split with a gap. Each candidate with context is also trained without it. The champion has the lowest MAE on the
+  holdout and must beat PERSISTENCE; conformal intervals come from the holdout residuals. No code exists.
+inputs:
+  - { name: target, type: series, cardinality: many, description: The series to forecast. }
+  - { name: context, type: series, cardinality: many, description: "Optional context such as a weather forecast, joined as-of with a maximum age." }
+outputs:
+  - { name: forecast, type: series, cardinality: many, description: "Forecast for t + h per horizon h, issued at t." }
+  - { name: interval, type: series, cardinality: many, description: Lower and upper bound per horizon and level. }
+params:
+  - { name: horizons, type: list, required: true, description: "Forecast horizons as ISO 8601 durations, for example PT10M, PT1H and PT6H." }
+  - { name: candidates, type: list, description: "Candidates from PERSISTENCE, SEASONAL_NAIVE, HOLT_WINTERS, LINEAR and EXTERNAL. PERSISTENCE and SEASONAL_NAIVE are always trained." }
+  - { name: season, type: duration, description: "Season of SEASONAL_NAIVE and HOLT_WINTERS, for example P1D." }
+  - { name: select, type: enum, values: [MAE], description: Measure that picks the champion per target and horizon. }
+  - { name: holdout, type: duration, description: "Length of the holdout at the end of the training window, for example P7D." }
+  - { name: gap, type: duration, description: "Gap between training data and holdout, so that lags do not leak, for example PT6H." }
+  - { name: levels, type: list, description: "Levels of the conformal intervals, for example 0.8 and 0.95." }
+semantics: { needs: series, origin: FORECAST }
+runtimes:
+  python: { status: planned, note: "TASK-016 P7b: opentsx.smart.train(spec) trains the candidates and logs them to MLflow." }
+  java: { status: planned, note: "TASK-016 P7c: Prediction API in Java and REST, with or without context." }
+  processor: { status: planned, note: "TASK-016 P7c: scoring processor opentsx-smart on KafScale with ONNX Runtime." }
+  go: { status: planned, note: "TASK-016 P7f, a proposal: scoring of pure Go models in a Go TSx processor." }
+  workbench: { status: none }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: "P7b (python), P7c (java, processor), P7f (go)" }
+literature:
+  - "P. R. Winters, Forecasting sales by exponentially weighted moving averages, Management Science 6, 324 (1960)"
+  - "V. Vovk, A. Gammerman, G. Shafer, Algorithmic learning in a random world, Springer (2005)"

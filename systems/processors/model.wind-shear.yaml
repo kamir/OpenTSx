@@ -1,0 +1,34 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: model.wind-shear
+version: 1
+kind: model
+category: model
+title: Wind shear
+description: >-
+  Carries the wind speed measured at one height to another height by the power law v * (toM / fromM)^alpha. The
+  exponent alpha belongs to the site: about 0.1 over open sea, 0.14 over flat land, 0.2 and more over rough land. A
+  model with one exponent for every weather: it knows neither the stability of the air nor the wind direction.
+inputs:
+  - { name: in, type: series, cardinality: one, description: Wind speed at the height fromM }
+outputs:
+  - { name: out, type: series, description: Wind speed at the height toM }
+params:
+  - { name: fromM, type: number, required: true, unit: m, description: Height of the measurement. Above 0. }
+  - { name: toM, type: number, required: true, unit: m, description: Height the wind is carried to. Above 0. }
+  - { name: alpha, type: number, required: true, min: 0, max: 0.6, description: Shear exponent of the site. }
+semantics: { needs: point, deterministic: true, keeps: [time, unit, series], origin: ESTIMATED }
+runtimes:
+  workbench: { status: available, note: "Defaults fromM 10, toM 120, alpha 0.11; the ranges are not checked." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#WindShear", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Refuses fromM or toM at or below 0 and alpha outside [0, 0.6]." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Wind shear }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+literature:
+  - "G. Hellmann, Meteorologische Zeitschrift 34, 273 (1916)"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/model.wind-shear.example.test.ts
+  chart: docs/user-manual/img/operators/model.wind-shear.png
+  shows: With alpha 0.14 every value of a day of 10 m wind speed is multiplied by the expected factor (120 / 10)^0.14 = 1.4161, and ln(output / input) over ln(toM / fromM) for heights from 10 m to 150 m is a straight line with the measured slope 0.1400.

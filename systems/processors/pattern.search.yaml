@@ -1,0 +1,51 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pattern.search
+version: 1
+kind: transformer
+category: pattern
+title: Subsequence search
+description: >-
+  Finds the topK windows of the selected series that look most like a query pattern of m values, m ≥ 4. Both
+  distances compare z-normalized windows. zED is their Euclidean distance, computed for every window at once with
+  MASS in O(n log n). DTW is dynamic time warping in a Sakoe-Chiba band of band · m samples, pruned exactly with
+  LB_Kim and LB_Keogh, so it also matches a copy that is a little faster or slower. Two matches in one series start at
+  least m/2 samples apart, windows with NaN are skipped, and a window may span episodes where the sampling continues.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: matches, type: events, cardinality: many, description: "PatternMatch per window, best first: episodeId, seriesId, offset, length, distance, metric zED or DTW(w=band)" }
+params:
+  - { name: pattern, type: list, description: "Query values, at least 4. Instead of pattern: episodeId, offset and length." }
+  - { name: episodeId, type: string, description: Episode that holds the query. }
+  - { name: offset, type: integer, min: 0, description: First sample of the query in that episode. }
+  - { name: length, type: integer, min: 4, description: Number of samples of the query. }
+  - { name: distance, type: enum, values: [zED, DTW], default: zED, description: z-normalized Euclidean distance or dynamic time warping. }
+  - { name: band, type: number, default: 0.1, min: 0, max: 1, description: "DTW only: width of the Sakoe-Chiba band as a share of m." }
+  - { name: topK, type: integer, default: 10, min: 1, description: Number of matches. }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  java:
+    status: available
+    class: org.opentsx.retrieval.pattern.PatternSearch
+    note: >-
+      EpisodeService.similarTo(pattern) or similarTo(episodeId, offset, length), then distance(Distance.dtw(band)),
+      topK(k) and fetch(). Distance.dtw has no default band. The retrieval server offers it as POST
+      /v1/patterns/search.
+  python:
+    status: available
+    class: "opentsx.client.retrieval.RetrievalClient#search"
+    note: >-
+      search(pattern=..., distance="DTW", band=0.1, top_k=10) calls POST /v1/patterns/search of the retrieval server
+      and returns the matches as a DataFrame; Python computes nothing.
+  workbench: { status: none }
+  processor: { status: none }
+  go: { status: none, note: "Concept 11, section 6: the Go core runs no pattern search and would call the Java search as a sidecar (sidecar.call)." }
+docs: docs/user-manual/09-retrieval.md#93-pattern-search
+literature:
+  - "T. Rakthanmanon et al., Searching and mining trillions of time series subsequences under dynamic time warping, Proc. 18th ACM SIGKDD, 262 (2012)"
+  - "H. Sakoe, S. Chiba, Dynamic programming algorithm optimization for spoken word recognition, IEEE Trans. Acoust. Speech Signal Process. 26, 43 (1978)"
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/PatternSearchExampleTest.java
+  chart: docs/user-manual/img/operators/pattern.search.png
+  shows: Both distances find the 3 planted copies of the pattern, zED at distances 1.10 to 1.17; only DTW with band 0.2 also finds the copy that is 30 % slower, at distance 0.98, while the fourth zED match lies elsewhere at 4.83.

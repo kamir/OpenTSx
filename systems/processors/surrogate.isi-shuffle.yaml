@@ -1,0 +1,39 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: surrogate.isi-shuffle
+version: 1
+kind: transformer
+category: surrogate
+title: Inter-event interval shuffle
+description: >-
+  Puts the intervals between consecutive events into a random order (Fisher-Yates, from the last interval down) and
+  adds them up again from the first event. The first and the last event, the event count and the set of intervals
+  stay; the timing relative to any other series is lost. A coupling measure that keeps its value on such copies is
+  explained by the event rate and the intervals alone.
+inputs:
+  - { name: in, type: events, cardinality: one }
+outputs:
+  - { name: out, type: events, description: The event times with shuffled intervals }
+params:
+  - { name: seed, type: integer, default: 1, description: "Seed of the Mulberry32 generator; one generator draws all copies in turn" }
+  - { name: shuffles, type: integer, default: 10, min: 1, description: Number of copies surrogate_sync draws and averages }
+semantics: { needs: series, deterministic: true, keeps: [count] }
+testvectors: docs/datamodel-2026/testvectors/pair-es.v1.json
+runtimes:
+  python:
+    status: available
+    class: opentsx.algorithms.event_sync.isi_shuffle
+    note: >-
+      isi_shuffle(events, Mulberry32(seed)) returns one copy; fewer than 3 events are returned unchanged.
+      EventSynchronization.surrogate_sync uses it for q_rand. Mulberry32 draws bit for bit what the workbench draws.
+  workbench:
+    status: none
+    note: >-
+      isiShuffle in es.ts runs only inside pair.es, for q_rand; it is no operator of its own.
+  java: { status: none }
+  processor: { status: none }
+  go: { status: none }
+example:
+  source: python-package/tests/examples/test_isi_shuffle_example.py
+  chart: docs/user-manual/img/operators/surrogate.isi-shuffle.png
+  shows: Ten shuffled copies of B, which repeats every event of A 3 ticks later, keep the first and last event and all 119 intervals, while Q with A falls from 1.00 to between 0.33 and 0.46 (mean 0.39), the level of an independent train (0.40).

@@ -1,0 +1,33 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: granger
+version: 1
+kind: transformer
+category: dependency
+title: Granger causality test
+description: >-
+  Tests whether the l past values of x improve the least-squares prediction of y from its own l past values. With
+  RSS0 and RSS1 the residual sums of squares of the model without and with x and n = N − l rows,
+  F = ((RSS0 − RSS1) / l) / (RSS1 / (n − 2l − 1)) and p = 1 − F_cdf(F; l, n − 2l − 1). A small p means that x
+  Granger-causes y.
+inputs:
+  - { name: y, type: series, cardinality: one, description: The series to predict. }
+  - { name: x, type: series, cardinality: one, description: "The predictor, as long as y." }
+outputs:
+  - { name: p, type: stats, description: p value of the F test }
+params:
+  - { name: l, type: integer, required: true, min: 1, description: Number of past values of y and of x in the models. }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.algorithms.statistics.GrangerCausality#grangerCausalityTest"
+    note: >-
+      2.x model in opentsx-core: grangerCausalityTest(y, x, l) on two arrays. No automated test. Prints RSS0, RSS1,
+      F and p to standard output on every call.
+  workbench: { status: none, note: The test per pair window is planned as pair.granger. }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+literature:
+  - "C. W. J. Granger, Investigating causal relations by econometric models and cross-spectral methods, Econometrica 37, 424 (1969)"

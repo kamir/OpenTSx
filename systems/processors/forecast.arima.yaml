@@ -1,0 +1,28 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: forecast.arima
+version: 1
+kind: model
+category: forecast
+title: AR, MA, ARMA, ARIMA, SARIMA and CARIMA
+description: >-
+  An ARIMA(p, d, q) model differences the series d times and explains each value by its p previous values (AR) and
+  its q previous forecast errors (MA); SARIMA adds the same terms at the season, CARIMA a controlled input. The
+  fitted model forecasts the next values. No runtime implements any of them and no plan names them.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: forecast, type: series }
+runtimes:
+  java:
+    status: none
+    note: >-
+      The 2.x SingleTsARIMATool.processReihe returns null. The six buttons AR to CARIMA of TSOperationControlerPanel
+      are disabled with the tooltip "This operation is not implemented".
+  workbench: { status: none, note: "Listed in NOT_PORTED: no handler in the Swing panel either." }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/11-classic-analytics.md
+literature:
+  - "G. E. P. Box, G. M. Jenkins, Time series analysis: forecasting and control, Holden-Day (1970)"

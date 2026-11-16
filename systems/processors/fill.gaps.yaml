@@ -1,0 +1,22 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: fill.gaps
+version: 1
+kind: transformer
+category: cleaning
+title: Gap filling
+description: >-
+  Fills the gaps of a series linearly, from the season or from a model, and marks every filled value with the quality
+  code SUBSTITUTED. align.vector fills a missing tick with the last value (fill as-of); no operator fills the gaps of
+  a series.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+runtimes:
+  workbench: { status: none }
+  java: { status: planned, note: "The plan names the methods, not the runtime. The 2.x TimeSeriesObject.fillGapWithValue replaces zeros with the mean, ignores its arguments and has no test." }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-018-analytics-storage-extensions.md, item: P6 }

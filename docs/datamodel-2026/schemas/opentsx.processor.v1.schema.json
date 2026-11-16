@@ -131,6 +131,7 @@
             "source",
             "transform",
             "univariate",
+            "multivariate",
             "group",
             "stream"
           ],
@@ -167,6 +168,85 @@
         "scenario"
       ],
       "description": "For a generator: demo gives plausible single values of one signal and knows nothing of the rest of the system; scenario generates several quantities together from assumptions and dependencies. Results that rest on a demo generator are not for comparing strategies (decision D61)."
+    },
+    "category": {
+      "enum": [
+        "source",
+        "quality",
+        "cleaning",
+        "alignment",
+        "segmentation",
+        "statistics",
+        "transform",
+        "distribution",
+        "spectral",
+        "fluctuation",
+        "dependency",
+        "surrogate",
+        "pattern",
+        "feature",
+        "model",
+        "forecast",
+        "network"
+      ],
+      "description": "Section of the operator chapter of the user manual (docs/user-manual/17-operators.md)."
+    },
+    "docs": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_./-]+(#[a-z0-9-]+)?$",
+      "description": "Repository path, optionally with an anchor, of the page that explains the operator in more depth."
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "file",
+        "item"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_./-]+$",
+          "description": "Repository path of the plan, for example EVOLUTION/TASK-018-analytics-storage-extensions.md."
+        },
+        "item": {
+          "type": "string",
+          "description": "Phase or checklist item of the plan, for example P6 or 1e."
+        }
+      },
+      "description": "Where a runtime with status planned is planned. Required when any runtime is planned."
+    },
+    "literature": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Publications that define the method."
+    },
+    "example": {
+      "type": "object",
+      "required": [
+        "source",
+        "chart",
+        "shows"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_./-]+$",
+          "description": "Test file that runs the example. The lines between the markers usage:begin and usage:end are shown in the manual."
+        },
+        "chart": {
+          "type": "string",
+          "pattern": "^docs/user-manual/img/operators/[a-z0-9.-]+\\.png$",
+          "description": "Image the example draws with tools/operator_charts.py."
+        },
+        "shows": {
+          "type": "string",
+          "description": "One sentence: what the chart shows. Caption and alt text of the image."
+        }
+      }
     }
   },
   "allOf": [

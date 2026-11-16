@@ -1,0 +1,48 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: ris
+version: 1
+kind: transformer
+category: fluctuation
+title: Return interval statistics
+description: >-
+  Marks every value above a threshold (by default the 95th percentile) as an extreme event and returns the intervals r
+  between consecutive events with their mean, median, spread and the risk parameter R = std(r) / mean(r). For
+  uncorrelated values the intervals are geometric, R is sqrt(1 − p) for an exceedance probability p, and the mean is
+  1 / p. Long-term correlations cluster the extremes: R rises above 1 while the mean interval stays 1 / p.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: events, type: events, description: Indices of the values above the threshold }
+  - { name: intervals, type: xy, description: Return interval r over the event number }
+  - { name: summary, type: stats, description: "num_events, threshold, mean_ri, median_ri, std_ri, min_ri, max_ri, risk_parameter, gamma, tau_0" }
+params:
+  - { name: threshold, type: number, description: "Absolute threshold. When set, threshold_percentile is not used" }
+  - { name: threshold_percentile, type: number, default: 95, min: 0, max: 100, description: Percentile of the values that is the threshold }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  python:
+    status: available
+    class: opentsx.algorithms.ris.RIS#analyze
+    note: >-
+      RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold. survival_function(r)
+      gives S(r), the share of intervals of r or longer. stretched_exponential_fit returns gamma = 1.0 for every input
+      and tau_0 from a straight line through log P over log r, so neither describes a stretched exponential.
+  workbench: { status: none }
+  java:
+    status: available
+    class: org.opentsx.algorithms.ris.RISTool
+    note: >-
+      2.x model in opentsx-core: collects return intervals of many series into binned distributions, scaled by the
+      mean interval R_q. No automated test. A clean-room Java library for the univariate stage (DFA, RIS) is planned in
+      TASK-015 P8.1.
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/11-classic-analytics.md#114-return-interval-statistics-ris
+literature:
+  - "A. Bunde, J. F. Eichner, J. W. Kantelhardt, S. Havlin, Long-term memory: a natural mechanism for the clustering of extreme events and anomalous residual times in climate records, Phys. Rev. Lett. 94, 048701 (2005)"
+  - "E. G. Altmann, H. Kantz, Recurrence time analysis, long-term correlations, and extreme events, Phys. Rev. E 71, 056106 (2005)"
+example:
+  source: python-package/tests/examples/test_ris_example.py
+  chart: docs/user-manual/img/operators/ris.png
+  shows: Uncorrelated noise and 1/f^0.6 noise both have a mean return interval of 20.0 above the 95th percentile, but R is 0.96 (expected 0.97) for uncorrelated noise and 1.73 for the correlated noise, where 23 percent of the intervals are 1 against 5 percent.

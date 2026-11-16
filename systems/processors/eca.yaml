@@ -1,0 +1,28 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: eca
+version: 1
+kind: transformer
+category: dependency
+title: Event coincidence analysis
+description: >-
+  Counts how often events of two series coincide within a tolerance window ΔT after a lag τ. The precursor rate is
+  the share of events in A with at least one event of B in [t − τ − ΔT, t − τ] before them; the trigger rate is the
+  share of events in B followed by at least one event of A in [t + τ, t + τ + ΔT]. Rates far above those of
+  independent event series point to a coupling; unlike event synchronisation, events that cluster in time distort
+  them little. No code exists.
+inputs:
+  - { name: a, type: events, cardinality: one }
+  - { name: b, type: events, cardinality: one }
+outputs:
+  - { name: rates, type: stats, description: Precursor and trigger coincidence rate }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  java: { status: planned, note: "TASK-015 P8.1: Event Coincidence Analysis in a clean-room Java library, next to event synchronisation with Q_rand." }
+  processor: { status: planned, note: "TASK-015 P8.1: streaming screening with running window sums of CC and ECA in opentsx-stats." }
+  workbench: { status: none }
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: P8.1 }
+literature:
+  - "J. F. Donges, C.-F. Schleussner, J. F. Siegmund, R. V. Donner, Event coincidence analysis for quantifying statistical interrelationships between event time series, Eur. Phys. J. Spec. Top. 225, 471 (2016)"

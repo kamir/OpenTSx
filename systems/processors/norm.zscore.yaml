@@ -1,0 +1,44 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: norm.zscore
+version: 1
+kind: transformer
+category: transform
+title: Standardize (z-score)
+description: >-
+  Subtracts the mean of a series and divides by its standard deviation, z = (y − mean) / std, both over the finite
+  values and std with n − 1. Every series ends with mean 0 and standard deviation 1 whatever its level and spread, so
+  series of different units become comparable. A constant series gives 0 everywhere.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: (y − mean) / std on the time axis of the input }
+semantics: { needs: series, deterministic: true, keeps: [time, count, series] }
+runtimes:
+  workbench: { status: available, note: "The output keeps the unit of the input although it has none." }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#normalizeToStdevIsOne"
+    note: >-
+      2.x model in opentsx-core: through DatasetNormalizationTool.normalizeToMWZeroANDSTDevONE, std with n − 1. Throws
+      IllegalArgumentException for fewer than 2 values, values that are not finite and a standard deviation of 0.
+      Tested in TimeSeriesObjectStatisticsTest.
+  python:
+    status: available
+    class: "opentsx.core.time_series.TimeSeriesObject#normalize"
+    note: >-
+      normalize('zscore'), the default, divides by the standard deviation with n (numpy.std), so the result has std 1
+      with n, not with n − 1. A constant series gives NaN and a RuntimeWarning. The two other methods scale by the
+      range and by the interquartile range.
+  processor:
+    status: none
+    note: >-
+      The workbench exports the step to a PFD as NORMALIZE. The Flink PFD runtime of opentsx-flink-core accepts
+      NORMALIZE only with method center (PFDValidation) and subtracts the mean (OperationFactory), so the exported step
+      does not divide by the standard deviation.
+  go: { status: none }
+ui: { group: transform, label: "NORM std=1, avg=0" }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/norm.zscore.example.test.ts
+  chart: docs/user-manual/img/operators/norm.zscore.png
+  shows: Three series with the means 20.0, 46.4 and 36.0 and the standard deviations 5.8, 5.2 and 7.4 all have mean 0 and standard deviation 1 within 1e-15 after norm.zscore.

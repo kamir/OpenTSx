@@ -1,0 +1,51 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: mfdfa
+version: 1
+kind: transformer
+category: fluctuation
+title: Multifractal detrended fluctuation analysis
+description: >-
+  Cuts the profile (cumulative sum of the deviations from the mean) into segments of size s, removes a polynomial
+  trend per segment and averages the q-th power of the segment fluctuations: F_q(s) = {mean of [F^2(s)]^(q/2)}^(1/q),
+  with a geometric mean at q = 0. The generalized Hurst exponent h(q) is the slope of log F_q(s) over log s; from it
+  follow tau(q) = q h(q) − 1 and the singularity spectrum f(alpha). h(q) is flat for a monofractal series, and the
+  widths delta h = h(q_min) − h(q_max) and delta alpha measure how multifractal a series is.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: hurst, type: xy, description: "h(q) over q; also tau(q) and the fluctuation functions F_q(s)" }
+  - { name: spectrum, type: xy, description: "f(alpha) over alpha; delta alpha is its width" }
+  - { name: summary, type: stats, description: "delta_h, delta_alpha, is_multifractal (delta_h > 0.1)" }
+params:
+  - { name: polynom_order, type: integer, default: 1, min: 1, description: Order of the detrending polynomial }
+  - { name: q_range, type: list, description: "Values of q. Default: -10 to 10.5 in steps of 0.5, with 0 (42 values)" }
+  - { name: min_scale, type: integer, default: 10, description: Smallest window size s }
+  - { name: max_scale, type: integer, description: "Largest window size s. Default: a quarter of the series length" }
+  - { name: num_scales, type: integer, default: 20, description: "Number of window sizes, spaced evenly in log s" }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  python:
+    status: available
+    class: opentsx.algorithms.mfdfa.MFDFA#analyze
+    note: >-
+      MFDFA(polynom_order=1).analyze(x): q_values, scales, Fq, h_q, tau_q, alpha, f_alpha, delta_h, delta_alpha,
+      is_multifractal. Segments are cut from the start only; the rest of n / s is dropped. is_multifractal is
+      delta_h > 0.1, which white noise of 16384 values passes in 2 of 8 seeds (delta_h 0.07 to 0.13). The key h_2 holds
+      h(0.5), not h(2).
+  workbench: { status: none, note: "Listed as not ported (MF-DFA) in ops.ts NOT_PORTED." }
+  java:
+    status: available
+    class: org.opentsx.algorithms.detrending.MFDFAAnalyzer
+    note: >-
+      2.x model in opentsx-core: MFDFAAnalyzer.process runs the 2.x method MFDFA of order 2 for q = -5 to 5 without 0,
+      writes measurement tables to databuffer/MFDFA and opens charts. No automated test.
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/11-classic-analytics.md#112-multifractal-dfa-mfdfa
+literature:
+  - "J. W. Kantelhardt et al., Multifractal detrended fluctuation analysis of nonstationary time series, Physica A 316, 87 (2002)"
+example:
+  source: python-package/tests/examples/test_mfdfa_example.py
+  chart: docs/user-manual/img/operators/mfdfa.png
+  shows: For white noise h(q) stays within 0.07 of 0.5 (delta h 0.09), for a binomial cascade with a = 0.75 it falls from 1.90 to 0.47 and follows the theory within 0.10 (delta h 1.42 against 1.39, delta alpha 1.60 against 1.58).

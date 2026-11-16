@@ -1,0 +1,35 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: norm.max
+version: 1
+kind: transformer
+category: transform
+title: Divide by the maximum
+description: >-
+  Divides every value of a series by the largest value of that series, out = y / max(y), with the maximum taken over
+  the finite values. The largest value becomes 1 and the shape of the series stays. The divisor is the largest value,
+  not the largest absolute value: a series whose maximum is 0 or below does not end with the maximum 1.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: y / max(y) on the time axis of the input }
+semantics: { needs: series, deterministic: true, keeps: [time, count, series] }
+runtimes:
+  workbench: { status: available, note: "The output keeps the unit of the input although it is a ratio." }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#normalize"
+    note: "2.x model in opentsx-core: normalize() divides in place by the maximum and appends it to the label. No automated test."
+  python: { status: none, note: "TimeSeriesObject.normalize('minmax') gives (y − min) / (max − min), another scaling." }
+  processor:
+    status: none
+    note: >-
+      The workbench exports the step to a PFD as NORMALIZE. The Flink PFD runtime of opentsx-flink-core accepts
+      NORMALIZE only with method center (PFDValidation) and subtracts the mean (OperationFactory), so the exported step
+      does not divide by the maximum.
+  go: { status: none }
+ui: { group: transform, label: NORM max=1 }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/norm.max.example.test.ts
+  chart: docs/user-manual/img/operators/norm.max.png
+  shows: Three turbines with the maxima 2000, 3000 and 6000 kW all have the maximum 1 after norm.max, and each output is its input divided by that maximum.

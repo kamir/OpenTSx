@@ -39,6 +39,11 @@ fixture) and `OPENTSX_RETRIEVAL_URL` (Python client against a running retrieval 
 [`.mvn/maven.config`](.mvn/maven.config) makes Maven retry a download up to five times when the repository answers
 HTTP 429, 500, 502, 503 or 504.
 
+An operator is described in `systems/processors/<id>.yaml`. When you add or change an operator, update its description
+and its example test, then regenerate the charts and the operator chapter as
+[chapter 17](docs/user-manual/17-operators.md#run-the-examples-and-draw-the-charts) shows. `OperatorCatalogTest` fails
+when a description names code that does not exist or when the chapter is out of date.
+
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and on pushes to `master` and

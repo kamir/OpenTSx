@@ -10,6 +10,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Operator catalog: user-manual chapter [17](docs/user-manual/17-operators.md) lists 71 time-series operators, 50 with a
+  runtime and 21 planned or missing, with their specification, the status per runtime (workbench, java, python,
+  processor, go) and an example. `org.opentsx.retrieval.system.OperatorCatalog` generates the chapter from one
+  description per operator in `systems/processors/<id>.yaml`. `OperatorCatalogTest` fails when a runtime marked
+  `available` names a Java class, Python name or workbench operator that does not exist, when a planned runtime has no
+  plan, or when the chapter is out of date. The schema `opentsx.processor.v1` gains the fields `category`, `docs`,
+  `plan`, `literature` and `example` and the UI group `multivariate`.
+- Operator examples: 46 example tests (7 Python, 27 workbench, 12 Java) feed each operator input with a known property
+  and check the result, for example the DFA exponent of white noise, a planted lag for `pair.xcorr` or an injected stuck
+  sensor for `dq.stats`. With `OPENTSX_EXAMPLES_DIR` set they write their chart data, and `tools/operator_charts.py`
+  draws the charts in `docs/user-manual/img/operators/`.
+
+- `opentsx-conf` (TASK-020, Java foundation): the key registry `opentsx.config.v1` with 126 keys and 48 commands,
+  `OpenTsxConf` with six sources (code, command line, environment, `--properties-file`, the defaults file in
+  `$OPENTSX_CONF_DIR`, registry default), properties and YAML files, one type grammar and fail-closed errors with exit
+  code 2. `bin/opentsx` gets `config list|show|get`, `version` and `--version` (`org.opentsx.conf.ConfCli`); secrets
+  are shown as `******` and refused on the command line. The module passes all 246 shared vectors
+  `docs/datamodel-2026/testvectors/conf.v1.json`. No main class reads the registry yet.
+
+- Python configuration and command line (TASK-020, foundation for Python): the package `opentsx.conf` with
+  `OpenTsxConf` (`set`, `setIfMissing`, `setAll`, `get`, `getOption`, typed getters, `contains`, `getAll`, `source`,
+  `toDebugString`, `load`) and `OpenTsxConfError`, a byte-identical copy of the registry `opentsx.config.v1.json`, the
+  console script `opentsx` with `config list`, `config show`, `config get` and `version`, and the extra
+  `opentsx[yaml]` (`PyYAML>=6.0.1`) for YAML files. The tests run every case of the shared vectors
+  `docs/datamodel-2026/testvectors/conf.v1.json`; CI installs the extra on Python 3.12 only, so the other versions
+  check the message that names the extra.
+
 - `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.

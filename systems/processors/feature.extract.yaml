@@ -1,0 +1,24 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: feature.extract
+version: 1
+kind: transformer
+category: feature
+title: Feature extraction per episode
+description: >-
+  Computes one vector of features per episode in the manner of tsfresh, for example statistics of the values,
+  autocorrelations and spectral measures. Episodes can then be compared, clustered or used to train a model by their
+  vectors instead of their raw values. The plan names the operator, not its feature set. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: features, type: stats, cardinality: many, description: One feature vector per episode. }
+runtimes:
+  java: { status: planned, note: "TASK-018 phase 6. The plan names the method, not the runtime." }
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-018-analytics-storage-extensions.md, item: P6 }
+literature:
+  - "M. Christ, N. Braun, J. Neuffer, A. W. Kempa-Liehr, Time series feature extraction on basis of scalable hypothesis tests (tsfresh, a Python package), Neurocomputing 307, 72 (2018)"

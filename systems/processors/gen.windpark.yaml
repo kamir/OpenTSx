@@ -1,0 +1,52 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: gen.windpark
+version: 1
+kind: generator
+fidelity: scenario
+category: source
+title: Wind park simulator
+description: >-
+  Simulates a wind park from a scenario: free wind from hourly Weibull means with turbulence and a daily cycle, wakes
+  after Jensen, and per turbine the power curve, rotor and generator speed, pitch, yaw, generator temperature and
+  operating state. It writes one REGULAR episode per turbine, channel and episodeDuration, and injects operations and
+  sensor faults, each returned as ground truth and written as a label on the episodes it overlaps. The same scenario
+  and seed give the same episodes, ids included.
+outputs:
+  - { name: episodes, type: series, cardinality: many, description: "10 channels per turbine: wind speed and direction, ambient temperature, nacelle direction, rotor speed, pitch angle, generator speed and temperature, active power, state" }
+  - { name: ground_truth, type: events, description: "Per injected event: category (operation or sensor-fault), type, turbine, channel, from, to, params" }
+params:
+  - { name: seed, type: integer, description: Seed of all random numbers. }
+  - { name: start, type: string, required: true, description: "Start instant, aligned to episodeDuration, for example 2026-10-01T00:00:00Z." }
+  - { name: duration, type: duration, required: true, description: Simulated time. }
+  - { name: sampleInterval, type: duration, default: PT1S, description: Time step and sampling interval. }
+  - { name: episodeDuration, type: duration, default: PT10M, description: Length of one episode. A multiple of sampleInterval. }
+  - { name: turbineModel, type: enum, values: [GENERIC-3MW, GENERIC-8MW], default: GENERIC-3MW, description: Turbine type of the park (park.turbineModel). }
+  - { name: rows, type: integer, default: 1, min: 1, description: Rows of the turbine grid (park.rows). }
+  - { name: columns, type: integer, default: 1, min: 1, description: Turbines per row (park.columns). }
+  - { name: spacingRotorDiameters, type: number, default: 5, description: Spacing within a row in rotor diameters. }
+  - { name: rowSpacingRotorDiameters, type: number, default: 7, description: Spacing between rows in rotor diameters. }
+  - { name: wakeDecay, type: number, default: 0.05, description: Wake decay constant of the Jensen model. }
+  - { name: weibullK, type: number, default: 2.0, description: Shape of the Weibull distribution of hourly mean wind (wind.weibullK). }
+  - { name: weibullC, type: number, default: 9.0, unit: m/s, description: Scale of the Weibull distribution of hourly mean wind. }
+  - { name: turbulenceIntensity, type: number, default: 0.10, description: Standard deviation of the wind relative to its mean. }
+  - { name: meanDirectionDeg, type: number, default: 240, unit: degree, description: Mean wind direction. }
+  - { name: directionStdDeg, type: number, default: 15, unit: degree, description: Standard deviation of the wind direction. }
+  - { name: diurnalAmplitude, type: number, default: 0.1, description: Relative day and night change of the mean wind. }
+  - { name: meanTemperatureC, type: number, default: 10, unit: degree Celsius, description: Mean ambient temperature. }
+  - { name: operations, type: list, description: "CURTAILMENT (limitKw), FAULT or MAINTENANCE, each with turbines (empty or * for all), offset and duration." }
+  - { name: sensorFaults, type: list, description: "STUCK, DRIFT (ratePerHour), OFFSET (magnitude), SPIKES (magnitude, probability) or GAP, each with turbine, channel, offset and duration." }
+semantics: { deterministic: true, origin: SYNTHETIC }
+runtimes:
+  java: { status: available, class: "org.opentsx.windpark.sim.WindparkSimulator#run", note: "bin/opentsx windpark-sim --scenario <file.yaml> runs a scenario once and writes the episodes to KafScale as one sealed bucket (--kafscale), to Iceberg (--iceberg) or to both; --ground-truth <file.json> writes the ground truth. The wind defaults apply when the scenario has no wind block." }
+  processor: { status: none, note: "A run covers the duration of the scenario and ends; nothing writes continuously." }
+  workbench: { status: none }
+  python: { status: none }
+  go: { status: none }
+docs: docs/user-manual/06-windpark.md#64-simulator-and-scenarios
+literature:
+  - "N. O. Jensen, A note on wind generator interaction, Risø-M-2411, Risø National Laboratory (1983)"
+example:
+  source: opentsx-windpark/src/test/java/org/opentsx/windpark/examples/WindparkSimulatorExampleTest.java
+  chart: docs/user-manual/img/operators/gen.windpark.png
+  shows: In a 6-hour scenario the 1-minute means of T01 lie on average 14 kW from the reference power curve; while the injected STUCK fault holds the anemometer at 11.00 m/s from hour 2 to 2.5, the power moves between 549 and 1957 kW, and the ground truth and the episode labels mark exactly that half hour.

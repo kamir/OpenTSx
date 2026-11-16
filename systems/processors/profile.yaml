@@ -1,0 +1,32 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: profile
+version: 1
+kind: transformer
+category: transform
+title: Profile (cumulated deviations)
+description: >-
+  Gives the running sum of the deviations from the mean, out[i] = sum over j ≤ i of (y[j] − mean), with the mean over
+  the finite values; a value that is not finite adds 0. The profile ends at 0. It is 0 for a constant, falls while the
+  values lie below the mean and rises while they lie above; DFA starts from it.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: The running sum of y − mean on the time axis of the input }
+semantics: { needs: series, deterministic: true, keeps: [time, unit, count, series] }
+runtimes:
+  workbench: { status: available }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#getProfile"
+    note: "2.x model in opentsx-core: the x values of the output are the sample index 0, 1, 2 and so on. No automated test."
+  python: { status: none, note: "DFA and MFDFA compute the profile inside analyze; no function returns it." }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: transform, label: Profile }
+literature:
+  - "C.-K. Peng et al., Mosaic organization of DNA nucleotides, Phys. Rev. E 49, 1685 (1994)"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/profile.example.test.ts
+  chart: docs/user-manual/img/operators/profile.png
+  shows: The profile of a constant 7.3 is 0 at every sample, and the profile of a step from 4 to 6 falls to -50.000 at 49 s and ends at -1e-14, against the expected -50 and 0.

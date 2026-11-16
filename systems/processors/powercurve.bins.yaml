@@ -1,0 +1,40 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: powercurve.bins
+version: 1
+kind: transformer
+category: model
+title: Power curve, method of bins
+description: >-
+  Averages wind speed and active power of one turbine over aligned intervals, sorts the interval means into wind-speed
+  bins and gives per bin the count, mean wind, mean power, its standard deviation and the reference power at the mean
+  wind (IEC 61400-12-1, simplified: nacelle anemometer, no air-density or site correction). The performance index is
+  produced / expected energy over the intervals in which the reference expects at least minExpectedShare of rated
+  power. Runs of such intervals with measured / reference power below ratioThreshold are underperformance periods, with
+  their mean ratio and the energy lost against the reference.
+inputs:
+  - { name: wind, type: series, cardinality: one, description: Wind speed of the turbine in m/s }
+  - { name: power, type: series, cardinality: one, description: Active power of the turbine in kW }
+outputs:
+  - { name: bins, type: xy, description: "Per bin: windFromMs, windToMs, count, meanWindMs, meanPowerKw, stdPowerKw, referenceKw" }
+  - { name: underperformance, type: events, description: "Per period: fromMicros, toMicros, meanRatio, lostEnergyKwh" }
+params:
+  - { name: interval, type: duration, default: PT10M, description: Length of the aligned averaging intervals. An interval without a wind or a power value is left out. }
+  - { name: binWidthMs, type: number, default: 0.5, unit: m/s, description: Width of the wind-speed bins. }
+  - { name: ratioThreshold, type: number, default: 0.8, min: 0, description: An interval with measured / reference power below it underperforms. }
+  - { name: minExpectedShare, type: number, default: 0.1, min: 0, max: 1, description: Share of rated power the reference must expect for an interval to count in the performance index and in underperformance. }
+  - { name: reference, type: enum, values: [GENERIC-3MW, GENERIC-8MW], description: "Turbine type whose reference curve (PowerCurve.powerKw) and rated power are used. The second analyze takes any curve and its rated power, for example a warranted curve." }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  java: { status: available, class: "org.opentsx.windpark.analysis.PowerCurveAnalysis#analyze", note: "Java API only; no command runs it." }
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/06-windpark.md#65-power-curve-analysis
+literature:
+  - "IEC 61400-12-1:2017, Wind energy generation systems, Part 12-1: Power performance measurements of electricity producing wind turbines"
+example:
+  source: opentsx-windpark/src/test/java/org/opentsx/windpark/examples/PowerCurveBinsExampleTest.java
+  chart: docs/user-manual/img/operators/powercurve.bins.png
+  shows: Over 48 simulated hours the bins with 5 or more of the 252 healthy 10-minute intervals lie within 253 kW of the reference curve (performance index 0.992), and a curtailment to 500 kW from hour 20 to 26 is found as one underperformance period from hour 20.0 to 26.0 with a mean ratio of 0.39.

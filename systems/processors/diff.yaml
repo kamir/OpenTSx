@@ -1,0 +1,35 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: diff
+version: 1
+kind: transformer
+category: transform
+title: Difference to the previous sample
+description: >-
+  Gives the change from one sample to the next, out[i] = y[i] − y[i−1], and 0 at the first sample, on the time axis
+  of the input. The differences of a counter, such as an energy meter, are the amount of each step; the differences
+  of a ramp are constant.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: "y[i] − y[i−1], 0 at the first sample" }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, count, series] }
+runtimes:
+  workbench: { status: available }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#getNextDiffs"
+    note: "2.x model in opentsx-core: the x values of the output are the sample index 0, 1, 2 and so on. No automated test."
+  python:
+    status: available
+    class: "opentsx.core.time_series.TimeSeriesObject#diff"
+    note: >-
+      diff(periods=1) leaves out the first sample: n − 1 values on the timestamps from the second on. periods above 1
+      gives the difference of that order (numpy.diff with n=periods), not y[i] − y[i − periods].
+  processor: { status: none }
+  go: { status: none }
+ui: { group: transform, label: Diffs }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/diff.example.test.ts
+  chart: docs/user-manual/img/operators/diff.png
+  shows: The differences of an energy meter that grows by 2, 5 and 1 kWh per 10 min are 2, 5 and 1 kWh, exact for all 149 steps, with 0 at the first sample.

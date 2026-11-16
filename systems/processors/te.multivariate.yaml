@@ -1,0 +1,27 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: te.multivariate
+version: 1
+kind: transformer
+category: dependency
+title: Multivariate transfer entropy
+description: >-
+  Measures how much the past of a source X reduces the uncertainty of the next value of a target Y beyond the past
+  of Y and of the sources already selected, Z: TE = I(Y_t ; X_past | Y_past, Z_past). Sources are added one at a
+  time while a permutation test finds them significant, which keeps false links in check as the data grow; pairwise
+  transfer entropy does not. The plan runs IDTxl in a Python worker behind a process boundary. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: edges, type: model, description: "Directed links with lag and significance, written to the edge table" }
+semantics: { needs: series }
+runtimes:
+  python: { status: planned, note: "TASK-015 P8.2: a worker in python-package/opentsx/algorithms calls IDTxl, which is GPL, behind a process boundary." }
+  workbench: { status: none }
+  java: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: P8.2 }
+literature:
+  - "T. Schreiber, Measuring information transfer, Phys. Rev. Lett. 85, 461 (2000)"
+  - "L. Novelli, P. Wollstadt, P. Mediano, M. Wibral, J. T. Lizier, Large-scale directed network inference with multivariate transfer entropy and hierarchical statistical testing, Network Neuroscience 3, 827 (2019)"

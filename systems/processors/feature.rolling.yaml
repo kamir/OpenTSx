@@ -1,0 +1,31 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: feature.rolling
+version: 1
+kind: transformer
+category: feature
+title: Rolling-window feature
+description: >-
+  Gives every sample an aggregate of the values of the last window, the current sample included and gaps left out:
+  the samples with a time after t - window and up to t. STD is the population standard deviation of those values.
+  A feature for models that predict from the recent past.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: window, type: duration, required: true, editAs: seconds, description: Length of the window. }
+  - { name: fn, type: enum, values: [MEAN, STD, MIN, MAX], default: MEAN, description: Aggregate of the values in the window. }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+runtimes:
+  workbench: { status: available, note: "window in units of the x axis, default 3600." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Rolling", note: "A step of the clean chain before a series sink (bin/opentsx vectors). A window holds at most 100000 values; older ones are dropped." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Rolling }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/feature.rolling.example.test.ts
+  chart: docs/user-manual/img/operators/feature.rolling.png
+  shows: On a 1 s step from 0 to 10 a 20 s window gives a MEAN that reaches the measured 10 at 19 s after the step and a STD with the measured peak of 5.000 at 9 s, where half the window is 10.

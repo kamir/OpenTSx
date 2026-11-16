@@ -4,16 +4,19 @@ id: gen.ou
 version: 1
 kind: generator
 fidelity: demo
+category: source
 title: Mean-reverting noise
 description: >-
   Values wander around a mean and are pulled back to it. A stand-in for a price or a demand where no data is
-  connected. A demo generator: it knows nothing of the rest of the system. Values are clipped to the plausible range
-  of the signal.
+  connected. Each step takes back the share reversion of the distance to the mean and adds noise:
+  x(k+1) − mean = (1 − reversion) (x(k) − mean) + sigma · ε. The lag-1 autocorrelation is 1 − reversion and the
+  standard deviation sigma / sqrt(1 − (1 − reversion)²). A demo generator: it knows nothing of the rest of the
+  system. Values are clipped to the plausible range of the signal.
 outputs:
   - { name: out, type: series }
 params:
   - { name: mean, type: number, required: true, description: Level the values return to }
-  - { name: reversion, type: number, default: 0.1, min: 0, max: 1, description: Share of the distance to the mean taken back per step }
+  - { name: reversion, type: number, default: 0.1, min: 0, max: 1, description: Share of the distance to the mean taken back per step; above 0 }
   - { name: sigma, type: number, required: true, min: 0, description: Standard deviation of one step }
   - { name: min, type: number, from: expect.min }
   - { name: max, type: number, from: expect.max }
@@ -21,7 +24,24 @@ params:
   - { name: unit, type: string, from: expect.unit }
 semantics: { needs: window, deterministic: true, origin: SYNTHETIC }
 runtimes:
-  java: { status: available, class: org.opentsx.retrieval.generate.Generators, note: "One run over a period, started by a person; no continuous operation." }
-  workbench: { status: none }
-  processor: { status: none }
+  java:
+    status: available
+    class: "org.opentsx.retrieval.generate.Generators#values"
+    note: >-
+      One run over a period, started by a person; no continuous operation. The value of a step does not depend on
+      where the run began: the recursion starts early enough that earlier steps fade below a thousandth.
+      Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST
+      /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2.
+  workbench: { status: none, note: "The page Signals presets the parameters from the expectation of the signal and asks the server to generate." }
+  python: { status: none }
+  processor: { status: planned, note: "A generator that keeps writing is part of step E2 of the decision circle." }
+  go: { status: none }
+plan: { file: docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, item: E2 }
 ui: { group: source, label: Mean-reverting noise }
+docs: docs/user-manual/16-engineering-method.md#step-4-connect-the-sources
+literature:
+  - "G. E. Uhlenbeck, L. S. Ornstein, On the theory of the Brownian motion, Phys. Rev. 36, 823 (1930)"
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/OuGeneratorExampleTest.java
+  chart: docs/user-manual/img/operators/gen.ou.png
+  shows: With reversion 0.08 the measured 1 − lag-1 autocorrelation is 0.078, and for reversions from 0.02 to 0.5 it lies on the line 1 − r1 = reversion; the mean is 60.4 against 62.8 and the standard deviation 23.9 against the expected 23.0.

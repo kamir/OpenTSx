@@ -1,0 +1,25 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: feature.calendar
+version: 1
+kind: transformer
+category: feature
+title: Calendar features
+description: >-
+  Encodes the time stamp of each value as points on a circle: hour of day h as sin(2π h / 24) and cos(2π h / 24),
+  day of year d as sin and cos of 2π d over the length of the year. 23:00 and 00:00 lie close together, as they do
+  in time, which a plain hour number does not show a model. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: features, type: series, cardinality: many, description: One sin and one cos series per field. }
+params:
+  - { name: fields, type: list, description: "Calendar fields, for example hourOfDay and dayOfYear." }
+semantics: { needs: point, deterministic: true, keeps: [time] }
+runtimes:
+  java: { status: planned, note: "TASK-016 P7a: feature pipeline in Java and Python with shared test vectors." }
+  python: { status: planned, note: "TASK-016 P7a: feature pipeline in Java and Python with shared test vectors." }
+  processor: { status: planned, note: "TASK-016 P7c: the scoring processor keeps the feature buffers in its checkpoint." }
+  workbench: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: "P7a (java, python), P7c (processor)" }

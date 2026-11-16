@@ -1,0 +1,32 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: dfa
+version: 1
+kind: transformer
+category: fluctuation
+title: Detrended fluctuation analysis
+description: >-
+  Sums the deviations from the mean into a profile, removes a polynomial trend in windows of size s and returns the
+  fluctuation function F(s). The exponent alpha is the slope of log F(s) over log s. It is about 0.5 for uncorrelated
+  values, between 0.5 and 1 for long-range correlated values, about 1 for 1/f noise and about 1.5 for a random walk.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: fluctuation, type: xy, description: F(s) over the window size s; alpha is the slope in log-log }
+params:
+  - { name: order, type: integer, default: 1, min: 1, description: Order of the detrending polynomial }
+  - { name: scales, type: integer, default: 20, min: 4, description: "Number of window sizes, spaced evenly in log s" }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  python: { status: available, class: opentsx.algorithms.dfa.DFA, note: "DFA(polynom_order=1).analyze(x): alpha, r_squared, scales, fluctuations. Windows from 10 to n/4." }
+  workbench: { status: available, class: dfa, note: "Defaults order 2, 40 scales." }
+  java: { status: available, class: org.opentsx.algorithms.detrending.methods.DFA, note: "2.x tools DFA, SingleDFATool, MultiDFATool." }
+  processor: { status: none }
+ui: { group: univariate, label: DFA }
+docs: docs/user-manual/11-classic-analytics.md
+literature:
+  - "C.-K. Peng et al., Mosaic organization of DNA nucleotides, Phys. Rev. E 49, 1685 (1994)"
+example:
+  source: python-package/tests/examples/test_dfa_example.py
+  chart: docs/user-manual/img/operators/dfa.png
+  shows: The fluctuation functions of white noise, 1/f^0.6 noise and a random walk are straight lines in log-log with the slopes 0.52, 0.84 and 1.41, close to the expected 0.5, 0.8 and 1.5.

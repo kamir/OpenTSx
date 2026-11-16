@@ -1,0 +1,29 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pair.granger
+version: 1
+kind: transformer
+category: dependency
+title: Granger test per pair window
+description: >-
+  Puts series A and B on one clock and runs the Granger F test of the operator granger in each pair window. The
+  field p is the p value of that test, one value per window, stamped at the window centre. A small p means that the
+  past of one series improves the least-squares prediction of the other beyond its own past.
+inputs:
+  - { name: a, type: series, cardinality: many, description: "Series A. Without b every pair of its series is compared." }
+  - { name: b, type: series, cardinality: many, description: "Series B, optional: each series of a is paired with each series of b." }
+outputs:
+  - { name: p, type: series, cardinality: many, description: Metric pair.granger.p. }
+semantics: { needs: window, deterministic: true }
+runtimes:
+  workbench: { status: planned, note: "TASK-015 phase 1f: a port of GrangerCausality.grangerCausalityTest of the 2.x model." }
+  processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
+  java:
+    status: none
+    note: >-
+      The 2.x GrangerCausality in opentsx-core (operator granger) tests two whole arrays, not per pair window.
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "1f (workbench), 3 (processor)" }
+literature:
+  - "C. W. J. Granger, Investigating causal relations by econometric models and cross-spectral methods, Econometrica 37, 424 (1969)"

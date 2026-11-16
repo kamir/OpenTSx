@@ -1,0 +1,58 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pair.xcorr
+version: 1
+kind: transformer
+category: dependency
+title: Cross-correlation per pair window
+description: >-
+  Puts series A and B on one clock and computes in each window CC(k) = Σ (a[t] − ā)(b[t − k] − b̄) / ((N − 1) s_a s_b)
+  for k from −lags to lags ticks, with N the ticks of the window and B shifted in by zeros, so CC(0) is the Pearson
+  correlation. max is the extreme of |CC| with its sign, lag is −k times the clock at that extreme (lag > 0: B
+  follows A), and strength = (|max| − mean of CC) / std of CC over the 2 lags + 1 values. A tick without a value
+  counts as the mean of its series.
+inputs:
+  - { name: a, type: series, cardinality: many, description: "Series A. Without b every pair of its series is compared." }
+  - { name: b, type: series, cardinality: many, description: "Series B, optional: each series of a is paired with each series of b." }
+outputs:
+  - { name: max, type: series, cardinality: many, description: "Metric pair.xcorr.max, tags a, b, window and step; one value per window at its centre." }
+  - { name: lag, type: series, cardinality: many, description: "Metric pair.xcorr.lag, in seconds; lag > 0: B follows A." }
+  - { name: strength, type: series, cardinality: many, description: "Metric pair.xcorr.strength. For a positive peak at most 2 lags / sqrt(2 lags + 1), 4.36 for lags 10." }
+params:
+  - { name: lags, type: integer, default: 10, min: 0, unit: clock ticks, description: Largest shift of B against A in both directions. }
+  - { name: pairing, type: enum, values: [same, intersect], default: same, description: "same: an episode of A with the episode of B that has the same start and end. intersect: overlapping episodes on their overlap. A series without episodes is one range from its first sample to its last plus one sampling interval." }
+  - { name: window, type: string, default: episode, description: "episode: one window over the whole pair range. A number: the window width in seconds; a window that would end after the range is not computed." }
+  - { name: step, type: duration, default: PT0S, editAs: seconds, description: "Distance of the window starts. 0: the window width, windows side by side." }
+  - { name: every, type: duration, default: PT0S, editAs: seconds, description: "Clock; ticks are multiples of every since the epoch. 0: the larger sampling interval (median spacing) of A and B." }
+  - { name: agg, type: enum, values: [MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT], default: MEAN, description: "Aggregate of the samples of one series in one tick, as in align.vector." }
+  - { name: fill, type: enum, values: [none, as-of], default: none, description: "as-of: a tick without a sample takes the last value when it is at most maxAge old. The fill does not reach back across the start of the pair range." }
+  - { name: maxAge, type: duration, default: PT60S, editAs: seconds, description: Age of the oldest value fill as-of takes. }
+  - { name: minCoverage, type: number, default: 0.8, min: 0, max: 1, description: "Below this share of ticks with A and B a window gives NaN with quality 1 (see pair.coverage)." }
+semantics: { needs: window, deterministic: true }
+testvectors: docs/datamodel-2026/testvectors/pair-xcorr.v1.json
+runtimes:
+  workbench:
+    status: available
+    note: >-
+      Operator "Cross-correlation", tab Multi-variate Analysis. Port of KreuzKorrelation.calcKRCoeffizient and
+      CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in
+      the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures,
+      also when it is negative. A window without spread in A or B gives NaN in all three fields. A call of apply
+      without maxAge uses 0.
+  java:
+    status: planned
+    note: >-
+      No Java cross-correlation exists. TASK-015 P8.1 plans a clean-room Java library for lagged cross-correlation
+      with the link strengths l_adj, l_norm and l_trans; strength here is l_norm.
+  processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "3 (processor), P8.1 (java)" }
+ui: { group: multivariate, label: Cross-correlation }
+docs: EVOLUTION/TASK-015-multivariate-analysis.md#pair-windows
+literature:
+  - "M. Kämpf, Time-Series-Based Reconstruction and Analysis of Complex Networks: Methods for Quantitative Comparison of Dynamic Processes, dissertation, Martin Luther University Halle-Wittenberg (2017), urn:nbn:de:gbv:3:4-21151"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/pair.xcorr.example.test.ts
+  chart: docs/user-manual/img/operators/pair.xcorr.png
+  shows: B is A delayed by 40 s plus noise; in all 11 windows of 10 min the peak of the cross-correlation lies at the planted lag of +40 s, with max 0.74 to 0.92 and strength 2.7 to 3.4.

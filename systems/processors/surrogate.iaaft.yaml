@@ -1,0 +1,32 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: surrogate.iaaft
+version: 1
+kind: transformer
+category: surrogate
+title: Iterative amplitude adjusted Fourier surrogate
+description: >-
+  Starts from a shuffled copy and repeats two steps: give the copy the Fourier amplitudes of the original while
+  keeping its phases, then put the original values back in the rank order of the copy. The result has the value
+  distribution and nearly the power spectrum of the original, so long-range correlations stay while nonlinear
+  structure and the timing relative to other series are lost. No runtime implements it.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: One surrogate copy }
+semantics: { needs: series, keeps: [count] }
+runtimes:
+  java:
+    status: planned
+    note: >-
+      TASK-015 P8.1: Fourier filter and rank reordering, which keep long-term correlations, in a clean-room Java
+      library. The 2.x LongTermCorrelationSeriesGenerator.getRandomRowSchreiberSchmitz in opentsx-core is
+      package-private, has no test, opens a chart window and multiplies the spectrum by f^(−β/2) in every round
+      instead of restoring the amplitudes of the original.
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: P8.1 }
+literature:
+  - "T. Schreiber, A. Schmitz, Improved surrogate data for nonlinearity tests, Phys. Rev. Lett. 77, 635 (1996)"

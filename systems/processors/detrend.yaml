@@ -1,0 +1,33 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: detrend
+version: 1
+kind: transformer
+category: transform
+title: Remove a polynomial trend
+description: >-
+  Fits one polynomial of the given order to the whole series by least squares and subtracts it, so the result is the
+  residual y − p(i) over the sample index i. Order 1 removes a straight line, order 2 a parabola; a trend of higher
+  order than the fit leaves a bow in the residual.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: The residual on the timestamps of the input }
+params:
+  - { name: order, type: integer, default: 1, min: 0, description: Order of the polynomial; 0 removes the mean }
+semantics: { needs: series, deterministic: true, keeps: [time, unit, count] }
+runtimes:
+  python:
+    status: available
+    class: opentsx.core.time_series.TimeSeriesObject#detrend
+    note: >-
+      ts.detrend(order=1) returns a new TimeSeriesObject on the same timestamps; its metadata records detrend_order.
+      The fit uses the sample index, not the timestamps, so gaps in irregular series are not taken into account.
+  workbench: { status: none }
+  java: { status: none }
+  processor: { status: none }
+  go: { status: none }
+example:
+  source: python-package/tests/examples/test_detrend_example.py
+  chart: docs/user-manual/img/operators/detrend.png
+  shows: On a quadratic trend plus noise of std 1.00, detrend(order=2) leaves a residual of std 1.00 and removes the planted trend within 0.11, while detrend(order=1) leaves a bow with a residual std of 2.45 against the expected 2.45.

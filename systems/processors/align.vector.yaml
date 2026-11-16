@@ -1,28 +1,40 @@
-# Example processor description, schema opentsx.processor.v1 (draft), for the one operator that runs continuously.
-# Parameters as in the DAG (docs/datamodel-2026/11, section 5a); the workbench enters durations in seconds.
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
 schema: opentsx.processor.v1
 id: align.vector
 version: 1
 kind: transformer
+category: alignment
 title: Align to vector
-description: Brings several inputs onto one clock; one measuring point per tick with a component per input.
+description: >-
+  Brings several inputs onto one clock: ticks are multiples of every since the epoch, and each tick gives one
+  measuring point with one component per input, the aggregate of that input's samples in the tick. A component
+  without a sample is missing, or with fill as-of takes its last value when that is at most maxAge old. key decides
+  which series form one vector: the same series, all of them, or the series with the same value of a tag.
 inputs:
   - { name: in, type: series, cardinality: many }
 outputs:
   - { name: out, type: vector }
 params:
-  - { name: every, type: duration, required: true, default: PT60S, editAs: seconds, from: expect.interval }
+  - { name: every, type: duration, required: true, default: PT60S, editAs: seconds, from: expect.interval, description: "Clock. Tick k covers [k * every, (k + 1) * every)." }
   - { name: key, type: string, default: series, description: "series, all, or the name of a tag" }
-  - { name: agg, type: enum, values: [MEAN, MIN, MAX, FIRST, LAST, SUM, COUNT], default: MEAN }
-  - { name: fill, type: enum, values: [none, as-of], default: none }
-  - { name: maxAge, type: duration, default: PT60S, editAs: seconds }
-  - { name: emit, type: enum, values: [any, complete], default: any }
+  - { name: agg, type: enum, values: [MEAN, MIN, MAX, FIRST, LAST, SUM, COUNT], default: MEAN, description: Aggregate of the samples of one input in one tick. }
+  - { name: fill, type: enum, values: [none, as-of], default: none, description: "as-of: a missing component takes its last value." }
+  - { name: maxAge, type: duration, default: PT60S, editAs: seconds, description: Age of the oldest value fill as-of takes. }
+  - { name: emit, type: enum, values: [any, complete], default: any, description: "any: a tick with at least one component. complete: only ticks with every component." }
   - { name: names, type: list, description: Names of the components in the order of the inputs }
-  - { name: lateness, type: duration, default: PT0S, editAs: seconds }
+  - { name: lateness, type: duration, default: PT0S, editAs: seconds, description: How long a tick waits for series that lag behind. }
 semantics: { needs: window, deterministic: true, keeps: [unit], origin: INHERIT }
 runtimes:
   workbench: { status: available }
-  java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner }
-  processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor }
+  java: { status: available, class: org.opentsx.retrieval.vector.VectorAligner, note: "One run over all data. Without maxAge fill as-of takes values up to one tick old." }
+  processor: { status: available, class: org.opentsx.retrieval.vector.VectorProcessor, note: "bin/opentsx vectors. lateness applies here only." }
+  python: { status: none }
+  go: { status: planned, note: "Concept 11, section 6, marks align.vector as planned for the Go core." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
 ui: { group: stream, label: Align to vector }
+docs: docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md
 testvectors: docs/datamodel-2026/testvectors/align-vector.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/align.vector.example.test.ts
+  chart: docs/user-manual/img/operators/align.vector.png
+  shows: A series every 10 s and a series every 60 s that misses 6 samples become one vector on a 60 s clock; as-of fill with maxAge 120 s fills the first 2 empty ticks with the last value and leaves the other 4 missing, as expected.

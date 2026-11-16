@@ -1,0 +1,34 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: cdf
+version: 1
+kind: transformer
+category: distribution
+title: Cumulative distribution
+description: >-
+  Builds the histogram of each series, with bins of equal width w between its minimum and its maximum, and cumulates
+  the relative frequencies. The value at the centre x of a bin is the share of values up to the upper edge of that
+  bin, x + w/2, so the last value is 1.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: cdf, type: xy, description: Cumulated relative frequency over the bin centre }
+params:
+  - { name: bins, type: integer, default: 30, min: 2, description: Number of bins between the minimum and the maximum of the series. }
+semantics: { needs: series, deterministic: true, keeps: [series] }
+runtimes:
+  workbench: { status: available }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#cumulatedDistributionOfYValues"
+    note: >-
+      The 2.x model in opentsx-core has TimeSeriesObject#cumulatedDistributionOfYValues(bins) behind the Swing button
+      CDF, without a test. It returns cumulated counts, not shares.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: univariate, label: CDF }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/cdf.example.test.ts
+  chart: docs/user-manual/img/operators/cdf.png
+  shows: The CDF of 20000 uniform values on [0, 1] is a straight line and that of 20000 normal values the normal S curve; both match the distribution function at the upper bin edge within 0.0045 and 0.0043.

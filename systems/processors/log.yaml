@@ -1,0 +1,30 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: log
+version: 1
+kind: transformer
+category: transform
+title: Natural logarithm
+description: >-
+  Takes the natural logarithm of every value, out = ln(y). Values without a finite logarithm (0, negative values and
+  NaN) are dropped together with their time, so the output can be shorter than the input. Exponential growth
+  y = a · e^(r t) becomes the straight line ln(a) + r t.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: "ln(y) at the times where it is finite" }
+semantics: { needs: point, deterministic: true, keeps: [time, series] }
+runtimes:
+  workbench: { status: available, note: "The output keeps the unit of the input although it has none." }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#calcMR_Log_for_Y"
+    note: "2.x model in opentsx-core: drops only 0 and infinite values; a negative value gives NaN and stays in the output. No automated test."
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: transform, label: Log }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/log.example.test.ts
+  chart: docs/user-manual/img/operators/log.png
+  shows: Requests that grow by 2 % per minute become a straight line with the measured slope 0.0199 and intercept 3.927 against the expected 0.02 and 3.912, and the two samples with 0 and -1 are dropped, so 198 of 200 remain.

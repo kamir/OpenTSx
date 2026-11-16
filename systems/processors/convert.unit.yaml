@@ -1,0 +1,31 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: convert.unit
+version: 1
+kind: transformer
+category: cleaning
+title: Unit conversion
+description: >-
+  Computes value * factor + offset for every value and gives the output a new unit. Degrees Celsius to degrees
+  Fahrenheit is factor 1.8 and offset 32, W to kW is factor 0.001. Gaps stay gaps and the time axis stays as it is.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: factor, type: number, default: 1, description: Multiplier. }
+  - { name: offset, type: number, default: 0, description: Added after the multiplication. }
+  - { name: unit, type: string, description: Unit of the output. Without it the output keeps the unit of the input. }
+semantics: { needs: point, deterministic: true, keeps: [time, series], origin: INHERIT }
+runtimes:
+  workbench: { status: available }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Convert", note: "A step of the clean chain before a series sink (bin/opentsx vectors)." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Convert unit }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/convert.unit.example.test.ts
+  chart: docs/user-manual/img/operators/convert.unit.png
+  shows: A day of air temperature in Cel becomes [degF]; output over input is a straight line with the measured slope 1.8000 and intercept 32.0000.

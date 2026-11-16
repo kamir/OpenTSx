@@ -1,0 +1,27 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: hawkes.granger
+version: 1
+kind: transformer
+category: dependency
+title: Hawkes-Granger causality
+description: >-
+  Fits a multivariate Hawkes process to several event streams: the rate of stream i is a base rate plus, for every
+  past event of every stream j, a decaying kernel φ_ij. Stream j Granger-causes stream i when φ_ij is not zero.
+  Bursts within one stream are part of the model as self-excitation instead of being mistaken for coupling. No code
+  exists.
+inputs:
+  - { name: in, type: events, cardinality: many }
+outputs:
+  - { name: edges, type: model, description: "Directed links j to i with kernel weight, written to the edge table" }
+semantics: { needs: series }
+runtimes:
+  python: { status: planned, note: "TASK-015 P8.2: causal confirmation in Python, for event streams such as accesses, edits and feedback." }
+  workbench: { status: none }
+  java: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: P8.2 }
+literature:
+  - "A. G. Hawkes, Spectra of some self-exciting and mutually exciting point processes, Biometrika 58, 83 (1971)"
+  - "H. Xu, M. Farajtabar, H. Zha, Learning Granger causality for Hawkes processes, Proc. ICML 2016, PMLR 48, 1717 (2016)"

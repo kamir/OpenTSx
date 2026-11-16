@@ -1,0 +1,30 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: network.reconstruct
+version: 1
+kind: transformer
+category: network
+title: Network reconstruction
+description: >-
+  Builds a network from a group of series by the reconstruction grammar of Kämpf: one link measure per layer, for
+  example link.cc or eca, gives a strength for every pair; a filter keeps the significant links; a projection
+  combines the layers linearly, l_c = Σ c_i l_i. The result is a versioned edge table with source, target, layer,
+  method, lag, score, p value, null model and correction per edge, which simulation and optimization read. No code
+  exists.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: edges, type: model, description: The edge table of the reconstructed network }
+params:
+  - { name: layers, type: list, description: "Link measures, one per layer, for example link.cc and eca." }
+  - { name: weights, type: list, description: Coefficients c_i of the projection of the layers. }
+semantics: { needs: window }
+runtimes:
+  workbench: { status: planned, note: "TASK-015 phase 1g: run a pair method on all pairs of a set of series and write one row per pair and pair range into the edge table." }
+  java: { status: planned, note: "TASK-015 P8.0 (edge table schema) and P8.1 (link measures, significance and filters in a clean-room Java library)." }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "1g (workbench), P8.0 and P8.1 (java)" }
+literature:
+  - "M. Kämpf, Time-series-based reconstruction and analysis of complex networks: methods for quantitative comparison of dynamic processes, dissertation, Martin Luther University Halle-Wittenberg (2017)"

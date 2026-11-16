@@ -1,0 +1,42 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: segment.fixed-count
+version: 1
+kind: transformer
+category: segmentation
+title: Fixed-count segments
+description: >-
+  Cuts each series into blocks of n consecutive samples. Block k starts at sample k · (n − overlap), counted from the
+  first sample of the selection, so consecutive blocks share overlap samples. Samples at the end that do not fill a
+  block are dropped. A typical use is blocks for an FFT with 50 % overlap.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: segments, type: series, cardinality: many, description: "Derived episodes of n samples each, with segmentation FIXED_COUNT" }
+params:
+  - { name: n, type: integer, required: true, min: 1, description: Samples per block. }
+  - { name: overlap, type: integer, default: 0, min: 0, description: Samples two consecutive blocks share. Below n. }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.retrieval.segment.Segmenter#fixedCount"
+    note: >-
+      EpisodeService.segments(Segmenter.fixedCount(n, overlap)).fetch() over stored episodes; StreamingSegmenter gives
+      the same blocks episode by episode. The retrieval server offers it as POST /v1/segments with strategy FIXED_COUNT.
+      Where the first block starts depends on the start of the selection (from).
+  python:
+    status: available
+    class: "opentsx.client.retrieval.RetrievalClient#segments"
+    note: >-
+      segments("FIXED_COUNT", {"n": 256, "overlap": 128}) calls POST /v1/segments of the retrieval server; Python
+      computes nothing.
+  workbench: { status: none }
+  processor: { status: none }
+  go: { status: planned, note: "Concept 11, section 6, lists episodes.fixed-count for the Go core." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+docs: docs/user-manual/09-retrieval.md#92-segmentation
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/SegmentFixedCountExampleTest.java
+  chart: docs/user-manual/img/operators/segment.fixed-count.png
+  shows: 1000 samples give 6 blocks of 256 samples that start at 0, 128 and on to 640, as expected for 50 % overlap; the last 104 samples fill no block and are dropped.

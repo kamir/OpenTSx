@@ -1,0 +1,41 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: dq.stats
+version: 1
+kind: transformer
+category: quality
+title: Data-quality checks on statistics
+description: >-
+  Evaluates up to five checks on one SeriesStats record, without the raw values. COMPLETENESS is validCount /
+  floor(window / expectedInterval), PLAUSIBLE_RANGE the share of values outside [minPlausible, maxPlausible] estimated
+  from the quantile sketch, FLATLINE the standard deviation over at least flatlineMinCount values, GAPS the gapCount and
+  FRESHNESS the age of lastSeen. Each check gives SUCCESS or FAILED with its value; the parameters say when a check is
+  skipped.
+inputs:
+  - { name: in, type: stats, cardinality: one, description: One SeriesStats record of a window or of GLOBAL }
+outputs:
+  - { name: results, type: events, description: "One Result per evaluated check: check, status SUCCESS, FAILED or ABORTED, value, threshold and message" }
+params:
+  - { name: minPlausible, type: number, from: expect.min, description: Lower plausible bound. Without both bounds PLAUSIBLE_RANGE is skipped. }
+  - { name: maxPlausible, type: number, from: expect.max, description: Upper plausible bound. }
+  - { name: expectedInterval, type: duration, from: expect.interval, description: Expected sampling interval. Without it COMPLETENESS is skipped and GAPS runs only when gaps were counted. }
+  - { name: minCompleteness, type: number, default: 0.95, min: 0, max: 1, description: COMPLETENESS fails below this share of the expected values. }
+  - { name: maxOutOfRange, type: number, default: 0.001, min: 0, max: 1, description: "PLAUSIBLE_RANGE fails above this share outside the bounds. Without a sketch the share is 1 when min or max lies outside, else 0." }
+  - { name: flatlineCheck, type: boolean, default: true, description: Run FLATLINE. withoutFlatline() turns it off. }
+  - { name: flatlineMinCount, type: integer, default: 60, min: 0, description: FLATLINE runs only on windows with at least this many valid values. }
+  - { name: flatlineEpsilon, type: number, default: 1e-9, min: 0, description: FLATLINE fails when the standard deviation is at most this value. }
+  - { name: maxGaps, type: integer, default: 0, min: 0, description: GAPS fails above this number of gaps. }
+  - { name: maxAge, type: duration, description: "FRESHNESS fails when lastSeen is older. Runs only with the current time (evaluate(stats, expectation, now)); a record without lastSeen gives ABORTED." }
+semantics: { deterministic: true }
+runtimes:
+  java: { status: available, class: "org.opentsx.stats.DataQuality#evaluate", note: "Expectation.of(min, max, interval) sets the defaults; withoutFlatline() and withMaxAge(age) change them." }
+  processor: { status: none, note: "bin/opentsx metadata --kafscale reads the latest statistics once and publishes the results to OpenMetadata. No processor evaluates them continuously." }
+  workbench: { status: none }
+  python: { status: none }
+  go: { status: planned, note: "DQ in the Go stream core of the proposed Go TSx processor." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+docs: docs/user-manual/07-stats-quality.md#73-data-quality-checks
+example:
+  source: opentsx-stats/src/test/java/org/opentsx/stats/examples/DataQualityExampleTest.java
+  chart: docs/user-manual/img/operators/dq.stats.png
+  shows: In 2 hours of 10 s wind speed, an anemometer stuck from minute 80 to 90 fails FLATLINE with standard deviation 0 (the other windows have 0.75 or more), and an outage from minute 102 to 108 fails COMPLETENESS with 40 % valid values and GAPS with 1 gap, both in window 100 to 110 only.

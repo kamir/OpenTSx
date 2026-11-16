@@ -1,0 +1,29 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: smooth.movavg
+version: 1
+kind: transformer
+category: transform
+title: Moving average
+description: >-
+  Replaces every value by the mean of the last window samples, the current one included; values that are not finite
+  are left out. The first window − 1 samples average the samples there are. A step becomes a ramp of window samples,
+  and white noise keeps 1 / sqrt(window) of its standard deviation.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: The trailing mean on the time axis of the input }
+params:
+  - { name: window, type: integer, default: 25, min: 1, unit: samples, description: "Number of samples, the current one included. A call of apply without window uses 5." }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, count, series] }
+runtimes:
+  workbench: { status: available }
+  processor: { status: none, note: "The processor has a trailing mean over a time window: feature.rolling with fn MEAN." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Moving average }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/smooth.movavg.example.test.ts
+  chart: docs/user-manual/img/operators/smooth.movavg.png
+  shows: A moving average of 25 samples turns a step from 0 to 10 into a ramp of 25 samples, exact within 2e-15 without noise, and lowers the noise std from 0.994 to 0.185 against the expected 0.199.

@@ -1,0 +1,24 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: agg.sum
+version: 1
+kind: transformer
+category: statistics
+title: Sum over series
+description: >-
+  Adds several series into one on a common clock, for example the clean active power of the turbines of a park into
+  the generation of the park (park.p_gen_kw). The flow systems/flows/park-power.flow.yaml names it; no runtime runs it.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: every, type: duration, description: Clock of the sum. }
+semantics: { needs: window, keeps: [unit], origin: INHERIT }
+runtimes:
+  workbench: { status: none }
+  java: { status: none }
+  python: { status: none }
+  processor: { status: planned, note: "Several inputs in the streaming path, step E2a of the decision circle." }
+  go: { status: none }
+plan: { file: docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, item: E2a }

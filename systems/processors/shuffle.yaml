@@ -1,0 +1,39 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: shuffle
+version: 1
+kind: transformer
+category: surrogate
+title: Shuffle values
+description: >-
+  Puts the values of each series into a random order (Fisher-Yates from the last value down, rounds times in a row)
+  and leaves the time axis as it is. The values and their distribution stay; their order in time, and with it the
+  autocorrelation, is lost. A statistic that keeps its value on shuffled copies does not depend on the order of the
+  values.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: The same values in a random order on the time axis of the input }
+params:
+  - { name: rounds, type: integer, default: 1, min: 1, description: Number of shuffles in a row. }
+  - { name: seed, type: integer, default: 1, description: Seed of the Mulberry32 generator; the same seed gives the same order. }
+semantics: { needs: series, deterministic: true, keeps: [time, unit, count, series] }
+runtimes:
+  workbench: { status: available, note: "Drops the ground-truth marks of the bucket: the values have left their place in time." }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#shuffleYValues"
+    note: >-
+      2.x model in opentsx-core: shuffleYValues(rounds) shuffles in place with Collections.shuffle and no seed, so
+      every call gives another order. No automated test. Surrogates by shuffling in a clean-room Java library are
+      planned in TASK-015 P8.1.
+  python: { status: none, note: "isi_shuffle in opentsx.algorithms.event_sync shuffles the intervals between events, not the values (operator surrogate.isi-shuffle)." }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: transform, label: Shuffle }
+literature:
+  - "J. Theiler, S. Eubank, A. Longtin, B. Galdrikian, J. D. Farmer, Testing for nonlinearity in time series: the method of surrogate data, Physica D 58, 77 (1992)"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/shuffle.example.test.ts
+  chart: docs/user-manual/img/operators/shuffle.png
+  shows: Shuffling 2000 values of an AR(1) series with coefficient 0.9 keeps all 2000 values, while the autocorrelation at lag 1 falls from the measured 0.887 (expected 0.9) to at most 0.046 in absolute value at lags 1 to 29, below the white-noise bound 0.08.

@@ -1,0 +1,33 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: resample
+version: 1
+kind: transformer
+category: alignment
+title: Resample
+description: >-
+  Cuts the time axis into windows of the width every, aligned to the epoch, and gives one value per window: the
+  aggregate of its values that are no gap, at the start of the window. A window without values is a gap. 1 s data
+  with every PT1M gives one value per minute, at the full minutes, whatever the first sample is.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: every, type: duration, required: true, editAs: seconds, description: Width of a window. Windows start at multiples of every since the epoch. }
+  - { name: agg, type: enum, values: [MEAN, MIN, MAX, LAST], default: MEAN, description: Aggregate of the values of a window. }
+semantics: { needs: window, deterministic: true, keeps: [unit, series], origin: INHERIT }
+runtimes:
+  workbench: { status: available, note: "every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Hands out the last window before the data has passed its end." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Resample", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Hands out a window once the data has passed its end. After 10000 empty windows the grid starts again at the next sample." }
+  java: { status: available, class: "org.opentsx.retrieval.Resampling#resample", note: "One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0." }
+  python: { status: available, class: "opentsx.core.time_series.TimeSeriesObject#resample", note: "resample(factor, method) aggregates blocks of factor samples, not time windows; method mean, median, max or min. RetrievalClient.episodes(resample=, agg=) has the server resample." }
+  go: { status: planned, note: "Resampling in the Go stream core of the proposed Go TSx processor." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+ui: { group: stream, label: Resample }
+docs: docs/user-manual/09-retrieval.md
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/resample.example.test.ts
+  chart: docs/user-manual/img/operators/resample.png
+  shows: Six minutes of 1 s wind speed with a known level and one gust of level + 2 m/s per minute become six values per aggregate; MAX is level + 2 in every minute, and MEAN is level + 0.02 on average against the expected 0.03 of one gust in 60 samples.

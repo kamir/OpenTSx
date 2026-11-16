@@ -1,0 +1,43 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: segment.fixed-duration
+version: 1
+kind: transformer
+category: segmentation
+title: Fixed-duration segments
+description: >-
+  Cuts each series into windows of the same duration that are aligned to the epoch, shifted by offset: a sample at
+  time t belongs to the window that starts at floor((t − offset) / duration) · duration + offset. Where a window
+  begins does not depend on where the data begins, and a window without samples gives no segment. Each segment is a
+  derived episode that records the strategy FIXED_DURATION, its parameters and the source episode.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: segments, type: series, cardinality: many, description: "Derived episodes, one per window that holds samples, with segmentation FIXED_DURATION" }
+params:
+  - { name: duration, type: duration, required: true, description: Length of a window. Must be above zero. }
+  - { name: offset, type: duration, default: PT0S, description: Shift of the windows against the epoch. }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.retrieval.segment.Segmenter#fixedDuration"
+    note: >-
+      EpisodeService.segments(Segmenter.fixedDuration(duration)).fetch() over stored episodes; StreamingSegmenter gives
+      the same segments episode by episode. The retrieval server offers it as POST /v1/segments with strategy
+      FIXED_DURATION.
+  python:
+    status: available
+    class: "opentsx.client.retrieval.RetrievalClient#segments"
+    note: >-
+      segments("FIXED_DURATION", {"duration": "PT10M"}) calls POST /v1/segments of the retrieval server; Python computes
+      nothing.
+  workbench: { status: none }
+  processor: { status: none }
+  go: { status: planned, note: "Concept 11, section 6, lists episodes.fixed-duration for the Go core." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+docs: docs/user-manual/09-retrieval.md#92-segmentation
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/SegmentFixedDurationExampleTest.java
+  chart: docs/user-manual/img/operators/segment.fixed-duration.png
+  shows: An hour of 1 Hz data that starts at 00:03:20 is cut at 00:10, 00:20 and on to 01:00 into 7 segments of 400, 5 x 600 and 200 samples, as expected for windows of PT10M aligned to the clock.

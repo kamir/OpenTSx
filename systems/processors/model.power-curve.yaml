@@ -1,0 +1,35 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: model.power-curve
+version: 1
+kind: model
+category: model
+title: Power curve
+description: >-
+  Turns wind speed at hub height into the power the wind offers count turbines: 0 below cutIn and above cutOut,
+  ratedKw from ratedWind on, and count * ratedKw * (v^3 - cutIn^3) / (ratedWind^3 - cutIn^3) in between. A model,
+  not a measurement: it does not fall when a turbine is curtailed.
+inputs:
+  - { name: in, type: series, cardinality: one, description: Wind speed at hub height in m/s }
+outputs:
+  - { name: out, type: series, description: Power in kW }
+params:
+  - { name: ratedKw, type: number, required: true, unit: kW, description: Rated power of one turbine. Above 0. }
+  - { name: cutIn, type: number, required: true, min: 0, unit: m/s, description: Wind speed below which the turbine gives nothing. }
+  - { name: ratedWind, type: number, required: true, unit: m/s, description: Wind speed from which the turbine gives rated power. Above cutIn. }
+  - { name: cutOut, type: number, required: true, unit: m/s, description: Wind speed above which the turbine stops. At least ratedWind. }
+  - { name: count, type: number, default: 1, description: Number of turbines that see the same wind. Above 0. }
+semantics: { needs: point, deterministic: true, keeps: [time, series], origin: ESTIMATED }
+runtimes:
+  workbench: { status: available, note: "Defaults ratedKw 3000, cutIn 3, ratedWind 12.5, cutOut 25; the ranges are not checked." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#PowerCurve", note: "A step of the clean chain before a series sink (bin/opentsx vectors); the output unit is kW." }
+  java: { status: available, class: "org.opentsx.windpark.sim.PowerCurve#powerKw", note: "The same curve for one turbine of a TurbineType of the windpark catalog, without count. Used by WindparkSimulator and PowerCurveAnalysis, tested through PowerCurveAnalysisTest." }
+  python: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Power curve }
+docs: docs/user-manual/06-windpark.md
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/model.power-curve.example.test.ts
+  chart: docs/user-manual/img/operators/model.power-curve.png
+  shows: A wind ramp from 0 to 30 m/s gives 0 kW up to 3 m/s, the cubic rise to the measured 755.4 kW at 8 m/s, 3000 kW from 12.5 m/s to 25 m/s and 0 kW above 25 m/s, as expected for the default curve.

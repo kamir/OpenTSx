@@ -1,0 +1,36 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: sigma.band
+version: 1
+kind: transformer
+category: statistics
+title: Sigma band
+description: >-
+  Gives, at every sample index, the mean of all input series and the mean plus and minus one standard deviation
+  across them, std with n − 1 for n series. The series are paired by index, not by time, up to the length of the
+  shortest, and the output takes the time axis of the first series. For the series of n turbines it shows the level
+  and the spread of the park at every time.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: mean, type: series, description: "Id avg: the mean across the series" }
+  - { name: upper, type: series, description: "Id avg+sigma: mean + std" }
+  - { name: lower, type: series, description: "Id avg-sigma: mean − std" }
+semantics: { needs: point, deterministic: true, keeps: [time, unit] }
+runtimes:
+  workbench: { status: available, note: "A value that is not finite is left out of its column. One series gives a band of width 0." }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#sigmaForAll"
+    note: >-
+      2.x model in opentsx-core: averageForAll and sigmaForAll (std with n − 1) up to the shortest series; sigmaForAll
+      uses the sample index as x. The Swing button Sigma Band opens org.opentsx.chart.simple.SigmaFilter. No automated
+      test.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: group, label: Sigma Band }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/sigma.band.example.test.ts
+  chart: docs/user-manual/img/operators/sigma.band.png
+  shows: Across 8 turbines whose wind speeds have a planted mean and a planted spread from 0.3 to 1.5 m/s, sigma.band gives that mean and that spread, within 2e-15 and 1e-15.

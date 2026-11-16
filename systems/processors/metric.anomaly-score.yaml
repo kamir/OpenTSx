@@ -1,0 +1,30 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: metric.anomaly-score
+version: 1
+kind: transformer
+category: forecast
+title: Residual, anomaly score and drift
+description: >-
+  Compares each forecast with the actual value when it arrives. RESIDUAL is the difference of the two, ANOMALY_SCORE
+  is |actual − forecast| / σ_holdout with σ_holdout the spread of the holdout residuals of the model, and DRIFT is
+  the rolling error divided by the holdout error. A high anomaly score can be cut into episodes by a threshold
+  segmenter; a drift above a set limit, for example 3.0, can start a new training. No code exists.
+inputs:
+  - { name: actual, type: series, cardinality: many }
+  - { name: forecast, type: series, cardinality: many, description: Output of the operator forecast. }
+  - { name: model, type: model, description: The champion with its holdout error. }
+outputs:
+  - { name: residual, type: series, cardinality: many }
+  - { name: anomaly_score, type: series, cardinality: many }
+  - { name: drift, type: series, cardinality: many }
+params:
+  - { name: emitEvery, type: duration, description: "Interval at which the metrics are written, for example PT10M." }
+semantics: { needs: window, deterministic: true }
+runtimes:
+  processor: { status: planned, note: "TASK-016 P7c: the scoring processor opentsx-smart writes them as Smart Metrics to tsx.<domain>.smart.<name>.metrics.v2." }
+  workbench: { status: none }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7c }

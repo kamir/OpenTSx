@@ -1,0 +1,26 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: graph.metrics
+version: 1
+kind: transformer
+category: network
+title: Graph metrics as time series
+description: >-
+  Computes metrics S_m of the network reconstructed in each window or episode, for example the structure induced
+  stress (SIS) or the fit parameters of the adaptive link threshold, so that the structure becomes a time series
+  S_m(t). A jump in S_m(t) marks a structural break such as a burst, a regime change or a fault, and can start a new
+  fit of the model. No code exists.
+inputs:
+  - { name: edges, type: model, cardinality: many, description: One network per window or episode }
+outputs:
+  - { name: metrics, type: series, cardinality: many, description: One series S_m(t) per metric }
+semantics: { needs: window }
+runtimes:
+  java: { status: planned, note: "TASK-015 P8.1 names SIS among the context measures; P8.3 uses SIS and the threshold parameters as a structural break detector. The plans name the methods, not the runtime of P8.3." }
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "P8.1, P8.3" }
+literature:
+  - "M. Kämpf, Time-series-based reconstruction and analysis of complex networks: methods for quantitative comparison of dynamic processes, dissertation, Martin Luther University Halle-Wittenberg (2017)"

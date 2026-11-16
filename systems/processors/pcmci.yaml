@@ -1,0 +1,30 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pcmci
+version: 1
+kind: transformer
+category: network
+title: PCMCI+ causal discovery
+description: >-
+  Finds the causal parents of each series among the lagged values of all series in two steps. A PC-style selection
+  drops candidates that are independent of the target given others; the momentary conditional independence test
+  (MCI) then tests each remaining link given the parents of both ends. PCMCI+ also finds links at lag 0, RPCMCI
+  handles regimes and J-PCMCI+ several contexts. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: edges, type: model, description: "Directed links with lag, strength and p value, written to the edge table; confidences from bootstrap bagging" }
+params:
+  - { name: variant, type: enum, values: [PCMCI+, RPCMCI, J-PCMCI+], description: Member of the PCMCI family. }
+  - { name: test, type: enum, values: [ParCorr, CMIknn, GPDC], description: "Conditional independence test: partial correlation, or CMIknn and GPDC for nonlinear links on fewer variables." }
+semantics: { needs: series }
+runtimes:
+  python: { status: planned, note: "TASK-015 P8.2: a worker in python-package/opentsx/algorithms reads episodes with PyIceberg and calls tigramite, which is GPL, behind a process boundary." }
+  workbench: { status: none }
+  java: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: P8.2 }
+literature:
+  - "J. Runge, P. Nowack, M. Kretschmer, S. Flaxman, D. Sejdinovic, Detecting and quantifying causal associations in large nonlinear time series datasets, Sci. Adv. 5, eaau4996 (2019)"
+  - "J. Runge, Discovering contemporaneous and lagged causal relations in autocorrelated nonlinear time series datasets, Proc. UAI 2020, PMLR 124, 1388 (2020)"

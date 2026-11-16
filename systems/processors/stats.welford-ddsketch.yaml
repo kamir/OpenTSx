@@ -1,0 +1,41 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: stats.welford-ddsketch
+version: 1
+kind: transformer
+category: statistics
+title: Window statistics
+description: >-
+  Keeps per series and per epoch-aligned tumbling window, and in GLOBAL since the start, the number of valid and of
+  NaN values, min, max, and Welford's running mean and m2, with variance = m2 / (n − 1), plus a DDSketch of the
+  values. Every quantile from the sketch is off by at most alpha relative to the exact quantile, and windows, partitions
+  or turbines merge without the raw values. A step between timestamps of more than gapFactor times the expected
+  interval counts as a gap; an episode that arrives twice (same episodeId) counts once.
+inputs:
+  - { name: in, type: series, cardinality: many, description: "Episodes and optionally observations, keyed by seriesId" }
+outputs:
+  - { name: stats, type: stats, description: "SeriesStats per series and window (windowType PT10M, PT1H, ... or GLOBAL): validCount, nanCount, min, max, mean, m2, quantileSketch, gapCount, lastSeen" }
+params:
+  - { name: windows, type: list, default: [PT10M, PT1H], description: "Tumbling windows aligned to the epoch, each a positive whole number of microseconds. GLOBAL is always kept." }
+  - { name: alpha, type: number, default: 0.01, max: 1, description: "Relative accuracy of the quantile sketch, below 1. Sketches merge only with the same alpha. 0 or less keeps no sketch." }
+  - { name: lateness, type: duration, default: PT0S, description: A window closes when its series reaches the window end plus lateness. Later values count in GLOBAL only. }
+  - { name: gapFactor, type: number, default: 1.5, min: 1, description: "A step between timestamps of more than gapFactor times the expected interval is a gap. Above 1. Java API only." }
+  - { name: expectedInterval, type: duration, from: expect.interval, description: "Expected sampling interval per series. Without it the interval of the last REGULAR episode is used. Java API only (withExpectedInterval)." }
+  - { name: observations, type: boolean, default: false, description: Also read the observations topic. bin/opentsx stats only. }
+semantics: { needs: window, deterministic: true, keeps: [series] }
+runtimes:
+  java: { status: available, class: org.opentsx.stats.StatsEngine, note: "onEpisode and onObservation return the windows they close, emitGlobal the GLOBAL records of changed series, flush closes all windows. The engine keeps at most 100000 recent episode ids for deduplication and at most 4096 sketch bins per sign." }
+  processor: { status: available, class: org.opentsx.stats.StatsProcessor, note: "bin/opentsx stats: its own processor on the episode topic, not a DAG node. Writes tsx.<domain>.series-stats.v2 and keeps positions and engine state in a checkpoint file. The same engine runs as the Flink job StatsJob of opentsx-flink-core (bin/opentsx stats-flink)." }
+  workbench: { status: available, class: stats.window, note: "Written into the DAG as stats.welford-ddsketch, but no DAG runtime runs it: the clean chain of the processor refuses it. One field per node, MEAN, STD (sample, the default), MIN or MAX, over windows of window units of the x axis (default 0.25). No quantiles, no gaps." }
+  python: { status: available, class: opentsx.stats.sketch.QuantileSketch, note: "Builds, merges and reads the DDSketch with the same bytes as Java; it has no bin limit. stats_to_frame turns SeriesStats records into a pandas frame with std and the quantiles q05 to q95. No windows and no Welford moments of its own: summarize and merge_summaries (stats.summary) give those." }
+  go: { status: planned, note: "Welford and DDSketch in the Go stream core of the proposed Go TSx processor." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+ui: { group: stream, label: Window statistics }
+docs: docs/user-manual/07-stats-quality.md#71-what-is-computed
+literature:
+  - "B. P. Welford, Note on a method for calculating corrected sums of squares and products, Technometrics 4, 419 (1962)"
+  - "C. Masson, J. E. Rim, H. K. Lee, DDSketch: a fast and fully-mergeable quantile sketch with relative-error guarantees, Proc. VLDB Endow. 12, 2195 (2019)"
+example:
+  source: opentsx-stats/src/test/java/org/opentsx/stats/examples/StatsWindowExampleTest.java
+  chart: docs/user-manual/img/operators/stats.welford-ddsketch.png
+  shows: Hourly windows over 4 hours with mean 8 and std 1 and 2 hours with mean 12 and std 3 give means within 0.08 and standard deviations within 0.11 of these values, and the quantiles of the GLOBAL sketch are at most 0.98 % off the exact quantiles, inside the 1 % bound.

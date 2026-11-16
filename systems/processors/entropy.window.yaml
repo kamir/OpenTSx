@@ -1,0 +1,39 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: entropy.window
+version: 1
+kind: transformer
+category: distribution
+title: Shannon entropy in a sliding window
+description: >-
+  Computes the Shannon entropy H = −sum_k p_k log2(p_k) in bit of the values in a sliding window, with p_k the share
+  of the window's values in bin k. The bins divide the range between the minimum and the maximum of the whole series,
+  the same for every window. H is 0 when all values of a window fall into one bin and log2(bins) when they spread
+  evenly over all bins.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: entropy, type: series, description: "H in bit per window, over the index of the window start (sample, not time)" }
+params:
+  - { name: length, type: integer, default: 20, min: 4, description: "Window length in samples. A window starts every floor(length / 4) samples; the last windows end at the end of the series and are shorter." }
+  - { name: bins, type: integer, default: 16, min: 2, description: Number of bins over the range of the whole series. }
+semantics: { needs: window, deterministic: true, keeps: [series] }
+runtimes:
+  workbench: { status: available, note: Gaps are left out of the counts. }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#calcEntropyForWindow"
+    note: >-
+      The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY,
+      without a test. It uses the same windows and step, but divides each window by its maximum and maps the values to
+      100 levels instead of bins over the range of the series.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: univariate, label: ENTROPY }
+literature:
+  - "C. E. Shannon, A mathematical theory of communication, Bell Syst. Tech. J. 27, 379 (1948)"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/entropy.window.example.test.ts
+  chart: docs/user-manual/img/operators/entropy.window.png
+  shows: In windows of 800 samples the entropy is 0.998 to 1.000 bit while the values use 2 of 16 bins and 3.975 to 3.993 bit once they spread over all 16, against the expected 1 and 4 bit.

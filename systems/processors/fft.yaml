@@ -1,0 +1,42 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: fft
+version: 1
+kind: transformer
+category: spectral
+title: Amplitude spectrum
+description: >-
+  Removes the mean, pads the n values with zeros to the smallest power of two N not below n and computes the discrete
+  Fourier transform X_k with a radix-2 FFT. It returns the one-sided amplitude spectrum 2 |X_k| / n at the
+  frequencies k / (N dt) for k from 0 to N/2 − 1, with the sampling interval dt. For n = N, a sine of amplitude A
+  whose frequency falls on a bin gives a peak of height A.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: spectrum, type: xy, description: Amplitude over the frequency }
+semantics: { needs: series, deterministic: true, keeps: [series] }
+runtimes:
+  workbench:
+    status: available
+    note: >-
+      dt is the median spacing of x, so f is in Hz for a time axis in seconds and in 1/sample for an index axis. Gaps
+      count as 0 after the mean is removed. No window function: a frequency between two bins leaks into its
+      neighbours.
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObjectFFT#getFFT"
+    note: >-
+      2.x model in opentsx-core: getFFT(samplingRate) pads with zeros to a power of two but keeps the mean, and returns
+      the real parts of the unscaled coefficients at k * samplingRate / N for all N bins, not the amplitude. The Swing
+      button FFT derives the sampling rate from uniformly spaced coordinates.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: transform, label: FFT }
+docs: docs/user-manual/11-classic-analytics.md#115-java-tools-in-opentsx-core-2x-model
+literature:
+  - "J. W. Cooley and J. W. Tukey, An algorithm for the machine calculation of complex Fourier series, Math. Comp. 19, 297 (1965)"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/fft.example.test.ts
+  chart: docs/user-manual/img/operators/fft.png
+  shows: Three sines of amplitude 0.5, 1 and 2 at 2, 5 and 12.5 Hz in noise of standard deviation 0.5 give peaks of 0.509, 0.995 and 2.036 at exactly these frequencies; the largest other bin is 0.063.

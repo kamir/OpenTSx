@@ -1,0 +1,25 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: psd.welch
+version: 1
+kind: transformer
+category: spectral
+title: Welch power spectral density
+description: >-
+  Cuts the series into overlapping segments, multiplies each segment by a window function, computes its periodogram
+  |FFT|² and averages the periodograms. The average varies much less than one periodogram of the whole series, at
+  the cost of frequency resolution. The plan names it for vibration signals. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: spectrum, type: xy, description: Power spectral density over frequency }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  java: { status: planned, note: "TASK-018 phase 6. The plan names the method, not the runtime." }
+  workbench: { status: none, note: "The operator fft gives the amplitude spectrum of the whole series." }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-018-analytics-storage-extensions.md, item: P6 }
+literature:
+  - "P. D. Welch, The use of fast Fourier transform for the estimation of power spectra: a method based on time averaging over short, modified periodograms, IEEE Trans. Audio Electroacoust. 15, 70 (1967)"

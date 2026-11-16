@@ -1,0 +1,36 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: gen.lrc
+version: 1
+kind: generator
+category: source
+title: Long-range correlated noise
+description: >-
+  Draws Gaussian white noise, multiplies its Fourier coefficient at frequency f by f^(−β/2) and transforms back
+  (Fourier filtering). The power spectrum of the result falls as f^(−β), and its DFA exponent is
+  alpha = (1 + β) / 2: β = 0 is white noise, β = 1 is 1/f noise, β below 0 gives anti-correlated values. It
+  gives a series with a known exponent, for example to check DFA.
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: beta, type: number, required: true, description: "Exponent β of the power spectrum f^(−β)." }
+  - { name: length, type: integer, required: true, min: 1, description: Number of values; a power of two avoids zero padding before the FFT. }
+  - { name: seed, type: integer, required: true, description: Seed of the random generator. }
+semantics: { deterministic: true, origin: SYNTHETIC }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.generators.LongTermCorrelationSeriesGenerator#getRandomRow"
+    note: >-
+      2.x model in opentsx-core: getRandomRow(length, beta, false, false) filters the noise of
+      TimeSeriesObject.getGaussianDistribution with TimeSeriesObjectFFT.getModifiedTimeSeries_FourierFiltered. Call
+      stdlib.StdRandom.initRandomGen(seed) or RNGWrapper.init() (seed 1) first; without it the call throws a
+      NullPointerException. The mean is 0 and the variance is not normalized: at 16384 values and seed 1 the standard
+      deviation is 6.2 for β = −0.4 and 0.021 for β = 1.0. β = 0 returns the noise unfiltered. No automated test.
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/11-classic-analytics.md
+literature:
+  - "H. A. Makse, S. Havlin, M. Schwartz, H. E. Stanley, Method for generating long-range correlations for large systems, Phys. Rev. E 53, 5445 (1996)"

@@ -1,0 +1,57 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: es
+version: 1
+kind: transformer
+category: dependency
+title: Event synchronization
+description: >-
+  Takes the local maxima above mean + 2 std of two whole series as events and counts the event pairs that lie closer
+  than a local window, half the smallest distance to a neighbouring event of either series. Q = (c(b|a) + c(a|b)) /
+  sqrt(m_a m_b) is in [0, 1], the delay q = (c(b|a) − c(a|b)) / sqrt(m_a m_b) in [-1, 1] says which series leads. The
+  chance level q_rand is the mean Q of a against copies of b whose inter-event intervals are shuffled; only a Q clearly
+  above q_rand points to a coupling.
+inputs:
+  - { name: a, type: series, cardinality: one }
+  - { name: b, type: series, cardinality: one }
+outputs:
+  - { name: sync, type: stats, description: "overall_sync (Q), sync_1_to_2, sync_2_to_1, delay (q), leader, lead_lag_strength" }
+  - { name: q_rand, type: stats, description: Chance level from surrogate_sync }
+  - { name: events, type: events, cardinality: many, description: Event indices of a and of b }
+params:
+  - { name: method, type: enum, values: [std, percentile, absolute], default: std, description: "Event threshold: mean + 2 std, the 95th percentile, or 0" }
+  - { name: threshold1, type: number, description: Event threshold of a; overrides method }
+  - { name: threshold2, type: number, description: Event threshold of b; overrides method }
+  - { name: tau_max, type: number, min: 0, unit: samples, description: "Cap of the local window. No cap by default." }
+  - { name: shuffles, type: integer, default: 10, min: 1, description: Number of shuffled copies of b for q_rand }
+  - { name: seed, type: integer, default: 1, description: Seed of the Mulberry32 generator that shuffles }
+semantics: { needs: series, deterministic: true }
+testvectors: docs/datamodel-2026/testvectors/pair-es.v1.json
+runtimes:
+  python:
+    status: available
+    class: opentsx.algorithms.event_sync.EventSynchronization#analyze
+    note: >-
+      EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand.
+      calculate_synchronization takes event indices directly. leader names a series only when the delay q is above
+      0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds.
+  workbench:
+    status: none
+    note: >-
+      The workbench computes the same Q, q and q_rand per window of a pair with pair.es (es.ts), not over whole series.
+  java:
+    status: available
+    class: org.opentsx.algorithms.eventsynchronisation.ESCalc#calc
+    note: >-
+      2.x model in opentsx-core: ESCalc.calc(ti, tj) on sorted event times returns sync and delay, counts only events
+      with two neighbours and normalizes by sqrt((m_a − 1)(m_b − 1)). No automated test. A clean-room Java library with
+      Q_rand calibration is planned in TASK-015 P8.1.
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/11-classic-analytics.md#113-event-synchronization-es
+literature:
+  - "R. Quian Quiroga, T. Kreuz, P. Grassberger, Event synchronization: a simple and fast method to measure synchronicity and time delay patterns, Phys. Rev. E 66, 041904 (2002)"
+example:
+  source: python-package/tests/examples/test_es_example.py
+  chart: docs/user-manual/img/operators/es.png
+  shows: When B repeats every event of A 3 ticks later, Q is 1.00 against a chance level q_rand of 0.43 and A is the leader; when B shares no events with A, Q is 0.47 against q_rand 0.45, and Q rises in between with the share of copied events.

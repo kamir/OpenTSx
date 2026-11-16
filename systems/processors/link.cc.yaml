@@ -1,0 +1,32 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: link.cc
+version: 1
+kind: transformer
+category: dependency
+title: Cross-correlation link strengths
+description: >-
+  Turns the lagged cross-correlation function CC(τ) of a pair into three link strengths. l_adj relates the peak to
+  its mean over ten shuffled copies; l_norm is the peak minus the mean of CC(τ), divided by the standard deviation
+  of CC(τ), and counts as significant above 5; l_trans separates a single sharp peak from broad structure. The field
+  strength of pair.xcorr has the form of l_norm; l_adj and l_trans exist nowhere.
+inputs:
+  - { name: a, type: series, cardinality: many }
+  - { name: b, type: series, cardinality: many }
+outputs:
+  - { name: l_adj, type: series, cardinality: many, description: Adjusted link strength per pair window }
+  - { name: l_norm, type: series, cardinality: many, description: Normalized link strength per pair window }
+  - { name: l_trans, type: series, cardinality: many, description: Transformed link strength (peak quality) per pair window }
+params:
+  - { name: shuffles, type: integer, default: 10, min: 1, description: Shuffled copies whose mean peak l_adj divides by }
+semantics: { needs: window }
+runtimes:
+  workbench: { status: planned, note: "TASK-015 P8.1: further fields of pair.xcorr." }
+  java: { status: planned, note: "TASK-015 P8.1: lagged cross-correlation with l_adj, l_norm and l_trans in a clean-room Java library." }
+  processor: { status: planned, note: "TASK-015 P8.1: streaming screening with running window sums of CC in opentsx-stats." }
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: P8.1 }
+literature:
+  - "M. Kämpf, Time-series-based reconstruction and analysis of complex networks: methods for quantitative comparison of dynamic processes, dissertation, Martin Luther University Halle-Wittenberg (2017)"
+  - "Y. Berezin, A. Gozolchiani, O. Guez, S. Havlin, Stability of climate networks with time, Sci. Rep. 2, 666 (2012)"

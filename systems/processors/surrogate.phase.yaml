@@ -1,0 +1,37 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: surrogate.phase
+version: 1
+kind: transformer
+category: surrogate
+title: Phase-randomized surrogate
+description: >-
+  Transforms the series with an FFT, multiplies each Fourier coefficient c_k by e^(iφ_k) with a random phase φ_k,
+  uniform in [0, 2π), and its mirror c_(N−k) by e^(−iφ_k), and transforms back. The copy has the same power spectrum,
+  and so the same linear autocorrelation, as the input; nonlinear structure and the phase relation to any other
+  series are lost. A measure that keeps its value on such copies is explained by the spectrum alone.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: One surrogate copy with mean 0 }
+semantics: { needs: series, deterministic: false, keeps: [count] }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.generators.LongTermCorrelationSeriesGenerator#getPhaseRandomizedRow"
+    note: >-
+      2.x model in opentsx-core: getPhaseRandomizedRow(ts, false, false) through
+      TimeSeriesObjectFFT.getModifiedTimeSeries_PhaseRandomized. Pads to a power of two with zeros, so for other
+      lengths it keeps the spectrum of the padded series; the coefficient at the Nyquist frequency gets a random
+      phase too, so its amplitude shrinks by |cos φ|; sets the mean to 0; draws the phases with Math.random, no
+      seed; opens two chart windows on every call. No automated test. FFTPhaseRandomizer.getPhaseRandomizedRow does
+      not randomize phases: mode 0 returns the same series on every call, (x[i] + x[N − i]) / 2 minus the mean, and
+      mode 1 scales the amplitudes by random factors and keeps the phases. Surrogates by phase randomization in a
+      clean-room Java library are planned in TASK-015 P8.1.
+  workbench: { status: none, note: "The operator shuffle keeps the values and destroys the spectrum." }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+docs: docs/user-manual/11-classic-analytics.md
+literature:
+  - "J. Theiler, S. Eubank, A. Longtin, B. Galdrikian, J. D. Farmer, Testing for nonlinearity in time series: the method of surrogate data, Physica D 58, 77 (1992)"

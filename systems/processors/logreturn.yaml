@@ -1,0 +1,30 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: logreturn
+version: 1
+kind: transformer
+category: transform
+title: Log return
+description: >-
+  Gives the change of the logarithm from one sample to the next, out[i] = ln(y[i]) − ln(y[i−1]), and 0 at the first
+  sample, on the time axis of the input. For small changes it is close to the relative change
+  (y[i] − y[i−1]) / y[i−1]. A value of 0 or below gives an infinite value or NaN at its sample and at the next one.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series, description: "ln(y[i]) − ln(y[i−1]), 0 at the first sample" }
+semantics: { needs: window, deterministic: true, keeps: [time, count, series] }
+runtimes:
+  workbench: { status: available, note: "The output keeps the unit of the input although it has none." }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#getLogReturn"
+    note: "2.x model in opentsx-core: the x values of the output are the sample index 0, 1, 2 and so on. No automated test."
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: transform, label: Returns (Rel-Diff) }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/logreturn.example.test.ts
+  chart: docs/user-manual/img/operators/logreturn.png
+  shows: The log returns of a price built from 299 planted hourly returns equal those returns with a largest difference of 9.5e-16, and the first value is 0.

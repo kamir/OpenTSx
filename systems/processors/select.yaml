@@ -1,0 +1,33 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: select
+version: 1
+kind: transformer
+category: cleaning
+title: Select series by label
+description: >-
+  Keeps the series whose label or id matches a regular expression, case ignored, and drops the others. The kept
+  series are passed on unchanged. The pattern wind speed keeps WT01 Wind speed and drops WT01 Power.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: out, type: series, cardinality: many, description: "The series that match, in their input order" }
+params:
+  - { name: pattern, type: string, default: ".*", description: "Regular expression in JavaScript syntax, tested against label and id." }
+semantics: { needs: point, deterministic: true, keeps: [time, unit, count, series] }
+runtimes:
+  workbench: { status: available, note: "A pattern that is no valid regular expression keeps no series and gives no error." }
+  python:
+    status: available
+    class: "opentsx.core.bucket.TSBucket#filter"
+    note: >-
+      bucket.filter(predicate) keeps the series for which the predicate is true, for example
+      lambda ts: re.search('wind speed', ts.label, re.I). It takes any predicate, not a pattern.
+  processor: { status: none, note: "The workbench exports the step to a PFD as FILTER, which the Flink PFD runtime refuses (PFDValidation)." }
+  java: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Select series }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/select.example.test.ts
+  chart: docs/user-manual/img/operators/select.png
+  shows: The pattern wind speed keeps WT01 Wind speed and WT02 Wind speed of 4 series and drops the two power series.

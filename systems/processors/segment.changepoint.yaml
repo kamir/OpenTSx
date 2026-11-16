@@ -1,0 +1,25 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: segment.changepoint
+version: 1
+kind: transformer
+category: segmentation
+title: Change-point segments
+description: >-
+  Cuts a series where its behaviour changes, for example where the mean or the variance shifts. CUSUM adds up the
+  deviations from a reference level and marks a change when the sum passes a threshold; PELT finds the change points
+  that minimise a cost per segment plus a penalty per change over the whole series. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: segments, type: series, cardinality: many, description: Derived episodes from one change point to the next }
+runtimes:
+  java: { status: planned, note: "TASK-018 phase 6: change-point detection (CUSUM/PELT) as a further strategy of Segmenter in opentsx-retrieval." }
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-018-analytics-storage-extensions.md, item: P6 }
+literature:
+  - "E. S. Page, Continuous inspection schemes, Biometrika 41, 100 (1954)"
+  - "R. Killick, P. Fearnhead, I. A. Eckley, Optimal detection of changepoints with a linear computational cost, J. Am. Stat. Assoc. 107, 1590 (2012)"

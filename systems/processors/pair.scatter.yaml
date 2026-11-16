@@ -1,0 +1,27 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pair.scatter
+version: 1
+kind: transformer
+category: dependency
+title: Scatter fit per pair window
+description: >-
+  Puts series A and B on one clock and gives, in each pair window, the slope of the least-squares line through the
+  aligned values and their Pearson correlation r. One value per field and window, stamped at the window centre.
+inputs:
+  - { name: a, type: series, cardinality: many, description: "Series A. Without b every pair of its series is compared." }
+  - { name: b, type: series, cardinality: many, description: "Series B, optional: each series of a is paired with each series of b." }
+outputs:
+  - { name: slope, type: series, cardinality: many, description: Metric pair.scatter.slope. }
+  - { name: r, type: series, cardinality: many, description: Metric pair.scatter.r. }
+semantics: { needs: window, deterministic: true }
+runtimes:
+  workbench: { status: planned, note: "TASK-015 phase 1e, on the pair windows of pair.coverage, pair.xcorr and pair.es." }
+  processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
+  java:
+    status: none
+    note: >-
+      The 2.x model in opentsx-core has Statistical.pearsonsCorrelation over two whole arrays, not per pair window.
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "1e (workbench), 3 (processor)" }

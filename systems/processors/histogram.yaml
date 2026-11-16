@@ -1,0 +1,37 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: histogram
+version: 1
+kind: transformer
+category: distribution
+title: Histogram per series
+description: >-
+  Counts the values of each series in bins of equal width w = (max − min) / bins and divides each count by the number
+  of values inside [min, max]. The result is the relative frequency per bin at the bin centre; it sums to 1. Values
+  outside the range and gaps are left out and do not count in the total.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: histogram, type: xy, description: Relative frequency per bin over the bin centre }
+params:
+  - { name: min, type: number, default: -10, description: Lower edge of the first bin. }
+  - { name: max, type: number, default: 10, description: Upper edge of the last bin. A value equal to max counts in the last bin. }
+  - { name: bins, type: integer, default: 50, min: 2, description: Number of bins. }
+semantics: { needs: series, deterministic: true, keeps: [series] }
+runtimes:
+  workbench: { status: available }
+  java:
+    status: available
+    class: "org.opentsx.data.series.TimeSeriesObject#distributionOfYValues"
+    note: >-
+      The 2.x model in opentsx-core has TimeSeriesObject#distributionOfYValues(min, max, bins) behind the Swing button
+      Histogram per series, without a test. It returns counts, not shares, takes min and max as integers and leaves
+      out empty bins.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: univariate, label: Histogram per series }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/histogram.example.test.ts
+  chart: docs/user-manual/img/operators/histogram.png
+  shows: 20000 uniform values on [0, 4] give 0.048 to 0.052 in each of their 20 bins (expected 0.050), and 20000 normal values match the bin probabilities of the normal distribution within 0.0024 (peak 0.0817 against 0.0793).

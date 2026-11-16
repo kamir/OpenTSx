@@ -1,0 +1,45 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pair.coverage
+version: 1
+kind: transformer
+category: quality
+title: Pair coverage
+description: >-
+  Puts series A and B on one clock and gives, for each window of a pair range, the share of clock ticks in which
+  both have a value, coverage = ticks with A and B / ticks in the window, and the number of ticks. Each value is
+  stamped at the window centre. It shows what the other pair methods see: they give a gap where the coverage of a
+  window is below their minCoverage.
+inputs:
+  - { name: a, type: series, cardinality: many, description: "Series A. Without b every pair of its series is compared." }
+  - { name: b, type: series, cardinality: many, description: "Series B, optional: each series of a is paired with each series of b." }
+outputs:
+  - { name: coverage, type: series, cardinality: many, description: "Metric pair.coverage.coverage, tags a, b, window and step; one value per window, NaN with quality 1 below minCoverage." }
+  - { name: ticks, type: series, cardinality: many, description: "Metric pair.coverage.ticks, the number of clock ticks per window." }
+params:
+  - { name: pairing, type: enum, values: [same, intersect], default: same, description: "same: an episode of A with the episode of B that has the same start and end. intersect: overlapping episodes on their overlap. A series without episodes is one range from its first sample to its last plus one sampling interval." }
+  - { name: window, type: string, default: episode, description: "episode: one window over the whole pair range. A number: the window width in seconds; a window that would end after the range is not computed." }
+  - { name: step, type: duration, default: PT0S, editAs: seconds, description: "Distance of the window starts. 0: the window width, windows side by side." }
+  - { name: every, type: duration, default: PT0S, editAs: seconds, description: "Clock; ticks are multiples of every since the epoch. 0: the larger sampling interval (median spacing) of A and B." }
+  - { name: agg, type: enum, values: [MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT], default: MEAN, description: "Aggregate of the samples of one series in one tick, as in align.vector." }
+  - { name: fill, type: enum, values: [none, as-of], default: none, description: "as-of: a tick without a sample takes the last value when it is at most maxAge old. The fill does not reach back across the start of the pair range." }
+  - { name: maxAge, type: duration, default: PT60S, editAs: seconds, description: Age of the oldest value fill as-of takes. }
+  - { name: minCoverage, type: number, default: 0, min: 0, max: 1, description: Below this coverage a window gives NaN with quality 1. }
+semantics: { needs: window, deterministic: true }
+runtimes:
+  workbench:
+    status: available
+    note: >-
+      Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above are those of
+      the operator panel; a call of apply without them uses minCoverage 0.8 and maxAge 0.
+  processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "3" }
+ui: { group: multivariate, label: Pair coverage }
+docs: EVOLUTION/TASK-015-multivariate-analysis.md#pair-windows
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/pair.coverage.example.test.ts
+  chart: docs/user-manual/img/operators/pair.coverage.png
+  shows: B misses 5 of 30 minutes; in 10 min windows with a step of 1 min the coverage is the expected 0.500 in the 6 windows that hold the whole outage, and over the whole pair it is the expected 0.833, 150 of 180 ticks.

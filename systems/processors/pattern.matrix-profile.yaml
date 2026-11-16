@@ -1,0 +1,25 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pattern.matrix-profile
+version: 1
+kind: transformer
+category: pattern
+title: Matrix profile
+description: >-
+  Gives every window of m samples the z-normalized Euclidean distance to its nearest other window: the matrix
+  profile. Its minima are motifs, shapes that repeat; its maxima are discords, shapes that occur nowhere else. The plan
+  searches motifs and discords across buckets and writes the matches back as annotations. No code exists.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: profile, type: series, description: Distance of each window to its nearest other window }
+  - { name: matches, type: events, cardinality: many, description: Motifs and discords }
+runtimes:
+  java: { status: planned, note: "TASK-018 option 5c of retrieval and pattern matching in opentsx-retrieval; optional." }
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-018-analytics-storage-extensions.md, item: 5c }
+literature:
+  - "C.-C. M. Yeh et al., Matrix Profile I: all pairs similarity joins for time series, Proc. IEEE ICDM 2016, 1317 (2016)"

@@ -1,0 +1,65 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: pair.es
+version: 1
+kind: transformer
+category: dependency
+title: Event synchronisation per pair window
+description: >-
+  Puts series A and B on one clock and takes, in each window, the local maxima above mean + sigma std of each series
+  as its events. An event pair counts as synchronous when it lies closer than half the smaller distance to a
+  neighbouring event of either series, capped by tauMax. q_total = (c(B|A) + c(A|B)) / sqrt(m_A m_B) is in [0, 1],
+  q_ab = c(B|A) / sqrt(m_A m_B) counts B after A and q_ba A after B, so q_ab > q_ba means B follows A. q_rand is the
+  mean q_total of A against copies of B with shuffled intervals between its events: the level chance gives.
+inputs:
+  - { name: a, type: series, cardinality: many, description: "Series A. Without b every pair of its series is compared." }
+  - { name: b, type: series, cardinality: many, description: "Series B, optional: each series of a is paired with each series of b." }
+outputs:
+  - { name: q_total, type: series, cardinality: many, description: "Metric pair.es.q_total, tags a, b, window and step; one value per window at its centre." }
+  - { name: q_ab, type: series, cardinality: many, description: "Metric pair.es.q_ab, the share of synchronous events where B follows A." }
+  - { name: q_ba, type: series, cardinality: many, description: "Metric pair.es.q_ba, the share where A follows B." }
+  - { name: q_rand, type: series, cardinality: many, description: "Metric pair.es.q_rand, the mean q_total against the shuffled copies of B." }
+params:
+  - { name: sigma, type: number, default: 2, description: "Events are local maxima above mean + sigma std of the window (population std); the first and the last tick and a tick next to a gap are none." }
+  - { name: tauMax, type: duration, default: PT0S, editAs: seconds, description: "Cap of the local window of every event pair. 0: no cap." }
+  - { name: shuffles, type: integer, default: 10, min: 1, description: Number of copies of B with shuffled intervals for q_rand. }
+  - { name: seed, type: integer, default: 1, description: Seed of the mulberry32 generator that shuffles. }
+  - { name: pairing, type: enum, values: [same, intersect], default: same, description: "same: an episode of A with the episode of B that has the same start and end. intersect: overlapping episodes on their overlap. A series without episodes is one range from its first sample to its last plus one sampling interval." }
+  - { name: window, type: string, default: episode, description: "episode: one window over the whole pair range. A number: the window width in seconds; a window that would end after the range is not computed." }
+  - { name: step, type: duration, default: PT0S, editAs: seconds, description: "Distance of the window starts. 0: the window width, windows side by side." }
+  - { name: every, type: duration, default: PT0S, editAs: seconds, description: "Clock; ticks are multiples of every since the epoch. 0: the larger sampling interval (median spacing) of A and B." }
+  - { name: agg, type: enum, values: [MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT], default: MEAN, description: "Aggregate of the samples of one series in one tick, as in align.vector." }
+  - { name: fill, type: enum, values: [none, as-of], default: none, description: "as-of: a tick without a sample takes the last value when it is at most maxAge old. The fill does not reach back across the start of the pair range." }
+  - { name: maxAge, type: duration, default: PT60S, editAs: seconds, description: Age of the oldest value fill as-of takes. }
+  - { name: minCoverage, type: number, default: 0.8, min: 0, max: 1, description: "Below this share of ticks with A and B a window gives NaN with quality 1 (see pair.coverage)." }
+semantics: { needs: window, deterministic: true }
+testvectors: docs/datamodel-2026/testvectors/pair-es.v1.json
+runtimes:
+  workbench:
+    status: available
+    note: >-
+      Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector
+      cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field.
+      Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. A call of apply
+      without maxAge uses 0.
+  python:
+    status: none
+    note: >-
+      The Python package computes the same q_total, q_ab, q_ba and q_rand over whole series with EventSynchronization
+      and surrogate_sync (operator es), not per pair window.
+  java:
+    status: planned
+    note: >-
+      TASK-015 P8.1 plans event synchronisation with the closed-form Q_rand calibration in a clean-room Java library.
+      The 2.x ESCalc in opentsx-core (operator es) works on whole series.
+  processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-015-multivariate-analysis.md, item: "3 (processor), P8.1 (java)" }
+ui: { group: multivariate, label: Event synchronisation }
+docs: docs/user-manual/11-classic-analytics.md#113-event-synchronization-es
+literature:
+  - "R. Quian Quiroga, T. Kreuz, P. Grassberger, Event synchronization: a simple and fast method to measure synchronicity and time delay patterns, Phys. Rev. E 66, 041904 (2002)"
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/pair.es.example.test.ts
+  chart: docs/user-manual/img/operators/pair.es.png
+  shows: While B fires independently of A, q_total is 0.37 against a chance level q_rand of 0.38; while B fires 3 s after every event of A, q_total is 0.99 against q_rand 0.42, and q_ab 0.99 against q_ba 0.00 says that B follows A.

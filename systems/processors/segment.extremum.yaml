@@ -1,0 +1,48 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: segment.extremum
+version: 1
+kind: transformer
+category: segmentation
+title: Segments around extrema
+description: >-
+  Cuts a window around each local maximum (MAX) or minimum (MIN) that stands out. A sample is a peak when its
+  prominence, the height above the higher of the lowest points on its two sides within ±window/2, is at least
+  prominence, and when it is the most extreme value within ±distance; ties go to the earliest. The segment covers
+  [t − pre, t + post] around the peak time t, which is its anchor. NaN values are never peaks.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: segments, type: series, cardinality: many, description: "Derived episodes, one per peak, with segmentation FEATURE_EXTREMUM and the peak time as anchorTs" }
+params:
+  - { name: feature, type: enum, values: [MAX, MIN], default: MAX, description: Maxima or minima. }
+  - { name: prominence, type: number, required: true, min: 0, description: "Least height of a peak above its surroundings, in the unit of the series." }
+  - { name: window, type: duration, required: true, description: Neighbourhood ±window/2 in which the prominence is measured. }
+  - { name: distance, type: duration, required: true, description: The peak must be the most extreme value within ±distance. }
+  - { name: pre, type: duration, default: PT0S, description: Part of the segment before the peak. }
+  - { name: post, type: duration, default: PT0S, description: Part of the segment after the peak. }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.retrieval.segment.Segmenter#extremum"
+    note: >-
+      Segmenter.extremum takes all six parameters. A peak is decided once the series has reached t + max(post,
+      distance, window/2), so StreamingSegmenter and EpisodeService.segments(...).fetch() give the same segments. The
+      retrieval server offers it as POST /v1/segments with strategy FEATURE_EXTREMUM and takes 0 for a missing
+      prominence.
+  python:
+    status: available
+    class: "opentsx.client.retrieval.RetrievalClient#segments"
+    note: >-
+      segments("FEATURE_EXTREMUM", {"prominence": 2, "window": "PT5M", "distance": "PT2M"}) calls POST /v1/segments of
+      the retrieval server; Python computes nothing.
+  workbench: { status: none }
+  processor: { status: none }
+  go: { status: planned, note: "Concept 11, section 6, lists segment.extremum, incremental, for the Go core." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+docs: docs/user-manual/09-retrieval.md#92-segmentation
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/SegmentExtremumExampleTest.java
+  chart: docs/user-manual/img/operators/segment.extremum.png
+  shows: With prominence 2 the segmenter finds exactly the 3 gusts planted at 600, 1500 and 2400 s, at 602, 1502 and 2400 s; with prominence 0 it cuts 14 segments, 11 of them around noise.

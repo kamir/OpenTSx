@@ -1,0 +1,55 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: segment.threshold
+version: 1
+kind: transformer
+category: segmentation
+title: Segments between thresholds
+description: >-
+  Cuts one segment per phase in which the series reaches enter and stays until it crosses back over exit. For ABOVE
+  a phase starts at a value ≥ enter and ends at the first value < exit, with exit ≤ enter; for BELOW the other way
+  round. The gap between enter and exit is a hysteresis: noise near one level does not end a phase. The segment is
+  extended by pre before and post after the phase; phases shorter than minDuration are dropped, longer than
+  maxDuration are cut there, and NaN values change nothing.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: segments, type: series, cardinality: many, description: "Derived episodes, one per phase, with segmentation FEATURE_THRESHOLD and the start of the phase as anchorTs" }
+params:
+  - { name: direction, type: enum, values: [ABOVE, BELOW], default: ABOVE, description: Phases above or below the levels. }
+  - { name: enter, type: number, required: true, description: Level that starts a phase. }
+  - { name: exit, type: number, description: "Level that ends a phase; it must not lie beyond enter. Without it exit equals enter: no hysteresis." }
+  - { name: pre, type: duration, default: PT0S, description: Part of the segment before the phase. }
+  - { name: post, type: duration, default: PT0S, description: Part of the segment after the phase. }
+  - { name: minDuration, type: duration, default: PT0S, description: Shorter phases are dropped. }
+  - { name: maxDuration, type: duration, default: PT0S, description: "Longer phases are cut here; the next phase starts only after the value crossed exit. PT0S: no limit." }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+runtimes:
+  java:
+    status: available
+    class: "org.opentsx.retrieval.segment.Segmenter#threshold"
+    note: >-
+      Segmenter.threshold takes all seven parameters. EpisodeService.segments(...).fetch() and StreamingSegmenter give
+      the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_THRESHOLD and takes 0
+      for a missing enter.
+  python:
+    status: available
+    class: "opentsx.client.retrieval.RetrievalClient#segments"
+    note: >-
+      segments("FEATURE_THRESHOLD", {"enter": 20, "exit": 18}) calls POST /v1/segments of the retrieval server; Python
+      computes nothing.
+  workbench:
+    status: available
+    note: >-
+      A different cut with the same id: one window per crossing of enter in the given direction, pre samples before and
+      post samples after it (defaults level 0, pre 20, post 80), aligned on the crossing. No exit level, no hysteresis,
+      no minimum or maximum duration. It draws the first 24 windows and counts all.
+  processor: { status: none, note: "The workbench lists it in the stream catalog, but CleanChain refuses it before a series sink." }
+  go: { status: planned, note: "Concept 11, section 6, lists segment.threshold, incremental, for the Go core." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
+ui: { group: stream, label: Segment at threshold }
+docs: docs/user-manual/09-retrieval.md#92-segmentation
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/SegmentThresholdExampleTest.java
+  chart: docs/user-manual/img/operators/segment.threshold.png
+  shows: Three storm phases at 21.5 m/s with noise give 3 segments of 300, 600 and 300 s with enter 20 and exit 18, as expected; with exit 20 the noise near the level cuts them into 20 segments.

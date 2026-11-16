@@ -1,0 +1,33 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: acf
+version: 1
+kind: transformer
+category: dependency
+title: Autocorrelation
+description: >-
+  Computes the autocorrelation C(k) = sum_i (y_i − m)(y_(i+k) − m) / sum_i (y_i − m)^2 with the mean m, for the lags
+  k from 0 to min(n/2, maxLag) − 1 samples. C(0) is 1. For a long AR(1) series with the coefficient phi, C(k) is close
+  to phi^k; for white noise it is close to 0 for every lag above 0.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: acf, type: xy, description: C(k) over the lag k in samples }
+params:
+  - { name: maxLag, type: integer, default: 1000, min: 1, description: "Number of lags. The largest lag is maxLag − 1, and at most n/2 − 1." }
+semantics: { needs: series, deterministic: true, keeps: [series] }
+runtimes:
+  workbench: { status: available, note: A series with a gap gives C(k) = 0 for every lag. }
+  java:
+    status: none
+    note: >-
+      The 2.x Swing button Auto-Correlation computes it inside TSOperationControlerPanel (opentsx-core), with no API and
+      no test: the Pearson correlation of the series with a shifted copy, for lags up to half the length.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: univariate, label: Auto-Correlation }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/acf.example.test.ts
+  chart: docs/user-manual/img/operators/acf.png
+  shows: For 50000 values of AR(1) with phi 0.7 the autocorrelation follows 0.7^k within 0.006 up to lag 19, and for white noise |C(k)| stays at 0.009 or below for every lag above 0.

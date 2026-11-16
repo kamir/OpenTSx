@@ -1,0 +1,26 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: coherence
+version: 1
+kind: transformer
+category: spectral
+title: Coherence
+description: >-
+  Measures per frequency how closely two series oscillate together: C(f) = |P_ab(f)|² / (P_aa(f) P_bb(f)), with the
+  cross spectrum P_ab and the power spectra P_aa and P_bb estimated by the method of Welch. C is between 0 and 1;
+  it is 1 at a frequency where B follows A with a fixed amplitude ratio and phase. No code exists.
+inputs:
+  - { name: a, type: series, cardinality: one }
+  - { name: b, type: series, cardinality: one }
+outputs:
+  - { name: coherence, type: xy, description: C(f) over frequency }
+semantics: { needs: series, deterministic: true }
+runtimes:
+  java: { status: planned, note: "TASK-018 phase 6. The plan names the method, not the runtime." }
+  workbench: { status: none }
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+plan: { file: EVOLUTION/TASK-018-analytics-storage-extensions.md, item: P6 }
+literature:
+  - "P. D. Welch, The use of fast Fourier transform for the estimation of power spectra: a method based on time averaging over short, modified periodograms, IEEE Trans. Audio Electroacoust. 15, 70 (1967)"

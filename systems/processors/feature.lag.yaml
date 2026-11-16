@@ -1,0 +1,29 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: feature.lag
+version: 1
+kind: transformer
+category: feature
+title: Lag feature
+description: >-
+  Gives every sample the value steps samples earlier, out[i] = in[i - steps], on the time axis of the input. The
+  first steps samples are gaps. A feature for models that predict from the recent past.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: steps, type: integer, required: true, min: 1, max: 100000, description: Number of samples back. }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
+runtimes:
+  workbench: { status: available, note: "Default 1; steps is rounded to a whole number." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Lag", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Keeps the last steps samples of each series between blocks." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: none }
+ui: { group: stream, label: Lag }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/feature.lag.example.test.ts
+  chart: docs/user-manual/img/operators/feature.lag.png
+  shows: White noise lagged by 5 samples correlates with the input shifted by k samples at the measured 1.000 for k = 5 and at most 0.10 for every other shift from -10 to 10.

@@ -1,0 +1,36 @@
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
+schema: opentsx.processor.v1
+id: histogram.crosscut
+version: 1
+kind: transformer
+category: distribution
+title: Histogram per time slice
+description: >-
+  Cuts the sample index into consecutive slices of the given length and pools the values of all series in a slice
+  into one histogram, computed as by histogram. Each result is labelled with the first and the end index of its slice, for
+  example 0_100. It shows how the distribution across many series changes over time. At most 16 slices are computed.
+inputs:
+  - { name: in, type: series, cardinality: many }
+outputs:
+  - { name: slices, type: xy, description: One relative-frequency histogram per time slice over the bin centre }
+params:
+  - { name: min, type: number, default: -10, description: Lower edge of the first bin. }
+  - { name: max, type: number, default: 10, description: Upper edge of the last bin. A value equal to max counts in the last bin. }
+  - { name: bins, type: integer, default: 50, min: 2, description: Number of bins. }
+  - { name: window, type: integer, default: 100, min: 2, description: Length of a slice in samples. The slices follow each other from sample 0 to the end of the first series. }
+semantics: { needs: window, deterministic: true }
+runtimes:
+  workbench: { status: available }
+  java:
+    status: none
+    note: >-
+      The 2.x Swing button Histogram cross-cut computes it inside TSOperationControlerPanel (opentsx-core), with no API
+      and no test. It returns counts, not shares, and has no limit of 16 slices.
+  python: { status: none }
+  processor: { status: none }
+  go: { status: none }
+ui: { group: univariate, label: Histogram cross-cut }
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/histogram.crosscut.example.test.ts
+  chart: docs/user-manual/img/operators/histogram.crosscut.png
+  shows: Pooled over 20 sensors that change their distribution at 200 s, the slice 0_200 has mean 0.01 and std 1.00 and the slice 200_400 mean 4.00 and std 0.50, as generated (0 and 1, then 4 and 0.5).

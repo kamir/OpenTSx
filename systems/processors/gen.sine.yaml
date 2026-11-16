@@ -4,11 +4,13 @@ id: gen.sine
 version: 1
 kind: generator
 fidelity: demo
+category: source
 title: Cycle with noise
 description: >-
   A sine around a mean with a period, for example a day, plus noise. A stand-in for a quantity with a daily shape.
-  A demo generator: it knows nothing of the rest of the system. Values are clipped to the plausible range of the
-  signal.
+  The value at time t since the epoch is mean + amplitude · sin(2π (t mod period / period + phase)) + sigma · ε,
+  with ε standard normal per step of the seed. A demo generator: it knows nothing of the rest of the system. Values
+  are clipped to the plausible range of the signal.
 outputs:
   - { name: out, type: series }
 params:
@@ -23,7 +25,21 @@ params:
   - { name: unit, type: string, from: expect.unit }
 semantics: { needs: point, deterministic: true, origin: SYNTHETIC }
 runtimes:
-  java: { status: available, class: org.opentsx.retrieval.generate.Generators, note: "One run over a period, started by a person; no continuous operation." }
-  workbench: { status: none }
-  processor: { status: none }
+  java:
+    status: available
+    class: "org.opentsx.retrieval.generate.Generators#values"
+    note: >-
+      One run over a period, started by a person; no continuous operation. Generators.episodes(target, params,
+      interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to
+      tsx.<domain>.synthetic.v2.
+  workbench: { status: none, note: "The page Signals presets the parameters from the expectation of the signal and asks the server to generate." }
+  python: { status: none }
+  processor: { status: planned, note: "A generator that keeps writing is part of step E2 of the decision circle." }
+  go: { status: none }
+plan: { file: docs/datamodel-2026/15-ENTSCHEIDUNGSKREIS.md, item: E2 }
 ui: { group: source, label: Cycle with noise }
+docs: docs/user-manual/16-engineering-method.md#step-4-connect-the-sources
+example:
+  source: opentsx-retrieval/src/test/java/org/opentsx/retrieval/examples/SineGeneratorExampleTest.java
+  chart: docs/user-manual/img/operators/gen.sine.png
+  shows: Seven days of gen.sine with mean 60, amplitude 30, period P1D and noise 3 have the measured mean 59.9, amplitude 30.0 and period 24.0 h, as configured.

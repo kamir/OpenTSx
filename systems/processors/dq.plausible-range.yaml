@@ -1,22 +1,34 @@
-# Example processor description, schema opentsx.processor.v1 (draft), for an operator of the workbench
-# (opentsx-saas-frontend/src/workbench/ops.ts, id dq.plausible-range, written into the DAG as dq.checks).
+# Processor description, schema opentsx.processor.v1. Rendered into docs/user-manual/17-operators.md.
 schema: opentsx.processor.v1
 id: dq.plausible-range
 version: 1
 kind: transformer
+category: cleaning
 title: Plausible range
-description: Values outside the band become gaps or are clipped.
+description: >-
+  Checks every value against the band [min, max]. A value below min or above max becomes a gap (mode gap) or the
+  bound it crossed (mode clip). Values inside the band, gaps of the input and the time axis stay as they are.
 inputs:
   - { name: in, type: series, cardinality: one }
 outputs:
   - { name: out, type: series }
 params:
-  - { name: min, type: number, required: true, default: -10, from: expect.min }
-  - { name: max, type: number, required: true, default: 10, from: expect.max }
-  - { name: mode, type: enum, values: [gap, clip], default: gap }
+  - { name: min, type: number, from: expect.min, description: Lower bound. Without it the band has no lower bound. }
+  - { name: max, type: number, from: expect.max, description: Upper bound. Without it the band has no upper bound. }
+  - { name: mode, type: enum, values: [gap, clip], default: gap, description: "gap: a value outside becomes a gap. clip: it becomes the bound." }
 semantics: { needs: point, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
 dag: { op: dq.checks, fixed: { checks: [PLAUSIBLE_RANGE] } }
 runtimes:
-  workbench: { status: available }
-  processor: { status: planned, note: "TASK-013, 013.5" }
+  workbench: { status: available, note: "The form presets min -10 and max 10, or the expected range of the signal it was opened for. Any mode other than clip gives gaps." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Range", note: "DAG op dq.checks with checks [PLAUSIBLE_RANGE], a step of the clean chain before a series sink (bin/opentsx vectors). Refuses min above max and a mode other than gap or clip." }
+  java: { status: none }
+  python: { status: none }
+  go: { status: planned, note: "DQ in the Go stream core of the proposed Go TSx processor." }
+plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }
 ui: { group: stream, label: Plausible range }
+docs: docs/user-manual/16-engineering-method.md
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
+example:
+  source: opentsx-saas-frontend/src/workbench/examples/dq.plausible-range.example.test.ts
+  chart: docs/user-manual/img/operators/dq.plausible-range.png
+  shows: A 10 s dropout of -10 m/s and a 5 s spike of 95 m/s lie outside [0, 60] m/s; mode gap turns exactly these 15 values into gaps and mode clip sets them to 0 and 60.
