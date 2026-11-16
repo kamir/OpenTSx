@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "ResultMatrix",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "A matrix over keys, e.g. the event-synchronization matrix Q of n series. values is row-major with rowKeys.size * colKeys.size entries; entry (i, j) relates rowKeys[i] to colKeys[j].",
+  "fields": [
+    {"name": "name", "type": "string", "doc": "e.g. Q, q_directed, lag."},
+    {"name": "rowKeys", "type": {"type": "array", "items": "string"}, "doc": "Usually series ids."},
+    {"name": "colKeys", "type": {"type": "array", "items": "string"}},
+    {"name": "values", "type": {"type": "array", "items": "double"}, "doc": "Row-major. NaN marks an undefined entry."},
+    {"name": "unit", "type": ["null", "string"], "default": null}
+  ]
+}

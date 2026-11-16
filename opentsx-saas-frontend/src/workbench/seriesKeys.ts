@@ -74,7 +74,7 @@ function escape(s: string): string {
   return s.replace(/[\\{},=]/g, (c) => `\\${c}`);
 }
 
-function compareUtf8(a: string, b: string): number {
+export function compareUtf8(a: string, b: string): number {
   const x = utf8.encode(a);
   const y = utf8.encode(b);
   for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) return x[i] - y[i];
