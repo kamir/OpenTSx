@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Related-work study for the IEEE paper ([`docs/research/01-RELATED-WORK-AND-POSITIONING.md`](docs/research/01-RELATED-WORK-AND-POSITIONING.md)):
+  188 candidates in nine clusters, high and medium candidates checked against primary sources on 2026-11-16, a comparison
+  matrix over 14 dimensions, a concept mapping to commercial historians and cloud services, a claim check of what
+  distinguishes OpenTSx, and the evaluation a federated variant would need before it can be claimed.
+
 - `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.
