@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "BucketManifest",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "A bucket is a logical collection of episodes (experiment, dataset, snapshot). Written OPEN before and SEALED after its episodes.",
+  "fields": [
+    {"name": "bucketId", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "state", "type": {"type": "enum", "name": "BucketState", "symbols": ["OPEN", "SEALED"]}},
+    {"name": "descriptor", "type": {"type": "map", "values": "string"}, "default": {}, "doc": "Experiment descriptor: author, scenario, seed, tags, ..."},
+    {"name": "tMin", "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}], "default": null},
+    {"name": "tMax", "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}], "default": null},
+    {"name": "episodeCount", "type": "long", "default": 0},
+    {"name": "checksum", "type": ["null", "string"], "default": null, "doc": "xxHash64 hex over the sorted episodeIds joined by newline."},
+    {"name": "createdAt", "type": {"type": "long", "logicalType": "timestamp-micros"}}
+  ]
+}

@@ -55,6 +55,9 @@
                                 <import>${project.basedir}/src/main/avro/Segmentation.avsc</import>
                                 <import>${project.basedir}/src/main/avro/EpisodeSummary.avsc</import>
                                 <import>${project.basedir}/src/main/avro/Provenance.avsc</import>
+                                <import>${project.basedir}/src/main/avro/ResultScalar.avsc</import>
+                                <import>${project.basedir}/src/main/avro/ResultCurve.avsc</import>
+                                <import>${project.basedir}/src/main/avro/ResultMatrix.avsc</import>
                             </imports>
                         </configuration>
                     </execution>

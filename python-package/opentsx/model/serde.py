@@ -16,8 +16,10 @@ from fastavro.schema import expand_schema, parse_schema, to_parsing_canonical_fo
 
 _MAGIC = b"\xc3\x01"
 _ORDER = ["SeriesKey", "Segmentation", "EpisodeSummary", "Provenance",
-          "Episode", "Observation", "BucketManifest", "SeriesStats", "PatternMatch"]
-_TOP_LEVEL = ["Episode", "Observation", "SeriesKey", "BucketManifest", "SeriesStats", "PatternMatch"]
+          "Episode", "Observation", "BucketManifest", "SeriesStats", "PatternMatch",
+          "ResultScalar", "ResultCurve", "ResultMatrix", "AnalysisResult"]
+_TOP_LEVEL = ["Episode", "Observation", "SeriesKey", "BucketManifest", "SeriesStats", "PatternMatch",
+              "AnalysisResult"]
 _NAMESPACE = "org.opentsx.model.v2"
 
 _named: Dict[str, dict] = {}
