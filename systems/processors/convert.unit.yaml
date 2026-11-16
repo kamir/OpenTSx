@@ -1,0 +1,19 @@
+schema: opentsx.processor.v1
+id: convert.unit
+version: 1
+kind: transformer
+title: Convert unit
+description: Multiplies values by a factor and adds an offset.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: factor, type: number, default: 1 }
+  - { name: offset, type: number, default: 0 }
+  - { name: unit, type: string, default: "" }
+semantics: { needs: point, deterministic: true, keeps: [time, count], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+state: { kind: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

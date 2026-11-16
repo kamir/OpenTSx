@@ -91,6 +91,23 @@ class DagPlanTest {
     }
 
     @Test
+    void rejectsDuplicateSinkIdentitiesBeforeOperatorParameters() {
+        String dag = VectorProcessorTest.cleanDag("dq.checks", "")
+                .replace("min: 0, max: 150", "min: 200, max: 150");
+        try {
+            com.fasterxml.jackson.databind.node.ObjectNode document = (com.fasterxml.jackson.databind.node.ObjectNode)
+                    VectorJobTest.YAML.readTree(dag);
+            com.fasterxml.jackson.databind.node.ArrayNode sinks = (com.fasterxml.jackson.databind.node.ArrayNode) document.path("sinks");
+            sinks.add(sinks.get(0).deepCopy());
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> DagPlan.of(document, LAYOUT, "test-spec"));
+            assertEquals("duplicate sink identity park-T01-WTUR.W", error.getMessage());
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
     void rejectsMalformedNodeAndSinkCollections() throws Exception {
         JsonNode valid = VectorJobTest.YAML.readTree(VectorJobTest.dag(VectorJobTest.VECTOR_NODE, VectorJobTest.VECTOR_SINK));
         ((com.fasterxml.jackson.databind.node.ObjectNode) valid).putObject("sinks");

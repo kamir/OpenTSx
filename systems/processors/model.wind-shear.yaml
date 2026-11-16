@@ -1,0 +1,19 @@
+schema: opentsx.processor.v1
+id: model.wind-shear
+version: 1
+kind: model
+title: Wind shear
+description: Carries wind speed between heights with a power-law exponent.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: fromM, type: number, required: true, min: 0, description: "Height in metres, strictly above zero" }
+  - { name: toM, type: number, required: true, min: 0, description: "Height in metres, strictly above zero" }
+  - { name: alpha, type: number, required: true, min: 0, max: 0.6 }
+semantics: { needs: point, deterministic: true, keeps: [time, unit, count], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+state: { kind: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

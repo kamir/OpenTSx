@@ -176,7 +176,9 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
    one `TsxTopicSink`.
 3. The driver MUST NOT use `wayang-api-json`: it compiles Scala source received in the request
    (`SerializableLambda.scala:23-29` at Wayang `main`).
-4. On a single site the plan runs with `Java.basicPlugin()` and the Track A plugin.
+4. On a single site the plan runs with `TsxJavaPlugin`. The plugin supplies the
+   Java platform, mappings, and channel conversions without the cloud mappings
+   whose SDKs are excluded (`TsxJavaPlugin.java`).
 
 ### S2.4 Site plan
 

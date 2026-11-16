@@ -15,6 +15,24 @@ import java.util.Set;
 public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<String> skipped) {
 
     public static DagPlan of(JsonNode dag, TopicLayout layout, String specHash) {
+        validateStructure(dag, layout);
+        List<SeriesJob> series = SeriesJob.of(dag, layout.episodes(), layout.clean(), layout.features(), layout.synthetic(), specHash);
+        List<VectorJob> jobs = List.of();
+        boolean vectors = false;
+        for (JsonNode sink : dag.path("sinks")) vectors |= VectorJob.SCHEMA.equals(sink.path("schema").asText());
+        if (vectors) {
+            jobs = VectorJob.of(dag, layout.domain(), layout.episodes()).jobs();
+            for (VectorJob job : jobs) {
+                if (job.seriesIds().isEmpty()) {
+                    throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)."
+                            + " Load the series from the TS inventory, then build the vector.");
+                }
+            }
+        }
+        return new DagPlan(jobs, series, List.of());
+    }
+
+    public static Map<String, JsonNode> validateStructure(JsonNode dag, TopicLayout layout) {
         if (dag == null || !dag.isObject() || !dag.path("nodes").isArray()) {
             throw new IllegalArgumentException("the document is no opentsx.dag DAG (no nodes)");
         }
@@ -22,7 +40,6 @@ public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<Stri
         if (!dag.path("sinks").isArray() || dag.path("sinks").isEmpty()) {
             throw new IllegalArgumentException("sinks must be a non-empty array");
         }
-        boolean vectors = false;
         for (JsonNode sink : dag.path("sinks")) {
             String schema = sink.path("schema").asText();
             if (!VectorJob.SCHEMA.equals(schema) && !SeriesJob.SCHEMA.equals(schema)) {
@@ -35,30 +52,28 @@ public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<Stri
                     throw new IllegalArgumentException("unsupported sink " + sink.path("topic").asText()
                             + ": a vector sink must read align.vector");
                 }
-                vectors = true;
-            }
-        }
-        List<SeriesJob> series = SeriesJob.of(dag, layout.episodes(), layout.clean(), layout.features(), layout.synthetic(), specHash);
-        List<VectorJob> jobs = List.of();
-        if (vectors) {
-            jobs = VectorJob.of(dag, layout.domain(), layout.episodes()).jobs();
-            for (VectorJob job : jobs) {
-                if (job.seriesIds().isEmpty()) {
-                    throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)."
-                            + " Load the series from the TS inventory, then build the vector.");
-                }
             }
         }
         Set<String> names = new HashSet<>();
-        List<String> sinkNames = new ArrayList<>();
-        jobs.forEach(j -> sinkNames.add(j.name()));
-        series.forEach(j -> sinkNames.add(j.name()));
-        for (String name : sinkNames) {
+        for (JsonNode sink : dag.path("sinks")) {
+            String name;
+            if (SeriesJob.SCHEMA.equals(sink.path("schema").asText())) {
+                String id = sink.path("signal").path("id").asText();
+                if (id.isBlank()) continue;
+                name = id.replaceAll("[^A-Za-z0-9._-]", "-");
+                if (sink.path("signal").path("grade").asText().equals("features")) name += "--" + sink.path("from").asText();
+            } else {
+                String topic = sink.path("topic").asText();
+                String prefix = "tsx." + layout.domain() + ".smart.";
+                String suffix = ".vectors.v1";
+                name = topic.startsWith(prefix) && topic.endsWith(suffix)
+                        ? topic.substring(prefix.length(), topic.length() - suffix.length()) : topic;
+            }
             if (!names.add(name)) {
                 throw new IllegalArgumentException("duplicate sink identity " + name);
             }
         }
-        return new DagPlan(jobs, series, List.of());
+        return nodes;
     }
 
     private static Map<String, JsonNode> validateNodes(JsonNode document) {

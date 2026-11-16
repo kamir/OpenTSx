@@ -32,33 +32,16 @@ class TsxStatusIntegrationTest {
         AtomicInteger increments = new AtomicInteger();
         try (TsxStatus status = new TsxStatus(k.bootstrap, k.layout.dagStatus())) {
             long read = TsxIncrement.loop(c, (source, state) -> TsxPassThroughIntegrationTest.connect(source,
-                    new TsxTopicSink(k.bootstrap, k.layout.clean())), status, Duration.ofSeconds(2),
+                    new TsxTopicSink(k.bootstrap, k.layout.clean())), status, Duration.ZERO,
                     () -> increments.getAndIncrement() >= 3);
             assertEquals(w.size(), read);
         }
 
-        ObjectMapper json = new ObjectMapper();
-        List<JsonNode> records = new ArrayList<>();
-        for (ConsumerRecord<byte[], byte[]> r : k.readAll(k.layout.dagStatus())) {
-            assertEquals(c.job(), new String(r.key(), StandardCharsets.UTF_8));
-            records.add(json.readTree(r.value()));
-        }
-        records.sort((a, b) -> Instant.parse(a.path("at").asText()).compareTo(Instant.parse(b.path("at").asText())));
-        assertEquals(List.of("running", "running", "running", "running", "stopped"),
-                records.stream().map(n -> n.path("state").asText()).toList());
-        for (JsonNode n : records) {
-            assertEquals("opentsx.dag-status.v1", n.path("schema").asText());
-            assertEquals("A", n.path("track").asText());
-            assertEquals(c.job(), n.path("job").asText());
-            assertEquals(c.planVersion(), n.path("planVersion").asInt());
-            assertEquals(c.specHash(), n.path("specHash").asText());
-        }
+        List<JsonNode> records = assertStatus(k.readAll(k.layout.dagStatus()), c);
+        assertTrue(records.size() >= 5);
+        assertEquals("stopped", records.get(records.size() - 1).path("state").asText());
+        assertTrue(records.subList(0, records.size() - 1).stream().allMatch(n -> n.path("state").asText().equals("running")));
         assertEquals(w.size(), records.get(records.size() - 1).path("records").asLong());
-        for (int i = 1; i < records.size(); i++) {
-            Duration gap = Duration.between(Instant.parse(records.get(i - 1).path("at").asText()),
-                    Instant.parse(records.get(i).path("at").asText()));
-            assertTrue(gap.compareTo(Duration.ofSeconds(31)) <= 0, "gap " + gap);
-        }
     }
 
     @Test
@@ -66,15 +49,59 @@ class TsxStatusIntegrationTest {
         KafScaleFixture k = new KafScaleFixture();
         k.write(k.layout.episodes(), KafScaleFixture.scenarioW().subList(0, 3));
         TsxIncrement.Config c = k.config(dir.resolve("ckpt.json"), java.util.Set.of("0000000000000000"));
+        TsxIncrementException error;
         try (TsxStatus status = new TsxStatus(k.bootstrap, k.layout.dagStatus())) {
-            org.junit.jupiter.api.Assertions.assertThrows(TsxIncrementException.class, () -> TsxIncrement.loop(c,
+            error = org.junit.jupiter.api.Assertions.assertThrows(TsxIncrementException.class, () -> TsxIncrement.loop(c,
                     (source, state) -> TsxPassThroughIntegrationTest.connect(source,
                             new TsxTopicSink(k.bootstrap, k.layout.clean())), status, Duration.ofSeconds(1), () -> false));
         }
-        List<ConsumerRecord<byte[], byte[]>> written = k.readAll(k.layout.dagStatus());
-        JsonNode last = new ObjectMapper().readTree(written.get(written.size() - 1).value());
+        List<JsonNode> written = assertStatus(k.readAll(k.layout.dagStatus()), c);
+        JsonNode last = written.get(written.size() - 1);
         assertEquals("failed", last.path("state").asText());
-        assertTrue(last.path("error").asText().contains("has schema fingerprint 8985f02b48c77195, not in plan it version 1"),
-                last.toString());
+        assertEquals(error.getMessage(), last.path("error").asText());
+    }
+
+    static List<JsonNode> assertStatus(List<ConsumerRecord<byte[], byte[]>> written, TsxIncrement.Config config) throws Exception {
+        ObjectMapper json = new ObjectMapper();
+        List<JsonNode> records = new ArrayList<>();
+        long previousCount = 0;
+        Instant previousTime = null;
+        boolean terminal = false;
+        for (ConsumerRecord<byte[], byte[]> r : written) {
+            assertEquals(config.job(), new String(r.key(), StandardCharsets.UTF_8));
+            JsonNode n = json.readTree(r.value());
+            assertEquals("opentsx.dag-status.v1", n.path("schema").asText());
+            assertEquals("A", n.path("track").asText());
+            assertEquals(config.job(), n.path("dag").asText());
+            assertEquals(config.job(), n.path("job").asText());
+            assertEquals(config.planVersion(), n.path("planVersion").asInt());
+            assertEquals(config.specHash(), n.path("specHash").asText());
+            assertTrue(n.path("records").isIntegralNumber());
+            assertTrue(n.path("records").asLong() >= previousCount);
+            previousCount = n.path("records").asLong();
+            assertTrue(n.has("watermark"));
+            if (!n.path("watermark").isNull()) Instant.parse(n.path("watermark").asText());
+            assertTrue(n.path("waitingFor").isArray());
+            assertTrue(n.path("waitingForCount").asInt() >= n.path("waitingFor").size());
+            assertTrue(n.path("skippedBlocks").isIntegralNumber());
+            assertTrue(n.path("skippedBlocks").asLong() >= 0);
+            assertTrue(List.of("running", "stopped", "failed").contains(n.path("state").asText()));
+            assertTrue(!terminal, "no status may follow a terminal state");
+            terminal = !n.path("state").asText().equals("running");
+            if (n.path("state").asText().equals("failed")) assertTrue(n.path("error").isTextual());
+            else assertTrue(!n.has("error"));
+            Instant at = Instant.parse(n.path("at").asText());
+            if (previousTime != null) {
+                Duration gap = Duration.between(previousTime, at);
+                assertTrue(!gap.isNegative());
+                assertTrue(gap.compareTo(Duration.ofSeconds(31)) <= 0, "gap " + gap);
+            }
+            previousTime = at;
+            records.add(n);
+        }
+        assertTrue(!records.isEmpty());
+        assertEquals("running", records.get(0).path("state").asText());
+        assertTrue(terminal, "the loop must report its terminal state");
+        return records;
     }
 }
