@@ -5,6 +5,7 @@ import org.apache.wayang.core.mapping.Mapping;
 import org.apache.wayang.core.optimizer.channels.ChannelConversion;
 import org.apache.wayang.core.platform.Platform;
 import org.apache.wayang.core.plugin.Plugin;
+import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.java.channels.ChannelConversions;
 import org.apache.wayang.java.mapping.CollectionSourceMapping;
 import org.apache.wayang.java.mapping.LocalCallbackSinkMapping;
@@ -22,9 +23,12 @@ import java.util.Set;
  */
 public final class TsxJavaPlugin implements Plugin {
 
+    static final String DEFAULTS = "wayang-tsx-defaults.properties";
+
     @Override
     public Collection<Mapping> getMappings() {
-        return List.of(new CollectionSourceMapping(), new MapMapping(), new LocalCallbackSinkMapping());
+        return List.of(new CollectionSourceMapping(), new MapMapping(), new LocalCallbackSinkMapping(),
+                new TsxTopicSourceMapping(), new TsxTopicSinkMapping());
     }
 
     @Override
@@ -39,5 +43,6 @@ public final class TsxJavaPlugin implements Plugin {
 
     @Override
     public void setProperties(Configuration configuration) {
+        configuration.load(ReflectionUtils.loadResource(DEFAULTS));
     }
 }
