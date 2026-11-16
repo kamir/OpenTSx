@@ -151,6 +151,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Changed
 
+- Related-work study ([`docs/research/01-RELATED-WORK-AND-POSITIONING.md`](docs/research/01-RELATED-WORK-AND-POSITIONING.md)):
+  claim C6, analysis results as typed records with a shared identity, checked against 43 counterparts in five families
+  and a separate search for combinations; it holds as a combination, with AiiDA, hctsa, OGC/ISO OMS, WaterML 2.0,
+  Bazel REAPI and GA4GH VRS as the closest work and four stated limits. The Wayang status now reflects the
+  `opentsx-wayang` module: milestones A1 to A3.1 of TASK-020 on single sites, federation (A4) open.
+
 - User manual 11.3 no longer lists `overall_sync` above 1 as a known issue of `EventSynchronization`: the local
   window of Quiroga et al. fixed it (93499604). It describes the local window and `surrogate_sync` instead.
 - TASK-011 (data model v2, KafScale, stores, wind farm, statistics, OpenMetadata, retrieval) is completed: all seven
