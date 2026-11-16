@@ -5,8 +5,23 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), tasks in
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-16.
 
-Status: phase A0. The module holds the Wayang dependency setup and `TsxJavaPlugin`. No OpenTSx operator runs on
-Wayang yet.
+The module contains the Wayang dependency setup, `TsxJavaPlugin`, and the pure
+Java `TsxPairEs` kernel. The kernel has no Wayang types and does not depend on
+`opentsx-core`.
+
+## Compute pair event synchronisation
+
+`org.opentsx.wayang.ops.TsxPairEs` detects local maxima above a population
+standard-deviation threshold, computes directional event synchronisation,
+and calculates a surrogate baseline by shuffling inter-event intervals.
+`Mulberry32` supplies the repeatable shuffle sequence. The implementation
+follows `event_sync.py` and the web workbench's `es.ts`.
+
+The regression tests load the repository's shared
+`docs/datamodel-2026/testvectors/pair-es.v1.json` directly. All eight cases
+require identical event lists and an absolute error below `5e-13` for
+`q_total`, `q_ab`, `q_ba`, and `q_rand`. The random sequence is compared
+exactly.
 
 ## Use the plugin
 
