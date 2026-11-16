@@ -17,6 +17,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   platform. The owner decisions D-T1 to D-T12 are recorded in TASK-020, and concept 20 documents the checked
   security features of KafScale v1.6.0 (no TLS or SASL on the Kafka listener; KafScale ACLs).
 
+- `ESCalcTest` (`opentsx-core`) covers the event synchronization of `ESCalc` and `ESCalc2`: identical series give
+  `(M - 2) / (M - 1)`, a series that follows the first gives a negative delay, an event halfway between two events of
+  the other series is not matched twice, and sync and delay stay in [0, 1] and [-1, 1] on random event series.
+
 - Related-work study for the IEEE paper ([`docs/research/01-RELATED-WORK-AND-POSITIONING.md`](docs/research/01-RELATED-WORK-AND-POSITIONING.md)):
   188 candidates in nine clusters, high and medium candidates checked against primary sources on 2026-11-16, a comparison
   matrix over 14 dimensions, a concept mapping to commercial historians and cloud services, a claim check of what
