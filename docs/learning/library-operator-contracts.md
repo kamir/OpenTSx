@@ -8,13 +8,19 @@ for a Python example. The [lesson manifest](library-operators.v1.json) contains 
 These families supplement the UI operator lessons. Helper methods belong to their family rather than becoming
 independent operators. A library implementation does not imply a deployed DAG, Wayang mapping or Rust kernel.
 
-The current Java Wayang plugin separately registers clean-chain and window-statistics mappings through
+The current Java Wayang plugin separately registers clean-chain and
+window-statistics mappings through
 [`TsxOperatorMappings`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxOperatorMappings.java).
-`TsxSeriesChain` delegates the seven clean operations to `SeriesStream`; `TsxStatsWindow` delegates statistics
-to `StatsEngine`. The
-[`clean vectors`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCleanVectorsTest.java)
-check clean values through an actual Wayang plan. Pair kernels and the SAX, segmentation and data-quality
-reference implementations remain separate from registered execution mappings.
+`TsxSeriesChain` delegates the seven clean operations to `SeriesStream`;
+`TsxStatsWindow` delegates statistics to `StatsEngine`. The [`clean
+vectors`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCleanVectorsTest.java)
+check clean values through an actual Wayang plan. The separate
+[`TsxRetrievalMappings`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java)
+register threshold/extremum segmentation, SAX annotation and data-quality
+findings. The
+[`TsxJavaPlugin`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java)
+also identifies the implemented vector and pair mappings. A numerical kernel
+alone remains insufficient evidence of a mapping.
 
 The local [`DagToWayang`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java)
 compiler validates the current catalog and constructs fused clean-series plans with topic sinks. Its current
@@ -74,6 +80,14 @@ the exact final distance. Normalization, PAA and breakpoint helpers are part of 
 [`sax-word.v1.json`](../datamodel-2026/testvectors/sax-word.v1.json) is replayed by
 [`SaxWordVectorsTest`](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java).
 
+The registered `TsxSaxWord(w,a,specHash)` normalizes the episode values by
+default. `TsxSaxWord.normalized(...)` skips that step for already normalized
+input. Both fill `EpisodeSummary.sax`, preserve raw values and timestamps, and
+derive an episode ID from the series, time bounds and supplied hash. The source
+episode becomes the parent. `TsxSaxVectorsTest` runs all seven shared cases
+through actual Wayang plans. An episode is atomic input; splitting its values
+into new episodes changes the SAX workload.
+
 ## Compute a MASS distance profile
 
 `Mass.distanceProfile(query, series)` returns one z-normalized Euclidean distance per candidate window.
@@ -117,6 +131,13 @@ lookahead; an observed high value alone is not yet a finalized segment.
 [`segment-extremum.v1.json`](../datamodel-2026/testvectors/segment-extremum.v1.json) is replayed by
 [`extremum vectors`](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java).
 
+The registered `TsxSegment` mapping also accepts this strategy. Its incremental
+constructor saves buffer, source and detector state under the supplied node ID;
+`TsxSegment.bounded(...)` flushes completed input. `TsxSegmentVectorsTest` and
+`TsxStreamEqualsBatchTest` replay the shared extremum cases through Wayang with
+state restored between chunks. The `TsxIncrement` plan callback supplies the
+state object.
+
 ## Segment threshold phases
 
 `Segmenter.threshold(direction, enter, exit, pre, post, minDuration, maxDuration)` applies hysteresis.
@@ -127,6 +148,13 @@ agreement with bounded segmentation, including anchor and [0,5,5,2] output value
 contract and is replayed by
 [`threshold vectors`](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java).
 It does not define the browser's simpler sample-neighborhood threshold operator.
+
+The same registered `TsxSegment` mapping accepts the threshold strategy.
+`StreamingSegmenter.writeState` and `readState` retain active phases, pending
+output, retained samples, quality and source references. The checkpoint tests
+preserve raw NaN bits and reject incompatible or unreadable state without
+replacing live state. Snapshot support for threshold and extremum does not
+establish fixed-count or fixed-duration mappings.
 
 ## Compute window statistics
 
@@ -161,6 +189,19 @@ Distinguish an implausible measurement from a valid measurement outside the syst
 [`DqResultVectorsTest`](../../opentsx-stats/src/test/java/org/opentsx/stats/DqResultVectorsTest.java).
 These checks evaluate `SeriesStats`; they are distinct from the raw-value `dq.checks` clean-chain transform.
 
+The registered `TsxDqResult` evaluates selected checks with an explicit optional
+clock and emits `opentsx.signal.v1` JSON. Messages use `Locale.ROOT`; the
+German-default-locale regression checks the same punctuation as the shared
+vectors. A non-finite library result becomes JSON `null`. Each finding keeps its
+actual window-end event time. Its deterministic ID includes the check and window
+bounds in addition to job, site, series, kind and event time, so different
+checks and window widths remain distinct. The signal schema and S6.2 of
+[specification
+20](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids)
+define that contract. `TsxDqVectorsTest` replays all seven shared cases through
+Wayang. A whole `SeriesStats` record is atomic input; native execution
+availability does not extend the current clean-DAG compiler to DQ sinks.
+
 ## Decode Avro records
 
 `OpenTsxAvro.encode(record)` and `decode(bytes, Episode.class)` preserve the v2 record contract.
@@ -183,6 +224,14 @@ The Java sink uses the KafScale producer settings, series-ID keys and acknowledg
 Constructing this object is not a successful write. Wire conversion and client-setting unit tests run offline;
 end-to-end production and crash tests need a disposable broker. Acknowledgements do not provide exactly-once delivery.
 
+The sink's `Object` channel accepts supported Avro records or validated
+`opentsx.signal.v1` JSON, with a series-ID key and schema header. JSON signal
+batches are fully validated before sending any member. Avro records remain
+streamed: an upstream failure can leave a written prefix that recovery repeats
+identically. `TsxTopicSinkStreamingTest` checks both behaviors without a broker;
+`TsxSignalSinkIntegrationTest` verifies JSON publication and an invalid batch
+with zero writes on a disposable broker. JSON signals are not Avro records.
+
 ## Persist an increment checkpoint
 
 `TsxCheckpoint(job, planVersion, specHash, topic, next, state).write(path)` persists next offsets and per-node
@@ -194,6 +243,12 @@ The starter passes `Map.of()` as its sixth argument. Nonempty state is covered b
 store `SeriesStream.state()` JSON and statistics store Base64 engine state in the per-node map.
 They do not implement the proposed orchestration state-ABI migration, fenced ownership or deployment grant policy.
 Each assigned whole topic retains all of its internal positions; the checkpoint file is not a partition scheduler.
+
+For threshold and extremum segmentation, the per-node map contains Base64
+segmenter state. It includes retained source records, timestamps, raw sample
+bits, quality and pending detector work. The direct checkpoint starter remains
+an empty-state example; segmentation and Wayang vector tests separately exercise
+nonempty snapshots, restoration between chunks and bounded final flushing.
 
 ## Validate a whole-topic execution assignment
 
