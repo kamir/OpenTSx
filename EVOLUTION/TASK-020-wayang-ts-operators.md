@@ -148,6 +148,8 @@ vector cases, and the four named parameter-message tests to execute successfully
   with every series of input `b`, episode by episode, by the rules of
   `pairs.ts` (pairing, windows, clock, coverage); one result episode per
   field and pair range, id of S6.2 (A3.2).
+- [x] `pair.es` on Wayang: the second method of `TsxPair`, over the kernel
+  `ops/TsxPairEs` (A3.3).
 - [ ] Catalog `tsx-catalog/1` frozen.
 
 Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
@@ -168,6 +170,12 @@ failures). An episode waits in `TsxState` until every series of the other
 input has passed its end. One difference to the workbench: without `every`
 the clock is the larger sampling interval of the two paired episodes, not of
 the two whole series, because a continuing input has no whole series.
+
+Status of A3.3 on 2026-11-16, JDK 21: the four `pair.es` cases with series run
+through a Wayang plan with `TsxPairEsWayangTest` (`q_total`, `q_ab`, `q_ba`,
+`q_rand` within `5e-13`), also with A in a later increment; the four cases with
+event lists only run on the kernel (`TsxPairEsVectorsTest`, events equal).
+Invalid settings fail with the messages of `es.ts` (9 tests, 0 failures).
 
 
 | # | Criterion | Proof | Data | Pass |

@@ -103,7 +103,11 @@ class TsxPairVectorsTest {
     }
 
     static TsxPair pair(Map<String, Object> params, TsxState state) {
-        return new TsxPair("x", "pair.xcorr", params, Set.of(A.getSeriesId()), Set.of(B.getSeriesId()), SPEC, state);
+        return pair("pair.xcorr", params, state);
+    }
+
+    static TsxPair pair(String method, Map<String, Object> params, TsxState state) {
+        return new TsxPair("x", method, params, Set.of(A.getSeriesId()), Set.of(B.getSeriesId()), SPEC, state);
     }
 
     private static Map<String, Episode> byField(List<Episode> out) {

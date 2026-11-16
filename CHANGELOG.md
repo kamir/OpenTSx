@@ -10,6 +10,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `opentsx-wayang` A3.3 (TASK-020): `pair.es` runs on Wayang as the second method of `TsxPair` (fields `q_total`,
+  `q_ab`, `q_ba`, `q_rand`; settings `sigma`, `tauMax`, `shuffles`, `seed` as in `es.ts`). The four shared cases with
+  series pass through a Wayang plan.
 - `opentsx-wayang` A3.2 (TASK-020): `pair.xcorr` runs on Wayang as `TsxPair`, with the pair windows of the workbench
   (`pairs.ts`) ported to `ops/TsxPairWindows`. Episodes of A and B are paired (`same` or `intersect`) as they arrive
   and wait in the checkpoint for their counterparts; each pair range gives one episode per field
