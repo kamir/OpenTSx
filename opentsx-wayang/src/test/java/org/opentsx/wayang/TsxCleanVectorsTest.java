@@ -110,4 +110,22 @@ class TsxCleanVectorsTest {
         }
         assertEquals(15, cases);
     }
+
+    @Test
+    void progressIncludesRestoredWatermarkWaitingSeriesAndDuplicateBlocks() throws Exception {
+        JsonNode c = new ObjectMapper().readTree(VECTORS.toFile()).path("cases").get(0);
+        TsxSeriesChain first = chain(c);
+        Episode input = episode(c);
+        JavaTsxSeriesChain.run(first, List.of(input));
+        TsxState restored = new TsxState(first.state().snapshot());
+        TsxSeriesChain next = new TsxSeriesChain(first.node(), first.nodes(), first.target(),
+                List.of(RAW.getSeriesId(), "missing"), restored);
+        JavaTsxSeriesChain.run(next, List.of());
+        assertEquals(org.opentsx.model.Micros.of(input.getTEnd()), restored.progress().watermark());
+        assertEquals(List.of("missing"), restored.progress().waitingFor());
+        assertEquals(0, restored.progress().skippedBlocks());
+        JavaTsxSeriesChain.run(next, List.of(input));
+        assertEquals(1, restored.progress().skippedBlocks());
+        assertEquals(List.of("missing"), restored.progress().waitingFor());
+    }
 }

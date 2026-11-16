@@ -722,7 +722,7 @@
         "Floating-point merges are not bitwise associative.",
         "DDSketch relative-error claims exclude its zero bucket and collapsed tails unless separately qualified.",
         "Duplicate suppression covers only episode IDs retained within Config.dedupCapacity; an evicted ID can be counted again.",
-        "The registered Wayang Java wrapper emits windows closed by input progress and saves open state; it does not call flush or emitGlobal automatically."
+        "The three-argument TsxStatsWindow constructor keeps incremental state without final flushing; bounded() flushes and includes changed GLOBAL, while window() flushes then selects its explicit windows."
       ],
       "references": {
         "manual": [
@@ -736,14 +736,17 @@
           "opentsx-stats/src/main/java/org/opentsx/stats/StatsEngine.java#L132",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#TsxStatsWindow",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxStatsWindow.java#run",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#getMappings"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#getMappings",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#bounded",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#window"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L54",
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L86",
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsWindowVectorsTest.java#sharedVectors",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#theSketchOfAClosedWindowHasTheBytesOfTheSharedVector",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#anOpenWindowContinuesInTheNextIncrementFromTheSavedState"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#anOpenWindowContinuesInTheNextIncrementFromTheSavedState",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/stats-window.v1.json"

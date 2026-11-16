@@ -16,6 +16,12 @@ to `StatsEngine`. The
 check clean values through an actual Wayang plan. Pair kernels and the SAX, segmentation and data-quality
 reference implementations remain separate from registered execution mappings.
 
+The local [`DagToWayang`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java)
+compiler validates the current catalog and constructs fused clean-series plans with topic sinks. Its current
+physical compilation accepts clean series sinks, not statistics sinks or federated plans. Statistics parameter
+validation and the separately constructible `TsxStatsWindow` operator do not expand that compiler scope.
+Remote deployment, authorization and Rust numerical execution remain outside this local API.
+
 ## Analyze DFA
 
 Use exported `DFA(polynom_order=1).analyze(values, scales=scales)` or pass a `TimeSeriesObject`.
@@ -133,13 +139,17 @@ declared numerical criteria; the zero bucket and collapsed tails do not support 
 
 [`stats-window.v1.json`](../datamodel-2026/testvectors/stats-window.v1.json) is replayed by
 [`StatsWindowVectorsTest`](../../opentsx-stats/src/test/java/org/opentsx/stats/StatsWindowVectorsTest.java).
-The registered Java Wayang `TsxStatsWindow` uses `StatsEngine.Config`, emits windows closed by episode progress,
-and saves open engine state by node ID in `TsxState`. Its current execution does not automatically call `flush()`
-or `emitGlobal()`. The direct library starter calls `emitGlobal()` explicitly. The browser's `stats.window`
-projection still has its own `window`/`field` parameter contract; a Java statistics mapping does not resolve that
-UI export translation. See
+The registered Java Wayang `TsxStatsWindow` uses `StatsEngine.Config` and accepts episodes or observations.
+The three-argument constructor is incremental: it emits windows closed by input progress and saves engine state
+by node ID in `TsxState`, without final flushing. `TsxStatsWindow.bounded(...)` calls `engine.flush()`, including
+changed GLOBAL statistics. `TsxStatsWindow.window(...)` also flushes, then returns only the requested aligned
+series windows, constructing an empty record when a requested window has no data; it rejects saved incremental
+state. The direct library starter calls `emitGlobal()` explicitly. The browser's `stats.window` projection still
+has its own `window`/`field` parameter contract; these Java modes do not resolve that UI export translation. See
 [`TsxStatsWindowTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java)
-for sketch-byte and cross-increment state checks.
+for sketch-byte and cross-increment state checks. The
+[`Wayang statistics vectors`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsVectorsTest.java)
+replay all five shared cases through actual plans, including bounded and explicit-window modes.
 
 ## Evaluate data quality
 

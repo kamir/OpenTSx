@@ -268,6 +268,13 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 
 ### 5.4 Translation path
 
+The A2 implementation in `opentsx-wayang` compiles local clean episode DAGs with
+`DagToWayang.compile`. It validates parameters from `systems/processors/` and
+fuses consecutive clean nodes into `TsxSeriesChain` as specified in S2.3.
+`TsxStatsWindow` is available through the Java API for incremental episodes and
+observations, completed inputs, and explicit keyed windows including empty
+input. Statistics sink translation and federation are outside this compiler.
+
 ```mermaid
 flowchart LR
   WB["Web workbench<br/>opentsx.dag.v1 / v2"] --> BE["SaaS backend<br/>authorization"]
@@ -282,9 +289,11 @@ flowchart LR
 
 1. The workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` when the flow has a series sink, as today. There is no
    second DAG format.
-2. The proposed `DagToWayang` builds a `WayangPlan` with the Java API: one `TsxTopicSource` per input topic and one
-   `TsxTopicSink` per sink. It lowers a consecutive run of `CleanChain.OPS` nodes to one `TsxSeriesChain`; other
-   nodes use their admitted logical operators. It validates as `DagPlan` does today and preserves S2.3 state identity.
+2. `DagToWayang.compile` validates the local clean-series path through `DagPlan`; processor descriptions supply
+   parameter types, bounds, enums and defaults. Its `plan` method connects the increment's `TsxTopicSource` to
+   one fused `TsxSeriesChain` and a `TsxTopicSink` for the selected series sink. The run's last node id identifies
+   its checkpoint state, as specified in S2.3. Statistics sink translation and remote fragment compilation remain
+   outside this local compiler.
 3. The plugin does not use `wayang-api-json`: that API has no Kafka operator and compiles Scala source received in
    the request (section 3.1), which a site must not accept.
 4. Single site: `WayangContext` with `TsxJavaPlugin` runs the plan in the driver JVM. The plugin registers only

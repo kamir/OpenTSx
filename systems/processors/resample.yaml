@@ -1,0 +1,18 @@
+schema: opentsx.processor.v1
+id: resample
+version: 1
+kind: transformer
+title: Resample
+description: Aggregates samples into windows on the epoch clock.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: every, type: duration, required: true, editAs: seconds }
+  - { name: agg, type: enum, values: [MEAN, MIN, MAX, LAST], default: MEAN }
+semantics: { needs: window, deterministic: true, keeps: [unit], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+state: { kind: windowed, key: series }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

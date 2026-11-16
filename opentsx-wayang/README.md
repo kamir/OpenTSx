@@ -9,7 +9,8 @@ Status: phase A2. The module reads and writes KafScale topics from Wayang plans,
 checkpoint, and runs the clean chain and the window statistics of OpenTSx as Wayang operators. It also contains the
 pure Java `TsxPairXcorr` and `TsxPairEs` kernels, whose APIs have no Wayang types and do not depend on
 `opentsx-core`. The kernels have no registered Wayang execution mappings yet. Shared reference vectors are checked
-by the statistics and retrieval modules.
+by the statistics and retrieval modules. Track A also checks all five statistics
+cases through Wayang plans.
 
 ## Compute pair cross-correlation
 
@@ -63,7 +64,38 @@ new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new Way
 those SDKs, so a plan built with `Java.basicPlugin()` fails with
 `NoClassDefFoundError: software/amazon/awssdk/core/ResponseInputStream`. `TsxJavaPlugin` registers the Java platform,
 its channel conversions and the mappings OpenTSx uses: collection source,
-map, local callback sink, and the OpenTSx topic source and sink.
+map, local callback sink, the OpenTSx topic source and sink, clean chains, and window statistics.
+
+## Compile a local clean DAG
+
+You need a valid series DAG, its SHA-256 hash, the domain's `TopicLayout`, and the
+processor descriptions in `systems/processors/`.
+`DagToWayang.compile(dag, layout, specHash, catalogDirectory)` validates structure
+through `DagPlan`, validates parameters against those descriptions, and applies
+optional defaults to a copy. Required parameters remain required when a UI default
+exists. Type, range, and enum errors use messages 13 to 16 of specification S2.5.
+
+Read `series()` to select a sink, then pass `plan(bootstrap, sinkName)` to
+`TsxIncrement.run` or `TsxIncrement.loop`. Each consecutive clean chain becomes
+one `TsxSeriesChain`, preserving the final series key and episode identity. This
+compiler accepts local episode sinks; it does not compile statistics sinks or
+federated plans. `DagToWayang.parameters` also validates statistics parameters
+without building a sink.
+
+## Compute window statistics
+
+`new TsxStatsWindow(node, config, state)` accepts `Episode` and `Observation`
+records and retains open `StatsEngine` windows across increments. Use this mode
+for a continuing input. `TsxStatsWindow.bounded(node, config, state)` flushes the
+engine after a complete input, including `GLOBAL` output. Empty engine input
+produces no records.
+
+`TsxStatsWindow.window(node, config, state, seriesId, startMicros)` requests one
+explicit window per configured duration for a known series. The start must be
+epoch-aligned for every duration. This bounded mode emits an empty
+`StatsAccumulator` window when no samples arrived, with NaN moments and an empty
+sketch. It rejects other series, samples outside the requested windows, and
+incremental saved state. These Java execution modes do not add DAG parameters.
 
 ## Run a plan in increments
 
@@ -74,7 +106,7 @@ checkpoint only after every sink record was acknowledged. A failed plan leaves t
 ```java
 TsxIncrement.Config config = new TsxIncrement.Config(bootstrap, "job", 1, specHash, layout.episodes(),
         Set.of("8985f02b48c77195"), "earliest", Path.of("state/job.checkpoint.json"));
-TsxIncrement.run(config, source -> {
+TsxIncrement.run(config, (source, state) -> {
     TsxTopicSink sink = new TsxTopicSink(bootstrap, layout.clean());
     source.connectTo(0, sink, 0);
     return sink;
@@ -93,6 +125,13 @@ TsxIncrement.run(config, source -> {
 | `TsxStatus` | `opentsx.dag-status.v1` records on `tsx.<domain>.dag-status.v1` with `track` `A`, `job`, `planVersion` |
 
 The source holds the records of one increment in memory. Choose the increment so that one range fits.
+
+The loop reports every state change and sends a heartbeat every 30 seconds while
+an increment runs or the loop waits. Status includes `watermark`, `waitingFor`,
+and `skippedBlocks` from clean streams. A null watermark means no progress is
+known. `records` counts committed input records. A heartbeat failure prevents
+the next checkpoint commit. A failed status write is suppressed on an existing
+processing exception so that the processing error remains the primary cause.
 
 The checkpoint file is JSON with these fields (`TsxCheckpoint.java`):
 
@@ -140,8 +179,21 @@ KAFSCALE_BOOTSTRAP=127.0.0.1:39092 mvn -B -ntp -pl opentsx-wayang -am test
 ```
 
 Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`,
-`TsxFingerprintIntegrationTest`, `TsxCleanIncrementsIntegrationTest` and `TsxStatusIntegrationTest` must show
+`TsxFingerprintIntegrationTest`, `TsxCleanIncrementsIntegrationTest`, `TsxCleanParityIntegrationTest`,
+and `TsxStatusIntegrationTest` must show
 executed tests with zero failures, errors and skips.
+
+`TsxCleanParityIntegrationTest` runs one clean DAG over W, then deploys the same
+document to the real `VectorProcessor` through the control topic. It compares
+the two disjoint output ranges for identical episode ids, timestamps, and values.
+It also checks the Track A status records with the S5.4 assertions of
+`TsxStatusIntegrationTest`. `TsxIncrementLoopTest` advances a virtual clock and
+scheduler to cover long increments and idle intervals without sleeping.
+
+`TsxCleanVectorsTest` runs all 15 shared clean cases directly and through Wayang.
+`TsxStatsVectorsTest` runs all five shared statistics cases through Wayang with
+exact field and sketch-byte comparisons. `DagToWayangErrorsTest` checks the
+four parameter messages exactly. CI rejects missing or skipped acceptance tests.
 
 ## Check the shared Java references
 

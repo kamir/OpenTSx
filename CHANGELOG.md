@@ -16,6 +16,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   (through `StatsEngine`). Operator state passes from increment to increment in the checkpoint. `TsxStatus` writes
   `opentsx.dag-status.v1` records with `track`, `job` and `planVersion`; `TsxIncrement.loop` runs increments at an
   interval. Specification S2.3 states why a run of clean operators is one Wayang operator.
+  `DagToWayang` validates local clean DAG parameters from processor descriptions.
+  Statistics accept episodes and observations, bounded streams, and explicit
+  keyed windows including empty input. All five shared statistics cases run
+  through Wayang. The parity test deploys the same clean DAG to the existing
+  `VectorProcessor` on KafScale and compares episode ids and values. Status
+  heartbeats run every 30 seconds during long increments and idle intervals,
+  include progress fields, and preserve the original error if reporting fails.
 
 - Five shared Java reference vector files for statistics windows, threshold
   and extremum segments, SAX words, and data-quality results. Owning-module

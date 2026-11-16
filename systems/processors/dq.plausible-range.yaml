@@ -19,8 +19,9 @@ dag: { op: dq.checks, fixed: { checks: [PLAUSIBLE_RANGE] } }
 runtimes:
   workbench: { status: available }
   processor: { status: available, note: "Series DAG op dq.checks in CleanChain." }
-  wayang: { status: planned, note: "TASK-020, phase A2" }
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
   rust: { status: planned, note: "TASK-020, phase B2" }
 state: { kind: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
 tolerance: { rel: 1.0e-12, abs: 1.0e-12 }
 ui: { group: stream, label: Plausible range }

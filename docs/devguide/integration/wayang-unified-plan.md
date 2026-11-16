@@ -9,7 +9,9 @@ You need [concept 20](../../datamodel-2026/20-WAYANG-TS-OPERATORS.md), its
 **Target: an OpenTSx UI DAG, admitted by the backend, compiled by Wayang and deployed as complete fragments to
 multiple Rust nodes.** Java supplies the reference kernels and an alternative execution runtime.
 The implemented foundation is [offline shared-contract validation](wayang-shared-contracts.md).
-The driver, Rust runner and multi-node rollout remain delivery work.
+The remote driver, Rust runner and multi-node rollout remain delivery work. The existing Java
+[`DagToWayang`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java) compiles local clean DAGs
+with episode sinks; it does not deploy remote fragments.
 
 ## Keep one logical DAG and two execution profiles
 
@@ -138,8 +140,8 @@ not substitute for the Rust deployment proof.
 
 This foundation branches from the exact PR #258 head and keeps its Wayang 1.1.1 dependency setup and
 `TsxJavaPlugin`. It does not replace them with the isolated research pilot's snapshot dependency or broad plugin.
-The feature branch integrates default-branch commit `9bcfbb5`, including merged PR #258, A1 topic I/O/checkpoints,
-A2 Java clean/statistics mappings, both pair kernels and the shared operator reference vectors.
+The feature branch integrates default-branch commit `a64c22a`, including merged PR #258, A1 topic I/O/checkpoints,
+A2 Java clean/statistics mappings, local clean DAG compilation, both pair kernels and shared operator vectors.
 Parallel operator and vector work remains independently owned.
 Required CI must be green before merge; this work performs no production deployment.
 

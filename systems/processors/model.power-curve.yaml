@@ -1,0 +1,21 @@
+schema: opentsx.processor.v1
+id: model.power-curve
+version: 1
+kind: model
+title: Wind power curve
+description: Computes wind-turbine power from a cubic reference curve.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: ratedKw, type: number, required: true, min: 0, description: "Rated power, strictly above zero" }
+  - { name: cutIn, type: number, required: true, min: 0 }
+  - { name: ratedWind, type: number, required: true, min: 0 }
+  - { name: cutOut, type: number, required: true, min: 0 }
+  - { name: count, type: number, default: 1, min: 1 }
+semantics: { needs: point, deterministic: true, keeps: [time, count], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+state: { kind: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
