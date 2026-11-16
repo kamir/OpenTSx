@@ -53,6 +53,8 @@ Operation:
 ## PFD runtime
 
 `pfd.DynamicTopologyJob` requires an explicit input topic and the existing `bootstrap.servers` configuration key.
+Set `group.id` through the same core `ConfigManager` to choose the Kafka consumer group. If omitted, it defaults
+to `opentsx-dynamic-job`. An empty or whitespace-only configured value fails before the Kafka source is built.
 It defaults to five-minute event-time windows with ten seconds of allowed out-of-order arrival.
 Append `--window-size <milliseconds>` after the descriptor filename or inline JSON to choose a positive integer
 window size. The default is `300000` milliseconds.

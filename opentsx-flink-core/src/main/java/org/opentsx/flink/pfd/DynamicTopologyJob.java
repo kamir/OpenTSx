@@ -143,10 +143,12 @@ public class DynamicTopologyJob {
         if ("KAFKA".equalsIgnoreCase(input.type)) {
             String brokers = ConfigManager.getInstance().getString("bootstrap.servers", null);
             PFDValidation.requireText(brokers, "bootstrap.servers");
+            String group = ConfigManager.getInstance().getString("group.id", "opentsx-dynamic-job");
+            PFDValidation.requireText(group, "group.id");
             KafkaSource<Observation> source = KafkaSource.<Observation>builder()
                     .setBootstrapServers(brokers)
                     .setTopics(input.topic)
-                    .setGroupId("opentsx-dynamic-job")
+                    .setGroupId(group)
                     .setStartingOffsets(OffsetsInitializer.earliest())
                     .setDeserializer(new ObservationSchema())
                     .build();
