@@ -4,7 +4,9 @@ OpenTSx started as a research toolkit for long-range correlations and extreme ev
 algorithms are still available:
 
 * in Python, through the `opentsx` top-level API (the recommended way, with verified examples below),
-* in Java, in `opentsx-core`, as tools on the 2.x `TimeSeriesObject` model.
+* in Java, in `opentsx-core`, as tools on the 2.x `TimeSeriesObject` model,
+* for `pair.es`, in `opentsx-wayang`, as pure Java methods over arrays of samples
+  or event times.
 
 The pure Java pair cross-correlation kernel is in `opentsx-wayang`; see
 [section 11.6](#116-compute-pair-cross-correlation-in-java).
@@ -64,6 +66,39 @@ al.), so `overall_sync` stays in [0, 1]; `tau_max` caps that window when set. `s
 reaches: the mean `overall_sync` against copies of `y` whose intervals between events are shuffled. Only an
 `overall_sync` clearly above it points to a coupling. The web workbench computes the same numbers per window with the
 operator "Event synchronisation" (`pair.es`, tab "Multi-variate Analysis").
+
+### Compute pair.es with Java
+
+You need JDK 17 or 21 and the `opentsx-wayang` module. The Java kernel is
+verified with JDK 21 on 2026-11-16. Import
+`org.opentsx.wayang.ops.TsxPairEs`. Call `detectEvents(values, sigma)` with a
+`double[]` of samples to get event tick indices. It uses the population
+standard deviation, excludes the first and last tick, and rejects a peak
+adjacent to a NaN gap.
+
+Call `eventSync(eventsA, eventsB, tauMax)` with two `double[]` event lists.
+Event times must be finite; the method sorts and deduplicates copies of the
+inputs. Set `tauMax` to `null` for uncapped local windows, or supply a
+nonnegative cap in the same units as the event times. A nonzero distance must
+be strictly below the local window and the cap.
+
+| `TsxPairEs.Sync` accessor | Meaning |
+| --- | --- |
+| `qTotal()` | Overall synchronization, `q_total` |
+| `qAb()` | A leads B, `q_ab` |
+| `qBa()` | B leads A, `q_ba` |
+
+Call `surrogateSync(eventsA, eventsB, shuffles, seed, tauMax)` for `q_rand`.
+Use at least one shuffle and a fixed `long` seed for repeatable results.
+For direct interval shuffling, import `org.opentsx.wayang.ops.Mulberry32`
+and pass a seeded instance to `isiShuffle(events, rand)`.
+
+`TsxPairEsVectorsTest` reads the shared `pair-es.v1.json` file directly. Its
+eight cases require equal event lists and an absolute error below `5e-13`
+for all four synchronization fields. All ten shared Mulberry32 values are
+compared exactly. See the
+[module instructions](../../opentsx-wayang/README.md#compute-pair-event-synchronisation)
+for the kernel and test entry point.
 
 ## 11.4 Return-interval statistics (RIS)
 

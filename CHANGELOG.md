@@ -13,6 +13,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Pure Java `pair.xcorr` in `opentsx-wayang`: lagged cross-correlation,
   signed absolute peak, link strength, and centred pair windows. The five
   shared vector cases and invalid-lag regression tests cover TASK-020 A3.2.
+- Pure Java `pair.es` in `opentsx-wayang`: local-maximum event detection,
+  directional synchronisation, interval-shuffle surrogates, and `Mulberry32`.
+  The eight shared vector cases and exact random sequence cover TASK-020 A3.3.
 
 - `opentsx-wayang` phase A1 (TASK-020): Wayang source and sink for KafScale topics (`TsxTopicSource`,
   `TsxTopicSink`) with manual assignment, a schema-fingerprint check per record and the KafScale client settings;

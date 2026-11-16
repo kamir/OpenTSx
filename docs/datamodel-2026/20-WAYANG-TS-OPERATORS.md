@@ -1,7 +1,8 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-16. The module has its Java platform plugin and
-> the pure Java `TsxPairXcorr` kernel. Checked against Apache
+> Status: **concept**, 2026-11-16. The module has its Java platform plugin,
+> KafScale source and sink, checkpointed increments, and the pure Java
+> `TsxPairXcorr` and `TsxPairEs` kernels. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -29,7 +30,7 @@ search, twin, causal analysis).
 
 | Item | State | Evidence |
 |---|---|---|
-| Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform; `TsxPairXcorr` is a pure Java pair kernel. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java` |
+| Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
@@ -246,7 +247,7 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 | SAX word | `Sax.java:16-49` (`breakpoints`, `word`, `mindist`), `Paa.java:9`; fills `EpisodeSummary.sax` | none | wrap; add vectors |
 | `align.vector` | `VectorAligner.java:99` (`align`); streaming in `VectorStream` | `align-vector.v1.json` | wrap |
 | `pair.xcorr` | `TsxPairXcorr` in `opentsx-wayang` follows the workbench port of `KreuzKorrelation` and `CCFunction` of kamir/WikiExplorer.NG, Apache License 2.0 | `pair-xcorr.v1.json`, read directly by `TsxPairXcorrVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
-| `pair.es` | Java `ESCalc.calc(int[], int[])` in `opentsx-core/src/main/java/org/opentsx/algorithms/eventsynchronisation/ESCalc.java:33`, integer event times; the workbench and Python (`python-package/opentsx/algorithms/event_sync.py:42`) follow `event_sync.py` with surrogates (`Mulberry32`, `isi_shuffle`) | `pair-es.v1.json` | port from `event_sync.py`; check `ESCalc` against the vectors before any reuse |
+| `pair.es` | `TsxPairEs` and `Mulberry32` in `opentsx-wayang` port `event_sync.py` and `es.ts`, including surrogate shuffles, without depending on `opentsx-core` | `pair-es.v1.json`, read directly by `TsxPairEsVectorsTest` | pure Java kernel; execution mapping is outside the kernel |
 | DFA | `opentsx-core/src/main/java/org/opentsx/algorithms/detrending/methods/DFA.java:5` (`extends DFACore`, `calc()`), stateful legacy API | none | later; needs vectors and a stateless entry point |
 
 ### 5.4 Translation path

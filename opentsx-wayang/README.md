@@ -7,8 +7,9 @@ OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java 
 
 Status: phase A1. The module reads and writes KafScale topics from Wayang
 plans and runs them in increments with a checkpoint. It also contains the
-pure Java `TsxPairXcorr` kernel, whose API has no Wayang types. The kernel
-has no registered Wayang execution mapping.
+pure Java `TsxPairXcorr` and `TsxPairEs` kernels, whose APIs have no Wayang
+types and do not depend on `opentsx-core`. The kernels have no registered
+Wayang execution mappings.
 
 ## Compute pair cross-correlation
 
@@ -30,6 +31,20 @@ sample to a clock tick before calling `compute`.
 The regression tests load the repository's shared
 `docs/datamodel-2026/testvectors/pair-xcorr.v1.json` directly. All five cases
 use an absolute error below `5e-13`.
+
+## Compute pair event synchronisation
+
+`org.opentsx.wayang.ops.TsxPairEs` detects local maxima above a population
+standard-deviation threshold, computes directional event synchronisation,
+and calculates a surrogate baseline by shuffling inter-event intervals.
+`Mulberry32` supplies the repeatable shuffle sequence. The implementation
+follows `event_sync.py` and the web workbench's `es.ts`.
+
+The regression tests load the repository's shared
+`docs/datamodel-2026/testvectors/pair-es.v1.json` directly. All eight cases
+require identical event lists and an absolute error below `5e-13` for
+`q_total`, `q_ab`, `q_ba`, and `q_rand`. The random sequence is compared
+exactly.
 
 ## Use the plugin
 
