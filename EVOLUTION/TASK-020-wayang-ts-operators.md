@@ -78,7 +78,7 @@ Status of A1 on 2026-11-16, run with JDK 21 against KafScale v1.6.0 built from s
 | A1.3 | met: `TsxClientSettingsTest`, 2 tests |
 | A1.4 | met: `TsxPassThroughIntegrationTest`, all episodes of W with identical bytes; a second increment reads 0 records |
 | A1.5 | met: `TsxCrashRecoveryIntegrationTest`, failures after 1, 150 and 299 of 300 episodes; no checkpoint after a failed increment; after the next increment every episode id present, every duplicate byte-identical |
-| A1.6 | met for the increment: `TsxFingerprintIntegrationTest`, `TsxIncrementException` carries the message of S3.2 exactly, no checkpoint, nothing written. The status record with state `failed` follows with the status writer in A2.5 |
+| A1.6 | met: `TsxFingerprintIntegrationTest`, `TsxIncrementException` carries the message of S3.2 exactly, no checkpoint, nothing written. `TsxStatusIntegrationTest` reports the failed increment with the same error |
 | A1.7 | open |
 
 The CI job "KafScale conformance" runs the three integration tests and fails when one of them is missing, skipped or
@@ -89,6 +89,9 @@ failed.
 - [x] New vector file `docs/datamodel-2026/testvectors/stats-window.v1.json`
   with its generator, `tools/java_operator_vectors.py`; five exact cases in
   `StatsWindowVectorsTest`.
+- [x] All six acceptance criteria: five shared statistics cases through Wayang,
+  deployed processor parity, S5.4 progress and heartbeats, and four exact
+  catalog parameter messages. README, manual, and regression tests are updated.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -104,11 +107,16 @@ Status of A2 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 | # | Result |
 |---|---|
 | A2.1 | met: `TsxCleanVectorsTest`, 15 of 15 cases through the Java execution operator and 15 of 15 through a Wayang plan |
-| A2.2 | open for Track A: `stats-window.v1.json` exists (#262) and `StatsWindowVectorsTest` in `opentsx-stats` replays it through `StatsEngine.onObservation` and `flush`. `TsxStatsWindow` feeds `StatsEngine.onEpisode`, which these cases do not exercise; a Track A replay needs episode cases or an observation input |
-| A2.3 | met: `TsxStatsWindowTest`, the bytes of `QuantileSketchTest.testVector` from a closed window, also when the window spans two increments and its state passes through `TsxState` |
-| A2.4 | met with a narrower comparison than written above: `TsxCleanIncrementsIntegrationTest` runs `dq.checks` and `resample` (PT7M, so a window stays open across increments) over W in three increments on KafScale and compares with `SeriesStream`, the computation of `VectorProcessor`, over all of W in one pass: same episode ids, same values, no duplicates. A deployed `VectorProcessor` on the same topic is not part of the test |
-| A2.5 | met: `TsxStatusIntegrationTest`, 2 tests: states `running` after each increment and `stopped` at the end with `track` `A`, `job`, `planVersion`, `specHash`, records read; largest gap ≤ 31 s; a failed increment reports `failed` with the fingerprint message |
-| A2.6 | moved to A4.1: the parameter messages need `DagToWayang` and the processor descriptions of catalog 1 (A3.6) |
+| A2.2 | met: `TsxStatsVectorsTest`, all five shared cases through real Wayang plans, with exact fields, non-finite values, quantiles, and sketch bytes. Input includes observations; explicit keyed windows cover empty input |
+| A2.3 | met: `TsxStatsVectorsTest` compares the canonical sketch hex exactly. `TsxStatsWindowTest` also checks a closed window across two increments with restored state |
+| A2.4 | met: `TsxCleanParityIntegrationTest` runs one clean DAG on W through Track A, then deploys the same document to `VectorProcessor` through KafScale's control topic. Separate output ranges have identical episode ids, timestamps, and values, with zero differences or duplicates. The three-increment state test also passes |
+| A2.5 | met: parity uses the S5.4 assertions of `TsxStatusIntegrationTest`, including progress fields, track A, terminal states, and gaps at most 31 s. Seven deterministic loop tests cover 125 s increments, 95 s idle intervals, heartbeat failures before checkpoints, and preservation of processing errors |
+| A2.6 | met: `DagToWayangErrorsTest` checks messages 13 to 16 exactly against processor descriptions. It also checks optional defaults, required fields, statistics limits, and catalog validation before parameter validation |
+
+Local verification on JDK 21: the KafScale reactor runs 402 tests with zero
+failures or errors and one conditional skip. All 86 Wayang tests execute with
+zero skips. CI requires nine Wayang acceptance classes, all five statistics
+vector cases, and the four named parameter-message tests to execute successfully.
 
 ### A3: remaining catalog 1, catalog freeze
 - [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).

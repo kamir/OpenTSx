@@ -35,8 +35,10 @@ public final class JavaTsxSeriesChain extends TsxSeriesChain implements JavaExec
         SeriesStream stream = saved == null ? new SeriesStream(chain, op.target(), op.expected())
                 : SeriesStream.restore(chain, op.target(), op.expected(), saved);
         List<Episode> out = new ArrayList<>();
+        op.state().progress(op.node(), stream.watermark(), stream.waitingFor(), stream.skippedBlocks());
         for (Episode e : in) {
             out.addAll(stream.add(e));
+            op.state().progress(op.node(), stream.watermark(), stream.waitingFor(), stream.skippedBlocks());
         }
         op.state().put(op.node(), stream.state());
         return out;

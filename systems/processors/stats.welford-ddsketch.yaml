@@ -1,0 +1,19 @@
+schema: opentsx.processor.v1
+id: stats.welford-ddsketch
+version: 1
+kind: transformer
+title: Window statistics
+description: Computes Welford moments and a DDSketch per series and time window.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: stats }
+params:
+  - { name: windows, type: list, default: [PT10M, PT1H], description: Positive ISO 8601 durations }
+  - { name: alpha, type: number, default: 0.01, min: 0, max: 1, description: "Relative error, strictly between zero and one" }
+semantics: { needs: window, deterministic: true, origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxStatsWindow }
+state: { kind: windowed, key: series }
+merge: { class: approximate, function: stats.chan-ddsketch, bound: relative error alpha }
+testvectors: docs/datamodel-2026/testvectors/stats-window.v1.json
