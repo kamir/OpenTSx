@@ -15,6 +15,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   tests replay all 31 cases exactly. `tools/java_operator_vectors.py`
   regenerates the files from the existing implementations (TASK-020 A2/A3).
 
+- Pure Java `pair.es` in `opentsx-wayang`: local-maximum event detection,
+  directional synchronisation, interval-shuffle surrogates, and `Mulberry32`.
+  The eight shared vector cases and exact random sequence cover TASK-020 A3.3.
+
 - `opentsx-wayang` phase A1 (TASK-020): Wayang source and sink for KafScale topics (`TsxTopicSource`,
   `TsxTopicSink`) with manual assignment, a schema-fingerprint check per record and the KafScale client settings;
   `TsxCheckpoint` and `TsxIncrement` run a plan over the offsets since the last checkpoint and write the new
