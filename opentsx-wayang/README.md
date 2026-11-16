@@ -92,6 +92,24 @@ epoch-aligned for every duration. This bounded mode emits an empty
 sketch. It rejects other series, samples outside the requested windows, and
 incremental saved state. These Java execution modes do not add DAG parameters.
 
+## Align series into vectors
+
+`TsxAlignVector` runs `align.vector` through `VectorStream` of `opentsx-retrieval`. A Wayang operator has at most two
+inputs, so mark every input with its name (`TsxTagged`) and join the inputs with `UnionAllOperator`. Give the operator
+the series ids of every input. Series of an input the operator does not know are ignored. The operator keeps open ticks
+in `TsxState`; set `flush` only for a complete input. `TsxVectorSink` writes the `opentsx.vector.v1` records to a vector
+topic, key = canonical text of the vector key, and returns after every record is acknowledged.
+
+```java
+MapOperator<SpecificRecord, TsxTagged> tag = new MapOperator<>(r -> new TsxTagged("raw", (Episode) r),
+        SpecificRecord.class, TsxTagged.class);
+TsxAlignVector align = new TsxAlignVector("v", "turbines", dag, specHash, params, Map.of("raw", ids), 0, false, state);
+TsxVectorSink sink = new TsxVectorSink(bootstrap, layout.smartVectors("turbines"));
+source.connectTo(0, tag, 0);
+tag.connectTo(0, align, 0);
+align.connectTo(0, sink, 0);
+```
+
 ## Run a plan in increments
 
 `TsxIncrement.run` reads the end offsets of the input topic, runs the plan over `[checkpoint, end)` and writes the new
@@ -116,6 +134,8 @@ TsxIncrement.run(config, (source, state) -> {
 | `TsxIncrement` | one increment as above; `TsxIncrement.loop` runs increments at an interval and reports each |
 | `TsxSeriesChain`, `JavaTsxSeriesChain` | a run of clean operators (`dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) through `SeriesStream` of `opentsx-retrieval`, with its keys and episode ids |
 | `TsxStatsWindow`, `JavaTsxStatsWindow` | `stats.welford-ddsketch` through `StatsEngine` of `opentsx-stats`: `SeriesStats` per series and window |
+| `TsxAlignVector`, `JavaTsxAlignVector` | `align.vector` through `VectorStream` with named inputs; input `TsxTagged`, output `TsxVectorRecord` |
+| `TsxVectorSink`, `JavaTsxVectorSink` | writes `opentsx.vector.v1` JSON records with `KafScaleClients.producer`; returns after every record is acknowledged |
 | `TsxState` | operator state by DAG node id, read from and written to the checkpoint |
 | `TsxStatus` | `opentsx.dag-status.v1` records on `tsx.<domain>.dag-status.v1` with `track` `A`, `job`, `planVersion` |
 
@@ -175,7 +195,7 @@ KAFSCALE_BOOTSTRAP=127.0.0.1:39092 mvn -B -ntp -pl opentsx-wayang -am test
 
 Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`, `TsxCrashRecoveryIntegrationTest`,
 `TsxFingerprintIntegrationTest`, `TsxCleanIncrementsIntegrationTest`, `TsxCleanParityIntegrationTest`,
-and `TsxStatusIntegrationTest` must show
+`TsxStatusIntegrationTest` and `TsxVectorIntegrationTest` must show
 executed tests with zero failures, errors and skips.
 
 `TsxCleanParityIntegrationTest` runs one clean DAG over W, then deploys the same
@@ -187,7 +207,9 @@ scheduler to cover long increments and idle intervals without sleeping.
 
 `TsxCleanVectorsTest` runs all 15 shared clean cases directly and through Wayang.
 `TsxStatsVectorsTest` runs all five shared statistics cases through Wayang with
-exact field and sketch-byte comparisons. `DagToWayangErrorsTest` checks the
+exact field and sketch-byte comparisons. `TsxVectorVectorsTest` runs all six
+shared `align.vector` cases through Wayang, once in one run and once in two
+increments with the state in between. `DagToWayangErrorsTest` checks the
 four parameter messages exactly. CI rejects missing or skipped acceptance tests.
 
 ## Check the shared Java references

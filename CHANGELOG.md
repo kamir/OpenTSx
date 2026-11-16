@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `opentsx-wayang` A3.1 (TASK-020): `align.vector` runs on Wayang as `TsxAlignVector` through `VectorStream`; inputs
+  are marked with `TsxTagged` and joined with a union, open ticks pass from increment to increment in the checkpoint,
+  and `TsxVectorSink` writes `opentsx.vector.v1` records to a vector topic. All six shared `align.vector` cases pass
+  through a Wayang plan, in one run and in two increments.
+- `opentsx-retrieval`: `VectorStream` accepts named inputs that read series of their own
+  (`new VectorStream(expectedByInput, params, lateness)`, `add(input, seriesId, ...)`). The state format of a stream
+  without named inputs is unchanged.
 - `opentsx-wayang` phase A2 (TASK-020): the clean chain (`dq.checks`, `convert.unit`, `resample`,
   `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) runs on Wayang as one operator per run
   of consecutive nodes (`TsxSeriesChain`, through `SeriesStream`), and `stats.welford-ddsketch` as `TsxStatsWindow`
