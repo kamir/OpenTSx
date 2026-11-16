@@ -171,6 +171,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
+  write every point, retain subtype formats and metadata, and report errors while preserving existing files
+  through atomic replacement.
+
 - Remove the orphaned InfluxDB/Grafana demo gitlink, which has no `.gitmodules` entry and blocks checkout
   credential cleanup. CI checks that every tracked gitlink has a configured path and URL.
 

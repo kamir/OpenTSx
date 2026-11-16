@@ -17,14 +17,18 @@ import org.opentsx.data.model.Event;
 import org.opentsx.data.model.Observation;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
@@ -488,37 +492,62 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return yValues;
     }
 
-    /**
-     * Die Daten zur Ausgabe auf der Konsole ausgeben.
-     *
-     * @return
-     */
     @Override
     public String toString() {
+        return formatText(5, null);
+    }
 
+    protected String formatText(int maxPoints, Character decimalSeparator) {
+        validateExportData();
         StringBuffer sb = new StringBuffer();
+        int size = getXValues().size();
+        DecimalFormat xFormat = withDecimalSeparator(getDecimalFormat_X(), decimalSeparator);
+        DecimalFormat yFormat = withDecimalSeparator(getDecimalFormat_Y(), decimalSeparator);
 
-        int size = xValues.size();
-
-        sb.append("#\n# TimeSeriesObject \n# Class : " + this.getClass() + " \n# Label  : " + this.label + "\n# Nr of data points => " + size );
-        sb.append("#\n#" + this.addinfo + "\n#");
-        sb.append("#\n" + status.toString() );
-        sb.append( getStatisticData("# ") +"\n" );
-
-        int MAX = 5;
-
-        for (int i = 0 ; i < MAX; i++  ) {
-
-            double x = (Double)getXValues().elementAt(i);
-            double y = (Double)getYValues().elementAt(i);
-
-            sb.append(  decimalFormat_X.format(x) + " " + decimalFormat_Y.format(y) + "\n");
-
+        sb.append("#\n# TimeSeriesObject \n# Class : " + getClass() + " \n# Label  : " + label
+                + "\n# Nr of data points => " + size);
+        sb.append("#\n#" + addinfo + "\n#");
+        if (status != null) sb.append("#\n").append(status);
+        sb.append(getStatisticData("# ")).append("\n");
+        for (int i = 0; i < Math.min(size, maxPoints); i++) {
+            sb.append(xFormat.format(getXValues().get(i))).append(' ')
+                    .append(yFormat.format(getYValues().get(i))).append('\n');
         }
-        sb.append( " ... ");
-        sb.append("#\n" + sbComments.toString() );
+        if (size > maxPoints) sb.append("# ...\n");
+        sb.append("#\n").append(sbComments);
         return sb.toString();
-    };
+    }
+
+    protected DecimalFormat withDecimalSeparator(DecimalFormat original, Character decimalSeparator) {
+        DecimalFormat format = (DecimalFormat) original.clone();
+        if (decimalSeparator != null) {
+            var symbols = format.getDecimalFormatSymbols();
+            if (symbols.getGroupingSeparator() == decimalSeparator) {
+                symbols.setGroupingSeparator(decimalSeparator == '.' ? ',' : '.');
+            }
+            symbols.setDecimalSeparator(decimalSeparator);
+            format.setDecimalFormatSymbols(symbols);
+        }
+        return format;
+    }
+
+    protected String formatRawValue(double value, Character decimalSeparator) {
+        String text = Double.toString(value);
+        return decimalSeparator == null ? text : text.replace('.', decimalSeparator);
+    }
+
+    private void validateExportData() {
+        Vector x = getXValues();
+        Vector y = getYValues();
+        if (x == null || y == null || x.size() != y.size()) {
+            throw new IllegalArgumentException("Export requires matching coordinate and value vectors");
+        }
+        for (int i = 0; i < x.size(); i++) {
+            if (!(x.get(i) instanceof Double) || !(y.get(i) instanceof Double)) {
+                throw new IllegalArgumentException("Export requires numeric coordinates and values at index " + i);
+            }
+        }
+    }
 
     public void setLabel(String label) {
         this.label = label;
@@ -798,64 +827,54 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return series;
     }
 
-    /**
-     * Speichert die TimeSeriesObject in der Datei f und legt
-     * das Verzeichnis an, falls dieses nicht schon existiert.
-     * 
-     * @param f 
-     */
     public void writeToFile(File f) {
-        if ( !f.getParentFile().exists() ) f.getParentFile().mkdirs();
-
-        FileWriter fw = null;
-        try {
-           fw = new FileWriter(f);     
-           fw.write( this.toString());
-           
-           System.out.println( "go.. " + f.getAbsolutePath() );
-           
-           fw.close();
-        } 
-        catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } 
-        finally {
-            try {
-                if ( fw != null ) {
-                    fw.close();
-                }
-                else System.err.println( "FW war bereits NULL !!!");
-            }
-            catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+        validateExportData();
+        writeExport(f, formatText(Integer.MAX_VALUE, null));
     }
-    
+
     public void writeToFile(File f, Character chara) {
-        if ( !f.getParentFile().exists() ) f.getParentFile().mkdirs();
+        if (chara == null) throw new IllegalArgumentException("Decimal separator is required");
+        validateExportData();
+        writeExport(f, formatText(Integer.MAX_VALUE, chara));
+    }
 
-        FileWriter fw = null;
+    private void writeExport(File file, String text) {
+        Path target = Objects.requireNonNull(file, "Export destination is required").toPath()
+                .toAbsolutePath();
+        Path temporary = null;
         try {
-           fw = new FileWriter(f);    
-           String s = this.toString();
-           s = s.replace(',', chara);
-           fw.write( s );
-           fw.close();
-        } 
-        catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } 
-        finally {
-            try {
-                fw.close();
+            if (target.getParent() == null) {
+                throw new IOException("Export destination must name a file: " + target);
             }
-            catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
+            if (Files.isSymbolicLink(target)) {
+                throw new IOException("Export destination must not be a symbolic link: " + target);
             }
+            Files.createDirectories(target.getParent());
+            temporary = Files.createTempFile(target.getParent(), ".opentsx-export-", ".tmp");
+            Files.writeString(temporary, text, StandardCharsets.UTF_8);
+            if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
+                PosixFileAttributeView permissions = Files.getFileAttributeView(target,
+                        PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+                if (permissions != null) {
+                    Files.setPosixFilePermissions(temporary, permissions.readAttributes().permissions());
+                }
+            }
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException | RuntimeException failure) {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException | RuntimeException cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            if (failure instanceof IOException ioFailure) {
+                throw new UncheckedIOException("Failed to export time series to " + target, ioFailure);
+            }
+            throw (RuntimeException) failure;
         }
     }
-    
+
     /**
      * Append a new y-value.
      * 
@@ -1342,7 +1361,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         this.status.append( "\n#" + string );
     }
     public String getStatusInfo() {
-        return this.status.toString();
+        return status == null ? "" : status.toString();
     }
 
     public TimeSeriesObject cut(int nrOfValues ) {

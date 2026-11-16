@@ -22,6 +22,39 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Preview and export a time series
+
+`TimeSeriesObject.toString()` shows up to five coordinate-value pairs and marks truncation only when more
+points exist. Empty and short series, including disabled status recording, can be shown in the native preview.
+
+Both `writeToFile(File)` and `writeToFile(File, Character)` export every pair as UTF-8 text without a preview
+ellipsis. The base format retains its comment headers, metadata, numeric patterns and space-separated columns.
+The character overload selects the decimal separator of numeric columns; commas in labels and comments stay
+unchanged. Existing FFT, marked, qualified and dated formats retain their precision and additional columns.
+Formatting does not change the input vectors or their numeric formatters.
+
+Relative filenames and missing parent directories are supported. The writer prepares the full text, writes a
+sibling temporary file and atomically replaces the destination after closing the file. Existing POSIX access
+permissions are retained where supported. Destination symbolic links are rejected. Atomic replacement is required;
+unsupported moves fail explicitly.
+
+Malformed coordinate/value vectors and a null decimal separator raise `IllegalArgumentException` before writing.
+I/O failures raise `UncheckedIOException` with the original cause. Failed preparation, encoding or replacement
+preserves an existing destination. Temporary files are cleaned up; any cleanup failure is attached to the
+reported exception.
+
+You need JDK 17 or later, Maven, and a display for the Swing preview checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TimeSeriesObjectTextExportTest,TimeSeriesSubclassExportTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
+The tests cover 0, 1, 2, 4, 5 and 8 points, decimal separators, metadata, native preview calls on the event dispatch
+thread, subtype formats and deterministic preparation, encoding and replacement failures. The Java CI matrix
+runs them under Xvfb.
+
 ## Normalize finite time series
 
 `TimeSeriesObject.normalizeToStdevIsOne` centers values and divides by their sample standard deviation.
