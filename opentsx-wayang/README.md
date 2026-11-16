@@ -115,6 +115,20 @@ tag.connectTo(0, align, 0);
 align.connectTo(0, sink, 0);
 ```
 
+## Compare two series in windows
+
+`TsxPair` runs a pair method (`pair.xcorr`) by the rules of `pairs.ts` of the workbench. Mark the episodes of A with
+input `a` and those of B with input `b` (`TsxTagged`). Every series of `a` is compared with every series of `b`:
+`pairing` `same` pairs episodes with equal ranges, `intersect` overlapping episodes on their intersection. Each pair
+range gives one episode per field, series `pair.<method>.<field>` with the tags `a`, `b`, `window` and `step`, parent
+the episode of A. An episode waits in `TsxState` until every series of the other input has passed its end. Without
+`every` the clock is the larger sampling interval of the two paired episodes.
+
+```java
+TsxPair xcorr = new TsxPair("x", "pair.xcorr", Map.of("lags", 5, "window", 32, "step", 8),
+        Set.of(windSpeedId), Set.of(powerId), specHash, state);
+```
+
 ## Run a plan in increments
 
 `TsxIncrement.run` reads the end offsets of the input topic, runs the plan over `[checkpoint, end)` and writes the new
@@ -141,6 +155,7 @@ TsxIncrement.run(config, (source, state) -> {
 | `TsxStatsWindow`, `JavaTsxStatsWindow` | `stats.welford-ddsketch` through `StatsEngine` of `opentsx-stats`: `SeriesStats` per series and window |
 | `TsxAlignVector`, `JavaTsxAlignVector` | `align.vector` through `VectorStream` with named inputs; input `TsxTagged`, output `TsxVectorRecord` |
 | `TsxVectorSink`, `JavaTsxVectorSink` | writes `opentsx.vector.v1` JSON records with `KafScaleClients.producer`; returns after every record is acknowledged |
+| `TsxPair`, `JavaTsxPair` | pair methods through `ops/TsxPairWindows` (port of `pairs.ts`) and `ops/TsxPairXcorr`; output `Episode` |
 | `TsxState` | operator state by DAG node id, read from and written to the checkpoint |
 | `TsxStatus` | `opentsx.dag-status.v1` records on `tsx.<domain>.dag-status.v1` with `track` `A`, `job`, `planVersion` |
 
@@ -214,7 +229,9 @@ scheduler to cover long increments and idle intervals without sleeping.
 `TsxStatsVectorsTest` runs all five shared statistics cases through Wayang with
 exact field and sketch-byte comparisons. `TsxVectorVectorsTest` runs all six
 shared `align.vector` cases through Wayang, once in one run and once in two
-increments with the state in between. `DagToWayangErrorsTest` checks the
+increments with the state in between. `TsxPairVectorsTest` runs all five
+shared `pair.xcorr` cases through Wayang, also with B in a later increment.
+`DagToWayangErrorsTest` checks the
 four parameter messages exactly. CI rejects missing or skipped acceptance tests.
 
 ## Check the shared Java references

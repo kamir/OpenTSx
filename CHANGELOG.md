@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `opentsx-wayang` A3.2 (TASK-020): `pair.xcorr` runs on Wayang as `TsxPair`, with the pair windows of the workbench
+  (`pairs.ts`) ported to `ops/TsxPairWindows`. Episodes of A and B are paired (`same` or `intersect`) as they arrive
+  and wait in the checkpoint for their counterparts; each pair range gives one episode per field
+  (`pair.xcorr.max`, `lag`, `strength`). All five shared `pair.xcorr` cases pass through a Wayang plan. Specification
+  S6.2 gives the id of a pair result episode.
 - `opentsx-wayang` A3.1 (TASK-020): `align.vector` runs on Wayang as `TsxAlignVector` through `VectorStream`; inputs
   are marked with `TsxTagged` and joined with a union, open ticks pass from increment to increment in the checkpoint,
   and `TsxVectorSink` writes `opentsx.vector.v1` records to a vector topic. All six shared `align.vector` cases pass
