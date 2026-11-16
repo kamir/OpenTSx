@@ -43,6 +43,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   read and written again keeps its bytes. `LogReader` in `opentsx-kafka-v2` is public. The CI job "KafScale
   conformance" runs the three new integration tests and requires them to execute.
 
+- Shared execution-assignment schema and offline Java/Rust validators for exact source/fragment identities,
+  decimal-string offsets, execution modes and whole-topic ownership with complete internal cursor checks.
+  Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
+  UI-to-Wayang-to-Rust orchestration and a separate
+  bounded storage profile; no runner, network deployment or production fencing is enabled.
+
+- Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
+  families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
+  are generated with source-content hashes; synchronization rejects missing, edited or stale material.
+  Manual chapter 17 links the contracts and verification commands. The project rules require coordinated
+  operator, manual, SPEC, exercise and test updates and preserve whole-topic deployment ownership.
+
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
   storage SDKs and the `log4j-slf4j-impl` binding; Hadoop from the managed shaded client 3.5.0; `TsxJavaPlugin`
@@ -146,6 +158,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Remove the orphaned InfluxDB/Grafana demo gitlink, which has no `.gitmodules` entry and blocks checkout
+  credential cleanup. CI checks that every tracked gitlink has a configured path and URL.
 
 - The PFD runtime reads `group.id` through the existing core configuration manager, retaining
   `opentsx-dynamic-job` when absent and rejecting empty or whitespace-only configured values.

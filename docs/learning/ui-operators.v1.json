@@ -1,0 +1,3273 @@
+{
+  "schema": "opentsx.learning.v1",
+  "lessons": [
+    {
+      "id": "ui.shuffle",
+      "operator": "shuffle",
+      "title": "Test a seeded shuffle",
+      "surface": "ui",
+      "objectives": [
+        "Separate the value distribution from temporal order.",
+        "Repeat an experiment with the same seed."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Run one shuffle with seed 3 and sort a copy of the result.",
+        "Repeat seed 3 and compare the complete output.",
+        "Change the seed and explain why pointwise comparisons no longer describe the original chronology."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "y": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ]
+            }
+          ]
+        },
+        "params": {
+          "rounds": 1,
+          "seed": 3
+        }
+      },
+      "expected": [
+        "The sorted result is exactly 1 through 8 and x stays 0 through 7.",
+        "Seed 3 repeats the same nonidentity ordering."
+      ],
+      "pitfalls": [
+        "The browser random sequence is not Java Collections.shuffle.",
+        "Shuffled values no longer have their original event positions."
+      ],
+      "parameterKeys": [
+        "rounds",
+        "seed"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "sortedY": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "differsFromInput": true
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#shuffle"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#shuffle"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.norm.max",
+      "operator": "norm.max",
+      "title": "Scale a series by its maximum",
+      "surface": "ui",
+      "objectives": [
+        "Compute a maximum-based scale factor.",
+        "Distinguish per-series scaling from a shared physical unit."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Divide the four values by 8 before running.",
+        "Compare each prediction with the output.",
+        "Try an all-zero series and inspect the undefined division."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                2,
+                4,
+                8
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "The output is 0.125, 0.25, 0.5, 1 on the same coordinates.",
+        "The transform scales each series separately."
+      ],
+      "pitfalls": [
+        "Zero maxima produce nonfinite values.",
+        "Maximum normalization is not z-score normalization."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              0.125,
+              0.25,
+              0.5,
+              1
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#norm-max"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#normMax"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.norm.zscore",
+      "operator": "norm.zscore",
+      "title": "Use sample standard deviation in a z-score",
+      "surface": "ui",
+      "objectives": [
+        "Recognize sample rather than population standard deviation.",
+        "Explain constant-series handling."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Calculate mean 0 and sample standard deviation 1.",
+        "Run the transform and verify all three values.",
+        "Replace the input by three equal values and explain the zero result."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2
+              ],
+              "y": [
+                -1,
+                0,
+                1
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "The starter remains -1, 0, 1.",
+        "A constant finite series becomes zero because the divisor falls back to 1."
+      ],
+      "pitfalls": [
+        "The sample denominator is n minus 1.",
+        "The displayed unit metadata is retained even though z-scores are dimensionless."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              -1,
+              0,
+              1
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#norm-zscore"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#normZ"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.log",
+      "operator": "log",
+      "title": "Track coordinates when logarithms remove points",
+      "surface": "ui",
+      "objectives": [
+        "Identify the domain of the natural logarithm.",
+        "Track which original coordinates survive filtering."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Predict which of the four input points have finite logarithms.",
+        "Run Log and compare x and y, not only the output length.",
+        "Explain why this result cannot be treated as a regularly sampled sequence without checking x."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                0,
+                -1,
+                2.718281828459045
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "Only coordinates 0 and 3 remain.",
+        "Their values are 0 and 1."
+      ],
+      "pitfalls": [
+        "Zero and negative inputs are dropped rather than converted to gaps.",
+        "The operation can make a regular time grid irregular."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              3
+            ],
+            "y": [
+              0,
+              1
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#log"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#logY"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.logreturn",
+      "operator": "logreturn",
+      "title": "Measure multiplicative changes with log returns",
+      "surface": "ui",
+      "objectives": [
+        "Relate equal ratios to equal log returns.",
+        "Account for the initialized first return."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Compute the ratio of each value to its predecessor.",
+        "Predict three copies of ln(2) after the initial zero.",
+        "Compare this output with ordinary differences on the same input."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                2,
+                4,
+                8
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "The first output is 0.",
+        "Every following output is ln(2), approximately 0.69314718056."
+      ],
+      "pitfalls": [
+        "Inputs must be positive to obtain finite log differences.",
+        "The first zero is an initialization convention, not an observed return."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              0,
+              0.6931471805599453,
+              0.6931471805599453,
+              0.6931471805599453
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#logreturn"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#logReturn"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.diff",
+      "operator": "diff",
+      "title": "Measure additive first differences",
+      "surface": "ui",
+      "objectives": [
+        "Distinguish additive differences from relative changes.",
+        "Explain the first-value convention."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Subtract each value from its successor by hand.",
+        "Run Diffs and verify the retained four coordinates.",
+        "Compare the increasing differences with the constant log returns."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                2,
+                4,
+                8
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "The output is 0, 1, 2, 4.",
+        "The original coordinate count is retained."
+      ],
+      "pitfalls": [
+        "The initial zero is synthetic.",
+        "A missing input affects its own and the following difference."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              0,
+              1,
+              2,
+              4
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#diff"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#diff"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.profile",
+      "operator": "profile",
+      "title": "Integrate deviations from the mean",
+      "surface": "ui",
+      "objectives": [
+        "Build a cumulative centered profile.",
+        "Understand the finite-value mean used at gaps."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Compute the mean 2 and deviations -1, 0, 1.",
+        "Accumulate them to -1, -1, 0.",
+        "Insert a gap and inspect its zero contribution after centering."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2
+              ],
+              "y": [
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "The profile is -1, -1, 0.",
+        "The last value is zero for this complete finite series."
+      ],
+      "pitfalls": [
+        "This is a centered cumulative sum, not a raw integral.",
+        "A gap contributes the mean before centering, so it adds zero."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              -1,
+              -1,
+              0
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#profile"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#profile"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.fft",
+      "operator": "fft",
+      "title": "Locate a sine in an amplitude spectrum",
+      "surface": "ui",
+      "objectives": [
+        "Relate sample spacing to frequency in hertz.",
+        "Interpret the one-sided amplitude spectrum."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Use the 0.25-second sampling interval to derive a 4 Hz sampling rate.",
+        "Predict a unit-amplitude peak at 1 Hz.",
+        "Change the signal length to inspect zero padding and explain that interpolation does not add observations."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0.0,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                1.25,
+                1.5,
+                1.75
+              ],
+              "y": [
+                0,
+                1,
+                0,
+                -1,
+                0,
+                1,
+                0,
+                -1
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "Four bins appear at 0, 0.5, 1 and 1.5 Hz.",
+        "The 1 Hz amplitude is 1; the other starter bins are zero within numerical tolerance."
+      ],
+      "pitfalls": [
+        "The mean is removed before the transform.",
+        "The Nyquist endpoint is omitted and gaps are replaced by zero after centering."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "frequency",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              0.5,
+              1,
+              1.5
+            ],
+            "y": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/11-classic-analytics.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#fft"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#fft"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.histogram",
+      "operator": "histogram",
+      "title": "Count values in a normalized histogram",
+      "surface": "ui",
+      "objectives": [
+        "Read bin centers separately from bin edges.",
+        "Check probability normalization."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Place 0 and 1 in the first bin and 2 and 3 in the second.",
+        "Predict the centers 1 and 3 and frequencies 0.5 each.",
+        "Add an out-of-range value and explain why it does not increase the histogram denominator."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        },
+        "params": {
+          "min": 0,
+          "max": 4,
+          "bins": 2
+        }
+      },
+      "expected": [
+        "The value axis is [1, 3].",
+        "Relative frequencies sum to 1."
+      ],
+      "pitfalls": [
+        "Only finite values inside the inclusive min/max range enter the denominator.",
+        "The upper endpoint belongs to the final bin."
+      ],
+      "parameterKeys": [
+        "min",
+        "max",
+        "bins"
+      ],
+      "expectedOutput": {
+        "xKind": "value",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              1,
+              3
+            ],
+            "y": [
+              0.5,
+              0.5
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#histogram"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#histogram"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.histogram.crosscut",
+      "operator": "histogram.crosscut",
+      "title": "Compare distributions in separate time slices",
+      "surface": "ui",
+      "objectives": [
+        "Pool series within each sample slice.",
+        "Distinguish cross-cut histograms from one histogram per series."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Pool the first two samples from both series.",
+        "Predict one all-low and one all-high histogram.",
+        "Increase the slice width to combine both distributions."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                0,
+                0,
+                2,
+                2
+              ]
+            },
+            {
+              "id": "s1",
+              "label": "s1",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                1,
+                3,
+                3
+              ]
+            }
+          ]
+        },
+        "params": {
+          "min": 0,
+          "max": 4,
+          "bins": 2,
+          "window": 2
+        }
+      },
+      "expected": [
+        "Two output series represent the two slices.",
+        "Their frequencies are [1,0] and [0,1]."
+      ],
+      "pitfalls": [
+        "Window is a number of samples, not elapsed seconds.",
+        "Only the first 16 slices are drawn."
+      ],
+      "parameterKeys": [
+        "min",
+        "max",
+        "bins",
+        "window"
+      ],
+      "expectedOutput": {
+        "xKind": "value",
+        "seriesCount": 2,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              1,
+              3
+            ],
+            "y": [
+              1,
+              0
+            ]
+          },
+          {
+            "index": 1,
+            "x": [
+              1,
+              3
+            ],
+            "y": [
+              0,
+              1
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#histogram-crosscut"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#histogramCrossCut"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.cdf",
+      "operator": "cdf",
+      "title": "Accumulate histogram probabilities into a CDF",
+      "surface": "ui",
+      "objectives": [
+        "Read a binned cumulative distribution.",
+        "Check its monotone endpoint."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Find the observed range from 0 to 3.",
+        "Predict two bin centers and cumulative frequencies.",
+        "Compare with Histogram and explain the extra accumulation."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        },
+        "params": {
+          "bins": 2
+        }
+      },
+      "expected": [
+        "Bin centers are 0.75 and 2.25.",
+        "Cumulative probabilities are 0.5 and 1."
+      ],
+      "pitfalls": [
+        "The operator derives its range independently for each series.",
+        "A binned CDF is not an exact empirical step function at every observation."
+      ],
+      "parameterKeys": [
+        "bins"
+      ],
+      "expectedOutput": {
+        "xKind": "value",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0.75,
+              2.25
+            ],
+            "y": [
+              0.5,
+              1
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#cdf"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#cdf"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.entropy.window",
+      "operator": "entropy.window",
+      "title": "Predict entropy for balanced and partial windows",
+      "surface": "ui",
+      "objectives": [
+        "Interpret Shannon entropy in bits.",
+        "Account for partial windows near the tail."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Count the two equally likely symbols in the first four samples.",
+        "Predict 1 bit, then the entropy of probabilities 1/3 and 2/3.",
+        "Inspect why the last two samples still produce an output."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "index",
+          "xLabel": "sample",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                0,
+                1,
+                0,
+                1
+              ]
+            }
+          ]
+        },
+        "params": {
+          "length": 4,
+          "bins": 2
+        }
+      },
+      "expected": [
+        "Window-start coordinates are 0, 1 and 2.",
+        "Entropy values are 1, approximately 0.91829583405 and 1 bit."
+      ],
+      "pitfalls": [
+        "The bin range is derived from the whole input series.",
+        "This workbench binning is not guaranteed to match the legacy Java entropy implementation."
+      ],
+      "parameterKeys": [
+        "length",
+        "bins"
+      ],
+      "expectedOutput": {
+        "xKind": "index",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              1,
+              0.9182958340544896,
+              1
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#entropy-window"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.acf",
+      "operator": "acf",
+      "title": "Find alternating dependence with autocorrelation",
+      "surface": "ui",
+      "objectives": [
+        "Interpret zero lag and one-sample lag.",
+        "Recognize the finite-length normalization."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Center the alternating starter, whose mean is zero.",
+        "Predict zero-lag correlation 1 and one-lag correlation -3/4.",
+        "Explain why the output axis is a lag index rather than time."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                -1,
+                1,
+                -1
+              ]
+            }
+          ]
+        },
+        "params": {
+          "maxLag": 2
+        }
+      },
+      "expected": [
+        "The lag axis is [0,1].",
+        "Correlations are 1 and -0.75."
+      ],
+      "pitfalls": [
+        "The number of returned lags is capped at floor(n/2).",
+        "Gaps can propagate through the correlation sums; they are not pairwise deleted."
+      ],
+      "parameterKeys": [
+        "maxLag"
+      ],
+      "expectedOutput": {
+        "xKind": "lag",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              1,
+              -0.75
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#acf"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#autoCorrelation"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.dfa",
+      "operator": "dfa",
+      "title": "Check a white-noise DFA exponent",
+      "surface": "ui",
+      "objectives": [
+        "Interpret the slope of log fluctuation over log scale.",
+        "Use deterministic white noise as a scaling sanity check."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Generate 8192 centered uniform samples with Mulberry32 seed 42.",
+        "Run second-order DFA over 30 requested scales.",
+        "Read alpha and compare it with the white-noise reference interval (0.4,0.6)."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "index",
+          "xLabel": "sample",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": []
+        },
+        "params": {
+          "order": 2,
+          "scales": 30
+        },
+        "noise": {
+          "seed": 42,
+          "count": 8192
+        }
+      },
+      "expected": [
+        "The output is a finite increasing log-scale curve with at least 20 points.",
+        "The displayed exponent lies strictly between 0.4 and 0.6."
+      ],
+      "pitfalls": [
+        "The exponent is a scaling estimate, not a causal relationship.",
+        "Short or constant data can yield too few nonzero fluctuations for an exponent."
+      ],
+      "parameterKeys": [
+        "order",
+        "scales"
+      ],
+      "expectedOutput": {
+        "xKind": "scale",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "minLength": 20,
+            "allFinite": true,
+            "increasingX": true
+          }
+        ],
+        "alphaRange": [
+          0.4,
+          0.6
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/11-classic-analytics.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#dfa"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#dfaOp"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.pair.coverage",
+      "operator": "pair.coverage",
+      "title": "Measure overlap before interpreting a pair statistic",
+      "surface": "ui",
+      "objectives": [
+        "Distinguish total ticks from jointly observed ticks.",
+        "Use coverage to qualify later pair results."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Put both inputs onto a one-second clock.",
+        "Count three jointly present ticks out of four.",
+        "Raise minCoverage above 0.75 and inspect the retained timestamp with a missing result."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                2,
+                3,
+                4
+              ]
+            },
+            {
+              "id": "s1",
+              "label": "s1",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                null,
+                3,
+                4
+              ]
+            }
+          ]
+        },
+        "params": {
+          "pairing": "same",
+          "window": "episode",
+          "step": 0,
+          "every": 1,
+          "agg": "MEAN",
+          "fill": "none",
+          "maxAge": 60,
+          "minCoverage": 0
+        }
+      },
+      "expected": [
+        "Coverage is 0.75 and ticks is 4.",
+        "The episode-wide result is stamped at its center, second 2."
+      ],
+      "pitfalls": [
+        "A low-coverage item stays on the regular output grid as a gap.",
+        "Coverage measures available overlap, not statistical dependence."
+      ],
+      "parameterKeys": [
+        "pairing",
+        "window",
+        "step",
+        "every",
+        "agg",
+        "fill",
+        "maxAge",
+        "minCoverage"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 2,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              2
+            ],
+            "y": [
+              0.75
+            ],
+            "metric": "pair.coverage.coverage"
+          },
+          {
+            "index": 1,
+            "x": [
+              2
+            ],
+            "y": [
+              4
+            ],
+            "metric": "pair.coverage.ticks"
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#pair-coverage"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/pairs.ts#PAIR_COVERAGE"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/pairs.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.pair.xcorr",
+      "operator": "pair.xcorr",
+      "title": "Interpret a signed cross-correlation peak",
+      "surface": "ui",
+      "objectives": [
+        "Connect zero-lag Pearson correlation with the peak field.",
+        "Separate correlation, lag and strength."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Predict perfect correlation between the identical starter series.",
+        "Run a one-tick lag search and verify peak 1 at lag 0.",
+        "Delay B and inspect the positive lag convention that means B follows A."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "y": [
+                0,
+                1,
+                0,
+                -1,
+                0,
+                1,
+                0,
+                -1
+              ]
+            },
+            {
+              "id": "s1",
+              "label": "s1",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "y": [
+                0,
+                1,
+                0,
+                -1,
+                0,
+                1,
+                0,
+                -1
+              ]
+            }
+          ]
+        },
+        "params": {
+          "pairing": "same",
+          "window": "episode",
+          "step": 0,
+          "every": 1,
+          "agg": "MEAN",
+          "fill": "none",
+          "maxAge": 60,
+          "minCoverage": 0.8,
+          "lags": 1
+        }
+      },
+      "expected": [
+        "The max field is 1 and lag is 0 seconds at center second 4.",
+        "Strength is 2/sqrt(3), approximately 1.15470053838."
+      ],
+      "pitfalls": [
+        "An anticorrelated extreme can be the selected peak with a negative sign.",
+        "A single searched lag has undefined strength because there is no spread."
+      ],
+      "parameterKeys": [
+        "pairing",
+        "window",
+        "step",
+        "every",
+        "agg",
+        "fill",
+        "maxAge",
+        "minCoverage",
+        "lags"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 3,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              4
+            ],
+            "y": [
+              1
+            ],
+            "metric": "pair.xcorr.max"
+          },
+          {
+            "index": 1,
+            "x": [
+              4
+            ],
+            "y": [
+              0
+            ],
+            "metric": "pair.xcorr.lag"
+          },
+          {
+            "index": 2,
+            "x": [
+              4
+            ],
+            "y": [
+              1.1547005383792517
+            ],
+            "metric": "pair.xcorr.strength"
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#pair-xcorr"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/xcorr.ts#PAIR_XCORR"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/xcorr.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/pair-xcorr.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.pair.es",
+      "operator": "pair.es",
+      "title": "Compare event synchronization with its surrogate baseline",
+      "surface": "ui",
+      "objectives": [
+        "Detect strict local peaks above a population-deviation threshold.",
+        "Compare observed synchronization with an interval-shuffle control."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Predict events at ticks 1 and 4 in both inputs.",
+        "Explain why simultaneous events split equally between q_ab and q_ba.",
+        "Observe that shuffling the single inter-event interval cannot change this two-event control."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "y": [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0
+              ]
+            },
+            {
+              "id": "s1",
+              "label": "s1",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "y": [
+                0,
+                2,
+                0,
+                0,
+                2,
+                0
+              ]
+            }
+          ]
+        },
+        "params": {
+          "pairing": "same",
+          "window": "episode",
+          "step": 0,
+          "every": 1,
+          "agg": "MEAN",
+          "fill": "none",
+          "maxAge": 60,
+          "minCoverage": 0.8,
+          "sigma": 0,
+          "tauMax": 0,
+          "shuffles": 3,
+          "seed": 1
+        }
+      },
+      "expected": [
+        "q_total and q_rand are both 1.",
+        "q_ab and q_ba are both 0.5 at center second 3."
+      ],
+      "pitfalls": [
+        "A large q_total alone does not prove coupling when q_rand is equally large.",
+        "First and last samples cannot be detected local-maximum events."
+      ],
+      "parameterKeys": [
+        "pairing",
+        "window",
+        "step",
+        "every",
+        "agg",
+        "fill",
+        "maxAge",
+        "minCoverage",
+        "sigma",
+        "tauMax",
+        "shuffles",
+        "seed"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 4,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              3
+            ],
+            "y": [
+              1
+            ],
+            "metric": "pair.es.q_total"
+          },
+          {
+            "index": 1,
+            "x": [
+              3
+            ],
+            "y": [
+              0.5
+            ],
+            "metric": "pair.es.q_ab"
+          },
+          {
+            "index": 2,
+            "x": [
+              3
+            ],
+            "y": [
+              0.5
+            ],
+            "metric": "pair.es.q_ba"
+          },
+          {
+            "index": 3,
+            "x": [
+              3
+            ],
+            "y": [
+              1
+            ],
+            "metric": "pair.es.q_rand"
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/11-classic-analytics.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#pair-es"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/es.ts#PAIR_ES"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/es.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/pair-es.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.sigma.band",
+      "operator": "sigma.band",
+      "title": "Calculate a cross-series sample sigma band",
+      "surface": "ui",
+      "objectives": [
+        "Compute an ensemble mean and sample spread at each index.",
+        "Separate index-wise aggregation from timestamp alignment."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Compute the two column means, 2 and 4.",
+        "Use sample standard deviations sqrt(2) and 2sqrt(2) for the band.",
+        "Try mismatched x coordinates and explain why a separate alignment step is necessary."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                1,
+                2
+              ]
+            },
+            {
+              "id": "s1",
+              "label": "s1",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                3,
+                6
+              ]
+            }
+          ]
+        },
+        "params": {}
+      },
+      "expected": [
+        "The three output series are mean, mean plus sigma and mean minus sigma.",
+        "Their starter values match the two hand-calculated columns."
+      ],
+      "pitfalls": [
+        "Columns are paired by array position and truncated to the shortest series.",
+        "The band is a spread across input series, not a confidence interval."
+      ],
+      "parameterKeys": [],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 3,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              2,
+              4
+            ]
+          },
+          {
+            "index": 1,
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              3.414213562373095,
+              6.82842712474619
+            ]
+          },
+          {
+            "index": 2,
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              0.5857864376269049,
+              1.1715728752538097
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#sigma-band"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#sigmaBand"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.select",
+      "operator": "select",
+      "title": "Select a series with a case-insensitive pattern",
+      "surface": "ui",
+      "objectives": [
+        "Filter series identity rather than sample values.",
+        "Recognize the pattern search surface."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Predict which label matches beta ignoring case.",
+        "Run Select and verify that Beta retains both values.",
+        "Try the pattern s0 to match a series ID instead of a label."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "Alpha",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                1,
+                2
+              ]
+            },
+            {
+              "id": "s1",
+              "label": "Beta",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                10,
+                20
+              ]
+            }
+          ]
+        },
+        "params": {
+          "pattern": "beta"
+        }
+      },
+      "expected": [
+        "One series remains with values 10 and 20.",
+        "The retained series keeps its original coordinates."
+      ],
+      "pitfalls": [
+        "The pattern is a regular expression, not literal text.",
+        "An invalid regular expression selects no series."
+      ],
+      "parameterKeys": [
+        "pattern"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              10,
+              20
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#select"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#selectSeries"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.dq.plausible-range",
+      "operator": "dq.plausible-range",
+      "title": "Keep the clock while marking implausible values as gaps",
+      "surface": "ui",
+      "objectives": [
+        "Separate a sensor plausibility bound from an operating limit.",
+        "Compare gap and clip preparation modes."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Identify -1 and 11 as outside the inclusive [0,10] band.",
+        "Run gap mode and verify both missing values without losing x.",
+        "Run clip mode and explain the difference from the original measurements."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                -1,
+                0,
+                5,
+                11
+              ]
+            }
+          ]
+        },
+        "params": {
+          "min": 0,
+          "max": 10,
+          "mode": "gap"
+        }
+      },
+      "expected": [
+        "Values become null, 0, 5, null on the same four coordinates.",
+        "The DAG name is dq.checks with PLAUSIBLE_RANGE, not the UI ID."
+      ],
+      "pitfalls": [
+        "This value transform does not produce a full DataQuality event record.",
+        "Clipping changes values and can hide extremes from later analysis."
+      ],
+      "parameterKeys": [
+        "min",
+        "max",
+        "mode"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              null,
+              0,
+              5,
+              null
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#dq-plausible-range"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.convert.unit",
+      "operator": "convert.unit",
+      "title": "Convert Celsius to Fahrenheit explicitly",
+      "surface": "ui",
+      "objectives": [
+        "Apply an affine unit conversion.",
+        "Change the unit label together with numeric values."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Calculate 0*1.8+32 and 100*1.8+32.",
+        "Run the conversion and inspect the degF series unit.",
+        "Explain why relabeling a series without the numeric conversion would be wrong."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                0,
+                100
+              ],
+              "unit": "degC"
+            }
+          ]
+        },
+        "params": {
+          "factor": 1.8,
+          "offset": 32,
+          "unit": "degF"
+        }
+      },
+      "expected": [
+        "The values are 32 and 212.",
+        "The series unit becomes degF."
+      ],
+      "pitfalls": [
+        "The operator trusts the supplied factor and offset.",
+        "An empty target unit retains the original unit metadata."
+      ],
+      "parameterKeys": [
+        "factor",
+        "offset",
+        "unit"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              32,
+              212
+            ],
+            "unit": "degF"
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#convert-unit"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.resample",
+      "operator": "resample",
+      "title": "Aggregate a regular series into two-second windows",
+      "surface": "ui",
+      "objectives": [
+        "Read half-open aggregation windows.",
+        "Distinguish coarser sampling from interpolation."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Partition the starter into [0,2), [2,4) and [4,6).",
+        "Predict means 2, 6 and 10.",
+        "Change agg to LAST and inspect which observations survive."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "y": [
+                1,
+                3,
+                5,
+                7,
+                9,
+                11
+              ]
+            }
+          ]
+        },
+        "params": {
+          "every": 2,
+          "agg": "MEAN"
+        }
+      },
+      "expected": [
+        "Window-start coordinates are 0, 2 and 4.",
+        "Window means are 2, 6 and 10."
+      ],
+      "pitfalls": [
+        "Only finite values enter a window aggregate.",
+        "A batch workbench can include a partial final window; a running stream waits for sufficient progress."
+      ],
+      "parameterKeys": [
+        "every",
+        "agg"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              2,
+              4
+            ],
+            "y": [
+              2,
+              6,
+              10
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/09-retrieval.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#resample"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#resample"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.model.wind-shear",
+      "operator": "model.wind-shear",
+      "title": "Estimate wind at a different height",
+      "surface": "ui",
+      "objectives": [
+        "Apply the power-law height model.",
+        "Label a model estimate separately from a measurement."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Compute (40/10)^0.5 = 2.",
+        "Predict the three doubled wind speeds.",
+        "Discuss why changing alpha changes an assumption, not the observed source."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2
+              ],
+              "y": [
+                1,
+                2,
+                3
+              ],
+              "unit": "m/s"
+            }
+          ]
+        },
+        "params": {
+          "fromM": 10,
+          "toM": 40,
+          "alpha": 0.5
+        }
+      },
+      "expected": [
+        "The model produces 2, 4 and 6 m/s.",
+        "The coordinates and wind-speed unit are retained."
+      ],
+      "pitfalls": [
+        "The model uses one exponent for all samples.",
+        "An estimate at hub height is not a measured hub-height signal."
+      ],
+      "parameterKeys": [
+        "fromM",
+        "toM",
+        "alpha"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              2,
+              4,
+              6
+            ],
+            "unit": "m/s"
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#model-wind-shear"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#windShear"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.model.power-curve",
+      "operator": "model.power-curve",
+      "title": "Check power-curve boundaries and model limits",
+      "surface": "ui",
+      "objectives": [
+        "Evaluate cut-in, cubic ramp, rated and cut-out branches.",
+        "Separate available modeled power from actual generation."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Predict zero below cut-in and at the ramp start.",
+        "Compute 4.75 kW at wind 1.5 and 14 kW at rated wind.",
+        "Check that wind equal to cut-out still yields rated output but a larger value yields zero."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "y": [
+                0,
+                1,
+                1.5,
+                2,
+                3,
+                4,
+                null
+              ],
+              "unit": "m/s"
+            }
+          ]
+        },
+        "params": {
+          "ratedKw": 7,
+          "cutIn": 1,
+          "ratedWind": 2,
+          "cutOut": 3,
+          "count": 2
+        }
+      },
+      "expected": [
+        "Values are 0, 0, 4.75, 14, 14, 0 and a gap.",
+        "Output units are kW."
+      ],
+      "pitfalls": [
+        "Equality at cut-out uses rated power in this implementation.",
+        "The curve estimates potential power and does not model curtailment or measured production."
+      ],
+      "parameterKeys": [
+        "ratedKw",
+        "cutIn",
+        "ratedWind",
+        "cutOut",
+        "count"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "y": [
+              0,
+              0,
+              4.75,
+              14,
+              14,
+              0,
+              null
+            ],
+            "unit": "kW"
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#model-power-curve"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#powerCurve"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.feature.lag",
+      "operator": "feature.lag",
+      "title": "Build a two-sample lag without inventing history",
+      "surface": "ui",
+      "objectives": [
+        "Distinguish lag in samples from lag in elapsed time.",
+        "Represent unavailable prefix history as gaps."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Shift the values forward by two array positions.",
+        "Predict two initial gaps followed by 10 and 20.",
+        "Repeat with uneven x spacing and explain why steps still counts samples."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                10,
+                20,
+                30,
+                40
+              ]
+            }
+          ]
+        },
+        "params": {
+          "steps": 2
+        }
+      },
+      "expected": [
+        "The output is null, null, 10, 20.",
+        "All four original coordinates are retained."
+      ],
+      "pitfalls": [
+        "The first steps positions have no earlier history.",
+        "A batch invocation starts empty; streaming state can retain history across episode boundaries."
+      ],
+      "parameterKeys": [
+        "steps"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              null,
+              null,
+              10,
+              20
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#feature-lag"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#featureLag"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.feature.rolling",
+      "operator": "feature.rolling",
+      "title": "Use an open-left trailing time window",
+      "surface": "ui",
+      "objectives": [
+        "Read the trailing interval (t-window,t].",
+        "Separate time-width rolling features from sample-count smoothing."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "At t=2, exclude the value exactly at t-window=0.",
+        "Predict means 1, 2, 4 and 6.",
+        "Use uneven coordinates to see that membership follows x rather than a fixed count."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                3,
+                5,
+                7
+              ]
+            }
+          ]
+        },
+        "params": {
+          "window": 2,
+          "fn": "MEAN"
+        }
+      },
+      "expected": [
+        "The rolling means are 1, 2, 4, 6.",
+        "Every original timestamp has an output."
+      ],
+      "pitfalls": [
+        "STD uses population variance in this rolling feature.",
+        "A point exactly one window behind is excluded."
+      ],
+      "parameterKeys": [
+        "window",
+        "fn"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              1,
+              2,
+              4,
+              6
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#feature-rolling"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#featureRolling"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "ui.smooth.movavg",
+      "operator": "smooth.movavg",
+      "title": "Smooth over a fixed number of samples while ignoring gaps",
+      "surface": "ui",
+      "objectives": [
+        "Read a trailing sample-count average.",
+        "Inspect the denominator when a sample is missing."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Average at most the current and preceding sample.",
+        "Predict 1, 1, 5 and 6 while skipping the gap.",
+        "Compare with a duration-based rolling feature on irregular coordinates."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                null,
+                5,
+                7
+              ]
+            }
+          ]
+        },
+        "params": {
+          "window": 2
+        }
+      },
+      "expected": [
+        "The smoothed values are 1, 1, 5 and 6.",
+        "The input gap does not require a gap in the average when another finite sample is present."
+      ],
+      "pitfalls": [
+        "Window is a count of samples, not seconds.",
+        "This operation does not fill the source record; it computes a new series."
+      ],
+      "parameterKeys": [
+        "window"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              1,
+              1,
+              5,
+              6
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#smooth-movavg"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#movingAverage"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.stats.window",
+      "operator": "stats.window",
+      "title": "Compute sample spread in tumbling windows",
+      "surface": "ui",
+      "objectives": [
+        "Calculate sample standard deviation in nonoverlapping windows.",
+        "Distinguish the UI statistic projection from a streaming statistics record."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Group the samples into [0,2) and [2,4).",
+        "Predict sample standard deviation sqrt(2) for each pair.",
+        "Inspect DAG export and identify the unresolved catalog parameter translation."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "y": [
+                1,
+                3,
+                5,
+                7
+              ]
+            }
+          ]
+        },
+        "params": {
+          "window": 2,
+          "field": "STD"
+        }
+      },
+      "expected": [
+        "The window-start axis is [0,2].",
+        "Both STD values equal sqrt(2)."
+      ],
+      "pitfalls": [
+        "The UI accepts window and field; the proposed catalog accepts windows and alpha.",
+        "A workbench statistic series is not a complete SeriesStats record."
+      ],
+      "parameterKeys": [
+        "window",
+        "field"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 1,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              2
+            ],
+            "y": [
+              1.4142135623730951,
+              1.4142135623730951
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/07-stats-quality.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#stats-window"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#windowStats"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.segment.threshold",
+      "operator": "segment.threshold",
+      "title": "Extract sample neighborhoods around rising crossings",
+      "surface": "ui",
+      "objectives": [
+        "Find rising threshold crossings.",
+        "Read segment coordinates relative to the crossing."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Locate rising crossings at original samples 2 and 6.",
+        "Keep one preceding sample and the crossing plus one following sample.",
+        "Compare with Java hysteresis segmentation and list its additional parameters."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "lesson",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ],
+              "y": [
+                0,
+                0,
+                5,
+                5,
+                0,
+                0,
+                5,
+                5,
+                0
+              ]
+            }
+          ]
+        },
+        "params": {
+          "enter": 2,
+          "direction": "ABOVE",
+          "pre": 1,
+          "post": 2
+        }
+      },
+      "expected": [
+        "Two segments contain 0, 5, 5.",
+        "Both use relative coordinates -1, 0 and 1."
+      ],
+      "pitfalls": [
+        "pre and post count samples in this UI operator.",
+        "This is not the richer Java enter/exit/minDuration/maxDuration segment contract."
+      ],
+      "parameterKeys": [
+        "enter",
+        "direction",
+        "pre",
+        "post"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 2,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              -1,
+              0,
+              1
+            ],
+            "y": [
+              0,
+              5,
+              5
+            ]
+          },
+          {
+            "index": 1,
+            "x": [
+              -1,
+              0,
+              1
+            ],
+            "y": [
+              0,
+              5,
+              5
+            ]
+          }
+        ]
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/09-retrieval.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#segment-threshold"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/ops.ts#segmentThreshold"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "ui.align.vector",
+      "operator": "align.vector",
+      "title": "Put two components on one clock without filling missing data",
+      "surface": "ui",
+      "objectives": [
+        "Align independent inputs on epoch-based ticks.",
+        "Distinguish any from complete emission and optional as-of fill."
+      ],
+      "prerequisites": [
+        "Read x as an ordered coordinate and null as a missing value.",
+        "Load the synthetic bucket and set every starter parameter explicitly."
+      ],
+      "tasks": [
+        "Connect the wind and power buckets with the same series ID.",
+        "Predict three one-second ticks and a missing power value at t=1.",
+        "Change emit to complete, then try as-of with maxAge 1 and explain the two different policies."
+      ],
+      "starter": {
+        "bucket": {
+          "name": "wind",
+          "xKind": "time",
+          "xLabel": "t [s]",
+          "yLabel": "value",
+          "t0Ms": 0,
+          "series": [
+            {
+              "id": "s0",
+              "label": "s0",
+              "x": [
+                0,
+                1,
+                2
+              ],
+              "y": [
+                1,
+                3,
+                5
+              ],
+              "unit": "m/s"
+            }
+          ]
+        },
+        "params": {
+          "every": 1,
+          "key": "series",
+          "agg": "MEAN",
+          "fill": "none",
+          "maxAge": 1,
+          "emit": "any",
+          "names": "wind,power",
+          "lateness": 0
+        },
+        "others": [
+          {
+            "name": "power",
+            "xKind": "time",
+            "xLabel": "t [s]",
+            "yLabel": "value",
+            "t0Ms": 0,
+            "series": [
+              {
+                "id": "s0",
+                "label": "s0",
+                "x": [
+                  0,
+                  2
+                ],
+                "y": [
+                  10,
+                  30
+                ],
+                "unit": "kW"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": [
+        "Components are wind and power on ticks 0, 1, 2.",
+        "Power retains a gap at tick 1 in fill none, emit any mode."
+      ],
+      "pitfalls": [
+        "Both inputs must carry a time axis.",
+        "Lateness configures the running processor and does not delay this batch apply call."
+      ],
+      "parameterKeys": [
+        "every",
+        "key",
+        "agg",
+        "fill",
+        "maxAge",
+        "emit",
+        "names",
+        "lateness"
+      ],
+      "expectedOutput": {
+        "xKind": "time",
+        "seriesCount": 2,
+        "series": [
+          {
+            "index": 0,
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              1,
+              3,
+              5
+            ],
+            "unit": "m/s"
+          },
+          {
+            "index": 1,
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              10,
+              null,
+              30
+            ],
+            "unit": "kW"
+          }
+        ],
+        "vector": {
+          "clock": 1,
+          "components": [
+            "wind",
+            "power"
+          ],
+          "keyBy": "series"
+        }
+      },
+      "references": {
+        "manual": [
+          "docs/user-manual/14-saas-service-layer.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/ui-operator-contracts.md#align-vector"
+        ],
+        "source": [
+          "opentsx-saas-frontend/src/workbench/vector.ts#alignVector"
+        ],
+        "tests": [
+          "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
+          "opentsx-saas-frontend/src/workbench/vector.test.ts"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/align-vector.v1.json"
+        ]
+      }
+    }
+  ]
+}

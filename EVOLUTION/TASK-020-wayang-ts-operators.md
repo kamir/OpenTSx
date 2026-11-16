@@ -31,7 +31,18 @@ zero failures, errors and skips, as the existing streaming acceptance requires (
 
 ## Phases and milestones
 
-Track A first. Track B starts when A3 is accepted.
+The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md) defines U00 to U09 for the
+UI-to-Wayang-to-multiple-Rust-node target and the separate bounded storage profile.
+The small Rust deployment proof follows shared contracts rather than waiting for the full A3 catalog.
+Each operator still requires its reference vectors and admission gate before use.
+
+- [x] U00 offline foundation: shared execution-assignment schema, exact source/fragment identities, Java/Rust
+  preflight validators and generated cross-runtime cases. This establishes no deployed runner or live fencing.
+- [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
+- [ ] U02/U03 stage compilation, fake-transport proof and durable control/delivery sequence.
+- [ ] U04/U05 minimal Rust runner and actual UI-to-two-node proof with static assignments.
+- [ ] U06 production stale-output enforcement, rollout, policy and operating qualification.
+- [ ] U08 bounded Iceberg snapshot/seal/publication profile.
 
 ### A0: foundation and decisions
 - [x] Owner decisions D-T1 to D-T12 recorded in the decision table below (2026-11-16: every recommendation accepted).
@@ -147,9 +158,9 @@ vector cases, and the four named parameter-message tests to execute successfully
 |---|---|---|---|---|
 | A4.1 | Every rejection message is exact | `DagToWayangErrorsTest`, one fixture per message of S2.5 | fixtures | 22 of 22 messages equal character for character |
 | A4.2 | Workbench DAGs translate | `DagToWayangWorkbenchTest` over the DAG documents of `opentsx-saas-frontend/src/workbench/workbench.test.ts` and `clean.test.ts` | those fixtures | every document whose operators are in catalog 1 translates; every other fails with message 11 |
-| A4.3 | Bad plans are refused with their code | `TsxSiteAgentPlanTest`: tampered payload, `alg: none`, expired, `planVersion` not above, wrong `site` | fixtures | codes `plan.signature`, `plan.signature`, `plan.expired`, `plan.version`, `plan.site`; 5 of 5 |
+| A4.3 | Bad plans are refused; accepted retry is idempotent | `TsxSiteAgentPlanTest`: tampered payload, `alg: none`, expired new activation, older version, conflicting bytes for an accepted version, wrong site, identical accepted retry before and after expiry | fixtures | six refusals with their exact S5.5 codes; both identical retries return the recorded outcome without reactivation |
 | A4.4 | Bad sites are refused | `ConformanceHandshakeTest`: one site with a wrong input fingerprint, one with a `seriesId` of another site | W3 on K | responses `{"result":"refused","check":"topics.fingerprints",...}` and `{"result":"refused","check":"series.disjoint",...}`; 2 of 2 |
-| A4.5 | Federated equals centralized | `FederatedStatsIntegrationTest`: `stats.welford-ddsketch` with `windows: [PT10M, PT1H]`, `alpha: 0.01`, over three sites, against one `StatsAccumulator` per group and window over all values | W3 on K | for every window: `validCount`, `nanCount`, `gapCount`, `min`, `max` and sketch bytes bit-identical; `mean` and `m2` within the tolerance of D-T2; quantiles at 0.01, 0.5, 0.99 equal to the centralized sketch and within relative 0.01 of the exact quantile of the sorted values |
+| A4.5 | Federated equals centralized | `FederatedStatsIntegrationTest`: `stats.welford-ddsketch` with `windows: [PT10M, PT1H]`, `alpha: 0.01`, over three sites, against one `StatsAccumulator` per group and window over all values | W3 on K | for every window: exact counts/min/max; sketch bytes equal in the one-runtime/no-collapse domain; mean/m2 within D-T2; quantile accuracy qualified by S4.3, with explicit zero-bucket and collapsed-tail cases |
 | A4.6 | The merge is order-independent | `MergeOrderTest`: the three partials of every window of A4.5 in all 6 orders | W3 partials | all 6 merged records bit-identical |
 | A4.7 | Late and missing sites follow S4.5 | `CompletenessIntegrationTest`: stop `s3`, wait past `maxDelay`, restart | W3 on K, `maxDelay: PT1M` | first record `tsx-final: false`, `tsx-missing-sites: s3`; after restart revision 1 with `tsx-final: true`; revision 0 unchanged in the topic |
 | A4.8 | Route J equals route S | `JobStateRouteIntegrationTest`: a bounded job over W3 | W3 on K | merged records bit-identical to A4.5 |
@@ -191,7 +202,7 @@ vector cases, and the four named parameter-message tests to execute successfully
 ### B4: mixed federation and evaluation on small hardware
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
-| B4.1 | Mixed federation equals centralized | `FederatedStatsIntegrationTest` with `s1`, `s2` on Track A and `s3` on Track B | W3 on K | counts, `min`, `max` bit-identical; `mean`, `m2` within D-T2; quantiles within relative 0.01 of exact; sketch byte differences only from listed boundary values |
+| B4.1 | Mixed federation equals centralized | `FederatedStatsIntegrationTest` with `s1`, `s2` on Track A and `s3` on Track B | W3 on K | counts, `min`, `max` bit-identical; `mean`, `m2` within D-T2; quantile accuracy qualified by S4.3; listed boundary, zero-bucket and collapsed-tail cases explain sketch differences |
 | B4.2 | Baseline (c) is measured | protocol of concept 20, section 14, on one arm64 and one armv7 board | W, 100, 1,000 and 10,000 series | RSS, CPU, start time, throughput of both tracks measured and reported with raw samples; no threshold unless the owner sets one |
 
 ### B5: WASM operators

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.execution-assignment.v1.schema.json",
+  "title": "opentsx.execution-assignment.v1",
+  "description": "Structural offline preflight contract assigning whole topics to one physical fragment. Partitions are internal cursor metadata, never placement units. Java/Rust semantic validation is mandatory for byte/numeric bounds, hashes, complete partition positions and whole-topic ownership. This is not deployment authorization or proof of exclusive live ownership.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "deployment", "generation", "assignment", "attempt", "fence", "fragment", "site", "node", "runtime", "catalog", "artifactDigest", "specHash", "sourceDagText", "fragmentHash", "fragmentText", "mode", "inputs"],
+  "properties": {
+    "schema": {"const": "opentsx.execution-assignment.v1"},
+    "deployment": {"$ref": "#/$defs/id"},
+    "generation": {"$ref": "#/$defs/positive"},
+    "assignment": {"$ref": "#/$defs/id"},
+    "attempt": {"$ref": "#/$defs/id"},
+    "fence": {"$ref": "#/$defs/positive"},
+    "fragment": {"$ref": "#/$defs/id"},
+    "site": {"$ref": "#/$defs/id"},
+    "node": {"$ref": "#/$defs/id"},
+    "runtime": {"enum": ["java", "rust"]},
+    "catalog": {"const": "tsx-catalog/1"},
+    "artifactDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "specHash": {"$ref": "#/$defs/hash", "description": "SHA-256 of the exact sourceDagText UTF-8 bytes, preserving the original logical DAG identity across fragment cuts and placement."},
+    "sourceDagText": {"type": "string", "maxLength": 32768, "description": "Original UI DAG text, JSON or YAML. The validator verifies its hash, not its DAG semantics. Maximum 32768 UTF-8 bytes."},
+    "fragmentHash": {"$ref": "#/$defs/hash", "description": "SHA-256 of the exact fragmentText UTF-8 bytes."},
+    "fragmentText": {"type": "string", "maxLength": 32768, "description": "Compiler-produced JSON DAG fragment with source object and nonempty nodes/sinks arrays. Maximum 32768 UTF-8 bytes."},
+    "mode": {"enum": ["bounded", "continuous"]},
+    "inputs": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/input"}}
+  },
+  "allOf": [
+    {"if": {"properties": {"mode": {"const": "bounded"}}}, "then": {"properties": {"inputs": {"items": {"properties": {"positions": {"items": {"required": ["to"]}}}}}}}},
+    {"if": {"properties": {"mode": {"const": "continuous"}}}, "then": {"properties": {"inputs": {"items": {"properties": {"positions": {"items": {"not": {"required": ["to"]}}}}}}}}}
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
+    "positive": {"type": "string", "pattern": "^[1-9][0-9]{0,18}$"},
+    "offset": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,18})$"},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "topic", "partitionCount", "positions"],
+      "properties": {
+        "binding": {"$ref": "#/$defs/id"},
+        "topic": {"type": "string", "maxLength": 249, "pattern": "^tsx\\.[a-z0-9][a-z0-9_-]*\\.[a-z0-9][a-z0-9-]*(?:\\.[a-z0-9][a-z0-9-]*)*\\.v[1-9][0-9]*$"},
+        "partitionCount": {"type": "string", "pattern": "^[1-9][0-9]{0,9}$"},
+        "positions": {"type": "array", "items": {"$ref": "#/$defs/position"}}
+      }
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["partition", "from"],
+      "properties": {
+        "partition": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,9})$"},
+        "from": {"$ref": "#/$defs/offset"},
+        "to": {"$ref": "#/$defs/offset"}
+      }
+    }
+  }
+}

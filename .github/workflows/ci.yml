@@ -14,6 +14,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  operator-learning:
+    name: Operator learning synchronization
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test repository metadata and learning synchronization
+        run: python3 -m unittest discover -s tools -p 'test_*.py' -v
+      - name: Generate and check the student material
+        run: |
+          mkdir -p "$RUNNER_TEMP/student-course"
+          python3 tools/sync_operator_exercises.py --opentsx-root . --student-root "$RUNNER_TEMP/student-course"
+          python3 tools/sync_operator_exercises.py --opentsx-root . --student-root "$RUNNER_TEMP/student-course" --check
+
+  execution-contracts:
+    name: Shared contract vectors and Rust
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Check generated contract vectors
+        run: python3 tools/execution_contract_vectors.py --check
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal
+      - name: Run the Rust consumer of the shared cases
+        run: cargo +1.99.1 test --locked --manifest-path rust/tsx-contracts/Cargo.toml -- --nocapture
+
   java:
     name: Java ${{ matrix.java }}
     runs-on: ubuntu-24.04

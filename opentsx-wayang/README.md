@@ -47,6 +47,11 @@ require identical event lists and an absolute error below `5e-13` for
 `q_total`, `q_ab`, `q_ba`, and `q_rand`. The random sequence is compared
 exactly.
 
+The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md) covers UI DAGs deployed through
+Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
+[shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`
+and `rust/tsx-contracts`; it validates offline assignments and does not deploy a Rust runtime.
+
 ## Use the plugin
 
 Register `TsxJavaPlugin`, not `Java.basicPlugin()`:
@@ -145,7 +150,7 @@ The root `pom.xml` pins `wayang.version` and manages `wayang-core`, `wayang-basi
 exclusions (decision D-T9 in TASK-020):
 
 | Excluded | Pulled in by |
-|---|---|
+| --- | --- |
 | `com.amazonaws:aws-java-sdk-s3` | `wayang-core` |
 | `com.google.cloud:google-cloud-storage`, `google-cloud-storage-control` | `wayang-basic` |
 | `software.amazon.awssdk:s3` | `wayang-basic` |

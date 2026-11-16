@@ -15,6 +15,12 @@ statistics, OpenMetadata and retrieval. Many code examples did not compile, and 
 | [`tools/check_links.py`](../tools/check_links.py) | checks relative links in the maintained docs; runs in CI |
 | `archive/docs/README.md`, `archive/demos/README.md`, `archive/bin/README.md` | archive indexes |
 | this file | inventory |
+| [`docs/user-manual/17-learn-operators.md`](user-manual/17-learn-operators.md) | select actual execution surfaces and verify generated student lessons |
+| [`docs/learning/ui-operator-contracts.md`](learning/ui-operator-contracts.md) | contracts and executable learning workloads for all 30 implemented UI/DAG operators |
+| [`docs/learning/library-operator-contracts.md`](learning/library-operator-contracts.md) | contracts and learning workloads for 25 public library/infrastructure families, including MFDFA and RIS |
+| [`docs/devguide/integration/wayang-unified-plan.md`](devguide/integration/wayang-unified-plan.md) | unified Java/Rust multi-node deployment plan and bounded storage profile |
+| [`docs/devguide/integration/wayang-shared-contracts.md`](devguide/integration/wayang-shared-contracts.md) | implemented offline assignment contract, shared generated cases and verification |
+| [`docs/devguide/integration/wayang-orchestration-review.md`](devguide/integration/wayang-orchestration-review.md) | architecture gap assessment and qualification gates for Rust orchestration |
 | [`docs/datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md`](datamodel-2026/06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) | concept P8: network reconstruction, simulation, optimization (concept map, research, roadmap) |
 | [`docs/datamodel-2026/07-DIGITAL-TWIN-BSP.md`](datamodel-2026/07-DIGITAL-TWIN-BSP.md) | proposal P9: digital twin of an energy system (atoms, MVC + policy, BSP, Smart Topics) |
 | [`docs/datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md`](datamodel-2026/09-STUDIO-LABVIEW-STEUERPULT.md) | Smart Topics Studio (three views), LabVIEW analogy, control-desk loop via KafScale/infinimesh; prototype in `docs/prototypes/` |
