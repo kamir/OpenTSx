@@ -31,7 +31,8 @@ public final class TsxJavaPlugin implements Plugin {
         return List.of(new CollectionSourceMapping(), new MapMapping(), new LocalCallbackSinkMapping(),
                 new TsxTopicSourceMapping(), new TsxTopicSinkMapping(), new TsxOperatorMappings.SeriesChainMapping(),
                 new TsxOperatorMappings.StatsWindowMapping(), new UnionAllMapping(),
-                new TsxVectorMappings.AlignVectorMapping(), new TsxVectorMappings.VectorSinkMapping());
+                new TsxVectorMappings.AlignVectorMapping(), new TsxVectorMappings.VectorSinkMapping(),
+                new TsxVectorMappings.PairMapping());
     }
 
     @Override

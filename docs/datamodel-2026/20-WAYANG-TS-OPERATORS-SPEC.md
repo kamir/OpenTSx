@@ -506,6 +506,7 @@ Every output record MUST carry an id that depends only on what it logically is:
 | Output | Id |
 |---|---|
 | derived episode | `"c" + hex(xxHash64(seriesId + "|" + from + "|" + to + "|" + specHash))`, as `SeriesStream.java:152-153` |
+| pair result episode | `"p" + hex(xxHash64(seriesId + "|" + episodeId of A + "|" + episodeId of B + "|" + specHash))`, as `JavaTsxPair.episodes` |
 | partial aggregate | Kafka key of S4.2 plus `tsx-revision` |
 | merged aggregate | Kafka key of S4.2 plus `tsx-revision` |
 | signal | `id` of `opentsx.signal.v1`: `hex(xxHash64(job + "|" + site + "|" + seriesId + "|" + kind + "|" + at))` |

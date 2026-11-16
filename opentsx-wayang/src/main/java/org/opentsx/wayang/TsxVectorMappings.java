@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Maps {@link TsxAlignVector} and {@link TsxVectorSink} onto their Java execution operators. */
+/** Maps {@link TsxAlignVector}, {@link TsxPair} and {@link TsxVectorSink} onto their Java execution operators. */
 final class TsxVectorMappings {
 
     private TsxVectorMappings() {
@@ -30,6 +30,18 @@ final class TsxVectorMappings {
                     SubplanPattern.createSingleton(new OperatorPattern<>("align", prototype, false)),
                     new ReplacementSubplanFactory.OfSingleOperators<TsxAlignVector>(
                             (matched, epoch) -> new JavaTsxAlignVector(matched).at(epoch)),
+                    JavaPlatform.getInstance()));
+        }
+    }
+
+    static final class PairMapping implements Mapping {
+        @Override
+        public Collection<PlanTransformation> getTransformations() {
+            TsxPair prototype = new TsxPair("", "pair.xcorr", Map.of(), Set.of(), Set.of(), "", new TsxState(Map.of()));
+            return List.of(new PlanTransformation(
+                    SubplanPattern.createSingleton(new OperatorPattern<>("pair", prototype, false)),
+                    new ReplacementSubplanFactory.OfSingleOperators<TsxPair>(
+                            (matched, epoch) -> new JavaTsxPair(matched).at(epoch)),
                     JavaPlatform.getInstance()));
         }
     }

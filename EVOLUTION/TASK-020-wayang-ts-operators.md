@@ -144,6 +144,10 @@ vector cases, and the four named parameter-message tests to execute successfully
   inputs (each input is marked with `TsxTagged` and joined with a union),
   state in `TsxState`, records `opentsx.vector.v1` through `TsxVectorSink`
   (A3.1).
+- [x] `pair.xcorr` on Wayang: `TsxPair` compares every series of input `a`
+  with every series of input `b`, episode by episode, by the rules of
+  `pairs.ts` (pairing, windows, clock, coverage); one result episode per
+  field and pair range, id of S6.2 (A3.2).
 - [ ] Catalog `tsx-catalog/1` frozen.
 
 Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
@@ -155,6 +159,15 @@ a vector topic: 9 points, then 0, then the tenth, each written once.
 `VectorStream` in `opentsx-retrieval` gained named inputs for this:
 `VectorStreamTest` compares them with `VectorAligner.align` for all 6 cases in
 blocks of 1, 2 and 3 samples and in two series orders.
+
+Status of A3.2 on 2026-11-16, JDK 21: `TsxPairVectorsTest` runs all 5 shared
+`pair.xcorr` cases through a Wayang plan with an absolute error below `5e-13`
+(peak of largest magnitude, as `xcorr.ts`), the same 5 with B in a later
+increment, a repeated delivery, and `intersect` pairing (12 tests, 0
+failures). An episode waits in `TsxState` until every series of the other
+input has passed its end. One difference to the workbench: without `every`
+the clock is the larger sampling interval of the two paired episodes, not of
+the two whole series, because a continuing input has no whole series.
 
 
 | # | Criterion | Proof | Data | Pass |
