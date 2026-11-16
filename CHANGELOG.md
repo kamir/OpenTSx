@@ -130,6 +130,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- The PFD runtime reads `group.id` through the existing core configuration manager, retaining
+  `opentsx-dynamic-job` when absent and rejecting empty or whitespace-only configured values.
+
 - Quantile representatives use `StrictMath.pow` for identical bits across
   platforms, removing a one-ULP ARM/x86 difference in the shared statistics
   vectors. Sketch bytes are unchanged.

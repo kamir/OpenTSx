@@ -3,6 +3,7 @@ package org.opentsx.flink.pfd;
 import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.transformations.OneInputTransformation;
 import org.apache.flink.streaming.api.transformations.SourceTransformation;
@@ -32,6 +33,7 @@ class PFDWindowSizeTest {
     private static final String FLOW = "{\"name\":\"Window contract\",\"input\":{\"type\":\"KAFKA\",\"topic\":\"fixture\"},"
             + "\"steps\":[],\"output\":{\"type\":\"LOG\"}}";
     private String originalBrokers;
+    private String originalGroup;
     private GraphEnvironment environment;
     @TempDir
     Path directory;
@@ -39,6 +41,8 @@ class PFDWindowSizeTest {
     @BeforeEach
     void configureGraphExecution() {
         originalBrokers = System.getProperty("bootstrap.servers");
+        originalGroup = System.getProperty("group.id");
+        System.clearProperty("group.id");
         System.setProperty("bootstrap.servers", "fixture-broker:19092");
         environment = new GraphEnvironment();
         GraphEnvironment.install(environment);
@@ -47,6 +51,8 @@ class PFDWindowSizeTest {
     @AfterEach
     void restoreExecution() {
         GraphEnvironment.reset();
+        if (originalGroup == null) System.clearProperty("group.id");
+        else System.setProperty("group.id", originalGroup);
         if (originalBrokers == null) System.clearProperty("bootstrap.servers");
         else System.setProperty("bootstrap.servers", originalBrokers);
     }
@@ -132,6 +138,50 @@ class PFDWindowSizeTest {
                 List.of("--out-of-orderness"),
                 List.of("--out-of-orderness", "1000", "--out-of-orderness", "2000"),
                 List.of("--window-size", "1000", "--out-of-orderness", "-1"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void absentConsumerGroupPreservesDefault(boolean inline) throws Exception {
+        DynamicTopologyJob.main(arguments(inline));
+        assertEquals("opentsx-dynamic-job", sourceGroup());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,analysis-run-1", "true,analysis-run-1", "false,series.team_2", "true,series.team_2"})
+    void configuredConsumerGroupReachesKafkaSource(boolean inline, String group) throws Exception {
+        System.setProperty("group.id", group);
+        DynamicTopologyJob.main(arguments(inline, "--window-size", "1000", "--out-of-orderness", "250"));
+        assertEquals(group, sourceGroup());
+        assertWindows(1000L);
+        assertWatermarks(250L);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "\t", "\n", "\u2003"})
+    void blankConsumerGroupFailsBeforeExecution(String group) throws Exception {
+        System.setProperty("group.id", group);
+        for (boolean inline : new boolean[]{false, true}) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> DynamicTopologyJob.main(arguments(inline)));
+            assertEquals("group.id is required", failure.getMessage());
+            assertFalse(environment.executed);
+            assertTrue(environment.getTransformations().isEmpty());
+        }
+    }
+
+    private String sourceGroup() throws Exception {
+        assertTrue(environment.executed);
+        var sources = environment.getTransformations().stream()
+                .flatMap(t -> t.getTransitivePredecessors().stream())
+                .filter(t -> t instanceof SourceTransformation<?, ?, ?>).distinct().toList();
+        assertEquals(1, sources.size());
+        KafkaSource<?> source = (KafkaSource<?>) ((SourceTransformation<?, ?, ?>) sources.get(0)).getSource();
+        var configuration = KafkaSource.class.getDeclaredMethod("getConfiguration");
+        configuration.setAccessible(true);
+        org.apache.flink.configuration.Configuration settings =
+                (org.apache.flink.configuration.Configuration) configuration.invoke(source);
+        return settings.getString("group.id", "");
     }
 
     private void assertWatermarks(long tolerance) {

@@ -22,6 +22,13 @@ The recorder uses this topic instead of a placeholder and sets output type `LOG`
 `DynamicTopologyJob` reads its input topic from the descriptor and brokers from `bootstrap.servers`
 through the same configuration manager. Blank broker configuration fails instead of selecting localhost.
 
+Set `group.id` through that configuration manager to choose the Kafka consumer group. If it is absent, the
+runtime uses `opentsx-dynamic-job`. You can set the JVM property `-Dgroup.id=analysis-run-1`, the environment
+variable `OPENTSX_GROUP_ID`, or `group.id` in the existing properties file. The JVM property takes precedence
+over the environment and file configuration. Configured group names are passed through unchanged.
+Empty or whitespace-only values fail with `group.id is required` before source construction; they do not select
+the default group.
+
 The runtime defaults to five-minute event-time windows. Append `--window-size <milliseconds>` after the descriptor
 filename or after `--json` and its JSON argument to select a positive integer window size in milliseconds.
 The default is `300000`. Zero, negative, non-integer,
@@ -58,7 +65,10 @@ cached mean. The tests run in the Java CI matrix.
 execution environment. It checks the five-minute default, configured windows, exact boundary membership,
 negative timestamps and rejection before execution. It also verifies zero and configured watermark tolerance,
 the initial watermark, out-of-order events and advancement to the actual window end boundary.
-Both options are checked together in either order. It never starts a Kafka consumer or a Flink cluster.
+Both options are checked together in either order. Consumer-group cases inspect the actual Kafka source
+configuration for the unchanged default and explicit group names with both descriptor forms. Empty, space,
+tab, newline and Unicode-whitespace values are rejected before graph construction. The tests restore the
+original JVM properties after each case. They never start a Kafka consumer or a Flink cluster.
 
 The JUnit cases are offline contract and graph tests. The log cases exercise zero, one, two and five points
 through the actual sink mapping function and verify all coordinates and values.
