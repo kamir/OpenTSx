@@ -30,11 +30,16 @@ The package's supported compiler baseline is Rust 1.89.0, also checked locally.
 The [implementation](src/lib.rs) rejects unknown or missing envelope fields, duplicate JSON keys,
 invalid JSON Unicode escapes, trailing documents and container nesting above 64.
 Assignment input is limited to 65,536 UTF-8 bytes. Each source or fragment text is limited to 32,768 bytes.
-An assignment contains between 1 and 128 inputs.
+An assignment contains between 1 and 128 whole-topic inputs. A topic is the atomic placement unit.
 Identifiers, runtime/catalog identity and artifact/content digests follow the shared contract.
-Epochs, fences, partitions and offsets use canonical decimal strings with checked integer bounds.
-Bounded assignments require exclusive end offsets; continuous assignments forbid them.
-Duplicate ownership is rejected even when assignments name different runtime nodes.
+Epochs, fences, partition counts and internal recovery positions use canonical decimal strings with checked bounds.
+Each input names `binding`, `topic`, positive `partitionCount` and the complete ordered `positions` array.
+Positions must cover every declared partition exactly once, in ascending order from zero.
+Bounded positions require exclusive end offsets; continuous positions forbid them.
+A positions array that omits, repeats or reorders declared partitions returns `assignment.coverage`.
+Positions describe internal recovery state and cannot split a topic between deployment owners.
+Ownership is exclusive per `(binding, topic)` within an assignment and per `(fragment, binding, topic)` in a set.
+These checks prove consistency with the declared inventory; broker inventory and durable ownership need separate checks.
 
 `sourceDagText` retains the exact original UI text. `fragmentText` carries the separate JSON stage.
 Fragment validation checks an object with a source object and nonempty node and sink arrays.

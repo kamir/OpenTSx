@@ -73,7 +73,7 @@ class ExecutionAssignmentsTest {
     @Test
     void validatesEveryInputShapeBeforeOffsetValues() throws IOException {
         ObjectNode document = valid();
-        ((ObjectNode) document.path("inputs").get(0)).put("from", "01");
+        ((ObjectNode) document.path("inputs").get(0).path("positions").get(0)).put("from", "01");
         ObjectNode wrongShape = document.path("inputs").get(0).deepCopy();
         wrongShape.put("extra", true);
         ((ArrayNode) document.path("inputs")).add(wrongShape);

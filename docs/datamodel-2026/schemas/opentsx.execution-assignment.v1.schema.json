@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.execution-assignment.v1.schema.json",
   "title": "opentsx.execution-assignment.v1",
-  "description": "Structural offline preflight contract for one physical fragment assignment. Java/Rust semantic validation is mandatory for UTF-8 byte limits, finite binary64 JSON numbers, integer bounds, hashes, intervals and ownership. This is not deployment authorization, a complete physical plan, a signature envelope, or proof of exclusive live ownership.",
+  "description": "Structural offline preflight contract assigning whole topics to one physical fragment. Partitions are internal cursor metadata, never placement units. Java/Rust semantic validation is mandatory for byte/numeric bounds, hashes, complete partition positions and whole-topic ownership. This is not deployment authorization or proof of exclusive live ownership.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "deployment", "generation", "assignment", "attempt", "fence", "fragment", "site", "node", "runtime", "catalog", "artifactDigest", "specHash", "sourceDagText", "fragmentHash", "fragmentText", "mode", "inputs"],
@@ -27,8 +27,8 @@
     "inputs": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/input"}}
   },
   "allOf": [
-    {"if": {"properties": {"mode": {"const": "bounded"}}}, "then": {"properties": {"inputs": {"items": {"required": ["to"]}}}}},
-    {"if": {"properties": {"mode": {"const": "continuous"}}}, "then": {"properties": {"inputs": {"items": {"not": {"required": ["to"]}}}}}}
+    {"if": {"properties": {"mode": {"const": "bounded"}}}, "then": {"properties": {"inputs": {"items": {"properties": {"positions": {"items": {"required": ["to"]}}}}}}}},
+    {"if": {"properties": {"mode": {"const": "continuous"}}}, "then": {"properties": {"inputs": {"items": {"properties": {"positions": {"items": {"not": {"required": ["to"]}}}}}}}}}
   ],
   "$defs": {
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
@@ -38,10 +38,19 @@
     "input": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["binding", "topic", "partition", "from"],
+      "required": ["binding", "topic", "partitionCount", "positions"],
       "properties": {
         "binding": {"$ref": "#/$defs/id"},
         "topic": {"type": "string", "maxLength": 249, "pattern": "^tsx\\.[a-z0-9][a-z0-9_-]*\\.[a-z0-9][a-z0-9-]*(?:\\.[a-z0-9][a-z0-9-]*)*\\.v[1-9][0-9]*$"},
+        "partitionCount": {"type": "string", "pattern": "^[1-9][0-9]{0,9}$"},
+        "positions": {"type": "array", "items": {"$ref": "#/$defs/position"}}
+      }
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["partition", "from"],
+      "properties": {
         "partition": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,9})$"},
         "from": {"$ref": "#/$defs/offset"},
         "to": {"$ref": "#/$defs/offset"}

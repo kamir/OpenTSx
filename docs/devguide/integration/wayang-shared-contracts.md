@@ -30,7 +30,7 @@ and [Rust library](../../../rust/tsx-contracts/src/lib.rs) implement the same re
 | `fragmentText` | Compiler-produced JSON object with a source object and nonempty node and sink arrays; at most 32,768 UTF-8 bytes. |
 | `fragmentHash` | SHA-256 of the exact UTF-8 `fragmentText`, as 64 lowercase hexadecimal characters. |
 | `mode` | `bounded` or `continuous`. |
-| `inputs` | Between 1 and 128 exact Kafka partition bindings described below. This first contract does not describe an Iceberg scan. |
+| `inputs` | Between 1 and 128 whole-topic bindings described below. Every topic includes its complete internal partition positions. This first contract does not describe an Iceberg scan. |
 
 No envelope fields are optional and unknown fields reject. The envelope has at most 65,536 UTF-8 bytes.
 Outer and fragment JSON reject duplicate decoded keys, malformed Unicode, trailing documents and container depth
@@ -45,17 +45,23 @@ These hashes do not implement canonical scientific equivalence. A separately ver
 delivery requirement; silently replacing legacy `specHash` would alter the
 [existing episode identity](../../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/clean/SeriesStream.java#L151).
 
-## Bind exact partitions without numeric rounding
+## Assign whole topics and preserve exact internal positions
 
-Every input has exactly `binding`, `topic`, `partition`, `from`, and, only for bounded mode, `to`.
+The smallest assignable execution unit is a whole topic, regardless of its partition count.
+Every input has exactly `binding`, `topic`, `partitionCount` and `positions`.
+Partition positions are internal cut/checkpoint metadata; they never select separate placement units.
 
 | Input field | Rule |
 | --- | --- |
 | `binding` | Opaque cluster/source binding ID using the identifier grammar above; no credentials or host address. The coordinator must resolve aliases to one authoritative source identity before set validation. |
 | `topic` | At most 249 ASCII characters; `tsx.<domain>.<kind>.v<n>`, with a lowercase/digit initial character in each segment. Domain permits underscores and hyphens; kind segments permit hyphens; version is positive decimal. |
-| `partition` | Canonical nonnegative decimal string, maximum `2147483647`. |
-| `from` | Canonical nonnegative decimal string, maximum `9223372036854775807`. |
-| `to` | Same range as `from`; required in bounded mode and forbidden in continuous mode. The interval is `[from,to)`, including an empty interval. |
+| `partitionCount` | Canonical positive decimal string, maximum `2147483647`; the complete declared inventory size. Real admission must compare it with the authoritative topic incarnation and inventory. |
+| `positions` | Array in canonical ascending partition order, exactly one cursor for each partition `0` through `partitionCount - 1`. Missing, repeated, reordered or partial inventories reject. |
+
+Every cursor has exactly `partition`, `from` and, only in bounded mode, `to`. `partition` is a canonical
+nonnegative decimal string within signed 32-bit bounds. `from` and `to` are canonical nonnegative signed
+64-bit decimal strings, maximum `9223372036854775807`. Bounded intervals are `[from,to)`, including empty ranges.
+Continuous cursors forbid `to`.
 
 Leading zeros, signs, fractional values and JSON numbers reject. The shared fixture includes
 `9007199254740993`, which a JavaScript number cannot represent exactly. Bounded cuts must be captured and persisted
@@ -63,9 +69,10 @@ before these offsets become admitted execution inputs. Continuous mode has a fix
 
 Set validation first validates every individual assignment. It then requires one deployment, generation,
 source hash, mode and catalog; each fragment ID has one fragment hash. Assignment IDs must be unique.
-Every `(fragment,binding,topic,partition)` belongs to at most one assignment, including across different sites/nodes.
-Different fragments may read the same partition when the physical plan explicitly permits it.
-The checker detects overlap; it does not prove complete coverage against an external inventory.
+Every `(fragment,binding,topic)` belongs to at most one assignment, including across different sites/nodes.
+Splitting one topic's partitions across assignments rejects. Different fragments may each read a whole topic
+when the physical graph explicitly permits full-topic fan-out.
+The checker proves complete cursor coverage against the declared count, not against an external broker inventory.
 It does not check node-to-site membership, operator availability or a partitioner's series-placement contract.
 
 ## Interpret refusal codes in a fixed order
@@ -82,9 +89,10 @@ It does not check node-to-site membership, operator availability or a partitione
 | 8 | `assignment.dag`, then `assignment.hash` | Invalid source/fragment text type or byte size; then malformed or mismatching content hashes. |
 | 9 | `assignment.mode` | Unsupported execution mode. |
 | 10 | `assignment.dag` | Invalid fragment JSON, nonfinite binary64 number token or missing source/nodes/sinks shape. |
-| 11 | `assignment.input` | Invalid input list, fields, binding or topic. Every input shape is checked before offsets. |
-| 12 | `assignment.offset` | Invalid partition/start/end decimal or reversed range. |
-| 13 | `assignment.ownership` | Duplicate input ownership within one assignment. |
+| 11 | `assignment.input` | Invalid topic list, topic/cursor fields, binding, topic or positions array. All shapes are checked before numeric values. |
+| 12 | `assignment.offset` | Invalid partition count, partition/start/end decimal or reversed range. |
+| 13 | `assignment.coverage` | Internal cursor inventory is not exactly the declared ascending partition set. |
+| 14 | `assignment.ownership` | Duplicate whole-topic ownership within one assignment. |
 
 After all individuals pass, a set rejects inconsistent deployment/fragment context with `assignment.context`,
 duplicate assignment IDs with `assignment.duplicate`, then duplicate ownership with `assignment.ownership`.
@@ -103,8 +111,9 @@ cargo +1.99.1 test --offline --locked --manifest-path rust/tsx-contracts/Cargo.t
 
 The generator's check compares the committed file byte for byte. The Java test creates a named dynamic test for
 each shared case. The Rust integration test reads that same file and prints the number of assignment, set and
-hash cases checked. The fixture contains valid and invalid assignments, two-node disjoint and overlapping
-ownership, mixed Java/Rust placement, byte/hash identity and values at integer limits.
+hash cases checked. Two-node success uses different whole topics, with two and three partitions respectively.
+Cases reject split-topic placement, missing internal positions and duplicate topic owners, and cover mixed
+Java/Rust placement, byte/hash identity and values at integer limits.
 
 Regenerate the fixture after changing its generator, then check the output:
 

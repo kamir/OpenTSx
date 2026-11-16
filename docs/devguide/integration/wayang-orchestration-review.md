@@ -13,19 +13,21 @@ This review records neither production approval nor executed runtime qualificati
 
 The baseline specification labels itself a draft that is not implemented
 ([status](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L3)).
-The Java plugin registers collection-source, map and local-callback mappings
-([plugin](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#L25)).
+The baseline Java plugin registers collection-source, map and local-callback mappings
+([plugin](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#L25)).
 Its smoke-test source builds a collection-to-map-to-callback plan
-([test](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/WayangSmokeTest.java#L24)).
+([test](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/opentsx-wayang/src/test/java/org/opentsx/wayang/WayangSmokeTest.java#L24)).
 Those sources do not establish network deployment, Rust execution, recovery or production capacity.
 The translator, site executor and Rust foundation are unchecked tasks in
-[A4](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/EVOLUTION/TASK-020-wayang-ts-operators.md#L99) and
-[B1](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/EVOLUTION/TASK-020-wayang-ts-operators.md#L120).
+[A4][baseline-a4] and [B1][baseline-b1].
+
+[baseline-a4]: https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/EVOLUTION/TASK-020-wayang-ts-operators.md#L99
+[baseline-b1]: https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/EVOLUTION/TASK-020-wayang-ts-operators.md#L120
 
 The proposed site stage is copied unchanged to every site
 ([S2.4](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L173)).
 That contract describes site federation, rather than arbitrary subgraph placement across nodes.
-The runner schema supplies topic partition counts but no assigned partition sets or node ownership
+The runner schema supplies topic partition counts without complete internal positions or whole-topic node ownership
 ([input](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/schemas/opentsx.runner-plan.v1.schema.json#L40)).
 These are the primary gaps between the inspected baseline and the requested orchestration target.
 
@@ -35,8 +37,11 @@ Adopt three distinct descriptions as the design boundary:
 
 1. The logical DAG contains admitted domain operations, resolved parameters, typed edges and logical outputs.
 2. The physical deployment binds that DAG to execution profiles, stages, channels, capabilities and resources.
-3. Each complete node fragment binds its stage work, inputs, outputs, partition ownership and generation.
+3. Each complete node fragment binds its stage work, inputs, outputs, whole-topic ownership and generation.
 
+The smallest deployable unit is always a whole topic, regardless of its partition count.
+Every assigned topic stays on one node for that fragment, with all its partitions.
+Partition positions describe internal source cuts and checkpoints; they are not independently deployable work.
 The node fragment contains enough admitted work for local execution without an RPC for each operator.
 Preserve source-node identity through lowering so validation and status can refer to the UI selection.
 Pin catalog, operator, wire and state compatibility separately from a human-readable node name.
@@ -64,23 +69,31 @@ Do not infer them from the superclass or send a separate remote call for every l
 
 ### Block placement until ownership and edges are complete
 
-Define the ownership unit using deployment, stage, source identity and exact partition IDs.
-Include node identity and the ownership generation in each assignment.
-Prove complete, disjoint coverage against the admitted source inventory before activation.
-Do not treat a topic's partition count as an assignment.
+Define the ownership key as `(fragment,binding,topic)` within the admitted deployment generation.
+Resolve source aliases to one authoritative binding before checking ownership.
+Bind each whole topic to one node; reject a second owner even if it claims disjoint partitions.
+An input topic descriptor contains `binding`, `topic`, `partitionCount` and `positions`.
+Require exactly one internal position for every partition in `0..N-1`, where `N` is `partitionCount`.
+Reject duplicate, missing and out-of-range positions before activation.
+Prove complete whole-topic coverage against the admitted source inventory.
 
-Classify every stage edge as local, repartitioned, or cross-node.
-Bind its cluster and topic identity, payload schema, key encoding, partitioner and partition set.
+Classify every stage edge as local or cross-node.
+Bind its cluster and whole-topic identity, payload schema, key encoding, partitioner and complete internal positions.
 Record raw-data residency policy and permitted destination before selecting placement.
-Multi-input operators require compatible ownership and ordering on every input.
-A key change requires a declared repartition boundary, as the concept already identifies
-([flow shapes](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#L329)).
+Multi-input operators require placement of their complete input topics and explicit ordering/key semantics.
+A key-changing operation may write a declared new topic stage; the new topic is then assigned as a whole.
+It cannot split ownership of the existing topic or turn its partitions into deployment units.
 Treat network buffering, output acknowledgement and outage capacity as bounded resources.
 Do not infer a direct node-to-node transport from a logical edge; approved broker channels are a valid first choice.
 
-**Gate:** deterministic fixtures reject duplicate owners, missing partitions, incompatible input partitioners,
-unbound edges and prohibited raw movement. A two-node integration run records actual assignments and channels.
-The integration gate includes source recreation, partition changes, skew and an unavailable destination.
+**Gate:** deterministic fixtures reject duplicate whole-topic owners, attempted partition splits, incomplete internal
+positions, incompatible input semantics, unbound edges and prohibited raw movement.
+The two-node integration run assigns different topics to the two Rust nodes; each node reads all partitions of
+its assigned topic. Record actual whole-topic assignments and channels.
+The integration gate includes source recreation, partition-count changes, skew and an unavailable destination.
+Admit memory, state, throughput and recovery capacity for each whole topic on its assigned node.
+Reject an oversized topic rather than dividing its partitions between nodes.
+Scale out through additional topics or an explicitly admitted new topic stage.
 
 ### Separate bounded completion from continuous acceptance
 
@@ -95,7 +108,8 @@ The baseline has starts but no fixed bounded ends
 ([start](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/schemas/opentsx.runner-plan.v1.schema.json#L21)).
 Its Java proposal repeatedly captures increment ends
 ([increments](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L386)).
-Resolve a bounded start and end once, persist them and reject unavailable cuts on retry.
+Resolve bounded starts and ends for every internal partition of each whole topic once.
+Persist that complete cut and reject unavailable cuts on retry.
 A continuous deployment handle is not an aggregate result or a completed data channel.
 A bounded successor consuming aggregates requires a separate verified completion boundary.
 
@@ -105,7 +119,7 @@ Neither a network acknowledgement nor a process launch can satisfy the bounded p
 
 ### Fence ownership before claiming failover
 
-Select static partition ownership for the first multi-node slice.
+Select static whole-topic ownership for the first multi-node slice.
 Do not claim automatic reassignment or failover until stale-output enforcement is qualified.
 The baseline local busy check
 ([refusal](https://github.com/kamir/OpenTSx/blob/dc5f05043158a7ddf80ac156f9690ca92cf93788/docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L447))
@@ -117,6 +131,7 @@ Preparation checks capabilities, channels, ownership, state compatibility and re
 Activation binds the complete admitted generation; retirement stops output and records the final checkpoint boundary.
 Partial activation needs an explicit failed or degraded outcome, never an implied atomic start across nodes.
 Keep old and replacement owners mutually exclusive at the output boundary.
+Failover, retirement and state transfer apply to the complete assigned topic, including all its partition positions.
 
 Offline autonomy requires a bounded grant and a declared expiry rule.
 Do not reassign while an offline owner still has authority to emit.
@@ -215,7 +230,7 @@ Run those vectors in Java and Rust before admitting the corresponding capability
 ## Apply the conditional recommendation
 
 Proceed with shared schemas and cross-language fixtures, then a nonproduction UI-to-Wayang-to-two-Rust-node slice.
-Use static assignments and the smallest supported operator subset for that slice.
+Use different whole topics on the two nodes, static topic ownership and the smallest supported operator subset.
 Contract validators establish deterministic admission rules; they do not establish authentication, network dispatch,
 durable coordination, broker ownership enforcement or production deployment.
 Do not wait for the entire Java operator catalog before proving the Rust deployment boundary.
@@ -235,7 +250,8 @@ The Rust implementation exposes the same individual and set boundaries
 The generator names valid and invalid assignment, set and exact-text hashing cases
 ([fixtures](../../../tools/execution_contract_vectors.py#L61)).
 
-Accept the corrected foundation conditionally within that offline scope, subject to the shared regression gates.
+Accept the corrected foundation conditionally within that offline scope, subject to source review and regression
+gates for whole-topic ownership and complete internal positions.
 The JSON Schema is a structural filter; runtime checks additionally enforce UTF-8 byte limits, numeric maxima,
 content hashes, parsed fragment shape and set consistency
 ([schema](../../datamodel-2026/schemas/opentsx.execution-assignment.v1.schema.json#L23)).

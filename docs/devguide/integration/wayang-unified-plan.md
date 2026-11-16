@@ -18,7 +18,12 @@ The UI keeps `opentsx.dag.v1`/`v2`. Separate three descriptions:
 1. The logical DAG identifies the user's operators, parameters, ports and requested outputs.
 2. The admitted physical deployment fixes catalog/artifact identities, fragments, node placement, channels,
    resources, execution profile and generation.
-3. Each execution assignment binds one fragment to one runtime node and an exact partition set.
+3. Each execution assignment binds one fragment to one runtime node and complete topics.
+
+The smallest deployable unit is always the whole topic, regardless of partition count.
+Every partition is read and tracked internally by that topic's assigned runner. Placement, resource admission,
+handover and failover operate on the whole topic. An oversized topic is refused or placed on a capable node;
+splitting its partitions across nodes is not a fallback.
 
 Wayang optimizes only admitted alternatives. Residency, ownership, supported operations and resource constraints
 are hard admission conditions, not penalties that a cheaper plan can override. One Rust platform represents the
@@ -50,10 +55,10 @@ Add an explicit Wayang deployment choice and capability-aware validation; preser
 | Responsibility | Required deliverable |
 | --- | --- |
 | UI and backend admission | Pinned catalog/capability digest, normalized aliases/defaults, typed ports, resource/residency policy and stable node/field refusal locations. Draft export alone never authorizes execution. |
-| `DagToWayang` | Validate the existing DAG; preserve source node IDs; produce allowed complete fragments and a typed physical deployment. Distinguish replicated site-local work from partitioned execution. |
+| `DagToWayang` | Validate the existing DAG; preserve source node IDs; produce complete fragments and whole-topic assignments in a typed physical deployment. Replicated graph branches each consume their topics in full. |
 | Rust platform and executor | One custom platform, complete-stage compilation, bounded fanout to assigned nodes, idempotent commands, verified receipts and cancellation. Do not infer concurrency from Wayang's executor cache. |
 | Channels | Explicit cluster/broker binding, topic incarnation, schema, key, partitioner, owner set, payload classification, buffering/backpressure and completion boundary for every cross-fragment edge. |
-| Rust runner | Trusted packaged operators, exact shared wire/identity rules, bounded per-key state, actual assigned partitions, compatible checkpoints and generation-specific status. |
+| Rust runner | Trusted packaged operators, exact shared wire/identity rules, bounded per-key state, every partition of each assigned topic, compatible checkpoints and generation-specific status. |
 | Durable coordinator | Reuse the SaaS PostgreSQL/SQLAlchemy boundary for authoritative deployment state, assignments and delivery records. Implement migrations, supervision and restore fencing; do not use request background tasks as a scheduler. |
 | Publication and readers | Bounded results use verified manifests and one atomic pointer/outcome transaction. Continuous output needs a separately enforceable stale-writer policy; a database pointer does not fence a Kafka producer. |
 
@@ -68,10 +73,11 @@ Editable [rollout UML](uml/wayang-rust-rollout.puml) and [PNG](uml/wayang-rust-r
 
 ## Set the first rollout and state rules
 
-The proposed first multi-node prototype uses static assignments and a small supported chain.
+The proposed first multi-node prototype assigns different whole topics to two nodes and uses a small supported chain.
 No automatic failover or rescaling is admitted until stale-output enforcement is qualified.
 Different aliases for one broker/topic must resolve to one authoritative source identity before ownership checks.
-Prove complete coverage against the admitted inventory, not only non-overlap among assignments.
+Prove whole-topic ownership and complete internal cursor coverage against the admitted inventory.
+Partition count or incarnation changes require readmission of the whole topic.
 
 Use durable prepare, activate and retire transitions. Preparation performs no output writes. Activation names
 the admitted generation and assignment set. Retirement stops output and records the final state boundary.
@@ -96,7 +102,7 @@ not promised by operator-output parity. Fixed provenance clocks are part of same
 | Logical and physical identity | Preserve raw-text `specHash`; separately version semantic/computation and physical deployment hashes. Define defaults, signed zero, NaNs and ordered inputs. Placement cannot silently change scientific identity. |
 | Delivery cursor | Durable per-site delivery sequence independent of each job's `planVersion`; test job A version 10 followed by job B version 1, reconnect and duplicate acknowledgement. |
 | Membership and capabilities | Bind node-to-site identity, artifact/catalog/state ABI, measured capacities and report freshness. Require every conformance check exactly once; validate inventory counts and unique IDs. |
-| Data edges and repartitioning | Name every edge and source/target port; validate key affinity and multi-input co-location. Key changes require explicit repartition. Raw cross-site pairs/vector joins reject until their movement contract is accepted. |
+| Data edges and new topics | Name every edge and source/target port; validate key affinity and multi-input co-location. A key-changing stage can create an explicit new topic, which is also assigned whole. Raw cross-site pairs/vector joins reject until their movement contract is accepted. |
 | Continuous fencing | Specify an output boundary that rejects old authority. Local busy checks, manual assignment and lease expiry alone are insufficient. Test the disconnected old owner before enabling takeover. |
 | Rollout availability | Specify required/optional assignments, deadline, partial activation behavior and operator-visible degraded state. Keep generation-bound expected membership. |
 | Federation finality | Require closed-window/cut evidence, not merely one partial from every site. Reject conflicting payloads under the same key/revision and stale generations. |
@@ -118,10 +124,10 @@ Planning IDs below are local work packages, not created issue numbers. Owners ar
 | U02: driver lowering; Wayang owner | U01 | Real Wayang logical/physical plan and custom stage executor against deterministic fake transport; two assignments, bounded fanout, placement restrictions, receipts and no raw driver payloads. |
 | U03: durable control; backend owner | U01 | PostgreSQL migrations, deployment/assignment journal, per-site delivery sequence, idempotent prepare/activate/retire and polling. Barrier tests for restart, stale events and lost acknowledgements. |
 | U04: minimal Rust runner; Rust owner | U00, U01 | Pass-through, Avro, series IDs, Kafka client/partitioner conformance, checkpoints and one cleaning chain. Shared wire/operator vectors plus crash-before/after-ack cases; pinned CI artifacts. |
-| U05: UI-to-two-node prototype; application/platform | U02, U03, U04 | Explicit UI target selection; two actual Rust processes receive disjoint assignments and channel bindings. Output matches direct Java, including restart and refused capabilities. Static ownership only. |
+| U05: UI-to-two-node prototype; application/platform | U02, U03, U04 | Explicit UI target selection; two actual Rust processes receive different whole topics and channel bindings, including all internal partitions. Reject split-topic placement. Output matches direct Java, including restart and refused capabilities. Static topic ownership only. |
 | U06: production ownership and rollout; platform/security | U05; approvals | Enforce stale-output rejection, policy/signatures, resource limits, staged rollout, retention and restore runbooks. Network-partition, partial activation and operating qualification before production. |
 | U07: catalog expansion; algorithm owners | Per-operator vectors | Continue A2/A3 Java kernels and Rust ports without blocking U02/U04 on every operator. No duplicate generator or conflicting ownership of shared algorithm fixtures. |
-| U08: bounded storage profile; storage/backend | U00, U01, U03 | Snapshot acquisition, durable Avro seal, bounded replay, private Iceberg staging and pointer-aware reads. Independently verify both tables and reconcile ambiguous publication. |
+| U08: bounded storage profile; storage/backend | U00, U01, U03; completion requires U02 and a qualified bounded executor plus selected U07 kernels | Snapshot acquisition, durable Avro seal, actual bounded Wayang execution, retained-state parity, private Iceberg staging and pointer-aware reads. Independently verify both tables and reconcile ambiguous publication. Storage work may start in parallel. |
 | U09: federation and dynamic placement; architecture/platform | U05, qualified U06/U07 capabilities | Partial/final aggregate contracts, movement/backpressure, mixed-runtime parity and measured cost models. Rescaling needs state migration and safe ownership handover evidence. |
 
 U05 is the first proof of the requested product behavior. U06 gates production; U08 preserves the selected
@@ -132,8 +138,9 @@ not substitute for the Rust deployment proof.
 
 This foundation branches from the exact PR #258 head and keeps its Wayang 1.1.1 dependency setup and
 `TsxJavaPlugin`. It does not replace them with the isolated research pilot's snapshot dependency or broad plugin.
-PR #258 merges before the dependent contract change is rebased and proposed against the repository default branch.
-Required CI must be green before merge; no merge or deployment is performed by this plan.
+The feature branch integrates default-branch commit `bf71af4`, including merged PR #258, A1 topic I/O/checkpoints
+and the pair-event-synchronization kernel. Parallel operator and vector work remains independently owned.
+Required CI must be green before merge; this work performs no production deployment.
 
 The parallel operator work owns `TsxPairXcorr`, `TsxPairEs`, their vectors and the statistics/segment/SAX/DQ
 reference generators. The parallel A1 work owns source/sink/checkpoint and increment execution.

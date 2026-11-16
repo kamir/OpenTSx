@@ -24,7 +24,7 @@ def assignment():
         "name": "shared-contract",
         "source": {
             "kind": "kafscale-broker",
-            "topics": ["tsx.wind.episodes.v2"],
+            "topics": ["tsx.wind.episodes.v2", "tsx.wind.other-episodes.v2"],
             "series": ["0000000000000001"],
         },
         "nodes": [
@@ -39,7 +39,7 @@ def assignment():
         "schema": "opentsx.execution-assignment.v1",
         "deployment": "synthetic-wind",
         "generation": "1",
-        "assignment": "convert-p0",
+        "assignment": "convert-topic-a",
         "attempt": "attempt-1",
         "fence": "1",
         "fragment": "convert",
@@ -53,8 +53,9 @@ def assignment():
         "fragmentHash": digest(text),
         "fragmentText": text,
         "mode": "bounded",
-        "inputs": [{"binding": "wind-source", "topic": "tsx.wind.episodes.v2",
-                    "partition": "0", "from": "9007199254740993", "to": "9007199254741000"}],
+        "inputs": [{"binding": "wind-source", "topic": "tsx.wind.episodes.v2", "partitionCount": "2",
+                    "positions": [{"partition": str(p), "from": "9007199254740993", "to": "9007199254741000"}
+                                  for p in range(2)]}],
     }
 
 
@@ -72,15 +73,25 @@ def vectors():
     def group(name, values, error=None):
         cases.append({"name": name, "kind": "set", "inputs": [encoded(v) for v in values], "error": error})
 
+    def cursor(value):
+        return value["inputs"][0]["positions"][0]
+
+    def continuous(value):
+        value["mode"] = "continuous"
+        for topic in value["inputs"]:
+            for position in topic["positions"]:
+                position.pop("to")
+
+    def maximum_offsets(value):
+        value.update(generation="9223372036854775807", fence="9223372036854775807")
+        for position in value["inputs"][0]["positions"]:
+            position.update(**{"from": "9223372036854775807", "to": "9223372036854775807"})
+
     single("bounded-rust-large-offset", assignment())
     changed("java-same-contract", lambda v: v.update(runtime="java", node="java-a"))
-    changed("continuous-fixed-start", lambda v: (v.update(mode="continuous"), v["inputs"][0].pop("to")))
-    changed("bounded-empty-range", lambda v: v["inputs"][0].update(to=v["inputs"][0]["from"]))
-    changed("signed-int64-boundary", lambda v: (v.update(generation="9223372036854775807",
-                                                        fence="9223372036854775807"),
-                                               v["inputs"][0].update(partition="2147483647",
-                                                                     **{"from": "9223372036854775807",
-                                                                        "to": "9223372036854775807"})))
+    changed("continuous-fixed-start", continuous)
+    changed("bounded-empty-range", lambda v: cursor(v).update(to=cursor(v)["from"]))
+    changed("signed-int64-boundary", maximum_offsets)
     changed("underscore-domain", lambda v: v["inputs"][0].update(topic="tsx.wind_farm.episodes.v2"))
     changed("opaque-original-yaml", lambda v: v.update(sourceDagText="name: wind\nunit: µW\n",
                                                         specHash=digest("name: wind\nunit: µW\n")))
@@ -108,17 +119,26 @@ def vectors():
     bad = '{"source":{},"nodes":[{}],"sinks":[{}],"nodes":[{}]}'
     changed("duplicate-fragment-key", lambda v: v.update(fragmentText=bad, fragmentHash=digest(bad)), "assignment.dag")
     changed("empty-inputs", lambda v: v.update(inputs=[]), "assignment.input")
-    changed("missing-bounded-end", lambda v: v["inputs"][0].pop("to"), "assignment.input")
+    changed("missing-bounded-end", lambda v: cursor(v).pop("to"), "assignment.input")
     changed("continuous-with-end", lambda v: v.update(mode="continuous"), "assignment.input")
     changed("input-extra-field", lambda v: v["inputs"][0].update(password="forbidden"), "assignment.input")
     changed("invalid-topic", lambda v: v["inputs"][0].update(topic="tsx.-wind.episodes.v2"), "assignment.input")
-    changed("numeric-offset-rounding-risk", lambda v: v["inputs"][0].update(**{"from": 9007199254740993}),
+    changed("numeric-offset-rounding-risk", lambda v: cursor(v).update(**{"from": 9007199254740993}),
             "assignment.offset")
-    changed("negative-offset", lambda v: v["inputs"][0].update(**{"from": "-1"}), "assignment.offset")
-    changed("offset-leading-zero", lambda v: v["inputs"][0].update(**{"from": "00"}), "assignment.offset")
-    changed("offset-overflow", lambda v: v["inputs"][0].update(to="9223372036854775808"), "assignment.offset")
-    changed("reversed-range", lambda v: v["inputs"][0].update(to="0"), "assignment.offset")
-    changed("partition-overflow", lambda v: v["inputs"][0].update(partition="2147483648"), "assignment.offset")
+    changed("negative-offset", lambda v: cursor(v).update(**{"from": "-1"}), "assignment.offset")
+    changed("offset-leading-zero", lambda v: cursor(v).update(**{"from": "00"}), "assignment.offset")
+    changed("offset-overflow", lambda v: cursor(v).update(to="9223372036854775808"), "assignment.offset")
+    changed("reversed-range", lambda v: cursor(v).update(to="0"), "assignment.offset")
+    changed("partition-overflow", lambda v: cursor(v).update(partition="2147483648"), "assignment.offset")
+    changed("numeric-partition-count", lambda v: v["inputs"][0].update(partitionCount=2), "assignment.offset")
+    changed("partition-count-overflow", lambda v: v["inputs"][0].update(partitionCount="2147483648"),
+            "assignment.offset")
+    changed("missing-partition-position", lambda v: v["inputs"][0]["positions"].pop(), "assignment.coverage")
+    changed("duplicate-partition-position", lambda v: cursor(v).update(partition="1"), "assignment.coverage")
+    changed("unordered-partition-positions", lambda v: v["inputs"][0]["positions"].reverse(), "assignment.coverage")
+    changed("empty-partition-positions", lambda v: v["inputs"][0].update(positions=[]), "assignment.coverage")
+    changed("large-declared-count-no-allocation", lambda v: v["inputs"][0].update(partitionCount="2147483647"),
+            "assignment.coverage")
     changed("duplicate-input-ownership", lambda v: v["inputs"].append(copy.deepcopy(v["inputs"][0])),
             "assignment.ownership")
     cases.append({"name": "duplicate-outer-key", "kind": "assignment",
@@ -149,19 +169,27 @@ def vectors():
     group("empty-deployment", [], "assignment.context")
     one = assignment()
     two = copy.deepcopy(one)
-    two.update(assignment="convert-p1", node="rust-b")
-    two["inputs"][0]["partition"] = "1"
-    group("two-rust-nodes-disjoint-partitions", [one, two])
+    two.update(assignment="convert-topic-b", node="rust-b")
+    two["inputs"][0].update(topic="tsx.wind.other-episodes.v2", partitionCount="3")
+    third_position = copy.deepcopy(two["inputs"][0]["positions"][0])
+    third_position["partition"] = "2"
+    two["inputs"][0]["positions"].append(third_position)
+    group("two-rust-nodes-distinct-whole-topics", [one, two])
     three = copy.deepcopy(two)
     three.update(runtime="java", node="java-b")
-    group("mixed-java-rust-disjoint-partitions", [one, three])
+    group("mixed-java-rust-distinct-whole-topics", [one, three])
     two["assignment"] = one["assignment"]
     group("duplicate-assignment-id", [one, two], "assignment.duplicate")
-    two["assignment"] = "convert-p1"
-    two["inputs"][0]["partition"] = "0"
-    group("two-nodes-overlapping-ownership", [one, two], "assignment.ownership")
+    two["assignment"] = "convert-topic-b"
+    two["inputs"][0] = copy.deepcopy(one["inputs"][0])
+    group("two-nodes-overlapping-topic-ownership", [one, two], "assignment.ownership")
+    split_a = copy.deepcopy(one)
+    split_b = copy.deepcopy(two)
+    split_a["inputs"][0]["positions"].pop()
+    split_b["inputs"][0]["positions"].pop(0)
+    group("split-topic-across-nodes-rejected", [split_a, split_b], "assignment.coverage")
     two["fragment"] = "independent"
-    group("different-fragments-same-partition", [one, two])
+    group("different-fragments-read-whole-topic", [one, two])
     two["generation"] = "2"
     group("mixed-generations", [one, two], "assignment.context")
     two["generation"] = "1"
@@ -171,8 +199,8 @@ def vectors():
     two.update(sourceDagText=one["sourceDagText"] + "\n", specHash=digest(one["sourceDagText"] + "\n"))
     group("mixed-source-identities", [one, two], "assignment.context")
     two = copy.deepcopy(one)
-    two.update(assignment="convert-p1", node="rust-b", fragmentText=pretty, fragmentHash=digest(pretty))
-    two["inputs"][0]["partition"] = "1"
+    two.update(assignment="convert-topic-b", node="rust-b", fragmentText=pretty, fragmentHash=digest(pretty))
+    two["inputs"][0]["topic"] = "tsx.wind.other-episodes.v2"
     group("inconsistent-fragment-definition", [one, two], "assignment.context")
     for name, text in [("empty-utf8", ""), ("ascii", "OpenTSx"), ("unicode", "µW Ω 😀"),
                        ("line-feed", "a\nb\n"), ("carriage-return-line-feed", "a\r\nb\r\n"),

@@ -17,7 +17,7 @@ Terms:
 | Track B | the Rust runner `tsx-runner` |
 | runtime | an implementation of the catalog: Track A or Track B |
 | site | one admitted data/security location with its cluster bindings and one or more runtime nodes |
-| node | one registered Java or Rust runtime instance assigned complete fragments and exact source partitions |
+| node | one registered Java or Rust runtime instance assigned complete fragments and whole source topics |
 | driver | the central Wayang process that translates DAGs and sends site plans |
 | signal cluster | the central KafScale cluster that receives site aggregates and signals |
 | DAG document | the `opentsx.dag.v1` or `opentsx.dag.v2` document the web workbench exports (`opentsx-saas-frontend/src/workbench/flow.ts:684-745`) |
@@ -163,7 +163,9 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 2. Nodes: ids, decoder, inputs, cycles (`DagPlan.java:64-118`).
 3. Sinks: non-empty array, supported schema.
 4. Sink identities unique.
-5. Catalog: every `op` is in the catalog version of the job and has a runtime for every site track in the job.
+5. Catalog: every `op` belongs to the job catalog. Check runtime, state and resource support at every node
+   assigned that operator or fragment. A replicated fragment checks every replica; unrelated fragments need not
+   support operators they do not execute.
 6. Parameters (S1.3).
 7. Topics: every source and sink topic follows `tsx.<domain>.<kind>.v<n>` of the job's domain (S3.1).
 8. Federation: validate the value crossing each site boundary and its ownership dependencies. A local cleaning
@@ -183,13 +185,14 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
    one `TsxTopicSink`.
 3. The driver MUST NOT use `wayang-api-json`: it compiles Scala source received in the request
    (`SerializableLambda.scala:23-29` at Wayang `main`).
-4. On a single site the plan runs with `Java.basicPlugin()` and the Track A plugin.
+4. On a single site the plan runs with `TsxJavaPlugin`, which registers the Java platform and the supported mappings.
 
 ### S2.4 Site plan
 
 For a federated job the driver MUST identify complete executable fragments and their explicit assignments.
 Replicating the same local stage at independent sites is one supported physical shape, not a general placement
-algorithm. Each assignment needs exact partitions, runtime/node identity, generation, channel bindings and
+algorithm. Each assignment owns whole topics, with complete internal partition positions, runtime/node identity,
+generation, channel bindings and
 resource/capability admission before activation. Central merge is an explicit downstream fragment.
 
 Preserve `specHash` over the original submitted UI text. Carry exact source text separately from compiler-produced
@@ -361,7 +364,8 @@ Laws:
    `StatsAccumulator` over all values. Sketch-byte equality requires one runtime and no bin collapse at a site
    or merge; collapsed-tail behavior needs separate acceptance vectors. `mean` and `m2` MUST be within the
    tolerance of the job (decision D-T2 in TASK-020; proposal: relative 1e-12). Quantiles from the merged sketch MUST
-   equal those of the centralized sketch. The relative error `alpha` comparison with the exact quantile is
+   equal those of the centralized sketch in that one-runtime/no-collapse domain. The relative error `alpha`
+   comparison with the exact quantile is
    qualified to nonzero magnitudes outside the zero bucket and without bounded-bin collapse; fixtures must
    separately cover the zero bucket and collapsed tails of `QuantileSketch`
    ([Masson, Rim, Lee 2019, doi:10.14778/3352063.3352135](https://doi.org/10.14778/3352063.3352135)).
@@ -388,13 +392,15 @@ Wayang plan's `AggregateChannel` and continues the plan.
 ### S4.5 Completeness
 
 1. `federation.expectedSites` is the list of sites of the job. `federation.maxDelay` is an ISO 8601 duration.
-2. A merged window is **final** when a partial of every expected site is present. The merge then writes it with
-   `tsx-final: true`.
+2. A merged window is **final** only when every expected assignment supplies admitted closed-window or source-cut
+   evidence for the generation. An open-window partial from every site is insufficient. The merge then writes
+   `tsx-final: true`. The evidence envelope and expected membership are U09 delivery gates.
 3. When the signal cluster's clock passes `windowEnd + maxDelay` and a site is missing, the merge MUST write the
    window with `tsx-final: false` and `tsx-missing-sites` set.
 4. A partial that arrives later MUST produce a new merged record with `tsx-revision` raised by 1. The merge MUST
    NOT change an earlier record.
-5. A duplicate partial (same key, same revision) MUST be ignored.
+5. A byte-identical duplicate partial (same key, same revision and generation) MUST be ignored. Conflicting content
+   under that identity MUST be refused and surfaced; stale generations MUST be refused.
 6. Removing a site from a job MUST go through a new `planVersion`. Windows before the change keep their sites.
 
 ### S4.6 Signals
@@ -424,7 +430,7 @@ cluster collects them. A signal MUST NOT carry raw values beyond the value that 
 
 | Mode | Behaviour |
 |---|---|
-| `agent` | runs the pull protocol of S5.3; supervises one task per job and partition set |
+| `agent` | runs the pull protocol of S5.3; supervises assigned whole topics per job; partitions remain internal cursor metadata |
 | `run --plan <file>` | verifies the signed plan in `<file>` and runs it until stopped; used by SSH launch |
 | `conform` | runs the checks of S3.3 and writes the signed report to standard output |
 
@@ -470,13 +476,13 @@ unreachable.
 | Code | When |
 |---|---|
 | `plan.signature` | signature invalid or signed by an unknown key |
-| `plan.expired` | now is after `expires` |
-| `plan.version` | `planVersion` not above the highest accepted one of the job |
+| `plan.expired` | new activation arrives after `expires`; accepted identical replay returns its recorded outcome |
+| `plan.version` | an older plan version, or changed content for an already accepted version; identical delivery returns its recorded outcome |
 | `plan.site` | `site` is not this site |
 | `plan.catalog` | catalog version or an operator version not available |
 | `plan.invalid` | any message of S2.5; the message is passed on |
 | `plan.policy` | an output cluster or kind not allowed by the site policy (S7.4) |
-| `plan.busy` | another plan of the same job runs on the same partitions |
+| `plan.busy` | another live assignment owns the same `(fragment, binding, topic)`, regardless of internal positions |
 
 ## S6. Delivery, state and checkpoints on KafScale
 
@@ -521,7 +527,8 @@ deterministic through the `seed` parameter (`Mulberry32`).
 
 ### S6.4 Reading
 
-1. A runtime MUST use manual partition assignment and seek; it MUST NOT join a consumer group.
+1. A runtime MUST use manual partition assignment and seek for every partition of each assigned whole topic;
+   it MUST NOT join a consumer group. Partition assignment is internal broker I/O, not cross-node placement.
 2. After a refused fetch it MUST reset to the positions before the fetch and retry, as `Patience.poll` does
    (`Patience.java:75`).
 3. A start by time MUST go through the episode index; `offsetsForTimes` MUST NOT be used.

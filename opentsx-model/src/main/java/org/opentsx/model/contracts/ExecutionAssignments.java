@@ -28,8 +28,9 @@ public final class ExecutionAssignments {
     private static final Set<String> FIELDS = Set.of("schema", "deployment", "generation", "assignment", "attempt",
             "fence", "fragment", "site", "node", "runtime", "catalog", "artifactDigest", "specHash", "sourceDagText",
             "fragmentHash", "fragmentText", "mode", "inputs");
-    private static final Set<String> BOUNDED_INPUT = Set.of("binding", "topic", "partition", "from", "to");
-    private static final Set<String> CONTINUOUS_INPUT = Set.of("binding", "topic", "partition", "from");
+    private static final Set<String> INPUT = Set.of("binding", "topic", "partitionCount", "positions");
+    private static final Set<String> BOUNDED_POSITION = Set.of("partition", "from", "to");
+    private static final Set<String> CONTINUOUS_POSITION = Set.of("partition", "from");
     private static final List<String> CONTEXT = List.of("deployment", "generation", "specHash", "mode", "catalog");
     private static final Pattern ID = Pattern.compile("[a-z0-9][a-z0-9-]{0,62}");
     private static final Pattern HASH = Pattern.compile("[0-9a-f]{64}");
@@ -149,17 +150,34 @@ public final class ExecutionAssignments {
             throw invalid("assignment.input");
         }
         for (JsonNode input : inputs) {
-            exactFields(input, bounded ? BOUNDED_INPUT : CONTINUOUS_INPUT, "assignment.input");
+            exactFields(input, INPUT, "assignment.input");
             if (!matches(input.get("binding"), ID) || !matches(input.get("topic"), TOPIC)
-                    || input.get("topic").textValue().length() > 249) {
+                    || input.get("topic").textValue().length() > 249 || !input.get("positions").isArray()) {
                 throw invalid("assignment.input");
+            }
+            for (JsonNode position : input.get("positions")) {
+                exactFields(position, bounded ? BOUNDED_POSITION : CONTINUOUS_POSITION, "assignment.input");
             }
         }
         for (JsonNode input : inputs) {
-            decimal(input.get("partition"), "2147483647", false, "assignment.offset");
-            long from = decimal(input.get("from"), MAX_OFFSET, false, "assignment.offset");
-            if (bounded && decimal(input.get("to"), MAX_OFFSET, false, "assignment.offset") < from) {
-                throw invalid("assignment.offset");
+            decimal(input.get("partitionCount"), "2147483647", true, "assignment.offset");
+            for (JsonNode position : input.get("positions")) {
+                decimal(position.get("partition"), "2147483647", false, "assignment.offset");
+                long from = decimal(position.get("from"), MAX_OFFSET, false, "assignment.offset");
+                if (bounded && decimal(position.get("to"), MAX_OFFSET, false, "assignment.offset") < from) {
+                    throw invalid("assignment.offset");
+                }
+            }
+        }
+        for (JsonNode input : inputs) {
+            JsonNode positions = input.get("positions");
+            if (!input.get("partitionCount").textValue().equals(Integer.toString(positions.size()))) {
+                throw invalid("assignment.coverage");
+            }
+            for (int i = 0; i < positions.size(); i++) {
+                if (!positions.get(i).get("partition").textValue().equals(Integer.toString(i))) {
+                    throw invalid("assignment.coverage");
+                }
             }
         }
         Set<Input> claimed = new HashSet<>();
@@ -256,14 +274,14 @@ public final class ExecutionAssignments {
     }
 
     private static Input inputKey(JsonNode input) {
-        return new Input(input.get("binding").textValue(), input.get("topic").textValue(), input.get("partition").textValue());
+        return new Input(input.get("binding").textValue(), input.get("topic").textValue());
     }
 
     private static IllegalArgumentException invalid(String code) {
         return new IllegalArgumentException(code);
     }
 
-    private record Input(String binding, String topic, String partition) {
+    private record Input(String binding, String topic) {
     }
 
     private record Claim(String fragment, Input input) {

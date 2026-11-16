@@ -71,7 +71,6 @@ pub fn validate_set(inputs: &[&str]) -> Result<(), &'static str> {
                 text(assignment, "fragment"),
                 text(input, "binding"),
                 text(input, "topic"),
-                text(input, "partition"),
             )) {
                 return Err("assignment.ownership");
             }
@@ -148,11 +147,7 @@ fn admit(input: &str) -> Result<Value, &'static str> {
         .ok_or("assignment.input")?;
     for input in inputs {
         let fields = input.as_object().ok_or("assignment.input")?;
-        let required = if bounded {
-            &["binding", "topic", "partition", "from", "to"][..]
-        } else {
-            &["binding", "topic", "partition", "from"][..]
-        };
+        let required = ["binding", "topic", "partitionCount", "positions"];
         if fields.len() != required.len()
             || !required.iter().all(|field| fields.contains_key(*field))
             || !identifier(text(input, "binding"))
@@ -160,24 +155,51 @@ fn admit(input: &str) -> Result<Value, &'static str> {
         {
             return Err("assignment.input");
         }
+        for position in input["positions"].as_array().ok_or("assignment.input")? {
+            let fields = position.as_object().ok_or("assignment.input")?;
+            let required = if bounded {
+                &["partition", "from", "to"][..]
+            } else {
+                &["partition", "from"][..]
+            };
+            if fields.len() != required.len()
+                || !required.iter().all(|field| fields.contains_key(*field))
+            {
+                return Err("assignment.input");
+            }
+        }
     }
     for input in inputs {
-        decimal(&input["partition"], i32::MAX as u64, false).ok_or("assignment.offset")?;
-        let from = decimal(&input["from"], i64::MAX as u64, false).ok_or("assignment.offset")?;
-        if bounded {
-            let to = decimal(&input["to"], i64::MAX as u64, false).ok_or("assignment.offset")?;
-            if to < from {
-                return Err("assignment.offset");
+        decimal(&input["partitionCount"], i32::MAX as u64, true).ok_or("assignment.offset")?;
+        for position in input["positions"].as_array().ok_or("assignment.input")? {
+            decimal(&position["partition"], i32::MAX as u64, false).ok_or("assignment.offset")?;
+            let from =
+                decimal(&position["from"], i64::MAX as u64, false).ok_or("assignment.offset")?;
+            if bounded {
+                let to =
+                    decimal(&position["to"], i64::MAX as u64, false).ok_or("assignment.offset")?;
+                if to < from {
+                    return Err("assignment.offset");
+                }
+            }
+        }
+    }
+    for input in inputs {
+        let count =
+            decimal(&input["partitionCount"], i32::MAX as u64, true).ok_or("assignment.offset")?;
+        let positions = input["positions"].as_array().ok_or("assignment.input")?;
+        if positions.len() as u64 != count {
+            return Err("assignment.coverage");
+        }
+        for (index, position) in positions.iter().enumerate() {
+            if decimal(&position["partition"], i32::MAX as u64, false) != Some(index as u64) {
+                return Err("assignment.coverage");
             }
         }
     }
     let mut owners = HashSet::new();
     for input in inputs {
-        if !owners.insert((
-            text(input, "binding"),
-            text(input, "topic"),
-            text(input, "partition"),
-        )) {
+        if !owners.insert((text(input, "binding"), text(input, "topic"))) {
             return Err("assignment.ownership");
         }
     }
