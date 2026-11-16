@@ -10,6 +10,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Data model `v2.1`: analysis results as records of their own. `AnalysisResult` holds method, version, typed
+  parameters, input episodes and series, and the parts `ResultScalar` (for example a DFA exponent with its fit range),
+  `ResultCurve` (for example F(s)) and `ResultMatrix` (for example an event-synchronization matrix over series ids).
+  `resultId` is the xxHash64 of a canonical form of method, version, parameters and inputs, computed the same way in
+  Java (`AnalysisResults`), Python (`opentsx.model.analysis`) and the workbench (`resultIds.ts`) and checked against
+  `testvectors/result-id.json` and the new `analysisResults` entries of `wire-format.json`. Python converts DFA and
+  event-synchronization output with `opentsx.algorithms.results`. The `v2.0` records are unchanged.
+
 - `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B
   after A), `q_ba` and `q_rand`, the mean `q_total` against copies of B with shuffled intervals between its events.

@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "SeriesKey",
+  "namespace": "org.opentsx.model.v2",
+  "doc": "Identity of a time series. seriesId = lower-case hex of xxHash64 (seed 0) over the canonical form of metric and tags; unit is an attribute, not part of the identity. See docs/datamodel-2026/04-MODELL-V2-SPEC.md.",
+  "fields": [
+    {"name": "metric", "type": "string", "doc": "Metric name, e.g. wind.turbine.power_active."},
+    {"name": "tags", "type": {"type": "map", "values": "string"}, "default": {}, "doc": "Dimensions, e.g. park, turbine, channel."},
+    {"name": "unit", "type": ["null", "string"], "default": null, "doc": "UCUM unit code, e.g. kW, m/s, Cel."},
+    {"name": "seriesId", "type": "string", "doc": "16 lower-case hex chars, derived from metric and tags."}
+  ]
+}

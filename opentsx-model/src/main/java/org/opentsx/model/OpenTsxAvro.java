@@ -9,6 +9,7 @@ import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificRecord;
+import org.opentsx.model.v2.AnalysisResult;
 import org.opentsx.model.v2.BucketManifest;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.Observation;
@@ -37,7 +38,8 @@ public final class OpenTsxAvro {
 
     /** Top-level record types that travel on topics or in files. */
     public static final List<Class<? extends SpecificRecord>> TOP_LEVEL_TYPES = List.of(
-            Episode.class, Observation.class, SeriesKey.class, BucketManifest.class, SeriesStats.class, PatternMatch.class);
+            Episode.class, Observation.class, SeriesKey.class, BucketManifest.class, SeriesStats.class, PatternMatch.class,
+            AnalysisResult.class);
 
     private final Map<Long, Class<? extends SpecificRecord>> readerByFingerprint = new ConcurrentHashMap<>();
     private final Map<Long, Schema> writerByFingerprint = new ConcurrentHashMap<>();
