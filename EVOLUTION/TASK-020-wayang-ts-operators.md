@@ -71,7 +71,9 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 
 ### A2: clean chain, statistics, status
 - [ ] Java execution operators, mappings and cost functions for `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`, `stats.welford-ddsketch`.
-- [ ] New vector file `docs/datamodel-2026/testvectors/stats-window.v1.json` with its generator.
+- [x] New vector file `docs/datamodel-2026/testvectors/stats-window.v1.json`
+  with its generator, `tools/java_operator_vectors.py`; five exact cases in
+  `StatsWindowVectorsTest`.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -84,7 +86,10 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 
 ### A3: remaining catalog 1, catalog freeze
 - [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).
-- [ ] New vector files `segment-threshold.v1.json`, `segment-extremum.v1.json`, `sax-word.v1.json`, `dq-result.v1.json`, each with its generator over the existing Java code.
+- [x] New vector files `segment-threshold.v1.json`, `segment-extremum.v1.json`,
+  `sax-word.v1.json`, `dq-result.v1.json`, generated over the existing Java
+  code by `tools/java_operator_vectors.py`; 26 exact cases in the owning
+  modules.
 - [ ] Catalog `tsx-catalog/1` frozen.
 
 | # | Criterion | Proof | Data | Pass |

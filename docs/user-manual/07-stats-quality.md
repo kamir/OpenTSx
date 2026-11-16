@@ -83,3 +83,28 @@ df = stats_to_frame(records)            # one row per window: counts, min/max/me
 ```
 
 The sketch format is identical in Java and Python; a shared test vector checks this.
+
+## 7.5 Check the Java reference vectors
+
+The shared `stats-window.v1.json` file records five synthetic cases from
+`StatsEngine`, `StatsAccumulator`, and `QuantileSketch`. Both `PT10M` and
+`PT1H` windows use alpha `0.01`. Outputs include complete statistics,
+sketch bytes as hex, quantiles, NaN values, and empty windows. An empty
+engine stream emits no records; an explicit empty accumulator window
+contains NaN moments and an empty sketch.
+
+`dq-result.v1.json` records seven cases from `DataQuality.evaluate`,
+covering every check and status. Freshness uses a fixed clock; messages
+use `Locale.ROOT`. Non-finite values in both files are strings.
+
+`StatsWindowVectorsTest` and `DqResultVectorsTest` load these repository
+files and require exact equality. You need JDK 17 or 21, Maven, and Python
+to regenerate them. From the repository root, run:
+
+```bash
+python tools/java_operator_vectors.py
+```
+
+The command writes all five Java reference files under
+`docs/datamodel-2026/testvectors/`. Verified with JDK 21 and Python 3.12
+on 2026-11-16. See the [module guide](../../opentsx-stats/README.md).

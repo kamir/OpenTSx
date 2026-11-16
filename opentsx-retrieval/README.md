@@ -66,6 +66,19 @@ The pattern engine provides these building blocks:
 | `PatternSearch` | Exact top-k search for **non-overlapping** subsequences over `Run`s (series assembled across episode boundaries, split at gaps) |
 | `EpisodeSimilarity` | Whole episodes. The representation is a z-normalized PAA (64 points). Exact best-first search with SAX bounds verifies only a fraction of the candidates. |
 
+Shared reference files in `docs/datamodel-2026/testvectors/` capture the
+existing Java output: six threshold cases, six extremum cases, and seven SAX
+cases. The segment tests compare batch output with streaming chunks of 1, 7,
+and all samples. Expected fields include segment ids, bounds, anchors,
+parameters, timestamps, and values; source episode references depend on
+chunk boundaries and are excluded. SAX cases include PAA values, breakpoints,
+letters, and words.
+
+Run `python tools/java_operator_vectors.py` from the repository root to
+regenerate these files with JDK 17 or 21, Maven, and Python. This command is
+verified with JDK 21 and Python 3.12 on 2026-11-16. Normal vector tests read
+the shared files directly and require exact output equality.
+
 Windows that contain NaN are skipped. A constant window has distance 0 to a constant query and √m to any other
 query.
 

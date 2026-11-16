@@ -91,15 +91,21 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 |---|---|---|
 | `opentsx-model/src/test/resources/testvectors/wire-format.json` | byte-identical hex | `opentsx-model` tests |
 | `series-id.json`, `xxh64.json`, `time-deltas.json`, `bucket-checksum.json` | identical values | same |
-| `docs/datamodel-2026/testvectors/clean-ops.v1.json` | `|expected - actual| <= 1e-12 * max(1, |expected|)`; a gap must be a gap | `CleanChainTest.java:76-85` |
+| `docs/datamodel-2026/testvectors/clean-ops.v1.json` | `\|expected - actual\| <= 1e-12 * max(1, \|expected\|)`; a gap must be a gap | `CleanChainTest.java:76-85` |
 | `align-vector.v1.json` | exact equality | `VectorAlignerTest.java:83` |
-| `pair-xcorr.v1.json` | `|expected - actual| < 5e-13` (vitest `toBeCloseTo(v, 12)`) | `xcorr.test.ts:57-95` |
+| `pair-xcorr.v1.json` | `\|expected - actual\| < 5e-13` (vitest `toBeCloseTo(v, 12)`) | `xcorr.test.ts:57-95` |
 | `pair-es.v1.json` | events equal; `q_total`, `q_ab`, `q_ba`, `q_rand` within `5e-13` | `es.test.ts:61-68` |
 | sketch bytes of `QuantileSketchTest.testVector` | byte-identical | `QuantileSketchTest.java:105-115`; `test_stats.py:10-17` |
+| `stats-window.v1.json` | exact statistics, sketch hex, and quantiles; non-finite strings equal | `StatsWindowVectorsTest` |
+| `segment-threshold.v1.json`, `segment-extremum.v1.json` | exact recorded fields for batch and streaming chunks of 1, 7, and all samples | `SegmentThresholdVectorsTest`, `SegmentExtremumVectorsTest` |
+| `sax-word.v1.json` | exact normalized values, PAA, breakpoints, letters, and word | `SaxWordVectorsTest` |
+| `dq-result.v1.json` | exact check records, including status and messages with a fixed clock and `Locale.ROOT` | `DqResultVectorsTest` |
 
 ### S1.7 Catalog 1
 
-`A` is Track A, `B` is Track B. "new" means the vector file does not exist yet and MUST be added with the operator.
+`A` is Track A, `B` is Track B. The statistics, segmentation, SAX, and
+data-quality reference vectors are generated from the existing Java
+implementations by `tools/java_operator_vectors.py`.
 
 | DAG `op` | In → out | Parameters (limits) | State | Merge | Vectors | A | B |
 |---|---|---|---|---|---|---|---|
@@ -111,14 +117,14 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 | `model.power-curve` | `series` → `series` | `ratedKw` > 0, `cutIn` < `ratedWind` < `cutOut`, `count` ≥ 1 | none | n/a | `clean-ops.v1.json` | yes | yes |
 | `feature.lag` | `series` → `series` | `steps` in `[1, 100000]` (`MAX_WINDOW_VALUES`, `CleanChain.java:38`, `:168`) | keyed (series) | n/a | `clean-ops.v1.json` | yes | yes |
 | `feature.rolling` | `series` → `series` | `window` duration > 0; `fn` ∈ `Fn` values | keyed (series) | n/a | `clean-ops.v1.json` | yes | yes |
-| `stats.welford-ddsketch` | `series` → `stats` | `windows` list of durations, each > 0; `alpha` in (0, 1) (`QuantileSketch.java:58-59`); `maxBins` fixed at 4096 in catalog 1 (`QuantileSketch.java:33`) | windowed | `approximate`, `stats.chan-ddsketch` (S4.3) | new, built from `QuantileSketchTest.testVector` and `StatsEngine` tests | yes | yes |
+| `stats.welford-ddsketch` | `series` → `stats` | `windows` list of durations, each > 0; `alpha` in (0, 1) (`QuantileSketch.java:58-59`); `maxBins` fixed at 4096 in catalog 1 (`QuantileSketch.java:33`) | windowed | `approximate`, `stats.chan-ddsketch` (S4.3) | `stats-window.v1.json`, `QuantileSketchTest.testVector` | yes | yes |
 | `align.vector` | `series`* → `vector` | `every`, `key` (`series`, a tag name, `all`), `agg`, `fill`, `maxAge`, `emit`, `names` ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5a) | windowed | `none` | `align-vector.v1.json` | yes | yes |
-| `segment.threshold` | `series` → `series` | `direction`, `enter`, `exit` (hysteresis: `exit` not beyond `enter`), `pre`, `post`, `minDuration`, `maxDuration` (`Segmenter.java:92-95`) | keyed (series) | `exact` for segment counts, `sum` | new | yes | yes |
-| `segment.extremum` | `series` → `series` | `feature`, `prominence` ≥ 0, `window`, `distance`, `pre`, `post` (`Segmenter.java:69-72`) | keyed (series) | `exact` for segment counts, `sum` | new | yes | yes |
-| `sax.word` | `series` → `series` (fills `EpisodeSummary.sax`) | `w` ≥ 1, `a` in the range of `Sax.breakpoints` (`Sax.java:16`) | none | `none` | new | yes | yes |
+| `segment.threshold` | `series` → `series` | `direction`, `enter`, `exit` (hysteresis: `exit` not beyond `enter`), `pre`, `post`, `minDuration`, `maxDuration` (`Segmenter.java:92-95`) | keyed (series) | `exact` for segment counts, `sum` | `segment-threshold.v1.json` | yes | yes |
+| `segment.extremum` | `series` → `series` | `feature`, `prominence` ≥ 0, `window`, `distance`, `pre`, `post` (`Segmenter.java:69-72`) | keyed (series) | `exact` for segment counts, `sum` | `segment-extremum.v1.json` | yes | yes |
+| `sax.word` | `series` → `series` (fills `EpisodeSummary.sax`) | `w` ≥ 1, `a` in the range of `Sax.breakpoints` (`Sax.java:16`) | none | `none` | `sax-word.v1.json` | yes | yes |
 | `pair.xcorr` | `series`, `series` → `series` | `lags` integer ≥ 0 (`xcorr.ts:95-98`); pair settings `pairing`, `window`, `step`, `every`, `agg`, `maxAge`, `minCoverage` (`pairs.ts:78-88`) | windowed | `none` | `pair-xcorr.v1.json` | yes (port) | short windows only (S1.8) |
 | `pair.es` | `series`, `series` → `series` | `sigma`, `tauMax`; surrogates with `shuffles`, `seed` (`es.ts`; `pair-es.v1.json`) | windowed | `none` | `pair-es.v1.json` | yes (port) | no |
-| `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:29-38`) | none | `exact` for counts per check and status, `sum` | new | yes | yes |
+| `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:29-38`) | none | `exact` for counts per check and status, `sum` | `dq-result.v1.json` | yes | yes |
 
 The workbench operator `stats.window` maps to `stats.welford-ddsketch` (`ops.ts:905-910`) but has the
 parameters `window` (seconds) and `field`, not `windows` and `alpha`. The workbench MUST write the catalog

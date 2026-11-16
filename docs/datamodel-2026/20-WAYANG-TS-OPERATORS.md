@@ -1,6 +1,7 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-16, not implemented. Checked against this repository at `548f316` and against Apache
+> Status: **concept**, 2026-11-16. The Java platform plugin and shared Java
+> reference vectors are implemented. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -28,7 +29,7 @@ search, twin, causal analysis).
 
 | Item | State | Evidence |
 |---|---|---|
-| Wayang in OpenTSx | Design prose only. No Wayang code and no Wayang dependency in any `pom.xml`. | `grep -rli wayang --include=pom.xml .` returns no file; mentions in [05](05-SMART-TOPICS.md) line 147, [06](06-SYSTEMREKONSTRUKTION-OPTIMIERUNG.md) line 231, [user manual 14](../user-manual/14-saas-service-layer.md) line 59, `EVOLUTION/TASK-015-multivariate-analysis.md` line 247, `TASK-016-smart-topics.md` line 34, `TASK-017-digital-twin.md` line 85 |
+| Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform. Shared Java reference vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
 | DAG validation | unique node ids, existing inputs, no cycles, supported sinks only, before the control record is written | `opentsx-retrieval/src/main/java/org/opentsx/retrieval/vector/DagPlan.java:17` |
@@ -41,7 +42,7 @@ search, twin, causal analysis).
 | Record key and partitioning | episode records use key `seriesId` and record timestamp `tStart`; the Java default partitioner places them | `BucketWriter.java:26`, `:107-108`; `KafScaleFeed.java:180` |
 | KafScale client rules | `enable.idempotence=false`, `acks=all`, `max.in.flight.requests.per.connection=1`, zstd, delivery timeout three minutes; consumers without group id, manual assignment and seek, `Patience.poll` for refused fetches | `KafScaleClients.java:16-72`; `Patience.java:24-75` |
 | KafScale capabilities | no timestamp seek, no idempotent producer, no standalone commit, no group rejoin, compaction accepted but not done; `Admin.listOffsets` earliest and latest work (KafScale v1.6.0) | [`opentsx-kafscale-conformance/README.md`](../../opentsx-kafscale-conformance/README.md) |
-| Shared operator vectors | `align-vector.v1.json`, `clean-ops.v1.json`, `pair-es.v1.json`, `pair-xcorr.v1.json`; sketch bytes shared by Java and Python | `docs/datamodel-2026/testvectors/`; `QuantileSketchTest.java:105-115`; `python-package/tests/test_stats.py:10-17` |
+| Shared operator vectors | `align-vector.v1.json`, `clean-ops.v1.json`, `pair-es.v1.json`, `pair-xcorr.v1.json`, `stats-window.v1.json`, `segment-threshold.v1.json`, `segment-extremum.v1.json`, `sax-word.v1.json`, `dq-result.v1.json`; sketch bytes shared by Java and Python | `docs/datamodel-2026/testvectors/`; `tools/java_operator_vectors.py`; `QuantileSketchTest.java:105-115`; `python-package/tests/test_stats.py:10-17` |
 
 ## 3. Research findings
 
@@ -51,7 +52,7 @@ Status: top-level Apache project since November 2025
 ([ASF announcement, 2025-12-03](https://news.apache.org/foundation/entry/the-apache-software-foundation-announces-new-top-level-projects-3)).
 Latest release 1.1.1, 2026-02-11 ([projects.apache.org](https://projects.apache.org/json/projects/wayang.json)).
 Release 1.1.1 compiles with `maven.compiler.release` 17 (`pom.xml:115` of the tag), so it runs on the Java 17 and 21
-of the OpenTSx CI. Running it on 21 is not tested yet (phase A0).
+of the OpenTSx CI. `WayangSmokeTest` executes a plan locally on Java 21.
 
 Class names below were checked in tag `wayang-1.1.1`. Paths start at the Wayang repository root.
 

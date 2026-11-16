@@ -46,3 +46,22 @@ mvn -B -ntp -pl opentsx-wayang -am verify
 ```
 
 `WayangSmokeTest` maps 1,000 integers through a Wayang plan on the Java platform and checks the result.
+
+## Check the shared Java references
+
+The shared files in `docs/datamodel-2026/testvectors/` capture existing
+statistics and retrieval behavior for TASK-020 A2 and A3:
+
+| Vector file | Owning-module test | Cases |
+| --- | --- | ---: |
+| `stats-window.v1.json` | `StatsWindowVectorsTest` | 5 |
+| `segment-threshold.v1.json` | `SegmentThresholdVectorsTest` | 6 |
+| `segment-extremum.v1.json` | `SegmentExtremumVectorsTest` | 6 |
+| `sax-word.v1.json` | `SaxWordVectorsTest` | 7 |
+| `dq-result.v1.json` | `DqResultVectorsTest` | 7 |
+
+These tests replay every case exactly in `opentsx-stats` and
+`opentsx-retrieval`. They read the repository files directly. Run
+`python tools/java_operator_vectors.py` from the repository root to
+regenerate all five files. You need JDK 17 or 21, Maven, and Python.
+The generator is verified with JDK 21 and Python 3.12 on 2026-11-16.

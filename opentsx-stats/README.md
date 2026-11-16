@@ -1,4 +1,4 @@
-# opentsx-stats — streaming statistics and data quality
+# opentsx-stats: streaming statistics and data quality
 
 This module computes running and windowed statistics over the v2 episode and observation streams. It writes them as
 `SeriesStats` to `tsx.<domain>.series-stats.v2` and evaluates data-quality checks on them. The engine has no runtime
@@ -81,6 +81,25 @@ with quantile columns.
 * Engine: windows equal episode summaries, gaps, duplicates, late values, observations, and checkpoint restore with
   output identical to an uninterrupted run.
 * Data quality against simulator ground truth.
+* `StatsWindowVectorsTest`: five shared cases with `PT10M` and `PT1H` windows,
+  alpha `0.01`, sketch bytes, NaN values, and explicit empty windows.
+* `DqResultVectorsTest`: seven shared cases covering every check and status,
+  with an explicit clock and `Locale.ROOT` for repeatable messages.
 * Processor:
   * With `MockConsumer`: checkpoint and resume, every value counted exactly once.
   * Against KafScale v1.6.0, when `KAFSCALE_BOOTSTRAP` is set; CI runs this.
+
+## Regenerate the shared vectors
+
+You need JDK 17 or 21, Maven, and Python. Verified with JDK 21 and Python 3.12
+on 2026-11-16. From the repository root, run:
+
+```bash
+python tools/java_operator_vectors.py
+```
+
+The generator calls the existing Java implementations through their vector
+tests. It writes `stats-window.v1.json` and `dq-result.v1.json` under
+`docs/datamodel-2026/testvectors/`, together with the retrieval vectors.
+Normal test runs read these repository files without regenerating them.
+Non-finite values use the strings `NaN`, `Infinity`, and `-Infinity`.
