@@ -157,11 +157,14 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
   recommendations have held for a period you agreed on beforehand.
 * **Pitfalls:** two writers for one result. Late data, duplicates and restarts that count something twice or lose
   it without anyone noticing. A new version of a flow that replaces the running one at once.
-* **Today:** "Publish as clean signal" in the workbench checks, saves and starts in one step; the processor then
-  runs a chain of plausible range, unit conversion and resampling on one raw series and writes the clean series,
+* **Today:** "Publish as clean signal" in the workbench checks, saves and starts in one step. Series DAGs support
+  `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`, `feature.lag` and `feature.rolling`.
+  The processor runs the admitted chain on its selected source series and writes the derived series,
   and the page "Signals" shows the signal as clean. The Flow Composer and the place "Flows" start and stop flows.
   A piece computed again after a restart carries the same identity, so a reader counts it once. Anything with
-  several inputs (a sum over turbines) and every other operator run in the workbench only. **Planned:** results
+  several raw inputs, such as an arbitrary sum over turbines, requires its own supported binding;
+  `align.vector` is the implemented vector-alignment path. Other workbench and library operators are not thereby
+  deployable. See [operator lessons and runtime boundaries](17-learn-operators.md). **Planned:** results
   marked as provisional, final or revised; late data as a revision instead of a skipped block; a new version in
   the shadow first; recommendations in shadow operation.
 

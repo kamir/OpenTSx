@@ -10,6 +10,7 @@ import org.apache.wayang.java.channels.ChannelConversions;
 import org.apache.wayang.java.mapping.CollectionSourceMapping;
 import org.apache.wayang.java.mapping.LocalCallbackSinkMapping;
 import org.apache.wayang.java.mapping.MapMapping;
+import org.apache.wayang.java.mapping.UnionAllMapping;
 import org.apache.wayang.java.platform.JavaPlatform;
 
 import java.util.Collection;
@@ -29,7 +30,8 @@ public final class TsxJavaPlugin implements Plugin {
     public Collection<Mapping> getMappings() {
         return List.of(new CollectionSourceMapping(), new MapMapping(), new LocalCallbackSinkMapping(),
                 new TsxTopicSourceMapping(), new TsxTopicSinkMapping(), new TsxOperatorMappings.SeriesChainMapping(),
-                new TsxOperatorMappings.StatsWindowMapping());
+                new TsxOperatorMappings.StatsWindowMapping(), new UnionAllMapping(),
+                new TsxVectorMappings.AlignVectorMapping(), new TsxVectorMappings.VectorSinkMapping());
     }
 
     @Override

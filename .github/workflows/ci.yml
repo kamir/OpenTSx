@@ -14,6 +14,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  operator-learning:
+    name: Operator learning synchronization
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Test repository metadata and learning synchronization
+        run: python3 -m unittest discover -s tools -p 'test_*.py' -v
+      - name: Generate and check the student material
+        run: |
+          mkdir -p "$RUNNER_TEMP/student-course"
+          python3 tools/sync_operator_exercises.py --opentsx-root . --student-root "$RUNNER_TEMP/student-course"
+          python3 tools/sync_operator_exercises.py --opentsx-root . --student-root "$RUNNER_TEMP/student-course" --check
+
+  execution-contracts:
+    name: Shared contract vectors and Rust
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Check generated contract vectors
+        run: python3 tools/execution_contract_vectors.py --check
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal
+      - name: Run the Rust consumer of the shared cases
+        run: cargo +1.99.1 test --locked --manifest-path rust/tsx-contracts/Cargo.toml -- --nocapture
+
   java:
     name: Java ${{ matrix.java }}
     runs-on: ubuntu-24.04
@@ -194,7 +225,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1 and A2)
+      - name: Require executed Wayang acceptance (TASK-020 A1, A2 and A3.1)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -209,6 +240,8 @@ jobs:
               "TsxCleanVectorsTest": 3,
               "TsxStatsVectorsTest": 12,
               "DagToWayangErrorsTest": 4,
+              "TsxVectorVectorsTest": 13,
+              "TsxVectorIntegrationTest": 1,
           }
           for name, minimum in expected.items():
               suite = ET.parse(f"opentsx-wayang/target/surefire-reports/TEST-org.opentsx.wayang.{name}.xml").getroot()
@@ -227,7 +260,12 @@ jobs:
                              if case.attrib["name"].startswith("everySharedCaseMatchesThroughAWayangPlan()[")]
                   if len(vectors) != 5:
                       raise SystemExit("all five statistics vectors must execute through Wayang")
-          print("All nine Wayang acceptance classes executed successfully")
+              if name == "TsxVectorVectorsTest":
+                  vectors = [case for case in suite.findall("testcase")
+                             if case.attrib["name"].startswith("everySharedCaseMatchesThroughAWayangPlan()[")]
+                  if len(vectors) != 6:
+                      raise SystemExit("all six align.vector vectors must execute through Wayang")
+          print("All eleven Wayang acceptance classes executed successfully")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:

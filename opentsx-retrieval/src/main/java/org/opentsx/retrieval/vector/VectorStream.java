@@ -23,7 +23,11 @@ import java.util.TreeSet;
  *   <li><b>A tick is final</b> when every expected series has progressed to its end plus the allowed lateness. Until
  *   every expected series has been seen once, nothing is handed out: only then is it known which series form a
  *   vector and what the components are called.</li>
- *   <li><b>Every input reads the same series.</b> That is what the runtime executes (see {@link VectorJob}).</li>
+ *   <li><b>Inputs.</b> With {@link #VectorStream(List, VectorAligner.Params, Set, long)} every input reads the same
+ *   series; that is what the processor executes (see {@link VectorJob}). With
+ *   {@link #VectorStream(Map, VectorAligner.Params, long)} every input has series of its own, handed in with
+ *   {@link #add(String, String, String, Map, long[], double[], long)}; the components are named per input as
+ *   {@link VectorAligner#align} names them.</li>
  * </ul>
  *
  * <p>Fed with all data and {@link #flush()}ed, the stream gives what {@link VectorAligner#align} gives. The state
@@ -77,6 +81,8 @@ public final class VectorStream {
     }
 
     private final List<String> inputNames;
+    /** Input name to the ids of its series; null when every input reads the same series ({@link #expected}). */
+    private final Map<String, Set<String>> expectedByInput;
     private final VectorAligner.Params params;
     private final long every;
     private final long lateness;
@@ -98,11 +104,58 @@ public final class VectorStream {
             throw new IllegalArgumentException("a vector that keeps running needs the ids of its series (source.series)");
         }
         this.inputNames = List.copyOf(inputNames);
+        this.expectedByInput = null;
         this.params = params;
         this.every = Math.floorDiv(params.every().toNanos(), 1000);
         this.lateness = Math.max(0, latenessMicros);
         this.maxAgeTicks = Math.floorDiv(Math.floorDiv(params.maxAge() == null ? params.every().toNanos() : params.maxAge().toNanos(), 1000), every);
         this.expected = new TreeSet<>(expected);
+    }
+
+    /**
+     * A vector whose inputs read series of their own, as the inputs of an {@code align.vector} node that follow
+     * different nodes of a DAG.
+     *
+     * @param expectedByInput input name to the ids of its series, in the order of the inputs
+     */
+    public VectorStream(Map<String, Set<String>> expectedByInput, VectorAligner.Params params, long latenessMicros) {
+        if (expectedByInput.isEmpty() || expectedByInput.values().stream().anyMatch(Set::isEmpty)) {
+            throw new IllegalArgumentException("a vector that keeps running needs the ids of the series of every input");
+        }
+        this.inputNames = List.copyOf(expectedByInput.keySet());
+        Map<String, Set<String>> copy = new LinkedHashMap<>();
+        expectedByInput.forEach((input, ids) -> copy.put(input, new TreeSet<>(ids)));
+        this.expectedByInput = java.util.Collections.unmodifiableMap(copy);
+        this.params = params;
+        this.every = Math.floorDiv(params.every().toNanos(), 1000);
+        this.lateness = Math.max(0, latenessMicros);
+        this.maxAgeTicks = Math.floorDiv(Math.floorDiv(params.maxAge() == null ? params.every().toNanos() : params.maxAge().toNanos(), 1000), every);
+        TreeSet<String> all = new TreeSet<>();
+        copy.forEach((input, ids) -> ids.forEach(id -> all.add(slot(input, id))));
+        this.expected = all;
+    }
+
+    /** Key of the state of one series in one input: the series id when every input reads the same series. */
+    private String slot(String input, String seriesId) {
+        return expectedByInput == null ? seriesId : input + "/" + seriesId;
+    }
+
+    /**
+     * Takes a block of samples of one series of one input, in time order; for a stream made with
+     * {@link #VectorStream(Map, VectorAligner.Params, long)}.
+     *
+     * @return the measuring points that became final
+     */
+    public List<VectorAligner.Point> add(String input, String seriesId, String metric, Map<String, String> tags,
+                                         long[] timesMicros, double[] values, long endMicros) {
+        if (expectedByInput == null) {
+            throw new IllegalStateException("every input of this vector reads the same series; use add without an input");
+        }
+        Set<String> ids = expectedByInput.get(input);
+        if (ids == null || !ids.contains(seriesId)) {
+            return List.of();
+        }
+        return take(slot(input, seriesId), metric, tags, timesMicros, values, endMicros);
     }
 
     /**
@@ -113,10 +166,18 @@ public final class VectorStream {
      */
     public List<VectorAligner.Point> add(String seriesId, String metric, Map<String, String> tags, long[] timesMicros,
                                          double[] values, long endMicros) {
+        if (expectedByInput != null) {
+            throw new IllegalStateException("the inputs of this vector read series of their own; use add with an input");
+        }
         if (!expected.contains(seriesId)) {
             return List.of();
         }
-        SeriesState s = series.computeIfAbsent(seriesId, id -> new SeriesState());
+        return take(seriesId, metric, tags, timesMicros, values, endMicros);
+    }
+
+    private List<VectorAligner.Point> take(String slot, String metric, Map<String, String> tags, long[] timesMicros,
+                                           double[] values, long endMicros) {
+        SeriesState s = series.computeIfAbsent(slot, id -> new SeriesState());
         if (s.metric == null) {
             s.metric = metric;
             s.tags.putAll(tags);
@@ -180,19 +241,27 @@ public final class VectorStream {
         String keyBy = params.key().trim();
         boolean bySeries = keyBy.equals("series");
         boolean all = keyBy.equals("all");
-        List<VectorAligner.Series> list = new ArrayList<>();
-        series.forEach((id, s) -> list.add(new VectorAligner.Series(id, s.metric, s.tags, new long[0], new double[0])));
-        if (!bySeries && !all && list.stream().noneMatch(s -> s.tags().containsKey(keyBy))) {
+        if (series.values().stream().noneMatch(s -> bySeries || all || s.tags.containsKey(keyBy))) {
             throw new IllegalArgumentException("no series carries the tag \"" + keyBy + "\"; use series, all or a tag of the series");
         }
-        Map<String, Integer> perKey = new LinkedHashMap<>();
-        for (VectorAligner.Series s : list) {
-            perKey.merge(VectorAligner.keyText(s, bySeries, all, keyBy), 1, Integer::sum);
-        }
-        boolean several = perKey.values().stream().anyMatch(n -> n > 1);
         List<String> comps = new ArrayList<>();
         Map<String, KeyState> ks = new TreeMap<>();
         for (String input : inputNames) {
+            // the series of this input; the id of a Series is the raw series id, its slot is where its state is kept
+            List<VectorAligner.Series> list = new ArrayList<>();
+            Map<VectorAligner.Series, String> slots = new java.util.IdentityHashMap<>();
+            Set<String> ids = expectedByInput == null ? expected : expectedByInput.get(input);
+            for (String id : ids) {
+                SeriesState st = series.get(slot(input, id));
+                VectorAligner.Series s = new VectorAligner.Series(id, st.metric, st.tags, new long[0], new double[0]);
+                list.add(s);
+                slots.put(s, slot(input, id));
+            }
+            Map<String, Integer> perKey = new LinkedHashMap<>();
+            for (VectorAligner.Series s : list) {
+                perKey.merge(VectorAligner.keyText(s, bySeries, all, keyBy), 1, Integer::sum);
+            }
+            boolean several = perKey.values().stream().anyMatch(n -> n > 1);
             TreeSet<String> ofInput = new TreeSet<>();
             for (VectorAligner.Series s : list) {
                 String component = !several ? input : inputNames.size() == 1 ? VectorAligner.seriesName(s)
@@ -200,8 +269,8 @@ public final class VectorStream {
                 ofInput.add(component);
                 KeyState k = ks.computeIfAbsent(VectorAligner.keyText(s, bySeries, all, keyBy),
                         t -> new KeyState(VectorAligner.keyOf(s, bySeries, all, keyBy)));
-                String other = k.seriesByComponent.put(component, s.id());
-                if (other != null && !other.equals(s.id())) {
+                String other = k.seriesByComponent.put(component, slots.get(s));
+                if (other != null && !other.equals(slots.get(s))) {
                     throw new IllegalArgumentException("the series " + other + " and " + s.id() + " both give the component \""
                             + component + "\" of one vector; choose a key that tells them apart");
                 }
@@ -323,7 +392,16 @@ public final class VectorStream {
     /** A stream that continues where {@link #state()} was taken. The parameters must be those of then. */
     public static VectorStream restore(List<String> inputNames, VectorAligner.Params params, Set<String> expected,
                                        long latenessMicros, JsonNode state) {
-        VectorStream v = new VectorStream(inputNames, params, expected, latenessMicros);
+        return restoreInto(new VectorStream(inputNames, params, expected, latenessMicros), state);
+    }
+
+    /** As {@link #restore(List, VectorAligner.Params, Set, long, JsonNode)}, for inputs with series of their own. */
+    public static VectorStream restore(Map<String, Set<String>> expectedByInput, VectorAligner.Params params,
+                                       long latenessMicros, JsonNode state) {
+        return restoreInto(new VectorStream(expectedByInput, params, latenessMicros), state);
+    }
+
+    private static VectorStream restoreInto(VectorStream v, JsonNode state) {
         v.skippedBlocks = state.path("skippedBlocks").asLong();
         state.path("series").fields().forEachRemaining(e -> {
             SeriesState s = new SeriesState();

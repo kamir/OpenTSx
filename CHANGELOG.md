@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `opentsx-wayang` A3.1 (TASK-020): `align.vector` runs on Wayang as `TsxAlignVector` through `VectorStream`; inputs
+  are marked with `TsxTagged` and joined with a union, open ticks pass from increment to increment in the checkpoint,
+  and `TsxVectorSink` writes `opentsx.vector.v1` records to a vector topic. All six shared `align.vector` cases pass
+  through a Wayang plan, in one run and in two increments.
+- `opentsx-retrieval`: `VectorStream` accepts named inputs that read series of their own
+  (`new VectorStream(expectedByInput, params, lateness)`, `add(input, seriesId, ...)`). The state format of a stream
+  without named inputs is unchanged.
 - `opentsx-wayang` phase A2 (TASK-020): the clean chain (`dq.checks`, `convert.unit`, `resample`,
   `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) runs on Wayang as one operator per run
   of consecutive nodes (`TsxSeriesChain`, through `SeriesStream`), and `stats.welford-ddsketch` as `TsxStatsWindow`
@@ -42,6 +49,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   checkpoint only after every record was acknowledged. The sink writes maps in UTF-8 key order, so an episode that is
   read and written again keeps its bytes. `LogReader` in `opentsx-kafka-v2` is public. The CI job "KafScale
   conformance" runs the three new integration tests and requires them to execute.
+
+- Shared execution-assignment schema and offline Java/Rust validators for exact source/fragment identities,
+  decimal-string offsets, execution modes and whole-topic ownership with complete internal cursor checks.
+  Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
+  UI-to-Wayang-to-Rust orchestration and a separate
+  bounded storage profile; no runner, network deployment or production fencing is enabled.
+
+- Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
+  families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
+  are generated with source-content hashes; synchronization rejects missing, edited or stale material.
+  Manual chapter 17 links the contracts and verification commands. The project rules require coordinated
+  operator, manual, SPEC, exercise and test updates and preserve whole-topic deployment ownership.
 
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
@@ -150,6 +169,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
   write every point, retain subtype formats and metadata, and report errors while preserving existing files
   through atomic replacement.
+
+- Remove the orphaned InfluxDB/Grafana demo gitlink, which has no `.gitmodules` entry and blocks checkout
+  credential cleanup. CI checks that every tracked gitlink has a configured path and URL.
 
 - The PFD runtime reads `group.id` through the existing core configuration manager, retaining
   `opentsx-dynamic-job` when absent and rejecting empty or whitespace-only configured values.

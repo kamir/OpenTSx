@@ -16,13 +16,19 @@ Terms:
 | Track A | Java execution operators on Wayang's Java platform, module `opentsx-wayang` |
 | Track B | the Rust runner `tsx-runner` |
 | runtime | an implementation of the catalog: Track A or Track B |
-| site | one KafScale cluster with one runtime that runs site plans |
+| site | one admitted data/security location with its cluster bindings and one or more runtime nodes |
+| node | one registered Java or Rust runtime instance assigned complete fragments and whole source topics |
 | driver | the central Wayang process that translates DAGs and sends site plans |
 | signal cluster | the central KafScale cluster that receives site aggregates and signals |
 | DAG document | the `opentsx.dag.v1` or `opentsx.dag.v2` document the web workbench exports (`opentsx-saas-frontend/src/workbench/flow.ts:684-745`) |
 | `specHash` | lower-case hex SHA-256 of the UTF-8 text of the DAG document, as the processor computes it today (`VectorProcessor.java:261`, `:797-803`) |
 
 ## S1. Operator catalog
+
+The [unified orchestration plan](../devguide/integration/wayang-unified-plan.md) defines the multi-node deployment
+boundary and separate bounded/continuous profiles. The implemented
+[assignment contract](../devguide/integration/wayang-shared-contracts.md) preserves original UI text and separate
+fragment text; its offline validator is not a complete runner or deployment admission service.
 
 ### S1.1 Identity
 
@@ -157,11 +163,14 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 2. Nodes: ids, decoder, inputs, cycles (`DagPlan.java:64-118`).
 3. Sinks: non-empty array, supported schema.
 4. Sink identities unique.
-5. Catalog: every `op` is in the catalog version of the job and has a runtime for every site track in the job.
+5. Catalog: every `op` belongs to the job catalog. Check runtime, state and resource support at every node
+   assigned that operator or fragment. A replicated fragment checks every replica; unrelated fragments need not
+   support operators they do not execute.
 6. Parameters (S1.3).
 7. Topics: every source and sink topic follows `tsx.<domain>.<kind>.v<n>` of the job's domain (S3.1).
-8. Federation: every node upstream of a federated sink has `merge.class` other than `none`, every windowed stats
-   node uses tumbling windows, and the sink kind is `aggregates` or `signals`.
+8. Federation: validate the value crossing each site boundary and its ownership dependencies. A local cleaning
+   chain may precede mergeable statistics. Cross-site raw pairing or alignment requires an explicitly admitted
+   movement contract. Federated statistics use tumbling windows and the sink kind is `aggregates` or `signals`.
 
 ### S2.3 Wayang plan
 
@@ -182,8 +191,16 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 
 ### S2.4 Site plan
 
-For a federated job the driver MUST cut the DAG at the federated sinks. Everything upstream of them, with those
-sinks, is the **site stage**; it goes unchanged to every site. Everything downstream (the merge) runs centrally.
+For a federated job the driver MUST identify complete executable fragments and their explicit assignments.
+Replicating the same local stage at independent sites is one supported physical shape, not a general placement
+algorithm. Each assignment owns whole topics, with complete internal partition positions, runtime/node identity,
+generation, channel bindings and
+resource/capability admission before activation. Central merge is an explicit downstream fragment.
+
+Preserve `specHash` over the original submitted UI text. Carry exact source text separately from compiler-produced
+fragment text and its `fragmentHash`; placement or slicing MUST NOT redefine the legacy output identity.
+The shared assignment schema implements this offline boundary. The runner-plan wrapper below is still a draft:
+U01 must bind it to the assignment and resolve its output/channel fields before a network runner can accept it.
 
 The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.runner-plan.v1.schema.json)):
 
@@ -194,7 +211,7 @@ The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.
 | `issued`, `expires` | RFC 3339 UTC; `expires` after `issued` |
 | `site` | the receiving site id |
 | `catalog` | catalog version, for example `tsx-catalog/1` |
-| `specHash` | as defined above, of the site stage document |
+| `specHash` | as defined above, of the original submitted DAG text; a fragment has its own `fragmentHash` |
 | `dag` | the site stage as a DAG document (JSON form) |
 | `inputs[]`, `outputs[]` | topic, allowed fingerprints (16 lower-case hex each), partitions; outputs name the cluster (`site` or `signal`) |
 | `start` | `earliest`, `latest`, or an offset map |
@@ -339,20 +356,25 @@ Laws:
 
 1. **Identity.** The record with all counts 0, `min` = +∞, `max` = −∞, `mean` = 0, `m2` = 0 and an empty sketch is the
    identity element.
-2. **Associativity and commutativity.** Counts, `min`, `max`, `lastSeen` and the sketch bins are exactly associative
-   and commutative (integer addition, min, max). `mean` and `m2` are associative and commutative in real
+2. **Associativity and commutativity.** Counts, `min`, `max`, `lastSeen` and uncollapsed sketch bin maps are exactly
+   associative and commutative within their checked numeric bounds (integer addition, min, max). Bounded-bin
+   collapse needs separate qualification. `mean` and `m2` are associative and commutative in real
    arithmetic only. In IEEE 754 doubles they depend on the order.
 3. **Canonical order.** The merge MUST fold the partials in ascending order of site id, starting from the identity.
    Two merges of the same partials then give bit-identical results.
-4. **Equality with the centralized result.** The merged counts, `min`, `max` and sketch bytes MUST equal those of
-   one `StatsAccumulator` over all values, when all sites run one runtime. `mean` and `m2` MUST be within the
+4. **Equality with the centralized result.** The merged counts, `min` and `max` MUST equal those of one
+   `StatsAccumulator` over all values. Sketch-byte equality requires one runtime and no bin collapse at a site
+   or merge; collapsed-tail behavior needs separate acceptance vectors. `mean` and `m2` MUST be within the
    tolerance of the job (decision D-T2 in TASK-020; proposal: relative 1e-12). Quantiles from the merged sketch MUST
-   equal those of the centralized sketch and lie within relative error `alpha` of the exact quantile
+   equal those of the centralized sketch in that one-runtime/no-collapse domain. The relative error `alpha`
+   comparison with the exact quantile is
+   qualified to nonzero magnitudes outside the zero bucket and without bounded-bin collapse; fixtures must
+   separately cover the zero bucket and collapsed tails of `QuantileSketch`
    ([Masson, Rim, Lee 2019, doi:10.14778/3352063.3352135](https://doi.org/10.14778/3352063.3352135)).
 5. **Mixed runtimes.** When sites run different runtimes, a value on a DDSketch bin boundary MAY fall into
    neighbouring bins (Java `Math.log` is within 1 ulp,
    [Java SE 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Math.html#log(double))).
-   Rule 4 then holds for counts, `min`, `max` and the `alpha` bound, not for sketch bytes.
+   Rule 4 then holds for counts, `min`, `max` and the qualified `alpha` bound, not for sketch bytes.
 
 ### S4.4 Routes
 
@@ -372,13 +394,15 @@ Wayang plan's `AggregateChannel` and continues the plan.
 ### S4.5 Completeness
 
 1. `federation.expectedSites` is the list of sites of the job. `federation.maxDelay` is an ISO 8601 duration.
-2. A merged window is **final** when a partial of every expected site is present. The merge then writes it with
-   `tsx-final: true`.
+2. A merged window is **final** only when every expected assignment supplies admitted closed-window or source-cut
+   evidence for the generation. An open-window partial from every site is insufficient. The merge then writes
+   `tsx-final: true`. The evidence envelope and expected membership are U09 delivery gates.
 3. When the signal cluster's clock passes `windowEnd + maxDelay` and a site is missing, the merge MUST write the
    window with `tsx-final: false` and `tsx-missing-sites` set.
 4. A partial that arrives later MUST produce a new merged record with `tsx-revision` raised by 1. The merge MUST
    NOT change an earlier record.
-5. A duplicate partial (same key, same revision) MUST be ignored.
+5. A byte-identical duplicate partial (same key, same revision and generation) MUST be ignored. Conflicting content
+   under that identity MUST be refused and surfaced; stale generations MUST be refused.
 6. Removing a site from a job MUST go through a new `planVersion`. Windows before the change keep their sites.
 
 ### S4.6 Signals
@@ -408,7 +432,7 @@ cluster collects them. A signal MUST NOT carry raw values beyond the value that 
 
 | Mode | Behaviour |
 |---|---|
-| `agent` | runs the pull protocol of S5.3; supervises one task per job and partition set |
+| `agent` | runs the pull protocol of S5.3; supervises assigned whole topics per job; partitions remain internal cursor metadata |
 | `run --plan <file>` | verifies the signed plan in `<file>` and runs it until stopped; used by SSH launch |
 | `conform` | runs the checks of S3.3 and writes the signed report to standard output |
 
@@ -424,7 +448,7 @@ JSON (`application/json`) unless stated.
 | Method and path | Request | Response |
 |---|---|---|
 | `POST /v1/sites/<site>/conformance` | compact JWS of an `opentsx.site-conformance.v1` report | `200 {"result":"accepted"}`, or `200 {"result":"refused","check":"<id>","message":"<text>"}` |
-| `GET /v1/sites/<site>/plans?after=<planVersion>` | none | `200 {"plans":["<compact JWS>", ...]}` with every plan of the site above `after`, oldest first; `204` when none |
+| `GET /v1/sites/<site>/plans?after=<deliverySequence>` | none | Proposed durable per-site delivery cursor, independent of per-job versions; response entries bind sequence, job/version and compact JWS. Exact acknowledgement envelope is a U01/U03 contract gate. |
 | `POST /v1/sites/<site>/jobs/<job>/status` | an `opentsx.dag-status.v1` record (S5.4) | `204` |
 | `POST /v1/sites/<site>/jobs/<job>/aggregates` | `application/vnd.opentsx.avro-soe-seq`: a sequence of `SeriesStats` records, each prefixed by its length as a 4-byte big-endian integer | `204` |
 | `POST /v1/sites/<site>/jobs/<job>/refusal` | `{"planVersion":<n>,"code":"<code>","message":"<text>"}` | `204` |
@@ -432,6 +456,9 @@ JSON (`application/json`) unless stated.
 Errors: `400 {"error":"bad-request","message":"<text>"}`, `401` when the client certificate is not a known site,
 `403` when `<site>` in the path differs from the certificate's site, `404` for an unknown job, `409` when a status or
 aggregate names an older `planVersion` than the current one.
+
+Delivery sequences use canonical int64 decimal strings. A job at version 10 MUST NOT hide another job at version 1.
+Repeated delivery of identical accepted bytes is idempotent; changed bytes under the same command identity reject.
 
 The agent SHOULD poll `GET .../plans` every 30 s and MUST back off to at most once per 5 min while the driver is
 unreachable.
@@ -451,13 +478,13 @@ unreachable.
 | Code | When |
 |---|---|
 | `plan.signature` | signature invalid or signed by an unknown key |
-| `plan.expired` | now is after `expires` |
-| `plan.version` | `planVersion` not above the highest accepted one of the job |
+| `plan.expired` | new activation arrives after `expires`; accepted identical replay returns its recorded outcome |
+| `plan.version` | an older plan version, or changed content for an already accepted version; identical delivery returns its recorded outcome |
 | `plan.site` | `site` is not this site |
 | `plan.catalog` | catalog version or an operator version not available |
 | `plan.invalid` | any message of S2.5; the message is passed on |
 | `plan.policy` | an output cluster or kind not allowed by the site policy (S7.4) |
-| `plan.busy` | another plan of the same job runs on the same partitions |
+| `plan.busy` | another live assignment owns the same `(fragment, binding, topic)`, regardless of internal positions |
 
 ## S6. Delivery, state and checkpoints on KafScale
 
@@ -494,14 +521,16 @@ deterministic through the `seed` parameter (`Mulberry32`).
    catalog version and `planVersion`.
 2. A runtime MUST write the checkpoint only after the broker acknowledged every record sent before it.
 3. A runtime MUST write it to a temporary file, flush it to disk and rename it over the previous one.
-4. On start, a runtime MUST refuse a checkpoint whose `specHash` or catalog differs from the plan and MUST start
-   from `start` of the plan instead.
+4. On start, a runtime MUST fail closed on an incompatible `specHash`, catalog, state ABI or continuation identity.
+   It MUST NOT restart from `start` silently. Reset requires an explicitly admitted new generation; migration
+   requires a qualified state transition. Operator parity does not imply cross-runtime checkpoint compatibility.
 5. An unreadable checkpoint MUST put the task in state `failed`. The runtime MUST NOT start over by itself.
 6. The checkpoint format is private to a runtime; it does not travel between tracks.
 
 ### S6.4 Reading
 
-1. A runtime MUST use manual partition assignment and seek; it MUST NOT join a consumer group.
+1. A runtime MUST use manual partition assignment and seek for every partition of each assigned whole topic;
+   it MUST NOT join a consumer group. Partition assignment is internal broker I/O, not cross-node placement.
 2. After a refused fetch it MUST reset to the positions before the fetch and retry, as `Patience.poll` does
    (`Patience.java:75`).
 3. A start by time MUST go through the episode index; `offsetsForTimes` MUST NOT be used.
@@ -514,9 +543,11 @@ deterministic through the `seed` parameter (`Mulberry32`).
    with `alg` `EdDSA` (Ed25519) or `ES256`. Other algorithms and `none` MUST be refused.
 2. The payload is the document's JSON. The signature covers it as sent; no canonicalization is applied.
 3. A site MUST pin the driver's public key in its configuration. The driver MUST pin each site's public key.
-4. A site MUST refuse a plan whose `planVersion` is not above the highest it accepted for the job, or whose
-   `expires` has passed (rollback and freeze protection as in
-   [TUF](https://theupdateframework.github.io/specification/latest/)).
+4. A site MUST refuse an older plan version or an expired new activation. Identical delivery of an already
+   accepted version MUST return its recorded outcome; different bytes for that version MUST conflict.
+   Restart of a persisted active assignment follows its grant and recovery policy, not fresh activation.
+   Rollback and freeze protection follow
+   [TUF](https://theupdateframework.github.io/specification/latest/).
 
 ### S7.2 Transport
 
