@@ -40,6 +40,12 @@ Built for what KafScale supports (see the [conformance results](../opentsx-kafsc
   `SeriesStatsLog` does.
 * A failed task restarts from the last checkpoint, up to 20 times with 15 s between attempts. KafScale refuses
   reads for about a minute at a time.
+* An input that does not decode is counted in the metric `undecodable` and dropped. A failure of the engine fails
+  the task. An input that decodes but is not a consistent episode, for example a count that differs from the number
+  of values, fails the task again after every restart.
+* A setting the engine cannot use, for example `--alpha 5`, ends the job before the Flink graph is built: it prints
+  the message and the usage line and exits with code 2. The settings and messages are in
+  [chapter 7](../docs/user-manual/07-stats-quality.md#72-run-the-processor) of the user manual.
 * The job emits no watermarks. The engine keeps event time per series and closes windows itself.
 
 Operation:
@@ -83,7 +89,8 @@ KAFSCALE_BOOTSTRAP=localhost:9092 mvn -pl opentsx-flink-core -am test    # also 
 ```
 
 * `StatsJobTest`: the job on a mini cluster gives the same `SeriesStats` as one `StatsEngine` over the same
-  episodes; a restore from a checkpoint after half the input counts every value once; GLOBAL timers.
+  episodes; a restore from a checkpoint after half the input counts every value once; GLOBAL timers; an engine
+  failure fails the task; an alpha outside the sketch range is refused at start.
 * `StatsEngineSerializerTest`: round trip, independent copies, snapshot and compatibility rules.
 * `StatsJobKafScaleTest`: episodes written to KafScale come back as the same `SeriesStats` on the series-stats
   topic. It runs in the KafScale CI job.

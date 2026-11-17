@@ -323,7 +323,7 @@ Evaluates up to five checks on one SeriesStats record, without the raw values. C
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  |  |
-| java | available | `org.opentsx.stats.DataQuality#evaluate` | Expectation.of(min, max, interval) sets the defaults; withoutFlatline() and withMaxAge(age) change them. |
+| java | available | `org.opentsx.stats.DataQuality#evaluate` | Expectation.of(min, max, interval) sets the defaults; withoutFlatline() and withMaxAge(age) change them. A window in which a series has no value has no SeriesStats record, so no check runs on it: the outage shows in GAPS of the window where the values resume, when the engine knows the expected interval, and in COMPLETENESS of a longer window such as PT1H. |
 | python | none |  |  |
 | processor | none |  | bin/opentsx metadata --kafscale reads the latest statistics once and publishes the results to OpenMetadata. No processor evaluates them continuously. |
 | go | planned |  | DQ in the Go stream core of the proposed Go TSx processor. |
@@ -1020,7 +1020,7 @@ Keeps per series and per epoch-aligned tumbling window, and in GLOBAL since the 
 | workbench | available | operator `stats.window` | Written into the DAG as stats.welford-ddsketch, but no DAG runtime runs it: the clean chain of the processor refuses it. One field per node, MEAN, STD (sample, the default), MIN or MAX, over windows of window units of the x axis (default 0.25). No quantiles, no gaps. |
 | java | available | `org.opentsx.stats.StatsEngine` | onEpisode and onObservation return the windows they close, emitGlobal the GLOBAL records of changed series, flush closes all windows. The engine keeps at most 100000 recent episode ids for deduplication and at most 4096 sketch bins per sign. |
 | python | available | `opentsx.stats.sketch.QuantileSketch` | Builds, merges and reads the DDSketch with the same bytes as Java; it has no bin limit. stats_to_frame turns SeriesStats records into a pandas frame with std and the quantiles q05 to q95. No windows and no Welford moments of its own: summarize and merge_summaries (stats.summary) give those. |
-| processor | available | `org.opentsx.stats.StatsProcessor` | bin/opentsx stats: its own processor on the episode topic, not a DAG node. Writes tsx.<domain>.series-stats.v2 and keeps positions and engine state in a checkpoint file. The same engine runs as the Flink job StatsJob of opentsx-flink-core (bin/opentsx stats-flink). |
+| processor | available | `org.opentsx.stats.StatsProcessor` | bin/opentsx stats: its own processor on the episode topic, not a DAG node. Writes tsx.<domain>.series-stats.v2 and keeps positions and engine state in a checkpoint file. A record that does not decode is counted as undecodable and skipped; a failure of the engine stops the processor, and the checkpoint stays before that record. Records that retention deleted after the checkpoint position are counted in lostToRetention. The same engine runs as the Flink job StatsJob of opentsx-flink-core (bin/opentsx stats-flink). |
 | go | planned |  | Welford and DDSketch in the Go stream core of the proposed Go TSx processor. |
 
 | Port | Direction | Type | Description |
@@ -1030,9 +1030,9 @@ Keeps per series and per epoch-aligned tumbling window, and in GLOBAL since the 
 
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
-| `windows` | list | `["PT10M","PT1H"]` |  | Tumbling windows aligned to the epoch, each a positive whole number of microseconds. GLOBAL is always kept. |
+| `windows` | list | `["PT10M","PT1H"]` |  | Tumbling windows aligned to the epoch, each a positive whole number of microseconds and each length once. GLOBAL is always kept. |
 | `alpha` | number | `0.01` |  .. 1 | Relative accuracy of the quantile sketch, below 1. Sketches merge only with the same alpha. 0 or less keeps no sketch. |
-| `lateness` | duration | `PT0S` |  | A window closes when its series reaches the window end plus lateness. Later values count in GLOBAL only. |
+| `lateness` | duration | `PT0S` |  | Zero or a positive whole number of microseconds. A window closes when its series reaches the window end plus lateness. Later values count in GLOBAL only. |
 | `gapFactor` | number | `1.5` | 1 ..  | A step between timestamps of more than gapFactor times the expected interval is a gap. Above 1. Java API only. |
 | `expectedInterval` | duration |  |  | Expected sampling interval per series. Without it the interval of the last REGULAR episode is used. Java API only (withExpectedInterval). Preset from `expect.interval`. |
 | `observations` | boolean | `false` |  | Also read the observations topic. bin/opentsx stats only. |

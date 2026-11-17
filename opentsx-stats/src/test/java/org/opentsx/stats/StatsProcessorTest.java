@@ -27,6 +27,10 @@ import org.opentsx.windpark.catalog.ChannelCatalog;
 import org.opentsx.windpark.sim.Scenario;
 import org.opentsx.windpark.sim.WindparkSimulator;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -37,6 +41,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StatsProcessorTest {
@@ -137,6 +144,82 @@ class StatsProcessorTest {
         global.forEach(g -> assertEquals(3600, g.getValidCount() + g.getNanCount(), "every value counted exactly once"));
         assertEquals(series * 6, latest.stream().filter(s -> s.getWindowType().equals("PT10M")).count());
         assertEquals(series, latest.stream().filter(s -> s.getWindowType().equals("PT1H")).count());
+    }
+
+    @Test
+    void anEngineFailureStopsTheRunAndLeavesNoCheckpoint(@TempDir Path dir) {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Episode> eps = simulate(scenario("engine", Duration.ofMinutes(20), 1));
+        IllegalStateException cause = new IllegalStateException("interval catalog unavailable");
+        StatsEngine engine = new StatsEngine(StatsEngine.Config.defaults().withExpectedInterval(id -> {
+            throw cause;
+        }));
+        Path checkpoint = dir.resolve("stats.ckpt");
+        MockProducer<String, byte[]> out = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+        StatsProcessor p = new StatsProcessor(consumerWith(layout, eps), out, layout, engine, checkpoint, false);
+        RuntimeException e = assertThrows(RuntimeException.class, () -> p.runUntilCaughtUp(Duration.ofSeconds(30), true));
+        assertSame(cause, e.getCause());
+        assertTrue(e.getMessage().startsWith(layout.episodes() + "-"), e.getMessage());
+        assertFalse(Files.exists(checkpoint), "the position must not move past a record the engine failed on");
+        assertTrue(p.positions().values().stream().allMatch(o -> o == 0L), p.positions().toString());
+        assertTrue(out.history().isEmpty());
+    }
+
+    @Test
+    void aRecordThatDoesNotDecodeIsCountedAndSkipped() {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Episode> eps = simulate(scenario("undecodable", Duration.ofMinutes(20), 1));
+        MockConsumer<byte[], byte[]> c = consumerWith(layout, eps);
+        TopicPartition tp = new TopicPartition(layout.episodes(), Math.floorMod(eps.get(0).getSeries().getSeriesId().hashCode(), 2));
+        long end = c.endOffsets(List.of(tp)).get(tp);
+        c.schedulePollTask(() -> c.addRecord(new ConsumerRecord<>(tp.topic(), tp.partition(), end, null,
+                "not avro".getBytes(StandardCharsets.UTF_8))));
+        c.updateEndOffsets(Map.of(tp, end + 1));
+        MockProducer<String, byte[]> out = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer());
+        StatsProcessor.RunResult r = new StatsProcessor(c, out, layout, new StatsEngine(StatsEngine.Config.defaults()), null, false)
+                .runUntilCaughtUp(Duration.ofSeconds(30), true);
+        assertEquals(eps.size() + 1, r.records());
+        assertEquals(1, r.undecodable());
+        assertEquals(eps.size(), r.metrics().episodes());
+    }
+
+    @Test
+    void recordsLostToRetentionAreCountedAndReported(@TempDir Path dir) {
+        TopicLayout layout = new TopicLayout("t" + UUID.randomUUID().toString().substring(0, 8));
+        List<Episode> eps = simulate(scenario("retention", Duration.ofHours(1), 2));
+        Path checkpoint = dir.resolve("stats.ckpt");
+        StatsProcessor first = new StatsProcessor(consumerWith(layout, eps.subList(0, eps.size() / 2)),
+                new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
+                new StatsEngine(StatsEngine.Config.defaults()), checkpoint, false);
+        first.runUntilCaughtUp(Duration.ofSeconds(30), false);
+        TopicPartition p0 = new TopicPartition(layout.episodes(), 0);
+        TopicPartition p1 = new TopicPartition(layout.episodes(), 1);
+        long saved = first.positions().get(p0);
+        Map<TopicPartition, Long> logStart = Map.of(p0, saved + 3, p1, first.positions().get(p1));
+
+        MockConsumer<byte[], byte[]> c = consumerWith(layout, eps);
+        c.updateBeginningOffsets(logStart);
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        StatsProcessor.RunResult r;
+        try {
+            r = new StatsProcessor(c, new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
+                    new StatsEngine(StatsEngine.Config.defaults()), checkpoint, false).runUntilCaughtUp(Duration.ofSeconds(30), true);
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(3, r.lostToRetention());
+        assertEquals(layout.episodes() + "-0: retention deleted 3 records before they were read (position " + saved
+                        + ", log start " + (saved + 3) + "); reading on from the log start" + System.lineSeparator(),
+                err.toString(StandardCharsets.UTF_8));
+
+        MockConsumer<byte[], byte[]> fresh = consumerWith(layout, eps);
+        fresh.updateBeginningOffsets(logStart);
+        StatsProcessor.RunResult none = new StatsProcessor(fresh,
+                new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()), layout,
+                new StatsEngine(StatsEngine.Config.defaults()), null, false).runUntilCaughtUp(Duration.ofSeconds(30), true);
+        assertEquals(0, none.lostToRetention(), "without a saved position nothing was lost");
     }
 
     @Test

@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.opentsx.model.OpenTsxAvro;
 import org.opentsx.model.v2.Episode;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -75,5 +77,32 @@ class EpisodeLogTailTest {
 
         assertEquals(written.subList(0, 5).stream().map(Episode::getEpisodeId).sorted().toList(),
                 seen.stream().sorted().toList());
+    }
+
+    @Test
+    void recordsDeletedByRetentionBetweenPollsAreCountedAndReported() {
+        List<Episode> written = WindData.episodes(1, List.of("wind_speed"), 5, 30, 8);
+        EpisodeLogTail tail = tail();
+        TopicPartition p0 = new TopicPartition(layout.episodes(), 0);
+        append(0, avro.encode(written.get(0)), avro.encode(written.get(1)));
+        consumer.updateBeginningOffsets(Map.of(p0, 1L));
+        List<String> seen = new ArrayList<>();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream stderr = System.err;
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
+        try {
+            assertEquals(1, tail.poll(e -> seen.add(e.getEpisodeId())));
+            assertEquals(0, tail.lostToRetention(), "a log start above 0 on the first read is no loss");
+
+            append(0, avro.encode(written.get(2)), avro.encode(written.get(3)), avro.encode(written.get(4)));
+            consumer.updateBeginningOffsets(Map.of(p0, 4L));
+            assertEquals(1, tail.poll(e -> seen.add(e.getEpisodeId())));
+        } finally {
+            System.setErr(stderr);
+        }
+        assertEquals(2, tail.lostToRetention());
+        assertEquals(List.of(written.get(1).getEpisodeId(), written.get(4).getEpisodeId()), seen);
+        assertEquals(layout.episodes() + "-0: retention deleted 2 records before they were read (position 2, log start 4);"
+                + " reading on from the log start" + System.lineSeparator(), err.toString(StandardCharsets.UTF_8));
     }
 }

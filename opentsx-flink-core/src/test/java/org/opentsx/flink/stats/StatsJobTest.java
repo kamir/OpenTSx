@@ -110,6 +110,24 @@ class StatsJobTest {
     }
 
     @Test
+    void anEngineFailureFailsTheTask() throws Exception {
+        Episode e = StatsData.episodes("engine", Duration.ofMinutes(10), 1).get(0);
+        Episode inconsistent = Episode.newBuilder(e).setCount(e.getCount() - 1).build();
+        try (var h = harness()) {
+            h.open();
+            assertThrows(ArrayIndexOutOfBoundsException.class, () -> h.processElement(new StreamRecord<>(
+                    StatsData.inputs(List.of(inconsistent)).get(0))));
+        }
+    }
+
+    @Test
+    void anAlphaOutsideTheSketchRangeIsRefusedAtStart() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> StatsJob.parse(new String[]{"--kafscale", "k:9092", "--alpha", "5"}));
+        assertTrue(e.getMessage().startsWith("sketchAlpha: \"5.0\" is not allowed"), e.getMessage());
+    }
+
+    @Test
     void optionsMirrorTheProcessor() {
         StatsJob.Options o = StatsJob.parse(new String[]{"--kafscale", "localhost:9092", "--domain", "solar",
                 "--windows", "PT1H", "--once", "true"});

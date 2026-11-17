@@ -18,7 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,7 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * } // seals
  * }</pre>
  *
- * If any send fails the bucket is not sealed and {@link #seal()} throws; replay treats unsealed buckets as incomplete.
+ * If any send or index entry fails, or {@link #seal()} is interrupted before every episode is acknowledged, the bucket is
+ * not sealed and {@link #seal()} throws; replay treats unsealed buckets as incomplete.
  */
 public final class BucketWriter implements AutoCloseable {
 
@@ -121,7 +124,14 @@ public final class BucketWriter implements AutoCloseable {
                 }
                 IndexEntry entry = new IndexEntry(sent.getEpisodeId(), sent.getSeries().getSeriesId(), tStart, tEnd,
                         bucketId(), md.topic(), md.partition(), md.offset());
-                index.add(entry);
+                try {
+                    index.add(entry);
+                } catch (RuntimeException indexFailure) {
+                    // the producer only logs what a callback throws
+                    failure.compareAndSet(null, indexFailure);
+                    future.completeExceptionally(indexFailure);
+                    return;
+                }
                 future.complete(entry);
             });
         } catch (RuntimeException ex) {
@@ -140,12 +150,17 @@ public final class BucketWriter implements AutoCloseable {
         producer.flush();
         try {
             CompletableFuture.allOf(pending.toArray(new CompletableFuture[0])).get(5, TimeUnit.MINUTES);
-        } catch (Exception e) {
+        } catch (ExecutionException e) {
             // reported below via failure
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BucketWriteException("bucket " + bucketId() + " not sealed: interrupted while waiting for acknowledgements", e);
+        } catch (TimeoutException e) {
+            throw new BucketWriteException("bucket " + bucketId() + " not sealed: episodes not acknowledged within 5 minutes", e);
         }
         Exception ex = failure.get();
         if (ex != null) {
-            throw new BucketWriteException("bucket " + bucketId() + " not sealed: an episode was not written", ex);
+            throw new BucketWriteException("bucket " + bucketId() + " not sealed: an episode was not written or not indexed", ex);
         }
         BucketManifest manifest = BucketManifest.newBuilder(openManifest)
                 .setState(BucketState.SEALED)

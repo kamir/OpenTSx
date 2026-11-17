@@ -22,7 +22,8 @@ import java.util.List;
  *
  * <ul>
  *   <li>Every input goes to {@link StatsEngine#onEpisode} or {@link StatsEngine#onObservation}; the windows it
- *       closes are emitted.</li>
+ *       closes are emitted. An input that does not decode is counted in the metric {@code undecodable} and dropped; a
+ *       failure of the engine fails the task, which restarts from the last checkpoint.</li>
  *   <li>GLOBAL: a processing-time timer emits {@link StatsEngine#emitGlobal()} every {@code globalEveryMs}
  *       (0 = only at the end of a bounded run).</li>
  *   <li>End of a bounded run: an event-time timer at {@link Long#MAX_VALUE} fires with the final watermark and
@@ -64,14 +65,19 @@ public final class StatsFunction extends KeyedProcessFunction<String, StatsInput
         if (e == null) {
             e = spec.newEngine();
         }
-        List<SeriesStats> closed;
+        Episode episode = null;
+        Observation observation = null;
         try {
-            closed = in.episode ? e.onEpisode(avro.decode(in.payload, Episode.class))
-                    : e.onObservation(avro.decode(in.payload, Observation.class));
+            if (in.episode) {
+                episode = avro.decode(in.payload, Episode.class);
+            } else {
+                observation = avro.decode(in.payload, Observation.class);
+            }
         } catch (RuntimeException ex) {
             undecodable.inc();
             return;
         }
+        List<SeriesStats> closed = in.episode ? e.onEpisode(episode) : e.onObservation(observation);
         engine.update(e);
         emit(closed, out);
         ctx.timerService().registerEventTimeTimer(Long.MAX_VALUE);

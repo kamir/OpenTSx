@@ -36,6 +36,11 @@ public final class EpisodeLogTail {
         return undecodable;
     }
 
+    /** Records that retention deleted before they were read, see {@link LogTail#lostToRetention()}. */
+    public synchronized long lostToRetention() {
+        return tail.lostToRetention();
+    }
+
     /**
      * Hands every episode appended since the previous call to the sink.
      *

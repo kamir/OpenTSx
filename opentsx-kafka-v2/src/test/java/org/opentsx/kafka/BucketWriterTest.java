@@ -1,7 +1,9 @@
 package org.opentsx.kafka;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
@@ -15,12 +17,16 @@ import org.opentsx.model.v2.Episode;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,6 +91,59 @@ class BucketWriterTest {
         producer.errorNext(new RuntimeException("broker gone"));
         assertThrows(BucketWriter.BucketWriteException.class, w::seal);
         assertEquals(1, index.size());
+    }
+
+    @Test
+    void doesNotSealWhenTheIndexFails() {
+        // KafkaProducer runs callbacks on its I/O thread and only logs what they throw
+        List<RuntimeException> loggedByProducer = new ArrayList<>();
+        MockProducer<String, byte[]> producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()) {
+            @Override
+            public synchronized Future<RecordMetadata> send(ProducerRecord<String, byte[]> record, Callback callback) {
+                return super.send(record, callback == null ? null : (md, ex) -> {
+                    try {
+                        callback.onCompletion(md, ex);
+                    } catch (RuntimeException e) {
+                        loggedByProducer.add(e);
+                    }
+                });
+            }
+        };
+        IllegalStateException full = new IllegalStateException("index full");
+        EpisodeIndex failing = new InMemoryEpisodeIndex() {
+            @Override
+            public synchronized void add(IndexEntry entry) {
+                throw full;
+            }
+        };
+        BucketWriter w = BucketWriter.open(producer, layout, failing, "b-4", "exp", Map.of());
+        CompletableFuture<IndexEntry> f = w.append(WindData.episodes(1, List.of("wind_speed"), 1, 10, 4).get(0));
+        assertEquals(List.of(), loggedByProducer);
+        assertTrue(f.isCompletedExceptionally(), "the caller learns that the episode is not indexed");
+        BucketWriter.BucketWriteException e = assertThrows(BucketWriter.BucketWriteException.class, w::seal);
+        assertSame(full, e.getCause());
+        assertEquals(List.of(BucketState.OPEN), manifests(producer));
+    }
+
+    @Test
+    void doesNotSealWhenInterruptedBeforeEveryEpisodeIsAcknowledged() {
+        MockProducer<String, byte[]> producer = new MockProducer<>(true, new StringSerializer(), new ByteArraySerializer()) {
+            @Override
+            public synchronized Future<RecordMetadata> send(ProducerRecord<String, byte[]> record, Callback callback) {
+                return record.topic().equals(layout.episodes()) ? new CompletableFuture<>() : super.send(record, callback);
+            }
+        };
+        BucketWriter w = BucketWriter.open(producer, layout, new InMemoryEpisodeIndex(), "b-5", "exp", Map.of());
+        w.append(WindData.episodes(1, List.of("wind_speed"), 1, 10, 5).get(0));
+        Thread.currentThread().interrupt();
+        assertThrows(BucketWriter.BucketWriteException.class, w::seal);
+        assertTrue(Thread.interrupted(), "the interrupt is kept for the caller");
+        assertEquals(List.of(BucketState.OPEN), manifests(producer));
+    }
+
+    private List<BucketState> manifests(MockProducer<String, byte[]> producer) {
+        return producer.history().stream().filter(r -> r.topic().equals(layout.buckets()))
+                .map(r -> avro.decode(r.value(), BucketManifest.class).getState()).toList();
     }
 
     @Test

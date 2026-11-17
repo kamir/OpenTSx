@@ -127,6 +127,25 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `market`: an ENTSO-E HTTP 400 counts as a month without data only when the response is the `No matching data found`
   acknowledgement. Any other 400 fails the year instead of reporting it empty, and the message shows the code and text
   of the acknowledgement's reasons.
+- Statistics: `StatsEngine.Config` refuses an alpha of 1 or more or NaN, a negative lateness or one that is not a
+  whole number of microseconds, a window length given twice (which counted every value twice) and a gap factor that is
+  not above 1, with a message that names the setting, so `bin/opentsx stats --alpha 1` stops at start instead of
+  reading the topic and writing no statistics. `StatsProcessor`, the Flink `StatsFunction` and
+  `EpisodeIndexer.rebuild` count only records that do not decode; a failure of the engine or the index now stops them,
+  and the processor names the topic, partition and offset and leaves the checkpoint before that record. A record that
+  decodes but is not a consistent episode, for example a count that differs from the number of values, is such an
+  engine failure and is no longer counted as undecodable.
+- Statistics processor and `LogTail`: records that retention deleted after the checkpoint position (processor, when a
+  run starts) or after the previous poll (`LogTail`) are counted (`RunResult.lostToRetention`,
+  `LogTail.lostToRetention()`, `EpisodeLogTail.lostToRetention()`) and reported with one stderr line per partition
+  that names the topic, partition, position and log start; a log start above 0 on the first read is not counted, and
+  neither is a gap that opens while the processor runs.
+- `BucketWriter`: when an index entry cannot be added, the append future completes exceptionally and the bucket is not
+  sealed; before, the future stayed open and `seal()` wrote SEALED after a 5-minute wait. `seal()` also refuses to
+  seal when it is interrupted, keeping the interrupt, or when acknowledgements time out.
+- Docs: a window in which a series has no value gives no `SeriesStats` record, so COMPLETENESS cannot flag it; the
+  outage shows in GAPS of the window where values resume, when the expected interval is known, and in COMPLETENESS of
+  a longer window.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

@@ -28,7 +28,7 @@ params:
   - { name: maxAge, type: duration, description: "FRESHNESS fails when lastSeen is older. Runs only with the current time (evaluate(stats, expectation, now)); a record without lastSeen gives ABORTED." }
 semantics: { deterministic: true }
 runtimes:
-  java: { status: available, class: "org.opentsx.stats.DataQuality#evaluate", note: "Expectation.of(min, max, interval) sets the defaults; withoutFlatline() and withMaxAge(age) change them." }
+  java: { status: available, class: "org.opentsx.stats.DataQuality#evaluate", note: "Expectation.of(min, max, interval) sets the defaults; withoutFlatline() and withMaxAge(age) change them. A window in which a series has no value has no SeriesStats record, so no check runs on it: the outage shows in GAPS of the window where the values resume, when the engine knows the expected interval, and in COMPLETENESS of a longer window such as PT1H." }
   processor: { status: none, note: "bin/opentsx metadata --kafscale reads the latest statistics once and publishes the results to OpenMetadata. No processor evaluates them continuously." }
   workbench: { status: none }
   python: { status: none }

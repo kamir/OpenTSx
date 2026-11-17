@@ -50,15 +50,27 @@ public final class StatsEngine {
 
         public Config {
             windows = List.copyOf(windows);
-            for (Duration w : windows) {
+            for (int i = 0; i < windows.size(); i++) {
+                Duration w = windows.get(i);
                 if (w.isNegative() || w.isZero() || w.toNanos() % 1000 != 0) {
-                    throw new IllegalArgumentException("window must be a positive whole number of microseconds: " + w);
+                    throw new IllegalArgumentException("windows: item \"" + w + "\" is not allowed; expected a positive whole"
+                            + " number of microseconds such as PT10M");
+                }
+                if (windows.subList(0, i).contains(w)) {
+                    throw new IllegalArgumentException("windows: item \"" + w + "\" is given twice; give each window length once");
                 }
             }
-            Objects.requireNonNull(allowedLateness);
+            if (!(sketchAlpha < 1)) {
+                throw new IllegalArgumentException("sketchAlpha: \"" + sketchAlpha + "\" is not allowed; expected a number above 0"
+                        + " and below 1, or 0 or less for no sketch");
+            }
+            if (allowedLateness.isNegative() || allowedLateness.toNanos() % 1000 != 0) {
+                throw new IllegalArgumentException("allowedLateness: \"" + allowedLateness + "\" is not allowed; expected zero or a"
+                        + " positive whole number of microseconds such as PT0S or PT5M");
+            }
             Objects.requireNonNull(expectedIntervalMicros);
-            if (gapFactor <= 1) {
-                throw new IllegalArgumentException("gapFactor must be > 1");
+            if (!(gapFactor > 1)) {
+                throw new IllegalArgumentException("gapFactor: \"" + gapFactor + "\" is not allowed; expected a number above 1 such as 1.5");
             }
         }
 

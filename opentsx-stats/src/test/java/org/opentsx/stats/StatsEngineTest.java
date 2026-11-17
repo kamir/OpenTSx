@@ -22,6 +22,7 @@ import java.util.OptionalLong;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StatsEngineTest {
@@ -101,6 +102,29 @@ class StatsEngineTest {
     }
 
     @Test
+    void aWindowWithoutAnyValueGivesNoRecordTheOutageShowsInTheNeighbours() {
+        StatsEngine engine = engine();
+        List<Episode> eps = episodes(6, 5);
+        List<SeriesStats> out = new ArrayList<>();
+        for (int k : new int[]{0, 1, 3, 4, 5}) {
+            out.addAll(engine.onEpisode(eps.get(k)));
+        }
+        out.addAll(engine.flush());
+        List<Long> tenMinuteStarts = out.stream().filter(s -> s.getWindowType().equals("PT10M"))
+                .map(s -> (Micros.of(s.getWindowStart()) - T0) / (600 * SEC)).toList();
+        assertEquals(List.of(0L, 1L, 3L, 4L, 5L), tenMinuteStarts, "no record for window 2, so COMPLETENESS cannot flag it");
+        DataQuality.Expectation expect = DataQuality.Expectation.of(null, null, Duration.ofSeconds(1)).withoutFlatline();
+        SeriesStats resumed = out.stream().filter(s -> s.getWindowType().equals("PT10M")
+                && Micros.of(s.getWindowStart()) == T0 + 1800 * SEC).findFirst().orElseThrow();
+        assertTrue(DataQuality.evaluate(resumed, expect).stream()
+                .anyMatch(r -> r.check() == DataQuality.Check.GAPS && r.failed()), "the window where values resume has the gap");
+        SeriesStats hour = out.stream().filter(s -> s.getWindowType().equals("PT1H")).findFirst().orElseThrow();
+        assertEquals(3000, hour.getValidCount());
+        assertTrue(DataQuality.evaluate(hour, expect).stream()
+                .anyMatch(r -> r.check() == DataQuality.Check.COMPLETENESS && r.failed()), "the hour around it is incomplete");
+    }
+
+    @Test
     void lateValuesOnlyCountGlobally() {
         StatsEngine engine = engine();
         List<Episode> eps = episodes(3, 3);
@@ -125,6 +149,32 @@ class StatsEngineTest {
         assertEquals(2, out.size(), "minutes 0 and 1 closed, minute 2 still open");
         assertEquals(50, out.get(1).getValidCount());
         assertEquals(1, out.get(1).getGapCount());
+    }
+
+    @Test
+    void configRefusesValuesTheEngineCannotUseAndNamesTheOption() {
+        StatsEngine.Config d = StatsEngine.Config.defaults();
+        for (double alpha : new double[]{5, 1, Double.NaN}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> d.withSketchAlpha(alpha));
+            assertEquals("sketchAlpha: \"" + alpha + "\" is not allowed; expected a number above 0 and below 1, or 0 or less for no sketch",
+                    e.getMessage());
+        }
+        assertEquals(0, d.withSketchAlpha(0).sketchAlpha());
+        assertEquals(-1, d.withSketchAlpha(-1).sketchAlpha(), "0 or less keeps no sketch");
+        assertEquals("allowedLateness: \"PT-1S\" is not allowed; expected zero or a positive whole number of microseconds"
+                        + " such as PT0S or PT5M",
+                assertThrows(IllegalArgumentException.class, () -> d.withAllowedLateness(Duration.ofSeconds(-1))).getMessage());
+        assertEquals("allowedLateness: \"PT0.0000005S\" is not allowed; expected zero or a positive whole number of microseconds"
+                        + " such as PT0S or PT5M",
+                assertThrows(IllegalArgumentException.class, () -> d.withAllowedLateness(Duration.ofNanos(500))).getMessage());
+        assertEquals("windows: item \"PT0S\" is not allowed; expected a positive whole number of microseconds such as PT10M",
+                assertThrows(IllegalArgumentException.class, () -> d.withWindows(Duration.ZERO)).getMessage());
+        assertEquals("windows: item \"PT10M\" is given twice; give each window length once",
+                assertThrows(IllegalArgumentException.class,
+                        () -> d.withWindows(Duration.ofMinutes(10), Duration.ofSeconds(600))).getMessage());
+        assertEquals("gapFactor: \"NaN\" is not allowed; expected a number above 1 such as 1.5",
+                assertThrows(IllegalArgumentException.class, () -> new StatsEngine.Config(d.windows(), d.sketchAlpha(),
+                        d.allowedLateness(), Double.NaN, d.expectedIntervalMicros(), d.dedupCapacity())).getMessage());
     }
 
     @Test

@@ -18,6 +18,9 @@ Windows are epoch-aligned tumbling windows (`PT10M`, `PT1H`, `P1D`, …) plus `G
   closes its 10-minute window immediately.
 * **Duplicates:** duplicate episodes are ignored (by `episodeId`).
 * **Late values:** they are counted and enter only `GLOBAL`.
+* **No value in a window:** a window in which a series has no value gives no record, so COMPLETENESS cannot flag
+  that window. When the values resume and the expected interval is known, the window where they resume counts the
+  gap (GAPS). A longer window around the outage, for example `PT1H`, has fewer values (COMPLETENESS).
 
 ## 7.2 Run the processor
 
@@ -28,9 +31,25 @@ bin/opentsx stats --kafscale localhost:9092 --domain wind --checkpoint stats.ckp
 
 * Input positions and the full engine state are written to the checkpoint file after the outputs are acknowledged.
   After a crash the processor resumes from the checkpoint and is at-least-once.
-* `--once true` processes the backlog, closes all windows and exits.
+* `--once true` processes the backlog, closes all windows, prints the `RunResult` with the counts `records`,
+  `undecodable`, `lostToRetention` and `statsWritten`, and exits.
 * Because KafScale has no compaction, `SeriesStatsLog.readLatest(...)` reads the whole topic. It keeps one record per
   series, window type and window start: the one with the most values, the later one on a tie.
+* A record that does not decode is counted in `undecodable` and skipped. When the engine fails on a record, the
+  processor stops without writing the checkpoint, so a restart reads that record again. The message names the record:
+  `<topic>-<partition> offset <offset>: the statistics engine failed on this record; the checkpoint stays before it`.
+  A record that decodes but is not a consistent episode, for example a count that differs from the number of values,
+  is such an engine failure. There is no option to skip a record: the processor stops at it after every restart until
+  retention deletes it.
+* When retention deleted records after the position in the checkpoint, the processor reads on from the log start,
+  counts the deleted records in `lostToRetention` and prints one line per partition on stderr:
+
+  ```text
+  <topic>-<partition>: retention deleted <n> records before they were read (position <saved>, log start <start>); reading on from the log start
+  ```
+
+  Without a position in the checkpoint, a log start above 0 is not counted. A gap that opens while the processor runs
+  is not counted.
 
 The same statistics run as a Flink job, `StatsJob` in `opentsx-flink-core`. It reads the same topics and writes the
 same records:
@@ -46,6 +65,9 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
 * One `StatsEngine` per series lives in Flink keyed state. Input positions are in Flink checkpoints, not in a file.
   The source commits no offsets, because KafScale rejects commits without group membership. The output is at least
   once, as with the processor.
+* An input that does not decode is counted in the Flink metric `undecodable` and dropped. When the engine fails on
+  an input, the task fails and restarts from the last checkpoint. An input that decodes but is not a consistent
+  episode fails the task again after every restart.
 * The job rejects `--checkpoint`. It prints this message and the usage line and exits with code 2:
 
   ```text
@@ -57,6 +79,16 @@ bin/opentsx stats-flink --kafscale localhost:9092 --domain wind \
   end offsets seen at start, closes all windows and ends.
 * Stop a running job without `--drain`. Draining sends the final watermark, which closes all open windows.
 * Use the heap state backend: with RocksDB the engine state is written on every record.
+
+Both commands refuse a setting the engine cannot use before they connect. `bin/opentsx stats` ends with the message
+and a stack trace and exit code 1. `bin/opentsx stats-flink` prints the message and the usage line and exits with
+code 2.
+
+| Option | Allowed | Message for a value that is not allowed |
+|--------|---------|-----------------------------------------|
+| `--alpha` | above 0 and below 1; 0 or less keeps no sketch | `sketchAlpha: "5.0" is not allowed; expected a number above 0 and below 1, or 0 or less for no sketch` |
+| `--lateness` | zero or positive, in whole microseconds | `allowedLateness: "PT-5M" is not allowed; expected zero or a positive whole number of microseconds such as PT0S or PT5M` |
+| `--windows` | positive, in whole microseconds, each length once (`PT10M` and `PT600S` are the same length) | `windows: item "PT10M" is given twice; give each window length once` |
 
 In code (any runtime):
 

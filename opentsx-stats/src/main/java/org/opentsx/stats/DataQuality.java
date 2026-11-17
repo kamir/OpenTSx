@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.OptionalLong;
 
 /**
- * Data-quality checks evaluated on {@link SeriesStats} - no access to the raw values is needed, so the checks run
+ * Data-quality checks evaluated on {@link SeriesStats}. They need no access to the raw values, so the checks run
  * wherever the statistics are (stream, Iceberg, OpenMetadata publisher).
  *
  * <table>

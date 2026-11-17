@@ -42,12 +42,17 @@ import java.util.function.BooleanSupplier;
  * positions and the complete engine state are kept in a local checkpoint file, written atomically after all
  * outputs of the covered input were acknowledged. After a crash the processor resumes from the last checkpoint and may
  * emit some statistics again (at-least-once); a re-emitted record is identical or newer, and readers keep the latest
- * record per (seriesId, windowType, windowStart) - see {@link SeriesStatsLog}.
+ * record per (seriesId, windowType, windowStart), see {@link SeriesStatsLog}.
+ *
+ * <p>A record that does not decode is counted in {@code undecodable} and skipped. A failure of the engine stops the
+ * processor, and the checkpoint stays before that record. Records that retention deleted after the checkpoint position
+ * are counted in {@code lostToRetention} and reported on stderr when a run starts; a gap that opens during a run is not
+ * counted.
  */
 public final class StatsProcessor {
 
     /** Outcome of a bounded run. */
-    public record RunResult(long records, long undecodable, long statsWritten, StatsEngine.Metrics metrics) {
+    public record RunResult(long records, long undecodable, long lostToRetention, long statsWritten, StatsEngine.Metrics metrics) {
     }
 
     private static final String MAGIC = "TSXSTATS1";
@@ -62,6 +67,7 @@ public final class StatsProcessor {
     private final Map<TopicPartition, Long> positions = new HashMap<>();
     private final List<Future<?>> pending = new ArrayList<>();
     private long undecodable;
+    private long lostToRetention;
     private long statsWritten;
     /** KafScale refuses reads for about a minute at a time; the processor waits instead of ending. */
     private Patience patience = Patience.standard();
@@ -124,7 +130,7 @@ public final class StatsProcessor {
         } finally {
             consumer.assign(List.of());
         }
-        return new RunResult(records, undecodable, statsWritten, engine.metrics());
+        return new RunResult(records, undecodable, lostToRetention, statsWritten, engine.metrics());
     }
 
     /** Continuous mode: emits GLOBAL and checkpoints every {@code checkpointEvery} until {@code stop} is true. */
@@ -160,7 +166,15 @@ public final class StatsProcessor {
         Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps, timeout);
         consumer.assign(tps);
         for (TopicPartition tp : tps) {
-            long from = Math.max(begin.get(tp), positions.getOrDefault(tp, 0L));
+            long from = begin.get(tp);
+            Long saved = positions.get(tp);
+            if (saved != null && saved < from) {
+                lostToRetention += from - saved;
+                System.err.println(tp + ": retention deleted " + (from - saved) + " records before they were read (position "
+                        + saved + ", log start " + from + "); reading on from the log start");
+            } else if (saved != null) {
+                from = saved;
+            }
             positions.put(tp, from);
             consumer.seek(tp, from);
         }
@@ -168,15 +182,26 @@ public final class StatsProcessor {
     }
 
     private void handle(ConsumerRecord<byte[], byte[]> r) {
-        List<SeriesStats> closed = List.of();
+        boolean isEpisode = r.topic().equals(layout.episodes());
+        Episode episode = null;
+        Observation observation = null;
         try {
-            if (r.topic().equals(layout.episodes())) {
-                closed = engine.onEpisode(avro.decode(r.value(), Episode.class));
+            if (isEpisode) {
+                episode = avro.decode(r.value(), Episode.class);
             } else {
-                closed = engine.onObservation(avro.decode(r.value(), Observation.class));
+                observation = avro.decode(r.value(), Observation.class);
             }
         } catch (RuntimeException e) {
             undecodable++;
+            positions.put(new TopicPartition(r.topic(), r.partition()), r.offset() + 1);
+            return;
+        }
+        List<SeriesStats> closed;
+        try {
+            closed = isEpisode ? engine.onEpisode(episode) : engine.onObservation(observation);
+        } catch (RuntimeException e) {
+            throw new IllegalStateException(r.topic() + "-" + r.partition() + " offset " + r.offset()
+                    + ": the statistics engine failed on this record; the checkpoint stays before it", e);
         }
         positions.put(new TopicPartition(r.topic(), r.partition()), r.offset() + 1);
         send(closed);

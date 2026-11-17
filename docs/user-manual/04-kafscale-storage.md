@@ -62,7 +62,8 @@ try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap
 }   // close() seals: SEALED manifest with count, time range and checksum
 ```
 
-A bucket is sealed only if every episode was acknowledged. Otherwise the writer throws `BucketWriteException` and the
+A bucket is sealed only if every episode was acknowledged and its index entry was added. Otherwise, and when `seal()`
+is interrupted or the acknowledgements take longer than 5 minutes, the writer throws `BucketWriteException` and the
 bucket stays OPEN.
 
 ## 4.4 Replay

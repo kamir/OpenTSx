@@ -1,4 +1,4 @@
-# opentsx-kafka-v2 — episode storage and replay on KafScale
+# opentsx-kafka-v2: episode storage and replay on KafScale
 
 Stores v2 episodes ([`opentsx-model`](../opentsx-model)) in Kafka-protocol topics and replays them.
 Designed for [KafScale](https://kafscale.io), so it relies only on what KafScale supports
@@ -30,7 +30,9 @@ try (KafkaProducer<String, byte[]> producer = KafScaleClients.producer(bootstrap
 }                                          // close() = seal(): SEALED manifest with count, time range, checksum
 ```
 
-A bucket whose episodes did not all get acknowledged is **not sealed** (`BucketWriteException`).
+A bucket is **not sealed** (`BucketWriteException`) when an episode was not acknowledged, when its index entry could
+not be added, or when `seal()` is interrupted before every episode is acknowledged. When the send or the index entry
+fails, the future that `append` returned for that episode completes exceptionally.
 
 ## Replay
 
@@ -47,16 +49,29 @@ try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap
 
 Episodes arrive in event-time order (`tStart`, `episodeId`); memory is bounded by `maxEpisodesInMemory`.
 The index is derived state: `EpisodeIndexer.rebuild(consumer, layout, index, timeout)` recreates it from the log,
-and `BucketCatalog.load(...)` lists all buckets with their current manifest.
+and `BucketCatalog.load(...)` lists all buckets with their current manifest. The rebuild counts records that do not
+decode as an episode in `skipped`; a failure of the index stops it.
 
 Legacy TSBucket files (`*.tsb.vec.seq`) are converted with `org.opentsx.bridge.LegacyBucketImport` and then written
 with a `BucketWriter`.
 
+## Follow a topic
+
+`LogTail` (records) and `EpisodeLogTail` (decoded episodes) read the whole log on the first `poll` and the records
+appended since then on every later one. When retention deleted records after the position of the previous poll, the
+tail reads on from the log start, counts them in `lostToRetention()` and prints one line per partition on stderr:
+
+```text
+<topic>-<partition>: retention deleted <n> records before they were read (position <previous>, log start <start>); reading on from the log start
+```
+
+A log start above 0 on the first poll is not counted.
+
 ## Tests
 
-* Unit tests with `MockProducer`, always run.
+* Unit tests with `MockProducer` and `MockConsumer`, always run.
 * `EpisodeLogIntegrationTest` (write → verified replay, chunked replay, range replay, index rebuild,
-  duplicates, unsealed buckets, pacing) runs when `KAFSCALE_BOOTSTRAP` is set — green on KafScale v1.6.0 and
+  duplicates, unsealed buckets, pacing) runs when `KAFSCALE_BOOTSTRAP` is set. It is green on KafScale v1.6.0 and
   Apache Kafka 3.9.1; CI runs it against KafScale built from source.
 
 ## Storage cost (measured, `StorageCostTest`)
@@ -70,5 +85,5 @@ Episodes of 10 min at 1 Hz, Avro single-object records batched to ~512 KB and co
 | sensor resolution with ≤ 2 ms timestamp jitter, `IRREGULAR_DELTA` | 10.32 B/value | 4.07 B/value |
 
 Values at sensor resolution compress well; full-precision derived values barely compress. A quantized integer
-value encoding (scale + zig-zag deltas) would bring regular sensor data well below 1 B/value — a candidate for a
+value encoding (scale + zig-zag deltas) would bring regular sensor data well below 1 B/value. It is a candidate for a
 future schema version if storage cost demands it.

@@ -22,6 +22,7 @@ public final class LogTail {
     private final String topic;
     private final Duration timeout;
     private final Map<TopicPartition, Long> next = new HashMap<>();
+    private long lostToRetention;
 
     public LogTail(Consumer<byte[], byte[]> consumer, String topic, Duration timeout) {
         this.consumer = consumer;
@@ -31,6 +32,11 @@ public final class LogTail {
 
     public String topic() {
         return topic;
+    }
+
+    /** Records that retention deleted after an earlier poll and before they were read; reported on stderr. */
+    public synchronized long lostToRetention() {
+        return lostToRetention;
     }
 
     /**
@@ -48,8 +54,16 @@ public final class LogTail {
         Map<TopicPartition, Long> end = consumer.endOffsets(tps, timeout);
         Map<TopicPartition, long[]> ranges = new HashMap<>();
         for (TopicPartition tp : tps) {
-            // retention may have moved the log start past the position reached last time
-            ranges.put(tp, new long[]{Math.max(next.getOrDefault(tp, 0L), begin.get(tp)), end.get(tp)});
+            long from = begin.get(tp);
+            Long reached = next.get(tp);
+            if (reached != null && reached < from) {
+                lostToRetention += from - reached;
+                System.err.println(tp + ": retention deleted " + (from - reached) + " records before they were read"
+                        + " (position " + reached + ", log start " + from + "); reading on from the log start");
+            } else if (reached != null) {
+                from = reached;
+            }
+            ranges.put(tp, new long[]{from, end.get(tp)});
         }
         int[] delivered = {0};
         LogReader.read(consumer, ranges, r -> {
