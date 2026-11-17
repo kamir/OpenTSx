@@ -98,10 +98,10 @@ def source_signature():
     digest = hashlib.sha256()
     names = set()
     for folder in ["rust/tsx-runner", "rust/tsx-contracts", "opentsx-wayang/src", "opentsx-model/src",
-                   "opentsx-saas-frontend/src", "opentsx-saas-backend/app"]:
+                   "opentsx-saas-frontend/src", "opentsx-saas-backend/app", "systems/processors", "systems/catalogs"]:
         for path in (ROOT / folder).rglob("*"):
             if path.is_file() and "target" not in path.parts and path.suffix in {
-                    ".rs", ".toml", ".lock", ".java", ".properties", ".json", ".avsc", ".ts", ".tsx", ".css", ".py"}:
+                    ".rs", ".toml", ".lock", ".java", ".properties", ".json", ".avsc", ".ts", ".tsx", ".css", ".py", ".yaml"}:
                 names.add(path)
     for name in ["pom.xml", "opentsx-wayang/pom.xml", "opentsx-model/pom.xml",
                  "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",

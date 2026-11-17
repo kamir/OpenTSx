@@ -199,7 +199,8 @@ class WayangComposeGuardsTest(unittest.TestCase):
                  "opentsx-saas-frontend/vite.config.ts", "opentsx-saas-frontend/tsconfig.json",
                  "opentsx-saas-frontend/tsconfig.node.json", "opentsx-saas-frontend/postcss.config.js",
                  "opentsx-saas-frontend/tailwind.config.js", "opentsx-saas-frontend/index.html",
-                 "opentsx-saas-frontend/src/workbench/workbench.css"]
+                 "opentsx-saas-frontend/src/workbench/workbench.css", "systems/catalogs/tsx-catalog-1.yaml",
+                 "systems/processors/resample.yaml"]
         with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "ROOT", Path(directory)):
             for name in names:
                 path = Path(directory) / name

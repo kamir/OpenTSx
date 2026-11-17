@@ -29,7 +29,8 @@ survive service restart. The three browser workloads retain their original local
 separate increment and Compose regressions establish the continuous runtime behavior.
 The
 workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to `stats.welford-ddsketch` ; the latter still
-has a parameter-contract mismatch in the [execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L129) .
+has a parameter-contract mismatch in the
+[execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
 
 Finite predictions use absolute comparison to ten decimal places in the lesson tests; missing-value positions must match
 exactly. Existing shared operator vectors retain their own tolerances. Each operation is repeated with a fresh input to
