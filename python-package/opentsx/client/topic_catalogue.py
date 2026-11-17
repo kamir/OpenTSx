@@ -24,6 +24,17 @@ def _integer(value, name, minimum=0, maximum=2**63 - 1):
     return value
 
 
+def _whole_topic(metadata, topic, partition):
+    if topic not in metadata.topics or metadata.topics[topic].error is not None:
+        raise ValueError("continuous scoring source topic is unavailable")
+    if (
+        type(partition) is not int
+        or partition != 0
+        or set(metadata.topics[topic].partitions) != {0}
+    ):
+        raise ValueError("continuous scoring requires a whole topic with exactly partition 0")
+
+
 def _regular(episode):
     verify_series_key(episode["series"])
     count = _integer(episode["count"], "episode count", 1, MAX_CELLS)
@@ -120,7 +131,7 @@ class TopicCatalogue:
         ):
             raise ValueError("topic is outside the configured episode namespace")
 
-    def snapshot(self, topic):
+    def snapshot(self, topic, *, whole_topic=False):
         self._topic(topic)
         from confluent_kafka import Consumer, TopicPartition
 
@@ -147,6 +158,8 @@ class TopicCatalogue:
             metadata = consumer.list_topics(topic, timeout=remaining())
             if topic not in metadata.topics or metadata.topics[topic].error is not None:
                 raise ValueError("selected source topic is unavailable")
+            if whole_topic:
+                _whole_topic(metadata, topic, 0)
             partitions = sorted(metadata.topics[topic].partitions)
             if not 1 <= len(partitions) <= MAX_PARTITIONS:
                 raise ValueError("modelling snapshots require one to sixteen partitions")
@@ -342,7 +355,7 @@ class TopicCatalogue:
         start, end = source["t_start_micros"], source["t_end_micros"]
         if end != start + len(training) * interval:
             raise ValueError("training clock does not match its sample count")
-        records = _owned(_groups(self.snapshot(input_topic)), source["series_id"])
+        records = _owned(_groups(self.snapshot(input_topic, whole_topic=True)), source["series_id"])
         if records[0]["partition"] != input_partition:
             raise ValueError("selected partition does not own the registered series")
         actual, filled = np.empty(len(training), dtype="<f8"), np.zeros(len(training), dtype=bool)

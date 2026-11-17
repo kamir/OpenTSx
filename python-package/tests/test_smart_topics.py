@@ -150,7 +150,9 @@ class Context:
 
 class Admin:
     def __init__(self, events):
-        self.events, self.topics = events, {}
+        self.events, self.topics = events, {
+            INPUT: SimpleNamespace(error=None, partitions={0: None})
+        }
         self.created = []
         self.create_failure = None
         self.before_create = None
@@ -620,6 +622,9 @@ def qualified_context(runtime):
             "schema_id": value["context_schema"]["schema_id"],
         }
 
+    runtime.admin.topics[PREFIX + "forecast.context.v1"] = SimpleNamespace(
+        error=None, partitions={0: None}
+    )
     runtime.manager.context_catalogue = SimpleNamespace(verify_binding=verify)
     return value, calls
 
@@ -661,3 +666,56 @@ def test_context_free_model_rejects_context_binding(runtime):
             }
         )
     assert runtime.admin.created == []
+
+
+@pytest.mark.parametrize("topic", ["target", "context"])
+def test_whole_topic_admission_rejects_multiple_partitions_before_mutation(runtime, topic):
+    if topic == "context":
+        qualified_context(runtime)
+        binding = {"topic": PREFIX + "forecast.context.v1", "partition": 0}
+        body = {**document(), "context": binding}
+        selected = binding["topic"]
+    else:
+        body, selected = document(), INPUT
+    runtime.admin.topics[selected].partitions[1] = None
+    with pytest.raises(ValueError, match="whole topic"):
+        runtime.manager.deploy(body)
+    assert runtime.store.list_deployments() == []
+    assert runtime.admin.created == []
+    assert "registry.promote" not in runtime.events
+    assert runtime.context.processes == []
+
+
+def test_whole_topic_restart_rejects_expansion_without_mutating_saved_state(runtime):
+    runtime.store.add_deployment(record())
+    checkpoint = {"artifact_id": "b" * 64, "next_offset": 9, "numerical": {"total_nobs": 80}}
+    runtime.store.save_checkpoint("forecast", checkpoint)
+    before = runtime.store.get_deployment("forecast")
+    runtime.admin.topics[INPUT].partitions[1] = None
+    with pytest.raises(ValueError, match="whole topic"):
+        runtime.manager.start("forecast")
+    assert runtime.store.get_deployment("forecast") == before
+    assert runtime.context.processes == []
+
+
+def test_whole_topic_context_expansion_fails_recovery_without_losing_checkpoint(runtime):
+    value, calls = qualified_context(runtime)
+    context = {"topic": PREFIX + "forecast.context.v1", "partition": 0}
+    runtime.store.add_deployment(
+        {
+            **record(desired="running"),
+            "context": context,
+            "context_schema": value["context_schema"],
+            "context_binding": {"schema_id": value["context_schema"]["schema_id"]},
+        }
+    )
+    checkpoint = {"artifact_id": "b" * 64, "next_offset": 9, "numerical": {"total_nobs": 80}}
+    runtime.store.save_checkpoint("forecast", checkpoint)
+    runtime.admin.topics[context["topic"]].partitions[1] = None
+    runtime.manager.recover()
+    saved = runtime.store.get_deployment("forecast")
+    assert saved["status"] == "failed"
+    assert saved["desired_state"] == "stopped"
+    assert "whole topic" in saved["error"]
+    assert saved["checkpoint"] == checkpoint
+    assert runtime.context.processes == []

@@ -32,7 +32,7 @@ def message(offset=0, record=None):
     return SimpleNamespace(
         error=lambda: None,
         topic=lambda: TOPIC,
-        partition=lambda: 1,
+        partition=lambda: 0,
         offset=lambda: offset,
         value=lambda: model.encode("Episode", episode() if record is None else record),
     )
@@ -45,7 +45,7 @@ class Store:
             "id": "lab",
             "model_id": "registered-a",
             "input_topic": TOPIC,
-            "input_partition": 1,
+            "input_partition": 0,
             "output_topic": PREFIX + "smart.lab.predictions.v1",
             "series_id": episode()["series"]["seriesId"],
             "desired_state": "running",
@@ -113,9 +113,15 @@ class Consumer:
         self.closed = False
         self.assignments = []
         self.polls = []
+        self.partitions = {0: None}
+
+    def list_topics(self, topic, timeout):
+        return SimpleNamespace(
+            topics={topic: SimpleNamespace(error=None, partitions=self.partitions.copy())}
+        )
 
     def get_watermark_offsets(self, partition, timeout):
-        assert (partition.topic, partition.partition) == (TOPIC, 1)
+        assert (partition.topic, partition.partition) == (TOPIC, 0)
         return self.bounds
 
     def assign(self, partitions):
@@ -601,7 +607,7 @@ def test_real_registered_artifact_scores_through_the_worker_without_refitting(
             "model_id": registered["id"],
             "series_id": key["seriesId"],
             "input_topic": TOPIC,
-            "input_partition": 1,
+            "input_partition": 0,
             "output_topic": PREFIX + "smart.lab.predictions.v1",
             "desired_state": "running",
             "status": "starting",
@@ -962,7 +968,7 @@ def test_real_sarimax_wait_restart_and_lookahead_match_fixed_parameter_filtering
             "model_id": registered["id"],
             "series_id": key["seriesId"],
             "input_topic": TOPIC,
-            "input_partition": 1,
+            "input_partition": 0,
             "output_topic": PREFIX + "smart.lab.predictions.v1",
             "desired_state": "running",
             "status": "starting",
@@ -1103,3 +1109,119 @@ def test_initial_context_replay_starts_at_the_first_pinned_record(context_runtim
     assert value.store.outputs[0][1]["context"]["source_positions"] == [
         {"offset": "5", "record_id": value.context_record["record_id"]}
     ]
+
+
+def test_whole_topic_worker_rejects_extra_partition_before_initial_checkpoint(runtime):
+    runtime.consumer.partitions[1] = None
+    with pytest.raises(ValueError, match="whole topic"):
+        runtime.run([message()])
+    assert runtime.store.checkpoint is None
+    assert runtime.advances == []
+    assert runtime.producer.produced == []
+
+
+def test_whole_topic_worker_rejects_expansion_on_restart_without_state_progress(runtime):
+    runtime.run([message()])
+    before = copy.deepcopy(runtime.store.checkpoint)
+    outputs = copy.deepcopy(runtime.store.outputs)
+    calls = len(runtime.advances)
+    runtime.consumer.partitions[1] = None
+    with pytest.raises(ValueError, match="whole topic"):
+        runtime.run([message(1, episode(1060, (7.0, 8.0)))], bounds=(0, 2))
+    assert runtime.store.checkpoint == before
+    assert runtime.store.outputs == outputs
+    assert len(runtime.advances) == calls
+
+
+def test_whole_topic_expansion_during_target_poll_does_not_advance(runtime, monkeypatch):
+    poll = runtime.consumer.poll
+
+    def expanded(timeout):
+        record = poll(timeout)
+        runtime.consumer.partitions[1] = None
+        return record
+
+    monkeypatch.setattr(runtime.consumer, "poll", expanded)
+    with pytest.raises(ValueError, match="whole topic"):
+        runtime.run([message()])
+    assert runtime.store.checkpoint["next_offset"] == 0
+    assert runtime.store.checkpoint["numerical"]["total_nobs"] == 4
+    assert runtime.store.checkpoint["counters"] == {"read": 0, "scored": 0, "skipped": 0}
+    assert runtime.advances == []
+    assert runtime.producer.produced == []
+
+
+@pytest.mark.parametrize("topic", ["target", "context"])
+def test_whole_topic_expansion_during_context_poll_preserves_both_cursors(
+    context_runtime, monkeypatch, topic
+):
+    value = context_runtime
+    poll = value.context_consumer.poll
+
+    def expanded(timeout):
+        record = poll(timeout)
+        (value.consumer if topic == "target" else value.context_consumer).partitions[1] = None
+        return record
+
+    value.context_consumer.messages = [value.context_message()]
+    monkeypatch.setattr(value.context_consumer, "poll", expanded)
+    with pytest.raises(ValueError, match="whole topic"):
+        value.run([message()])
+    assert value.store.checkpoint["next_offset"] == 0
+    assert value.store.checkpoint["context"]["next_offset"] == 0
+    assert value.store.checkpoint["context"]["rows"] == []
+    assert value.store.checkpoint["numerical"]["total_nobs"] == 4
+    assert value.joins == []
+    assert value.producer.produced == []
+
+
+@pytest.mark.parametrize("topic", ["target", "context"])
+def test_whole_topic_expansion_during_filtering_prevents_publication(
+    context_runtime, monkeypatch, topic
+):
+    value = context_runtime
+    fitted = importlib.import_module("opentsx.algorithms.fitted")
+    advance = fitted.advance_artifact
+    saved = []
+
+    def expanded(*args, **kwargs):
+        saved.append(copy.deepcopy(value.store.checkpoint))
+        result = advance(*args, **kwargs)
+        (value.consumer if topic == "target" else value.context_consumer).partitions[1] = None
+        return result
+
+    value.context_consumer.messages = [value.context_message()]
+    monkeypatch.setattr(fitted, "advance_artifact", expanded)
+    with pytest.raises(ValueError, match="whole topic"):
+        value.run([message()])
+    assert value.store.checkpoint == saved[0]
+    assert value.producer.produced == []
+    assert value.store.outputs == []
+
+
+def test_whole_topic_context_expansion_rejects_worker_start_before_state_creation(context_runtime):
+    value = context_runtime
+    value.context_consumer.partitions[1] = None
+    with pytest.raises(ValueError, match="whole topic"):
+        value.run([message()])
+    assert value.store.checkpoint is None
+    assert value.joins == []
+    assert value.producer.produced == []
+    assert value.context_consumer.polls == []
+
+
+def test_whole_topic_expansion_while_idle_fails_without_state_progress(runtime, monkeypatch):
+    poll = runtime.consumer.poll
+
+    def expanded(timeout):
+        record = poll(timeout)
+        runtime.consumer.partitions[1] = None
+        return record
+
+    monkeypatch.setattr(runtime.consumer, "poll", expanded)
+    with pytest.raises(ValueError, match="whole topic"):
+        runtime.run()
+    assert runtime.store.checkpoint["next_offset"] == 0
+    assert runtime.store.checkpoint["counters"] == {"read": 0, "scored": 0, "skipped": 0}
+    assert runtime.advances == []
+    assert runtime.producer.produced == []

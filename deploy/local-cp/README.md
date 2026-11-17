@@ -32,3 +32,7 @@ Use `demo-seed --scenario sarimax` and `demo-append --scenario sarimax` for the
 paired target/context demonstration. `demo-target --scenario sarimax` followed
 by `demo-context --scenario sarimax` exercises a visible missing-context wait.
 Follow the model deployment guide for capture, review and context binding.
+
+Continuous statistical scoring requires whole input and context topics with
+exactly partition 0. Admission and worker topology checks reject multipart
+topics and partition expansion.

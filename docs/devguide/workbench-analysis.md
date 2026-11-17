@@ -3,9 +3,10 @@
 Use the analysis views in the frontend package version 1.0.0 to inspect local
 results and preserve a finite run. You need a current frontend build and a
 browser on localhost or HTTPS for SHA-256 snapshot operations. Browser
-computation requires no account. Continuous deployment still requires the
-account backend, an administrator, retrieval access and the supported Java
-processor.
+computation requires no account. General DAG deployment through the Java
+processor requires the account backend, an administrator and retrieval access.
+For local statistical Smart Topics, use the separate
+[CP review and deployment workflow](model-smart-topics.md).
 
 ## Inspect episodes and quality
 

@@ -76,6 +76,12 @@ name uses 1 to 64 lowercase letters, digits, underscores or hyphens and starts
 with a letter or digit. The server rejects an unrelated existing output topic.
 An existing deployment keeps its immutable model/source/output binding.
 
+The local statistical profile owns whole topics and requires input and context
+topics to contain exactly partition 0. Multipart topics are rejected before
+deployment. Startup, recovery and active processing recheck this topology;
+partition expansion stops scoring before numerical progress or publication.
+Finite catalogue capture can still inspect multipart topics.
+
 Admission verifies that the registered training values occur at the exact
 timestamps in the selected source partition, with the same series, interval and
 unit. It verifies the MLflow artifact before promoting the selected version to
@@ -151,14 +157,18 @@ python3 deploy/local-cp/workbench.py demo-seed --scenario sarimax
 ```
 
 Load `tsx.workbench-demo.sarimax.episodes.v2` through the training catalogue.
-Select SARIMAX. Select **Load context topics**, choose
-`tsx.workbench-demo.sarimax.context.v1`, select **Read context schemas**, choose
-partition 0, and select **Load aligned SARIMAX context**. The capture preserves
-column order, units, values and availability times for the selected target range
-and horizon. Changing the target, range or evaluation settings requires a new
-capture. Review the backtest and register the fit. Select **Load scoring context
-topics**, choose the same context topic, select **Read scoring context schemas**
-and choose partition 0 when starting its Smart Topic.
+Select SARIMAX. Set orders `(p,d,q)` to `(0,0,0)` and seasonal orders
+`(P,D,Q,Season length)` to `(0,0,0,0)`. Select trend **None** (`n`), set
+**Forecast steps** to 4 and **Optimizer iterations** to 200. This is the
+evaluated configuration for the synthetic demonstration. Select **Load context
+topics**, choose `tsx.workbench-demo.sarimax.context.v1`, select **Read context
+schemas**, choose partition 0, and select **Load aligned SARIMAX context**. The
+capture preserves column order, units, values and availability times for the
+selected target range and horizon. Changing the target, range or evaluation
+settings requires a new capture. Review the backtest and register the fit.
+Select **Load scoring context topics**, choose the same context topic, select
+**Read scoring context schemas** and choose partition 0 when starting its Smart
+Topic.
 
 The `opentsx.forecast-context.v1` record carries `record_id`,
 `target_series_id`, `context_names`, `context_units`, `t_start_micros`,

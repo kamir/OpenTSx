@@ -7,6 +7,7 @@ import threading
 
 from opentsx.client.lifecycle import blockers, identifier
 from opentsx.client.modelling import fields, integer
+from opentsx.client.topic_catalogue import _whole_topic
 
 
 def public_deployment(record):
@@ -118,6 +119,10 @@ class SmartTopics:
 
         admin = AdminClient({"bootstrap.servers": self.bootstrap})
         metadata = admin.list_topics(timeout=10)
+        _whole_topic(metadata, record["input_topic"], record["input_partition"])
+        if record.get("context") is not None:
+            selected = record["context"]
+            _whole_topic(metadata, selected["topic"], selected["partition"])
         topic = record["output_topic"]
         if topic in metadata.topics:
             if metadata.topics[topic].error is not None or not allow_existing:
@@ -230,6 +235,7 @@ class SmartTopics:
             return self.start(deployment_id)
 
     def start(self, deployment_id):
+        from confluent_kafka.admin import AdminClient
         from opentsx.client.scoring import run_worker
 
         identifier(deployment_id, "deployment identifier")
@@ -249,6 +255,11 @@ class SmartTopics:
                 or not isinstance(record.get("context_binding"), dict)
             ):
                 raise ValueError("deployment has no verified immutable context binding")
+            metadata = AdminClient({"bootstrap.servers": self.bootstrap}).list_topics(timeout=10)
+            _whole_topic(metadata, record["input_topic"], record["input_partition"])
+            if record.get("context") is not None:
+                selected = record["context"]
+                _whole_topic(metadata, selected["topic"], selected["partition"])
             event = self.context.Event()
             process = self.context.Process(
                 target=run_worker,

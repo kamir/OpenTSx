@@ -16,6 +16,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   acknowledged predictions. Checkpoints preserve numerical state and source position after publication.
   SARIMAX supports artifact reuse and continuous scoring with verified immutable known-ahead context,
   explicit availability cutoffs, visible context waits and durable context/target cursors.
+  Continuous statistical scoring requires whole one-partition input/context topics and rejects topology expansion.
 
 - Workbench modelling for finite regular targets: ARIMA, SARIMA and SARIMAX, reference forecasts,
   rolling-origin backtests, prediction intervals and JSON result export. Context values carry availability

@@ -433,4 +433,13 @@ def test_selected_partition_is_independent_of_other_partition_histories(broker, 
     captured = broker.catalogue.capture(document())
     assert captured["binding"]["partition"] == 0
     request = retained(broker)
-    assert broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)["partition"] == 0
+    with pytest.raises(ValueError, match="whole topic"):
+        broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)
+
+
+def test_whole_topic_context_binding_rejects_an_additional_empty_partition(broker):
+    request = retained(broker)
+    broker.bounds[1] = (0, 0)
+    assert broker.catalogue.capture(document())["context"] == request["context"]
+    with pytest.raises(ValueError, match="whole topic"):
+        broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)

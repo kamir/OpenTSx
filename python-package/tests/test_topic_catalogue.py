@@ -332,3 +332,12 @@ def test_missing_samples_remain_null_in_capture_and_never_become_training_proof(
     assert result["episodes"][0]["values"][1] is None
     with pytest.raises(ValueError, match="not proven"):
         broker.catalogue.verify_binding(registered(), TOPIC, 0)
+
+
+def test_whole_topic_binding_rejects_an_additional_empty_partition_but_capture_remains_available(
+    broker,
+):
+    broker.bounds[1] = (0, 0)
+    assert broker.catalogue.capture(document())["episodes"]
+    with pytest.raises(ValueError, match="whole topic"):
+        broker.catalogue.verify_binding(registered(), TOPIC, 0)

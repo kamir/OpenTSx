@@ -9,6 +9,7 @@ import numpy as np
 
 from opentsx import model
 from opentsx.algorithms._analysis import regular_values
+from opentsx.client.topic_catalogue import _whole_topic
 
 MAX_BYTES = 4 * 1024 * 1024
 MAX_SAMPLES = 262_144
@@ -365,7 +366,16 @@ def _context_checkpoint(checkpoint, config, artifact, low, high):
 
 
 def _join_context(
-    store, identifier, consumer, config, artifact, checkpoint, values, start, stop_event
+    store,
+    identifier,
+    consumer,
+    target_consumer,
+    config,
+    artifact,
+    checkpoint,
+    values,
+    start,
+    stop_event,
 ):
     from opentsx.client.context_join import (
         MissingContext,
@@ -379,8 +389,17 @@ def _join_context(
     end = start + len(values) * interval
     steps = artifact["configuration"]["steps"]
     while not stop_event.is_set():
-        if store.get_deployment(identifier)["desired_state"] != "running":
+        deployment = store.get_deployment(identifier)
+        if deployment["desired_state"] != "running":
             return None
+        _whole_topic(
+            target_consumer.list_topics(deployment["input_topic"], timeout=10),
+            deployment["input_topic"],
+            deployment["input_partition"],
+        )
+        _whole_topic(
+            consumer.list_topics(config["topic"], timeout=10), config["topic"], config["partition"]
+        )
         context = checkpoint["context"]
         try:
             observed = select_rows(
@@ -439,6 +458,14 @@ def _join_context(
             store.set_context_status(identifier, detail)
             store.set_worker_status(identifier, "waiting_context")
         message = consumer.poll(1.0)
+        _whole_topic(
+            target_consumer.list_topics(deployment["input_topic"], timeout=10),
+            deployment["input_topic"],
+            deployment["input_partition"],
+        )
+        _whole_topic(
+            consumer.list_topics(config["topic"], timeout=10), config["topic"], config["partition"]
+        )
         if message is None:
             continue
         if message.error() is not None:
@@ -512,6 +539,7 @@ def run_worker(database_path, identifier, bootstrap, prefix, stop_event):
             }
         )
         topic, partition = deployment["input_topic"], deployment["input_partition"]
+        _whole_topic(consumer.list_topics(topic, timeout=10), topic, partition)
         low, high = consumer.get_watermark_offsets(TopicPartition(topic, partition), timeout=10)
         _integer(low, "retained low offset")
         _integer(high, "retained high offset")
@@ -533,6 +561,11 @@ def run_worker(database_path, identifier, bootstrap, prefix, stop_event):
                 }
             )
             context_partition = TopicPartition(context_config["topic"], context_config["partition"])
+            _whole_topic(
+                context_consumer.list_topics(context_config["topic"], timeout=10),
+                context_config["topic"],
+                context_config["partition"],
+            )
             context_low, context_high = context_consumer.get_watermark_offsets(
                 context_partition, timeout=10
             )
@@ -569,6 +602,13 @@ def run_worker(database_path, identifier, bootstrap, prefix, stop_event):
             if store.get_deployment(identifier)["desired_state"] != "running":
                 break
             message = consumer.poll(1.0)
+            _whole_topic(consumer.list_topics(topic, timeout=10), topic, partition)
+            if context_config is not None:
+                _whole_topic(
+                    context_consumer.list_topics(context_config["topic"], timeout=10),
+                    context_config["topic"],
+                    context_config["partition"],
+                )
             if message is None:
                 continue
             if message.error() is not None:
@@ -618,6 +658,7 @@ def run_worker(database_path, identifier, bootstrap, prefix, stop_event):
                     store,
                     identifier,
                     context_consumer,
+                    consumer,
                     context_config,
                     artifact,
                     checkpoint,
@@ -699,6 +740,13 @@ def run_worker(database_path, identifier, bootstrap, prefix, stop_event):
             ).encode()
             if len(encoded) > MAX_BYTES:
                 raise ValueError("prediction output exceeds the payload limit")
+            _whole_topic(consumer.list_topics(topic, timeout=10), topic, partition)
+            if context_config is not None:
+                _whole_topic(
+                    context_consumer.list_topics(context_config["topic"], timeout=10),
+                    context_config["topic"],
+                    context_config["partition"],
+                )
             output_partition, output_offset = _publish(
                 producer, deployment["output_topic"], key, encoded
             )

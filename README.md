@@ -44,7 +44,8 @@ backtests and conditional Gaussian prediction intervals.
 The [model deployment guide](docs/devguide/model-smart-topics.md) covers reviewed MLflow registration,
 prediction from preserved fits and continuous ARIMA/SARIMA scoring into local Kafka Smart Topics. SARIMAX scoring
 joins a verified immutable known-ahead context topic, preserving availability
-cutoffs and both source positions.
+cutoffs and both source positions. The local statistical scorer owns whole
+one-partition topics and rejects multipart sources and topology expansion.
 
 ### Three systems, one set of building blocks
 

@@ -16,6 +16,7 @@ from opentsx.client.topic_catalogue import (
     MAX_PARTITIONS,
     MAX_RECORDS,
     _integer,
+    _whole_topic,
 )
 
 POLICY = "latest_200_context_records"
@@ -105,7 +106,7 @@ class ContextCatalogue:
         )
         return {"schema": "opentsx.context-topics.v1", "topics": topics}
 
-    def snapshot(self, topic, partition=None):
+    def snapshot(self, topic, partition=None, *, whole_topic=False):
         self._topic(topic)
         if partition is not None:
             _integer(partition, "context partition", 0, 2**31 - 1)
@@ -134,6 +135,8 @@ class ContextCatalogue:
             metadata = consumer.list_topics(topic, timeout=remaining())
             if topic not in metadata.topics or metadata.topics[topic].error is not None:
                 raise ValueError("context topic is unavailable")
+            if whole_topic:
+                _whole_topic(metadata, topic, partition)
             partitions = sorted(metadata.topics[topic].partitions)
             if not 1 <= len(partitions) <= MAX_PARTITIONS:
                 raise ValueError("context snapshots require one to sixteen partitions")
@@ -233,7 +236,7 @@ class ContextCatalogue:
             "capture_policy": POLICY,
         }
 
-    def capture(self, document):
+    def capture(self, document, *, whole_topic=False):
         if not isinstance(document, dict) or set(document) != {
             "topic",
             "partition",
@@ -259,7 +262,9 @@ class ContextCatalogue:
         if interval <= 0 or any(right - left != interval for left, right in zip(times, times[1:])):
             raise ValueError("context capture requires a regular increasing target clock")
         steps = _integer(configuration.get("steps"), "forecast steps", 1, 96)
-        groups = _groups(self.snapshot(document["topic"], partition=partition))
+        groups = _groups(
+            self.snapshot(document["topic"], partition=partition, whole_topic=whole_topic)
+        )
         if len(groups) != 1:
             raise ValueError("selected context partition must contain exactly one schema")
         matching = [
@@ -368,7 +373,8 @@ class ContextCatalogue:
                 "target": target,
                 "configuration": request["configuration"],
                 "backtest": request["backtest"],
-            }
+            },
+            whole_topic=True,
         )
         actual = captured["context"]
         if actual["names"] != context["names"] or actual["units"] != context["units"]:
