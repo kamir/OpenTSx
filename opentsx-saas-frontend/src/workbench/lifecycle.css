@@ -1,0 +1,66 @@
+.wb-model-lifecycle {
+  margin-top: 18px;
+  border-top: 2px solid #8a9da8;
+  padding-top: 12px;
+  min-width: 0;
+}
+.wb-lifecycle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+.wb-model-lifecycle label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.wb-model-lifecycle .wb-lifecycle-check {
+  flex-direction: row;
+  align-items: center;
+}
+.wb-model-lifecycle input:not([type="checkbox"]),
+.wb-model-lifecycle select {
+  max-width: 100%;
+  min-width: 180px;
+}
+.wb-model-lifecycle fieldset {
+  margin: 12px 0;
+  min-width: 0;
+}
+.wb-model-lifecycle dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 5px 12px;
+}
+.wb-model-lifecycle dt {
+  font-weight: 600;
+}
+.wb-model-lifecycle dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.wb-model-lifecycle table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+}
+.wb-model-lifecycle th,
+.wb-model-lifecycle td {
+  border: 1px solid #b6c0c8;
+  text-align: left;
+  vertical-align: top;
+  padding: 6px;
+}
+.wb-model-lifecycle pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 260px;
+  overflow: auto;
+}
+@media (max-width: 700px) {
+  .wb-model-lifecycle dl {
+    grid-template-columns: 1fr;
+  }
+}

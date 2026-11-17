@@ -35,6 +35,20 @@ Principles that hold throughout:
 * **Safety stays local.** Local safety logic always wins over a twin's suggestion.
 * **Open and vendor-neutral.** Apache 2.0; Kafka-protocol logs and open table formats.
 
+Read the [workbench analysis guide](docs/devguide/workbench-analysis.md) for pair-result tables, typed result inspection, episode quality, finite snapshots and deployment capability checks.
+
+Use the [local CP workbench](docs/devguide/local-cp-workbench.md) to build and run the browser and Python service
+against an existing Confluent Platform Docker network. The Modelling view fits ARIMA, SARIMA and SARIMAX on a
+finite regular target, compares naive, mean, drift and seasonal naive baselines, and reports chronological
+backtests and conditional Gaussian prediction intervals.
+ARIMA-family fitting uses the Harvey likelihood score with complex-step derivatives
+and rejects optimizer nonconvergence.
+The [model deployment guide](docs/devguide/model-smart-topics.md) covers reviewed MLflow registration,
+prediction from preserved fits and continuous ARIMA/SARIMA scoring into local Kafka Smart Topics. SARIMAX scoring
+joins a verified immutable known-ahead context topic, preserving availability
+cutoffs and both source positions. The local statistical scorer owns whole
+one-partition topics and rejects multipart sources and topology expansion.
+
 ### Three systems, one set of building blocks
 
 The same atoms and modes, wired differently. All three run today on synthetic or simulated data:

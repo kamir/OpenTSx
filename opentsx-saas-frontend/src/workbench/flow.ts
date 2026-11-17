@@ -5,6 +5,8 @@
  */
 
 import { create } from 'zustand';
+import { checkBrowserWork } from './workLimits';
+import { PROCESSOR_SERIES_OPS, capabilityOf } from './capabilities';
 import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
@@ -331,6 +333,8 @@ export function parseNodes(raw: unknown): FlowNode[] | null {
   for (const r of raw as Partial<FlowNode>[]) {
     if (!r || typeof r.id !== 'string' || typeof r.op !== 'string' || typeof r.label !== 'string') return null;
     if (r.op !== 'source' && !OP_BY_ID[r.op]) return null;
+    const counter = /^n(\d+)$/.exec(r.id);
+    if (counter && (!Number.isSafeInteger(Number(counter[1])) || Number(counter[1]) > 1_000_000)) return null;
     nodes.push({
       id: r.id,
       op: r.op,
@@ -425,7 +429,7 @@ export function keepQuality(out: Bucket, inputs: Bucket[]): Bucket {
   if (xOf.size === 0 || !out.series.some((s) => s.quality && xOf.has(s.quality) && xOf.get(s.quality) !== s.x)) return out;
   return {
     ...out,
-    series: out.series.map((s) => (s.quality && xOf.has(s.quality) && xOf.get(s.quality) !== s.x ? { ...s, quality: undefined } : s)),
+    series: out.series.map((s) => (s.quality && xOf.has(s.quality) && xOf.get(s.quality) !== s.x ? { ...s, quality: undefined, qualityKnown: undefined } : s)),
   };
 }
 
@@ -454,6 +458,7 @@ export function evaluate(source: Bucket | null, nodes: FlowNode[], id: string): 
     if (!next) {
       // A multi-input operator names its components after the buckets, so it gets them under their track names.
       const named = (i: string): Bucket => ({ ...results.get(i)!, name: nodes.find((m) => m.id === i)?.label ?? i });
+      checkBrowserWork(n.op, ins.map((i) => results.get(i)!), n.params);
       next = op.multiInput ? op.apply(named(ins[0]), n.params, ins.slice(1).map(named)) : op.apply(results.get(ins[0])!, n.params);
       next = keepQuality(next, ins.map((i) => results.get(i)!));
       if (cache.size > 200) cache.clear();
@@ -510,7 +515,7 @@ export interface Finding {
 // ---------------------------------------------------------------- clean signals (docs/datamodel-2026/14, section 6)
 
 /** Operators the processor runs before a series sink; everything else computes in the workbench only. */
-export const CLEAN_OPS = ['dq.plausible-range', 'convert.unit', 'resample', 'model.wind-shear', 'model.power-curve', 'feature.lag', 'feature.rolling'];
+export const CLEAN_OPS = PROCESSOR_SERIES_OPS;
 export const EPISODE_SCHEMA = 'opentsx.episode.v2';
 
 /** The topic the generated series of a domain live in. */
@@ -586,28 +591,10 @@ export function cleanChecks(nodes: FlowNode[], sourceSeries: string[], context: 
 }
 
 /**
- * Why the vector processor cannot run the flow, or null when it can. It executes align.vector on the series of the
- * source topic and nothing else, and it needs their ids (docs/datamodel-2026/11, sections 5a and 5b).
+ * Why the processor cannot run every published path, or null when all paths are supported.
  */
 export function runBlocker(nodes: FlowNode[], sourceSeries?: string[], context?: SignalContext | null): string | null {
-  const clean = nodes.find(isCleanSink);
-  if (clean) return cleanChecks(nodes, sourceSeries ?? [], context, clean.id).find((c) => !c.ok)?.text ?? null;
-  const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
-  if (vectors.length === 0) return 'Publish an "Align to vector" node first: the processor writes vector topics only.';
-  if (sourceSeries && sourceSeries.length === 0) {
-    return 'Load the series from the TS inventory: a vector that keeps running has to name the series it is made of.';
-  }
-  for (const v of vectors) {
-    const other = inputsOf(v).find((i) => i !== SOURCE_ID);
-    if (other) {
-      const label = nodes.find((n) => n.id === other)?.label ?? other;
-      return `${v.label} reads ${label}. The processor executes vectors built from the source bucket only; operators before the vector are not available in it yet.`;
-    }
-    if (!/^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? '')) {
-      return `Topic ${v.sinkTopic} must have the form tsx.<domain>.smart.<name>.vectors.v1.`;
-    }
-  }
-  return null;
+  return deployChecks(nodes, sourceSeries, context).find((c) => !c.ok)?.text ?? null;
 }
 
 export interface DeployCheck {
@@ -620,34 +607,35 @@ export interface DeployCheck {
  * What the vector processor needs of a flow, one line each, so a person sees which step is still open instead of
  * only the first obstacle ({@link runBlocker}).
  */
-export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?: SignalContext | null): DeployCheck[] {
-  // a flow published as the clean grade of a signal has its own list
-  const clean = nodes.find(isCleanSink);
-  if (clean) return cleanChecks(nodes, sourceSeries, context, clean.id);
-  const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP);
-  const fromInventory = sourceSeries.length > 0;
-  const onSource = vectors.length > 0 && vectors.every((v) => inputsOf(v).every((i) => i === SOURCE_ID));
+export function deployChecks(nodes: FlowNode[], sourceSeries?: string[], context?: SignalContext | null): DeployCheck[] {
+  if (nodes.length > 0 && !parseNodes(nodes)) return [{ ok: false, text: 'The flow has an invalid node, input or cycle.' }];
+  const clean = nodes.filter(isCleanSink);
+  const vectors = nodes.filter((n) => n.sinkTopic && n.op === VECTOR_OP && !isCleanSink(n));
+  const fromInventory = sourceSeries === undefined || sourceSeries.length > 0;
+  const foreignInput = vectors.flatMap((v) => inputsOf(v).filter((i) => i !== SOURCE_ID).map((i) => ({ vector: v, input: i })))[0];
+  const onSource = vectors.length > 0 && !foreignInput;
   const topicsOk = vectors.length > 0 && vectors.every((v) => /^tsx\.[a-z0-9_-]+\.smart\.[a-z0-9][a-z0-9-]*\.vectors\.v1$/.test(v.sinkTopic ?? ''));
-  return [
+  const checks: DeployCheck[] = clean.flatMap((n) => cleanChecks(nodes, sourceSeries ?? [], context, n.id));
+  if (clean.length === 0 || vectors.length > 0) checks.push(
     {
       ok: fromInventory,
       text: fromInventory
-        ? `The bucket comes from a topic: ${sourceSeries.length} series loaded from the TS inventory.`
+        ? `The bucket comes from a topic${sourceSeries ? `: ${sourceSeries.length} series loaded from the TS inventory` : ''}.`
         : 'Load the series from the TS inventory. A sample bucket or a file has no topic the processor could follow.',
     },
     {
       ok: vectors.length > 0,
       text: vectors.length > 0
         ? `An "Align to vector" node is published: ${vectors.map((v) => v.label).join(', ')}.`
-        : 'Publish an "Align to vector" node. The processor writes vector topics; other published nodes are export only.',
+        : 'Publish an "Align to vector" node first: the processor writes vector topics; other published nodes are export only.',
     },
     {
       ok: onSource,
       text: onSource
         ? 'The vector reads the source bucket directly.'
-        : vectors.length === 0
-          ? 'The vector must read the source bucket directly.'
-          : 'The vector must read the source bucket directly. Operators before it (normalising, smoothing, resampling) run in the workbench only.',
+        : foreignInput
+          ? `${foreignInput.vector.label} reads ${nodes.find((n) => n.id === foreignInput.input)?.label ?? foreignInput.input}. The processor executes vectors built from the source bucket only. The vector must read the source bucket directly. Operators before it (normalising, smoothing, resampling) run in the workbench only.`
+          : 'The vector must read the source bucket directly.',
     },
     {
       ok: topicsOk,
@@ -655,7 +643,14 @@ export function deployChecks(nodes: FlowNode[], sourceSeries: string[], context?
         ? `It writes ${vectors.map((v) => v.sinkTopic).join(', ')}.`
         : 'The topic must have the form tsx.<domain>.smart.<name>.vectors.v1 (lower-case letters, digits and hyphens in the name).',
     },
-  ];
+  );
+  for (const n of nodes.filter((n) => n.sinkTopic && !isCleanSink(n) && n.op !== VECTOR_OP)) {
+    checks.push({ ok: false, text: `${n.label} (${n.op}): ${capabilityOf(n.op).reason} This output is not a supported processor sink.` });
+  }
+  for (const finding of validate(nodes).filter((f) => f.level === 'error' && !f.text.startsWith('No node is published.'))) {
+    checks.push({ ok: false, text: finding.text });
+  }
+  return checks;
 }
 
 /** Checks whether the flow can be handed over as a Smart Topic definition. */
@@ -726,6 +721,7 @@ export function toDagYaml(s: FlowDoc): string {
     const params = dagParams(s.nodes, n, toSeries.has(n.id));
     lines.push(`  - id: ${n.id}`);
     lines.push(`    op: ${op?.dagOp ?? n.op}${op?.inCatalog ? '' : '   # not in the stream operator catalog'}`);
+    if (n.op.startsWith('pair.')) lines.push('    experimental: true');
     lines.push(`    in: [${inputsOf(n).map((i) => (i === SOURCE_ID ? 'decode' : i)).join(', ')}]`);
     if (typeof params === 'string') lines.push(`    params: ${params}`);
     else if (Object.keys(params).length > 0) lines.push(`    params: ${yamlParams(params)}`);

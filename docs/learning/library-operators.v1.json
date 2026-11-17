@@ -1556,6 +1556,313 @@
         ],
         "vectors": []
       }
+    },
+    {
+      "id": "library.forecast-arima",
+      "operator": "forecast_arima",
+      "title": "Forecast a regular random walk",
+      "surface": "library",
+      "objectives": [
+        "Explain the last-value mean and growing uncertainty of ARIMA(0,1,0).",
+        "Preserve the episode identity, target unit and next-sample microsecond coordinates."
+      ],
+      "prerequisites": [
+        "Use the public Python package with its forecasting extra; the local CP profile pins the scientific runtime.",
+        "Use the stated synthetic inputs and execute the referenced starter regression. These finite library calls do not deploy a processor or establish cross-runtime parity."
+      ],
+      "tasks": [
+        "Generate the fixed seeded random walk and wrap it as a regular synthetic MW episode.",
+        "Forecast six steps with order (0,1,0) and no drift.",
+        "Compare each mean with the final observation and each interval width with the square-root horizon law."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import forecast_arima, model\nvalues = np.cumsum(np.random.default_rng(42).normal(size=200))\nepisode = model.regular(model.series_key(\"learning.random-walk\", {\"origin\": \"SYNTHETIC\"}, \"MW\"), 0, 10, values, episode_id=\"01ARZ3NDEKTSV4RRFFQ69G5FA0\", quality=bytes(200), created_at_us=0)\nresult = forecast_arima(episode, steps=6, order=(0, 1, 0), trend=\"n\", maxiter=200)",
+        "data": {}
+      },
+      "expected": [
+        "All six forecast means equal the last observation within 1e-8 absolute tolerance.",
+        "Interval widths divided by the first width equal sqrt([1,2,3,4,5,6]) within 1e-6 relative tolerance.",
+        "Forecast timestamps are [2000,2010,2020,2030,2040,2050] microseconds, and source unit MW and episode identity are retained."
+      ],
+      "pitfalls": [
+        "These conditional Gaussian bounds omit full parameter-estimation uncertainty.",
+        "Fitting uses L-BFGS with the Harvey likelihood score and complex-step derivatives. The requested iteration limit and strict convergence check apply without an alternate optimizer retry.",
+        "Inputs must be finite, regular and nonconstant with at least eight samples and enough observations for the selected orders. Invalid configuration and optimizer nonconvergence fail explicitly.",
+        "The numerical exog matrix API does not prove historical context availability or deploy the fit; reviewed Smart Topic deployment is a separate workflow."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/17-learn-operators.md#run-finite-python-forecasting-and-preparation"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#forecast-finite-arima-families"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/forecasting.py#forecast_arima",
+          "python-package/opentsx/algorithms/_analysis.py#regular_values"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_forecast_arima_preserves_clock_and_random_walk_uncertainty",
+          "python-package/tests/test_forecasting.py#test_random_walk_forecast_matches_analytic_mean_and_variance",
+          "python-package/tests/test_forecasting.py#test_small_amplitude_white_noise_matches_analytic_gaussian_likelihood"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.forecast-baseline",
+      "operator": "forecast_baseline",
+      "title": "Compare analytic reference forecasts",
+      "surface": "library",
+      "objectives": [
+        "Derive mean, naive, drift and seasonal-naive forecasts before fitting a candidate.",
+        "Identify degenerate conditional intervals for a constant training signal."
+      ],
+      "prerequisites": [
+        "Use the public Python package with its forecasting extra; the local CP profile pins the scientific runtime.",
+        "Use the stated synthetic inputs and execute the referenced starter regression. These finite library calls do not deploy a processor or establish cross-runtime parity."
+      ],
+      "tasks": [
+        "Forecast four steps from the fixed twelve-sample ramp using all four baseline methods.",
+        "Use seasonal period four only for the explicit repeating-last-season rule.",
+        "Inspect a constant-series forecast and explain its zero-width interval status."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import forecast_baseline\nvalues = np.arange(12, dtype=float)\nresult = {method: forecast_baseline(values, steps=4, method=method, seasonal_period=4) for method in (\"mean\", \"naive\", \"drift\", \"seasonal_naive\")}\nconstant = forecast_baseline(np.full(12, 7.0), steps=4)",
+        "data": {}
+      },
+      "expected": [
+        "The mean baseline is [5.5,5.5,5.5,5.5], naive is [11,11,11,11], drift is [12,13,14,15] and seasonal naive is [8,9,10,11].",
+        "All lower/upper bounds contain the point forecast and the input ramp is unchanged.",
+        "The constant series returns means/lower/upper equal to [7,7,7,7] with four degenerate interval-status values."
+      ],
+      "pitfalls": [
+        "Seasonal naive repeats the last complete season; it is not a fitted seasonal ARIMA.",
+        "The seasonal period must be at least two and smaller than the training sample count. Steps and periods are positive integers.",
+        "A degenerate training-based interval does not prove that real future observations are certain."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/17-learn-operators.md#run-finite-python-forecasting-and-preparation"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#compare-finite-reference-forecasts"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/evaluation.py#forecast_baseline"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_forecast_baselines_match_closed_form_and_degenerate_bounds",
+          "python-package/tests/test_forecast_baseline.py#test_baseline_forecasts_match_analytic_values_without_mutating_input"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.rolling-backtest",
+      "operator": "rolling_backtest",
+      "title": "Evaluate chronological forecast origins",
+      "surface": "library",
+      "objectives": [
+        "Separate training rows from held-out outcomes at each origin.",
+        "Check forecast error and scaled error against an analytic ramp.",
+        "Prove that changing later observations cannot change an earlier forecast case."
+      ],
+      "prerequisites": [
+        "Use the public Python package with its forecasting extra; the local CP profile pins the scientific runtime.",
+        "Use the stated synthetic inputs and execute the referenced starter regression. These finite library calls do not deploy a processor or establish cross-runtime parity."
+      ],
+      "tasks": [
+        "Evaluate naive and drift forecasts at origins eight, twelve and sixteen with horizon three.",
+        "Compare MAE and RMSE with the errors [1,2,3] of the naive ramp forecast.",
+        "Add 1000 to observations from index eleven onward and verify that the first origin stays unchanged while a later prediction changes."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import rolling_backtest\nvalues = np.arange(20, dtype=float)\noptions = {\"initial\": 8, \"horizon\": 3, \"step\": 4, \"methods\": [\"naive\", \"drift\"]}\nresult = rolling_backtest(values, **options)\nchanged = values.copy()\nchanged[11:] += 1000\nchanged_result = rolling_backtest(changed, **options)",
+        "data": {}
+      },
+      "expected": [
+        "Training stops are [8,12,16], equal to their corresponding test starts; each method has nine held-out cases.",
+        "Naive MAE and MASE are 2, and RMSE is sqrt(14/3); drift MAE is zero on the unchanged ramp.",
+        "The first training fold and its first three naive forecast cases are identical after the future-only mutation; the second-origin naive prediction changes."
+      ],
+      "pitfalls": [
+        "MASE and RMSSE use each fold training scale; a zero scale is reported as undefined rather than silently replaced.",
+        "A sliding window needs at least eight samples and cannot exceed the initial training length. All folds must leave a complete horizon.",
+        "Transform estimation belongs inside each training fold. Exogenous information must have been available at its forecast origin; this API does not certify forecast vintages or broker source positions."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/17-learn-operators.md#run-finite-python-forecasting-and-preparation"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#evaluate-rolling-forecast-origins"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/evaluation.py#rolling_backtest"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_rolling_backtest_keeps_origins_training_scales_and_future_isolation",
+          "python-package/tests/test_evaluation.py#test_rolling_origins_have_analytic_drift_and_naive_errors"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.seasonal-decomposition",
+      "operator": "seasonal_decomposition",
+      "title": "Reconstruct offline seasonal components",
+      "surface": "library",
+      "objectives": [
+        "Distinguish one-season STL from multi-season MSTL output.",
+        "Verify additive reconstruction and the seasonally-adjusted series.",
+        "Identify the noncausal boundary of the decomposition."
+      ],
+      "prerequisites": [
+        "Use the public Python package with its forecasting extra; the local CP profile pins the scientific runtime.",
+        "Use the stated synthetic inputs and execute the referenced starter regression. These finite library calls do not deploy a processor or establish cross-runtime parity."
+      ],
+      "tasks": [
+        "Create 128 synthetic samples with a linear trend and periods eight and sixteen.",
+        "Run both one-period STL and multi-period MSTL with periods supplied out of order.",
+        "Sum trend, every seasonal component and residual and compare with the original signal."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import seasonal_decomposition\nt = np.arange(128)\nvalues = 10 + 0.05 * t + 2 * np.sin(2 * np.pi * t / 8) + 0.4 * np.cos(2 * np.pi * t / 16)\nsingle = seasonal_decomposition(values, periods=8)\nresult = seasonal_decomposition(values, periods=[16, 8])",
+        "data": {}
+      },
+      "expected": [
+        "Single-period output method is stl; two-period output method is mstl with sorted periods [8,16] and two iterations.",
+        "Every seasonal component has 128 finite samples. Trend plus both seasonal components plus residual reconstructs input within 1e-12 relative and absolute tolerance.",
+        "Seasonally adjusted values plus both seasonal components reconstruct input to the same tolerance; causal is false."
+      ],
+      "pitfalls": [
+        "Centered seasonal smoothing is offline and noncausal; do not feed full-history components into a historical forecast evaluation as if they were origin-available features.",
+        "Periods are distinct sample counts of at least two and strictly less than half the input length. Explicit seasonal windows must be odd and at least seven.",
+        "Decomposition is not a forecast, causal effect or deployed streaming binding."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/17-learn-operators.md#run-finite-python-forecasting-and-preparation"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#decompose-offline-seasonality"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/decomposition.py#seasonal_decomposition"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_seasonal_decomposition_reconstructs_inputs_without_claiming_causality",
+          "python-package/tests/test_decomposition.py#test_mstl_recovers_two_seasons_with_explicit_ordered_components"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.power-transform",
+      "operator": "power_transform",
+      "title": "Transform positive and signed samples",
+      "surface": "library",
+      "objectives": [
+        "Identify the Box-Cox logarithmic limit at lambda zero.",
+        "Distinguish the positive-only Box-Cox domain from signed Yeo-Johnson input.",
+        "Keep fixed transformation parameters separate from training-estimated parameters."
+      ],
+      "prerequisites": [
+        "Use the public Python package with its forecasting extra; the local CP profile pins the scientific runtime.",
+        "Use the stated synthetic inputs and execute the referenced starter regression. These finite library calls do not deploy a processor or establish cross-runtime parity."
+      ],
+      "tasks": [
+        "Apply Box-Cox with fixed lambda zero to [1,2,4,8].",
+        "Apply Yeo-Johnson with fixed lambda one to mixed signed samples.",
+        "Reject nonpositive Box-Cox input rather than adding an implicit offset."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import power_transform\nvalues = np.array([1.0, 2.0, 4.0, 8.0])\nresult = power_transform(values, method=\"boxcox\", lmbda=0)\nmixed = np.array([-3.0, -1.0, 0.0, 2.0, 7.0])\nsigned = power_transform(mixed, method=\"yeojohnson\", lmbda=1)",
+        "data": {}
+      },
+      "expected": [
+        "Box-Cox output equals natural logs of [1,2,4,8] within 1e-12 absolute tolerance.",
+        "The recorded lambda is 0, estimated is false and value_space is power_transformed.",
+        "Yeo-Johnson at lambda one preserves all signed samples within 1e-12; the positive input remains unchanged."
+      ],
+      "pitfalls": [
+        "Box-Cox requires strictly positive values; Yeo-Johnson can accept zero and negative values. Both require finite real input.",
+        "An estimated lambda needs at least eight nonconstant training samples; a fixed finite lambda permits one or more samples.",
+        "Estimate parameters on the training window only, then retain the same lambda for future and inverse transformations. Transformed values are not still in the original physical value space."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/17-learn-operators.md#run-finite-python-forecasting-and-preparation"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#apply-finite-power-transformations"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/decomposition.py#power_transform"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_power_transform_checks_log_identity_signed_values_and_domain",
+          "python-package/tests/test_decomposition.py#test_power_transforms_roundtrip_including_special_lambda_cases"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.inverse-power-transform",
+      "operator": "inverse_power_transform",
+      "title": "Restore the original transformed value space",
+      "surface": "library",
+      "objectives": [
+        "Retain the forward method and lambda when restoring transformed samples.",
+        "Exercise both Yeo-Johnson logarithmic-limit branches and the inverse Box-Cox logarithm.",
+        "Reject values outside the inverse domain."
+      ],
+      "prerequisites": [
+        "Use the public Python package with its forecasting extra; the local CP profile pins the scientific runtime.",
+        "Use the stated synthetic inputs and execute the referenced starter regression. These finite library calls do not deploy a processor or establish cross-runtime parity."
+      ],
+      "tasks": [
+        "Forward-transform and restore mixed signed samples at Yeo-Johnson lambdas zero and two.",
+        "Restore log([1,2,4,8]) through inverse Box-Cox with lambda zero.",
+        "Check the value-space marker and an invalid inverse Box-Cox domain."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import power_transform, inverse_power_transform\nmixed = np.array([-3.0, -1.0, 0.0, 2.0, 7.0])\nresult = {}\nfor lmbda in (0.0, 2.0):\n    transformed = power_transform(mixed, method=\"yeojohnson\", lmbda=lmbda)\n    result[lmbda] = inverse_power_transform(transformed[\"result\"][\"values\"], method=\"yeojohnson\", lmbda=lmbda)\npositive = inverse_power_transform(np.log([1.0, 2.0, 4.0, 8.0]), method=\"boxcox\", lmbda=0)",
+        "data": {}
+      },
+      "expected": [
+        "Both Yeo-Johnson round trips recover [-3,-1,0,2,7] within 1e-12 relative and absolute tolerance, with value_space original.",
+        "Inverse Box-Cox at lambda zero restores [1,2,4,8] within 1e-12 absolute tolerance.",
+        "Inverse Box-Cox of [-1] at lambda one is rejected because 1 + lambda * value must be strictly positive."
+      ],
+      "pitfalls": [
+        "Use the saved finite lambda from the forward transform; do not estimate another lambda while inverting.",
+        "An inverse-transformed point forecast is not automatically an unbiased conditional mean.",
+        "Monotone transformation preserves quantile order, but inversion alone supplies neither prediction intervals nor a deployed runtime binding."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/17-learn-operators.md#run-finite-python-forecasting-and-preparation"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#invert-finite-power-transformations"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/decomposition.py#inverse_power_transform"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_inverse_power_transform_restores_both_signed_log_limits_and_domain",
+          "python-package/tests/test_decomposition.py#test_power_transforms_roundtrip_including_special_lambda_cases"
+        ],
+        "vectors": []
+      }
     }
   ]
 }

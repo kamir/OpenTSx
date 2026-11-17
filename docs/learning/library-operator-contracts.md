@@ -38,6 +38,99 @@ The [continuous local target](../devguide/integration/wayang-rust-continuous.md)
 the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
 
+The finite forecasting and preparation examples use the scientific runtime
+pinned by the [local CP profile](../devguide/local-cp-workbench.md). They need
+the Python package's `forecasting` extra; direct library calls do not need
+Kafka or MLflow. The separate
+[reviewed statistical deployment](../devguide/model-smart-topics.md) has its own
+admission, availability and fitted-state contracts.
+
+## Forecast finite ARIMA families
+
+`forecast_arima` fits finite regular, nonconstant real input through statsmodels
+SARIMAX with stationarity and invertibility enforcement. ARIMA orders,
+seasonal orders, trend, horizon, alpha and optimizer iterations are explicit.
+Fitting uses L-BFGS with the Harvey likelihood score and complex-step
+derivatives, the requested iteration limit and a strict convergence check.
+There is no alternate optimizer retry. The small-amplitude Gaussian regression
+checks the fitted variance, conditional intervals and likelihood against their
+analytic values at three signal scales.
+Inputs need at least eight observations and enough samples for the requested
+orders and regressor columns. Exogenous matrices must be finite, aligned and
+full-column-rank during training; future rows must match the horizon and column
+count. Invalid configuration and nonconvergence fail explicitly.
+
+Output contains forecast means and conditional Gaussian lower/upper bounds,
+fitted parameters and likelihood measures, input provenance, runtime version
+and warnings. Regular v2 episodes retain their unit/identity and supply the
+next-sample microsecond timestamps. The seeded ARIMA(0,1,0) lesson has a
+last-value mean and interval widths proportional to the square root of the
+horizon. The call fits again on each invocation; preserved-artifact reuse and
+context-availability proof are separate contracts.
+
+## Compare finite reference forecasts
+
+`forecast_baseline` supports mean, naive, drift and seasonal naive. Positive
+integer horizons, finite input and alpha in (0,1) are required. Constant input
+is permitted. Seasonal naive additionally needs a period of at least two and
+below the training sample count. Output includes means, conditional Gaussian
+bounds and explicit degenerate interval status when lower equals upper.
+
+The ramp lesson derives all four point forecasts analytically. The constant
+lesson has zero-width bounds; this describes the training-based estimate and
+does not establish certainty about real future values.
+
+## Evaluate rolling forecast origins
+
+`rolling_backtest` uses complete chronological training/test folds. Initial
+training and optional sliding windows contain at least eight samples; the
+window cannot exceed the initial length. Methods are a nonempty unique subset
+of the supported baselines and ARIMA. Seasonal period is smaller than every
+training window. Transform lambdas and scaled-error denominators are estimated
+inside each training fold. Zero scales are reported as undefined.
+
+Output preserves fold ranges, training digests, held-out cases, aggregate and
+per-horizon metrics. The ramp workload has three origins and nine cases per
+method. Mutating observations after the first test horizon leaves that origin
+and its cases unchanged, while later predictions can change. Input exogenous
+matrices alone do not prove origin availability or historical forecast vintages.
+
+## Decompose offline seasonality
+
+`seasonal_decomposition` selects STL for one period and two-iteration MSTL for
+multiple periods. Periods are distinct integer sample counts of at least two,
+strictly smaller than half the finite, regular, nonconstant input length.
+Explicit seasonal windows match the period count and are odd integers of at
+least seven. Output periods are sorted with their windows.
+
+Trend, each seasonal component and residual reconstruct the input; seasonally
+adjusted values omit the seasonal sum. The method records `causal: false`:
+centered offline smoothing must not become an origin-available historical
+forecast feature without a separate causal preparation policy.
+
+## Apply finite power transformations
+
+`power_transform` supports positive-only Box-Cox and signed Yeo-Johnson input.
+A fixed finite lambda permits one or more finite samples. Estimating lambda
+requires at least eight nonconstant samples. The result records lambda,
+whether it was estimated, transformed values and `value_space: power_transformed`.
+
+The Box-Cox lambda-zero lesson equals the natural logarithm. Yeo-Johnson at
+lambda one preserves signed values. Fit lambda only on training data and carry
+the same parameter into future and inverse transformations; do not silently add
+an offset to invalid Box-Cox input.
+
+## Invert finite power transformations
+
+`inverse_power_transform` requires the forward method and saved finite lambda.
+It validates inverse-domain boundaries and returns finite original-space
+values with `value_space: original`. The lesson covers Box-Cox lambda zero and
+both Yeo-Johnson logarithmic-limit branches at lambdas zero and two.
+
+Round trips preserve the original samples within the stated numerical
+tolerance. Inversion is not a new parameter fit, bias correction, uncertainty
+calibration or deployed runtime binding.
+
 ## Analyze DFA
 
 Use exported `DFA(polynom_order=1).analyze(values, scales=scales)` or pass a `TimeSeriesObject`.

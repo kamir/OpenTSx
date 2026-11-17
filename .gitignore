@@ -225,3 +225,5 @@ data/history/
 .cursor/
 .codex/
 .grok/
+
+deploy/local-cp/.build/

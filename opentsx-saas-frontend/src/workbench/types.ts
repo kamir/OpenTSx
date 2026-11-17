@@ -25,6 +25,7 @@ export interface Series {
    * minimum. It belongs to this x: an operator that builds a new x array drops it (flow.ts, `evaluate`).
    */
   quality?: Uint8Array;
+  qualityKnown?: Uint8Array;
 }
 
 /**
@@ -57,6 +58,7 @@ export interface EpisodeRange {
   labels?: Record<string, string>;
   /** The episode this one was computed from (`Provenance.parentEpisodeId`); for a pair result the episode of A. */
   parent?: string;
+  segmentation?: { strategy?: string; params?: Record<string, string>; anchorTs?: string };
 }
 
 export interface Bucket {

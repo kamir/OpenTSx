@@ -10,6 +10,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Reviewed MLflow registration and immutable fitted-state JSON artifacts, prediction without refitting,
+  verified Kafka training capture, and persistent ARIMA/SARIMA Smart Topic scoring on the local CP profile.
+  The Workbench exposes registration, measured approval thresholds, start/stop, actual worker state and
+  acknowledged predictions. Checkpoints preserve numerical state and source position after publication.
+  SARIMAX supports artifact reuse and continuous scoring with verified immutable known-ahead context,
+  explicit availability cutoffs, visible context waits and durable context/target cursors.
+  Continuous statistical scoring requires whole one-partition input/context topics and rejects topology expansion.
+
+- Workbench modelling for finite regular targets: ARIMA, SARIMA and SARIMAX, reference forecasts,
+  rolling-origin backtests, prediction intervals and JSON result export. Context values carry availability
+  times checked at each origin. The local CP Compose profile serves the UI and bounded Python forecasting
+  API from one locked bundle.
+
+- Workbench pair-result tables and matrices, typed analysis-result JSON inspection, episode quality and lineage, and integrity-checked finite input/graph snapshots. Properties distinguish browser, Java processor and Wayang capabilities. Deployment preflight checks every published sink and path; browser-only pair drafts are marked experimental.
+
 - Continuous workbench execution through Wayang on fixed whole-topic Rust workers. Each acknowledged increment
   supplies the next complete partition cursors and retained operator state. PostgreSQL persists plans before
   dispatch, retains ownership through idle and uncertain outcomes, and records durable stop requests. Worker
@@ -227,6 +242,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- ARIMA-family fits use L-BFGS with the Harvey likelihood score and complex-step derivatives.
+  Small-amplitude Gaussian fits retain their analytic variance and forecast intervals; the requested
+  iteration limit and strict nonconvergence rejection remain enforced.
 
 - Native entropy windows validate lengths and finite matching coordinate/value vectors, advance by at least one
   sample and clip partial cuts to the available data. The `ENTROPY` dialog handles cancellation and invalid
