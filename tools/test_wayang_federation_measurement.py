@@ -107,6 +107,18 @@ class FederationMeasurementTest(unittest.TestCase):
         self.assertIn("TLS client bytes", text)
         self.assertTrue(all(len(line) <= 120 for line in text.splitlines()))
 
+    def test_report_defines_the_different_route_clocks_and_tls_control_traffic(self):
+        self.fixture()
+        metadata = {"openTsxCommit": "c" * 40, "javaVersion": "synthetic JDK fixture", "platform": "synthetic OS",
+                    "hardware": "synthetic hardware", "startedAt": "2000-01-01T00:00:00Z"}
+        self.measurement.report(self.output, metadata)
+        text = " ".join((self.output / "REPORT.md").read_text().split())
+        self.assertIn("Centralized elapsed time covers raw-record transfer and acknowledgements.", text)
+        self.assertIn("Signal-cluster and job-state elapsed time also includes site computation and central merging.", text)
+        self.assertIn("These clocks measure different work and do not establish a latency or speed comparison.", text)
+        self.assertIn("HTTP body bytes count only aggregate-delivery application bodies.", text)
+        self.assertIn("TLS client bytes include plan polls, lifecycle status and delivery acknowledgements during the execution interval.", text)
+
     def test_dirty_checkout_stops_before_any_build_or_output(self):
         target = self.output / "results"
         argv = ["wayang_federation_measurement.py", "--output", str(target), "--java-home", "/synthetic-jdk"]

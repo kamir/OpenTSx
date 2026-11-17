@@ -152,10 +152,14 @@ def report(output, metadata):
     paragraph(f"OS: {metadata['platform']}. Hardware: {metadata['hardware']}.")
     paragraph("Kafka bytes are complete PRODUCE request frames observed before forwarding, including the four-byte "
               "length prefix. Record counts include every request attempt. Failed-record acknowledgements are zero.")
-    paragraph("HTTP body bytes count aggregate-delivery application bodies. TLS client bytes count the actual encrypted "
+    paragraph("HTTP body bytes count only aggregate-delivery application bodies. TLS client bytes count the actual encrypted "
               "client-to-server TCP stream measured by the transparent proxy. These counters describe separate layers. "
               "Inapplicable transport cells remain blank.")
+    paragraph("TLS client bytes include plan polls, lifecycle status and delivery acknowledgements during the execution interval.")
     paragraph("Elapsed time is measured once per route and repeated on its three site rows. Each table displays that route clock once.")
+    paragraph("Centralized elapsed time covers raw-record transfer and acknowledgements. "
+              "Signal-cluster and job-state elapsed time also includes site computation and central merging. "
+              "These clocks measure different work and do not establish a latency or speed comparison.")
     totals = []
     http = []
     for route in ROUTES:
