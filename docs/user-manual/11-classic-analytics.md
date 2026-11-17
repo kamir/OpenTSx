@@ -202,6 +202,13 @@ validation message. Window starts follow the first series; every series contribu
 each nominal window, including the final partial window. See the
 [native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
 
+`Histogram per series` validates integer bounds, positive bin counts and nonempty finite matching coordinate/value
+pairs in every selected row. It retains native raw-count binning. The native `NORM std=1, avg=0` action preserves
+original sample coordinates and axis labels while rejecting short, malformed, nonfinite or constant series.
+Both actions display validation errors and produce no chart or recorder entry for rejected input, including a bad
+later row. See [native per-series histograms](../../opentsx-core/README.md#plot-native-histograms-per-series) and
+[standard normalization](../../opentsx-core/README.md#normalize-finite-time-series) for contracts and regression checks.
+
 The native `ENTROPY` action accepts positive integer window lengths and finite series with matching coordinates.
 Cancelling or rejecting an input produces no chart or recorder entry. Window starts advance by at least one sample,
 partial cuts stop at the available data, and output coordinates identify sample-start indices. The native maximum

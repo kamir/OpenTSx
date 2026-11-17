@@ -262,7 +262,8 @@
       ],
       "pitfalls": [
         "The sample denominator is n minus 1.",
-        "The displayed unit metadata is retained even though z-scores are dimensionless."
+        "The displayed unit metadata is retained even though z-scores are dimensionless.",
+        "The native standard-normalization action validates matching finite samples and a finite positive sample deviation with a finite reciprocal, preserves original coordinates, and rejects constant series. This browser workload instead returns zeros for a constant finite series."
       ],
       "parameterKeys": [],
       "expectedOutput": {
@@ -287,17 +288,20 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#norm-zscore"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#normZ"
+          "opentsx-saas-frontend/src/workbench/ops.ts#normZ",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton13ActionPerformed"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelNormalizationTest.java"
         ],
         "vectors": []
       }
@@ -829,7 +833,8 @@
       ],
       "pitfalls": [
         "Only finite values inside the inclusive min/max range enter the denominator.",
-        "The upper endpoint belongs to the final bin."
+        "The upper endpoint belongs to the final bin.",
+        "The native per-series histogram action validates ordered integer bounds, a positive integer bin count and at least one finite matching coordinate/value pair in every selected series. Its legacy bins and raw counts differ from this browser workload's normalized centers and frequencies."
       ],
       "parameterKeys": [
         "min",
@@ -856,17 +861,20 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#histogram"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#histogram"
+          "opentsx-saas-frontend/src/workbench/ops.ts#histogram",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton10ActionPerformed"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelSeriesHistogramTest.java"
         ],
         "vectors": []
       }

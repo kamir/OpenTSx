@@ -93,6 +93,29 @@ mvn -B -ntp -pl opentsx-core -am test \
   -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
 ```
 
+## Plot native histograms per series
+
+Choose `Histogram per series` to compute one native raw-count histogram for each selected series. The fields
+default to minimum -10, maximum 10 and 50 bins. Minimum and maximum must be signed 32-bit integers with minimum
+less than maximum; the bin count must be an integer from 1 through 2147483647. Each selected row must contain at
+least one matching coordinate/value pair, with finite `Double` entries in both vectors.
+
+The `Histogram failed` dialog reports invalid fields or selections. No invalid input produces a chart or recorder
+entry, including a bad row later in the selection. All results are prepared before opening the chart and recording
+the transformation. Input coordinates, values and labels are unchanged. The numerical histogram API and its legacy
+binning are retained; native raw counts and boundary handling differ from the
+[browser histogram lesson](../docs/learning/ui-operator-contracts.md#histogram).
+
+| Error | Accepted input |
+| --- | --- |
+| `Select at least one series for a histogram` | A nonempty selection |
+| `Histogram bounds must be integers with minimum less than maximum` | Ordered signed 32-bit integer bounds |
+| `Histogram bin count must be a positive integer` | An integer from 1 through 2147483647 |
+| `Histogram requires at least one coordinate-value pair` | Matching nonempty X/Y vectors in every selected row |
+| `Histogram requires finite coordinates and values` | Finite `Double` entries in both vectors |
+
+Run the shared desktop regression command under [standard normalization](#normalize-finite-time-series).
+
 ## Compare native histogram slices
 
 In the native workbench, select time series and choose `Histogram cross-cut`. Enter a window length in samples,
@@ -169,8 +192,31 @@ It returns a new series with the input coordinates and axis labels. Input values
 Normalization requires at least two finite coordinate-value pairs with matching lengths and a finite,
 positive standard deviation whose reciprocal is representable. Invalid inputs raise `IllegalArgumentException`.
 
+The native `NORM std=1, avg=0` action applies this checked kernel to each selected series. Its output preserves the
+original sample coordinates and axis labels, including irregular or fractional coordinates. Input coordinates,
+numeric values and labels are unchanged. The `Normalization failed` dialog reports invalid input; a rejection
+opens no chart and records no transformation, including when a later selected row is invalid. All results are
+prepared before opening the chart and recording the transformation. Constant series are rejected; the
+[browser z-score lesson](../docs/learning/ui-operator-contracts.md#norm-zscore) uses a different constant-series policy.
+
+| Error | Accepted input |
+| --- | --- |
+| `Select at least one series for standard normalization` | A nonempty selection |
+| `Normalization requires at least two coordinate-value pairs` | Matching X/Y vectors with at least two samples |
+| `Normalization requires finite coordinates and values` | Finite `Double` entries in both vectors |
+| `Normalization requires a finite positive standard deviation` | Positive finite sample deviation with a finite reciprocal |
+
 `TimeSeriesObjectStatisticsTest` also checks mean recalculation and half-open `cutOut` windows,
 including empty and truncated windows.
+
+You need JDK 17 or later, Maven, and a display for the desktop histogram and normalization checks. From the
+repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TSOperationControlerPanelNormalizationTest,TSOperationControlerPanelSeriesHistogramTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
 
 ## Compute event synchronization
 

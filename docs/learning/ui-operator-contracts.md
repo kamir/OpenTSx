@@ -71,6 +71,12 @@ not positive. Coordinates and unit metadata are retained. NaN gaps remain NaN.
 
 Source: [ops.ts#normZ](../../opentsx-saas-frontend/src/workbench/ops.ts#normZ). Executable exercise: `ui.norm.zscore`.
 
+The native `NORM std=1, avg=0` action uses a separate
+[checked normalization contract](../../opentsx-core/README.md#normalize-finite-time-series). It preserves original
+sample coordinates and axis labels and requires at least two matching finite coordinate/value pairs with a finite,
+positive sample deviation and finite reciprocal. Invalid input produces no chart or recorder entry. Native
+constant-series rejection differs from this browser workload's zero result.
+
 <a id="log"></a>
 
 ## Track coordinates when logarithms remove points
@@ -139,6 +145,12 @@ includes max in the last bin, then divides by the accepted count. Outputs a valu
 
 Source: [ops.ts#histogram](../../opentsx-saas-frontend/src/workbench/ops.ts#histogram) . Executable exercise:
 `ui.histogram` .
+
+The native `Histogram per series` action uses a separate
+[raw-count contract](../../opentsx-core/README.md#plot-native-histograms-per-series). It validates ordered integer
+bounds, a positive integer bin count and at least one finite matching coordinate/value pair in every selected row.
+Its legacy bins and raw counts differ from this browser workload's normalized bin centers and frequencies.
+Invalid input produces no chart or recorder entry.
 
 <a id="histogram-crosscut"></a>
 
