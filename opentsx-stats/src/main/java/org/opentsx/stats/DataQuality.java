@@ -6,6 +6,7 @@ import org.opentsx.model.v2.SeriesStats;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.OptionalLong;
 
 /**
@@ -76,7 +77,7 @@ public final class DataQuality {
             double expected = Math.floor((double) (end - start) / e.expectedIntervalMicros());
             double ratio = expected <= 0 ? 1.0 : Math.min(1.0, s.getValidCount() / expected);
             out.add(result(s, Check.COMPLETENESS, ratio >= e.minCompleteness(), ratio, ">= " + e.minCompleteness(),
-                    String.format("%d of %.0f expected values valid (%d NaN)", s.getValidCount(), expected, s.getNanCount())));
+                    String.format(Locale.ROOT, "%d of %.0f expected values valid (%d NaN)", s.getValidCount(), expected, s.getNanCount())));
         }
 
         if ((e.minPlausible() != null || e.maxPlausible() != null) && s.getValidCount() > 0) {
@@ -94,7 +95,7 @@ public final class DataQuality {
                 how = "min/max only";
             }
             out.add(result(s, Check.PLAUSIBLE_RANGE, outside <= e.maxOutOfRange(), outside, "<= " + e.maxOutOfRange(),
-                    String.format("range [%s, %s], observed [%.4g, %.4g], share outside %.4f (%s)",
+                    String.format(Locale.ROOT, "range [%s, %s], observed [%.4g, %.4g], share outside %.4f (%s)",
                             e.minPlausible(), e.maxPlausible(), s.getMin(), s.getMax(), outside, how)));
         }
 
@@ -102,7 +103,7 @@ public final class DataQuality {
             double sd = s.getValidCount() < 2 ? Double.NaN : Math.sqrt(s.getM2() / (s.getValidCount() - 1));
             boolean flat = sd <= e.flatlineEpsilon();
             out.add(result(s, Check.FLATLINE, !flat, sd, "> " + e.flatlineEpsilon(),
-                    flat ? String.format("constant value %.6g over %d values", s.getMean(), s.getValidCount())
+                    flat ? String.format(Locale.ROOT, "constant value %.6g over %d values", s.getMean(), s.getValidCount())
                          : "values vary"));
         }
 
@@ -118,7 +119,7 @@ public final class DataQuality {
             } else {
                 double ageSeconds = (nowMicros.getAsLong() - Micros.of(s.getLastSeen())) / 1e6;
                 out.add(result(s, Check.FRESHNESS, ageSeconds <= e.maxAge().toNanos() / 1e9, ageSeconds,
-                        "<= " + e.maxAge(), String.format("last value %.0f s ago", ageSeconds)));
+                        "<= " + e.maxAge(), String.format(Locale.ROOT, "last value %.0f s ago", ageSeconds)));
             }
         }
         return out;

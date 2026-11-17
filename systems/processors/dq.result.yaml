@@ -1,0 +1,21 @@
+schema: opentsx.processor.v1
+id: dq.result
+version: 1
+kind: transformer
+title: Data-quality findings
+description: Evaluates SeriesStats and writes one opentsx.signal.v1 finding per enabled check.
+inputs:
+  - { name: in, type: stats, cardinality: one }
+outputs:
+  - { name: out, type: events }
+params:
+  - { name: checks, type: list, values: [COMPLETENESS, PLAUSIBLE_RANGE, FLATLINE, GAPS, FRESHNESS], default: [COMPLETENESS, PLAUSIBLE_RANGE, FLATLINE, GAPS, FRESHNESS] }
+  - { name: min, type: number, description: Optional lower plausible bound }
+  - { name: max, type: number, description: Optional upper plausible bound }
+  - { name: expectedInterval, type: duration, min: 0, description: Non-negative expected sample interval; PT0S disables sample-count checks }
+semantics: { needs: point, deterministic: true, origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxDqResult }
+state: { kind: none }
+merge: { class: exact, function: sum }
+testvectors: docs/datamodel-2026/testvectors/dq-result.v1.json

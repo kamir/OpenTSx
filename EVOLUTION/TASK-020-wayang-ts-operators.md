@@ -126,7 +126,7 @@ Status of A2 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 
 Local verification on JDK 21: the KafScale reactor runs 402 tests with zero
 failures or errors and one conditional skip. All 86 Wayang tests execute with
-zero skips. CI requires nine Wayang acceptance classes, all five statistics
+zero skips. CI requires the A1/A2 acceptance classes, all five statistics
 vector cases, and the four named parameter-message tests to execute successfully.
 
 ### A3: remaining catalog 1, catalog freeze
@@ -148,6 +148,11 @@ vector cases, and the four named parameter-message tests to execute successfully
   with every series of input `b`, episode by episode, by the rules of
   `pairs.ts` (pairing, windows, clock, coverage); one result episode per
   field and pair range, id of S6.2 (A3.2).
+- [x] Native Wayang mappings for `segment.threshold`, `segment.extremum`,
+  `sax.word`, and `dq.result`: 26 exact shared cases in the three A3.4 test
+  classes. Segment detectors and retained samples are checkpointed per series.
+- [x] Stream/batch parity for these four operators: 26 cases, six chunk and
+  series-order combinations per case, 156 exact comparisons.
 - [ ] Catalog `tsx-catalog/1` frozen.
 
 Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
@@ -178,6 +183,24 @@ the two whole series, because a continuing input has no whole series.
 | A3.4 | New operators match their new vectors | `TsxSegmentVectorsTest`, `TsxSaxVectorsTest`, `TsxDqVectorsTest` | V: the four new files | 100 % of cases exact |
 | A3.5 | Stream equals batch | `TsxStreamEqualsBatchTest` feeds every vector input in chunks of 1, 7 and all records, in two series orders | V | identical output in all 6 runs per case |
 | A3.6 | The catalog is complete and valid | `SystemDocTest` | `systems/processors/` | one description per row of S1.7 with `state`, `merge`, `runtimes.wayang.status: available`; schema validation 0 errors |
+
+Status of the retrieval operators on 2026-11-17:
+
+| #    | Result                                                   |
+| ---- | -------------------------------------------------------- |
+| A3.4 | met: all 12 segment, seven SAX, and seven DQ cases       |
+| A3.5 | met for these four operators: 26 cases, 156 comparisons  |
+| A3.6 | four descriptions available; catalog freeze remains open |
+
+Segments restore a checkpoint between chunks and compare full Avro payloads
+with batch. SAX compares complete episodes; DQ compares complete statistics
+records and full signal JSON. The four processor descriptions declare state,
+merge, and available Wayang runtimes. Align and pair execution mappings are
+tracked separately.
+
+`TsxSignalSinkIntegrationTest` checks JSON signal writes and rejection of an
+invalid batch before any records are sent. DQ ids include the check and both
+window bounds, preserving distinct findings under the S6.2 deduplication rule.
 
 ### A4: translation, signed plans, federation on JVM sites
 - [ ] `DagToWayang`, `TsxSitePlatform`, `TsxSiteExecutor`, `TsxSiteAgent`, plan service API (S5.3), forwarder, central merge.

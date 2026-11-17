@@ -10,6 +10,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Wayang operators for threshold and extremum segmentation, SAX words, and
+  data-quality signals (TASK-020 A3.4 and the retrieval part of A3.5). Segments
+  checkpoint their retained samples and detector state per series. All 26
+  shared cases run through Wayang and all 156 chunk/order comparisons match.
+  The topic sink validates and writes JSON `opentsx.signal.v1` records.
+  DQ signal identities include the check and window bounds; result messages
+  use `Locale.ROOT`. README, manual, and processor descriptions are updated.
+
 - `opentsx-wayang` A3.2 (TASK-020): `pair.xcorr` runs on Wayang as `TsxPair`, with the pair windows of the workbench
   (`pairs.ts`) ported to `ops/TsxPairWindows`. Episodes of A and B are paired (`same` or `intersect`) as they arrive
   and wait in the checkpoint for their counterparts; each pair range gives one episode per field
