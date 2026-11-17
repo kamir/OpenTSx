@@ -26,7 +26,9 @@ The local [`DagToWayang`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/
 compiler validates the current catalog and constructs fused clean-series plans with topic sinks. Its current
 physical compilation accepts clean series sinks, not statistics sinks or federated plans. Statistics parameter
 validation and the separately constructible `TsxStatsWindow` operator do not expand that compiler scope.
-Remote deployment, authorization and Rust numerical execution remain outside this local API.
+Remote deployment and authorization remain outside this local Java API. The separate
+[`tsx-runner` bounded profile](../devguide/integration/rust-runner-local.md) executes pass-through, plausible-range
+checks, unit conversion and a trailing resample without a remote Wayang executor.
 
 ## Analyze DFA
 
@@ -254,6 +256,8 @@ nonempty snapshots, restoration between chunks and bounded final flushing.
 
 `ExecutionAssignments.validate(text)` and `validateSet(texts)` perform offline preflight.
 The Rust `tsx-contracts` library implements the same contract checks; it does not execute numerical operators.
+The separate local `tsx-runner` adds artifact, binding, graph, capacity and actual broker-inventory checks before
+executing its bounded subset. Passing this library lesson does not activate that process.
 Every input owns one whole `(fragment,binding,topic)`. Its positive `partitionCount` has complete ordered
 `positions` for `0..N-1`; offsets are checked decimal strings. Duplicate owners and incomplete positions reject.
 Schema shape checks, exact hashes, complete internal positions and set consistency are separate gates.

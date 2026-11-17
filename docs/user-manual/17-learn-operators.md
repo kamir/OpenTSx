@@ -17,11 +17,17 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | The shared offline assignment validator exists. Numerical operator execution and deployment remain separate delivery work. |
+| Rust | `tsx-contracts` validates offline assignments. The separate `tsx-runner` 0.1.0 executes trusted-local bounded Kafka pass-through and a three-operation cleaning subset; UI/Wayang fleet dispatch remains separate. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.
 The [unified Wayang plan](../devguide/integration/wayang-unified-plan.md) records deployment work and its gates.
+For Rust execution, use the [bounded local runner guide](../devguide/integration/rust-runner-local.md).
+It accepts `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional trailing `resample`.
+The three UI lessons retain their browser workloads and link the separate Rust vector and state tests.
+Their zero-based coordinates do not establish a Kafka timestamp policy: published Rust records require
+`tStart / 1000` rounded down to be strictly positive milliseconds.
+Open resample tails remain in retained state at the cut; source series cannot merge into one derived identity.
 
 ## Work through a lesson
 

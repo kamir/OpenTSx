@@ -58,6 +58,9 @@ The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md)
 Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
 [shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`
 and `rust/tsx-contracts`; it validates offline assignments and does not deploy a Rust runtime.
+The separate [`tsx-runner` 0.1.0](../rust/tsx-runner/README.md) executes a capped bounded topic from trusted local
+configuration. It supports pass-through and three cleaning operations; this module does not dispatch that binary
+through a remote Wayang platform.
 
 ## Use the plugin
 

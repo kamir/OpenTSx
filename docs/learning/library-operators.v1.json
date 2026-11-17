@@ -1147,7 +1147,7 @@
         "Two nodes may own distinct whole topics for the same admitted fragment.",
         "Each input includes all positions from zero through partitionCount minus one, in order.",
         "Splitting a topic across nodes fails coverage; duplicate whole-topic ownership fails ownership.",
-        "Java and Rust validate the same shared cases without providing a Rust numerical runner."
+        "Java and Rust validate the same shared cases; these offline library calls do not execute the separate bounded Rust runner."
       ],
       "pitfalls": [
         "Resolve aliases to authoritative topic identity before interpreting ownership.",
@@ -1156,7 +1156,8 @@
       "references": {
         "manual": [
           "docs/devguide/integration/wayang-shared-contracts.md#assign-whole-topics-and-preserve-exact-internal-positions",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-local.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment"

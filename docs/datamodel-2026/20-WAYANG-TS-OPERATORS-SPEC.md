@@ -1,6 +1,7 @@
 # Specification 20: time-series operators on Apache Wayang (S1 to S7)
 
-> Status: **draft specification, version 0.1**, 2026-11-16, not implemented. Concept and research:
+> Status: **draft specification, version 0.1**, 2026-11-17. Java mappings and the trusted-local Rust subset are
+> implemented; the full catalog and fleet protocols below are not implementation claims. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
 > [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Checked against this repository at `548f316` and
 > Apache Wayang tag `wayang-1.1.1`.
@@ -29,6 +30,8 @@ The [unified orchestration plan](../devguide/integration/wayang-unified-plan.md)
 boundary and separate bounded/continuous profiles. The implemented
 [assignment contract](../devguide/integration/wayang-shared-contracts.md) preserves original UI text and separate
 fragment text; its offline validator is not a complete runner or deployment admission service.
+The executable [`tsx-runner` 0.1.0 profile](../devguide/integration/rust-runner-local.md) is described in
+[S1.9](#s19-execute-the-trusted-local-bounded-rust-subset). Local replay does not implement S5 fleet activation.
 
 ### S1.1 Identity
 
@@ -110,11 +113,12 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 
 ### S1.7 Catalog 1
 
-`A` is Track A, `B` is Track B. The statistics, segmentation, SAX, and
+`A target` and `B target` describe intended catalog membership, not currently installed capabilities.
+For the implemented Rust subset, use S1.9. The statistics, segmentation, SAX, and
 data-quality reference vectors are generated from the existing Java
 implementations by `tools/java_operator_vectors.py`.
 
-| DAG `op` | In → out | Parameters (limits) | State | Merge | Vectors | A | B |
+| DAG `op` | In → out | Parameters (limits) | State | Merge | Vectors | A target | B target |
 |---|---|---|---|---|---|---|---|
 | `decode.avro-soe` | topic → `series` | none | none | n/a | `wire-format.json` | yes | yes |
 | `dq.checks` | `series` → `series` | `checks` ⊆ {`PLAUSIBLE_RANGE`} in the streaming path (`CleanChain.java:121`); `min` ≤ `max`; `mode` ∈ {`gap`, `clip`} | none | n/a | `clean-ops.v1.json` | yes | yes |
@@ -145,6 +149,31 @@ registered through `TsxRetrievalMappings`.
 
 Track B MUST reject `pair.xcorr` when `(2 * lags + 1) * window / every` exceeds the limit set in the site
 configuration, with the message of S2.5. Track B MUST NOT offer `pair.es`.
+
+<a id="s19-execute-the-trusted-local-bounded-rust-subset"></a>
+
+### S1.9 Execute the trusted-local bounded Rust subset
+
+`rust/tsx-runner` version 0.1.0 accepts `opentsx.local-bounded-run.v1` with one bounded Rust assignment,
+one complete input topic and one distinct episode output topic on a trusted local broker binding.
+It executes pass-through or a linear chain containing `dq.checks` (`PLAUSIBLE_RANGE`, gap or clip),
+`convert.unit` and an optional trailing `resample` (`MEAN`, `MIN`, `MAX`, `LAST`). Other operators reject.
+Cleaning rejects nonzero revisions, per-value quality, infinite inputs and changes to source series metadata.
+Two distinct source series cannot own one derived series, even when their episode extents do not overlap.
+
+The implementation validates the capped cut, computes output and checks checkpoint capacity before publication.
+Output Kafka timestamps are epoch milliseconds rounded down from `tStart` and must be greater than zero.
+Every output acknowledgement precedes checkpoint commit. Interrupted publication can duplicate records;
+same-request replay preserves episode identities and a fixed provenance clock. Exact completed retries return
+the stored receipt without broker I/O. An unfinished resample window remains in private Rust state at the cut.
+The state stores derived-series ownership and validates it against retained source keys on restore.
+
+The [local guide](../devguide/integration/rust-runner-local.md) defines fields, bounds and failure messages.
+The [operator tests](../../rust/tsx-runner/src/operators.rs) replay the eight supported cases of
+`clean-ops.v1.json` through every chunk size and checkpoint restore; the seven unsupported cases reject.
+The [flow tests](../../rust/tsx-runner/tests/runner_flow.rs) exercise acknowledgement and checkpoint failures.
+The three-worker Compose fixture assigns separate topics with one, two and three internal partitions.
+It does not implement continuous execution, a remote Wayang platform, UI deployment or signed fleet activation.
 
 ## S2. Plan translation
 

@@ -1,0 +1,71 @@
+name: opentsx-rust-runner
+
+x-runner: &runner
+  image: rust:1.99.1-bookworm
+  profiles: [workers]
+  user: "${RUST_RUNNER_UID:?Set RUST_RUNNER_UID}:${RUST_RUNNER_GID:?Set RUST_RUNNER_GID}"
+  entrypoint: [/runner/release/tsx-runner]
+  restart: "no"
+  read_only: true
+  depends_on:
+    kafscale-broker:
+      condition: service_started
+
+services:
+  kafscale-broker:
+    image: ghcr.io/kafscale/kafscale-broker:v1.6.0
+    environment:
+      KAFSCALE_USE_MEMORY_S3: "1"
+      KAFSCALE_BROKER_ID: "0"
+      KAFSCALE_BROKER_ADDR: ":${KAFSCALE_BROKER_PORT:-39092}"
+      KAFSCALE_BROKER_HOST: kafscale-broker
+      KAFSCALE_BROKER_PORT: "${KAFSCALE_BROKER_PORT:-39092}"
+    ports:
+      - "127.0.0.1:${KAFSCALE_BROKER_PORT:-39092}:${KAFSCALE_BROKER_PORT:-39092}"
+
+  runner-build:
+    image: rust:1.99.1-bookworm
+    profiles: [build]
+    working_dir: /workspace
+    environment:
+      CARGO_HOME: /cargo
+    command:
+      - cargo
+      - build
+      - --locked
+      - --release
+      - --manifest-path
+      - rust/tsx-runner/Cargo.toml
+      - --target-dir
+      - /artifacts
+    volumes:
+      - .:/workspace:ro
+      - ./target/rust-runner-linux:/artifacts
+      - runner-cargo:/cargo
+
+  runner-1:
+    <<: *runner
+    command: [replay, --request, /requests/worker-1.json, --checkpoint, /state/completed.json]
+    volumes:
+      - ./target/rust-runner-linux:/runner:ro
+      - ./target/rust-runner-compose/requests:/requests:ro
+      - ./target/rust-runner-compose/state/worker-1:/state
+
+  runner-2:
+    <<: *runner
+    command: [replay, --request, /requests/worker-2.json, --checkpoint, /state/completed.json]
+    volumes:
+      - ./target/rust-runner-linux:/runner:ro
+      - ./target/rust-runner-compose/requests:/requests:ro
+      - ./target/rust-runner-compose/state/worker-2:/state
+
+  runner-3:
+    <<: *runner
+    command: [replay, --request, /requests/worker-3.json, --checkpoint, /state/completed.json]
+    volumes:
+      - ./target/rust-runner-linux:/runner:ro
+      - ./target/rust-runner-compose/requests:/requests:ro
+      - ./target/rust-runner-compose/state/worker-3:/state
+
+volumes:
+  runner-cargo:

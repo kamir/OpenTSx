@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-020-wayang-ts-operators
 - **Created**: 2026-11-16
-- **Status**: Planned
+- **Status**: In progress
 - **Priority**: Medium
 - **Epic**: P7 Smart Topics (federated part, P7d) and P8 federated analysis
 - **Concept**: [20-WAYANG-TS-OPERATORS.md](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md)
@@ -41,6 +41,9 @@ Each operator still requires its reference vectors and admission gate before use
 - [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
 - [ ] U02/U03 stage compilation, fake-transport proof and durable control/delivery sequence.
 - [ ] U04/U05 minimal Rust runner and actual UI-to-two-node proof with static assignments.
+- [x] U04 trusted-local bounded subset: `tsx-runner` 0.1.0 replays one complete topic with pass-through or
+  plausible-range checks, unit conversion and a trailing resample. Shared vectors, local failure/retry tests and
+  a three-worker Compose fixture are implemented. This does not complete fleet activation or U05.
 - [ ] U06 production stale-output enforcement, rollout, policy and operating qualification.
 - [ ] U08 bounded Iceberg snapshot/seal/publication profile.
 
@@ -226,6 +229,13 @@ window bounds, preserving distinct findings under the S6.2 deduplication rule.
 ### B1: Rust runner foundation
 - [ ] `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds.
 
+The implemented command is `tsx-runner replay`, using the
+[trusted-local bounded profile](../docs/devguide/integration/rust-runner-local.md).
+It provides Avro episode I/O, series identity, explicit caps, retained operator state and a completed receipt
+after all output acknowledgements. The Compose fixture assigns three separate topics with one, two and three
+partitions and compares their output to Java. The fleet command, full cross-target matrix and all B1 criteria
+remain separate qualification work.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B1.1 | Cross builds exist | CI job builds `aarch64-unknown-linux-musl`, `armv7-unknown-linux-musleabihf`, `x86_64-unknown-linux-musl` | none | three artifacts; `file` reports "statically linked" for each |
@@ -236,6 +246,12 @@ window bounds, preserving distinct findings under the S6.2 deduplication rule.
 | B1.6 | Unknown fingerprint as A1.6 | `fingerprint` integration test | K | as A1.6 |
 
 ### B2: edge operators
+
+The executable local subset is `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and optional trailing `resample`.
+The operator tests consume the eight supported `clean-ops.v1.json` cases and refuse the seven unsupported cases.
+They check all chunk sizes and state restores, including exclusive derived-series ownership.
+The broader B2 acceptance table is not a claim that the remaining target operators execute in Rust.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B2.1 | Operator vectors pass | `cargo test` | V: every file for the operators with B = yes in S1.7 | the thresholds of A2.1 to A3.5 |

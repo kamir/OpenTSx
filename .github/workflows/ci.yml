@@ -41,9 +41,88 @@ jobs:
       - name: Check generated contract vectors
         run: python3 tools/execution_contract_vectors.py --check
       - name: Install the pinned Rust toolchain
-        run: rustup toolchain install 1.99.1 --profile minimal
+        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+      - name: Check formatting of the shared contract crate
+        run: cargo +1.99.1 fmt --manifest-path rust/tsx-contracts/Cargo.toml -- --check
+      - name: Check the shared contract crate with Clippy
+        run: cargo +1.99.1 clippy --locked --manifest-path rust/tsx-contracts/Cargo.toml --all-targets -- -D warnings
       - name: Run the Rust consumer of the shared cases
         run: cargo +1.99.1 test --locked --manifest-path rust/tsx-contracts/Cargo.toml -- --nocapture
+
+  rust-runner:
+    name: Rust runner tests and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container: rust:1.99.1-bookworm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the pinned formatting and lint components
+        run: rustup component add --toolchain 1.99.1 rustfmt clippy
+      - name: Check formatting of the runner crate
+        run: cargo +1.99.1 fmt --manifest-path rust/tsx-runner/Cargo.toml -- --check
+      - name: Check all runner targets with Clippy
+        run: cargo +1.99.1 clippy --locked --manifest-path rust/tsx-runner/Cargo.toml --all-targets -- -D warnings
+      - name: Run locked runner tests
+        run: cargo +1.99.1 test --locked --manifest-path rust/tsx-runner/Cargo.toml -- --nocapture
+
+  rust-runner-compose:
+    name: Rust runner three-worker Compose acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      KAFSCALE_BROKER_PORT: "39093"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Check helper syntax and CLI
+        run: |
+          python3 -m py_compile tools/verify_rust_runner_compose.py
+          python3 tools/verify_rust_runner_compose.py --help
+      - name: Verify three whole-topic workers and replay against Java
+        run: python3 tools/verify_rust_runner_compose.py
+      - name: Require all three acceptance phases
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          directory = Path("target/rust-runner-compose")
+          fixture = json.loads((directory / "expected.json").read_text())
+          expected = {worker["worker"]: len(worker["expected"]) for worker in fixture["workers"]}
+          assert set(expected) == {1, 2, 3}
+          for phase, multiplier in [("initial", 1), ("completed-retry", 1), ("checkpoint-replay", 2)]:
+              report = json.loads((directory / f"verify-{phase}.json").read_text())
+              workers = {worker["worker"]: worker for worker in report["workers"]}
+              assert report["phase"] == phase and len(report["workers"]) == 3 and set(workers) == set(expected)
+              for worker, count in expected.items():
+                  assert workers[worker]["partitions"] == worker
+                  assert workers[worker]["distinctEpisodes"] == count
+                  assert workers[worker]["records"] == count * multiplier
+              assert report["records"] == sum(expected.values()) * multiplier
+              assert report["distinctEpisodes"] == sum(expected.values())
+          print("All three whole-topic worker acceptance phases executed successfully")
+          PYTHON
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rust-runner-compose
+          path: |
+            target/rust-runner-compose/
+            target/rust-runner-linux/release/tsx-runner
 
   java:
     name: Java ${{ matrix.java }}
