@@ -19,7 +19,10 @@ All entries below execute in the browser workbench. Deployment is a separate cap
 [`align.vector`](../../systems/processors/align.vector.yaml) have existing Java processor implementations. A pure Java
 pair kernel does not establish a Wayang execution mapping. The separate
 [Rust bounded profile](../devguide/integration/rust-runner-local.md) accepts `dq.checks`, `convert.unit` and a trailing
-`resample`; these browser lessons do not deploy it. Their zero-based coordinates do not prove Kafka timestamp validity.
+`resample`. The explicit [bounded Wayang UI target](../devguide/integration/wayang-rust-compose.md) compiles those
+operations into one connected custom Rust stage and complete per-topic fragments for one to three workers.
+Its journal, private prepare, collision checks, activation and receipts are separate from the browser lesson workload.
+The browser lessons' zero-based coordinates do not prove Kafka timestamp validity.
 The
 workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to `stats.welford-ddsketch` ; the latter still
 has a parameter-contract mismatch in the [execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L129) .

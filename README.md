@@ -70,6 +70,9 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
 * **Bounded Rust replay.** `tsx-runner` 0.1.0 executes one complete Kafka topic with pass-through or range checks,
   unit conversion and a trailing resample. Explicit resource caps, acknowledged output and a local checkpoint
   bound each replay. See the [local runner guide](docs/devguide/integration/rust-runner-local.md).
+* **Bounded UI rollout through Wayang.** The workbench submits one v2 DAG to the authenticated backend and
+  PostgreSQL journal. A real custom Wayang Rust platform prepares and activates one to three whole-topic workers.
+  See the [three-worker local guide](docs/devguide/integration/wayang-rust-compose.md).
 * **Classic analytics.** DFA, MFDFA, event synchronization, return-interval statistics.
 
 ## Quick start
@@ -129,9 +132,9 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-market` | electricity-market collector (SMARD, ENTSO-E, netztransparenz.de, Energy-Charts, partner files), history archive with manifests and quality reports, backfill, twins on real history |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
-| `opentsx-wayang` | Apache Wayang 1.1.1 plugin, KafScale increments, clean DAGs, statistics, segments, SAX, DQ signals, status heartbeats, and pure Java pair kernels (TASK-020) |
+| `opentsx-wayang` | Apache Wayang 1.1.1 Java operators and local clean compiler; custom Rust platform, connected stage compiler and bounded whole-topic rollout (TASK-020) |
 | `rust/tsx-contracts` | Offline execution-assignment validation shared with Java; [contract guide](docs/devguide/integration/wayang-shared-contracts.md) and [unified Wayang deployment plan](docs/devguide/integration/wayang-unified-plan.md) |
-| [`rust/tsx-runner`](rust/tsx-runner/README.md) | Trusted-local bounded Kafka replay, Avro episodes, three cleaning operations and retained state; separate from Wayang fleet deployment |
+| [`rust/tsx-runner`](rust/tsx-runner/README.md) | Trusted-local bounded Kafka replay and HTTP workers, Avro episodes, three cleaning operations, private prepare and acknowledged checkpoints |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |
 | `python-package/` | Python library `opentsx` |
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |

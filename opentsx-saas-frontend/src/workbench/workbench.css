@@ -564,6 +564,48 @@
   gap: 8px;
   align-content: start;
 }
+.wb-wayang-run {
+  min-width: 0;
+}
+.wb-wayang-target,
+.wb-wayang-run .wb-param {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  white-space: normal;
+  margin-bottom: 8px;
+}
+.wb-wayang-target select,
+.wb-wayang-run input,
+.wb-wayang-run select,
+.wb-wayang-run textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+.wb-wayang-run textarea {
+  font-family: var(--mono);
+  line-height: 1.5;
+  resize: vertical;
+}
+.wb-wayang-run ul {
+  padding-left: 16px;
+}
+.wb-wayang-run li {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.wb-wayang-run details {
+  margin-block: 6px;
+}
+.wb-wayang-run pre {
+  max-height: 240px;
+  overflow: auto;
+}
+.wb-wayang-run dd {
+  margin-left: 0;
+  overflow-wrap: anywhere;
+}
 .wb-code-bar {
   display: flex;
   gap: 6px;

@@ -1,9 +1,10 @@
 # Specification 20: time-series operators on Apache Wayang (S1 to S7)
 
 > Status: **draft specification, version 0.1**, 2026-11-17. Java mappings and the trusted-local Rust subset are
-> implemented; the full catalog and fleet protocols below are not implementation claims. Concept and research:
+> implemented, together with the bounded UI orchestration profile in S1.10; the full catalog and signed continuous
+> fleet protocols below are not implementation claims. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
-> [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Checked against this repository at `548f316` and
+> [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Source baseline `d9f29a1`, with the local rollout slice and
 > Apache Wayang tag `wayang-1.1.1`.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
@@ -31,7 +32,9 @@ boundary and separate bounded/continuous profiles. The implemented
 [assignment contract](../devguide/integration/wayang-shared-contracts.md) preserves original UI text and separate
 fragment text; its offline validator is not a complete runner or deployment admission service.
 The executable [`tsx-runner` 0.1.0 profile](../devguide/integration/rust-runner-local.md) is described in
-[S1.9](#s19-execute-the-trusted-local-bounded-rust-subset). Local replay does not implement S5 fleet activation.
+[S1.9](#s19-execute-the-trusted-local-bounded-rust-subset). The bounded UI-to-Wayang-to-worker contract is
+[S1.10](#s110-orchestrate-the-bounded-ui-rust-profile). Neither local profile implements the complete S5/S7 signed
+fleet protocol.
 
 ### S1.1 Identity
 
@@ -186,7 +189,36 @@ The [operator tests](../../rust/tsx-runner/src/operators.rs) replay the eight su
 `clean-ops.v1.json` through every chunk size and checkpoint restore; the seven unsupported cases reject.
 The [flow tests](../../rust/tsx-runner/tests/runner_flow.rs) exercise acknowledgement and checkpoint failures.
 The three-worker Compose fixture assigns separate topics with one, two and three internal partitions.
-It does not implement continuous execution, a remote Wayang platform, UI deployment or signed fleet activation.
+That standalone replay fixture does not exercise the remote Wayang/UI path in S1.10 or signed fleet activation.
+
+<a id="s110-orchestrate-the-bounded-ui-rust-profile"></a>
+
+### S1.10 Orchestrate the bounded UI Rust profile
+
+The implemented local orchestration path uses `opentsx.dag.v2`, `opentsx.local-rollout.v1`, the shared assignment
+envelope and S1.9 requests. It accepts one to three complete source topics, one episode sink and only the S1.9
+cleaning subset. The UI queries target capabilities and submits explicit `flowId` and exact UTF-8 `dagText` through
+the authenticated backend. Administrator permission is required. Existing continuous deployment routes are unchanged.
+
+| Boundary | Required local behavior and implementation |
+| --- | --- |
+| Source identity | `specHash` is SHA-256 of the original UI text. The PostgreSQL journal accepts that exact identity once installation-wide. A retry for the same owner/flow reuses the persisted plan and clock; another owner or flow conflicts. |
+| Physical plan | `RustRollout` normalizes catalog parameters, freezes zero-based complete partition cuts, and binds one complete topic to each assigned node. Each fragment has a distinct ID/hash while preserving the original source text/hash. Partition positions do not authorize splitting topic ownership. |
+| Runtime admission | Worker node/site, supported operators, exact binary digest, Episode fingerprint, state ABI and explicit caps must match. Placement is static by topic order and sorted worker ID, with no partition fallback or cost-based placement claim. |
+| Wayang execution | Logical topic sources, optional `UnionAllOperator`, optional fused clean chain and sink map through `RustPlugin` to one connected `RustPlatform` stage. `RustExecutor` invokes the stage action once. Topology channels cannot materialize raw records and unsupported mappings have no Java fallback. |
+| Durable control | The backend persists original source, physical plan/hash, accepted clock and whole-topic ownership before execution. The standalone coordinator owns a PostgreSQL advisory lock and reconciles the same persisted plan. The Java driver has no second authoritative journal. |
+| Prepare | Every worker fully reads and computes the capped cut privately. All preparations must succeed and input/output series ownership must be disjoint across topics before activation. |
+| Activate and recover | Workers publish prepared output and commit the completed checkpoint only after all output acknowledgements. Exact completed retry returns the receipt. `activationRetryable=true` retains saved candidate bytes and request identity; the coordinator retains running state and topic ownership until identical retry is reconciled. |
+| Completion | Completion requires verified receipts from every assigned worker. Partial activation can expose at-least-once output; there is no atomic multi-worker publication or transactional rollback. Open resample tails remain in retained state. |
+| Local transport | HTTP workers and the driver are internal trusted Compose services. Normal application login remains enabled and `TEST_LOGIN` remains false. These checks do not implement S7 signatures, production transport authentication or distributed stale-output fencing. |
+
+The [local guide](../devguide/integration/wayang-rust-compose.md) records helper commands and evidence locations.
+`RustPlatformTest` exercises real Wayang stage selection without network transport; `RustRolloutTest` checks planning,
+private preparation, ownership refusal and uncertain activation. The browser/Compose helper is a separate acceptance
+check over three topics with one, two and three internal partitions, using actual Java-derived output and receipts.
+Its initial, exact-retry and restart checks require the same twelve output records. A generated result is evidence of
+that run, not a throughput benchmark or production qualification. Continuous input, dynamic failover, broad kernels,
+operational quotas, signed rollout and Iceberg publication remain separate gates.
 
 ## S2. Plan translation
 

@@ -39,13 +39,35 @@ Each operator still requires its reference vectors and admission gate before use
 - [x] U00 offline foundation: shared execution-assignment schema, exact source/fragment identities, Java/Rust
   preflight validators and generated cross-runtime cases. This establishes no deployed runner or live fencing.
 - [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
-- [ ] U02/U03 stage compilation, fake-transport proof and durable control/delivery sequence.
-- [ ] U04/U05 minimal Rust runner and actual UI-to-two-node proof with static assignments.
+- [x] U02 local bounded stage: `RustPlugin` maps connected topic sources, unions, optional fused chain and sink to
+  `RustPlatform`; `RustExecutor` invokes one complete stage action with no raw-payload channel or Java fallback.
+- [x] U03 local bounded control: authenticated backend PostgreSQL journal and standalone advisory-lock coordinator,
+  frozen UI text/cut/clock/plan, whole-topic ownership, private worker preparation and identical activation retry.
+  Production migrations, per-site delivery sequence, restore fencing and general retire remain open.
+- [x] U05 local bounded acceptance: run the actual UI-to-Wayang-to-three-worker Compose helper, retain public
+  deployment/receipt and Java parity evidence after initial execution, exact retry and worker/coordinator restart.
 - [x] U04 trusted-local bounded subset: `tsx-runner` 0.1.0 replays one complete topic with pass-through or
   plausible-range checks, unit conversion and a trailing resample. Shared vectors, local failure/retry tests and
-  a three-worker Compose fixture are implemented. This does not complete fleet activation or U05.
+  a standalone three-worker Compose fixture are implemented. The separate UI rollout helper exercises the custom
+  Wayang stage and journal path; production fleet activation remains open.
 - [ ] U06 production stale-output enforcement, rollout, policy and operating qualification.
 - [ ] U08 bounded Iceberg snapshot/seal/publication profile.
+
+### Local bounded UI rollout evidence
+
+The [local guide](../docs/devguide/integration/wayang-rust-compose.md) records the helper and evidence directory.
+`RustPlatformTest` checks actual Wayang Rust stage selection, original node retention and refusal without Java fallback.
+`RustRolloutTest` checks one original UI document lowered to complete distinct-topic fragments, all-private preparation,
+series collision refusal, receipt validation and same-request uncertain-publication retry. Backend tests check normal
+role/flow ownership, installation-wide source identity, persisted-plan reuse and ownership retention on uncertainty.
+Worker lifecycle tests check prepare, activation, checkpoint recovery and exact completed retry.
+
+The separate browser/Compose acceptance submits one actual UI DAG over topics with one, two and three partitions.
+The local acceptance on 2026-11-17 passed all three phases: initial execution, exact UI retry and worker/driver/
+coordinator restart. Each phase retained twelve output records and twelve distinct episode identities.
+`RustRolloutComposeFixture` computes reference output from that submitted DAG and requires twelve unchanged canonical
+output records through retry and restart. Run-generated `result.json` and per-phase views supply actual execution
+results; unit tests alone do not satisfy that acceptance. Activation remains at least once and is not atomic publication.
 
 ### A0: foundation and decisions
 - [x] Owner decisions D-T1 to D-T12 recorded in the decision table below (2026-11-16: every recommendation accepted).

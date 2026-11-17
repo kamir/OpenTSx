@@ -124,6 +124,83 @@ jobs:
             target/rust-runner-compose/
             target/rust-runner-linux/release/tsx-runner
 
+  wayang-rust-compose:
+    name: UI Wayang Rust three-worker acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      KAFSCALE_BROKER_PORT: "39093"
+      WAYANG_UI_PORT: "18081"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.22.2"
+          cache: npm
+          cache-dependency-path: opentsx-saas-frontend/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Install the pinned browser runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/wayang-browser" --no-audit --no-fund --ignore-scripts playwright@1.62.1
+          node "$RUNNER_TEMP/wayang-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Check helper guards and syntax
+        run: |
+          python3 -m unittest discover -s tools -p test_verify_wayang_rust_compose.py -v
+          python3 -m py_compile tools/verify_wayang_rust_compose.py
+          python3 tools/verify_wayang_rust_compose.py --help
+          node --check tools/wayang_rust_browser.mjs
+      - name: Verify the real UI through Wayang and three Rust workers
+        run: python3 tools/verify_wayang_rust_compose.py --playwright-module "$RUNNER_TEMP/wayang-browser/node_modules/playwright"
+      - name: Require browser, Java parity and restart evidence
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          root = Path("target/wayang-rust-compose")
+          result = json.loads((root / "result.json").read_text())
+          assert result["workers"] == 3
+          assert result["phases"] == ["initial", "retry", "restart"]
+          assert result["verifiedRecords"] == result["distinctEpisodes"] == 12
+          for phase in result["phases"]:
+              browser = json.loads((root / f"browser-{phase}.json").read_text())
+              parity = json.loads((root / f"verified-{phase}.json").read_text())
+              assert browser["state"] == "completed" and browser["assignments"] == 3
+              assert parity["verifiedRecords"] == parity["distinctEpisodes"] == 12
+              assert (root / f"browser-{phase}.png").is_file()
+              assert (root / f"deployment-{phase}.json").is_file()
+          print("Actual UI submission, Java parity and completed service restart were verified")
+          PYTHON
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: wayang-rust-browser-parity
+          path: |
+            target/wayang-rust-compose/result.json
+            target/wayang-rust-compose/fixture.json
+            target/wayang-rust-compose/submitted-dag.txt
+            target/wayang-rust-compose/browser-*.json
+            target/wayang-rust-compose/browser-*.png
+            target/wayang-rust-compose/deployment-*.json
+            target/wayang-rust-compose/verified-*.json
+            target/wayang-rust-compose/browser-*.log
+            target/wayang-rust-compose/parity-*.log
+            target/wayang-rust-compose/runtime.log
+
   java:
     name: Java ${{ matrix.java }}
     runs-on: ubuntu-24.04

@@ -25,7 +25,8 @@ pub struct InputRecord {
     pub payload: Vec<u8>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct OutputRecord {
     pub key: String,
     pub timestamp: i64,

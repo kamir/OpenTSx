@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const SUPPORTED_OPS: &[&str] = &["dq.checks", "convert.unit", "resample"];
-const STATE_ABI: &str = "opentsx.rust.clean-state.v1";
+pub const STATE_ABI: &str = "opentsx.rust.clean-state.v1";
 const MAX_EMPTY_WINDOWS: i64 = 10_000;
 
 #[derive(Clone, Copy, Debug)]

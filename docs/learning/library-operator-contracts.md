@@ -28,7 +28,10 @@ physical compilation accepts clean series sinks, not statistics sinks or federat
 validation and the separately constructible `TsxStatsWindow` operator do not expand that compiler scope.
 Remote deployment and authorization remain outside this local Java API. The separate
 [`tsx-runner` bounded profile](../devguide/integration/rust-runner-local.md) executes pass-through, plausible-range
-checks, unit conversion and a trailing resample without a remote Wayang executor.
+checks, unit conversion and a trailing resample. The separate
+[local UI rollout](../devguide/integration/wayang-rust-compose.md) uses `RustRollout` with `DagToWayang.parameters`
+and a custom Rust platform. Its logical sources, union, fused clean chain and sink form one Wayang stage; complete
+fragments run on HTTP workers. It does not expand the original local Java compiler's sink or operator scope.
 
 ## Analyze DFA
 
@@ -232,6 +235,8 @@ Constructing the logical source performs no broker replay. The Java execution op
 schema-fingerprint checks and no consumer-group offset commits. The physical learning assignment owns the whole
 topic; internal ranges never authorize placing its partitions on different nodes.
 Offline wire/settings tests and disposable-broker integration are separate checks.
+`RustTopicSource` is a separate logical source for the bounded remote stage. Its topology channel does not deliver
+raw episodes to Java; the assigned Rust worker reads every internal partition of the frozen whole-topic cut.
 
 ## Construct a topic sink
 
@@ -239,6 +244,9 @@ Offline wire/settings tests and disposable-broker integration are separate check
 The Java sink uses the KafScale producer settings, series-ID keys and acknowledgements.
 Constructing this object is not a successful write. Wire conversion and client-setting unit tests run offline;
 end-to-end production and crash tests need a disposable broker. Acknowledgements do not provide exactly-once delivery.
+The remote `RustTopicSink` names the shared output contract while HTTP workers publish the records. All workers
+prepare privately and the stage checks derived-series ownership before activation. One worker can acknowledge output
+before another fails; neither a shared sink nor a successful Wayang stage supplies atomic multi-worker publication.
 
 The sink's `Object` channel accepts supported Avro records or validated
 `opentsx.signal.v1` JSON, with a series-ID key and schema header. JSON signal
@@ -259,6 +267,9 @@ The starter passes `Map.of()` as its sixth argument. Nonempty state is covered b
 store `SeriesStream.state()` JSON and statistics store Base64 engine state in the per-node map.
 They do not implement the proposed orchestration state-ABI migration, fenced ownership or deployment grant policy.
 Each assigned whole topic retains all of its internal positions; the checkpoint file is not a partition scheduler.
+The Rust HTTP worker uses its own checksummed completion envelope and retained pipeline state. It commits after all
+output acknowledgements. Saved prepared output supports identical activation retry after an uncertain publication;
+completed retry returns the saved receipt. This does not change `TsxCheckpoint.load` or make its state portable.
 
 For threshold and extremum segmentation, the per-node map contains Base64
 segmenter state. It includes retained source records, timestamps, raw sample
@@ -276,6 +287,10 @@ Every input owns one whole `(fragment,binding,topic)`. Its positive `partitionCo
 `positions` for `0..N-1`; offsets are checked decimal strings. Duplicate owners and incomplete positions reject.
 Schema shape checks, exact hashes, complete internal positions and set consistency are separate gates.
 Passing these gates does not authorize deployment, prove broker metadata or enforce live fencing.
+`RustRollout` adds actual capability, artifact/state-ABI, source inventory and catalog checks. It preserves one original
+UI text/hash while giving per-topic fragments distinct identities. The authenticated backend persists its physical
+plan, clock and topic ownership before the standalone coordinator executes the Wayang stage. The three-worker
+acceptance fixture reads actual output and receipts; the offline assignment starter does not dispatch that workload.
 
 ## Generate mean-reverting demo values
 
