@@ -708,30 +708,55 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-
         String operationLabel = "PDF of ";
-        String operationPrefix = "PDF_";
-
         String source = this.label;
-        String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
+        String target = "PDF_" + this.label;
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-
-        double minY = Integer.parseInt(this.jtMIN.getText());
-        double maxY = Integer.parseInt(this.jtMAX.getText());
-        int bins = Integer.parseInt(this.jtBINS.getText());
-
-        for (TimeSeriesObject r : this.rows) {
-
-            TimeSeriesObject distr = r.distributionOfYValues((int) minY, (int) maxY, bins);
-            v.add(distr);
-
+        try {
+            if (rows == null || rows.isEmpty()) {
+                throw new IllegalArgumentException("Select at least one series for a histogram");
+            }
+            int minY;
+            int maxY;
+            try {
+                minY = Integer.parseInt(this.jtMIN.getText());
+                maxY = Integer.parseInt(this.jtMAX.getText());
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException("Histogram bounds must be integers with minimum less than maximum", failure);
+            }
+            if (minY >= maxY) {
+                throw new IllegalArgumentException("Histogram bounds must be integers with minimum less than maximum");
+            }
+            int bins;
+            try {
+                bins = Integer.parseInt(this.jtBINS.getText());
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException("Histogram bin count must be a positive integer", failure);
+            }
+            if (bins <= 0) {
+                throw new IllegalArgumentException("Histogram bin count must be a positive integer");
+            }
+            for (TimeSeriesObject r : rows) {
+                if (r == null || r.getXValues() == null || r.getYValues() == null
+                        || r.getXValues().size() != r.getYValues().size() || r.getYValues().isEmpty()) {
+                    throw new IllegalArgumentException("Histogram requires at least one coordinate-value pair");
+                }
+                Vector x = r.getXValues();
+                Vector y = r.getYValues();
+                for (int index = 0; index < y.size(); index++) {
+                    if (!(x.get(index) instanceof Double coordinate) || !(y.get(index) instanceof Double value)
+                            || !Double.isFinite(coordinate) || !Double.isFinite(value)) {
+                        throw new IllegalArgumentException("Histogram requires finite coordinates and values");
+                    }
+                }
+                v.add(r.distributionOfYValues(minY, maxY, bins));
+            }
+            MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions of " + this.label);
+        } catch (IllegalArgumentException failure) {
+            JOptionPane.showMessageDialog(this, failure.getMessage(), "Histogram failed", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions of " + this.label);
-
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
@@ -764,44 +789,26 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
     
     private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
-
         String operationLabel = "Standardized of ";
-        String operationPrefix = "Standardized_";
-
         String source = this.label;
-        String target = operationPrefix + this.label;
-
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
-
+        String target = "Standardized_" + this.label;
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject r : this.rows) {
-
-            TimeSeriesObject a = r.copy();
-
-            a = a.normalizeToStdevIsOne();
-
-            v.add(a);
-
-        }
-
         try {
-            
-            // ICorrelator c = (ICorrelator) Class.forName(correlatorClass).newInstance();
-             
-            MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), "NORM_STD=1, AVG=0 of " + this.label, null );
-
-        // }
-        // catch (ClassNotFoundException ex) {
-        //    Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
-        // } catch (InstantiationException ex) {
-        //     Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+            if (rows == null || rows.isEmpty()) {
+                throw new IllegalArgumentException("Select at least one series for standard normalization");
+            }
+            for (TimeSeriesObject r : rows) {
+                if (r == null) {
+                    throw new IllegalArgumentException("Normalization requires at least two coordinate-value pairs");
+                }
+                v.add(r.normalizeToStdevIsOne());
+            }
+            MultiChart.openWithCorrelator(v, this.jRadioButton1.isSelected(), "NORM_STD=1, AVG=0 of " + this.label, null);
+        } catch (IllegalArgumentException failure) {
+            JOptionPane.showMessageDialog(this, failure.getMessage(), "Normalization failed", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        catch (Exception ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
     }//GEN-LAST:event_jButton13ActionPerformed
 
     private void jButton14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton14ActionPerformed
