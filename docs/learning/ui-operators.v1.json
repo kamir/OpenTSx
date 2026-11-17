@@ -985,7 +985,7 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/17-learn-operators.md",
-          "opentsx-core/README.md#compare-native-histogram-slices"
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#histogram-crosscut"
