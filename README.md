@@ -149,12 +149,15 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-market` | electricity-market collector (SMARD, ENTSO-E, netztransparenz.de, Energy-Charts, partner files), history archive with manifests and quality reports, backfill, twins on real history |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
-| `opentsx-wayang` | Apache Wayang 1.1.1 catalog compiler, signed bounded JVM federation, bounded and trusted-local continuous whole-topic Rust execution (TASK-020) |
+| `opentsx-wayang` | Apache Wayang 1.1.1 catalog compiler with JVM and Rust execution (TASK-020) |
 | `rust/tsx-contracts` | Offline execution-assignment validation shared with Java; [contract guide](docs/devguide/integration/wayang-shared-contracts.md) and [unified Wayang deployment plan](docs/devguide/integration/wayang-unified-plan.md) |
 | [`rust/tsx-runner`](rust/tsx-runner/README.md) | Trusted-local bounded Kafka replay and HTTP workers, Avro episodes, three cleaning operations, private prepare and acknowledged checkpoints |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |
 | `python-package/` | Python library `opentsx` |
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |
+
+The Wayang module supports signed bounded JVM federation, plus bounded and
+trusted-local continuous whole-topic Rust execution.
 
 The 2025 documentation and old demos are in [`archive/`](archive/). Retired modules were removed from `master`
 (last state: commit `315f01d`, see the [migration chapter](docs/user-manual/13-migration.md)).

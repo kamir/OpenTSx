@@ -5,7 +5,7 @@ See [concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specificatio
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md) and
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md). Verified with JDK 21 on 2026-11-17.
 
-Status: phases A2 and A3, with all 16 native Java entries in frozen
+Status: phases A2, A3 and the qualified bounded JVM profile of A4, with all 16 native Java entries in frozen
 [`tsx-catalog/1`](../systems/catalogs/tsx-catalog-1.yaml). The module reads and
 writes KafScale topics from Wayang plans, runs checkpointed increments, and executes
 the clean chain and window statistics. It also contains the pure Java
@@ -271,6 +271,13 @@ and freezes its Java classpath. The same source guard runs before and after
 execution. Its result directory contains `bytes.csv`, `windows.csv`, `run.json`,
 `metadata.json`, logs and a generated `REPORT.md`. Results are written from the
 executed workload and validated before report generation.
+
+The [A4.9 report and raw samples](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+record nine site/route measurements, 420 reference windows and 2,520 exact
+merge-order comparisons. Use the
+[measurement instructions](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#143-measure-bounded-jvm-federation)
+to rerun the bounded profile. Kafka frames, HTTP bodies and TLS client-stream
+bytes describe different layers; their route clocks cover different work.
 
 ## Compute window statistics
 

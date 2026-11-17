@@ -10,6 +10,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Qualified bounded W3 JVM federation measurement for TASK-020 A4.9. The
+  [report and raw samples](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+  retain per-site Kafka, HTTP and TLS counters, 420 window comparisons and
+  2,520 exact merge-order checks, with source/runtime hashes and commands.
+
 - Reviewed MLflow registration and immutable fitted-state JSON artifacts, prediction without refitting,
   verified Kafka training capture, and persistent ARIMA/SARIMA Smart Topic scoring on the local CP profile.
   The Workbench exposes registration, measured approval thresholds, start/stop, actual worker state and
