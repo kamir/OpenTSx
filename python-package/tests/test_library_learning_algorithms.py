@@ -139,3 +139,125 @@ def test_learning_covers_every_exported_python_algorithm(tmp_path):
     fixture.write_text(json.dumps(unknown))
     with pytest.raises(AssertionError):
         check_coverage(fixture)
+
+
+def test_learning_forecast_arima_preserves_clock_and_random_walk_uncertainty():
+    from opentsx import forecast_arima
+
+    starter = execute_starter("library.forecast-arima")
+    result = starter["result"]
+    forecast = result["result"]
+    np.testing.assert_allclose(forecast["mean"], starter["values"][-1], atol=1e-8)
+    widths = np.asarray(forecast["upper"]) - np.asarray(forecast["lower"])
+    np.testing.assert_allclose(widths / widths[0], np.sqrt(np.arange(1, 7)), rtol=1e-6)
+    assert result["method"] == "arima"
+    assert result["parameters"]["order"] == [0, 1, 0]
+    assert result["input"]["unit"] == "MW"
+    assert result["input"]["episode_id"] == starter["episode"]["episodeId"]
+    assert forecast["timestamps_micros"] == [2000 + index * 10 for index in range(6)]
+    np.testing.assert_array_equal(starter["episode"]["values"], starter["values"])
+    with pytest.raises(ValueError, match="steps"):
+        forecast_arima(starter["values"], steps=0)
+
+
+def test_learning_forecast_baselines_match_closed_form_and_degenerate_bounds():
+    from opentsx import forecast_baseline
+
+    starter = execute_starter("library.forecast-baseline")
+    expected = {
+        "mean": [5.5] * 4,
+        "naive": [11.0] * 4,
+        "drift": [12.0, 13.0, 14.0, 15.0],
+        "seasonal_naive": [8.0, 9.0, 10.0, 11.0],
+    }
+    for method, values in expected.items():
+        record = starter["result"][method]
+        np.testing.assert_allclose(record["result"]["mean"], values, atol=1e-12)
+        assert record["parameters"]["method"] == method
+        assert np.all(np.asarray(record["result"]["lower"]) <= values)
+        assert np.all(np.asarray(record["result"]["upper"]) >= values)
+    constant = starter["constant"]["result"]
+    assert constant["mean"] == constant["lower"] == constant["upper"] == [7.0] * 4
+    assert constant["interval_status"] == ["degenerate"] * 4
+    np.testing.assert_array_equal(starter["values"], np.arange(12, dtype=float))
+    with pytest.raises(ValueError, match="seasonal naive"):
+        forecast_baseline(starter["values"], steps=2, method="seasonal_naive", seasonal_period=12)
+
+
+def test_learning_rolling_backtest_keeps_origins_training_scales_and_future_isolation():
+    from opentsx import rolling_backtest
+
+    starter = execute_starter("library.rolling-backtest")
+    result = starter["result"]["result"]
+    changed = starter["changed_result"]["result"]
+    assert [fold["training_stop"] for fold in result["folds"]] == [8, 12, 16]
+    assert all(fold["training_stop"] == fold["test_start"] for fold in result["folds"])
+    assert result["metrics"]["naive"]["mae"] == 2
+    assert result["metrics"]["naive"]["mase"] == 2
+    assert result["metrics"]["naive"]["rmse"] == pytest.approx(np.sqrt(14 / 3))
+    assert result["metrics"]["drift"]["mae"] == 0
+    assert len(result["cases"]["naive"]) == 9
+    assert result["folds"][0] == changed["folds"][0]
+    assert result["cases"]["naive"][:3] == changed["cases"]["naive"][:3]
+    assert changed["cases"]["naive"][3]["predicted"] != result["cases"]["naive"][3]["predicted"]
+    with pytest.raises(ValueError, match="window"):
+        rolling_backtest(starter["values"], initial=8, window=9)
+
+
+def test_learning_seasonal_decomposition_reconstructs_inputs_without_claiming_causality():
+    from opentsx import seasonal_decomposition
+
+    starter = execute_starter("library.seasonal-decomposition")
+    record = starter["result"]
+    result = record["result"]
+    seasonal = sum(np.asarray(part) for part in result["seasonal"].values())
+    np.testing.assert_allclose(
+        np.asarray(result["trend"]) + seasonal + np.asarray(result["residual"]),
+        starter["values"],
+        rtol=1e-12,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        np.asarray(result["seasonally_adjusted"]) + seasonal,
+        starter["values"],
+        rtol=1e-12,
+        atol=1e-12,
+    )
+    assert record["method"] == "mstl"
+    assert record["parameters"]["periods"] == [8, 16]
+    assert record["parameters"]["causal"] is False
+    assert record["parameters"]["iterations"] == 2
+    assert starter["single"]["method"] == "stl"
+    assert all(
+        len(part) == 128 and np.all(np.isfinite(part)) for part in result["seasonal"].values()
+    )
+    with pytest.raises(ValueError, match="half"):
+        seasonal_decomposition(starter["values"], periods=64)
+
+
+def test_learning_power_transform_checks_log_identity_signed_values_and_domain():
+    from opentsx import power_transform
+
+    starter = execute_starter("library.power-transform")
+    result = starter["result"]
+    np.testing.assert_allclose(result["result"]["values"], np.log(starter["values"]), atol=1e-12)
+    assert result["parameters"] == {"lambda": 0.0, "estimated": False}
+    assert result["result"]["value_space"] == "power_transformed"
+    np.testing.assert_allclose(starter["signed"]["result"]["values"], starter["mixed"], atol=1e-12)
+    np.testing.assert_array_equal(starter["values"], [1, 2, 4, 8])
+    with pytest.raises(ValueError, match="positive"):
+        power_transform([0, 1], method="boxcox", lmbda=0)
+
+
+def test_learning_inverse_power_transform_restores_both_signed_log_limits_and_domain():
+    from opentsx import inverse_power_transform
+
+    starter = execute_starter("library.inverse-power-transform")
+    for record in starter["result"].values():
+        np.testing.assert_allclose(
+            record["result"]["values"], starter["mixed"], rtol=1e-12, atol=1e-12
+        )
+        assert record["result"]["value_space"] == "original"
+    np.testing.assert_allclose(starter["positive"]["result"]["values"], [1, 2, 4, 8], atol=1e-12)
+    with pytest.raises(ValueError, match="domain"):
+        inverse_power_transform([-1], method="boxcox", lmbda=1)
