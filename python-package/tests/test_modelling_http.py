@@ -45,17 +45,11 @@ def test_modelling_route_preserves_service_status(monkeypatch, tmp_path, status)
     assert calls == [{}]
 
 
-@pytest.mark.parametrize(
-    "body", [b'{"v":NaN}', b'{"v":Infinity}', b'{"v":-Infinity}', b"{"]
-)
-def test_modelling_route_rejects_invalid_json_before_execution(
-    monkeypatch, tmp_path, body
-):
+@pytest.mark.parametrize("body", [b'{"v":NaN}', b'{"v":Infinity}', b'{"v":-Infinity}', b"{"])
+def test_modelling_route_rejects_invalid_json_before_execution(monkeypatch, tmp_path, body):
     api = importlib.import_module("opentsx.client.research")
     calls = []
-    monkeypatch.setattr(
-        api, "run_modelling", lambda doc: calls.append(doc), raising=False
-    )
+    monkeypatch.setattr(api, "run_modelling", lambda doc: calls.append(doc), raising=False)
     status, error = post(monkeypatch, tmp_path, body)
     assert status == 400
     assert "error" in error

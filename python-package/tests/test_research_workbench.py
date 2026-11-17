@@ -149,9 +149,9 @@ def test_tutorial_operator_runs_through_the_same_publication_path():
     store = Store([episode([3, 4])])
     receipt = api.execute(store, document("episode_rms"))
     assert receipt["published"] == 1
-    assert json.loads(store.published[0][1])["analysis"]["result"][
-        "value"
-    ] == pytest.approx(np.sqrt(12.5))
+    assert json.loads(store.published[0][1])["analysis"]["result"]["value"] == pytest.approx(
+        np.sqrt(12.5)
+    )
 
 
 def test_newly_created_seed_topic_does_not_require_immediate_leader_watermarks(
@@ -169,10 +169,7 @@ def test_newly_created_seed_topic_does_not_require_immediate_leader_watermarks(
 
         def create_topics(self, topics, request_timeout):
             assert len(topics) == 2
-            return {
-                str(index): SimpleNamespace(result=lambda timeout: None)
-                for index in range(2)
-            }
+            return {str(index): SimpleNamespace(result=lambda timeout: None) for index in range(2)}
 
     class Producer:
         def __init__(self, config):
@@ -185,9 +182,7 @@ def test_newly_created_seed_topic_does_not_require_immediate_leader_watermarks(
         def flush(self, timeout):
             return 0
 
-    monkeypatch.setitem(
-        sys.modules, "confluent_kafka", SimpleNamespace(Producer=Producer)
-    )
+    monkeypatch.setitem(sys.modules, "confluent_kafka", SimpleNamespace(Producer=Producer))
     monkeypatch.setitem(
         sys.modules,
         "confluent_kafka.admin",

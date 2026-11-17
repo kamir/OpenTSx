@@ -13,15 +13,11 @@ from opentsx.core.time_series import TimeSeriesObject
 
 def _options(source, sample_rate, nperseg, noverlap, nfft, window, detrend, alpha):
     nperseg = integer(nperseg, "nperseg", minimum=4)
-    noverlap = (
-        nperseg // 2 if noverlap is None else integer(noverlap, "noverlap", minimum=0)
-    )
+    noverlap = nperseg // 2 if noverlap is None else integer(noverlap, "noverlap", minimum=0)
     nfft = nperseg if nfft is None else integer(nfft, "nfft")
     alpha = probability(alpha)
     if nperseg > source["nobs"] or noverlap >= nperseg or nfft < nperseg:
-        raise ValueError(
-            "segment, overlap and FFT lengths are inconsistent with the input"
-        )
+        raise ValueError("segment, overlap and FFT lengths are inconsistent with the input")
     if window not in ("hann", "hamming", "boxcar"):
         raise ValueError("window must be hann, hamming or boxcar")
     if detrend is not False and detrend not in ("constant", "linear"):
@@ -38,9 +34,7 @@ def _options(source, sample_rate, nperseg, noverlap, nfft, window, detrend, alph
         frequency_unit = "Hz"
     if "interval_micros" in source:
         derived = 1_000_000 / source["interval_micros"]
-        if sample_rate is not None and not np.isclose(
-            sample_rate, derived, rtol=1e-12, atol=0
-        ):
+        if sample_rate is not None and not np.isclose(sample_rate, derived, rtol=1e-12, atol=0):
             raise ValueError("declared sample rate disagrees with the episode interval")
         sample_rate = derived
         frequency_unit = "Hz"
@@ -131,9 +125,7 @@ def welch_spectrum(
         "lower": lower,
         "upper": upper,
         "confidence_method": "overlap-adjusted chi-square approximation",
-        "density_unit": (
-            None if unit is None else f"{unit}^2/{metadata['frequency_unit']}"
-        ),
+        "density_unit": (None if unit is None else f"{unit}^2/{metadata['frequency_unit']}"),
     }
     return record(
         "welch",
@@ -149,10 +141,7 @@ def _aligned(first, second, first_source, second_source):
     if first_source["nobs"] != second_source["nobs"]:
         raise ValueError("paired inputs must align and have equal sample counts")
     if isinstance(first, Mapping) and isinstance(second, Mapping):
-        if any(
-            first_source[k] != second_source[k]
-            for k in ["t_start_micros", "interval_micros"]
-        ):
+        if any(first_source[k] != second_source[k] for k in ["t_start_micros", "interval_micros"]):
             raise ValueError("episode time axes do not align")
     elif isinstance(first, TimeSeriesObject) and isinstance(second, TimeSeriesObject):
         if not np.array_equal(first.timestamps, second.timestamps):
@@ -212,23 +201,17 @@ def cross_spectrum(
         "second_density": pyy.tolist(),
         "cross_real": pxy.real.tolist(),
         "cross_imaginary": pxy.imag.tolist(),
-        "phase_radians": [
-            float(v) if ok else None for v, ok in zip(phase, valid_phase)
-        ],
+        "phase_radians": [float(v) if ok else None for v, ok in zip(phase, valid_phase)],
         "valid_phase": valid_phase.tolist(),
         "coherence": [float(v) if ok else None for v, ok in zip(coherence, valid)],
         "valid_coherence": valid.tolist(),
         "coherence_null_threshold": float(threshold),
         "coherence_threshold_valid": threshold_valid.tolist(),
         "first_density_unit": (
-            None
-            if first_unit is None
-            else f"{first_unit}^2/{metadata['frequency_unit']}"
+            None if first_unit is None else f"{first_unit}^2/{metadata['frequency_unit']}"
         ),
         "second_density_unit": (
-            None
-            if second_unit is None
-            else f"{second_unit}^2/{metadata['frequency_unit']}"
+            None if second_unit is None else f"{second_unit}^2/{metadata['frequency_unit']}"
         ),
         "cross_density_unit": (
             None
