@@ -122,6 +122,12 @@ preserves existing files on preparation or I/O failure. See the
 [preview and export contract](../../opentsx-core/README.md#preview-and-export-a-time-series) for formats,
 exceptions and regression checks.
 
+The native `save PN` action writes the table, PNG and optional caption in order, replacing each file atomically.
+A failed step stops the export and displays its destination plus the files saved in that attempt. Earlier outputs
+remain available; the failed destination is preserved. See
+[native table and chart saving](../../opentsx-core/README.md#save-native-tables-and-charts) for formats, errors
+and regression checks.
+
 The Java implementations work on `org.opentsx.data.series.TimeSeriesObject` and on TSBucket sequence files. Most are
 standalone programs with a `main` method:
 

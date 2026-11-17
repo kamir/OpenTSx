@@ -55,6 +55,44 @@ The tests cover 0, 1, 2, 4, 5 and 8 points, decimal separators, metadata, native
 thread, subtype formats and deterministic preparation, encoding and replacement failures. The Java CI matrix
 runs them under Xvfb.
 
+## Save native tables and charts
+
+Choose `save PN` in the `Pix-Node` tab to save the selected series, chart and optional caption. With folder field
+`<base>/` and a filename-safe chart label `<name>`, the existing filename controls produce these outputs in order.
+`<base>` is the output folder and `<name>` is the chart label after filename cleaning.
+The configured folder text is preserved, including spaces, hyphens and Unicode characters. Only the chart label
+is cleaned. An empty folder field writes relative to the current working directory.
+
+| Output | Destination | Format |
+| --- | --- | --- |
+| Table | `<base>/<name>/<name>.mwt.tsv` | UTF-8 text with the existing table layout and headers |
+| Chart | `<base>/<name>.png` | PNG, 800 by 600 pixels |
+| Caption, when present | `<base>/caption_<name>.tex` | UTF-8 text |
+
+Each file is prepared, written to a sibling temporary file and closed before atomic replacement. Preparation,
+encoding, writing or replacement failures preserve that destination. Existing POSIX access permissions are retained
+where supported; destination symbolic links are rejected. Atomic replacement is required. Failed temporary files
+are cleaned up, with cleanup failures attached to the reported exception. The save dialog also shows these
+failures as `Additional failure:` lines.
+
+The files are saved separately. The first failure stops the export, leaving completed files in place. The
+`Save failed` dialog identifies the failed step and destination and lists `Saved in this attempt:` paths, or
+`No files were saved.` Correct the reported destination or input before retrying; a retry writes the outputs in
+the same order.
+
+Programmatic `TSOperationControlerPanel.save()` throws `IOException` with that context and the original cause.
+`MeasurementTable.writeToFile` and `storeChartImageAsPNG` retain their existing signatures and report I/O failures
+with `UncheckedIOException`. Rendering errors propagate. Table values, column layout, headers and PNG dimensions
+are retained; malformed Unicode text fails instead of replacing invalid characters.
+
+You need JDK 17 or later, Maven, and a display for the Swing checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=MeasurementTableExportTest,TSOperationControlerPanelSaveTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
 ## Compare native histogram slices
 
 In the native workbench, select time series and choose `Histogram cross-cut`. Enter a window length in samples,
