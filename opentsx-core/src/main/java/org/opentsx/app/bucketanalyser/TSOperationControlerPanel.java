@@ -939,33 +939,53 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
     private void jButton20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton20ActionPerformed
 
-        String operationLabel = "PDF (cross)";
-        String operationPrefix = "PDF_cross_";
+        if (rows == null || rows.isEmpty() || rows.firstElement() == null
+                || rows.firstElement().getXValues().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Select at least one nonempty series for a cross-cut histogram");
+            return;
+        }
 
-        String source = this.label;
-        String target = operationPrefix + this.label;
+        String input = JOptionPane.showInputDialog(this, "Window length l=");
+        if (input == null) return;
 
-        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(source, target, operationLabel));
+        int length;
+        try {
+            length = Integer.parseInt(input);
+            if (length <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Window length must be a positive integer");
+            return;
+        }
 
-        String i = javax.swing.JOptionPane.showInputDialog("Window length l=");
+        int minY;
+        int maxY;
+        try {
+            minY = Integer.parseInt(this.jtMIN.getText());
+            maxY = Integer.parseInt(this.jtMAX.getText());
+            if (minY >= maxY) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Histogram bounds must be integers with minimum less than maximum");
+            return;
+        }
 
-        int l = Integer.parseInt(i);
-        int pos = 0;
-
-        double minY = Integer.parseInt(this.jtMIN.getText());
-        double maxY = Integer.parseInt(this.jtMAX.getText());
-        int bins = Integer.parseInt(this.jtBINS.getText());
+        int bins;
+        try {
+            bins = Integer.parseInt(this.jtBINS.getText());
+            if (bins <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Histogram bin count must be a positive integer");
+            return;
+        }
 
         Vector<TimeSeriesObject> v = new Vector<TimeSeriesObject>();
-
-        // create series of cuts ...
-        while (pos < this.rows.elementAt(0).getXValues().size()) {
-
-            System.out.println(pos + " => " + (pos + l));
+        int count = rows.firstElement().getXValues().size();
+        int pos = 0;
+        while (pos < count) {
+            long end = pos + (long) length;
 
             HaeufigkeitsZaehlerDouble hz = new HaeufigkeitsZaehlerDouble();
 
-            hz.setLabel(pos + "_" + (pos + l));
+            hz.setLabel(pos + "_" + end);
 
             hz.min = minY;
             hz.max = maxY;
@@ -973,20 +993,22 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
             hz.intervalle = bins;
 
             for (TimeSeriesObject r : this.rows) {
-
-                hz.addData(r.cutOut(pos, pos + l).getYValues());
-
+                int size = r.getXValues().size();
+                if (pos < size) {
+                    hz.addData(r.cutOut(pos, (int) Math.min(end, size)).getYValues());
+                }
             }
 
             hz.calcWS();
 
             v.add(hz.getHistogram());
-            pos = pos + l;
+            pos += Math.min(length, count - pos);
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions (tims slice l=" + l + " of " + this.label);
-
+        MultiChart.open(v, this.jRadioButton1.isSelected(), "y-value distributions (time slice l=" + length + ") of " + this.label);
+        MacroTrackerFrame.addTransformation(TSBucketTransformation.getTransformation(
+                this.label, "PDF_cross_" + this.label, "PDF (cross)"));
 
     }//GEN-LAST:event_jButton20ActionPerformed
 

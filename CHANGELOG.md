@@ -189,6 +189,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native `Histogram cross-cut` validates selections, positive integer window lengths, ordered integer bounds and
+  positive bin counts. Cancelling or rejecting input leaves charts and the recorder unchanged. Cuts stop at each
+  series' available samples while preserving nominal window labels, pooled raw counts and input series.
+
 - Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
   write every point, retain subtype formats and metadata, and report errors while preserving existing files
   through atomic replacement.
