@@ -22,6 +22,71 @@ This is the original OpenTSx library. It works on `TimeSeriesObject` and TSBucke
   interface.
 * **v2 data:** convert episodes with `opentsx-legacy-bridge`.
 
+## Preview and export a time series
+
+`TimeSeriesObject.toString()` shows up to five coordinate-value pairs and marks truncation only when more
+points exist. Empty and short series, including disabled status recording, can be shown in the native preview.
+
+Both `writeToFile(File)` and `writeToFile(File, Character)` export every pair as UTF-8 text without a preview
+ellipsis. The base format retains its comment headers, metadata, numeric patterns and space-separated columns.
+The character overload selects the decimal separator of numeric columns; commas in labels and comments stay
+unchanged. Existing FFT, marked, qualified and dated formats retain their precision and additional columns.
+Formatting does not change the input vectors or their numeric formatters.
+
+Relative filenames and missing parent directories are supported. The writer prepares the full text, writes a
+sibling temporary file and atomically replaces the destination after closing the file. Existing POSIX access
+permissions are retained where supported. Destination symbolic links are rejected. Atomic replacement is required;
+unsupported moves fail explicitly.
+
+Malformed coordinate/value vectors and a null decimal separator raise `IllegalArgumentException` before writing.
+I/O failures raise `UncheckedIOException` with the original cause. Failed preparation, encoding or replacement
+preserves an existing destination. Temporary files are cleaned up; any cleanup failure is attached to the
+reported exception.
+
+You need JDK 17 or later, Maven, and a display for the Swing preview checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TimeSeriesObjectTextExportTest,TimeSeriesSubclassExportTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
+The tests cover 0, 1, 2, 4, 5 and 8 points, decimal separators, metadata, native preview calls on the event dispatch
+thread, subtype formats and deterministic preparation, encoding and replacement failures. The Java CI matrix
+runs them under Xvfb.
+
+## Compare native histogram slices
+
+In the native workbench, select time series and choose `Histogram cross-cut`. Enter a window length in samples,
+from 1 through 2147483647. The action pools values from all selected series into each consecutive slice and
+returns the existing raw-count histogram format. Window start positions stop at the first selected series' length.
+Each half-open window runs from its start to start plus length; labels retain those nominal bounds. Each series
+contributes its available samples within that window, including longer series' values beyond the first series'
+final sample. Input series stay unchanged.
+
+Cancel the window dialog to return without a chart or recorded transformation. The first selected series must
+contain samples; other selected series may be empty. A missing selection or an empty first series is rejected
+before the dialog opens. Invalid input produces no chart or recorded transformation:
+
+| Error | Accepted input |
+| --- | --- |
+| `Select at least one nonempty series for a cross-cut histogram` | A selection whose first series contains samples |
+| `Window length must be a positive integer` | An integer from 1 through 2147483647 |
+| `Histogram bounds must be integers with minimum less than maximum` | Two signed 32-bit integers with minimum less than maximum |
+| `Histogram bin count must be a positive integer` | An integer from 1 through 2147483647 |
+
+Blank, nonnumeric, fractional, overflowing, zero and negative window lengths are rejected. This native action uses
+legacy histogram bins and raw counts; the [browser lesson](../docs/learning/ui-operator-contracts.md#histogram-crosscut)
+uses its own normalized bins and slice limits.
+
+You need JDK 17 or later, Maven, and a display for the Swing checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TSOperationControlerPanelHistogramTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
 ## Normalize finite time series
 
 `TimeSeriesObject.normalizeToStdevIsOne` centers values and divides by their sample standard deviation.

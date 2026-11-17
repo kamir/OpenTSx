@@ -117,6 +117,11 @@ r["mean_ri"], r["median_ri"], r["risk_parameter"], r["risk_interpretation"], r["
 
 ## 11.5 Java tools in `opentsx-core` (2.x model)
 
+The base time-series text preview shows at most five points; legacy `writeToFile` exports every point and
+preserves existing files on preparation or I/O failure. See the
+[preview and export contract](../../opentsx-core/README.md#preview-and-export-a-time-series) for formats,
+exceptions and regression checks.
+
 The Java implementations work on `org.opentsx.data.series.TimeSeriesObject` and on TSBucket sequence files. Most are
 standalone programs with a `main` method:
 
@@ -151,6 +156,13 @@ context-based loading and named bucket processing are not implemented. See
 The desktop FFT action derives its sampling rate from uniformly spaced coordinates. For integer index coordinates
 with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
 See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
+
+The native `Histogram cross-cut` action pools raw counts within consecutive sample windows. Enter a positive
+integer window length; cancellation leaves the chart and recorder unchanged. The first selected series must
+contain samples; later series may be empty. Invalid selections, window lengths, bounds or bin counts produce a
+validation message. Window starts follow the first series; every series contributes its available samples within
+each nominal window, including the final partial window. See the
+[native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
 
 ### Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 

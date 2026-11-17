@@ -1,0 +1,19 @@
+schema: opentsx.processor.v1
+id: sax.word
+version: 1
+kind: transformer
+title: SAX word
+description: Fills EpisodeSummary.sax from the normalized episode values using PAA and SAX.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: w, type: integer, min: 1, required: true }
+  - { name: a, type: integer, min: 2, max: 26, required: true }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, count, series], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSaxWord }
+state: { kind: none }
+merge: { class: none }
+testvectors: docs/datamodel-2026/testvectors/sax-word.v1.json

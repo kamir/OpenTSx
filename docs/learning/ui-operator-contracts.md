@@ -17,7 +17,10 @@ checker.
 All entries below execute in the browser workbench. Deployment is a separate capability. The seven
 [`CleanChain`](../../opentsx-retrieval/src/main/java/org/opentsx/retrieval/clean/CleanChain.java#L35) operators and
 [`align.vector`](../../systems/processors/align.vector.yaml) have existing Java processor implementations. A pure Java
-pair kernel does not establish a Wayang execution mapping. No Rust operator runner is described as available here. The
+pair kernel does not establish a Wayang execution mapping. The separate
+[Rust bounded profile](../devguide/integration/rust-runner-local.md) accepts `dq.checks`, `convert.unit` and a trailing
+`resample`; these browser lessons do not deploy it. Their zero-based coordinates do not prove Kafka timestamp validity.
+The
 workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to `stats.welford-ddsketch` ; the latter still
 has a parameter-contract mismatch in the [execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L129) .
 
@@ -141,6 +144,13 @@ unit is assigned.
 
 Source: [ops.ts#histogramCrossCut](../../opentsx-saas-frontend/src/workbench/ops.ts#histogramCrossCut) . Executable
 exercise: `ui.histogram.crosscut` .
+
+The native Swing `Histogram cross-cut` action has a separate
+[raw-count contract](../../opentsx-core/README.md#compare-native-histogram-slices). It accepts positive integer
+window lengths and requires samples in the first selected series. Window starts follow that series, while each
+series contributes its available values within each nominal window, including the final partial slice. Selection,
+bounds and bin count are validated before output. Its legacy bins and counts do not use this browser lesson's
+normalization or 16-slice limit.
 
 <a id="cdf"></a>
 

@@ -3,14 +3,21 @@
 OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java platform (Track A of
 [concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specification
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), tasks in
-[TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-16.
+[TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-17.
 
-Status: phase A2. The module reads and writes KafScale topics from Wayang plans, runs them in increments with a
-checkpoint, and runs the clean chain and the window statistics of OpenTSx as Wayang operators. It also contains the
-pure Java `TsxPairXcorr` and `TsxPairEs` kernels, whose APIs have no Wayang types and do not depend on
-`opentsx-core`. The kernels have no registered Wayang execution mappings yet. Shared reference vectors are checked
-by the statistics and retrieval modules. Track A also checks all five statistics
-cases through Wayang plans.
+Status: phase A2 and the retrieval operators of A3. The module reads and writes
+KafScale topics from Wayang plans, runs checkpointed increments, and executes
+the clean chain and window statistics. It also contains the pure Java
+`TsxPairXcorr` and `TsxPairEs` kernels. Their APIs have no Wayang types and do
+not depend on `opentsx-core`. Align and cross-correlation mappings are
+registered separately from the retrieval mappings.
+The statistics and retrieval modules check the shared references. Track A
+also checks all five statistics cases through Wayang plans.
+
+`segment.threshold`, `segment.extremum`, `sax.word`, and `dq.result` have native
+Java mappings in `TsxRetrievalMappings`. All 26 shared cases execute through
+Wayang; stream/batch checks cover all six chunk and series-order combinations
+per case. These operators are available through the Java API.
 
 ## Compute pair cross-correlation
 
@@ -51,6 +58,9 @@ The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md)
 Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
 [shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`
 and `rust/tsx-contracts`; it validates offline assignments and does not deploy a Rust runtime.
+The separate [`tsx-runner` 0.1.0](../rust/tsx-runner/README.md) executes a capped bounded topic from trusted local
+configuration. It supports pass-through and three cleaning operations; this module does not dispatch that binary
+through a remote Wayang platform.
 
 ## Use the plugin
 
@@ -64,7 +74,8 @@ new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new Way
 those SDKs, so a plan built with `Java.basicPlugin()` fails with
 `NoClassDefFoundError: software/amazon/awssdk/core/ResponseInputStream`. `TsxJavaPlugin` registers the Java platform,
 its channel conversions and the mappings OpenTSx uses: collection source,
-map, local callback sink, the OpenTSx topic source and sink, clean chains, and window statistics.
+map, local callback sink, the OpenTSx topic source and sink, clean chains,
+window statistics, and the retrieval operators.
 
 ## Compile a local clean DAG
 
@@ -156,6 +167,9 @@ TsxIncrement.run(config, (source, state) -> {
 | `TsxAlignVector`, `JavaTsxAlignVector` | `align.vector` through `VectorStream` with named inputs; input `TsxTagged`, output `TsxVectorRecord` |
 | `TsxVectorSink`, `JavaTsxVectorSink` | writes `opentsx.vector.v1` JSON records with `KafScaleClients.producer`; returns after every record is acknowledged |
 | `TsxPair`, `JavaTsxPair` | pair methods through `ops/TsxPairWindows` (port of `pairs.ts`) and `ops/TsxPairXcorr`; output `Episode` |
+| `TsxSegment` | Threshold/extremum segments; keyed checkpoint |
+| `TsxSaxWord` | SAX words in `EpisodeSummary.sax` |
+| `TsxDqResult` | `SeriesStats` to JSON `opentsx.signal.v1` |
 | `TsxState` | operator state by DAG node id, read from and written to the checkpoint |
 | `TsxStatus` | `opentsx.dag-status.v1` records on `tsx.<domain>.dag-status.v1` with `track` `A`, `job`, `planVersion` |
 
@@ -177,7 +191,38 @@ The checkpoint file is JSON with these fields (`TsxCheckpoint.java`):
 | `specHash` | SHA-256 of the DAG document; a checkpoint with another value is ignored |
 | `topic` | the input topic |
 | `next` | partition number (as a string) to the first offset not yet processed |
-| `state` | DAG node id to the state of its operator: `SeriesStream.state()` for a clean chain, Base64 of `StatsEngine.writeState` for statistics |
+| `state` | DAG node id to the state of its operator: `SeriesStream.state()` for a clean chain, Base64 of `StatsEngine.writeState` or `StreamingSegmenter.writeState` |
+
+## Segment episodes and annotate SAX words
+
+You need episodes in time order per series. Construct `TsxSegment(node,
+segmenter, state)` with a threshold or extremum `Segmenter`. Its checkpoint
+keeps the retained sample buffer, source episodes, and detector state per series.
+The version and parameters are checked when restoring. Use `TsxSegment.bounded`
+only at the end of input to decide pending segments. Segment ids and lineage
+follow the existing Java segmenter. The state stores raw floating-point bits,
+including NaN payloads, and rejects truncated or incompatible data.
+
+`TsxSaxWord(w, a, specHash)` normalizes each complete episode and fills its SAX
+word. `TsxSaxWord.normalized` accepts values already normalized by the caller.
+The word length must be positive and the alphabet size must be from 2 to 26.
+Raw timestamps and values are preserved. The output has the deterministic
+derived-episode id of S6.2 and points to the input episode as its parent.
+
+## Emit data-quality signals
+
+`TsxDqResult(job, site, specHash, expectation, checks, nowMicros)` consumes
+`SeriesStats`. It reuses `DataQuality.evaluate` and selects the requested checks.
+Supply an explicit clock value in `nowMicros` for freshness checks. Messages use
+`Locale.ROOT`. Non-finite result values become JSON null.
+
+Connect its JSON output to `TsxTopicSink`. The sink accepts
+`opentsx.signal.v1`, validates the whole JSON batch before sending any record,
+and writes canonical JSON with key `seriesId` and header
+`tsx-schema: opentsx.signal.v1`. Other JSON schemas are rejected. DQ ids include
+the check and both window bounds in addition to the common S6.2 fields, so
+different findings remain distinct when their windows end at the same time.
+Avro inputs retain their streaming encode-and-send behavior.
 
 ## Measure increment latency
 
@@ -232,6 +277,7 @@ Read `opentsx-wayang/target/surefire-reports/`: `TsxPassThroughIntegrationTest`,
 `TsxFingerprintIntegrationTest`, `TsxCleanIncrementsIntegrationTest`, `TsxCleanParityIntegrationTest`,
 `TsxStatusIntegrationTest` and `TsxVectorIntegrationTest` must show
 executed tests with zero failures, errors and skips.
+`TsxSignalSinkIntegrationTest` also executes both JSON signal paths with no skips.
 
 `TsxCleanParityIntegrationTest` runs one clean DAG over W, then deploys the same
 document to the real `VectorProcessor` through the control topic. It compares
@@ -248,6 +294,15 @@ increments with the state in between. `TsxPairVectorsTest` runs all five
 shared `pair.xcorr` cases through Wayang, also with B in a later increment.
 `DagToWayangErrorsTest` checks the
 four parameter messages exactly. CI rejects missing or skipped acceptance tests.
+
+`TsxSegmentVectorsTest`, `TsxSaxVectorsTest`, and `TsxDqVectorsTest` execute all
+12 segment, seven SAX, and seven DQ cases from the repository files.
+`TsxStreamEqualsBatchTest` compares each case in chunks of 1, 7, and all records
+in both series orders, for 156 comparisons. Segment state is checkpointed and
+restored between chunks, with a full Avro payload comparison against batch.
+SAX treats a complete episode as one record; DQ treats one statistics window as
+one record. Their parity fixtures contain 16 records per case. CI requires the
+26 vector cases, all 26 parity cases, and both JSON broker tests to execute.
 
 ## Check the shared Java references
 

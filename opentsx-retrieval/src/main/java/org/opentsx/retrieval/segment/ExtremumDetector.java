@@ -1,5 +1,8 @@
 package org.opentsx.retrieval.segment;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -123,5 +126,27 @@ final class ExtremumDetector implements Detector {
             need = Math.min(need, buf.indexAtOrAfter(buf.ts(candidates.peekFirst()) - lookback, buf.base()));
         }
         return Math.max(buf.base(), need);
+    }
+
+    @Override
+    public void writeState(DataOutput out) throws IOException {
+        out.writeInt(candidates.size());
+        for (long candidate : candidates) out.writeLong(candidate);
+    }
+
+    @Override
+    public void readState(DataInput in, SampleBuffer buf) throws IOException {
+        int count = in.readInt();
+        if (count < 0 || count > buf.end() - buf.base()) throw new IOException("invalid extremum candidate count");
+        candidates.clear();
+        long previous = -1;
+        for (int i = 0; i < count; i++) {
+            long candidate = in.readLong();
+            if (candidate < buf.base() || candidate >= buf.end() || candidate <= previous) {
+                throw new IOException("invalid extremum candidate index");
+            }
+            candidates.addLast(candidate);
+            previous = candidate;
+        }
     }
 }

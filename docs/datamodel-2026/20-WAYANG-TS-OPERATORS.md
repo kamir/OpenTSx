@@ -3,7 +3,8 @@
 > Status: **concept**, 2026-11-16. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
-> segmentation, SAX, and data-quality results. Checked against Apache
+> segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 adds trusted-local bounded Kafka replay and
+> three cleaning operations; it is separate from the fleet design below. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -14,6 +15,8 @@
 The [unified delivery plan](../devguide/integration/wayang-unified-plan.md) combines bounded storage and
 multi-node Rust orchestration. Its [shared-contract implementation](../devguide/integration/wayang-shared-contracts.md)
 validates assignment envelopes in Java and Rust; it does not deploy runners.
+The separate [local Rust profile](../devguide/integration/rust-runner-local.md) executes pass-through,
+plausible-range checks, unit conversion and an optional trailing resample on a capped whole-topic cut.
 
 ## 1. Goal
 
@@ -33,6 +36,11 @@ as a separate profile with immutable inputs and publication guarantees. Out of s
 search, twin, causal analysis).
 
 ## 2. Current state
+
+`tsx-runner` 0.1.0 executes trusted-local bounded requests, with explicit resource caps and checkpointed
+completion after broker acknowledgement. Its Compose fixture runs three independent deployments on distinct
+topics with one, two and three partitions. This does not establish the remote Wayang driver, continuous
+fleet execution, signed activation or production fencing described by this concept.
 
 | Item | State | Evidence |
 |---|---|---|
@@ -307,6 +315,11 @@ vectors. They are not part of this plan: Wayang's Spark and Flink operators brin
 OpenTSx already has a Flink path (`opentsx-flink-core`).
 
 ## 6. Track B: Rust edge runner
+
+This section describes the fleet target. The implemented interface is `tsx-runner replay`, documented in the
+[local bounded guide](../devguide/integration/rust-runner-local.md), with the subset in
+[SPEC S1.9](20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset).
+The fleet commands and broader operator table below are not the executable local profile.
 
 ### 6.1 Scope
 

@@ -28,7 +28,18 @@ const FIELDS: [&str; 18] = [
 ];
 
 pub fn sha256(text: &str) -> String {
-    format!("{:x}", Sha256::digest(text.as_bytes()))
+    sha256_bytes(text.as_bytes())
+}
+
+pub fn sha256_bytes(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+pub fn parse_json(input: &str, max_bytes: usize) -> Result<Value, &'static str> {
+    if input.len() > max_bytes {
+        return Err("json.limit");
+    }
+    strict_json(input).map_err(|_| "json.invalid")
 }
 
 pub fn validate(input: &str) -> Result<(), &'static str> {
@@ -151,7 +162,7 @@ fn admit(input: &str) -> Result<Value, &'static str> {
         if fields.len() != required.len()
             || !required.iter().all(|field| fields.contains_key(*field))
             || !identifier(text(input, "binding"))
-            || !topic(text(input, "topic"))
+            || !valid_topic(text(input, "topic"))
         {
             return Err("assignment.input");
         }
@@ -241,7 +252,7 @@ fn decimal(value: &Value, maximum: u64, positive: bool) -> Option<u64> {
     Some(number)
 }
 
-fn topic(value: &str) -> bool {
+pub fn valid_topic(value: &str) -> bool {
     if value.len() > 249 || !value.is_ascii() {
         return false;
     }
