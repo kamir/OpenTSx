@@ -9,6 +9,7 @@ outputs:
 semantics: { needs: point, deterministic: true, keeps: [time, unit, count, series], origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxTopicSource }
+  rust: { status: available, note: "tsx-runner 0.1.0 trusted-local bounded replay and continuous increments; Episode v2 only." }
 state: { kind: none }
 merge: { class: none }
 testvectors: opentsx-model/src/test/resources/testvectors/wire-format.json

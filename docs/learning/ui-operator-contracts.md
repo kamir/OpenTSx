@@ -23,6 +23,10 @@ pair kernel does not establish a Wayang execution mapping. The separate
 operations into one connected custom Rust stage and complete per-topic fragments for one to three workers.
 Its journal, private prepare, collision checks, activation and receipts are separate from the browser lesson workload.
 The browser lessons' zero-based coordinates do not prove Kafka timestamp validity.
+The [continuous target](../devguide/integration/wayang-rust-continuous.md) preserves the same whole-topic placement,
+source hash and accepted clock across acknowledged increments. Worker-local state and cumulative series ownership
+survive service restart. The three browser workloads retain their original local inputs and expected values;
+separate increment and Compose regressions establish the continuous runtime behavior.
 The workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to
 `stats.welford-ddsketch`. Its statistics deployment exporter writes a catalog
 duration and a full statistics sink; the stored flow retains the selected
@@ -180,6 +184,12 @@ nonfinite values. Output x is window-start sample index and unit is bit.
 
 Source: [ops.ts#entropyWindow](../../opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow) . Executable exercise:
 `ui.entropy.window` .
+
+The native Swing `ENTROPY` action and `TimeSeriesObject.calcEntropyForWindow` use a separate
+[native contract](../../opentsx-core/README.md#compute-native-entropy-windows). They accept positive integer lengths,
+require at least two finite matching coordinate/value samples, advance starts by at least one sample and clip cuts
+to the available data. Native maximum normalization and modulo-100 discretization differ from this browser
+workload's binning; its expected values do not establish native output parity.
 
 <a id="acf"></a>
 

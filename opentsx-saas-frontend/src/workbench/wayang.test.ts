@@ -51,6 +51,13 @@ describe('bounded target export', () => {
     expect(useFlow.getState().restore({ ...definition, wayang: false }, 7)).toBe(false);
   });
 
+  it('restores the explicit continuous profile and refuses an unknown profile', () => {
+    const definition = toDefinition({ ...graph, wayang: { ...configuration, profile: 'continuous' } });
+    expect(useFlow.getState().restore(definition, 7)).toBe(true);
+    expect(useFlow.getState().wayang?.profile).toBe('continuous');
+    expect(useFlow.getState().restore({ ...definition, wayang: { ...configuration, profile: 'another-runtime' } }, 7)).toBe(false);
+  });
+
   it.each([
     { ...configuration, inputTopics: [configuration.inputTopics[0], configuration.inputTopics[0]] },
     { ...configuration, inputTopics: [] },

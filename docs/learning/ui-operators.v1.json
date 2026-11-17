@@ -1151,7 +1151,7 @@
       ],
       "pitfalls": [
         "The bin range is derived from the whole input series.",
-        "This workbench binning is not guaranteed to match the legacy Java entropy implementation."
+        "The native ENTROPY action uses maximum normalization and modulo-100 discretization within each slice, validates finite matching samples and positive integer lengths, and clips cuts to available data. This browser workload does not establish native output parity."
       ],
       "parameterKeys": [
         "length",
@@ -1179,17 +1179,22 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#entropy-window"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow"
+          "opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java#calcEntropyForWindow",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton14ActionPerformed"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/data/series/TimeSeriesObjectEntropyTest.java",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelEntropyTest.java"
         ],
         "vectors": []
       }
@@ -2154,7 +2159,8 @@
       "pitfalls": [
         "This value transform does not produce a full DataQuality event record.",
         "Clipping changes values and can hide extremes from later analysis.",
-        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps."
+        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
       ],
       "parameterKeys": [
         "min",
@@ -2187,12 +2193,14 @@
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
-          "docs/devguide/integration/wayang-rust-compose.md"
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#dq-plausible-range",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange",
@@ -2207,7 +2215,11 @@
           "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2268,7 +2280,8 @@
       "pitfalls": [
         "The operator trusts the supplied factor and offset.",
         "An empty target unit retains the original unit metadata.",
-        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps."
+        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
       ],
       "parameterKeys": [
         "factor",
@@ -2298,12 +2311,14 @@
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
-          "docs/devguide/integration/wayang-rust-compose.md"
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#convert-unit",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit",
@@ -2318,7 +2333,11 @@
           "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2386,7 +2405,9 @@
         "Only finite values enter a window aggregate.",
         "A batch workbench can include a partial final window; a running stream waits for sufficient progress.",
         "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
-        "The Rust Kafka cut retains an unfinished trailing window instead of flushing it at batch end."
+        "The Rust Kafka cut retains an unfinished trailing window instead of flushing it at batch end.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "An unfinished window spans increments and service restart. Stop does not flush it, and the existing valid-sample ceiling still applies."
       ],
       "parameterKeys": [
         "every",
@@ -2418,13 +2439,15 @@
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
           "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md",
           "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
           "opentsx-wayang/README.md#compile-a-catalog-dag"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#resample",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#resample",
@@ -2442,6 +2465,10 @@
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode"
         ],
         "vectors": [

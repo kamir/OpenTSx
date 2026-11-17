@@ -10,6 +10,8 @@ The developer guide holds notes for contributors. User-facing documentation is i
   [architecture assessment](integration/wayang-orchestration-review.md).
 * [Run a workbench DAG on three Rust workers through Wayang](integration/wayang-rust-compose.md): authenticated UI,
   durable PostgreSQL control, one custom Wayang stage, private preparation and bounded acknowledgement/retry checks.
+* [Run continuous input on three Rust workers](integration/wayang-rust-continuous.md): persisted increments,
+  cumulative ownership and positions, stateful service restart and a durable Stop operation.
 * [Replay a bounded topic with Rust](integration/rust-runner-local.md): trusted local configuration, three cleaning
   operations, retained state and a standalone three-worker Compose check against Java.
 * [Processing-flow descriptor schema](schemas/README.md) and its [validation plan](validation/README.md). The

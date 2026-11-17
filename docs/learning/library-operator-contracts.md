@@ -37,6 +37,9 @@ checks, unit conversion and a trailing resample. The separate
 [local UI rollout](../devguide/integration/wayang-rust-compose.md) uses `RustRollout` with `DagToWayang.parameters`
 and a custom Rust platform. Its logical sources, union, fused clean chain and sink form one Wayang stage; complete
 fragments run on HTTP workers. Java catalog availability does not expand that Rust profile.
+The [continuous local target](../devguide/integration/wayang-rust-continuous.md) executes successive finite cuts on
+the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
+cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
 
 The [signed bounded JVM profile](../user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile)
 binds an immutable whole-topic assignment to a statistics fragment and one

@@ -125,6 +125,43 @@ mvn -B -ntp -pl opentsx-core -am test \
   -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
 ```
 
+## Compute native entropy windows
+
+Choose `ENTROPY` in the native workbench or call `TimeSeriesObject.calcEntropyForWindow(int)` to compute Shannon
+entropy in bits over sample windows. The result retains the native maximum normalization and modulo-100
+discretization within each copied slice. The input series is unchanged; this binning differs from the
+[browser entropy lesson](../docs/learning/ui-operator-contracts.md#entropy-window).
+
+The window length is an integer from 1 through 2147483647. Input X and Y vectors must have matching lengths,
+contain at least two samples and contain only finite `Double` values. Window starts begin at index 0 and advance
+by `max(1, floor(length / 4))`. Starts are retained while at least two input positions remain. Each half-open slice
+ends at the smaller of start plus length and the input size, so large lengths do not extend the cut beyond the data.
+Length 1 evaluates one-sample slices at those same retained starts. Output X values are sample-start indices,
+including when input coordinates are irregular. The result label appends `H(l=<length>)` to the input label;
+`<length>` is the requested window length.
+
+The `Entropy failed` dialog displays invalid selections and inputs. Empty selections, null rows, short rows and
+mismatched coordinate/value counts are rejected before the length prompt. Cancelling the prompt returns without
+a chart or recorded transformation. Invalid text, fractional, zero, negative and overflowing lengths are rejected.
+No rejection produces a chart or recorder entry, including a failure in a later selected row. All row results are
+prepared before the chart opens and the transformation is recorded.
+
+| Error | Accepted input |
+| --- | --- |
+| `Select at least one series for entropy` | A nonempty selection |
+| `Entropy window length must be a positive integer` | An integer from 1 through 2147483647 |
+| `Entropy needs at least two samples with matching coordinates` | Matching X/Y vectors with at least two samples |
+| `Entropy values and coordinates must be finite numbers` | Finite `Double` entries in both vectors |
+
+Programmatic validation failures raise `IllegalArgumentException`. You need JDK 17 or later, Maven, and a display
+for the Swing checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TimeSeriesObjectEntropyTest,TSOperationControlerPanelEntropyTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
 ## Normalize finite time series
 
 `TimeSeriesObject.normalizeToStdevIsOne` centers values and divides by their sample standard deviation.

@@ -10,6 +10,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Continuous workbench execution through Wayang on fixed whole-topic Rust workers. Each acknowledged increment
+  supplies the next complete partition cursors and retained operator state. PostgreSQL persists plans before
+  dispatch, retains ownership through idle and uncertain outcomes, and records durable stop requests. Worker
+  head/candidate storage and completed cycle history stay bounded. The continuous Compose/browser profile checks
+  live input, data arriving during execution-service downtime, stateful restart, later input and Stop against Java.
+  Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
+  failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
+
 - Regression guards for the Wayang/Rust Compose profile's existing required
   credential interpolation and the helper's private per-run environment.
   Mutated fallback and empty-value fixtures reject without printing credentials.
@@ -230,6 +238,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Native entropy windows validate lengths and finite matching coordinate/value vectors, advance by at least one
+  sample and clip partial cuts to the available data. The `ENTROPY` dialog handles cancellation and invalid
+  selections or input without opening a chart or recording a transformation. Native discretization is retained.
 
 - Native table, chart and caption saving reports the failed destination and completed outputs in the dialog.
   Each file is prepared and replaced atomically; a failure preserves that destination and stops later outputs.

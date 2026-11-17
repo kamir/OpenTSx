@@ -125,12 +125,23 @@ jobs:
             target/rust-runner-linux/release/tsx-runner
 
   wayang-rust-compose:
-    name: UI Wayang Rust three-worker acceptance
+    name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: bounded
+            name: UI Wayang Rust three-worker acceptance
+            artifact: wayang-rust-browser-parity
+          - profile: continuous
+            name: Continuous UI Wayang Rust three-worker acceptance
+            artifact: wayang-rust-continuous-browser-parity
     env:
       KAFSCALE_BROKER_PORT: "39093"
       WAYANG_UI_PORT: "18081"
+      WAYANG_PROFILE: ${{ matrix.profile }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -165,30 +176,40 @@ jobs:
           python3 tools/verify_wayang_rust_compose.py --help
           node --check tools/wayang_rust_browser.mjs
       - name: Verify the real UI through Wayang and three Rust workers
-        run: python3 tools/verify_wayang_rust_compose.py --playwright-module "$RUNNER_TEMP/wayang-browser/node_modules/playwright"
+        run: python3 tools/verify_wayang_rust_compose.py --profile "$WAYANG_PROFILE" --playwright-module "$RUNNER_TEMP/wayang-browser/node_modules/playwright"
       - name: Require browser, Java parity and restart evidence
         run: |
           python3 - <<'PYTHON'
           import json
+          import os
           from pathlib import Path
           root = Path("target/wayang-rust-compose")
           result = json.loads((root / "result.json").read_text())
           assert result["workers"] == 3
-          assert result["phases"] == ["initial", "retry", "restart"]
-          assert result["verifiedRecords"] == result["distinctEpisodes"] == 12
+          continuous = os.environ["WAYANG_PROFILE"] == "continuous"
+          phases = ["initial", "retry", "new-data", "restart", "after-restart", "stopped"] if continuous else ["initial", "retry", "restart"]
+          assert result["phases"] == phases
+          assert result["verifiedRecords"] == result["distinctEpisodes"] == (30 if continuous else 12)
+          if continuous:
+              assert result["inputRecords"] == "30"
           for phase in result["phases"]:
               browser = json.loads((root / f"browser-{phase}.json").read_text())
               parity = json.loads((root / f"verified-{phase}.json").read_text())
-              assert browser["state"] == "completed" and browser["assignments"] == 3
-              assert parity["verifiedRecords"] == parity["distinctEpisodes"] == 12
+              assert browser["assignments"] == 3
+              assert browser["state"] == (("stopped" if phase == "stopped" else "idle") if continuous else "completed")
+              if continuous:
+                  assert browser["submissions"] == int(phase in ("initial", "retry"))
+                  assert parity["verifiedRecords"] == parity["distinctEpisodes"] == int(browser["blocks"]) * 6
+              else:
+                  assert parity["verifiedRecords"] == parity["distinctEpisodes"] == 12
               assert (root / f"browser-{phase}.png").is_file()
               assert (root / f"deployment-{phase}.json").is_file()
-          print("Actual UI submission, Java parity and completed service restart were verified")
+          print("Actual UI submission, Java parity, input progress and service restart were verified")
           PYTHON
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: wayang-rust-browser-parity
+          name: ${{ matrix.artifact }}
           path: |
             target/wayang-rust-compose/result.json
             target/wayang-rust-compose/fixture.json

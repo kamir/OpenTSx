@@ -2,7 +2,7 @@
 
 > Status: **fleet specification draft 0.1; Catalog 1 frozen**, 2026-11-17.
 > All 16 native Java entries in S1.7 are available. Implemented Rust profiles
-> are qualified separately in S1.9 and S1.10. Signed continuous fleet requirements
+> are qualified separately in S1.9, S1.10 and the local continuous profile S1.11. Signed continuous fleet requirements
 > remain separate contracts. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
 > [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Catalog checks use
@@ -34,8 +34,9 @@ boundary and separate bounded/continuous profiles. The implemented
 fragment text; its offline validator is not a complete runner or deployment admission service.
 The executable [`tsx-runner` 0.1.0 profile](../devguide/integration/rust-runner-local.md) is described in
 [S1.9](#s19-execute-the-trusted-local-bounded-rust-subset). The bounded UI-to-Wayang-to-worker contract is
-[S1.10](#s110-orchestrate-the-bounded-ui-rust-profile). Neither local profile implements the complete S5/S7 signed
-fleet protocol.
+[S1.10](#s110-orchestrate-the-bounded-ui-rust-profile). The continuous local orchestration contract is
+[S1.11](#s111-continue-complete-topics-on-fixed-rust-workers). These local profiles do not implement the complete
+S5/S7 signed fleet protocol.
 
 The bounded JVM qualification in S2.4 implements signed replicated statistics stages,
 job-bound conformance, authenticated outbound pulls and both aggregate routes.
@@ -249,8 +250,44 @@ The [local guide](../devguide/integration/wayang-rust-compose.md) records helper
 private preparation, ownership refusal and uncertain activation. The browser/Compose helper is a separate acceptance
 check over three topics with one, two and three internal partitions, using actual Java-derived output and receipts.
 Its initial, exact-retry and restart checks require the same twelve output records. A generated result is evidence of
-that run, not a throughput benchmark or production qualification. Continuous input, dynamic failover, broad kernels,
-operational quotas, signed rollout and Iceberg publication remain separate gates.
+that run, not a throughput benchmark or production qualification. S1.11 adds local continuous input. Dynamic failover,
+broad kernels, operational quotas, signed rollout and Iceberg publication remain separate gates.
+
+<a id="s111-continue-complete-topics-on-fixed-rust-workers"></a>
+
+### S1.11 Continue complete topics on fixed Rust workers
+
+The local continuous profile uses the S1.9 operator subset and S1.10 whole-topic stage. It preserves one deployment,
+exact source text/hash, accepted clock, fragment text, binary identity, worker placement, channel inventory and limits.
+Each finite increment includes every internal partition of each topic. No partition position is a deployment unit.
+
+| Boundary | Exact local contract |
+| --- | --- |
+| Backend admission | `POST /api/v1/dags/wayang-rust/deploy` accepts optional `profile`, either `bounded` (default) or `continuous`. The same source identity cannot be accepted under another profile, owner or flow. |
+| Initial plan | `POST /v1/plan` accepts `deployment`, `dagText`, `createdAtMicros` and optional `profile: continuous`. A continuous plan has schema `opentsx.local-continuous-rollout.v1`, the existing plan fields, `sequence: "1"` and `previousPlanHash: null`. |
+| Successor plan | `POST /v1/next` accepts exactly `plan` and its completed `result`. It returns exactly `{state: idle, plan: null}` or `{state: ready, plan: <object>}`. The new sequence is the previous sequence plus one; `previousPlanHash` identifies the preceding plan. |
+| Finite cut | Each `from` equals the preceding verified `next`. Broker beginning must be at or before that cursor, and end must be at or after it. Partition and output counts stay fixed. All topics remain in every non-idle wave, including empty spans. |
+| Record budget | Per topic, use `min(records, inputBytes / payloadBytes, samples / episodeSamples)` with integer division and rotating partition priority. The current limits admit four records per topic per cycle. Payload, output and retained-state caps still apply independently. |
+| Worker request | `opentsx.local-increment.v1` contains the six S1.9 request fields plus `sequence` and `previousRequestHash`. Sequence is a positive canonical signed-64-bit decimal string. Predecessor is null at sequence one, otherwise the previous completed request's 64-character lowercase SHA-256 hash. |
+| Assignment envelope | The shared execution assignment remains `mode: bounded`, since each cut is finite. Assignment, deployment, generation, attempt, fence and fragment identities remain unchanged; only complete partition positions advance. The standalone replay command refuses increment requests. |
+| Worker continuity | Sequence one starts every partition at zero. A successor names the current completed head and starts at its complete receipt positions. State is restored locally; caller state and paths are forbidden. Stale, forked, skipped and changed-context successors fail before reads. |
+| Cumulative ownership | Retain every decoded input identity and its internal partition, including unselected/pass-through input, plus all emitted and pending output identities. Never evict ownership to admit another series. Lifetime series and retained-state caps apply. Every topic prepares before cross-topic checks and activation. |
+| Worker status | Increment status adds `sequence` and `previousRequestHash`; the first predecessor is JSON null. Existing receipt record counts remain per increment. `activationRetryable` keeps uncertain saved output under reconciliation. |
+| Bounded history | Each worker retains one immutable completed head and at most one candidate in `increments/checkpoint.json`. Latest exact retry returns its receipt. PostgreSQL retains the latest two completed cycle rows plus pending work, with cumulative progress stored separately. Idle creates no increment. |
+| Public progress | Continuous views add `profile`, `currentCycle`, `completedCycles`, `stopRequested`, `inputRecords` and `outputRecords`. Each assignment adds `cumulativeInputRecords`, `cumulativeOutputRecords` and latest completed `positions`. Counters, sequences and offsets are canonical decimal strings. |
+| Stop | The authenticated owner stop route records durable intent. Re-read it after planning and execution RPCs. Cancel undispatched work; reconcile dispatched work before entering `stopped` and releasing topic ownership. Unknown publication retains `stopping` and ownership. Stop does not flush a resample tail. |
+
+The worker advertises `incrementalRequestSchema: opentsx.local-increment.v1` and `limits.incrementalChains: 1`.
+One worker retains one immutable continuous chain after Stop; replacement requires explicit reset of disposable
+state after conclusive stop. There is no implicit retirement, failover or migration. Open resample windows retain
+the existing maximum of 100,000 valid samples. Output is at least once and activation is not atomic across workers.
+
+`RustContinuousRolloutTest`, `tests/increments.rs`, backend continuous tests and the
+[continuous Compose acceptance](../devguide/integration/wayang-rust-continuous.md) cover finite successors,
+cumulative ownership, idle, exact retry, stateful service restart, queued new data and Stop. Broker restart,
+topic-incarnation qualification, distributed stale-writer fencing and the signed S5/S7 fleet contract remain open.
+The existing cleaning policy skips a block whose first event timestamp precedes the retained series end, increments
+the skipped-block counter and advances its input cursor. Continuous execution does not introduce late-data revisions.
 
 ## S2. Plan translation
 

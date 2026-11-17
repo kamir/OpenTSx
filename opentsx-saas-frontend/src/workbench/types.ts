@@ -158,6 +158,7 @@ export interface SignalContext {
 }
 
 export interface WayangConfig {
+  profile?: 'bounded' | 'continuous';
   inputTopics: string[];
   seriesIds: string[];
   nodeId: string;

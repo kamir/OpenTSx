@@ -418,9 +418,11 @@ export function SmartTopic({ node, base, onSave }: { node: FlowNode; base: strin
         <select aria-label="Deployment target" value={target} onChange={(e) => setTarget(e.target.value)}>
           <option value="processor">Continuous Java processor</option>
           <option value="wayang-rust">Bounded Wayang on Rust</option>
+          <option value="wayang-rust-continuous">Continuous Wayang on Rust</option>
         </select>
       </label>
-      {target === 'wayang-rust' ? <WayangRunPanel onSave={onSave} /> : <>
+      {target === 'wayang-rust' || target === 'wayang-rust-continuous'
+        ? <WayangRunPanel key={target} profile={target === 'wayang-rust-continuous' ? 'continuous' : 'bounded'} onSave={onSave} /> : <>
       <fieldset>
         <legend>Source topic</legend>
         <div className="wb-oprow">
