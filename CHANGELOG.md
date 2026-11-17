@@ -10,6 +10,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- A rerunnable Wayang increment-latency harness for TASK-020 A1.7: real
+  passthrough and `dq.checks` plus `resample PT1M` plans, paced complete simulator
+  input, a pinned disposable KafScale broker, private runtime snapshots and
+  per-increment/raw output timing samples. The
+  [measurement report](docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  records its metric definitions, configuration and isolation limits.
+
 - `tsx-runner` 0.1.0 for trusted-local bounded whole-topic Kafka replay. Pass-through and a linear chain of
   `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing `resample` use the shared Avro, identity
   and cleaning vectors. Explicit resource caps and positive Kafka transport timestamps reject before publication.

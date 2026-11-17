@@ -589,7 +589,37 @@ Baselines:
 | (b) the existing OpenTSx Java streaming path (the processor in `opentsx-retrieval` and the statistics processor in `opentsx-stats`) | same server | in-repository reference for throughput and latency of the same operators |
 | (c) Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
 
-**Measurement protocol for Track B against Track A on small hardware:**
+### 14.1 Measure Track A increments
+
+The [A1.7 harness](../../tools/wayang_increment_latency.py)
+measures the actual `TsxIncrement` passthrough and `dq.checks` plus `resample PT1M`
+plans on the complete W simulation. Each condition has one partition, a fresh JVM
+and a disposable KafScale v1.6.0 broker with in-memory storage. Intervals of
+5, 30 and 60 seconds, 30 increments and three sequential repetitions give
+18 conditions and 540 increments. Inputs are paced across each interval; the
+first increment starts after one full interval. No warm-up samples are discarded.
+
+Per-increment samples record first input Fetch from job invocation, wall time,
+record counts, scheduling lateness and output latency p50/p95/p99. Per-output
+latency subtracts successful input Produce ingress from output Produce ingress at
+a loopback protocol observer. These are monotonic transport clocks. Kafka record
+timestamps preserve event time. For aggregate output, the input clock belongs to
+the latest contributing episode with matching raw series identity and
+overlapping event-time range. The raw samples retain every contributing id and
+separate acknowledgement clocks. Observer parsing and forwarding are included.
+
+The [operations guide](../user-manual/12-operations.md#127-measure-wayang-increment-latency)
+gives the rerun command and prerequisites. The generated
+[measurement report](measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+and its case directories retain hardware, OS, JDK, explicit heap, source hashes,
+exact commands and raw CSV files. Private classpath copies prevent later shared
+Maven-cache writes from changing a condition. macOS idle-sleep prevention is tied
+to the Python process and released in cleanup. This does not reserve CPU or
+remove other shared-host contention. The local, single-partition, in-memory
+baseline has no threshold and does not establish the broader throughput matrix,
+durable-storage behavior, a remote-network result or Track B parity.
+
+### 14.2 Compare Track B and Track A on small hardware
 
 1. Fix the device, OS image, kernel, CPU governor (`performance`) and storage; record them.
 2. Run a local KafScale or connect to one KafScale over a fixed network; record which.
