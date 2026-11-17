@@ -105,8 +105,10 @@ class ContextCatalogue:
         )
         return {"schema": "opentsx.context-topics.v1", "topics": topics}
 
-    def snapshot(self, topic):
+    def snapshot(self, topic, partition=None):
         self._topic(topic)
+        if partition is not None:
+            _integer(partition, "context partition", 0, 2**31 - 1)
         from confluent_kafka import Consumer, TopicPartition
 
         deadline = monotonic() + 10
@@ -135,6 +137,10 @@ class ContextCatalogue:
             partitions = sorted(metadata.topics[topic].partitions)
             if not 1 <= len(partitions) <= MAX_PARTITIONS:
                 raise ValueError("context snapshots require one to sixteen partitions")
+            if partition is not None:
+                if partition not in partitions:
+                    raise ValueError("selected context partition is unavailable")
+                partitions = [partition]
             bounds = {}
             for partition in partitions:
                 _integer(partition, "context partition", 0, 2**31 - 1)
@@ -253,7 +259,9 @@ class ContextCatalogue:
         if interval <= 0 or any(right - left != interval for left, right in zip(times, times[1:])):
             raise ValueError("context capture requires a regular increasing target clock")
         steps = _integer(configuration.get("steps"), "forecast steps", 1, 96)
-        groups = _groups(self.snapshot(document["topic"]))
+        groups = _groups(self.snapshot(document["topic"], partition=partition))
+        if len(groups) != 1:
+            raise ValueError("selected context partition must contain exactly one schema")
         matching = [
             group
             for (part, _), group in groups.items()
@@ -268,6 +276,14 @@ class ContextCatalogue:
         descriptor = group["descriptor"]
         if descriptor["interval_micros"] != interval:
             raise ValueError("context interval differs from the target clock")
+        previous_end = None
+        for item in group["records"]:
+            record = item["record"]
+            if previous_end is not None and record["t_start_micros"] != previous_end:
+                raise ValueError(
+                    "selected context partition must have contiguous valid-time ranges without gaps"
+                )
+            previous_end = record["t_start_micros"] + len(record["values"]) * interval
         end = times[-1] + (steps + 1) * interval
         rows = [
             row

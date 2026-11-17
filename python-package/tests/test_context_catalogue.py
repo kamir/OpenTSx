@@ -347,3 +347,90 @@ def test_binding_requires_context_units_in_the_original_training_request(broker)
     del request["context"]["units"]
     with pytest.raises(ValueError, match="unit"):
         broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)
+
+
+@pytest.mark.parametrize("operation", ["capture", "binding"])
+@pytest.mark.parametrize("placement", ["before", "after"])
+def test_selected_partition_rejects_unrelated_schemas_outside_the_requested_range(
+    broker, operation, placement
+):
+    request = retained(broker)
+    original = broker.records[0][0][1]
+    unrelated = broker.core.make_record(
+        "other-target",
+        original["context_names"],
+        original["context_units"],
+        800 if placement == "before" else 1200,
+        10,
+        500,
+        original["values"],
+        original["available_at_micros"],
+    )
+    ordered = [unrelated, original] if placement == "before" else [original, unrelated]
+    broker.records = {0: list(enumerate(ordered))}
+    broker.bounds = {0: (0, 2)}
+    before = copy.deepcopy((broker.records, request))
+    with pytest.raises(ValueError, match="schema"):
+        if operation == "capture":
+            broker.catalogue.capture(document())
+        else:
+            broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)
+    assert (broker.records, request) == before
+
+
+@pytest.mark.parametrize("operation", ["capture", "binding"])
+@pytest.mark.parametrize("placement", ["before", "after"])
+def test_selected_partition_rejects_clock_gaps_outside_the_requested_range(
+    broker, operation, placement
+):
+    request = retained(broker)
+    original = broker.records[0][0][1]
+    separated = broker.core.make_record(
+        "target-a",
+        original["context_names"],
+        original["context_units"],
+        800 if placement == "before" else 1300,
+        10,
+        500,
+        original["values"][:10],
+        original["available_at_micros"][:10],
+    )
+    ordered = [separated, original] if placement == "before" else [original, separated]
+    broker.records = {0: list(enumerate(ordered))}
+    broker.bounds = {0: (0, 2)}
+    with pytest.raises(ValueError, match="gap|contiguous"):
+        if operation == "capture":
+            broker.catalogue.capture(document())
+        else:
+            broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)
+
+
+@pytest.mark.parametrize("other", ["gap", "mixed_schema", "malformed"])
+def test_selected_partition_is_independent_of_other_partition_histories(broker, other):
+    original = broker.records[0][0][1]
+    first = broker.core.make_record(
+        "other-target",
+        original["context_names"],
+        original["context_units"],
+        800,
+        10,
+        500,
+        original["values"][:10],
+        original["available_at_micros"][:10],
+    )
+    second = broker.core.make_record(
+        "third-target" if other == "mixed_schema" else "other-target",
+        original["context_names"],
+        original["context_units"],
+        1000,
+        10,
+        500,
+        original["values"][:10],
+        original["available_at_micros"][:10],
+    )
+    broker.records[1] = [(0, first), (1, b"not-json" if other == "malformed" else second)]
+    broker.bounds[1] = (0, 2)
+    captured = broker.catalogue.capture(document())
+    assert captured["binding"]["partition"] == 0
+    request = retained(broker)
+    assert broker.catalogue.verify_binding(registered(request), request, TOPIC, 0)["partition"] == 0

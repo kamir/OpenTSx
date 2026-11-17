@@ -153,21 +153,21 @@ python3 deploy/local-cp/workbench.py demo-seed --scenario sarimax
 Load `tsx.workbench-demo.sarimax.episodes.v2` through the training catalogue.
 Select SARIMAX. Select **Load context topics**, choose
 `tsx.workbench-demo.sarimax.context.v1`, select **Read context schemas**, choose
-partition 0, and select **Load aligned SARIMAX context**.
-The capture preserves column order, units, values and availability times for the
-selected target range and horizon. Changing the target, range or evaluation
-settings requires a new capture. Review the backtest and register the fit.
-Select **Load scoring context topics**, choose the same context topic, select
-**Read scoring context schemas** and choose partition 0 when starting its Smart
-Topic.
+partition 0, and select **Load aligned SARIMAX context**. The capture preserves
+column order, units, values and availability times for the selected target range
+and horizon. Changing the target, range or evaluation settings requires a new
+capture. Review the backtest and register the fit. Select **Load scoring context
+topics**, choose the same context topic, select **Read scoring context schemas**
+and choose partition 0 when starting its Smart Topic.
 
 The `opentsx.forecast-context.v1` record carries `record_id`,
 `target_series_id`, `context_names`, `context_units`, `t_start_micros`,
 `interval_micros`, `issued_at_micros`, `values`, `available_at_micros` and
-`revision: 0`. `record_id` is the canonical SHA-256 of all other fields. The
-Kafka key equals that digest. Rows have a regular valid-time grid. Each
-availability cell must be no earlier than the record's issue time. These are
-source-supplied claims; Kafka arrival time does not certify real-world
+`revision: 0`. `record_id` is the canonical SHA-256 of all other fields.
+Demonstration records use the target series identifier as their Kafka key. The
+body digest identifies the context record. Rows have a regular valid-time grid.
+Each availability cell must be no earlier than the record's issue time. These
+are source-supplied claims; Kafka arrival time does not certify real-world
 publication time.
 
 This profile uses `immutable_known_ahead` context. It rejects revisions,
@@ -195,6 +195,10 @@ The worker resumes the pending target. For normal use, publish both in order:
 ```bash
 python3 deploy/local-cp/workbench.py demo-append --scenario sarimax
 ```
+
+Context replay starts at the earliest record pinned by the training capture. The
+selected context partition must have one ordered schema and contiguous
+valid-time rows in the admitted snapshot.
 
 The durable checkpoint preserves both source cursors and bounded context rows,
 including lookahead already consumed for a future horizon. Context-only progress

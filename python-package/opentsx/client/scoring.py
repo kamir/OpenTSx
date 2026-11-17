@@ -262,7 +262,7 @@ def _context_checkpoint(checkpoint, config, artifact, low, high):
             "partition": config["partition"],
             "schema_id": config["schema"]["schema_id"],
             "binding_id": config["binding_id"],
-            "next_offset": low,
+            "next_offset": min(config["positions"]),
             "watermark_micros": None,
             "rows": [],
         }

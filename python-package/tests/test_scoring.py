@@ -1090,3 +1090,16 @@ def test_sarimax_target_record_limit_applies_before_training_overlap_is_trimmed(
         value.run([message(0, record)])
     assert value.context_consumer.polls == []
     assert value.store.outputs == []
+
+
+def test_initial_context_replay_starts_at_the_first_pinned_record(context_runtime):
+    value = context_runtime
+    value.store.deployment["context_binding"]["source_positions"][0]["offset"] = "5"
+    value.context_consumer.bounds = (0, 6)
+    value.context_consumer.messages = [value.context_message(offset=5)]
+    value.run([message()])
+    assert value.context_consumer.assignments[-1][0].offset == 5
+    assert value.store.checkpoint["context"]["next_offset"] == 6
+    assert value.store.outputs[0][1]["context"]["source_positions"] == [
+        {"offset": "5", "record_id": value.context_record["record_id"]}
+    ]
