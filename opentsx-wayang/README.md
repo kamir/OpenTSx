@@ -179,6 +179,21 @@ The checkpoint file is JSON with these fields (`TsxCheckpoint.java`):
 | `next` | partition number (as a string) to the first offset not yet processed |
 | `state` | DAG node id to the state of its operator: `SeriesStream.state()` for a clean chain, Base64 of `StatsEngine.writeState` for statistics |
 
+## Measure increment latency
+
+Run [`tools/wayang_increment_latency.py`](../tools/wayang_increment_latency.py)
+from a clean tracked checkout to measure the real `TsxIncrement` passthrough and
+`dq.checks` plus `resample PT1M` plans. The default matrix uses one partition,
+intervals of 5, 30 and 60 seconds, 30 increments, and three repetitions. Conditions
+run sequentially with a fresh JVM and disposable in-memory KafScale broker.
+
+Read the [operations instructions](../docs/user-manual/12-operations.md#127-measure-wayang-increment-latency)
+for the command, metric definitions and isolation limits. The generated
+[measurement report](../docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+identifies the hardware, versions, exact commands and raw samples. Produce ingress
+clocks measure transport latency; Kafka record timestamps retain event time.
+These measurements cover A1.7, not the broader throughput or Track B matrix.
+
 ## Dependencies
 
 The root `pom.xml` pins `wayang.version` and manages `wayang-core`, `wayang-basic` and `wayang-java` with these

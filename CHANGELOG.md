@@ -10,6 +10,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- A rerunnable Wayang increment-latency harness for TASK-020 A1.7: real
+  passthrough and `dq.checks` plus `resample PT1M` plans, paced complete simulator
+  input, a pinned disposable KafScale broker, private runtime snapshots and
+  per-increment/raw output timing samples. The
+  [measurement report](docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  records its metric definitions, configuration and isolation limits.
 - `opentsx-wayang` A3.2 (TASK-020): `pair.xcorr` runs on Wayang as `TsxPair`, with the pair windows of the workbench
   (`pairs.ts`) ported to `ops/TsxPairWindows`. Episodes of A and B are paired (`same` or `intersect`) as they arrive
   and wait in the checkpoint for their counterparts; each pair range gives one episode per field
