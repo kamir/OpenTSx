@@ -54,6 +54,13 @@ require identical event lists and an absolute error below `5e-13` for
 `q_total`, `q_ab`, `q_ba`, and `q_rand`. The random sequence is compared
 exactly.
 
+The native Java API `TsxPair` also executes `pair.es` on sampled episodes.
+Four shared sampled-series cases run through Wayang in one plan and with pair
+state restored between increments; four event-list-only cases remain kernel
+checks. Read the [native ES instructions](../docs/user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang)
+for clock units, seed reduction and settings labels. This API is separate from
+a deployed UI DAG binding or a frozen catalog entry.
+
 The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md) covers UI DAGs deployed through
 Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
 [shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`
@@ -134,7 +141,7 @@ align.connectTo(0, sink, 0);
 
 ## Compare two series in windows
 
-`TsxPair` runs a pair method (`pair.xcorr`) by the rules of `pairs.ts` of the workbench. Mark the episodes of A with
+`TsxPair` runs `pair.xcorr` and `pair.es` by the rules of `pairs.ts` of the workbench. Mark the episodes of A with
 input `a` and those of B with input `b` (`TsxTagged`). Every series of `a` is compared with every series of `b`:
 `pairing` `same` pairs episodes with equal ranges, `intersect` overlapping episodes on their intersection. Each pair
 range gives one episode per field, series `pair.<method>.<field>` with the tags `a`, `b`, `window` and `step`, parent
@@ -172,7 +179,7 @@ TsxIncrement.run(config, (source, state) -> {
 | `TsxStatsWindow`, `JavaTsxStatsWindow` | `stats.welford-ddsketch` through `StatsEngine` of `opentsx-stats`: `SeriesStats` per series and window |
 | `TsxAlignVector`, `JavaTsxAlignVector` | `align.vector` through `VectorStream` with named inputs; input `TsxTagged`, output `TsxVectorRecord` |
 | `TsxVectorSink`, `JavaTsxVectorSink` | writes `opentsx.vector.v1` JSON records with `KafScaleClients.producer`; returns after every record is acknowledged |
-| `TsxPair`, `JavaTsxPair` | pair methods through `ops/TsxPairWindows` (port of `pairs.ts`) and `ops/TsxPairXcorr`; output `Episode` |
+| `TsxPair`, `JavaTsxPair` | pair methods through `ops/TsxPairWindows`, `ops/TsxPairXcorr` and `ops/TsxPairEs`; output `Episode` |
 | `TsxSegment` | Threshold/extremum segments; keyed checkpoint |
 | `TsxSaxWord` | SAX words in `EpisodeSummary.sax` |
 | `TsxDqResult` | `SeriesStats` to JSON `opentsx.signal.v1` |
@@ -298,6 +305,9 @@ exact field and sketch-byte comparisons. `TsxVectorVectorsTest` runs all six
 shared `align.vector` cases through Wayang, once in one run and once in two
 increments with the state in between. `TsxPairVectorsTest` runs all five
 shared `pair.xcorr` cases through Wayang, also with B in a later increment.
+`TsxPairEsWayangTest` runs all four `pair.es` series cases through Wayang,
+including a later increment and restored state. The four event-list cases
+remain numerical kernel tests because they contain no sampled series.
 `DagToWayangErrorsTest` checks the
 four parameter messages exactly. CI rejects missing or skipped acceptance tests.
 

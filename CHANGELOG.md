@@ -10,6 +10,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `pair.es` runs on Wayang through `TsxPair` with `q_total`, `q_ab`, `q_ba`
+  and `q_rand` outputs. The four shared series cases execute through real plans.
+  Parameters and surrogate seeds follow the workbench implementation.
+
 - Explicit bounded workbench deployment through the authenticated backend, PostgreSQL journal and standalone
   coordinator to Apache Wayang's custom Rust platform. Connected topic sources, unions, a fused clean chain and
   sink execute as one stage; complete topics are assigned statically to one to three HTTP workers. All workers

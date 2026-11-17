@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A pair method ({@code pair.xcorr}, S1.7) on Wayang: compares every series of input {@code a} with every series of
+ * A pair method ({@code pair.xcorr}, {@code pair.es}, S1.7) on Wayang: compares every series of input {@code a} with every series of
  * input {@code b}, episode by episode, following {@code pairs.ts} of the workbench. Each pair range gives one result
  * episode per field, series {@code pair.<method>.<field>} with the tags a, b, window and step. Episodes wait in
  * {@link TsxState} until every series of the other input has passed their end.

@@ -183,6 +183,8 @@ vector cases, and the four named parameter-message tests to execute successfully
   with every series of input `b`, episode by episode, by the rules of
   `pairs.ts` (pairing, windows, clock, coverage); one result episode per
   field and pair range, id of S6.2 (A3.2).
+- [x] `pair.es` on Wayang: the second method of `TsxPair`, over the existing
+  `ops/TsxPairEs` kernel (A3.3).
 - [x] Native Wayang mappings for `segment.threshold`, `segment.extremum`,
   `sax.word`, and `dq.result`: 26 exact shared cases in the three A3.4 test
   classes. Segment detectors and retained samples are checkpointed per series.
@@ -218,6 +220,12 @@ the two whole series, because a continuing input has no whole series.
 | A3.4 | New operators match their new vectors | `TsxSegmentVectorsTest`, `TsxSaxVectorsTest`, `TsxDqVectorsTest` | V: the four new files | 100 % of cases exact |
 | A3.5 | Stream equals batch | `TsxStreamEqualsBatchTest` feeds every vector input in chunks of 1, 7 and all records, in two series orders | V | identical output in all 6 runs per case |
 | A3.6 | The catalog is complete and valid | `SystemDocTest` | `systems/processors/` | one description per row of S1.7 with `state`, `merge`, `runtimes.wayang.status: available`; schema validation 0 errors |
+
+Status of A3.3 on 2026-11-17, JDK 21: `TsxPairEsWayangTest` executes the four
+sampled-series cases through Wayang, both together and with restored state
+between increments. The four event-list cases remain kernel tests.
+All 11 native ES tests pass, including unsigned 32-bit seed conversion beyond
+the signed long range and Workbench-compatible numeric labels.
 
 Status of the retrieval operators on 2026-11-17:
 

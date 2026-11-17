@@ -1674,7 +1674,8 @@
       "surface": "ui",
       "objectives": [
         "Detect strict local peaks above a population-deviation threshold.",
-        "Compare observed synchronization with an interval-shuffle control."
+        "Compare observed synchronization with an interval-shuffle control.",
+        "Distinguish native sampled-series Wayang execution from event-list kernel checks and deployed DAG bindings."
       ],
       "prerequisites": [
         "Read x as an ordered coordinate and null as a missing value.",
@@ -1683,7 +1684,9 @@
       "tasks": [
         "Predict events at ticks 1 and 4 in both inputs.",
         "Explain why simultaneous events split equally between q_ab and q_ba.",
-        "Observe that shuffling the single inter-event interval cannot change this two-event control."
+        "Observe that shuffling the single inter-event interval cannot change this two-event control.",
+        "Inspect the four shared sampled-series cases through TsxPair, including state restored between B and a later A increment.",
+        "Compare largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench and settingsLabelsKeepWorkbenchNumberFormatting with the workbench settings."
       ],
       "starter": {
         "bucket": {
@@ -1752,11 +1755,16 @@
       },
       "expected": [
         "q_total and q_rand are both 1.",
-        "q_ab and q_ba are both 0.5 at center second 3."
+        "q_ab and q_ba are both 0.5 at center second 3.",
+        "Four sampled-series vector cases match all four fields through Wayang within 5e-13, in one plan and after restoring state between increments.",
+        "The four event-list-only cases remain numerical kernel checks; TsxPairEsVectorsTest covers all eight cases.",
+        "Native random state uses the seed modulo 2^32, while sigma, tauMax, shuffles and seed labels retain workbench number formatting."
       ],
       "pitfalls": [
         "A large q_total alone does not prove coupling when q_rand is equally large.",
-        "First and last samples cannot be detected local-maximum events."
+        "First and last samples cannot be detected local-maximum events.",
+        "The native Java API does not establish a deployed UI DAG binding or a frozen catalog entry.",
+        "A large whole-number seed must wrap to the unsigned 32-bit random state without changing its settings label."
       ],
       "parameterKeys": [
         "pairing",
@@ -1825,14 +1833,23 @@
           "docs/user-manual/17-learn-operators.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#pair-es"
+          "docs/learning/ui-operator-contracts.md#pair-es",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/es.ts#PAIR_ES"
+          "opentsx-saas-frontend/src/workbench/es.ts#PAIR_ES",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxPair.java#TsxPair",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/es.test.ts"
+          "opentsx-saas-frontend/src/workbench/es.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#everySeriesCaseMatchesThroughAWayangPlan",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#aInALaterIncrementGivesTheSameResult",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/pair-es.v1.json"

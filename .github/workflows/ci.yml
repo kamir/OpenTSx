@@ -399,6 +399,7 @@ jobs:
               "TsxVectorVectorsTest": 13,
               "TsxVectorIntegrationTest": 1,
               "TsxPairVectorsTest": 12,
+              "TsxPairEsWayangTest": 11,
               "TsxSegmentVectorsTest": 13,
               "TsxSaxVectorsTest": 8,
               "TsxDqVectorsTest": 10,
@@ -433,6 +434,7 @@ jobs:
                   if len(vectors) != 5:
                       raise SystemExit("all five pair.xcorr vectors must execute through Wayang")
               factories = {
+                  "TsxPairEsWayangTest": ("everySeriesCaseMatchesThroughAWayangPlan()[", 4),
                   "TsxSegmentVectorsTest": ("sharedVectorsThroughRealWayangPlans()[", 12),
                   "TsxSaxVectorsTest": ("allSharedWordsMatchThroughWayang()[", 7),
                   "TsxDqVectorsTest": ("allSharedResultsMatchThroughWayang()[", 7),

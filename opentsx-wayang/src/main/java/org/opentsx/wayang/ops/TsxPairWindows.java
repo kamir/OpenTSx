@@ -60,6 +60,75 @@ public final class TsxPairWindows {
         };
     }
 
+    /** {@code pair.es} (es.ts:132-166): fields q_total, q_ab, q_ba, q_rand; the cap tauMax in seconds. */
+    public static Method es(Map<String, ?> params) {
+        double sigma = number(params.get("sigma"), 2);
+        if (!Double.isFinite(sigma)) {
+            throw new IllegalArgumentException("sigma \"" + params.get("sigma") + "\" is not a number.");
+        }
+        double cap = number(params.get("tauMax"), 0);
+        if (!(cap >= 0)) {
+            throw new IllegalArgumentException("tauMax \"" + params.get("tauMax") + "\" is not a duration in seconds, 0 or more.");
+        }
+        double shuffles = number(params.get("shuffles"), 10);
+        if (shuffles != Math.rint(shuffles) || shuffles < 1 || shuffles > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("shuffles \"" + params.get("shuffles") + "\" is not a whole number of 1 or more.");
+        }
+        double seed = number(params.get("seed"), 1);
+        if (seed != Math.rint(seed) || Double.isInfinite(seed)) {
+            throw new IllegalArgumentException("seed \"" + params.get("seed") + "\" is not a whole number.");
+        }
+        Double tauMax = cap > 0 ? cap : null;
+        Map<String, String> settings = Map.of("sigma", text(sigma), "tauMax", tauMax == null ? "none" : "PT" + text(tauMax) + "S",
+                "shuffles", text(shuffles), "seed", text(seed));
+        return new Method() {
+            public String id() {
+                return "pair.es";
+            }
+
+            public List<String> fields() {
+                return List.of("q_total", "q_ab", "q_ba", "q_rand");
+            }
+
+            public Map<String, String> settings() {
+                return settings;
+            }
+
+            public double[] compute(double[] a, double[] b, double every, double coverage) {
+                double[] ea = TsxPairEs.detectEvents(a, sigma);
+                double[] eb = TsxPairEs.detectEvents(b, sigma);
+                Double tau = tauMax == null ? null : tauMax / every;
+                TsxPairEs.Sync sync = TsxPairEs.eventSync(ea, eb, tau);
+                return new double[]{sync.qTotal(), sync.qAb(), sync.qBa(),
+                        TsxPairEs.surrogateSync(ea, eb, (int) shuffles, (long) (seed % 4294967296.0), tau)};
+            }
+        };
+    }
+
+    /** A parameter as a number, as JavaScript's Number() reads a number or a decimal string. */
+    private static double number(Object value, double fallback) {
+        if (value == null) {
+            return fallback;
+        }
+        if (value instanceof Number n) {
+            return n.doubleValue();
+        }
+        String s = value.toString().trim();
+        if (s.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            return Double.NaN;
+        }
+    }
+
+    /** A number as JavaScript's String() writes it, for the values that occur in settings. */
+    private static String text(double v) {
+        return TsxPairXcorr.number(v);
+    }
+
     /** The samples of one episode: start and end of its range, times and values. */
     public record Piece(String seriesId, String episodeId, double start, double end, double[] x, double[] y) {
     }

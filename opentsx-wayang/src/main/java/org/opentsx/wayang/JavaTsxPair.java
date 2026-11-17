@@ -46,6 +46,9 @@ public final class JavaTsxPair extends TsxPair implements JavaExecutionOperator 
         if (id.equals("pair.xcorr")) {
             return TsxPairWindows.xcorr(params);
         }
+        if (id.equals("pair.es")) {
+            return TsxPairWindows.es(params);
+        }
         throw new IllegalArgumentException("unknown pair method " + id);
     }
 

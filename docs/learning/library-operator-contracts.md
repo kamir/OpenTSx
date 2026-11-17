@@ -55,6 +55,20 @@ Thresholds in this example select planted spike events. Results include both eve
 directional synchronization and `leader`. A lag must be strictly below the permitted local window and cap.
 For the lesson's one-tick lag, cap two accepts the events and cap one rejects their nonzero separation.
 Surrogate helpers and the matching Java `TsxPairEs` kernel belong to this family.
+The shared `pair-es.v1.json` has four sampled-series cases and four event-list-only
+cases; all eight run on the kernel. The native Java `TsxPair` operator executes
+the four sampled cases through Wayang, once together and once with B retained
+in `TsxState` before A arrives after state restoration in a later increment.
+This Java API is separate from a deployed UI DAG binding or a frozen catalog.
+
+For sampled pair windows, `tauMax` is in seconds and zero means uncapped; the
+operator converts it to aligned tick units before calling the kernel. A
+whole-number seed uses its value modulo `2^32` for Mulberry32. Labels retain
+the original workbench numeric text. The native regression methods
+`largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` and
+`settingsLabelsKeepWorkbenchNumberFormatting` check large seeds and boundary
+number formatting. See the
+[native API instructions](../user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang).
 
 ## Measure return intervals
 

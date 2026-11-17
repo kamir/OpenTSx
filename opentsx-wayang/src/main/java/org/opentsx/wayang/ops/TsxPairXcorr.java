@@ -192,7 +192,7 @@ public final class TsxPairXcorr {
         }
     }
 
-    private static String number(double value) {
+    static String number(double value) {
         if (!Double.isFinite(value)) return Double.toString(value);
         if (value == 0) return "0";
         BigDecimal exact = new BigDecimal(value);

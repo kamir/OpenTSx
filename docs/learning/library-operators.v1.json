@@ -104,7 +104,9 @@
       "surface": "library",
       "objectives": [
         "Identify planted events and their lead direction.",
-        "Distinguish a strict lag cap from an inclusive threshold."
+        "Distinguish a strict lag cap from an inclusive threshold.",
+        "Identify the four sampled-series cases that also run through Wayang among the eight kernel cases.",
+        "Explain restored pair state, unsigned 32-bit seeds and workbench settings labels."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -113,7 +115,9 @@
       "tasks": [
         "Plant four spikes in each series with B one tick after A.",
         "Analyze with tau_max two, then one.",
-        "Compare directional synchronization and the reported leader."
+        "Compare directional synchronization and the reported leader.",
+        "Inspect the four sampled-series cases through TsxPair in one plan and with B retained before A arrives after state restoration.",
+        "Read the large-seed and settings-label regressions in TsxPairEsWayangTest; explain why the seed label need not equal the random state."
       ],
       "starter": {
         "language": "python",
@@ -123,27 +127,41 @@
       "expected": [
         "Events are [2,8,14,20] and [3,9,15,21].",
         "Cap two gives overall_sync=1, sync_1_to_2=1, sync_2_to_1=0 and leader Series 1.",
-        "Cap one gives overall_sync=0 because the lag must be strictly below the cap."
+        "Cap one gives overall_sync=0 because the lag must be strictly below the cap.",
+        "Four sampled-series vectors match all four synchronization fields through Wayang within 5e-13, also after restoring state between increments.",
+        "The four event-list-only vectors remain kernel cases; all eight cases are checked by TsxPairEsVectorsTest.",
+        "A native seed of 1e20 gives the same window results as unsigned 32-bit state 1661992960 while its settings label retains the original number."
       ],
       "pitfalls": [
         "Event synchronization is not Pearson correlation.",
-        "Use a fixed seed when adding surrogate_sync; a reproducible surrogate does not establish causality."
+        "Use a fixed seed when adding surrogate_sync; a reproducible surrogate does not establish causality.",
+        "Event-list-only vectors do not establish sampled Wayang coverage or a deployed DAG binding.",
+        "The direct kernel uses event-list units for tauMax; the sampled native operator accepts seconds and converts them to ticks."
       ],
       "references": {
         "manual": [
           "docs/user-manual/11-classic-analytics.md#113-event-synchronization-es",
+          "docs/user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang",
           "docs/user-manual/17-learn-operators.md"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#compare-event-synchronization"
+          "docs/learning/library-operator-contracts.md#compare-event-synchronization",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
         ],
         "source": [
           "python-package/opentsx/algorithms/event_sync.py#L263",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairEs.java#L38"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairEs.java#L38",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxPair.java#TsxPair",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es"
         ],
         "tests": [
           "python-package/tests/test_library_learning_algorithms.py#test_learning_event_sync_exposes_direction_and_strict_cap",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java#L1"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java#L1",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#everySeriesCaseMatchesThroughAWayangPlan",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#aInALaterIncrementGivesTheSameResult",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/pair-es.v1.json"
