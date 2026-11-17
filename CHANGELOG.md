@@ -109,11 +109,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Numbers in DAG nodes, demo generators, system documents and retrieval POST bodies are taken as YAML or JSON numbers
   only. A number in quotes, such as `factor: "1.5"` or `"topK": "10"`, was read as that number and is now refused;
   write it without quotes. A deployed DAG that holds one gets the status `failed` from the vector processor.
+- The `Character` argument of `TimeSeriesObject.writeToFile(file, separator)` is the column separator; it no longer
+  replaces commas in the output.
+- `TimeSeriesObject` and `MessreihenLoader` write their labels, comments, messages and diagnostics in English. `shift`
+  throws `shift: offset <offset> exceeds the <n> values; expected an offset from -<n> to <n>`, `split` notes `<n>
+  missing values replaced with mean=<mean>.`, `cutFromStart` labels `( -<n> values )` and `calcAveragOfRows` labels
+  `mean of <n> series`.
 
 ### Removed
 
 - `TimeSeriesAnalysisJob`, the 2.x Flink example job. `StatsJob` is the v2 Flink job. `TimeSeriesAggregateFunction`
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
+- `TimeSeriesObject.fillGapWithValue`, which ignored its arguments and did what `replaceZeroWithAverage` does, and
+  `TimeSeriesObject.add2`; use `replaceZeroWithAverage` and `add`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -177,6 +185,31 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `GET /v1/episodes?resample=` with a step that gives more than 100000 points for one episode allocated memory for
   every point. It now answers 400 naming `resample`. JSON bodies over 262144 bytes to `POST /v1/patterns/search`,
   `/v1/episodes/similar` and `/v1/segments` now answer 413, like `/v1/systems/{id}/...`.
+- `ConfigManager` stops with `<path>: no such file; give an existing file` when `OPENTSX_CONFIG_FILE`,
+  `opentsx.config.file` or a profile names a missing file, and with `<name>: empty value; set a value or leave the key
+  unset` when one of them is empty. It reports files that do not load, and `getInt` stops on a value that is not a
+  whole number instead of returning the default.
+- Phase-randomized surrogates of `TimeSeriesObjectFFT`, also used by `FFTPhaseRandomizer`, keep the amplitude of every
+  Fourier coefficient of the zero-padded values and the Nyquist coefficient, and open no chart windows.
+  `getModifiedTimeSeries_PhaseRandomized`, `getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV` and
+  `getPhaseRandomizedModifiedFFT_SHUFFLED_INV` take a `java.util.Random` to repeat a surrogate. `FFTPhaseRandomizer`
+  mode 0 permutes the phases and mode 1 adds random phases.
+- `Statistical.shapiroWilk` no longer changes when a constant is added to the values, and its Javadoc gives the result
+  order W, p.
+- `GrangerCausality.grangerCausalityTest` no longer fails with a singular design matrix or prints to standard output;
+  its p value matches the F test of two least-squares models with intercept.
+- `TimeSeriesObject.calcEntropyForWindow` throws `IllegalArgumentException` for a window length below 4 instead of
+  looping forever.
+- `TimeSeriesObject.writeToFile` writes every pair with the given separator instead of a header and 5 points, also for
+  `TimeSeriesObjectFFT`. `toString` works for fewer than 5 points, and a failed write throws `UncheckedIOException`
+  naming the file.
+- `TimeSeriesObject.getAvarage` and `TimeSeriesObjectFFT.getAvarage` compute the mean instead of returning 0.0 until
+  `calcAverage` was called.
+- `MessreihenLoader.loadMessreihe_2` reads comma-separated files with decimal points and stops with the file and line
+  on a bad value, a short line or a missing file instead of returning an empty or partial series.
+- `TimeSeriesObject.add`, `add(series, length)` and `divide_by` keep the x values, throw for series of different
+  lengths and give NaN for a zero divisor instead of padding with 0.0.
+- `RNGWrapper.getStdPoisson(lambda)` uses `lambda` instead of 1.0.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

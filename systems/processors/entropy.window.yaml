@@ -24,9 +24,10 @@ runtimes:
     status: available
     class: "org.opentsx.data.series.TimeSeriesObject#calcEntropyForWindow"
     note: >-
-      The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY,
-      without a test. It uses the same windows and step, but divides each window by its maximum and maps the values to
-      100 levels instead of bins over the range of the series.
+      The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY.
+      It uses the same windows and step, but divides each window by its maximum and maps the values to 100 levels
+      instead of bins over the range of the series. A length below 4 throws IllegalArgumentException.
+      TimeSeriesObjectStatisticsTest checks the length and the step, not the entropy values.
   python: { status: none }
   processor: { status: none }
   go: { status: none }

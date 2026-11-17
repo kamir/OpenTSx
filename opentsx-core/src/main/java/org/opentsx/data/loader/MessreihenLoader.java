@@ -1,5 +1,5 @@
 /**
- * Load Messreihen from a 
+ * Loads time series from text files.
  * 
  */
 
@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
@@ -43,11 +44,11 @@ public class MessreihenLoader {
         }
         if (!f.canRead()) {
             error = true;
-            System.out.println("nicht lesbar...");
+            System.out.println("not readable...");
         };
 
         if (error) {
-            System.out.println("Fehler ... MessreihenLoader.checkFileAccess().");
+            System.out.println("Error ... MessreihenLoader.checkFileAccess().");
             state = false;
         }
         else {
@@ -58,8 +59,8 @@ public class MessreihenLoader {
 
     
     /**
-     * Es wird davon ausgegangen, dass keine Kopfzeile vorhanden ist und
-     * alle Zeilen gleich viele Spalten haben.
+     * Assumes that the file has no header line and
+     * that all lines have the same number of columns.
      *
      * @param fn
      * @param spalteX
@@ -72,7 +73,7 @@ public class MessreihenLoader {
         int logUsed = 0;
         
         //
-        // Anzahl der BINS
+        // number of bins
         //
         double z = 1.0;
         int c = 0;
@@ -94,7 +95,7 @@ public class MessreihenLoader {
         }
         
         //
-        // BIN Breiten ermitteln ...
+        // bin widths
         //
         z=1;
         c=0;
@@ -140,7 +141,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( "Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -168,7 +169,7 @@ public class MessreihenLoader {
                    // System.out.println( i + " [" + data[i] + "]" );
                    i++;
                 }
-                // wir zählen ab 1 ....
+                // columns count from 1
                 String sx = data[_spalteX-1];
                 String sy = data[spalteY-1];
                 Double dx = Double.parseDouble(sx);
@@ -225,18 +226,18 @@ public class MessreihenLoader {
             }
         }
         
-        // zusammenfassen ...
+        // summarize
         for( int j = 1; j < conuterBin.length ; j++ ) { 
             double x = lowerBorder[j] + widthOfBin[j] * 0.5;
             double y = conuterBin[j] / widthOfBin[j];  // DEGREE DISTRIBUTION
-            double y2 = conuterBin[j] / conuterBin2[j]; // DICHTE DER ZEITREIHE
+            double y2 = conuterBin[j] / conuterBin2[j]; // DENSITY OF THE TIME SERIES
             
             System.out.println(" >>> use: " +  x + " \t " + y2 + "\t --> " + conuterBin[j] + "\t" + conuterBin2[j] );
             
             mr.addValuePair(x, y2);
         }
         
-        System.out.println( logSkipped / ( logSkipped + logUsed ) + "% verworfen");
+        System.out.println( logSkipped / ( logSkipped + logUsed ) + "% skipped");
         return mr;
     };
 
@@ -244,8 +245,8 @@ public class MessreihenLoader {
 
     
     /**
-     * Es wird davon ausgegangen, dass keine Kopfzeile vorhanden ist und
-     * alle Zeilen gleich viele Spalten haben.
+     * Assumes that the file has no header line and
+     * that all lines have the same number of columns.
      *
      * @param fn
      * @param spalteX
@@ -258,7 +259,7 @@ public class MessreihenLoader {
         int logUsed = 0;
         
         //
-        // Anzahl der BINS
+        // number of bins
         //
         double z = 1.0;
         int c = 0;
@@ -280,7 +281,7 @@ public class MessreihenLoader {
         }
         
         //
-        // BIN Breiten ermitteln ...
+        // bin widths
         //
         z=1;
         c=0;
@@ -326,7 +327,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( "Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -354,7 +355,7 @@ public class MessreihenLoader {
                    // System.out.println( i + " [" + data[i] + "]" );
                    i++;
                 }
-                // wir zählen ab 1 ....
+                // columns count from 1
                 String sx = data[_spalteX-1];
                 String sy = data[spalteY-1];
                 Double dx = Double.parseDouble(sx);
@@ -411,11 +412,10 @@ public class MessreihenLoader {
             }
         }
         
-        // zusammenfassen ...
+        // summarize
         for( int j = 1; j < conuterBin.length ; j++ ) { 
             double x = lowerBorder[j] + widthOfBin[j] * 0.5;
             double y = conuterBin[j] / widthOfBin[j];  // DEGREE DISTRIBUTION
-            //double y2 = conuterBin[j] / conuterBin2[j]; // DICHTE DER ZEITREIHE
             
             System.out.println(" >>> use: " +  x + " \t " + y + "\t --> " + conuterBin[j] + "\t" + conuterBin2[j] );
             
@@ -425,7 +425,7 @@ public class MessreihenLoader {
         if ( ( logSkipped + logUsed ) > 0 ) {
             System.out.println( ( logSkipped + logUsed ) + " counted ... ");
         
-            System.out.println( logSkipped / ( logSkipped + logUsed ) + "% verworfen");
+            System.out.println( logSkipped / ( logSkipped + logUsed ) + "% skipped");
         }
         else { 
             System.out.println( "PROBLEMS in data !");
@@ -435,8 +435,8 @@ public class MessreihenLoader {
     
     
      /**
-     * Es wird davon ausgegangen, dass keine Kopfzeile vorhanden ist und
-     * alle Zeilen gleich viele Spalten haben.
+     * Assumes that the file has no header line and
+     * that all lines have the same number of columns.
      *
      * @param fn
      * @param spalteX
@@ -449,7 +449,7 @@ public class MessreihenLoader {
         int logUsed = 0;
         
         //
-        // Anzahl der BINS
+        // number of bins
         //
         double z = 1.0;
         int c = 0;
@@ -475,7 +475,7 @@ public class MessreihenLoader {
         
         
         //
-        // BIN Breiten ermitteln ...
+        // bin widths
         //
         z=1;
         c=0;
@@ -496,7 +496,7 @@ public class MessreihenLoader {
             int index = getBin(i, lowerBorder, conuterBin );
             widthOfBinCounted[index] = widthOfBinCounted[index] + 1; 
         }
-        System.out.println( ">>> Binbreite wurde ausgezählt ... ");
+        System.out.println( ">>> bin widths counted ... ");
         for( int i = 0; i < widthOfBinCounted.length; i++ ) {
             System.out.println("("+i+") " + widthOfBinCounted[ i ] );  
         }
@@ -537,7 +537,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( "Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -570,7 +570,7 @@ public class MessreihenLoader {
                    i++;
                 }
                 
-                // wir zählen ab 1 ....
+                // columns count from 1
                 String sx = data[spalteX-1];
                 String sy = data[spalteY-1];
                 Double dx = Double.parseDouble(sx);
@@ -627,12 +627,12 @@ public class MessreihenLoader {
             }
         }
         
-        // zusammenfassen ...
+        // summarize
         for( int j = 1; j < conuterBin.length ; j++ ) { 
             double x = lowerBorder[j] + widthOfBin[j] * 0.5;
             
             double y = conuterBin[j] / widthOfBin[j];  // DEGREE DISTRIBUTION
-            double y2 = conuterBin[j] / widthOfBinCounted[j]; // DICHTE DER ZEITREIHE
+            double y2 = conuterBin[j] / widthOfBinCounted[j]; // DENSITY OF THE TIME SERIES
             
             // System.out.println(" >>> use: " +  x + " \t " + y + "\t --> " + conuterBin[j] + "\t" + conuterBin2[j] );
             
@@ -642,7 +642,7 @@ public class MessreihenLoader {
         if ( ( logSkipped + logUsed ) > 0 ) {
             System.out.println( ( logSkipped + logUsed ) + " counted ... ");
         
-            System.out.println( logSkipped / ( logSkipped + logUsed ) + "% verworfen");
+            System.out.println( logSkipped / ( logSkipped + logUsed ) + "% skipped");
         }
         else { 
             System.out.println( "PROBLEMS in data !");
@@ -674,110 +674,64 @@ public class MessreihenLoader {
 
 
     /**
-     * Es wird davon ausgegangen, dass keine Kopfzeile vorhanden ist und
-     * alle Zeilen gleich viele Spalten haben.
-     *
-     * @param fn
-     * @param spalteX
-     * @param spalteY
-     * @return
+     * Loads x from column spalteX and y from column spalteY, both counted from 1. Lines that start with # and empty
+     * lines are skipped. The columns are split at the characters of delim, or at white space when delim is null.
+     * A comma is read as a decimal point unless delim contains a comma.
      */
     public TimeSeriesObject loadMessreihe_2(File fn , int spalteX , int spalteY ) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
-
-        System.out.println("File: "+fn.getAbsolutePath());
-
-//        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) { 
-//            mr = null;
-//            
-//            return mr;
-//        };
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            
-            br = new BufferedReader(new FileReader(fn));
-            
-            System.out.println(">>> File: "+fn.getAbsolutePath() + " " + fn.canRead() );
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( "> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( delim != null ) {
-                st = new StringTokenizer(line, delim );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( "Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                    
-                   
-                line = line.replace(',','.');
+        boolean decimalComma = delim == null || delim.indexOf(',') < 0;
+        int columns = Math.max(spalteX, spalteY);
+        int lineNumber = 0;
+        int limitCounter = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( limitCounter < limit && (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
+                    continue;
+                }
+                if ( decimalComma ) {
+                    line = line.replace(',','.');
+                }
                 if ( debug ) System.out.println( "> line=[" + line + "]" );
 
-                if ( delim != null ) {
-                    st = new StringTokenizer(line, delim );
+                StringTokenizer st = delim != null ? new StringTokenizer(line, delim) : new StringTokenizer(line);
+                String[] data = new String[st.countTokens()];
+                for (int i = 0; i < data.length; i++) {
+                    data[i] = st.nextToken();
                 }
-                else {
-                    st = new StringTokenizer(line);
-                };
-
-                int i = 0;
-                while ( st.hasMoreElements() ) {
-                   data[i] = st.nextToken();
-                   // System.out.println( i + " [" + data[i] + "]" );
-                   i++;
+                if ( data.length < columns ) {
+                    throw new IllegalArgumentException(fn + ":" + lineNumber + ": the line has " + data.length
+                            + " columns; expected at least " + columns + " columns separated by "
+                            + (delim == null ? "white space" : "\"" + delim + "\""));
                 }
-                // wir zählen ab 1 ....
-                String sx = data[spalteX-1];
-                String sy = data[spalteY-1];
-                Double dx = Double.parseDouble(sx);
-                Double dy = Double.parseDouble(sy);
-
-               // System.out.println( line + " : " + dx + " " + dy );
-                mr.addValuePair(dx, dy);
-                 limitCounter++;
-                };
-
-                
-
-            };
-            br.close();
-        }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
+                mr.addValuePair(parseNumber(fn, lineNumber, data[spalteX - 1]), parseNumber(fn, lineNumber, data[spalteY - 1]));
+                limitCounter++;
             }
+        }
+        catch (IOException ex) {
+            throw new UncheckedIOException(fn + ": cannot read the file (" + ex + ")", ex);
         }
         return mr;
     };
 
-    
+    private static double parseNumber(File fn, int lineNumber, String token) {
+        try {
+            return Double.parseDouble(token);
+        }
+        catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(fn + ":" + lineNumber + ": \"" + token
+                    + "\" is not a number; expected a decimal number such as 1.5", ex);
+        }
+    }
+
+
     /**
-    * Es soll eine Datei eingelesen werden, in der lediglich die y Werte stehen (also nur eine Spalte)
+    * Reads a file that holds only the y values, in one column.
      */
     public TimeSeriesObject loadMessreihe_1(File fn ) {
 
@@ -804,13 +758,13 @@ public class MessreihenLoader {
                 else goOn = false;
                 System.out.println( line );
             }
-            // und nun die richtige Zeile mit dem Header lesen
+            // now read the line after the header
             line = br.readLine();
             br.close();
 
             StringTokenizer st = new StringTokenizer(line);
             int zahlSpalten = st.countTokens();
-            System.out.println( "Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -830,7 +784,7 @@ public class MessreihenLoader {
                         // System.out.println( i + " [" + data[i] + "]" );
                         i++;
                     }
-                    // wir zählen ab 1 ....
+                    // columns count from 1
                     String sy = data[0];
                     Double dx = cnt++;
                     Double dy = Double.parseDouble(sy);
@@ -857,7 +811,7 @@ public class MessreihenLoader {
     public static int limit = 1000000000;
 
     /**
-     * lade x aus Spalte 1 und y aus Spalte 2
+     * Loads x from column 1 and y from column 2.
      * 
      * @param fn
      * @return
@@ -909,7 +863,7 @@ public class MessreihenLoader {
 
     public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, int _limit) {
         limit = _limit;
-        System.out.println( ">>> WARNUNG >>>  LIMIT wird gesetzt auf limit=" + _limit);
+        System.out.println( ">>> WARNING >>>  setting limit=" + _limit);
         return loadMessreihe_2(f, i, i0);
     }
 
@@ -922,7 +876,7 @@ public class MessreihenLoader {
 
         TimeSeriesObject mr = new TimeSeriesObject();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " lese in Spalte Nr:=" + spalteY );
+        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading column nr:=" + spalteY );
 
 //        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) { 
 //            mr = null;
@@ -954,7 +908,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( ">>> Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( ">>> number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -984,7 +938,7 @@ public class MessreihenLoader {
                     }
 
                     x++;
-                    // wir zählen ab 1 ....
+                    // columns count from 1
 
                     String sy = data[spalteY-1];
                     Double dx = 1.0 * x;
@@ -1026,7 +980,7 @@ public class MessreihenLoader {
 
         TimeSeriesObject mr = new TimeSeriesObject();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " lese in Spalte Nr:=" + spalteValue );
+        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading column nr:=" + spalteValue );
 
 
         BufferedReader br = null;
@@ -1053,7 +1007,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( ">>> Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( ">>> number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -1084,7 +1038,7 @@ public class MessreihenLoader {
 
                     x++;
                     
-                    // wir zählen ab 1 ....
+                    // columns count from 1
                     String labelA = data[spalteLabel1-1];
                     String labelB = data[spalteLabel2-1];
                     
@@ -1121,7 +1075,7 @@ public class MessreihenLoader {
     public TimeSeriesObject loadMessreihe_For_LinkStrength(File fn, int spalteLabel1, int spalteLabel2, ColumnValueCalculator mapper, String del) {
         TimeSeriesObject mr = new TimeSeriesObject();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " lese mit mapper:=" + mapper.getName() );
+        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading with mapper:=" + mapper.getName() );
 
 
         BufferedReader br = null;
@@ -1148,7 +1102,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( ">>> Zahl von Spalten in der Datei ("+ fn +") : " + zahlSpalten );
+            System.out.println( ">>> number of columns in the file ("+ fn +") : " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -1179,7 +1133,7 @@ public class MessreihenLoader {
 
                     x++;
                     
-                    // wir zählen ab 1 ....
+                    // columns count from 1
                     
                     
                     String labelA = data[spalteLabel1-1];
@@ -1226,7 +1180,7 @@ public class MessreihenLoader {
 
         mr.dateHash = new Hashtable<Date,Double>();
         
-        System.out.println(">>> File: "+fn.getAbsolutePath() + " lese mit mapper:=" + mapper.getName() );
+        System.out.println(">>> File: "+fn.getAbsolutePath() + " reading with mapper:=" + mapper.getName() );
 
         BufferedReader br = null;
         mr.setLabel( fn.getName() );
@@ -1252,7 +1206,7 @@ public class MessreihenLoader {
             };
 
             int zahlSpalten = st.countTokens();
-            System.out.println( ">>> Zahl von Spalten in der Datei ("+ fn +") " + zahlSpalten );
+            System.out.println( ">>> number of columns in the file ("+ fn +") " + zahlSpalten );
 
             String[] data = new String[zahlSpalten];
 
@@ -1282,7 +1236,7 @@ public class MessreihenLoader {
 
                     x++;
                     
-                    // wir zählen ab 1 ....
+                    // columns count from 1
                     Double dy = 0.0;
                     
                     int mode = 1;

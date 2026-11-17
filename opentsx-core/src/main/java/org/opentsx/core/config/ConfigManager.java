@@ -2,7 +2,9 @@ package org.opentsx.core.config;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Properties;
 
 public final class ConfigManager {
@@ -42,10 +44,12 @@ public final class ConfigManager {
         if (value == null) {
             return defaultValue;
         }
+        String trimmed = value.trim();
         try {
-            return Integer.parseInt(value);
+            return Integer.parseInt(trimmed);
         } catch (NumberFormatException e) {
-            return defaultValue;
+            throw new IllegalArgumentException(key + ": \"" + trimmed
+                    + "\" is not an int; expected a whole number from -2147483648 to 2147483647", e);
         }
     }
 
@@ -75,44 +79,64 @@ public final class ConfigManager {
 
     private void loadDefaults() {
         loadFromClasspath("opentsx-default.properties");
-        loadFromFile("config/opentsx-default.properties");
+        loadFromFile("config/opentsx-default.properties", false);
     }
 
     private void loadProfileOverrides() {
-        String configFile = getOverrideValue("opentsx.config.file");
-        if (configFile == null) {
-            configFile = getOverrideValue("OPENTSX_CONFIG_FILE");
-        }
-        String profile = getOverrideValue("opentsx.config.profile");
-        if (profile == null) {
-            profile = getOverrideValue("OPENTSX_CONFIG_PROFILE");
-        }
+        String configFile = nonBlankOverride("opentsx.config.file", "OPENTSX_CONFIG_FILE");
+        String profile = nonBlankOverride("opentsx.config.profile", "OPENTSX_CONFIG_PROFILE");
         if (configFile != null) {
-            loadFromFile(configFile);
+            loadFromFile(configFile, true);
             return;
         }
         if (profile != null) {
-            loadFromFile("config/opentsx-" + profile + ".properties");
+            loadFromFile("config/opentsx-" + profile + ".properties", true);
         }
+    }
+
+    private String nonBlankOverride(String key, String envKey) {
+        String value = getOverrideValue(key);
+        if (value == null) {
+            value = getOverrideValue(envKey);
+        }
+        if (value != null && value.isBlank()) {
+            String name = System.getProperty(key) != null || System.getenv(key) != null ? key : envKey;
+            throw new IllegalArgumentException(name + ": empty value; set a value or leave the key unset");
+        }
+        return value;
     }
 
     private void loadFromClasspath(String resourcePath) {
         try (InputStream is = ConfigManager.class.getClassLoader().getResourceAsStream(resourcePath)) {
             if (is != null) {
-                properties.load(is);
+                load(is, "classpath:" + resourcePath);
             }
-        } catch (Exception ignored) {
+        } catch (IOException e) {
+            throw new UncheckedIOException("classpath:" + resourcePath + ": cannot read the file (" + e + ")", e);
         }
     }
 
-    private void loadFromFile(String path) {
+    private void loadFromFile(String path, boolean required) {
         File file = new File(path);
-        if (!file.exists() || !file.canRead()) {
+        if (!file.isFile()) {
+            if (required) {
+                throw new IllegalArgumentException(path + ": no such file; give an existing file");
+            }
             return;
         }
         try (FileInputStream fis = new FileInputStream(file)) {
-            properties.load(fis);
-        } catch (Exception ignored) {
+            load(fis, path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(path + ": cannot read the file (" + e + ")", e);
+        }
+    }
+
+    private void load(InputStream in, String source) throws IOException {
+        try {
+            properties.load(in);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(source
+                    + ": malformed \\uxxxx escape; write \\u followed by four hexadecimal digits", e);
         }
     }
 }

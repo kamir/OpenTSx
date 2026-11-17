@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.opentsx.algorithms.statistics.DatasetNormalizationTool;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,6 +20,40 @@ class TimeSeriesObjectStatisticsTest {
         assertEquals(4.0, row.getAvarage());
         row.yValues.set(0, 8.0);
         assertEquals(6.0, row.getAvarage2());
+    }
+
+    @Test
+    void meanIsComputedWithoutCalcAverage() {
+        TimeSeriesObject row = series();
+        assertEquals(4.0, row.getAvarage());
+        row.yValues.set(0, 8.0);
+        assertEquals(6.0, row.getAvarage());
+    }
+
+    @Test
+    void meanOfAnFftSeriesIsComputedWithoutCalcAverage() {
+        TimeSeriesObjectFFT row = new TimeSeriesObjectFFT();
+        row.addValuePair(1.0, 2.0);
+        row.addValuePair(2.0, 6.0);
+        assertEquals(4.0, row.getAvarage());
+        row.yValues.set(0, 8.0);
+        assertEquals(7.0, row.getAvarage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 0, 1, 3})
+    void entropyWindowShorterThanFourFails(int length) {
+        TimeSeriesObject row = series();
+        IllegalArgumentException e = assertTimeoutPreemptively(Duration.ofSeconds(10),
+                () -> assertThrows(IllegalArgumentException.class, () -> row.calcEntropyForWindow(length)));
+        assertEquals("window length: " + length + " is less than 4; expected a window length of at least 4 values",
+                e.getMessage());
+    }
+
+    @Test
+    void entropyWindowOfFourAdvancesByOneValue() {
+        TimeSeriesObject entropy = series().calcEntropyForWindow(4);
+        assertEquals(List.of(0.0, 1.0), entropy.xValues);
     }
 
     @Test

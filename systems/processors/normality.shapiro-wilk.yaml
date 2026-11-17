@@ -22,10 +22,10 @@ runtimes:
     note: >-
       The 2.x model in opentsx-core has org.opentsx.algorithms.statistics.Statistical#shapiroWilk(values), a port of
       algorithm AS R94 made for 3 to 5000 values, used by DistributionTester#testDataset and
-      TimeSeriesObject#getSWTestResult. No test covers it. It throws for fewer than 3 values and returns W = p = -1
-      when all values are equal. Its sort moves the padding value 0 into the data when a value is negative, so W
-      changes when a constant is added. The Swing button TEST Normal Distribution draws histograms of W in windows of
-      20 to 100 values.
+      TimeSeriesObject#getSWTestResult. It returns W at index SHAPIRO_WILK_WSTAT (0) and p at index SHAPIRO_WILK_PVALUE
+      (1). StatisticalTest checks both against scipy.stats.shapiro and checks that adding a constant does not change
+      them. It throws for fewer than 3 values and returns W = p = -1 when all values are equal. The Swing button TEST
+      Normal Distribution draws histograms of W in windows of 20 to 100 values.
   workbench: { status: none, note: "Listed as not ported (TEST Normal Distribution) in ops.ts NOT_PORTED." }
   python: { status: none }
   processor: { status: none }

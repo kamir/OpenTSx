@@ -39,7 +39,7 @@ public class RNGWrapper {
 
     public static double getStdRandomCauchy() { return stdlib.StdRandom.cauchy(); }
 
-    public static double getStdPoisson(double v) { return stdlib.StdRandom.poisson(1.0); }
+    public static double getStdPoisson(double v) { return stdlib.StdRandom.poisson(v); }
 
 
 

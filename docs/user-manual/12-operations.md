@@ -49,6 +49,14 @@ The 2.x tools in `opentsx-core` and `opentsx-lg` use `ConfigManager`, which reso
 4. `config/opentsx-default.properties`,
 5. the resource `opentsx-default.properties` of `opentsx-core`.
 
+When `OPENTSX_CONFIG_FILE` or `opentsx.config.file` names a file, or `OPENTSX_CONFIG_PROFILE` or
+`opentsx.config.profile` names a profile, the file must exist and load; for a profile the path is
+`config/opentsx-<profile>.properties`. An empty or blank value stops the tool with
+`<name>: empty value; set a value or leave the key unset`, where `<name>` is the key or variable that holds it. A
+missing file stops it with `<path>: no such file; give an existing file`. A file that cannot be read or has a
+malformed `\u` escape stops it with a message that starts with `<path>:`. An integer key whose value is not a whole
+number stops it with `<key>: "<value>" is not an int; expected a whole number from -2147483648 to 2147483647`.
+
 `opentsx-connectors` does not use `ConfigManager`. It reads `OPENTSX_TOPIC_MAP_FILE_NAME` and
 `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` from the environment only, so a JVM system property or
 `config/opentsx-default.properties` does not set them.

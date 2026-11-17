@@ -15,7 +15,7 @@ outputs:
   - { name: out, type: series }
 runtimes:
   workbench: { status: none }
-  java: { status: planned, note: "The plan names the methods, not the runtime. The 2.x TimeSeriesObject.fillGapWithValue replaces zeros with the mean, ignores its arguments and has no test." }
+  java: { status: planned, note: "The plan names the methods, not the runtime. The 2.x TimeSeriesObject has no gap filler: replaceZeroWithAverage replaces every value 0 with the mean of all values, the zeros included, and does not mark them." }
   python: { status: none }
   processor: { status: none }
   go: { status: none }

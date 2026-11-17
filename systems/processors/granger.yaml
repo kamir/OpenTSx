@@ -23,8 +23,10 @@ runtimes:
     status: available
     class: "org.opentsx.algorithms.statistics.GrangerCausality#grangerCausalityTest"
     note: >-
-      2.x model in opentsx-core: grangerCausalityTest(y, x, l) on two arrays. No automated test. Prints RSS0, RSS1,
-      F and p to standard output on every call.
+      2.x model in opentsx-core: grangerCausalityTest(y, x, l) on two arrays; both models have an intercept and
+      nothing is written to standard output. GrangerCausalityTest compares p with reference values from numpy and
+      scipy, and checks over 200 seeds that x driving y at lag 1 gives p below 1e-6 for x to y while p for y to x
+      averages 0.4 to 0.6.
   workbench: { status: none, note: The test per pair window is planned as pair.granger. }
   python: { status: none }
   processor: { status: none }

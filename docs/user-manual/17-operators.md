@@ -1506,7 +1506,7 @@ Computes the Shannon entropy H = −sum_k p_k log2(p_k) in bit of the values in 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `entropy.window` | Gaps are left out of the counts. |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#calcEntropyForWindow` | The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY, without a test. It uses the same windows and step, but divides each window by its maximum and maps the values to 100 levels instead of bins over the range of the series. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#calcEntropyForWindow` | The 2.x model in opentsx-core has TimeSeriesObject#calcEntropyForWindow(length) behind the Swing button ENTROPY. It uses the same windows and step, but divides each window by its maximum and maps the values to 100 levels instead of bins over the range of the series. A length below 4 throws IllegalArgumentException. TimeSeriesObjectStatisticsTest checks the length and the step, not the entropy values. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -1667,7 +1667,7 @@ Tests whether the values of a series come from a normal distribution. The statis
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | Listed as not ported (TEST Normal Distribution) in ops.ts NOT_PORTED. |
-| java | available (2.x) | `org.opentsx.algorithms.statistics.Statistical#shapiroWilk` | The 2.x model in opentsx-core has org.opentsx.algorithms.statistics.Statistical#shapiroWilk(values), a port of algorithm AS R94 made for 3 to 5000 values, used by DistributionTester#testDataset and TimeSeriesObject#getSWTestResult. No test covers it. It throws for fewer than 3 values and returns W = p = -1 when all values are equal. Its sort moves the padding value 0 into the data when a value is negative, so W changes when a constant is added. The Swing button TEST Normal Distribution draws histograms of W in windows of 20 to 100 values. |
+| java | available (2.x) | `org.opentsx.algorithms.statistics.Statistical#shapiroWilk` | The 2.x model in opentsx-core has org.opentsx.algorithms.statistics.Statistical#shapiroWilk(values), a port of algorithm AS R94 made for 3 to 5000 values, used by DistributionTester#testDataset and TimeSeriesObject#getSWTestResult. It returns W at index SHAPIRO_WILK_WSTAT (0) and p at index SHAPIRO_WILK_PVALUE (1). StatisticalTest checks both against scipy.stats.shapiro and checks that adding a constant does not change them. It throws for fewer than 3 values and returns W = p = -1 when all values are equal. The Swing button TEST Normal Distribution draws histograms of W in windows of 20 to 100 values. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -2007,7 +2007,7 @@ Tests whether the l past values of x improve the least-squares prediction of y f
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | The test per pair window is planned as pair.granger. |
-| java | available (2.x) | `org.opentsx.algorithms.statistics.GrangerCausality#grangerCausalityTest` | 2.x model in opentsx-core: grangerCausalityTest(y, x, l) on two arrays. No automated test. Prints RSS0, RSS1, F and p to standard output on every call. |
+| java | available (2.x) | `org.opentsx.algorithms.statistics.GrangerCausality#grangerCausalityTest` | 2.x model in opentsx-core: grangerCausalityTest(y, x, l) on two arrays; both models have an intercept and nothing is written to standard output. GrangerCausalityTest compares p with reference values from numpy and scipy, and checks over 200 seeds that x driving y at lag 1 gives p below 1e-6 for x to y while p for y to x averages 0.4 to 0.6. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -2275,7 +2275,7 @@ Transforms the series with an FFT, multiplies each Fourier coefficient c_k by e^
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | The operator shuffle keeps the values and destroys the spectrum. |
-| java | available (2.x) | `org.opentsx.generators.LongTermCorrelationSeriesGenerator#getPhaseRandomizedRow` | 2.x model in opentsx-core: getPhaseRandomizedRow(ts, false, false) through TimeSeriesObjectFFT.getModifiedTimeSeries_PhaseRandomized. Pads to a power of two with zeros, so for other lengths it keeps the spectrum of the padded series; the coefficient at the Nyquist frequency gets a random phase too, so its amplitude shrinks by \|cos φ\|; sets the mean to 0; draws the phases with Math.random, no seed; opens two chart windows on every call. No automated test. FFTPhaseRandomizer.getPhaseRandomizedRow does not randomize phases: mode 0 returns the same series on every call, (x[i] + x[N − i]) / 2 minus the mean, and mode 1 scales the amplitudes by random factors and keeps the phases. Surrogates by phase randomization in a clean-room Java library are planned in TASK-015 P8.1. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObjectFFT#getModifiedTimeSeries_PhaseRandomized` | 2.x model in opentsx-core: getModifiedTimeSeries_PhaseRandomized(random) on TimeSeriesObjectFFT.convertToMessreiheFFT(ts) draws the phases from the java.util.Random it is given; without an argument it uses a new Random. Pads to a power of two with zeros, so for other lengths it keeps the spectrum of the padded series; keeps the real coefficient at the Nyquist frequency; sets c_0 of the padded values to 0, so the result has mean 0 only for a length that is a power of two; opens no window. LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(ts, false, false) calls it without a seed. FFTPhaseRandomizer.getPhaseRandomizedRow mode 1 adds random phases the same way, mode 0 permutes the phases of the coefficients instead; getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV(random) and getPhaseRandomizedModifiedFFT_SHUFFLED_INV(random) take a seed. TimeSeriesObjectFFTTest checks the amplitude spectrum, the change of the series and the seed of all three. Surrogates by phase randomization in a clean-room Java library are planned in TASK-015 P8.1. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -2283,7 +2283,7 @@ Transforms the series with an FFT, multiplies each Fourier coefficient c_k by e^
 | Port | Direction | Type | Description |
 |---|---|---|---|
 | `in` | in | series (one) |  |
-| `out` | out | series | One surrogate copy with mean 0 |
+| `out` | out | series | One surrogate copy as long as the input |
 
 Semantics: needs one series of input per output value; not deterministic; keeps count.
 

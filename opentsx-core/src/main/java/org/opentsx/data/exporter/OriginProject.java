@@ -1,7 +1,5 @@
 /*
- *  Ein Daten-Container, in dem Messreihen abgelegt werden,
- *  die dann für den Origin-Import optimiert gespeichert werden.
- * 
+ *  A container of time series that writes them in a form for the Origin import.
  */
 package org.opentsx.data.exporter;
 
@@ -121,7 +119,7 @@ public class OriginProject {
         
         for( TimeSeriesObject mr : mrv2) {
             File ff = new File( f.getAbsolutePath() + File.separator + prefix + "_" + mr.getFileName() );
-            mr.writeToFile( ff , '.' );            
+            mr.writeToFile( ff );
         }
     }
 

@@ -221,6 +221,15 @@ The desktop FFT action derives its sampling rate from uniformly spaced coordinat
 with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
 See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
 
+`FFTPhaseRandomizer` and `TimeSeriesObjectFFT` make phase-randomized surrogates. For a length that is a power of two a
+surrogate keeps the amplitude spectrum and has mean 0; other lengths are padded with zeros and the surrogate is cut
+back to the input length, so neither holds. The `TimeSeriesObjectFFT` methods take a `java.util.Random` to repeat a
+surrogate; `FFTPhaseRandomizer` does not. See
+[surrogates](../../opentsx-core/README.md#make-a-phase-randomized-surrogate).
+
+`TimeSeriesObject.writeToFile` writes every pair, and `MessreihenLoader.loadMessreihe_2` reads the file back. Both
+stop with an exception that names the file. See [export and load](../../opentsx-core/README.md#export-and-load-a-series).
+
 ### Run the Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 
 * `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,

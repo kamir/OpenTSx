@@ -17,14 +17,15 @@ import org.opentsx.data.model.Event;
 import org.opentsx.data.model.Observation;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
@@ -214,7 +215,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return v;
     };
     
-    // String[] enthält dann id1 und id2 in einem String[2] Array
+    // each String[2] holds id1 and id2
     public Vector<String[]> xLabels = new Vector<String[]>();
     public Vector<String> xLabels2 = new Vector<String>();
 
@@ -230,35 +231,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     
    
 
-    public TimeSeriesObject fillGapWithValue(double v, double length ) {
-        
-        TimeSeriesObject mr = new TimeSeriesObject();
-        mr.setLabel(label);
-        mr.setLabel_X(label_X);
-        mr.setLabel_Y(label_Y);
-
-        this.calcAverage();
-
-        double av = this.getAvarage();
-
-        for( int i = 0; i < yValues.size(); i++ ) {
-            
-            double vx = (Double)xValues.elementAt(i);
-            double vy = (Double)yValues.elementAt(i);
-            if (vy == 0.0) vy = av;
-            mr.addValuePair(vx, vy);
-            
-            
-            
-        };
-
-        return mr;
-    };
-
-    
-    
-    
-    
     public TimeSeriesObject replaceZeroWithAverage() {
         TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel(label);
@@ -434,9 +406,9 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
     /**
      *
-     * @param label der messreihe
-     * @param xL - Laber der x-Werte
-     * @param yL - Label der y-Werte
+     * @param label label of the series
+     * @param xL label of the x values
+     * @param yL label of the y values
      */public TimeSeriesObject(String label, String xL, String yL) {
         this(label);
         this.label_Y = yL;
@@ -450,7 +422,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     /**
-     * Datencontainer werden instanziiert.
+     * Creates the data containers.
      */
     public TimeSeriesObject() {
         xValues = new Vector<Double>();
@@ -469,7 +441,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
 
     /**
-     * Ein Wertepaar wird hinzugefügt.
+     * Adds a value pair.
      *
      * @param x
      * @param y
@@ -489,7 +461,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
 
     /**
-     * Die Daten zur Ausgabe auf der Konsole ausgeben.
+     * Formats the series for the console.
      *
      * @return
      */
@@ -505,7 +477,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         sb.append("#\n" + status.toString() );
         sb.append( getStatisticData("# ") +"\n" );
 
-        int MAX = 5;
+        int MAX = Math.min(5, size);
 
         for (int i = 0 ; i < MAX; i++  ) {
 
@@ -569,7 +541,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
 
     /**
-     * berechnet den Mittelwert für die Werte der Y-Spalte
+     * Computes the mean of the y values and keeps it in the field av.
      */
     public void calcAverage() {
         int z = this.xValues.size();
@@ -580,25 +552,22 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
         }
         av = sum / ((double)z);
-        // System.out.println(getLabel() + " mw=" + av + " z=" + z + " sum=" + sum);
 
     };
 
     double av = 0.0;
     double sum = 0.0;
 
-    /**
-     * Wird an dieser Stelle nich neu berechnet - enthält also die
-     * letzte Größe, seit dem Aufruf von calcAverage() !
-     *
-     * @return
-     */
     public double getAvarage2() {
         calcAverage();
         return av;
     };
 
+    /**
+     * Returns the mean of the y values. It is computed on every call.
+     */
     public double getAvarage() {
+        calcAverage();
         return av;
     };
 
@@ -799,63 +768,31 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
 
     /**
-     * Speichert die TimeSeriesObject in der Datei f und legt
-     * das Verzeichnis an, falls dieses nicht schon existiert.
-     * 
-     * @param f 
+     * Writes a header of comment lines starting with # and then every pair as x, separator, y on its own line.
+     * Creates the parent directories.
      */
     public void writeToFile(File f) {
-        if ( !f.getParentFile().exists() ) f.getParentFile().mkdirs();
+        writeToFile(f, ' ');
+    }
 
-        FileWriter fw = null;
+    public void writeToFile(File f, Character separator) {
+        File parent = f.getAbsoluteFile().getParentFile();
         try {
-           fw = new FileWriter(f);     
-           fw.write( this.toString());
-           
-           System.out.println( "go.. " + f.getAbsolutePath() );
-           
-           fw.close();
-        } 
-        catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } 
-        finally {
-            try {
-                if ( fw != null ) {
-                    fw.close();
+            if ( parent != null ) {
+                Files.createDirectories(parent.toPath());
+            }
+            try (Writer w = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
+                w.write("# TimeSeriesObject\n# Label : " + getLabel() + "\n# Nr of data points => " + xValues.size() + "\n");
+                for (int i = 0; i < xValues.size(); i++) {
+                    w.write(xValues.elementAt(i) + separator.toString() + yValues.elementAt(i) + "\n");
                 }
-                else System.err.println( "FW war bereits NULL !!!");
-            }
-            catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-    }
-    
-    public void writeToFile(File f, Character chara) {
-        if ( !f.getParentFile().exists() ) f.getParentFile().mkdirs();
-
-        FileWriter fw = null;
-        try {
-           fw = new FileWriter(f);    
-           String s = this.toString();
-           s = s.replace(',', chara);
-           fw.write( s );
-           fw.close();
-        } 
         catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } 
-        finally {
-            try {
-                fw.close();
-            }
-            catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            throw new UncheckedIOException(f + ": cannot write the file (" + ex + ")", ex);
         }
     }
-    
+
     /**
      * Append a new y-value.
      * 
@@ -888,7 +825,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
 
     /**
-     * Für spalte Y !!! 
+     * Of the y values.
      * @return
      */
     public double getStddev() {
@@ -1003,12 +940,10 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
  
         double returnValueY = Double.NaN;
         
-        int counter = 0; // für den Zugriff auf das Datenfeld
+        int counter = 0;
         
-        // die Y Werte durchgehen ...
         Enumeration<Double> vx = this.xValues.elements();
         while( vx.hasMoreElements() ) {
-            // Vergleichswert ermitteln  
             double wx = vx.nextElement();
             if ( x > (wx-epsilon) && (x <= (wx+epsilon) ) ) {
                 returnValueY = ((Double)this.yValues.elementAt(counter)).doubleValue();
@@ -1025,7 +960,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     public double getYValueForX(int i) {
-        // index von X-Wert bestimmen ...
         int indexX = this.xValues.indexOf( new Double(i) );
         Double value = null;
         if( indexX >= 0 ) value = (Double)this.yValues.elementAt(indexX) ;
@@ -1035,8 +969,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
     int binning = 1;
 
-    // jeweils "bin" Werte werden addiert und dem ersten Feld des Blocks
-    // gespeichert.
+    // Sums each block of "bin" values into one value; a rest shorter than bin is dropped.
     public TimeSeriesObject setBinningX_sum(int bin ) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
@@ -1051,8 +984,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
         double summeA = this.summeY();
 
-        // System.out.println( "[BINNING] bin=" + bin + "\tRest=" + rest + "\tBlöcke=" + blocks  );
-        mr.addStatusInfo( "[BINNING] bin=" + bin + "\tRest=" + rest + "\tBlöcke=" + blocks  );
+        mr.addStatusInfo( "[BINNING] bin=" + bin + "\tRest=" + rest + "\tblocks=" + blocks  );
 
         int i=0;
         int j=0;
@@ -1135,33 +1067,26 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return summe;
     };
 
-    // berechnet die Differenz zwischen den beiden Messreihen ... punktweise
     public TimeSeriesObject divide_by(TimeSeriesObject mr2 ) {
-
-//        System.out.println( "Quotient der Reihen: " + (this.yValues.size() + " ... " + mr2.yValues.size()) );
-
-        double difff = 0.0;
+        int n = this.yValues.size();
+        if ( mr2.yValues.size() != n ) {
+            throw new IllegalArgumentException("divide_by: the series have " + n + " and " + mr2.yValues.size()
+                    + " values; expected series of equal length");
+        }
         TimeSeriesObject mr = new TimeSeriesObject();
-        if ( mr2 == null ) return mr;
-        if ( this.xValues.size() < mr2.xValues.size() ) return mr;
-
-        int max = mr2.xValues.size();
-        for( int k = 0; k < max; k++ ) {
-
-            double q = 0;
+        for( int k = 0; k < n; k++ ) {
             double v1 = (Double)this.yValues.elementAt(k);
             double v2 = (Double)mr2.yValues.elementAt(k);
-            if ( v2 != 0.0 ) q = v1/v2;
-            mr.addValuePair(k, q);
+            mr.addValuePair((Double)this.xValues.elementAt(k), v2 == 0.0 ? Double.NaN : v1 / v2);
         }
         mr.setLabel( this.getLabel() + " / " + mr2.getLabel() );
         return mr;
     };
     
-    // berechnet die Differenz zwischen den beiden Messreihen ... punktweise
+    // pointwise difference of the two series
     public TimeSeriesObject diff(TimeSeriesObject mr2 ) {
 
-        System.out.println( "Differenz der Anzahl der Werte: " + (this.yValues.size() - mr2.yValues.size()) );
+        System.out.println( "difference of the number of values: " + (this.yValues.size() - mr2.yValues.size()) );
         double difff = 0.0;
         TimeSeriesObject mr = new TimeSeriesObject();
 
@@ -1177,129 +1102,45 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return mr;
     };
 
-    // berechnet die Summe der beiden Messreihen ... punktweise
-    public TimeSeriesObject add2(TimeSeriesObject mr2 , boolean concatLabels) {
-
-        String label = this.getLabel();
-        
-        this.anzahlOfAllAddedMessreihen++;
-
-        // System.out.println( "Add:" + mr2.yValues.size() + " To:" + this.yValues.size() );
-
-        TimeSeriesObject mr = null;
-
-        // nur beim ersten mal, wenn die Basis-TimeSeriesObject noch leer ist
-        if ( this.yValues.size() == 0 ) {
-            mr = mr2.copy();
-        }
-        else {
-            mr = new TimeSeriesObject();
-            int max = mr2.yValues.size();
-            for( int k = 0; k < max; k++ ) {
-
-                double v1 = 0.0;
-                double v2 = 0.0;
-
-                try {
-                    v1 = (Double)this.yValues.elementAt(k);
-                }
-                catch( Exception ex) {
-
-                };
-                try {
-                    v2 = (Double)mr2.yValues.elementAt(k);
-                }
-                catch( Exception ex) {
-
-                };
-     
-                double sum = v1+v2;
-                mr.addValuePair(k, sum);
-            }
-        }
-        if( concatLabels ) label = label + "+" + mr2.getLabel();
-        mr.setLabel( label);
-        return mr;
-    };
-    
-    // berechnet die Summe der beiden Messreihen ... punktweise
     public TimeSeriesObject add(TimeSeriesObject mr2 ) {
 
         String label = this.getLabel();
-        
+
         this.anzahlOfAllAddedMessreihen++;
 
-        // System.out.println( "Add:" + mr2.yValues.size() + " To:" + this.yValues.size() );
-
-        TimeSeriesObject mr = null;
-
-        // nur beim ersten mal, wenn die Basis-TimeSeriesObject noch leer ist
-        if ( this.yValues.size() == 0 ) {
-            mr = mr2.copy();
+        int n = this.yValues.size();
+        if ( n > 0 && mr2.yValues.size() != n ) {
+            throw new IllegalArgumentException("add: the series have " + n + " and " + mr2.yValues.size()
+                    + " values; expected series of equal length");
         }
-        else {
-            mr = new TimeSeriesObject();
-            int max = mr2.yValues.size();
-            for( int k = 0; k < max; k++ ) {
-
-                double v1 = 0.0;
-                double v2 = 0.0;
-
-                try {
-                    v1 = (Double)this.yValues.elementAt(k);
-                }
-                catch( Exception ex) {
-
-                };
-                try {
-                    v2 = (Double)mr2.yValues.elementAt(k);
-                }
-                catch( Exception ex) {
-
-                };
-     
-                double sum = v1+v2;
-                mr.addValuePair(k, sum);
-            }
+        TimeSeriesObject base = n == 0 ? mr2 : this;
+        TimeSeriesObject mr = new TimeSeriesObject();
+        for( int k = 0; k < mr2.yValues.size(); k++ ) {
+            double v1 = n == 0 ? 0.0 : (Double)this.yValues.elementAt(k);
+            mr.addValuePair((Double)base.xValues.elementAt(k), v1 + (Double)mr2.yValues.elementAt(k));
         }
         label = label + "+" + mr2.getLabel();
         mr.setLabel( label);
         return mr;
     };
-    
+
     public TimeSeriesObject add(TimeSeriesObject messreihe, int shortestLength) {
-        
-        TimeSeriesObject mr = mr = new TimeSeriesObject();
-
-        int max = shortestLength;
-
-        for( int k = 0; k < max; k++ ) {
-
-            double v1 = 0.0;
-            double v2 = 0.0;
-
-            try {
-                v1 = (Double)this.yValues.elementAt(k);
-            }
-            catch( Exception ex) {
-
-            };
-            try {
-                v2 = (Double)messreihe.yValues.elementAt(k);
-            }
-            catch( Exception ex) {
-
-            };
-
-            double sum = v1+v2;
-            mr.addValuePair(k, sum);
+        int n = this.yValues.size();
+        if ( (n > 0 && n < shortestLength) || messreihe.yValues.size() < shortestLength ) {
+            throw new IllegalArgumentException("add: the series have " + n + " and " + messreihe.yValues.size()
+                    + " values; expected at least " + shortestLength + " values in each");
         }
-
+        TimeSeriesObject base = n == 0 ? messreihe : this;
+        TimeSeriesObject mr = new TimeSeriesObject();
+        for( int k = 0; k < shortestLength; k++ ) {
+            double v1 = n == 0 ? 0.0 : (Double)this.yValues.elementAt(k);
+            mr.addValuePair((Double)base.xValues.elementAt(k), v1 + (Double)messreihe.yValues.elementAt(k));
+        }
         return mr;
     }
 
     /**
-     * Hängt Werte an bestehende Reihe an...
+     * Appends the values of mr to this series.
      * 
      */ 
     public void addValues( TimeSeriesObject mr ) {
@@ -1359,37 +1200,39 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     /**
-     * verschiebe die Werte der Reihe im "offset" stellen.
+     * Shifts the values of the series by "offset" positions.
      *
-     *   offset greater than  0 rechts
-     *   offset smaller than 0 links
+     *   offset greater than 0: right
+     *   offset smaller than 0: left
      *
      * @param offset
      *
-     * @return neue Reihe
+     * @return a new series
      *
      * @throws Exception
      */
     public TimeSeriesObject shift(int offset ) throws Exception {
-        if( Math.abs(offset) > yValues.size() ) throw new Exception("TimeSeriesObject kürzer als SHIFT-Weite!");
+        if( Math.abs(offset) > yValues.size() ) throw new Exception("shift: offset " + offset + " exceeds the "
+                + yValues.size() + " values; expected an offset from -" + yValues.size() + " to " + yValues.size());
         if ( offset < 0 ) return this.shiftLeft( Math.abs(offset));
         else return this.shiftRight( Math.abs(offset));
     };
 
         /**
-     * verschiebe die Werte der Reihe im "offset" stellen.
+     * Shifts the values of the series by "offset" positions.
      *
-     *   offset greater 0 rechts
-     *   offset smaller 0 links
+     *   offset greater than 0: right
+     *   offset smaller than 0: left
      *
      * @param offset
      *
-     * @return neue Reihe
+     * @return a new series
      *
      * @throws Exception
      */
     public TimeSeriesObject shift(int offset , double v ) throws Exception {
-        if( Math.abs(offset) > yValues.size() ) throw new Exception("TimeSeriesObject kürzer als SHIFT-Weite!");
+        if( Math.abs(offset) > yValues.size() ) throw new Exception("shift: offset " + offset + " exceeds the "
+                + yValues.size() + " values; expected an offset from -" + yValues.size() + " to " + yValues.size());
         if ( offset < 0 ) return this.shiftLeft( Math.abs(offset), v);
         else return this.shiftRight( Math.abs(offset), v);
     };
@@ -1448,7 +1291,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     public TimeSeriesObject cutFromStart(int n ) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
-        mr.setLabel( this.getLabel() + "( -" + n + " Werte )" );
+        mr.setLabel( this.getLabel() + "( -" + n + " values )" );
 
         int max = this.yValues.size();
 
@@ -1620,9 +1463,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 //    };
 
     /**
-     * Nutzt elementare Funktionen ...
-     *
-     * UNGEPRÜFT ...
+     * Averages the series pointwise over the length of the shortest series and keeps the x values of the first
+     * series.
      *
      * @param mrs
      * @return
@@ -1656,7 +1498,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
     
     /**
-     * In einer EPSILON Umgebung nachsehen und die erste nehmen
+     * Looks for y in an epsilon neighborhood and takes the first match.
      * 
      * @param y
      * @return 
@@ -1665,10 +1507,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         
         double returnValueX = Double.NaN;
  
-        // die Y Werte durchgehen ...
         Enumeration<Double> vy = this.yValues.elements();
         while( vy.hasMoreElements() ) {
-            // Vergleichswert ermitteln  
             double wy = vy.nextElement();
             if ( returnValueX == Double.NaN ) {
                 if( y > (wy-epsilon) && y < (wy+epsilon) ) { 
@@ -1714,7 +1554,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
         double maks = this.getMaxX();
 
-        //if ( x_max > maks ) throw new Exception(" Reihe zu kurz. xMax=" + maks + ", x_max=" + x_max );
 
         for( int i = 0; i < this.xValues.size(); i++ ) {
 
@@ -1762,12 +1601,12 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
                     c++;
                 }
             }
-            mr.calcAverage(); // Rq
+            double mean = mr.getAvarage();
             if ( c > 0 ) {
-                mr.addComment(  c + " fehlende Werte mit RQ=" + mr.getAvarage() + " ersetzt." );
-                System.out.println( mr.getLabel() + " >>> " + c + " fehlende Werte mit RQ=" + mr.getAvarage() + " ersetzt." );
+                mr.addComment(  c + " missing values replaced with mean=" + mean + "." );
+                System.out.println( mr.getLabel() + " >>> " + c + " missing values replaced with mean=" + mean + "." );
                 for( int d = 0 ; d < c ; d++ ){ 
-                    mr.addValue( mr.getAvarage() );
+                    mr.addValue( mean );
                 }
             }
             rows[i] = mr;
@@ -1932,8 +1771,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     /**
-     * Es wird vorausgesetzt und geprüft, dass alle x-Werte identisch sind sonst
-     * gibt es eine Exception.
+     * Uses the x values of the first row. The x values of the other rows are not compared.
      *
      * @param rows
      * @return
@@ -1941,18 +1779,16 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     public static TimeSeriesObject calcAveragOfRows(Vector<TimeSeriesObject> rows ) throws Exception{
         System.out.println( ">>> AVG: " + rows.size() );
         TimeSeriesObject r = new TimeSeriesObject();
-        r.setLabel("MW aus " + rows.size() + " Reihen");
+        r.setLabel("mean of " + rows.size() + " series");
         r.setLabel_X( rows.elementAt(0).getLabel_X() );
         r.setLabel_Y( rows.elementAt(0).getLabel_Y() );
 
-        // i Werte werden betrachtet ...
         int i = rows.elementAt(0).xValues.size();
         int j = rows.size();
         int a = 0;
         int c = 0;
         while( a < i ) {
          
-            // System.out.println( "> Stelle: a=" + a + " von i=" + i );
             
             TimeSeriesObject ref = rows.elementAt(0);
 
@@ -1964,7 +1800,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
                 
                 try{
                     TimeSeriesObject vergl = rows.elementAt(z);
-                    // System.out.println( "> Reihe: z=" + z + " von j=" + j );
 
                     Double vxn = (Double)vergl.xValues.elementAt(a);
                     double vyn = (Double)vergl.yValues.elementAt(a);
@@ -2005,7 +1840,6 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         this.calcAverage();
 
         double av = this.getAvarage();
-        // System.out.println("> subtrahiere den Mittelwert von Reihe : " + this.getLabel() + " mw=" + av );
 
         int c = 0;
         TimeSeriesObject mr = new TimeSeriesObject();
@@ -2027,7 +1861,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
 
     public void supressAtStart( int length, double value ) {
-        // wir kürzen hier nicht die Access-Reihe, wir setzen die Werte nur auf 0;
+        // keeps the length and overwrites the values
             for( int i = 0; i < length; i++ ) {
                 yValues.setElementAt( value ,i );
             }
@@ -2094,7 +1928,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
     public void supressAtEnd(int START_CUTTOF_LENGTH, double value) {
 
-        // wir kürzen hier nicht die Access-Reihe, wir setzen die Werte nur auf 0;
+        // keeps the length and overwrites the values
             for( int i = START_CUTTOF_LENGTH; i < this.yValues.size(); i++ ) {
                 yValues.setElementAt( value ,i );
             }
@@ -2148,7 +1982,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
 
     /**
-     * Für das automatische Speichern in einem Projekt-Verzeichnis.
+     * For automatic saving in a project directory.
      * 
      */
     String filename = null;
@@ -2208,14 +2042,14 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return mrNeu;
     }
 
-    // einen Link hinzufügen ...
+    // adds a link
     public void addValue(double d, String[] label) {
         this.addValue(d);
         this.hashValueByLabel( label[0]+"_"+label[1] , d);
         this.xLabels.add( label );
     }
     
-        // einen Link hinzufügen ...
+        // adds a link
     public void addValue(double d, String label) {
         this.addValue(d);
         this.hashValueByLabel( label , d);
@@ -2275,7 +2109,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
 
     public void mapDataToDateHash(Calendar fd) {
-        // alle Werte in den Date-Hash mappen ...
+        // maps all values into the date hash
         this.dateHash.clear();        
         for( Object o : yValues ) { 
             Double v = (Double)o;
@@ -2608,6 +2442,10 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
      * @return 
      */
     public TimeSeriesObject calcEntropyForWindow(int z ) {
+        if (z < 4) {
+            throw new IllegalArgumentException("window length: " + z
+                    + " is less than 4; expected a window length of at least 4 values");
+        }
         int i = 0;
         TimeSeriesObject m = new TimeSeriesObject();
         m.setLabel( this.getLabel() + "H(l="+z+")" );
@@ -2704,8 +2542,7 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
 
     /**
-     * Für das Schreiber Schmitz-Verfahren muss ich hier die Werte dem Rang 
-     * nach überschreiben.
+     * For the Schreiber-Schmitz method: overwrites the values by rank.
      * 
      * @param refSeries
      * @return 

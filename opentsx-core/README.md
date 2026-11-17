@@ -92,3 +92,93 @@ Cancelling the dialog produces no chart or recorded transformation. Empty select
 unequal coordinate and value counts, non-finite data, and non-uniform coordinates produce an error message.
 
 `TimeSeriesObjectFFT` uses English headers, diagnostics and error messages. Averaged series use the `Mean_` label prefix.
+
+## Combine series
+
+`add(other)` sums the y values pointwise and keeps the x values of the series it is called on. On an empty series it
+returns the pairs of `other`. Series of different lengths throw `IllegalArgumentException` with
+`add: the series have <n> and <m> values; expected series of equal length`.
+`add(other, length)` sums the first `length` pairs. When one series is shorter, it throws
+`add: the series have <n> and <m> values; expected at least <length> values in each`.
+`averageForAll` uses it with the length of the shortest series and keeps the x values of the first series.
+`divide_by(other)` keeps the x values and gives NaN where the divisor is 0. Series of different lengths throw
+`divide_by: the series have <n> and <m> values; expected series of equal length`.
+
+`getAvarage()` computes the mean of the y values on every call. An empty series gives NaN.
+`replaceZeroWithAverage()` replaces every value 0 with the mean of all values, the zeros included.
+
+## Compute the entropy in sliding windows
+
+`calcEntropyForWindow(length)` starts a window every `length / 4` values, rounded down. A length below 4 throws
+`IllegalArgumentException` with `window length: <length> is less than 4; expected a window length of at least 4 values`.
+
+## Export and load a series
+
+`writeToFile(file, separator)` writes three header lines that start with `#`, then one line per pair: x, the
+separator and y in the notation of `Double.toString`, for example `0.5,1.25`. `writeToFile(file)` separates with a
+space. Both create missing parent directories. A failed write throws `UncheckedIOException` with
+`<file>: cannot write the file (<cause>)`. `toString()` lists at most the first 5 pairs.
+
+`MessreihenLoader.loadMessreihe_2(file, columnX, columnY, delimiter)` reads such a file. Columns count from 1. Lines
+that start with `#` and empty lines are skipped. The delimiter is a set of separator characters, as in
+`StringTokenizer`. A comma is read as a decimal point unless the delimiter contains a comma, so `0,5;1,25` with `;`
+loads as 0.5 and 1.25. The call sets the static `MessreihenLoader.delim` for later calls. Errors stop the load:
+
+| Problem | Exception and message |
+|---------|-----------------------|
+| value is not a number | `IllegalArgumentException`: `<file>:<line>: "<token>" is not a number; expected a decimal number such as 1.5` |
+| too few columns | `IllegalArgumentException`: `<file>:<line>: the line has <n> columns; expected at least <m> columns separated by "<delimiter>"` |
+| missing or unreadable file | `UncheckedIOException`: `<file>: cannot read the file (<cause>)` |
+
+## Test for normality and Granger causality
+
+`Statistical.shapiroWilk(values)` returns `{W, p}`: W at index `SHAPIRO_WILK_WSTAT` (0), p at index
+`SHAPIRO_WILK_PVALUE` (1). Adding a constant to every value does not change them.
+
+`GrangerCausality.grangerCausalityTest(y, x, l)` fits y on its own l past values with an intercept, then on these
+and the l past values of x. It returns the p value of the F test with l and n − 2l − 1 degrees of freedom, where n is
+the length of y minus l. It writes nothing to standard output.
+
+## Make a phase-randomized surrogate
+
+`TimeSeriesObjectFFT` pads the n values with zeros to the smallest power of two that is at least n. It sets the
+coefficient c_0 to 0 and keeps the amplitude of every other Fourier coefficient of the padded values and the
+coefficient at the Nyquist frequency. Each other coefficient gets a new phase, and its mirror gets the conjugate, so
+the inverse transform is real. The result holds the first n values of the inverse transform. For a length that is a
+power of two the result has mean 0 and the amplitude spectrum of the input. For other lengths neither holds. The
+methods differ in the new phase:
+
+| Method | New phase |
+|--------|-----------|
+| `getModifiedTimeSeries_PhaseRandomized(random)` | old phase plus a uniform random phase |
+| `getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV(random)` | old phase plus a uniform random phase |
+| `getPhaseRandomizedModifiedFFT_SHUFFLED_INV(random)` | a random permutation of the old phases |
+
+Pass a `java.util.Random` with a seed to get the same surrogate again. Without the argument, each method uses a new
+`Random`. `FFTPhaseRandomizer.getPhaseRandomizedRow(ts, showTest, runDFA, testZaehler, mode)` calls the shuffle for
+`MODE_shuffle_phase` and the random phases for `MODE_multiply_phase_with_random_value`, both without a seed. It does
+not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a window.
+
+## Draw Poisson numbers
+
+`RNGWrapper.getStdPoisson(lambda)` draws a Poisson number with mean `lambda`. Seed the generator first with
+`RNGWrapper.init()` (seed 1) or `stdlib.StdRandom.initRandomGen(seed)`.
+
+## Configure the 2.x tools
+
+`ConfigManager.getInstance()` reads the resource `opentsx-default.properties`, then
+`config/opentsx-default.properties` when that file exists. A file named by `opentsx.config.file` or
+`OPENTSX_CONFIG_FILE` must exist, and so must `config/opentsx-<profile>.properties` for a profile set by
+`opentsx.config.profile` or `OPENTSX_CONFIG_PROFILE`. When one of these four names holds an empty value, or a file is
+missing or does not load, the first call of `getInstance()` fails with `ExceptionInInitializerError` and later calls
+with `NoClassDefFoundError`. The cause names the key, the variable or the file:
+
+| Problem | Cause and message |
+|---------|-------------------|
+| empty or blank value | `IllegalArgumentException`: `<name>: empty value; set a value or leave the key unset`, where `<name>` is the key or variable that holds the value |
+| missing file | `IllegalArgumentException`: `<path>: no such file; give an existing file` |
+| unreadable file | `UncheckedIOException`: `<path>: cannot read the file (<cause>)` |
+| malformed `\u` escape | `IllegalArgumentException`: `<path>: malformed \uxxxx escape; write \u followed by four hexadecimal digits` |
+
+`getInt(key, default)` returns the default for an unset key. A value that is not a whole number throws
+`IllegalArgumentException` with `<key>: "<value>" is not an int; expected a whole number from -2147483648 to 2147483647`.

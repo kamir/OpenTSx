@@ -13,21 +13,24 @@ description: >-
 inputs:
   - { name: in, type: series, cardinality: one }
 outputs:
-  - { name: out, type: series, description: One surrogate copy with mean 0 }
+  - { name: out, type: series, description: One surrogate copy as long as the input }
 semantics: { needs: series, deterministic: false, keeps: [count] }
 runtimes:
   java:
     status: available
-    class: "org.opentsx.generators.LongTermCorrelationSeriesGenerator#getPhaseRandomizedRow"
+    class: "org.opentsx.data.series.TimeSeriesObjectFFT#getModifiedTimeSeries_PhaseRandomized"
     note: >-
-      2.x model in opentsx-core: getPhaseRandomizedRow(ts, false, false) through
-      TimeSeriesObjectFFT.getModifiedTimeSeries_PhaseRandomized. Pads to a power of two with zeros, so for other
-      lengths it keeps the spectrum of the padded series; the coefficient at the Nyquist frequency gets a random
-      phase too, so its amplitude shrinks by |cos φ|; sets the mean to 0; draws the phases with Math.random, no
-      seed; opens two chart windows on every call. No automated test. FFTPhaseRandomizer.getPhaseRandomizedRow does
-      not randomize phases: mode 0 returns the same series on every call, (x[i] + x[N − i]) / 2 minus the mean, and
-      mode 1 scales the amplitudes by random factors and keeps the phases. Surrogates by phase randomization in a
-      clean-room Java library are planned in TASK-015 P8.1.
+      2.x model in opentsx-core: getModifiedTimeSeries_PhaseRandomized(random) on
+      TimeSeriesObjectFFT.convertToMessreiheFFT(ts) draws the phases from the java.util.Random it is given; without
+      an argument it uses a new Random. Pads to a power of two with zeros, so for other lengths it keeps the spectrum
+      of the padded series; keeps the real coefficient at the Nyquist frequency; sets c_0 of the padded values to 0, so
+      the result has mean 0 only for a length that is a power of two; opens no window.
+      LongTermCorrelationSeriesGenerator.getPhaseRandomizedRow(ts, false, false) calls it without a seed.
+      FFTPhaseRandomizer.getPhaseRandomizedRow mode 1 adds random phases the same way, mode 0 permutes the phases of
+      the coefficients instead; getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV(random) and
+      getPhaseRandomizedModifiedFFT_SHUFFLED_INV(random) take a seed. TimeSeriesObjectFFTTest checks the amplitude
+      spectrum, the change of the series and the seed of all three. Surrogates by phase randomization in a clean-room
+      Java library are planned in TASK-015 P8.1.
   workbench: { status: none, note: "The operator shuffle keeps the values and destroys the spectrum." }
   python: { status: none }
   processor: { status: none }

@@ -6,6 +6,7 @@ package org.opentsx.data.series;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -15,210 +16,64 @@ import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.jfree.data.xy.XYSeries;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class TimeSeriesObjectFFT extends TimeSeriesObject {
     
     public TimeSeriesObjectFFT getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV( ) {
+        return getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV(new Random());
+    }
 
-        System.out.println( ">>> phase_randomized_MULTIPLY_random" );
-
-        TimeSeriesObjectFFT aThis = this;
-        
-        TimeSeriesObjectFFT rFFT = new TimeSeriesObjectFFT();
-        rFFT.setLabel( aThis.getLabel() + " (phase_randomized_MULTIPLY_random)");
-        
-        double[] data = aThis.getYData();
-        
-        int N_Original = data.length;
-        
-        data = extendToPowerOf2(data);
-        
-        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
-
-        // TRANSFORMED by FFT
-        Complex[] c = fft.transform(data, TransformType.FORWARD );
-        
-        // MODIFIED => for back transformation  by FFT
-        Complex[] mod = new Complex[c.length];
-
-        double N = c.length;
-
-        double c0_R = c[0].getReal();
-        double c0_I = c[0].getImaginary();
-
-        double cf_R = c[(data.length - 1)].getReal();
-        double cf_I = c[(data.length - 1)].getImaginary();
-
-//        double fmin = 0;
-//        double fmax = 0.5D * samplingRate;
-//
-//        double df = fmax / ( N * 0.5 );
-        
-        
-        double f0 = c0_R;
-        double df = N / 6283.1853071795858D;
-
-        int MAX = (c.length / 2);
-        System.out.println( ">> LENGTH " + c.length);
-        System.out.println( ">>    MAX " + MAX );
-
-        
-        // Conjugate frequency pairs must be modified together.
-        
-        /**
-         * Randomize by multipling complex part with a random number
-         */
-        for (int i = 1; i <= MAX ; i++) {
-            
-            double factor = Math.random() * 1.0;
-            
-//            Complex c1 = new Complex( c[i].getReal(), c[i].getImaginary() * factor);
-//            Complex c2 = new Complex( c[(int)N-i].getReal(), c[i].getImaginary() * factor);
-//            
-            Complex c1 = c[i].multiply( factor );
-            Complex c2 = c[(int)N-i].multiply( factor );
-            
-            mod[i] = c1;
-            mod[c.length - i] = c2;
-        
-//            System.out.print( ">> " + (i+1) );
-//            System.out.println( "  >> " + (c.length - 1 - i) + " => " +coeff );
-//            
-        }
-
-        // Remove the constant component.
-        mod[0] = new Complex(0.0D, 0.0D);
-//        mod[c.length - 1] = new Complex(0.0D, 0.0D);
-
-        
-        // transform back to 
-        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD );
-        Complex[] modData = fft2.transform(mod, TransformType.INVERSE );
-
-//                TimeSeriesObject check = new TimeSeriesObject( "COMPLEX part" );
-//        
-//        // take only the real - value to build the transformed time series.
-        for (int i = 0; i < N_Original; i++) {
-            rFFT.addValuePair( i, modData[i].getReal() );
-//            check.addValuePair( i, modData[i].getImaginary() );
-        }
-//        
-//        Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
-//        mrv2.add( check );
-//        mrv2.add( rFFT );
-//        mrv2.add( this );
-//        
-//        MultiChart.open(mrv2, true);
-//        
-//        System.out.println(" null: " + rFFT );
-        
-        
-        // return the transformed ts build from shuffled phases.
+    public TimeSeriesObjectFFT getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV(Random random) {
+        TimeSeriesObjectFFT rFFT = randomizedPhases(random, false);
+        rFFT.setLabel( getLabel() + " (phase_randomized_MULTIPLY_random)");
         return rFFT;
     }
 
-    
     public TimeSeriesObjectFFT getPhaseRandomizedModifiedFFT_SHUFFLED_INV( ) {
+        return getPhaseRandomizedModifiedFFT_SHUFFLED_INV(new Random());
+    }
 
-        System.out.println( ">>> phase_randomized_SHUFFLE" );
-        
-        TimeSeriesObjectFFT aThis = this;
-        
+    public TimeSeriesObjectFFT getPhaseRandomizedModifiedFFT_SHUFFLED_INV(Random random) {
+        TimeSeriesObjectFFT rFFT = randomizedPhases(random, true);
+        rFFT.setLabel( getLabel() + " (phase_randomized_SHUFFLE)");
+        return rFFT;
+    }
+
+    /**
+     * The new phases keep c_(N-k) the conjugate of c_k and the Nyquist coefficient c_(N/2) real, so the inverse
+     * transform is real and keeps the amplitude spectrum of the zero-padded values. c_0 becomes 0.
+     */
+    private TimeSeriesObjectFFT randomizedPhases(Random random, boolean shuffle) {
+        double[] data = getYData();
+        Complex[] c = new FastFourierTransformer(DftNormalization.STANDARD)
+                .transform(extendToPowerOf2(data), TransformType.FORWARD);
+        int n = c.length;
+        int half = n / 2;
+        List<Double> phases = new ArrayList<Double>();
+        for (int k = 1; k < half; k++) {
+            phases.add(shuffle ? c[k].getArgument() : c[k].getArgument() + 2.0 * Math.PI * random.nextDouble());
+        }
+        if (shuffle) {
+            Collections.shuffle(phases, random);
+        }
+        Complex[] mod = new Complex[n];
+        mod[0] = Complex.ZERO;
+        for (int k = 1; k < half; k++) {
+            mod[k] = ComplexUtils.polar2Complex(c[k].abs(), phases.get(k - 1));
+            mod[n - k] = mod[k].conjugate();
+        }
+        if (half > 0) {
+            mod[half] = c[half];
+        }
+        Complex[] values = new FastFourierTransformer(DftNormalization.STANDARD).transform(mod, TransformType.INVERSE);
         TimeSeriesObjectFFT rFFT = new TimeSeriesObjectFFT();
-        rFFT.setLabel( aThis.getLabel() + " (phase_randomized_SHUFFLE)");
-        
-        double[] data = aThis.getYData();
-
-        int N_Original = data.length ;
-        
-        System.out.println( "N_original=" + data.length );
-        
-        data = extendToPowerOf2(data);
-
-        System.out.println( "N_extended=" + data.length );
-
-        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
-        Complex[] c = fft.transform(data, TransformType.FORWARD );
-        
-        // MODIFIED => for back transformation  by FFT
-        Complex[] mod = new Complex[c.length];
-
-        double N = c.length;
-
-//        double c0_R = c[0].getReal();
-//        double c0_I = c[0].getImaginary();
-//
-//        double cf_R = c[(data.length - 1)].getReal();
-//        double cf_I = c[(data.length - 1)].getImaginary();
-//
-//        
-//        
-////        double fmin = 0;
-////        double fmax = 0.5D * samplingRate;
-////
-//////        double df = fmax / ( N * 0.5 );
-////        
-//        
-//        double f0 = c0_R;
-//        double df = N / 6283.1853071795858D;
-
-        Vector<Double> ph = new Vector<Double>();
-        
-        /**
-         * Randomize by shuffeling the phases
-         */
-        for (int i = 1; i <= c.length / 2; i++) {
-            ph.add(c[i].getImaginary());
+        for (int i = 0; i < data.length; i++) {
+            rFFT.addValuePair(i, values[i].getReal());
         }
-        
-        // shuffle the ontainer...
-        Collections.shuffle(ph);
-        
-        System.out.println( "Nr of complex numbers : " + ph.size() );
-        System.out.println( "Nr of coefficients    : " + c.length );
-        
-        // use the shuffeled phases ...
-        for (int i = 1; i <= c.length / 2 ; i++) {
-
-            mod[i] = new Complex( c[i].getReal(), ph.elementAt(i-1) ); 
-            mod[(int)N-i] = new Complex( c[(int)N-i].getReal(), ph.elementAt(i-1) ) ;
-        
-        }
-
-        // Remove the constant component.
-        mod[0] = new Complex(0.0D, 0.0D);
-
-        // transform back to 
-        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD);
-        Complex[] modData = fft2.transform(mod, TransformType.INVERSE);
-
-//        TimeSeriesObject check = new TimeSeriesObject( "COMPLEX part" );
-        
-        // take only the real - value to build the transformed time series.
-        for (int i = 0; i < N_Original; i++) {
-            rFFT.addValuePair( i, modData[i].getReal() );
-//            check.addValuePair( i, modData[i].getImaginary() );
-        }
-        
-//        Vector<TimeSeriesObject> mrv2 = new Vector<TimeSeriesObject>();
-//        mrv2.add( check );
-//        mrv2.add( rFFT );
-//        mrv2.add( this );
-//        
-//        MultiChart.open(mrv2, true);
-//        
-//        System.out.println(" null: " + rFFT );
-        
-        // return the transformed ts build from shuffled phases.
         return rFFT;
     }
 
@@ -382,10 +237,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         this.av = (sum / z);
     }
 
-    public double getAvarage() {
-        return this.av;
-    }
-
     public void setDecimalFomrmatX(String format) {
         this.dfx = format;
         this.decimalFormat_X = new DecimalFormat(format);
@@ -439,27 +290,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         }
 
         return series;
-    }
-
-    public void writeToFile(File f) {
-        if (!f.getParentFile().exists()) {
-            f.getParentFile().mkdirs();
-        }
-
-        FileWriter fw = null;
-        try {
-            fw = new FileWriter(f);
-            fw.write(toString());
-            fw.close();
-        } catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fw.close();
-            } catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
     }
 
     public void addValue(double y) {
@@ -609,35 +439,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
             double delta = v1 - v2;
             difff += Math.abs(delta);
             mr.addValuePair(k, delta);
-        }
-        return mr;
-    }
-
-    public TimeSeriesObject add(TimeSeriesObject mr2) {
-        this.anzahlOfAllAddedMessreihen += 1;
-
-        TimeSeriesObject mr = null;
-
-        if (this.yValues.size() == 0) {
-            mr = mr2.copy();
-        } else {
-            mr = new TimeSeriesObject();
-            int max = mr2.yValues.size();
-            for (int k = 0; k < max; k++) {
-                double v1 = 0.0D;
-                double v2 = 0.0D;
-                try {
-                    v1 = ((Double) this.yValues.elementAt(k)).doubleValue();
-                } catch (Exception ex) {
-                }
-                try {
-                    v2 = ((Double) mr2.yValues.elementAt(k)).doubleValue();
-                } catch (Exception ex) {
-                }
-
-                double sum = v1 + v2;
-                mr.addValuePair(k, sum);
-            }
         }
         return mr;
     }
@@ -917,12 +718,12 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
                     c++;
                 }
             }
-            mr.calcAverage();
+            double mean = mr.getAvarage();
             if (c > 0) {
-                mr.addComment(c + " missing values replaced with mean=" + mr.getAvarage() + ".");
-                System.out.println(mr.getLabel() + " >>> " + c + " missing values replaced with mean=" + mr.getAvarage() + ".");
+                mr.addComment(c + " missing values replaced with mean=" + mean + ".");
+                System.out.println(mr.getLabel() + " >>> " + c + " missing values replaced with mean=" + mean + ".");
                 for (int d = 0; d < c; d++) {
-                    mr.addValue(mr.getAvarage());
+                    mr.addValue(mean);
                 }
             }
             rows[i] = mr;
@@ -1156,62 +957,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         
     }
     
-    /**
-     * Modification of time series.
-     * 
-     * Phase Randomization is moving the "imaginary part" by a randtom angle.
-     */
-    private void calc_modified_PR(TimeSeriesObjectFFT aThis, TimeSeriesObject rFFT, double samplingRate) {
-        
-        double[] data = aThis.getYData();
-        
-        int N_Original = data.length;
-        
-        data = extendToPowerOf2(data);
-        
-        FastFourierTransformer fft = new FastFourierTransformer( DftNormalization.STANDARD );
-
-        Complex[] c = fft.transform(data, TransformType.FORWARD );
-        Complex[] modCOMPLEX = new Complex[c.length];
-
-        double N = c.length;
-
-        double c0_R = c[0].getReal();
-        double c0_I = c[0].getImaginary();
-
-        double cf_R = c[(data.length - 1)].getReal();
-        double cf_I = c[(data.length - 1)].getImaginary();
-
-        double f0 = c0_R;
-        double df = N / 6283.1853071795858D;
- 
-        for (int i = 1; i <= c.length / 2; i++) {
-            
-            double randPhase = Math.random() * Math.PI * 2.0;
-            
-            Complex e = new Complex( Math.E , 0.0 );
-            
-            Complex factor = e.pow( Complex.I.multiply( randPhase ) );
-            
-            modCOMPLEX[i] = c[i].multiply(factor);
-            
-            if (i < c.length / 2)
-               modCOMPLEX[c.length - i] = c[c.length - i].multiply( factor.conjugate() );
-        
-        }
-        
-        modCOMPLEX[0] = new Complex(0.0D, 0.0D);
-
-        FastFourierTransformer fft2 = new FastFourierTransformer( DftNormalization.STANDARD);
-        Complex[] modData = fft2.transform(modCOMPLEX, TransformType.INVERSE );
-
-        for (int i = 0; i < N_Original; i++) {
-            rFFT.addValuePair(i, modData[i].getReal());
-        }
-        
-        TimeSeriesObjectFFT.debugComplexSeries(modCOMPLEX, " <PR> : modified complex coefficients" );
-        TimeSeriesObjectFFT.debugComplexSeries(modData, " <PR> : transformed values" );
-    }
 
     
     /**
@@ -1308,22 +1053,17 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     /**
-     * Modifies the row and gives back the result of the final FFT
-     * which is a time series of real values.
-     * 
-
-     * @return 
+     * Phase randomization with a uniform random phase per coefficient, as in
+     * getPhaseRandomizedModifiedFFT_MULTIPLY_RANDOM_INV.
      */
     public TimeSeriesObjectFFT getModifiedTimeSeries_PhaseRandomized() {
-        
-        TimeSeriesObjectFFT rFFT = new TimeSeriesObjectFFT();
+        return getModifiedTimeSeries_PhaseRandomized(new Random());
+    }
+
+    public TimeSeriesObjectFFT getModifiedTimeSeries_PhaseRandomized(Random random) {
+        TimeSeriesObjectFFT rFFT = randomizedPhases(random, false);
         rFFT.setLabel("PhaseRandomized {" + getLabel() + "}" );
-
-        double band = 6283.1853071795858D; 
-        calc_modified_PR(this, rFFT, band);
-
         return rFFT;
-        
     }
     /**
      * Modifies the row and gives back the result of the final FFT

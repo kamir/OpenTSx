@@ -38,13 +38,9 @@ public class GrangerCausality {
 
         double ftest = ((RSS0 - RSS1)/l) / (RSS1 / ( n - 2*l - 1));
 
-        System.out.println(RSS0 + " " + RSS1);
-        System.out.println("F-test " + ftest);
-
         FDistribution fDist = new FDistribution(l, n-2*l-1);
         try {
             double pValue = 1.0 - fDist.cumulativeProbability(ftest);
-            System.out.println("P-value " + pValue);
             return  pValue;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -55,7 +51,7 @@ public class GrangerCausality {
 
     private static double[][] createLaggedSide(int L, double[]... a) {
         int n = a[0].length - L;
-        double[][] res = new double[n][L*a.length+1];
+        double[][] res = new double[n][L*a.length];
         for(int i=0; i<a.length; i++){
             double[] ai = a[i];
             for(int l=0; l<L; l++){
@@ -63,9 +59,6 @@ public class GrangerCausality {
                     res[j][i*L+l] = ai[l+j];
                 }
             }
-        }
-        for(int i=0; i<n; i++){
-            res[i][L*a.length] = 1;
         }
         return res;
     }

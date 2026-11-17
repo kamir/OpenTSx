@@ -1337,7 +1337,7 @@ public abstract class Statistical
 	 * a normally distributed population.
 	 * 
 	 * @param values			The distribution to test.
-	 * @return					The result of the test, which is a double array of 2 elements: ({@link Statistical#SHAPIRO_WILK_PVALUE} and {@link Statistical#SHAPIRO_WILK_WSTAT}).
+	 * @return					The result of the test, which is a double array of 2 elements: ({@link Statistical#SHAPIRO_WILK_WSTAT} and {@link Statistical#SHAPIRO_WILK_PVALUE}).
 	 * @throws IllegalArgumentException
 	 * 							Thrown when the length of the vector is less than 3 elements.
 	 */
@@ -1351,7 +1351,7 @@ public abstract class Statistical
 		double sorted[] = new double[length+1];	// need padding for the FORTRAN port
 		for (int i=0; i<length; ++i)
 			sorted[i+1] = values[i];
-		Arrays.sort(sorted);
+		Arrays.sort(sorted, 1, length + 1);
 		
 		// call the fortran port
 		boolean init[] = new boolean[1];
