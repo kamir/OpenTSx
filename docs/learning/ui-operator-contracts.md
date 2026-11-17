@@ -184,6 +184,12 @@ nonfinite values. Output x is window-start sample index and unit is bit.
 Source: [ops.ts#entropyWindow](../../opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow) . Executable exercise:
 `ui.entropy.window` .
 
+The native Swing `ENTROPY` action and `TimeSeriesObject.calcEntropyForWindow` use a separate
+[native contract](../../opentsx-core/README.md#compute-native-entropy-windows). They accept positive integer lengths,
+require at least two finite matching coordinate/value samples, advance starts by at least one sample and clip cuts
+to the available data. Native maximum normalization and modulo-100 discretization differ from this browser
+workload's binning; its expected values do not establish native output parity.
+
 <a id="acf"></a>
 
 ## Find alternating dependence with autocorrelation

@@ -2627,15 +2627,31 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
      * @return 
      */
     public TimeSeriesObject calcEntropyForWindow(int z ) {
-        int i = 0;
+        if (z <= 0) {
+            throw new IllegalArgumentException("Entropy window length must be a positive integer");
+        }
+        Vector x = getXValues();
+        Vector y = getYValues();
+        if (x == null || y == null || x.size() != y.size() || y.size() < 2) {
+            throw new IllegalArgumentException("Entropy needs at least two samples with matching coordinates");
+        }
+        int count = y.size();
+        for (int index = 0; index < count; index++) {
+            if (!(x.get(index) instanceof Double coordinate) || !(y.get(index) instanceof Double value)
+                    || !Double.isFinite(coordinate) || !Double.isFinite(value)) {
+                throw new IllegalArgumentException("Entropy values and coordinates must be finite numbers");
+            }
+        }
+
         TimeSeriesObject m = new TimeSeriesObject();
         m.setLabel( this.getLabel() + "H(l="+z+")" );
-        
-        
-        while( i + 1 < this.getYData().length ) {
-            TimeSeriesObject t = this.cutOut(i, i + z);
+        int step = Math.max(1, z / 4);
+        int i = 0;
+        while (i < count - 1) {
+            int end = i + Math.min(z, count - i);
+            TimeSeriesObject t = this.cutOut(i, end);
             m.addValuePair( i , t.calculateShannonEntropy() );
-            i = i + (int)( z * 0.25 );
+            i += Math.min(step, count - i);
         }
         return m;
     }

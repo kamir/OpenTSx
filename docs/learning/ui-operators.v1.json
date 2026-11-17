@@ -1151,7 +1151,7 @@
       ],
       "pitfalls": [
         "The bin range is derived from the whole input series.",
-        "This workbench binning is not guaranteed to match the legacy Java entropy implementation."
+        "The native ENTROPY action uses maximum normalization and modulo-100 discretization within each slice, validates finite matching samples and positive integer lengths, and clips cuts to available data. This browser workload does not establish native output parity."
       ],
       "parameterKeys": [
         "length",
@@ -1179,17 +1179,22 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#entropy-window"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow"
+          "opentsx-saas-frontend/src/workbench/ops.ts#entropyWindow",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObject.java#calcEntropyForWindow",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton14ActionPerformed"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/data/series/TimeSeriesObjectEntropyTest.java",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelEntropyTest.java"
         ],
         "vectors": []
       }
