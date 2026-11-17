@@ -243,6 +243,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native standard normalization preserves original sample coordinates and axis labels and reports invalid series.
+  Per-series histograms validate selections, integer bounds, positive bin counts and finite matching samples.
+  Both desktop actions prepare all results before opening a chart or recording a transformation; rejected input
+  leaves the recorder unchanged. Numerical APIs and native histogram binning are retained.
+
 - ARIMA-family fits use L-BFGS with the Harvey likelihood score and complex-step derivatives.
   Small-amplitude Gaussian fits retain their analytic variance and forecast intervals; the requested
   iteration limit and strict nonconvergence rejection remain enforced.
