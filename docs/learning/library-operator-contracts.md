@@ -23,9 +23,11 @@ also identifies the implemented vector and pair mappings. A numerical kernel
 alone remains insufficient evidence of a mapping.
 
 The local [`DagToWayang`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java)
-compiler validates the current catalog and constructs fused clean-series plans with topic sinks. Its current
-physical compilation accepts clean series sinks, not statistics sinks or federated plans. Statistics parameter
-validation and the separately constructible `TsxStatsWindow` operator do not expand that compiler scope.
+compiler validates parameters from processor descriptions and constructs fused
+clean-series plans with topic sinks. Its current physical compilation accepts
+clean series sinks, not statistics sinks or federated plans. Statistics parameter
+validation and the separately constructible `TsxStatsWindow` operator do not
+expand that compiler scope.
 Remote deployment and authorization remain outside this local Java API. The separate
 [`tsx-runner` bounded profile](../devguide/integration/rust-runner-local.md) executes pass-through, plausible-range
 checks, unit conversion and a trailing resample. The separate
@@ -62,7 +64,9 @@ The shared `pair-es.v1.json` has four sampled-series cases and four event-list-o
 cases; all eight run on the kernel. The native Java `TsxPair` operator executes
 the four sampled cases through Wayang, once together and once with B retained
 in `TsxState` before A arrives after state restoration in a later increment.
-This Java API is separate from a deployed UI DAG binding or a frozen catalog.
+`pair.es` version 1 belongs to the
+[frozen catalog](../../systems/catalogs/tsx-catalog-1.yaml). Its available native
+Wayang API remains separate from full A4 compilation and a deployed UI DAG binding.
 
 For sampled pair windows, `tauMax` is in seconds and zero means uncapped; the
 operator converts it to aligned tick units before calling the kernel. A

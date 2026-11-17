@@ -109,9 +109,17 @@ class DagToWayangErrorsTest {
     }
 
     @Test
-    void validatesEveryCatalogNodeBeforeReportingParameterErrors() throws Exception {
+    void validatesEveryCatalogNodeBeforeReportingParameterErrors(@TempDir Path catalog) throws Exception {
+        try (var files = Files.list(CATALOG)) {
+            for (Path file : files.toList()) Files.copy(file, catalog.resolve(file.getFileName()));
+        }
+        ObjectNode planned = (ObjectNode) YAML.readTree(catalog.resolve("align.vector.yaml").toFile());
+        ((ObjectNode) planned.path("runtimes").path("wayang")).put("status", "planned");
+        YAML.writeValue(catalog.resolve("align.vector.yaml").toFile(), planned);
         refused("missing.operator", "{}", "node n1: operator missing.operator is not in catalog tsx-catalog/1");
-        refused("align.vector", "{every: PT1M}", "node n1: operator align.vector version 1 has no runtime for track A");
+        assertEquals("node n1: operator align.vector version 1 has no runtime for track A",
+                assertThrows(IllegalArgumentException.class,
+                        () -> DagToWayang.compile(dag("align.vector", "{every: PT1M}"), LAYOUT, "spec", catalog)).getMessage());
         for (String op : List.of("missing.operator", "align.vector")) {
             ObjectNode input = dag("model.wind-shear", "{toM: 100, alpha: 0.2}");
             ((ArrayNode) input.path("nodes")).addObject().put("id", "later").put("op", op)
@@ -120,8 +128,21 @@ class DagToWayangErrorsTest {
                     ? "node later: operator missing.operator is not in catalog tsx-catalog/1"
                     : "node later: operator align.vector version 1 has no runtime for track A";
             assertEquals(expected, assertThrows(IllegalArgumentException.class,
-                    () -> DagToWayang.compile(input, LAYOUT, "spec", CATALOG)).getMessage());
+                    () -> DagToWayang.compile(input, LAYOUT, "spec", catalog)).getMessage());
         }
+    }
+
+    @Test
+    void frozenAlignmentIsAvailableDuringParameterValidation() throws Exception {
+        JsonNode normalized = DagToWayang.parameters(dag("align.vector", "{every: PT1M}"), CATALOG);
+        assertEquals("MEAN", normalized.path("nodes").get(1).path("params").path("agg").asText());
+    }
+
+    @Test
+    void zeroAlignmentAgeIsValidForTheCurrentTick() throws Exception {
+        JsonNode normalized = DagToWayang.parameters(
+                dag("align.vector", "{every: PT1M, lateness: PT1S, maxAge: PT0S}"), CATALOG);
+        assertEquals("PT0S", normalized.path("nodes").get(1).path("params").path("maxAge").asText());
     }
 
     @Test

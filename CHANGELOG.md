@@ -51,6 +51,12 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   against Java reference output. This standalone replay fixture remains distinct from the UI-to-Wayang rollout
   acceptance helper; continuous processing and production fleet activation remain separate.
 
+- Frozen `tsx-catalog/1` with 16 versioned native Java entries, complete
+  processor descriptions and membership/version/metadata regressions.
+  Stream/batch parity covers 61 native numerical cases and four explicit
+  ES kernel cases in six chunk/order combinations. README, SPEC, manual
+  and learning contracts describe runtime scope and comparison boundaries.
+
 - Wayang operators for threshold and extremum segmentation, SAX words, and
   data-quality signals (TASK-020 A3.4 and the retrieval part of A3.5). Segments
   checkpoint their retained samples and detector state per series. All 26

@@ -117,7 +117,8 @@
         "Analyze with tau_max two, then one.",
         "Compare directional synchronization and the reported leader.",
         "Inspect the four sampled-series cases through TsxPair in one plan and with B retained before A arrives after state restoration.",
-        "Read the large-seed and settings-label regressions in TsxPairEsWayangTest; explain why the seed label need not equal the random state."
+        "Read the large-seed and settings-label regressions in TsxPairEsWayangTest; explain why the seed label need not equal the random state.",
+        "Resolve pair.es version 1 in frozen catalog 1 and distinguish its sampled native mapping from event-list kernel coverage and full A4 deployment."
       ],
       "starter": {
         "language": "python",
@@ -136,13 +137,15 @@
         "Event synchronization is not Pearson correlation.",
         "Use a fixed seed when adding surrogate_sync; a reproducible surrogate does not establish causality.",
         "Event-list-only vectors do not establish sampled Wayang coverage or a deployed DAG binding.",
-        "The direct kernel uses event-list units for tauMax; the sampled native operator accepts seconds and converts them to ticks."
+        "The direct kernel uses event-list units for tauMax; the sampled native operator accepts seconds and converts them to ticks.",
+        "Frozen catalog membership does not expand the local clean-series compiler or admit a site plan."
       ],
       "references": {
         "manual": [
           "docs/user-manual/11-classic-analytics.md#113-event-synchronization-es",
           "docs/user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#compare-event-synchronization",
@@ -153,7 +156,9 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairEs.java#L38",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxPair.java#TsxPair",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es",
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "systems/processors/pair.es.yaml"
         ],
         "tests": [
           "python-package/tests/test_library_learning_algorithms.py#test_learning_event_sync_exposes_direction_and_strict_cap",
@@ -161,7 +166,9 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#everySeriesCaseMatchesThroughAWayangPlan",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#aInALaterIncrementGivesTheSameResult",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/pair-es.v1.json"
@@ -952,7 +959,8 @@
       "surface": "library",
       "objectives": [
         "Separate logical source construction from broker execution.",
-        "Represent all internal ranges of a whole-topic assignment."
+        "Represent all internal ranges of a whole-topic assignment.",
+        "Locate the recorded-replay source in frozen catalog 1."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -962,7 +970,8 @@
         "Construct a read description for both partitions of one synthetic topic.",
         "Compute the Episode fingerprint from the registered schema.",
         "Inspect source.read without opening a broker; use the existing wire/settings tests for offline evidence.",
-        "Inspect the separate RustTopicSource and topology-only channel, then compare a complete three-topic plan with the local source starter."
+        "Inspect the separate RustTopicSource and topology-only channel, then compare a complete three-topic plan with the local source starter.",
+        "Resolve decode.avro-soe version 1 in the inventory and its processor description, then distinguish logical construction from native replay and deployment admission."
       ],
       "starter": {
         "language": "java",
@@ -978,7 +987,8 @@
         "Partition positions are checkpoint/cut metadata, never independently deployable units.",
         "The current source materializes an increment in memory; broker integration is a separate disposable-environment check.",
         "The remote Rust source is a separate mapping. Its complete topic is read on the assigned worker, without materializing raw payloads in the Java driver.",
-        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate."
       ],
       "references": {
         "manual": [
@@ -986,7 +996,8 @@
           "opentsx-wayang/README.md#run-a-plan-in-increments",
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/wayang-rust-compose.md",
-          "docs/devguide/integration/wayang-rust-continuous.md"
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
@@ -997,7 +1008,9 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSource.java#L12",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSource.java#L1",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSource.java#RustTopicSource",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPlanChannel.java#createInstance"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPlanChannel.java#createInstance",
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "systems/processors/decode.avro-soe.yaml"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
@@ -1007,7 +1020,8 @@
           "rust/tsx-runner/tests/increments.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
-          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json"
@@ -1119,7 +1133,8 @@
         "Use the existing corruption regression to distinguish an unreadable file from absence.",
         "Follow TsxSegment state across increments and compare bounded completion with a restored run.",
         "Run the segmentation checkpoint regressions for quality/source metadata, raw NaN bits, incompatible parameters and truncated input.",
-        "Distinguish the Rust worker prepared journal, its completed checkpoint and the authoritative PostgreSQL deployment plan during an identical retry."
+        "Distinguish the Rust worker prepared journal, its completed checkpoint and the authoritative PostgreSQL deployment plan during an identical retry.",
+        "Compare frozen operator versions with the local checkpoint hash rules and identify the separate admission and state-migration boundaries."
       ],
       "starter": {
         "language": "java",
@@ -1140,7 +1155,8 @@
         "Incremental segmentation keeps pending output; bounded completion flushes it before the next checkpoint is written.",
         "An uncertain Rust activation retries saved bytes with the same hash while topic ownership remains held; it cannot choose another clock, source cut or worker.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "One immutable worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset."
+        "One immutable worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
+        "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration."
       ],
       "references": {
         "manual": [
@@ -1148,7 +1164,8 @@
           "docs/user-manual/17-learn-operators.md",
           "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
           "docs/devguide/integration/wayang-rust-compose.md",
-          "docs/devguide/integration/wayang-rust-continuous.md"
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
@@ -1164,7 +1181,8 @@
           "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
           "rust/tsx-runner/src/worker.rs#activate",
           "rust/tsx-runner/src/worker.rs#recover",
-          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_once"
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_once",
+          "systems/catalogs/tsx-catalog-1.yaml"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1180,7 +1198,8 @@
           "rust/tsx-runner/tests/increments.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
-          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
         ],
         "vectors": []
       }

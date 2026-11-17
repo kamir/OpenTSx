@@ -1,0 +1,18 @@
+catalog: tsx-catalog/1
+operators:
+  - { id: decode.avro-soe, version: 1 }
+  - { id: dq.plausible-range, version: 1 }
+  - { id: convert.unit, version: 1 }
+  - { id: resample, version: 1 }
+  - { id: model.wind-shear, version: 1 }
+  - { id: model.power-curve, version: 1 }
+  - { id: feature.lag, version: 1 }
+  - { id: feature.rolling, version: 1 }
+  - { id: stats.welford-ddsketch, version: 1 }
+  - { id: align.vector, version: 1 }
+  - { id: segment.threshold, version: 1 }
+  - { id: segment.extremum, version: 1 }
+  - { id: sax.word, version: 1 }
+  - { id: pair.xcorr, version: 1 }
+  - { id: pair.es, version: 1 }
+  - { id: dq.result, version: 1 }
