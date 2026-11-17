@@ -257,9 +257,13 @@ jobs:
           cache: pip
           cache-dependency-path: python-package/pyproject.toml
       - name: Install
-        run: python -m pip install -e . pytest
+        run: python -m pip install -e ".[forecasting,kafka]" pytest
       - name: Test
         run: python -m pytest -q
+      - name: Local CP launcher tests
+        if: matrix.python == '3.12'
+        working-directory: .
+        run: python -m unittest discover -s deploy/local-cp -p test_workbench.py -v
       - name: Documentation links
         if: matrix.python == '3.12'
         working-directory: .
