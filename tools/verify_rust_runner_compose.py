@@ -104,8 +104,17 @@ def run_workers(environment, phase):
         environment, f"workers-{phase}-start", timeout=180)
     failure = None
     try:
-        run(COMPOSE + ["--profile", "workers", "wait"] + WORKERS,
-            environment, f"workers-{phase}-wait", timeout=1000)
+        output = run(COMPOSE + ["--profile", "workers", "ps", "--all", "--quiet"] + WORKERS,
+                     environment, f"workers-{phase}-ids", timeout=60)
+        identifiers = [line.strip() for line in output.splitlines() if line.strip()]
+        if (len(identifiers) != 3 or len(set(identifiers)) != 3
+                or not all(12 <= len(value) <= 64 and all(character in "0123456789abcdef" for character in value)
+                           for value in identifiers)):
+            raise RuntimeError("expected three distinct worker container IDs")
+        output = run(["docker", "container", "wait"] + identifiers,
+                     environment, f"workers-{phase}-wait", timeout=1000)
+        if [line.strip() for line in output.splitlines()] != ["0", "0", "0"]:
+            raise RuntimeError("worker container wait did not report three successful exits")
     except RuntimeError as error:
         failure = error
     run(COMPOSE + ["--profile", "workers", "logs", "--no-color"] + WORKERS,

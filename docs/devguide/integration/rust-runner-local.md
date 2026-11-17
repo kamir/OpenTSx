@@ -2,7 +2,8 @@
 
 Run the `opentsx.local-bounded-run.v1` profile with `tsx-runner` 0.1.0 and three isolated Compose workers.
 
-You need Docker Compose 2.24.4 or later, Docker access, JDK 21 and Maven 3.9.8 for the Java fixture checks.
+You need Linux or macOS, Docker Compose 2.24.4 or later, Docker access, JDK 21 and Maven 3.9.8
+for the Java fixture checks.
 Use a disposable local broker and trusted request files. This profile does not implement signed fleet activation,
 the remote Wayang executor, automatic failover or production access controls.
 
