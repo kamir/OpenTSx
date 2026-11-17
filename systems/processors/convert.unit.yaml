@@ -15,5 +15,6 @@ params:
 semantics: { needs: point, deterministic: true, keeps: [time, count], origin: INHERIT }
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+  rust: { status: available, note: "tsx-runner 0.1.0 trusted-local bounded profile; finite factor and offset." }
 state: { kind: none }
 testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

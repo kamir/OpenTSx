@@ -3,7 +3,7 @@
 ## Task Metadata
 - **Task ID**: TASK-020-wayang-ts-operators
 - **Created**: 2026-11-16
-- **Status**: Planned
+- **Status**: In progress
 - **Priority**: Medium
 - **Epic**: P7 Smart Topics (federated part, P7d) and P8 federated analysis
 - **Concept**: [20-WAYANG-TS-OPERATORS.md](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md)
@@ -41,6 +41,9 @@ Each operator still requires its reference vectors and admission gate before use
 - [ ] U01 physical deployment, complete ownership, channels, capabilities and structured refusal contract.
 - [ ] U02/U03 stage compilation, fake-transport proof and durable control/delivery sequence.
 - [ ] U04/U05 minimal Rust runner and actual UI-to-two-node proof with static assignments.
+- [x] U04 trusted-local bounded subset: `tsx-runner` 0.1.0 replays one complete topic with pass-through or
+  plausible-range checks, unit conversion and a trailing resample. Shared vectors, local failure/retry tests and
+  a three-worker Compose fixture are implemented. This does not complete fleet activation or U05.
 - [ ] U06 production stale-output enforcement, rollout, policy and operating qualification.
 - [ ] U08 bounded Iceberg snapshot/seal/publication profile.
 
@@ -69,6 +72,10 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 
 ### A1: KafScale source, sink, checkpoint, increments
 - [x] `TsxTopicSource`, `TsxTopicSink`, `TsxCheckpoint` and the increment runner `TsxIncrement` (S5.1, S6), 2026-11-16.
+- [x] A1.7: both increment chains measured at 5, 30 and 60 seconds, with
+  30 increments per condition and three repetitions. The
+  [report and raw samples](../docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  record all 18 conditions and 540 increments, without a threshold.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -80,7 +87,9 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 | A1.6 | An unknown fingerprint stops the task | `TsxFingerprintIntegrationTest` writes one record with another schema | K | task state `failed`, status `error` equals the message of S3.2 exactly; no later record processed |
 | A1.7 | Increment latency is known | protocol of concept 20, section 14 | W on K | measured and reported with raw samples; no threshold |
 
-Status of A1 on 2026-11-16, run with JDK 21 against KafScale v1.6.0 built from source (in-memory S3, `127.0.0.1:39092`):
+Status of A1.1 to A1.6 on 2026-11-16, run with JDK 21 against KafScale v1.6.0
+built from source (in-memory S3, `127.0.0.1:39092`). A1.7 was measured on
+2026-11-17 on the host recorded in its report:
 
 | # | Result |
 |---|---|
@@ -90,7 +99,11 @@ Status of A1 on 2026-11-16, run with JDK 21 against KafScale v1.6.0 built from s
 | A1.4 | met: `TsxPassThroughIntegrationTest`, all episodes of W with identical bytes; a second increment reads 0 records |
 | A1.5 | met: `TsxCrashRecoveryIntegrationTest`, failures after 1, 150 and 299 of 300 episodes; no checkpoint after a failed increment; after the next increment every episode id present, every duplicate byte-identical |
 | A1.6 | met: `TsxFingerprintIntegrationTest`, `TsxIncrementException` carries the message of S3.2 exactly, no checkpoint, nothing written. `TsxStatusIntegrationTest` reports the failed increment with the same error |
-| A1.7 | open |
+| A1.7 | met on 2026-11-17; report and raw samples linked above |
+
+A1.7 records 18 conditions, 540 increments, 64,800 input and output records and
+0 Produce errors. All outputs match the reference. The report records
+per-output p50/p95/p99 and first-Fetch/wall samples for both chains.
 
 The CI job "KafScale conformance" runs the three integration tests and fails when one of them is missing, skipped or
 failed.
@@ -126,7 +139,7 @@ Status of A2 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 
 Local verification on JDK 21: the KafScale reactor runs 402 tests with zero
 failures or errors and one conditional skip. All 86 Wayang tests execute with
-zero skips. CI requires nine Wayang acceptance classes, all five statistics
+zero skips. CI requires the A1/A2 acceptance classes, all five statistics
 vector cases, and the four named parameter-message tests to execute successfully.
 
 ### A3: remaining catalog 1, catalog freeze
@@ -148,8 +161,13 @@ vector cases, and the four named parameter-message tests to execute successfully
   with every series of input `b`, episode by episode, by the rules of
   `pairs.ts` (pairing, windows, clock, coverage); one result episode per
   field and pair range, id of S6.2 (A3.2).
-- [x] `pair.es` on Wayang: the second method of `TsxPair`, over the kernel
-  `ops/TsxPairEs` (A3.3).
+- [x] `pair.es` on Wayang: the second method of `TsxPair`, over the existing
+  `ops/TsxPairEs` kernel (A3.3).
+- [x] Native Wayang mappings for `segment.threshold`, `segment.extremum`,
+  `sax.word`, and `dq.result`: 26 exact shared cases in the three A3.4 test
+  classes. Segment detectors and retained samples are checkpointed per series.
+- [x] Stream/batch parity for these four operators: 26 cases, six chunk and
+  series-order combinations per case, 156 exact comparisons.
 - [ ] Catalog `tsx-catalog/1` frozen.
 
 Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
@@ -171,12 +189,6 @@ input has passed its end. One difference to the workbench: without `every`
 the clock is the larger sampling interval of the two paired episodes, not of
 the two whole series, because a continuing input has no whole series.
 
-Status of A3.3 on 2026-11-16, JDK 21: the four `pair.es` cases with series run
-through a Wayang plan with `TsxPairEsWayangTest` (`q_total`, `q_ab`, `q_ba`,
-`q_rand` within `5e-13`), also with A in a later increment; the four cases with
-event lists only run on the kernel (`TsxPairEsVectorsTest`, events equal).
-Invalid settings fail with the messages of `es.ts` (9 tests, 0 failures).
-
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -186,6 +198,24 @@ Invalid settings fail with the messages of `es.ts` (9 tests, 0 failures).
 | A3.4 | New operators match their new vectors | `TsxSegmentVectorsTest`, `TsxSaxVectorsTest`, `TsxDqVectorsTest` | V: the four new files | 100 % of cases exact |
 | A3.5 | Stream equals batch | `TsxStreamEqualsBatchTest` feeds every vector input in chunks of 1, 7 and all records, in two series orders | V | identical output in all 6 runs per case |
 | A3.6 | The catalog is complete and valid | `SystemDocTest` | `systems/processors/` | one description per row of S1.7 with `state`, `merge`, `runtimes.wayang.status: available`; schema validation 0 errors |
+
+Status of the retrieval operators on 2026-11-17:
+
+| #    | Result                                                   |
+| ---- | -------------------------------------------------------- |
+| A3.4 | met: all 12 segment, seven SAX, and seven DQ cases       |
+| A3.5 | met for these four operators: 26 cases, 156 comparisons  |
+| A3.6 | four descriptions available; catalog freeze remains open |
+
+Segments restore a checkpoint between chunks and compare full Avro payloads
+with batch. SAX compares complete episodes; DQ compares complete statistics
+records and full signal JSON. The four processor descriptions declare state,
+merge, and available Wayang runtimes. Align and pair execution mappings are
+tracked separately.
+
+`TsxSignalSinkIntegrationTest` checks JSON signal writes and rejection of an
+invalid batch before any records are sent. DQ ids include the check and both
+window bounds, preserving distinct findings under the S6.2 deduplication rule.
 
 ### A4: translation, signed plans, federation on JVM sites
 - [ ] `DagToWayang`, `TsxSitePlatform`, `TsxSiteExecutor`, `TsxSiteAgent`, plan service API (S5.3), forwarder, central merge.
@@ -211,6 +241,13 @@ Invalid settings fail with the messages of `es.ts` (9 tests, 0 failures).
 ### B1: Rust runner foundation
 - [ ] `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds.
 
+The implemented command is `tsx-runner replay`, using the
+[trusted-local bounded profile](../docs/devguide/integration/rust-runner-local.md).
+It provides Avro episode I/O, series identity, explicit caps, retained operator state and a completed receipt
+after all output acknowledgements. The Compose fixture assigns three separate topics with one, two and three
+partitions and compares their output to Java. The fleet command, full cross-target matrix and all B1 criteria
+remain separate qualification work.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B1.1 | Cross builds exist | CI job builds `aarch64-unknown-linux-musl`, `armv7-unknown-linux-musleabihf`, `x86_64-unknown-linux-musl` | none | three artifacts; `file` reports "statically linked" for each |
@@ -221,6 +258,12 @@ Invalid settings fail with the messages of `es.ts` (9 tests, 0 failures).
 | B1.6 | Unknown fingerprint as A1.6 | `fingerprint` integration test | K | as A1.6 |
 
 ### B2: edge operators
+
+The executable local subset is `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and optional trailing `resample`.
+The operator tests consume the eight supported `clean-ops.v1.json` cases and refuse the seven unsupported cases.
+They check all chunk sizes and state restores, including exclusive derived-series ownership.
+The broader B2 acceptance table is not a claim that the remaining target operators execute in Rust.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | B2.1 | Operator vectors pass | `cargo test` | V: every file for the operators with B = yes in S1.7 | the thresholds of A2.1 to A3.5 |

@@ -1,17 +1,16 @@
 package org.opentsx.wayang;
 
-import org.apache.avro.specific.SpecificRecord;
 import org.apache.wayang.core.plan.wayangplan.UnarySink;
 import org.apache.wayang.core.types.DataSetType;
 
 /** Writes OpenTSx records to one topic with the KafScale client settings. */
-public class TsxTopicSink extends UnarySink<SpecificRecord> {
+public class TsxTopicSink extends UnarySink<Object> {
 
     private final String bootstrap;
     private final String topic;
 
     public TsxTopicSink(String bootstrap, String topic) {
-        super(DataSetType.createDefault(SpecificRecord.class));
+        super(DataSetType.createDefault(Object.class));
         this.bootstrap = bootstrap;
         this.topic = topic;
     }

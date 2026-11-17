@@ -7,12 +7,12 @@ package org.opentsx.data.exporter;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -67,45 +67,23 @@ public class MeasurementTable {
     }
 
     public void createParrentFile(File f) {
-        System.out.println("> MT : file ===> " + f);
-        File p = f.getParentFile();
-        System.out.println("> MT : parent => " + p);
-
-        if (p == null || !p.exists()) {
-            p.mkdirs();
-            System.out.println( f.getAbsolutePath() + " was created. " );
-        } else {
-            System.out.println("> MT : Nothing to create. ");
+        Path parent = f.toPath().toAbsolutePath().getParent();
+        try {
+            if (parent == null) throw new IOException("Export destination must name a file: " + f);
+            Files.createDirectories(parent);
+        } catch (IOException failure) {
+            throw new UncheckedIOException("Failed to create measurement table folder for " + f, failure);
         }
     }
 
     ;
 
     public void writeToFile(File f) {
-        
-        System.out.println(">>> MWT => writeToFile() ... " + f.getAbsolutePath());
-
-        createParrentFile(f);
-
-        FileWriter fw = null;
-        
+        String content = this.toString();
         try {
-            
-            fw = new FileWriter(f);
-            
-            String content = this.toString();
-            
-            fw.write( content );
-            fw.close();
-            
-        } catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fw.close();
-            } catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            ExportFileWriter.write(f, content);
+        } catch (IOException failure) {
+            throw new UncheckedIOException("Failed to export measurement table to " + f, failure);
         }
     }
     public double fill_UP_VALUE = -5.0;

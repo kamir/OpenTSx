@@ -1,5 +1,8 @@
 package org.opentsx.retrieval.segment;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -118,5 +121,42 @@ final class ThresholdDetector implements Detector {
             need = Math.min(need, p.from());
         }
         return need;
+    }
+
+    @Override
+    public void writeState(DataOutput out) throws IOException {
+        out.writeUTF(state.name());
+        out.writeLong(enterIdx);
+        out.writeLong(fromIdx);
+        out.writeInt(pending.size());
+        for (Pending p : pending) {
+            out.writeLong(p.from());
+            out.writeLong(p.coreEndTs());
+            out.writeLong(p.anchor());
+        }
+    }
+
+    @Override
+    public void readState(DataInput in, SampleBuffer buf) throws IOException {
+        try {
+            state = State.valueOf(in.readUTF());
+        } catch (IllegalArgumentException e) {
+            throw new IOException("invalid threshold detector state", e);
+        }
+        enterIdx = in.readLong();
+        fromIdx = in.readLong();
+        if (state != State.IDLE && (fromIdx < buf.base() || enterIdx < fromIdx || enterIdx >= buf.end())) {
+            throw new IOException("invalid threshold detector indices");
+        }
+        int count = in.readInt();
+        if (count < 0 || count > buf.end() - buf.base()) throw new IOException("invalid threshold pending count");
+        pending.clear();
+        for (int i = 0; i < count; i++) {
+            Pending p = new Pending(in.readLong(), in.readLong(), in.readLong());
+            if (p.from() < buf.base() || p.anchor() < p.from() || p.anchor() >= buf.end()) {
+                throw new IOException("invalid threshold pending indices");
+            }
+            pending.add(p);
+        }
     }
 }

@@ -15,14 +15,9 @@ import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.generator.RNGWrapper;
 import org.jfree.data.xy.XYSeries;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class TimeSeriesObjectFFT extends TimeSeriesObject {
@@ -323,6 +318,11 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public String toString() {
+        return formatText(Integer.MAX_VALUE, null);
+    }
+
+    @Override
+    protected String formatText(int maxPoints, Character decimalSeparator) {
         StringBuffer sb = new StringBuffer();
 
         int size = this.xValues.size();
@@ -331,11 +331,12 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         sb.append("#\n#" + this.addinfo + "\n#\n");
         sb.append(getStatisticData("# "));
         sb.append("\n");
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < Math.min(size, maxPoints); i++) {
             double x = ((Double) getXValues().elementAt(i)).doubleValue();
             double y = ((Double) getYValues().elementAt(i)).doubleValue();
 
-            sb.append(x + " " + y + "\n");
+            sb.append(formatRawValue(x, decimalSeparator) + " "
+                    + formatRawValue(y, decimalSeparator) + "\n");
         }
         sb.append("#\n" + this.sbComments.toString());
         return sb.toString();
@@ -439,27 +440,6 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         }
 
         return series;
-    }
-
-    public void writeToFile(File f) {
-        if (!f.getParentFile().exists()) {
-            f.getParentFile().mkdirs();
-        }
-
-        FileWriter fw = null;
-        try {
-            fw = new FileWriter(f);
-            fw.write(toString());
-            fw.close();
-        } catch (IOException ex) {
-            Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fw.close();
-            } catch (IOException ex) {
-                Logger.getLogger(TimeSeriesObject.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
     }
 
     public void addValue(double y) {

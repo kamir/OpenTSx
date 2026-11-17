@@ -301,7 +301,8 @@
       "surface": "library",
       "objectives": [
         "Compose normalization, PAA and breakpoint encoding.",
-        "Preserve the width/alphabet identity of stored words."
+        "Preserve the width/alphabet identity of stored words.",
+        "Separate pre-normalized Sax.word input from the registered TsxSaxWord normalization modes and derived episode identity."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -310,7 +311,9 @@
       "tasks": [
         "Normalize [1,2,3,4] and encode width two/alphabet four.",
         "Repeat after an affine value transformation.",
-        "Measure the same word against itself and reject alphabet one."
+        "Measure the same word against itself and reject alphabet one.",
+        "Replay all seven SAX vector cases through TsxSaxWord and TsxJavaPlugin, choosing normalized(...) only for cases whose input is already normalized.",
+        "Check that the output fills EpisodeSummary.sax while preserving raw samples and timestamps and recording the parent episode."
       ],
       "starter": {
         "language": "java",
@@ -320,26 +323,37 @@
       "expected": [
         "The stored word is 2x4:ad; its distance lower bound to itself is zero.",
         "Normalized [12,14,16,18] gives the same word.",
-        "Alphabet one rejects; supported alphabet sizes are 2 through 26."
+        "Alphabet one rejects; supported alphabet sizes are 2 through 26.",
+        "Actual Wayang plans reproduce every shared word. Derived episode IDs are deterministic for the series, time bounds and supplied specHash."
       ],
       "pitfalls": [
         "Sax.word expects already normalized values.",
-        "A pruning lower bound is not an exact final similarity score."
+        "A pruning lower bound is not an exact final similarity score.",
+        "TsxSaxWord normalizes by default; normalized(...) is an explicit Java API mode that skips normalization. Neither mode changes the stored sample values.",
+        "An episode is the atomic SAX input. Splitting its values into separate episodes changes the workload rather than proving stream/batch parity."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#93-pattern-search",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#encode-sax-words"
+          "docs/learning/library-operator-contracts.md#encode-sax-words",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids"
         ],
         "source": [
-          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Sax.java#L28"
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Sax.java#L28",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSaxWord.java#normalized",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSaxWord.java#word",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSaxWord"
         ],
         "tests": [
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L49",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java#sharedVectors"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSaxVectorsTest.java#allSharedWordsMatchThroughWayang",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/sax-word.v1.json"
@@ -595,7 +609,8 @@
       "surface": "library",
       "objectives": [
         "Separate prominence, peak separation and output extent.",
-        "Identify the anchor independently of segment start."
+        "Identify the anchor independently of segment start.",
+        "Distinguish the public segmentation algorithm from its registered Wayang execution mapping and saved operator state."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -604,7 +619,9 @@
       "tasks": [
         "Segment [0,0,1,4,1,0,0,0] with the stated parameters.",
         "Inspect the three-sample output and anchor.",
-        "Explain why a streaming detector needs lookahead."
+        "Explain why a streaming detector needs lookahead.",
+        "Replay the applicable shared vector cases through TsxSegment using TsxJavaPlugin, then compare chunks of one, seven and all samples in both series orders.",
+        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state."
       ],
       "starter": {
         "language": "java",
@@ -613,26 +630,41 @@
       },
       "expected": [
         "One segment contains [1,4,1].",
-        "Its anchor is 3000000 epoch microseconds; pre/post endpoints are inclusive."
+        "Its anchor is 3000000 epoch microseconds; pre/post endpoints are inclusive.",
+        "The registered threshold and extremum mappings reproduce their shared vector cases exactly, including after checkpoint restoration and bounded final flushing."
       ],
       "pitfalls": [
         "A high current sample is not a finalized local maximum.",
-        "Prominence is measured against surrounding minima, not the global series mean."
+        "Prominence is measured against surrounding minima, not the global series mean.",
+        "Segmenter construction alone does not execute a Wayang plan. TsxIncrement supplies TsxState to its plan callback; do not invent a second state store.",
+        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#92-segmentation",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#segment-around-extrema"
+          "docs/learning/library-operator-contracts.md#segment-around-extrema",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s14-state",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
         ],
         "source": [
-          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L69"
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L69",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSegment.java#TsxSegment",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment"
         ],
         "tests": [
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L113",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java#sharedVectors"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#sharedVectorsThroughRealWayangPlans",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/segment-extremum.v1.json"
@@ -646,7 +678,8 @@
       "surface": "library",
       "objectives": [
         "Retain a phase across an input block boundary.",
-        "Distinguish the entry anchor from pre/post context."
+        "Distinguish the entry anchor from pre/post context.",
+        "Distinguish the public segmentation algorithm from its registered Wayang execution mapping and saved operator state."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -655,7 +688,9 @@
       "tasks": [
         "Build [0,0,5] and adjacent [5,2,0,0,0] episodes.",
         "Use ABOVE, enter four, exit three, pre/post one second and zero duration limits.",
-        "Compare StreamingSegmenter output plus flush with Segmentations.segment."
+        "Compare StreamingSegmenter output plus flush with Segmentations.segment.",
+        "Replay the applicable shared vector cases through TsxSegment using TsxJavaPlugin, then compare chunks of one, seven and all samples in both series orders.",
+        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state."
       ],
       "starter": {
         "language": "java",
@@ -664,26 +699,41 @@
       },
       "expected": [
         "One segment contains [0,5,5,2], anchored at 2000000 epoch microseconds.",
-        "Incremental and bounded results are exactly equal for the same source episodes."
+        "Incremental and bounded results are exactly equal for the same source episodes.",
+        "The registered threshold and extremum mappings reproduce their shared vector cases exactly, including after checkpoint restoration and bounded final flushing."
       ],
       "pitfalls": [
         "For ABOVE, exit cannot exceed enter.",
-        "Zero maxDuration means unlimited, not zero-length output."
+        "Zero maxDuration means unlimited, not zero-length output.",
+        "Segmenter construction alone does not execute a Wayang plan. TsxIncrement supplies TsxState to its plan callback; do not invent a second state store.",
+        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings."
       ],
       "references": {
         "manual": [
           "docs/user-manual/09-retrieval.md#92-segmentation",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#segment-threshold-phases"
+          "docs/learning/library-operator-contracts.md#segment-threshold-phases",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s14-state",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
         ],
         "source": [
-          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L92"
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L92",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSegment.java#TsxSegment",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment"
         ],
         "tests": [
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L123",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java#sharedVectors"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#sharedVectorsThroughRealWayangPlans",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/segment-threshold.v1.json"
@@ -760,7 +810,8 @@
       "surface": "library",
       "objectives": [
         "Separate completeness and plausible-range checks.",
-        "Use a fixed clock for freshness."
+        "Use a fixed clock for freshness.",
+        "Trace the registered Wayang quality operator, locale-independent messages and distinct JSON finding identities."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -769,7 +820,10 @@
       "tasks": [
         "Summarize the same [1,2,NaN,3] four-second episode.",
         "Evaluate a plausible range [0,10] and one-second expected sampling.",
-        "Explain why completeness fails while plausible range passes, without treating the source as an operating fault."
+        "Explain why completeness fails while plausible range passes, without treating the source as an operating fault.",
+        "Replay all seven quality vector cases through TsxDqResult and TsxJavaPlugin with the fixture clock and selected checks.",
+        "Compare finding identities for different checks and window widths at one event time, then replay the same input.",
+        "Run the German-default-locale regression without changing the expected punctuation or numerical values."
       ],
       "starter": {
         "language": "java",
@@ -779,26 +833,43 @@
       "expected": [
         "Completeness is 0.75 and fails the default 0.95 threshold.",
         "The values remain within [0,10], so plausible range succeeds.",
-        "With last sample at three seconds and now at six, freshness fails the two-second age limit."
+        "With last sample at three seconds and now at six, freshness fails the two-second age limit.",
+        "Messages use Locale.ROOT independently of the default locale.",
+        "TsxDqResult writes one opentsx.signal.v1 JSON finding per selected applicable check; non-finite result values become JSON null.",
+        "DQ finding IDs include the check and window bounds, so different findings do not collapse under deduplication."
       ],
       "pitfalls": [
         "Freshness is evaluated only when maxAge and explicit nowMicros are supplied.",
-        "A constant legitimate operating state is not automatically a faulty sensor; choose flatline policy for the signal."
+        "A constant legitimate operating state is not automatically a faulty sensor; choose flatline policy for the signal.",
+        "DataQuality.evaluate returns library results. TsxDqResult is a registered Wayang mapping; its JSON output is not an Avro SpecificRecord.",
+        "A SeriesStats record is the atomic DQ input. Keep the fixture clock fixed and preserve its window metadata.",
+        "Direct Java execution availability does not establish a DQ sink in the current clean-DAG compiler."
       ],
       "references": {
         "manual": [
           "docs/user-manual/07-stats-quality.md#73-data-quality-checks",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-wayang/README.md#emit-data-quality-signals",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#evaluate-data-quality"
+          "docs/learning/library-operator-contracts.md#evaluate-data-quality",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
+          "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json"
         ],
         "source": [
-          "opentsx-stats/src/main/java/org/opentsx/stats/DataQuality.java#L70"
+          "opentsx-stats/src/main/java/org/opentsx/stats/DataQuality.java#evaluate",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxDqResult.java#TsxDqResult",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxDqResult.java#results",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxDqResult"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/WindparkDataQualityTest.java#L30",
-          "opentsx-stats/src/test/java/org/opentsx/stats/DqResultVectorsTest.java#sharedVectors"
+          "opentsx-stats/src/test/java/org/opentsx/stats/DqResultVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#allSharedResultsMatchThroughWayang",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#differentChecksAndWindowWidthsHaveDifferentIdsAndReplayIdentically",
+          "opentsx-stats/src/test/java/org/opentsx/stats/DataQualityLocaleTest.java#messagesMatchTheSharedReferenceUnderAGermanDefaultLocale",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/dq-result.v1.json"
@@ -917,7 +988,8 @@
       "surface": "library",
       "objectives": [
         "Connect a source and sink in a logical Wayang plan.",
-        "Distinguish offline wire/settings checks from actual publication."
+        "Distinguish offline wire/settings checks from actual publication.",
+        "Preserve streamed Avro delivery while validating a complete JSON signal batch before its first send."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -926,7 +998,9 @@
       "tasks": [
         "Construct a sink for a synthetic output topic.",
         "Inspect its binding and connect an existing logical source using connectTo(0,sink,0).",
-        "Explain why acknowledgements and deterministic records do not make the transport exactly once."
+        "Explain why acknowledgements and deterministic records do not make the transport exactly once.",
+        "Run TsxTopicSinkStreamingTest to compare an upstream Avro failure with an invalid later JSON signal.",
+        "On a disposable KafScale broker, run TsxSignalSinkIntegrationTest and inspect the signal series key, schema header and JSON payload."
       ],
       "starter": {
         "language": "java",
@@ -936,28 +1010,41 @@
       "expected": [
         "The sink names tsx.learning.clean.v2 and construction performs no writes.",
         "Existing tests require no idempotence, acks=all and one request in flight.",
-        "Wire conversion preserves the encoded record bytes; actual delivery requires a separate broker test."
+        "Wire conversion preserves the encoded record bytes; actual delivery requires a separate broker test.",
+        "An upstream Avro failure can leave an acknowledged output prefix without committing the increment checkpoint.",
+        "An invalid later JSON signal prevents every signal in that JSON batch from being sent; valid signal payloads have canonical field order."
       ],
       "pitfalls": [
         "Do not point a learning exercise at production topics.",
-        "A sink object or successful wire encoding is not evidence that a record was published."
+        "A sink object or successful wire encoding is not evidence that a record was published.",
+        "The Object channel accepts only supported Avro records or validated opentsx.signal.v1 JSON. It does not turn JSON signals into fake Avro records.",
+        "JSON whole-batch validation must not make Avro upstream streams eager."
       ],
       "references": {
         "manual": [
           "docs/user-manual/04-kafscale-storage.md#43-write-a-bucket",
           "opentsx-wayang/README.md#run-a-plan-in-increments",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-wayang/README.md#emit-data-quality-signals"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#construct-a-topic-sink"
+          "docs/learning/library-operator-contracts.md#construct-a-topic-sink",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
+          "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#L1"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#L1",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#write"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxClientSettingsTest.java#L21"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxClientSettingsTest.java#L21",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxTopicSinkStreamingTest.java#avroRecordsAreSentBeforeTheNextUpstreamRecordIsRead",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxTopicSinkStreamingTest.java#aLaterInvalidJsonSignalPreventsEverySend",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSignalSinkIntegrationTest.java#writesJsonSignalsWithTheirSeriesKeyAndSchemaHeader",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSignalSinkIntegrationTest.java#validatesTheWholeBatchBeforeSendingAnySignal",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCrashRecoveryIntegrationTest.java#aFailureAtThreePointsRepeatsOnlyIdenticalRecords"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json"
@@ -971,7 +1058,8 @@
       "surface": "library",
       "objectives": [
         "Persist next positions for every internal partition of one topic.",
-        "Observe actual absence, mismatch and corruption behavior."
+        "Observe actual absence, mismatch and corruption behavior.",
+        "Identify the retained segmentation buffer, source metadata and detector state inside the per-node checkpoint entry."
       ],
       "prerequisites": [
         "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
@@ -980,7 +1068,9 @@
       "tasks": [
         "Write a checkpoint with next offsets ten and seven for one whole topic.",
         "Load with the matching hash, then a different hash.",
-        "Use the existing corruption regression to distinguish an unreadable file from absence."
+        "Use the existing corruption regression to distinguish an unreadable file from absence.",
+        "Follow TsxSegment state across increments and compare bounded completion with a restored run.",
+        "Run the segmentation checkpoint regressions for quality/source metadata, raw NaN bits, incompatible parameters and truncated input."
       ],
       "starter": {
         "language": "java",
@@ -991,29 +1081,41 @@
         "Matching load returns next positions {0:10,1:7}.",
         "Absence and a different specHash return an empty Optional in this local API.",
         "Unreadable existing JSON raises IllegalStateException instead of being silently ignored.",
-        "The sixth constructor argument is the per-node operator-state map; this starter uses an empty map, while the checkpoint regression preserves nonempty state."
+        "The sixth constructor argument is the per-node operator-state map; this starter uses an empty map, while the checkpoint regression preserves nonempty state.",
+        "Threshold and extremum snapshots retain source metadata, sample quality and raw NaN bits, while invalid state fails without replacing live state."
       ],
       "pitfalls": [
         "Current hash-mismatch behavior is not the proposed fail-closed orchestration state-ABI policy.",
-        "A local checkpoint provides neither distributed ownership nor exactly-once output."
+        "A local checkpoint provides neither distributed ownership nor exactly-once output.",
+        "A segmenter checkpoint is private runtime state, not a portable signal or a partition-placement assignment.",
+        "Incremental segmentation keeps pending output; bounded completion flushes it before the next checkpoint is written."
       ],
       "references": {
         "manual": [
           "opentsx-wayang/README.md#run-a-plan-in-increments",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint"
+          "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#TsxCheckpoint",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxState.java#TsxState"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxState.java#TsxState",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aCheckpointOfAnotherDocumentIsNotUsed",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#anUnreadableCheckpointFailsInsteadOfStartingOver",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointLearningTest.java#checkpointStarterCompilesRunsAndCleansItsFiles"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointLearningTest.java#checkpointStarterCompilesRunsAndCleansItsFiles",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesRawNaNBitsAcrossCheckpoints",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#rejectsUnknownVersionsOtherParametersAndTruncatedState",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#failsClosedOnCorruptStateAndUnsupportedInput"
         ],
         "vectors": []
       }
@@ -1045,7 +1147,7 @@
         "Two nodes may own distinct whole topics for the same admitted fragment.",
         "Each input includes all positions from zero through partitionCount minus one, in order.",
         "Splitting a topic across nodes fails coverage; duplicate whole-topic ownership fails ownership.",
-        "Java and Rust validate the same shared cases without providing a Rust numerical runner."
+        "Java and Rust validate the same shared cases; these offline library calls do not execute the separate bounded Rust runner."
       ],
       "pitfalls": [
         "Resolve aliases to authoritative topic identity before interpreting ownership.",
@@ -1054,7 +1156,8 @@
       "references": {
         "manual": [
           "docs/devguide/integration/wayang-shared-contracts.md#assign-whole-topics-and-preserve-exact-internal-positions",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-local.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment"
@@ -1265,9 +1368,9 @@
           "docs/learning/library-operator-contracts.md#inspect-legacy-real-fft-coefficients"
         ],
         "source": [
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L730",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L984",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L1075"
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L710",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L964",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L1055"
         ],
         "tests": [
           "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fourierStarterCodeCompilesAndRuns",
@@ -1341,8 +1444,8 @@
         ],
         "source": [
           "opentsx-core/src/main/java/org/opentsx/generators/FFTPhaseRandomizer.java#L234",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L30",
-          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L130"
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L25",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L125"
         ],
         "tests": [
           "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fourierStarterCodeCompilesAndRuns",

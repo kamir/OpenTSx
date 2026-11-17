@@ -26,6 +26,9 @@ The package's supported compiler baseline is Rust 1.89.0, also checked locally.
 | `validate(input: &str)` | One raw assignment JSON document. | `Result<(), &'static str>` with the shared refusal code. |
 | `validate_set(inputs: &[&str])` | Raw JSON documents for one deployment context. | `Result<(), &'static str>` after individual admission, context, assignment-ID and ownership checks. |
 | `sha256(text: &str)` | Exact UTF-8 text. | Lowercase SHA-256 hex, without reformatting or normalization. |
+| `sha256_bytes(bytes: &[u8])` | Exact binary artifact bytes. | Lowercase SHA-256 hex. |
+| `parse_json(input: &str, max_bytes: usize)` | Local runtime document and its explicit UTF-8 byte ceiling. | Parsed JSON or `json.limit`/`json.invalid`; duplicate keys, invalid numbers/Unicode, trailing documents and depth above 64 reject. |
+| `valid_topic(value: &str)` | One input or output topic name. | Whether the name satisfies the shared OpenTSx topic contract. |
 
 The [implementation](src/lib.rs) rejects unknown or missing envelope fields, duplicate JSON keys,
 invalid JSON Unicode escapes, trailing documents and container nesting above 64.

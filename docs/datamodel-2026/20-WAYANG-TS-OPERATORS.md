@@ -3,7 +3,8 @@
 > Status: **concept**, 2026-11-16. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
-> segmentation, SAX, and data-quality results. Checked against Apache
+> segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 adds trusted-local bounded Kafka replay and
+> three cleaning operations; it is separate from the fleet design below. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -14,6 +15,8 @@
 The [unified delivery plan](../devguide/integration/wayang-unified-plan.md) combines bounded storage and
 multi-node Rust orchestration. Its [shared-contract implementation](../devguide/integration/wayang-shared-contracts.md)
 validates assignment envelopes in Java and Rust; it does not deploy runners.
+The separate [local Rust profile](../devguide/integration/rust-runner-local.md) executes pass-through,
+plausible-range checks, unit conversion and an optional trailing resample on a capped whole-topic cut.
 
 ## 1. Goal
 
@@ -33,6 +36,11 @@ as a separate profile with immutable inputs and publication guarantees. Out of s
 search, twin, causal analysis).
 
 ## 2. Current state
+
+`tsx-runner` 0.1.0 executes trusted-local bounded requests, with explicit resource caps and checkpointed
+completion after broker acknowledgement. Its Compose fixture runs three independent deployments on distinct
+topics with one, two and three partitions. This does not establish the remote Wayang driver, continuous
+fleet execution, signed activation or production fencing described by this concept.
 
 | Item | State | Evidence |
 |---|---|---|
@@ -308,6 +316,11 @@ OpenTSx already has a Flink path (`opentsx-flink-core`).
 
 ## 6. Track B: Rust edge runner
 
+This section describes the fleet target. The implemented interface is `tsx-runner replay`, documented in the
+[local bounded guide](../devguide/integration/rust-runner-local.md), with the subset in
+[SPEC S1.9](20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset).
+The fleet commands and broader operator table below are not the executable local profile.
+
 ### 6.1 Scope
 
 `tsx-runner` is one statically linked binary. It executes the same operator ids and versions as Track A, on the
@@ -576,7 +589,37 @@ Baselines:
 | (b) the existing OpenTSx Java streaming path (the processor in `opentsx-retrieval` and the statistics processor in `opentsx-stats`) | same server | in-repository reference for throughput and latency of the same operators |
 | (c) Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
 
-**Measurement protocol for Track B against Track A on small hardware:**
+### 14.1 Measure Track A increments
+
+The [A1.7 harness](../../tools/wayang_increment_latency.py)
+measures the actual `TsxIncrement` passthrough and `dq.checks` plus `resample PT1M`
+plans on the complete W simulation. Each condition has one partition, a fresh JVM
+and a disposable KafScale v1.6.0 broker with in-memory storage. Intervals of
+5, 30 and 60 seconds, 30 increments and three sequential repetitions give
+18 conditions and 540 increments. Inputs are paced across each interval; the
+first increment starts after one full interval. No warm-up samples are discarded.
+
+Per-increment samples record first input Fetch from job invocation, wall time,
+record counts, scheduling lateness and output latency p50/p95/p99. Per-output
+latency subtracts successful input Produce ingress from output Produce ingress at
+a loopback protocol observer. These are monotonic transport clocks. Kafka record
+timestamps preserve event time. For aggregate output, the input clock belongs to
+the latest contributing episode with matching raw series identity and
+overlapping event-time range. The raw samples retain every contributing id and
+separate acknowledgement clocks. Observer parsing and forwarding are included.
+
+The [operations guide](../user-manual/12-operations.md#127-measure-wayang-increment-latency)
+gives the rerun command and prerequisites. The generated
+[measurement report](measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+and its case directories retain hardware, OS, JDK, explicit heap, source hashes,
+exact commands and raw CSV files. Private classpath copies prevent later shared
+Maven-cache writes from changing a condition. macOS idle-sleep prevention is tied
+to the Python process and released in cleanup. This does not reserve CPU or
+remove other shared-host contention. The local, single-partition, in-memory
+baseline has no threshold and does not establish the broader throughput matrix,
+durable-storage behavior, a remote-network result or Track B parity.
+
+### 14.2 Compare Track B and Track A on small hardware
 
 1. Fix the device, OS image, kernel, CPU governor (`performance`) and storage; record them.
 2. Run a local KafScale or connect to one KafScale over a fixed network; record which.

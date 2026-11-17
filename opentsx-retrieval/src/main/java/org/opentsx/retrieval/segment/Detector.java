@@ -1,5 +1,8 @@
 package org.opentsx.retrieval.segment;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -17,4 +20,12 @@ interface Detector {
 
     /** Smallest absolute index the detector may still need; older samples can be dropped. */
     long earliestNeeded(SampleBuffer buf);
+
+    default void writeState(DataOutput out) throws IOException {
+        throw new IOException("checkpointing is unsupported for " + getClass().getSimpleName());
+    }
+
+    default void readState(DataInput in, SampleBuffer buf) throws IOException {
+        throw new IOException("checkpointing is unsupported for " + getClass().getSimpleName());
+    }
 }

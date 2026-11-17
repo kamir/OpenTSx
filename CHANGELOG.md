@@ -10,9 +10,33 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
-- `opentsx-wayang` A3.3 (TASK-020): `pair.es` runs on Wayang as the second method of `TsxPair` (fields `q_total`,
-  `q_ab`, `q_ba`, `q_rand`; settings `sigma`, `tauMax`, `shuffles`, `seed` as in `es.ts`). The four shared cases with
-  series pass through a Wayang plan.
+- `pair.es` runs on Wayang through `TsxPair` with `q_total`, `q_ab`, `q_ba`
+  and `q_rand` outputs. The four shared series cases execute through real plans.
+  Parameters and surrogate seeds follow the workbench implementation.
+
+- A rerunnable Wayang increment-latency harness for TASK-020 A1.7: real
+  passthrough and `dq.checks` plus `resample PT1M` plans, paced complete simulator
+  input, a pinned disposable KafScale broker, private runtime snapshots and
+  per-increment/raw output timing samples. The
+  [measurement report](docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  records its metric definitions, configuration and isolation limits.
+
+- `tsx-runner` 0.1.0 for trusted-local bounded whole-topic Kafka replay. Pass-through and a linear chain of
+  `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing `resample` use the shared Avro, identity
+  and cleaning vectors. Explicit resource caps and positive Kafka transport timestamps reject before publication.
+  Derived-series ownership prevents conflicting packets from distinct source series. Local checkpoints retain
+  lossless operator state and commit after every output acknowledgement; exact completed retries return their
+  saved receipts. A standalone Compose helper runs three independent topics with one, two and three partitions
+  against Java reference output. UI dispatch, continuous processing and Wayang fleet activation remain separate.
+
+- Wayang operators for threshold and extremum segmentation, SAX words, and
+  data-quality signals (TASK-020 A3.4 and the retrieval part of A3.5). Segments
+  checkpoint their retained samples and detector state per series. All 26
+  shared cases run through Wayang and all 156 chunk/order comparisons match.
+  The topic sink validates and writes JSON `opentsx.signal.v1` records.
+  DQ signal identities include the check and window bounds; result messages
+  use `Locale.ROOT`. README, manual, and processor descriptions are updated.
+
 - `opentsx-wayang` A3.2 (TASK-020): `pair.xcorr` runs on Wayang as `TsxPair`, with the pair windows of the workbench
   (`pairs.ts`) ported to `ops/TsxPairWindows`. Episodes of A and B are paired (`same` or `intersect`) as they arrive
   and wait in the checkpoint for their counterparts; each pair range gives one episode per field
@@ -25,6 +49,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-retrieval`: `VectorStream` accepts named inputs that read series of their own
   (`new VectorStream(expectedByInput, params, lateness)`, `add(input, seriesId, ...)`). The state format of a stream
   without named inputs is unchanged.
+
 - `opentsx-wayang` phase A2 (TASK-020): the clean chain (`dq.checks`, `convert.unit`, `resample`,
   `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) runs on Wayang as one operator per run
   of consecutive nodes (`TsxSeriesChain`, through `SeriesStream`), and `stats.welford-ddsketch` as `TsxStatsWindow`
@@ -62,7 +87,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   decimal-string offsets, execution modes and whole-topic ownership with complete internal cursor checks.
   Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
   UI-to-Wayang-to-Rust orchestration and a separate
-  bounded storage profile; no runner, network deployment or production fencing is enabled.
+  bounded storage profile. The validators perform no network deployment or production fencing; the separate
+  Rust runner executes only its trusted-local bounded profile.
 
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
@@ -173,6 +199,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Native table, chart and caption saving reports the failed destination and completed outputs in the dialog.
+  Each file is prepared and replaced atomically; a failure preserves that destination and stops later outputs.
+  Table and caption text use strict UTF-8, while table layouts and 800 by 600 PNG dimensions are retained.
+  Configured folder paths are preserved, including spaces, hyphens and Unicode characters.
+
+- Native `Histogram cross-cut` validates selections, positive integer window lengths, ordered integer bounds and
+  positive bin counts. Cancelling or rejecting input leaves charts and the recorder unchanged. Cuts stop at each
+  series' available samples while preserving nominal window labels, pooled raw counts and input series.
+
+- Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
+  write every point, retain subtype formats and metadata, and report errors while preserving existing files
+  through atomic replacement.
 
 - Remove the orphaned InfluxDB/Grafana demo gitlink, which has no `.gitmodules` entry and blocks checkout
   credential cleanup. CI checks that every tracked gitlink has a configured path and URL.

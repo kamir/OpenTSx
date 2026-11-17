@@ -102,3 +102,23 @@ synthetic. See
 [section 7.5](07-stats-quality.md#75-check-the-java-reference-vectors)
 for the generator command and prerequisites, and the
 [module guide](../../opentsx-retrieval/README.md) for the implementation.
+
+## 9.6 Run retrieval operators on Wayang
+
+You need JDK 17 or 21, Maven, and `TsxJavaPlugin`. The `opentsx-wayang` Java API
+runs threshold and extremum segmentation through `TsxSegment`. Its keyed
+checkpoint includes the detector and retained samples. Restore that state
+between increments and use the `bounded` factory at the end of input to emit
+pending segments.
+
+`TsxSaxWord` fills `EpisodeSummary.sax` for each complete episode. Its default
+mode normalizes values first; `normalized` accepts already normalized input.
+`TsxDqResult` evaluates statistics and emits JSON data-quality signals. These
+signals have distinct ids per check and window. Connect them to `TsxTopicSink`
+to write validated `opentsx.signal.v1` records.
+
+The shared-vector tests cover 12 segment, seven SAX, and seven DQ cases through
+real Wayang plans. `TsxStreamEqualsBatchTest` checks chunks of 1, 7, and all
+records in both series orders for every case. Read the
+[Wayang module guide](../../opentsx-wayang/README.md#test) for the commands and
+broker prerequisites. Verified with JDK 21 on 2026-11-17.

@@ -1,10 +1,20 @@
 package org.opentsx.retrieval.segment;
 
 import org.opentsx.model.Episodes;
+import org.opentsx.model.OpenTsxAvro;
+import org.opentsx.model.SeriesKeys;
 import org.opentsx.model.v2.Episode;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The samples of one series in time order, addressed by absolute index (0 = first sample ever appended). Older
@@ -113,6 +123,88 @@ public final class SampleBuffer {
         Arrays.fill(source, size - n, size, null);
         size -= n;
         base += n;
+    }
+
+    void writeState(DataOutput out, OpenTsxAvro avro) throws IOException {
+        out.writeLong(base);
+        out.writeInt(size);
+        out.writeBoolean(anyQuality);
+        List<Episode> episodes = new ArrayList<>();
+        Map<Episode, Integer> indices = new IdentityHashMap<>();
+        for (int i = 0; i < size; i++) {
+            if (!indices.containsKey(source[i])) {
+                indices.put(source[i], episodes.size());
+                episodes.add(source[i]);
+            }
+        }
+        out.writeInt(episodes.size());
+        for (Episode episode : episodes) {
+            Episode copy = Episode.newBuilder(episode).build();
+            copy.getSeries().setTags(SeriesKeys.sortedByUtf8(copy.getSeries().getTags()));
+            copy.setLabels(SeriesKeys.sortedByUtf8(copy.getLabels()));
+            if (copy.getSegmentation() != null) {
+                copy.getSegmentation().setParams(SeriesKeys.sortedByUtf8(copy.getSegmentation().getParams()));
+            }
+            byte[] encoded = avro.encode(copy);
+            out.writeInt(encoded.length);
+            out.write(encoded);
+        }
+        for (int i = 0; i < size; i++) {
+            out.writeLong(ts[i]);
+            out.writeLong(Double.doubleToRawLongBits(vs[i]));
+            out.writeByte(quality[i]);
+            out.writeInt(indices.get(source[i]));
+        }
+    }
+
+    static SampleBuffer readState(DataInput in, OpenTsxAvro avro) throws IOException {
+        SampleBuffer buf = new SampleBuffer();
+        buf.base = in.readLong();
+        int size = in.readInt();
+        if (buf.base < 0 || size < 0 || buf.base > Long.MAX_VALUE - size) {
+            throw new IOException("invalid segmentation buffer bounds");
+        }
+        buf.anyQuality = in.readBoolean();
+        int count = in.readInt();
+        if (count < 0 || count > size || (size > 0 && count == 0)) {
+            throw new IOException("invalid segmentation source count");
+        }
+        List<Episode> episodes = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            int length = in.readInt();
+            if (length < 1) throw new IOException("invalid segmentation source length");
+            ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+            byte[] block = new byte[8192];
+            for (int remaining = length; remaining > 0; ) {
+                int n = Math.min(remaining, block.length);
+                in.readFully(block, 0, n);
+                encoded.write(block, 0, n);
+                remaining -= n;
+            }
+            try {
+                Episode episode = avro.decode(encoded.toByteArray(), Episode.class);
+                Episodes.validate(episode);
+                episodes.add(episode);
+            } catch (RuntimeException e) {
+                throw new IOException("invalid segmentation source episode", e);
+            }
+        }
+        for (int i = 0; i < size; i++) {
+            long timestamp = in.readLong();
+            double value = Double.longBitsToDouble(in.readLong());
+            byte quality = in.readByte();
+            int source = in.readInt();
+            if (source < 0 || source >= count || (i > 0 && timestamp <= buf.ts[i - 1])) {
+                throw new IOException("invalid segmentation buffer sample");
+            }
+            buf.ensure(i + 1);
+            buf.ts[i] = timestamp;
+            buf.vs[i] = value;
+            buf.quality[i] = quality;
+            buf.source[i] = episodes.get(source);
+            buf.size++;
+        }
+        return buf;
     }
 
     private int local(long i) {
