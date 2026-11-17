@@ -260,6 +260,8 @@ public final class TsxSiteAgent implements AutoCloseable {
         state.check();
         if (runtime == null) throw new IllegalStateException("polling requires an explicit qualified runtime version");
         String after = state.value.path("deliveryCursor").asText("0");
+        Optional<JsonNode> retained = acknowledgeRetained(client, after);
+        if (retained.isPresent()) return retained;
         JsonNode response = client.next(after);
         SiteJson.fields(response, "deliveries", "next");
         JsonNode deliveries = response.path("deliveries");
@@ -283,33 +285,59 @@ public final class TsxSiteAgent implements AutoCloseable {
         JsonNode outcome;
         ObjectNode acknowledgement = SiteJson.JSON.createObjectNode().put("job", plan.job()).put("planVersion", plan.planVersion())
                 .put("commandHash", plan.commandHash());
-        JsonNode previous = state.value.path("deliveryOutcomes").path(sequence);
-        if (previous.isObject()) {
-            JsonNode recorded = previous.path("acknowledgement");
-            for (String name : Set.of("job", "planVersion", "commandHash")) {
-                if (!recorded.path(name).equals(acknowledgement.path(name))) throw SiteJson.invalid("retained delivery identity conflicts");
-            }
-            acknowledgement = (ObjectNode) recorded.deepCopy();
-            outcome = previous.path("outcome").deepCopy();
-        } else {
-            try {
-                outcome = accept(compact, admitted -> runWithStatus(admitted, execution, value -> client.status(admitted.job(), value)));
-                acknowledgement.put("result", "accepted");
-            } catch (PlanRefusal error) {
-                if (state.value.path("jobs").path(plan.job()).path("commandHash").asText().equals(plan.commandHash())) throw error;
-                acknowledgement.put("result", "refused").put("code", error.code()).put("message", error.getMessage());
-                outcome = acknowledgement.deepCopy();
-            }
-            ObjectNode receipt = SiteJson.JSON.createObjectNode();
-            receipt.set("acknowledgement", acknowledgement);
-            receipt.set("outcome", outcome);
-            state.value.with("deliveryOutcomes").set(sequence, receipt);
-            state.save();
+        try {
+            outcome = accept(compact, admitted -> runWithStatus(admitted, execution, value -> client.status(admitted.job(), value)));
+            acknowledgement.put("result", "accepted");
+        } catch (PlanRefusal error) {
+            if (state.value.path("jobs").path(plan.job()).path("commandHash").asText().equals(plan.commandHash())) throw error;
+            acknowledgement.put("result", "refused").put("code", error.code()).put("message", error.getMessage());
+            outcome = acknowledgement.deepCopy();
         }
+        ObjectNode receipt = SiteJson.JSON.createObjectNode();
+        receipt.set("acknowledgement", acknowledgement);
+        receipt.set("outcome", outcome);
+        state.value.with("deliveryOutcomes").set(sequence, receipt);
+        state.save();
         client.ack(sequence, acknowledgement);
         state.value.put("deliveryCursor", sequence);
         state.save();
         return Optional.of(outcome);
+    }
+
+    private Optional<JsonNode> acknowledgeRetained(TsxPlanClient client, String after) {
+        long cursor = SiteJson.decimal(after, false);
+        JsonNode outcomes = state.value.path("deliveryOutcomes");
+        if (outcomes.isMissingNode()) return Optional.empty();
+        if (!outcomes.isObject()) throw SiteJson.invalid("invalid retained delivery inventory");
+        String sequence = null;
+        long first = Long.MAX_VALUE;
+        for (var entries = outcomes.fields(); entries.hasNext();) {
+            var entry = entries.next();
+            long position = SiteJson.decimal(entry.getKey(), true);
+            if (position > cursor && (sequence == null || position < first)) {
+                sequence = entry.getKey();
+                first = position;
+            }
+        }
+        if (sequence == null) return Optional.empty();
+        JsonNode receipt = outcomes.get(sequence);
+        SiteJson.fields(receipt, "acknowledgement", "outcome");
+        JsonNode acknowledgement = receipt.path("acknowledgement"), outcome = receipt.path("outcome");
+        String result = SiteJson.text(acknowledgement, "result");
+        if (result.equals("accepted")) SiteJson.fields(acknowledgement, "job", "planVersion", "commandHash", "result");
+        else if (result.equals("refused")) SiteJson.fields(acknowledgement, "job", "planVersion", "commandHash", "result", "code", "message");
+        else throw SiteJson.invalid("invalid retained acknowledgement result");
+        SiteJson.id(acknowledgement, "job");
+        if (!acknowledgement.path("planVersion").isIntegralNumber() || !acknowledgement.path("planVersion").canConvertToInt()
+                || acknowledgement.path("planVersion").intValue() < 1 || !SiteJson.text(acknowledgement, "commandHash").matches("[0-9a-f]{64}")
+                || !outcome.isObject()) throw SiteJson.invalid("invalid retained delivery identity");
+        for (String name : Set.of("job", "planVersion", "commandHash")) {
+            if (!outcome.path(name).equals(acknowledgement.path(name))) throw SiteJson.invalid("retained outcome identity differs");
+        }
+        client.ack(sequence, acknowledgement);
+        state.value.put("deliveryCursor", sequence);
+        state.save();
+        return Optional.of(outcome.deepCopy());
     }
 
     JsonNode runWithStatus(RunnerPlan plan, Function<RunnerPlan, JsonNode> execution, Consumer<JsonNode> sink) {

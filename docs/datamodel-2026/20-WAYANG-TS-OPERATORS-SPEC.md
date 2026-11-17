@@ -677,7 +677,12 @@ aggregate names an older `planVersion` than the current one.
 Delivery sequences use canonical int64 decimal strings. A job at version 10 MUST NOT hide another job at version 1.
 Repeated delivery of identical accepted bytes is idempotent; changed bytes under the same command identity reject.
 The service persists deliveries before returning them. The site persists its outcome before acknowledgement
-and advances its cursor after acknowledgement. New activation requires valid job-bound conformance.
+and advances its cursor after acknowledgement. Before requesting another
+delivery, it retries any retained acknowledgement beyond that cursor and returns
+the saved outcome, even after conformance expires. This recovery covers an
+unsent acknowledgement and a lost response after the service confirmed it. The
+acknowledgement still requires the original site identity and exact command
+hash. New activation requires valid job-bound conformance.
 
 The agent SHOULD poll `GET .../plans` every 30 s and MUST back off to at most once per 5 min while the driver is
 unreachable.

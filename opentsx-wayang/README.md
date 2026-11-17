@@ -209,7 +209,9 @@ The order matters:
    the fragment, groups statistics, supplies known empty scopes, publishes
    partials and saves the compatible checkpoint. The agent then persists the
    outcome, acknowledges the delivery and retains the cursor. An identical retry
-   reuses the saved outcome; conflicting bytes under the same identity reject.
+   reuses the saved outcome. Pending acknowledgements are retried before another
+   pull, including after conformance expiry; fresh activation still requires
+   conformance. Conflicting bytes under the same identity reject.
 5. [`TsxSiteStage`](src/main/java/org/opentsx/wayang/TsxSiteStage.java),
    [`TsxSitePlatform`](src/main/java/org/opentsx/wayang/TsxSitePlatform.java) and
    [`TsxSiteExecutor`](src/main/java/org/opentsx/wayang/TsxSiteExecutor.java)

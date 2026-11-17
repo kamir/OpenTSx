@@ -3,8 +3,20 @@ package org.opentsx.wayang.site;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Authenticator;
+import java.net.CookieHandler;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,6 +24,14 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Base64;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.time.Duration;
+import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -184,4 +204,125 @@ class TsxSiteAgentPlanTest {
             assertFalse(Files.exists(agent.checkpointPath(plan)));
         }
     }
+
+    @Test @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
+    void lostAckResponseReplaysTheRetainedOutcomeAfterConformanceExpires() throws Exception {
+        assertPendingAckReplay(true);
+    }
+
+    @Test @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
+    void unsentAckReplaysTheRetainedOutcomeAfterConformanceExpires() throws Exception {
+        assertPendingAckReplay(false);
+    }
+
+    private void assertPendingAckReplay(boolean afterResponse) throws Exception {
+        var driver = SiteTestData.key();
+        var site = SiteTestData.key();
+        var otherSite = SiteTestData.key();
+        MutableClock clock = new MutableClock();
+        var runtime = new ConformanceHandshake.QualifiedRuntime("s1", "node-s1", "3.0.0", SiteTestData.DIGEST, SiteTestData.ABI);
+        String signed = SignedJws.sign(SiteJson.bytes(SiteTestData.document("wind", 1, "s1")), driver.getPrivate());
+        AtomicInteger executions = new AtomicInteger();
+        List<JsonNode> statuses = new ArrayList<>();
+        Path driverDirectory = temporary.resolve("ack-driver"), siteDirectory = temporary.resolve("ack-site");
+        try (var tls = EphemeralSiteTlsFixture.create("s1", "s2");
+             var service = new TsxPlanService(driver.getPublic(), Map.of("s1", site.getPublic(), "s2", otherSite.getPublic()), tls.certificateSites(),
+                     driverDirectory, clock, (plan, status) -> statuses.add(status.deepCopy()), (plan, delivery) -> fail("unexpected aggregate"))) {
+            service.registerQualifiedRuntime("s1", "node-s1", runtime.version(), runtime.digest(), runtime.stateAbi());
+            assertEquals("1", service.publish(signed));
+            int port = service.start(new InetSocketAddress("127.0.0.1", 0), tls.serverContext()).getAddress().getPort();
+            URI endpoint = URI.create("https://localhost:" + port);
+            AckFaultClient transport = new AckFaultClient(tls.clientContext("s1"), afterResponse);
+            TsxPlanClient client = new TsxPlanClient(endpoint, "s1", transport);
+            JsonNode report = SiteTestData.report(client.challenge("wind"), "0123456789abcdef");
+            assertEquals("accepted", client.conformance(SignedJws.sign(SiteJson.bytes(report), site.getPrivate())).path("result").asText());
+            try (var agent = new TsxSiteAgent(runtime, driver.getPublic(), SiteTestData.policy(), siteDirectory, clock)) {
+                IllegalStateException failure = assertThrows(IllegalStateException.class, () -> agent.pollOnce(client, plan -> {
+                    executions.incrementAndGet();
+                    return SiteJson.JSON.createObjectNode().put("inputRecords", 0);
+                }));
+                assertInstanceOf(IOException.class, failure.getCause());
+            }
+            JsonNode retained = SiteJson.parse(Files.readAllBytes(siteDirectory.resolve("state.json")), 1024 * 1024)
+                    .path("deliveryOutcomes").path("1");
+            JsonNode acknowledgement = retained.path("acknowledgement");
+            assertEquals(RunnerPlan.verify(signed, driver.getPublic()).commandHash(), acknowledgement.path("commandHash").asText());
+            JsonNode serverAck = SiteJson.parse(Files.readAllBytes(driverDirectory.resolve("state.json")), 1024 * 1024)
+                    .path("sites").path("s1").path("deliveries").path("1").path("ack");
+            if (afterResponse) assertEquals(acknowledgement, serverAck);
+            else assertTrue(serverAck.isMissingNode());
+            clock.now = Instant.parse("2026-11-20T00:00:00Z");
+            ObjectNode fresh = SiteTestData.document("solar", 1, "s1").put("issued", "2026-11-20T00:00:00Z").put("expires", "2026-11-21T00:00:00Z");
+            assertEquals("2", service.publish(SignedJws.sign(SiteJson.bytes(fresh), driver.getPrivate())));
+            try (var restored = new TsxSiteAgent(runtime, driver.getPublic(), SiteTestData.policy(), siteDirectory, clock)) {
+                JsonNode result = restored.pollOnce(client, plan -> { fail("retained delivery reactivated"); return null; }).orElseThrow();
+                assertEquals(retained.path("outcome"), result);
+                assertEquals(1, transport.nextRequests);
+                assertEquals(2, transport.ackRequests);
+                assertEquals(1, executions.get());
+                assertEquals(2, statuses.size());
+                TsxPlanClient wrongRole = new TsxPlanClient(endpoint, "s1", tls.clientContext("s2"));
+                assertEquals(403, assertThrows(TsxPlanService.HttpFailure.class, () -> wrongRole.ack("1", acknowledgement)).status());
+                ObjectNode changed = acknowledgement.deepCopy();
+                changed.put("commandHash", "b".repeat(64));
+                assertEquals(409, assertThrows(TsxPlanService.HttpFailure.class, () -> client.ack("1", changed)).status());
+                assertEquals(409, assertThrows(TsxPlanService.HttpFailure.class,
+                        () -> restored.pollOnce(client, plan -> { fail("unqualified fresh delivery activated"); return null; })).status());
+                assertEquals(1, executions.get());
+                assertEquals("1", SiteJson.parse(Files.readAllBytes(siteDirectory.resolve("state.json")), 1024 * 1024).path("deliveryCursor").asText());
+            }
+            JsonNode recorded = SiteJson.parse(Files.readAllBytes(driverDirectory.resolve("state.json")), 1024 * 1024)
+                    .path("sites").path("s1").path("deliveries").path("1").path("ack");
+            assertEquals(acknowledgement, recorded);
+        }
+    }
+
+    private static final class MutableClock extends Clock {
+        volatile Instant now = SiteTestData.CLOCK.instant();
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return Clock.fixed(now, zone); }
+        @Override public Instant instant() { return now; }
+    }
+
+    private static final class AckFaultClient extends HttpClient {
+        private final HttpClient delegate;
+        private final boolean afterResponse;
+        private boolean pending = true;
+        int nextRequests;
+        int ackRequests;
+        AckFaultClient(SSLContext tls, boolean afterResponse) {
+            var parameters = tls.getDefaultSSLParameters();
+            parameters.setProtocols(new String[]{"TLSv1.3"});
+            parameters.setEndpointIdentificationAlgorithm("HTTPS");
+            delegate = HttpClient.newBuilder().sslContext(tls).sslParameters(parameters).followRedirects(Redirect.NEVER).build();
+            this.afterResponse = afterResponse;
+        }
+        @Override public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException {
+            boolean ack = request.uri().getPath().endsWith("/ack");
+            if (request.uri().getPath().endsWith("/plans")) nextRequests++;
+            if (ack) ackRequests++;
+            boolean fail = ack && pending;
+            if (fail) pending = false;
+            if (fail && !afterResponse) throw new IOException("synthetic acknowledgement request loss before send");
+            HttpResponse<T> response = delegate.send(request, handler);
+            if (fail && afterResponse && response.statusCode() == 204) {
+                if (response.body() instanceof InputStream body) body.close();
+                throw new IOException("synthetic acknowledgement response loss after confirmed 204");
+            }
+            return response;
+        }
+        @Override public Optional<CookieHandler> cookieHandler() { return delegate.cookieHandler(); }
+        @Override public Optional<Duration> connectTimeout() { return delegate.connectTimeout(); }
+        @Override public Redirect followRedirects() { return delegate.followRedirects(); }
+        @Override public Optional<ProxySelector> proxy() { return delegate.proxy(); }
+        @Override public SSLContext sslContext() { return delegate.sslContext(); }
+        @Override public javax.net.ssl.SSLParameters sslParameters() { return delegate.sslParameters(); }
+        @Override public Optional<Authenticator> authenticator() { return delegate.authenticator(); }
+        @Override public Version version() { return delegate.version(); }
+        @Override public Optional<Executor> executor() { return delegate.executor(); }
+        @Override public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> handler) { return delegate.sendAsync(request, handler); }
+        @Override public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> handler,
+                HttpResponse.PushPromiseHandler<T> push) { return delegate.sendAsync(request, handler, push); }
+    }
+
 }

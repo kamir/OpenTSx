@@ -18,18 +18,33 @@ public final class TsxPlanClient {
     private final HttpClient client;
 
     public TsxPlanClient(URI endpoint, String site, SSLContext tls) {
+        validate(endpoint, site);
+        this.base = endpoint.toString().replaceAll("/$", "");
+        this.site = site;
+        this.client = client(tls);
+    }
+
+    TsxPlanClient(URI endpoint, String site, HttpClient client) {
+        validate(endpoint, site);
+        this.base = endpoint.toString().replaceAll("/$", "");
+        this.site = site;
+        this.client = java.util.Objects.requireNonNull(client);
+    }
+
+    private static void validate(URI endpoint, String site) {
         if (!"https".equals(endpoint.getScheme()) || endpoint.getHost() == null || endpoint.getUserInfo() != null
                 || endpoint.getRawQuery() != null || endpoint.getFragment() != null
                 || !(endpoint.getPath().isEmpty() || endpoint.getPath().equals("/"))
                 || site == null || !site.matches("[a-z0-9][a-z0-9-]{0,62}")) {
             throw new IllegalArgumentException("a pinned HTTPS plan endpoint and valid site are required");
         }
-        this.base = endpoint.toString().replaceAll("/$", "");
-        this.site = site;
+    }
+
+    private static HttpClient client(SSLContext tls) {
         SSLParameters parameters = tls.getDefaultSSLParameters();
         parameters.setProtocols(new String[]{"TLSv1.3"});
         parameters.setEndpointIdentificationAlgorithm("HTTPS");
-        client = HttpClient.newBuilder().sslContext(tls).sslParameters(parameters)
+        return HttpClient.newBuilder().sslContext(tls).sslParameters(parameters)
                 .followRedirects(HttpClient.Redirect.NEVER).connectTimeout(Duration.ofSeconds(10)).build();
     }
 

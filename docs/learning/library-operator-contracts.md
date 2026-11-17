@@ -414,8 +414,10 @@ nonempty snapshots, restoration between chunks and bounded final flushing.
 The signed JVM site checkpoint is a separate continuation contract. It binds
 the exact admitted grant, generation, artifact, state ABI and source cuts;
 `TsxSiteAgent` refuses incompatible or unadmitted access. An identical delivery
-uses its saved outcome, while explicit recovery requires the same grant and a
-retained compatible checkpoint. The local `TsxCheckpoint` starter keeps its
+uses its saved outcome. A pending acknowledgement is retried before another
+plan pull, including after conformance expiry, without another activation.
+Explicit execution recovery requires the same grant and a retained compatible
+checkpoint. The local `TsxCheckpoint` starter keeps its
 existing hash-mismatch behavior. Read
 [`TsxSiteAgentPlanTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java)
 for the admission and recovery regressions.

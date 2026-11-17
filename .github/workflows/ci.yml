@@ -409,7 +409,7 @@ jobs:
               raise SystemExit("streaming acceptance is missing, skipped or failed")
           print("All three streaming acceptance cases executed successfully")
           PYTHON
-      - name: Require executed Wayang acceptance (TASK-020 A1 to A3)
+      - name: Require executed Wayang acceptance (TASK-020 A1 to A4)
         if: always()
         run: |
           python3 - <<'PYTHON'
@@ -443,7 +443,7 @@ jobs:
               "federation.AggregateForwarderTest": 5,
               "federation.SiteStatsTest": 2,
               "federation.AggregateTransportVectorsTest": 13,
-              "site.TsxSiteAgentPlanTest": 9,
+              "site.TsxSiteAgentPlanTest": 11,
               "site.ConformanceHandshakeTest": 13,
               "site.SiteStatusTest": 5,
               "TsxVectorVectorsTest": 13,
