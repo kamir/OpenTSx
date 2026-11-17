@@ -1,7 +1,9 @@
 package org.opentsx.windpark;
 
 import org.junit.jupiter.api.Test;
+import org.opentsx.model.Episodes;
 import org.opentsx.model.Micros;
+import org.opentsx.model.SeriesKeys;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.windpark.analysis.PowerCurveAnalysis;
 import org.opentsx.windpark.catalog.ChannelCatalog;
@@ -13,7 +15,9 @@ import org.opentsx.windpark.sim.WindparkSimulator;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,6 +61,30 @@ class PowerCurveAnalysisTest {
             assertTrue(inside >= 0.8 * flagged, turbine + ": " + inside + " of " + flagged);
             assertTrue(r.performanceIndex() < t1.performanceIndex());
         }
+    }
+
+    @Test
+    void anIntervalIsLeftOutOnlyWhenWindOrPowerHasNoValueInIt() {
+        double[] wind = new double[30];
+        double[] power = new double[30];
+        Arrays.fill(wind, 8.0);
+        Arrays.fill(power, 1000.0);
+        Arrays.fill(power, 0, 9, Double.NaN);
+        power[9] = 600.0;
+        Arrays.fill(power, 10, 20, Double.NaN);
+        long t0 = Micros.of(START);
+        long minute = 60_000_000L;
+        Episode w = Episodes.regular(SeriesKeys.of("wind.met.wind_speed", Map.of("turbine", "T01"), "m/s"), t0, minute, wind)
+                .source("test").build();
+        Episode p = Episodes.regular(SeriesKeys.of("wind.turbine.power_active", Map.of("turbine", "T01"), "kW"), t0, minute, power)
+                .source("test").build();
+
+        PowerCurveAnalysis.Result r = PowerCurveAnalysis.analyze(v -> 1000.0, 3000, List.of(w), List.of(p),
+                PowerCurveAnalysis.Settings.defaults());
+
+        assertEquals(2, r.intervals(), "the interval with one power value is kept, the one without is left out");
+        assertEquals(1, r.bins().size());
+        assertEquals(800.0, r.bins().get(0).meanPowerKw(), 1e-9, "mean of 600 (the only value) and 1000");
     }
 
     private static PowerCurveAnalysis.Result analyze(List<Episode> all, String turbine, TurbineType type) {

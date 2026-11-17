@@ -107,6 +107,11 @@ Add flags to write the episodes. Every flag takes a value:
 | `--catalog <file>` | channel catalog YAML. Default: the built-in catalog. |
 | `--ground-truth <file>` | writes the injected events as JSON. |
 
+The last Iceberg batch is written when the run closes its clients. If that write fails, or closing the producer, the
+index or the Iceberg store fails, the command prints the stack trace and exits with code 1 without the summary. When
+the run has already failed, for example on `--ground-truth`, these close failures appear in its stack trace as
+`Suppressed:`.
+
 There is no `--help`. Run the command without flags to print the usage line. `--help` fails with
 `expected --name value pairs, got --help`. [Appendix A](appendix-a-cli.md) lists all commands.
 
@@ -115,6 +120,8 @@ There is no `--help`. Run the command without flags to print the usage line. `--
 `PowerCurveAnalysis` applies the method of bins (IEC 61400-12-1, simplified):
 
 * It works on 10-minute means of nacelle wind speed and active power, with 0.5 m/s bins.
+* NaN values are skipped. An interval without a wind or a power value is left out. A partly covered interval counts
+  with the mean of the values it has.
 * Each bin is compared with the turbine type's reference curve, or with any curve you supply.
 * The **performance index** is produced / expected energy.
 * **Underperformance periods** are runs of intervals below 80 % of expected, with the lost energy.

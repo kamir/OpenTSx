@@ -146,6 +146,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - Docs: a window in which a series has no value gives no `SeriesStats` record, so COMPLETENESS cannot flag it; the
   outage shows in GAPS of the window where values resume, when the expected interval is known, and in COMPLETENESS of
   a longer window.
+- `windpark-sim` no longer ignores failures at the end of a run: if writing the last Iceberg batch or closing the
+  producer, the episode index or the Iceberg store fails, the command exits with code 1 without the summary. If the
+  run had already failed, these close failures are attached to that error as suppressed exceptions.
+- The `PowerCurveAnalysis` Javadoc and manual chapter 6.5 state which intervals are left out: NaN values are skipped,
+  and only an interval without any wind or power value is dropped.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

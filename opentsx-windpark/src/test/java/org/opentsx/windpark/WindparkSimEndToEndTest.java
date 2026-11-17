@@ -17,6 +17,10 @@ import org.opentsx.model.v2.BucketManifest;
 import org.opentsx.model.v2.Episode;
 import org.opentsx.windpark.sim.SimulationReport;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -26,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WindparkSimEndToEndTest {
@@ -55,6 +60,56 @@ class WindparkSimEndToEndTest {
         try (var store = org.opentsx.store.iceberg.IcebergSeriesStore.open(WindparkSim.props(iceberg), "tsx")) {
             assertEquals(100, store.listSeries(org.opentsx.store.SeriesSelector.all()).size()); // 10 turbines x 10 channels
         }
+    }
+
+    /** Iceberg properties whose table creation works but whose data files cannot be written. */
+    private String icebergWithUnwritableData() throws Exception {
+        Path tableDir = Files.createDirectories(dir.resolve("wh/tsx/episodes"));
+        Files.writeString(tableDir.resolve("data"), "a file where the data directory belongs");
+        return "catalog-impl=org.apache.iceberg.jdbc.JdbcCatalog,uri=jdbc:sqlite:" + dir.resolve("c.db")
+                + ",jdbc.schema-version=V1,warehouse=" + dir.resolve("wh").toUri();
+    }
+
+    private static String trace(Throwable t) {
+        StringWriter out = new StringWriter();
+        t.printStackTrace(new PrintWriter(out));
+        return out.toString();
+    }
+
+    @Test
+    void failedFinalIcebergWriteFailsTheRun() throws Exception {
+        Map<String, String> args = Map.of("scenario", shortScenario().toString(), "iceberg", icebergWithUnwritableData());
+        Exception e = assertThrows(Exception.class, () -> WindparkSim.run(args));
+        assertTrue(trace(e).contains("wh/tsx/episodes/data"), trace(e));
+    }
+
+    @Test
+    void failedFinalIcebergWriteIsSuppressedOnTheFirstFailure() throws Exception {
+        Map<String, String> args = Map.of("scenario", shortScenario().toString(), "iceberg", icebergWithUnwritableData(),
+                "ground-truth", dir.toString());
+        Exception e = assertThrows(Exception.class, () -> WindparkSim.run(args));
+        assertTrue(e instanceof FileSystemException, e.toString());
+        assertEquals(1, e.getSuppressed().length, trace(e));
+        assertTrue(trace(e.getSuppressed()[0]).contains("wh/tsx/episodes/data"));
+    }
+
+    @Test
+    void closeAllClosesEveryCloseableAndKeepsTheFirstFailure() {
+        List<String> closed = new ArrayList<>();
+        List<AutoCloseable> closeables = List.of(
+                () -> {
+                    closed.add("flush");
+                    throw new IOException("flush");
+                },
+                () -> closed.add("producer"),
+                () -> {
+                    closed.add("store");
+                    throw new IllegalStateException("store");
+                });
+        Exception e = assertThrows(IOException.class, () -> WindparkSim.closeAll(closeables, null));
+        assertEquals(List.of("flush", "producer", "store"), closed);
+        assertEquals(1, e.getSuppressed().length, trace(e));
+        assertEquals("store", e.getSuppressed()[0].getMessage());
     }
 
     @Test

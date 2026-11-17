@@ -121,6 +121,8 @@ mvn -q -pl opentsx-windpark exec:java -Dexec.mainClass=org.opentsx.windpark.Wind
   `ReplayService` and verify it against the manifest checksum.
 * `--iceberg` writes to the `episodes` and `series` tables of `<namespace>`. Any Iceberg catalog properties work (`type=jdbc`, `type=rest`, …).
 * `--catalog` uses your own data-point catalog. `--ground-truth` writes the injected events as JSON.
+* The last Iceberg batch is written when the run closes its clients. A failure of that write or of a close fails the
+  run with exit code 1. When the run has already failed, the close failures appear as `Suppressed:` in its stack trace.
 
 The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 ground-truth events. It produces about 3,600 episodes and 2.2 M values.
 
@@ -131,4 +133,7 @@ The demo scenario has 10 turbines, 6 h at 1 Hz, 9 channels plus state, and 17 gr
 * `SimulatorTest` covers determinism, 10-minute blocks and summaries, the power curve, wakes, operations, sensor faults vs.
   ground truth, and the 30-day Weibull mean.
 * `WindparkSimEndToEndTest` runs the CLI into Iceberg (JDBC/SQLite catalog), and, when `KAFSCALE_BOOTSTRAP` is set, the CLI into
-  KafScale with a verified bucket replay.
+  KafScale with a verified bucket replay. A last Iceberg batch that cannot be written fails the run, also as a
+  suppressed failure on an earlier one. Every client is closed when one close fails.
+* `PowerCurveAnalysisTest` covers the performance index and underperformance against ground truth, and which
+  intervals are left out for missing values.

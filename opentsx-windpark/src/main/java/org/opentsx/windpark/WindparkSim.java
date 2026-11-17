@@ -19,7 +19,6 @@ import org.opentsx.windpark.sim.Scenario;
 import org.opentsx.windpark.sim.SimulationReport;
 import org.opentsx.windpark.sim.WindparkSimulator;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ public final class WindparkSim {
         System.out.println(summary(report));
     }
 
-    static SimulationReport run(Map<String, String> a) throws IOException {
+    static SimulationReport run(Map<String, String> a) throws Exception {
         Scenario scenario = Scenario.load(Path.of(a.get("scenario")));
         ChannelCatalog catalog = a.containsKey("catalog") ? ChannelCatalog.load(Path.of(a.get("catalog"))) : ChannelCatalog.standard();
         WindparkSimulator sim = new WindparkSimulator(scenario, catalog);
@@ -62,6 +61,7 @@ public final class WindparkSim {
         List<AutoCloseable> closeables = new ArrayList<>();
         List<Consumer<Episode>> sinks = new ArrayList<>();
         BucketWriter[] bucket = new BucketWriter[1];
+        Throwable failure = null;
         try {
             if (a.containsKey("kafscale")) {
                 String bootstrap = a.get("kafscale");
@@ -112,14 +112,31 @@ public final class WindparkSim {
                         .writeValue(Files.newOutputStream(Path.of(a.get("ground-truth"))), report.groundTruth());
             }
             return report;
+        } catch (Throwable t) {
+            failure = t;
+            throw t;
         } finally {
-            for (AutoCloseable c : closeables) {
-                try {
-                    c.close();
-                } catch (Exception ignored) {
-                    // best effort
+            closeAll(closeables, failure);
+        }
+    }
+
+    static void closeAll(List<AutoCloseable> closeables, Throwable primary) throws Exception {
+        Exception first = null;
+        for (AutoCloseable c : closeables) {
+            try {
+                c.close();
+            } catch (Exception e) {
+                if (primary != null) {
+                    primary.addSuppressed(e);
+                } else if (first == null) {
+                    first = e;
+                } else {
+                    first.addSuppressed(e);
                 }
             }
+        }
+        if (first != null) {
+            throw first;
         }
     }
 
