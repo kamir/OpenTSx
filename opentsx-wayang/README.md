@@ -114,6 +114,8 @@ its channel conversions and the mappings OpenTSx uses: collection source,
 map, local callback sink, the OpenTSx topic source and sink, clean chains,
 window statistics, and the retrieval operators.
 
+<a id="compile-a-catalog-dag"></a>
+
 ## Compile a catalog DAG
 
 You need the original workbench YAML, the domain's `TopicLayout`, processor

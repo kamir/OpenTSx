@@ -91,6 +91,8 @@ validate local construction; they do not grant remote execution rights. Rust
 execution uses its own admitted operator profile, which the 16 Java bindings do
 not expand.
 
+<a id="compile-the-exported-workbench-document"></a>
+
 ## Compile the exported workbench document
 
 You need the original YAML text, processor descriptions and their frozen

@@ -2469,11 +2469,11 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
           "opentsx-saas-backend/tests/test_wayang_continuous.py",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode",
+          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
         ],
         "vectors": [
-          "docs/datamodel-2026/testvectors/clean-ops.v1.json",
-          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
         ]
       }
     },
@@ -3097,11 +3097,10 @@
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/workbench.test.ts",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode"
-        ],
-        "vectors": [
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode",
           "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
-        ]
+        ],
+        "vectors": []
       }
     },
     {
