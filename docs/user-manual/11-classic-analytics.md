@@ -157,6 +157,13 @@ The desktop FFT action derives its sampling rate from uniformly spaced coordinat
 with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
 See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
 
+The native `Histogram cross-cut` action pools raw counts within consecutive sample windows. Enter a positive
+integer window length; cancellation leaves the chart and recorder unchanged. The first selected series must
+contain samples; later series may be empty. Invalid selections, window lengths, bounds or bin counts produce a
+validation message. Window starts follow the first series; every series contributes its available samples within
+each nominal window, including the final partial window. See the
+[native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
+
 ### Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 
 * `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,

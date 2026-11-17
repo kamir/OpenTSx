@@ -944,7 +944,8 @@
       ],
       "pitfalls": [
         "Window is a number of samples, not elapsed seconds.",
-        "Only the first 16 slices are drawn."
+        "Only the first 16 slices are drawn.",
+        "The native Swing action uses legacy raw counts and positive integer windows; starts follow the nonempty first series while every series contributes available samples within each nominal window. This browser workload does not establish native output parity."
       ],
       "parameterKeys": [
         "min",
@@ -983,17 +984,20 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-core/README.md#compare-native-histogram-slices"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#histogram-crosscut"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#histogramCrossCut"
+          "opentsx-saas-frontend/src/workbench/ops.ts#histogramCrossCut",
+          "opentsx-core/src/main/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanel.java#jButton20ActionPerformed"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-core/src/test/java/org/opentsx/app/bucketanalyser/TSOperationControlerPanelHistogramTest.java"
         ],
         "vectors": []
       }
