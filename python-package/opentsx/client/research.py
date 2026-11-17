@@ -365,6 +365,14 @@ def lifecycle_get(lifecycle, path, query):
             "topic_prefix": lifecycle.prefix,
             "models": lifecycle.store.list_models(),
         }
+    if path == "/analysis/v1/modelling/context-topics":
+        if query:
+            raise ValueError("context topics do not accept query parameters")
+        return 200, lifecycle.context_catalogue.topics()
+    if path == "/analysis/v1/modelling/context-series":
+        if set(query) != {"topic"} or len(query["topic"]) != 1:
+            raise ValueError("context catalogue requires one topic query parameter")
+        return 200, lifecycle.context_catalogue.series(query["topic"][0])
     if path == "/analysis/v1/modelling/series":
         if set(query) != {"topic"} or len(query["topic"]) != 1:
             raise ValueError("series catalogue requires one topic query parameter")
@@ -384,13 +392,16 @@ def lifecycle_post(lifecycle, path, document):
         return 503, {"error": "Model lifecycle state is unavailable in this service."}
     if path == "/analysis/v1/modelling/capture":
         return 200, lifecycle.catalogue.capture(document)
+    if path == "/analysis/v1/modelling/context-capture":
+        return 200, lifecycle.context_catalogue.capture(document)
     if path == "/analysis/v1/modelling/models":
         model = lifecycle.store.register(document, lifecycle.registry)
         return 200, {key: value for key, value in model.items() if key != "artifact"}
     if path == "/analysis/v1/modelling/deployments":
         return 200, lifecycle.deploy(document)
     match = re.fullmatch(
-        r"/analysis/v1/modelling/deployments/([a-z0-9][a-z0-9_-]{0,63})/(start|stop)", path
+        r"/analysis/v1/modelling/deployments/([a-z0-9][a-z0-9_-]{0,63})/(start|stop)",
+        path,
     )
     if match:
         from opentsx.client.modelling import fields
@@ -434,7 +445,9 @@ def lifecycle_post(lifecycle, path, document):
             raise ValueError("this registered model does not accept external context")
         lifecycle.registry.verify(model)
         forecast = predict_artifact(
-            model["artifact"], steps=document["steps"], future_exog=document.get("future_exog")
+            model["artifact"],
+            steps=document["steps"],
+            future_exog=document.get("future_exog"),
         )
         return 200, {
             "schema": "opentsx.registered-prediction.v1",
@@ -563,7 +576,18 @@ def handler(store, web_root, manifest, lifecycle=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("serve", "seed", "demo-seed", "demo-append"))
+    parser.add_argument(
+        "command",
+        choices=(
+            "serve",
+            "seed",
+            "demo-seed",
+            "demo-append",
+            "demo-target",
+            "demo-context",
+        ),
+    )
+    parser.add_argument("--scenario", choices=("ar1", "sarimax"), default="ar1")
     parser.add_argument("--bootstrap", required=True)
     parser.add_argument("--prefix", default="tsx.workbench-demo.")
     parser.add_argument("--web-root")
@@ -572,7 +596,7 @@ def main(argv=None):
     parser.add_argument("--state-dir")
     parser.add_argument("--registry-url")
     args = parser.parse_args(argv)
-    if args.command in ("demo-seed", "demo-append"):
+    if args.command.startswith("demo-"):
         from opentsx.client.scoring_demo import main as scoring_demo
 
         scoring_demo(
@@ -583,6 +607,7 @@ def main(argv=None):
                 "--prefix",
                 args.prefix,
             ]
+            + (["--scenario", args.scenario] if args.scenario != "ar1" else [])
         )
         return
     store = KafkaStore(args.bootstrap, args.prefix)

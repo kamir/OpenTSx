@@ -72,6 +72,36 @@ def test_registry_list_and_source_query_use_local_service(tmp_path):
     ) == (200, {"topic": "tsx.workbench-demo.input.episodes.v2"})
 
 
+def test_context_catalogue_and_capture_use_the_local_bound_service(tmp_path):
+    lifecycle = SimpleNamespace(
+        context_catalogue=SimpleNamespace(
+            topics=lambda: {"topics": ["tsx.test.context.v1"]},
+            series=lambda topic: {"topic": topic},
+            capture=lambda document: {"receipt": document},
+        )
+    )
+    assert request(tmp_path, lifecycle, "/analysis/v1/modelling/context-topics") == (
+        200,
+        {"topics": ["tsx.test.context.v1"]},
+    )
+    assert request(
+        tmp_path,
+        lifecycle,
+        "/analysis/v1/modelling/context-series?topic=tsx.test.context.v1",
+    ) == (200, {"topic": "tsx.test.context.v1"})
+    assert request(
+        tmp_path, lifecycle, "/analysis/v1/modelling/context-capture", {"topic": "a"}
+    ) == (200, {"receipt": {"topic": "a"}})
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["context-series", "context-series?topic=a&topic=b", "context-topics?topic=a"],
+)
+def test_context_queries_reject_ambiguous_input(tmp_path, path):
+    assert request(tmp_path, SimpleNamespace(), "/analysis/v1/modelling/" + path)[0] == 400
+
+
 @pytest.mark.parametrize("query", ["", "?topic=a&topic=b", "?topic=a&other=b"])
 def test_catalogue_rejects_ambiguous_queries(tmp_path, query):
     assert request(tmp_path, SimpleNamespace(), "/analysis/v1/modelling/series" + query)[0] == 400
@@ -113,7 +143,13 @@ def test_deployment_controls_call_concrete_worker_manager(tmp_path, action):
 
 def test_lifecycle_changes_still_require_local_same_origin(tmp_path):
     assert (
-        request(tmp_path, SimpleNamespace(), "/analysis/v1/modelling/models", {}, origin=False)[0]
+        request(
+            tmp_path,
+            SimpleNamespace(),
+            "/analysis/v1/modelling/models",
+            {},
+            origin=False,
+        )[0]
         == 403
     )
 
@@ -139,7 +175,11 @@ def test_prediction_reuses_only_the_named_registered_artifact(tmp_path, monkeypa
     import opentsx.algorithms.fitted as fitted
 
     calls = []
-    model = {"id": "a" * 64, "artifact_id": "b" * 64, "artifact": {"state": "registered"}}
+    model = {
+        "id": "a" * 64,
+        "artifact_id": "b" * 64,
+        "artifact": {"state": "registered"},
+    }
     lifecycle = SimpleNamespace(
         store=SimpleNamespace(get_model=lambda model_id: model),
         registry=SimpleNamespace(verify=lambda record: calls.append(record)),
@@ -150,7 +190,10 @@ def test_prediction_reuses_only_the_named_registered_artifact(tmp_path, monkeypa
         lambda artifact, **kwargs: {"mean": [3], "artifact": artifact, **kwargs},
     )
     status, result = request(
-        tmp_path, lifecycle, "/analysis/v1/modelling/models/" + "a" * 64 + "/predict", {"steps": 1}
+        tmp_path,
+        lifecycle,
+        "/analysis/v1/modelling/models/" + "a" * 64 + "/predict",
+        {"steps": 1},
     )
     assert status == 200 and result["forecast"]["mean"] == [3]
     assert result["forecast"]["artifact"] == model["artifact"] and calls == [model]
@@ -190,7 +233,10 @@ def test_registered_context_requires_availability_by_the_preserved_origin(
         body["future_available_at_micros"] = available
     assert (
         request(
-            tmp_path, lifecycle, "/analysis/v1/modelling/models/" + "a" * 64 + "/predict", body
+            tmp_path,
+            lifecycle,
+            "/analysis/v1/modelling/models/" + "a" * 64 + "/predict",
+            body,
         )[0]
         == expected
     )

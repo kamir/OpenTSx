@@ -27,15 +27,15 @@ def identifier(value, name="identifier"):
     return value
 
 
-def blockers(artifact):
+def blockers(artifact, context_schema=None):
     result = []
     if artifact["source"]["time_kind"] != "absolute":
         result.append("Continuous scoring requires an absolute UTC clock.")
     if not artifact["source"]["unit"]:
         result.append("Continuous scoring requires a declared target unit.")
-    if artifact["context_names"]:
+    if artifact["context_names"] and context_schema is None:
         result.append(
-            "SARIMAX continuous scoring requires a live context join; only finite reuse is available."
+            "SARIMAX continuous scoring requires declared context units and a verified live context binding; capture and review the context again."
         )
     return result
 
@@ -130,6 +130,18 @@ class LifecycleStore:
             if existing is not None:
                 return json.loads(existing[0])
             artifact = create_artifact(request, result)
+            context_schema = None
+            if request["context"] is not None and "units" in request["context"]:
+                from opentsx.client.context_join import schema_descriptor
+
+                context_schema = schema_descriptor(
+                    request["target"]["series_id"],
+                    request["context"]["names"],
+                    request["context"]["units"],
+                    artifact["source"]["interval_micros"],
+                )
+                if result.get("context_schema") != context_schema:
+                    raise ValueError("completed context schema does not match the retained request")
             remote = registry.register(document["name"], model_id, artifact, result, review)
             record = {
                 "id": model_id,
@@ -149,7 +161,8 @@ class LifecycleStore:
                 "mlflow_run_id": remote["run_id"],
                 "mlflow_version": str(remote["version"]),
                 "status": "registered",
-                "deployment_blockers": blockers(artifact),
+                "context_schema": context_schema,
+                "deployment_blockers": blockers(artifact, context_schema),
             }
             with self.connection() as connection:
                 connection.execute("INSERT INTO models VALUES(?,?)", (model_id, encoded(record)))
@@ -187,6 +200,8 @@ class LifecycleStore:
                         "input_partition",
                         "output_topic",
                         "series_id",
+                        "context",
+                        "context_schema",
                     )
                 ):
                     raise ValueError(
@@ -194,7 +209,8 @@ class LifecycleStore:
                     )
                 return old
             connection.execute(
-                "INSERT INTO deployments VALUES(?,?,NULL)", (record["id"], encoded(record))
+                "INSERT INTO deployments VALUES(?,?,NULL)",
+                (record["id"], encoded(record)),
             )
         return record
 
@@ -205,7 +221,10 @@ class LifecycleStore:
             ).fetchone()
         if row is None:
             raise KeyError("scoring deployment was not found")
-        return {**json.loads(row[0]), "checkpoint": None if row[1] is None else json.loads(row[1])}
+        return {
+            **json.loads(row[0]),
+            "checkpoint": None if row[1] is None else json.loads(row[1]),
+        }
 
     def list_deployments(self):
         with self.connection() as connection:
@@ -213,7 +232,7 @@ class LifecycleStore:
         return [self.get_deployment(row[0]) for row in ids]
 
     def update_deployment(self, deployment_id, **changes):
-        if set(changes) - {"status", "desired_state", "error"}:
+        if set(changes) - {"status", "desired_state", "error", "context_status"}:
             raise ValueError("unsupported deployment update")
         with self.connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -225,16 +244,29 @@ class LifecycleStore:
             record = json.loads(row[0])
             record.update(changes)
             connection.execute(
-                "UPDATE deployments SET record=? WHERE id=?", (encoded(record), deployment_id)
+                "UPDATE deployments SET record=? WHERE id=?",
+                (encoded(record), deployment_id),
             )
 
     def set_worker_status(self, deployment_id, status, error=None):
-        if status not in {"starting", "running", "stopping", "stopped", "failed"}:
+        if status not in {
+            "starting",
+            "running",
+            "waiting_context",
+            "stopping",
+            "stopped",
+            "failed",
+        }:
             raise ValueError("invalid worker state")
         changes = {"status": status, "error": error}
         if status == "failed":
             changes["desired_state"] = "stopped"
         self.update_deployment(deployment_id, **changes)
+
+    def set_context_status(self, deployment_id, detail):
+        if detail is not None and not isinstance(detail, dict):
+            raise ValueError("context status must be an object or null")
+        self.update_deployment(deployment_id, context_status=detail)
 
     def get_checkpoint(self, deployment_id):
         return self.get_deployment(deployment_id)["checkpoint"]
@@ -254,7 +286,8 @@ class LifecycleStore:
         with self.connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
             existing = connection.execute(
-                "SELECT payload FROM outputs WHERE deployment_id=? AND key=?", (deployment_id, key)
+                "SELECT payload FROM outputs WHERE deployment_id=? AND key=?",
+                (deployment_id, key),
             ).fetchone()
             body = encoded(payload)
             if existing is not None and existing[0] != body:

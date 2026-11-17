@@ -157,6 +157,25 @@ def test_real_sarimax_uses_context_and_retains_reference_hashes():
     assert result["source"]["context_names"] == ["known-calendar"]
 
 
+def test_declared_context_units_produce_a_live_schema():
+    raw = with_context()
+    raw["context"]["units"] = ["1"]
+    result = api().execute_modelling(raw)
+    schema = result["context_schema"]
+    assert schema["names"] == ["known-calendar"]
+    assert schema["units"] == ["1"]
+    assert schema["target_series_id"] == raw["target"]["series_id"]
+    assert schema["policy"] == "immutable_known_ahead"
+
+
+@pytest.mark.parametrize("units", [[], [""], ["1", "MW"], [None]])
+def test_rejects_invalid_declared_context_units(units):
+    raw = with_context()
+    raw["context"]["units"] = units
+    with pytest.raises(ValueError):
+        api().validate_modelling(raw)
+
+
 def test_real_sarima_and_no_input_mutation():
     raw = request("sarima")
     raw["configuration"].update(order=[0, 0, 0], seasonal_order=[1, 0, 0, 4])
@@ -192,7 +211,8 @@ def test_rejects_non_string_episode_references_at_the_boundary(reference):
 
 
 @pytest.mark.parametrize(
-    "order,seasonal,expected", [([3, 0, 0], [2, 0, 0, 64], 131), ([0, 0, 3], [0, 0, 2, 64], 132)]
+    "order,seasonal,expected",
+    [([3, 0, 0], [2, 0, 0, 64], 131), ([0, 0, 3], [0, 0, 2, 64], 132)],
 )
 def test_rejects_multiplicative_state_sizes_above_the_real_budget(order, seasonal, expected):
     from statsmodels.tsa.statespace.sarimax import SARIMAX

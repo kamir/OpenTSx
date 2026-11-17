@@ -259,11 +259,14 @@ def main(argv=None):
             "seed",
             "demo-seed",
             "demo-append",
+            "demo-target",
+            "demo-context",
             "status",
             "logs",
             "down",
         ),
     )
+    parser.add_argument("--scenario", choices=("ar1", "sarimax"), default="ar1")
     args = parser.parse_args(argv)
     settings = json.loads((LOCAL / "settings.json").read_text())
     if args.command == "lock":
@@ -319,7 +322,16 @@ def main(argv=None):
     elif args.command == "up":
         run(compose() + ["up", "--detach", "--wait", "--wait-timeout", "180"])
         print(f"http://127.0.0.1:{settings['port']}/workbench")
-    elif args.command in ("seed", "demo-seed", "demo-append"):
+    elif args.command in (
+        "seed",
+        "demo-seed",
+        "demo-append",
+        "demo-target",
+        "demo-context",
+    ):
+        scenario_args = (
+            ["--scenario", args.scenario] if args.command.startswith("demo-") else []
+        )
         run(
             compose()
             + [
@@ -333,6 +345,7 @@ def main(argv=None):
                 "--prefix",
                 settings["prefix"],
             ]
+            + scenario_args
         )
     elif args.command == "status":
         run(compose() + ["ps"])

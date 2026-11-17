@@ -95,6 +95,15 @@ class WorkbenchTests(unittest.TestCase):
             api.main(["up"])
         self.assertIn("http://127.0.0.1:18081/workbench", captured.getvalue())
 
+    def test_sarimax_demo_commands_forward_the_selected_scenario(self):
+        api = builder()
+        for command in ("demo-seed", "demo-append", "demo-target", "demo-context"):
+            with self.subTest(command=command), patch.object(api, "run") as run:
+                api.main([command, "--scenario", "sarimax"])
+                arguments = run.call_args.args[0]
+                self.assertIn(command, arguments)
+                self.assertEqual(arguments[-2:], ["--scenario", "sarimax"])
+
     def test_profile_developer_guide_link_exists(self):
         api = builder()
         readme = api.LOCAL / "README.md"

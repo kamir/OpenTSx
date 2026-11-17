@@ -14,7 +14,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   verified Kafka training capture, and persistent ARIMA/SARIMA Smart Topic scoring on the local CP profile.
   The Workbench exposes registration, measured approval thresholds, start/stop, actual worker state and
   acknowledged predictions. Checkpoints preserve numerical state and source position after publication.
-  SARIMAX supports artifact reuse with explicit future context; continuous context joins remain unavailable.
+  SARIMAX supports artifact reuse and continuous scoring with verified immutable known-ahead context,
+  explicit availability cutoffs, visible context waits and durable context/target cursors.
 
 - Workbench modelling for finite regular targets: ARIMA, SARIMA and SARIMAX, reference forecasts,
   rolling-origin backtests, prediction intervals and JSON result export. Context values carry availability

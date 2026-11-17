@@ -66,7 +66,15 @@ def validate_modelling(document):
     target, config, backtest = (document[k] for k in ("target", "configuration", "backtest"))
     fields(
         target,
-        {"series_id", "label", "unit", "time_kind", "values", "timestamps_micros", "episode_ids"},
+        {
+            "series_id",
+            "label",
+            "unit",
+            "time_kind",
+            "values",
+            "timestamps_micros",
+            "episode_ids",
+        },
         {"quality", "quality_known"},
     )
     text(target["series_id"], "series_id")
@@ -112,7 +120,10 @@ def validate_modelling(document):
         or any(type(q) is not int or q not in (0, 1) for q in known)
     ):
         raise ValueError("quality_known must be a byte mask matching quality")
-    fields(config, {"family", "order", "seasonal_order", "trend", "steps", "alpha", "maxiter"})
+    fields(
+        config,
+        {"family", "order", "seasonal_order", "trend", "steps", "alpha", "maxiter"},
+    )
     family = config["family"]
     if family not in ("arima", "sarima", "sarimax"):
         raise ValueError("unknown forecast family")
@@ -135,7 +146,10 @@ def validate_modelling(document):
     if family == "sarima" and not any(seasonal[:3]):
         raise ValueError("SARIMA requires at least one seasonal component")
     states = (
-        max(order[0] + seasonal[0] * seasonal[3], order[2] + seasonal[2] * seasonal[3] + 1)
+        max(
+            order[0] + seasonal[0] * seasonal[3],
+            order[2] + seasonal[2] * seasonal[3] + 1,
+        )
         + order[1]
         + seasonal[1] * seasonal[3]
     )
@@ -147,7 +161,12 @@ def validate_modelling(document):
     integer(config["maxiter"], "maxiter", 1, 200)
     if not 0 < real(config["alpha"], "alpha") < 1:
         raise ValueError("alpha must be between zero and one")
-    integer(times[-1] + steps * interval, "last forecast coordinate", -(2**53 - 1), 2**53 - 1)
+    integer(
+        times[-1] + steps * interval,
+        "last forecast coordinate",
+        -(2**53 - 1),
+        2**53 - 1,
+    )
     fields(backtest, {"initial", "horizon", "step", "window", "seasonal_period", "methods"})
     initial = integer(backtest["initial"], "initial", 8, n - 1)
     horizon = integer(backtest["horizon"], "backtest horizon", 1, min(96, n - initial))
@@ -183,6 +202,7 @@ def validate_modelling(document):
                 "future",
                 "future_available_at_micros",
             },
+            {"units"},
         )
         names = context["names"]
         if (
@@ -194,6 +214,12 @@ def validate_modelling(document):
             raise ValueError("context requires 1 to 8 distinct names")
         for name in names:
             text(name, "context name")
+        if "units" in context:
+            units = context["units"]
+            if not isinstance(units, list) or len(units) != len(names):
+                raise ValueError("context units must match the ordered context names")
+            for unit in units:
+                text(unit, "context unit")
         for key, rows, stamps in (
             ("historical", n, False),
             ("historical_available_at_micros", n, True),
@@ -320,6 +346,12 @@ def execute_modelling(document):
         "warnings": list(dict.fromkeys(warnings)),
         "runtime": runtime,
     }
+    if context is not None and "units" in context:
+        from opentsx.client.context_join import schema_descriptor
+
+        result["context_schema"] = schema_descriptor(
+            target["series_id"], context["names"], context["units"], interval
+        )
     json.dumps(result, allow_nan=False)
     return result
 
@@ -329,7 +361,10 @@ def _worker(document, connection):
         connection.send((200, execute_modelling(document)))
     except ImportError:
         connection.send(
-            (503, {"error": "Forecasting runtime unavailable; install opentsx[forecasting]."})
+            (
+                503,
+                {"error": "Forecasting runtime unavailable; install opentsx[forecasting]."},
+            )
         )
     except ValueError as error:
         connection.send((400, {"error": str(error)}))

@@ -10,6 +10,13 @@ import {
 } from "./modelling";
 import "./modelling.css";
 import ModelLifecyclePanel from "./ModelLifecyclePanel";
+import {
+  captureAlignedContext,
+  loadContextSchemas,
+  loadContextTopics,
+  type CapturedContext,
+  type CatalogContext,
+} from "./lifecycle";
 
 function defaults(n: number): ModellingOptions {
   const stop = Math.min(n, 512),
@@ -393,6 +400,19 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
   );
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [contextTopics, setContextTopics] = useState<string[]>([]),
+    [contextTopic, setContextTopic] = useState("");
+  const [contextSchemas, setContextSchemas] = useState<CatalogContext[]>([]),
+    [contextChoice, setContextChoice] = useState("");
+  const [contextReceipt, setContextReceipt] = useState<CapturedContext | null>(
+      null,
+    ),
+    [contextInvalidated, setContextInvalidated] = useState(false),
+    [contextBusy, setContextBusy] = useState("");
+  const contextSequence = useRef(0);
+  const selectedContext = contextSchemas.find(
+    (c) => `${c.partition}:${c.context_schema.schema_id}` === contextChoice,
+  );
   const [answer, setAnswer] = useState<{
     run: ModellingResult;
     series: Series;
@@ -400,24 +420,125 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
   } | null>(null);
   const controller = useRef<AbortController | null>(null),
     sourceRef = useRef<Series | undefined>(series),
+    bucketRef = useRef(bucket),
     signatureRef = useRef("");
-  if (sourceRef.current !== series) {
+  if (sourceRef.current !== series || bucketRef.current !== bucket) {
     sourceRef.current = series;
+    bucketRef.current = bucket;
     setOptions(defaults(series?.y.length ?? 0));
     setAnswer(null);
     setError("");
     controller.current?.abort();
+    setContextReceipt(null);
+    setContextInvalidated(false);
+    contextSequence.current++;
   }
   const signature = JSON.stringify(options) + (series?.id ?? "");
   signatureRef.current = signature;
   useEffect(() => () => controller.current?.abort(), []);
   const change = (next: Partial<ModellingOptions>) => {
+    contextSequence.current++;
+    if (contextReceipt) {
+      setContextReceipt(null);
+      setContextInvalidated(true);
+    }
     controller.current?.abort();
     setBusy(false);
     setAnswer(null);
     setError("");
-    setOptions((p) => ({ ...p, ...next }));
+    setOptions((p) => ({
+      ...p,
+      ...(contextReceipt ? { contextText: "" } : {}),
+      ...next,
+    }));
   };
+  async function contextAction(label: string, action: () => Promise<void>) {
+    setContextBusy(label);
+    setError("");
+    try {
+      await action();
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "The context operation failed.",
+      );
+    } finally {
+      setContextBusy("");
+    }
+  }
+  const readContexts = () =>
+    contextAction("Reading context topics", async () => {
+      const topics = await loadContextTopics();
+      setContextTopics(topics);
+      if (!topics.includes(contextTopic)) {
+        setContextTopic(topics[0] ?? "");
+        setContextSchemas([]);
+        setContextChoice("");
+      }
+    });
+  const readSchemas = () =>
+    contextAction("Reading context schemas", async () => {
+      const contexts = await loadContextSchemas(contextTopic);
+      setContextSchemas(contexts);
+      const matching =
+        contexts.find(
+          (c) => c.context_schema.target_series_id === series?.id,
+        ) ?? contexts[0];
+      setContextChoice(
+        matching
+          ? `${matching.partition}:${matching.context_schema.schema_id}`
+          : "",
+      );
+    });
+  const captureContext = () =>
+    contextAction("Capturing aligned context", async () => {
+      if (!bucket || !series || !selectedContext)
+        throw new Error("Select a target and a validated context partition.");
+      if (bucket.xKind !== "time" || bucket.t0Ms === undefined)
+        throw new Error(
+          "Live context capture requires an absolute UTC target clock.",
+        );
+      const base = modellingRequest(bucket, series, {
+        ...options,
+        family: "arima",
+        contextText: "",
+      });
+      const document = {
+        target: base.target,
+        configuration: {
+          ...base.configuration,
+          family: "sarimax" as const,
+          seasonal_order: options.seasonalOrder,
+        },
+        backtest: base.backtest,
+      };
+      const interval =
+        base.target.timestamps_micros[1] - base.target.timestamps_micros[0];
+      if (
+        selectedContext.context_schema.target_series_id !== series.id ||
+        selectedContext.context_schema.interval_micros !== interval
+      )
+        throw new Error(
+          "The context schema target and interval must match the selected training window.",
+        );
+      const sent = ++contextSequence.current;
+      const captured = await captureAlignedContext(
+        contextTopic,
+        selectedContext.partition,
+        document,
+        selectedContext.context_schema,
+      );
+      if (sent !== contextSequence.current) return;
+      controller.current?.abort();
+      setBusy(false);
+      setAnswer(null);
+      setContextInvalidated(false);
+      setContextReceipt(captured);
+      setOptions((old) => ({
+        ...old,
+        family: "sarimax",
+        contextText: JSON.stringify(captured.context, null, 2),
+      }));
+    });
   async function fit() {
     if (!bucket || !series) return;
     controller.current?.abort();
@@ -613,6 +734,105 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
                 ))}
               </div>
             )}
+            <fieldset>
+              <legend>Known-ahead Kafka context</legend>
+              <div className="wb-modelling-grid">
+                <button
+                  disabled={busy || !!contextBusy}
+                  onClick={() => void readContexts()}
+                >
+                  Load context topics
+                </button>
+                <label>
+                  Training context topic
+                  <select
+                    value={contextTopic}
+                    onChange={(e) => {
+                      change({});
+                      setContextTopic(e.target.value);
+                      setContextSchemas([]);
+                      setContextChoice("");
+                    }}
+                  >
+                    <option value="">Select a context topic</option>
+                    {contextTopics.map((topic) => (
+                      <option key={topic}>{topic}</option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  disabled={busy || !!contextBusy || !contextTopic}
+                  onClick={() => void readSchemas()}
+                >
+                  Read context schemas
+                </button>
+                <label>
+                  Training context schema and partition
+                  <select
+                    value={contextChoice}
+                    onChange={(e) => {
+                      change({});
+                      setContextChoice(e.target.value);
+                    }}
+                  >
+                    <option value="">Select a context partition</option>
+                    {contextSchemas.map((c) => (
+                      <option
+                        key={`${c.partition}:${c.context_schema.schema_id}`}
+                        value={`${c.partition}:${c.context_schema.schema_id}`}
+                      >
+                        Partition {c.partition}: {c.context_schema.schema_id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  disabled={busy || !!contextBusy || !selectedContext}
+                  onClick={() => void captureContext()}
+                >
+                  Load aligned SARIMAX context
+                </button>
+              </div>
+              {selectedContext && (
+                <p>
+                  Policy {selectedContext.context_schema.policy}; ordered
+                  columns{" "}
+                  {selectedContext.context_schema.names
+                    .map(
+                      (name, i) =>
+                        `${name} [${selectedContext.context_schema.units[i]}]`,
+                    )
+                    .join(", ")}
+                  ; interval {selectedContext.context_schema.interval_micros}{" "}
+                  microseconds. Capture uses the current target range, forecast
+                  horizon and backtest configuration.
+                </p>
+              )}
+              {contextBusy && <p role="status">{contextBusy}.</p>}
+              {contextInvalidated && (
+                <p>
+                  Captured context was invalidated by an input or configuration
+                  change. Load aligned context again, or supply explicit manual
+                  context.
+                </p>
+              )}
+              {contextReceipt && (
+                <section aria-label="Aligned context receipt">
+                  <p>
+                    Aligned context receipt {contextReceipt.receipt_id}; policy{" "}
+                    {contextReceipt.context_schema.policy}.
+                  </p>
+                  <p>
+                    {contextReceipt.binding.topic}, partition{" "}
+                    {contextReceipt.binding.partition}; schema{" "}
+                    {contextReceipt.binding.schema_id};{" "}
+                    {contextReceipt.binding.source_positions.length} source
+                    records. The receipt belongs to the current target,
+                    configuration and backtests.
+                  </p>
+                </section>
+              )}
+            </fieldset>
             {options.family === "sarimax" && (
               <>
                 <label>
@@ -712,7 +932,7 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
           </fieldset>
           <button
             className="wb-primary"
-            disabled={busy}
+            disabled={busy || !!contextBusy}
             onClick={() => void fit()}
           >
             {busy ? "Fitting and evaluating" : "Fit, backtest and forecast"}

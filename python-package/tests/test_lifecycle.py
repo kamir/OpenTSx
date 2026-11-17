@@ -102,7 +102,14 @@ def test_registration_reuses_server_fit_and_is_idempotent(tmp_path):
 
 @pytest.mark.parametrize(
     "change",
-    ["unreviewed", "missing_note", "unknown_run", "name_escape", "extra_field", "nan_threshold"],
+    [
+        "unreviewed",
+        "missing_note",
+        "unknown_run",
+        "name_escape",
+        "extra_field",
+        "nan_threshold",
+    ],
 )
 def test_registration_rejects_invalid_review_before_registry_mutation(tmp_path, change):
     store, model, registry, document, result, body = registered(tmp_path)
@@ -201,3 +208,57 @@ def test_corrupt_persisted_json_does_not_reset_state(tmp_path):
         connection.execute("UPDATE models SET record=? WHERE id=?", ('{"invalid":', model["id"]))
     with pytest.raises((ValueError, json.JSONDecodeError)):
         store.get_model(model["id"])
+
+
+def test_waiting_context_is_durable_and_keeps_running_intent(tmp_path):
+    store = api().LifecycleStore(tmp_path / "lifecycle.sqlite")
+    store.add_deployment({"id": "context", "desired_state": "running"})
+    detail = {"reason": "missing_context", "missing_start_micros": 100}
+    store.set_context_status("context", detail)
+    store.set_worker_status("context", "waiting_context")
+    reopened = api().LifecycleStore(tmp_path / "lifecycle.sqlite")
+    record = reopened.get_deployment("context")
+    assert record["status"] == "waiting_context"
+    assert record["desired_state"] == "running"
+    assert record["context_status"] == detail
+    reopened.set_context_status("context", None)
+    assert reopened.get_deployment("context")["context_status"] is None
+
+
+def test_context_binding_is_immutable(tmp_path):
+    store = api().LifecycleStore(tmp_path / "lifecycle.sqlite")
+    record = {"id": "context", "context": {"topic": "a.context.v1", "partition": 0}}
+    store.add_deployment(record)
+    with pytest.raises(ValueError, match="immutable"):
+        store.add_deployment({**record, "context": {"topic": "b.context.v1", "partition": 0}})
+
+
+def test_registration_preserves_and_checks_the_context_schema(tmp_path):
+    from test_modelling import with_context
+    from opentsx.client.modelling import execute_modelling
+
+    document = with_context()
+    document["context"]["units"] = ["1"]
+    result = execute_modelling(document)
+    store = api().LifecycleStore(tmp_path / "lifecycle.sqlite")
+    store.save_run(document, result)
+    registration = {
+        "run_id": result["run_id"],
+        "name": "sarimax",
+        "review": {
+            "accepted": True,
+            "note": "Synthetic context review",
+            "minimum_improvement": -10,
+        },
+    }
+    model = store.register(registration, Registry())
+    assert model["context_schema"] == result["context_schema"]
+    assert model["deployment_blockers"] == []
+    altered = copy.deepcopy(result)
+    altered["context_schema"]["units"] = ["MW"]
+    other = api().LifecycleStore(tmp_path / "altered.sqlite")
+    other.save_run(document, altered)
+    registry = Registry()
+    with pytest.raises(ValueError, match="context schema"):
+        other.register(registration, registry)
+    assert registry.calls == []

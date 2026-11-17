@@ -3,8 +3,9 @@
 Serve the Workbench and local Python analysis service on the existing CP Docker
 network. Read the [developer path](../../docs/devguide/local-cp-workbench.md)
 for prerequisites, locked build, installed-artifact tests, startup and finite
-modelling. Continue with the [model deployment guide](../../docs/devguide/model-smart-topics.md)
-to register reviewed fits and score incoming episodes as Smart Topics.
+modelling. Continue with the
+[model deployment guide](../../docs/devguide/model-smart-topics.md) to register
+reviewed fits and score incoming episodes as Smart Topics.
 
 `settings.json` selects the external network, internal bootstrap addresses,
 tutorial topic prefix, pinned container images and loopback port. `workbench.py`
@@ -26,3 +27,8 @@ The profile includes an internal MLflow registry with a persistent database and
 artifact volume. A separate Workbench state volume stores completed runs,
 registrations, deployment intent and scoring checkpoints. The registry has no
 published host port. The Workbench remains bound to loopback.
+
+Use `demo-seed --scenario sarimax` and `demo-append --scenario sarimax` for the
+paired target/context demonstration. `demo-target --scenario sarimax` followed
+by `demo-context --scenario sarimax` exercises a visible missing-context wait.
+Follow the model deployment guide for capture, review and context binding.

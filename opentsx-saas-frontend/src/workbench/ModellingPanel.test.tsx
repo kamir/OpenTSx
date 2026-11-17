@@ -44,6 +44,113 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("finite modelling workflow", () => {
+  it("captures aligned known-ahead context for the current training window and invalidates it after an input change", async () => {
+    const schema = {
+      schema_id: "schema-001",
+      policy: "immutable_known_ahead",
+      target_series_id: "load-a",
+      names: ["schedule_sin", "schedule_cos"],
+      units: ["1", "1"],
+      interval_micros: 900000000,
+    };
+    const context = {
+      names: schema.names,
+      units: schema.units,
+      historical: Array.from({ length: 32 }, (_, i) => [
+        Math.sin(i),
+        Math.cos(i),
+      ]),
+      historical_available_at_micros: Array.from({ length: 32 }, () => [0, 0]),
+      future: Array.from({ length: 4 }, (_, i) => [
+        Math.sin(i + 32),
+        Math.cos(i + 32),
+      ]),
+      future_available_at_micros: Array.from({ length: 4 }, () => [0, 0]),
+    };
+    const fetch = vi.fn(async (path: string, options?: RequestInit) => {
+      if (path.endsWith("context-capture"))
+        expect(options?.method).toBe("POST");
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify(
+            path.endsWith("context-topics")
+              ? {
+                  schema: "opentsx.context-topics.v1",
+                  topics: ["tsx.demo.sarimax.context.v1"],
+                }
+              : path.includes("context-series?")
+                ? {
+                    schema: "opentsx.context-series.v1",
+                    topic: "tsx.demo.sarimax.context.v1",
+                    contexts: [
+                      {
+                        partition: 0,
+                        context_schema: schema,
+                        first_micros: 1700000000000000,
+                        last_micros: 1700031500000000,
+                        row_count: 36,
+                      },
+                    ],
+                    capture_policy: "immutable_known_ahead",
+                  }
+                : {
+                    schema: "opentsx.context-capture.v1",
+                    context,
+                    context_schema: schema,
+                    binding: {
+                      topic: "tsx.demo.sarimax.context.v1",
+                      partition: 0,
+                      schema_id: schema.schema_id,
+                      source_positions: [
+                        { offset: "2", record_id: "context-row" },
+                      ],
+                    },
+                    receipt_id: "receipt-001",
+                  },
+          ),
+      };
+    });
+    vi.stubGlobal("fetch", fetch);
+    await show();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load context topics" }),
+    );
+    await screen.findByRole("option", { name: "tsx.demo.sarimax.context.v1" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Read context schemas" }),
+    );
+    await screen.findByRole("option", { name: /schema-001/ });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load aligned SARIMAX context" }),
+    );
+    await screen.findByText(/Aligned context receipt receipt-001/);
+    expect(screen.getByLabelText("Forecast family")).toHaveValue("sarimax");
+    expect(
+      JSON.parse(
+        (screen.getByLabelText("External context JSON") as HTMLTextAreaElement)
+          .value,
+      ),
+    ).toEqual(context);
+    const call = fetch.mock.calls.find(([path]) =>
+      path.endsWith("context-capture"),
+    )!;
+    const submitted = JSON.parse((call[1] as RequestInit).body as string);
+    expect(submitted.target.timestamps_micros[0]).toBe(1700000000000000);
+    expect(submitted.configuration.family).toBe("sarimax");
+    expect(submitted.backtest.initial).toBe(22);
+    fireEvent.change(screen.getByLabelText("Forecast steps"), {
+      target: { value: "5" },
+    });
+    expect(
+      screen.queryByText(/Aligned context receipt receipt-001/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("External context JSON")).toHaveValue("");
+    expect(
+      screen.getByText(/Captured context was invalidated/),
+    ).toBeInTheDocument();
+  });
   it("offers the Kafka capture and model lifecycle before a bucket is loaded", async () => {
     await show(null);
     expect(

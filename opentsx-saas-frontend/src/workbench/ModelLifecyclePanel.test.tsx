@@ -195,6 +195,143 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("local fitting lifecycle", () => {
+  it("binds a qualified SARIMAX context schema and shows an actual waiting state without calling it running", async () => {
+    const schema = {
+      schema_id: "schema-001",
+      policy: "immutable_known_ahead",
+      target_series_id: "load-a",
+      names: ["schedule"],
+      units: ["1"],
+      interval_micros: 1000000,
+    };
+    const fetch = fixtures({
+      "/analysis/v1/modelling/models": {
+        schema: "opentsx.model-registry.v1",
+        topic_prefix: "tsx.demo.",
+        models: [model({ family: "sarimax", context_schema: schema })],
+      },
+      "/analysis/v1/modelling/context-topics": {
+        schema: "opentsx.context-topics.v1",
+        topics: ["tsx.demo.sarimax.context.v1"],
+      },
+      "/analysis/v1/modelling/context-series?topic=tsx.demo.sarimax.context.v1":
+        {
+          schema: "opentsx.context-series.v1",
+          topic: "tsx.demo.sarimax.context.v1",
+          contexts: [
+            {
+              partition: 0,
+              context_schema: schema,
+              first_micros: 1700000000000000,
+              last_micros: 1700000035000000,
+              row_count: 36,
+            },
+          ],
+          capture_policy: "immutable_known_ahead",
+        },
+      "POST /analysis/v1/modelling/deployments": deployment({
+        status: "waiting_context",
+        context: { topic: "tsx.demo.sarimax.context.v1", partition: 0 },
+        context_status: {
+          reason: "Missing known-ahead rows",
+          missing_start_micros: 1700000032000000,
+          missing_end_micros: 1700000036000000,
+          cutoff_micros: 1700000031000000,
+          topic: "tsx.demo.sarimax.context.v1",
+          partition: 0,
+          next_offset: 3,
+          watermark_micros: 1700000031000000,
+          buffered_rows: 32,
+        },
+      }),
+      "/analysis/v1/modelling/deployments/deploy-001/results": {
+        schema: "opentsx.smart-predictions.v1",
+        deployment_id: "deploy-001",
+        results: [
+          {
+            key: "sarimax-prediction",
+            broker_partition: 0,
+            broker_offset: 7,
+            payload: {
+              target: {
+                series_id: "load-a",
+                unit: "MW",
+                time_kind: "absolute",
+                interval_micros: 1000000,
+              },
+              forecast: {
+                mean: [14],
+                lower: [12],
+                upper: [16],
+                timestamps_micros: [1700000034000000],
+              },
+              observed: { actual: [15], residual: [1] },
+              context: {
+                policy: "immutable_known_ahead",
+                schema_id: schema.schema_id,
+                topic: "tsx.demo.sarimax.context.v1",
+                partition: 0,
+                source_positions: [
+                  { offset: "2", record_id: "known-ahead-001" },
+                ],
+                observed_start_micros: 1700000032000000,
+                observed_end_micros: 1700000034000000,
+                forecast_start_micros: 1700000034000000,
+                forecast_end_micros: 1700000035000000,
+                available_at_max_micros: 1700000031000000,
+                values_sha256: "values-digest",
+                availability_sha256: "availability-digest",
+              },
+            },
+          },
+        ],
+      },
+    });
+    await show();
+    await catalogue();
+    await source();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load scoring context topics" }),
+    );
+    await screen.findByRole("option", { name: "tsx.demo.sarimax.context.v1" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Read scoring context schemas" }),
+    );
+    await screen.findByRole("option", { name: /schema-001/ });
+    expect(
+      screen.getByRole("button", { name: "Start Smart Topic" }),
+    ).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Start Smart Topic" }));
+    const status = await screen.findByRole("region", {
+      name: "Scoring deployment status",
+    });
+    expect(
+      within(status).getByText("Actual state").nextElementSibling,
+    ).toHaveTextContent("waiting_context");
+    expect(status).toHaveTextContent("Missing known-ahead rows");
+    expect(status).toHaveTextContent("Context next offset 3");
+    const call = fetch.mock.calls.find(
+      ([path, options]) =>
+        path.endsWith("/deployments") && options?.method === "POST",
+    )!;
+    expect(JSON.parse(call[1]!.body as string).context).toEqual({
+      topic: "tsx.demo.sarimax.context.v1",
+      partition: 0,
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect scoring results" }),
+    );
+    const provenance = await screen.findByRole("region", {
+      name: "Prediction context provenance",
+    });
+    expect(provenance).toHaveTextContent("immutable_known_ahead");
+    expect(provenance).toHaveTextContent("schema-001");
+    expect(provenance).toHaveTextContent("1 source records");
+    expect(provenance).toHaveTextContent("2023-11-14T22:13:51.000000Z");
+    expect(
+      screen.getByText(/Full cached prediction JSON/).closest("details"),
+    ).toHaveTextContent("availability-digest");
+  });
   it("loads an actual Kafka series into the workbench before a fit exists", async () => {
     const fetch = fixtures();
     await show();
@@ -345,6 +482,9 @@ describe("local fitting lifecycle", () => {
     expect(
       screen.getByRole("button", { name: "Predict with registered artifact" }),
     ).toBeDisabled();
+    expect(screen.getByText(/aligned future_exog/)).toHaveTextContent(
+      "future_available_at_micros",
+    );
   });
   it("retains legacy cached JSON without inventing target units or UTC coordinates", async () => {
     fixtures({

@@ -11,30 +11,49 @@ from opentsx import model
 
 PREFIX = "tsx.workbench-demo."
 TOPIC = PREFIX + "forecast.episodes.v2"
+SARIMAX_TOPIC = PREFIX + "sarimax.episodes.v2"
+CONTEXT_TOPIC = PREFIX + "sarimax.context.v1"
 
 
 @pytest.fixture
 def broker(monkeypatch):
     broker = SimpleNamespace(
-        records=[], partitions=None, created=[], delivered=[], configs=[], error=None, remaining=0
+        records=[],
+        partitions=None,
+        created=[],
+        delivered=[],
+        configs=[],
+        error=None,
+        remaining=0,
+        other_records={SARIMAX_TOPIC: [], CONTEXT_TOPIC: []},
+        other_partitions={},
+        publications=[],
     )
+
+    def records(topic):
+        return broker.records if topic == TOPIC else broker.other_records[topic]
 
     class Admin:
         def __init__(self, config):
             broker.configs.append(config)
 
         def list_topics(self, timeout):
-            topics = (
-                {}
-                if broker.partitions is None
-                else {TOPIC: SimpleNamespace(error=None, partitions=broker.partitions)}
-            )
+            topics = {
+                name: SimpleNamespace(error=None, partitions=partitions)
+                for name, partitions in broker.other_partitions.items()
+            }
+            if broker.partitions is not None:
+                topics[TOPIC] = SimpleNamespace(error=None, partitions=broker.partitions)
             return SimpleNamespace(topics=topics)
 
         def create_topics(self, topics, request_timeout):
             broker.created.extend(topics)
-            broker.partitions = {0: None}
-            return {TOPIC: SimpleNamespace(result=lambda timeout: None)}
+            for topic in topics:
+                if topic.topic == TOPIC:
+                    broker.partitions = {0: None}
+                else:
+                    broker.other_partitions[topic.topic] = {0: None}
+            return {topic.topic: SimpleNamespace(result=lambda timeout: None) for topic in topics}
 
     class Consumer:
         def __init__(self, config):
@@ -43,22 +62,26 @@ def broker(monkeypatch):
             self.closed = False
 
         def get_watermark_offsets(self, partition, timeout):
-            return 0, len(broker.records)
+            return 0, len(records(partition.topic))
 
         def assign(self, partitions):
             self.position = partitions[0]
 
         def poll(self, timeout):
-            if self.position.offset >= len(broker.records):
+            if self.position.offset >= len(records(self.position.topic)):
                 return None
-            offset, raw = self.position.offset, broker.records[self.position.offset]
+            offset, raw = self.position.offset, records(self.position.topic)[self.position.offset]
             return SimpleNamespace(
                 error=lambda: None,
-                topic=lambda: TOPIC,
+                topic=lambda: self.position.topic,
                 partition=lambda: 0,
                 offset=lambda: offset,
                 value=lambda: raw,
-                key=lambda: model.decode(raw)[1]["series"]["seriesId"].encode(),
+                key=lambda: (
+                    json.loads(raw)["target_series_id"]
+                    if self.position.topic == CONTEXT_TOPIC
+                    else model.decode(raw)[1]["series"]["seriesId"]
+                ).encode(),
             )
 
         def close(self):
@@ -70,19 +93,18 @@ def broker(monkeypatch):
             self.pending = []
 
         def produce(self, topic, *, partition, key, value, timestamp, on_delivery):
-            assert topic == TOPIC and partition == 0
-            broker.records.append(value)
+            assert topic in (TOPIC, SARIMAX_TOPIC, CONTEXT_TOPIC) and partition == 0
+            records(topic).append(value)
             broker.delivered.append((key, timestamp, value))
-            self.pending.append(on_delivery)
+            broker.publications.append((topic, key, timestamp, value))
+            self.pending.append((on_delivery, len(records(topic)) - 1))
 
         def flush(self, timeout):
             if not broker.remaining:
-                for callback in self.pending:
+                for callback, offset in self.pending:
                     callback(
                         broker.error,
-                        SimpleNamespace(
-                            partition=lambda: 0, offset=lambda: len(broker.records) - 1
-                        ),
+                        SimpleNamespace(partition=lambda: 0, offset=lambda: offset),
                     )
             return broker.remaining
 
@@ -111,7 +133,11 @@ def broker(monkeypatch):
         ),
     )
     broker.api = importlib.import_module("opentsx.client.scoring_demo")
-    broker.run = lambda command: broker.api.execute(command, "fixture:9092", PREFIX)
+    broker.run = lambda command, scenario="ar1": (
+        broker.api.execute(command, "fixture:9092", PREFIX)
+        if scenario == "ar1"
+        else broker.api.execute(command, "fixture:9092", PREFIX, scenario)
+    )
     return broker
 
 
@@ -233,7 +259,7 @@ def test_invalid_prefix_is_rejected_before_any_broker_access(broker):
     assert broker.configs == []
 
 
-def test_cli_has_only_seed_append_and_the_required_bootstrap(broker, capsys):
+def test_cli_lists_supported_commands_and_requires_bootstrap(broker, capsys):
     with pytest.raises(SystemExit) as result:
         broker.api.main(["--help"])
     assert result.value.code == 0
@@ -245,3 +271,93 @@ def test_cli_has_only_seed_append_and_the_required_bootstrap(broker, capsys):
         broker.api.main(["seed"])
     broker.api.main(["seed", "--bootstrap", "fixture:9092"])
     assert json.loads(capsys.readouterr().out)["status"] == "seeded"
+
+
+def test_sarimax_seed_publishes_known_ahead_context_before_the_target(broker):
+    result = broker.run("seed", "sarimax")
+    assert result["topic"] == SARIMAX_TOPIC and result["context_topic"] == CONTEXT_TOPIC
+    assert [entry[0] for entry in broker.publications] == [CONTEXT_TOPIC, SARIMAX_TOPIC]
+    target = model.decode(broker.other_records[SARIMAX_TOPIC][0])[1]
+    context = json.loads(broker.other_records[CONTEXT_TOPIC][0])
+    assert target["count"] == 512 and len(context["values"]) == 516
+    assert context["context_names"] == ["schedule_sin", "schedule_cos"]
+    assert context["context_units"] == ["1", "1"]
+    assert context["target_series_id"] == target["series"]["seriesId"]
+    assert context["issued_at_micros"] == broker.api.EPOCH - broker.api.INTERVAL
+    assert all(
+        stamp <= broker.api.EPOCH - broker.api.INTERVAL
+        for row in context["available_at_micros"]
+        for stamp in row
+    )
+    assert broker.records == []
+
+
+def test_sarimax_append_preserves_the_old_lookahead_and_adds_64_new_context_rows(broker):
+    broker.run("seed", "sarimax")
+    first = broker.other_records[CONTEXT_TOPIC][0]
+    broker.run("append", "sarimax")
+    assert len(broker.other_records[SARIMAX_TOPIC]) == 2
+    context = json.loads(broker.other_records[CONTEXT_TOPIC][1])
+    assert len(context["values"]) == 64
+    assert context["t_start_micros"] == broker.api.EPOCH + 516 * broker.api.INTERVAL
+    assert context["issued_at_micros"] == broker.api.EPOCH + 511 * broker.api.INTERVAL
+    assert broker.other_records[CONTEXT_TOPIC][0] == first
+    assert [entry[0] for entry in broker.publications[-2:]] == [CONTEXT_TOPIC, SARIMAX_TOPIC]
+
+
+def test_split_sarimax_commands_can_expose_missing_context_then_release_it(broker):
+    broker.run("seed", "sarimax")
+    result = broker.run("target", "sarimax")
+    assert result["status"] == "appended"
+    assert len(broker.other_records[SARIMAX_TOPIC]) == 2
+    assert len(broker.other_records[CONTEXT_TOPIC]) == 1
+    result = broker.run("context", "sarimax")
+    assert result["status"] == "context_ready"
+    assert len(broker.other_records[SARIMAX_TOPIC]) == 2
+    assert len(broker.other_records[CONTEXT_TOPIC]) == 2
+    before = broker.publications.copy()
+    broker.run("context", "sarimax")
+    assert broker.publications == before
+
+
+def test_sarimax_context_can_catch_up_multiple_pending_target_blocks(broker):
+    broker.run("seed", "sarimax")
+    broker.run("target", "sarimax")
+    broker.run("target", "sarimax")
+    broker.run("context", "sarimax")
+    assert len(broker.other_records[CONTEXT_TOPIC]) == 3
+    assert [len(json.loads(raw)["values"]) for raw in broker.other_records[CONTEXT_TOPIC]] == [
+        516,
+        64,
+        64,
+    ]
+
+
+def test_sarimax_seed_is_idempotent_and_rejects_modified_context(broker):
+    broker.run("seed", "sarimax")
+    before = broker.publications.copy()
+    assert broker.run("seed", "sarimax")["status"] == "already_seeded"
+    assert broker.publications == before
+    record = json.loads(broker.other_records[CONTEXT_TOPIC][0])
+    record["values"][0][0] += 1
+    broker.other_records[CONTEXT_TOPIC][0] = json.dumps(record).encode()
+    with pytest.raises(ValueError):
+        broker.run("append", "sarimax")
+
+
+def test_context_record_helper_can_create_an_explicit_late_availability_exercise(broker):
+    record = broker.api.context_record(
+        516, issued_at_micros=broker.api.EPOCH + 600 * broker.api.INTERVAL
+    )
+    assert record["issued_at_micros"] > record["t_start_micros"]
+    assert all(
+        stamp == record["issued_at_micros"]
+        for row in record["available_at_micros"]
+        for stamp in row
+    )
+
+
+@pytest.mark.parametrize("command", ["target", "context"])
+def test_split_commands_are_not_silent_ar1_aliases(broker, command):
+    with pytest.raises(ValueError):
+        broker.run(command)

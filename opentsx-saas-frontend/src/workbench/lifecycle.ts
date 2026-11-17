@@ -1,7 +1,51 @@
 import { parseEpisodes } from "./loaders";
-import type { ForecastResult } from "./modelling";
+import type { ForecastResult, modellingRequest } from "./modelling";
 
 const BASE = "/analysis/v1/modelling";
+export interface ContextSchema {
+  schema_id: string;
+  policy: "immutable_known_ahead";
+  target_series_id: string;
+  names: string[];
+  units: string[];
+  interval_micros: number;
+}
+export interface CatalogContext {
+  partition: number;
+  context_schema: ContextSchema;
+  first_micros: number;
+  last_micros: number;
+  row_count: number;
+}
+export interface CapturedContext {
+  context: {
+    names: string[];
+    units: string[];
+    historical: number[][];
+    historical_available_at_micros: number[][];
+    future: number[][];
+    future_available_at_micros: number[][];
+  };
+  context_schema: ContextSchema;
+  binding: {
+    topic: string;
+    partition: number;
+    schema_id: string;
+    source_positions: { offset: string; record_id: string }[];
+  };
+  receipt_id: string;
+}
+export interface ContextStatus {
+  reason: string;
+  missing_start_micros: number | null;
+  missing_end_micros: number | null;
+  cutoff_micros: number | null;
+  topic: string;
+  partition: number;
+  next_offset: number | null;
+  watermark_micros: number | null;
+  buffered_rows: number;
+}
 export interface CatalogSeries {
   series_id: string;
   label: string;
@@ -35,6 +79,7 @@ export interface RegisteredModel {
   mlflow_version: string | number | null;
   status: "registered";
   deployment_blockers: string[];
+  context_schema?: ContextSchema | null;
 }
 export interface ScoringDeployment {
   id: string;
@@ -44,9 +89,17 @@ export interface ScoringDeployment {
   input_partition: number;
   output_topic: string;
   desired_state: "running" | "stopped";
-  status: "starting" | "running" | "stopping" | "stopped" | "failed";
+  status:
+    | "starting"
+    | "running"
+    | "waiting_context"
+    | "stopping"
+    | "stopped"
+    | "failed";
   error: string | null;
   checkpoint: Record<string, unknown> | null;
+  context?: { topic: string; partition: number } | null;
+  context_status?: ContextStatus | null;
 }
 export interface SmartPrediction {
   key: string;
@@ -172,6 +225,8 @@ function model(value: unknown): RegisteredModel {
   if (metrics.improvement !== null)
     number(metrics.improvement, "relative improvement");
   strings(m.deployment_blockers, "deployment blockers");
+  if (m.context_schema !== undefined && m.context_schema !== null)
+    inspectContextSchema(m.context_schema);
   return m as unknown as RegisteredModel;
 }
 function deployment(value: unknown): ScoringDeployment {
@@ -187,13 +242,38 @@ function deployment(value: unknown): ScoringDeployment {
   number(d.input_partition, "input partition", true, 0);
   if (
     !["running", "stopped"].includes(String(d.desired_state)) ||
-    !["starting", "running", "stopping", "stopped", "failed"].includes(
-      String(d.status),
-    )
+    ![
+      "starting",
+      "running",
+      "waiting_context",
+      "stopping",
+      "stopped",
+      "failed",
+    ].includes(String(d.status))
   )
     throw new Error("Unsupported scoring deployment state.");
   if (d.error !== null) text(d.error, "deployment error");
   if (d.checkpoint !== null) object(d.checkpoint, "deployment checkpoint");
+  if (d.context !== undefined && d.context !== null) {
+    const context = object(d.context, "deployment context");
+    text(context.topic, "deployment context topic");
+    number(context.partition, "deployment context partition", true, 0);
+  }
+  if (d.context_status !== undefined && d.context_status !== null) {
+    const s = object(d.context_status, "context status");
+    text(s.reason, "context status reason");
+    text(s.topic, "context status topic");
+    number(s.partition, "context status partition", true, 0);
+    number(s.buffered_rows, "context buffered rows", true, 0);
+    for (const key of [
+      "missing_start_micros",
+      "missing_end_micros",
+      "cutoff_micros",
+      "watermark_micros",
+      "next_offset",
+    ])
+      if (s[key] !== null) number(s[key], key, true);
+  }
   return d as unknown as ScoringDeployment;
 }
 export async function loadLifecycleCatalogue() {
@@ -303,6 +383,7 @@ export async function createScoringDeployment(
   topic: string,
   partition: number,
   outputTopic: string,
+  context?: { topic: string; partition: number },
 ) {
   const d = deployment(
     await request(`${BASE}/deployments`, {
@@ -310,6 +391,7 @@ export async function createScoringDeployment(
       input_topic: topic,
       input_partition: partition,
       output_topic: outputTopic,
+      ...(context ? { context } : {}),
     }),
   );
   if (
@@ -319,7 +401,179 @@ export async function createScoringDeployment(
     d.output_topic !== outputTopic
   )
     throw new Error("The deployment does not match the requested binding.");
+  if (
+    context &&
+    (d.context?.topic !== context.topic ||
+      d.context?.partition !== context.partition)
+  )
+    throw new Error(
+      "The deployment does not match the requested context binding.",
+    );
   return d;
+}
+
+function inspectContextSchema(value: unknown): ContextSchema {
+  const s = object(value, "context schema");
+  text(s.schema_id, "context schema id");
+  text(s.target_series_id, "context target identity");
+  if (s.policy !== "immutable_known_ahead")
+    throw new Error("Unsupported live context availability policy.");
+  strings(s.names, "context names");
+  strings(s.units, "context units");
+  if (
+    s.names.length < 1 ||
+    s.names.length > 8 ||
+    s.units.length !== s.names.length ||
+    new Set(s.names).size !== s.names.length ||
+    s.names.some((v) => !v.trim()) ||
+    s.units.some((v) => !v.trim())
+  )
+    throw new Error(
+      "Context schema requires 1 to 8 ordered names with declared units.",
+    );
+  number(s.interval_micros, "context interval", true, 1);
+  return s as unknown as ContextSchema;
+}
+export function matchingContextSchema(
+  left: ContextSchema,
+  right: ContextSchema,
+): boolean {
+  return (
+    left.schema_id === right.schema_id &&
+    left.policy === right.policy &&
+    left.target_series_id === right.target_series_id &&
+    left.interval_micros === right.interval_micros &&
+    JSON.stringify(left.names) === JSON.stringify(right.names) &&
+    JSON.stringify(left.units) === JSON.stringify(right.units)
+  );
+}
+export async function loadContextTopics(): Promise<string[]> {
+  const d = object(await request(`${BASE}/context-topics`), "context topics");
+  if (d.schema !== "opentsx.context-topics.v1")
+    throw new Error("Unsupported context topics schema.");
+  strings(d.topics, "context topics");
+  return d.topics;
+}
+export async function loadContextSchemas(
+  topic: string,
+): Promise<CatalogContext[]> {
+  const d = object(
+    await request(`${BASE}/context-series?topic=${encodeURIComponent(topic)}`),
+    "context catalogue",
+  );
+  if (d.schema !== "opentsx.context-series.v1" || d.topic !== topic)
+    throw new Error(
+      "The context catalogue does not match the requested topic.",
+    );
+  return list(d.contexts, "context catalogue").map((value) => {
+    const c = object(value, "context partition");
+    number(c.partition, "context partition", true, 0);
+    number(c.row_count, "context row count", true, 1);
+    number(c.first_micros, "context start", true);
+    number(c.last_micros, "context end", true);
+    inspectContextSchema(c.context_schema);
+    return c as unknown as CatalogContext;
+  });
+}
+export async function captureAlignedContext(
+  topic: string,
+  partition: number,
+  document: Pick<
+    ReturnType<typeof modellingRequest>,
+    "target" | "configuration" | "backtest"
+  >,
+  schema: ContextSchema,
+): Promise<CapturedContext> {
+  const d = object(
+    await request(`${BASE}/context-capture`, { topic, partition, ...document }),
+    "aligned context capture",
+  );
+  if (d.schema !== "opentsx.context-capture.v1")
+    throw new Error("Unsupported context capture schema.");
+  const actualSchema = inspectContextSchema(d.context_schema);
+  if (
+    !matchingContextSchema(actualSchema, schema) ||
+    schema.target_series_id !== document.target.series_id
+  )
+    throw new Error(
+      "Captured context schema does not match the selected target and feature order.",
+    );
+  const context = object(d.context, "captured context");
+  if (
+    JSON.stringify(context.names) !== JSON.stringify(schema.names) ||
+    JSON.stringify(context.units) !== JSON.stringify(schema.units)
+  )
+    throw new Error("Captured context names or units changed.");
+  for (const [key, rows, stamps] of [
+    ["historical", document.target.values.length, false],
+    ["historical_available_at_micros", document.target.values.length, true],
+    ["future", document.configuration.steps, false],
+    ["future_available_at_micros", document.configuration.steps, true],
+  ] as const) {
+    const matrix = context[key];
+    if (
+      !Array.isArray(matrix) ||
+      matrix.length !== rows ||
+      matrix.length > 2048
+    )
+      throw new Error(
+        "Captured context rows do not match the selected target or horizon.",
+      );
+    for (const row of matrix) {
+      const cells = list(row, "captured context row");
+      if (cells.length !== schema.names.length)
+        throw new Error("Captured context column count changed.");
+      cells.forEach((cell) => number(cell, "captured context value", stamps));
+    }
+  }
+  const historical = context.historical_available_at_micros as number[][],
+    future = context.future_available_at_micros as number[][];
+  const times = document.target.timestamps_micros,
+    n = times.length;
+  const origins = [n];
+  for (
+    let origin = document.backtest.initial;
+    origin <= n - document.backtest.horizon;
+    origin += document.backtest.step
+  )
+    origins.push(origin);
+  for (const origin of origins) {
+    const start = document.backtest.window
+      ? Math.max(0, origin - document.backtest.window)
+      : 0;
+    const end = origin === n ? n : origin + document.backtest.horizon;
+    if (
+      historical
+        .slice(start, end)
+        .some((row) => row.some((stamp) => stamp > times[origin - 1]))
+    )
+      throw new Error(
+        "Captured historical context was unavailable at an evaluated forecast origin.",
+      );
+  }
+  if (future.some((row) => row.some((stamp) => stamp > times[n - 1])))
+    throw new Error(
+      "Captured future context was unavailable at the final forecast origin.",
+    );
+  const binding = object(d.binding, "context capture binding");
+  if (
+    binding.topic !== topic ||
+    binding.partition !== partition ||
+    binding.schema_id !== schema.schema_id
+  )
+    throw new Error(
+      "Context capture binding does not match the requested source.",
+    );
+  list(binding.source_positions, "context source positions").forEach(
+    (position) => {
+      const p = object(position, "context source position");
+      text(p.record_id, "context record identity");
+      if (typeof p.offset !== "string" || !/^\d+$/.test(p.offset))
+        throw new Error("Context source offsets must be decimal strings.");
+    },
+  );
+  text(d.receipt_id, "context receipt id");
+  return d as unknown as CapturedContext;
 }
 export async function changeScoringState(id: string, action: "start" | "stop") {
   const d = deployment(

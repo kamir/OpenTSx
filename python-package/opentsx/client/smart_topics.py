@@ -12,21 +12,39 @@ from opentsx.client.modelling import fields, integer
 def public_deployment(record):
     checkpoint = record.get("checkpoint")
     if checkpoint is not None:
+        context = checkpoint.get("context")
         checkpoint = {
             key: value
             for key, value in checkpoint.items()
             if key in {"artifact_id", "next_offset", "counters", "last_source"}
         }
+        if context is not None:
+            checkpoint["context"] = {
+                **{
+                    key: context.get(key)
+                    for key in (
+                        "topic",
+                        "partition",
+                        "schema_id",
+                        "next_offset",
+                        "watermark_micros",
+                    )
+                },
+                "buffered_rows": len(context["rows"]),
+            }
     return {**record, "checkpoint": checkpoint}
 
 
 class SmartTopics:
-    def __init__(self, store, registry, catalogue, bootstrap, prefix):
+    def __init__(self, store, registry, catalogue, bootstrap, prefix, context_catalogue=None):
+        from opentsx.client.context_catalogue import ContextCatalogue
+
         if not isinstance(prefix, str) or not re.fullmatch(
             r"[A-Za-z0-9_-][A-Za-z0-9._-]{0,180}\.", prefix
         ):
             raise ValueError("topic prefix is invalid")
         self.store, self.registry, self.catalogue = store, registry, catalogue
+        self.context_catalogue = context_catalogue or ContextCatalogue(bootstrap, prefix)
         self.bootstrap, self.prefix = bootstrap, prefix
         self.lock = threading.RLock()
         self.children = {}
@@ -64,7 +82,19 @@ class SmartTopics:
             or model["source"] != model["artifact"]["source"]
         ):
             raise ValueError("registered model identity does not match its fitted artifact")
-        reasons = blockers(model["artifact"])
+        context_schema = model.get("context_schema")
+        if context_schema is not None:
+            from opentsx.client.context_join import schema_descriptor
+
+            expected = schema_descriptor(
+                model["source"]["series_id"],
+                model["artifact"]["context_names"],
+                context_schema["units"],
+                model["source"]["interval_micros"],
+            )
+            if context_schema != expected:
+                raise ValueError("registered context schema does not match the fitted artifact")
+        reasons = blockers(model["artifact"], context_schema)
         if reasons:
             raise ValueError(" ".join(reasons))
         self.registry.verify(model)
@@ -113,7 +143,11 @@ class SmartTopics:
 
     def deploy(self, document):
         self._open()
-        fields(document, {"model_id", "input_topic", "input_partition", "output_topic"})
+        fields(
+            document,
+            {"model_id", "input_topic", "input_partition", "output_topic"},
+            {"context"},
+        )
         topic = document["output_topic"]
         pattern = re.escape(self.prefix) + r"smart\.([a-z0-9][a-z0-9_-]{0,63})\.predictions\.v1"
         match = re.fullmatch(pattern, topic) if isinstance(topic, str) else None
@@ -130,6 +164,25 @@ class SmartTopics:
         ):
             raise ValueError("input topic is outside the configured episode namespace")
         model = self._model(document["model_id"])
+        context = document.get("context")
+        context_binding = None
+        if model["artifact"]["context_names"]:
+            fields(context, {"topic", "partition"})
+            context_topic = context["topic"]
+            integer(context["partition"], "context partition", 0, 2**31 - 1)
+            if (
+                not isinstance(context_topic, str)
+                or not re.fullmatch(r"[A-Za-z0-9._-]{1,249}", context_topic)
+                or not context_topic.startswith(self.prefix)
+                or not context_topic.endswith(".context.v1")
+            ):
+                raise ValueError("context topic is outside the configured context namespace")
+            request, _ = self.store.get_run(model["run_id"])
+            context_binding = self.context_catalogue.verify_binding(
+                model, request, context_topic, context["partition"]
+            )
+        elif context is not None:
+            raise ValueError("a context-free model cannot bind a context topic")
         receipt = self.catalogue.verify_binding(model, document["input_topic"], partition)
         record = {
             "id": deployment_id,
@@ -143,6 +196,10 @@ class SmartTopics:
             "start_policy": "replay_after_training",
             "delivery": "at_least_once",
             "binding": receipt,
+            "context": context,
+            "context_schema": model.get("context_schema"),
+            "context_binding": context_binding,
+            "context_status": None,
             "desired_state": "stopped",
             "status": "stopped",
             "error": None,
@@ -154,13 +211,15 @@ class SmartTopics:
             except KeyError:
                 existing = None
             if existing is not None and any(
-                existing[key] != record[key]
+                existing.get(key) != record.get(key)
                 for key in (
                     "model_id",
                     "input_topic",
                     "input_partition",
                     "output_topic",
                     "series_id",
+                    "context",
+                    "context_schema",
                 )
             ):
                 raise ValueError(
@@ -183,11 +242,23 @@ class SmartTopics:
                 return public_deployment(record)
             if sum(process.is_alive() for process, event in self.children.values()) >= 4:
                 raise ValueError("the local profile allows at most four active scoring deployments")
-            self._model(record["model_id"])
+            model = self._model(record["model_id"])
+            if model["artifact"]["context_names"] and (
+                record.get("context_schema") != model.get("context_schema")
+                or not isinstance(record.get("context"), dict)
+                or not isinstance(record.get("context_binding"), dict)
+            ):
+                raise ValueError("deployment has no verified immutable context binding")
             event = self.context.Event()
             process = self.context.Process(
                 target=run_worker,
-                args=(self.store.path, deployment_id, self.bootstrap, self.prefix, event),
+                args=(
+                    self.store.path,
+                    deployment_id,
+                    self.bootstrap,
+                    self.prefix,
+                    event,
+                ),
                 daemon=True,
             )
             self.store.update_deployment(
@@ -198,7 +269,9 @@ class SmartTopics:
                 process.start()
             except Exception as error:
                 self.store.set_worker_status(
-                    deployment_id, "failed", f"worker start failed: {type(error).__name__}"
+                    deployment_id,
+                    "failed",
+                    f"worker start failed: {type(error).__name__}",
                 )
                 self._stop_child(deployment_id)
                 raise
@@ -242,7 +315,9 @@ class SmartTopics:
             record = self.store.get_deployment(deployment_id)
             if record["desired_state"] == "running" and record["status"] != "failed":
                 self.store.set_worker_status(
-                    deployment_id, "failed", f"scoring process exited with code {process.exitcode}"
+                    deployment_id,
+                    "failed",
+                    f"scoring process exited with code {process.exitcode}",
                 )
             self._stop_child(deployment_id)
 

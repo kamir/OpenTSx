@@ -9,6 +9,9 @@ import {
   loadLifecycleCatalogue,
   loadScoringResults,
   loadTopicSeries,
+  loadContextTopics,
+  loadContextSchemas,
+  matchingContextSchema,
   predictRegisteredModel,
   registerReviewedFit,
   type CatalogSeries,
@@ -16,6 +19,7 @@ import {
   type RegisteredPrediction,
   type ScoringDeployment,
   type SmartPrediction,
+  type CatalogContext,
 } from "./lifecycle";
 import "./lifecycle.css";
 
@@ -86,6 +90,7 @@ function LatestPrediction({ record }: { record: SmartPrediction }) {
     typeof target?.interval_micros === "number" ? target.interval_micros : NaN;
   const actual = numericArray(observed?.actual),
     residual = numericArray(observed?.residual);
+  const context = dataObject(record.payload.context);
   const absoluteError =
     actual && residual && actual.length === residual.length
       ? residual.reduce((sum, n) => sum + Math.abs(n), 0) / residual.length
@@ -151,6 +156,56 @@ function LatestPrediction({ record }: { record: SmartPrediction }) {
           forecast values and bounds. Inspect the full cached JSON.
         </p>
       )}
+      {context && (
+        <section aria-label="Prediction context provenance">
+          <h5>Context provenance</h5>
+          <p>
+            Policy{" "}
+            {typeof context.policy === "string"
+              ? context.policy
+              : "Not reported"}
+            ; schema{" "}
+            {typeof context.schema_id === "string"
+              ? context.schema_id
+              : "Not reported"}
+            ; topic{" "}
+            {typeof context.topic === "string" ? context.topic : "Not reported"}
+            , partition{" "}
+            {typeof context.partition === "number"
+              ? context.partition
+              : "Not reported"}
+            .{" "}
+            {Array.isArray(context.source_positions)
+              ? context.source_positions.length
+              : "Unknown"}{" "}
+            source records; latest availability{" "}
+            {typeof context.available_at_max_micros === "number"
+              ? utcMicros(context.available_at_max_micros)
+              : "Not reported"}
+            .
+          </p>
+          <p>
+            Observed context range{" "}
+            {typeof context.observed_start_micros === "number"
+              ? utcMicros(context.observed_start_micros)
+              : "Not reported"}{" "}
+            to{" "}
+            {typeof context.observed_end_micros === "number"
+              ? utcMicros(context.observed_end_micros)
+              : "Not reported"}
+            ; forecast context range{" "}
+            {typeof context.forecast_start_micros === "number"
+              ? utcMicros(context.forecast_start_micros)
+              : "Not reported"}{" "}
+            to{" "}
+            {typeof context.forecast_end_micros === "number"
+              ? utcMicros(context.forecast_end_micros)
+              : "Not reported"}
+            . Exact record identities, offsets and integrity digests remain in
+            the full cached JSON.
+          </p>
+        </section>
+      )}
     </section>
   );
 }
@@ -180,10 +235,21 @@ export default function ModelLifecyclePanel({
   const [steps, setSteps] = useState(4),
     [prediction, setPrediction] = useState<RegisteredPrediction | null>(null);
   const [results, setResults] = useState<SmartPrediction[] | null>(null);
+  const [contextTopics, setContextTopics] = useState<string[]>([]),
+    [contextTopic, setContextTopic] = useState("");
+  const [contextSchemas, setContextSchemas] = useState<CatalogContext[]>([]),
+    [contextChoice, setContextChoice] = useState("");
+  const selectedContext = contextSchemas.find(
+    (c) => `${c.partition}:${c.context_schema.schema_id}` === contextChoice,
+  );
   const selectedModel = models.find((m) => m.id === modelId) ?? null;
   const selectedSeries = series.find((s) => s.series_id === seriesId) ?? null;
   const selectedDeployment =
     deployments.find((d) => d.id === deploymentId) ?? null;
+  useEffect(() => {
+    setContextChoice("");
+    setContextSchemas([]);
+  }, [modelId]);
   useEffect(() => {
     setAccepted(false);
     setNote("");
@@ -294,10 +360,22 @@ export default function ModelLifecyclePanel({
   const blockers = selectedModel
     ? [...selectedModel.deployment_blockers]
     : ["Select a registered model."];
-  if (selectedModel?.family === "sarimax")
-    blockers.push(
-      "Continuous SARIMAX scoring requires a live context join, which this local runtime does not provide.",
-    );
+  if (selectedModel?.family === "sarimax") {
+    if (!selectedModel.context_schema)
+      blockers.push(
+        "The registered context schema and units are unavailable. Register an evaluated fit with declared context units before live deployment.",
+      );
+    else if (
+      !selectedContext ||
+      !matchingContextSchema(
+        selectedContext.context_schema,
+        selectedModel.context_schema,
+      )
+    )
+      blockers.push(
+        "Select a context topic and partition matching the registered ordered context schema.",
+      );
+  }
   if (selectedModel && selectedModel.source.time_kind !== "absolute")
     blockers.push("Continuous scoring requires an absolute training clock.");
   if (!selectedSeries)
@@ -330,6 +408,9 @@ export default function ModelLifecyclePanel({
         topic,
         selectedSeries.partitions[0],
         outputTopic,
+        selectedModel.family === "sarimax" && selectedContext
+          ? { topic: contextTopic, partition: selectedContext.partition }
+          : undefined,
       );
       updateDeployment(record);
       setNotice(`Deployment ${record.id} is ${record.status}.`);
@@ -579,7 +660,8 @@ export default function ModelLifecyclePanel({
             {selectedModel.family === "sarimax" && (
               <p>
                 Registered SARIMAX prediction requires future external context.
-                Use the numerical API with its aligned future_exog matrix.
+                Use the numerical API with aligned future_exog and
+                future_available_at_micros matrices.
               </p>
             )}
           </>
@@ -618,6 +700,114 @@ export default function ModelLifecyclePanel({
       </fieldset>
       <fieldset>
         <legend>Continuous Smart Topic</legend>
+        {selectedModel?.family === "sarimax" && (
+          <fieldset>
+            <legend>Registered live context binding</legend>
+            {selectedModel.context_schema ? (
+              <p>
+                Registered schema {selectedModel.context_schema.schema_id};
+                policy {selectedModel.context_schema.policy}; ordered columns{" "}
+                {selectedModel.context_schema.names
+                  .map(
+                    (name, i) =>
+                      `${name} [${selectedModel.context_schema!.units[i]}]`,
+                  )
+                  .join(", ")}
+                . Source bindings must match this schema.
+              </p>
+            ) : (
+              <p>
+                Registered context metadata is unknown. No units or availability
+                policy are inferred.
+              </p>
+            )}
+            <div className="wb-lifecycle-grid">
+              <button
+                disabled={!!busy}
+                onClick={() =>
+                  void act("Reading scoring context topics", async () => {
+                    const topics = await loadContextTopics();
+                    setContextTopics(topics);
+                    if (!topics.includes(contextTopic)) {
+                      setContextTopic(topics[0] ?? "");
+                      setContextSchemas([]);
+                      setContextChoice("");
+                    }
+                  })
+                }
+              >
+                Load scoring context topics
+              </button>
+              <label>
+                Scoring context topic
+                <select
+                  value={contextTopic}
+                  onChange={(e) => {
+                    setContextTopic(e.target.value);
+                    setContextSchemas([]);
+                    setContextChoice("");
+                  }}
+                >
+                  <option value="">Select a context topic</option>
+                  {contextTopics.map((topic) => (
+                    <option key={topic}>{topic}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                disabled={!!busy || !contextTopic}
+                onClick={() =>
+                  void act("Reading scoring context schemas", async () => {
+                    const contexts = await loadContextSchemas(contextTopic);
+                    setContextSchemas(contexts);
+                    const match =
+                      contexts.find(
+                        (c) =>
+                          selectedModel.context_schema &&
+                          matchingContextSchema(
+                            c.context_schema,
+                            selectedModel.context_schema,
+                          ),
+                      ) ?? contexts[0];
+                    setContextChoice(
+                      match
+                        ? `${match.partition}:${match.context_schema.schema_id}`
+                        : "",
+                    );
+                  })
+                }
+              >
+                Read scoring context schemas
+              </button>
+              <label>
+                Scoring context schema and partition
+                <select
+                  value={contextChoice}
+                  onChange={(e) => setContextChoice(e.target.value)}
+                >
+                  <option value="">Select a context partition</option>
+                  {contextSchemas.map((c) => (
+                    <option
+                      key={`${c.partition}:${c.context_schema.schema_id}`}
+                      value={`${c.partition}:${c.context_schema.schema_id}`}
+                    >
+                      Partition {c.partition}: {c.context_schema.schema_id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {selectedContext && (
+              <p>
+                Selected policy {selectedContext.context_schema.policy}; schema{" "}
+                {selectedContext.context_schema.schema_id};{" "}
+                {selectedContext.row_count} context rows. Missing or unavailable
+                context makes the processor wait; it does not produce a
+                context-free fallback.
+              </p>
+            )}
+          </fieldset>
+        )}
         <label>
           Prediction output topic
           <input
@@ -686,6 +876,63 @@ export default function ModelLifecyclePanel({
               <dt>Progress</dt>
               <dd>{checkpointText(selectedDeployment)}</dd>
             </dl>
+            {selectedDeployment.context_status && (
+              <section aria-label="Waiting for live context">
+                <p>{selectedDeployment.context_status.reason}</p>
+                <dl>
+                  <dt>Missing valid-time range (UTC)</dt>
+                  <dd>
+                    {selectedDeployment.context_status.missing_start_micros ===
+                    null
+                      ? "Not reported"
+                      : utcMicros(
+                          selectedDeployment.context_status
+                            .missing_start_micros,
+                        )}{" "}
+                    to{" "}
+                    {selectedDeployment.context_status.missing_end_micros ===
+                    null
+                      ? "Not reported"
+                      : utcMicros(
+                          selectedDeployment.context_status.missing_end_micros,
+                        )}
+                  </dd>
+                  <dt>Origin availability cutoff (UTC)</dt>
+                  <dd>
+                    {selectedDeployment.context_status.cutoff_micros === null
+                      ? "Not reported"
+                      : utcMicros(
+                          selectedDeployment.context_status.cutoff_micros,
+                        )}
+                  </dd>
+                  <dt>Context source</dt>
+                  <dd>
+                    {selectedDeployment.context_status.topic}, partition{" "}
+                    {selectedDeployment.context_status.partition}
+                  </dd>
+                  <dt>Context progress</dt>
+                  <dd>
+                    Context next offset{" "}
+                    {selectedDeployment.context_status.next_offset ??
+                      "Not reported"}
+                    ; watermark{" "}
+                    {selectedDeployment.context_status.watermark_micros === null
+                      ? "Not reported"
+                      : utcMicros(
+                          selectedDeployment.context_status.watermark_micros,
+                        )}
+                    ; buffered rows{" "}
+                    {selectedDeployment.context_status.buffered_rows}.
+                  </dd>
+                </dl>
+              </section>
+            )}
+            {dataObject(selectedDeployment.checkpoint?.context) && (
+              <p>
+                Context checkpoint:{" "}
+                {JSON.stringify(selectedDeployment.checkpoint!.context)}
+              </p>
+            )}
             {selectedDeployment.error && (
               <p role="alert">{selectedDeployment.error}</p>
             )}

@@ -42,7 +42,9 @@ against an existing Confluent Platform Docker network. The Modelling view fits A
 finite regular target, compares naive, mean, drift and seasonal naive baselines, and reports chronological
 backtests and conditional Gaussian prediction intervals.
 The [model deployment guide](docs/devguide/model-smart-topics.md) covers reviewed MLflow registration,
-prediction from preserved fits and continuous ARIMA/SARIMA scoring into local Kafka Smart Topics.
+prediction from preserved fits and continuous ARIMA/SARIMA scoring into local Kafka Smart Topics. SARIMAX scoring
+joins a verified immutable known-ahead context topic, preserving availability
+cutoffs and both source positions.
 
 ### Three systems, one set of building blocks
 

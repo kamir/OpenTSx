@@ -20,6 +20,27 @@ def test_manager_exposes_the_local_worker_lifecycle():
         assert callable(getattr(manager, name))
 
 
+def test_public_checkpoint_exposes_context_cursor_without_values():
+    value = api().public_deployment(
+        {
+            "checkpoint": {
+                "context": {
+                    "topic": "a.context.v1",
+                    "partition": 0,
+                    "next_offset": 2,
+                    "schema_id": "a" * 64,
+                    "watermark_micros": 100,
+                    "rows": [{"timestamp_micros": 100, "values": [3]}],
+                }
+            }
+        }
+    )
+    context = value["checkpoint"]["context"]
+    assert context["next_offset"] == 2
+    assert context["buffered_rows"] == 1
+    assert "rows" not in context
+
+
 def model():
     source = {
         "series_id": "series-a",
@@ -165,7 +186,8 @@ def runtime(tmp_path, monkeypatch):
     def save_model(value):
         with store.connection() as connection:
             connection.execute(
-                "INSERT OR REPLACE INTO models VALUES(?,?)", (value["id"], encoded(value))
+                "INSERT OR REPLACE INTO models VALUES(?,?)",
+                (value["id"], encoded(value)),
             )
 
     save_model(model())
@@ -466,7 +488,9 @@ def test_listing_a_dead_child_reports_failure_and_reaps_its_handle(runtime):
     assert runtime.manager.children == {}
 
 
-def test_start_reaps_other_dead_worker_handles_before_launching_another_binding(runtime):
+def test_start_reaps_other_dead_worker_handles_before_launching_another_binding(
+    runtime,
+):
     runtime.store.add_deployment(record())
     runtime.manager.start("forecast")
     old = runtime.context.processes[0]
@@ -575,3 +599,65 @@ def test_malformed_inputs_fail_before_output_mutation(runtime, change):
         runtime.manager.deploy(body)
     assert "metadata" not in runtime.events
     assert runtime.context.processes == []
+
+
+def qualified_context(runtime):
+    from opentsx.client.context_join import schema_descriptor
+
+    value = model()
+    value["run_id"] = "c" * 64
+    value["artifact"]["context_names"] = ["schedule"]
+    value["context_schema"] = schema_descriptor("series-a", ["schedule"], ["MW"], 1000000)
+    runtime.save_model(value)
+    with runtime.store.connection() as connection:
+        connection.execute("INSERT INTO runs VALUES(?,?,?)", (value["run_id"], "{}", "{}"))
+    calls = []
+
+    def verify(model, request, topic, partition):
+        calls.append((model["id"], topic, partition))
+        return {
+            "schema": "opentsx.context-binding.v1",
+            "schema_id": value["context_schema"]["schema_id"],
+        }
+
+    runtime.manager.context_catalogue = SimpleNamespace(verify_binding=verify)
+    return value, calls
+
+
+def test_qualified_sarimax_binds_context_before_starting(runtime):
+    value, calls = qualified_context(runtime)
+    context = {"topic": PREFIX + "forecast.context.v1", "partition": 0}
+    result = runtime.manager.deploy({**document(), "context": context})
+    assert calls == [(MODEL_ID, context["topic"], 0)]
+    assert result["context"] == context
+    assert result["context_schema"] == value["context_schema"]
+    assert result["status"] == "starting"
+    with pytest.raises(ValueError, match="immutable"):
+        runtime.manager.deploy({**document(), "context": {**context, "partition": 1}})
+
+
+@pytest.mark.parametrize(
+    "context",
+    [
+        None,
+        {"topic": "outside.context.v1", "partition": 0},
+        {"topic": PREFIX + "a.context.v1", "partition": -1},
+    ],
+)
+def test_sarimax_rejects_invalid_context_before_topic_mutation(runtime, context):
+    qualified_context(runtime)
+    with pytest.raises(ValueError):
+        runtime.manager.deploy({**document(), "context": context})
+    assert runtime.admin.created == []
+    assert runtime.context.processes == []
+
+
+def test_context_free_model_rejects_context_binding(runtime):
+    with pytest.raises(ValueError, match="context-free"):
+        runtime.manager.deploy(
+            {
+                **document(),
+                "context": {"topic": PREFIX + "a.context.v1", "partition": 0},
+            }
+        )
+    assert runtime.admin.created == []
