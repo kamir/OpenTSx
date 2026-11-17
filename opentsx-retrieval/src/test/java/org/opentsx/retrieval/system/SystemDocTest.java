@@ -2,6 +2,8 @@ package org.opentsx.retrieval.system;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
@@ -11,11 +13,20 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -27,6 +38,13 @@ class SystemDocTest {
     static final Path ROOT = Path.of("..").toAbsolutePath().normalize();
     static final Path H2 = ROOT.resolve("systems/h2-chain.system.yaml");
     static final Path SCHEMAS = ROOT.resolve("docs/datamodel-2026/schemas");
+    static final Path CATALOG = ROOT.resolve("systems/catalogs/tsx-catalog-1.yaml");
+    static final Map<String, Integer> CATALOG_1 = Map.ofEntries(
+            Map.entry("decode.avro-soe", 1), Map.entry("dq.plausible-range", 1), Map.entry("convert.unit", 1),
+            Map.entry("resample", 1), Map.entry("model.wind-shear", 1), Map.entry("model.power-curve", 1),
+            Map.entry("feature.lag", 1), Map.entry("feature.rolling", 1), Map.entry("stats.welford-ddsketch", 1),
+            Map.entry("align.vector", 1), Map.entry("segment.threshold", 1), Map.entry("segment.extremum", 1),
+            Map.entry("sax.word", 1), Map.entry("pair.xcorr", 1), Map.entry("pair.es", 1), Map.entry("dq.result", 1));
 
     static JsonSchema schema(String name) throws IOException {
         JsonNode node = new ObjectMapper().readTree(SCHEMAS.resolve(name).toFile());
@@ -54,6 +72,230 @@ class SystemDocTest {
                 assertEquals(List.of(), List.copyOf(schema.validate(doc)), f.toString());
                 assertEquals(doc.path("id").asText() + ".yaml", f.getFileName().toString());
             }
+        }
+    }
+
+    static Map<String, JsonNode> descriptions() throws IOException {
+        Map<String, JsonNode> descriptions = new LinkedHashMap<>();
+        try (Stream<Path> files = Files.list(ROOT.resolve("systems/processors"))) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".yaml")).sorted().toList()) {
+                descriptions.put(file.getFileName().toString().replaceFirst("\\.yaml$", ""), SystemDoc.read(file));
+            }
+        }
+        return descriptions;
+    }
+
+    static Set<String> fields(JsonNode node) {
+        Set<String> fields = new LinkedHashSet<>();
+        node.fieldNames().forEachRemaining(fields::add);
+        return fields;
+    }
+
+    static void repositoryFile(String name, String at) throws IOException {
+        assertFalse(name.isBlank(), at);
+        Path file = ROOT.resolve(name).normalize();
+        assertTrue(file.startsWith(ROOT) && !Path.of(name).isAbsolute(), at);
+        assertTrue(Files.isRegularFile(file), at);
+        assertTrue(file.toRealPath().startsWith(ROOT.toRealPath()), at);
+    }
+
+    static void catalogMatches(JsonNode catalog, Map<String, JsonNode> descriptions) throws IOException {
+        assertTrue(catalog.isObject(), "catalog must be an object");
+        assertEquals(Set.of("catalog", "operators"), fields(catalog), "catalog fields");
+        assertEquals("tsx-catalog/1", catalog.path("catalog").asText(), "catalog identity");
+        assertTrue(catalog.path("operators").isArray(), "catalog operators must be an array");
+        Map<String, Integer> versions = new LinkedHashMap<>();
+        for (JsonNode entry : catalog.path("operators")) {
+            assertTrue(entry.isObject(), "catalog operator must be an object");
+            assertEquals(Set.of("id", "version"), fields(entry), "catalog operator fields");
+            assertTrue(entry.path("id").isTextual() && !entry.path("id").asText().isBlank(), "catalog operator id");
+            assertTrue(entry.path("version").isIntegralNumber() && entry.path("version").canConvertToInt(),
+                    "catalog operator version");
+            String id = entry.path("id").asText();
+            assertNull(versions.putIfAbsent(id, entry.path("version").asInt()), "duplicate catalog operator " + id);
+        }
+        assertEquals(CATALOG_1, versions, "catalog 1 identity/version membership");
+        JsonSchema processorSchema = schema("opentsx.processor.v1.schema.json");
+        Set<String> operators = new LinkedHashSet<>();
+        for (var entry : versions.entrySet()) {
+            String id = entry.getKey();
+            JsonNode description = descriptions.get(id);
+            assertNotNull(description, "missing processor description " + id);
+            assertEquals(List.of(), List.copyOf(processorSchema.validate(description)), "processor schema " + id);
+            assertEquals(id, description.path("id").asText(), "processor filename " + id);
+            assertEquals(entry.getValue().intValue(), description.path("version").asInt(), "processor version " + id);
+            String op = description.path("dag").path("op").asText(id);
+            assertTrue(operators.add(op), "duplicate DAG operator " + op);
+            String state = description.path("state").path("kind").asText();
+            assertTrue(Set.of("none", "keyed", "windowed").contains(state), "processor state " + id);
+            if (!state.equals("none")) {
+                assertTrue(description.path("state").path("key").isTextual()
+                        && !description.path("state").path("key").asText().isBlank(), "processor state key " + id);
+            }
+            String merge = description.path("merge").path("class").asText();
+            assertTrue(Set.of("none", "exact", "approximate").contains(merge), "processor merge " + id);
+            if (!merge.equals("none")) {
+                assertTrue(Set.of("sum", "stats.chan-ddsketch").contains(description.path("merge").path("function").asText()),
+                        "processor merge function " + id);
+            }
+            if (merge.equals("approximate")) {
+                assertTrue(description.path("merge").path("bound").isTextual()
+                        && !description.path("merge").path("bound").asText().isBlank(), "processor merge bound " + id);
+            }
+            JsonNode wayang = description.path("runtimes").path("wayang");
+            assertEquals("available", wayang.path("status").asText(), "processor Wayang availability " + id);
+            String implementation = wayang.path("class").asText();
+            assertTrue(implementation.matches("org\\.opentsx\\.wayang\\.[A-Za-z][A-Za-z0-9]*"),
+                    "processor Wayang class " + id);
+            repositoryFile("opentsx-wayang/src/main/java/" + implementation.replace('.', '/') + ".java",
+                    "processor Wayang source " + id);
+            assertTrue(description.path("testvectors").isTextual(), "processor vectors " + id);
+            repositoryFile(description.path("testvectors").asText(), "processor vectors " + id);
+        }
+        String spec = Files.readString(ROOT.resolve("docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md"));
+        String section = spec.substring(spec.indexOf("### S1.7 Catalog 1"), spec.indexOf("### S1.8"));
+        Set<String> specified = new LinkedHashSet<>();
+        var rows = Pattern.compile("^\\| `([^`]+)` \\|", Pattern.MULTILINE).matcher(section);
+        while (rows.find()) assertTrue(specified.add(rows.group(1)), "duplicate S1.7 operator");
+        assertEquals(16, specified.size(), "S1.7 membership");
+        assertEquals(specified, operators, "catalog DAG operators must equal S1.7");
+    }
+
+    static void refusesCatalog(JsonNode catalog, Map<String, JsonNode> descriptions, String message) {
+        AssertionError error = assertThrows(AssertionError.class, () -> catalogMatches(catalog, descriptions));
+        assertTrue(error.getMessage().contains(message), error.getMessage());
+    }
+
+    @Test
+    void catalogOneMatchesSpecAndProcessorDescriptions() throws IOException {
+        catalogMatches(SystemDoc.read(CATALOG), descriptions());
+    }
+
+    @Test
+    void catalogOneRejectsMalformedInventory() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        refusesCatalog(new ObjectMapper().createArrayNode(), descriptions(), "catalog must be an object");
+        ObjectNode changed = catalog.deepCopy();
+        changed.put("extra", true);
+        refusesCatalog(changed, descriptions(), "catalog fields");
+        changed = catalog.deepCopy();
+        changed.put("catalog", "tsx-catalog/2");
+        refusesCatalog(changed, descriptions(), "catalog identity");
+        changed = catalog.deepCopy();
+        changed.put("operators", "not a list");
+        refusesCatalog(changed, descriptions(), "operators must be an array");
+        changed = catalog.deepCopy();
+        ((ArrayNode) changed.path("operators")).set(0, new ObjectMapper().getNodeFactory().numberNode(1));
+        refusesCatalog(changed, descriptions(), "operator must be an object");
+        for (String field : List.of("id", "version")) {
+            changed = catalog.deepCopy();
+            ((ObjectNode) changed.path("operators").get(0)).remove(field);
+            refusesCatalog(changed, descriptions(), "operator fields");
+        }
+        changed = catalog.deepCopy();
+        ((ObjectNode) changed.path("operators").get(0)).put("extra", true);
+        refusesCatalog(changed, descriptions(), "operator fields");
+        changed = catalog.deepCopy();
+        ((ObjectNode) changed.path("operators").get(0)).put("version", "1");
+        refusesCatalog(changed, descriptions(), "operator version");
+    }
+
+    @Test
+    void catalogOneRejectsMembershipAndVersionDrift() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        ObjectNode changed = catalog.deepCopy();
+        ((ArrayNode) changed.path("operators")).remove(0);
+        refusesCatalog(changed, descriptions(), "identity/version membership");
+        changed = catalog.deepCopy();
+        ((ArrayNode) changed.path("operators")).addObject().put("id", "gen.sine").put("version", 1);
+        refusesCatalog(changed, descriptions(), "identity/version membership");
+        changed = catalog.deepCopy();
+        ((ArrayNode) changed.path("operators")).add(changed.path("operators").get(0).deepCopy());
+        refusesCatalog(changed, descriptions(), "duplicate catalog operator");
+        changed = catalog.deepCopy();
+        ((ObjectNode) changed.path("operators").get(0)).put("version", 2);
+        refusesCatalog(changed, descriptions(), "identity/version membership");
+        Map<String, JsonNode> processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).put("version", 2);
+        refusesCatalog(catalog, processors, "processor version sax.word");
+    }
+
+    @Test
+    void catalogOneRejectsMissingDescriptionsAndDuplicateDagOperators() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        Map<String, JsonNode> processors = descriptions();
+        processors.remove("decode.avro-soe");
+        refusesCatalog(catalog, processors, "missing processor description decode.avro-soe");
+        processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).put("id", "other");
+        refusesCatalog(catalog, processors, "processor filename sax.word");
+        processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).putObject("dag").put("op", "resample");
+        refusesCatalog(catalog, processors, "duplicate DAG operator resample");
+        processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).putObject("dag").put("op", "other");
+        refusesCatalog(catalog, processors, "catalog DAG operators must equal S1.7");
+    }
+
+    @Test
+    void catalogOneRequiresStateAndKeys() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        Map<String, JsonNode> processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).remove("state");
+        refusesCatalog(catalog, processors, "processor state sax.word");
+        for (String id : List.of("feature.lag", "resample")) {
+            processors = descriptions();
+            ((ObjectNode) processors.get(id).path("state")).remove("key");
+            refusesCatalog(catalog, processors, "processor state key " + id);
+        }
+    }
+
+    @Test
+    void catalogOneRequiresMergeMetadata() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        Map<String, JsonNode> processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).remove("merge");
+        refusesCatalog(catalog, processors, "processor merge sax.word");
+        for (String id : List.of("segment.threshold", "stats.welford-ddsketch")) {
+            processors = descriptions();
+            ((ObjectNode) processors.get(id).path("merge")).remove("function");
+            refusesCatalog(catalog, processors, "processor merge function " + id);
+        }
+        processors = descriptions();
+        ((ObjectNode) processors.get("stats.welford-ddsketch").path("merge")).remove("bound");
+        refusesCatalog(catalog, processors, "processor merge bound stats.welford-ddsketch");
+    }
+
+    @Test
+    void catalogOneRequiresAvailableWayangSources() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        for (String status : List.of("planned", "none")) {
+            Map<String, JsonNode> processors = descriptions();
+            ((ObjectNode) processors.get("sax.word").path("runtimes").path("wayang")).put("status", status);
+            refusesCatalog(catalog, processors, "processor Wayang availability sax.word");
+        }
+        Map<String, JsonNode> processors = descriptions();
+        ((ObjectNode) processors.get("sax.word").path("runtimes")).remove("wayang");
+        ((ObjectNode) processors.get("sax.word").path("runtimes")).putObject("java").put("status", "none");
+        refusesCatalog(catalog, processors, "processor Wayang availability sax.word");
+        processors = descriptions();
+        ((ObjectNode) processors.get("sax.word").path("runtimes").path("wayang")).remove("class");
+        refusesCatalog(catalog, processors, "processor Wayang class sax.word");
+        processors = descriptions();
+        ((ObjectNode) processors.get("sax.word").path("runtimes").path("wayang")).put("class", "org.opentsx.wayang.Missing");
+        refusesCatalog(catalog, processors, "processor Wayang source sax.word");
+    }
+
+    @Test
+    void catalogOneRequiresRepositoryVectors() throws IOException {
+        JsonNode catalog = SystemDoc.read(CATALOG);
+        Map<String, JsonNode> processors = descriptions();
+        ((ObjectNode) processors.get("sax.word")).remove("testvectors");
+        refusesCatalog(catalog, processors, "processor vectors sax.word");
+        for (String file : List.of("", "missing.json", "../outside.json", ROOT.resolve("pom.xml").toString())) {
+            processors = descriptions();
+            ((ObjectNode) processors.get("sax.word")).put("testvectors", file);
+            refusesCatalog(catalog, processors, "processor vectors sax.word");
         }
     }
 

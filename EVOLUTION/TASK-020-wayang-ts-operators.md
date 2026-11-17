@@ -165,7 +165,10 @@ zero skips. CI requires the A1/A2 acceptance classes, all five statistics
 vector cases, and the four named parameter-message tests to execute successfully.
 
 ### A3: remaining catalog 1, catalog freeze
-- [ ] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`, `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es` (from `event_sync.py`).
+
+- [x] `align.vector`, `segment.threshold`, `segment.extremum`, `sax.word`,
+  `dq.result`; ports of `pair.xcorr` (from kamir/WikiExplorer.NG) and `pair.es`
+  (from `event_sync.py`).
 - [x] Pure Java `pair.xcorr` kernel: `TsxPairXcorrVectorsTest` loads all five
   shared cases and checks absolute error below `5e-13` (A3.2).
 - [x] Pure Java `pair.es` kernel: `TsxPairEsVectorsTest` loads all eight shared
@@ -188,9 +191,10 @@ vector cases, and the four named parameter-message tests to execute successfully
 - [x] Native Wayang mappings for `segment.threshold`, `segment.extremum`,
   `sax.word`, and `dq.result`: 26 exact shared cases in the three A3.4 test
   classes. Segment detectors and retained samples are checkpointed per series.
-- [x] Stream/batch parity for these four operators: 26 cases, six chunk and
-  series-order combinations per case, 156 exact comparisons.
-- [ ] Catalog `tsx-catalog/1` frozen.
+- [x] Stream/batch parity across all 65 numerical vector cases: 61 native
+  cases and four explicit ES kernel cases, six chunk/order runs each.
+- [x] Catalog `tsx-catalog/1` frozen: 16 version-1 identities in
+  `systems/catalogs/tsx-catalog-1.yaml`, with complete validated descriptions.
 
 Status of A3.1 on 2026-11-16, JDK 21, KafScale v1.6.0 built from source:
 `TsxVectorVectorsTest` runs all 6 shared cases through a Wayang plan with exact
@@ -219,7 +223,7 @@ the two whole series, because a continuing input has no whole series.
 | A3.3 | `pair.es` matches | `TsxPairEsVectorsTest` | V: `pair-es.v1.json` | 8 of 8 cases; events equal; `q_total`, `q_ab`, `q_ba`, `q_rand` within 5e-13 |
 | A3.4 | New operators match their new vectors | `TsxSegmentVectorsTest`, `TsxSaxVectorsTest`, `TsxDqVectorsTest` | V: the four new files | 100 % of cases exact |
 | A3.5 | Stream equals batch | `TsxStreamEqualsBatchTest` feeds every vector input in chunks of 1, 7 and all records, in two series orders | V | identical output in all 6 runs per case |
-| A3.6 | The catalog is complete and valid | `SystemDocTest` | `systems/processors/` | one description per row of S1.7 with `state`, `merge`, `runtimes.wayang.status: available`; schema validation 0 errors |
+| A3.6 | The catalog is complete and valid | `SystemDocTest`, `TsxCatalogBindingsTest` | `systems/catalogs/tsx-catalog-1.yaml`, `systems/processors/` | one description per row of S1.7 with `state`, `merge`, `runtimes.wayang.status: available`; schema validation 0 errors |
 
 Status of A3.3 on 2026-11-17, JDK 21: `TsxPairEsWayangTest` executes the four
 sampled-series cases through Wayang, both together and with restored state
@@ -227,19 +231,28 @@ between increments. The four event-list cases remain kernel tests.
 All 11 native ES tests pass, including unsigned 32-bit seed conversion beyond
 the signed long range and Workbench-compatible numeric labels.
 
-Status of the retrieval operators on 2026-11-17:
+Status of the completed catalog on 2026-11-17:
 
-| #    | Result                                                   |
-| ---- | -------------------------------------------------------- |
-| A3.4 | met: all 12 segment, seven SAX, and seven DQ cases       |
-| A3.5 | met for these four operators: 26 cases, 156 comparisons  |
-| A3.6 | four descriptions available; catalog freeze remains open |
+| #    | Result                                                     |
+| ---- | ---------------------------------------------------------- |
+| A3.4 | met: all 12 segment, seven SAX, and seven DQ cases         |
+| A3.5 | met: 61 native cases and four explicit ES kernel cases     |
+| A3.6 | met: 16 version-1 descriptions, schema validation 0 errors |
 
-Segments restore a checkpoint between chunks and compare full Avro payloads
-with batch. SAX compares complete episodes; DQ compares complete statistics
-records and full signal JSON. The four processor descriptions declare state,
-merge, and available Wayang runtimes. Align and pair execution mappings are
-tracked separately.
+`TsxStreamEqualsBatchTest` executes 390 comparisons with chunks of 1, 7 and
+all records, in two series orders. Stateful helpers restore serialized state
+between chunks. Pair/SAX episodes, DQ statistics and event-list inputs remain
+atomic. Clean comparisons use logical samples because envelope grouping and
+ids follow fragment boundaries; pair comparisons exclude only execution
+`createdAt`. Segment payloads, vector JSON, SAX, DQ and statistics/sketch
+records retain their exact comparisons. Wire and identity suites provide the
+separate transport proof; event-only ES vectors are not native episode plans.
+
+`SystemDocTest` freezes membership, versions, aliases and required metadata
+against S1.7 and rejects mutations. `TsxCatalogBindingsTest` couples every
+description to its compiled logical and Java execution classes. Local compiler
+and fleet admission work remain in A4; catalog availability does not claim
+those deployment capabilities.
 
 `TsxSignalSinkIntegrationTest` checks JSON signal writes and rejection of an
 invalid batch before any records are sent. DQ ids include the check and both

@@ -176,6 +176,57 @@ class TsxVectorVectorsTest {
         return StreamSupport.stream(root.path("cases").spliterator(), false);
     }
 
+    static JsonNode parityCase(JsonNode c, int chunk, boolean reverse) throws Exception {
+        List<String> aggregations = new ArrayList<>();
+        aggregations.add(c.path("params").path("agg").textValue());
+        c.path("also").fieldNames().forEachRemaining(aggregations::add);
+        var result = JSON.createObjectNode();
+        for (String aggregation : aggregations) {
+            List<List<TsxTagged>> series = new ArrayList<>();
+            Map<String, SeriesKey> keys = keys(c);
+            for (JsonNode input : c.path("inputs")) {
+                for (JsonNode s : input.path("series")) {
+                    String name = input.path("name").textValue();
+                    series.add(episodes(s, keys.get(s.path("id").textValue())).stream()
+                            .map(e -> new TsxTagged(name, e)).toList());
+                }
+            }
+            if (reverse) java.util.Collections.reverse(series);
+            List<TsxTagged> input = series.stream().flatMap(List::stream).toList();
+            List<TsxVectorRecord> output = new ArrayList<>();
+            TsxState state = new TsxState(Map.of());
+            for (int from = 0; from < input.size(); from += chunk) {
+                CollectionSource<TsxTagged> source = new CollectionSource<>(
+                        input.subList(from, Math.min(input.size(), from + chunk)), TsxTagged.class);
+                TsxAlignVector operator = align(c, aggregation, false, state);
+                LocalCallbackSink<TsxVectorRecord> sink = LocalCallbackSink.createCollectingSink(output, TsxVectorRecord.class);
+                source.connectTo(0, operator, 0);
+                operator.connectTo(0, sink, 0);
+                new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new WayangPlan(sink));
+                state = TsxCleanStatsParity.restore(state);
+            }
+            CollectionSource<TsxTagged> source = new CollectionSource<>(List.of(), TsxTagged.class);
+            TsxAlignVector operator = align(c, aggregation, true, state);
+            LocalCallbackSink<TsxVectorRecord> sink = LocalCallbackSink.createCollectingSink(output, TsxVectorRecord.class);
+            source.connectTo(0, operator, 0);
+            operator.connectTo(0, sink, 0);
+            new WayangContext(new Configuration()).with(new TsxJavaPlugin()).execute(new WayangPlan(sink));
+            if (aggregation.equals(c.path("params").path("agg").textValue())) {
+                assertEquals(expected(c), actual(output, c.path("params").path("every").longValue()));
+            } else {
+                assertEquals(1, output.size());
+                List<Double> expected = new ArrayList<>();
+                c.path("also").path(aggregation).forEach(n -> expected.add(n.doubleValue()));
+                List<Double> actual = new ArrayList<>();
+                output.get(0).json().path("values").forEach(n -> actual.add(n.doubleValue()));
+                assertEquals(expected, actual);
+            }
+            var records = result.putArray(aggregation);
+            output.stream().map(TsxVectorRecord::json).sorted(java.util.Comparator.comparing(JsonNode::toString)).forEach(records::add);
+        }
+        return result;
+    }
+
     @TestFactory
     Stream<DynamicTest> everySharedCaseMatchesThroughAWayangPlan() throws Exception {
         return cases().map(c -> DynamicTest.dynamicTest(c.path("name").asText(), () -> {

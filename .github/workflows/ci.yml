@@ -403,7 +403,8 @@ jobs:
               "TsxSegmentVectorsTest": 13,
               "TsxSaxVectorsTest": 8,
               "TsxDqVectorsTest": 10,
-              "TsxStreamEqualsBatchTest": 26,
+              "TsxStreamEqualsBatchTest": 65,
+              "TsxCatalogBindingsTest": 2,
               "TsxSignalSinkIntegrationTest": 2,
           }
           for name, minimum in expected.items():
@@ -438,13 +439,26 @@ jobs:
                   "TsxSegmentVectorsTest": ("sharedVectorsThroughRealWayangPlans()[", 12),
                   "TsxSaxVectorsTest": ("allSharedWordsMatchThroughWayang()[", 7),
                   "TsxDqVectorsTest": ("allSharedResultsMatchThroughWayang()[", 7),
-                  "TsxStreamEqualsBatchTest": ("everyVectorCaseMatchesInSixChunkAndSeriesOrders()[", 26),
+                  "TsxStreamEqualsBatchTest": ("everyVectorCaseMatchesInSixChunkAndSeriesOrders()[", 65),
               }
               if name in factories:
                   prefix, count = factories[name]
                   if sum(case.attrib["name"].startswith(prefix) for case in suite.findall("testcase")) != count:
                       raise SystemExit(f"{name} did not execute every shared case")
           print(f"All {len(expected)} Wayang acceptance classes executed successfully")
+          suite = ET.parse("opentsx-retrieval/target/surefire-reports/TEST-org.opentsx.retrieval.system.SystemDocTest.xml").getroot()
+          if int(suite.attrib["tests"]) < 14 or any(int(suite.attrib[k]) for k in ("failures", "errors", "skipped")):
+              raise SystemExit("catalog freeze validation is missing, skipped or failed")
+          required = {
+              "catalogOneMatchesSpecAndProcessorDescriptions", "catalogOneRejectsMalformedInventory",
+              "catalogOneRejectsMembershipAndVersionDrift", "catalogOneRejectsMissingDescriptionsAndDuplicateDagOperators",
+              "catalogOneRequiresStateAndKeys", "catalogOneRequiresMergeMetadata",
+              "catalogOneRequiresAvailableWayangSources", "catalogOneRequiresRepositoryVectors",
+          }
+          executed = {case.attrib["name"].split("(", 1)[0] for case in suite.findall("testcase")}
+          if not required.issubset(executed):
+              raise SystemExit("one of the catalog freeze regressions was not executed")
+          print("Catalog 1 membership, versions and descriptions validated")
           PYTHON
       - name: Verify recorder PFD through Kafka and Flink
         env:

@@ -16,4 +16,5 @@ semantics: { needs: point, deterministic: true, keeps: [time, unit, count], orig
 runtimes:
   wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
 state: { kind: none }
+merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

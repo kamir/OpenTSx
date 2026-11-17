@@ -229,8 +229,12 @@ Operator: `pair.xcorr` . Defaults: `pairing="same"` , `window="episode"` , `step
 Aligns pair windows, centers finite values, and computes lagged products with zero padding divided by (n-1) times both
 sample standard deviations. Missing centered values become zero. Selects the signed extreme of absolute correlation.
 Positive reported lag means B follows A and is measured in clock seconds. Strength uses the mean and sample standard
-deviation across searched lags. Constant windows give gaps. Workbench implementation exists; Java port status is
-separate.
+deviation across searched lags. Constant windows give gaps. The native `TsxPair`
+mapping and frozen `pair.xcorr` version 1 are separate from deployment through
+the workbench. Read
+[Use frozen catalog 1](../user-manual/17-learn-operators.md#use-frozen-catalog-1)
+for membership and the catalog's text representation of pair windows; direct
+pair APIs also accept numeric seconds.
 
 Source: [xcorr.ts#PAIR_XCORR](../../opentsx-saas-frontend/src/workbench/xcorr.ts#PAIR_XCORR) . Executable exercise:
 `ui.pair.xcorr` .
@@ -251,7 +255,11 @@ The pure Java `TsxPairEs` kernel checks all eight shared vector cases. The nativ
 Java API `TsxPair` also executes the four sampled-series cases through Wayang,
 including B held in `TsxState` and restored before A arrives in a later
 increment. The other four cases contain event lists only and are kernel checks.
-This native API does not establish a deployed UI DAG binding or freeze a catalog.
+`pair.es` version 1 belongs to the
+[frozen catalog](../../systems/catalogs/tsx-catalog-1.yaml). Native availability
+does not establish a deployed UI DAG binding or full A4 compiler support. Read
+[Use frozen catalog 1](../user-manual/17-learn-operators.md#use-frozen-catalog-1)
+for the catalog boundary and canonical text representation of pair windows.
 Whole-number seeds use their value modulo `2^32` for the random state; labels
 retain workbench numeric formatting. The native regression methods
 `largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` and

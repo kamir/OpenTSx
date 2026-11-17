@@ -5,8 +5,9 @@ See [concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specificatio
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md) and
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md). Verified with JDK 21 on 2026-11-17.
 
-Status: phase A2 and the retrieval operators of A3. The module reads and writes
-KafScale topics from Wayang plans, runs checkpointed increments, and executes
+Status: phases A2 and A3, with all 16 native Java entries in frozen
+[`tsx-catalog/1`](../systems/catalogs/tsx-catalog-1.yaml). The module reads and
+writes KafScale topics from Wayang plans, runs checkpointed increments, and executes
 the clean chain and window statistics. It also contains the pure Java
 `TsxPairXcorr` and `TsxPairEs` kernels. Their APIs have no Wayang types and do
 not depend on `opentsx-core`. Align and cross-correlation mappings are
@@ -18,6 +19,23 @@ also checks all five statistics cases through Wayang plans.
 Java mappings in `TsxRetrievalMappings`. All 26 shared cases execute through
 Wayang; stream/batch checks cover all six chunk and series-order combinations
 per case. These operators are available through the Java API.
+
+## Use frozen catalog 1
+
+The inventory pins 16 processor identities to version 1. Descriptions in
+`systems/processors/` supply their parameters, state, merge class and native
+Wayang class; `dq.plausible-range` maps to DAG operator `dq.checks`.
+`SystemDocTest` rejects missing members, duplicate aliases, version drift,
+invalid metadata and broken implementation/vector references.
+`TsxCatalogBindingsTest` checks the compiled logical and Java execution types.
+Changing an operator's output requires a new operator version and a new
+catalog version.
+
+Pair `window` is catalog text, either `episode` or positive decimal seconds.
+Direct Java APIs also accept numbers. Native availability is separate from
+the local clean-DAG compiler and the admitted Rust subset described below.
+Read the [catalog manual](../docs/user-manual/17-learn-operators.md#use-frozen-catalog-1)
+for runtime selection and the [normative inventory](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
 
 ## Compute pair cross-correlation
 
@@ -59,7 +77,7 @@ Four shared sampled-series cases run through Wayang in one plan and with pair
 state restored between increments; four event-list-only cases remain kernel
 checks. Read the [native ES instructions](../docs/user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang)
 for clock units, seed reduction and settings labels. This API is separate from
-a deployed UI DAG binding or a frozen catalog entry.
+a deployed UI DAG binding.
 
 The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md) covers UI DAGs deployed through
 Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
@@ -313,12 +331,15 @@ four parameter messages exactly. CI rejects missing or skipped acceptance tests.
 
 `TsxSegmentVectorsTest`, `TsxSaxVectorsTest`, and `TsxDqVectorsTest` execute all
 12 segment, seven SAX, and seven DQ cases from the repository files.
-`TsxStreamEqualsBatchTest` compares each case in chunks of 1, 7, and all records
-in both series orders, for 156 comparisons. Segment state is checkpointed and
-restored between chunks, with a full Avro payload comparison against batch.
+`TsxStreamEqualsBatchTest` runs all 65 numerical cases in chunks of 1, 7 and
+all records, in both series orders: 366 native comparisons and 24 explicitly
+kernel-only event-list comparisons. Stateful helpers restore serialized state
+between chunks. Clean comparisons use logical samples; pair comparisons
+exclude only execution `createdAt`. Segment Avro, vector JSON, SAX records,
+DQ signals and statistics including sketch bytes keep their exact comparisons.
 SAX treats a complete episode as one record; DQ treats one statistics window as
 one record. Their parity fixtures contain 16 records per case. CI requires the
-26 vector cases, all 26 parity cases, and both JSON broker tests to execute.
+26 vector cases, all 65 parity cases, and both JSON broker tests to execute.
 
 ## Check the shared Java references
 
