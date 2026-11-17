@@ -1,9 +1,9 @@
 # opentsx-wayang
 
-OpenTSx time-series operators as Apache Wayang 1.1.1 operators on Wayang's Java platform (Track A of
-[concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specification
-[S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md), tasks in
-[TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md)). Verified with JDK 21 on 2026-11-17.
+OpenTSx time-series operators on Apache Wayang 1.1.1, with Java execution and a trusted-local bounded Rust platform.
+See [concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specification
+[S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md) and
+[TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md). Verified with JDK 21 on 2026-11-17.
 
 Status: phase A2 and the retrieval operators of A3. The module reads and writes
 KafScale topics from Wayang plans, runs checkpointed increments, and executes
@@ -59,8 +59,14 @@ Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
 [shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`
 and `rust/tsx-contracts`; it validates offline assignments and does not deploy a Rust runtime.
 The separate [`tsx-runner` 0.1.0](../rust/tsx-runner/README.md) executes a capped bounded topic from trusted local
-configuration. It supports pass-through and three cleaning operations; this module does not dispatch that binary
-through a remote Wayang platform.
+configuration. It supports pass-through and three cleaning operations. The separate
+[bounded UI rollout](../docs/devguide/integration/wayang-rust-compose.md) uses `RustRollout`, `RustPlugin`,
+`RustPlatform` and `RustExecutor` to map one connected source/union/clean/sink stage to one to three HTTP workers.
+The backend owns the frozen plan and clock in PostgreSQL; the Java driver has no authoritative deployment journal.
+All workers prepare privately before cross-topic series ownership checks and parallel activation. Completed retries
+reuse stored receipts; uncertain publication retries the same saved requests while topic ownership remains held.
+Activation can expose partial at-least-once output. Placeholder load costs do not select worker placement, and this
+local profile does not implement the signed continuous fleet contract.
 
 ## Use the plugin
 

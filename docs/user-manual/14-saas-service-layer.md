@@ -12,6 +12,9 @@
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status,
   * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it (administrators only
     unless configured otherwise),
+  * `/api/v1/dags/wayang-rust`: administrator-only bounded capability, deployment and status endpoints. PostgreSQL
+    stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
+    the saved plan through a custom Wayang Rust platform,
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
@@ -24,6 +27,10 @@
     `feature.lag` and `feature.rolling`; vector sinks support `align.vector`.
     Workbench execution and deployment availability are separate. Use the
     [operator lessons](17-learn-operators.md) and the actual runtime contract when choosing an execution surface.
+    **Run bounded with Wayang** is an explicit separate action for plausible-range checks, unit conversion and an
+    optional trailing resample on one to three complete topics. HTTP workers prepare privately before activation and
+    checkpoint acknowledged output. Exact retry reuses the frozen plan and receipts; partial activation can expose
+    at-least-once output. See the [local rollout guide](../devguide/integration/wayang-rust-compose.md).
   * **Systems** (`/systems`): a shell around one system with four places. "System": the atoms of its plan and what
     feeds each input. "Signals": the signals the system expects, each with its expectation, origin, state and next
     step; "Prepare" opens the raw series of a signal in the workbench with the expected range on the screen;

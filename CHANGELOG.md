@@ -10,13 +10,23 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Explicit bounded workbench deployment through the authenticated backend, PostgreSQL journal and standalone
+  coordinator to Apache Wayang's custom Rust platform. Connected topic sources, unions, a fused clean chain and
+  sink execute as one stage; complete topics are assigned statically to one to three HTTP workers. All workers
+  prepare privately and expose series ownership before any activation. Exact UI text, source cuts, clock, fragments
+  and request bytes survive retry. Uncertain activation retains topic ownership and retries saved output; completed
+  requests return stored receipts. A separate three-worker Compose/browser acceptance helper compares the shared
+  output with Java. Activation remains at least once and can expose partial output; signed fleet execution,
+  continuous processing, automatic failover and durable Iceberg publication remain outside this local profile.
+
 - `tsx-runner` 0.1.0 for trusted-local bounded whole-topic Kafka replay. Pass-through and a linear chain of
   `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing `resample` use the shared Avro, identity
   and cleaning vectors. Explicit resource caps and positive Kafka transport timestamps reject before publication.
   Derived-series ownership prevents conflicting packets from distinct source series. Local checkpoints retain
   lossless operator state and commit after every output acknowledgement; exact completed retries return their
   saved receipts. A standalone Compose helper runs three independent topics with one, two and three partitions
-  against Java reference output. UI dispatch, continuous processing and Wayang fleet activation remain separate.
+  against Java reference output. This standalone replay fixture remains distinct from the UI-to-Wayang rollout
+  acceptance helper; continuous processing and production fleet activation remain separate.
 
 - Wayang operators for threshold and extremum segmentation, SAX words, and
   data-quality signals (TASK-020 A3.4 and the retrieval part of A3.5). Segments
@@ -77,7 +87,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
   UI-to-Wayang-to-Rust orchestration and a separate
   bounded storage profile. The validators perform no network deployment or production fencing; the separate
-  Rust runner executes only its trusted-local bounded profile.
+  Rust runner and local Wayang rollout execute only their trusted-local bounded profiles.
 
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons

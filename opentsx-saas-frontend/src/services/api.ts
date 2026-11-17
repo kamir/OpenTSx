@@ -225,6 +225,35 @@ export const dagsAPI = {
   },
 };
 
+export interface WayangDeployment {
+  id: string;
+  flowId: number;
+  specHash: string;
+  planHash: string;
+  createdAtMicros: string;
+  state: 'queued' | 'running' | 'completed' | 'failed';
+  error: string | null;
+  assignments: { node: string; inputTopic: string; partitionCount: string; outputTopic: string;
+    requestHash: string; specHash: string;
+    state?: string; receipt?: Record<string, unknown>; error?: string }[];
+}
+
+export interface WayangCapabilities {
+  canRun: boolean;
+  reason: string | null;
+  profile?: string;
+  operators?: string[];
+  workers?: { node: string; site?: string }[];
+}
+
+export const wayangAPI = {
+  capabilities: async (): Promise<WayangCapabilities> => (await apiClient.get('/dags/wayang-rust/capabilities')).data,
+  deploy: async (flowId: number, dagText: string): Promise<WayangDeployment> =>
+    (await apiClient.post('/dags/wayang-rust/deploy', { flowId, dagText })).data,
+  list: async (): Promise<WayangDeployment[]> => (await apiClient.get('/dags/wayang-rust/deployments')).data.deployments,
+  get: async (id: string): Promise<WayangDeployment> => (await apiClient.get(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}`)).data,
+};
+
 export const flowsAPI = {
   /**
    * List all flows

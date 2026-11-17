@@ -157,6 +157,15 @@ export interface SignalContext {
   target?: { signal: string; title: string; metric?: string; origin: string };
 }
 
+export interface WayangConfig {
+  inputTopics: string[];
+  seriesIds: string[];
+  nodeId: string;
+  system: string;
+  signal: string;
+  outputTopic: string;
+}
+
 export interface SourceInfo {
   /** 'generator' | 'file' | 'retrieval' | 'inventory' */
   kind: string;

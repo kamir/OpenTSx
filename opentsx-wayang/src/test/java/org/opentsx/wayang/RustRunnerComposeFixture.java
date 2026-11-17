@@ -41,9 +41,9 @@ public final class RustRunnerComposeFixture {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final OpenTsxAvro AVRO = new OpenTsxAvro();
-    private static final long CREATED = 1_790_812_800_000_000L;
+    static final long CREATED = 1_790_812_800_000_000L;
     private static final String PRODUCER = "tsx-runner/0.1.0";
-    private static final double[] VALUES = {5, -1, 50, 101, 100, 0, Double.NaN, 42};
+    static final double[] VALUES = {5, -1, 50, 101, 100, 0, Double.NaN, 42};
     private static final Duration TIMEOUT = Duration.ofMinutes(3);
 
     private RustRunnerComposeFixture() {
@@ -259,11 +259,11 @@ public final class RustRunnerComposeFixture {
         System.out.println(JSON.writeValueAsString(report));
     }
 
-    private static SeriesKey key(int worker, int partition) {
+    static SeriesKey key(int worker, int partition) {
         return SeriesKeys.of("learning.power", Map.of("worker", Integer.toString(worker), "partition", Integer.toString(partition)), "kW");
     }
 
-    private static String input(int worker) {
+    static String input(int worker) {
         return "tsx.rust.worker-" + worker + ".episodes.v2";
     }
 

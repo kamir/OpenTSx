@@ -8,6 +8,8 @@ The developer guide holds notes for contributors. User-facing documentation is i
 * [Deploy UI DAGs through Wayang to Java and Rust nodes](integration/wayang-unified-plan.md): unified delivery
   plan, [implemented shared contracts](integration/wayang-shared-contracts.md) and
   [architecture assessment](integration/wayang-orchestration-review.md).
+* [Run a workbench DAG on three Rust workers through Wayang](integration/wayang-rust-compose.md): authenticated UI,
+  durable PostgreSQL control, one custom Wayang stage, private preparation and bounded acknowledgement/retry checks.
 * [Replay a bounded topic with Rust](integration/rust-runner-local.md): trusted local configuration, three cleaning
   operations, retained state and a standalone three-worker Compose check against Java.
 * [Processing-flow descriptor schema](schemas/README.md) and its [validation plan](validation/README.md). The

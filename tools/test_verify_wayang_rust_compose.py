@@ -1,0 +1,164 @@
+import importlib.util
+import contextlib
+import hashlib
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import shlex
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+
+SPEC = importlib.util.spec_from_file_location("wayang_compose", Path(__file__).with_name("verify_wayang_rust_compose.py"))
+HELPER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(HELPER)
+
+
+class WayangComposeGuardsTest(unittest.TestCase):
+    def test_helper_provides_port_validation_before_any_docker_mutation(self):
+        self.assertEqual(39093, HELPER.port_number("39093", "KAFSCALE_BROKER_PORT"))
+        for value in ["", "0", "01", "+1", "65536", " 1", "١"]:
+            with self.subTest(value=value), self.assertRaisesRegex(RuntimeError, "canonical integer"):
+                HELPER.port_number(value, "PORT")
+
+    def test_occupied_ports_are_refused_without_stopping_anything(self):
+        with patch.object(HELPER.socket, "socket") as create:
+            create.return_value.__enter__.return_value.bind.side_effect = OSError("occupied")
+            with self.assertRaisesRegex(RuntimeError, "no existing service was stopped"):
+                HELPER.free_port(18081)
+
+    def test_existing_project_is_refused_after_read_only_inventory(self):
+        with patch.object(HELPER, "run", return_value="existing-container\n") as run:
+            with self.assertRaisesRegex(RuntimeError, "no existing project was changed"):
+                HELPER.empty_project({})
+            self.assertEqual(1, run.call_count)
+            self.assertEqual(["docker", "ps"], run.call_args.args[0][:2])
+
+    def test_private_files_are_exclusive_and_owner_readable_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "generated.env"
+            HELPER.private_file(path, "private-value")
+            self.assertEqual(0o600, os.stat(path).st_mode & 0o777)
+            with self.assertRaisesRegex(RuntimeError, "already exists"):
+                HELPER.private_file(path, "replacement")
+            self.assertEqual("private-value", path.read_text())
+
+    def test_logs_redact_private_values_and_never_print_command_arguments(self):
+        command = ["/runtime/node", "classpath:" * 8192]
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)), \
+                patch.object(HELPER, "SECRET_VALUES", ["private-value"]), patch.object(
+                    HELPER.subprocess, "run", return_value=subprocess.CompletedProcess(command, 0, stdout=b"private-value output")) as run:
+            console = io.StringIO()
+            with contextlib.redirect_stdout(console):
+                self.assertEqual("<redacted> output", HELPER.run(command, {}, "probe"))
+            self.assertNotIn("private-value", (Path(directory) / "probe.log").read_text())
+            self.assertNotIn(command[1], console.getvalue())
+            self.assertEqual(command, run.call_args.args[0])
+
+    def test_unmounted_classpath_entries_fail_instead_of_being_dropped(self):
+        repository = Path("/reference/maven")
+        value = os.pathsep.join([str(HELPER.ROOT / "opentsx-wayang/target/classes"), str(repository / "dependency.jar")])
+        self.assertEqual("/workspace/opentsx-wayang/target/classes:/m2/dependency.jar",
+                         HELPER.container_classpath(value, repository))
+        with self.assertRaisesRegex(RuntimeError, "outside the mounted source"):
+            HELPER.container_classpath("/unmounted/dependency.jar", repository)
+
+    def test_source_changes_during_build_require_a_rebuild(self):
+        with patch.object(HELPER, "source_signature", return_value="changed"):
+            with self.assertRaisesRegex(RuntimeError, "sources changed during the build"):
+                HELPER.verify_build_sources("captured-before-build")
+        with patch.object(HELPER, "source_signature", return_value="same"):
+            HELPER.verify_build_sources("same")
+
+    def test_build_configuration_changes_invalidate_cached_artifacts(self):
+        names = ["pom.xml", "opentsx-wayang/pom.xml", "opentsx-model/pom.xml",
+                 "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",
+                 "docker-compose.wayang-rust.yml", "deploy/compose/wayang-rust-nginx.conf",
+                 "tools/verify_wayang_rust_compose.py", "bin/opentsx", "opentsx-saas-frontend/package.json",
+                 "opentsx-saas-frontend/vite.config.ts", "opentsx-saas-frontend/tsconfig.json",
+                 "opentsx-saas-frontend/tsconfig.node.json", "opentsx-saas-frontend/postcss.config.js",
+                 "opentsx-saas-frontend/tailwind.config.js", "opentsx-saas-frontend/index.html",
+                 "opentsx-saas-frontend/src/workbench/workbench.css"]
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "ROOT", Path(directory)):
+            for name in names:
+                path = Path(directory) / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("initial")
+            initial = HELPER.source_signature()
+            for name in names:
+                with self.subTest(name=name):
+                    path = Path(directory) / name
+                    path.write_text("changed")
+                    self.assertNotEqual(initial, HELPER.source_signature())
+                    path.write_text("initial")
+
+    def test_dependency_install_recreates_the_retained_environment(self):
+        compose = (HELPER.ROOT / "docker-compose.wayang-rust.yml").read_text()
+        service = compose.split("  python-deps:\n", 1)[1].split("\n  runner-1:", 1)[0]
+        command_line = next(line for line in service.splitlines() if line.strip().startswith("command:"))
+        command = json.loads(command_line[command_line.index('"'):command_line.rindex('"') + 1])
+        create = shlex.split(command.split(" && ", 1)[0])
+        self.assertEqual(["python", "-m", "venv"], create[:3])
+        self.assertEqual("/opt/venv", create[-1])
+        with tempfile.TemporaryDirectory() as directory:
+            environment = Path(directory) / "venv"
+            environment.mkdir()
+            stale = environment / "stale-native-package.so"
+            stale.write_text("unusable dependency from another interpreter")
+            subprocess.run([sys.executable, *create[1:-1], str(environment)], check=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            self.assertFalse(stale.exists(), "the Compose installer retained stale native dependencies")
+
+    def test_new_run_removes_only_known_public_evidence(self):
+        evidence = {"result.json", "fixture.json", "submitted-dag.txt", "verified.json"}
+        for phase in ["initial", "retry", "restart"]:
+            evidence.update({f"deployment-{phase}.json", f"browser-{phase}.json", f"browser-{phase}.png",
+                             f"browser-{phase}-failed.png", f"verified-{phase}.json"})
+        retained = {"build-source.sha256", "backend-install.log", "unrelated-cache.json"}
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
+            for name in evidence | retained:
+                (Path(directory) / name).write_text("previous run")
+            HELPER.clear_run_artifacts()
+            self.assertEqual(retained, {path.name for path in Path(directory).iterdir()})
+            HELPER.clear_run_artifacts()
+            self.assertEqual(retained, {path.name for path in Path(directory).iterdir()})
+
+    def test_restart_requires_a_fresh_successful_worker_capability_probe(self):
+        events = []
+        with patch.object(HELPER, "run", side_effect=lambda *args, **kwargs: events.append("restart")), \
+                patch.object(HELPER, "wait_driver", side_effect=lambda *args: events.append("qualified")):
+            HELPER.restart_runtime(["compose"], {})
+        self.assertEqual(["restart", "qualified"], events)
+        with patch.object(HELPER, "run"), patch.object(
+                HELPER, "wait_driver", side_effect=RuntimeError("workers are incompatible")):
+            with self.assertRaisesRegex(RuntimeError, "workers are incompatible"):
+                HELPER.restart_runtime(["compose"], {})
+
+    def test_all_three_phases_require_identical_clock_cut_and_whole_topic_inventory(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
+            root = Path(directory)
+            graph = b"original UI text\n"
+            sources = [{"topic": f"tsx.test.input{number}.v2", "partitions": number} for number in range(1, 4)]
+            value = {"id": "local-test", "specHash": hashlib.sha256(graph).hexdigest(), "planHash": "a" * 64,
+                     "createdAtMicros": "1700000000000000", "state": "completed", "assignments": [
+                         {"node": f"worker-{number}", "inputTopic": item["topic"], "partitionCount": str(number)}
+                         for number, item in enumerate(sources, 1)]}
+            (root / "submitted-dag.txt").write_bytes(graph)
+            (root / "fixture.json").write_text(json.dumps({"sources": sources}))
+            for phase in ["initial", "retry", "restart"]:
+                (root / f"deployment-{phase}.json").write_text(json.dumps(value))
+                (root / f"browser-{phase}.json").write_text(json.dumps({"phase": phase, "assignments": 3}))
+                (root / f"verified-{phase}.json").write_text(json.dumps({"verifiedRecords": 12, "distinctEpisodes": 12}))
+            self.assertEqual(3, HELPER.verify_views()["workers"])
+            changed = dict(value, createdAtMicros="1700000000000001")
+            (root / "deployment-retry.json").write_text(json.dumps(changed))
+            with self.assertRaisesRegex(RuntimeError, "cut, clock or receipt"):
+                HELPER.verify_views()
+
+
+if __name__ == "__main__":
+    unittest.main()

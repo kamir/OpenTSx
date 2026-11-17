@@ -211,7 +211,7 @@ fn validate_limits(limits: &Limits) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_bootstrap(bootstrap: &str) -> Result<(), String> {
+pub(crate) fn validate_bootstrap(bootstrap: &str) -> Result<(), String> {
     if bootstrap.len() > 1_024 || bootstrap.is_empty() {
         return Err("invalid broker address list".into());
     }
