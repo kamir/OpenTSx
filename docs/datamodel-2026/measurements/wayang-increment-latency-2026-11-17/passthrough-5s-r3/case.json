@@ -1,0 +1,11 @@
+{
+  "increments" : 30,
+  "completedAt" : "2026-11-17T03:23:21.964785Z",
+  "referenceEquality" : "episode ids, series keys, timestamps and values; passthrough payload bytes",
+  "chain" : "passthrough",
+  "inputRecords" : 3600,
+  "partitions" : 1,
+  "clock" : "System.nanoTime; increment clocks relative to originNanos; Produce clocks absolute",
+  "intervalSeconds" : 5,
+  "originNanos" : 2090464775551166
+}

@@ -9,8 +9,9 @@
 
 Both stacks bind port 9092, so do not run them at the same time.
 
-Running the tools as services on Kubernetes (k3s) against an existing KafScale cluster — images, manifests, setup
-and sizing plan, demos — is described in the [DevOps guide](../devops/README.md) (scripts in
+Running the tools as services on Kubernetes (k3s) against an existing KafScale
+cluster is described in the [DevOps guide](../devops/README.md), including images,
+manifests, setup, sizing and demos (scripts in
 [`deploy/k3s/`](../../deploy/k3s/README.md)).
 
 ## 12.2 Configuration
@@ -84,3 +85,67 @@ GitHub Actions runs these jobs:
 | duplicate episodes after a retry | expected without an idempotent producer. Stores and readers deduplicate by `episodeId` |
 | PyIceberg warns "v0 schema" | the catalog was created by the Java JDBC catalog. The warning is harmless |
 | `bin/opentsx`: "module … is not built" | run `mvn -q install -DskipTests` first |
+
+## 12.7 Measure Wayang increment latency
+
+You need JDK 17 or 21, Maven 3.9 or later, Go, git, Python 3.10 or later, and
+network access for dependencies. Run from a clean tracked and staged repository
+checkout. Stop other builds and benchmarks on the host before measuring.
+`<jdk-home>` is the selected JDK directory; `<new-result-directory>` is an unused
+output directory.
+
+The [harness](../../tools/wayang_increment_latency.py) builds pinned KafScale
+v1.6.0 source with Go 1.25.2 and starts a disposable in-memory broker for every
+condition. It executes the actual `TsxIncrement` passthrough and `dq.checks`
+plus `resample PT1M` plans, with one partition. Run the default matrix:
+
+```bash
+python tools/wayang_increment_latency.py \
+  --output <new-result-directory> \
+  --java-home <jdk-home>
+```
+
+The matrix runs both chains at 5, 30 and 60 seconds, with 30 increments and three
+repetitions. Its 18 conditions run sequentially and contain 540 increments.
+Scheduled intervals alone take 4 hours 45 minutes; builds, startup and processing
+add time. Every condition sends the complete fixed-seed `ostsee-demo.yaml`
+simulation once, paced from 5% to 90% of each interval. Its first increment starts
+after a full interval. Every condition starts a fresh JVM with
+`-Xms512m -Xmx2g`; no warm-up samples are discarded.
+
+Read `metadata.json` in the output directory for hardware, OS, JDK, source
+hashes, the invocation, build commands and JVM commands. Every condition uses
+private copies of the resolved JARs and class directories, verified by a SHA256
+manifest. Matching local reactor JARs must equal their resolved OpenTSx
+dependencies before copying. On macOS, `/usr/bin/caffeinate -i -w <pid>` prevents
+idle sleep for the Python process; cleanup releases the assertion. Other systems
+record that no sleep assertion is applied.
+
+Read the generated `REPORT.md` and the case directories after completion:
+
+| File | Evidence |
+| --- | --- |
+| `increments.csv` | Fetch, wall time, counts, lateness and percentiles |
+| `records.csv` | Output/input ids, Produce clocks and acknowledgement clocks |
+| `produce-attempts.csv` | Attempts, partitions, offsets and response codes |
+| `case.json` | completed condition, clock origin and reference checks |
+
+Produce time is the arrival of a complete Produce request at the loopback
+protocol observer, before parsing and forwarding. Only acknowledged successful
+partition writes contribute to latency. Kafka record timestamps stay at event
+time and are not transport clocks. For a clean output, latency starts at the
+latest contributing input Produce request; contributors share raw series identity
+and overlap its event-time range. Passthrough matches the same episode id.
+The observer rewrites broker endpoints only in Metadata responses and preserves
+Produce payloads. Its parsing and forwarding overhead is part of the measurement.
+
+The harness checks output ids, series keys, timestamps and values against
+`SeriesStream` before completing a condition; passthrough also checks payload
+bytes. A shared host has no reserved CPU or OS scheduling guarantee. These are
+local, single-partition, in-memory-broker measurements, without a throughput,
+durable-storage, remote-network or Track B comparison. No latency threshold is
+applied. `--pilot` explicitly excludes a shortened run from the A1.7 baseline.
+
+Read the [measurement report](../datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+for the recorded run and [concept 20, section 14](../datamodel-2026/20-WAYANG-TS-OPERATORS.md#14-evaluation-plan)
+for the broader evaluation protocol.

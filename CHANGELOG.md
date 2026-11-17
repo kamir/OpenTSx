@@ -19,6 +19,13 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   output with Java. Activation remains at least once and can expose partial output; signed fleet execution,
   continuous processing, automatic failover and durable Iceberg publication remain outside this local profile.
 
+- A rerunnable Wayang increment-latency harness for TASK-020 A1.7: real
+  passthrough and `dq.checks` plus `resample PT1M` plans, paced complete simulator
+  input, a pinned disposable KafScale broker, private runtime snapshots and
+  per-increment/raw output timing samples. The
+  [measurement report](docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  records its metric definitions, configuration and isolation limits.
+
 - `tsx-runner` 0.1.0 for trusted-local bounded whole-topic Kafka replay. Pass-through and a linear chain of
   `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing `resample` use the shared Avro, identity
   and cleaning vectors. Explicit resource caps and positive Kafka transport timestamps reject before publication.
@@ -198,6 +205,15 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Native table, chart and caption saving reports the failed destination and completed outputs in the dialog.
+  Each file is prepared and replaced atomically; a failure preserves that destination and stops later outputs.
+  Table and caption text use strict UTF-8, while table layouts and 800 by 600 PNG dimensions are retained.
+  Configured folder paths are preserved, including spaces, hyphens and Unicode characters.
+
+- Native `Histogram cross-cut` validates selections, positive integer window lengths, ordered integer bounds and
+  positive bin counts. Cancelling or rejecting input leaves charts and the recorder unchanged. Cuts stop at each
+  series' available samples while preserving nominal window labels, pooled raw counts and input series.
 
 - Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
   write every point, retain subtype formats and metadata, and report errors while preserving existing files

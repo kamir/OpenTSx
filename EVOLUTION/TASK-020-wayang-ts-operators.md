@@ -94,6 +94,10 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 
 ### A1: KafScale source, sink, checkpoint, increments
 - [x] `TsxTopicSource`, `TsxTopicSink`, `TsxCheckpoint` and the increment runner `TsxIncrement` (S5.1, S6), 2026-11-16.
+- [x] A1.7: both increment chains measured at 5, 30 and 60 seconds, with
+  30 increments per condition and three repetitions. The
+  [report and raw samples](../docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  record all 18 conditions and 540 increments, without a threshold.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -105,7 +109,9 @@ Status of A0 on 2026-11-16, measured on the branch `docs/rust-kafka-runner-plan`
 | A1.6 | An unknown fingerprint stops the task | `TsxFingerprintIntegrationTest` writes one record with another schema | K | task state `failed`, status `error` equals the message of S3.2 exactly; no later record processed |
 | A1.7 | Increment latency is known | protocol of concept 20, section 14 | W on K | measured and reported with raw samples; no threshold |
 
-Status of A1 on 2026-11-16, run with JDK 21 against KafScale v1.6.0 built from source (in-memory S3, `127.0.0.1:39092`):
+Status of A1.1 to A1.6 on 2026-11-16, run with JDK 21 against KafScale v1.6.0
+built from source (in-memory S3, `127.0.0.1:39092`). A1.7 was measured on
+2026-11-17 on the host recorded in its report:
 
 | # | Result |
 |---|---|
@@ -115,7 +121,11 @@ Status of A1 on 2026-11-16, run with JDK 21 against KafScale v1.6.0 built from s
 | A1.4 | met: `TsxPassThroughIntegrationTest`, all episodes of W with identical bytes; a second increment reads 0 records |
 | A1.5 | met: `TsxCrashRecoveryIntegrationTest`, failures after 1, 150 and 299 of 300 episodes; no checkpoint after a failed increment; after the next increment every episode id present, every duplicate byte-identical |
 | A1.6 | met: `TsxFingerprintIntegrationTest`, `TsxIncrementException` carries the message of S3.2 exactly, no checkpoint, nothing written. `TsxStatusIntegrationTest` reports the failed increment with the same error |
-| A1.7 | open |
+| A1.7 | met on 2026-11-17; report and raw samples linked above |
+
+A1.7 records 18 conditions, 540 increments, 64,800 input and output records and
+0 Produce errors. All outputs match the reference. The report records
+per-output p50/p95/p99 and first-Fetch/wall samples for both chains.
 
 The CI job "KafScale conformance" runs the three integration tests and fails when one of them is missing, skipped or
 failed.

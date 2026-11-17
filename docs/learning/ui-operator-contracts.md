@@ -148,6 +148,13 @@ unit is assigned.
 Source: [ops.ts#histogramCrossCut](../../opentsx-saas-frontend/src/workbench/ops.ts#histogramCrossCut) . Executable
 exercise: `ui.histogram.crosscut` .
 
+The native Swing `Histogram cross-cut` action has a separate
+[raw-count contract](../../opentsx-core/README.md#compare-native-histogram-slices). It accepts positive integer
+window lengths and requires samples in the first selected series. Window starts follow that series, while each
+series contributes its available values within each nominal window, including the final partial slice. Selection,
+bounds and bin count are validated before output. Its legacy bins and counts do not use this browser lesson's
+normalization or 16-slice limit.
+
 <a id="cdf"></a>
 
 ## Accumulate histogram probabilities into a CDF
