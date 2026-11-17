@@ -1,12 +1,22 @@
 package org.opentsx.market;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.opentsx.market.archive.Archive;
+import org.opentsx.market.archive.Backfill;
 import org.opentsx.market.source.EntsoeSource;
+import org.opentsx.market.source.Fetcher;
+import org.opentsx.market.source.Http;
 import org.opentsx.market.source.MissingCredentials;
 import org.opentsx.market.source.NetztransparenzSource;
 import org.opentsx.market.source.Rebap;
 import org.opentsx.market.source.SmardSource;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +82,113 @@ class SourcesTest {
         assertTrue(f.requests.get(0).contains("periodStart=202509302000&periodEnd=202510010000"));
         assertTrue(q.stream().noneMatch(x -> x.contains("secret-token")));
         assertEquals(8, p.size());            // finest resolution of the document, once per month chunk
+    }
+
+    @Test
+    void entsoeHttp400IsNoDataOnlyForTheNoMatchingDataAcknowledgement(@TempDir Path dir) {
+        String noData = Fixtures.text("entsoe-ack.xml");
+        String refused = noData.replace("No matching data found for Data item Day-ahead Prices [12.1.D]",
+                "The amount of requested data exceeds allowed limit.");
+        long from = t("2024-01-01T00:00:00Z");
+        long to = t("2024-02-01T00:00:00Z");
+        assertTrue(new EntsoeSource(status400(noData), "tok").fetch("day_ahead_price", from, to, new ArrayList<>())
+                .isEmpty());
+        String cut = noData.replace("</Acknowledgement_MarketDocument>", "");
+        for (String body : List.of(refused, cut, "<html><body>Bad Request</body></html>")) {
+            Http.StatusException e = assertThrows(Http.StatusException.class,
+                    () -> new EntsoeSource(status400(body), "tok").fetch("day_ahead_price", from, to,
+                            new ArrayList<>()));
+            assertEquals(400, e.status());
+        }
+        String failed = failedYear(dir, status400(refused), "tok");
+        assertTrue(failed.contains("HTTP 400 for " + EntsoeSource.BASE), failed);
+        assertTrue(failed.contains("&securityToken=***: 999 The amount of requested data exceeds allowed limit.\n"),
+                failed);
+    }
+
+    static Fetcher status400(String body) {
+        return (uri, h) -> {
+            throw new Http.StatusException(400, uri, body);
+        };
+    }
+
+    @Test
+    void entsoeFailuresKeepTheTokenOutOfOutcomesAndTheLog(@TempDir Path dir) {
+        String token = "SECRET-TOKEN-123";
+        Fetcher refused = (uri, h) -> {
+            throw new Http.StatusException(503, uri, "Service Unavailable: GET " + uri);
+        };
+        // port 0: the connection is refused on the loopback interface, nothing leaves the host
+        Fetcher unreachable = (uri, h) -> new Http(0, 0).get(uri.replace(EntsoeSource.BASE, "http://127.0.0.1:0/api"),
+                h);
+        for (String shown : List.of(failedYear(dir, refused, token), failedYear(dir, unreachable, token),
+                failedYear(dir, unreachable, token + "\n"))) {
+            assertTrue(shown.contains("securityToken=***"), shown);
+            assertFalse(shown.contains(token), shown);
+        }
+    }
+
+    @Test
+    void aRefusedEntsoeRequestEndsTheCommandWithOneLineWithoutTheToken() {
+        String token = "SECRET-TOKEN-123";
+        Collector c = new Collector(null, null, (uri, h) -> {
+            throw new Http.StatusException(503, uri, "Service Unavailable: GET " + uri);
+        }, null, Map.of("ENTSOE_TOKEN", token));
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int code = MarketCli.exitCode("prices", new PrintStream(err, true, StandardCharsets.UTF_8), () -> {
+            c.fetch(MarketCatalog.require("entsoe/day_ahead_price"), t("2025-10-01T00:00:00Z"),
+                    t("2025-10-02T00:00:00Z"));
+            return 0;
+        });
+        String shown = err.toString(StandardCharsets.UTF_8);
+        assertEquals(1, code, shown);
+        assertEquals(1, shown.lines().count(), shown);
+        assertTrue(shown.startsWith("market prices: HTTP 503 for " + EntsoeSource.BASE + "?documentType=A44"), shown);
+        assertFalse(shown.contains(token), shown);
+    }
+
+    @Test
+    void aRejectedCredentialEndsTheCommandWithOneLineThatNamesIt() {
+        Fetcher unauthorized = new Fetcher() {
+            @Override
+            public String get(String uri, Map<String, String> headers) {
+                throw new Http.StatusException(401, uri, "Unauthorized");
+            }
+
+            @Override
+            public String postForm(String uri, String form, Map<String, String> headers) {
+                throw new Http.StatusException(401, uri, "invalid_client");
+            }
+        };
+        Collector c = new Collector(null, null, unauthorized, unauthorized, Map.of("ENTSOE_TOKEN", "SECRET-TOKEN-123",
+                "NTP_CLIENT_ID", "client", "NTP_CLIENT_SECRET", "s3cret"));
+        assertOneFailureLine("prices", c, "entsoe/day_ahead_price",
+                "market prices: ENTSO-E rejected the token (HTTP 401): check ENTSOE_TOKEN");
+        assertOneFailureLine("rebap", c, "netztransparenz/rebap_short",
+                "market rebap: netztransparenz.de rejected the client credentials (HTTP 401)");
+    }
+
+    /** Fetching {@code series} in {@code cmd} ends with exit code 1 and {@code line} as the only line on stderr. */
+    static void assertOneFailureLine(String cmd, Collector c, String series, String line) {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int code = MarketCli.exitCode(cmd, new PrintStream(err, true, StandardCharsets.UTF_8), () -> {
+            c.fetch(MarketCatalog.require(series), t("2025-10-01T00:00:00Z"), t("2025-10-02T00:00:00Z"));
+            return 0;
+        });
+        assertEquals(1, code, line);
+        assertEquals(List.of(line), err.toString(StandardCharsets.UTF_8).lines().toList());
+    }
+
+    /** Outcome message and log of a backfill year of the ENTSO-E price whose request fails. */
+    static String failedYear(Path dir, Fetcher entsoe, String token) {
+        Map<String, String> env = Map.of("ENTSOE_TOKEN", token);
+        ByteArrayOutputStream log = new ByteArrayOutputStream();
+        Backfill b = new Backfill(new Archive(dir), new Collector(null, null, entsoe, null, env), env,
+                new PrintStream(log, true, StandardCharsets.UTF_8));
+        Backfill.Outcome o = b.run(List.of(MarketCatalog.require("entsoe/day_ahead_price")), 2024, 2024, false,
+                Instant.parse("2026-01-10T00:00:00Z")).get(0);
+        assertEquals(Backfill.Status.FAILED, o.status(), o.message());
+        return o.message() + "\n" + log.toString(StandardCharsets.UTF_8);
     }
 
     @Test

@@ -62,7 +62,8 @@ public final class EntsoeSource {
             long next = Math.min(to, Micro.of(Micro.instant(t).atZone(ZoneOffset.UTC).toLocalDate().withDayOfMonth(1)
                     .plusMonths(1).atStartOfDay(ZoneOffset.UTC).toInstant()));
             String period = "&periodStart=" + PERIOD.format(Micro.instant(t)) + "&periodEnd=" + PERIOD.format(Micro.instant(next));
-            queries.add(base + "?" + q + period + "&securityToken=***");
+            String shown = base + "?" + q + period + "&securityToken=***";
+            queries.add(shown);
             try {
                 for (Point p : EntsoeXml.finest(EntsoeXml.parse(fetcher.get(base + "?" + q + period + "&securityToken=" + token)))) {
                     if (p.tMicros() >= from && p.tMicros() < to) {
@@ -75,12 +76,31 @@ public final class EntsoeSource {
                 if (e.status() == 401) {
                     throw new MissingCredentials("ENTSO-E rejected the token (HTTP 401): check ENTSOE_TOKEN");
                 }
-                if (e.status() != 400) {   // 400 carries an acknowledgement "no matching data"
+                if (e.status() != 400 || !e.body().contains("Acknowledgement_MarketDocument")) {
                     throw e;
+                }
+                String reason = reason(e);
+                // a month without data is answered with 400 and the acknowledgement "No matching data found ..."
+                if (!reason.contains("No matching data found")) {
+                    Http.StatusException refused = new Http.StatusException(400, shown, reason);
+                    refused.initCause(e);
+                    throw refused;
                 }
             }
             t = next;
         }
         return out;
+    }
+
+    /** The reasons of the acknowledgement in the response of {@code e}; throws {@code e} when it holds none. */
+    private static String reason(Http.StatusException e) {
+        try {
+            EntsoeXml.parse(e.body());
+        } catch (EntsoeXml.NoData ack) {
+            return ack.getMessage();
+        } catch (IllegalArgumentException notXml) {
+            e.addSuppressed(notXml);
+        }
+        throw e;
     }
 }

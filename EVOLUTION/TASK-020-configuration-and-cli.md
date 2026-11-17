@@ -753,7 +753,7 @@ The order matters: the foundation first, then one batch per module, then errors 
       keep winning).
 - [ ] **Migration `opentsx-modbus`**: `ModbusCli`.
 - [ ] **Migration `opentsx-market`**: `MarketCli`, `BrokerPublish`, `Collector` (credentials), `HistoryTwins`; exit
-      codes 3 and 4 become 1 and 2 (D9), [opentsx-market/README.md](../opentsx-market/README.md) line 110 changes.
+      codes 3 and 4 become 1 and 2 (D9), [opentsx-market/README.md](../opentsx-market/README.md) line 117 changes.
 - [ ] **Migration deploy**: `KafScaleCheck`, the k3s manifests and `opentsx-entrypoint.sh` (dispatch of `vectors`,
       `history-twin`), `docs/user-manual/appendix-a-cli.md`.
 - [ ] **Errors** (audit of the error handling): one `main` per command catches `OpenTsxConfException` (exit 2) and every other

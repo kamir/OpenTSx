@@ -7,8 +7,10 @@ import org.opentsx.market.archive.Backfill;
 import org.opentsx.market.archive.Manifest;
 import org.opentsx.market.archive.WeatherBackfill;
 import org.opentsx.market.source.Fetcher;
+import org.opentsx.market.twin.HistorySites;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -154,6 +156,82 @@ class WeatherJobsTest {
         assertArrayEquals(new String[]{"01759", "wind_gust"}, named.get(1));
         assertThrows(IllegalArgumentException.class, () -> MarketCli.weatherJobs(Map.of("stations", "01759:sunshine")));
         assertThrows(IllegalArgumentException.class, () -> MarketCli.weatherJobs(Map.of("stations", "01759")));
+    }
+
+    @Test
+    void aMistypedSitesFileFailsAndNamesTheField(@TempDir Path dir) throws IOException {
+        String park = "  windpark-ostsee:\n    latitude: 54.45\n    longitude: 13.95\n    wind: \"01759\"\n";
+        Path rootTypo = Files.writeString(dir.resolve("root.yaml"), "site:\n" + park);
+        Path noStation = Files.writeString(dir.resolve("none.yaml"), "sites: {}\n");
+        Map<Map<String, String>, String> cases = new LinkedHashMap<>();
+        cases.put(Map.of("sites", rootTypo.toString()), rootTypo + ": site: unknown field; allowed: sites");
+        cases.put(Map.of("sites", noStation.toString()), noStation + ": sites: no site names a temperature, wind or "
+                + "radiation station; name one, or pass --stations <id>:<parameter>,...");
+        cases.put(Map.of("stations", ","), "--stations \",\": no station; expected <id>:<parameter>,... with "
+                + "parameter in " + WeatherBackfill.parameters());
+        assertWeatherBackfillStops(cases, dir);
+        Path fieldTypo = Files.writeString(dir.resolve("typo.yaml"), "sites:\n" + park + "    hubHeight: 120\n");
+        assertEquals(fieldTypo + ": sites.windpark-ostsee.hubHeight: unknown field; allowed: anemometerHeightM, "
+                        + "hubHeightM, latitude, longitude, radiation, shearExponent, temperature, wind",
+                assertThrows(IllegalArgumentException.class,
+                        () -> MarketCli.weatherJobs(Map.of("sites", fieldTypo.toString()))).getMessage());
+        Path noLatitude = Files.writeString(dir.resolve("lat.yaml"),
+                "sites:\n" + park.replace("    latitude: 54.45\n", ""));
+        assertEquals(noLatitude + ": sites.windpark-ostsee.latitude: missing; a site needs latitude and longitude in "
+                        + "degrees",
+                assertThrows(IllegalArgumentException.class, () -> HistorySites.load(noLatitude)).getMessage());
+        Path notANumber = Files.writeString(dir.resolve("nan.yaml"), "sites:\n" + park.replace("54.45", "north"));
+        assertEquals(notANumber + ": sites.windpark-ostsee.latitude: \"north\" is not a double; expected a finite "
+                        + "decimal number such as 0.01 or 1e-3",
+                assertThrows(IllegalArgumentException.class, () -> HistorySites.load(notANumber)).getMessage());
+    }
+
+    @Test
+    void aSitesFileThatIsNotYamlOrHoldsAWrongValueFailsInOneLine(@TempDir Path dir) throws IOException {
+        String park = "  windpark-ostsee:\n    latitude: 54.45\n    longitude: 13.95\n    wind: \"01759\"\n";
+        Path broken = Files.writeString(dir.resolve("broken.yaml"),
+                "sites:\n" + park.replace("    longitude", "   longitude"));
+        Path tab = Files.writeString(dir.resolve("tab.yaml"), "sites:\n\t" + park.strip());
+        Path empty = Files.writeString(dir.resolve("empty.yaml"), "");
+        Map<Map<String, String>, String> cases = new LinkedHashMap<>();
+        cases.put(Map.of("sites", broken.toString()), broken + ":4: not valid YAML; while parsing a block mapping, "
+                + "expected <block end>, but found '<block mapping start>'");
+        cases.put(Map.of("sites", tab.toString()), tab + ":2: not valid YAML; while scanning for the next token, "
+                + "found character '\\t(TAB)' that cannot start any token. (Do not use \\t(TAB) for indentation)");
+        cases.put(Map.of("sites", empty.toString()), empty + ": sites: missing; the file needs a map sites with one "
+                + "entry per site");
+        assertWeatherBackfillStops(cases, dir);
+        Map<String, String> wrong = new LinkedHashMap<>();
+        wrong.put("sites:\n  - windpark-ostsee\n", "sites: wrong type; expected a map");
+        wrong.put("sites:\n  windpark-ostsee: 5\n", "sites.windpark-ostsee: wrong type; expected a map");
+        wrong.put("sites:\n" + park.replace("54.45", "[54.45]"), "sites.windpark-ostsee.latitude: wrong type; "
+                + "expected a number");
+        wrong.put("sites:\n" + park.replace("\"01759\"", "[\"01759\"]"), "sites.windpark-ostsee.wind: wrong type; "
+                + "expected a station id such as \"03166\"");
+        wrong.put("sites:\n" + park.replace("54.45", "NaN"), "sites.windpark-ostsee.latitude: not finite; expected a "
+                + "finite decimal number such as 0.01 or 1e-3");
+        wrong.put("sites:\n" + park + "    hubHeightM: 1e999\n", "sites.windpark-ostsee.hubHeightM: not finite; "
+                + "expected a finite decimal number such as 0.01 or 1e-3");
+        for (Map.Entry<String, String> w : wrong.entrySet()) {
+            Path file = Files.writeString(dir.resolve("wrong.yaml"), w.getKey());
+            assertEquals(file + ": " + w.getValue(),
+                    assertThrows(IllegalArgumentException.class, () -> HistorySites.load(file)).getMessage());
+        }
+    }
+
+    /** Each options map stops {@code weather-backfill} with exit code 2 and its message as the one line on stderr. */
+    static void assertWeatherBackfillStops(Map<Map<String, String>, String> cases, Path dir) {
+        for (Map.Entry<Map<String, String>, String> c : cases.entrySet()) {
+            Map<String, String> o = new LinkedHashMap<>(c.getKey());
+            o.put("archive", dir.resolve("history").toString());
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
+            int code = MarketCli.exitCode("weather-backfill", new PrintStream(err, true, StandardCharsets.UTF_8),
+                    () -> MarketCli.run("weather-backfill", o, new PrintStream(new ByteArrayOutputStream()), Map.of(),
+                            Instant.parse("2026-10-22T00:00:00Z")));
+            assertEquals(2, code, c.getValue());
+            assertEquals(List.of("market weather-backfill: " + c.getValue()),
+                    err.toString(StandardCharsets.UTF_8).lines().toList());
+        }
     }
 
     @Test

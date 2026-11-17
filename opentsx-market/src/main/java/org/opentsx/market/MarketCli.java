@@ -10,6 +10,7 @@ import org.opentsx.market.source.EnergyChartsJson;
 import org.opentsx.market.source.EntsoeXml;
 import org.opentsx.market.source.Http;
 import org.opentsx.market.source.Marktwerte;
+import org.opentsx.market.source.MissingCredentials;
 import org.opentsx.market.source.PartnerCsv;
 import org.opentsx.market.source.Rebap;
 import org.opentsx.market.source.SmardJson;
@@ -35,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.IntSupplier;
 
 /**
  * {@code bin/opentsx market <command>}: collect electricity-market data, keep the history archive, load it into a
@@ -91,11 +93,23 @@ public final class MarketCli {
             System.out.print(USAGE);
             System.exit(args.length == 0 ? 1 : 0);
         }
+        System.exit(exitCode(args[0], System.err, () -> run(args[0], options(args), System.out, System.getenv(),
+                Instant.now())));
+    }
+
+    /**
+     * Exit code of a command; a failure is one line on {@code err}: 2 for usage and IO, 1 for an HTTP status or a
+     * missing or rejected credential.
+     */
+    static int exitCode(String cmd, PrintStream err, IntSupplier command) {
         try {
-            System.exit(run(args[0], options(args), System.out, System.getenv(), Instant.now()));
+            return command.getAsInt();
         } catch (IllegalArgumentException | UncheckedIOException e) {
-            System.err.println("market " + args[0] + ": " + e.getMessage());
-            System.exit(2);
+            err.println("market " + cmd + ": " + e.getMessage());
+            return 2;
+        } catch (Http.StatusException | MissingCredentials e) {
+            err.println("market " + cmd + ": " + e.getMessage());
+            return 1;
         }
     }
 
@@ -380,6 +394,13 @@ public final class MarketCli {
                         + WeatherBackfill.parameters() + ", got " + j);
             }
             out.add(p);
+        }
+        if (out.isEmpty()) {
+            throw new IllegalArgumentException(o.containsKey("stations")
+                    ? "--stations \"" + o.get("stations") + "\": no station; expected <id>:<parameter>,... with "
+                    + "parameter in " + WeatherBackfill.parameters()
+                    : o.getOrDefault("sites", "classpath:" + HistorySites.RESOURCE) + ": sites: no site names a "
+                    + "temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...");
         }
         return out;
     }

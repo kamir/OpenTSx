@@ -115,6 +115,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
   decoders and cycles before publishing control records. Supported sinks are accepted together.
+- `market`: error messages, the backfill log and stderr no longer show the ENTSO-E token. The value of every URL query
+  parameter whose name contains `token`, `secret` or `key` shows as `***`, also in the response text and when the URL
+  cannot be parsed. A request refused with an HTTP status, a rejected ENTSO-E token and a rejected netztransparenz.de
+  client end `prices`, `series`, `rebap`, `marktwert` and `mosmix-archive` with one line on stderr and exit code 1
+  instead of a stack trace.
+- `market weather-backfill`, `weather-forward` and the history twins read the sites file strictly. An unknown or
+  missing field, a value of the wrong type, a number that is not finite or a file that is not valid YAML fails with
+  exit code 2 and one line that names the file and the field or the line. Latitude and longitude are required. A
+  weather backfill without any station fails instead of doing nothing with exit code 0.
+- `market`: an ENTSO-E HTTP 400 counts as a month without data only when the response is the `No matching data found`
+  acknowledgement. Any other 400 fails the year instead of reporting it empty, and the message shows the code and text
+  of the acknowledgement's reasons.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

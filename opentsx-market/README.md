@@ -61,6 +61,13 @@ bin/opentsx market import --file config/private/fahrplan.csv --name schedule-dm 
 `--from`/`--to` take a local date (Europe/Berlin, start of day) or an ISO instant. `--to` is exclusive. `--offline`
 parses a downloaded file in the source's format. `--archive` merges the result into the archive year files.
 
+In `prices`, `series`, `rebap`, `marktwert` and `mosmix-archive`, a request that the source answers with an HTTP
+error status ends the command with exit code 1 and one line on stderr:
+`market <command>: HTTP <status> for <URL>`, followed by `: <response text, cut at 300 characters>` when the
+response has text. The URL shows the ENTSO-E token as `securityToken=***`. For an ENTSO-E acknowledgement answered
+with HTTP 400, the response text is the code and text of its reasons. A rejected ENTSO-E token (HTTP 401) or
+netztransparenz.de client ends the command the same way, and the line names the credential to check instead.
+
 **Partner files** (`import`) have a header and the columns `start` (ISO-8601 with offset or `Z`), optional `end`,
 and `value`. They use `,` or `;` as separator; with `;` a decimal comma is allowed. Without `end`, pass
 `--resolution PT15M`. Local timestamps need `--zone Europe/Berlin` and are rejected inside the doubled hour.
@@ -108,8 +115,14 @@ bin/opentsx market load     --archive data/history --iceberg type=jdbc,uri=jdbc:
 * **Politeness:** a minimum pause between requests per host (`--delay-ms`, default 500 ms; ENTSO-E at least 1 s,
   netztransparenz at least 600 ms), and retries with exponential backoff on network errors, 429 and 5xx, honouring
   `Retry-After`. A failing year is reported and the run continues (exit code 3 if any year failed).
+* **ENTSO-E without data:** ENTSO-E answers a month without data with HTTP 400 and an acknowledgement that says
+  `No matching data found`. That month counts as empty. Any other HTTP 400 fails the year; for an acknowledgement,
+  the message shows the code and text of its reasons. An acknowledgement that comes with HTTP 200 counts as empty
+  whatever its reason.
 * **Credentials:** a source without credentials is skipped with the reason. Tokens come only from the environment
-  and are never written to the manifest.
+  and are never written to the manifest. In error messages and the log, the value of every URL query parameter
+  whose name contains `token`, `secret` or `key` in any letter case shows as `***`, also where the response
+  repeats it.
 * **Publish:** `publish --series source/name,... --kafscale host:port --domain wind` writes archived series as raw
   episodes into `tsx.<domain>.episodes.v2`, where the retrieval server and the flows of the domain read them. It
   sends a batch (`--batch`, default 100), waits for every confirmation, pauses (`--pause-ms`, default 3000) and
@@ -153,6 +166,28 @@ The weather backfill reads the DWD CDC observations of the twin sites' stations
 
 The sites file names a station for temperature, wind and radiation; the other six parameters are asked for with
 `--stations <id>:<parameter>,...`.
+
+`--sites <file>` replaces the built-in sites file, here and in `bin/opentsx twin|house|boat --history`. Under
+`sites`, the file maps a site id to these fields:
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `latitude`, `longitude` | number | yes | position of the site in degrees |
+| `temperature`, `wind`, `radiation` | string | no | DWD CDC station id, 5 digits (`"03166"`); without it the site has no station for that variable |
+| `anemometerHeightM` | number | no, default 10 | height of the station's wind measurement in m |
+| `hubHeightM` | number | no, default 120 | hub height of the park's turbines in m |
+| `shearExponent` | number | no, default 0.14 | wind shear exponent from the measurement to the hub height |
+
+An unknown or missing field, a value of the wrong type or a number that is not finite stops the command with exit
+code 2 and one line that names the file and the field. A file that is not valid YAML stops the same way and names
+the line. A weather backfill that finds no station stops the same way:
+
+```text
+market weather-backfill: sites.yaml: sites.windpark-ostsee.hubHeight: unknown field; allowed: anemometerHeightM, hubHeightM, latitude, longitude, radiation, shearExponent, temperature, wind
+market weather-backfill: sites.yaml: sites.windpark-ostsee.hubHeightM: not finite; expected a finite decimal number such as 0.01 or 1e-3
+market weather-backfill: sites.yaml:4: not valid YAML; while parsing a block mapping, expected <block end>, but found '<block mapping start>'
+market weather-backfill: nostation.yaml: sites: no site names a temperature, wind or radiation station; name one, or pass --stations <id>:<parameter>,...
+```
 
 The zips come from the directory listings. A `historical` file name carries its date range, so only the zips
 overlapping the requested years are read, and nothing is downloaded when every year is already complete. `recent`
