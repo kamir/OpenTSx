@@ -18,6 +18,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
   failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
 
+- Regression guards for the Wayang/Rust Compose profile's existing required
+  credential interpolation and the helper's private per-run environment.
+  Mutated fallback and empty-value fixtures reject without printing credentials.
+
 - `pair.es` runs on Wayang through `TsxPair` with `q_total`, `q_ab`, `q_ba`
   and `q_rand` outputs. The four shared series cases execute through real plans.
   Parameters and surrogate seeds follow the workbench implementation.

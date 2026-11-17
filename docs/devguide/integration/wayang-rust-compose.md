@@ -107,6 +107,13 @@ The broker stays alive during worker/coordinator restart. This test supplies no 
 Only the frontend and Kafka listener are published on loopback. Driver, worker and PostgreSQL ports stay internal.
 The generated administrator uses normal login and role checks; `TEST_LOGIN` remains false.
 
+The Compose profile requires nonempty `POSTGRES_PASSWORD`, `SECRET_KEY` and
+`FIRST_SUPERUSER_PASSWORD` values. The helper creates fresh values for each run
+and supplies them through its process environment and private `generated.env`.
+It validates the configuration with `config --quiet` before starting services.
+Missing or empty credential variables reject configuration; credentials have no
+fallback values. Keep the private environment file out of logs and artifacts.
+
 Check the installed command interface:
 
 ```bash
@@ -136,6 +143,22 @@ Only the expected runtime producer label and accepted provenance clock are norma
 Sanitized evidence is written under `target/wayang-rust-compose/`, including `submitted-dag.txt`, per-phase public
 deployment views, `verified-<phase>.json` and `result.json`. Generated credentials, driver arguments and worker state
 are private under `target/wayang-rust-private/<random>/`; keep that directory out of artifacts and logs.
+
+## Check credential guards without starting services
+
+Run the deterministic
+[helper tests](../../../tools/test_verify_wayang_rust_compose.py) from the
+repository root:
+
+```bash
+python3 -m unittest tools/test_verify_wayang_rust_compose.py
+```
+
+The tests cover all four credential substitutions, reject fixtures that replace
+required interpolation with a fallback or allow empty values, and verify that
+the helper supplies its generated credentials before configuration validation.
+These guards check the existing profile behavior without starting Docker
+services or printing credential values.
 
 ## Inspect the implementation and remaining limits
 
