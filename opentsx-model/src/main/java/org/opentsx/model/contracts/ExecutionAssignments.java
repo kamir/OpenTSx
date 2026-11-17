@@ -104,6 +104,10 @@ public final class ExecutionAssignments {
         }
     }
 
+    public static boolean validTopic(String value) {
+        return value != null && value.length() <= 249 && TOPIC.matcher(value).matches();
+    }
+
     private static JsonNode assignment(String text) {
         if (text != null && text.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) {
             throw invalid("assignment.limit");
@@ -151,8 +155,8 @@ public final class ExecutionAssignments {
         }
         for (JsonNode input : inputs) {
             exactFields(input, INPUT, "assignment.input");
-            if (!matches(input.get("binding"), ID) || !matches(input.get("topic"), TOPIC)
-                    || input.get("topic").textValue().length() > 249 || !input.get("positions").isArray()) {
+            if (!matches(input.get("binding"), ID) || !input.get("topic").isTextual()
+                    || !validTopic(input.get("topic").textValue()) || !input.get("positions").isArray()) {
                 throw invalid("assignment.input");
             }
             for (JsonNode position : input.get("positions")) {

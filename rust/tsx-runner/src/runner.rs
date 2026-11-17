@@ -2,8 +2,18 @@ use crate::admission::{Admitted, MAX_EPISODE_SAMPLES};
 use crate::broker::{Broker, OutputRecord};
 use crate::checkpoint::{CompletedPosition, Completion, Receipt, Store};
 use crate::wire;
-use std::collections::BTreeMap;
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Prepared {
+    pub completion: Completion,
+    pub records: Vec<OutputRecord>,
+    pub input_series: Vec<String>,
+    pub output_series: Vec<String>,
+}
 
 pub fn execute(
     mut run: Admitted,
@@ -15,7 +25,15 @@ pub fn execute(
         verify_completion(&run, &saved)?;
         return Ok(saved.receipt);
     }
-    let mut records = broker.read(&run)?;
+    let prepared = prepare(&mut run, broker)?;
+    store.validate(&prepared.completion)?;
+    broker.publish(&run, &prepared.records)?;
+    store.commit(&prepared.completion)?;
+    Ok(prepared.completion.receipt)
+}
+
+pub fn prepare(run: &mut Admitted, broker: &mut impl Broker) -> Result<Prepared, String> {
+    let mut records = broker.read(run)?;
     if records.len() > run.request.limits.records {
         return Err("input record limit exceeded".into());
     }
@@ -111,14 +129,14 @@ pub fn execute(
     let receipt = Receipt {
         schema: "opentsx.local-receipt.v1".into(),
         request_hash: run.request_hash.clone(),
-        artifact_digest: assignment_field(&run, "artifactDigest")?,
-        deployment: assignment_field(&run, "deployment")?,
-        generation: assignment_field(&run, "generation")?,
-        assignment: assignment_field(&run, "assignment")?,
-        node: assignment_field(&run, "node")?,
+        artifact_digest: assignment_field(run, "artifactDigest")?,
+        deployment: assignment_field(run, "deployment")?,
+        generation: assignment_field(run, "generation")?,
+        assignment: assignment_field(run, "assignment")?,
+        node: assignment_field(run, "node")?,
         input_topic: run.cut.topic.clone(),
         output_topic: run.request.sink.topic.clone(),
-        positions: completed_positions(&run),
+        positions: completed_positions(run),
         input_records: records.len(),
         output_records: prepared.len(),
         output_digest: tsx_contracts::sha256_bytes(&digest_bytes),
@@ -129,10 +147,94 @@ pub fn execute(
         receipt: receipt.clone(),
         state,
     };
-    store.validate(&completion)?;
-    broker.publish(&run, &prepared)?;
-    store.commit(&completion)?;
-    Ok(receipt)
+    let mut output_series: BTreeSet<_> = prepared.iter().map(|r| r.key.clone()).collect();
+    if let Some(pending) = completion.state["outputOwners"].as_object() {
+        output_series.extend(pending.keys().cloned());
+    }
+    Ok(Prepared {
+        completion,
+        records: prepared,
+        input_series: owners.into_keys().collect(),
+        output_series: output_series.into_iter().collect(),
+    })
+}
+
+pub fn activate(
+    run: &Admitted,
+    prepared: &Prepared,
+    broker: &mut impl Broker,
+    checkpoint: &Path,
+) -> Result<Receipt, String> {
+    validate_prepared(run, prepared)?;
+    let store = Store::open(checkpoint, run.request.limits.state_bytes + 65_536)?;
+    if let Some(saved) = store.load()? {
+        verify_completion(run, &saved)?;
+        if saved.receipt != prepared.completion.receipt {
+            return Err("checkpoint conflicts with prepared output".into());
+        }
+        return Ok(saved.receipt);
+    }
+    store.validate(&prepared.completion)?;
+    broker.publish(run, &prepared.records)?;
+    store.commit(&prepared.completion)?;
+    Ok(prepared.completion.receipt.clone())
+}
+
+pub fn validate_prepared(run: &Admitted, prepared: &Prepared) -> Result<(), String> {
+    verify_completion(run, &prepared.completion)?;
+    if prepared.records.len() != prepared.completion.receipt.output_records
+        || prepared.input_series.len() > run.request.limits.series
+        || !ordered_identities(&prepared.input_series)
+        || !ordered_identities(&prepared.output_series)
+    {
+        return Err("invalid prepared series inventory or record count".into());
+    }
+    let mut bytes = 0usize;
+    let mut framed = Vec::new();
+    let mut output_series = BTreeSet::new();
+    for record in &prepared.records {
+        bytes = bytes
+            .checked_add(record.payload.len())
+            .ok_or("prepared size overflow")?;
+        if bytes > run.request.limits.output_bytes {
+            return Err("prepared output exceeds byte limit".into());
+        }
+        let episode = wire::decode(
+            &record.payload,
+            run.request.limits.payload_bytes,
+            MAX_EPISODE_SAMPLES,
+        )?;
+        if record.key != episode.series.series_id
+            || record.timestamp <= 0
+            || record.timestamp != episode.t_start.div_euclid(1_000)
+        {
+            return Err("prepared output identity or timestamp mismatch".into());
+        }
+        output_series.insert(record.key.clone());
+        framed.extend_from_slice(&(record.key.len() as u64).to_be_bytes());
+        framed.extend_from_slice(record.key.as_bytes());
+        framed.extend_from_slice(&record.timestamp.to_be_bytes());
+        framed.extend_from_slice(&(record.payload.len() as u64).to_be_bytes());
+        framed.extend_from_slice(&record.payload);
+    }
+    if let Some(pending) = prepared.completion.state["outputOwners"].as_object() {
+        output_series.extend(pending.keys().cloned());
+    }
+    if tsx_contracts::sha256_bytes(&framed) != prepared.completion.receipt.output_digest
+        || prepared.output_series != output_series.into_iter().collect::<Vec<_>>()
+    {
+        return Err("prepared output digest or inventory mismatch".into());
+    }
+    Ok(())
+}
+
+fn ordered_identities(ids: &[String]) -> bool {
+    ids.iter().all(|id| {
+        id.len() == 16
+            && id
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    }) && ids.windows(2).all(|pair| pair[0] < pair[1])
 }
 
 fn completed_positions(run: &Admitted) -> Vec<CompletedPosition> {
@@ -153,7 +255,7 @@ fn assignment_field(run: &Admitted, name: &str) -> Result<String, String> {
         .ok_or_else(|| format!("assignment field missing: {name}"))
 }
 
-fn verify_completion(run: &Admitted, saved: &Completion) -> Result<(), String> {
+pub(crate) fn verify_completion(run: &Admitted, saved: &Completion) -> Result<(), String> {
     if saved.request_hash != run.request_hash || saved.receipt.request_hash != run.request_hash {
         return Err("checkpoint conflicts with this exact local request".into());
     }

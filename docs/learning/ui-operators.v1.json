@@ -2118,7 +2118,7 @@
       "pitfalls": [
         "This value transform does not produce a full DataQuality event record.",
         "Clipping changes values and can hide extremes from later analysis.",
-        "The Rust bounded profile is a separate execution surface; this browser workload does not deploy a runner or establish Kafka timestamp validity."
+        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps."
       ],
       "parameterKeys": [
         "min",
@@ -2150,20 +2150,28 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/17-learn-operators.md",
-          "docs/devguide/integration/rust-runner-local.md"
+          "docs/devguide/integration/rust-runner-local.md",
+          "docs/devguide/integration/wayang-rust-compose.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#dq-plausible-range",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange",
-          "rust/tsx-runner/src/operators.rs#compile"
+          "rust/tsx-runner/src/operators.rs#compile",
+          "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
+          "rust/tsx-runner/src/worker.rs#prepare"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/clean.test.ts",
-          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split"
+          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "opentsx-saas-frontend/src/workbench/wayang.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2224,7 +2232,7 @@
       "pitfalls": [
         "The operator trusts the supplied factor and offset.",
         "An empty target unit retains the original unit metadata.",
-        "The Rust bounded profile is a separate execution surface; this browser workload does not deploy a runner or establish Kafka timestamp validity."
+        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps."
       ],
       "parameterKeys": [
         "factor",
@@ -2253,20 +2261,28 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/17-learn-operators.md",
-          "docs/devguide/integration/rust-runner-local.md"
+          "docs/devguide/integration/rust-runner-local.md",
+          "docs/devguide/integration/wayang-rust-compose.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#convert-unit",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit",
-          "rust/tsx-runner/src/operators.rs#compile"
+          "rust/tsx-runner/src/operators.rs#compile",
+          "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
+          "rust/tsx-runner/src/worker.rs#prepare"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/clean.test.ts",
-          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split"
+          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "opentsx-saas-frontend/src/workbench/wayang.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2333,7 +2349,7 @@
       "pitfalls": [
         "Only finite values enter a window aggregate.",
         "A batch workbench can include a partial final window; a running stream waits for sufficient progress.",
-        "The Rust bounded profile is a separate execution surface; this browser workload does not deploy a runner or establish Kafka timestamp validity.",
+        "The browser workload remains local. The explicit bounded Wayang action is a separate authenticated execution path with frozen whole-topic cuts and does not use this zero-based lesson clock for Kafka timestamps.",
         "The Rust Kafka cut retains an unfinished trailing window instead of flushing it at batch end."
       ],
       "parameterKeys": [
@@ -2364,21 +2380,29 @@
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/09-retrieval.md",
           "docs/user-manual/17-learn-operators.md",
-          "docs/devguide/integration/rust-runner-local.md"
+          "docs/devguide/integration/rust-runner-local.md",
+          "docs/devguide/integration/wayang-rust-compose.md"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#resample",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
         ],
         "source": [
           "opentsx-saas-frontend/src/workbench/ops.ts#resample",
-          "rust/tsx-runner/src/operators.rs#compile"
+          "rust/tsx-runner/src/operators.rs#compile",
+          "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
+          "rust/tsx-runner/src/worker.rs#prepare"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
           "opentsx-saas-frontend/src/workbench/clean.test.ts",
           "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
-          "rust/tsx-runner/src/operators.rs#open_resample_tail_survives_restore_and_is_not_flushed_at_batch_end"
+          "rust/tsx-runner/src/operators.rs#open_resample_tail_survives_restore_and_is_not_flushed_at_batch_end",
+          "opentsx-saas-frontend/src/workbench/wayang.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"

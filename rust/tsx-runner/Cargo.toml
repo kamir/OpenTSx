@@ -12,3 +12,4 @@ serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
 xxhash-rust = { version = "=0.8.19", features = ["xxh64"] }
 rdkafka = { version = "=0.39.0", default-features = false, features = ["zstd"] }
+tiny_http = { version = "=0.12.0", default-features = false }

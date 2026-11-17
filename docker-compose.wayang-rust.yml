@@ -1,0 +1,138 @@
+name: opentsx-wayang-rust
+
+x-python: &python
+  image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+  working_dir: /workspace/opentsx-saas-backend
+  user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+  environment:
+    PYTHONDONTWRITEBYTECODE: "1"
+    PYTHONUNBUFFERED: "1"
+    POSTGRES_SERVER: postgres
+    POSTGRES_USER: opentsx
+    POSTGRES_DB: opentsx
+    POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+    SECRET_KEY: "${SECRET_KEY:?Set SECRET_KEY}"
+    FIRST_SUPERUSER_EMAIL: "${FIRST_SUPERUSER_EMAIL:?Set FIRST_SUPERUSER_EMAIL}"
+    FIRST_SUPERUSER_PASSWORD: "${FIRST_SUPERUSER_PASSWORD:?Set FIRST_SUPERUSER_PASSWORD}"
+    WAYANG_URL: http://wayang:8095
+    BACKEND_CORS_ORIGINS: '["http://127.0.0.1:${WAYANG_UI_PORT:-18081}"]'
+  volumes:
+    - .:/workspace:ro
+    - backend-python:/opt/venv:ro
+
+x-runner: &runner
+  image: rust:1.99.1-bookworm@sha256:e6f2cff35d0f309acf8433b4f05878ed77092602c5065cc81801177da0bb3a9c
+  user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+  entrypoint: [/runner/release/tsx-runner]
+  read_only: true
+  restart: "no"
+  depends_on: [kafscale-broker]
+
+services:
+  kafscale-broker:
+    image: ghcr.io/kafscale/kafscale-broker:v1.6.0@sha256:2de20814b731131fcce7fc4e95d9e903cf6d35d9bed84be839b44a0613e57adf
+    environment:
+      KAFSCALE_USE_MEMORY_S3: "1"
+      KAFSCALE_BROKER_ID: "0"
+      KAFSCALE_BROKER_ADDR: ":${KAFSCALE_BROKER_PORT:-39093}"
+      KAFSCALE_BROKER_HOST: kafscale-broker
+      KAFSCALE_BROKER_PORT: "${KAFSCALE_BROKER_PORT:-39093}"
+    ports:
+      - "127.0.0.1:${KAFSCALE_BROKER_PORT:-39093}:${KAFSCALE_BROKER_PORT:-39093}"
+
+  postgres:
+    image: postgres:15-alpine@sha256:23799e521dee9265a8b388ecf3bc0f1eaa34b95be67f5a76af4f8f6adb44c720
+    environment:
+      POSTGRES_USER: opentsx
+      POSTGRES_DB: opentsx
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U opentsx -d opentsx"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+
+  runner-build:
+    image: rust:1.99.1-bookworm@sha256:e6f2cff35d0f309acf8433b4f05878ed77092602c5065cc81801177da0bb3a9c
+    profiles: [build]
+    working_dir: /workspace
+    environment: {CARGO_HOME: /cargo}
+    command: [cargo, build, --locked, --release, --manifest-path, rust/tsx-runner/Cargo.toml, --target-dir, /artifacts]
+    volumes:
+      - .:/workspace:ro
+      - ./target/wayang-rust-linux:/artifacts
+      - runner-cargo:/cargo
+
+  python-deps:
+    image: python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+    profiles: [build]
+    working_dir: /workspace/opentsx-saas-backend
+    command: [sh, -ec, "python -m venv --clear /opt/venv && /opt/venv/bin/python -m pip install --no-cache-dir --disable-pip-version-check -r requirements.txt && /opt/venv/bin/python -m pip check && /opt/venv/bin/python -c 'from pydantic_core import ArgsKwargs; import fastapi, psycopg2, sqlalchemy, uvicorn'"]
+    volumes:
+      - .:/workspace:ro
+      - backend-python:/opt/venv
+
+  runner-1:
+    <<: *runner
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-1, --site, compose, --bootstrap, "kafscale-broker:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    volumes:
+      - ./target/wayang-rust-linux:/runner:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-1:/state
+
+  runner-2:
+    <<: *runner
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-2, --site, compose, --bootstrap, "kafscale-broker:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    volumes:
+      - ./target/wayang-rust-linux:/runner:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-2:/state
+
+  runner-3:
+    <<: *runner
+    command: [serve, --listen, "0.0.0.0:8090", --node, worker-3, --site, compose, --bootstrap, "kafscale-broker:${KAFSCALE_BROKER_PORT:-39093}", --state, /state]
+    volumes:
+      - ./target/wayang-rust-linux:/runner:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/state/worker-3:/state
+
+  wayang:
+    image: eclipse-temurin:21-jdk@sha256:db5cc6341a1d7bc40cdb51e1f0d9824f3bb2cc8107d29da421dc4df7d11f05f1
+    user: "${WAYANG_UID:?Set WAYANG_UID}:${WAYANG_GID:?Set WAYANG_GID}"
+    working_dir: /workspace
+    entrypoint: [java, "@/settings/driver.args"]
+    volumes:
+      - .:/workspace:ro
+      - ${WAYANG_M2_REPOSITORY:?Set WAYANG_M2_REPOSITORY}:/m2:ro
+      - ${WAYANG_PRIVATE_DIR:?Set WAYANG_PRIVATE_DIR}/driver.args:/settings/driver.args:ro
+    depends_on: [runner-1, runner-2, runner-3]
+
+  backend:
+    <<: *python
+    command: [/opt/venv/bin/python, -m, uvicorn, app.main:app, --host, 0.0.0.0, --port, "8000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, /opt/venv/bin/python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3).read()"]
+      interval: 2s
+      timeout: 4s
+      retries: 60
+
+  coordinator:
+    <<: *python
+    command: [/opt/venv/bin/python, -m, app.wayang_worker]
+    depends_on:
+      backend: {condition: service_healthy}
+      wayang: {condition: service_started}
+
+  frontend:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    ports: ["127.0.0.1:${WAYANG_UI_PORT:-18081}:8080"]
+    volumes:
+      - ./opentsx-saas-frontend/dist:/usr/share/nginx/html:ro
+      - ./deploy/compose/wayang-rust-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend: {condition: service_healthy}
+
+volumes:
+  runner-cargo:
+  backend-python:
+  postgres-data:

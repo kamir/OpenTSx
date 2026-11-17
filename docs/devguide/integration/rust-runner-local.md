@@ -6,6 +6,7 @@ You need Linux or macOS, Docker Compose 2.24.4 or later, Docker access, JDK 21 a
 for the Java fixture checks.
 Use a disposable local broker and trusted request files. This profile does not implement signed fleet activation,
 the remote Wayang executor, automatic failover or production access controls.
+For the separate workbench-to-Wayang-to-HTTP-worker path, use the [bounded rollout guide](wayang-rust-compose.md).
 
 ## Preserve the assignment boundary
 
@@ -221,8 +222,8 @@ The production [runner specification](../../datamodel-2026/20-WAYANG-TS-OPERATOR
 defines signed `run --plan`, control polling and conformance reports. Local `replay` implements none of those
 interfaces. It opens no inbound worker service and does not load request-supplied code.
 
-The [unified delivery plan](wayang-unified-plan.md#deliver-the-shared-foundation-and-the-two-node-proof-first)
-keeps remote Wayang lowering,
-durable rollout, stale-output rejection and the sealed bounded storage route as separate qualification gates.
+The [unified delivery plan](wayang-unified-plan.md#preserve-the-local-proof-and-qualify-the-remaining-profiles)
+separates this replay fixture from the implemented bounded UI rollout. Production stale-output rejection, signed
+fleet control and the sealed bounded storage route remain separate qualification gates.
 A successful three-worker replay proves the selected local workload and its tested failure boundaries.
 It does not qualify production activation, continuous recovery or transparent cross-runtime state migration.

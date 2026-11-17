@@ -150,7 +150,12 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
 
 For a finite local replay, the separate [Rust profile](../devguide/integration/rust-runner-local.md) executes
 plausible-range checks, unit conversion and an optional trailing resample over one complete Kafka topic.
-It is a bounded command with local state and receipts; publishing a workbench flow does not dispatch it.
+It is a bounded command with local state and receipts. The separate **Run bounded with Wayang** workbench action
+submits one supported v2 chain to a PostgreSQL journal and a real Wayang Rust stage. One to three workers each own a
+complete topic, including all partitions. They prepare privately, check cross-topic series ownership, then activate
+and checkpoint acknowledged output. The accepted cut and clock stay fixed across retries. This action completes a
+finite replay; it does not start continuous shadow operation. Partial activation can publish output before a failure.
+See the [three-worker rollout guide](../devguide/integration/wayang-rust-compose.md).
 
 * **Goal:** the preparation and the analysis keep up with the data, and you have seen them do so before anyone
   acts on them.

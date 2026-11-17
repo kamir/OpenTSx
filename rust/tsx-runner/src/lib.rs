@@ -5,3 +5,4 @@ pub mod model;
 pub mod operators;
 pub mod runner;
 pub mod wire;
+pub mod worker;

@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { OP_BY_ID, defaultParams } from './ops';
-import { Bucket, FlowNode, Params, SignalContext, SourceInfo } from './types';
+import { Bucket, FlowNode, Params, SignalContext, SourceInfo, WayangConfig } from './types';
 import { VECTOR_OP, VECTOR_SCHEMA, componentNames } from './vector';
 
 export const SOURCE_ID = 'source';
@@ -28,6 +28,7 @@ export interface FlowState {
   savedId: number | null;
   /** The signal the workbench was opened for, if it was. */
   context: SignalContext | null;
+  wayang: WayangConfig | null;
 
   setTrack: (track: string) => void;
   setDomain: (domain: string) => void;
@@ -45,6 +46,7 @@ export interface FlowState {
   setSink: (id: string, topic: string | null) => void;
   setSavedId: (id: number | null) => void;
   setContext: (context: SignalContext | null) => void;
+  setWayang: (configuration: WayangConfig) => void;
   /** Empties the workbench for a new flow; track and domain stay. */
   clear: () => void;
   restore: (definition: Record<string, unknown>, savedId: number) => boolean;
@@ -153,6 +155,7 @@ export const useFlow = create<FlowState>((set, get) => ({
   counter: 0,
   savedId: null,
   context: null,
+  wayang: null,
 
   setTrack: (track) => set({ track }),
   setDomain: (domain) =>
@@ -266,15 +269,22 @@ export const useFlow = create<FlowState>((set, get) => ({
 
   setSavedId: (savedId) => set({ savedId }),
   setContext: (context) => set({ context }),
+  setWayang: (wayang) => set({ wayang }),
 
   clear: () => {
     cache.clear();
-    set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null, context: null });
+    set({ source: null, sourceInfo: null, sourceSeries: [], nodes: [], selectedId: null, counter: 0, savedId: null, context: null, wayang: null });
   },
 
   restore: (definition, savedId) => {
     const nodes = parseNodes(definition.nodes);
     if (definition.kind !== WORKBENCH_KIND || !nodes) return false;
+    const wayang = definition.wayang as WayangConfig | undefined;
+    if (definition.wayang !== undefined && definition.wayang !== null
+      && (typeof definition.wayang !== 'object' || Array.isArray(definition.wayang))) return false;
+    if (wayang && (!Array.isArray(wayang.inputTopics) || !wayang.inputTopics.every((v) => typeof v === 'string')
+      || !Array.isArray(wayang.seriesIds) || !wayang.seriesIds.every((v) => typeof v === 'string')
+      || !['nodeId', 'system', 'signal', 'outputTopic'].every((key) => typeof wayang[key as keyof WayangConfig] === 'string'))) return false;
     cache.clear();
     const numbers = nodes.map((n) => Number(/^n(\d+)$/.exec(n.id)?.[1] ?? 0));
     set({
@@ -284,6 +294,7 @@ export const useFlow = create<FlowState>((set, get) => ({
       sourceSeries: Array.isArray(definition.sourceSeries)
         ? definition.sourceSeries.filter((i): i is string => typeof i === 'string' && /^[A-Za-z0-9_.-]+$/.test(i))
         : [],
+      wayang: wayang ?? null,
       source: null,
       sourceInfo: null,
       nodes,
@@ -359,6 +370,8 @@ export function parseNodes(raw: unknown): FlowNode[] | null {
 /** What the exports read of the flow. */
 export type FlowDoc = Pick<FlowState, 'track' | 'domain' | 'sourceTopic' | 'nodes'> & {
   sourceSeries?: string[];
+  sourceTopics?: string[];
+  wayang?: WayangConfig | null;
   /** The signal the flow was made for, when the workbench was opened for one. */
   context?: SignalContext | null;
   /** Number of the flow in the account, once it is stored. */
@@ -387,6 +400,7 @@ export function toDefinition(s: FlowDoc): Record<string, unknown> {
     domain: s.domain,
     sourceTopic: s.sourceTopic,
     sourceSeries: s.sourceSeries ?? [],
+    ...(s.wayang ? { wayang: s.wayang } : {}),
     // the signal the flow was made for comes back with the flow
     ...(s.context ? { system: s.context.system, signal: s.context.signal, grade: s.context.grade, signalContext: s.context } : {}),
     nodes: s.nodes,
@@ -699,7 +713,7 @@ export function toDagYaml(s: FlowDoc): string {
     'version: 1',
     'source:',
     '  kind: kafscale-broker',
-    `  topics: [${yamlScalar(s.sourceTopic)}]`,
+    `  topics: [${(s.sourceTopics ?? [s.sourceTopic]).map(yamlScalar).join(', ')}]`,
     ...(s.sourceSeries && s.sourceSeries.length > 0 ? [`  series: [${s.sourceSeries.map(yamlScalar).join(', ')}]`] : []),
     'checkpoint: { backend: file }',
     'nodes:',

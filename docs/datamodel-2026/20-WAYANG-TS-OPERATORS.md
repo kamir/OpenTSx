@@ -1,10 +1,11 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-16. The module has its Java platform plugin,
+> Status: **concept**, 2026-11-17. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
 > segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 adds trusted-local bounded Kafka replay and
-> three cleaning operations; it is separate from the fleet design below. Checked against Apache
+> three cleaning operations. The bounded UI rollout uses a custom Wayang Rust stage and HTTP workers; the broader
+> signed continuous fleet design below remains separate. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
@@ -38,12 +39,16 @@ search, twin, causal analysis).
 ## 2. Current state
 
 `tsx-runner` 0.1.0 executes trusted-local bounded requests, with explicit resource caps and checkpointed
-completion after broker acknowledgement. Its Compose fixture runs three independent deployments on distinct
-topics with one, two and three partitions. This does not establish the remote Wayang driver, continuous
-fleet execution, signed activation or production fencing described by this concept.
+completion after broker acknowledgement. Its standalone replay fixture runs three independent deployments.
+The separate [bounded UI rollout](../devguide/integration/wayang-rust-compose.md) compiles one original v2 DAG
+through a real custom Wayang Rust platform and one connected execution stage. The authenticated backend journals
+the exact UI text, source cuts, clock and plan in PostgreSQL before its standalone coordinator dispatches the stage.
+Workers own distinct whole topics, prepare privately, then publish after cross-topic series ownership checks.
+This local profile does not establish continuous fleet execution, signed activation or production fencing.
 
 | Item | State | Evidence |
 |---|---|---|
+| Bounded Rust orchestration | Explicit workbench target, PostgreSQL journal/coordinator, `RustRollout` compiler, custom `RustPlatform`/`RustExecutor`, private HTTP preparation and acknowledged completion | [local guide](../devguide/integration/wayang-rust-compose.md), `opentsx-saas-backend/app/services/wayang_service.py`, `opentsx-wayang/src/main/java/org/opentsx/wayang/rust/`, `rust/tsx-runner/src/worker.rs` |
 | Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. Shared vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
@@ -366,6 +371,31 @@ retention must cover that gap.
 | `pair.xcorr` | only for short windows and few lags | cost grows with window length times lags |
 | `pair.es` | JVM | surrogate shuffles multiply the cost by the shuffle count |
 | DFA, pattern search (MASS, DTW), twin, ONNX scoring | JVM | history or large models |
+
+### 6.4 Run the bounded UI orchestration profile
+
+The implemented profile accepts one to three whole Kafka topics and one supported v2 cleaning chain.
+`RustRollout` reuses `DagToWayang.parameters`, preserves original UI node IDs and raw-text `specHash`, and gives
+each complete per-topic fragment its own ID/hash. It freezes every internal partition from zero to its observed end.
+Sources, optional unions, a fused chain and the sink map to custom Rust execution operators in one Wayang stage.
+Topology channels carry no episode payloads in the driver. Node placement follows topic order and sorted worker IDs;
+placeholder costs are not a measured placement model. All workers must match the artifact digest and state ABI.
+
+The PostgreSQL journal accepts exact source text once per installation and persists the accepted clock and plan.
+Normal authentication and administrator permission apply. A standalone coordinator owns a database advisory lock;
+the Java driver is stateless for authoritative control. Driver and worker HTTP ports remain internal to the trusted
+Compose network. This is not the signed runner-plan protocol or production authorization in sections 8 to 11.
+
+Every worker fully prepares its bounded input and candidate output privately before any activation. The stage checks
+input-series and derived-series ownership across all preparations, then activates in parallel. Broker acknowledgements
+precede the worker checkpoint and receipt. An uncertain publication has `activationRetryable=true`; retries retain
+the same request hash, saved output, clock and source cut while PostgreSQL topic ownership remains held. Completed
+retry returns the stored receipt. Partial activation can expose at-least-once output, without atomic publication or
+rollback across workers. The [acceptance helper](../../tools/verify_wayang_rust_compose.py) exercises the real browser
+and compares output with the Java reference; its generated evidence records the actual run outcome.
+
+Continuous input, failover, signed delivery, broader kernels and durable Iceberg publication remain outside this
+profile. A topic that exceeds its assigned worker's capacity is refused rather than split across workers.
 
 ## 7. Flow shapes
 
