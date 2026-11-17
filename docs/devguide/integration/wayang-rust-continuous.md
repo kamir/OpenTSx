@@ -29,6 +29,10 @@ partition from permanently excluding its siblings. Complete partition coverage a
 Payload, retained state, output and lifetime series caps still reject before publication; they are not unlimited
 streaming resource budgets.
 
+Cleaning retains its existing event-time policy: a late or overlapping episode whose first timestamp is before
+the saved series end is skipped. Its Kafka cursor and input count still advance. This profile does not revise
+earlier output or claim late-data completeness.
+
 ## Follow the persisted lifecycle
 
 ```mermaid

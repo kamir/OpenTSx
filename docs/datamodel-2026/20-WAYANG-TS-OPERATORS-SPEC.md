@@ -255,6 +255,8 @@ the existing maximum of 100,000 valid samples. Output is at least once and activ
 [continuous Compose acceptance](../devguide/integration/wayang-rust-continuous.md) cover finite successors,
 cumulative ownership, idle, exact retry, stateful service restart, queued new data and Stop. Broker restart,
 topic-incarnation qualification, distributed stale-writer fencing and the signed S5/S7 fleet contract remain open.
+The existing cleaning policy skips a block whose first event timestamp precedes the retained series end, increments
+the skipped-block counter and advances its input cursor. Continuous execution does not introduce late-data revisions.
 
 ## S2. Plan translation
 

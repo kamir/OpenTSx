@@ -178,6 +178,69 @@ fn incremental_windows_continue_after_restart_and_latest_retry_has_no_broker_io(
 }
 
 #[test]
+fn late_event_time_at_a_new_offset_advances_cursor_without_revising_clean_output() {
+    let directory = Directory::new();
+    let mut worker = directory.worker();
+    let first_episode = episode(vec![1.0, 2.0], 10_000_000);
+    let identity = first_episode.series.series_id.clone();
+    let mut broker = FakeBroker {
+        records: vec![InputRecord {
+            partition: 0,
+            offset: 0,
+            key: identity.as_bytes().to_vec(),
+            payload: wire::encode(&first_episode).unwrap(),
+        }],
+        ..FakeBroker::default()
+    };
+    let first = worker
+        .prepare(&increment(1, None, 0, 1, false), &mut broker)
+        .unwrap();
+    let first = worker.activate(&first.request_hash, &mut broker).unwrap();
+    assert_eq!(first.receipt.as_ref().unwrap().output_records, 1);
+    let original_output = broker.output[0].payload.clone();
+    let checkpoint = directory.0.join("increments/checkpoint.json");
+    let before: Value = serde_json::from_slice(&fs::read(&checkpoint).unwrap()).unwrap();
+    drop(worker);
+    let mut worker = directory.worker();
+    broker.records.push(InputRecord {
+        partition: 0,
+        offset: 1,
+        key: identity.as_bytes().to_vec(),
+        payload: wire::encode(&episode(vec![9.0], 11_000_000)).unwrap(),
+    });
+    let text = increment(2, Some(&first.request_hash), 1, 2, false);
+    let candidate = worker.prepare(&text, &mut broker).unwrap();
+    assert_eq!(broker.output.len(), 1);
+    let completed = worker
+        .activate(&candidate.request_hash, &mut broker)
+        .unwrap();
+    let receipt = completed.receipt.as_ref().unwrap();
+    assert_eq!((receipt.input_records, receipt.output_records), (1, 0));
+    assert_eq!(receipt.positions[0].next, "2");
+    assert_eq!(completed.input_series, first.input_series);
+    assert_eq!(completed.output_series, first.output_series);
+    assert_eq!(broker.output.len(), 1);
+    assert_eq!(broker.output[0].payload, original_output);
+    let after: Value = serde_json::from_slice(&fs::read(&checkpoint).unwrap()).unwrap();
+    let previous_state = &before["payload"]["head"]["completion"]["state"];
+    let current_state = &after["payload"]["head"]["completion"]["state"];
+    assert_eq!(previous_state["skippedBlocks"], "0");
+    assert_eq!(current_state["skippedBlocks"], "1");
+    assert_eq!(current_state["series"], previous_state["series"]);
+    assert_eq!(
+        current_state["outputOwners"],
+        previous_state["outputOwners"]
+    );
+    assert_eq!(current_state["series"][&identity]["end"], "12000000");
+    assert_eq!(current_state["series"][&identity]["written"], "2");
+    let counts = (broker.reads, broker.sends);
+    drop(worker);
+    let mut worker = directory.worker();
+    assert_eq!(worker.prepare(&text, &mut broker).unwrap(), completed);
+    assert_eq!((broker.reads, broker.sends), counts);
+}
+
+#[test]
 fn successor_cas_rejects_forks_skips_gaps_and_clock_changes_without_input_reads() {
     let directory = Directory::new();
     let mut worker = directory.worker();
