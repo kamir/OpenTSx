@@ -10,6 +10,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- `tsx-runner` 0.1.0 for trusted-local bounded whole-topic Kafka replay. Pass-through and a linear chain of
+  `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing `resample` use the shared Avro, identity
+  and cleaning vectors. Explicit resource caps and positive Kafka transport timestamps reject before publication.
+  Derived-series ownership prevents conflicting packets from distinct source series. Local checkpoints retain
+  lossless operator state and commit after every output acknowledgement; exact completed retries return their
+  saved receipts. A standalone Compose helper runs three independent topics with one, two and three partitions
+  against Java reference output. UI dispatch, continuous processing and Wayang fleet activation remain separate.
+
 - Wayang operators for threshold and extremum segmentation, SAX words, and
   data-quality signals (TASK-020 A3.4 and the retrieval part of A3.5). Segments
   checkpoint their retained samples and detector state per series. All 26
@@ -30,6 +38,7 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `opentsx-retrieval`: `VectorStream` accepts named inputs that read series of their own
   (`new VectorStream(expectedByInput, params, lateness)`, `add(input, seriesId, ...)`). The state format of a stream
   without named inputs is unchanged.
+
 - `opentsx-wayang` phase A2 (TASK-020): the clean chain (`dq.checks`, `convert.unit`, `resample`,
   `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) runs on Wayang as one operator per run
   of consecutive nodes (`TsxSeriesChain`, through `SeriesStream`), and `stats.welford-ddsketch` as `TsxStatsWindow`
@@ -67,7 +76,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   decimal-string offsets, execution modes and whole-topic ownership with complete internal cursor checks.
   Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
   UI-to-Wayang-to-Rust orchestration and a separate
-  bounded storage profile; no runner, network deployment or production fencing is enabled.
+  bounded storage profile. The validators perform no network deployment or production fencing; the separate
+  Rust runner executes only its trusted-local bounded profile.
 
 - Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
   families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons

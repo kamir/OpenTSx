@@ -148,6 +148,10 @@ are in. A manually confirmed action closes the loop: nothing here needs the plan
 
 ### Step 6: Run in the shadow
 
+For a finite local replay, the separate [Rust profile](../devguide/integration/rust-runner-local.md) executes
+plausible-range checks, unit conversion and an optional trailing resample over one complete Kafka topic.
+It is a bounded command with local state and receipts; publishing a workbench flow does not dispatch it.
+
 * **Goal:** the preparation and the analysis keep up with the data, and you have seen them do so before anyone
   acts on them.
 * **Do:** publish the flow and start it so it follows the topic. Watch its state and how far its data reaches.

@@ -9,7 +9,9 @@ You need [concept 20](../../datamodel-2026/20-WAYANG-TS-OPERATORS.md), its
 **Target: an OpenTSx UI DAG, admitted by the backend, compiled by Wayang and deployed as complete fragments to
 multiple Rust nodes.** Java supplies the reference kernels and an alternative execution runtime.
 The implemented foundation is [offline shared-contract validation](wayang-shared-contracts.md).
-The remote driver, Rust runner and multi-node rollout remain delivery work. The existing Java
+The separate [Rust runner 0.1.0](rust-runner-local.md) executes a trusted-local bounded subset. Three independent
+Compose workers own distinct topics with one, two and three internal partitions. The remote driver and
+UI-to-Wayang multi-node rollout remain delivery work. The existing Java
 [`DagToWayang`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java) compiles local clean DAGs
 with episode sinks; it does not deploy remote fragments.
 
@@ -125,7 +127,7 @@ Planning IDs below are local work packages, not created issue numbers. Owners ar
 | U01: deployment contract; architecture/backend | U00 | Freeze physical plan, output/channel bindings, source identity, complete ownership, capability/state ABI and structured refusals. Golden UI-to-fragment and valid/invalid physical-plan cases. |
 | U02: driver lowering; Wayang owner | U01 | Real Wayang logical/physical plan and custom stage executor against deterministic fake transport; two assignments, bounded fanout, placement restrictions, receipts and no raw driver payloads. |
 | U03: durable control; backend owner | U01 | PostgreSQL migrations, deployment/assignment journal, per-site delivery sequence, idempotent prepare/activate/retire and polling. Barrier tests for restart, stale events and lost acknowledgements. |
-| U04: minimal Rust runner; Rust owner | U00, U01 | Pass-through, Avro, series IDs, Kafka client/partitioner conformance, checkpoints and one cleaning chain. Shared wire/operator vectors plus crash-before/after-ack cases; pinned CI artifacts. |
+| U04: minimal Rust runner; Rust owner | U00, U01 | Local bounded subset implemented: pass-through, Avro/series IDs, range checks, unit conversion, trailing resample, caps, receipts and retained state. Shared vectors and acknowledgement/checkpoint regressions exist. The standalone three-topic Compose fixture checks Java output and partition placement. Full cross-target/conformance qualification remains separate. |
 | U05: UI-to-two-node prototype; application/platform | U02, U03, U04 | Explicit UI target selection; two actual Rust processes receive different whole topics and channel bindings, including all internal partitions. Reject split-topic placement. Output matches direct Java, including restart and refused capabilities. Static topic ownership only. |
 | U06: production ownership and rollout; platform/security | U05; approvals | Enforce stale-output rejection, policy/signatures, resource limits, staged rollout, retention and restore runbooks. Network-partition, partial activation and operating qualification before production. |
 | U07: catalog expansion; algorithm owners | Per-operator vectors | Continue A2/A3 Java kernels and Rust ports without blocking U02/U04 on every operator. No duplicate generator or conflicting ownership of shared algorithm fixtures. |
@@ -135,6 +137,8 @@ Planning IDs below are local work packages, not created issue numbers. Owners ar
 U05 is the first proof of the requested product behavior. U06 gates production; U08 preserves the selected
 Iceberg route as an independently qualified profile. Spark remains a separate future backend decision and does
 not substitute for the Rust deployment proof.
+The local three-worker fixture exercises U04 directly. It does not pass through UI deployment, a Wayang remote
+platform or the durable control plane, so it does not establish U02, U03 or U05.
 
 ## Integrate parallel work without replacing its baseline
 

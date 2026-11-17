@@ -2113,7 +2113,8 @@
       ],
       "pitfalls": [
         "This value transform does not produce a full DataQuality event record.",
-        "Clipping changes values and can hide extremes from later analysis."
+        "Clipping changes values and can hide extremes from later analysis.",
+        "The Rust bounded profile is a separate execution surface; this browser workload does not deploy a runner or establish Kafka timestamp validity."
       ],
       "parameterKeys": [
         "min",
@@ -2144,17 +2145,21 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-local.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#dq-plausible-range"
+          "docs/learning/ui-operator-contracts.md#dq-plausible-range",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange"
+          "opentsx-saas-frontend/src/workbench/ops.ts#plausibleRange",
+          "rust/tsx-runner/src/operators.rs#compile"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2214,7 +2219,8 @@
       ],
       "pitfalls": [
         "The operator trusts the supplied factor and offset.",
-        "An empty target unit retains the original unit metadata."
+        "An empty target unit retains the original unit metadata.",
+        "The Rust bounded profile is a separate execution surface; this browser workload does not deploy a runner or establish Kafka timestamp validity."
       ],
       "parameterKeys": [
         "factor",
@@ -2242,17 +2248,21 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-local.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#convert-unit"
+          "docs/learning/ui-operator-contracts.md#convert-unit",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit"
+          "opentsx-saas-frontend/src/workbench/ops.ts#convertUnit",
+          "rust/tsx-runner/src/operators.rs#compile"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
@@ -2318,7 +2328,9 @@
       ],
       "pitfalls": [
         "Only finite values enter a window aggregate.",
-        "A batch workbench can include a partial final window; a running stream waits for sufficient progress."
+        "A batch workbench can include a partial final window; a running stream waits for sufficient progress.",
+        "The Rust bounded profile is a separate execution surface; this browser workload does not deploy a runner or establish Kafka timestamp validity.",
+        "The Rust Kafka cut retains an unfinished trailing window instead of flushing it at batch end."
       ],
       "parameterKeys": [
         "every",
@@ -2347,17 +2359,22 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/09-retrieval.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-local.md"
         ],
         "spec": [
-          "docs/learning/ui-operator-contracts.md#resample"
+          "docs/learning/ui-operator-contracts.md#resample",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#resample"
+          "opentsx-saas-frontend/src/workbench/ops.ts#resample",
+          "rust/tsx-runner/src/operators.rs#compile"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/clean.test.ts"
+          "opentsx-saas-frontend/src/workbench/clean.test.ts",
+          "rust/tsx-runner/src/operators.rs#eight_shared_clean_cases_match_whole_and_every_checkpointed_split",
+          "rust/tsx-runner/src/operators.rs#open_resample_tail_survives_restore_and_is_not_flushed_at_batch_end"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/clean-ops.v1.json"
