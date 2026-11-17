@@ -231,27 +231,38 @@ export interface WayangDeployment {
   specHash: string;
   planHash: string;
   createdAtMicros: string;
-  state: 'queued' | 'running' | 'completed' | 'failed';
+  state: 'queued' | 'running' | 'completed' | 'failed' | 'idle' | 'stopping' | 'stopped';
   error: string | null;
+  profile?: 'bounded' | 'continuous';
+  currentCycle?: string;
+  completedCycles?: string;
+  stopRequested?: boolean;
+  inputRecords?: string;
+  outputRecords?: string;
   assignments: { node: string; inputTopic: string; partitionCount: string; outputTopic: string;
     requestHash: string; specHash: string;
-    state?: string; receipt?: Record<string, unknown>; error?: string }[];
+    state?: string; receipt?: Record<string, unknown>; error?: string;
+    cumulativeInputRecords?: string; cumulativeOutputRecords?: string;
+    positions?: { partition: string; next: string }[] }[];
 }
 
 export interface WayangCapabilities {
   canRun: boolean;
   reason: string | null;
   profile?: string;
+  profiles?: ('bounded' | 'continuous')[];
   operators?: string[];
   workers?: { node: string; site?: string }[];
 }
 
 export const wayangAPI = {
   capabilities: async (): Promise<WayangCapabilities> => (await apiClient.get('/dags/wayang-rust/capabilities')).data,
-  deploy: async (flowId: number, dagText: string): Promise<WayangDeployment> =>
-    (await apiClient.post('/dags/wayang-rust/deploy', { flowId, dagText })).data,
+  deploy: async (flowId: number, dagText: string, profile?: 'bounded' | 'continuous'): Promise<WayangDeployment> =>
+    (await apiClient.post('/dags/wayang-rust/deploy', { flowId, dagText, ...(profile ? { profile } : {}) })).data,
   list: async (): Promise<WayangDeployment[]> => (await apiClient.get('/dags/wayang-rust/deployments')).data.deployments,
   get: async (id: string): Promise<WayangDeployment> => (await apiClient.get(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}`)).data,
+  stop: async (id: string): Promise<WayangDeployment> =>
+    (await apiClient.post(`/dags/wayang-rust/deployments/${encodeURIComponent(id)}/stop`)).data,
 };
 
 export const flowsAPI = {

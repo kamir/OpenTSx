@@ -283,6 +283,7 @@ export const useFlow = create<FlowState>((set, get) => ({
     if (definition.wayang !== undefined && definition.wayang !== null
       && (typeof definition.wayang !== 'object' || Array.isArray(definition.wayang))) return false;
     if (wayang && (!Array.isArray(wayang.inputTopics) || !wayang.inputTopics.every((v) => typeof v === 'string')
+      || (wayang.profile !== undefined && wayang.profile !== 'bounded' && wayang.profile !== 'continuous')
       || !Array.isArray(wayang.seriesIds) || !wayang.seriesIds.every((v) => typeof v === 'string')
       || !['nodeId', 'system', 'signal', 'outputTopic'].every((key) => typeof wayang[key as keyof WayangConfig] === 'string'))) return false;
     cache.clear();

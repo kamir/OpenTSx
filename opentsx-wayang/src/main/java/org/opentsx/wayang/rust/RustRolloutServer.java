@@ -33,9 +33,18 @@ public final class RustRolloutServer {
         if (!method.equals("POST")) throw new IllegalArgumentException("unsupported rollout route");
         JsonNode input = RustRollout.json(body);
         if (path.equals("/v1/plan")) {
-            if (!input.isObject() || input.size() != 3 || !input.path("deployment").isTextual()
-                    || !input.path("dagText").isTextual() || !input.path("createdAtMicros").isTextual()) throw new IllegalArgumentException("expected deployment, dagText and createdAtMicros strings");
+            boolean continuous = input.has("profile");
+            if (!input.isObject() || input.size() != (continuous ? 4 : 3) || !input.path("deployment").isTextual()
+                    || !input.path("dagText").isTextual() || !input.path("createdAtMicros").isTextual()
+                    || (continuous && !input.path("profile").asText().equals("continuous"))) throw new IllegalArgumentException("expected deployment, dagText, createdAtMicros and optional continuous profile");
+            if (continuous) return rollout.planContinuous(input.path("deployment").asText(), input.path("dagText").asText(), input.path("createdAtMicros").asText());
             return rollout.plan(input.path("deployment").asText(), input.path("dagText").asText(), input.path("createdAtMicros").asText());
+        }
+        if (path.equals("/v1/next")) {
+            if (input.size() != 2 || !input.path("plan").isObject() || !input.path("result").isObject()) {
+                throw new IllegalArgumentException("expected the previous plan and completed result");
+            }
+            return rollout.next(input.path("plan"), input.path("result"));
         }
         if (!path.equals("/v1/execute")) throw new IllegalArgumentException("unsupported rollout route");
         String deployment = input.path("deployment").asText();
@@ -43,12 +52,14 @@ public final class RustRolloutServer {
         if (!hash.matches("[0-9a-f]{64}") || !deployment.matches("[a-z0-9][a-z0-9-]{0,62}")
                 || !hash.equals(RustRollout.hash(input))) throw new IllegalArgumentException("invalid physical plan identity");
         Job candidate = new Job(hash, new CompletableFuture<>());
+        boolean continuous = input.path("schema").asText().equals(RustRollout.CONTINUOUS_SCHEMA);
+        String key = continuous ? deployment + ":" + input.path("sequence").asText() : deployment;
         Job job;
         synchronized (jobs) {
-            job = jobs.get(deployment);
+            job = jobs.get(key);
             if (job == null) {
                 if (jobs.size() >= 64) throw new IllegalStateException("local rollout journal capacity reached");
-                jobs.put(deployment, candidate);
+                jobs.put(key, candidate);
                 job = candidate;
             }
         }
@@ -57,12 +68,13 @@ public final class RustRolloutServer {
             try { job.result().complete(rollout.execute(input)); }
             catch (RuntimeException error) {
                 job.result().completeExceptionally(error);
-                jobs.remove(deployment, job);
+                jobs.remove(key, job);
                 throw error;
             }
         }
         try { return job.result().join(); }
         catch (CompletionException error) { throw new IllegalStateException("deployment requires reconciliation", error.getCause()); }
+        finally { if (continuous) jobs.remove(key, job); }
     }
 
     private void handle(HttpExchange exchange) throws IOException {

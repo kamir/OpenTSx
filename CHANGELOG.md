@@ -10,6 +10,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Continuous workbench execution through Wayang on fixed whole-topic Rust workers. Each acknowledged increment
+  supplies the next complete partition cursors and retained operator state. PostgreSQL persists plans before
+  dispatch, retains ownership through idle and uncertain outcomes, and records durable stop requests. Worker
+  head/candidate storage and completed cycle history stay bounded. The continuous Compose/browser profile checks
+  live input, data arriving during execution-service downtime, stateful restart, later input and Stop against Java.
+  Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
+  failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
+
 - Regression guards for the Wayang/Rust Compose profile's existing required
   credential interpolation and the helper's private per-run environment.
   Mutated fallback and empty-value fixtures reject without printing credentials.

@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 const options = {};
 for (let index = 2; index < process.argv.length; index += 2) {
   const key = process.argv[index];
-  if (!['--base', '--fixture', '--credentials', '--output', '--phase', '--playwright-module'].includes(key)
+  if (!['--base', '--fixture', '--credentials', '--output', '--phase', '--playwright-module', '--profile', '--blocks'].includes(key)
     || !process.argv[index + 1] || options[key]) throw new Error('Expected unique named browser arguments.');
   options[key] = process.argv[index + 1];
 }
@@ -21,7 +21,16 @@ const fixture = JSON.parse(fs.readFileSync(options['--fixture'], 'utf8'));
 const credentials = JSON.parse(fs.readFileSync(options['--credentials'], 'utf8'));
 const directory = options['--output'];
 const phase = options['--phase'];
-if (!['initial', 'retry', 'restart'].includes(phase)) throw new Error('Unknown browser phase.');
+const profile = options['--profile'] ?? 'bounded';
+if (!['bounded', 'continuous'].includes(profile)) throw new Error('Unknown browser profile.');
+const continuous = profile === 'continuous';
+if (!(continuous ? ['initial', 'retry', 'new-data', 'restart', 'after-restart', 'stopped']
+  : ['initial', 'retry', 'restart']).includes(phase)) throw new Error('Unknown browser phase.');
+const blocks = continuous ? options['--blocks'] : null;
+if (continuous && (!blocks || !/^[1-9][0-9]*$/.test(blocks) || BigInt(blocks) > 64n)) {
+  throw new Error('Continuous verification requires one to 64 blocks.');
+}
+const inputRecords = continuous ? BigInt(blocks) * BigInt(fixture.sources.reduce((n, source) => n + source.partitions, 0)) : null;
 fs.mkdirSync(directory, { recursive: true });
 const initialFile = path.join(directory, 'deployment-initial.json');
 const initial = phase === 'initial' ? null : JSON.parse(fs.readFileSync(initialFile, 'utf8'));
@@ -34,8 +43,13 @@ let awaitedDeployment = initial?.id ?? null;
 let observedRows = [];
 let resolveCompletion;
 const completion = new Promise((resolve) => { resolveCompletion = resolve; });
+const expectedState = continuous ? (phase === 'stopped' ? 'stopped' : 'idle') : 'completed';
+const matches = (value) => value.id === awaitedDeployment && value.state === expectedState
+  && (!continuous || (value.profile === profile && value.inputRecords === String(inputRecords)
+    && value.assignments.length === 3 && value.assignments.every((assignment) => assignment.positions.length === Number(assignment.partitionCount)
+      && assignment.positions.every((position, index) => position.partition === String(index) && position.next === blocks))));
 const observe = () => {
-  const row = observedRows.find((value) => value.id === awaitedDeployment && value.state === 'completed');
+  const row = observedRows.find(matches);
   if (row) resolveCompletion(row);
 };
 page.on('response', async (response) => {
@@ -81,8 +95,9 @@ try {
     await page.getByRole('button', { name: `Save flow ${initial.flowId}`, exact: true }).waitFor();
   }
   await page.getByRole('tab', { name: 'Smart Topic', exact: true }).click();
-  await page.getByLabel('Deployment target', { exact: true }).selectOption('wayang-rust');
-  const panel = page.locator('fieldset').filter({ has: page.locator('legend', { hasText: /^Bounded Wayang on Rust$/ }) });
+  await page.getByLabel('Deployment target', { exact: true }).selectOption(continuous ? 'wayang-rust-continuous' : 'wayang-rust');
+  const panel = page.locator('fieldset').filter({ has: page.locator('legend', {
+    hasText: continuous ? /^Continuous Wayang on Rust$/ : /^Bounded Wayang on Rust$/ }) });
   if (phase === 'initial') {
     await panel.getByLabel('Whole input topics', { exact: true }).fill(fixture.inputTopics.join('\n'));
     await panel.getByLabel('Selected series IDs', { exact: true }).fill(fixture.seriesIds.join('\n'));
@@ -91,34 +106,61 @@ try {
     await panel.getByLabel('Output signal', { exact: true }).fill(fixture.signal);
     await panel.getByLabel('Rust output topic', { exact: true }).fill(fixture.outputTopic);
   }
-  const responsePromise = page.waitForResponse((response) => response.request().method() === 'POST'
-    && new URL(response.url()).pathname === '/api/v1/dags/wayang-rust/deploy');
-  await panel.getByRole('button', { name: 'Run bounded with Wayang', exact: true }).click();
-  const response = await responsePromise;
-  if (response.status() !== 202) throw new Error(`Deployment request returned HTTP ${response.status()}.`);
-  let deployment = await response.json();
-  awaitedDeployment = deployment.id;
+  let deployment = initial;
+  const submit = !continuous || phase === 'initial' || phase === 'retry';
+  if (submit) {
+    const responsePromise = page.waitForResponse((response) => response.request().method() === 'POST'
+      && new URL(response.url()).pathname === '/api/v1/dags/wayang-rust/deploy');
+    await panel.getByRole('button', { name: continuous ? 'Run continuously with Wayang' : 'Run bounded with Wayang', exact: true }).click();
+    const response = await responsePromise;
+    if (response.status() !== 202) throw new Error(`Deployment request returned HTTP ${response.status()}.`);
+    deployment = await response.json();
+    awaitedDeployment = deployment.id;
+  }
+  if (continuous && phase === 'stopped') {
+    const stop = page.waitForResponse((response) => response.request().method() === 'POST'
+      && new URL(response.url()).pathname === `/api/v1/dags/wayang-rust/deployments/${deployment.id}/stop`);
+    await panel.getByRole('button', { name: `Stop deployment ${deployment.id}`, exact: true }).click();
+    const response = await stop;
+    if (!response.ok()) throw new Error(`Stop request returned HTTP ${response.status()}.`);
+  }
   observe();
-  if (captured.length !== 1) throw new Error('Expected exactly one browser deployment submission.');
+  if (captured.length !== Number(submit)) throw new Error('The browser submitted an unexpected deployment request.');
+  if (continuous && submit && captured[0].profile !== 'continuous') throw new Error('The UI did not select continuous execution.');
   if (phase === 'initial') fs.writeFileSync(path.join(directory, 'submitted-dag.txt'), captured[0].dagText);
-  else if (captured[0].dagText !== fs.readFileSync(path.join(directory, 'submitted-dag.txt'), 'utf8')) {
+  else if (submit && captured[0].dagText !== fs.readFileSync(path.join(directory, 'submitted-dag.txt'), 'utf8')) {
     throw new Error('Completed retry changed the original UI graph text.');
   }
-  await panel.getByText(`Bounded deployment ${deployment.id}: completed`, { exact: true }).waitFor({ timeout: 600_000 });
-  if (deployment.state !== 'completed') deployment = await completion;
-  if (deployment.state !== 'completed' || deployment.assignments.length !== 3) throw new Error('Three workers did not complete.');
-  const hash = crypto.createHash('sha256').update(captured[0].dagText, 'utf8').digest('hex');
+  await panel.getByText(`${continuous ? 'Continuous' : 'Bounded'} deployment ${deployment.id}: ${expectedState}`, { exact: true })
+    .waitFor({ timeout: 600_000 });
+  let timeout;
+  try {
+    if (!matches(deployment)) deployment = await Promise.race([completion, new Promise((_, reject) => {
+      timeout = setTimeout(() => reject(new Error('The deployment did not reach the required complete-topic watermarks.')), 600_000);
+    })]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+  if (!matches(deployment) || deployment.assignments.length !== 3) throw new Error('Three workers did not reach the required outcome.');
+  const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(directory, 'submitted-dag.txt')), 'utf8').digest('hex');
   if (deployment.specHash !== hash) throw new Error('The completion has another original source hash.');
   const actual = deployment.assignments.map((assignment) => [assignment.inputTopic, assignment.partitionCount]);
   const expected = fixture.sources.map((source) => [source.topic, String(source.partitions)]);
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error('Assignments split or changed a source topic inventory.');
-  if (initial && JSON.stringify(deployment) !== JSON.stringify(initial)) throw new Error('Completed retry changed its durable outcome.');
+  if (initial && (!continuous || phase === 'retry') && JSON.stringify(deployment) !== JSON.stringify(initial)) {
+    throw new Error('Completed retry changed its durable outcome.');
+  }
+  if (continuous && initial && (deployment.id !== initial.id || deployment.createdAtMicros !== initial.createdAtMicros)) {
+    throw new Error('Continuous input changed its deployment or accepted clock.');
+  }
   fs.writeFileSync(path.join(directory, `deployment-${phase}.json`), JSON.stringify(deployment, null, 2) + '\n');
   fs.writeFileSync(path.join(directory, `browser-${phase}.json`), JSON.stringify({ phase, deployment: deployment.id,
     flowId: deployment.flowId, state: deployment.state, specHash: hash, planHash: deployment.planHash,
-    createdAtMicros: deployment.createdAtMicros, assignments: deployment.assignments.length }, null, 2) + '\n');
+    createdAtMicros: deployment.createdAtMicros, assignments: deployment.assignments.length,
+    ...(continuous ? { profile, blocks, inputRecords: deployment.inputRecords, outputRecords: deployment.outputRecords,
+      submissions: captured.length } : {}) }, null, 2) + '\n');
   await page.screenshot({ path: path.join(directory, `browser-${phase}.png`), fullPage: true });
-  console.log(`Browser ${phase} verified three completed whole-topic assignments.`);
+  console.log(`Browser ${phase} verified three whole-topic assignments in state ${deployment.state}.`);
 } catch (error) {
   let screenshotFailure = '';
   try {

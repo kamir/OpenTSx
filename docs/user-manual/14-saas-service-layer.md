@@ -12,9 +12,13 @@
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status,
   * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it (administrators only
     unless configured otherwise),
-  * `/api/v1/dags/wayang-rust`: administrator-only bounded capability, deployment and status endpoints. PostgreSQL
+  * `/api/v1/dags/wayang-rust`: administrator-only capability, bounded/continuous deployment, status and continuous
+    stop endpoints. PostgreSQL
     stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
     the saved plan through a custom Wayang Rust platform,
+  * **Continuous Wayang on Rust** retains complete-topic ownership between increments, saves confirmed positions
+    and cumulative counts, and restores worker state after service restart. **Stop deployment** reconciles dispatched
+    work before releasing ownership. See the [continuous guide](../devguide/integration/wayang-rust-continuous.md),
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open

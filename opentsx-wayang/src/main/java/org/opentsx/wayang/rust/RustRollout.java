@@ -51,6 +51,8 @@ import java.util.function.Function;
 
 public final class RustRollout {
     public static final String SCHEMA = "opentsx.local-rollout.v1";
+    public static final String CONTINUOUS_SCHEMA = "opentsx.local-continuous-rollout.v1";
+    public static final String INCREMENT_SCHEMA = "opentsx.local-increment.v1";
     public static final List<String> OPERATORS = List.of("decode.avro-soe", "dq.checks", "convert.unit", "resample");
     private static final List<String> LIMITS = List.of("records", "payloadBytes", "inputBytes", "samples", "outputBytes", "series", "stateBytes");
     private static final Map<String, Integer> CEILINGS = Map.of("records", 10_000, "payloadBytes", 1_048_576,
@@ -106,18 +108,63 @@ public final class RustRollout {
         result.set("operators", JSON.valueToTree(OPERATORS));
         ArrayNode nodes = result.putArray("workers");
         String artifact = null;
+        boolean incremental = true;
         for (Worker worker : workers) {
             JsonNode capability = client.get(worker, "/v1/capabilities");
             validateCapability(worker, capability);
             String digest = capability.path("artifactDigest").asText();
             if (artifact != null && !artifact.equals(digest)) throw new IllegalArgumentException("workers must run the same qualified artifact");
             artifact = digest;
+            JsonNode chains = capability.path("limits").path("incrementalChains");
+            incremental &= capability.path("incrementalRequestSchema").asText().equals(INCREMENT_SCHEMA)
+                    && chains.isIntegralNumber() && chains.canConvertToInt() && chains.asInt() == 1;
             nodes.add(capability);
         }
+        ArrayNode profiles = result.putArray("profiles").add("bounded");
+        if (incremental) profiles.add("continuous");
         return result;
     }
 
     public ObjectNode plan(String deployment, String sourceText, String createdAt) {
+        return plan(deployment, sourceText, createdAt, null, false);
+    }
+
+    public ObjectNode planContinuous(String deployment, String sourceText, String createdAt) {
+        return plan(deployment, sourceText, createdAt, null, true);
+    }
+
+    public ObjectNode next(JsonNode previous, JsonNode result) {
+        validatePlan(previous);
+        if (!previous.path("schema").asText().equals(CONTINUOUS_SCHEMA)) throw new IllegalArgumentException("a successor requires a continuous plan");
+        allowed(result, Set.of("deployment", "planHash", "state", "assignments", "error"));
+        if (!result.path("deployment").equals(previous.path("deployment")) || !result.path("planHash").equals(previous.path("planHash"))
+                || !result.path("state").asText().equals("completed") || !result.path("assignments").isArray()
+                || result.path("assignments").size() != previous.path("assignments").size()) {
+            throw new IllegalArgumentException("a successor requires the exact completed previous outcome");
+        }
+        Set<String> nodes = new HashSet<>();
+        for (JsonNode status : result.path("assignments")) {
+            JsonNode unit = null;
+            for (JsonNode candidate : previous.path("assignments")) if (candidate.path("node").equals(status.path("node"))) unit = candidate;
+            if (unit == null || !nodes.add(status.path("node").asText()) || !status.path("state").asText().equals("completed")
+                    || status.path("activationRetryable").asBoolean(true)) throw new IllegalArgumentException("the previous worker inventory is not complete");
+            verifyStatus(unit, status);
+        }
+        ObjectNode plan = plan(previous.path("deployment").asText(), previous.path("sourceDagText").asText(),
+                previous.path("createdAtMicros").asText(), previous, true);
+        boolean changed = false;
+        for (JsonNode unit : plan.path("assignments")) {
+            JsonNode assignment = json(json(unit.path("requestText").asText()).path("assignmentText").asText());
+            for (JsonNode cursor : assignment.path("inputs").get(0).path("positions")) {
+                changed |= !cursor.path("from").equals(cursor.path("to"));
+            }
+        }
+        ObjectNode answer = JSON.createObjectNode().put("state", changed ? "ready" : "idle");
+        if (changed) answer.set("plan", plan); else answer.putNull("plan");
+        return answer;
+    }
+
+    private ObjectNode plan(String deployment, String sourceText, String createdAt, JsonNode previous, boolean continuous) {
         if (deployment == null || !deployment.matches("[a-z0-9][a-z0-9-]{0,62}")) throw new IllegalArgumentException("invalid deployment identity");
         decimal(createdAt);
         JsonNode dag = source(sourceText);
@@ -129,11 +176,21 @@ public final class RustRollout {
         String output = sink.path("topic").asText();
         if (!ExecutionAssignments.validTopic(output) || topics.contains(output)) throw new IllegalArgumentException("output must be a distinct valid OpenTSx topic");
         ObjectNode capability = capabilities();
+        if (continuous && !texts(capability.path("profiles"), "profiles", 2).contains("continuous")) throw new IllegalArgumentException("workers do not support continuous increments");
         Inventory inventory = metadata.inspect(topics, output);
         if (inventory.outputPartitions() < 1 || inventory.outputPartitions() > 128) throw new IllegalArgumentException("output partition capacity exceeded");
-        ObjectNode plan = JSON.createObjectNode().put("schema", SCHEMA).put("deployment", deployment)
+        if (previous != null && (inventory.createOutput()
+                || !Integer.toString(inventory.outputPartitions()).equals(previous.path("output").path("partitionCount").asText()))) {
+            throw new IllegalArgumentException("continuous output topic inventory changed");
+        }
+        long sequence = previous == null ? 1 : Math.addExact(decimal(previous.path("sequence").asText()), 1);
+        ObjectNode plan = JSON.createObjectNode().put("schema", continuous ? CONTINUOUS_SCHEMA : SCHEMA).put("deployment", deployment)
                 .put("sourceDagText", sourceText).put("specHash", ExecutionAssignments.sha256(sourceText))
                 .put("createdAtMicros", createdAt);
+        if (continuous) {
+            plan.put("sequence", Long.toString(sequence));
+            if (previous == null) plan.putNull("previousPlanHash"); else plan.set("previousPlanHash", previous.path("planHash"));
+        }
         plan.putObject("output").put("topic", output).put("partitionCount", Integer.toString(inventory.outputPartitions()))
                 .put("create", inventory.createOutput());
         ArrayNode assignments = plan.putArray("assignments");
@@ -147,6 +204,8 @@ public final class RustRollout {
                     || positions.size() > cap.path("limits").path("partitions").asInt()) {
                 throw new IllegalArgumentException("whole topic exceeds assigned worker capacity: " + topic);
             }
+            JsonNode previousUnit = previous == null ? null : previous.path("assignments").get(index);
+            if (continuous) positions = incrementPositions(positions, previousUnit, cap, sequence);
             ObjectNode fragment = dag.deepCopy();
             ((ObjectNode) fragment.path("source")).putArray("topics").add(topic);
             String fragmentText = stringify(fragment);
@@ -164,18 +223,23 @@ public final class RustRollout {
             long records = 0;
             for (int partition = 0; partition < positions.size(); partition++) {
                 Position position = positions.get(partition);
-                if (position.partition() != partition || position.from() != 0 || position.to() < 0) {
+                if (position.partition() != partition || position.from() < 0 || position.to() < position.from()
+                        || (!continuous && position.from() != 0)) {
                     throw new IllegalArgumentException("bounded rollout requires every retained partition from offset zero");
                 }
-                records = Math.addExact(records, position.to());
-                cursor.addObject().put("partition", Integer.toString(partition)).put("from", "0").put("to", Long.toString(position.to()));
+                records = Math.addExact(records, position.to() - position.from());
+                cursor.addObject().put("partition", Integer.toString(partition)).put("from", Long.toString(position.from())).put("to", Long.toString(position.to()));
             }
             if (records > cap.path("limits").path("records").asLong()) throw new IllegalArgumentException("whole topic exceeds assigned record capacity");
             String envelope = stringify(assignment);
             ExecutionAssignments.validate(envelope);
             envelopes.add(envelope);
-            ObjectNode request = JSON.createObjectNode().put("schema", "opentsx.local-bounded-run.v1")
+            ObjectNode request = JSON.createObjectNode().put("schema", continuous ? INCREMENT_SCHEMA : "opentsx.local-bounded-run.v1")
                     .put("assignmentText", envelope).put("createdAtMicros", createdAt);
+            if (continuous) {
+                request.put("sequence", Long.toString(sequence));
+                if (previousUnit == null) request.putNull("previousRequestHash"); else request.put("previousRequestHash", requestHash(previousUnit));
+            }
             ObjectNode binding = request.putObject("bindings").putObject("local").put("bootstrap", bootstrap);
             binding.putArray("inputs").add(topic);
             binding.putArray("outputs").add(output);
@@ -192,6 +256,60 @@ public final class RustRollout {
         plan.put("planHash", hash(plan));
         if (stringify(plan).getBytes(StandardCharsets.UTF_8).length > 262_144) throw new IllegalArgumentException("physical plan exceeds its byte limit");
         return plan;
+    }
+
+    private static List<Position> incrementPositions(List<Position> inventory, JsonNode previousUnit, JsonNode capability, long sequence) {
+        JsonNode cursors = previousUnit == null ? null
+                : json(json(previousUnit.path("requestText").asText()).path("assignmentText").asText()).path("inputs").get(0).path("positions");
+        if (cursors != null && cursors.size() != inventory.size()) throw new IllegalArgumentException("continuous whole-topic partition count changed");
+        long[] from = new long[inventory.size()];
+        long[] to = new long[inventory.size()];
+        long[] end = new long[inventory.size()];
+        List<Integer> active = new ArrayList<>();
+        int first = (int) ((sequence - 1) % inventory.size());
+        for (int partition = 0; partition < inventory.size(); partition++) {
+            Position position = inventory.get(partition);
+            long start = cursors == null ? 0 : decimal(cursors.get(partition).path("to").asText());
+            if (position.partition() != partition || position.from() < 0 || position.from() > start || position.to() < start) {
+                throw new IllegalArgumentException("continuous cursor is outside the retained whole-topic inventory");
+            }
+            from[partition] = to[partition] = start;
+            end[partition] = position.to();
+        }
+        for (int offset = 0; offset < inventory.size(); offset++) {
+            int partition = (first + offset) % inventory.size();
+            if (to[partition] < end[partition]) active.add(partition);
+        }
+        long remaining = incrementBudget(capability);
+        while (remaining > 0 && !active.isEmpty()) {
+            long share = Math.max(1, remaining / active.size());
+            List<Integer> pending = new ArrayList<>();
+            for (int partition : active) {
+                long take = Math.min(remaining, Math.min(share, end[partition] - to[partition]));
+                to[partition] = Math.addExact(to[partition], take);
+                remaining -= take;
+                if (to[partition] < end[partition]) pending.add(partition);
+            }
+            active = pending;
+        }
+        List<Position> result = new ArrayList<>(inventory.size());
+        for (int partition = 0; partition < inventory.size(); partition++) result.add(new Position(partition, from[partition], to[partition]));
+        return result;
+    }
+
+    private static long incrementBudget(JsonNode capability) {
+        JsonNode limits = capability.path("limits");
+        if (!limits.path("incrementalChains").isIntegralNumber() || !limits.path("incrementalChains").canConvertToInt()
+                || limits.path("incrementalChains").asInt() != 1) throw new IllegalArgumentException("worker must own one incremental chain");
+        JsonNode episode = limits.path("episodeSamples");
+        if (!episode.isIntegralNumber() || !episode.canConvertToInt() || episode.asInt() < 1 || episode.asInt() > 25_000) {
+            throw new IllegalArgumentException("invalid worker episode capacity");
+        }
+        long budget = Math.min(limits.path("records").asLong(), Math.min(
+                limits.path("inputBytes").asLong() / limits.path("payloadBytes").asLong(),
+                limits.path("samples").asLong() / episode.asInt()));
+        if (budget < 1) throw new IllegalArgumentException("worker capacities cannot admit one maximum-sized episode");
+        return budget;
     }
 
     public ObjectNode execute(JsonNode plan) {
@@ -340,12 +458,22 @@ public final class RustRollout {
     }
 
     private void validatePlan(JsonNode plan) {
-        fields(plan, Set.of("schema", "deployment", "sourceDagText", "specHash", "createdAtMicros", "output", "assignments", "planHash"));
-        if (!SCHEMA.equals(plan.path("schema").asText()) || !hash(plan).equals(plan.path("planHash").asText())
+        boolean continuous = CONTINUOUS_SCHEMA.equals(plan.path("schema").asText());
+        fields(plan, continuous
+                ? Set.of("schema", "deployment", "sourceDagText", "specHash", "createdAtMicros", "output", "assignments", "planHash", "sequence", "previousPlanHash")
+                : Set.of("schema", "deployment", "sourceDagText", "specHash", "createdAtMicros", "output", "assignments", "planHash"));
+        if ((!continuous && !SCHEMA.equals(plan.path("schema").asText())) || !hash(plan).equals(plan.path("planHash").asText())
                 || !ExecutionAssignments.sha256(plan.path("sourceDagText").asText()).equals(plan.path("specHash").asText())) {
             throw new IllegalArgumentException("physical plan identity mismatch");
         }
         decimal(plan.path("createdAtMicros").asText());
+        if (continuous) {
+            if (!plan.path("sequence").isTextual() || decimal(plan.path("sequence").asText()) < 1
+                    || (plan.path("sequence").asText().equals("1") ? !plan.path("previousPlanHash").isNull()
+                    : !plan.path("previousPlanHash").isTextual() || !plan.path("previousPlanHash").asText().matches("[0-9a-f]{64}"))) {
+                throw new IllegalArgumentException("invalid continuous sequence or predecessor plan");
+            }
+        }
         JsonNode dag = source(plan.path("sourceDagText").asText());
         List<String> topics = texts(dag.path("source").path("topics"), "source topics", workers.size());
         JsonNode units = plan.path("assignments");
@@ -363,8 +491,16 @@ public final class RustRollout {
             Worker worker = worker(unit);
             if (!worker.equals(workers.get(index)) || !unit.path("inputTopic").asText().equals(topics.get(index))) throw new IllegalArgumentException("physical placement changed");
             JsonNode request = json(unit.path("requestText").asText());
-            fields(request, Set.of("schema", "assignmentText", "bindings", "sink", "createdAtMicros", "limits"));
-            if (!request.path("schema").asText().equals("opentsx.local-bounded-run.v1") || !request.path("createdAtMicros").equals(plan.path("createdAtMicros"))) throw new IllegalArgumentException("local request context mismatch");
+            fields(request, continuous ? Set.of("schema", "assignmentText", "bindings", "sink", "createdAtMicros", "limits", "sequence", "previousRequestHash")
+                    : Set.of("schema", "assignmentText", "bindings", "sink", "createdAtMicros", "limits"));
+            if (!request.path("schema").asText().equals(continuous ? INCREMENT_SCHEMA : "opentsx.local-bounded-run.v1")
+                    || !request.path("createdAtMicros").equals(plan.path("createdAtMicros"))) throw new IllegalArgumentException("local request context mismatch");
+            if (continuous && (!cap.path("workers").get(index).path("incrementalRequestSchema").asText().equals(INCREMENT_SCHEMA)
+                    || !request.path("sequence").equals(plan.path("sequence"))
+                    || (plan.path("sequence").asText().equals("1") ? !request.path("previousRequestHash").isNull()
+                    : !request.path("previousRequestHash").isTextual() || !request.path("previousRequestHash").asText().matches("[0-9a-f]{64}")))) {
+                throw new IllegalArgumentException("continuous request predecessor mismatch");
+            }
             String envelope = request.path("assignmentText").asText();
             ExecutionAssignments.validate(envelope);
             envelopes.add(envelope);
@@ -382,8 +518,8 @@ public final class RustRollout {
                     || decimal(input.get(0).path("partitionCount").asText()) > 128) throw new IllegalArgumentException("assignment does not own one complete topic");
             long records = 0;
             for (JsonNode position : input.get(0).path("positions")) {
-                if (!position.path("from").asText().equals("0")) throw new IllegalArgumentException("bounded rollout begins at offset zero");
-                records = Math.addExact(records, decimal(position.path("to").asText()));
+                if (!continuous && !position.path("from").asText().equals("0")) throw new IllegalArgumentException("bounded rollout begins at offset zero");
+                records = Math.addExact(records, decimal(position.path("to").asText()) - decimal(position.path("from").asText()));
             }
             ObjectNode bindings = JSON.createObjectNode();
             ObjectNode binding = bindings.putObject("local").put("bootstrap", bootstrap);
@@ -394,7 +530,8 @@ public final class RustRollout {
             ObjectNode limits = JSON.createObjectNode();
             for (String name : LIMITS) limits.put(name, cap.path("workers").get(index).path("limits").path(name).asInt());
             if (!request.path("bindings").equals(bindings) || !request.path("sink").equals(sink) || !request.path("limits").equals(limits)
-                    || records > limits.path("records").asLong()) throw new IllegalArgumentException("physical binding or capacity mismatch");
+                    || records > limits.path("records").asLong()
+                    || (continuous && records > incrementBudget(cap.path("workers").get(index)))) throw new IllegalArgumentException("physical binding or capacity mismatch");
         }
         ExecutionAssignments.validateSet(envelopes);
     }
@@ -488,6 +625,9 @@ public final class RustRollout {
                 || !status.path("node").equals(unit.path("node")) || !status.path("site").equals(assignment.path("site"))
                 || !status.path("artifactDigest").equals(assignment.path("artifactDigest")) || !status.path("inputTopic").equals(unit.path("inputTopic"))
                 || !status.path("activationRetryable").isBoolean()) throw new IllegalStateException("worker status identity mismatch");
+        if (request.path("schema").asText().equals(INCREMENT_SCHEMA)
+                && (!status.path("sequence").equals(request.path("sequence"))
+                || !status.path("previousRequestHash").equals(request.path("previousRequestHash")))) throw new IllegalStateException("worker increment identity mismatch");
         series(status, "inputSeries");
         series(status, "outputSeries");
         if (status.path("state").asText().equals("completed")) {
@@ -499,7 +639,7 @@ public final class RustRollout {
             long count = 0;
             for (JsonNode cursor : assignment.path("inputs").get(0).path("positions")) {
                 positions.addObject().put("partition", cursor.path("partition").asText()).put("next", cursor.path("to").asText());
-                count = Math.addExact(count, decimal(cursor.path("to").asText()));
+                count = Math.addExact(count, decimal(cursor.path("to").asText()) - decimal(cursor.path("from").asText()));
             }
             long outputCeiling = json(assignment.path("fragmentText").asText()).path("nodes").size() == 1
                     ? count : request.path("limits").path("samples").asLong();

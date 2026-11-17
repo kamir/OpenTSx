@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
 
@@ -26,6 +27,7 @@ class WayangDeployment(Base):
     error = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=utc_now)
     updated_at = Column(DateTime, nullable=False, default=utc_now)
+    continuous = relationship("WayangContinuous", uselist=False, lazy="joined")
 
 
 class WayangTopicOwner(Base):
@@ -33,3 +35,28 @@ class WayangTopicOwner(Base):
 
     topic = Column(String(249), primary_key=True)
     deployment_id = Column(String(63), ForeignKey("wayang_deployments.id"), nullable=False, index=True)
+
+
+class WayangContinuous(Base):
+    __tablename__ = "wayang_continuous"
+
+    deployment_id = Column(String(63), ForeignKey("wayang_deployments.id"), primary_key=True)
+    current_cycle = Column(BigInteger, nullable=False, default=1)
+    completed_cycles = Column(BigInteger, nullable=False, default=0)
+    stop_requested = Column(Boolean, nullable=False, default=False)
+    next_poll_at = Column(DateTime, nullable=False, default=utc_now)
+    totals = Column(JSON, nullable=False, default=lambda: {"inputRecords": "0", "outputRecords": "0", "assignments": {}})
+
+
+class WayangCycle(Base):
+    __tablename__ = "wayang_cycles"
+
+    deployment_id = Column(String(63), ForeignKey("wayang_deployments.id"), primary_key=True)
+    number = Column(BigInteger, primary_key=True)
+    plan_hash = Column(String(64), nullable=False)
+    plan_text = Column(Text, nullable=False)
+    state = Column(String(16), nullable=False, default="queued")
+    result = Column(JSON, nullable=True)
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+    updated_at = Column(DateTime, nullable=False, default=utc_now)
