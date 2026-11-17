@@ -35,6 +35,7 @@ import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VectorProcessorTest {
@@ -302,6 +303,49 @@ class VectorProcessorTest {
         assertEquals(10, after.size(), "only the ten new minutes");
         assertEquals("2026-10-01T00:11:00Z", after.get(0).path("ts").asText());
         assertEquals(20, lastStatus().path("records").asLong(), "the count goes on from the checkpoint");
+    }
+
+    @Test
+    void aCheckpointThatCannotBeReadFailsTheSinkAndIsKept(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        Path checkpoint = state.resolve("wind-exp2-smart--turbine-state.json");
+        String cut = "{\"dag\":\"wind-exp2-smart\",\"vector\":\"turbine-state\",\"specHash\":";
+        Files.writeString(checkpoint, cut);
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "failed"), p.states());
+            assertEquals(0, vectors().size(), "nothing is written without the positions of the checkpoint");
+            JsonNode status = lastStatus();
+            assertEquals("failed", status.path("state").asText());
+            assertTrue(status.path("error").asText().startsWith("checkpoint " + checkpoint + ": cannot be read ("), status.toString());
+            assertTrue(status.path("error").asText().endsWith("; repair it, or delete it to start the sink over"), status.toString());
+        }
+        assertEquals(cut, Files.readString(checkpoint), "the file is kept as it was");
+    }
+
+    @Test
+    void anEmptyCheckpointFailsTheSinkAndIsKept(@TempDir Path state) throws Exception {
+        appendBlock(0);
+        deploy(goodDag());
+        Path checkpoint = state.resolve("wind-exp2-smart--turbine-state.json");
+        Files.writeString(checkpoint, "");
+        try (VectorProcessor p = processor(state)) {
+            steps(p, 5);
+            assertEquals(Map.of("wind-exp2-smart/turbine-state", "failed"), p.states());
+            assertEquals("checkpoint " + checkpoint + ": cannot be read (it holds no JSON object); repair it, or delete it to start the sink over",
+                    lastStatus().path("error").asText());
+        }
+        assertEquals("", Files.readString(checkpoint));
+    }
+
+    @Test
+    void aFailureWhileApplyingTheControlTopicIsNotTakenForAnUnreadableTopic(@TempDir Path state) {
+        deploy(dag("\"" + SPEED.getSeriesId() + "\"", "  - id: n0\n    op: norm.zscore\n    in: [decode]\n", "n0"));
+        VectorProcessor p = new VectorProcessor(broker::consumer, () -> {
+            throw new IllegalStateException("no producer for the status");
+        }, LAYOUT, state, FAST);
+        assertEquals("no producer for the status", assertThrows(IllegalStateException.class, p::step).getMessage());
     }
 
     @Test

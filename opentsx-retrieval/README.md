@@ -104,6 +104,11 @@ POST /v1/dags/deploy       opentsx.dag.v1 (YAML): hands the DAG to the vector pr
 POST /v1/dags/stop?name=   stops the DAG of that name
 ```
 
+Numbers in a POST body are JSON numbers. A string where a number belongs, such as `"topK": "ten"` or
+`"topK": "10"`, is a 400 that names the field. `params.prominence` of `FEATURE_EXTREMUM` and `params.enter` of `FEATURE_THRESHOLD` are required.
+A JSON body over 262144 bytes (`RetrievalServer.MAX_BODY_BYTES`) is a 413. A `resample` step that gives more than
+100000 points for one episode (`Resampling.MAX_POINTS`) is a 400.
+
 ### Vector topics
 
 With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,
@@ -148,7 +153,16 @@ opentsx vectors stop   --kafscale host:9092 --domain wind --name <dag name>
 * Per series, episodes must arrive in time order. One that does not continue its series is skipped and counted.
 * A checkpoint per sink in `--state` holds positions and state. It is written after the broker confirmed the
   records, so a crash repeats at most the records since the last checkpoint, with the same values.
+* A checkpoint that cannot be read, or holds no JSON object, fails the sink: the status says `failed` and names the
+  file in `error`, and the file stays as it is. Repair it, or delete it to start the sink over.
 * A changed DAG starts over from the beginning of the topic (`source.start: latest`: from now).
+* Numbers in a node of a series sink, such as `factor` of `convert.unit` or `min` of `dq.checks`, are YAML numbers.
+  Text there, also a number in quotes such as `"1.5"`, refuses the DAG with the node and the field, for example
+  `node n3: factor: "1,5" is not a number; expected a number without quotes, such as 0.01 or 1e-3`.
+  `POST /v1/dags/deploy` answers 400; a DAG from `vectors deploy` or one already in the control topic gets the status
+  `failed` with that error.
+* An error while the processor applies a deployment or a stop, such as a status record it cannot send, ends the
+  processor with that error. Started again, it reads the control topic from the beginning.
 
 Limits: one processor per domain, no idle timeout for a series that falls silent, vectors on source series only.
 The rules are in `docs/datamodel-2026/11-SMART-TOPIC-PROZESSOR-DEVOPS.md`, section 5b.

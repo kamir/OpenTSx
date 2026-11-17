@@ -14,6 +14,9 @@ public final class Resampling {
 
     public enum Agg { MEAN, MIN, MAX, FIRST, LAST, SUM, COUNT }
 
+    /** Points one resampled episode may have; a step that gives more is refused before anything is allocated. */
+    public static final int MAX_POINTS = 100_000;
+
     private Resampling() {
     }
 
@@ -22,11 +25,16 @@ public final class Resampling {
         if (d <= 0) {
             throw new IllegalArgumentException("resampling interval must be positive");
         }
-        long[] ts = Episodes.timestampsMicros(e);
-        double[] vs = Episodes.values(e);
         long first = Math.floorDiv(Micros.of(e.getTStart()), d) * d;
         long last = Math.floorDiv(Micros.of(e.getTEnd()) - 1, d) * d;
-        int n = (int) ((last - first) / d) + 1;
+        long points = (last - first) / d + 1;
+        if (points > MAX_POINTS) {
+            throw new IllegalArgumentException("resample: \"" + every + "\" gives " + points + " points for one episode; expected a longer"
+                    + " step that gives at most " + MAX_POINTS);
+        }
+        int n = (int) points;
+        long[] ts = Episodes.timestampsMicros(e);
+        double[] vs = Episodes.values(e);
         double[] acc = new double[n];
         long[] cnt = new long[n];
         java.util.Arrays.fill(acc, Double.NaN);

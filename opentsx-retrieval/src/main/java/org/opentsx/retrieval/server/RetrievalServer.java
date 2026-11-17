@@ -210,6 +210,8 @@ public final class RetrievalServer implements AutoCloseable {
             } else {
                 json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such endpoint"));
             }
+        } catch (TooLarge e) {
+            json(ex, 413, EpisodeJson.JSON.createObjectNode().put("error", e.getMessage()));
         } catch (java.util.NoSuchElementException e) {
             json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", String.valueOf(e.getMessage())));
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
@@ -248,6 +250,15 @@ public final class RetrievalServer implements AutoCloseable {
     /** A DAG document is small; anything larger is not one. */
     private static final int MAX_DAG_BYTES = 256 * 1024;
 
+    /** A JSON body of a POST route; a larger one is answered 413 after reading at most one byte more. */
+    private static final int MAX_BODY_BYTES = 256 * 1024;
+
+    private static final class TooLarge extends RuntimeException {
+        TooLarge() {
+            super("request body: larger than " + MAX_BODY_BYTES + " bytes; send at most " + MAX_BODY_BYTES + " bytes");
+        }
+    }
+
     /** Who asked, as far as the caller says; a name for the record, not a proof. */
     private static String by(HttpExchange ex) {
         String by = ex.getRequestHeaders().getFirst(BY_HEADER);
@@ -274,33 +285,36 @@ public final class RetrievalServer implements AutoCloseable {
         if (b.has("pattern")) {
             double[] p = new double[b.get("pattern").size()];
             for (int i = 0; i < p.length; i++) {
-                p[i] = b.get("pattern").get(i).asDouble();
+                p[i] = number(b.get("pattern").path(i), "pattern[" + i + "]");
             }
             sq = service.similarTo(p);
         } else {
-            sq = service.similarTo(b.path("episodeId").asText(), b.path("offset").asInt(), b.path("length").asInt());
+            sq = service.similarTo(b.path("episodeId").asText(), integer(b.path("offset"), "offset", 0), integer(b.path("length"), "length", 0));
         }
         select(sq, text(b, "metric"), tags(b), text(b, "series"), text(b, "from"), text(b, "to"));
-        return sq.distance(distance(b)).topK(b.path("topK").asInt(10)).fetch();
+        return sq.distance(distance(b)).topK(integer(b.path("topK"), "topK", 10)).fetch();
     }
 
     private List<PatternMatch> similar(JsonNode b) {
         EpisodeService.SimilarEpisodesQuery q = service.similarEpisodes(b.path("episodeId").asText());
         select(q, text(b, "metric"), tags(b), text(b, "series"), text(b, "from"), text(b, "to"));
-        return q.distance(distance(b)).topK(b.path("topK").asInt(10)).fetch();
+        return q.distance(distance(b)).topK(integer(b.path("topK"), "topK", 10)).fetch();
     }
 
     private List<Episode> segments(JsonNode b) {
         JsonNode p = b.path("params");
         Segmenter s = switch (b.path("strategy").asText()) {
             case "FIXED_DURATION" -> Segmenter.fixedDuration(dur(p, "duration", null), dur(p, "offset", "PT0S"));
-            case "FIXED_COUNT" -> Segmenter.fixedCount(p.path("n").asInt(), p.path("overlap").asInt(0));
+            case "FIXED_COUNT" -> Segmenter.fixedCount(integer(p.path("n"), "params.n", 0), integer(p.path("overlap"), "params.overlap", 0));
             case "FEATURE_EXTREMUM" -> Segmenter.extremum(Segmenter.Feature.valueOf(p.path("feature").asText("MAX")),
-                    p.path("prominence").asDouble(), dur(p, "window", null), dur(p, "distance", null),
+                    number(p.path("prominence"), "params.prominence"), dur(p, "window", null), dur(p, "distance", null),
                     dur(p, "pre", "PT0S"), dur(p, "post", "PT0S"));
-            case "FEATURE_THRESHOLD" -> Segmenter.threshold(Segmenter.Direction.valueOf(p.path("direction").asText("ABOVE")),
-                    p.path("enter").asDouble(), p.path("exit").asDouble(p.path("enter").asDouble()), dur(p, "pre", "PT0S"),
-                    dur(p, "post", "PT0S"), dur(p, "minDuration", "PT0S"), dur(p, "maxDuration", "PT0S"));
+            case "FEATURE_THRESHOLD" -> {
+                double enter = number(p.path("enter"), "params.enter");
+                yield Segmenter.threshold(Segmenter.Direction.valueOf(p.path("direction").asText("ABOVE")), enter,
+                        number(p.path("exit"), "params.exit", enter), dur(p, "pre", "PT0S"), dur(p, "post", "PT0S"),
+                        dur(p, "minDuration", "PT0S"), dur(p, "maxDuration", "PT0S"));
+            }
             default -> throw new IllegalArgumentException("unknown strategy " + b.path("strategy").asText());
         };
         EpisodeService.SegmentQuery q = service.segments(s);
@@ -327,8 +341,42 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     private static Distance distance(JsonNode b) {
-        return "DTW".equalsIgnoreCase(b.path("distance").asText("zED")) ? Distance.dtw(b.path("band").asDouble(0.1))
+        return "DTW".equalsIgnoreCase(b.path("distance").asText("zED")) ? Distance.dtw(number(b.path("band"), "band", 0.1))
                 : Distance.zNormalizedEuclidean();
+    }
+
+    private static final String NUMBER = "expected a number without quotes, such as 0.01 or 1e-3";
+
+    private static double number(JsonNode v, String field) {
+        if (v.isMissingNode() || v.isNull()) {
+            throw new IllegalArgumentException(field + ": missing; " + NUMBER);
+        }
+        return number(v, field, 0);
+    }
+
+    private static double number(JsonNode v, String field, double dflt) {
+        if (v.isMissingNode() || v.isNull()) {
+            return dflt;
+        }
+        if (!v.isNumber()) {
+            throw new IllegalArgumentException(field + ": " + shown(v) + " is not a number; " + NUMBER);
+        }
+        return v.asDouble();
+    }
+
+    private static int integer(JsonNode v, String field, int dflt) {
+        if (v.isMissingNode() || v.isNull()) {
+            return dflt;
+        }
+        if (!v.isIntegralNumber() || !v.canConvertToInt()) {
+            throw new IllegalArgumentException(field + ": " + shown(v)
+                    + " is not a whole number; expected a whole number from -2147483648 to 2147483647 without quotes");
+        }
+        return v.asInt();
+    }
+
+    private static String shown(JsonNode v) {
+        return "\"" + (v.isTextual() ? v.asText().trim() : v.toString()) + "\"";
     }
 
     private static Duration dur(JsonNode p, String name, String dflt) {
@@ -375,7 +423,11 @@ public final class RetrievalServer implements AutoCloseable {
     }
 
     private static JsonNode body(HttpExchange ex) throws IOException {
-        return EpisodeJson.JSON.readTree(ex.getRequestBody());
+        byte[] raw = ex.getRequestBody().readNBytes(MAX_BODY_BYTES + 1);
+        if (raw.length > MAX_BODY_BYTES) {
+            throw new TooLarge();
+        }
+        return raw.length == 0 ? EpisodeJson.JSON.createObjectNode() : EpisodeJson.JSON.readTree(raw);
     }
 
     private void episodes(HttpExchange ex, List<Episode> eps) throws IOException {
@@ -469,12 +521,7 @@ public final class RetrievalServer implements AutoCloseable {
             json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "no such system or route: " + path));
             return;
         }
-        byte[] raw = ex.getRequestBody().readNBytes(MAX_DAG_BYTES + 1);
-        if (raw.length > MAX_DAG_BYTES) {
-            json(ex, 413, EpisodeJson.JSON.createObjectNode().put("error", "the request is larger than " + MAX_DAG_BYTES + " bytes"));
-            return;
-        }
-        JsonNode body = raw.length == 0 ? EpisodeJson.JSON.createObjectNode() : EpisodeJson.JSON.readTree(raw);
+        JsonNode body = body(ex);
         if (p[2].equals("runs")) {
             if (!runs.has(p[1])) {
                 json(ex, 404, EpisodeJson.JSON.createObjectNode().put("error", "the system " + p[1] + " has no scenario to run"));

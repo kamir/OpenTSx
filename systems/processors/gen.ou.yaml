@@ -31,7 +31,8 @@ runtimes:
       One run over a period, started by a person; no continuous operation. The value of a step does not depend on
       where the run began: the recursion starts early enough that earlier steps fade below a thousandth.
       Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST
-      /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2.
+      /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. A parameter that is no number is refused
+      with its name.
   workbench: { status: none, note: "The page Signals presets the parameters from the expectation of the signal and asks the server to generate." }
   python: { status: none }
   processor: { status: planned, note: "A generator that keeps writing is part of step E2 of the decision circle." }

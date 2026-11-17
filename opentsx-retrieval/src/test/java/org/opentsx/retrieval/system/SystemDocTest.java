@@ -120,6 +120,47 @@ class SystemDocTest {
         assertProblem(changed(dir, "ref: opentsx-twin/src/main/resources/twin/h2-chain.yaml", "ref: ../outside.yaml"), "does not exist below");
     }
 
+    @Test
+    void aRootGivenAsTheWorkingDirectoryResolvesTheReferences(@TempDir Path dir) throws IOException {
+        // "." is the default of --systems-root; the tests run in the module directory, so the flow lies below it
+        Path below = Files.createTempDirectory(Files.createDirectories(Path.of("target")), "systems-root");
+        Files.writeString(below.resolve("probe.flow.yaml"), "flow: probe\n");
+        Path doc = Files.writeString(dir.resolve("probe.system.yaml"), """
+                schema: opentsx.system.v1
+                system: probe
+                domain: wind
+                version: 1
+                flows:
+                  - { id: probe, ref: %s/probe.flow.yaml }
+                """.formatted("target/" + below.getFileName()));
+        assertEquals(List.of(), SystemDoc.load(doc, Path.of(".")).problems());
+        assertEquals(List.of(), SystemDoc.load(doc, Path.of("")).problems());
+    }
+
+    @Test
+    void aNumberWrittenAsTextIsAProblem(@TempDir Path dir) throws IOException {
+        assertProblem(changed(dir, "seed: 1", "seed: one"), "offtake.demand_kgph@raw: seed: \"one\" is not a whole number; expected a whole number");
+        assertProblem(changed(dir, "kind: manual, value: 12000", "kind: manual, value: 12 MW"), "park.dispatch_kw@raw: value: \"12 MW\" is not a number; expected a number");
+        assertProblem(changed(dir, "{ unit: kg/h, min: 0, max: 120", "{ unit: kg/h, min: 0 kg/h, max: 120"), "offtake.demand_kgph: min: \"0 kg/h\" is not a number");
+    }
+
+    @Test
+    void aManualSourceWithANullValueIsAProblem(@TempDir Path dir) throws IOException {
+        assertProblem(changed(dir, "kind: manual, value: 12000", "kind: manual, value: null"), "park.dispatch_kw@raw: a manual source needs value or table");
+    }
+
+    @Test
+    void aCatalogValueThatIsNoNumberIsNamedUnderTheCatalog(@TempDir Path dir) throws IOException {
+        String ref = "opentsx-windpark/src/main/resources/windpark/channel-catalog.yaml";
+        String catalog = Files.readString(ROOT.resolve(ref));
+        assertTrue(catalog.contains("    min: -100\n"), "the catalog no longer holds: min: -100");
+        Path below = Files.createTempDirectory(Files.createDirectories(Path.of("target")), "catalog");
+        Files.writeString(below.resolve("channel-catalog.yaml"), catalog.replace("    min: -100\n", "    min: -100 kW\n"));
+        SystemDoc d = changed(dir, "ref: " + ref, "ref: opentsx-retrieval/target/" + below.getFileName() + "/channel-catalog.yaml");
+        assertProblem(d, "catalog wind/WTUR.W: min: \"-100 kW\" is not a number");
+        assertEquals(List.of(), d.problems().stream().filter(p -> p.startsWith("park/T02/WTUR.W")).toList());
+    }
+
     /** Decision cards and their records match their schemas, and a card only names what its system has. */
     @Test
     void theDecisionCardsMatchTheirSchemaAndTheirSystem() throws IOException {

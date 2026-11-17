@@ -20,7 +20,7 @@ semantics: { needs: window, deterministic: true, keeps: [unit, series], origin: 
 runtimes:
   workbench: { status: available, note: "every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Hands out the last window before the data has passed its end." }
   processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Resample", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Hands out a window once the data has passed its end. After 10000 empty windows the grid starts again at the next sample." }
-  java: { status: available, class: "org.opentsx.retrieval.Resampling#resample", note: "One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0." }
+  java: { status: available, class: "org.opentsx.retrieval.Resampling#resample", note: "One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0. A step that gives more than 100000 points for one episode is refused (400)." }
   python: { status: available, class: "opentsx.core.time_series.TimeSeriesObject#resample", note: "resample(factor, method) aggregates blocks of factor samples, not time windows; method mean, median, max or min. RetrievalClient.episodes(resample=, agg=) has the server resample." }
   go: { status: planned, note: "Resampling in the Go stream core of the proposed Go TSx processor." }
 plan: { file: EVOLUTION/TASK-016-smart-topics.md, item: P7f }

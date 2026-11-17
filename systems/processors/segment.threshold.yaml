@@ -30,8 +30,8 @@ runtimes:
     class: "org.opentsx.retrieval.segment.Segmenter#threshold"
     note: >-
       Segmenter.threshold takes all seven parameters. EpisodeService.segments(...).fetch() and StreamingSegmenter give
-      the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_THRESHOLD and takes 0
-      for a missing enter.
+      the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_THRESHOLD and answers
+      400 when enter is missing or no number.
   python:
     status: available
     class: "opentsx.client.retrieval.RetrievalClient#segments"

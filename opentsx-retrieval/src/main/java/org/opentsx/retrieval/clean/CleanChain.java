@@ -34,7 +34,7 @@ public final class CleanChain {
     /** Operators this runtime executes before a series sink, by their name in the DAG. */
     public static final List<String> OPS = List.of("dq.checks", "convert.unit", "resample", "model.wind-shear", "model.power-curve", "feature.lag", "feature.rolling");
 
-    /** Values a rolling window may hold; a feature over more is no feature for a stream. */
+    /** Values a rolling window may hold; a window over more fails, it is no feature for a stream. */
     static final int MAX_WINDOW_VALUES = 100_000;
 
     /** Windows a series may skip before the stream starts a new run instead of filling the gap. */
@@ -46,10 +46,6 @@ public final class CleanChain {
     }
 
     /**
-     * Reference power curve of a wind turbine: zero below cut-in and above cut-out, rated power from the rated wind,
-     * cubic in between; times {@code count} turbines. A model, not a measurement: it says what the wind offers.
-     */
-    /**
      * The wind of one height carried to another by the power law. A model with one exponent for every weather: it
      * knows neither stability nor the direction of the wind. The exponent belongs to the site (about 0.1 over open
      * sea, 0.14 over flat land, 0.2 and more over rough land).
@@ -57,6 +53,10 @@ public final class CleanChain {
     record WindShear(double factor) implements Step {
     }
 
+    /**
+     * Reference power curve of a wind turbine: zero below cut-in and above cut-out, rated power from the rated wind,
+     * cubic in between; times {@code count} turbines. A model, not a measurement: it says what the wind offers.
+     */
     record PowerCurve(double ratedKw, double cutIn, double ratedWind, double cutOut, double count) implements Step {
         double kw(double wind) {
             if (Double.isNaN(wind)) {
@@ -78,7 +78,7 @@ public final class CleanChain {
     }
 
     /** Aggregate of the values of the last {@code windowMicros}, the current one included. */
-    record Rolling(long windowMicros, Fn fn) implements Step {
+    record Rolling(String node, long windowMicros, Fn fn) implements Step {
     }
 
     public enum Fn { MEAN, STD, MIN, MAX }
@@ -121,8 +121,8 @@ public final class CleanChain {
                             throw new IllegalArgumentException("node " + id + ": this runtime runs the check PLAUSIBLE_RANGE only, not " + c.asText());
                         }
                     }
-                    double min = p.path("min").asDouble(Double.NEGATIVE_INFINITY);
-                    double max = p.path("max").asDouble(Double.POSITIVE_INFINITY);
+                    double min = number(id, p, "min", Double.NEGATIVE_INFINITY);
+                    double max = number(id, p, "max", Double.POSITIVE_INFINITY);
                     if (min > max) {
                         throw new IllegalArgumentException("node " + id + ": min is above max");
                     }
@@ -132,9 +132,9 @@ public final class CleanChain {
                     }
                     steps.add(new Range(min, max, mode.equals("clip")));
                 }
-                case "convert.unit" -> steps.add(new Convert(p.path("factor").asDouble(1), p.path("offset").asDouble(0), p.path("unit").asText("")));
+                case "convert.unit" -> steps.add(new Convert(number(id, p, "factor", 1), number(id, p, "offset", 0), p.path("unit").asText("")));
                 case "resample" -> {
-                    long every = micros(id, p.path("every"));
+                    long every = micros(id, p, "every");
                     Agg agg;
                     try {
                         agg = Agg.valueOf(p.path("agg").asText("MEAN").toUpperCase(Locale.ROOT));
@@ -144,9 +144,9 @@ public final class CleanChain {
                     steps.add(new Resample(every, agg));
                 }
                 case "model.wind-shear" -> {
-                    double from = p.path("fromM").asDouble(Double.NaN);
-                    double to = p.path("toM").asDouble(Double.NaN);
-                    double alpha = p.path("alpha").asDouble(Double.NaN);
+                    double from = number(id, p, "fromM", Double.NaN);
+                    double to = number(id, p, "toM", Double.NaN);
+                    double alpha = number(id, p, "alpha", Double.NaN);
                     if (!(from > 0) || !(to > 0) || !(alpha >= 0 && alpha <= 0.6)) {
                         throw new IllegalArgumentException("node " + id + ": a wind shear needs fromM and toM above zero and alpha"
                                 + " between 0 and 0.6");
@@ -154,8 +154,8 @@ public final class CleanChain {
                     steps.add(new WindShear(Math.pow(to / from, alpha)));
                 }
                 case "model.power-curve" -> {
-                    PowerCurve c = new PowerCurve(p.path("ratedKw").asDouble(Double.NaN), p.path("cutIn").asDouble(Double.NaN),
-                            p.path("ratedWind").asDouble(Double.NaN), p.path("cutOut").asDouble(Double.NaN), p.path("count").asDouble(1));
+                    PowerCurve c = new PowerCurve(number(id, p, "ratedKw", Double.NaN), number(id, p, "cutIn", Double.NaN),
+                            number(id, p, "ratedWind", Double.NaN), number(id, p, "cutOut", Double.NaN), number(id, p, "count", 1));
                     if (!(c.ratedKw() > 0) || !(c.cutIn() >= 0) || !(c.ratedWind() > c.cutIn()) || !(c.cutOut() >= c.ratedWind()) || !(c.count() > 0)) {
                         throw new IllegalArgumentException("node " + id + ": a power curve needs ratedKw above zero and cutIn below"
                                 + " ratedWind, which is at most cutOut");
@@ -163,7 +163,7 @@ public final class CleanChain {
                     steps.add(c);
                 }
                 case "feature.lag" -> {
-                    int k = p.path("steps").asInt(0);
+                    int k = integer(id, p, "steps", 0);
                     if (k < 1 || k > MAX_WINDOW_VALUES) {
                         throw new IllegalArgumentException("node " + id + ": steps must be between 1 and " + MAX_WINDOW_VALUES);
                     }
@@ -176,7 +176,7 @@ public final class CleanChain {
                     } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("node " + id + ": fn must be one of " + List.of(Fn.values()));
                     }
-                    steps.add(new Rolling(micros(id, p.path("window")), fn));
+                    steps.add(new Rolling(id, micros(id, p, "window"), fn));
                 }
                 default -> throw new IllegalArgumentException("node " + id + " (" + n.path("op").asText() + ") is not available in this"
                         + " runtime before a series sink: it runs " + OPS + ". Keep other operators for the workbench.");
@@ -185,16 +185,45 @@ public final class CleanChain {
         return new CleanChain(steps);
     }
 
+    private static double number(String node, JsonNode params, String field, double dflt) {
+        JsonNode v = params.path(field);
+        if (v.isMissingNode() || v.isNull()) {
+            return dflt;
+        }
+        if (!v.isNumber()) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": " + shown(v)
+                    + " is not a number; expected a number without quotes, such as 0.01 or 1e-3");
+        }
+        return v.asDouble();
+    }
+
+    private static int integer(String node, JsonNode params, String field, int dflt) {
+        JsonNode v = params.path(field);
+        if (v.isMissingNode() || v.isNull()) {
+            return dflt;
+        }
+        if (!v.isIntegralNumber() || !v.canConvertToInt()) {
+            throw new IllegalArgumentException("node " + node + ": " + field + ": " + shown(v)
+                    + " is not a whole number; expected a whole number from -2147483648 to 2147483647 without quotes");
+        }
+        return v.asInt();
+    }
+
+    private static String shown(JsonNode v) {
+        return "\"" + (v.isTextual() ? v.asText().trim() : v.toString()) + "\"";
+    }
+
     /** A duration like PT1M, or a number of seconds as the workbench writes it for other axes. */
-    private static long micros(String node, JsonNode every) {
+    private static long micros(String node, JsonNode params, String field) {
+        JsonNode v = params.path(field);
         long micros;
         try {
-            micros = every.isNumber() ? Math.round(every.asDouble() * 1e6) : Duration.parse(every.asText("")).toNanos() / 1000;
+            micros = v.isNumber() ? Math.round(v.asDouble() * 1e6) : Duration.parse(v.asText("")).toNanos() / 1000;
         } catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("node " + node + ": every must be a duration like PT1M");
+            throw new IllegalArgumentException("node " + node + ": " + field + " must be a duration like PT1M", e);
         }
         if (micros <= 0) {
-            throw new IllegalArgumentException("node " + node + ": every must be above zero");
+            throw new IllegalArgumentException("node " + node + ": " + field + " must be above zero");
         }
         return micros;
     }
@@ -426,8 +455,12 @@ public final class CleanChain {
             long t = in.times()[k];
             kept.addLast(new double[]{t, in.values()[k]});
             // the window reaches back windowMicros from this sample, this sample included
-            while (!kept.isEmpty() && ((long) kept.peekFirst()[0] <= t - r.windowMicros() || kept.size() > MAX_WINDOW_VALUES)) {
+            while (!kept.isEmpty() && (long) kept.peekFirst()[0] <= t - r.windowMicros()) {
                 kept.removeFirst();
+            }
+            if (kept.size() > MAX_WINDOW_VALUES) {
+                throw new IllegalStateException("node " + r.node() + ": window " + Duration.ofNanos(r.windowMicros() * 1000)
+                        + " holds more than " + MAX_WINDOW_VALUES + " values; give a shorter window or resample the series first");
             }
             double sum = 0;
             double sq = 0;

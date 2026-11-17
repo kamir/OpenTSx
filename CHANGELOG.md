@@ -106,6 +106,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `EVOLUTION/TASK-011-datamodel-refresher-2026.md` is in English. Its phases 6 to 9 and its backlog moved to the new
   tasks TASK-015 to TASK-019 and to TASK-010 (D90 in `docs/datamodel-2026/18-CLOSING-TASK-011.md`). TASK-015 adds
   the design of pair windows for multivariate analysis.
+- Numbers in DAG nodes, demo generators, system documents and retrieval POST bodies are taken as YAML or JSON numbers
+  only. A number in quotes, such as `factor: "1.5"` or `"topK": "10"`, was read as that number and is now refused;
+  write it without quotes. A deployed DAG that holds one gets the status `failed` from the vector processor.
 
 ### Removed
 
@@ -151,6 +154,29 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   run had already failed, these close failures are attached to that error as suppressed exceptions.
 - The `PowerCurveAnalysis` Javadoc and manual chapter 6.5 state which intervals are left out: NaN values are skipped,
   and only an interval without any wind or power value is dropped.
+- Text that is no number in a DAG node (`convert.unit`, `dq.checks`, `model.wind-shear`, `model.power-curve`,
+  `feature.lag`), a demo generator, a system document (`seed`, `value`, expected min and max) or a retrieval POST body
+  (`topK`, `band`, `offset`, `length`, `pattern`, segment parameters) was taken as the default: `factor: "1,5"` gave 1
+  and `min: "0 kW"` gave no lower bound. It is now refused with the node or field, for example `node n3: factor: "1,5"
+  is not a number; expected a number without quotes, such as 0.01 or 1e-3`, and the REST routes answer 400. A min or
+  max of a channel catalog that is no number is reported under the catalog, for example `catalog wind/WTUR.W: min:
+  "-100 kW" is not a number; ...`. A manual source with `value: null` and no `table` is reported as `a manual source
+  needs value or table` instead of taking 0. `POST /v1/segments` answers 400 without `prominence` or `enter` instead
+  of using 0.
+- A `feature.rolling` node whose window is no duration was refused with a message about `every`. The message now names
+  `window`.
+- The Javadoc of the power curve step of `CleanChain` sat on the wind shear step. Each step now carries its own.
+- `feature.rolling` in the vector processor dropped the oldest values of a window that held more than 100000 values,
+  without a message. The sink now fails with an error that names the node.
+- The vector processor started a sink over when its checkpoint could not be read or was empty, so a `latest` sink
+  skipped data and overwrote the file. The sink now fails, its status names the file, and the file is kept. An error
+  while applying the control topic is no longer reported as an unreadable control topic. Such an error now ends the
+  processor; started again, it reads the control topic from the beginning.
+- `--systems-root .`, the default of the retrieval server, reported every reference of a system document as missing.
+  References now resolve against the absolute root.
+- `GET /v1/episodes?resample=` with a step that gives more than 100000 points for one episode allocated memory for
+  every point. It now answers 400 naming `resample`. JSON bodies over 262144 bytes to `POST /v1/patterns/search`,
+  `/v1/episodes/similar` and `/v1/segments` now answer 413, like `/v1/systems/{id}/...`.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

@@ -9,15 +9,19 @@ import org.opentsx.model.v2.Episode;
 import org.opentsx.model.v2.SeriesKey;
 import org.opentsx.model.v2.TimeEncoding;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -164,6 +168,60 @@ class CleanChainTest {
         e = assertThrows(IllegalArgumentException.class,
                 () -> CleanChain.of(List.of(JSON.readTree("{\"id\":\"n1\",\"op\":\"dq.checks\",\"params\":{\"min\":5,\"max\":1}}"))));
         assertTrue(e.getMessage().contains("min is above max"), e.getMessage());
+    }
+
+    static String refusal(String node) {
+        return assertThrows(IllegalArgumentException.class, () -> CleanChain.of(List.of(JSON.readTree(node)))).getMessage();
+    }
+
+    @Test
+    void aParameterThatIsNoNumberIsRefusedWithNodeAndField() throws Exception {
+        assertEquals("node n3: factor: \"1,5\" is not a number; expected a number without quotes, such as 0.01 or 1e-3",
+                refusal("{\"id\":\"n3\",\"op\":\"convert.unit\",\"params\":{\"factor\":\"1,5\"}}"));
+        assertEquals("node n3: factor: \"1.5\" is not a number; expected a number without quotes, such as 0.01 or 1e-3",
+                refusal("{\"id\":\"n3\",\"op\":\"convert.unit\",\"params\":{\"factor\":\"1.5\"}}"));
+        assertTrue(refusal("{\"id\":\"n1\",\"op\":\"dq.checks\",\"params\":{\"checks\":[\"PLAUSIBLE_RANGE\"],\"min\":\"0 kW\",\"max\":10}}")
+                .startsWith("node n1: min: \"0 kW\" is not a number;"));
+        assertTrue(refusal("{\"id\":\"h\",\"op\":\"model.wind-shear\",\"params\":{\"fromM\":10,\"toM\":120,\"alpha\":\"0,11\"}}")
+                .startsWith("node h: alpha: \"0,11\" is not a number;"));
+        assertTrue(refusal("{\"id\":\"p\",\"op\":\"model.power-curve\",\"params\":{\"ratedKw\":3000,\"cutIn\":3,\"ratedWind\":12.5,"
+                + "\"cutOut\":25,\"count\":\"four\"}}").startsWith("node p: count: \"four\" is not a number;"));
+        assertEquals("node l: steps: \"1.5\" is not a whole number; expected a whole number from -2147483648 to 2147483647 without quotes",
+                refusal("{\"id\":\"l\",\"op\":\"feature.lag\",\"params\":{\"steps\":1.5}}"));
+        // absent or null: the default
+        CleanChain c = CleanChain.of(List.of(JSON.readTree("{\"id\":\"n3\",\"op\":\"convert.unit\",\"params\":{\"factor\":null,\"offset\":2}}")));
+        assertArrayEquals(new double[]{7}, c.apply(c.newState(), new CleanChain.Block(new long[]{0}, new double[]{5}), 1).values());
+    }
+
+    @Test
+    void everyDocCommentOfTheChainSitsOnItsOwnDeclaration() throws Exception {
+        String src = Files.readString(Path.of("src/main/java/org/opentsx/retrieval/clean/CleanChain.java"));
+        assertFalse(Pattern.compile("\\*/\\s*/\\*\\*").matcher(src).find(), "a doc comment follows another one, so the first documents the wrong declaration");
+        assertTrue(Pattern.compile("Reference power curve[^/]*\\*/\\s*record PowerCurve\\(").matcher(src).find());
+        assertTrue(Pattern.compile("by the power law[^/]*\\*/\\s*record WindShear\\(").matcher(src).find());
+    }
+
+    @Test
+    void aRollingWindowThatIsNoDurationIsRefusedAsWindow() throws Exception {
+        assertEquals("node r: window must be a duration like PT1M", refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"an hour\"}}"));
+        assertInstanceOf(java.time.format.DateTimeParseException.class, assertThrows(IllegalArgumentException.class,
+                () -> CleanChain.of(List.of(JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"an hour\"}}")))).getCause());
+        assertEquals("node r: window must be above zero", refusal("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT0S\"}}"));
+    }
+
+    @Test
+    void aRollingWindowOverMoreValuesThanItMayHoldFailsInsteadOfDroppingTheOldest() throws Exception {
+        CleanChain chain = CleanChain.of(List.of(JSON.readTree("{\"id\":\"r\",\"op\":\"feature.rolling\",\"params\":{\"window\":\"PT10M\"}}")));
+        // a state that already holds the most values a window may hold: 1 ms apart, all inside the ten minutes
+        StringBuilder kept = new StringBuilder("{\"kept\":[{\"step\":0,\"samples\":[");
+        for (int i = 0; i < CleanChain.MAX_WINDOW_VALUES; i++) {
+            kept.append(i == 0 ? "" : ",").append("[").append(i * 1000L).append(",\"1.0\"]");
+        }
+        CleanChain.State st = chain.restore(JSON.readTree(kept.append("]}]}").toString()));
+        long t = CleanChain.MAX_WINDOW_VALUES * 1000L;
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> chain.apply(st, new CleanChain.Block(new long[]{t}, new double[]{1}), t + 1));
+        assertEquals("node r: window PT10M holds more than 100000 values; give a shorter window or resample the series first", e.getMessage());
     }
 
     // ---------------------------------------------------------------- the stream that writes a clean signal

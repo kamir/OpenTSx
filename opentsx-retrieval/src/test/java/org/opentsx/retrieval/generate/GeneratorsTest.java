@@ -105,6 +105,25 @@ class GeneratorsTest {
     }
 
     @Test
+    void aParameterThatIsNoNumberIsRefusedWithItsName() throws Exception {
+        assertEquals("gen.ou: reversion: \"0,2\" is not a number; expected a number without quotes, such as 0.01 or 1e-3",
+                assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.ou", params("{\"mean\":1,\"sigma\":1,\"reversion\":\"0,2\"}"),
+                        1, MINUTE, 0, 1, null, null)).getMessage());
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.sine",
+                params("{\"mean\":1,\"amplitude\":1,\"phase\":\"a quarter\"}"), 1, MINUTE, 0, 1, null, null)).getMessage()
+                .startsWith("gen.sine: phase: \"a quarter\" is not a number;"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.sine",
+                params("{\"mean\":1,\"amplitude\":1,\"sigma\":\"none\"}"), 1, MINUTE, 0, 1, null, null)).getMessage()
+                .startsWith("gen.sine: sigma: \"none\" is not a number;"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.ou",
+                params("{\"mean\":\"62,8\",\"sigma\":1}"), 1, MINUTE, 0, 1, null, null)).getMessage()
+                .startsWith("gen.ou: mean: \"62,8\" is not a number;"));
+        assertEquals(Generators.values("gen.ou", params("{\"mean\":1,\"sigma\":1}"), 1, MINUTE, 0, 3, null, null)[2],
+                Generators.values("gen.ou", params("{\"mean\":1,\"sigma\":1,\"reversion\":null}"), 1, MINUTE, 0, 3, null, null)[2],
+                "null is the default");
+    }
+
+    @Test
     void aRequestThatCannotBeServedSaysWhy() throws Exception {
         JsonNode ok = params("{\"mean\":1,\"sigma\":1}");
         assertTrue(assertThrows(IllegalArgumentException.class, () -> Generators.values("gen.magic", ok, 1, MINUTE, 0, 1, null, null))

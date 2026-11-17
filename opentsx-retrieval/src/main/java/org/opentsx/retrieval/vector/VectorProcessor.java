@@ -56,7 +56,8 @@ import java.util.function.Supplier;
  *   <li><b>Checkpoint</b> per runner in the state directory: positions and {@link VectorStream} state, written only
  *   after the broker confirmed every measuring point. Waiting for that does not stop the loop: every runner has its
  *   own producer, and one whose sends are not confirmed is closed and replaced when the runner starts again. After a crash the runner repeats at most what it wrote since
- *   the last checkpoint; readers take the later record per key and tick, and the values are the same.</li>
+ *   the last checkpoint; readers take the later record per key and tick, and the values are the same. A checkpoint
+ *   that cannot be read fails the runner and stays as it is.</li>
  *   <li><b>Status</b> per runner goes to {@link TopicLayout#dagStatus()}.</li>
  * </ul>
  *
@@ -230,12 +231,12 @@ public final class VectorProcessor implements AutoCloseable {
     }
 
     private void readControl() {
+        Map<String, JsonNode> latest = new LinkedHashMap<>();
         try {
             if (control == null) {
                 controlConsumer = consumers.get();
                 control = new LogTail(controlConsumer, layout.dags(), Duration.ofSeconds(30));
             }
-            Map<String, JsonNode> latest = new LinkedHashMap<>();
             control.poll(r -> {
                 try {
                     JsonNode n = JSON.readTree(r.value());
@@ -246,13 +247,14 @@ public final class VectorProcessor implements AutoCloseable {
                     // not a control record: ignore
                 }
             });
-            latest.forEach(this::apply);
         } catch (RuntimeException e) {
+            // a refusal, or the time-out of the read, which LogTail reports as IllegalStateException
             if (!Patience.isRefusal(e) && !(e instanceof IllegalStateException)) {
                 throw e;
             }
             System.err.println("vector processor: the control topic cannot be read now: " + e.getMessage());
         }
+        latest.forEach(this::apply);
     }
 
     private void apply(String dag, JsonNode record) {
@@ -673,18 +675,30 @@ public final class VectorProcessor implements AutoCloseable {
             return out;
         }
 
-        /** The checkpoint of this DAG document, or null when there is none (or one of another document). */
+        /**
+         * The checkpoint of this DAG document, or null when there is none (or one of another document).
+         *
+         * @throws IllegalStateException when the file cannot be read; the runner fails and the file stays as it is
+         */
         private JsonNode load() {
             if (!Files.exists(file)) {
                 return null;
             }
+            JsonNode n;
             try {
-                JsonNode n = JSON.readTree(file.toFile());
-                return hash.equals(n.path("specHash").asText()) ? n : null;
+                n = JSON.readTree(file.toFile());
             } catch (IOException e) {
-                System.err.println("vector processor: checkpoint " + file + " cannot be read, starting over: " + e.getMessage());
-                return null;
+                throw new IllegalStateException(unreadable(e instanceof com.fasterxml.jackson.core.JsonProcessingException j
+                        ? j.getOriginalMessage() : e.toString()), e);
             }
+            if (!n.isObject()) {
+                throw new IllegalStateException(unreadable("it holds no JSON object"));
+            }
+            return hash.equals(n.path("specHash").asText()) ? n : null;
+        }
+
+        private String unreadable(String why) {
+            return "checkpoint " + file + ": cannot be read (" + why + "); repair it, or delete it to start the sink over";
         }
 
         private void fail(RuntimeException e) {

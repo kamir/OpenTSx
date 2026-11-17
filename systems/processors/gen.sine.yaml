@@ -31,7 +31,7 @@ runtimes:
     note: >-
       One run over a period, started by a person; no continuous operation. Generators.episodes(target, params,
       interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to
-      tsx.<domain>.synthetic.v2.
+      tsx.<domain>.synthetic.v2. A parameter that is no number is refused with its name.
   workbench: { status: none, note: "The page Signals presets the parameters from the expectation of the signal and asks the server to generate." }
   python: { status: none }
   processor: { status: planned, note: "A generator that keeps writing is part of step E2 of the decision circle." }

@@ -20,7 +20,7 @@ semantics: { needs: point, deterministic: true, keeps: [time, unit, series], ori
 dag: { op: dq.checks, fixed: { checks: [PLAUSIBLE_RANGE] } }
 runtimes:
   workbench: { status: available, note: "The form presets min -10 and max 10, or the expected range of the signal it was opened for. Any mode other than clip gives gaps." }
-  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Range", note: "DAG op dq.checks with checks [PLAUSIBLE_RANGE], a step of the clean chain before a series sink (bin/opentsx vectors). Refuses min above max and a mode other than gap or clip." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Range", note: "DAG op dq.checks with checks [PLAUSIBLE_RANGE], a step of the clean chain before a series sink (bin/opentsx vectors). Refuses min above max, a min or max that is no number and a mode other than gap or clip." }
   java: { status: none }
   python: { status: none }
   go: { status: planned, note: "DQ in the Go stream core of the proposed Go TSx processor." }

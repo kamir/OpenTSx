@@ -29,8 +29,8 @@ runtimes:
     note: >-
       Segmenter.extremum takes all six parameters. A peak is decided once the series has reached t + max(post,
       distance, window/2), so StreamingSegmenter and EpisodeService.segments(...).fetch() give the same segments. The
-      retrieval server offers it as POST /v1/segments with strategy FEATURE_EXTREMUM and takes 0 for a missing
-      prominence.
+      retrieval server offers it as POST /v1/segments with strategy FEATURE_EXTREMUM and answers 400 when prominence
+      is missing or no number.
   python:
     status: available
     class: "opentsx.client.retrieval.RetrievalClient#segments"

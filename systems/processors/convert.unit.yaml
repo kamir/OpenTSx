@@ -19,7 +19,7 @@ params:
 semantics: { needs: point, deterministic: true, keeps: [time, series], origin: INHERIT }
 runtimes:
   workbench: { status: available }
-  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Convert", note: "A step of the clean chain before a series sink (bin/opentsx vectors)." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Convert", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Refuses a factor or offset that is no number." }
   java: { status: none }
   python: { status: none }
   go: { status: none }

@@ -361,8 +361,9 @@ public final class SystemDoc {
             }
             return null;
         }
-        Path file = root.resolve(ref).normalize();
-        if (!file.startsWith(root.normalize()) || !Files.isRegularFile(file)) {
+        Path base = root.toAbsolutePath().normalize();
+        Path file = base.resolve(ref).normalize();
+        if (!file.startsWith(base) || !Files.isRegularFile(file)) {
             problems.add(what + ": " + ref + " does not exist below " + root);
             return null;
         }
@@ -398,12 +399,13 @@ public final class SystemDoc {
         }
         Expect expect = new Expect(
                 first(own.path("unit"), cat == null ? null : cat.path("unit")),
-                number(own.path("min"), cat == null ? null : cat.path("min")),
-                number(own.path("max"), cat == null ? null : cat.path("max")),
+                number(id + ": min", own.path("min"), "catalog " + channel + ": min", cat == null ? null : cat.path("min")),
+                number(id + ": max", own.path("max"), "catalog " + channel + ": max", cat == null ? null : cat.path("max")),
                 first(own.path("interval"), cat == null ? null : cat.path("sampling")),
                 first(own.path("kind"), cat == null ? null : cat.path("kind")),
                 first(own.path("origin"), null),
-                number(own.path("operating").path("min"), null), number(own.path("operating").path("max"), null));
+                number(id + ": operating.min", own.path("operating").path("min"), null, null),
+                number(id + ": operating.max", own.path("operating").path("max"), null, null));
         if (expect.interval() != null && !DURATION.matcher(expect.interval()).matches()) {
             problems.add(id + ": interval " + expect.interval() + " is no duration like PT1M");
         }
@@ -469,7 +471,7 @@ public final class SystemDoc {
                 }
             }
             case "manual" -> {
-                if (s.has("value") == s.has("table")) {
+                if (s.hasNonNull("value") == s.hasNonNull("table")) {
                     problems.add(at + ": a manual source needs value or table");
                 }
                 origin = origin == null ? Origin.REPORTED.name() : origin;
@@ -481,8 +483,8 @@ public final class SystemDoc {
         }
         origin(id, grade, origin);
         return new Source(kind, s.path("topic").asText(null), metric, tags, series, origin, s.path("processor").asText(null),
-                s.path("params").isMissingNode() ? null : s.path("params"), s.has("seed") ? s.path("seed").asLong() : null,
-                s.path("flow").asText(null), s.path("output").asText(null), s.has("value") ? s.path("value").asDouble() : null,
+                s.path("params").isMissingNode() ? null : s.path("params"), whole(at + ": seed", s.path("seed")),
+                s.path("flow").asText(null), s.path("output").asText(null), number(at + ": value", s.path("value"), null, null),
                 s.path("table").asText(null), s.path("workingCopy").asBoolean(false));
     }
 
@@ -591,11 +593,34 @@ public final class SystemDoc {
         return b == null || b.isMissingNode() || b.isNull() ? null : b.asText();
     }
 
-    private static Double number(JsonNode a, JsonNode b) {
-        if (a != null && a.isNumber()) {
-            return a.asDouble();
+    private Double number(String subject, JsonNode a, String fallback, JsonNode b) {
+        boolean own = a != null && !a.isMissingNode() && !a.isNull();
+        JsonNode v = own ? a : b;
+        if (v == null || v.isMissingNode() || v.isNull()) {
+            return null;
         }
-        return b != null && b.isNumber() ? b.asDouble() : null;
+        if (!v.isNumber()) {
+            problems.add((own ? subject : fallback) + ": " + shown(v)
+                    + " is not a number; expected a number without quotes, such as 0.01 or 1e-3");
+            return null;
+        }
+        return v.asDouble();
+    }
+
+    private Long whole(String subject, JsonNode v) {
+        if (v.isMissingNode() || v.isNull()) {
+            return null;
+        }
+        if (!v.isIntegralNumber() || !v.canConvertToLong()) {
+            problems.add(subject + ": " + shown(v) + " is not a whole number; expected a whole number from -9223372036854775808 to"
+                    + " 9223372036854775807 without quotes");
+            return null;
+        }
+        return v.asLong();
+    }
+
+    private static String shown(JsonNode v) {
+        return "\"" + (v.isTextual() ? v.asText().trim() : v.toString()) + "\"";
     }
 
     static JsonNode read(Path file) {

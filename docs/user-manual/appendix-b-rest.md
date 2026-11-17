@@ -29,6 +29,14 @@ Base URL: `http://<host>:<port>`. Times are ISO-8601 instants (UTC).
 
 `series` is a comma-separated list of series ids in every endpoint that takes it.
 
+**Limits:**
+
+| Limit | Value | Constant | Answer when exceeded |
+|-------|-------|----------|----------------------|
+| JSON body of `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` and `/v1/systems/{id}/...` | 262144 bytes | `RetrievalServer.MAX_BODY_BYTES` | 413 `request body: larger than 262144 bytes; send at most 262144 bytes` |
+| DAG document of `POST /v1/dags/deploy` | 262144 bytes | `RetrievalServer.MAX_DAG_BYTES` | 400 `the DAG is larger than 262144 bytes` |
+| points of one episode after `resample` | 100000 | `Resampling.MAX_POINTS` | 400, for example `resample: "PT0.005S" gives 120000 points for one episode; expected a longer step that gives at most 100000` |
+
 **Run token:** `POST /v1/dags/deploy`, `POST /v1/dags/stop` and `POST /v1/systems/{id}/generate` write to KafScale.
 Set a run token with `--dag-run-token <token>` or the environment variable `OPENTSX_DAG_RUN_TOKEN`; the option wins.
 Callers then send the token in the header `X-OpenTSx-Run-Token`. Without a token, anyone who reaches the port can
@@ -63,6 +71,19 @@ The operators are described in [chapter 17](17-operators.md).
 | `FEATURE_EXTREMUM` | `feature` (MAX/MIN), `prominence`, `window`, `distance`, `pre`, `post` |
 | `FEATURE_THRESHOLD` | `direction` (ABOVE/BELOW), `enter`, `exit`, `pre`, `post`, `minDuration`, `maxDuration` |
 
+`prominence` and `enter` are required. Without `exit` the phase ends at `enter`.
+
+**Numbers in a body:** `offset`, `length`, `topK`, `band`, the values of `pattern` and the numeric segment parameters
+are JSON numbers. Absent or `null` gives the default; `prominence`, `enter` and each value of `pattern` have none, and
+an absent or `null` one is a 400 `<field>: missing; ...`. A string, also a number in quotes such as `"10"`, a boolean,
+or a fraction where a whole number belongs is a 400 that names the field:
+
+```text
+topK: "ten" is not a whole number; expected a whole number from -2147483648 to 2147483647 without quotes
+pattern[1]: "a" is not a number; expected a number without quotes, such as 0.01 or 1e-3
+params.prominence: missing; expected a number without quotes, such as 0.01 or 1e-3
+```
+
 **Response formats:**
 
 * **Episodes:** JSON by default: an array of objects with `episodeId`, `seriesId`, `metric`, `tags`, `unit`,
@@ -79,10 +100,10 @@ The operators are described in [chapter 17](17-operators.md).
 
 | Status | When |
 |--------|------|
-| `400` | invalid input, an unknown episode in a POST body, a DAG that cannot be run or is over 262144 bytes |
+| `400` | invalid input, an unknown episode in a POST body, a DAG that cannot be run or is over 262144 bytes, a `resample` step that gives more than 100000 points for one episode |
 | `401` | the server has a run token and the request lacks it |
 | `404` | an unknown episode in `GET /v1/episodes/{id}`; an unknown route, system or run; a system without a scenario on the run routes; a route the server does not offer without `--systems`, `--kafscale` or `--dag-runs true` |
-| `413` | a `POST /v1/systems/{id}/...` request with a body over 262144 bytes |
+| `413` | a `POST /v1/patterns/search`, `/v1/episodes/similar`, `/v1/segments` or `/v1/systems/{id}/...` request with a body over 262144 bytes |
 | `500` | a server error |
 
 A POST body that is not valid JSON gets no answer: the server closes the connection, and `curl` reports

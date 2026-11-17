@@ -146,7 +146,7 @@ Values wander around a mean and are pulled back to it. A stand-in for a price or
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | The page Signals presets the parameters from the expectation of the signal and asks the server to generate. |
-| java | available | `org.opentsx.retrieval.generate.Generators#values` | One run over a period, started by a person; no continuous operation. The value of a step does not depend on where the run began: the recursion starts early enough that earlier steps fade below a thousandth. Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. |
+| java | available | `org.opentsx.retrieval.generate.Generators#values` | One run over a period, started by a person; no continuous operation. The value of a step does not depend on where the run began: the recursion starts early enough that earlier steps fade below a thousandth. Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. A parameter that is no number is refused with its name. |
 | python | none |  |  |
 | processor | planned |  | A generator that keeps writing is part of step E2 of the decision circle. |
 | go | none |  |  |
@@ -198,7 +198,7 @@ A sine around a mean with a period, for example a day, plus noise. A stand-in fo
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | The page Signals presets the parameters from the expectation of the signal and asks the server to generate. |
-| java | available | `org.opentsx.retrieval.generate.Generators#values` | One run over a period, started by a person; no continuous operation. Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. |
+| java | available | `org.opentsx.retrieval.generate.Generators#values` | One run over a period, started by a person; no continuous operation. Generators.episodes(target, params, interval, from, to) cuts the run into episodes of 600 samples; POST /v1/systems/<id>/generate writes them to tsx.<domain>.synthetic.v2. A parameter that is no number is refused with its name. |
 | python | none |  |  |
 | processor | planned |  | A generator that keeps writing is part of step E2 of the decision circle. |
 | go | none |  |  |
@@ -451,7 +451,7 @@ Computes value * factor + offset for every value and gives the output a new unit
 | workbench | available | operator `convert.unit` |  |
 | java | none |  |  |
 | python | none |  |  |
-| processor | available | `org.opentsx.retrieval.clean.CleanChain#Convert` | A step of the clean chain before a series sink (bin/opentsx vectors). |
+| processor | available | `org.opentsx.retrieval.clean.CleanChain#Convert` | A step of the clean chain before a series sink (bin/opentsx vectors). Refuses a factor or offset that is no number. |
 | go | none |  |  |
 
 | Port | Direction | Type | Description |
@@ -503,7 +503,7 @@ Checks every value against the band [min, max]. A value below min or above max b
 | workbench | available | operator `dq.plausible-range` | The form presets min -10 and max 10, or the expected range of the signal it was opened for. Any mode other than clip gives gaps. |
 | java | none |  |  |
 | python | none |  |  |
-| processor | available | `org.opentsx.retrieval.clean.CleanChain#Range` | DAG op dq.checks with checks [PLAUSIBLE_RANGE], a step of the clean chain before a series sink (bin/opentsx vectors). Refuses min above max and a mode other than gap or clip. |
+| processor | available | `org.opentsx.retrieval.clean.CleanChain#Range` | DAG op dq.checks with checks [PLAUSIBLE_RANGE], a step of the clean chain before a series sink (bin/opentsx vectors). Refuses min above max, a min or max that is no number and a mode other than gap or clip. |
 | go | planned |  | DQ in the Go stream core of the proposed Go TSx processor. |
 
 | Port | Direction | Type | Description |
@@ -669,7 +669,7 @@ Cuts the time axis into windows of the width every, aligned to the epoch, and gi
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `resample` | every in units of the x axis, default 0.05; 60 s when the workbench is opened for a signal. Hands out the last window before the data has passed its end. |
-| java | available | `org.opentsx.retrieval.Resampling#resample` | One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0. |
+| java | available | `org.opentsx.retrieval.Resampling#resample` | One episode at a time, also GET /v1/episodes?resample=PT1M&agg=MEAN. agg also FIRST, SUM and COUNT; an empty window is NaN, for COUNT 0. A step that gives more than 100000 points for one episode is refused (400). |
 | python | available | `opentsx.core.time_series.TimeSeriesObject#resample` | resample(factor, method) aggregates blocks of factor samples, not time windows; method mean, median, max or min. RetrievalClient.episodes(resample=, agg=) has the server resample. |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#Resample` | A step of the clean chain before a series sink (bin/opentsx vectors). Hands out a window once the data has passed its end. After 10000 empty windows the grid starts again at the next sample. |
 | go | planned |  | Resampling in the Go stream core of the proposed Go TSx processor. |
@@ -723,7 +723,7 @@ Cuts a window around each local maximum (MAX) or minimum (MIN) that stands out. 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  |  |
-| java | available | `org.opentsx.retrieval.segment.Segmenter#extremum` | Segmenter.extremum takes all six parameters. A peak is decided once the series has reached t + max(post, distance, window/2), so StreamingSegmenter and EpisodeService.segments(...).fetch() give the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_EXTREMUM and takes 0 for a missing prominence. |
+| java | available | `org.opentsx.retrieval.segment.Segmenter#extremum` | Segmenter.extremum takes all six parameters. A peak is decided once the series has reached t + max(post, distance, window/2), so StreamingSegmenter and EpisodeService.segments(...).fetch() give the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_EXTREMUM and answers 400 when prominence is missing or no number. |
 | python | available | `opentsx.client.retrieval.RetrievalClient#segments` | segments("FEATURE_EXTREMUM", {"prominence": 2, "window": "PT5M", "distance": "PT2M"}) calls POST /v1/segments of the retrieval server; Python computes nothing. |
 | processor | none |  |  |
 | go | planned |  | Concept 11, section 6, lists segment.extremum, incremental, for the Go core. |
@@ -871,7 +871,7 @@ Cuts one segment per phase in which the series reaches enter and stays until it 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `segment.threshold` | A different cut with the same id: one window per crossing of enter in the given direction, pre samples before and post samples after it (defaults level 0, pre 20, post 80), aligned on the crossing. No exit level, no hysteresis, no minimum or maximum duration. It draws the first 24 windows and counts all. |
-| java | available | `org.opentsx.retrieval.segment.Segmenter#threshold` | Segmenter.threshold takes all seven parameters. EpisodeService.segments(...).fetch() and StreamingSegmenter give the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_THRESHOLD and takes 0 for a missing enter. |
+| java | available | `org.opentsx.retrieval.segment.Segmenter#threshold` | Segmenter.threshold takes all seven parameters. EpisodeService.segments(...).fetch() and StreamingSegmenter give the same segments. The retrieval server offers it as POST /v1/segments with strategy FEATURE_THRESHOLD and answers 400 when enter is missing or no number. |
 | python | available | `opentsx.client.retrieval.RetrievalClient#segments` | segments("FEATURE_THRESHOLD", {"enter": 20, "exit": 18}) calls POST /v1/segments of the retrieval server; Python computes nothing. |
 | processor | none |  | The workbench lists it in the stream catalog, but CleanChain refuses it before a series sink. |
 | go | planned |  | Concept 11, section 6, lists segment.threshold, incremental, for the Go core. |
@@ -2469,7 +2469,7 @@ Gives every sample an aggregate of the values of the last window, the current sa
 | workbench | available | operator `feature.rolling` | window in units of the x axis, default 3600. |
 | java | none |  |  |
 | python | none |  |  |
-| processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). A window holds at most 100000 values; older ones are dropped. |
+| processor | available | `org.opentsx.retrieval.clean.CleanChain#Rolling` | A step of the clean chain before a series sink (bin/opentsx vectors). A window that holds more than 100000 values fails the sink with an error that names the node; give a shorter window or resample the series first. |
 | go | none |  |  |
 
 | Port | Direction | Type | Description |

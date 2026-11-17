@@ -79,7 +79,7 @@ public final class Generators {
     private static double[] ou(JsonNode p, long seed, long first, int n) {
         double mean = required(p, "mean", "gen.ou");
         double sigma = required(p, "sigma", "gen.ou");
-        double reversion = p.path("reversion").asDouble(0.1);
+        double reversion = number(p, "reversion", "gen.ou", 0.1);
         if (sigma < 0 || reversion <= 0 || reversion > 1) {
             throw new IllegalArgumentException("gen.ou: sigma must not be below zero, reversion must be above 0 and at most 1");
         }
@@ -103,17 +103,29 @@ public final class Generators {
     }
 
     private static double required(JsonNode p, String name, String processor) {
-        if (!p.path(name).isNumber()) {
+        if (p.path(name).isMissingNode() || p.path(name).isNull()) {
             throw new IllegalArgumentException(processor + " needs the parameter " + name);
         }
-        return p.path(name).asDouble();
+        return number(p, name, processor, 0);
+    }
+
+    private static double number(JsonNode p, String name, String processor, double dflt) {
+        JsonNode v = p.path(name);
+        if (v.isMissingNode() || v.isNull()) {
+            return dflt;
+        }
+        if (!v.isNumber()) {
+            throw new IllegalArgumentException(processor + ": " + name + ": \"" + (v.isTextual() ? v.asText().trim() : v.toString())
+                    + "\" is not a number; expected a number without quotes, such as 0.01 or 1e-3");
+        }
+        return v.asDouble();
     }
 
     private static double[] sine(JsonNode p, long seed, long intervalMicros, long first, int n) {
         double mean = required(p, "mean", "gen.sine");
         double amplitude = required(p, "amplitude", "gen.sine");
-        double sigma = p.path("sigma").asDouble(0);
-        double phase = p.path("phase").asDouble(0);
+        double sigma = number(p, "sigma", "gen.sine", 0);
+        double phase = number(p, "phase", "gen.sine", 0);
         long period;
         try {
             period = java.time.Duration.parse(p.path("period").asText("P1D")).toNanos() / 1000;

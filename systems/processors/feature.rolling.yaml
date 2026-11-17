@@ -19,7 +19,7 @@ params:
 semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
 runtimes:
   workbench: { status: available, note: "window in units of the x axis, default 3600." }
-  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Rolling", note: "A step of the clean chain before a series sink (bin/opentsx vectors). A window holds at most 100000 values; older ones are dropped." }
+  processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Rolling", note: "A step of the clean chain before a series sink (bin/opentsx vectors). A window that holds more than 100000 values fails the sink with an error that names the node; give a shorter window or resample the series first." }
   java: { status: none }
   python: { status: none }
   go: { status: none }
