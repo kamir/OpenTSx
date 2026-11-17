@@ -18,6 +18,8 @@
 * [15. Status and roadmap](15-roadmap.md)
 * [16. Engineering method: from a decision to its effect](16-engineering-method.md)
 * [17. Time-series operators](17-operators.md)
+* [18. Configuration](18-configuration.md)
 * [Appendix A: Command-line tools](appendix-a-cli.md)
 * [Appendix B: REST API (retrieval server)](appendix-b-rest.md)
 * [Appendix C: Glossary](appendix-c-glossary.md)
+* [Appendix D: Configuration keys](appendix-d-configuration.md)

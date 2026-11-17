@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.config.v1.schema.json",
+  "title": "opentsx.config.v1",
+  "description": "Registry of the OpenTSx configuration keys and the commands that read them. The source is opentsx-conf/src/main/resources/org/opentsx/conf/opentsx.config.v1.json; the Python package ships a byte-identical copy. Rules beyond this schema (sorted entries, no key is a prefix of another key, an injective environment mapping, one key per flag and command, defaults that parse) are in EVOLUTION/TASK-020-configuration-and-cli.md.",
+  "type": "object",
+  "required": [
+    "schema",
+    "commands",
+    "keys"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "opentsx.config.v1"
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/command"
+      }
+    },
+    "keys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/key"
+      }
+    }
+  },
+  "$defs": {
+    "since": {
+      "description": "First OpenTSx release that reads the setting under any name, or unreleased until the release commit sets the version.",
+      "type": "string",
+      "pattern": "^([0-9]+\\.[0-9]+\\.[0-9]+|unreleased)$"
+    },
+    "doc": {
+      "description": "One sentence in plain English.",
+      "type": "string",
+      "pattern": "^[A-Z].*\\.$"
+    },
+    "command": {
+      "type": "object",
+      "required": [
+        "name",
+        "since",
+        "doc"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Command words after opentsx, separated by one space.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*( [a-z][a-z0-9-]*)*$"
+        },
+        "args": {
+          "description": "Names of the required positional arguments, in order.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*$"
+          }
+        },
+        "since": {
+          "$ref": "#/$defs/since"
+        },
+        "doc": {
+          "$ref": "#/$defs/doc"
+        }
+      }
+    },
+    "key": {
+      "type": "object",
+      "required": [
+        "key",
+        "type",
+        "secret",
+        "commands",
+        "since",
+        "doc"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^opentsx(\\.[a-z][a-z0-9]*([A-Z][a-z0-9]+)*)+$"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "int",
+            "long",
+            "double",
+            "boolean",
+            "duration",
+            "list",
+            "enum",
+            "path"
+          ]
+        },
+        "items": {
+          "description": "Type of the items of a list key; string when absent.",
+          "enum": [
+            "string",
+            "int",
+            "long",
+            "double",
+            "duration",
+            "enum",
+            "path"
+          ]
+        },
+        "values": {
+          "description": "Allowed values of an enum key or of the items of a list key with enum items.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[^,\\s]+$"
+          }
+        },
+        "unit": {
+          "description": "Unit of a numeric key, for example ms, s or Kd.",
+          "type": "string",
+          "minLength": 1
+        },
+        "default": {
+          "description": "Default as text; it must parse as the type of the key.",
+          "type": "string",
+          "minLength": 1
+        },
+        "secret": {
+          "type": "boolean"
+        },
+        "flag": {
+          "description": "Option of the commands without the two dashes: --<flag> <value> equals --conf <key>=<value>.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+        },
+        "legacyFlags": {
+          "description": "Further options that the commands read today under another name; they stay accepted.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+          }
+        },
+        "env": {
+          "description": "Environment variables read today, after the canonical OPENTSX_ name, in this order.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          }
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*( [a-z][a-z0-9-]*)*$"
+          }
+        },
+        "since": {
+          "$ref": "#/$defs/since"
+        },
+        "doc": {
+          "$ref": "#/$defs/doc"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "type": {
+                    "const": "enum"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "items"
+                ],
+                "properties": {
+                  "items": {
+                    "const": "enum"
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "required": [
+              "values"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "values"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "items"
+            ]
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "list"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "unit"
+            ]
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "int",
+                  "long",
+                  "double"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "secret": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "default"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -11,6 +11,7 @@
 
     <modules>
         <module>opentsx-model</module>
+        <module>opentsx-conf</module>
         <module>opentsx-data</module>
         <module>opentsx-core</module>
         <module>opentsx-connectors</module>

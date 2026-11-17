@@ -1,0 +1,1910 @@
+{
+  "schema": "opentsx.config.v1",
+  "commands": [
+    {
+      "name": "boat",
+      "since": "3.0.1",
+      "doc": "Run the boat twin (Etap 22) with its what-if alternatives."
+    },
+    {
+      "name": "config get",
+      "args": [
+        "key"
+      ],
+      "since": "unreleased",
+      "doc": "Print the effective value of one key."
+    },
+    {
+      "name": "config list",
+      "since": "unreleased",
+      "doc": "Print the key registry."
+    },
+    {
+      "name": "config show",
+      "since": "unreleased",
+      "doc": "Print every key that has a value, with the source of the value."
+    },
+    {
+      "name": "dwd house",
+      "since": "3.0.1",
+      "doc": "Run the house twin over the MOSMIX forecast horizon with DWD weather."
+    },
+    {
+      "name": "dwd mosmix",
+      "since": "3.0.1",
+      "doc": "Read a MOSMIX_L forecast of one station."
+    },
+    {
+      "name": "dwd obs",
+      "since": "3.0.1",
+      "doc": "Read CDC station observations."
+    },
+    {
+      "name": "dwd stations",
+      "since": "3.0.1",
+      "doc": "List the DWD stations nearest to a position."
+    },
+    {
+      "name": "history-twin boat",
+      "since": "3.0.1",
+      "doc": "Run the boat twin on irradiance from the history archive."
+    },
+    {
+      "name": "history-twin house",
+      "since": "3.0.1",
+      "doc": "Run the house twin on weather years from the history archive."
+    },
+    {
+      "name": "history-twin twin",
+      "since": "3.0.1",
+      "doc": "Run twin scenario S1 (H2 chain) on prices and wind from the history archive."
+    },
+    {
+      "name": "house",
+      "since": "3.0.1",
+      "doc": "Run the house twin: KPIs of the reference year and every lever as a what-if."
+    },
+    {
+      "name": "kafscale-check",
+      "since": "3.0.1",
+      "doc": "Check that a KafScale bootstrap address and its advertised brokers are reachable."
+    },
+    {
+      "name": "market backfill",
+      "since": "3.0.1",
+      "doc": "Fill the history archive with market series for a range of years."
+    },
+    {
+      "name": "market catalog",
+      "since": "3.0.1",
+      "doc": "List the market series the collector knows."
+    },
+    {
+      "name": "market forward",
+      "since": "3.0.1",
+      "doc": "Fetch the market series of the previous and the running year (daily job)."
+    },
+    {
+      "name": "market import",
+      "since": "3.0.1",
+      "doc": "Import a partner CSV file into the history archive."
+    },
+    {
+      "name": "market load",
+      "since": "3.0.1",
+      "doc": "Load archived series as episodes into Iceberg or an in-memory store."
+    },
+    {
+      "name": "market marktwert",
+      "since": "3.0.1",
+      "doc": "Fetch the market values of all technologies."
+    },
+    {
+      "name": "market mosmix-archive",
+      "since": "3.0.1",
+      "doc": "Archive the raw MOSMIX_L forecasts of stations."
+    },
+    {
+      "name": "market prices",
+      "since": "3.0.1",
+      "doc": "Fetch day-ahead prices."
+    },
+    {
+      "name": "market publish",
+      "since": "3.0.1",
+      "doc": "Publish archived series as raw episodes to the episodes topic of a domain."
+    },
+    {
+      "name": "market rebap",
+      "since": "3.0.1",
+      "doc": "Fetch both sides of the imbalance price reBAP."
+    },
+    {
+      "name": "market report",
+      "since": "3.0.1",
+      "doc": "Print the manifests and quality reports of the archived series."
+    },
+    {
+      "name": "market series",
+      "since": "3.0.1",
+      "doc": "Fetch one series of the catalog."
+    },
+    {
+      "name": "market weather-backfill",
+      "since": "3.0.1",
+      "doc": "Fill the history archive with DWD CDC observations of the twin sites."
+    },
+    {
+      "name": "market weather-forward",
+      "since": "3.0.1",
+      "doc": "Fetch the DWD CDC observations of the previous and the running year (daily job)."
+    },
+    {
+      "name": "metadata",
+      "since": "3.0.1",
+      "doc": "Publish the wind-farm metadata pool to OpenMetadata."
+    },
+    {
+      "name": "modbus check",
+      "since": "3.0.1",
+      "doc": "Validate a register map and print its points and read plan."
+    },
+    {
+      "name": "modbus poll",
+      "since": "3.0.1",
+      "doc": "Poll a meter repeatedly."
+    },
+    {
+      "name": "modbus read",
+      "since": "3.0.1",
+      "doc": "Run one poll cycle and print it as a table."
+    },
+    {
+      "name": "modbus simulate",
+      "since": "3.0.1",
+      "doc": "Serve a simulated meter over Modbus TCP."
+    },
+    {
+      "name": "retrieval-server",
+      "since": "3.0.1",
+      "doc": "Serve the REST API for episodes, patterns, segments, DAGs and systems."
+    },
+    {
+      "name": "stats",
+      "since": "3.0.1",
+      "doc": "Run the streaming statistics processor on KafScale."
+    },
+    {
+      "name": "stats-flink",
+      "since": "unreleased",
+      "doc": "Run the streaming statistics as a Flink job in a local mini cluster."
+    },
+    {
+      "name": "studio-export",
+      "args": [
+        "out.json"
+      ],
+      "since": "3.0.1",
+      "doc": "Write the scenario data of the Smart Topics Studio to a JSON file."
+    },
+    {
+      "name": "twin",
+      "since": "3.0.1",
+      "doc": "Run twin scenario S1 (H2 chain) in the modes shadow, what-if and forecast."
+    },
+    {
+      "name": "twin-coupling",
+      "since": "3.0.1",
+      "doc": "Compare coupling variant L with variant T over a grid of staleness bounds and latencies."
+    },
+    {
+      "name": "twin-live bridge",
+      "since": "3.0.1",
+      "doc": "Serve event topics to browsers as server-sent events."
+    },
+    {
+      "name": "twin-live demo",
+      "since": "3.0.1",
+      "doc": "Run publisher and bridge in one process on topics kept in memory."
+    },
+    {
+      "name": "twin-live publish",
+      "since": "3.0.1",
+      "doc": "Write the events of the reference runs to their event topics."
+    },
+    {
+      "name": "twin-schemas",
+      "since": "3.0.1",
+      "doc": "Regenerate the Avro topic contract of the twin."
+    },
+    {
+      "name": "vectors",
+      "since": "3.0.1",
+      "doc": "Run the vector processor of a domain (same as vectors run)."
+    },
+    {
+      "name": "vectors deploy",
+      "since": "3.0.1",
+      "doc": "Deploy a DAG to the vector processor, or replace it, through the control topic."
+    },
+    {
+      "name": "vectors run",
+      "since": "3.0.1",
+      "doc": "Run the vector processor of a domain."
+    },
+    {
+      "name": "vectors stop",
+      "since": "3.0.1",
+      "doc": "Stop a DAG of the vector processor through the control topic."
+    },
+    {
+      "name": "version",
+      "since": "unreleased",
+      "doc": "Print the OpenTSx version."
+    },
+    {
+      "name": "windpark-sim",
+      "since": "3.0.1",
+      "doc": "Run a wind-farm scenario and write its episodes to KafScale, Iceberg or both."
+    }
+  ],
+  "keys": [
+    {
+      "key": "opentsx.archive.dir",
+      "type": "path",
+      "default": "data/history",
+      "secret": false,
+      "flag": "archive",
+      "legacyFlags": [
+        "history"
+      ],
+      "commands": [
+        "history-twin boat",
+        "history-twin house",
+        "history-twin twin",
+        "market backfill",
+        "market forward",
+        "market import",
+        "market load",
+        "market marktwert",
+        "market mosmix-archive",
+        "market prices",
+        "market publish",
+        "market rebap",
+        "market report",
+        "market series",
+        "market weather-backfill",
+        "market weather-forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Root directory of the history archive."
+    },
+    {
+      "key": "opentsx.boat.calibrate",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "calibrate",
+      "commands": [
+        "boat"
+      ],
+      "since": "3.0.1",
+      "doc": "Fit solar derating and usage scales to the operating data first."
+    },
+    {
+      "key": "opentsx.boat.data",
+      "type": "path",
+      "secret": false,
+      "flag": "data",
+      "commands": [
+        "boat"
+      ],
+      "since": "3.0.1",
+      "doc": "Operating data CSV of the boat."
+    },
+    {
+      "key": "opentsx.boat.zone",
+      "type": "string",
+      "default": "Europe/Berlin",
+      "secret": false,
+      "flag": "zone",
+      "commands": [
+        "boat"
+      ],
+      "since": "3.0.1",
+      "doc": "Time zone of the timestamps in the operating data."
+    },
+    {
+      "key": "opentsx.domain",
+      "type": "string",
+      "default": "wind",
+      "secret": false,
+      "flag": "domain",
+      "commands": [
+        "kafscale-check",
+        "market publish",
+        "metadata",
+        "retrieval-server",
+        "stats",
+        "stats-flink",
+        "vectors",
+        "vectors deploy",
+        "vectors run",
+        "vectors stop",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Domain of the topic names tsx.<domain>.<kind>.v2."
+    },
+    {
+      "key": "opentsx.dwd.boat",
+      "type": "path",
+      "secret": false,
+      "flag": "boat",
+      "commands": [
+        "dwd mosmix",
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "CSV file of irradiance for the boat twin."
+    },
+    {
+      "key": "opentsx.dwd.daily",
+      "type": "path",
+      "secret": false,
+      "flag": "daily",
+      "commands": [
+        "dwd mosmix",
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "CSV file of daily mean temperatures for the house twin."
+    },
+    {
+      "key": "opentsx.dwd.hourly",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "hourly",
+      "commands": [
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "Read the hourly recent observations instead of the 10-minute now observations."
+    },
+    {
+      "key": "opentsx.dwd.httpsProxy",
+      "type": "string",
+      "secret": true,
+      "env": [
+        "HTTPS_PROXY",
+        "https_proxy"
+      ],
+      "commands": [
+        "dwd house",
+        "dwd mosmix",
+        "dwd obs",
+        "dwd stations"
+      ],
+      "since": "3.0.1",
+      "doc": "HTTPS proxy for downloads from opendata.dwd.de when the JVM has no proxy settings."
+    },
+    {
+      "key": "opentsx.dwd.near",
+      "type": "list",
+      "items": "double",
+      "secret": false,
+      "flag": "near",
+      "commands": [
+        "dwd stations"
+      ],
+      "since": "3.0.1",
+      "doc": "Position LAT,LON the nearest stations are searched for."
+    },
+    {
+      "key": "opentsx.dwd.nearestCount",
+      "type": "int",
+      "default": "5",
+      "secret": false,
+      "flag": "n",
+      "commands": [
+        "dwd stations"
+      ],
+      "since": "3.0.1",
+      "doc": "Number of stations listed."
+    },
+    {
+      "key": "opentsx.dwd.obs.offline",
+      "type": "list",
+      "items": "path",
+      "secret": false,
+      "flag": "offline",
+      "commands": [
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "Local observation files read instead of a download from opendata.dwd.de."
+    },
+    {
+      "key": "opentsx.dwd.offline",
+      "type": "path",
+      "secret": false,
+      "flag": "offline",
+      "commands": [
+        "dwd house",
+        "dwd mosmix",
+        "dwd stations"
+      ],
+      "since": "3.0.1",
+      "doc": "Local file read instead of a download from opendata.dwd.de."
+    },
+    {
+      "key": "opentsx.dwd.out",
+      "type": "path",
+      "secret": false,
+      "flag": "out",
+      "commands": [
+        "dwd mosmix",
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "Wide CSV file the series are written to."
+    },
+    {
+      "key": "opentsx.dwd.params",
+      "type": "list",
+      "items": "enum",
+      "values": [
+        "wind",
+        "air_temperature",
+        "solar",
+        "precipitation"
+      ],
+      "secret": false,
+      "flag": "param",
+      "commands": [
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "Observation parameters; without it wind,air_temperature,solar, or wind,air_temperature with hourly."
+    },
+    {
+      "key": "opentsx.dwd.station",
+      "type": "string",
+      "secret": false,
+      "flag": "station",
+      "commands": [
+        "dwd house",
+        "dwd mosmix",
+        "dwd obs"
+      ],
+      "since": "3.0.1",
+      "doc": "DWD station id."
+    },
+    {
+      "key": "opentsx.dwd.stationCatalog",
+      "type": "enum",
+      "values": [
+        "mosmix",
+        "cdc"
+      ],
+      "default": "mosmix",
+      "secret": false,
+      "flag": "catalog",
+      "commands": [
+        "dwd stations"
+      ],
+      "since": "3.0.1",
+      "doc": "Station catalog: mosmix for forecast ids, cdc for observation ids."
+    },
+    {
+      "key": "opentsx.history.boat.days",
+      "type": "int",
+      "default": "14",
+      "secret": false,
+      "flag": "days",
+      "commands": [
+        "history-twin boat"
+      ],
+      "since": "3.0.1",
+      "doc": "Number of days of the trip."
+    },
+    {
+      "key": "opentsx.history.boat.start",
+      "type": "string",
+      "secret": false,
+      "flag": "start",
+      "commands": [
+        "history-twin boat"
+      ],
+      "since": "3.0.1",
+      "doc": "First day (YYYY-MM-DD) of the trip; without it the first Saturday from July 1."
+    },
+    {
+      "key": "opentsx.history.boat.weatherYear",
+      "type": "int",
+      "default": "2024",
+      "secret": false,
+      "flag": "weather-year",
+      "commands": [
+        "history-twin boat"
+      ],
+      "since": "3.0.1",
+      "doc": "Weather year of the boat trip."
+    },
+    {
+      "key": "opentsx.history.house.levers",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "levers",
+      "commands": [
+        "history-twin house"
+      ],
+      "since": "3.0.1",
+      "doc": "Also print every lever as a what-if per year."
+    },
+    {
+      "key": "opentsx.history.house.weatherYear",
+      "type": "string",
+      "default": "2023",
+      "secret": false,
+      "flag": "weather-year",
+      "commands": [
+        "history-twin house"
+      ],
+      "since": "3.0.1",
+      "doc": "Weather year YYYY or range YYYY-YYYY of the house twin."
+    },
+    {
+      "key": "opentsx.history.radiationStation",
+      "type": "string",
+      "secret": false,
+      "flag": "radiation-station",
+      "commands": [
+        "history-twin boat",
+        "history-twin house"
+      ],
+      "since": "3.0.1",
+      "doc": "Radiation station id; overrides the sites file."
+    },
+    {
+      "key": "opentsx.history.sites",
+      "type": "path",
+      "secret": false,
+      "flag": "sites",
+      "commands": [
+        "history-twin boat",
+        "history-twin house",
+        "history-twin twin",
+        "market weather-backfill",
+        "market weather-forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Sites file (YAML) of the twins; without it the built-in sites are used."
+    },
+    {
+      "key": "opentsx.history.station",
+      "type": "string",
+      "secret": false,
+      "flag": "station",
+      "commands": [
+        "history-twin boat",
+        "history-twin house"
+      ],
+      "since": "3.0.1",
+      "doc": "Temperature station id; overrides the sites file."
+    },
+    {
+      "key": "opentsx.history.twin.capacityFactor",
+      "type": "double",
+      "default": "0.30",
+      "secret": false,
+      "flag": "cf",
+      "commands": [
+        "history-twin twin"
+      ],
+      "since": "3.0.1",
+      "doc": "Mean capacity factor the SMARD wind is scaled to."
+    },
+    {
+      "key": "opentsx.history.twin.days",
+      "type": "int",
+      "secret": false,
+      "flag": "days",
+      "commands": [
+        "history-twin twin"
+      ],
+      "since": "3.0.1",
+      "doc": "Number of days of the run; without it the rest of the year."
+    },
+    {
+      "key": "opentsx.history.twin.from",
+      "type": "string",
+      "secret": false,
+      "flag": "from",
+      "commands": [
+        "history-twin twin"
+      ],
+      "since": "3.0.1",
+      "doc": "First UTC day (YYYY-MM-DD) of the run; without it January 1 of the year."
+    },
+    {
+      "key": "opentsx.history.twin.wind",
+      "type": "enum",
+      "values": [
+        "smard",
+        "dwd"
+      ],
+      "default": "smard",
+      "secret": false,
+      "flag": "wind",
+      "commands": [
+        "history-twin twin"
+      ],
+      "since": "3.0.1",
+      "doc": "Wind input: SMARD onshore wind scaled to the park, or a DWD station through the power curve."
+    },
+    {
+      "key": "opentsx.history.twin.year",
+      "type": "int",
+      "default": "2024",
+      "secret": false,
+      "flag": "year",
+      "commands": [
+        "history-twin twin"
+      ],
+      "since": "3.0.1",
+      "doc": "Year of the history run."
+    },
+    {
+      "key": "opentsx.house.bills",
+      "type": "path",
+      "secret": false,
+      "flag": "calibrate",
+      "commands": [
+        "house"
+      ],
+      "since": "3.0.1",
+      "doc": "Bills CSV the house twin is calibrated on."
+    },
+    {
+      "key": "opentsx.house.hddRef",
+      "type": "double",
+      "unit": "Kd",
+      "default": "4300",
+      "secret": false,
+      "flag": "hdd-ref",
+      "commands": [
+        "history-twin house",
+        "house"
+      ],
+      "since": "3.0.1",
+      "doc": "Reference heating degree days the final heat is normalized to."
+    },
+    {
+      "key": "opentsx.house.weather",
+      "type": "path",
+      "secret": false,
+      "flag": "weather",
+      "commands": [
+        "house"
+      ],
+      "since": "3.0.1",
+      "doc": "Daily temperatures CSV used with the calibration."
+    },
+    {
+      "key": "opentsx.iceberg.namespace",
+      "type": "string",
+      "default": "tsx",
+      "secret": false,
+      "flag": "namespace",
+      "commands": [
+        "market load",
+        "metadata",
+        "retrieval-server",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Iceberg namespace of the OpenTSx tables."
+    },
+    {
+      "key": "opentsx.iceberg.properties",
+      "type": "list",
+      "secret": false,
+      "flag": "iceberg",
+      "commands": [
+        "market load",
+        "retrieval-server",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Iceberg catalog properties as key=value items, for example type=rest,uri=http://localhost:8181; shown in clear, so keep credentials out of it."
+    },
+    {
+      "key": "opentsx.kafscale.bootstrap",
+      "type": "string",
+      "secret": false,
+      "flag": "kafscale",
+      "legacyFlags": [
+        "bootstrap"
+      ],
+      "env": [
+        "KAFSCALE_BOOTSTRAP"
+      ],
+      "commands": [
+        "kafscale-check",
+        "market publish",
+        "metadata",
+        "retrieval-server",
+        "stats",
+        "stats-flink",
+        "twin-live bridge",
+        "twin-live publish",
+        "vectors",
+        "vectors deploy",
+        "vectors run",
+        "vectors stop",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Bootstrap address of the KafScale proxy as host:port, several separated by commas."
+    },
+    {
+      "key": "opentsx.kafscale.checkTimeout",
+      "type": "duration",
+      "default": "PT20S",
+      "secret": false,
+      "flag": "timeout",
+      "commands": [
+        "kafscale-check"
+      ],
+      "since": "3.0.1",
+      "doc": "How long the check waits for each request to the broker."
+    },
+    {
+      "key": "opentsx.kafscale.partitions",
+      "type": "int",
+      "default": "6",
+      "secret": false,
+      "flag": "partitions",
+      "commands": [
+        "kafscale-check",
+        "metadata",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Number of data partitions when OpenTSx creates the topics of a domain."
+    },
+    {
+      "key": "opentsx.kafscale.provision",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "provision",
+      "commands": [
+        "kafscale-check"
+      ],
+      "since": "3.0.1",
+      "doc": "Create the topics of the domain that do not exist yet."
+    },
+    {
+      "key": "opentsx.market.backfill.fromYear",
+      "type": "int",
+      "default": "2019",
+      "secret": false,
+      "flag": "from-year",
+      "commands": [
+        "market backfill",
+        "market weather-backfill"
+      ],
+      "since": "3.0.1",
+      "doc": "First year of the backfill."
+    },
+    {
+      "key": "opentsx.market.backfill.series",
+      "type": "string",
+      "default": "market",
+      "secret": false,
+      "flag": "series",
+      "commands": [
+        "market backfill",
+        "market forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Series to fetch: market, all, or source/name items separated by commas."
+    },
+    {
+      "key": "opentsx.market.backfill.toYear",
+      "type": "int",
+      "secret": false,
+      "flag": "to-year",
+      "commands": [
+        "market backfill",
+        "market forward",
+        "market weather-backfill",
+        "market weather-forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Last year of the backfill; without it the running UTC year."
+    },
+    {
+      "key": "opentsx.market.backfillDelayMs",
+      "type": "long",
+      "unit": "ms",
+      "default": "500",
+      "secret": false,
+      "flag": "delay-ms",
+      "commands": [
+        "market backfill",
+        "market forward",
+        "market weather-backfill",
+        "market weather-forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Pause between two requests to a source."
+    },
+    {
+      "key": "opentsx.market.entsoeToken",
+      "type": "string",
+      "secret": true,
+      "env": [
+        "ENTSOE_TOKEN"
+      ],
+      "commands": [
+        "market backfill",
+        "market forward",
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "Security token of the ENTSO-E transparency platform."
+    },
+    {
+      "key": "opentsx.market.fetchDelayMs",
+      "type": "long",
+      "unit": "ms",
+      "default": "300",
+      "secret": false,
+      "flag": "delay-ms",
+      "commands": [
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "Pause between two requests to a source."
+    },
+    {
+      "key": "opentsx.market.force",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "force",
+      "commands": [
+        "market backfill",
+        "market forward",
+        "market weather-backfill",
+        "market weather-forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Fetch years again that the archive marks as complete."
+    },
+    {
+      "key": "opentsx.market.from",
+      "type": "string",
+      "secret": false,
+      "flag": "from",
+      "commands": [
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "Start: a local date (Europe/Berlin, start of day) or an ISO instant."
+    },
+    {
+      "key": "opentsx.market.fromDay",
+      "type": "string",
+      "secret": false,
+      "flag": "from-day",
+      "commands": [
+        "market load",
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "First UTC day (YYYY-MM-DD) to load or publish."
+    },
+    {
+      "key": "opentsx.market.fromYear",
+      "type": "int",
+      "default": "2000",
+      "secret": false,
+      "flag": "from-year",
+      "commands": [
+        "market load",
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "First year to load or publish."
+    },
+    {
+      "key": "opentsx.market.import.file",
+      "type": "path",
+      "secret": false,
+      "flag": "file",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Partner CSV file to import."
+    },
+    {
+      "key": "opentsx.market.import.metric",
+      "type": "string",
+      "secret": false,
+      "flag": "metric",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Metric of the imported series."
+    },
+    {
+      "key": "opentsx.market.import.origin",
+      "type": "enum",
+      "values": [
+        "REPORTED",
+        "FORECAST"
+      ],
+      "default": "REPORTED",
+      "secret": false,
+      "flag": "origin",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Origin of the imported values."
+    },
+    {
+      "key": "opentsx.market.import.partner",
+      "type": "string",
+      "default": "default",
+      "secret": false,
+      "flag": "partner",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Partner tag of the imported series."
+    },
+    {
+      "key": "opentsx.market.import.resolution",
+      "type": "duration",
+      "secret": false,
+      "flag": "resolution",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Resolution of the imported series."
+    },
+    {
+      "key": "opentsx.market.import.unit",
+      "type": "string",
+      "secret": false,
+      "flag": "unit",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Unit of the imported series."
+    },
+    {
+      "key": "opentsx.market.import.valueColumn",
+      "type": "string",
+      "secret": false,
+      "flag": "value-column",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Column of the CSV file that holds the values."
+    },
+    {
+      "key": "opentsx.market.import.zone",
+      "type": "string",
+      "secret": false,
+      "flag": "zone",
+      "commands": [
+        "market import"
+      ],
+      "since": "3.0.1",
+      "doc": "Time zone of local timestamps in the CSV file."
+    },
+    {
+      "key": "opentsx.market.mosmix.stations",
+      "type": "list",
+      "default": "10579,10097,10046,E5411",
+      "secret": false,
+      "flag": "stations",
+      "commands": [
+        "market mosmix-archive"
+      ],
+      "since": "3.0.1",
+      "doc": "MOSMIX station ids to archive."
+    },
+    {
+      "key": "opentsx.market.name",
+      "type": "string",
+      "secret": false,
+      "flag": "name",
+      "commands": [
+        "market import",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "Series path source/name, or the name of a partner series."
+    },
+    {
+      "key": "opentsx.market.ntpClientId",
+      "type": "string",
+      "secret": true,
+      "env": [
+        "NTP_CLIENT_ID"
+      ],
+      "commands": [
+        "market backfill",
+        "market forward",
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "OAuth client id for the Netztransparenz API."
+    },
+    {
+      "key": "opentsx.market.ntpClientSecret",
+      "type": "string",
+      "secret": true,
+      "env": [
+        "NTP_CLIENT_SECRET"
+      ],
+      "commands": [
+        "market backfill",
+        "market forward",
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "OAuth client secret for the Netztransparenz API."
+    },
+    {
+      "key": "opentsx.market.offline",
+      "type": "path",
+      "secret": false,
+      "flag": "offline",
+      "commands": [
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "Downloaded file parsed instead of a request to the source."
+    },
+    {
+      "key": "opentsx.market.out",
+      "type": "path",
+      "secret": false,
+      "flag": "out",
+      "commands": [
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "CSV file the fetched series is written to."
+    },
+    {
+      "key": "opentsx.market.publish.batch",
+      "type": "int",
+      "default": "100",
+      "secret": false,
+      "flag": "batch",
+      "commands": [
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Episodes per batch sent to the broker."
+    },
+    {
+      "key": "opentsx.market.publish.dryRun",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "dry-run",
+      "commands": [
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Count what would be published without writing to the broker."
+    },
+    {
+      "key": "opentsx.market.publish.pauseMs",
+      "type": "long",
+      "unit": "ms",
+      "default": "3000",
+      "secret": false,
+      "flag": "pause-ms",
+      "commands": [
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Pause between two batches."
+    },
+    {
+      "key": "opentsx.market.publish.series",
+      "type": "list",
+      "secret": false,
+      "flag": "series",
+      "commands": [
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Series paths source/name to publish."
+    },
+    {
+      "key": "opentsx.market.requality",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "requality",
+      "commands": [
+        "market report"
+      ],
+      "since": "3.0.1",
+      "doc": "Recompute the quality reports from the archived files."
+    },
+    {
+      "key": "opentsx.market.series",
+      "type": "string",
+      "default": "all-archived",
+      "secret": false,
+      "flag": "series",
+      "commands": [
+        "market load",
+        "market report"
+      ],
+      "since": "3.0.1",
+      "doc": "Series to report or load: all-archived, all, market, or source/name items separated by commas."
+    },
+    {
+      "key": "opentsx.market.source",
+      "type": "enum",
+      "values": [
+        "smard",
+        "energy-charts",
+        "entsoe"
+      ],
+      "default": "smard",
+      "secret": false,
+      "flag": "source",
+      "commands": [
+        "market prices"
+      ],
+      "since": "3.0.1",
+      "doc": "Source of the day-ahead prices."
+    },
+    {
+      "key": "opentsx.market.to",
+      "type": "string",
+      "secret": false,
+      "flag": "to",
+      "commands": [
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "3.0.1",
+      "doc": "End, exclusive: a local date (Europe/Berlin, start of day) or an ISO instant."
+    },
+    {
+      "key": "opentsx.market.toDay",
+      "type": "string",
+      "secret": false,
+      "flag": "to-day",
+      "commands": [
+        "market load",
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "UTC day (YYYY-MM-DD) before which loading or publishing stops."
+    },
+    {
+      "key": "opentsx.market.toYear",
+      "type": "int",
+      "default": "2100",
+      "secret": false,
+      "flag": "to-year",
+      "commands": [
+        "market load",
+        "market publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Last year to load or publish."
+    },
+    {
+      "key": "opentsx.market.weather.stations",
+      "type": "list",
+      "secret": false,
+      "flag": "stations",
+      "commands": [
+        "market weather-backfill",
+        "market weather-forward"
+      ],
+      "since": "3.0.1",
+      "doc": "Station and parameter pairs station:parameter; without it every station of the sites file."
+    },
+    {
+      "key": "opentsx.modbus.count",
+      "type": "long",
+      "default": "0",
+      "secret": false,
+      "flag": "count",
+      "commands": [
+        "modbus poll"
+      ],
+      "since": "3.0.1",
+      "doc": "Number of poll cycles; 0 polls until stopped."
+    },
+    {
+      "key": "opentsx.modbus.episodeLength",
+      "type": "duration",
+      "default": "PT1M",
+      "secret": false,
+      "flag": "episode",
+      "commands": [
+        "modbus poll"
+      ],
+      "since": "3.0.1",
+      "doc": "Length of the episodes the poll normalizes into."
+    },
+    {
+      "key": "opentsx.modbus.file",
+      "type": "path",
+      "secret": false,
+      "flag": "file",
+      "commands": [
+        "modbus poll"
+      ],
+      "since": "3.0.1",
+      "doc": "File the CSV rows or the episodes are written to instead of stdout."
+    },
+    {
+      "key": "opentsx.modbus.host",
+      "type": "string",
+      "secret": false,
+      "flag": "host",
+      "commands": [
+        "modbus check",
+        "modbus poll",
+        "modbus read"
+      ],
+      "since": "3.0.1",
+      "doc": "Host of the meter; overrides the register map."
+    },
+    {
+      "key": "opentsx.modbus.interval",
+      "type": "duration",
+      "secret": false,
+      "flag": "interval",
+      "commands": [
+        "modbus poll"
+      ],
+      "since": "3.0.1",
+      "doc": "Poll interval; overrides the register map."
+    },
+    {
+      "key": "opentsx.modbus.map",
+      "type": "string",
+      "secret": false,
+      "flag": "map",
+      "commands": [
+        "modbus check",
+        "modbus poll",
+        "modbus read",
+        "modbus simulate"
+      ],
+      "since": "3.0.1",
+      "doc": "Register map file (YAML) or example."
+    },
+    {
+      "key": "opentsx.modbus.out",
+      "type": "enum",
+      "values": [
+        "csv",
+        "episodes"
+      ],
+      "default": "csv",
+      "secret": false,
+      "flag": "out",
+      "commands": [
+        "modbus poll"
+      ],
+      "since": "3.0.1",
+      "doc": "Output of the poll: csv rows or episodes."
+    },
+    {
+      "key": "opentsx.modbus.port",
+      "type": "int",
+      "secret": false,
+      "flag": "port",
+      "commands": [
+        "modbus check",
+        "modbus poll",
+        "modbus read"
+      ],
+      "since": "3.0.1",
+      "doc": "TCP port of the meter; overrides the register map."
+    },
+    {
+      "key": "opentsx.modbus.simulate",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "simulate",
+      "commands": [
+        "modbus poll",
+        "modbus read"
+      ],
+      "since": "3.0.1",
+      "doc": "Poll a simulator in the same JVM; its data is labelled origin=SYNTHETIC."
+    },
+    {
+      "key": "opentsx.modbus.simulator.bind",
+      "type": "string",
+      "default": "127.0.0.1",
+      "secret": false,
+      "flag": "bind",
+      "commands": [
+        "modbus simulate"
+      ],
+      "since": "3.0.1",
+      "doc": "Address the simulated meter binds to."
+    },
+    {
+      "key": "opentsx.modbus.simulator.port",
+      "type": "int",
+      "default": "1502",
+      "secret": false,
+      "flag": "port",
+      "commands": [
+        "modbus simulate"
+      ],
+      "since": "3.0.1",
+      "doc": "TCP port the simulated meter listens on."
+    },
+    {
+      "key": "opentsx.modbus.simulator.seconds",
+      "type": "long",
+      "unit": "s",
+      "default": "0",
+      "secret": false,
+      "flag": "seconds",
+      "commands": [
+        "modbus simulate"
+      ],
+      "since": "3.0.1",
+      "doc": "How long the simulated meter runs; 0 runs until stopped."
+    },
+    {
+      "key": "opentsx.modbus.simulator.seed",
+      "type": "long",
+      "default": "42",
+      "secret": false,
+      "flag": "seed",
+      "commands": [
+        "modbus poll",
+        "modbus read",
+        "modbus simulate"
+      ],
+      "since": "3.0.1",
+      "doc": "Seed of the simulated meter."
+    },
+    {
+      "key": "opentsx.modbus.unitId",
+      "type": "int",
+      "secret": false,
+      "flag": "unit",
+      "commands": [
+        "modbus check",
+        "modbus poll",
+        "modbus read",
+        "modbus simulate"
+      ],
+      "since": "3.0.1",
+      "doc": "Modbus unit id of the meter; overrides the register map."
+    },
+    {
+      "key": "opentsx.openmetadata.dqWindow",
+      "type": "duration",
+      "default": "PT10M",
+      "secret": false,
+      "flag": "dq-window",
+      "commands": [
+        "metadata"
+      ],
+      "since": "3.0.1",
+      "doc": "Statistics window that the data-quality results are computed on."
+    },
+    {
+      "key": "opentsx.openmetadata.dryRunDir",
+      "type": "path",
+      "secret": false,
+      "flag": "dry-run",
+      "commands": [
+        "metadata"
+      ],
+      "since": "3.0.1",
+      "doc": "Directory the requests are written to instead of sending them to OpenMetadata."
+    },
+    {
+      "key": "opentsx.openmetadata.profileWindow",
+      "type": "duration",
+      "default": "PT1H",
+      "secret": false,
+      "flag": "profile-window",
+      "commands": [
+        "metadata"
+      ],
+      "since": "3.0.1",
+      "doc": "Statistics window that is published as the table profile."
+    },
+    {
+      "key": "opentsx.openmetadata.token",
+      "type": "string",
+      "secret": true,
+      "flag": "token",
+      "env": [
+        "OPENMETADATA_JWT"
+      ],
+      "commands": [
+        "metadata"
+      ],
+      "since": "3.0.1",
+      "doc": "Bot token (JWT) for the OpenMetadata API."
+    },
+    {
+      "key": "opentsx.openmetadata.url",
+      "type": "string",
+      "secret": false,
+      "flag": "om",
+      "commands": [
+        "metadata"
+      ],
+      "since": "3.0.1",
+      "doc": "Base URL of the OpenMetadata API, ending in /api."
+    },
+    {
+      "key": "opentsx.retrieval.dagRunToken",
+      "type": "string",
+      "secret": true,
+      "flag": "dag-run-token",
+      "env": [
+        "OPENTSX_DAG_RUN_TOKEN"
+      ],
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "Token a caller of the DAG write routes must send in the header X-OpenTSx-Run-Token."
+    },
+    {
+      "key": "opentsx.retrieval.dagRuns",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "dag-runs",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "Offer POST /v1/dags/deploy and /v1/dags/stop, which write to the control topic of the vector processor."
+    },
+    {
+      "key": "opentsx.retrieval.maxEpisodes",
+      "type": "int",
+      "default": "20000",
+      "secret": false,
+      "flag": "max-episodes",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "Most episodes the server keeps in memory from the episodes topic."
+    },
+    {
+      "key": "opentsx.retrieval.port",
+      "type": "int",
+      "default": "8080",
+      "secret": false,
+      "flag": "port",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "HTTP port of the retrieval server."
+    },
+    {
+      "key": "opentsx.retrieval.refreshInterval",
+      "type": "duration",
+      "default": "PT30S",
+      "secret": false,
+      "flag": "refresh",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "How often the server polls the episodes topic for new records."
+    },
+    {
+      "key": "opentsx.retrieval.systems",
+      "type": "path",
+      "secret": false,
+      "flag": "systems",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "Directory of system documents (*.system.yaml) behind /v1/systems."
+    },
+    {
+      "key": "opentsx.retrieval.systemsRoot",
+      "type": "path",
+      "default": ".",
+      "secret": false,
+      "flag": "systems-root",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "3.0.1",
+      "doc": "Directory the references in the system documents are relative to."
+    },
+    {
+      "key": "opentsx.stats.allowedLateness",
+      "type": "duration",
+      "default": "PT0S",
+      "secret": false,
+      "flag": "lateness",
+      "commands": [
+        "stats",
+        "stats-flink"
+      ],
+      "since": "3.0.1",
+      "doc": "How long a closed window still accepts late episodes."
+    },
+    {
+      "key": "opentsx.stats.checkpoint",
+      "type": "path",
+      "secret": false,
+      "flag": "checkpoint",
+      "commands": [
+        "stats"
+      ],
+      "since": "3.0.1",
+      "doc": "Checkpoint file of the processor; without it the processor starts from the beginning every time."
+    },
+    {
+      "key": "opentsx.stats.checkpointInterval",
+      "type": "duration",
+      "default": "PT30S",
+      "secret": false,
+      "flag": "checkpoint-every",
+      "commands": [
+        "stats-flink"
+      ],
+      "since": "unreleased",
+      "doc": "Interval of the Flink checkpoints."
+    },
+    {
+      "key": "opentsx.stats.globalInterval",
+      "type": "duration",
+      "default": "PT30S",
+      "secret": false,
+      "flag": "global-every",
+      "commands": [
+        "stats-flink"
+      ],
+      "since": "unreleased",
+      "doc": "How often the Flink job emits the global statistics of a series."
+    },
+    {
+      "key": "opentsx.stats.observations",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "observations",
+      "commands": [
+        "stats",
+        "stats-flink"
+      ],
+      "since": "3.0.1",
+      "doc": "Also read the observations topic of the domain."
+    },
+    {
+      "key": "opentsx.stats.once",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "once",
+      "commands": [
+        "stats",
+        "stats-flink"
+      ],
+      "since": "3.0.1",
+      "doc": "Process the backlog, close all windows and exit."
+    },
+    {
+      "key": "opentsx.stats.sketchAlpha",
+      "type": "double",
+      "default": "0.01",
+      "secret": false,
+      "flag": "alpha",
+      "commands": [
+        "stats",
+        "stats-flink"
+      ],
+      "since": "3.0.1",
+      "doc": "Relative accuracy of the quantile sketch."
+    },
+    {
+      "key": "opentsx.stats.windows",
+      "type": "list",
+      "items": "duration",
+      "default": "PT10M,PT1H",
+      "secret": false,
+      "flag": "windows",
+      "commands": [
+        "stats",
+        "stats-flink"
+      ],
+      "since": "3.0.1",
+      "doc": "Window lengths of the statistics."
+    },
+    {
+      "key": "opentsx.twin.coupling.csv",
+      "type": "path",
+      "secret": false,
+      "flag": "csv",
+      "commands": [
+        "twin-coupling"
+      ],
+      "since": "3.0.1",
+      "doc": "CSV file the coupling study writes its grid to."
+    },
+    {
+      "key": "opentsx.twin.plan",
+      "type": "path",
+      "secret": false,
+      "flag": "plan",
+      "commands": [
+        "boat",
+        "house",
+        "twin"
+      ],
+      "since": "3.0.1",
+      "doc": "Twin plan file (YAML); without it the built-in plan of the command is used."
+    },
+    {
+      "key": "opentsx.twin.scenario",
+      "type": "string",
+      "secret": false,
+      "flag": "scenario",
+      "commands": [
+        "twin-coupling",
+        "twin-live demo",
+        "twin-live publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Id of a Studio scenario; without it every scenario is used."
+    },
+    {
+      "key": "opentsx.twin.schemas.out",
+      "type": "path",
+      "default": "opentsx-twin/src/main/resources/twin/avro",
+      "secret": false,
+      "flag": "out",
+      "commands": [
+        "twin-schemas"
+      ],
+      "since": "3.0.1",
+      "doc": "Directory the Avro schemas of the twin are written to."
+    },
+    {
+      "key": "opentsx.twin.simulated",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "simulated",
+      "commands": [
+        "boat",
+        "house"
+      ],
+      "since": "3.0.1",
+      "doc": "Use the bundled simulated data instead of real data."
+    },
+    {
+      "key": "opentsx.twinLive.allowOrigin",
+      "type": "string",
+      "default": "*",
+      "secret": false,
+      "flag": "allow-origin",
+      "env": [
+        "EVENT_BRIDGE_ALLOW_ORIGIN"
+      ],
+      "commands": [
+        "twin-live bridge",
+        "twin-live demo"
+      ],
+      "since": "3.0.1",
+      "doc": "Origin the event bridge answers browsers from."
+    },
+    {
+      "key": "opentsx.twinLive.durationSeconds",
+      "type": "long",
+      "unit": "s",
+      "secret": false,
+      "flag": "duration",
+      "commands": [
+        "twin-live demo",
+        "twin-live publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Time in which one run is played; without it publish writes the run at once and demo plays it in 120 seconds."
+    },
+    {
+      "key": "opentsx.twinLive.loop",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "loop",
+      "commands": [
+        "twin-live publish"
+      ],
+      "since": "3.0.1",
+      "doc": "Publish the runs again and again."
+    },
+    {
+      "key": "opentsx.twinLive.maxStreams",
+      "type": "int",
+      "default": "16",
+      "secret": false,
+      "flag": "max-streams",
+      "commands": [
+        "twin-live bridge",
+        "twin-live demo"
+      ],
+      "since": "3.0.1",
+      "doc": "Most event streams the bridge serves at the same time."
+    },
+    {
+      "key": "opentsx.twinLive.port",
+      "type": "int",
+      "default": "8090",
+      "secret": false,
+      "flag": "port",
+      "commands": [
+        "twin-live bridge",
+        "twin-live demo"
+      ],
+      "since": "3.0.1",
+      "doc": "HTTP port of the event bridge."
+    },
+    {
+      "key": "opentsx.vectors.by",
+      "type": "string",
+      "default": "cli",
+      "secret": false,
+      "flag": "by",
+      "commands": [
+        "vectors deploy",
+        "vectors stop"
+      ],
+      "since": "3.0.1",
+      "doc": "Who asks for the deployment or the stop; kept in the control record."
+    },
+    {
+      "key": "opentsx.vectors.dag",
+      "type": "path",
+      "secret": false,
+      "flag": "dag",
+      "commands": [
+        "vectors deploy"
+      ],
+      "since": "3.0.1",
+      "doc": "DAG file (opentsx.dag.v1, YAML) to deploy."
+    },
+    {
+      "key": "opentsx.vectors.name",
+      "type": "string",
+      "secret": false,
+      "flag": "name",
+      "commands": [
+        "vectors stop"
+      ],
+      "since": "3.0.1",
+      "doc": "Name of the DAG to stop."
+    },
+    {
+      "key": "opentsx.vectors.state",
+      "type": "path",
+      "default": "vector-state",
+      "secret": false,
+      "flag": "state",
+      "commands": [
+        "vectors",
+        "vectors run"
+      ],
+      "since": "3.0.1",
+      "doc": "State directory of the vector processor."
+    },
+    {
+      "key": "opentsx.windpark.catalog",
+      "type": "path",
+      "secret": false,
+      "flag": "catalog",
+      "commands": [
+        "metadata",
+        "retrieval-server",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Channel catalog file (YAML); without it the standard catalog is used."
+    },
+    {
+      "key": "opentsx.windpark.groundTruth",
+      "type": "path",
+      "secret": false,
+      "flag": "ground-truth",
+      "commands": [
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "File the ground-truth events of the run are written to (JSON)."
+    },
+    {
+      "key": "opentsx.windpark.index",
+      "type": "path",
+      "secret": false,
+      "flag": "index",
+      "commands": [
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Episode index file (TSV); without it the index is kept in memory."
+    },
+    {
+      "key": "opentsx.windpark.scenario",
+      "type": "path",
+      "secret": false,
+      "flag": "scenario",
+      "commands": [
+        "metadata",
+        "retrieval-server",
+        "windpark-sim"
+      ],
+      "since": "3.0.1",
+      "doc": "Wind-farm scenario file (YAML)."
+    }
+  ]
+}

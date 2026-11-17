@@ -22,6 +22,8 @@
 #                                                                            (org.opentsx.market.MarketCli)
 #   twin --history d   twin S1 on archived history (year, real prices + wind)  (org.opentsx.market.twin.HistoryTwins)
 #   house --weather-year Y, boat --weather-year Y   same for house and boat (archive: --history data/history)
+#   config             config list|show|get: key registry, effective values  (org.opentsx.conf.ConfCli)
+#   version            print the OpenTSx version (also --version)            (org.opentsx.conf.ConfCli)
 #   classpath <module> print the runtime classpath of a module
 #
 # Requires a prior build: mvn -q install -DskipTests   (JDK 17+)
@@ -68,6 +70,8 @@ case "$cmd" in
   twin-coupling)    exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.demo.CouplingStudy "$@" ;;
   twin-live)        exec java -cp "$(classpath opentsx-twin-live)" org.opentsx.twin.live.TwinLive "$@" ;;
   twin-schemas)     exec java -cp "$(classpath opentsx-twin)" org.opentsx.twin.schema.AtomSchemas "$@" ;;
+  config|version)   exec java -cp "$(classpath opentsx-conf)" org.opentsx.conf.ConfCli "$cmd" "$@" ;;
+  --version)        exec java -cp "$(classpath opentsx-conf)" org.opentsx.conf.ConfCli --version ;;
   classpath)        classpath "$@" ;;
   -h|--help|help)   usage 0 ;;
   *) echo "unknown command: $cmd" >&2; usage 1 ;;

@@ -26,16 +26,27 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `OpenTsxConf` with six sources (code, command line, environment, `--properties-file`, the defaults file in
   `$OPENTSX_CONF_DIR`, registry default), properties and YAML files, one type grammar and fail-closed errors with exit
   code 2. `bin/opentsx` gets `config list|show|get`, `version` and `--version` (`org.opentsx.conf.ConfCli`); secrets
-  are shown as `******` and refused on the command line. The module passes all 246 shared vectors
+  are shown as `******` in every output and error message and refused on the command line. A file that is not UTF-8,
+  a value that is not valid UTF-8 (Java without a UTF-8 locale), `key:value` in a properties file, a misnamed
+  `opentsx-defaults.yml` and YAML nested deeper than 100 levels exit with 2; a result that cannot be written to stdout
+  exits with 1. `--help` wins over an unknown command. The module passes all 272 shared vectors
   `docs/datamodel-2026/testvectors/conf.v1.json`. No main class reads the registry yet.
 
 - Python configuration and command line (TASK-020, foundation for Python): the package `opentsx.conf` with
   `OpenTsxConf` (`set`, `setIfMissing`, `setAll`, `get`, `getOption`, typed getters, `contains`, `getAll`, `source`,
-  `toDebugString`, `load`) and `OpenTsxConfError`, a byte-identical copy of the registry `opentsx.config.v1.json`, the
+  `toDebugString`, `load`, `registry`, `SOURCES`, the same names as in Java) and `OpenTsxConfError`, a byte-identical copy of the registry `opentsx.config.v1.json`, the
   console script `opentsx` with `config list`, `config show`, `config get` and `version`, and the extra
   `opentsx[yaml]` (`PyYAML>=6.0.1`) for YAML files. The tests run every case of the shared vectors
   `docs/datamodel-2026/testvectors/conf.v1.json`; CI installs the extra on Python 3.12 only, so the other versions
   check the message that names the extra.
+- Configuration documentation (TASK-020): user-manual chapter [18](docs/user-manual/18-configuration.md) shows how to
+  show, set and read the configuration with `bin/opentsx`, the Python console script `opentsx` and the API of both
+  runtimes, the precedence of the six sources, defaults files, YAML, secrets and the error messages with their fix.
+  Appendix [D](docs/user-manual/appendix-d-configuration.md) lists the 126 keys in 17 areas with type, default, alias,
+  environment variables, meaning and first release. `org.opentsx.conf.ConfReference` generates the appendix and the
+  defaults-file templates `conf/opentsx-defaults.conf.template` and `conf/opentsx-defaults.yaml.template` from the
+  registry; `ConfReferenceTest` fails when one of the three files differs from the rendering and names the command
+  that regenerates them.
 
 - `pair.es` in the web workbench (TASK-015 phase 1d, operator "Event synchronisation"): event synchronisation after
   Quiroga, Kreuz and Grassberger per pair window, ported from `event_sync.py`, with the fields `q_total`, `q_ab` (B

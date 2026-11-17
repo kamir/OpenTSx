@@ -98,7 +98,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 
 | Document | Content |
 |----------|---------|
-| [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, CLI and REST reference |
+| [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, configuration, CLI and REST reference |
 | [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) (German) | normative spec |
 | [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11), Explorer (12): visual inventory & maintenance |
 | [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
@@ -112,6 +112,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | Module | Purpose |
 |--------|---------|
 | `opentsx-model` | data model v2 (Avro, series identity, episodes, wire format) |
+| `opentsx-conf` | configuration: key registry `opentsx.config.v1`, `OpenTsxConf`, `opentsx config list\|show\|get`, `opentsx version` |
 | `opentsx-kafka-v2` | episode storage, index and replay on KafScale/Kafka |
 | `opentsx-store-spi`, `-store-iceberg`, `-store-opentsdb-v2` | store SPI and backends |
 | `opentsx-windpark` | IEC 61400-25-2 catalog, normalizer, simulator, power curve |

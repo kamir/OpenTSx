@@ -41,6 +41,9 @@ kafka = [
 iceberg = [
     "pyiceberg[sql-sqlite,pyarrow]>=0.9",
 ]
+yaml = [
+    "PyYAML>=6.0.1",
+]
 viz = [
     "matplotlib>=3.7.0",
     "plotly>=5.17.0",
@@ -70,6 +73,9 @@ dev = [
     "sphinx>=7.2.0",
 ]
 
+[project.scripts]
+opentsx = "opentsx.cli:main"
+
 [project.urls]
 Homepage = "https://opentsx.org"
 Documentation = "https://docs.opentsx.org"
@@ -82,6 +88,7 @@ include = ["opentsx*"]
 
 [tool.setuptools.package-data]
 "opentsx.model" = ["schemas/*.avsc"]
+"opentsx.conf" = ["opentsx.config.v1.json"]
 
 [tool.black]
 line-length = 100

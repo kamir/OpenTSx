@@ -22,6 +22,7 @@ module classpath with Maven (`dependency:build-classpath`) and caches it in `<mo
 | `twin-schemas` | `org.opentsx.twin.schema.AtomSchemas` | `[--out <dir>]`; writes the Avro topic contract of the twin; the default `opentsx-twin/src/main/resources/twin/avro` is relative to the working directory, so run it from the repository root |
 | `market <command>` | `org.opentsx.market.MarketCli` | electricity-market data and the history archive: `prices --source smard\|energy-charts\|entsoe --from D --to D [--out f.csv] [--offline file] [--archive dir]`, `series --name source/series ...`, `rebap ...`, `marktwert ...`, `import --file f.csv --name n --metric m --unit u [--origin] [--partner]`, `backfill [--archive data/history] [--series market\|all\|<source/series>,...] [--from-year 2019] [--to-year Y] [--delay-ms 500] [--force]`, `forward`, `weather-backfill [--from-year 2019] [--stations id:param,...]`, `weather-forward`, `mosmix-archive [--stations ...]`, `report`, `load [--iceberg k=v,... --namespace tsx]`, `publish --series <source/series>,... --kafscale <host:port> --domain <d> [--archive data/history] [--from-year Y --to-year Y] [--from-day D --to-day D] [--batch 100] [--pause-ms 3000] [--dry-run]` (archived series as raw episodes into `tsx.<domain>.episodes.v2`; stops at the first refusal of the broker), `catalog`; `bin/opentsx market --help` prints every option; credentials only from `ENTSOE_TOKEN`, `NTP_CLIENT_ID`, `NTP_CLIENT_SECRET`; see [opentsx-market](../../opentsx-market/README.md) |
 | `twin\|house\|boat --history <dir>` | `org.opentsx.market.twin.HistoryTwins` | the twins on archived history: `twin --year Y [--from D --days N] [--wind smard\|dwd] [--cf 0.30]`, `house --weather-year Y\|Y1-Y2 [--levers] [--station id]`, `boat --weather-year Y [--start D] [--days 14]`, `[--sites file.yaml]`; used only when `--history` or `--weather-year` is given |
+| `config list\|show\|get`, `version` | `org.opentsx.conf.ConfCli` | `config list [--output text\|json]` prints the key registry; `config show [--output text\|json]` prints every key with a value and its source, secrets as `******`; `config get <key>` prints one effective value; `config show` and `config get` take `--conf <key>=<value>` for any key and `--properties-file <path>`; `version` and `--version` print `opentsx 3.0.1 (java)`; usage errors exit with code 2; see [opentsx-conf](../../opentsx-conf/README.md) |
 | `classpath <module>` | none (shell function in `bin/opentsx`) | prints the runtime classpath, for example for your own `java -cp` calls |
 
 The container image `opentsx-tools` is published as `ghcr.io/kamir/opentsx-tools:<version>`
@@ -33,6 +34,7 @@ it `opentsx/tools`. It runs `opentsx <command>` with these commands of `bin/open
 `history-twin twin|house|boat ...` instead. The image adds `studio-export <out.json>` (Smart Topics Studio data) and
 `kafscale-check --kafscale <bootstrap> [--domain d] [--provision true --partitions n] [--timeout PT20S]`
 (reachability of the bootstrap and the advertised broker addresses, topic provisioning, record counts per topic).
+`config` and `version` run only through `bin/opentsx`.
 
 Other scripts in `bin/`:
 

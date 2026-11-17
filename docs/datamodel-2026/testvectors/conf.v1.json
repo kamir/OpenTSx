@@ -1,0 +1,3905 @@
+{
+ "schema": "opentsx.testvectors.conf.v1",
+ "description": "Shared vectors of the OpenTSx configuration (EVOLUTION/TASK-020-configuration-and-cli.md). Normative: the Java module opentsx-conf and the Python package opentsx.conf must reproduce every case byte for byte. The registry below is a fixture in the format opentsx.config.v1, independent of the shipped registry. {dir} stands for a fresh temporary directory: a test writes each entry of files below it, creates each entry of dirs, and replaces {dir} in args, confDir, file and every expected string. A file case holds the file as text, or as base64 when the bytes are not UTF-8. Durations are compared as milliseconds.",
+ "registry": {
+  "schema": "opentsx.config.v1",
+  "commands": [
+   {
+    "name": "config get",
+    "args": [
+     "key"
+    ],
+    "since": "3.0.1",
+    "doc": "Print the effective value of one key."
+   },
+   {
+    "name": "config list",
+    "since": "3.0.1",
+    "doc": "Print the key registry."
+   },
+   {
+    "name": "config show",
+    "since": "3.0.1",
+    "doc": "Print every key that has a value, with the source of the value."
+   },
+   {
+    "name": "export",
+    "args": [
+     "out.json"
+    ],
+    "since": "3.0.1",
+    "doc": "Fixture command with one positional argument."
+   },
+   {
+    "name": "jobs run",
+    "since": "3.0.1",
+    "doc": "Fixture command in a group."
+   },
+   {
+    "name": "jobs stop",
+    "since": "3.0.1",
+    "doc": "Second fixture command in the group."
+   },
+   {
+    "name": "serve",
+    "since": "3.0.1",
+    "doc": "Fixture command that reads most keys."
+   },
+   {
+    "name": "version",
+    "since": "3.0.1",
+    "doc": "Print the OpenTSx version."
+   }
+  ],
+  "keys": [
+   {
+    "key": "opentsx.domain",
+    "type": "string",
+    "default": "wind",
+    "secret": false,
+    "flag": "domain",
+    "commands": [
+     "jobs run",
+     "jobs stop",
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "Domain of the topic names."
+   },
+   {
+    "key": "opentsx.kafscale.bootstrap",
+    "type": "string",
+    "secret": false,
+    "flag": "kafscale",
+    "legacyFlags": [
+     "bootstrap"
+    ],
+    "env": [
+     "KAFSCALE_BOOTSTRAP"
+    ],
+    "commands": [
+     "jobs run",
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "Bootstrap address of the KafScale proxy."
+   },
+   {
+    "key": "opentsx.stats.sketchAlpha",
+    "type": "double",
+    "default": "0.01",
+    "secret": false,
+    "flag": "alpha",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "Relative accuracy of the quantile sketch."
+   },
+   {
+    "key": "opentsx.stats.windows",
+    "type": "list",
+    "items": "duration",
+    "default": "PT10M,PT1H",
+    "secret": false,
+    "flag": "windows",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "Window lengths."
+   },
+   {
+    "key": "opentsx.test.count",
+    "type": "int",
+    "default": "6",
+    "secret": false,
+    "flag": "count",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "An int."
+   },
+   {
+    "key": "opentsx.test.delayMs",
+    "type": "long",
+    "unit": "ms",
+    "default": "500",
+    "secret": false,
+    "flag": "delay-ms",
+    "commands": [
+     "jobs run"
+    ],
+    "since": "3.0.1",
+    "doc": "A long with a unit."
+   },
+   {
+    "key": "opentsx.test.dir",
+    "type": "path",
+    "secret": false,
+    "flag": "dir",
+    "commands": [
+     "export",
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A path."
+   },
+   {
+    "key": "opentsx.test.enabled",
+    "type": "boolean",
+    "default": "false",
+    "secret": false,
+    "flag": "enabled",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A boolean."
+   },
+   {
+    "key": "opentsx.test.mode",
+    "type": "enum",
+    "values": [
+     "csv",
+     "episodes"
+    ],
+    "default": "csv",
+    "secret": false,
+    "flag": "mode",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "An enum."
+   },
+   {
+    "key": "opentsx.test.names",
+    "type": "list",
+    "secret": false,
+    "flag": "names",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A list of strings."
+   },
+   {
+    "key": "opentsx.test.offset",
+    "type": "long",
+    "secret": false,
+    "flag": "offset",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A long."
+   },
+   {
+    "key": "opentsx.test.once",
+    "type": "boolean",
+    "default": "false",
+    "secret": false,
+    "flag": "once",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A second boolean."
+   },
+   {
+    "key": "opentsx.test.pin",
+    "type": "int",
+    "secret": true,
+    "env": [
+     "TEST_PIN"
+    ],
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A secret int."
+   },
+   {
+    "key": "opentsx.test.station",
+    "type": "string",
+    "secret": false,
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A string without a flag."
+   },
+   {
+    "key": "opentsx.test.text",
+    "type": "string",
+    "secret": false,
+    "flag": "text",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A string."
+   },
+   {
+    "key": "opentsx.test.timeout",
+    "type": "duration",
+    "default": "PT20S",
+    "secret": false,
+    "flag": "timeout",
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A duration."
+   },
+   {
+    "key": "opentsx.test.token",
+    "type": "string",
+    "secret": true,
+    "flag": "token",
+    "env": [
+     "TEST_TOKEN"
+    ],
+    "commands": [
+     "serve"
+    ],
+    "since": "3.0.1",
+    "doc": "A secret string."
+   }
+  ]
+ },
+ "cases": [
+  {
+   "id": "key-grammar-01",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.domain",
+   "valid": true
+  },
+  {
+   "id": "key-grammar-02",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.stats.sketchAlpha",
+   "valid": true
+  },
+  {
+   "id": "key-grammar-03",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.s3Bucket",
+   "valid": true
+  },
+  {
+   "id": "key-grammar-04",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.modbus.simulator.seed",
+   "valid": true
+  },
+  {
+   "id": "key-grammar-05",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-06",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.Stats",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-07",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.stats.sketch_alpha",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-08",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.stats.sketchALPHA",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-09",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "spark.master",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-10",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx..domain",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-11",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.stats.2x",
+   "valid": false
+  },
+  {
+   "id": "key-grammar-12",
+   "kind": "keyGrammar",
+   "description": "Key grammar of D1.",
+   "key": "opentsx.domain.",
+   "valid": false
+  },
+  {
+   "id": "env-name-opentsx.domain",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.domain",
+   "name": "OPENTSX_DOMAIN"
+  },
+  {
+   "id": "env-name-opentsx.kafscale.bootstrap",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.kafscale.bootstrap",
+   "name": "OPENTSX_KAFSCALE_BOOTSTRAP"
+  },
+  {
+   "id": "env-name-opentsx.stats.sketchAlpha",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.stats.sketchAlpha",
+   "name": "OPENTSX_STATS_SKETCH_ALPHA"
+  },
+  {
+   "id": "env-name-opentsx.twinLive.allowOrigin",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.twinLive.allowOrigin",
+   "name": "OPENTSX_TWIN_LIVE_ALLOW_ORIGIN"
+  },
+  {
+   "id": "env-name-opentsx.market.ntpClientId",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.market.ntpClientId",
+   "name": "OPENTSX_MARKET_NTP_CLIENT_ID"
+  },
+  {
+   "id": "env-name-opentsx.s3Bucket",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.s3Bucket",
+   "name": "OPENTSX_S3_BUCKET"
+  },
+  {
+   "id": "env-name-opentsx.modbus.simulator.seed",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.modbus.simulator.seed",
+   "name": "OPENTSX_MODBUS_SIMULATOR_SEED"
+  },
+  {
+   "id": "env-name-opentsx.retrieval.dagRunToken",
+   "kind": "envName",
+   "description": "Canonical environment name of a key.",
+   "key": "opentsx.retrieval.dagRunToken",
+   "name": "OPENTSX_RETRIEVAL_DAG_RUN_TOKEN"
+  },
+  {
+   "id": "value-string-001",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "wind",
+   "expect": {
+    "text": "wind",
+    "value": "wind"
+   }
+  },
+  {
+   "id": "value-string-002",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "  wind\t",
+   "expect": {
+    "text": "wind",
+    "value": "wind"
+   }
+  },
+  {
+   "id": "value-string-003",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "a b",
+   "expect": {
+    "text": "a b",
+    "value": "a b"
+   }
+  },
+  {
+   "id": "value-string-004",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "",
+   "expect": {
+    "error": "opentsx.test.text: empty value; set a value or leave the key unset"
+   }
+  },
+  {
+   "id": "value-string-005",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "   ",
+   "expect": {
+    "error": "opentsx.test.text: empty value; set a value or leave the key unset"
+   }
+  },
+  {
+   "id": "value-string-006",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "a\u0001b",
+   "expect": {
+    "error": "opentsx.test.text: value contains a control character; remove it"
+   }
+  },
+  {
+   "id": "value-string-007",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type string.",
+   "key": "opentsx.test.text",
+   "input": "äöü",
+   "expect": {
+    "text": "äöü",
+    "value": "äöü"
+   }
+  },
+  {
+   "id": "value-int-008",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "42",
+   "expect": {
+    "text": "42",
+    "value": 42
+   }
+  },
+  {
+   "id": "value-int-009",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "-7",
+   "expect": {
+    "text": "-7",
+    "value": -7
+   }
+  },
+  {
+   "id": "value-int-010",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "0",
+   "expect": {
+    "text": "0",
+    "value": 0
+   }
+  },
+  {
+   "id": "value-int-011",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "2147483647",
+   "expect": {
+    "text": "2147483647",
+    "value": 2147483647
+   }
+  },
+  {
+   "id": "value-int-012",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "-2147483648",
+   "expect": {
+    "text": "-2147483648",
+    "value": -2147483648
+   }
+  },
+  {
+   "id": "value-int-013",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "2147483648",
+   "expect": {
+    "error": "opentsx.test.count: \"2147483648\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-014",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "007",
+   "expect": {
+    "error": "opentsx.test.count: \"007\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-015",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "+5",
+   "expect": {
+    "error": "opentsx.test.count: \"+5\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-016",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "1_000",
+   "expect": {
+    "error": "opentsx.test.count: \"1_000\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-017",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "٥",
+   "expect": {
+    "error": "opentsx.test.count: \"٥\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-018",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "4.0",
+   "expect": {
+    "error": "opentsx.test.count: \"4.0\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-019",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "-0",
+   "expect": {
+    "error": "opentsx.test.count: \"-0\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-020",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.count",
+   "input": "1e3",
+   "expect": {
+    "error": "opentsx.test.count: \"1e3\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-long-021",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type long.",
+   "key": "opentsx.test.offset",
+   "input": "9223372036854775807",
+   "expect": {
+    "text": "9223372036854775807",
+    "value": 9223372036854775807
+   }
+  },
+  {
+   "id": "value-long-022",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type long.",
+   "key": "opentsx.test.offset",
+   "input": "-9223372036854775808",
+   "expect": {
+    "text": "-9223372036854775808",
+    "value": -9223372036854775808
+   }
+  },
+  {
+   "id": "value-long-023",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type long.",
+   "key": "opentsx.test.offset",
+   "input": "9223372036854775808",
+   "expect": {
+    "error": "opentsx.test.offset: \"9223372036854775808\" is not a long; expected a whole number from -9223372036854775808 to 9223372036854775807"
+   }
+  },
+  {
+   "id": "value-double-024",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "0.01",
+   "expect": {
+    "text": "0.01",
+    "value": 0.01
+   }
+  },
+  {
+   "id": "value-double-025",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "1e-3",
+   "expect": {
+    "text": "1e-3",
+    "value": 0.001
+   }
+  },
+  {
+   "id": "value-double-026",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "4300",
+   "expect": {
+    "text": "4300",
+    "value": 4300.0
+   }
+  },
+  {
+   "id": "value-double-027",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "-2.5E+2",
+   "expect": {
+    "text": "-2.5E+2",
+    "value": -250.0
+   }
+  },
+  {
+   "id": "value-double-028",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "0.30",
+   "expect": {
+    "text": "0.30",
+    "value": 0.3
+   }
+  },
+  {
+   "id": "value-double-029",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": ".5",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \".5\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-030",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "1.",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"1.\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-031",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "NaN",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"NaN\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-032",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "Infinity",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"Infinity\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-033",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "1e999",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"1e999\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-034",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "0x1p3",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"0x1p3\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-035",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "1,5",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"1,5\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-double-036",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type double.",
+   "key": "opentsx.stats.sketchAlpha",
+   "input": "01.5",
+   "expect": {
+    "error": "opentsx.stats.sketchAlpha: \"01.5\" is not a double; expected a finite decimal number such as 0.01 or 1e-3"
+   }
+  },
+  {
+   "id": "value-boolean-037",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "true",
+   "expect": {
+    "text": "true",
+    "value": true
+   }
+  },
+  {
+   "id": "value-boolean-038",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "FALSE",
+   "expect": {
+    "text": "FALSE",
+    "value": false
+   }
+  },
+  {
+   "id": "value-boolean-039",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "True",
+   "expect": {
+    "text": "True",
+    "value": true
+   }
+  },
+  {
+   "id": "value-boolean-040",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "yes",
+   "expect": {
+    "error": "opentsx.test.enabled: \"yes\" is not a boolean; expected true or false"
+   }
+  },
+  {
+   "id": "value-boolean-041",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "1",
+   "expect": {
+    "error": "opentsx.test.enabled: \"1\" is not a boolean; expected true or false"
+   }
+  },
+  {
+   "id": "value-boolean-042",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "on",
+   "expect": {
+    "error": "opentsx.test.enabled: \"on\" is not a boolean; expected true or false"
+   }
+  },
+  {
+   "id": "value-boolean-043",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type boolean.",
+   "key": "opentsx.test.enabled",
+   "input": "falſe",
+   "expect": {
+    "error": "opentsx.test.enabled: \"falſe\" is not a boolean; expected true or false"
+   }
+  },
+  {
+   "id": "value-duration-044",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT10M",
+   "expect": {
+    "text": "PT10M",
+    "value": {
+     "millis": 600000
+    }
+   }
+  },
+  {
+   "id": "value-duration-045",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT0S",
+   "expect": {
+    "text": "PT0S",
+    "value": {
+     "millis": 0
+    }
+   }
+  },
+  {
+   "id": "value-duration-046",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT1.5S",
+   "expect": {
+    "text": "PT1.5S",
+    "value": {
+     "millis": 1500
+    }
+   }
+  },
+  {
+   "id": "value-duration-047",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT0.25S",
+   "expect": {
+    "text": "PT0.25S",
+    "value": {
+     "millis": 250
+    }
+   }
+  },
+  {
+   "id": "value-duration-048",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "P1DT2H",
+   "expect": {
+    "text": "P1DT2H",
+    "value": {
+     "millis": 93600000
+    }
+   }
+  },
+  {
+   "id": "value-duration-049",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT1H30M",
+   "expect": {
+    "text": "PT1H30M",
+    "value": {
+     "millis": 5400000
+    }
+   }
+  },
+  {
+   "id": "value-duration-050",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "500ms",
+   "expect": {
+    "text": "500ms",
+    "value": {
+     "millis": 500
+    }
+   }
+  },
+  {
+   "id": "value-duration-051",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "10s",
+   "expect": {
+    "text": "10s",
+    "value": {
+     "millis": 10000
+    }
+   }
+  },
+  {
+   "id": "value-duration-052",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "5m",
+   "expect": {
+    "text": "5m",
+    "value": {
+     "millis": 300000
+    }
+   }
+  },
+  {
+   "id": "value-duration-053",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "5min",
+   "expect": {
+    "text": "5min",
+    "value": {
+     "millis": 300000
+    }
+   }
+  },
+  {
+   "id": "value-duration-054",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "2h",
+   "expect": {
+    "text": "2h",
+    "value": {
+     "millis": 7200000
+    }
+   }
+  },
+  {
+   "id": "value-duration-055",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "1d",
+   "expect": {
+    "text": "1d",
+    "value": {
+     "millis": 86400000
+    }
+   }
+  },
+  {
+   "id": "value-duration-056",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "999999999d",
+   "expect": {
+    "text": "999999999d",
+    "value": {
+     "millis": 86399999913600000
+    }
+   }
+  },
+  {
+   "id": "value-duration-057",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "1000000000d",
+   "expect": {
+    "error": "opentsx.test.timeout: \"1000000000d\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-058",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "pt10m",
+   "expect": {
+    "error": "opentsx.test.timeout: \"pt10m\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-059",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "-PT1S",
+   "expect": {
+    "error": "opentsx.test.timeout: \"-PT1S\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-060",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT",
+   "expect": {
+    "error": "opentsx.test.timeout: \"PT\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-061",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "P",
+   "expect": {
+    "error": "opentsx.test.timeout: \"P\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-062",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "P1DT",
+   "expect": {
+    "error": "opentsx.test.timeout: \"P1DT\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-063",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "1.5h",
+   "expect": {
+    "error": "opentsx.test.timeout: \"1.5h\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-064",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "5 s",
+   "expect": {
+    "error": "opentsx.test.timeout: \"5 s\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-065",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "10",
+   "expect": {
+    "error": "opentsx.test.timeout: \"10\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-066",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "1y",
+   "expect": {
+    "error": "opentsx.test.timeout: \"1y\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-067",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT0.0001S",
+   "expect": {
+    "error": "opentsx.test.timeout: \"PT0.0001S\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-068",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "P1W",
+   "expect": {
+    "error": "opentsx.test.timeout: \"P1W\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-069",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "10MS",
+   "expect": {
+    "error": "opentsx.test.timeout: \"10MS\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-070",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "010s",
+   "expect": {
+    "error": "opentsx.test.timeout: \"010s\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-duration-071",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type duration.",
+   "key": "opentsx.test.timeout",
+   "input": "PT10M ",
+   "expect": {
+    "text": "PT10M",
+    "value": {
+     "millis": 600000
+    }
+   }
+  },
+  {
+   "id": "value-enum-072",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type enum.",
+   "key": "opentsx.test.mode",
+   "input": "csv",
+   "expect": {
+    "text": "csv",
+    "value": "csv"
+   }
+  },
+  {
+   "id": "value-enum-073",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type enum.",
+   "key": "opentsx.test.mode",
+   "input": "episodes",
+   "expect": {
+    "text": "episodes",
+    "value": "episodes"
+   }
+  },
+  {
+   "id": "value-enum-074",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type enum.",
+   "key": "opentsx.test.mode",
+   "input": "CSV",
+   "expect": {
+    "error": "opentsx.test.mode: \"CSV\" is not allowed; expected one of csv, episodes"
+   }
+  },
+  {
+   "id": "value-enum-075",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type enum.",
+   "key": "opentsx.test.mode",
+   "input": "json",
+   "expect": {
+    "error": "opentsx.test.mode: \"json\" is not allowed; expected one of csv, episodes"
+   }
+  },
+  {
+   "id": "value-list-076",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list.",
+   "key": "opentsx.test.names",
+   "input": "a,b",
+   "expect": {
+    "text": "a,b",
+    "value": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "id": "value-list-077",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list.",
+   "key": "opentsx.test.names",
+   "input": " a , b ",
+   "expect": {
+    "text": "a,b",
+    "value": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "id": "value-list-078",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list.",
+   "key": "opentsx.test.names",
+   "input": "a",
+   "expect": {
+    "text": "a",
+    "value": [
+     "a"
+    ]
+   }
+  },
+  {
+   "id": "value-list-079",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list.",
+   "key": "opentsx.test.names",
+   "input": "a,,b",
+   "expect": {
+    "error": "opentsx.test.names: \"a,,b\" has an empty item; expected comma-separated items such as a,b"
+   }
+  },
+  {
+   "id": "value-list-080",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list.",
+   "key": "opentsx.test.names",
+   "input": "a,",
+   "expect": {
+    "error": "opentsx.test.names: \"a,\" has an empty item; expected comma-separated items such as a,b"
+   }
+  },
+  {
+   "id": "value-list-081",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list.",
+   "key": "opentsx.test.names",
+   "input": ",",
+   "expect": {
+    "error": "opentsx.test.names: \",\" has an empty item; expected comma-separated items such as a,b"
+   }
+  },
+  {
+   "id": "value-list-082",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list of duration.",
+   "key": "opentsx.stats.windows",
+   "input": "PT10M,1h",
+   "expect": {
+    "text": "PT10M,1h",
+    "value": [
+     {
+      "millis": 600000
+     },
+     {
+      "millis": 3600000
+     }
+    ]
+   }
+  },
+  {
+   "id": "value-list-083",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list of duration.",
+   "key": "opentsx.stats.windows",
+   "input": "PT10M, PT1H",
+   "expect": {
+    "text": "PT10M,PT1H",
+    "value": [
+     {
+      "millis": 600000
+     },
+     {
+      "millis": 3600000
+     }
+    ]
+   }
+  },
+  {
+   "id": "value-list-084",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type list of duration.",
+   "key": "opentsx.stats.windows",
+   "input": "PT10M,PT1X",
+   "expect": {
+    "error": "opentsx.stats.windows: item \"PT1X\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days"
+   }
+  },
+  {
+   "id": "value-path-085",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type path.",
+   "key": "opentsx.test.dir",
+   "input": "data/history",
+   "expect": {
+    "text": "data/history",
+    "value": "data/history"
+   }
+  },
+  {
+   "id": "value-path-086",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type path.",
+   "key": "opentsx.test.dir",
+   "input": "C:/data",
+   "expect": {
+    "text": "C:/data",
+    "value": "C:/data"
+   }
+  },
+  {
+   "id": "value-path-087",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type path.",
+   "key": "opentsx.test.dir",
+   "input": "/tmp/x y",
+   "expect": {
+    "text": "/tmp/x y",
+    "value": "/tmp/x y"
+   }
+  },
+  {
+   "id": "value-int-088",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.pin",
+   "input": "1234",
+   "expect": {
+    "text": "1234",
+    "value": 1234
+   }
+  },
+  {
+   "id": "value-int-089",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.pin",
+   "input": "abc",
+   "expect": {
+    "error": "opentsx.test.pin: \"******\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "value-int-090",
+   "kind": "value",
+   "description": "conf.set(key, input) with a value of type int.",
+   "key": "opentsx.test.pin",
+   "input": "  ",
+   "expect": {
+    "error": "opentsx.test.pin: empty value; set a value or leave the key unset"
+   }
+  },
+  {
+   "id": "value-string-utf8-1",
+   "kind": "value",
+   "description": "U+FFFD, which the JVM puts for bytes it cannot decode, is not valid text.",
+   "key": "opentsx.test.text",
+   "input": "w�nd",
+   "expect": {
+    "error": "opentsx.test.text: value is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8"
+   }
+  },
+  {
+   "id": "value-string-utf8-2",
+   "kind": "value",
+   "description": "A lone surrogate, which Python keeps for an invalid byte, is not valid text.",
+   "key": "opentsx.test.text",
+   "input": "w\udcffnd",
+   "expect": {
+    "error": "opentsx.test.text: value is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8"
+   }
+  },
+  {
+   "id": "properties-01",
+   "kind": "properties",
+   "description": "Properties file: valid lines.",
+   "file": "{dir}/job.conf",
+   "text": "# comment\n! also a comment\n\nopentsx.domain wind\nopentsx.test.count = 7\nopentsx.stats.sketchAlpha=0.02\n\topentsx.test.names\t a , b \nopentsx.test.text a # not a comment\nopentsx.test.station = x = y\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.domain",
+      "wind"
+     ],
+     [
+      "opentsx.test.count",
+      "7"
+     ],
+     [
+      "opentsx.stats.sketchAlpha",
+      "0.02"
+     ],
+     [
+      "opentsx.test.names",
+      "a,b"
+     ],
+     [
+      "opentsx.test.text",
+      "a # not a comment"
+     ],
+     [
+      "opentsx.test.station",
+      "x = y"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "properties-02",
+   "kind": "properties",
+   "description": "Properties file: byte order mark and CRLF.",
+   "file": "{dir}/job.conf",
+   "text": "﻿opentsx.domain wind\r\nopentsx.test.count 3\r\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.domain",
+      "wind"
+     ],
+     [
+      "opentsx.test.count",
+      "3"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "properties-03",
+   "kind": "properties",
+   "description": "Properties file: secret keys are allowed in files.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.token abc\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.test.token",
+      "abc"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "properties-04",
+   "kind": "properties",
+   "description": "Properties file: empty file.",
+   "file": "{dir}/job.conf",
+   "text": "",
+   "expect": {
+    "pairs": []
+   }
+  },
+  {
+   "id": "properties-05",
+   "kind": "properties",
+   "description": "Properties file: only comments.",
+   "file": "{dir}/job.conf",
+   "text": "# a\n   ! b\n",
+   "expect": {
+    "pairs": []
+   }
+  },
+  {
+   "id": "properties-06",
+   "kind": "properties",
+   "description": "Properties file: line continuation.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.text a \\\n  b\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: line continuation is not supported; write the value on one line"
+   }
+  },
+  {
+   "id": "properties-07",
+   "kind": "properties",
+   "description": "Properties file: escape sequence.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.domain wind\nopentsx.test.dir C:\\data\n",
+   "expect": {
+    "error": "{dir}/job.conf:2: escape sequences are not supported; write the character itself"
+   }
+  },
+  {
+   "id": "properties-08",
+   "kind": "properties",
+   "description": "Properties file: key without value.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.domain\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.domain has no value; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-09",
+   "kind": "properties",
+   "description": "Properties file: key with separator but without value.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.domain =\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.domain has no value; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-10",
+   "kind": "properties",
+   "description": "Properties file: line without key.",
+   "file": "{dir}/job.conf",
+   "text": "= wind\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: line has no key; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-11",
+   "kind": "properties",
+   "description": "Properties file: unknown key with a near key.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.domian wind\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.domian: unknown key; did you mean opentsx.domain?"
+   }
+  },
+  {
+   "id": "properties-12",
+   "kind": "properties",
+   "description": "Properties file: unknown key without a near key.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.foo.bar 1\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.foo.bar: unknown key; run opentsx config list for the known keys"
+   }
+  },
+  {
+   "id": "properties-13",
+   "kind": "properties",
+   "description": "Properties file: key outside opentsx.",
+   "file": "{dir}/job.conf",
+   "text": "spark.master local\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: spark.master: not an OpenTSx key; expected a key that starts with opentsx."
+   }
+  },
+  {
+   "id": "properties-14",
+   "kind": "properties",
+   "description": "Properties file: a colon is no separator, and the text after it is not shown.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.domain: wind\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.domain: \":\" is not a separator; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-15",
+   "kind": "properties",
+   "description": "Properties file: same key twice.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.domain a\nopentsx.test.count 1\nopentsx.domain b\n",
+   "expect": {
+    "error": "{dir}/job.conf:3: opentsx.domain: set twice in this file (first on line 1); set each key once"
+   }
+  },
+  {
+   "id": "properties-16",
+   "kind": "properties",
+   "description": "Properties file: malformed value.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.count seven\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.test.count: \"seven\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "properties-17",
+   "kind": "properties",
+   "description": "Properties file: malformed secret value.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.pin abc\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.test.pin: \"******\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "properties-18",
+   "kind": "properties",
+   "description": "Properties file: control character in value.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.text a\u0007b\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.test.text: value contains a control character; remove it"
+   }
+  },
+  {
+   "id": "properties-19",
+   "kind": "properties",
+   "description": "Properties file: key:value of java.util.Properties fails without showing the secret.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.token:s3cr3t\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.test.token: \":\" is not a separator; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-20",
+   "kind": "properties",
+   "description": "Properties file: key:value followed by more text fails without showing the secret.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.token:s3cr3t tail\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: opentsx.test.token: \":\" is not a separator; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-21",
+   "kind": "properties",
+   "description": "Properties file: an unknown key without value is not shown, it can hold a secret.",
+   "file": "{dir}/job.conf",
+   "text": "opentsx.test.tokens3cr3t\n",
+   "expect": {
+    "error": "{dir}/job.conf:1: line has no value; write key value or key = value"
+   }
+  },
+  {
+   "id": "properties-22",
+   "kind": "properties",
+   "description": "Properties file: bytes that are not UTF-8 (base64 holds the file).",
+   "file": "{dir}/job.conf",
+   "base64": "b3BlbnRzeC5kb21haW4gd/9uZAo=",
+   "expect": {
+    "error": "{dir}/job.conf: not valid UTF-8; save the file as UTF-8"
+   }
+  },
+  {
+   "id": "yaml-01",
+   "kind": "yaml",
+   "description": "YAML file: nested maps flatten to dotted keys.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  domain: wind\n  stats:\n    sketchAlpha: 0.02\n    windows: [PT10M, 1h]\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.domain",
+      "wind"
+     ],
+     [
+      "opentsx.stats.sketchAlpha",
+      "0.02"
+     ],
+     [
+      "opentsx.stats.windows",
+      "PT10M,1h"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "yaml-02",
+   "kind": "yaml",
+   "description": "YAML file: dotted keys and nested maps mix; scalars keep their text.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.stats:\n  sketchAlpha: 0.010\nopentsx.domain: wind\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.stats.sketchAlpha",
+      "0.010"
+     ],
+     [
+      "opentsx.domain",
+      "wind"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "yaml-03",
+   "kind": "yaml",
+   "description": "YAML file: block list.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.names:\n  - a\n  - b\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.test.names",
+      "a,b"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "yaml-04",
+   "kind": "yaml",
+   "description": "YAML file: YAML 1.1 boolean yes is not a boolean.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  test:\n    enabled: yes\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.test.enabled: \"yes\" is not a boolean; expected true or false"
+   }
+  },
+  {
+   "id": "yaml-05",
+   "kind": "yaml",
+   "description": "YAML file: True is a boolean.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  test:\n    enabled: True\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.test.enabled",
+      "True"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "yaml-06",
+   "kind": "yaml",
+   "description": "YAML file: number-like text stays text.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.text: 0x1F\nopentsx.test.station: 08080\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.test.text",
+      "0x1F"
+     ],
+     [
+      "opentsx.test.station",
+      "08080"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "yaml-07",
+   "kind": "yaml",
+   "description": "YAML file: quoted text.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.text: 'a: b'\nopentsx.domain: \"wind\"\n",
+   "expect": {
+    "pairs": [
+     [
+      "opentsx.test.text",
+      "a: b"
+     ],
+     [
+      "opentsx.domain",
+      "wind"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "yaml-08",
+   "kind": "yaml",
+   "description": "YAML file: empty value.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  domain:\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.domain: empty value; set a value or leave the key unset"
+   }
+  },
+  {
+   "id": "yaml-09",
+   "kind": "yaml",
+   "description": "YAML file: null value.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  domain: ~\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.domain: empty value; set a value or leave the key unset"
+   }
+  },
+  {
+   "id": "yaml-10",
+   "kind": "yaml",
+   "description": "YAML file: quoted empty value.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.domain: \"\"\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.domain: empty value; set a value or leave the key unset"
+   }
+  },
+  {
+   "id": "yaml-11",
+   "kind": "yaml",
+   "description": "YAML file: list for a key that is not a list.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.domain: [a, b]\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.domain: a YAML list is only allowed for keys of type list; write one value"
+   }
+  },
+  {
+   "id": "yaml-12",
+   "kind": "yaml",
+   "description": "YAML file: list item with a comma.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.names: [\"a,b\", c]\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.test.names: item \"a,b\" contains a comma; write one value per item"
+   }
+  },
+  {
+   "id": "yaml-13",
+   "kind": "yaml",
+   "description": "YAML file: nested list.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.names: [[a], b]\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.test.names: list items must be plain values; write one value per item"
+   }
+  },
+  {
+   "id": "yaml-14",
+   "kind": "yaml",
+   "description": "YAML file: alias.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.text: &w wind\nopentsx.domain: *w\n",
+   "expect": {
+    "error": "{dir}/job.yaml: aliases (*name) are not supported; write the value"
+   }
+  },
+  {
+   "id": "yaml-15",
+   "kind": "yaml",
+   "description": "YAML file: explicit tag.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.count: !!int 5\n",
+   "expect": {
+    "error": "{dir}/job.yaml: tags (!!type) are not supported; write the value as plain text"
+   }
+  },
+  {
+   "id": "yaml-16",
+   "kind": "yaml",
+   "description": "YAML file: two documents.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.domain: a\n---\nopentsx.domain: b\n",
+   "expect": {
+    "error": "{dir}/job.yaml: more than one YAML document; keep one document per file"
+   }
+  },
+  {
+   "id": "yaml-17",
+   "kind": "yaml",
+   "description": "YAML file: scalar at the top level.",
+   "file": "{dir}/job.yaml",
+   "text": "wind\n",
+   "expect": {
+    "error": "{dir}/job.yaml: the top level must be a mapping of keys to values; write key: value lines"
+   }
+  },
+  {
+   "id": "yaml-18",
+   "kind": "yaml",
+   "description": "YAML file: list at the top level.",
+   "file": "{dir}/job.yaml",
+   "text": "- a\n",
+   "expect": {
+    "error": "{dir}/job.yaml: the top level must be a mapping of keys to values; write key: value lines"
+   }
+  },
+  {
+   "id": "yaml-19",
+   "kind": "yaml",
+   "description": "YAML file: empty file.",
+   "file": "{dir}/job.yaml",
+   "text": "",
+   "expect": {
+    "pairs": []
+   }
+  },
+  {
+   "id": "yaml-20",
+   "kind": "yaml",
+   "description": "YAML file: empty document.",
+   "file": "{dir}/job.yaml",
+   "text": "---\n",
+   "expect": {
+    "pairs": []
+   }
+  },
+  {
+   "id": "yaml-21",
+   "kind": "yaml",
+   "description": "YAML file: only a comment.",
+   "file": "{dir}/job.yaml",
+   "text": "# nothing\n",
+   "expect": {
+    "pairs": []
+   }
+  },
+  {
+   "id": "yaml-22",
+   "kind": "yaml",
+   "description": "YAML file: same key nested and dotted.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.domain: a\nopentsx:\n  domain: b\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.domain: set twice in this file; set each key once"
+   }
+  },
+  {
+   "id": "yaml-23",
+   "kind": "yaml",
+   "description": "YAML file: unknown nested key.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  stats:\n    sketchAlfa: 0.1\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.stats.sketchAlfa: unknown key; did you mean opentsx.stats.sketchAlpha?"
+   }
+  },
+  {
+   "id": "yaml-24",
+   "kind": "yaml",
+   "description": "YAML file: key outside opentsx.",
+   "file": "{dir}/job.yaml",
+   "text": "spark:\n  master: local\n",
+   "expect": {
+    "error": "{dir}/job.yaml: spark.master: not an OpenTSx key; expected a key that starts with opentsx."
+   }
+  },
+  {
+   "id": "yaml-25",
+   "kind": "yaml",
+   "description": "YAML file: map under a key.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx:\n  domain:\n    x: 1\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.domain.x: unknown key; did you mean opentsx.domain?"
+   }
+  },
+  {
+   "id": "yaml-26",
+   "kind": "yaml",
+   "description": "YAML file: malformed secret value.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.pin: abc\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.test.pin: \"******\" is not an int; expected a whole number from -2147483648 to 2147483647"
+   }
+  },
+  {
+   "id": "yaml-syntax",
+   "kind": "yaml",
+   "description": "YAML file: a syntax error; only the start of the message is fixed, the parser adds its own detail.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx: [a\n",
+   "expect": {
+    "errorStartsWith": "{dir}/job.yaml: not valid YAML; "
+   }
+  },
+  {
+   "id": "yaml-complex-key",
+   "kind": "yaml",
+   "description": "YAML file: a mapping key that is a list or a map counts as a syntax error.",
+   "file": "{dir}/job.yaml",
+   "text": "? [a]\n: 1\n",
+   "expect": {
+    "errorStartsWith": "{dir}/job.yaml: not valid YAML; "
+   }
+  },
+  {
+   "id": "yaml-29",
+   "kind": "yaml",
+   "description": "YAML file: bytes that are not UTF-8 (base64 holds the file); checked before PyYAML is needed.",
+   "file": "{dir}/job.yaml",
+   "base64": "b3BlbnRzeC5kb21haW46IHf/bmQK",
+   "expect": {
+    "error": "{dir}/job.yaml: not valid UTF-8; save the file as UTF-8"
+   }
+  },
+  {
+   "id": "yaml-30",
+   "kind": "yaml",
+   "description": "YAML file: list item with a comma of a secret key is masked.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.token: [abc, \"s3cr3t,tail\"]\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.test.token: item \"******\" contains a comma; write one value per item"
+   }
+  },
+  {
+   "id": "yaml-31",
+   "kind": "yaml",
+   "description": "YAML file: the key of a list is checked before its items, so a misspelled secret key shows no item.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx.test.tokn: [\"s3cr3t,tail\"]\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.test.tokn: unknown key; did you mean opentsx.test.token?"
+   }
+  },
+  {
+   "id": "yaml-32",
+   "kind": "yaml",
+   "description": "YAML file: nesting deeper than 100 levels.",
+   "file": "{dir}/job.yaml",
+   "text": "a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: x}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}\n",
+   "expect": {
+    "error": "{dir}/job.yaml: not valid YAML; nesting deeper than 100 levels"
+   }
+  },
+  {
+   "id": "yaml-33",
+   "kind": "yaml",
+   "description": "YAML file: 100 levels of nesting are read.",
+   "file": "{dir}/job.yaml",
+   "text": "opentsx: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {a: {b: x}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}\n",
+   "expect": {
+    "error": "{dir}/job.yaml: opentsx.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.b: unknown key; run opentsx config list for the known keys"
+   }
+  },
+  {
+   "id": "cli-flags",
+   "kind": "load",
+   "description": "Alias flags set keys from the command line; other keys keep their defaults.",
+   "args": [
+    "serve",
+    "--kafscale",
+    "k:9092",
+    "--alpha",
+    "0.02"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.kafscale.bootstrap": {
+      "value": "k:9092",
+      "source": "commandLine"
+     },
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.02",
+      "source": "commandLine"
+     },
+     "opentsx.domain": {
+      "value": "wind",
+      "source": "default"
+     }
+    },
+    "unset": [
+     "opentsx.test.offset"
+    ]
+   }
+  },
+  {
+   "id": "cli-conf",
+   "kind": "load",
+   "description": "--conf and -c set keys; the value may contain an equals sign.",
+   "args": [
+    "serve",
+    "--conf",
+    "opentsx.domain=solar",
+    "-c",
+    "opentsx.test.text=a=b",
+    "-c",
+    "opentsx.test.count=9"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "commandLine"
+     },
+     "opentsx.test.text": {
+      "value": "a=b",
+      "source": "commandLine"
+     },
+     "opentsx.test.count": {
+      "value": "9",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-legacy-flag",
+   "kind": "load",
+   "description": "A legacy flag sets the same key as the flag.",
+   "args": [
+    "serve",
+    "--bootstrap",
+    "k:1"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.kafscale.bootstrap": {
+      "value": "k:1",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-subcommand",
+   "kind": "load",
+   "description": "The command is the longest run of leading words that names a command.",
+   "args": [
+    "jobs",
+    "run",
+    "--delay-ms",
+    "250"
+   ],
+   "expect": {
+    "command": "jobs run",
+    "positional": [],
+    "values": {
+     "opentsx.test.delayMs": {
+      "value": "250",
+      "source": "commandLine"
+     },
+     "opentsx.domain": {
+      "value": "wind",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-positional",
+   "kind": "load",
+   "description": "Options and positional arguments may interleave.",
+   "args": [
+    "export",
+    "--dir",
+    "d",
+    "out.json"
+   ],
+   "expect": {
+    "command": "export",
+    "positional": [
+     "out.json"
+    ],
+    "values": {
+     "opentsx.test.dir": {
+      "value": "d",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-double-dash",
+   "kind": "load",
+   "description": "Everything after -- is positional.",
+   "args": [
+    "export",
+    "--",
+    "--weird.json"
+   ],
+   "expect": {
+    "command": "export",
+    "positional": [
+     "--weird.json"
+    ],
+    "values": {}
+   }
+  },
+  {
+   "id": "cli-switch",
+   "kind": "load",
+   "description": "A boolean flag without a value means true.",
+   "args": [
+    "serve",
+    "--enabled"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.test.enabled": {
+      "value": "true",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-switch-value",
+   "kind": "load",
+   "description": "A boolean flag takes a following true or false as its value.",
+   "args": [
+    "serve",
+    "--enabled",
+    "false",
+    "--once",
+    "TRUE"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.test.enabled": {
+      "value": "false",
+      "source": "commandLine"
+     },
+     "opentsx.test.once": {
+      "value": "TRUE",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-switches",
+   "kind": "load",
+   "description": "Two boolean flags in a row.",
+   "args": [
+    "serve",
+    "--once",
+    "--enabled"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.test.enabled": {
+      "value": "true",
+      "source": "commandLine"
+     },
+     "opentsx.test.once": {
+      "value": "true",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-switch-then-word",
+   "kind": "load",
+   "description": "A word after a boolean flag that is not true or false is a positional argument.",
+   "args": [
+    "serve",
+    "--enabled",
+    "yes"
+   ],
+   "expect": {
+    "error": "yes: unexpected argument; expected opentsx serve",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-negative-value",
+   "kind": "load",
+   "description": "A value may start with a single dash.",
+   "args": [
+    "serve",
+    "--count",
+    "-5"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.test.count": {
+      "value": "-5",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-help",
+   "kind": "load",
+   "description": "--help anywhere prints the help and checks nothing else.",
+   "args": [
+    "serve",
+    "--kafscale",
+    "--help",
+    "--bogus"
+   ],
+   "expect": {
+    "command": "serve",
+    "help": true
+   }
+  },
+  {
+   "id": "cli-help-short",
+   "kind": "load",
+   "description": "-h prints the help.",
+   "args": [
+    "jobs",
+    "stop",
+    "-h"
+   ],
+   "expect": {
+    "command": "jobs stop",
+    "help": true
+   }
+  },
+  {
+   "id": "cli-version",
+   "kind": "load",
+   "description": "--version prints the version.",
+   "args": [
+    "serve",
+    "--version"
+   ],
+   "expect": {
+    "command": "serve",
+    "version": true
+   }
+  },
+  {
+   "id": "cli-config-show",
+   "kind": "load",
+   "description": "config show takes --output.",
+   "args": [
+    "config",
+    "show",
+    "--output",
+    "json"
+   ],
+   "expect": {
+    "command": "config show",
+    "positional": [],
+    "values": {}
+   }
+  },
+  {
+   "id": "cli-config-get",
+   "kind": "load",
+   "description": "config get takes the key as its argument.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.domain"
+   ],
+   "expect": {
+    "command": "config get",
+    "positional": [
+     "opentsx.domain"
+    ],
+    "values": {}
+   }
+  },
+  {
+   "id": "cli-no-command",
+   "kind": "load",
+   "description": "No command.",
+   "args": [],
+   "expect": {
+    "error": "<command>: missing; run opentsx --help for the commands",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-help-without-command",
+   "kind": "load",
+   "description": "opentsx --help prints the list of commands.",
+   "args": [
+    "--help"
+   ],
+   "expect": {
+    "command": null,
+    "help": true
+   }
+  },
+  {
+   "id": "cli-version-without-command",
+   "kind": "load",
+   "description": "opentsx --version prints the version.",
+   "args": [
+    "--version"
+   ],
+   "expect": {
+    "command": null,
+    "version": true
+   }
+  },
+  {
+   "id": "cli-option-before-command",
+   "kind": "load",
+   "description": "An option before the command is no command.",
+   "args": [
+    "--kafscale",
+    "k:1",
+    "serve"
+   ],
+   "expect": {
+    "error": "<command>: missing; run opentsx --help for the commands",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-config-get-conf",
+   "kind": "load",
+   "description": "config get reads every key, so --conf may set any key.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.test.delayMs",
+    "-c",
+    "opentsx.test.delayMs=250"
+   ],
+   "expect": {
+    "command": "config get",
+    "positional": [
+     "opentsx.test.delayMs"
+    ],
+    "values": {
+     "opentsx.test.delayMs": {
+      "value": "250",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "cli-unknown-command-near",
+   "kind": "load",
+   "description": "Unknown command with a near command.",
+   "args": [
+    "serev"
+   ],
+   "expect": {
+    "error": "serev: unknown command; did you mean serve?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-unknown-command",
+   "kind": "load",
+   "description": "Unknown command without a near command.",
+   "args": [
+    "frobnicate"
+   ],
+   "expect": {
+    "error": "frobnicate: unknown command; run opentsx --help for the commands",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-missing-subcommand",
+   "kind": "load",
+   "description": "A group word alone.",
+   "args": [
+    "jobs"
+   ],
+   "expect": {
+    "error": "jobs: missing subcommand; expected one of jobs run, jobs stop",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-unknown-subcommand",
+   "kind": "load",
+   "description": "Unknown subcommand with a near one.",
+   "args": [
+    "jobs",
+    "rnu"
+   ],
+   "expect": {
+    "error": "jobs rnu: unknown command; did you mean jobs run?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-unknown-option-near",
+   "kind": "load",
+   "description": "Unknown option with a near option.",
+   "args": [
+    "serve",
+    "--windwos",
+    "PT1H"
+   ],
+   "expect": {
+    "error": "--windwos: unknown option of serve; did you mean --windows?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-unknown-option",
+   "kind": "load",
+   "description": "Unknown option without a near option.",
+   "args": [
+    "serve",
+    "--frobnicate",
+    "x"
+   ],
+   "expect": {
+    "error": "--frobnicate: unknown option of serve; run opentsx serve --help for the options",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-option-of-other-command",
+   "kind": "load",
+   "description": "A flag of another command is unknown here.",
+   "args": [
+    "serve",
+    "--delay-ms",
+    "5"
+   ],
+   "expect": {
+    "error": "--delay-ms: unknown option of serve; run opentsx serve --help for the options",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-option-for-config-only",
+   "kind": "load",
+   "description": "--output belongs to config list and config show.",
+   "args": [
+    "serve",
+    "--output",
+    "json"
+   ],
+   "expect": {
+    "error": "--output: unknown option of serve; run opentsx serve --help for the options",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-unknown-short-option",
+   "kind": "load",
+   "description": "Unknown single-dash option.",
+   "args": [
+    "serve",
+    "-x"
+   ],
+   "expect": {
+    "error": "-x: unknown option of serve; run opentsx serve --help for the options",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-missing-value-end",
+   "kind": "load",
+   "description": "Flag at the end without a value.",
+   "args": [
+    "serve",
+    "--kafscale"
+   ],
+   "expect": {
+    "error": "--kafscale: missing value; expected --kafscale <string>",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-missing-value-option",
+   "kind": "load",
+   "description": "Flag followed by another option.",
+   "args": [
+    "serve",
+    "--kafscale",
+    "--alpha",
+    "0.1"
+   ],
+   "expect": {
+    "error": "--kafscale: missing value; expected --kafscale <string>",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-missing-value-enum",
+   "kind": "load",
+   "description": "The expected form names the enum values.",
+   "args": [
+    "serve",
+    "--mode"
+   ],
+   "expect": {
+    "error": "--mode: missing value; expected --mode <csv|episodes>",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-missing",
+   "kind": "load",
+   "description": "--conf without a value.",
+   "args": [
+    "serve",
+    "--conf"
+   ],
+   "expect": {
+    "error": "--conf: missing value; expected --conf key=value",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-no-equals",
+   "kind": "load",
+   "description": "-c without an equals sign.",
+   "args": [
+    "serve",
+    "-c",
+    "opentsx.domain"
+   ],
+   "expect": {
+    "error": "-c: \"opentsx.domain\" has no \"=\"; expected -c key=value",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-unknown-near",
+   "kind": "load",
+   "description": "Unknown key with a near key.",
+   "args": [
+    "serve",
+    "-c",
+    "opentsx.stats.sketchAlfa=0.1"
+   ],
+   "expect": {
+    "error": "opentsx.stats.sketchAlfa: unknown key; did you mean opentsx.stats.sketchAlpha?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-outside",
+   "kind": "load",
+   "description": "Key outside opentsx.",
+   "args": [
+    "serve",
+    "-c",
+    "spark.master=local"
+   ],
+   "expect": {
+    "error": "spark.master: not an OpenTSx key; expected a key that starts with opentsx.",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-outside-near",
+   "kind": "load",
+   "description": "Key outside opentsx with a near key.",
+   "args": [
+    "serve",
+    "-c",
+    "opentx.domain=wind"
+   ],
+   "expect": {
+    "error": "opentx.domain: not an OpenTSx key; did you mean opentsx.domain?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-not-read",
+   "kind": "load",
+   "description": "A key the command does not read.",
+   "args": [
+    "serve",
+    "-c",
+    "opentsx.test.delayMs=5"
+   ],
+   "expect": {
+    "error": "opentsx.test.delayMs: not read by serve; run opentsx serve --help for its keys",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-secret",
+   "kind": "load",
+   "description": "A secret key on the command line.",
+   "args": [
+    "serve",
+    "-c",
+    "opentsx.test.token=abc"
+   ],
+   "expect": {
+    "error": "opentsx.test.token: secret keys are not accepted on the command line; set OPENTSX_TEST_TOKEN or put opentsx.test.token in a properties file",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-flag-secret",
+   "kind": "load",
+   "description": "The flag of a secret key on the command line.",
+   "args": [
+    "serve",
+    "--token",
+    "abc"
+   ],
+   "expect": {
+    "error": "--token: secret keys are not accepted on the command line; set OPENTSX_TEST_TOKEN or put opentsx.test.token in a properties file",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-duplicate-flag",
+   "kind": "load",
+   "description": "The same flag twice.",
+   "args": [
+    "serve",
+    "--domain",
+    "a",
+    "--domain",
+    "b"
+   ],
+   "expect": {
+    "error": "--domain: set twice on the command line (also by --domain); set each key once",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-duplicate-mixed",
+   "kind": "load",
+   "description": "A flag and --conf for the same key.",
+   "args": [
+    "serve",
+    "--domain",
+    "a",
+    "-c",
+    "opentsx.domain=b"
+   ],
+   "expect": {
+    "error": "opentsx.domain: set twice on the command line (also by --domain); set each key once",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-duplicate-mixed-reverse",
+   "kind": "load",
+   "description": "--conf and then the flag for the same key.",
+   "args": [
+    "serve",
+    "-c",
+    "opentsx.domain=a",
+    "--domain",
+    "b"
+   ],
+   "expect": {
+    "error": "--domain: set twice on the command line (also by opentsx.domain); set each key once",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-duplicate-legacy",
+   "kind": "load",
+   "description": "A flag and its legacy flag.",
+   "args": [
+    "serve",
+    "--kafscale",
+    "a",
+    "--bootstrap",
+    "b"
+   ],
+   "expect": {
+    "error": "--bootstrap: set twice on the command line (also by --kafscale); set each key once",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-duplicate-switch",
+   "kind": "load",
+   "description": "The same boolean flag twice.",
+   "args": [
+    "serve",
+    "--once",
+    "--once"
+   ],
+   "expect": {
+    "error": "--once: set twice on the command line (also by --once); set each key once",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-bad-value-flag",
+   "kind": "load",
+   "description": "Malformed value through a flag names the flag.",
+   "args": [
+    "serve",
+    "--alpha",
+    "abc"
+   ],
+   "expect": {
+    "error": "--alpha: \"abc\" is not a double; expected a finite decimal number such as 0.01 or 1e-3",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-bad-value-conf",
+   "kind": "load",
+   "description": "Malformed value through --conf names the key.",
+   "args": [
+    "serve",
+    "-c",
+    "opentsx.test.timeout=10"
+   ],
+   "expect": {
+    "error": "opentsx.test.timeout: \"10\" is not a duration; expected ISO-8601 such as PT10M or a whole number with the unit ms, s, m, min, h or d such as 10m, at most 999999999 days",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-first-error-wins",
+   "kind": "load",
+   "description": "The command line is checked left to right; the first error stops.",
+   "args": [
+    "serve",
+    "--alpha",
+    "x",
+    "--alpha",
+    "y"
+   ],
+   "expect": {
+    "error": "--alpha: \"x\" is not a double; expected a finite decimal number such as 0.01 or 1e-3",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-missing-argument",
+   "kind": "load",
+   "description": "A required argument is missing.",
+   "args": [
+    "export"
+   ],
+   "expect": {
+    "error": "export: missing argument <out.json>; expected opentsx export <out.json>",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-extra-argument",
+   "kind": "load",
+   "description": "One argument too many.",
+   "args": [
+    "export",
+    "a.json",
+    "b.json"
+   ],
+   "expect": {
+    "error": "b.json: unexpected argument; expected opentsx export <out.json>",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-properties-twice",
+   "kind": "load",
+   "description": "--properties-file twice.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "{dir}/a.conf",
+    "--properties-file",
+    "{dir}/b.conf"
+   ],
+   "files": {
+    "a.conf": "",
+    "b.conf": ""
+   },
+   "expect": {
+    "error": "--properties-file: given twice; give it once",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-properties-missing",
+   "kind": "load",
+   "description": "--properties-file names a file that does not exist.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "{dir}/none.conf"
+   ],
+   "expect": {
+    "error": "{dir}/none.conf: no such file; give an existing file",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-output-bad",
+   "kind": "load",
+   "description": "--output takes text or json.",
+   "args": [
+    "config",
+    "list",
+    "--output",
+    "xml"
+   ],
+   "expect": {
+    "error": "--output: \"xml\" is not allowed; expected one of text, json",
+    "exit": 2
+   }
+  },
+  {
+   "id": "env-canonical",
+   "kind": "load",
+   "description": "Canonical environment name.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_STATS_SKETCH_ALPHA": "0.03"
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.03",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-legacy",
+   "kind": "load",
+   "description": "Legacy environment name.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "KAFSCALE_BOOTSTRAP": "k:1"
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.kafscale.bootstrap": {
+      "value": "k:1",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-canonical-first",
+   "kind": "load",
+   "description": "The canonical name wins over a legacy name.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "KAFSCALE_BOOTSTRAP": "legacy:1",
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "canonical:1"
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.kafscale.bootstrap": {
+      "value": "canonical:1",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-blank-is-unset",
+   "kind": "load",
+   "description": "A blank variable counts as unset.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_DOMAIN": "  "
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.domain": {
+      "value": "wind",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-unknown-ignored",
+   "kind": "load",
+   "description": "Variables that name no key are ignored.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_DOMIAN": "x",
+    "OPENTSX_HOME": "/opt"
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.domain": {
+      "value": "wind",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-bad-value",
+   "kind": "load",
+   "description": "A malformed value names the variable.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_TEST_COUNT": "x"
+   },
+   "expect": {
+    "error": "OPENTSX_TEST_COUNT: \"x\" is not an int; expected a whole number from -2147483648 to 2147483647",
+    "exit": 2
+   }
+  },
+  {
+   "id": "env-bad-secret",
+   "kind": "load",
+   "description": "A malformed secret value is masked.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "TEST_PIN": "abc"
+   },
+   "expect": {
+    "error": "TEST_PIN: \"******\" is not an int; expected a whole number from -2147483648 to 2147483647",
+    "exit": 2
+   }
+  },
+  {
+   "id": "env-secret",
+   "kind": "load",
+   "description": "Secrets come from the environment.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.test.token": {
+      "value": "s3cr3t",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-unread-key-validated",
+   "kind": "load",
+   "description": "Values of keys the command does not read are validated too.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_TEST_DELAY_MS": "soon"
+   },
+   "expect": {
+    "error": "OPENTSX_TEST_DELAY_MS: \"soon\" is not a long; expected a whole number from -9223372036854775808 to 9223372036854775807",
+    "exit": 2
+   }
+  },
+  {
+   "id": "precedence-code",
+   "kind": "load",
+   "description": "Worked example: set in code wins over every other source.",
+   "args": [
+    "serve",
+    "--alpha",
+    "0.02",
+    "--properties-file",
+    "{dir}/job.conf"
+   ],
+   "env": {
+    "OPENTSX_STATS_SKETCH_ALPHA": "0.03"
+   },
+   "files": {
+    "job.conf": "opentsx.stats.sketchAlpha 0.04\n",
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha 0.05\nopentsx.domain solar\n"
+   },
+   "confDir": "{dir}/conf",
+   "set": [
+    [
+     "opentsx.stats.sketchAlpha",
+     "0.06"
+    ]
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.06",
+      "source": "code"
+     },
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "defaultsFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "precedence-cli",
+   "kind": "load",
+   "description": "Worked example: the command line wins over environment and files.",
+   "args": [
+    "serve",
+    "--alpha",
+    "0.02",
+    "--properties-file",
+    "{dir}/job.conf"
+   ],
+   "env": {
+    "OPENTSX_STATS_SKETCH_ALPHA": "0.03"
+   },
+   "files": {
+    "job.conf": "opentsx.stats.sketchAlpha 0.04\n",
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha 0.05\nopentsx.domain solar\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.02",
+      "source": "commandLine"
+     },
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "defaultsFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "precedence-env",
+   "kind": "load",
+   "description": "Worked example: the environment wins over both files.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "{dir}/job.conf"
+   ],
+   "env": {
+    "OPENTSX_STATS_SKETCH_ALPHA": "0.03"
+   },
+   "files": {
+    "job.conf": "opentsx.stats.sketchAlpha 0.04\n",
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha 0.05\nopentsx.domain solar\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.03",
+      "source": "environment"
+     },
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "defaultsFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "precedence-properties",
+   "kind": "load",
+   "description": "Worked example: the properties file wins over the defaults file.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "{dir}/job.conf"
+   ],
+   "files": {
+    "job.conf": "opentsx.stats.sketchAlpha 0.04\n",
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha 0.05\nopentsx.domain solar\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.04",
+      "source": "propertiesFile"
+     },
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "defaultsFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "precedence-defaults",
+   "kind": "load",
+   "description": "Worked example: the defaults file wins over the registry default.",
+   "args": [
+    "serve"
+   ],
+   "files": {
+    "job.conf": "opentsx.stats.sketchAlpha 0.04\n",
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha 0.05\nopentsx.domain solar\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.05",
+      "source": "defaultsFile"
+     },
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "defaultsFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "precedence-default",
+   "kind": "load",
+   "description": "Worked example: the registry default.",
+   "args": [
+    "serve"
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.01",
+      "source": "default"
+     },
+     "opentsx.domain": {
+      "value": "wind",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "defaults-yaml",
+   "kind": "load",
+   "description": "The defaults file may be YAML.",
+   "args": [
+    "serve"
+   ],
+   "files": {
+    "conf/opentsx-defaults.yaml": "opentsx:\n  stats:\n    sketchAlpha: 0.05\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.05",
+      "source": "defaultsFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "defaults-none",
+   "kind": "load",
+   "description": "A configuration directory without a defaults file sets nothing.",
+   "args": [
+    "serve"
+   ],
+   "dirs": [
+    "conf"
+   ],
+   "confDir": "{dir}/conf",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.01",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "defaults-both",
+   "kind": "load",
+   "description": "Both defaults files is an error.",
+   "args": [
+    "serve"
+   ],
+   "files": {
+    "conf/opentsx-defaults.conf": "",
+    "conf/opentsx-defaults.yaml": ""
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "error": "{dir}/conf: both opentsx-defaults.conf and opentsx-defaults.yaml exist; keep one",
+    "exit": 2
+   }
+  },
+  {
+   "id": "defaults-not-a-directory",
+   "kind": "load",
+   "description": "The configuration directory must exist.",
+   "args": [
+    "serve"
+   ],
+   "confDir": "{dir}/missing",
+   "expect": {
+    "error": "{dir}/missing: not a directory; set OPENTSX_CONF_DIR to the directory that holds opentsx-defaults.conf or opentsx-defaults.yaml",
+    "exit": 2
+   }
+  },
+  {
+   "id": "defaults-bad-value-overridden",
+   "kind": "load",
+   "description": "A malformed value in a file fails even when a higher source sets the key.",
+   "args": [
+    "serve",
+    "--alpha",
+    "0.02"
+   ],
+   "files": {
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha high\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "error": "{dir}/conf/opentsx-defaults.conf:1: opentsx.stats.sketchAlpha: \"high\" is not a double; expected a finite decimal number such as 0.01 or 1e-3",
+    "exit": 2
+   }
+  },
+  {
+   "id": "properties-yaml",
+   "kind": "load",
+   "description": "--properties-file reads YAML by its extension.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "{dir}/job.yml"
+   ],
+   "files": {
+    "job.yml": "opentsx.stats:\n  sketchAlpha: 0.04\n  windows:\n    - 5m\n    - PT1H\n"
+   },
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.04",
+      "source": "propertiesFile"
+     },
+     "opentsx.stats.windows": {
+      "value": "5m,PT1H",
+      "source": "propertiesFile"
+     }
+    }
+   }
+  },
+  {
+   "id": "properties-error-location",
+   "kind": "load",
+   "description": "Errors in a properties file name the file and the line.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "{dir}/job.conf"
+   ],
+   "files": {
+    "job.conf": "opentsx.domain wind\nopentsx.test.cuont 3\n"
+   },
+   "expect": {
+    "error": "{dir}/job.conf:2: opentsx.test.cuont: unknown key; did you mean opentsx.test.count?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "set-if-missing",
+   "kind": "load",
+   "description": "setIfMissing does not replace a value from any source but sets a key that only has its default.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_DOMAIN": "solar"
+   },
+   "setIfMissing": [
+    [
+     "opentsx.domain",
+     "x"
+    ],
+    [
+     "opentsx.test.count",
+     "8"
+    ]
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.domain": {
+      "value": "solar",
+      "source": "environment"
+     },
+     "opentsx.test.count": {
+      "value": "8",
+      "source": "code"
+     }
+    }
+   }
+  },
+  {
+   "id": "set-unknown-key",
+   "kind": "load",
+   "description": "set in code checks the key.",
+   "args": [
+    "serve"
+   ],
+   "set": [
+    [
+     "opentsx.test.cuont",
+     "1"
+    ]
+   ],
+   "expect": {
+    "error": "opentsx.test.cuont: unknown key; did you mean opentsx.test.count?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "set-secret-in-code",
+   "kind": "load",
+   "description": "Code may set a secret.",
+   "args": [
+    "serve"
+   ],
+   "set": [
+    [
+     "opentsx.test.token",
+     "t"
+    ]
+   ],
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.test.token": {
+      "value": "t",
+      "source": "code"
+     }
+    }
+   }
+  },
+  {
+   "id": "env-legacy-checked",
+   "kind": "load",
+   "description": "A legacy variable is checked also when the canonical variable sets the key.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "k:9092",
+    "KAFSCALE_BOOTSTRAP": "k\u0001"
+   },
+   "expect": {
+    "error": "KAFSCALE_BOOTSTRAP: value contains a control character; remove it",
+    "exit": 2
+   }
+  },
+  {
+   "id": "env-not-utf8",
+   "kind": "load",
+   "description": "A variable that the JVM could not decode is an error, not a silent U+FFFD.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "OPENTSX_DOMAIN": "w�nd"
+   },
+   "expect": {
+    "error": "OPENTSX_DOMAIN: value is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-conf-not-utf8",
+   "kind": "load",
+   "description": "An argument with an invalid byte is an error, not the raw byte.",
+   "args": [
+    "serve",
+    "--conf",
+    "opentsx.domain=w\udcffnd"
+   ],
+   "expect": {
+    "error": "opentsx.domain: value is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-properties-file-not-utf8",
+   "kind": "load",
+   "description": "A file name that is not valid text is an error that names the option, not the name.",
+   "args": [
+    "serve",
+    "--properties-file",
+    "j��b.conf"
+   ],
+   "expect": {
+    "error": "--properties-file: path is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8",
+    "exit": 2
+   }
+  },
+  {
+   "id": "cli-help-group",
+   "kind": "load",
+   "description": "--help wins over a missing subcommand.",
+   "args": [
+    "jobs",
+    "--help"
+   ],
+   "expect": {
+    "command": null,
+    "help": true
+   }
+  },
+  {
+   "id": "cli-help-unknown-command",
+   "kind": "load",
+   "description": "--help wins over an unknown command.",
+   "args": [
+    "jobz",
+    "run",
+    "-h"
+   ],
+   "expect": {
+    "command": null,
+    "help": true
+   }
+  },
+  {
+   "id": "cli-version-group",
+   "kind": "load",
+   "description": "--version wins over a missing subcommand.",
+   "args": [
+    "jobs",
+    "--version"
+   ],
+   "expect": {
+    "command": null,
+    "version": true
+   }
+  },
+  {
+   "id": "set-if-missing-checked",
+   "kind": "load",
+   "description": "setIfMissing checks the value also when the key is set.",
+   "args": [
+    "serve"
+   ],
+   "set": [
+    [
+     "opentsx.test.once",
+     "TRUE"
+    ]
+   ],
+   "setIfMissing": [
+    [
+     "opentsx.test.once",
+     "yes"
+    ]
+   ],
+   "expect": {
+    "error": "opentsx.test.once: \"yes\" is not a boolean; expected true or false",
+    "exit": 2
+   }
+  },
+  {
+   "id": "defaults-dir-as-given",
+   "kind": "load",
+   "description": "The path in messages is OPENTSX_CONF_DIR as given, joined with /.",
+   "args": [
+    "serve"
+   ],
+   "files": {
+    "conf/opentsx-defaults.conf": "opentsx.stats.sketchAlpha x\n"
+   },
+   "confDir": "{dir}/conf/",
+   "expect": {
+    "error": "{dir}/conf//opentsx-defaults.conf:1: opentsx.stats.sketchAlpha: \"x\" is not a double; expected a finite decimal number such as 0.01 or 1e-3",
+    "exit": 2
+   }
+  },
+  {
+   "id": "defaults-not-a-directory-as-given",
+   "kind": "load",
+   "description": "OPENTSX_CONF_DIR is shown as given.",
+   "args": [
+    "serve"
+   ],
+   "confDir": "{dir}/missing/",
+   "expect": {
+    "error": "{dir}/missing/: not a directory; set OPENTSX_CONF_DIR to the directory that holds opentsx-defaults.conf or opentsx-defaults.yaml",
+    "exit": 2
+   }
+  },
+  {
+   "id": "defaults-blank-dir",
+   "kind": "load",
+   "description": "A blank OPENTSX_CONF_DIR means no defaults file.",
+   "args": [
+    "serve"
+   ],
+   "confDir": " ",
+   "expect": {
+    "command": "serve",
+    "positional": [],
+    "values": {
+     "opentsx.stats.sketchAlpha": {
+      "value": "0.01",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "defaults-yml",
+   "kind": "load",
+   "description": "opentsx-defaults.yml is an error, not ignored.",
+   "args": [
+    "serve"
+   ],
+   "files": {
+    "conf/opentsx-defaults.yml": "opentsx.domain: solar\n"
+   },
+   "confDir": "{dir}/conf",
+   "expect": {
+    "error": "{dir}/conf/opentsx-defaults.yml: not a defaults file name; rename it to opentsx-defaults.yaml",
+    "exit": 2
+   }
+  },
+  {
+   "id": "defaults-dir-not-utf8",
+   "kind": "load",
+   "description": "An OPENTSX_CONF_DIR that is not valid text is an error that names the variable.",
+   "args": [
+    "serve"
+   ],
+   "confDir": "w�",
+   "expect": {
+    "error": "OPENTSX_CONF_DIR: path is not valid UTF-8; pass UTF-8 text in a UTF-8 locale such as LANG=C.UTF-8",
+    "exit": 2
+   }
+  },
+  {
+   "id": "not-set-opentsx.kafscale.bootstrap",
+   "kind": "notSet",
+   "description": "get(key) of a key without a value and without a default.",
+   "key": "opentsx.kafscale.bootstrap",
+   "expect": {
+    "error": "opentsx.kafscale.bootstrap: not set; set it with --kafscale, --conf opentsx.kafscale.bootstrap=<value> or OPENTSX_KAFSCALE_BOOTSTRAP"
+   }
+  },
+  {
+   "id": "not-set-opentsx.test.station",
+   "kind": "notSet",
+   "description": "get(key) of a key without a value and without a default.",
+   "key": "opentsx.test.station",
+   "expect": {
+    "error": "opentsx.test.station: not set; set it with --conf opentsx.test.station=<value> or OPENTSX_TEST_STATION"
+   }
+  },
+  {
+   "id": "not-set-opentsx.test.token",
+   "kind": "notSet",
+   "description": "get(key) of a key without a value and without a default.",
+   "key": "opentsx.test.token",
+   "expect": {
+    "error": "opentsx.test.token: not set; set it with OPENTSX_TEST_TOKEN or a properties file"
+   }
+  },
+  {
+   "id": "not-set-opentsx.test.offset",
+   "kind": "notSet",
+   "description": "get(key) of a key without a value and without a default.",
+   "key": "opentsx.test.offset",
+   "expect": {
+    "error": "opentsx.test.offset: not set; set it with --offset, --conf opentsx.test.offset=<value> or OPENTSX_TEST_OFFSET"
+   }
+  },
+  {
+   "id": "config-show-json",
+   "kind": "show",
+   "description": "config show --output json: every key with a value, sorted, secrets masked.",
+   "args": [
+    "config",
+    "show",
+    "--output",
+    "json",
+    "-c",
+    "opentsx.domain=solar"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t",
+    "OPENTSX_TEST_NAMES": "a, b"
+   },
+   "expect": {
+    "exit": 0,
+    "stdout": "{\"schema\":\"opentsx.config.show.v1\",\"values\":[{\"key\":\"opentsx.domain\",\"value\":\"solar\",\"source\":\"commandLine\"},{\"key\":\"opentsx.stats.sketchAlpha\",\"value\":\"0.01\",\"source\":\"default\"},{\"key\":\"opentsx.stats.windows\",\"value\":\"PT10M,PT1H\",\"source\":\"default\"},{\"key\":\"opentsx.test.count\",\"value\":\"6\",\"source\":\"default\"},{\"key\":\"opentsx.test.delayMs\",\"value\":\"500\",\"source\":\"default\"},{\"key\":\"opentsx.test.enabled\",\"value\":\"false\",\"source\":\"default\"},{\"key\":\"opentsx.test.mode\",\"value\":\"csv\",\"source\":\"default\"},{\"key\":\"opentsx.test.names\",\"value\":\"a,b\",\"source\":\"environment\"},{\"key\":\"opentsx.test.once\",\"value\":\"false\",\"source\":\"default\"},{\"key\":\"opentsx.test.timeout\",\"value\":\"PT20S\",\"source\":\"default\"},{\"key\":\"opentsx.test.token\",\"value\":\"******\",\"source\":\"environment\"}]}\n"
+   }
+  },
+  {
+   "id": "config-show-text",
+   "kind": "show",
+   "description": "config show --output text: every key with a value, sorted, secrets masked.",
+   "args": [
+    "config",
+    "show",
+    "--output",
+    "text",
+    "-c",
+    "opentsx.domain=solar"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t",
+    "OPENTSX_TEST_NAMES": "a, b"
+   },
+   "expect": {
+    "exit": 0,
+    "stdout": "KEY                        VALUE       SOURCE\nopentsx.domain             solar       commandLine\nopentsx.stats.sketchAlpha  0.01        default\nopentsx.stats.windows      PT10M,PT1H  default\nopentsx.test.count         6           default\nopentsx.test.delayMs       500         default\nopentsx.test.enabled       false       default\nopentsx.test.mode          csv         default\nopentsx.test.names         a,b         environment\nopentsx.test.once          false       default\nopentsx.test.timeout       PT20S       default\nopentsx.test.token         ******      environment\n"
+   }
+  },
+  {
+   "id": "debug-string",
+   "kind": "debugString",
+   "description": "toDebugString: key=value lines, sorted, secrets masked.",
+   "args": [
+    "serve"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "text": "opentsx.domain=wind\nopentsx.stats.sketchAlpha=0.01\nopentsx.stats.windows=PT10M,PT1H\nopentsx.test.count=6\nopentsx.test.delayMs=500\nopentsx.test.enabled=false\nopentsx.test.mode=csv\nopentsx.test.once=false\nopentsx.test.timeout=PT20S\nopentsx.test.token=******\n"
+   }
+  },
+  {
+   "id": "api-names",
+   "kind": "api",
+   "description": "The public names of OpenTsxConf, the same in both runtimes.",
+   "names": [
+    "SOURCES",
+    "contains",
+    "get",
+    "getAll",
+    "getBoolean",
+    "getDouble",
+    "getDuration",
+    "getDurationList",
+    "getInt",
+    "getList",
+    "getLong",
+    "getOption",
+    "load",
+    "registry",
+    "set",
+    "setAll",
+    "setIfMissing",
+    "source",
+    "toDebugString"
+   ]
+  },
+  {
+   "id": "config-get",
+   "kind": "show",
+   "description": "config get prints the effective value; secrets are masked; errors go to stderr with exit code 2.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.domain"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "exit": 0,
+    "stdout": "wind\n"
+   }
+  },
+  {
+   "id": "config-get-secret",
+   "kind": "show",
+   "description": "config get prints the effective value; secrets are masked; errors go to stderr with exit code 2.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.test.token"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "exit": 0,
+    "stdout": "******\n"
+   }
+  },
+  {
+   "id": "config-get-unset",
+   "kind": "show",
+   "description": "config get prints the effective value; secrets are masked; errors go to stderr with exit code 2.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.test.station"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "exit": 2,
+    "stderr": "opentsx: opentsx.test.station: not set; set it with --conf opentsx.test.station=<value> or OPENTSX_TEST_STATION\n"
+   }
+  },
+  {
+   "id": "config-get-unknown",
+   "kind": "show",
+   "description": "config get prints the effective value; secrets are masked; errors go to stderr with exit code 2.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.domian"
+   ],
+   "env": {
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "exit": 2,
+    "stderr": "opentsx: opentsx.domian: unknown key; did you mean opentsx.domain?\n"
+   }
+  },
+  {
+   "id": "config-get-unset-flag",
+   "kind": "show",
+   "description": "config get names --conf and the variable, not the flag, which config get does not take.",
+   "args": [
+    "config",
+    "get",
+    "opentsx.kafscale.bootstrap"
+   ],
+   "expect": {
+    "exit": 2,
+    "stderr": "opentsx: opentsx.kafscale.bootstrap: not set; set it with --conf opentsx.kafscale.bootstrap=<value> or OPENTSX_KAFSCALE_BOOTSTRAP\n"
+   }
+  }
+ ]
+}
