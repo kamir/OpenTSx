@@ -101,6 +101,9 @@ The public Python lessons cover `forecast_arima`, `forecast_baseline`,
 [local CP scientific runtime](../devguide/local-cp-workbench.md). The
 [library lesson metadata](../learning/library-operators.v1.json) supplies finite
 synthetic workloads and executable checks for every exported Python algorithm.
+The [finite ARIMA contract](../learning/library-operator-contracts.md#forecast-finite-arima-families)
+records the likelihood-score derivatives, iteration limit and strict convergence
+check. Its small-amplitude regression verifies analytic variance and intervals.
 
 Start with analytic reference forecasts and chronological evaluation. Check
 the random-walk forecast's mean and square-root interval growth, then prove

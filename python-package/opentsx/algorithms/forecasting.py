@@ -98,7 +98,13 @@ def forecast_arima(
             enforce_invertibility=True,
             missing="raise",
         )
-        fitted = process.fit(disp=False, maxiter=maxiter, method="lbfgs")
+        fitted = process.fit(
+            disp=False,
+            maxiter=maxiter,
+            method="lbfgs",
+            optim_score="harvey",
+            optim_complex_step=True,
+        )
         if not fitted.mle_retvals["converged"]:
             raise RuntimeError("ARIMA optimization did not converge")
         forecast = fitted.get_forecast(steps=steps, exog=future)

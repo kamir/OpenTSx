@@ -243,6 +243,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- ARIMA-family fits use L-BFGS with the Harvey likelihood score and complex-step derivatives.
+  Small-amplitude Gaussian fits retain their analytic variance and forecast intervals; the requested
+  iteration limit and strict nonconvergence rejection remain enforced.
+
 - Native entropy windows validate lengths and finite matching coordinate/value vectors, advance by at least one
   sample and clip partial cuts to the available data. The `ENTROPY` dialog handles cancellation and invalid
   selections or input without opening a chart or recording a transformation. Native discretization is retained.

@@ -80,6 +80,10 @@ displays predicted values and conditional intervals, fold/origin metrics and
 runtime/provenance information when the execution service returns a successful
 result.
 
+The fit uses L-BFGS with the Harvey likelihood score and complex-step
+derivatives. The requested iteration limit and convergence check apply to every
+fit, including each backtest origin. There is no alternate optimizer retry.
+
 Prepare gaps, flagged values or an irregular clock explicitly before fitting. A
 relative or index axis stays relative or indexed; a missing absolute origin is
 not a date in 1970. Seasonal lengths and horizons are measured in samples of the

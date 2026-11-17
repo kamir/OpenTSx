@@ -41,6 +41,8 @@ Use the [local CP workbench](docs/devguide/local-cp-workbench.md) to build and r
 against an existing Confluent Platform Docker network. The Modelling view fits ARIMA, SARIMA and SARIMAX on a
 finite regular target, compares naive, mean, drift and seasonal naive baselines, and reports chronological
 backtests and conditional Gaussian prediction intervals.
+ARIMA-family fitting uses the Harvey likelihood score with complex-step derivatives
+and rejects optimizer nonconvergence.
 The [model deployment guide](docs/devguide/model-smart-topics.md) covers reviewed MLflow registration,
 prediction from preserved fits and continuous ARIMA/SARIMA scoring into local Kafka Smart Topics. SARIMAX scoring
 joins a verified immutable known-ahead context topic, preserving availability

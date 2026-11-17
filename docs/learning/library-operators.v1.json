@@ -1587,6 +1587,7 @@
       ],
       "pitfalls": [
         "These conditional Gaussian bounds omit full parameter-estimation uncertainty.",
+        "Fitting uses L-BFGS with the Harvey likelihood score and complex-step derivatives. The requested iteration limit and strict convergence check apply without an alternate optimizer retry.",
         "Inputs must be finite, regular and nonconstant with at least eight samples and enough observations for the selected orders. Invalid configuration and optimizer nonconvergence fail explicitly.",
         "The numerical exog matrix API does not prove historical context availability or deploy the fit; reviewed Smart Topic deployment is a separate workflow."
       ],
@@ -1603,7 +1604,8 @@
         ],
         "tests": [
           "python-package/tests/test_library_learning_algorithms.py#test_learning_forecast_arima_preserves_clock_and_random_walk_uncertainty",
-          "python-package/tests/test_forecasting.py#test_random_walk_forecast_matches_analytic_mean_and_variance"
+          "python-package/tests/test_forecasting.py#test_random_walk_forecast_matches_analytic_mean_and_variance",
+          "python-package/tests/test_forecasting.py#test_small_amplitude_white_noise_matches_analytic_gaussian_likelihood"
         ],
         "vectors": []
       }

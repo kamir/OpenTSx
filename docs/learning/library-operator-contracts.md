@@ -50,6 +50,11 @@ admission, availability and fitted-state contracts.
 `forecast_arima` fits finite regular, nonconstant real input through statsmodels
 SARIMAX with stationarity and invertibility enforcement. ARIMA orders,
 seasonal orders, trend, horizon, alpha and optimizer iterations are explicit.
+Fitting uses L-BFGS with the Harvey likelihood score and complex-step
+derivatives, the requested iteration limit and a strict convergence check.
+There is no alternate optimizer retry. The small-amplitude Gaussian regression
+checks the fitted variance, conditional intervals and likelihood against their
+analytic values at three signal scales.
 Inputs need at least eight observations and enough samples for the requested
 orders and regressor columns. Exogenous matrices must be finite, aligned and
 full-column-rank during training; future rows must match the horizon and column

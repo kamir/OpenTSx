@@ -3,6 +3,7 @@ import json
 
 import numpy as np
 import pytest
+from scipy.stats import norm
 
 from opentsx import model
 
@@ -16,6 +17,23 @@ def test_random_walk_forecast_matches_analytic_mean_and_variance():
     widths = np.array(result["upper"]) - np.array(result["lower"])
     np.testing.assert_allclose(widths / widths[0], np.sqrt(np.arange(1, 7)), rtol=1e-6)
     assert record["method"] == "arima"
+    json.dumps(record, allow_nan=False)
+
+
+@pytest.mark.parametrize("scale", [1e-3, 1e-4, 1e-5])
+def test_small_amplitude_white_noise_matches_analytic_gaussian_likelihood(scale):
+    api = importlib.import_module("opentsx.algorithms.forecasting")
+    values = np.tile([-2.0, -1.0, 1.0, 2.0], 16) * scale
+    record = api.forecast_arima(values, steps=3, order=(0, 0, 0))
+    result = record["result"]
+    variance = 2.5 * scale**2
+    assert result["parameters"]["sigma2"] == pytest.approx(variance, rel=1e-8, abs=0)
+    np.testing.assert_array_equal(result["mean"], np.zeros(3))
+    bound = norm.ppf(0.975) * np.sqrt(variance)
+    np.testing.assert_allclose(result["lower"], np.full(3, -bound), rtol=1e-8, atol=0)
+    np.testing.assert_allclose(result["upper"], np.full(3, bound), rtol=1e-8, atol=0)
+    likelihood = -len(values) / 2 * (np.log(2 * np.pi * variance) + 1)
+    assert result["log_likelihood"] == pytest.approx(likelihood, rel=1e-8, abs=0)
     json.dumps(record, allow_nan=False)
 
 
