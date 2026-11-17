@@ -2,6 +2,7 @@
 """Measure isolated single-partition Wayang increments on a disposable KafScale broker."""
 
 import argparse
+import contextlib
 import csv
 import hashlib
 import json
@@ -10,6 +11,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -48,6 +50,80 @@ def require_clean_checkout(root):
         if result.returncode == 1:
             raise RuntimeError("reported measurements require a clean tracked checkout")
         result.check_returncode()
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def directory_hashes(directory):
+    return {str(path.relative_to(directory)): sha256(path) for path in sorted(directory.rglob("*")) if path.is_file()}
+
+
+def freeze_classpath(root, entries, destination):
+    destination.mkdir(parents=True)
+    frozen, manifest = [], []
+    for index, entry in enumerate(entries):
+        source = Path(entry).absolute()
+        target = destination / f"{index:04d}-{source.name}"
+        reactor = None
+        if source.is_dir():
+            expected = directory_hashes(source)
+            shutil.copytree(source, target)
+            actual = directory_hashes(target)
+        elif source.is_file():
+            expected = sha256(source)
+            if tuple(source.parts[-5:-3]) == ("org", "opentsx"):
+                candidate = root / source.parent.parent.name / "target" / source.name
+                if candidate.is_file():
+                    reactor = str(candidate)
+                    if expected != sha256(candidate):
+                        raise RuntimeError(f"{source} differs from the reactor build {candidate}")
+            shutil.copy2(source, target)
+            actual = sha256(target)
+        else:
+            raise FileNotFoundError(f"classpath entry does not exist: {source}")
+        if actual != expected:
+            raise RuntimeError(f"classpath entry changed while copying: {source}")
+        frozen.append(str(target))
+        manifest.append({"source": str(source), "snapshot": str(target), "sha256": actual, "reactorTarget": reactor})
+    return os.pathsep.join(frozen), manifest
+
+
+def require_power_assertion(process):
+    if process is not None and process.poll() is not None:
+        raise RuntimeError(f"idle-sleep assertion exited with code {process.returncode}")
+
+
+@contextlib.contextmanager
+def power_assertion(metadata):
+    system = platform.system()
+    if system != "Darwin":
+        metadata["powerAssertion"] = {"mode": "none", "platform": system, "command": [], "released": True}
+        yield None
+        return
+    command = ["/usr/bin/caffeinate", "-i", "-w", str(os.getpid())]
+    process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    metadata["powerAssertion"] = {"mode": "prevent idle sleep", "platform": system,
+                                  "command": command, "pid": process.pid, "released": False}
+    try:
+        require_power_assertion(process)
+        yield process
+    finally:
+        if process.poll() is None:
+            process.terminate()
+        try:
+            code = process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            code = process.wait(timeout=10)
+        if process.stderr is not None:
+            process.stderr.close()
+        metadata["powerAssertion"].update({"released": True, "exitCode": code})
 
 
 def paragraph(lines, text):
@@ -130,6 +206,17 @@ def report(output, metadata):
                   "source hashes, build commands and exact JVM command. Repeat that invocation with a new --output directory.")
     else:
         paragraph(lines, "metadata.json records the build commands, source hashes and exact JVM command for this run.")
+    if "runtimeSnapshot" in metadata:
+        paragraph(lines, "Every JVM condition uses a private copy of its class directories and dependency JARs. "
+                  "metadata.json records the SHA256 manifest. Available reactor JARs must match their resolved "
+                  "OpenTSx dependencies before copying, and every copied entry is verified again after copying.")
+    if "powerAssertion" in metadata:
+        if metadata["powerAssertion"]["mode"] == "none":
+            paragraph(lines, f"No idle-sleep assertion is applied on {metadata['powerAssertion']['platform']}.")
+        else:
+            paragraph(lines, "On macOS, the built-in caffeinate tool prevents idle sleep during the measurement. "
+                      "Its assertion follows the Python process and is released in cleanup. "
+                      "metadata.json records the actual command and exit status.")
     paragraph(lines, "Read increments.csv, records.csv and produce-attempts.csv inside each case directory for raw evidence. "
               "Case directory names retain the full chain, interval and repetition, such as passthrough-5s-r1.")
     paragraph(lines, "Reference validation checks episode ids, series keys, timestamps and values against SeriesStream; "
@@ -200,45 +287,53 @@ def main():
             classpath_file = work / "test.cp"
             command(["mvn", "-B", "-ntp", "-pl", "opentsx-wayang", "org.apache.maven.plugins:maven-dependency-plugin:3.7.0:build-classpath",
                      "-DincludeScope=test", f"-Dmdep.outputFile={classpath_file}"], env=env, log=log)
-        classpath = os.pathsep.join([str(ROOT / "opentsx-wayang/target/test-classes"), str(ROOT / "opentsx-wayang/target/classes"), classpath_file.read_text().strip()])
+        dependencies = classpath_file.read_text().strip().split(os.pathsep)
+        if any(not entry for entry in dependencies):
+            raise RuntimeError("resolved classpath contains an empty entry")
+        classpath, metadata["runtimeSnapshot"] = freeze_classpath(ROOT,
+                [ROOT / "opentsx-wayang/target/test-classes", ROOT / "opentsx-wayang/target/classes", *dependencies],
+                work / "runtime")
         try:
-            for repetition in range(1, args.repetitions + 1):
-                for interval in args.intervals:
-                    for chain in ("passthrough", "clean"):
-                        case = output / f"{chain}-{interval}s-r{repetition}"
-                        case.mkdir()
-                        port = free_port()
-                        broker_env = {k: v for k, v in env.items() if not k.startswith("KAFSCALE_")}
-                        broker_env.update({"KAFSCALE_USE_MEMORY_S3": "1", "KAFSCALE_BROKER_ID": "0",
-                                           "KAFSCALE_BROKER_ADDR": f"127.0.0.1:{port}",
-                                           "KAFSCALE_METRICS_ADDR": "127.0.0.1:0", "KAFSCALE_CONTROL_ADDR": "127.0.0.1:0"})
-                        metadata.setdefault("brokerConfigurations", []).append({k: v for k, v in broker_env.items() if k.startswith("KAFSCALE_")})
-                        with (case / "broker.log").open("w") as log:
-                            broker = subprocess.Popen([str(binary)], env=broker_env, stdout=log, stderr=subprocess.STDOUT)
-                            try:
-                                deadline = time.monotonic() + 30
-                                while True:
-                                    if broker.poll() is not None:
-                                        raise RuntimeError(f"broker exited with code {broker.returncode}; inspect {case / 'broker.log'}")
-                                    try:
-                                        with socket.create_connection(("127.0.0.1", port), timeout=0.2):
-                                            break
-                                    except (ConnectionRefusedError, TimeoutError):
-                                        if time.monotonic() >= deadline:
-                                            raise TimeoutError("broker startup exceeded 30 seconds")
-                                        time.sleep(0.1)
-                                with (case / "driver.log").open("w") as driver_log:
-                                    command([java, "-Xms512m", "-Xmx2g", "-cp", classpath,
-                                             "org.opentsx.wayang.IncrementLatency", str(port), str(case), chain,
-                                             str(interval), str(args.increments)], cwd=ROOT / "opentsx-wayang", env=env, log=driver_log)
-                            finally:
-                                broker.terminate()
+            with power_assertion(metadata) as assertion:
+                for repetition in range(1, args.repetitions + 1):
+                    for interval in args.intervals:
+                        for chain in ("passthrough", "clean"):
+                            require_power_assertion(assertion)
+                            case = output / f"{chain}-{interval}s-r{repetition}"
+                            case.mkdir()
+                            port = free_port()
+                            broker_env = {k: v for k, v in env.items() if not k.startswith("KAFSCALE_")}
+                            broker_env.update({"KAFSCALE_USE_MEMORY_S3": "1", "KAFSCALE_BROKER_ID": "0",
+                                               "KAFSCALE_BROKER_ADDR": f"127.0.0.1:{port}",
+                                               "KAFSCALE_METRICS_ADDR": "127.0.0.1:0", "KAFSCALE_CONTROL_ADDR": "127.0.0.1:0"})
+                            metadata.setdefault("brokerConfigurations", []).append({k: v for k, v in broker_env.items() if k.startswith("KAFSCALE_")})
+                            with (case / "broker.log").open("w") as log:
+                                broker = subprocess.Popen([str(binary)], env=broker_env, stdout=log, stderr=subprocess.STDOUT)
                                 try:
-                                    broker.wait(timeout=10)
-                                except subprocess.TimeoutExpired:
-                                    broker.kill()
-                                    broker.wait(timeout=10)
-                        print(f"completed {case.name}", flush=True)
+                                    deadline = time.monotonic() + 30
+                                    while True:
+                                        if broker.poll() is not None:
+                                            raise RuntimeError(f"broker exited with code {broker.returncode}; inspect {case / 'broker.log'}")
+                                        try:
+                                            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                                                break
+                                        except (ConnectionRefusedError, TimeoutError):
+                                            if time.monotonic() >= deadline:
+                                                raise TimeoutError("broker startup exceeded 30 seconds")
+                                            time.sleep(0.1)
+                                    with (case / "driver.log").open("w") as driver_log:
+                                        command([java, "-Xms512m", "-Xmx2g", "-cp", classpath,
+                                                 "org.opentsx.wayang.IncrementLatency", str(port), str(case), chain,
+                                                 str(interval), str(args.increments)], cwd=ROOT / "opentsx-wayang", env=env, log=driver_log)
+                                    require_power_assertion(assertion)
+                                finally:
+                                    broker.terminate()
+                                    try:
+                                        broker.wait(timeout=10)
+                                    except subprocess.TimeoutExpired:
+                                        broker.kill()
+                                        broker.wait(timeout=10)
+                            print(f"completed {case.name}", flush=True)
         finally:
             (output / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
             report(output, metadata)
