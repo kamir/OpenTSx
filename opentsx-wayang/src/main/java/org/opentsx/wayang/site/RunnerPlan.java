@@ -86,6 +86,9 @@ public final class RunnerPlan {
             fingerprints(output.get("fingerprints"));
         }
         JsonNode fragment = SiteJson.parse(assignment.path("fragmentText").asText().getBytes(StandardCharsets.UTF_8), 65_536);
+        if (!inputTopics.equals(strings(fragment.path("source").path("topics"), true))) {
+            throw SiteJson.invalid("assignment input topics must match the fragment source topics");
+        }
         if (fragment.path("sinks").size() != 1 || outputs.size() != 1) throw SiteJson.invalid("bounded JVM execution requires one statistics sink");
         JsonNode sink = fragment.path("sinks").get(0), output = outputs.get(0);
         if (!sink.path("schema").asText().equals("org.opentsx.model.v2.SeriesStats") || !sink.path("topic").equals(output.path("topic"))) {

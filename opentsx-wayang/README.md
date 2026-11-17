@@ -188,7 +188,9 @@ The order matters:
    [runner wrapper](../docs/datamodel-2026/schemas/opentsx.runner-plan.v1.schema.json)
    binds their hashes, generation, runtime artifact, inputs, output and admitted
    aggregate scopes. `DagToWayang.sinkIdentity` supplies the existing output
-   identity. Broker aliases resolve through local configuration.
+   identity. Every fragment source topic needs an admitted input, and every
+   admitted input must appear in the fragment. Broker aliases resolve through
+   local configuration.
 2. Sign the exact wrapper bytes with
    [`SignedJws.sign`](src/main/java/org/opentsx/wayang/site/SignedJws.java).
    [`TsxPlanService`](src/main/java/org/opentsx/wayang/site/TsxPlanService.java)

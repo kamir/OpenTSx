@@ -437,6 +437,11 @@ UI text/hash while giving per-topic fragments distinct identities. The authentic
 plan, clock and topic ownership before the standalone coordinator executes the Wayang stage. The three-worker
 acceptance fixture reads actual output and receipts; the offline assignment starter does not dispatch that workload.
 
+The bounded JVM runner wrapper adds an exact source-topic gate before admission:
+every declared fragment source needs an input, and no admitted input may remain
+unused. Matching multiple topics may use a different inventory order. This gate
+belongs to `RunnerPlan`, not the shared offline assignment validator.
+
 ## Generate mean-reverting demo values
 
 `Generators.IDS` is the implemented generator registry: `gen.ou` and `gen.sine`. Each has a learning lesson,

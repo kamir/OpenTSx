@@ -1309,7 +1309,8 @@
         "Trace the separate RustRollout compiler from exact UI text and catalog validation to distinct per-topic fragments, complete source cuts and one connected Wayang Rust stage.",
         "Bind the existing exact assignment text to the signed bounded JVM wrapper and its output sink identity, fingerprint contract, membership and declared scopes.",
         "Compare plain RunnerPlan.parse with signature-verified admission and prove that unsigned parsing cannot access a continuation.",
-        "Replay a retained acknowledgement after losing its request or response and advancing the logical clock beyond conformance expiry; then verify that a fresh unqualified delivery remains blocked."
+        "Replay a retained acknowledgement after losing its request or response and advancing the logical clock beyond conformance expiry; then verify that a fresh unqualified delivery remains blocked.",
+        "For the bounded JVM wrapper, add an unused admitted topic or remove a required input and verify plan.invalid before admission; retain a matching multi-topic control."
       ],
       "starter": {
         "language": "java",
@@ -1321,7 +1322,8 @@
         "Each input includes all positions from zero through partitionCount minus one, in order.",
         "Splitting a topic across nodes fails coverage; duplicate whole-topic ownership fails ownership.",
         "Java and Rust validate the same shared cases; these offline library calls do not execute the separate bounded Rust runner.",
-        "Pending acknowledgement recovery returns the stored outcome without another execution or a new plan pull."
+        "Pending acknowledgement recovery returns the stored outcome without another execution or a new plan pull.",
+        "The bounded JVM wrapper requires exact equality between admitted input topics and fragment source.topics, independent of inventory order."
       ],
       "pitfalls": [
         "Resolve aliases to authoritative topic identity before interpreting ownership.",
@@ -1329,7 +1331,8 @@
         "The local rollout adds actual capability and broker checks plus durable control; the offline starter remains an offline validator and does not activate workers.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission.",
-        "An expired conformance report still blocks fresh activation; it does not invalidate an already retained acknowledgement."
+        "An expired conformance report still blocks fresh activation; it does not invalidate an already retained acknowledgement.",
+        "The JVM wrapper source-topic gate does not change the shared offline assignment validator or the Rust contract."
       ],
       "references": {
         "manual": [
@@ -1357,7 +1360,8 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/SignedJws.java#verify",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#accept",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxBoundedSiteExecution.java#run",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#pollOnce"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#pollOnce",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/RunnerPlan.java#parse"
         ],
         "tests": [
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
@@ -1372,7 +1376,10 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#outputBindingsAndByteLimitsFailClosed",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#sixBadPlansRefuseWithExactCodesAndAcceptedRetriesNeverReactivate",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#lostAckResponseReplaysTheRetainedOutcomeAfterConformanceExpires",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unsentAckReplaysTheRetainedOutcomeAfterConformanceExpires"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unsentAckReplaysTheRetainedOutcomeAfterConformanceExpires",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unusedAdmittedInputIsRejectedBeforeExecution",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#aFragmentSourceWithoutAnAdmittedInputIsRejectedBeforeExecution",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#matchingMultipleWholeTopicInputsAreAcceptedIndependentlyOfInventoryOrder"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

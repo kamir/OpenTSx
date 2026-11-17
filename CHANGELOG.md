@@ -71,7 +71,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   assignments, job-bound conformance, TLS 1.3 client certificates, durable
   delivery outcomes and strict continuation identities. Retained acknowledgements
   recover lost requests and responses after conformance expiry without repeating
-  execution. Site statistics carry
+  execution. Bounded JVM admission rejects missing or unused fragment sources.
+  Site statistics carry
   width-aware keys and closed-cut evidence through either acknowledged Kafka
   forwarding or the authenticated aggregate endpoint. Canonical central merges
   retain immutable completeness revisions and an acknowledged publication outbox.

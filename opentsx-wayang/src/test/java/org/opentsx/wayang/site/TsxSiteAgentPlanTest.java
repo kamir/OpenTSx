@@ -325,4 +325,66 @@ class TsxSiteAgentPlanTest {
                 HttpResponse.PushPromiseHandler<T> push) { return delegate.sendAsync(request, handler, push); }
     }
 
+
+    @Test void unusedAdmittedInputIsRejectedBeforeExecution() throws Exception {
+        assertInputTopicMismatch(List.of(SiteTestData.INPUT), List.of(SiteTestData.INPUT, "tsx.wind.synthetic.v2"));
+    }
+
+    @Test void aFragmentSourceWithoutAnAdmittedInputIsRejectedBeforeExecution() throws Exception {
+        assertInputTopicMismatch(List.of(SiteTestData.INPUT, "tsx.wind.synthetic.v2"), List.of(SiteTestData.INPUT));
+    }
+
+    @Test void matchingMultipleWholeTopicInputsAreAcceptedIndependentlyOfInventoryOrder() {
+        ObjectNode document = inputTopicPlan(List.of("tsx.wind.synthetic.v2", SiteTestData.INPUT), List.of(SiteTestData.INPUT, "tsx.wind.synthetic.v2"));
+        RunnerPlan plan = RunnerPlan.parse(SiteJson.bytes(document));
+        assertEquals(2, plan.assignment().path("inputs").size());
+        assertEquals(2, plan.document().path("inputContracts").size());
+    }
+
+    private void assertInputTopicMismatch(List<String> sourceTopics, List<String> inputTopics) throws Exception {
+        ObjectNode document = inputTopicPlan(sourceTopics, inputTopics);
+        org.opentsx.model.contracts.ExecutionAssignments.validate(document.path("assignmentText").asText());
+        PlanRefusal parsed = assertThrows(PlanRefusal.class, () -> RunnerPlan.parse(SiteJson.bytes(document)));
+        assertEquals("plan.invalid", parsed.code());
+        assertEquals("assignment input topics must match the fragment source topics", parsed.getMessage());
+        var driver = SiteTestData.key();
+        AtomicInteger executions = new AtomicInteger();
+        ObjectNode policy = (ObjectNode) SiteTestData.policy();
+        var allowed = ((ObjectNode) policy.path("inputs")).putArray("site");
+        inputTopics.forEach(allowed::add);
+        try (var agent = new TsxSiteAgent("s1", "node-s1", SiteTestData.DIGEST, SiteTestData.ABI, driver.getPublic(),
+                policy, temporary.resolve("topic-admission"), SiteTestData.CLOCK)) {
+            PlanRefusal refusal = assertThrows(PlanRefusal.class, () -> agent.accept(SignedJws.sign(SiteJson.bytes(document), driver.getPrivate()), plan -> {
+                executions.incrementAndGet();
+                return SiteJson.JSON.createObjectNode();
+            }));
+            assertEquals("plan.invalid", refusal.code());
+            assertEquals("assignment input topics must match the fragment source topics", refusal.getMessage());
+            assertEquals(0, executions.get());
+            assertFalse(Files.exists(temporary.resolve("topic-admission/state.json")));
+        }
+    }
+
+    private static ObjectNode inputTopicPlan(List<String> sourceTopics, List<String> inputTopics) {
+        ObjectNode plan = SiteTestData.document("wind", 1, "s1");
+        ObjectNode assignment = (ObjectNode) SiteJson.parse(plan.path("assignmentText").asText().getBytes(StandardCharsets.UTF_8), 65_536);
+        ObjectNode fragment = (ObjectNode) SiteJson.parse(assignment.path("fragmentText").asText().getBytes(StandardCharsets.UTF_8), 65_536);
+        var declared = ((ObjectNode) fragment.path("source")).putArray("topics");
+        sourceTopics.forEach(declared::add);
+        String text = new String(SiteJson.bytes(fragment), StandardCharsets.UTF_8);
+        String hash = org.opentsx.model.contracts.ExecutionAssignments.sha256(text);
+        assignment.put("sourceDagText", text).put("fragmentText", text).put("specHash", hash).put("fragmentHash", hash);
+        JsonNode prototype = assignment.path("inputs").get(0).deepCopy();
+        var inputs = assignment.putArray("inputs");
+        JsonNode contract = plan.path("inputContracts").get(0).deepCopy();
+        var contracts = plan.putArray("inputContracts");
+        for (String topic : inputTopics) {
+            inputs.add(((ObjectNode) prototype.deepCopy()).put("topic", topic));
+            contracts.add(((ObjectNode) contract.deepCopy()).put("topic", topic));
+        }
+        plan.put("specHash", hash).put("assignmentText", new String(SiteJson.bytes(assignment), StandardCharsets.UTF_8));
+        ((ObjectNode) plan.path("federation").path("expectedAssignments").get(0)).put("fragmentHash", hash);
+        return plan;
+    }
+
 }

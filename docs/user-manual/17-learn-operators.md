@@ -152,7 +152,8 @@ Work through these executable boundaries:
    [signed-plan tests](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java)
    and distinguish an identical retry from changed bytes, an expired grant,
    rollback and an incompatible continuation. Trace the durable outcome and
-   delivery cursor without treating an unsigned parse as activation. Follow the
+   delivery cursor without treating an unsigned parse as activation. Match the
+   admitted input-topic set to the fragment's source-topic set. Follow the
    lost-request and lost-response cases: replay the saved acknowledgement after
    conformance expires, then confirm that a fresh unqualified delivery rejects.
 2. Follow the actual

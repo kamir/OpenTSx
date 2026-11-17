@@ -379,6 +379,9 @@ All declared scopes receive a partial, including known empty scopes. Scope membe
 The wrapper payload is limited to 128 KiB and the compact JWS to 176 KiB.
 Inputs have distinct topic names in this profile; local configuration resolves their binding IDs and the
 `site`/`signal` output aliases. Plans carry no broker addresses, credentials or local paths.
+The assignment input-topic set MUST equal the fragment's nonempty, distinct
+`source.topics` set. Missing or unused sources are refused with `plan.invalid`
+before admission.
 
 The site plan MUST be signed (S7.1).
 
