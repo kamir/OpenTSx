@@ -34,6 +34,8 @@ Their zero-based coordinates do not establish a Kafka timestamp policy: publishe
 `tStart / 1000` rounded down to be strictly positive milliseconds.
 Open resample tails remain in retained state at the cut; source series cannot merge into one derived identity.
 
+<a id="use-frozen-catalog-1"></a>
+
 ## Use frozen catalog 1
 
 Use the [catalog inventory](../../systems/catalogs/tsx-catalog-1.yaml) to
