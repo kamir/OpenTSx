@@ -1,0 +1,11 @@
+{
+  "schema" : "opentsx.wayang.checkpoint.v1",
+  "job" : "latency",
+  "planVersion" : 1,
+  "specHash" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "topic" : "tsx.latency.episodes.v2",
+  "next" : {
+    "0" : 3600
+  },
+  "state" : { }
+}
