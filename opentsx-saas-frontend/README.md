@@ -99,6 +99,9 @@ frontend/
 - Save flow to backend
 
 #### Workbench (`/workbench`)
+
+Read the [analysis guide](../docs/devguide/workbench-analysis.md) for the result views, quality inspector, integrity-checked local snapshots and per-runtime deployment checks.
+
 - The Swing bucket analyser in the browser; computes locally and needs no account
 - Load a bucket: sample, CSV/TSV file, episode JSON, or episodes from the retrieval server
   (dev proxy `/retrieval`, target `OPENTSX_RETRIEVAL_URL`, default `http://localhost:8080`)
@@ -441,9 +444,9 @@ npm install -D typescript@latest
 
 ## Documentation
 
-- **Full SaaS Documentation**: [../SAAS-PLATFORM.md](../SAAS-PLATFORM.md)
-- **Visual Flow Builder Design**: [../WEB-UI-VISUAL-FLOW-BUILDER.md](../WEB-UI-VISUAL-FLOW-BUILDER.md)
-- **API Reference**: [../docs/API-DOCUMENTATION.md](../docs/API-DOCUMENTATION.md)
+- **User manual**: [../docs/user-manual/README.md](../docs/user-manual/README.md)
+- **Developer guide**: [../docs/devguide/README.md](../docs/devguide/README.md)
+- **API client**: [src/services/api.ts](src/services/api.ts)
 
 ## Demo Credentials
 

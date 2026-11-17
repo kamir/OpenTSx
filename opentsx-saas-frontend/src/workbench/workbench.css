@@ -1824,3 +1824,21 @@
   cursor: pointer;
   font-weight: 600;
 }
+
+.wb-analysis-workspace {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.wb-view-scope {
+  display: grid;
+  min-height: 0;
+}
+.wb-data-pane {
+  overflow: auto;
+  min-width: 0;
+  padding: 12px;
+  background: var(--panel, #e2e5ea);
+  color: var(--ink);
+}
+.wb-data-pane h2, .wb-data-pane h3 { margin: 0 0 8px; }
+.wb-table-scroll { max-height: 260px; overflow: auto; }
+.wb-data-pane td, .wb-data-pane pre { overflow-wrap: anywhere; white-space: pre-wrap; }

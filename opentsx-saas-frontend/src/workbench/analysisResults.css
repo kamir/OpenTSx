@@ -1,0 +1,62 @@
+.wb-analysis-import {
+  padding: 12px;
+  border-top: 1px solid #a3acb3;
+  background: #edf0f2;
+  color: #24323d;
+  overflow-wrap: anywhere;
+}
+.wb-analysis-import summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.wb-analysis-import label {
+  display: block;
+  margin: 10px 0;
+}
+.wb-analysis-import textarea {
+  display: block;
+  width: 100%;
+  font-family: monospace;
+}
+.wb-analysis-import dl {
+  margin: 10px 0;
+}
+.wb-analysis-import dd {
+  margin: 0 0 8px;
+}
+.wb-analysis-scalars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.wb-analysis-scalars section {
+  padding: 12px;
+  border: 1px solid #b0bec9;
+  min-width: 150px;
+}
+.wb-analysis-scalars strong {
+  font-size: 22px;
+}
+.wb-analysis-import svg {
+  max-width: 650px;
+  width: 100%;
+  background: white;
+}
+.wb-analysis-import svg text {
+  font-size: 11px;
+}
+.wb-analysis-matrix {
+  max-height: 400px;
+  overflow: auto;
+  margin: 12px 0;
+}
+.wb-analysis-matrix table {
+  border-collapse: collapse;
+}
+.wb-analysis-matrix th,
+.wb-analysis-matrix td {
+  border: 1px solid #b0bec9;
+  padding: 8px;
+  color: #152837;
+}

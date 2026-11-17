@@ -186,6 +186,31 @@ elapsed clock per route. Read its arguments with
 `python3 tools/wayang_federation_measurement.py --help`; use its executed
 `bytes.csv`, `windows.csv`, `run.json` and provenance when assessing a report.
 
+## Run finite Python forecasting and preparation
+
+The public Python lessons cover `forecast_arima`, `forecast_baseline`,
+`rolling_backtest`, `seasonal_decomposition`, `power_transform` and
+`inverse_power_transform`. Use the package's `forecasting` extra or the pinned
+[local CP scientific runtime](../devguide/local-cp-workbench.md). The
+[library lesson metadata](../learning/library-operators.v1.json) supplies finite
+synthetic workloads and executable checks for every exported Python algorithm.
+The [finite ARIMA contract](../learning/library-operator-contracts.md#forecast-finite-arima-families)
+records the likelihood-score derivatives, iteration limit and strict convergence
+check. Its small-amplitude regression verifies analytic variance and intervals.
+
+Start with analytic reference forecasts and chronological evaluation. Check
+the random-walk forecast's mean and square-root interval growth, then prove
+that later observations cannot change an earlier backtest origin. Decompose
+seasonal signals only as an offline operation; its centered smoothing is
+noncausal. Apply Box-Cox only to positive values, retain the chosen lambda, and
+verify inverse transformations on the original value space. Inverting a point
+forecast does not by itself make it an unbiased conditional mean.
+
+These examples execute the public library calls directly. They do not establish
+Java, Wayang or Rust parity, or deploy a processor. Use the separate
+[reviewed statistical Smart Topic workflow](../devguide/model-smart-topics.md)
+for Workbench training, registration and admitted local Kafka scoring.
+
 ## Work through a lesson
 
 The lesson format follows the existing [exercise structure](../../exercises/README.md#exercise-format):

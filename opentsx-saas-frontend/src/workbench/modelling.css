@@ -1,0 +1,73 @@
+.wb-modelling {
+  padding: 12px;
+  color: #1e2d39;
+  background: #edf0f2;
+  min-width: 0;
+}
+.wb-modelling fieldset {
+  margin: 10px 0;
+  padding: 10px;
+}
+.wb-modelling-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+.wb-modelling label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+.wb-modelling .wb-modelling-check {
+  flex-direction: row;
+  align-items: center;
+}
+.wb-modelling textarea {
+  width: 100%;
+  min-height: 100px;
+  font-family: monospace;
+}
+.wb-modelling svg {
+  width: 100%;
+  min-width: 320px;
+  max-width: 900px;
+  background: #fff;
+}
+.wb-modelling svg text {
+  font-size: 11px;
+  fill: #24323d;
+}
+.wb-modelling svg .observed {
+  stroke: #294e70;
+  fill: none;
+  stroke-width: 2;
+}
+.wb-modelling svg .forecast {
+  stroke: #a64115;
+  fill: none;
+  stroke-width: 2;
+}
+.wb-modelling svg .interval {
+  fill: #d9855659;
+  stroke: none;
+}
+.wb-modelling-output {
+  overflow: auto;
+}
+.wb-modelling-output table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  min-width: 100%;
+}
+.wb-modelling-output th,
+.wb-modelling-output td {
+  padding: 6px;
+  border: 1px solid #b6c0c8;
+  text-align: left;
+}
+.wb-modelling pre {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

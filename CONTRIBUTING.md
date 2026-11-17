@@ -17,6 +17,8 @@ public issues; see [SECURITY.md](SECURITY.md).
 ## Build and test
 
 Requirements: JDK 17 or 21, Maven 3.9+, Python 3.10 to 3.13. Docker is optional (KafScale, MinIO).
+Install the forecasting and Kafka extras for the numerical and Smart Topic tests.
+Add `iceberg` to the extras when you need the PyIceberg reader.
 
 ```bash
 mvn -q install -DskipTests                     # build all modules
@@ -26,9 +28,11 @@ docker compose -f docker-compose.kafscale.yml up -d
 KAFSCALE_BOOTSTRAP=localhost:9092 mvn verify   # including the KafScale tests
 
 cd python-package
-python -m pip install -e . pytest              # add ".[iceberg]" for the PyIceberg reader
+python -m pip install -e ".[forecasting,kafka]" pytest
 python -m pytest -q
 
+cd ..
+python -m unittest discover -s deploy/local-cp -p test_workbench.py -v
 python3 tools/check_links.py                   # relative links in the maintained Markdown (from the repo root)
 ```
 
@@ -41,15 +45,15 @@ HTTP 429, 500, 502, 503 or 504.
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and on pushes to `master` and
-`opentsx/**`:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request
+and on pushes to `master`:
 
 | Job | What it does |
 |-----|--------------|
 | Java 17, Java 21 | `mvn -B -ntp verify` |
 | Operator learning synchronization | repository gitlink URL checks, learning synchronization tests, generated student lessons and source-content hashes |
 | Shared contract vectors and Rust | generated assignment fixture check and the pinned Rust consumer of the shared cases |
-| Python 3.10 to 3.13 | `pip install -e . pytest`, `pytest -q`; on 3.12 also `tools/check_links.py` |
+| Python 3.10 to 3.13 | `pip install -e ".[forecasting,kafka]" pytest`, `pytest -q`; on 3.12 also local CP launcher tests and `tools/check_links.py` |
 | k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
 | KafScale conformance | builds the KafScale broker from source (in-memory S3) and runs the conformance suite plus the `opentsx-kafka-v2`, `opentsx-windpark` and `opentsx-stats` tests against it |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
