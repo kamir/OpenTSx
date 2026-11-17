@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deployChecks, keepQuality, runBlocker, toDagYaml, toDefinition } from './flow';
 import { runPlan, summarize } from './flows';
+import { defaultParams, OP_BY_ID } from './ops';
 import { Bucket, FlowNode, SignalContext } from './types';
 
 const source: FlowNode = { id: 'source', op: 'source', label: 'Input', params: {}, input: null };
@@ -25,7 +26,13 @@ describe('deployment preflight for every published path', () => {
   it('checks every clean sink instead of accepting the first one', () => blocked([source, clean, { ...pair, sinkTopic: 'tsx.other.clean.v2' }], /workbench only/));
   it('checks a vector path beside a valid clean sink', () => blocked([source, clean, { ...vector, input: clean.id }], /source bucket directly/));
   it('rejects duplicate output topics', () => blocked([source, vector, { ...vector, id: 'v2' }], /same topic/));
-  it('refuses statistics whose runtime parameters have not been translated', () => blocked([source, vector, { ...pair, op: 'stats.window', label: 'Statistics' }], /Statistics.*catalog parameters/));
+  it('refuses statistics outside the deployed processor profile', () => blocked([source, vector, { ...pair, op: 'stats.window', label: 'Statistics', params: defaultParams(OP_BY_ID['stats.window']) }], /Statistics.*catalog parameters/));
+  it('rejects statistics with missing export parameters', () => {
+    const input = doc([source, { ...pair, op: 'stats.window', label: 'Statistics' }]);
+    const message = 'A deployed statistics window must be a positive number of seconds.';
+    expect(() => toDagYaml(input)).toThrow(message);
+    expect(() => toDefinition(input)).toThrow(message);
+  });
   it('does not deploy an unpublished pair preview', () => {
     const nodes = [source, vector, { ...pair, sinkTopic: undefined }];
     expect(runBlocker(nodes, ['a', 'b'], context)).toBeNull();
@@ -45,7 +52,10 @@ describe('operator capability labels', () => {
     expect(load).toBeDefined();
     const { capabilityOf } = await load() as { capabilityOf: (id: string) => { browser: string; processor: string; wayang: string; reason: string } };
     expect(capabilityOf('align.vector')).toMatchObject({ browser: 'Available', processor: 'Available', wayang: 'Not deployable' });
-    expect(capabilityOf('pair.es')).toMatchObject({ browser: 'Available', processor: 'Unavailable', wayang: 'Kernel only' });
+    for (const id of ['pair.xcorr', 'pair.es', 'stats.window']) {
+      expect(capabilityOf(id)).toMatchObject({ browser: 'Available', processor: 'Unavailable', wayang: 'Java API only' });
+      expect(capabilityOf(id).reason).toMatch(/This workbench deployment path does not execute/);
+    }
     expect(capabilityOf('stats.window').reason).toMatch(/catalog parameters/);
     expect(capabilityOf('missing')).toMatchObject({ browser: 'Unavailable', processor: 'Unavailable', wayang: 'Not deployable' });
   });

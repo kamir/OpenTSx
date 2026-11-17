@@ -114,14 +114,20 @@ performance promise.
 ## Check deployment capability
 
 The Properties tab shows browser preview, Java processor and Wayang capability
-separately. An available numerical kernel does not make a Wayang DAG deployable.
+separately. **Java API only** identifies the available native pair and statistics
+bindings. Their [local catalog compiler](../../opentsx-wayang/README.md#compile-a-catalog-dag)
+is separate from activation through this workbench deployment path.
 
 The Smart Topic preflight checks every published sink and its upstream path. A
 valid vector branch cannot make an unsupported pair branch runnable. Unsupported
 branches remain usable in the browser; pair nodes in an exported draft carry
-`experimental: true`. Statistics preview parameters do not count as deployable
-catalog parameters.
+`experimental: true`. The statistics exporter translates the selected window
+width to catalog `windows` and writes a full `SeriesStats` sink. The selected
+browser `field` stays in the saved flow as a view; it is not a catalog parameter.
+This export representation does not enable statistics or pair execution through
+the Smart Topic processor path. Missing or invalid statistics export parameters
+fail explicitly.
 
 Download exports a draft; Deploy is a separate action. The server remains the
-final validation and permission boundary. This UI change adds no new continuous
-operator or Wayang plan service.
+final validation and permission boundary. These controls do not activate the
+separate [signed bounded JVM profile](../../opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage).
