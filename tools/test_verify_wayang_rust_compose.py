@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import shlex
 import sys
@@ -19,6 +20,59 @@ SPEC.loader.exec_module(HELPER)
 
 
 class WayangComposeGuardsTest(unittest.TestCase):
+    def assert_credentials_required(self, compose):
+        for name, count in {"POSTGRES_PASSWORD": 2, "SECRET_KEY": 1, "FIRST_SUPERUSER_PASSWORD": 1}.items():
+            values = [line.split(":", 1)[1].strip() for line in compose.splitlines()
+                      if line.lstrip().startswith(name + ":")]
+            self.assertEqual(count, len(values), f"{name} substitution count")
+            for occurrence, value in enumerate(values, 1):
+                self.assertTrue(value.startswith('"${' + name + ':?') and value.endswith('}"'),
+                                f"{name} occurrence {occurrence} requires a nonempty environment value")
+
+    def test_compose_credential_fields_require_nonempty_environment_values(self):
+        self.assert_credentials_required((HELPER.ROOT / "docker-compose.wayang-rust.yml").read_text())
+
+    def test_credential_guard_rejects_fallback_missing_operator_and_empty_value_mutations(self):
+        compose = (HELPER.ROOT / "docker-compose.wayang-rust.yml").read_text()
+        checked = 0
+        for name, count in {"POSTGRES_PASSWORD": 2, "SECRET_KEY": 1, "FIRST_SUPERUSER_PASSWORD": 1}.items():
+            matches = list(re.finditer(r"\$\{" + name + r":\?[^}]*\}", compose))
+            self.assertEqual(count, len(matches), f"{name} required substitution count")
+            replacements = {"fallback": "${" + name + ":-}", "missing operator": "${" + name + "}",
+                            "allows empty": "${" + name + "?Set " + name + "}"}
+            for occurrence, match in enumerate(matches, 1):
+                for mode, replacement in replacements.items():
+                    mutated = compose[:match.start()] + replacement + compose[match.end():]
+                    with self.subTest(field=name, occurrence=occurrence, mode=mode):
+                        with self.assertRaisesRegex(AssertionError, name):
+                            self.assert_credentials_required(mutated)
+                    checked += 1
+        self.assertEqual(12, checked)
+
+    def test_helper_supplies_required_credentials_before_compose_validation(self):
+        names = {"POSTGRES_PASSWORD", "SECRET_KEY", "FIRST_SUPERUSER_PASSWORD"}
+        environment = {}
+        def validate(command, supplied, label, timeout):
+            self.assertEqual("compose-config", label)
+            self.assertEqual(["--profile", "build", "config", "--quiet"], command[-4:])
+            path = Path(command[command.index("--env-file") + 1])
+            values = dict(line.split("=", 1) for line in path.read_text().splitlines())
+            for name in names:
+                self.assertTrue(name in supplied and bool(supplied[name]), f"{name} process environment")
+                self.assertTrue(name in values and values[name] == supplied[name], f"{name} private environment file")
+            raise RuntimeError("stop before Docker execution")
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "ROOT", Path(directory)), \
+                patch.object(HELPER, "SECRET_VALUES", []), patch.object(HELPER, "run", side_effect=validate) as run, \
+                patch.object(HELPER.secrets, "token_hex", side_effect=lambda size: format(size, "x")[0] * (2 * size)) as hexadecimal, \
+                patch.object(HELPER.secrets, "token_urlsafe", side_effect=lambda size: "u" * size) as urlsafe:
+            (Path(directory) / "target").mkdir()
+            with self.assertRaisesRegex(RuntimeError, "stop before Docker execution"):
+                HELPER.execute(None, environment, 39093, 18081)
+            self.assertEqual(1, run.call_count)
+            self.assertEqual([12, 24, 32], [call.args[0] for call in hexadecimal.call_args_list])
+            self.assertEqual([32], [call.args[0] for call in urlsafe.call_args_list])
+            self.assertEqual([], list((Path(directory) / "target/wayang-rust-private").iterdir()))
+
     def test_helper_provides_port_validation_before_any_docker_mutation(self):
         self.assertEqual(39093, HELPER.port_number("39093", "KAFSCALE_BROKER_PORT"))
         for value in ["", "0", "01", "+1", "65536", " 1", "١"]:
