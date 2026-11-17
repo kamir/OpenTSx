@@ -108,8 +108,8 @@ expected series ids for inputs `a` and `b`, the specification hash, and
 `TsxState`. Tag each input episode with `TsxTagged`, combine the inputs, and
 register `TsxJavaPlugin`; the
 [pair operator guide](../../opentsx-wayang/README.md#compare-two-series-in-windows)
-describes this native Java API. It does not establish a deployed UI DAG binding
-or a frozen catalog entry.
+describes this native Java API. `pair.es` belongs to frozen Catalog 1;
+deployment admission remains separate from this Java entry point.
 
 The pair settings select episode or sliding windows and align their sample
 clocks. `sigma` controls event detection, `tauMax` is a cap in seconds with zero

@@ -1,0 +1,34 @@
+schema: opentsx.processor.v1
+id: pair.es
+version: 1
+kind: transformer
+title: Pair event synchronization
+description: Computes event synchronization and seeded interval-shuffle surrogates in aligned pair windows.
+inputs:
+  - { name: a, type: series, cardinality: many }
+  - { name: b, type: series, cardinality: many }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: sigma, type: number, default: 2 }
+  - { name: tauMax, type: number, min: 0, default: 0, description: "Maximum event distance in seconds; zero means uncapped" }
+  - { name: shuffles, type: integer, min: 1, max: 2147483647, default: 10 }
+  - { name: seed, type: integer, default: 1 }
+  - { name: pairing, type: enum, values: [same, intersect], default: same }
+  - name: window
+    type: string
+    default: episode
+    description: "Catalog text: episode or positive seconds; direct pair APIs also accept numeric seconds"
+  - { name: step, type: number, default: 0, description: "Positive stride in seconds; otherwise the window width" }
+  - { name: every, type: number, default: 0, description: "Positive clock in seconds; otherwise the larger episode sampling interval" }
+  - { name: agg, type: enum, values: [MEAN, LAST, FIRST, MIN, MAX, SUM, COUNT], default: MEAN }
+  - { name: fill, type: enum, values: [none, as-of], default: none }
+  - { name: maxAge, type: number, default: 0, description: "As-of age in seconds, clamped to zero when negative" }
+  - { name: minCoverage, type: number, min: 0, max: 1, default: 0.8 }
+semantics: { needs: window, deterministic: true, origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxPair }
+state: { kind: windowed, key: series }
+merge: { class: none }
+testvectors: docs/datamodel-2026/testvectors/pair-es.v1.json
+tolerance: { abs: 5.0e-13 }

@@ -1511,7 +1511,8 @@
       "surface": "ui",
       "objectives": [
         "Connect zero-lag Pearson correlation with the peak field.",
-        "Separate correlation, lag and strength."
+        "Separate correlation, lag and strength.",
+        "Distinguish browser execution, the native Wayang mapping and frozen catalog membership."
       ],
       "prerequisites": [
         "Read x as an ordered coordinate and null as a missing value.",
@@ -1520,7 +1521,9 @@
       "tasks": [
         "Predict perfect correlation between the identical starter series.",
         "Run a one-tick lag search and verify peak 1 at lag 0.",
-        "Delay B and inspect the positive lag convention that means B follows A."
+        "Delay B and inspect the positive lag convention that means B follows A.",
+        "Resolve pair.xcorr version 1 in the frozen inventory and compare the referenced native Wayang regression with the browser workload.",
+        "Inspect the window text field and YAML exporter; keep catalog window values as text while recognizing numeric seconds in direct pair APIs."
       ],
       "starter": {
         "bucket": {
@@ -1598,7 +1601,8 @@
       ],
       "pitfalls": [
         "An anticorrelated extreme can be the selected peak with a negative sign.",
-        "A single searched lag has undefined strength because there is no spread."
+        "A single searched lag has undefined strength because there is no spread.",
+        "An available native mapping does not establish full A4 compilation or deployment through the workbench."
       ],
       "parameterKeys": [
         "pairing",
@@ -1650,17 +1654,26 @@
       "references": {
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#pair-xcorr"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/xcorr.ts#PAIR_XCORR"
+          "opentsx-saas-frontend/src/workbench/xcorr.ts#PAIR_XCORR",
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "systems/processors/pair.xcorr.yaml",
+          "opentsx-saas-frontend/src/pages/Workbench.tsx#ParamInput",
+          "opentsx-saas-frontend/src/workbench/flow.ts#yamlScalar",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/xcorr.test.ts"
+          "opentsx-saas-frontend/src/workbench/xcorr.test.ts",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/pair-xcorr.v1.json"
@@ -1686,7 +1699,8 @@
         "Explain why simultaneous events split equally between q_ab and q_ba.",
         "Observe that shuffling the single inter-event interval cannot change this two-event control.",
         "Inspect the four shared sampled-series cases through TsxPair, including state restored between B and a later A increment.",
-        "Compare largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench and settingsLabelsKeepWorkbenchNumberFormatting with the workbench settings."
+        "Compare largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench and settingsLabelsKeepWorkbenchNumberFormatting with the workbench settings.",
+        "Resolve pair.es version 1 in the frozen inventory and explain why native availability remains separate from full A4 compilation and deployment."
       ],
       "starter": {
         "bucket": {
@@ -1763,7 +1777,7 @@
       "pitfalls": [
         "A large q_total alone does not prove coupling when q_rand is equally large.",
         "First and last samples cannot be detected local-maximum events.",
-        "The native Java API does not establish a deployed UI DAG binding or a frozen catalog entry.",
+        "The frozen pair.es entry identifies native Wayang availability; it does not establish a deployed UI DAG binding or full A4 compiler support.",
         "A large whole-number seed must wrap to the unsigned 32-bit random state without changing its settings label."
       ],
       "parameterKeys": [
@@ -1830,7 +1844,8 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/11-classic-analytics.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#pair-es",
@@ -1840,7 +1855,9 @@
           "opentsx-saas-frontend/src/workbench/es.ts#PAIR_ES",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxPair.java#TsxPair",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es",
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "systems/processors/pair.es.yaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -1849,7 +1866,9 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#everySeriesCaseMatchesThroughAWayangPlan",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#aInALaterIncrementGivesTheSameResult",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/pair-es.v1.json"

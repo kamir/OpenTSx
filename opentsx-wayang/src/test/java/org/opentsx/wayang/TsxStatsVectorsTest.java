@@ -40,7 +40,7 @@ class TsxStatsVectorsTest {
     private static final Path VECTORS = Path.of("..", "docs", "datamodel-2026", "testvectors", "stats-window.v1.json");
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private static StatsEngine.Config config(JsonNode c) {
+    static StatsEngine.Config config(JsonNode c) {
         List<Duration> windows = new ArrayList<>();
         c.path("windows").forEach(w -> windows.add(Duration.parse(w.textValue())));
         return StatsEngine.Config.defaults().withWindows(windows.toArray(Duration[]::new))
@@ -58,7 +58,7 @@ class TsxStatsVectorsTest {
         return out;
     }
 
-    private static List<SeriesStats> plan(TsxStatsWindow operator, List<SpecificRecord> input) {
+    static List<SeriesStats> plan(TsxStatsWindow operator, List<SpecificRecord> input) {
         CollectionSource<SpecificRecord> source = new CollectionSource<>(input, SpecificRecord.class);
         List<SpecificRecord> output = new ArrayList<>();
         LocalCallbackSink<SpecificRecord> sink = LocalCallbackSink.createCollectingSink(output, SpecificRecord.class);
@@ -76,7 +76,7 @@ class TsxStatsVectorsTest {
         }
     }
 
-    private static ArrayNode records(List<SeriesStats> records) {
+    static ArrayNode records(List<SeriesStats> records) {
         ArrayNode out = JSON.createArrayNode();
         for (SeriesStats s : records) {
             ObjectNode record = out.addObject();

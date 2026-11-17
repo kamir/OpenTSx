@@ -34,6 +34,60 @@ Their zero-based coordinates do not establish a Kafka timestamp policy: publishe
 `tStart / 1000` rounded down to be strictly positive milliseconds.
 Open resample tails remain in retained state at the cut; source series cannot merge into one derived identity.
 
+## Use frozen catalog 1
+
+Use the [catalog inventory](../../systems/catalogs/tsx-catalog-1.yaml) to
+identify the 16 frozen processor versions. Every entry is version 1. Its
+processor description supplies parameters, state, merge metadata, shared
+vectors and the available Wayang class. Read those definitions instead of
+copying parameters into a lesson or treating the learning metadata as another
+runtime catalog.
+
+| DAG operator | Version |
+| --- | --- |
+| `decode.avro-soe` | 1 |
+| `dq.checks` | 1 |
+| `convert.unit` | 1 |
+| `resample` | 1 |
+| `model.wind-shear` | 1 |
+| `model.power-curve` | 1 |
+| `feature.lag` | 1 |
+| `feature.rolling` | 1 |
+| `stats.welford-ddsketch` | 1 |
+| `align.vector` | 1 |
+| `segment.threshold` | 1 |
+| `segment.extremum` | 1 |
+| `sax.word` | 1 |
+| `pair.xcorr` | 1 |
+| `pair.es` | 1 |
+| `dq.result` | 1 |
+
+The inventory uses processor identity `dq.plausible-range`; its
+[description](../../systems/processors/dq.plausible-range.yaml) maps it to DAG
+operator `dq.checks` and fixes the `PLAUSIBLE_RANGE` check. Resolve this alias
+when comparing the inventory with
+[SPEC S1.7](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
+
+For pair operators, keep the catalog's `window` value as text. The workbench
+text field and YAML exporter preserve that representation, including decimal
+text. Direct pair APIs also accept numeric seconds.
+The [cross-correlation](../../systems/processors/pair.xcorr.yaml) and
+[event-synchronization](../../systems/processors/pair.es.yaml) descriptions
+record this boundary.
+
+[SystemDocTest](../../opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java)
+checks frozen membership, versions and description metadata. Native execution
+and retained-state comparisons are separate checks in
+[TsxStreamEqualsBatchTest](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java).
+Available Wayang classes do not make every catalog operator compilable by the
+local
+[`DagToWayang`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java)
+API, which constructs clean-series plans. The inventory is a build-time freeze,
+not a production admission gate. Full A4 Java DAG translation, signed Java site
+plans and federation remain separate from native Wayang availability. Rust
+execution uses its own admitted operator profile; the 16 native Wayang entries
+do not expand that subset.
+
 ## Work through a lesson
 
 The lesson format follows the existing [exercise structure](../../exercises/README.md#exercise-format):
