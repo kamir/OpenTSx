@@ -75,6 +75,12 @@ reuse stored receipts; uncertain publication retries the same saved requests whi
 Activation can expose partial at-least-once output. Placeholder load costs do not select worker placement, and this
 local profile does not implement the signed continuous fleet contract.
 
+The [continuous local profile](../docs/devguide/integration/wayang-rust-continuous.md) executes successive finite
+stages on the same complete-topic bindings. PostgreSQL persists each plan before execution; Rust workers restore
+their own preceding state and verify sequence/hash/cursor continuity. Idle keeps topic ownership. New input and
+service restart continue without redeployment. Durable Stop reconciles dispatched work before releasing ownership.
+This profile retains one immutable chain per worker and does not provide production migration or fencing.
+
 ## Use the plugin
 
 Register `TsxJavaPlugin`, not `Java.basicPlugin()`:

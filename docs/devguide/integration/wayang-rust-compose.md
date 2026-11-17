@@ -148,7 +148,8 @@ Read the [UI builder](../../../opentsx-saas-frontend/src/workbench/wayang.ts),
 The [acceptance helper](../../../tools/verify_wayang_rust_compose.py) and
 [Java fixture](../../../opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixture.java) define the checks.
 
-This is a trusted local bounded deployment, not the signed fleet protocol in specification S5/S7. Continuous input,
-automatic failover, broad operator coverage, operational tenant quotas, artifact signatures and durable Iceberg
+This is a trusted local bounded deployment, not the signed fleet protocol in specification S5/S7.
+The separate [continuous profile](wayang-rust-continuous.md) adds acknowledged increments and stateful service restart.
+Automatic failover, broad operator coverage, operational tenant quotas, artifact signatures and durable Iceberg
 publication remain separate work in the [unified plan](wayang-unified-plan.md). HTTP generation/hash checks do not
 establish production authentication, network isolation or distributed stale-writer fencing.

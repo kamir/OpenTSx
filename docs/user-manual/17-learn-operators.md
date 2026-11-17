@@ -17,7 +17,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | `tsx-contracts` validates offline assignments. `tsx-runner` 0.1.0 executes trusted-local bounded pass-through and three cleaning operations. The explicit bounded UI target uses a custom Wayang stage and one to three whole-topic HTTP workers; continuous and production fleet execution remain separate. |
+| Rust | `tsx-contracts` validates offline assignments. `tsx-runner` 0.1.0 executes trusted-local pass-through and three cleaning operations. Explicit bounded and continuous UI targets use a custom Wayang stage and one to three whole-topic HTTP workers; signed production fleet execution remains separate. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.
@@ -27,6 +27,9 @@ It accepts `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional tr
 The [bounded UI rollout guide](../devguide/integration/wayang-rust-compose.md) connects one actual workbench DAG
 to the backend PostgreSQL journal, standalone coordinator, custom Wayang Rust platform and three HTTP workers.
 The three UI lessons retain their browser workloads and link the separate Rust vector, state and rollout tests.
+The [continuous guide](../devguide/integration/wayang-rust-continuous.md) adds live-input, predecessor/cursor,
+retained-window and restart cases. Increment manifests reserve cumulative series ownership, including unselected
+input series. A finite increment is not a new deployment, and a partition cursor is not a placement unit.
 The source/sink/checkpoint/assignment lessons trace the infrastructure without introducing another operator catalog.
 Private preparation precedes every activation; completed retry reuses receipts, while uncertain activation retains
 ownership and retries saved bytes. These are at-least-once bounded writes, without atomic publication across workers.

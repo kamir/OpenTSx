@@ -13,6 +13,7 @@ pub struct Prepared {
     pub records: Vec<OutputRecord>,
     pub input_series: Vec<String>,
     pub output_series: Vec<String>,
+    pub input_owners: BTreeMap<String, i32>,
 }
 
 pub fn execute(
@@ -20,6 +21,9 @@ pub fn execute(
     broker: &mut impl Broker,
     checkpoint: &Path,
 ) -> Result<Receipt, String> {
+    if run.increment.is_some() {
+        return Err("increment requests require the worker's durable predecessor state".into());
+    }
     let store = Store::open(checkpoint, run.request.limits.state_bytes + 65_536)?;
     if let Some(saved) = store.load()? {
         verify_completion(&run, &saved)?;
@@ -33,13 +37,23 @@ pub fn execute(
 }
 
 pub fn prepare(run: &mut Admitted, broker: &mut impl Broker) -> Result<Prepared, String> {
+    if run.increment.is_some() {
+        return Err("increment requests require the worker's durable predecessor state".into());
+    }
+    prepare_continued(run, broker, BTreeMap::new())
+}
+
+pub(crate) fn prepare_continued(
+    run: &mut Admitted,
+    broker: &mut impl Broker,
+    mut owners: BTreeMap<String, i32>,
+) -> Result<Prepared, String> {
     let mut records = broker.read(run)?;
     if records.len() > run.request.limits.records {
         return Err("input record limit exceeded".into());
     }
     records.sort_by_key(|r| (r.partition, r.offset));
     let mut next: Vec<_> = run.cut.positions.iter().map(|p| p.from).collect();
-    let mut owners = BTreeMap::new();
     let mut episodes = Vec::with_capacity(records.len());
     let mut input_bytes = 0usize;
     let mut samples = 0usize;
@@ -151,11 +165,24 @@ pub fn prepare(run: &mut Admitted, broker: &mut impl Broker) -> Result<Prepared,
     if let Some(pending) = completion.state["outputOwners"].as_object() {
         output_series.extend(pending.keys().cloned());
     }
+    if run.pipeline.is_passthrough() {
+        output_series.extend(
+            owners
+                .keys()
+                .filter(|id| {
+                    run.pipeline.expected_series().is_empty()
+                        || run.pipeline.expected_series().contains(*id)
+                })
+                .cloned(),
+        );
+    }
+    check_retained_owners(run, &completion, &owners)?;
     Ok(Prepared {
         completion,
         records: prepared,
-        input_series: owners.into_keys().collect(),
+        input_series: owners.keys().cloned().collect(),
         output_series: output_series.into_iter().collect(),
+        input_owners: owners,
     })
 }
 
@@ -165,6 +192,9 @@ pub fn activate(
     broker: &mut impl Broker,
     checkpoint: &Path,
 ) -> Result<Receipt, String> {
+    if run.increment.is_some() {
+        return Err("increment requests require the worker's durable predecessor state".into());
+    }
     validate_prepared(run, prepared)?;
     let store = Store::open(checkpoint, run.request.limits.state_bytes + 65_536)?;
     if let Some(saved) = store.load()? {
@@ -184,11 +214,14 @@ pub fn validate_prepared(run: &Admitted, prepared: &Prepared) -> Result<(), Stri
     verify_completion(run, &prepared.completion)?;
     if prepared.records.len() != prepared.completion.receipt.output_records
         || prepared.input_series.len() > run.request.limits.series
+        || prepared.output_series.len() > run.request.limits.series
+        || prepared.input_series != prepared.input_owners.keys().cloned().collect::<Vec<_>>()
         || !ordered_identities(&prepared.input_series)
         || !ordered_identities(&prepared.output_series)
     {
         return Err("invalid prepared series inventory or record count".into());
     }
+    check_retained_owners(run, &prepared.completion, &prepared.input_owners)?;
     let mut bytes = 0usize;
     let mut framed = Vec::new();
     let mut output_series = BTreeSet::new();
@@ -220,12 +253,76 @@ pub fn validate_prepared(run: &Admitted, prepared: &Prepared) -> Result<(), Stri
     if let Some(pending) = prepared.completion.state["outputOwners"].as_object() {
         output_series.extend(pending.keys().cloned());
     }
+    if run.pipeline.is_passthrough() {
+        output_series.extend(
+            prepared
+                .input_owners
+                .keys()
+                .filter(|id| {
+                    run.pipeline.expected_series().is_empty()
+                        || run.pipeline.expected_series().contains(*id)
+                })
+                .cloned(),
+        );
+    }
     if tsx_contracts::sha256_bytes(&framed) != prepared.completion.receipt.output_digest
         || prepared.output_series != output_series.into_iter().collect::<Vec<_>>()
     {
         return Err("prepared output digest or inventory mismatch".into());
     }
     Ok(())
+}
+
+pub(crate) fn check_retained_owners(
+    run: &Admitted,
+    completion: &Completion,
+    owners: &BTreeMap<String, i32>,
+) -> Result<(), String> {
+    if owners.len() > run.request.limits.series
+        || !ordered_identities(&owners.keys().cloned().collect::<Vec<_>>())
+        || owners.values().any(|partition| {
+            usize::try_from(*partition)
+                .ok()
+                .is_none_or(|p| p >= run.cut.positions.len())
+        })
+        || completion.state["series"]
+            .as_object()
+            .is_none_or(|entries| entries.keys().any(|id| !owners.contains_key(id)))
+    {
+        return Err("invalid cumulative input ownership".into());
+    }
+    if run.increment.is_some() {
+        let bytes = serde_json::to_vec(
+            &serde_json::json!({"pipeline":completion.state,"inputOwners":owners}),
+        )
+        .map_err(|e| format!("cannot encode cumulative ownership: {e}"))?;
+        if bytes.len() > run.request.limits.state_bytes {
+            return Err("cumulative retained state exceeds stateBytes".into());
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn retained_output_series(
+    run: &Admitted,
+    completion: &Completion,
+    owners: &BTreeMap<String, i32>,
+) -> Result<Vec<String>, String> {
+    if run.pipeline.is_passthrough() {
+        Ok(owners
+            .keys()
+            .filter(|id| {
+                run.pipeline.expected_series().is_empty()
+                    || run.pipeline.expected_series().contains(*id)
+            })
+            .cloned()
+            .collect())
+    } else {
+        let entries = completion.state["outputOwners"]
+            .as_object()
+            .ok_or("retained output ownership is missing")?;
+        Ok(entries.keys().cloned().collect())
+    }
 }
 
 fn ordered_identities(ids: &[String]) -> bool {

@@ -19,6 +19,69 @@ SPEC.loader.exec_module(HELPER)
 
 
 class WayangComposeGuardsTest(unittest.TestCase):
+    def test_continuous_evidence_requires_fixed_topics_clock_and_confirmed_progress(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
+            root = Path(directory)
+            graph = b"original continuous UI text\n"
+            sources = [{"topic": f"tsx.test.input{n}.v2", "partitions": n} for n in range(1, 4)]
+            (root / "fixture.json").write_text(json.dumps({"sources": sources}))
+            (root / "submitted-dag.txt").write_bytes(graph)
+            for phase, blocks in [("initial", 1), ("retry", 1), ("new-data", 2), ("restart", 4),
+                                  ("after-restart", 5), ("stopped", 5)]:
+                value = {"id": "local-test", "specHash": hashlib.sha256(graph).hexdigest(),
+                         "createdAtMicros": "1700000000000000", "profile": "continuous",
+                         "planHash": hashlib.sha256(str(blocks).encode()).hexdigest(),
+                         "state": "stopped" if phase == "stopped" else "idle", "stopRequested": phase == "stopped",
+                         "currentCycle": str(blocks), "completedCycles": str(blocks),
+                         "inputRecords": str(6 * blocks), "outputRecords": str(6 * blocks), "assignments": [
+                             {"node": f"worker-{n}", "inputTopic": source["topic"], "partitionCount": str(n),
+                              "cumulativeInputRecords": str(n * blocks), "cumulativeOutputRecords": str(n * blocks),
+                              "positions": [{"partition": str(p), "next": str(blocks)} for p in range(n)]}
+                             for n, source in enumerate(sources, 1)]}
+                (root / f"deployment-{phase}.json").write_text(json.dumps(value))
+                (root / f"browser-{phase}.json").write_text(json.dumps({"phase": phase, "assignments": 3,
+                    "profile": "continuous", "blocks": str(blocks), "submissions": int(phase in ("initial", "retry"))}))
+                (root / f"verified-{phase}.json").write_text(json.dumps({"verifiedRecords": 6 * blocks,
+                    "distinctEpisodes": 6 * blocks, "workerReceipts": 3, "throughBlocks": blocks,
+                    "inputRecords": 6 * blocks}))
+            self.assertEqual(30, HELPER.verify_continuous_views()["verifiedRecords"])
+            path = root / "deployment-restart.json"
+            original = json.loads(path.read_text())
+            for key, changed in [("createdAtMicros", "1700000000000001"), ("inputRecords", "12"),
+                                 ("id", "local-another")]:
+                with self.subTest(key=key):
+                    path.write_text(json.dumps(dict(original, **{key: changed})))
+                    with self.assertRaises(RuntimeError):
+                        HELPER.verify_continuous_views()
+            path.write_text(json.dumps(original))
+            browser = root / "browser-new-data.json"
+            changed = json.loads(browser.read_text())
+            changed["submissions"] = 1
+            browser.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(RuntimeError, "resubmission"):
+                HELPER.verify_continuous_views()
+
+    def test_continuous_restart_appends_data_while_only_execution_services_are_stopped(self):
+        events = []
+        with patch.object(HELPER, "run", side_effect=lambda command, *args, **kwargs: events.append(command)), \
+                patch.object(HELPER, "wait_driver", side_effect=lambda *args: events.append(["qualified"])):
+            HELPER.resume_with_backlog(["java", "fixture"], "127.0.0.1:39093", ["compose"], {}, 4)
+        services = ["coordinator", "wayang", "runner-1", "runner-2", "runner-3"]
+        self.assertEqual(["compose", "stop", *services], events[0])
+        self.assertEqual(["java", "fixture", "append", "127.0.0.1:39093", str(HELPER.DIRECTORY), "4"], events[1])
+        self.assertEqual(["compose", "start", *services], events[2])
+        self.assertEqual(["qualified"], events[3])
+
+    def test_continuous_success_artifacts_are_invalidated_without_removing_caches(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(HELPER, "DIRECTORY", Path(directory)):
+            root = Path(directory)
+            for phase in ["new-data", "after-restart", "stopped"]:
+                for prefix, suffix in [("deployment", "json"), ("browser", "json"), ("browser", "png"), ("verified", "json")]:
+                    (root / f"{prefix}-{phase}.{suffix}").write_text("previous run")
+            (root / "build-source.sha256").write_text("cache")
+            HELPER.clear_run_artifacts()
+            self.assertEqual(["build-source.sha256"], [path.name for path in root.iterdir()])
+
     def test_helper_provides_port_validation_before_any_docker_mutation(self):
         self.assertEqual(39093, HELPER.port_number("39093", "KAFSCALE_BROKER_PORT"))
         for value in ["", "0", "01", "+1", "65536", " 1", "١"]:

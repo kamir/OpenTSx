@@ -157,6 +157,12 @@ and checkpoint acknowledged output. The accepted cut and clock stay fixed across
 finite replay; it does not start continuous shadow operation. Partial activation can publish output before a failure.
 See the [three-worker rollout guide](../devguide/integration/wayang-rust-compose.md).
 
+For continuous shadow execution, select **Continuous Wayang on Rust** and **Run continuously with Wayang**.
+Successive acknowledged cuts preserve whole-topic placement, original source hash and clock, and worker-local state.
+The [continuous acceptance profile](../devguide/integration/wayang-rust-continuous.md) compares live input and
+restart-spanning resample windows with Java. Inspect cumulative progress; an idle deployment still owns its topics.
+Use **Stop deployment** to request a conclusive stop, including reconciliation of any uncertain publication.
+
 * **Goal:** the preparation and the analysis keep up with the data, and you have seen them do so before anyone
   acts on them.
 * **Do:** publish the flow and start it so it follows the topic. Watch its state and how far its data reaches.

@@ -10,6 +10,14 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Continuous workbench execution through Wayang on fixed whole-topic Rust workers. Each acknowledged increment
+  supplies the next complete partition cursors and retained operator state. PostgreSQL persists plans before
+  dispatch, retains ownership through idle and uncertain outcomes, and records durable stop requests. Worker
+  head/candidate storage and completed cycle history stay bounded. The continuous Compose/browser profile checks
+  live input, data arriving during execution-service downtime, stateful restart, later input and Stop against Java.
+  Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
+  failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
+
 - `pair.es` runs on Wayang through `TsxPair` with `q_total`, `q_ab`, `q_ba`
   and `q_rand` outputs. The four shared series cases execute through real plans.
   Parameters and surrogate seeds follow the workbench implementation.

@@ -397,6 +397,22 @@ and compares output with the Java reference; its generated evidence records the 
 Continuous input, failover, signed delivery, broader kernels and durable Iceberg publication remain outside this
 profile. A topic that exceeds its assigned worker's capacity is refused rather than split across workers.
 
+### 6.5 Continue complete-topic cuts on fixed workers
+
+The [continuous local profile](../devguide/integration/wayang-rust-continuous.md) retains the same original DAG,
+clock and topic-to-worker bindings across successive finite Wayang stages. PostgreSQL saves each exact plan before
+dispatch. Workers restore their own preceding pipeline state and validate sequence, predecessor and every partition
+cursor. The per-topic record budget bounds each increment, with rotating internal partition priority; ownership
+still covers the complete topic. Empty input creates no new increment.
+
+Cumulative series manifests prevent a later topic from taking an earlier series identity. Acknowledged worker
+heads and cumulative backend counters survive service restart. The durable Stop operation reconciles dispatched
+work before releasing backend ownership. Worker history keeps one immutable chain/head and at most one candidate;
+the backend retains two completed cycles plus pending work. Uncertain publication reuses saved bytes and may
+produce identical duplicates. This is local at-least-once execution, without broker-restart qualification,
+automatic failover, chain replacement, production fencing or durable Iceberg publication. Specification S1.11
+defines the protocol and its resource limits.
+
 ## 7. Flow shapes
 
 All shapes keep the record key `seriesId`, except where an operator changes the key on purpose.

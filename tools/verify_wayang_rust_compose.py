@@ -21,6 +21,9 @@ BINARY = ROOT / "target/wayang-rust-linux/release/tsx-runner"
 PROJECT = "opentsx-wayang-rust"
 COMPOSE = ["docker", "compose", "-p", PROJECT, "-f", "docker-compose.wayang-rust.yml"]
 FIXTURE = "org.opentsx.wayang.RustRolloutComposeFixture"
+CONTINUOUS_FIXTURE = "org.opentsx.wayang.RustContinuousComposeFixture"
+CONTINUOUS_PHASES = [("initial", 1), ("retry", 1), ("new-data", 2), ("restart", 4),
+                     ("after-restart", 5), ("stopped", 5)]
 SECRET_VALUES = []
 
 
@@ -122,7 +125,7 @@ def verify_build_sources(expected):
 
 def clear_run_artifacts():
     names = {"result.json", "fixture.json", "submitted-dag.txt", "verified.json"}
-    for phase in ["initial", "retry", "restart"]:
+    for phase in {"initial", "retry", "restart", *(name for name, _ in CONTINUOUS_PHASES)}:
         names.update({f"deployment-{phase}.json", f"browser-{phase}.json", f"browser-{phase}.png",
                       f"browser-{phase}-failed.png", f"verified-{phase}.json"})
     for name in names:
@@ -162,7 +165,15 @@ def restart_runtime(compose, environment):
     wait_driver(compose, environment)
 
 
-def java_setup(environment, private, repository, skip_build):
+def resume_with_backlog(java, bootstrap, compose, environment, blocks):
+    services = ["coordinator", "wayang", "runner-1", "runner-2", "runner-3"]
+    run(compose + ["stop", *services], environment, "runtime-stop", timeout=180)
+    run(java + ["append", bootstrap, str(DIRECTORY), str(blocks)], environment, "fixture-backlog")
+    run(compose + ["start", *services], environment, "runtime-start-again", timeout=180)
+    wait_driver(compose, environment)
+
+
+def java_setup(environment, private, repository, skip_build, fixture=FIXTURE):
     if not skip_build:
         run(["mvn", "-B", "-ntp", "-pl", "opentsx-wayang", "-am", "-DskipTests", "install"],
             environment, "java-build", timeout=1800)
@@ -170,7 +181,7 @@ def java_setup(environment, private, repository, skip_build):
     dependency_file = ROOT / "opentsx-wayang/target/classpath.txt"
     classes = ROOT / "opentsx-wayang/target/classes"
     test_classes = ROOT / "opentsx-wayang/target/test-classes"
-    if not dependency_file.is_file() or not (test_classes / (FIXTURE.replace(".", "/") + ".class")).is_file():
+    if not dependency_file.is_file() or not (test_classes / (fixture.replace(".", "/") + ".class")).is_file():
         raise RuntimeError("Java classes are missing; omit --skip-build")
     dependencies = dependency_file.read_text().strip()
     if not dependencies:
@@ -186,7 +197,7 @@ def java_setup(environment, private, repository, skip_build):
     if not executable:
         raise RuntimeError("JDK 21 is required")
     return [executable, f"-Djdk.net.hosts.file={private / 'hosts'}", "-cp",
-            os.pathsep.join([str(test_classes), str(classes), dependencies]), FIXTURE]
+            os.pathsep.join([str(test_classes), str(classes), dependencies]), fixture]
 
 
 def verify_views():
@@ -215,10 +226,90 @@ def verify_views():
             "verifiedRecords": 12, "distinctEpisodes": 12}
 
 
+def verify_continuous_views():
+    fixture = json.loads((DIRECTORY / "fixture.json").read_text())
+    initial = json.loads((DIRECTORY / "deployment-initial.json").read_text())
+    source_hash = hashlib.sha256((DIRECTORY / "submitted-dag.txt").read_bytes()).hexdigest()
+    sources = {source["topic"]: source["partitions"] for source in fixture["sources"]}
+    if len(sources) != 3 or initial["specHash"] != source_hash:
+        raise RuntimeError("the continuous source identity or complete-topic inventory changed")
+    placement = {item["inputTopic"]: item["node"] for item in initial["assignments"]}
+    previous = None
+    last_count = 0
+    for phase, blocks in CONTINUOUS_PHASES:
+        value = json.loads((DIRECTORY / f"deployment-{phase}.json").read_text())
+        browser = json.loads((DIRECTORY / f"browser-{phase}.json").read_text())
+        verified = json.loads((DIRECTORY / f"verified-{phase}.json").read_text())
+        if (any(value[key] != initial[key] for key in ("id", "specHash", "createdAtMicros"))
+                or value["profile"] != "continuous" or value["state"] != ("stopped" if phase == "stopped" else "idle")
+                or value["stopRequested"] != (phase == "stopped")
+                or not re.fullmatch(r"[0-9a-f]{64}", value["planHash"])):
+            raise RuntimeError("the continuous deployment changed its identity, clock or execution state")
+        if (browser["phase"] != phase or browser["assignments"] != 3 or browser["profile"] != "continuous"
+                or browser["blocks"] != str(blocks) or browser["submissions"] != int(phase in ("initial", "retry"))):
+            raise RuntimeError("continuous input required an unexpected browser resubmission")
+        cycle = decimal_counter(value["completedCycles"])
+        if cycle < last_count or cycle < 1 or value["currentCycle"] != str(cycle):
+            raise RuntimeError("the continuous cycle watermark moved backwards or remains unconfirmed")
+        last_count = cycle
+        total_input, total_output = 0, 0
+        assignments = value["assignments"]
+        if (len(assignments) != 3 or len({item["node"] for item in assignments}) != 3
+                or {item["inputTopic"]: item["node"] for item in assignments} != placement
+                or set(placement) != set(sources)):
+            raise RuntimeError("continuous placement split or moved a complete topic")
+        for assignment in assignments:
+            count = sources[assignment["inputTopic"]]
+            expected_positions = [{"partition": str(partition), "next": str(blocks)} for partition in range(count)]
+            input_count = decimal_counter(assignment["cumulativeInputRecords"])
+            if (assignment["partitionCount"] != str(count) or assignment["positions"] != expected_positions
+                    or input_count != count * blocks):
+                raise RuntimeError("continuous progress omits or replays part of a whole topic")
+            total_input += input_count
+            total_output += decimal_counter(assignment["cumulativeOutputRecords"])
+        if (value["inputRecords"] != str(total_input) or value["outputRecords"] != str(total_output)
+                or verified["inputRecords"] != total_input or verified["throughBlocks"] != blocks
+                or verified["verifiedRecords"] != total_output or verified["distinctEpisodes"] != total_output
+                or verified["workerReceipts"] != 3):
+            raise RuntimeError("continuous Java parity or cumulative record counts do not match")
+        if phase == "retry" and value != initial:
+            raise RuntimeError("an exact continuous retry changed its idle outcome")
+        if phase == "stopped" and any(value[key] != previous[key] for key in (
+                "planHash", "currentCycle", "completedCycles", "inputRecords", "outputRecords", "assignments")):
+            raise RuntimeError("stopping the continuous deployment changed its confirmed output")
+        previous = value
+    return {"schema": "opentsx.wayang-rust-continuous-compose-result.v1", "profile": "continuous",
+            "deployment": initial["id"], "specHash": source_hash, "createdAtMicros": initial["createdAtMicros"],
+            "planHash": previous["planHash"], "workers": 3, "completedCycles": previous["completedCycles"],
+            "inputRecords": previous["inputRecords"], "phases": [phase for phase, _ in CONTINUOUS_PHASES],
+            "verifiedRecords": total_output, "distinctEpisodes": total_output}
+
+
+def decimal_counter(value):
+    if not isinstance(value, str) or not re.fullmatch(r"0|[1-9][0-9]*", value):
+        raise RuntimeError("continuous counters must be canonical nonnegative decimal strings")
+    return int(value)
+
+
+def verify_continuous(java, browser, compose, bootstrap, environment):
+    for phase, blocks in CONTINUOUS_PHASES:
+        if phase == "restart":
+            resume_with_backlog(java, bootstrap, compose, environment, blocks)
+        elif phase in ("new-data", "after-restart"):
+            run(java + ["append", bootstrap, str(DIRECTORY), str(blocks)], environment, f"fixture-{phase}")
+        run(browser + ["--phase", phase, "--blocks", str(blocks)], environment, f"browser-{phase}", timeout=900)
+        run(java + ["verify", bootstrap, str(DIRECTORY), str(DIRECTORY / f"deployment-{phase}.json"),
+                    str(DIRECTORY / "submitted-dag.txt"), str(blocks)], environment, f"parity-{phase}", timeout=240)
+        shutil.copyfile(DIRECTORY / "verified.json", DIRECTORY / f"verified-{phase}.json")
+    return verify_continuous_views()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Verify an actual UI graph through Wayang and three whole-topic Rust workers.")
     parser.add_argument("--skip-build", action="store_true", help="reuse matching Java, Rust and frontend build artifacts")
     parser.add_argument("--keep", action="store_true", help="retain this isolated project and its private state after verification")
+    parser.add_argument("--profile", choices=["bounded", "continuous"], default="bounded",
+                        help="verify bounded replay or continuous input and restart")
     parser.add_argument("--node", default=shutil.which("node"), help="Node 24.22.2 executable")
     parser.add_argument("--playwright-module", default="playwright", help="Playwright 1.62.1 package name or absolute module directory")
     args = parser.parse_args()
@@ -284,7 +375,8 @@ def execute(args, environment, broker_port, ui_port):
         signature = source_signature()
         if args.skip_build and (not stamp.is_file() or stamp.read_text().strip() != signature):
             raise RuntimeError("build artifacts do not match current sources; omit --skip-build")
-        java = java_setup(environment, private, repository, args.skip_build)
+        java = java_setup(environment, private, repository, args.skip_build,
+                          CONTINUOUS_FIXTURE if args.profile == "continuous" else FIXTURE)
         if not args.skip_build:
             frontend_environment = dict(environment, VITE_API_BASE_URL="")
             run([shutil.which("npm"), "ci", "--no-audit", "--no-fund"], frontend_environment, "frontend-install",
@@ -305,7 +397,7 @@ def execute(args, environment, broker_port, ui_port):
         verify_build_sources(signature)
         run(compose + ["up", "--detach", "postgres", "kafscale-broker"], environment, "data-start", timeout=180)
         bootstrap = f"127.0.0.1:{broker_port}"
-        run(java + ["ready", bootstrap], environment, "broker-ready", timeout=210)
+        run(java[:-1] + [FIXTURE, "ready", bootstrap], environment, "broker-ready", timeout=210)
         run(java + ["prepare", bootstrap, str(DIRECTORY)], environment, "fixture-prepare")
         run(compose + ["up", "--detach", "runner-1", "runner-2", "runner-3", "wayang", "backend", "coordinator", "frontend"],
             environment, "runtime-start", timeout=240)
@@ -314,15 +406,18 @@ def execute(args, environment, broker_port, ui_port):
         wait_driver(compose, environment)
         browser = [args.node, str(ROOT / "tools/wayang_rust_browser.mjs"), "--base", base,
                    "--fixture", str(DIRECTORY / "fixture.json"), "--credentials", str(private / "credentials.json"),
-                   "--output", str(DIRECTORY), "--playwright-module", args.playwright_module]
-        for phase in ["initial", "retry", "restart"]:
-            if phase == "restart":
-                restart_runtime(compose, environment)
-            run(browser + ["--phase", phase], environment, f"browser-{phase}", timeout=900)
-            run(java + ["verify", bootstrap, str(DIRECTORY), str(DIRECTORY / f"deployment-{phase}.json"),
-                        str(DIRECTORY / "submitted-dag.txt")], environment, f"parity-{phase}", timeout=240)
-            shutil.copyfile(DIRECTORY / "verified.json", DIRECTORY / f"verified-{phase}.json")
-        result = verify_views()
+                   "--output", str(DIRECTORY), "--playwright-module", args.playwright_module, "--profile", args.profile]
+        if args.profile == "continuous":
+            result = verify_continuous(java, browser, compose, bootstrap, environment)
+        else:
+            for phase in ["initial", "retry", "restart"]:
+                if phase == "restart":
+                    restart_runtime(compose, environment)
+                run(browser + ["--phase", phase], environment, f"browser-{phase}", timeout=900)
+                run(java + ["verify", bootstrap, str(DIRECTORY), str(DIRECTORY / f"deployment-{phase}.json"),
+                            str(DIRECTORY / "submitted-dag.txt")], environment, f"parity-{phase}", timeout=240)
+                shutil.copyfile(DIRECTORY / "verified.json", DIRECTORY / f"verified-{phase}.json")
+            result = verify_views()
         (DIRECTORY / "result.json").write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, sort_keys=True), flush=True)
     except (OSError, RuntimeError, ValueError) as error:

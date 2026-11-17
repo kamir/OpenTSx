@@ -32,6 +32,9 @@ checks, unit conversion and a trailing resample. The separate
 [local UI rollout](../devguide/integration/wayang-rust-compose.md) uses `RustRollout` with `DagToWayang.parameters`
 and a custom Rust platform. Its logical sources, union, fused clean chain and sink form one Wayang stage; complete
 fragments run on HTTP workers. It does not expand the original local Java compiler's sink or operator scope.
+The [continuous local target](../devguide/integration/wayang-rust-continuous.md) executes successive finite cuts on
+the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
+cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
 
 ## Analyze DFA
 

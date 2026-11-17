@@ -1,6 +1,6 @@
 # Deliver UI DAGs through Wayang to Java and Rust nodes
 
-Use this plan with the implemented local bounded rollout on the `d9f29a1` source baseline and Apache Wayang 1.1.1,
+Use this plan with the implemented local bounded and continuous profiles and Apache Wayang 1.1.1,
 inspected on 2026-11-17.
 
 You need [concept 20](../../datamodel-2026/20-WAYANG-TS-OPERATORS.md), its
@@ -13,11 +13,16 @@ distinct IDs/hashes, while preserving the original `specHash`. Private preparati
 checks precede activation. Completion requires every worker's acknowledged checkpoint and verified receipt.
 Partial activation remains at least once and can expose a written prefix.
 
+The [continuous UI profile](wayang-rust-continuous.md) advances acknowledged finite cuts on the same whole-topic
+bindings. It persists every increment before dispatch, restores worker-local state, retains cumulative ownership
+through idle and reconciles dispatched work before Stop. One immutable chain is retained per worker; production
+replacement and fencing remain outside this profile.
+
 The separate [standalone replay](rust-runner-local.md) fixture runs three independent bounded jobs.
 [Shared-contract validation](wayang-shared-contracts.md) remains an offline library boundary.
 The Java [`DagToWayang`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java) compiles local clean
 DAGs; [`RustRollout`](../../../opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java) reuses its parameter
-validation and builds the connected remote Rust stage. The complete continuous/signed fleet and bounded Iceberg
+validation and builds the connected remote Rust stage. The signed fleet and bounded Iceberg
 publication profiles below remain separate delivery work.
 
 ## Keep one logical DAG and explicit execution guarantees
@@ -47,16 +52,16 @@ Editable [deployment UML](uml/wayang-rust-deployment.puml) and [PNG](uml/wayang-
 | --- | --- | --- |
 | Local bounded Kafka, implemented | Freeze complete source cuts and accepted clock in the PostgreSQL plan. Workers prepare capped input/output privately and retain saved candidate bytes for identical activation retry. | All worker receipts verify finite completion after output acknowledgements. Partial activation is at least once, without atomic publication. |
 | Bounded storage, including Iceberg | Pin a source cut; persist original records, schema/algorithm documents and a checksum-verified seal. Retry the entire sealed prefix from empty state for the first capped route. | Verify private output and retained-state manifests, then publish an authoritative result pointer. Success means a verified finite result. |
-| Continuous Kafka/Rust | Persist concrete starts and per-partition state; checkpoint only acknowledged output. Keep at-least-once delivery and deterministic duplicate identities explicit. | Deployment acceptance returns a durable handle. Progress and analytics continue until stopped or failed; acceptance is not finite-result completion. |
+| Local continuous Kafka/Rust, implemented | Persist successive finite cuts, predecessor hashes, fixed whole-topic placement and worker-local state. Retain cumulative identity ownership and checkpoint only acknowledged output. | Return a durable deployment handle and cumulative progress. Idle retains ownership; Stop reconciles dispatched output. Publication is at least once, without fleet replacement or stale-writer fencing. |
 
 The first assignment format covers Kafka cuts. A bounded Iceberg adapter must bind its sealed inventory to the
 same semantic and artifact contracts; it is not implemented by the Kafka assignment validator.
 The local Rust deployment proof is independent of the complete Iceberg production route or full Java catalog.
 
-## Build on the explicit bounded orchestration boundary
+## Build on the explicit orchestration boundary
 
-The workbench has an explicit **Run bounded with Wayang** choice and capability validation. The authenticated
-[bounded route](../../../opentsx-saas-backend/app/api/wayang.py) persists the plan in PostgreSQL; a separate
+The workbench has explicit bounded and continuous Wayang choices and capability validation. The authenticated
+[deployment route](../../../opentsx-saas-backend/app/api/wayang.py) persists plans in PostgreSQL; a separate
 [coordinator](../../../opentsx-saas-backend/app/wayang_worker.py) reconciles it under a database advisory lock.
 Existing retrieval/vector and Flink deployment routes retain their behavior.
 The table distinguishes the broader required boundary from this implemented local subset.
@@ -82,9 +87,9 @@ Editable [rollout UML](uml/wayang-rust-rollout.puml) and [PNG](uml/wayang-rust-r
 
 ## Set the rollout and state rules
 
-The implemented bounded prototype assigns distinct whole topics to one to three HTTP workers and uses the three-operation
-cleaning subset. The [local guide](wayang-rust-compose.md) records its current contracts and acceptance helper.
-The following rules beyond that local profile remain production/continuous acceptance requirements.
+The implemented local profiles assign distinct whole topics to one to three HTTP workers and use the three-operation
+cleaning subset. The [bounded guide](wayang-rust-compose.md) and [continuous guide](wayang-rust-continuous.md) record
+their contracts and acceptance helpers. The following rules remain production fleet acceptance requirements.
 No automatic failover or rescaling is admitted until stale-output enforcement is qualified.
 Different aliases for one broker/topic must resolve to one authoritative source identity before ownership checks.
 Prove whole-topic ownership and complete internal cursor coverage against the admitted inventory.
@@ -104,7 +109,8 @@ Database restore requires stopping/revoking pre-restore generations before accep
 Checkpoint envelopes bind state ABI, operator/algorithm versions, source cut/continuation, fragment semantics,
 last acknowledged outputs and exact next input positions. Reject incompatible state by default.
 Reset requires an explicit new generation and admitted start policy; cross-runtime checkpoint portability is
-not promised by operator-output parity. Fixed provenance clocks are part of same-request bounded replay.
+not promised by operator-output parity. Fixed provenance clocks are part of bounded replay and each immutable
+continuous deployment.
 
 ## Resolve the remaining contracts before production fleet activation
 
@@ -131,11 +137,11 @@ Planning IDs below are local work packages, not created issue numbers. Owners ar
 | Package | Dependencies | Deliverable and acceptance gate |
 | --- | --- | --- |
 | U00: shared foundation | PR #258 baseline | Implemented assignment schema, Java/Rust validators and shared generated vectors; run all cases and structural schema checks. Scope remains offline. |
-| U01: deployment contract; architecture/backend | U00 | Local bounded plan and request identities, complete cuts, output binding, binary/state ABI and refusal checks are implemented in `RustRollout`. Production channel incarnation/residency policy and general fleet contract remain open. |
+| U01: deployment contract; architecture/backend | U00 | Local bounded and continuous plan/request identities, complete cuts, predecessor/cursor continuity, output binding and binary/state ABI checks are implemented. Production incarnation/residency policy and general fleet contracts remain open. |
 | U02: driver lowering; Wayang owner | U01 | Implemented custom Rust logical/physical operators, mappings, topology channel and complete-stage executor. Deterministic tests exercise three connected sources, preserved UI IDs, private prepare and receipt/retry failures. Costs remain placeholders and node placement remains static. |
-| U03: durable control; backend owner | U01 | Local PostgreSQL deployment/topic-ownership journal and standalone advisory-lock coordinator are implemented. Exact UI text is accepted once installation-wide and retries preserve the frozen plan/clock. Uncertain publication retains ownership. Production migrations, per-site delivery sequence, restore fencing and general retire protocol remain open. |
-| U04: minimal Rust runner; Rust owner | U00, U01 | Local bounded subset implemented: pass-through, Avro/series IDs, range checks, unit conversion, trailing resample, caps, receipts and retained state. Shared vectors and acknowledgement/checkpoint regressions exist. The standalone three-topic Compose fixture checks Java output and wire partitioning. Full cross-target/conformance qualification remains separate. |
-| U05: UI-to-three-worker local prototype; application/platform | U02, U03, U04 | Implemented explicit workbench target and browser/Compose helper over three whole topics with one, two and three partitions. Acceptance requires actual output/receipt equality after initial execution, exact UI retry and worker/driver/coordinator restart. Run evidence is required; this does not qualify production fleet operation. |
+| U03: durable control; backend owner | U01 | PostgreSQL deployment/topic ownership, continuous control, bounded cycle history and the advisory-lock coordinator are implemented. Exact source/clock and each pending plan survive restart; idle and uncertainty retain ownership. Durable Stop reconciles dispatched work. Restore fencing and general retire remain open. |
+| U04: minimal Rust runner; Rust owner | U00, U01 | Local bounded replay and continuous increments implement pass-through, range checks, unit conversion and trailing resample. One atomic head/candidate checkpoint retains state, cumulative owners and exact retries. One immutable continuous chain is retained per worker. Full cross-target/conformance qualification remains separate. |
+| U05: UI-to-three-worker local prototype; application/platform | U02, U03, U04 | Explicit bounded/continuous targets and Compose profiles cover whole topics with one, two and three partitions. Continuous acceptance adds live input, downtime backlog, stateful restart, later input and Stop against Java. Actual run evidence is required; this does not qualify production fleet operation. |
 | U06: production ownership and rollout; platform/security | U05; approvals | Enforce stale-output rejection, policy/signatures, resource limits, staged rollout, retention and restore runbooks. Network-partition, partial activation and operating qualification before production. |
 | U07: catalog expansion; algorithm owners | Per-operator vectors | Continue A2/A3 Java kernels and Rust ports without blocking U02/U04 on every operator. No duplicate generator or conflicting ownership of shared algorithm fixtures. |
 | U08: bounded storage profile; storage/backend | U00, U01, U03; completion requires U02 and a qualified bounded executor plus selected U07 kernels | Snapshot acquisition, durable Avro seal, actual bounded Wayang execution, retained-state parity, private Iceberg staging and pointer-aware reads. Independently verify both tables and reconcile ambiguous publication. Storage work may start in parallel. |

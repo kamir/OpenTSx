@@ -10,7 +10,9 @@ function reason(error: unknown): string {
   return typeof detail === 'string' ? detail : error instanceof Error ? error.message : String(error);
 }
 
-export default function WayangRunPanel({ onSave }: { onSave: () => Promise<number | null> }) {
+export default function WayangRunPanel({ onSave, profile = 'bounded' }: {
+  onSave: () => Promise<number | null>; profile?: 'bounded' | 'continuous';
+}) {
   const flow = useFlow();
   const saved = flow.wayang;
   const localConfiguration = useRef(saved);
@@ -29,7 +31,7 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
   const signedIn = !!localStorage.getItem('access_token');
   const configuration = (value = fields): WayangConfig => ({ inputTopics: splitEntries(value.topics),
     seriesIds: splitEntries(value.series), nodeId: value.nodeId, system: value.system.trim(),
-    signal: value.signal.trim(), outputTopic: value.outputTopic.trim() });
+    signal: value.signal.trim(), outputTopic: value.outputTopic.trim(), ...(profile === 'continuous' ? { profile } : {}) });
   const update = (key: keyof typeof fields, value: string) => {
     const next = { ...fields, [key]: value };
     setFields(next);
@@ -53,7 +55,8 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
       .catch((failure) => { if (active) setError(reason(failure)); });
     return () => { active = false; };
   }, [signedIn]);
-  const pending = deployments.some((deployment) => deployment.state === 'queued' || deployment.state === 'running');
+  const visibleDeployments = deployments.filter((deployment) => (deployment.profile ?? 'bounded') === profile);
+  const pending = visibleDeployments.some((deployment) => ['queued', 'running', 'idle', 'stopping'].includes(deployment.state));
   useEffect(() => {
     if (!signedIn || !pending) return;
     let active = true;
@@ -63,6 +66,10 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
     }, 2000);
     return () => { active = false; clearInterval(timer); };
   }, [signedIn, pending]);
+  const available = capabilities?.canRun && (profile === 'bounded' || capabilities.profiles?.includes('continuous'));
+  const stopped = profile === 'continuous' && visibleDeployments.some((deployment) =>
+    deployment.flowId === flow.savedId && deployment.state === 'stopped');
+  const title = profile === 'continuous' ? 'Continuous' : 'Bounded';
   let dagText = '';
   let blocker: string | null = null;
   try {
@@ -78,8 +85,21 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
       const id = await onSave();
       if (id === null) throw new Error('Save the flow to your account before running it.');
       const exactText = buildWayangDag(useFlow.getState(), configuration(), capabilities?.operators ?? []);
-      const deployment = await wayangAPI.deploy(id, exactText);
+      const deployment = profile === 'continuous' ? await wayangAPI.deploy(id, exactText, profile)
+        : await wayangAPI.deploy(id, exactText);
       setDeployments((current) => [deployment, ...current.filter((row) => row.id !== deployment.id)]);
+    } catch (failure) {
+      setError(reason(failure));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const stop = async (id: string) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const deployment = await wayangAPI.stop(id);
+      setDeployments((current) => current.map((item) => item.id === id ? deployment : item));
     } catch (failure) {
       setError(reason(failure));
     } finally {
@@ -88,13 +108,22 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
   };
   return (
     <fieldset className="wb-wayang-run">
-      <legend>Bounded Wayang on Rust</legend>
-      <p>Run the selected cleaning chain to a frozen Kafka cut. Each selected topic stays whole on one worker.
-        This target is separate from the continuous Java processor and Flink execution.</p>
+      <legend>{title} Wayang on Rust</legend>
+      {profile === 'continuous' ? <p>Keep reading each whole topic from its last verified positions.
+        Operator state continues between capped cycles. Stop waits for any in-flight cycle to reconcile.
+        This local worker profile retains one continuous chain; a replacement requires resetting its disposable state.</p>
+        : <p>Run the selected cleaning chain to a frozen Kafka cut. Each selected topic stays whole on one worker.
+          This target is separate from the continuous Java processor and Flink execution.</p>}
       {error && <p role="alert">{error}</p>}
-      <ul aria-label="Bounded Wayang deployments">
-        {deployments.map((deployment) => <li key={deployment.id}>
-          <p role="status"><strong>Bounded deployment {deployment.id}: {deployment.state}</strong></p>
+      <ul aria-label={`${title} Wayang deployments`}>
+        {visibleDeployments.map((deployment) => <li key={deployment.id}>
+          <p role="status"><strong>{title} deployment {deployment.id}: {deployment.state}</strong></p>
+          {profile === 'continuous' && <>
+            <p>Cycle {deployment.currentCycle}; {deployment.completedCycles} completed cycles</p>
+            <p>{deployment.inputRecords} total input records; {deployment.outputRecords} total output records</p>
+            {deployment.state !== 'stopped' && <button disabled={busy || deployment.stopRequested}
+              onClick={() => stop(deployment.id)}>Stop deployment {deployment.id}</button>}
+          </>}
           {deployment.error && <p>{deployment.error}</p>}
           <ul>{deployment.assignments.map((assignment) => <li key={assignment.node}>
             <code>{assignment.inputTopic}</code>: {assignment.partitionCount} internal partitions on {assignment.node};{' '}
@@ -104,6 +133,10 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
               : 'Record counts await a verified receipt.'}</p>
             {assignment.receipt && <details><summary>Worker receipt</summary>
               <pre>{JSON.stringify(assignment.receipt, null, 2)}</pre></details>}
+            {profile === 'continuous' && <>
+              <p>{assignment.cumulativeInputRecords} cumulative input records; {assignment.cumulativeOutputRecords} cumulative output records</p>
+              <p>Completed positions: {assignment.positions?.map((position) => `${position.partition}: ${position.next}`).join(', ')}</p>
+            </>}
             {assignment.error && <p>{assignment.error}</p>}
           </li>)}</ul>
           <details><summary>Run audit</summary><dl>
@@ -136,13 +169,15 @@ export default function WayangRunPanel({ onSave }: { onSave: () => Promise<numbe
       <label className="wb-param">Output topic
         <input aria-label="Rust output topic" value={fields.outputTopic} onChange={(e) => update('outputTopic', e.target.value)} />
       </label>
-      {!signedIn && <p>Sign in before running a bounded deployment.</p>}
-      {signedIn && !capabilities?.canRun && <p>{capabilities?.reason ?? 'Checking the bounded target.'}</p>}
+      {!signedIn && <p>Sign in before running a {profile} deployment.</p>}
+      {signedIn && !capabilities?.canRun && <p>{capabilities?.reason ?? `Checking the ${profile} target.`}</p>}
+      {signedIn && capabilities?.canRun && !available && <p>This installation does not advertise the continuous Rust profile.</p>}
       {blocker && <p className="wb-muted">{blocker}</p>}
-      <button disabled={!signedIn || !capabilities?.canRun || !!blocker || busy} onClick={run}>
-        {busy ? 'Queuing bounded run' : 'Run bounded with Wayang'}
-      </button>
-      {dagText && <details><summary>Review bounded DAG</summary><pre data-testid="wayang-dag-preview">{dagText}</pre></details>}
+      {stopped ? <p>This deployment is stopped. Reset disposable worker state before deploying a replacement.</p>
+        : <button disabled={!signedIn || !available || !!blocker || busy} onClick={run}>
+          {busy ? `Queuing ${profile} run` : profile === 'continuous' ? 'Run continuously with Wayang' : 'Run bounded with Wayang'}
+        </button>}
+      {dagText && <details><summary>Review {profile} DAG</summary><pre data-testid="wayang-dag-preview">{dagText}</pre></details>}
     </fieldset>
   );
 }
