@@ -201,7 +201,7 @@ the two whole series, because a continuing input has no whole series.
 
 Status of A3.3 on 2026-11-17, JDK 21: `TsxPairEsWayangTest` executes the four
 sampled-series cases through Wayang, both together and with restored state
-between increments. The four event-list cases remain exact kernel tests.
+between increments. The four event-list cases remain kernel tests.
 All 11 native ES tests pass, including unsigned 32-bit seed conversion beyond
 the signed long range and Workbench-compatible numeric labels.
 
