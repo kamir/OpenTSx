@@ -220,6 +220,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native entropy windows validate lengths and finite matching coordinate/value vectors, advance by at least one
+  sample and clip partial cuts to the available data. The `ENTROPY` dialog handles cancellation and invalid
+  selections or input without opening a chart or recording a transformation. Native discretization is retained.
+
 - Native table, chart and caption saving reports the failed destination and completed outputs in the dialog.
   Each file is prepared and replaced atomically; a failure preserves that destination and stops later outputs.
   Table and caption text use strict UTF-8, while table layouts and 800 by 600 PNG dimensions are retained.

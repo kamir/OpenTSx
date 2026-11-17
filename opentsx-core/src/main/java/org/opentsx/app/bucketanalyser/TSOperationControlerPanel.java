@@ -812,13 +812,34 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         String source = this.label;
         String target = operationPrefix + this.label;
 
-        int l = Integer.parseInt(javax.swing.JOptionPane.showInputDialog("Length: "));
-
         Vector<TimeSeriesObject> slidingWindowResults = new Vector<TimeSeriesObject>();
-
-        for (TimeSeriesObject comp : this.rows) {
-
-            slidingWindowResults.add(comp.calcEntropyForWindow(l));
+        try {
+            if (rows == null || rows.isEmpty()) {
+                throw new IllegalArgumentException("Select at least one series for entropy");
+            }
+            for (TimeSeriesObject comp : rows) {
+                if (comp == null || comp.getXValues() == null || comp.getYValues() == null
+                        || comp.getXValues().size() != comp.getYValues().size() || comp.getYValues().size() < 2) {
+                    throw new IllegalArgumentException("Entropy needs at least two samples with matching coordinates");
+                }
+            }
+            String input = JOptionPane.showInputDialog(this, "Window length (samples):");
+            if (input == null) return;
+            int length;
+            try {
+                length = Integer.parseInt(input);
+            } catch (NumberFormatException failure) {
+                throw new IllegalArgumentException("Entropy window length must be a positive integer", failure);
+            }
+            if (length <= 0) {
+                throw new IllegalArgumentException("Entropy window length must be a positive integer");
+            }
+            for (TimeSeriesObject comp : rows) {
+                slidingWindowResults.add(comp.calcEntropyForWindow(length));
+            }
+        } catch (IllegalArgumentException failure) {
+            JOptionPane.showMessageDialog(this, failure.getMessage(), "Entropy failed", JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
         MultiChart.open(slidingWindowResults, this.jRadioButton1.isSelected(), target);

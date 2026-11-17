@@ -202,6 +202,13 @@ validation message. Window starts follow the first series; every series contribu
 each nominal window, including the final partial window. See the
 [native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
 
+The native `ENTROPY` action accepts positive integer window lengths and finite series with matching coordinates.
+Cancelling or rejecting an input produces no chart or recorder entry. Window starts advance by at least one sample,
+partial cuts stop at the available data, and output coordinates identify sample-start indices. The native maximum
+normalization and modulo-100 discretization remain distinct from browser entropy binning. See
+[native entropy windows](../../opentsx-core/README.md#compute-native-entropy-windows) for the exact input requirements,
+error messages and regression checks.
+
 ### Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 
 * `PFDRecorder.toJSON()` is a preview. File export and the dynamic runtime accept only Kafka input,
