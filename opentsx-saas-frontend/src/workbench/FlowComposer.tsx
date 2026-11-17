@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, DagState, describeSink, topicConflict } from './deployments';
+import { DagList, DagState, describeSink, readDeployments, topicConflict } from './deployments';
 import { deployChecks } from './flow';
 import { FlowFilter, FlowSummary, NO_FLOW_FILTER, copyName, domainFacets, filterFlows, runPlan, stamp, summarize } from './flows';
 
@@ -144,8 +144,7 @@ export default function FlowComposer({ base, currentId, replaces, onOpen, onNew,
         if ('blocker' in plan) throw new Error(`the processor cannot run this flow yet. ${plan.blocker} Open it in the editor to change that`);
         if (!access?.canRun) throw new Error(access?.reason ?? 'this account may not deploy');
         // read anew: a flow started a moment ago in this run counts too
-        const res = await fetch(`${root}/v1/dags`, { signal: AbortSignal.timeout(10_000) }).catch(() => null);
-        const running = res?.ok ? ((await res.json()) as DagList).dags : [...dags.values()];
+        const running = (await readDeployments(`${root}/v1/dags`)).dags;
         const conflict = topicConflict(running, plan.dag, f.published, (await flowsAPI.list()).map(summarize));
         if (conflict) throw new Error(conflict);
         await dagsAPI.deploy(plan.yaml);

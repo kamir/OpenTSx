@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, describeSink, hasProcessor, topicConflict } from './deployments';
+import { DagList, describeSink, hasProcessor, readDeployments, topicConflict } from './deployments';
 import { summarize } from './flows';
 import { DeployCheck, dagName, flowIdOfDag, toDagYaml, useFlow } from './flow';
 
@@ -27,6 +27,7 @@ interface Props {
 export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, onSave }: Props) {
   const [access, setAccess] = useState<{ canRun: boolean; reason: string | null } | null>(null);
   const [list, setList] = useState<DagList | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const signedIn = !!localStorage.getItem('access_token');
@@ -47,10 +48,11 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(url);
-      setList(res.ok ? ((await res.json()) as DagList) : null);
-    } catch {
+      setList(await readDeployments(url));
+      setListError(null);
+    } catch (e) {
       setList(null);
+      setListError(e instanceof Error ? e.message : String(e));
     }
   }, [url]);
 
@@ -89,7 +91,8 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
     const now = useFlow.getState();
     const topics = now.nodes.flatMap((n) => (n.sinkTopic ? [n.sinkTopic] : []));
     const stored = (await flowsAPI.list()).map(summarize);
-    const conflict = topicConflict(list?.dags ?? [], dagName(now.domain, now.track, id), topics, stored);
+    const { dags } = await readDeployments(url);
+    const conflict = topicConflict(dags, dagName(now.domain, now.track, id), topics, stored);
     if (conflict) throw new Error(conflict);
     const answer = await dagsAPI.deploy(toDagYaml(now));
     await flowsAPI.patch(id, { status: 'active' });
@@ -136,7 +139,7 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
       )}{' '}
       <button
         className="wb-primary"
-        disabled={!allowed || !!blocker || !!busy}
+        disabled={!allowed || !!blocker || !!busy || list === null}
         onClick={() => act('Deploy', deploy, (dag) => `Saved and deployed as ${dag}. The processor takes it up within a few seconds.`)}
       >
         {busy === 'Deploy' ? 'Deploying' : 'Deploy'}
@@ -152,7 +155,11 @@ export default function DeploymentsPanel({ base, blocker, checks, onMakeVector, 
       )}
 
       {list === null ? (
-        <p className="wb-muted">The state of the deployments cannot be read from {url}.</p>
+        <p className="wb-muted">
+          {listError === null
+            ? `Reading the state of the deployments from ${url}.`
+            : `Deploy stays off: ${listError}. Another deployment may write the same topic.`}
+        </p>
       ) : list.dags.length === 0 ? (
         <p className="wb-muted">Nothing is deployed in this domain.</p>
       ) : (

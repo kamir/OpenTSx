@@ -57,6 +57,27 @@ export function hasProcessor(d: DagState, now: string): boolean {
   return (Date.parse(now) - newest) / 1000 <= STALE_SECONDS;
 }
 
+/**
+ * Reads what is deployed now. A list that cannot be read is an error: without it the topic guard would let a second
+ * deployment write a topic that another account or the command line already writes.
+ */
+export async function readDeployments(url: string): Promise<DagList> {
+  let reason: string;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (res.ok) {
+      const list = (await res.json()) as DagList;
+      if (Array.isArray(list?.dags)) return list;
+      reason = 'the answer has no list of deployments';
+    } else {
+      reason = `HTTP ${res.status}`;
+    }
+  } catch (e) {
+    reason = e instanceof Error ? e.message : String(e);
+  }
+  throw new Error(`the deployments could not be read from ${url} (${reason}); try again`);
+}
+
 /** Topics several flows write on purpose. */
 const SHARED = /^tsx\.[a-z0-9_-]+\.(clean|features)\.v2$/;
 

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { chainTo, cleanChecks, cleanTopic, contextOf, deployChecks, isCleanSink, runBlocker, toDagYaml, toDefinition } from './flow';
 import { topicConflict } from './deployments';
 import { summarize, runPlan } from './flows';
-import { OP_BY_ID } from './ops';
+import { OP_BY_ID, defaultParams } from './ops';
 import { Bucket, FlowNode, Params, SignalContext } from './types';
 
 // The same cases run in Java: opentsx-retrieval, CleanChainTest.
@@ -41,9 +41,57 @@ describe('cleaning operators against the test vectors shared with the processor'
   }
 });
 
+describe('parameters the processor refuses', () => {
+  const wind: Bucket = {
+    name: 'wind',
+    xKind: 'time',
+    xLabel: 't [s]',
+    yLabel: 'm/s',
+    t0Ms: Date.parse('2026-10-01T00:00:00Z'),
+    series: [{ id: 's', label: 's', unit: 'm/s', x: Float64Array.from([0, 60, 120]), y: Float64Array.from([4, 8, 13]) }],
+  };
+  const apply = (op: string, params: Params) => () => OP_BY_ID[op].apply(wind, params);
+  const shear = { fromM: 10, toM: 120, alpha: 0.11 };
+  const curve = { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25 };
+
+  it('are refused in the workbench too, with the parameter named', () => {
+    const refused: [string, Params, string][] = [
+      ['model.wind-shear', {}, 'fromM: missing; expected a number above 0'],
+      ['model.wind-shear', { ...shear, fromM: 0 }, 'fromM: "0" is out of range; expected a number above 0'],
+      ['model.wind-shear', { ...shear, toM: -1 }, 'toM: "-1" is out of range; expected a number above 0'],
+      ['model.wind-shear', { ...shear, toM: '' }, 'toM: empty value; expected a number above 0'],
+      ['model.wind-shear', { fromM: 10, toM: 120 }, 'alpha: missing; expected a number from 0 to 0.6'],
+      ['model.wind-shear', { ...shear, alpha: 0.7 }, 'alpha: "0.7" is out of range; expected a number from 0 to 0.6'],
+      ['model.wind-shear', { ...shear, alpha: -0.1 }, 'alpha: "-0.1" is out of range; expected a number from 0 to 0.6'],
+      ['model.wind-shear', { ...shear, alpha: '0.1' }, 'alpha: "0.1" is not a number; expected a number from 0 to 0.6'],
+      ['model.wind-shear', { ...shear, alpha: ' 0.1 ' }, 'alpha: "0.1" is not a number; expected a number from 0 to 0.6'],
+      ['model.wind-shear', { ...shear, alpha: ' ' }, 'alpha: empty value; expected a number from 0 to 0.6'],
+      ['model.power-curve', {}, 'ratedKw: missing; expected a number above 0'],
+      ['model.power-curve', { ...curve, ratedKw: 0 }, 'ratedKw: "0" is out of range; expected a number above 0'],
+      ['model.power-curve', { ...curve, cutIn: -1 }, 'cutIn: "-1" is out of range; expected a number of 0 or more'],
+      ['model.power-curve', { ...curve, ratedWind: 3 }, 'ratedWind: "3" is out of range; expected a number above cutIn 3'],
+      ['model.power-curve', { ...curve, cutOut: 12 }, 'cutOut: "12" is out of range; expected a number of at least ratedWind 12.5'],
+      ['model.power-curve', { ...curve, count: 0 }, 'count: "0" is out of range; expected a number above 0'],
+      ['model.power-curve', { ...curve, count: '' }, 'count: empty value; expected a number above 0'],
+      ['feature.lag', {}, 'steps: missing; expected a whole number from 1 to 100000'],
+      ['feature.lag', { steps: 0 }, 'steps: "0" is out of range; expected a whole number from 1 to 100000'],
+      ['feature.lag', { steps: 2.5 }, 'steps: "2.5" is out of range; expected a whole number from 1 to 100000'],
+      ['feature.lag', { steps: 100001 }, 'steps: "100001" is out of range; expected a whole number from 1 to 100000'],
+    ];
+    for (const [op, params, message] of refused) expect(apply(op, params), `${op} ${JSON.stringify(params)}`).toThrow(message);
+  });
+
+  it('take what the processor takes', () => {
+    for (const op of ['model.wind-shear', 'model.power-curve', 'feature.lag']) expect(apply(op, defaultParams(OP_BY_ID[op]))).not.toThrow();
+    expect(Array.from(OP_BY_ID['model.wind-shear'].apply(wind, { fromM: 10, toM: 10, alpha: 0.6 }).series[0].y)).toEqual([4, 8, 13]);
+    expect(Array.from(OP_BY_ID['model.power-curve'].apply(wind, curve).series[0].y)).toEqual(Array.from(OP_BY_ID['model.power-curve'].apply(wind, { ...curve, count: 1 }).series[0].y));
+    expect(Array.from(OP_BY_ID['feature.lag'].apply(wind, { steps: 100000 }).series[0].y)).toEqual([NaN, NaN, NaN]);
+  });
+});
+
 const context: SignalContext = {
   system: 'h2-chain',
-  systemTitle: 'Wasserstoffkette am Windpark',
+  systemTitle: 'Hydrogen chain at the wind park',
   signal: 'park/T02/WTUR.W',
   grade: 'raw',
   expect: { unit: 'kW', min: -100, max: 10000, interval: 'PT1S' },

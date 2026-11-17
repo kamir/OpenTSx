@@ -168,6 +168,19 @@ describe('alignment and coverage', () => {
     expect(half.y[1]).toBeCloseTo(90 / 120, 12);
   });
 
+  it('uses the defaults of the panel when apply is called without them', () => {
+    const b = park({ y: Float64Array.from({ length: 1800 }, (_, i) => gap(i)) });
+    for (const id of ['pair.coverage', 'pair.xcorr', 'pair.es']) {
+      const op = OP_BY_ID[id];
+      for (const p of [{ window: 120, step: 60 }, { window: 120, step: 60, fill: 'as-of' }] as Params[]) {
+        const bare = op.apply(b, p);
+        const panel = op.apply(b, { ...defaultParams(op), ...p });
+        expect(bare.note, `${id} ${JSON.stringify(p)}`).toBe(panel.note);
+        expect(bare.series.map((s) => s.y), `${id} ${JSON.stringify(p)}`).toEqual(panel.series.map((s) => s.y));
+      }
+    }
+  });
+
   it('takes the larger sampling interval as the clock', () => {
     const slow = { ...series('B', 10, 1800, (x) => Math.cos(x / 10)) };
     const out = coverage(park(slow), { window: 120, step: 60 });

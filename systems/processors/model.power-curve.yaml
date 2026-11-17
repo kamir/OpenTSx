@@ -21,7 +21,7 @@ params:
   - { name: count, type: number, default: 1, description: Number of turbines that see the same wind. Above 0. }
 semantics: { needs: point, deterministic: true, keeps: [time, series], origin: ESTIMATED }
 runtimes:
-  workbench: { status: available, note: "Defaults ratedKw 3000, cutIn 3, ratedWind 12.5, cutOut 25; the ranges are not checked." }
+  workbench: { status: available, note: "The panel starts with ratedKw 3000, cutIn 3, ratedWind 12.5, cutOut 25, count 1. Like the processor, apply refuses a missing ratedKw, cutIn, ratedWind or cutOut, ratedKw or count at or below 0, cutIn below 0, ratedWind at or below cutIn and cutOut below ratedWind." }
   processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#PowerCurve", note: "A step of the clean chain before a series sink (bin/opentsx vectors); the output unit is kW." }
   java: { status: available, class: "org.opentsx.windpark.sim.PowerCurve#powerKw", note: "The same curve for one turbine of a TurbineType of the windpark catalog, without count. Used by WindparkSimulator and PowerCurveAnalysis, tested through PowerCurveAnalysisTest." }
   python: { status: none }

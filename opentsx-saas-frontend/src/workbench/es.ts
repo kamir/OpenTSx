@@ -143,6 +143,7 @@ export function esSettings(p: Params): EsSettings {
 export const PAIR_ES: PairMethod = {
   id: 'pair.es',
   prefix: 'ES_',
+  minCoverage: 0.8,
   fields: ['q_total', 'q_ab', 'q_ba', 'q_rand'],
   yLabel: 'Q / q / Q_rand',
   settings: (p) => {

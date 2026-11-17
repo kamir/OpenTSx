@@ -30,8 +30,8 @@ runtimes:
   workbench:
     status: available
     note: >-
-      Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above are those of
-      the operator panel; a call of apply without them uses minCoverage 0.8 and maxAge 0.
+      Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above hold for the
+      operator panel and for a call of apply without them.
   processor: { status: planned, note: "TASK-015 phase 3: the pair methods as a stream phase on top of align.vector." }
   java: { status: none }
   python: { status: none }

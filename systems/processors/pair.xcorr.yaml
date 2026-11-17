@@ -37,8 +37,8 @@ runtimes:
       Operator "Cross-correlation", tab Multi-variate Analysis. Port of KreuzKorrelation.calcKRCoeffizient and
       CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in
       the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures,
-      also when it is negative. A window without spread in A or B gives NaN in all three fields. A call of apply
-      without maxAge uses 0.
+      also when it is negative. A window without spread in A or B gives NaN in all three fields. The defaults above
+      hold for the operator panel and for a call of apply without them.
   java:
     status: planned
     note: >-

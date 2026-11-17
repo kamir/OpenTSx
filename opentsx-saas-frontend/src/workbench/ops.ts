@@ -7,7 +7,7 @@
  * deviates from the Java code, the operator hint says so.
  */
 
-import { PAIRINGS, PAIR_COVERAGE, pairWindows } from './pairs';
+import { PAIRINGS, PAIR_COVERAGE, PAIR_MAX_AGE, PairMethod, pairWindows } from './pairs';
 import { mulberry32 } from './random';
 import { PAIR_XCORR } from './xcorr';
 import { PAIR_ES } from './es';
@@ -51,6 +51,21 @@ function num(p: Params, key: string, fallback: number): number {
   const v = Number(p[key]);
   return Number.isFinite(v) ? v : fallback;
 }
+
+/**
+ * A number parameter checked as the processor checks it (CleanChain): an absent one takes `absent` and is refused
+ * when that is NaN, and anything but a finite number for which `ok` holds is refused.
+ */
+function checked(p: Params, key: string, ok: (v: number) => boolean, allowed: string, absent = NaN): number {
+  const raw = p[key];
+  const v = raw ?? absent;
+  if (typeof v === 'number' && Number.isFinite(v) && ok(v)) return v;
+  const problem = raw === undefined || raw === null ? 'missing' : String(raw).trim() === '' ? 'empty value' : typeof raw === 'number' ? `"${raw}" is out of range` : `"${raw.trim()}" is not a number`;
+  throw new Error(`${key}: ${problem}; expected ${allowed}`);
+}
+
+/** The largest lag the processor keeps (CleanChain.MAX_WINDOW_VALUES). */
+const MAX_LAG = 100_000;
 
 function indexAxis(n: number): Float64Array {
   const x = new Float64Array(n);
@@ -386,11 +401,13 @@ function autoCorrelation(b: Bucket, p: Params): Bucket {
       const st = stats(s.y);
       const lags = Math.min(Math.floor(n / 2), cap);
       let c0 = 0;
-      for (let i = 0; i < n; i++) c0 += (s.y[i] - st.mean) ** 2;
+      for (let i = 0; i < n; i++) if (Number.isFinite(s.y[i])) c0 += (s.y[i] - st.mean) ** 2;
       const y = new Float64Array(lags);
       for (let k = 0; k < lags; k++) {
         let c = 0;
-        for (let i = 0; i + k < n; i++) c += (s.y[i] - st.mean) * (s.y[i + k] - st.mean);
+        for (let i = 0; i + k < n; i++) {
+          if (Number.isFinite(s.y[i]) && Number.isFinite(s.y[i + k])) c += (s.y[i] - st.mean) * (s.y[i + k] - st.mean);
+        }
         y[k] = c0 > 0 ? c / c0 : 0;
       }
       return { ...s, label: `AC_${s.label}`, unit: undefined, x: indexAxis(lags), y };
@@ -599,12 +616,11 @@ function windowed(b: Bucket, every: number, agg: string, name: string): Bucket {
   };
 }
 
-/**
- * Reference power curve of a wind turbine, times `count` turbines: what the wind offers. A model, not a measurement.
- * The same as CleanChain.PowerCurve in the processor.
- */
 function windShear(b: Bucket, p: Params): Bucket {
-  const factor = Math.pow(num(p, 'toM', 120) / num(p, 'fromM', 10), num(p, 'alpha', 0.11));
+  const fromM = checked(p, 'fromM', (v) => v > 0, 'a number above 0');
+  const toM = checked(p, 'toM', (v) => v > 0, 'a number above 0');
+  const alpha = checked(p, 'alpha', (v) => v >= 0 && v <= 0.6, 'a number from 0 to 0.6');
+  const factor = Math.pow(toM / fromM, alpha);
   return {
     ...b,
     name: `Hub_${b.name}`,
@@ -613,12 +629,16 @@ function windShear(b: Bucket, p: Params): Bucket {
   };
 }
 
+/**
+ * Reference power curve of a wind turbine, times `count` turbines: what the wind offers. A model, not a measurement.
+ * The same as CleanChain.PowerCurve in the processor.
+ */
 function powerCurve(b: Bucket, p: Params): Bucket {
-  const rated = num(p, 'ratedKw', 3000);
-  const cutIn = num(p, 'cutIn', 3);
-  const ratedWind = num(p, 'ratedWind', 12.5);
-  const cutOut = num(p, 'cutOut', 25);
-  const count = num(p, 'count', 1);
+  const rated = checked(p, 'ratedKw', (v) => v > 0, 'a number above 0');
+  const cutIn = checked(p, 'cutIn', (v) => v >= 0, 'a number of 0 or more');
+  const ratedWind = checked(p, 'ratedWind', (v) => v > cutIn, `a number above cutIn ${cutIn}`);
+  const cutOut = checked(p, 'cutOut', (v) => v >= ratedWind, `a number of at least ratedWind ${ratedWind}`);
+  const count = checked(p, 'count', (v) => v > 0, 'a number above 0', 1);
   const ci3 = cutIn * cutIn * cutIn;
   const kw = (w: number) =>
     Number.isNaN(w) ? NaN : w < cutIn || w > cutOut ? 0 : w >= ratedWind ? rated * count : (count * rated * (w * w * w - ci3)) / (ratedWind * ratedWind * ratedWind - ci3);
@@ -633,7 +653,7 @@ function powerCurve(b: Bucket, p: Params): Bucket {
 
 /** The value `steps` samples earlier; a gap until that many samples have passed. */
 function featureLag(b: Bucket, p: Params): Bucket {
-  const steps = Math.max(1, Math.round(num(p, 'steps', 1)));
+  const steps = checked(p, 'steps', (v) => Number.isInteger(v) && v >= 1 && v <= MAX_LAG, `a whole number from 1 to ${MAX_LAG}`);
   return mapY(b, `Lag${steps}_${b.name}`, (s) => ({ label: s.label, y: Float64Array.from(s.y, (_, i) => (i < steps ? NaN : s.y[i - steps])) }));
 }
 
@@ -760,8 +780,8 @@ const HIST_PARAMS = [
   { key: 'bins', label: 'bins', type: 'number' as const, default: 50, min: 2 },
 ];
 
-/** Parameters of every pair method (pairs.ts); `minCoverage` differs between them. */
-function pairParams(minCoverage: number): ParamDef[] {
+/** Parameters of every pair method (pairs.ts); the default of `minCoverage` differs between them. */
+function pairParams(method: PairMethod): ParamDef[] {
   return [
     { key: 'pairing', label: 'pairing', type: 'select', default: 'same', options: PAIRINGS },
     { key: 'window', label: 'window [s]', type: 'text', default: 'episode' },
@@ -769,8 +789,8 @@ function pairParams(minCoverage: number): ParamDef[] {
     { key: 'every', label: 'clock [s]', type: 'number', default: 0, min: 0 },
     { key: 'agg', label: 'agg', type: 'select', default: 'MEAN', options: VECTOR_AGGREGATIONS },
     { key: 'fill', label: 'fill', type: 'select', default: 'none', options: ['none', 'as-of'] },
-    { key: 'maxAge', label: 'max age [s]', type: 'number', default: 60, min: 0 },
-    { key: 'minCoverage', label: 'min coverage', type: 'number', default: minCoverage, min: 0, step: 0.05 },
+    { key: 'maxAge', label: 'max age [s]', type: 'number', default: PAIR_MAX_AGE, min: 0 },
+    { key: 'minCoverage', label: 'min coverage', type: 'number', default: method.minCoverage, min: 0, step: 0.05 },
   ];
 }
 
@@ -830,15 +850,15 @@ export const OPS: OpDef[] = [
   // Tab "Multi-variate Analysis": pair methods (EVOLUTION/TASK-015-multivariate-analysis.md, "Pair windows")
   { id: PAIR_COVERAGE.id, label: 'Pair coverage', group: 'multivariate', prefix: PAIR_COVERAGE.prefix, pfdOperation: 'PAIR_COVERAGE', inCatalog: false, multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} This method gives the coverage itself and the number of ticks per window: what the other pair methods will see.`,
-    params: pairParams(0), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },
+    params: pairParams(PAIR_COVERAGE), apply: (b, p, others) => pairWindows(PAIR_COVERAGE, b, p, others) },
   { id: PAIR_XCORR.id, label: 'Cross-correlation', group: 'multivariate', prefix: PAIR_XCORR.prefix, pfdOperation: 'PAIR_XCORR', inCatalog: false, multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} Per window: CC(k) for k from -lags to lags clock ticks. max is the peak of |CC| with its sign, lag its shift in seconds (lag > 0: B follows A), strength (|max| - mean) / std of CC over the lags. Port of KreuzKorrelation and CCFunction of WikiExplorer.NG.`,
-    params: [...pairParams(0.8), { key: 'lags', label: 'max lag [ticks]', type: 'number', default: 10, min: 0 }],
+    params: [...pairParams(PAIR_XCORR), { key: 'lags', label: 'max lag [ticks]', type: 'number', default: 10, min: 0 }],
     apply: (b, p, others) => pairWindows(PAIR_XCORR, b, p, others) },
   { id: PAIR_ES.id, label: 'Event synchronisation', group: 'multivariate', prefix: PAIR_ES.prefix, pfdOperation: 'PAIR_ES', inCatalog: false, multiInput: true, maxInputs: 2,
     hint: `${PAIR_HINT} Per window: events are local maxima above mean + sigma std; two events count as synchronous within half the distance to their neighbours (capped by tauMax when set). q_total is the share of synchronous events, q_ab the share where B follows A, q_ba where A follows B, q_rand q_total for B with its event intervals shuffled: the level chance gives. Port of event_sync.py (Quiroga, Kreuz and Grassberger).`,
     params: [
-      ...pairParams(0.8),
+      ...pairParams(PAIR_ES),
       { key: 'sigma', label: 'events above [std]', type: 'number', default: 2, step: 0.5 },
       { key: 'tauMax', label: 'tau max [s]', type: 'number', default: 0, min: 0 },
       { key: 'shuffles', label: 'shuffles', type: 'number', default: 10, min: 1 },

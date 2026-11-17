@@ -385,7 +385,7 @@ Puts series A and B on one clock and gives, for each window of a pair range, the
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `pair.coverage` | Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above are those of the operator panel; a call of apply without them uses minCoverage 0.8 and maxAge 0. |
+| workbench | available | operator `pair.coverage` | Operator "Pair coverage", tab Multi-variate Analysis. At most 200 pairs per run. The defaults above hold for the operator panel and for a call of apply without them. |
 | java | none |  |  |
 | python | none |  |  |
 | processor | planned |  | TASK-015 phase 3: the pair methods as a stream phase on top of align.vector. |
@@ -1897,7 +1897,7 @@ Computes the autocorrelation C(k) = sum_i (y_i − m)(y_(i+k) − m) / sum_i (y_
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `acf` | A series with a gap gives C(k) = 0 for every lag. |
+| workbench | available | operator `acf` | Values that are not finite are skipped: the mean and the denominator use the finite values, and C(k) sums only the pairs whose two values are finite. A sine of 400 values with period 50 and one gap gives C(k) within 0.01 of the gap-free result. |
 | java | none |  | The 2.x Swing button Auto-Correlation computes it inside TSOperationControlerPanel (opentsx-core), with no API and no test: the Pearson correlation of the series with a shifted copy, for lags up to half the length. |
 | python | none |  |  |
 | processor | none |  |  |
@@ -2036,7 +2036,7 @@ Puts series A and B on one clock and takes, in each window, the local maxima abo
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `pair.es` | Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field. Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. A call of apply without maxAge uses 0. |
+| workbench | available | operator `pair.es` | Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field. Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. The defaults above hold for the operator panel and for a call of apply without them. |
 | java | planned |  | TASK-015 P8.1 plans event synchronisation with the closed-form Q_rand calibration in a clean-room Java library. The 2.x ESCalc in opentsx-core (operator es) works on whole series. |
 | python | none |  | The Python package computes the same q_total, q_ab, q_ba and q_rand over whole series with EventSynchronization and surrogate_sync (operator es), not per pair window. |
 | processor | planned |  | TASK-015 phase 3: the pair methods as a stream phase on top of align.vector. |
@@ -2104,7 +2104,7 @@ Puts series A and B on one clock and computes in each window CC(k) = Σ (a[t] �
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `pair.xcorr` | Operator "Cross-correlation", tab Multi-variate Analysis. Port of KreuzKorrelation.calcKRCoeffizient and CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures, also when it is negative. A window without spread in A or B gives NaN in all three fields. A call of apply without maxAge uses 0. |
+| workbench | available | operator `pair.xcorr` | Operator "Cross-correlation", tab Multi-variate Analysis. Port of KreuzKorrelation.calcKRCoeffizient and CCFunction.calcStrength_VERSION_A of kamir/WikiExplorer.NG at 7b56e3d, equal to the original to 12 decimals in the 5 cases of the test vectors. Unlike the original, max and lag belong to the extreme that strength measures, also when it is negative. A window without spread in A or B gives NaN in all three fields. The defaults above hold for the operator panel and for a call of apply without them. |
 | java | planned |  | No Java cross-correlation exists. TASK-015 P8.1 plans a clean-room Java library for lagged cross-correlation with the link strengths l_adj, l_norm and l_trans; strength here is l_norm. |
 | python | none |  |  |
 | processor | planned |  | TASK-015 phase 3: the pair methods as a stream phase on top of align.vector. |
@@ -2418,7 +2418,7 @@ Gives every sample the value steps samples earlier, out[i] = in[i - steps], on t
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `feature.lag` | Default 1; steps is rounded to a whole number. |
+| workbench | available | operator `feature.lag` | The panel starts with steps 1. Like the processor, apply refuses a missing steps and steps that is not a whole number from 1 to 100000. |
 | java | none |  |  |
 | python | none |  |  |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#Lag` | A step of the clean chain before a series sink (bin/opentsx vectors). Keeps the last steps samples of each series between blocks. |
@@ -2522,7 +2522,7 @@ Turns wind speed at hub height into the power the wind offers count turbines: 0 
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `model.power-curve` | Defaults ratedKw 3000, cutIn 3, ratedWind 12.5, cutOut 25; the ranges are not checked. |
+| workbench | available | operator `model.power-curve` | The panel starts with ratedKw 3000, cutIn 3, ratedWind 12.5, cutOut 25, count 1. Like the processor, apply refuses a missing ratedKw, cutIn, ratedWind or cutOut, ratedKw or count at or below 0, cutIn below 0, ratedWind at or below cutIn and cutOut below ratedWind. |
 | java | available | `org.opentsx.windpark.sim.PowerCurve#powerKw` | The same curve for one turbine of a TurbineType of the windpark catalog, without count. Used by WindparkSimulator and PowerCurveAnalysis, tested through PowerCurveAnalysisTest. |
 | python | none |  |  |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#PowerCurve` | A step of the clean chain before a series sink (bin/opentsx vectors); the output unit is kW. |
@@ -2576,7 +2576,7 @@ Carries the wind speed measured at one height to another height by the power law
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
-| workbench | available | operator `model.wind-shear` | Defaults fromM 10, toM 120, alpha 0.11; the ranges are not checked. |
+| workbench | available | operator `model.wind-shear` | The panel starts with fromM 10, toM 120, alpha 0.11. Like the processor, apply refuses a missing fromM, toM or alpha, fromM or toM at or below 0 and alpha outside [0, 0.6]. |
 | java | none |  |  |
 | python | none |  |  |
 | processor | available | `org.opentsx.retrieval.clean.CleanChain#WindShear` | A step of the clean chain before a series sink (bin/opentsx vectors). Refuses fromM or toM at or below 0 and alpha outside [0, 0.6]. |

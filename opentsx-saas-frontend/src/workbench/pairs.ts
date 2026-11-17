@@ -45,6 +45,8 @@ export interface PairMethod {
   id: string;
   /** Prefix of the result bucket name. */
   prefix: string;
+  /** Default of minCoverage. */
+  minCoverage: number;
   fields: string[];
   yLabel: string;
   /** One value per field, in the order of `fields`; `p` are the parameters of the operator. */
@@ -71,8 +73,11 @@ export interface PairSettings {
 
 export const PAIRINGS = ['same', 'intersect'];
 
-/** Reads and checks the parameters of a pair operator. */
-export function pairSettings(p: Params): PairSettings {
+/** Default of maxAge in seconds. */
+export const PAIR_MAX_AGE = 60;
+
+/** Reads and checks the parameters of a pair operator; `minCoverageDefault` is the default of the method. */
+export function pairSettings(p: Params, minCoverageDefault: number): PairSettings {
   const pairing = String(p.pairing ?? 'same');
   if (!PAIRINGS.includes(pairing)) throw new Error(`Pairing "${pairing}" is unknown. Use same or intersect.`);
   const w = String(p.window ?? 'episode').trim();
@@ -82,8 +87,8 @@ export function pairSettings(p: Params): PairSettings {
   const every = Number(p.every) > 0 ? Number(p.every) : null;
   const agg = String(p.agg ?? 'MEAN');
   if (!VECTOR_AGGREGATIONS.includes(agg)) throw new Error(`Aggregate "${agg}" is unknown.`);
-  const maxAge = String(p.fill ?? 'none') === 'as-of' ? Math.max(0, Number(p.maxAge) || 0) : null;
-  const minCoverage = Number.isFinite(Number(p.minCoverage)) ? Number(p.minCoverage) : 0.8;
+  const maxAge = String(p.fill ?? 'none') === 'as-of' ? Math.max(0, Number(p.maxAge ?? PAIR_MAX_AGE) || 0) : null;
+  const minCoverage = Number.isFinite(Number(p.minCoverage)) ? Number(p.minCoverage) : minCoverageDefault;
   if (minCoverage < 0 || minCoverage > 1) throw new Error('The minimum coverage is a share between 0 and 1.');
   return { pairing: pairing as PairSettings['pairing'], window, step, every, agg, maxAge, minCoverage };
 }
@@ -206,7 +211,7 @@ function pairsOf(first: Bucket, others: Bucket[]): [Side, Side][] {
 
 /** Runs a pair method over the pairs of the inputs. `first` is A, `others[0]` B when given. */
 export function pairWindows(method: PairMethod, first: Bucket, p: Params, others: Bucket[] = []): Bucket {
-  const st = pairSettings(p);
+  const st = pairSettings(p, method.minCoverage);
   const own = method.settings?.(p) ?? {};
   for (const b of [first, ...others]) {
     if (b.xKind !== 'time') throw new Error(`${b.name} has a ${b.xKind} axis. A pair method needs inputs with a time axis.`);
@@ -333,6 +338,7 @@ export function pairWindows(method: PairMethod, first: Bucket, p: Params, others
 export const PAIR_COVERAGE: PairMethod = {
   id: 'pair.coverage',
   prefix: 'Coverage_',
+  minCoverage: 0,
   fields: ['coverage', 'ticks'],
   yLabel: 'coverage / ticks',
   compute: (w) => [w.coverage, w.a.length],

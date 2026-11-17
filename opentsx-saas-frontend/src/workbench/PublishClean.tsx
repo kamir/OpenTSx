@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { dagsAPI, flowsAPI } from '../services/api';
-import { DagList, topicConflict } from './deployments';
+import { readDeployments, topicConflict } from './deployments';
 import { chainTo, cleanChecks, cleanTopic, dagName, isCleanSink, toDagYaml, useFlow } from './flow';
 import { summarize } from './flows';
 
@@ -83,8 +83,7 @@ export default function PublishClean({ base, onSave, onDone, onClose }: Props) {
       if (id === null) throw new Error('the flow could not be saved to your account');
       if (start) {
         const now = useFlow.getState();
-        const res = await fetch(`${base.replace(/\/$/, '')}/v1/dags`, { signal: AbortSignal.timeout(10_000) }).catch(() => null);
-        const dags = res?.ok ? ((await res.json()) as DagList).dags : [];
+        const { dags } = await readDeployments(`${base.replace(/\/$/, '')}/v1/dags`);
         const conflict = topicConflict(dags, dagName(now.domain, now.track, id), [topic], (await flowsAPI.list()).map(summarize));
         if (conflict) throw new Error(conflict);
         await dagsAPI.deploy(toDagYaml(now));

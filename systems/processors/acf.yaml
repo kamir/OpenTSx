@@ -17,7 +17,12 @@ params:
   - { name: maxLag, type: integer, default: 1000, min: 1, description: "Number of lags. The largest lag is maxLag − 1, and at most n/2 − 1." }
 semantics: { needs: series, deterministic: true, keeps: [series] }
 runtimes:
-  workbench: { status: available, note: A series with a gap gives C(k) = 0 for every lag. }
+  workbench:
+    status: available
+    note: >-
+      Values that are not finite are skipped: the mean and the denominator use the finite values, and C(k) sums only the
+      pairs whose two values are finite. A sine of 400 values with period 50 and one gap gives C(k) within 0.01 of the
+      gap-free result.
   java:
     status: none
     note: >-

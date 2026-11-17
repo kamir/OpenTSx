@@ -101,6 +101,7 @@ export function lagsOf(p: Params): number {
 export const PAIR_XCORR: PairMethod = {
   id: 'pair.xcorr',
   prefix: 'XCorr_',
+  minCoverage: 0.8,
   fields: ['max', 'lag', 'strength'],
   yLabel: 'CC / lag [s] / strength',
   settings: (p) => ({ lags: String(lagsOf(p)) }),

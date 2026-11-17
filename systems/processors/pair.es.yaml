@@ -40,8 +40,8 @@ runtimes:
     note: >-
       Operator "Event synchronisation", tab Multi-variate Analysis. Port of event_sync.py; the 8 shared test vector
       cases give the same four numbers to 12 decimals. A window without events in A or B gives 0 in every field.
-      Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. A call of apply
-      without maxAge uses 0.
+      Strictly periodic events keep their timing under any shuffle, so there q_rand equals q_total. The defaults above
+      hold for the operator panel and for a call of apply without them.
   python:
     status: none
     note: >-

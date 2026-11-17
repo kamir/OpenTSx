@@ -19,7 +19,7 @@ params:
   - { name: alpha, type: number, required: true, min: 0, max: 0.6, description: Shear exponent of the site. }
 semantics: { needs: point, deterministic: true, keeps: [time, unit, series], origin: ESTIMATED }
 runtimes:
-  workbench: { status: available, note: "Defaults fromM 10, toM 120, alpha 0.11; the ranges are not checked." }
+  workbench: { status: available, note: "The panel starts with fromM 10, toM 120, alpha 0.11. Like the processor, apply refuses a missing fromM, toM or alpha, fromM or toM at or below 0 and alpha outside [0, 0.6]." }
   processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#WindShear", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Refuses fromM or toM at or below 0 and alpha outside [0, 0.6]." }
   java: { status: none }
   python: { status: none }

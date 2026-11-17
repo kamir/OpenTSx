@@ -16,7 +16,7 @@ params:
   - { name: steps, type: integer, required: true, min: 1, max: 100000, description: Number of samples back. }
 semantics: { needs: window, deterministic: true, keeps: [time, unit, series], origin: INHERIT }
 runtimes:
-  workbench: { status: available, note: "Default 1; steps is rounded to a whole number." }
+  workbench: { status: available, note: "The panel starts with steps 1. Like the processor, apply refuses a missing steps and steps that is not a whole number from 1 to 100000." }
   processor: { status: available, class: "org.opentsx.retrieval.clean.CleanChain#Lag", note: "A step of the clean chain before a series sink (bin/opentsx vectors). Keeps the last steps samples of each series between blocks." }
   java: { status: none }
   python: { status: none }

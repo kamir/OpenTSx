@@ -107,6 +107,16 @@ describe('operators', () => {
     expect(ac[50]).toBeGreaterThan(0.8);
   });
 
+  it('skips a gap in the autocorrelation', () => {
+    const y = Array.from({ length: 400 }, (_, i) => Math.sin((2 * Math.PI * i) / 50));
+    const whole = run('acf', bucketOf(y)).series[0].y;
+    const gap = run('acf', bucketOf(y.map((v, i) => (i === 137 ? NaN : v)))).series[0].y;
+    expect(gap[0]).toBeCloseTo(1);
+    expect(gap[25]).toBeLessThan(-0.8);
+    expect(gap[50]).toBeGreaterThan(0.8);
+    expect(Math.max(...Array.from(gap, (c, k) => Math.abs(c - whole[k])))).toBeLessThan(0.01);
+  });
+
   it('builds histograms that sum to 1 and a CDF that ends at 1', () => {
     const b = bucketOf([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     const h = run('histogram', b, { min: 0, max: 10, bins: 5 }).series[0].y;

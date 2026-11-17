@@ -230,6 +230,18 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `Summaries.of` in Java and `summarize` in Python count infinite values in `nanCount` like NaN, as `StatsAccumulator`
   does, so an infinite value no longer turns `mean` into NaN or infinity, `m2` into NaN and `min` or `max` into an
   infinity.
+- Workbench: Deploy, Start and "Publish and start" refuse to deploy while the list of deployments cannot be read from
+  the retrieval server, with the message `the deployments could not be read from <url> (<reason>); try again`. Deploy
+  stays disabled while the list is read or cannot be read, and the panel shows the reason. Before, an unreadable list
+  counted as empty and a second deployment could write a topic that another one already writes.
+- Workbench `acf`: values that are not finite are skipped pairwise, so a series with one gap gives its autocorrelation
+  instead of 0 for every lag.
+- Workbench pair operators: a call without `minCoverage` or `maxAge` uses the defaults the operator panel shows
+  (`minCoverage` 0 for `pair.coverage` and 0.8 for `pair.xcorr` and `pair.es`, `maxAge` 60 s). Before, it used
+  `minCoverage` 0.8 for `pair.coverage` and `maxAge` 0 for all three.
+- Workbench `model.wind-shear`, `model.power-curve` and `feature.lag` refuse the missing and out-of-range parameters
+  the processor refuses, with a message such as `alpha: "0.7" is out of range; expected a number from 0 to 0.6`, so a
+  flow with these operators that computes in the browser is not refused at deploy for their parameters.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,
