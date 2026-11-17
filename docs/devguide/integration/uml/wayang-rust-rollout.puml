@@ -1,0 +1,53 @@
+@startuml
+title Proposed continuous rollout: acceptance is not analytics completion
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam ArrowColor #34536F
+skinparam participantBackgroundColor #E8F0F8
+skinparam noteBackgroundColor #FFF5D6
+
+actor User
+participant "UI / backend" as api
+participant "Wayang stage executor" as driver
+database "Durable coordinator" as journal
+participant "Rust node A" as a
+participant "Rust node B" as b
+database "Approved broker channels" as kafka
+
+User -> api : deploy existing DAG
+api -> driver : normalized, authorized request
+driver -> driver : compile fragments + whole-topic placement
+driver -> driver : validate complete assignment coverage
+note right of driver
+Java/Rust envelope validators exist.
+Compiler, live inventory verification and fleet control are planned.
+end note
+driver -> journal : persist generation and commands
+driver -> a : prepare whole topic A
+driver -> b : prepare whole topic B
+a --> driver : prepared receipt
+b --> driver : prepared receipt
+driver -> journal : activate admitted generation
+driver -> a : activate exact command digest
+driver -> b : activate exact command digest
+note over driver,b
+Partial activation is a recorded failed/degraded outcome.
+There is no atomic start across machines.
+end note
+driver --> api : durable deployment handle
+api --> User : accepted / current node status
+loop continuous execution
+  a -> kafka : read all partitions of topic A / produce
+  kafka --> a : delivery acknowledgement
+  a -> a : persist compatible checkpoint
+  b -> kafka : read all partitions of topic B / produce
+  kafka --> b : delivery acknowledgement
+  b -> b : persist compatible checkpoint
+end
+note over a,b
+No automatic takeover while an old owner can emit.
+State migration and stale-output enforcement need qualification.
+end note
+@enduml

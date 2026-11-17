@@ -43,7 +43,7 @@ final class SegmentVectors {
                 Duration.parse(p.path("distance").textValue()), pre, post);
     }
 
-    private static List<Episode> episodes(JsonNode c, int chunk) {
+    static List<Episode> episodes(JsonNode c, int chunk) {
         double[] values = OperatorVectors.numbers(c.path("values"));
         long[] ts = new long[values.length];
         for (int i = 0; i < ts.length; i++) {
@@ -78,7 +78,7 @@ final class SegmentVectors {
         }
     }
 
-    private static ArrayNode records(List<Episode> episodes) {
+    static ArrayNode records(List<Episode> episodes) {
         ArrayNode out = OperatorVectors.JSON.createArrayNode();
         for (Episode episode : episodes) {
             Episodes.validate(episode);

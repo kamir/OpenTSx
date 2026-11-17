@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DeploymentsPanel from '../workbench/DeploymentsPanel';
+import WayangRunPanel from '../workbench/WayangRunPanel';
 import FlowGraph from '../workbench/FlowGraph';
 import FlowComposer from '../workbench/FlowComposer';
 import PublishClean from '../workbench/PublishClean';
@@ -412,8 +413,9 @@ function Properties({ node }: { node: FlowNode }) {
   );
 }
 
-function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSave: () => Promise<number | null> }) {
+export function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSave: () => Promise<number | null> }) {
   const state = useFlow();
+  const [target, setTarget] = useState('processor');
   const blocker = runBlocker(state.nodes, state.sourceSeries, state.context);
   // One step from loaded series to something the processor can run: a vector on the source, published.
   const hasVector = state.nodes.some((n) => n.op === VECTOR_OP && n.sinkTopic);
@@ -433,6 +435,15 @@ function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSa
 
   return (
     <div className="wb-props">
+      <label className="wb-param wb-wayang-target">Deployment target
+        <select aria-label="Deployment target" value={target} onChange={(e) => setTarget(e.target.value)}>
+          <option value="processor">Continuous Java processor</option>
+          <option value="wayang-rust">Bounded Wayang on Rust</option>
+          <option value="wayang-rust-continuous">Continuous Wayang on Rust</option>
+        </select>
+      </label>
+      {target === 'wayang-rust' || target === 'wayang-rust-continuous'
+        ? <WayangRunPanel key={target} profile={target === 'wayang-rust-continuous' ? 'continuous' : 'bounded'} onSave={onSave} /> : <>
       <fieldset>
         <legend>Source topic</legend>
         <div className="wb-oprow">
@@ -494,6 +505,7 @@ function SmartTopic({ node, base, onSave }: { node: FlowNode; base: string; onSa
         onMakeVector={canMakeVector ? makeVector : undefined}
         onSave={onSave}
       />
+      </>}
     </div>
   );
 }

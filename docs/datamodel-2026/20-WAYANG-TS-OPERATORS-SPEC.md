@@ -1,9 +1,12 @@
 # Specification 20: time-series operators on Apache Wayang (S1 to S7)
 
-> Status: **draft specification, version 0.1**, 2026-11-16, not implemented. Concept and research:
+> Status: **fleet specification draft 0.1; Catalog 1 frozen**, 2026-11-17.
+> All 16 native Java entries in S1.7 are available. Implemented Rust profiles
+> are qualified separately in S1.9, S1.10 and the local continuous profile S1.11. Signed continuous fleet requirements
+> remain separate contracts. Concept and research:
 > [20-WAYANG-TS-OPERATORS.md](20-WAYANG-TS-OPERATORS.md). Tasks and acceptance criteria:
-> [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Checked against this repository at `548f316` and
-> Apache Wayang tag `wayang-1.1.1`.
+> [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md). Catalog checks use
+> Apache Wayang tag `wayang-1.1.1` and JDK 21.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when they
@@ -16,13 +19,24 @@ Terms:
 | Track A | Java execution operators on Wayang's Java platform, module `opentsx-wayang` |
 | Track B | the Rust runner `tsx-runner` |
 | runtime | an implementation of the catalog: Track A or Track B |
-| site | one KafScale cluster with one runtime that runs site plans |
+| site | one admitted data/security location with its cluster bindings and one or more runtime nodes |
+| node | one registered Java or Rust runtime instance assigned complete fragments and whole source topics |
 | driver | the central Wayang process that translates DAGs and sends site plans |
 | signal cluster | the central KafScale cluster that receives site aggregates and signals |
 | DAG document | the `opentsx.dag.v1` or `opentsx.dag.v2` document the web workbench exports (`opentsx-saas-frontend/src/workbench/flow.ts:684-745`) |
 | `specHash` | lower-case hex SHA-256 of the UTF-8 text of the DAG document, as the processor computes it today (`VectorProcessor.java:261`, `:797-803`) |
 
 ## S1. Operator catalog
+
+The [unified orchestration plan](../devguide/integration/wayang-unified-plan.md) defines the multi-node deployment
+boundary and separate bounded/continuous profiles. The implemented
+[assignment contract](../devguide/integration/wayang-shared-contracts.md) preserves original UI text and separate
+fragment text; its offline validator is not a complete runner or deployment admission service.
+The executable [`tsx-runner` 0.1.0 profile](../devguide/integration/rust-runner-local.md) is described in
+[S1.9](#s19-execute-the-trusted-local-bounded-rust-subset). The bounded UI-to-Wayang-to-worker contract is
+[S1.10](#s110-orchestrate-the-bounded-ui-rust-profile). The continuous local orchestration contract is
+[S1.11](#s111-continue-complete-topics-on-fixed-rust-workers). These local profiles do not implement the complete
+S5/S7 signed fleet protocol.
 
 ### S1.1 Identity
 
@@ -55,7 +69,8 @@ Kafka they are:
 1. Parameters are the `params` of the description: `name`, `type`, `required`, `default`, `min`, `max`, `values`.
 2. A runtime MUST reject a plan in which a required parameter is missing, a value has the wrong type, a number lies
    outside `[min, max]`, or an enum value is not in `values`. The messages are in S2.5.
-3. A `duration` is an ISO 8601 duration (`PT1M`). It MUST be above zero unless the description says otherwise.
+3. A `duration` is an ISO 8601 duration (`PT1M`). It MUST be above zero unless
+   the description permits zero with `min: 0`. Negative durations are rejected.
 
 ### S1.4 State
 
@@ -103,11 +118,21 @@ Every operator whose output may leave a site (S4) MUST declare `merge.class`:
 
 ### S1.7 Catalog 1
 
-`A` is Track A, `B` is Track B. The statistics, segmentation, SAX, and
-data-quality reference vectors are generated from the existing Java
+The immutable identity/version inventory is
+[`systems/catalogs/tsx-catalog-1.yaml`](../../systems/catalogs/tsx-catalog-1.yaml).
+It pins all 16 descriptions to version 1; `dq.plausible-range` supplies the
+`dq.checks` DAG alias. Parameters and semantics remain in the descriptions.
+`SystemDocTest` checks membership against this table, versions, schema validity,
+state, merge declarations, Wayang availability and repository references.
+`TsxCatalogBindingsTest` checks the compiled logical and Java execution classes.
+
+`A` means an available native Java entry point. It does not expand the
+local compiler of S2.3 or establish fleet admission. `B target` remains intended
+membership; use S1.9 for implemented Rust profiles. The statistics,
+segmentation, SAX, and data-quality reference vectors use the existing Java
 implementations by `tools/java_operator_vectors.py`.
 
-| DAG `op` | In → out | Parameters (limits) | State | Merge | Vectors | A | B |
+| DAG `op` | In → out | Parameters | State | Merge | Vectors | A | B target |
 |---|---|---|---|---|---|---|---|
 | `decode.avro-soe` | topic → `series` | none | none | n/a | `wire-format.json` | yes | yes |
 | `dq.checks` | `series` → `series` | `checks` ⊆ {`PLAUSIBLE_RANGE`} in the streaming path (`CleanChain.java:121`); `min` ≤ `max`; `mode` ∈ {`gap`, `clip`} | none | n/a | `clean-ops.v1.json` | yes | yes |
@@ -118,26 +143,143 @@ implementations by `tools/java_operator_vectors.py`.
 | `feature.lag` | `series` → `series` | `steps` in `[1, 100000]` (`MAX_WINDOW_VALUES`, `CleanChain.java:38`, `:168`) | keyed (series) | n/a | `clean-ops.v1.json` | yes | yes |
 | `feature.rolling` | `series` → `series` | `window` duration > 0; `fn` ∈ `Fn` values | keyed (series) | n/a | `clean-ops.v1.json` | yes | yes |
 | `stats.welford-ddsketch` | `series` → `stats` | `windows` list of durations, each > 0; `alpha` in (0, 1) (`QuantileSketch.java:58-59`); `maxBins` fixed at 4096 in catalog 1 (`QuantileSketch.java:33`) | windowed | `approximate`, `stats.chan-ddsketch` (S4.3) | `stats-window.v1.json`, `QuantileSketchTest.testVector` | yes | yes |
-| `align.vector` | `series`* → `vector` | `every`, `key` (`series`, a tag name, `all`), `agg`, `fill`, `maxAge`, `emit`, `names` ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5a) | windowed | `none` | `align-vector.v1.json` | yes | yes |
+| `align.vector` | `series`* → `vector` | positive `every`; `key` (`series`, a tag name, `all`), `agg`, `fill`, non-negative `maxAge` and `lateness`, `emit`, `names` ([11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5a) | windowed | `none` | `align-vector.v1.json` | yes | yes |
 | `segment.threshold` | `series` → `series` | `direction`, `enter`, `exit` (hysteresis: `exit` not beyond `enter`), `pre`, `post`, `minDuration`, `maxDuration` (`Segmenter.java:92-95`) | keyed (series) | `exact` for segment counts, `sum` | `segment-threshold.v1.json` | yes | yes |
 | `segment.extremum` | `series` → `series` | `feature`, `prominence` ≥ 0, `window`, `distance`, `pre`, `post` (`Segmenter.java:69-72`) | keyed (series) | `exact` for segment counts, `sum` | `segment-extremum.v1.json` | yes | yes |
 | `sax.word` | `series` → `series` (fills `EpisodeSummary.sax`) | `w` ≥ 1, `a` in the range of `Sax.breakpoints` (`Sax.java:16`) | none | `none` | `sax-word.v1.json` | yes | yes |
-| `pair.xcorr` | `series`, `series` → `series` | `lags` integer ≥ 0 (`xcorr.ts:95-98`); pair settings `pairing`, `window`, `step`, `every`, `agg`, `maxAge`, `minCoverage` (`pairs.ts:78-88`) | windowed | `none` | `pair-xcorr.v1.json` | yes (port) | short windows only (S1.8) |
-| `pair.es` | `series`, `series` → `series` | `sigma`, `tauMax`; surrogates with `shuffles`, `seed` (`es.ts`; `pair-es.v1.json`) | windowed | `none` | `pair-es.v1.json` | yes (port) | no |
+| `pair.xcorr` | `series`, `series` → `series` | `lags` integer in [0, 1073741823] (Java array bound); pair settings `pairing`, `window`, `step`, `every`, `agg`, `maxAge`, `minCoverage` (`pairs.ts:78-88`) | windowed | `none` | `pair-xcorr.v1.json` | yes | short windows only (S1.8) |
+| `pair.es` | `series`, `series` → `series` | finite `sigma`; `tauMax` ≥ 0 seconds, zero uncapped; `shuffles` integer in [1, 2147483647]; finite integer `seed`; shared pair settings (`es.ts`; `pair-es.v1.json`) | windowed | `none` | `pair-es.v1.json` | yes | no |
 | `dq.result` | `stats` → `events` | `checks` ⊆ `DataQuality.Check` values, expectation `min`, `max`, `expectedInterval` (`DataQuality.java:29-38`) | none | `exact` for counts per check and status, `sum` | `dq-result.v1.json` | yes | yes |
 
 The workbench operator `stats.window` maps to `stats.welford-ddsketch` (`ops.ts:905-910`) but has the
 parameters `window` (seconds) and `field`, not `windows` and `alpha`. The workbench MUST write the catalog
 parameters before a flow with this operator can be deployed.
 
-`sax.word` and `dq.result` are new DAG `op` names: `Sax` and `DataQuality.evaluate` exist (`Sax.java:44`,
-`DataQuality.java:66-70`) but have no DAG operator yet. Their descriptions MUST be added to `systems/processors/`
-before use.
+Catalog pair descriptions use text for `window`: `episode` or a positive
+decimal width in seconds, matching workbench text-field serialization.
+The direct pair APIs also accept numeric widths. `step` and `every` default
+to zero, selecting the window width and inferred sample clock respectively.
+
+`TsxStreamEqualsBatchTest` covers 65 shared numerical cases in chunks of 1,
+7 and all input records, in both series orders: 61 native cases and four
+explicitly kernel-only ES event-list cases, 390 comparisons in total.
+Complete pair/SAX episodes, DQ statistics and event lists remain atomic inputs.
+Clean parity compares logical samples because fragment boundaries change
+envelope grouping and ids. Pair parity retains deterministic payload fields
+and excludes only execution `createdAt`. The wire/identity suites separately
+check exact transport bytes and identity vectors under S1.6.
+
+`sax.word` and `dq.result` have descriptions in `systems/processors/`. Their
+Wayang Java operators reuse `Sax`, `Paa`, and `DataQuality.evaluate` and are
+registered through `TsxRetrievalMappings`.
+
+The native Java API `TsxPair` executes `pair.es` through `JavaTsxPair` and
+`TsxPairWindows.es`, using the pair-window rules shared with `pair.xcorr`.
+The four sampled-series cases in `pair-es.v1.json` run through Wayang in one
+plan and across increments with restored `TsxState`. The four event-list-only
+cases remain numerical kernel checks in `TsxPairEsVectorsTest`; they are not
+sampled Wayang workloads. Native output has fields `q_total`, `q_ab`, `q_ba`,
+and `q_rand`. `tauMax` uses seconds before conversion to aligned clock ticks;
+zero means uncapped. Whole-number seeds use their value modulo `2^32` for the
+random state, and settings labels retain workbench number formatting.
+`TsxPairEsWayangTest.largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` and
+`settingsLabelsKeepWorkbenchNumberFormatting` cover those boundary cases.
+Catalog membership does not extend the local DAG compiler or fleet admission.
 
 ### S1.8 Limits on Track B
 
 Track B MUST reject `pair.xcorr` when `(2 * lags + 1) * window / every` exceeds the limit set in the site
 configuration, with the message of S2.5. Track B MUST NOT offer `pair.es`.
+
+<a id="s19-execute-the-trusted-local-bounded-rust-subset"></a>
+
+### S1.9 Execute the trusted-local bounded Rust subset
+
+`rust/tsx-runner` version 0.1.0 accepts `opentsx.local-bounded-run.v1` with one bounded Rust assignment,
+one complete input topic and one distinct episode output topic on a trusted local broker binding.
+It executes pass-through or a linear chain containing `dq.checks` (`PLAUSIBLE_RANGE`, gap or clip),
+`convert.unit` and an optional trailing `resample` (`MEAN`, `MIN`, `MAX`, `LAST`). Other operators reject.
+Cleaning rejects nonzero revisions, per-value quality, infinite inputs and changes to source series metadata.
+Two distinct source series cannot own one derived series, even when their episode extents do not overlap.
+
+The implementation validates the capped cut, computes output and checks checkpoint capacity before publication.
+Output Kafka timestamps are epoch milliseconds rounded down from `tStart` and must be greater than zero.
+Every output acknowledgement precedes checkpoint commit. Interrupted publication can duplicate records;
+same-request replay preserves episode identities and a fixed provenance clock. Exact completed retries return
+the stored receipt without broker I/O. An unfinished resample window remains in private Rust state at the cut.
+The state stores derived-series ownership and validates it against retained source keys on restore.
+
+The [local guide](../devguide/integration/rust-runner-local.md) defines fields, bounds and failure messages.
+The [operator tests](../../rust/tsx-runner/src/operators.rs) replay the eight supported cases of
+`clean-ops.v1.json` through every chunk size and checkpoint restore; the seven unsupported cases reject.
+The [flow tests](../../rust/tsx-runner/tests/runner_flow.rs) exercise acknowledgement and checkpoint failures.
+The three-worker Compose fixture assigns separate topics with one, two and three internal partitions.
+That standalone replay fixture does not exercise the remote Wayang/UI path in S1.10 or signed fleet activation.
+
+<a id="s110-orchestrate-the-bounded-ui-rust-profile"></a>
+
+### S1.10 Orchestrate the bounded UI Rust profile
+
+The implemented local orchestration path uses `opentsx.dag.v2`, `opentsx.local-rollout.v1`, the shared assignment
+envelope and S1.9 requests. It accepts one to three complete source topics, one episode sink and only the S1.9
+cleaning subset. The UI queries target capabilities and submits explicit `flowId` and exact UTF-8 `dagText` through
+the authenticated backend. Administrator permission is required. Existing continuous deployment routes are unchanged.
+
+| Boundary | Required local behavior and implementation |
+| --- | --- |
+| Source identity | `specHash` is SHA-256 of the original UI text. The PostgreSQL journal accepts that exact identity once installation-wide. A retry for the same owner/flow reuses the persisted plan and clock; another owner or flow conflicts. |
+| Physical plan | `RustRollout` normalizes catalog parameters, freezes zero-based complete partition cuts, and binds one complete topic to each assigned node. Each fragment has a distinct ID/hash while preserving the original source text/hash. Partition positions do not authorize splitting topic ownership. |
+| Runtime admission | Worker node/site, supported operators, exact binary digest, Episode fingerprint, state ABI and explicit caps must match. Placement is static by topic order and sorted worker ID, with no partition fallback or cost-based placement claim. |
+| Wayang execution | Logical topic sources, optional `UnionAllOperator`, optional fused clean chain and sink map through `RustPlugin` to one connected `RustPlatform` stage. `RustExecutor` invokes the stage action once. Topology channels cannot materialize raw records and unsupported mappings have no Java fallback. |
+| Durable control | The backend persists original source, physical plan/hash, accepted clock and whole-topic ownership before execution. The standalone coordinator owns a PostgreSQL advisory lock and reconciles the same persisted plan. The Java driver has no second authoritative journal. |
+| Prepare | Every worker fully reads and computes the capped cut privately. All preparations must succeed and input/output series ownership must be disjoint across topics before activation. |
+| Activate and recover | Workers publish prepared output and commit the completed checkpoint only after all output acknowledgements. Exact completed retry returns the receipt. `activationRetryable=true` retains saved candidate bytes and request identity; the coordinator retains running state and topic ownership until identical retry is reconciled. |
+| Completion | Completion requires verified receipts from every assigned worker. Partial activation can expose at-least-once output; there is no atomic multi-worker publication or transactional rollback. Open resample tails remain in retained state. |
+| Local transport | HTTP workers and the driver are internal trusted Compose services. Normal application login remains enabled and `TEST_LOGIN` remains false. These checks do not implement S7 signatures, production transport authentication or distributed stale-output fencing. |
+
+The [local guide](../devguide/integration/wayang-rust-compose.md) records helper commands and evidence locations.
+`RustPlatformTest` exercises real Wayang stage selection without network transport; `RustRolloutTest` checks planning,
+private preparation, ownership refusal and uncertain activation. The browser/Compose helper is a separate acceptance
+check over three topics with one, two and three internal partitions, using actual Java-derived output and receipts.
+Its initial, exact-retry and restart checks require the same twelve output records. A generated result is evidence of
+that run, not a throughput benchmark or production qualification. S1.11 adds local continuous input. Dynamic failover,
+broad kernels, operational quotas, signed rollout and Iceberg publication remain separate gates.
+
+<a id="s111-continue-complete-topics-on-fixed-rust-workers"></a>
+
+### S1.11 Continue complete topics on fixed Rust workers
+
+The local continuous profile uses the S1.9 operator subset and S1.10 whole-topic stage. It preserves one deployment,
+exact source text/hash, accepted clock, fragment text, binary identity, worker placement, channel inventory and limits.
+Each finite increment includes every internal partition of each topic. No partition position is a deployment unit.
+
+| Boundary | Exact local contract |
+| --- | --- |
+| Backend admission | `POST /api/v1/dags/wayang-rust/deploy` accepts optional `profile`, either `bounded` (default) or `continuous`. The same source identity cannot be accepted under another profile, owner or flow. |
+| Initial plan | `POST /v1/plan` accepts `deployment`, `dagText`, `createdAtMicros` and optional `profile: continuous`. A continuous plan has schema `opentsx.local-continuous-rollout.v1`, the existing plan fields, `sequence: "1"` and `previousPlanHash: null`. |
+| Successor plan | `POST /v1/next` accepts exactly `plan` and its completed `result`. It returns exactly `{state: idle, plan: null}` or `{state: ready, plan: <object>}`. The new sequence is the previous sequence plus one; `previousPlanHash` identifies the preceding plan. |
+| Finite cut | Each `from` equals the preceding verified `next`. Broker beginning must be at or before that cursor, and end must be at or after it. Partition and output counts stay fixed. All topics remain in every non-idle wave, including empty spans. |
+| Record budget | Per topic, use `min(records, inputBytes / payloadBytes, samples / episodeSamples)` with integer division and rotating partition priority. The current limits admit four records per topic per cycle. Payload, output and retained-state caps still apply independently. |
+| Worker request | `opentsx.local-increment.v1` contains the six S1.9 request fields plus `sequence` and `previousRequestHash`. Sequence is a positive canonical signed-64-bit decimal string. Predecessor is null at sequence one, otherwise the previous completed request's 64-character lowercase SHA-256 hash. |
+| Assignment envelope | The shared execution assignment remains `mode: bounded`, since each cut is finite. Assignment, deployment, generation, attempt, fence and fragment identities remain unchanged; only complete partition positions advance. The standalone replay command refuses increment requests. |
+| Worker continuity | Sequence one starts every partition at zero. A successor names the current completed head and starts at its complete receipt positions. State is restored locally; caller state and paths are forbidden. Stale, forked, skipped and changed-context successors fail before reads. |
+| Cumulative ownership | Retain every decoded input identity and its internal partition, including unselected/pass-through input, plus all emitted and pending output identities. Never evict ownership to admit another series. Lifetime series and retained-state caps apply. Every topic prepares before cross-topic checks and activation. |
+| Worker status | Increment status adds `sequence` and `previousRequestHash`; the first predecessor is JSON null. Existing receipt record counts remain per increment. `activationRetryable` keeps uncertain saved output under reconciliation. |
+| Bounded history | Each worker retains one immutable completed head and at most one candidate in `increments/checkpoint.json`. Latest exact retry returns its receipt. PostgreSQL retains the latest two completed cycle rows plus pending work, with cumulative progress stored separately. Idle creates no increment. |
+| Public progress | Continuous views add `profile`, `currentCycle`, `completedCycles`, `stopRequested`, `inputRecords` and `outputRecords`. Each assignment adds `cumulativeInputRecords`, `cumulativeOutputRecords` and latest completed `positions`. Counters, sequences and offsets are canonical decimal strings. |
+| Stop | The authenticated owner stop route records durable intent. Re-read it after planning and execution RPCs. Cancel undispatched work; reconcile dispatched work before entering `stopped` and releasing topic ownership. Unknown publication retains `stopping` and ownership. Stop does not flush a resample tail. |
+
+The worker advertises `incrementalRequestSchema: opentsx.local-increment.v1` and `limits.incrementalChains: 1`.
+One worker retains one immutable continuous chain after Stop; replacement requires explicit reset of disposable
+state after conclusive stop. There is no implicit retirement, failover or migration. Open resample windows retain
+the existing maximum of 100,000 valid samples. Output is at least once and activation is not atomic across workers.
+
+`RustContinuousRolloutTest`, `tests/increments.rs`, backend continuous tests and the
+[continuous Compose acceptance](../devguide/integration/wayang-rust-continuous.md) cover finite successors,
+cumulative ownership, idle, exact retry, stateful service restart, queued new data and Stop. Broker restart,
+topic-incarnation qualification, distributed stale-writer fencing and the signed S5/S7 fleet contract remain open.
+The existing cleaning policy skips a block whose first event timestamp precedes the retained series end, increments
+the skipped-block counter and advances its input cursor. Continuous execution does not introduce late-data revisions.
 
 ## S2. Plan translation
 
@@ -157,27 +299,44 @@ The driver MUST validate in this order and MUST stop at the first error. Steps 1
 2. Nodes: ids, decoder, inputs, cycles (`DagPlan.java:64-118`).
 3. Sinks: non-empty array, supported schema.
 4. Sink identities unique.
-5. Catalog: every `op` is in the catalog version of the job and has a runtime for every site track in the job.
+5. Catalog: every `op` belongs to the job catalog. Check runtime, state and resource support at every node
+   assigned that operator or fragment. A replicated fragment checks every replica; unrelated fragments need not
+   support operators they do not execute.
 6. Parameters (S1.3).
 7. Topics: every source and sink topic follows `tsx.<domain>.<kind>.v<n>` of the job's domain (S3.1).
-8. Federation: every node upstream of a federated sink has `merge.class` other than `none`, every windowed stats
-   node uses tumbling windows, and the sink kind is `aggregates` or `signals`.
+8. Federation: validate the value crossing each site boundary and its ownership dependencies. A local cleaning
+   chain may precede mergeable statistics. Cross-site raw pairing or alignment requires an explicitly admitted
+   movement contract. Federated statistics use tumbling windows and the sink kind is `aggregates` or `signals`.
 
 ### S2.3 Wayang plan
 
 1. Each DAG node MUST become one Wayang logical operator: `UnarySource`, `UnaryToUnaryOperator`,
    `BinaryToUnaryOperator` or `UnarySink` subclass (package `org.apache.wayang.core.plan.wayangplan`, tag
    `wayang-1.1.1`), chosen by the number of inputs and outputs of the description.
+   Exception: a run of consecutive single-input nodes whose operators are all in `CleanChain.OPS`
+   (`CleanChain.java:35`) MUST become one operator (`TsxSeriesChain`). These steps share one state per series, and the
+   written series gets its key and episode ids once, after the last step (`SeriesStream.java`); separate operators
+   would key and label every intermediate series. The state of the run is stored under the id of its last node.
 2. `decode.avro-soe` with the DAG `source` MUST become one `TsxTopicSource` per source topic. Each sink MUST become
    one `TsxTopicSink`.
 3. The driver MUST NOT use `wayang-api-json`: it compiles Scala source received in the request
    (`SerializableLambda.scala:23-29` at Wayang `main`).
-4. On a single site the plan runs with `Java.basicPlugin()` and the Track A plugin.
+4. On a single site the plan runs with `TsxJavaPlugin`. The plugin supplies the
+   Java platform, mappings, and channel conversions without the cloud mappings
+   whose SDKs are excluded (`TsxJavaPlugin.java`).
 
 ### S2.4 Site plan
 
-For a federated job the driver MUST cut the DAG at the federated sinks. Everything upstream of them, with those
-sinks, is the **site stage**; it goes unchanged to every site. Everything downstream (the merge) runs centrally.
+For a federated job the driver MUST identify complete executable fragments and their explicit assignments.
+Replicating the same local stage at independent sites is one supported physical shape, not a general placement
+algorithm. Each assignment owns whole topics, with complete internal partition positions, runtime/node identity,
+generation, channel bindings and
+resource/capability admission before activation. Central merge is an explicit downstream fragment.
+
+Preserve `specHash` over the original submitted UI text. Carry exact source text separately from compiler-produced
+fragment text and its `fragmentHash`; placement or slicing MUST NOT redefine the legacy output identity.
+The shared assignment schema implements this offline boundary. The runner-plan wrapper below is still a draft:
+U01 must bind it to the assignment and resolve its output/channel fields before a network runner can accept it.
 
 The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.runner-plan.v1.schema.json)):
 
@@ -188,7 +347,7 @@ The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.
 | `issued`, `expires` | RFC 3339 UTC; `expires` after `issued` |
 | `site` | the receiving site id |
 | `catalog` | catalog version, for example `tsx-catalog/1` |
-| `specHash` | as defined above, of the site stage document |
+| `specHash` | as defined above, of the original submitted DAG text; a fragment has its own `fragmentHash` |
 | `dag` | the site stage as a DAG document (JSON form) |
 | `inputs[]`, `outputs[]` | topic, allowed fingerprints (16 lower-case hex each), partitions; outputs name the cluster (`site` or `signal`) |
 | `start` | `earliest`, `latest`, or an offset map |
@@ -333,20 +492,25 @@ Laws:
 
 1. **Identity.** The record with all counts 0, `min` = +∞, `max` = −∞, `mean` = 0, `m2` = 0 and an empty sketch is the
    identity element.
-2. **Associativity and commutativity.** Counts, `min`, `max`, `lastSeen` and the sketch bins are exactly associative
-   and commutative (integer addition, min, max). `mean` and `m2` are associative and commutative in real
+2. **Associativity and commutativity.** Counts, `min`, `max`, `lastSeen` and uncollapsed sketch bin maps are exactly
+   associative and commutative within their checked numeric bounds (integer addition, min, max). Bounded-bin
+   collapse needs separate qualification. `mean` and `m2` are associative and commutative in real
    arithmetic only. In IEEE 754 doubles they depend on the order.
 3. **Canonical order.** The merge MUST fold the partials in ascending order of site id, starting from the identity.
    Two merges of the same partials then give bit-identical results.
-4. **Equality with the centralized result.** The merged counts, `min`, `max` and sketch bytes MUST equal those of
-   one `StatsAccumulator` over all values, when all sites run one runtime. `mean` and `m2` MUST be within the
+4. **Equality with the centralized result.** The merged counts, `min` and `max` MUST equal those of one
+   `StatsAccumulator` over all values. Sketch-byte equality requires one runtime and no bin collapse at a site
+   or merge; collapsed-tail behavior needs separate acceptance vectors. `mean` and `m2` MUST be within the
    tolerance of the job (decision D-T2 in TASK-020; proposal: relative 1e-12). Quantiles from the merged sketch MUST
-   equal those of the centralized sketch and lie within relative error `alpha` of the exact quantile
+   equal those of the centralized sketch in that one-runtime/no-collapse domain. The relative error `alpha`
+   comparison with the exact quantile is
+   qualified to nonzero magnitudes outside the zero bucket and without bounded-bin collapse; fixtures must
+   separately cover the zero bucket and collapsed tails of `QuantileSketch`
    ([Masson, Rim, Lee 2019, doi:10.14778/3352063.3352135](https://doi.org/10.14778/3352063.3352135)).
 5. **Mixed runtimes.** When sites run different runtimes, a value on a DDSketch bin boundary MAY fall into
    neighbouring bins (Java `Math.log` is within 1 ulp,
    [Java SE 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Math.html#log(double))).
-   Rule 4 then holds for counts, `min`, `max` and the `alpha` bound, not for sketch bytes.
+   Rule 4 then holds for counts, `min`, `max` and the qualified `alpha` bound, not for sketch bytes.
 
 ### S4.4 Routes
 
@@ -366,13 +530,15 @@ Wayang plan's `AggregateChannel` and continues the plan.
 ### S4.5 Completeness
 
 1. `federation.expectedSites` is the list of sites of the job. `federation.maxDelay` is an ISO 8601 duration.
-2. A merged window is **final** when a partial of every expected site is present. The merge then writes it with
-   `tsx-final: true`.
+2. A merged window is **final** only when every expected assignment supplies admitted closed-window or source-cut
+   evidence for the generation. An open-window partial from every site is insufficient. The merge then writes
+   `tsx-final: true`. The evidence envelope and expected membership are U09 delivery gates.
 3. When the signal cluster's clock passes `windowEnd + maxDelay` and a site is missing, the merge MUST write the
    window with `tsx-final: false` and `tsx-missing-sites` set.
 4. A partial that arrives later MUST produce a new merged record with `tsx-revision` raised by 1. The merge MUST
    NOT change an earlier record.
-5. A duplicate partial (same key, same revision) MUST be ignored.
+5. A byte-identical duplicate partial (same key, same revision and generation) MUST be ignored. Conflicting content
+   under that identity MUST be refused and surfaced; stale generations MUST be refused.
 6. Removing a site from a job MUST go through a new `planVersion`. Windows before the change keep their sites.
 
 ### S4.6 Signals
@@ -402,7 +568,7 @@ cluster collects them. A signal MUST NOT carry raw values beyond the value that 
 
 | Mode | Behaviour |
 |---|---|
-| `agent` | runs the pull protocol of S5.3; supervises one task per job and partition set |
+| `agent` | runs the pull protocol of S5.3; supervises assigned whole topics per job; partitions remain internal cursor metadata |
 | `run --plan <file>` | verifies the signed plan in `<file>` and runs it until stopped; used by SSH launch |
 | `conform` | runs the checks of S3.3 and writes the signed report to standard output |
 
@@ -418,7 +584,7 @@ JSON (`application/json`) unless stated.
 | Method and path | Request | Response |
 |---|---|---|
 | `POST /v1/sites/<site>/conformance` | compact JWS of an `opentsx.site-conformance.v1` report | `200 {"result":"accepted"}`, or `200 {"result":"refused","check":"<id>","message":"<text>"}` |
-| `GET /v1/sites/<site>/plans?after=<planVersion>` | none | `200 {"plans":["<compact JWS>", ...]}` with every plan of the site above `after`, oldest first; `204` when none |
+| `GET /v1/sites/<site>/plans?after=<deliverySequence>` | none | Proposed durable per-site delivery cursor, independent of per-job versions; response entries bind sequence, job/version and compact JWS. Exact acknowledgement envelope is a U01/U03 contract gate. |
 | `POST /v1/sites/<site>/jobs/<job>/status` | an `opentsx.dag-status.v1` record (S5.4) | `204` |
 | `POST /v1/sites/<site>/jobs/<job>/aggregates` | `application/vnd.opentsx.avro-soe-seq`: a sequence of `SeriesStats` records, each prefixed by its length as a 4-byte big-endian integer | `204` |
 | `POST /v1/sites/<site>/jobs/<job>/refusal` | `{"planVersion":<n>,"code":"<code>","message":"<text>"}` | `204` |
@@ -426,6 +592,9 @@ JSON (`application/json`) unless stated.
 Errors: `400 {"error":"bad-request","message":"<text>"}`, `401` when the client certificate is not a known site,
 `403` when `<site>` in the path differs from the certificate's site, `404` for an unknown job, `409` when a status or
 aggregate names an older `planVersion` than the current one.
+
+Delivery sequences use canonical int64 decimal strings. A job at version 10 MUST NOT hide another job at version 1.
+Repeated delivery of identical accepted bytes is idempotent; changed bytes under the same command identity reject.
 
 The agent SHOULD poll `GET .../plans` every 30 s and MUST back off to at most once per 5 min while the driver is
 unreachable.
@@ -445,13 +614,13 @@ unreachable.
 | Code | When |
 |---|---|
 | `plan.signature` | signature invalid or signed by an unknown key |
-| `plan.expired` | now is after `expires` |
-| `plan.version` | `planVersion` not above the highest accepted one of the job |
+| `plan.expired` | new activation arrives after `expires`; accepted identical replay returns its recorded outcome |
+| `plan.version` | an older plan version, or changed content for an already accepted version; identical delivery returns its recorded outcome |
 | `plan.site` | `site` is not this site |
 | `plan.catalog` | catalog version or an operator version not available |
 | `plan.invalid` | any message of S2.5; the message is passed on |
 | `plan.policy` | an output cluster or kind not allowed by the site policy (S7.4) |
-| `plan.busy` | another plan of the same job runs on the same partitions |
+| `plan.busy` | another live assignment owns the same `(fragment, binding, topic)`, regardless of internal positions |
 
 ## S6. Delivery, state and checkpoints on KafScale
 
@@ -473,9 +642,21 @@ Every output record MUST carry an id that depends only on what it logically is:
 | Output | Id |
 |---|---|
 | derived episode | `"c" + hex(xxHash64(seriesId + "|" + from + "|" + to + "|" + specHash))`, as `SeriesStream.java:152-153` |
+| pair result episode | `"p" + hex(xxHash64(seriesId + "|" + episodeId of A + "|" + episodeId of B + "|" + specHash))`, as `JavaTsxPair.episodes` |
 | partial aggregate | Kafka key of S4.2 plus `tsx-revision` |
 | merged aggregate | Kafka key of S4.2 plus `tsx-revision` |
 | signal | `id` of `opentsx.signal.v1`: `hex(xxHash64(job + "|" + site + "|" + seriesId + "|" + kind + "|" + at))` |
+
+Segment episodes keep the deterministic ULID of
+`StreamingSegmenter.materialize`: start time plus xxHash64 of series id,
+strategy, sorted parameters, and start time. The shared segment vectors
+preserve these identities.
+
+For `kind: dq`, the hash input is
+`job|site|seriesId|dq|at|check|window.from|window.to`. DQ identities include the
+check and window bounds so that distinct checks and overlapping window widths
+remain distinct findings. Hash the UTF-8 bytes of the strings exactly as
+written in the signal JSON, including ISO timestamps.
 
 Readers MUST keep one record per id; for aggregates the highest revision per key.
 
@@ -488,14 +669,16 @@ deterministic through the `seed` parameter (`Mulberry32`).
    catalog version and `planVersion`.
 2. A runtime MUST write the checkpoint only after the broker acknowledged every record sent before it.
 3. A runtime MUST write it to a temporary file, flush it to disk and rename it over the previous one.
-4. On start, a runtime MUST refuse a checkpoint whose `specHash` or catalog differs from the plan and MUST start
-   from `start` of the plan instead.
+4. On start, a runtime MUST fail closed on an incompatible `specHash`, catalog, state ABI or continuation identity.
+   It MUST NOT restart from `start` silently. Reset requires an explicitly admitted new generation; migration
+   requires a qualified state transition. Operator parity does not imply cross-runtime checkpoint compatibility.
 5. An unreadable checkpoint MUST put the task in state `failed`. The runtime MUST NOT start over by itself.
 6. The checkpoint format is private to a runtime; it does not travel between tracks.
 
 ### S6.4 Reading
 
-1. A runtime MUST use manual partition assignment and seek; it MUST NOT join a consumer group.
+1. A runtime MUST use manual partition assignment and seek for every partition of each assigned whole topic;
+   it MUST NOT join a consumer group. Partition assignment is internal broker I/O, not cross-node placement.
 2. After a refused fetch it MUST reset to the positions before the fetch and retry, as `Patience.poll` does
    (`Patience.java:75`).
 3. A start by time MUST go through the episode index; `offsetsForTimes` MUST NOT be used.
@@ -508,9 +691,11 @@ deterministic through the `seed` parameter (`Mulberry32`).
    with `alg` `EdDSA` (Ed25519) or `ES256`. Other algorithms and `none` MUST be refused.
 2. The payload is the document's JSON. The signature covers it as sent; no canonicalization is applied.
 3. A site MUST pin the driver's public key in its configuration. The driver MUST pin each site's public key.
-4. A site MUST refuse a plan whose `planVersion` is not above the highest it accepted for the job, or whose
-   `expires` has passed (rollback and freeze protection as in
-   [TUF](https://theupdateframework.github.io/specification/latest/)).
+4. A site MUST refuse an older plan version or an expired new activation. Identical delivery of an already
+   accepted version MUST return its recorded outcome; different bytes for that version MUST conflict.
+   Restart of a persisted active assignment follows its grant and recovery policy, not fresh activation.
+   Rollback and freeze protection follow
+   [TUF](https://theupdateframework.github.io/specification/latest/).
 
 ### S7.2 Transport
 

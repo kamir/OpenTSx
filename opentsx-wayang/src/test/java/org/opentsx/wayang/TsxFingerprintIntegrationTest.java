@@ -32,7 +32,7 @@ class TsxFingerprintIntegrationTest {
 
         TsxIncrementException e = assertThrows(TsxIncrementException.class, () -> TsxIncrement.run(
                 k.config(ckpt, KafScaleFixture.EPISODE_ONLY),
-                source -> TsxPassThroughIntegrationTest.connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean()))));
+                (source, state) -> TsxPassThroughIntegrationTest.connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean()))));
 
         int partition = k.readAll(k.layout.episodes()).get(0).partition();
         assertEquals("record " + k.layout.episodes() + "/" + partition + "@0 has schema fingerprint e51b48188baa6606,"

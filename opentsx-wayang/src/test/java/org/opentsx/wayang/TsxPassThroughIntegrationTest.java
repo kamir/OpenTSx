@@ -27,7 +27,7 @@ class TsxPassThroughIntegrationTest {
         Path ckpt = dir.resolve("ckpt.json");
 
         TsxIncrement.Result first = TsxIncrement.run(k.config(ckpt, KafScaleFixture.EPISODE_ONLY),
-                source -> connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean())));
+                (source, state) -> connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean())));
         assertEquals(w.size(), first.records());
 
         Map<String, byte[]> out = new HashMap<>();
@@ -40,7 +40,7 @@ class TsxPassThroughIntegrationTest {
         in.forEach((id, bytes) -> assertArrayEquals(bytes, out.get(id), id));
 
         TsxIncrement.Result second = TsxIncrement.run(k.config(ckpt, KafScaleFixture.EPISODE_ONLY),
-                source -> connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean())));
+                (source, state) -> connect(source, new TsxTopicSink(k.bootstrap, k.layout.clean())));
         assertEquals(0, second.records());
         assertEquals(w.size(), k.readAll(k.layout.clean()).size());
     }

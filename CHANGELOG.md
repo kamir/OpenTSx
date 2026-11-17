@@ -24,6 +24,88 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - Workbench pair-result tables and matrices, typed analysis-result JSON inspection, episode quality and lineage, and integrity-checked finite input/graph snapshots. Properties distinguish browser, Java processor and Wayang capabilities. Deployment preflight checks every published sink and path; browser-only pair drafts are marked experimental.
 
+- Continuous workbench execution through Wayang on fixed whole-topic Rust workers. Each acknowledged increment
+  supplies the next complete partition cursors and retained operator state. PostgreSQL persists plans before
+  dispatch, retains ownership through idle and uncertain outcomes, and records durable stop requests. Worker
+  head/candidate storage and completed cycle history stay bounded. The continuous Compose/browser profile checks
+  live input, data arriving during execution-service downtime, stateful restart, later input and Stop against Java.
+  Publication remains at least once; one immutable continuous chain is retained per worker. Replacement, automatic
+  failover, signed fleet activation, broker-restart qualification and durable Iceberg publication remain separate.
+
+- Regression guards for the Wayang/Rust Compose profile's existing required
+  credential interpolation and the helper's private per-run environment.
+  Mutated fallback and empty-value fixtures reject without printing credentials.
+
+- `pair.es` runs on Wayang through `TsxPair` with `q_total`, `q_ab`, `q_ba`
+  and `q_rand` outputs. The four shared series cases execute through real plans.
+  Parameters and surrogate seeds follow the workbench implementation.
+
+- Explicit bounded workbench deployment through the authenticated backend, PostgreSQL journal and standalone
+  coordinator to Apache Wayang's custom Rust platform. Connected topic sources, unions, a fused clean chain and
+  sink execute as one stage; complete topics are assigned statically to one to three HTTP workers. All workers
+  prepare privately and expose series ownership before any activation. Exact UI text, source cuts, clock, fragments
+  and request bytes survive retry. Uncertain activation retains topic ownership and retries saved output; completed
+  requests return stored receipts. A separate three-worker Compose/browser acceptance helper compares the shared
+  output with Java. Activation remains at least once and can expose partial output; signed fleet execution,
+  continuous processing, automatic failover and durable Iceberg publication remain outside this local profile.
+
+- A rerunnable Wayang increment-latency harness for TASK-020 A1.7: real
+  passthrough and `dq.checks` plus `resample PT1M` plans, paced complete simulator
+  input, a pinned disposable KafScale broker, private runtime snapshots and
+  per-increment/raw output timing samples. The
+  [measurement report](docs/datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+  records its metric definitions, configuration and isolation limits.
+
+- `tsx-runner` 0.1.0 for trusted-local bounded whole-topic Kafka replay. Pass-through and a linear chain of
+  `dq.checks` (`PLAUSIBLE_RANGE`), `convert.unit` and an optional trailing `resample` use the shared Avro, identity
+  and cleaning vectors. Explicit resource caps and positive Kafka transport timestamps reject before publication.
+  Derived-series ownership prevents conflicting packets from distinct source series. Local checkpoints retain
+  lossless operator state and commit after every output acknowledgement; exact completed retries return their
+  saved receipts. A standalone Compose helper runs three independent topics with one, two and three partitions
+  against Java reference output. This standalone replay fixture remains distinct from the UI-to-Wayang rollout
+  acceptance helper; continuous processing and production fleet activation remain separate.
+
+- Frozen `tsx-catalog/1` with 16 versioned native Java entries, complete
+  processor descriptions and membership/version/metadata regressions.
+  Stream/batch parity covers 61 native numerical cases and four explicit
+  ES kernel cases in six chunk/order combinations. README, SPEC, manual
+  and learning contracts describe runtime scope and comparison boundaries.
+
+- Wayang operators for threshold and extremum segmentation, SAX words, and
+  data-quality signals (TASK-020 A3.4 and the retrieval part of A3.5). Segments
+  checkpoint their retained samples and detector state per series. All 26
+  shared cases run through Wayang and all 156 chunk/order comparisons match.
+  The topic sink validates and writes JSON `opentsx.signal.v1` records.
+  DQ signal identities include the check and window bounds; result messages
+  use `Locale.ROOT`. README, manual, and processor descriptions are updated.
+
+- `opentsx-wayang` A3.2 (TASK-020): `pair.xcorr` runs on Wayang as `TsxPair`, with the pair windows of the workbench
+  (`pairs.ts`) ported to `ops/TsxPairWindows`. Episodes of A and B are paired (`same` or `intersect`) as they arrive
+  and wait in the checkpoint for their counterparts; each pair range gives one episode per field
+  (`pair.xcorr.max`, `lag`, `strength`). All five shared `pair.xcorr` cases pass through a Wayang plan. Specification
+  S6.2 gives the id of a pair result episode.
+- `opentsx-wayang` A3.1 (TASK-020): `align.vector` runs on Wayang as `TsxAlignVector` through `VectorStream`; inputs
+  are marked with `TsxTagged` and joined with a union, open ticks pass from increment to increment in the checkpoint,
+  and `TsxVectorSink` writes `opentsx.vector.v1` records to a vector topic. All six shared `align.vector` cases pass
+  through a Wayang plan, in one run and in two increments.
+- `opentsx-retrieval`: `VectorStream` accepts named inputs that read series of their own
+  (`new VectorStream(expectedByInput, params, lateness)`, `add(input, seriesId, ...)`). The state format of a stream
+  without named inputs is unchanged.
+
+- `opentsx-wayang` phase A2 (TASK-020): the clean chain (`dq.checks`, `convert.unit`, `resample`,
+  `model.wind-shear`, `model.power-curve`, `feature.lag`, `feature.rolling`) runs on Wayang as one operator per run
+  of consecutive nodes (`TsxSeriesChain`, through `SeriesStream`), and `stats.welford-ddsketch` as `TsxStatsWindow`
+  (through `StatsEngine`). Operator state passes from increment to increment in the checkpoint. `TsxStatus` writes
+  `opentsx.dag-status.v1` records with `track`, `job` and `planVersion`; `TsxIncrement.loop` runs increments at an
+  interval. Specification S2.3 states why a run of clean operators is one Wayang operator.
+  `DagToWayang` validates local clean DAG parameters from processor descriptions.
+  Statistics accept episodes and observations, bounded streams, and explicit
+  keyed windows including empty input. All five shared statistics cases run
+  through Wayang. The parity test deploys the same clean DAG to the existing
+  `VectorProcessor` on KafScale and compares episode ids and values. Status
+  heartbeats run every 30 seconds during long increments and idle intervals,
+  include progress fields, and preserve the original error if reporting fails.
+
 - Five shared Java reference vector files for statistics windows, threshold
   and extremum segments, SAX words, and data-quality results. Owning-module
   tests replay all 31 cases exactly. `tools/java_operator_vectors.py`
@@ -42,6 +124,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   checkpoint only after every record was acknowledged. The sink writes maps in UTF-8 key order, so an episode that is
   read and written again keeps its bytes. `LogReader` in `opentsx-kafka-v2` is public. The CI job "KafScale
   conformance" runs the three new integration tests and requires them to execute.
+
+- Shared execution-assignment schema and offline Java/Rust validators for exact source/fragment identities,
+  decimal-string offsets, execution modes and whole-topic ownership with complete internal cursor checks.
+  Generated fixtures are consumed directly by both runtimes. The unified delivery plan covers
+  UI-to-Wayang-to-Rust orchestration and a separate
+  bounded storage profile. The validators perform no network deployment or production fencing; the separate
+  Rust runner and local Wayang rollout execute only their trusted-local bounded profiles.
+
+- Versioned learning workloads for all 30 executable UI/DAG operators and 25 documented library/infrastructure
+  families, including MFDFA and RIS. Tests execute UI workloads and numerical library examples. Student lessons
+  are generated with source-content hashes; synchronization rejects missing, edited or stale material.
+  Manual chapter 17 links the contracts and verification commands. The project rules require coordinated
+  operator, manual, SPEC, exercise and test updates and preserve whole-topic deployment ownership.
 
 - Module `opentsx-wayang` (TASK-020 phase A0, [`opentsx-wayang/README.md`](opentsx-wayang/README.md)): Apache
   Wayang 1.1.1 (`wayang-core`, `wayang-basic`, `wayang-java`) in the root `dependencyManagement` without the cloud
@@ -146,6 +241,29 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 
 ### Fixed
+
+- Native entropy windows validate lengths and finite matching coordinate/value vectors, advance by at least one
+  sample and clip partial cuts to the available data. The `ENTROPY` dialog handles cancellation and invalid
+  selections or input without opening a chart or recording a transformation. Native discretization is retained.
+
+- Native table, chart and caption saving reports the failed destination and completed outputs in the dialog.
+  Each file is prepared and replaced atomically; a failure preserves that destination and stops later outputs.
+  Table and caption text use strict UTF-8, while table layouts and 800 by 600 PNG dimensions are retained.
+  Configured folder paths are preserved, including spaces, hyphens and Unicode characters.
+
+- Native `Histogram cross-cut` validates selections, positive integer window lengths, ordered integer bounds and
+  positive bin counts. Cancelling or rejecting input leaves charts and the recorder unchanged. Cuts stop at each
+  series' available samples while preserving nominal window labels, pooled raw counts and input series.
+
+- Native time-series previews handle empty and short series and disabled status recording. Legacy file exports
+  write every point, retain subtype formats and metadata, and report errors while preserving existing files
+  through atomic replacement.
+
+- Remove the orphaned InfluxDB/Grafana demo gitlink, which has no `.gitmodules` entry and blocks checkout
+  credential cleanup. CI checks that every tracked gitlink has a configured path and URL.
+
+- The PFD runtime reads `group.id` through the existing core configuration manager, retaining
+  `opentsx-dynamic-job` when absent and rejecting empty or whitespace-only configured values.
 
 - Quantile representatives use `StrictMath.pow` for identical bits across
   platforms, removing a one-ULP ARM/x86 difference in the shared statistics

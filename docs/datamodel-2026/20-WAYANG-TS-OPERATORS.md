@@ -1,15 +1,23 @@
 # Concept 20: time-series operators on Apache Wayang, a Java track and a Rust edge track
 
-> Status: **concept**, 2026-11-16. The module has its Java platform plugin,
+> Status: **concept**, 2026-11-17. The module has its Java platform plugin,
 > KafScale source and sink, checkpointed increments, and the pure Java
 > `TsxPairXcorr` and `TsxPairEs` kernels. Shared vectors cover statistics,
-> segmentation, SAX, and data-quality results. Checked against Apache
+> segmentation, SAX, and data-quality results. `tsx-runner` 0.1.0 adds trusted-local bounded Kafka replay and
+> three cleaning operations. The bounded UI rollout uses a custom Wayang Rust stage and HTTP workers; the broader
+> signed continuous fleet design below remains separate. Checked against Apache
 > Wayang release 1.1.1 (tag `wayang-1.1.1`, commit `61deee43`, 2026-02-09) and `main` at `713faa7d` (2026-11-12).
 > Crate and tool versions are named where they are used. Related: [05](05-SMART-TOPICS.md) (federated global model),
 > [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md) (Go Smart Topic processor, `opentsx.dag.v1`),
 > [Kafka native streaming](../devops/kafka-native-streaming.md) (the Java processor that runs today).
 > Normative rules: [20-WAYANG-TS-OPERATORS-SPEC.md](20-WAYANG-TS-OPERATORS-SPEC.md) (S1 to S7). Tasks and acceptance
 > criteria: [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
+
+The [unified delivery plan](../devguide/integration/wayang-unified-plan.md) combines bounded storage and
+multi-node Rust orchestration. Its [shared-contract implementation](../devguide/integration/wayang-shared-contracts.md)
+validates assignment envelopes in Java and Rust; it does not deploy runners.
+The separate [local Rust profile](../devguide/integration/rust-runner-local.md) executes pass-through,
+plausible-range checks, unit conversion and an optional trailing resample on a capped whole-topic cut.
 
 ## 1. Goal
 
@@ -21,16 +29,26 @@ Two implementation tracks share one operator catalog, one topic and schema contr
 | Track | What | Where it runs | Order |
 |---|---|---|---|
 | **A**, TSOperators for Java | native Wayang operators: logical operator, Java execution operator, mapping and cost function per OpenTSx operator; reuse of the existing OpenTSx Java code | JVM sites (servers, cluster nodes) | first |
-| **B**, Rust edge runner | the same operators, ported to a small Rust binary, reached from Wayang as a separate platform | low-capacity hardware: ARM gateways, a Raspberry Pi on board, meter and substation sites | second, after the catalog and vectors of Track A are stable |
+| **B**, Rust edge runner | the same operators, ported to a small Rust binary, reached from Wayang as a separate platform | low-capacity hardware: ARM gateways, a Raspberry Pi on board, meter and substation sites | a small deployment proof follows shared contracts; each operator still needs stable reference vectors before admission |
 
-Kafka is the only source and sink in both tracks. Out of scope: training (it stays a batch job,
+Kafka is the source and sink of this continuous edge profile. The unified plan defines bounded Iceberg work
+as a separate profile with immutable inputs and publication guarantees. Out of scope: training (it stays a batch job,
 [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), D28), joins over raw data of two sites, and history search (pattern
 search, twin, causal analysis).
 
 ## 2. Current state
 
+`tsx-runner` 0.1.0 executes trusted-local bounded requests, with explicit resource caps and checkpointed
+completion after broker acknowledgement. Its standalone replay fixture runs three independent deployments.
+The separate [bounded UI rollout](../devguide/integration/wayang-rust-compose.md) compiles one original v2 DAG
+through a real custom Wayang Rust platform and one connected execution stage. The authenticated backend journals
+the exact UI text, source cuts, clock and plan in PostgreSQL before its standalone coordinator dispatches the stage.
+Workers own distinct whole topics, prepare privately, then publish after cross-topic series ownership checks.
+This local profile does not establish continuous fleet execution, signed activation or production fencing.
+
 | Item | State | Evidence |
 |---|---|---|
+| Bounded Rust orchestration | Explicit workbench target, PostgreSQL journal/coordinator, `RustRollout` compiler, custom `RustPlatform`/`RustExecutor`, private HTTP preparation and acknowledged completion | [local guide](../devguide/integration/wayang-rust-compose.md), `opentsx-saas-backend/app/services/wayang_service.py`, `opentsx-wayang/src/main/java/org/opentsx/wayang/rust/`, `rust/tsx-runner/src/worker.rs` |
 | Wayang in OpenTSx | `TsxJavaPlugin` registers the Java platform and KafScale transport; `TsxIncrement` runs checkpointed increments; `TsxPairXcorr` and `TsxPairEs` are pure Java pair kernels. Shared vectors cover statistics, segmentation, SAX, and data-quality results. | `opentsx-wayang/pom.xml`, `TsxJavaPlugin.java`, `TsxIncrement.java`, `TsxPairXcorr.java`, `TsxPairXcorrVectorsTest.java`, `TsxPairEs.java`, `TsxPairEsVectorsTest.java`, `tools/java_operator_vectors.py` |
 | Build | Java release 17 (`pom.xml:39`), CI on Java 17 and 21 ([CONTRIBUTING.md](../../CONTRIBUTING.md)); `kafka.version` 3.9.2, `avro.version` 1.12.1, `hadoop.version` 3.5.0 (`pom.xml:50-55`) | `pom.xml` |
 | Streaming runtime that runs today | Java processor in `opentsx-retrieval`: manual assignment, explicit offsets, checkpoint per runner written after the broker acknowledged the output, control topic `tsx.<domain>.dags.v1`, status topic `tsx.<domain>.dag-status.v1` | [kafka-native-streaming.md](../devops/kafka-native-streaming.md); `VectorProcessor.java:46-59`; `TopicLayout.java:119-125` |
@@ -214,20 +232,29 @@ No dependency on `opentsx-core`: it pulls Swing charting, Mahout, POI and Hadoop
 
 ### 5.2 Classes per operator
 
-Every OpenTSx operator becomes four pieces, following the Wayang pattern of section 3.1:
+Track A uses logical operators, Java execution operators, mappings and load estimators.
+A consecutive run of `CleanChain.OPS` nodes becomes one
+[`TsxSeriesChain`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSeriesChain.java#L12).
+The steps share per-series state and assign output keys and episode ids after the last step.
+The run's last DAG node id identifies its checkpoint state, as specified in S2.3.
+The implemented statistics operator is
+[`TsxStatsWindow`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#L8).
 
-| Piece | Track A class (proposed) | Wayang type |
+| Piece | Implemented Track A classes or keys | Wayang type |
 |---|---|---|
-| logical operator | `TsxOperator` subclasses, for example `StatsWindowOperator extends UnaryToUnaryOperator<Episode, SeriesStats>`; `PairXcorrOperator extends BinaryToUnaryOperator<Episode, Episode, Episode>` | logical |
-| Java execution operator | `JavaStatsWindowOperator extends StatsWindowOperator implements JavaExecutionOperator` | Java platform |
-| mapping | `StatsWindowMapping implements Mapping` | registered by `TsxJavaPlugin` |
-| cost function | `wayang.java.tsx.stats-window.load.main = {...}` in `wayang-tsx-defaults.properties` | `LoadProfileEstimators` |
+| logical operator | `TsxSeriesChain`, `TsxStatsWindow` | logical |
+| Java execution operator | `JavaTsxSeriesChain`, `JavaTsxStatsWindow` | Java platform |
+| mapping | `TsxOperatorMappings.SeriesChainMapping`, `TsxOperatorMappings.StatsWindowMapping` | registered by `TsxJavaPlugin` |
+| load estimator | `wayang.java.tsx.serieschain.load`, `wayang.java.tsx.statswindow.load` in `wayang-tsx-defaults.properties` | `LoadProfileEstimators` |
+
+See the [registered mappings](../../opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#L29)
+and [load specifications](../../opentsx-wayang/src/main/resources/wayang-tsx-defaults.properties#L17).
 
 Source and sink, replacing Wayang's Kafka operators (section 3.2):
 
 | Class | Behaviour |
 |---|---|
-| `TsxTopicSource extends UnarySource<Episode>` and `JavaTsxTopicSource` | reads `[from, to)` per partition with manual assignment and seek, as `LogReader.java:21` does; `from` from the checkpoint, `to` from `endOffsets` at job start (`LogReader.java:68`); decodes with `OpenTsxAvro.decode`; refused fetches through `Patience.poll` |
+| `TsxTopicSource extends UnarySource<SpecificRecord>` and `JavaTsxTopicSource` | reads `[from, to)` per partition with manual assignment and seek, as `LogReader.java:21` does; `from` from the checkpoint, `to` from `endOffsets` at job start (`LogReader.java:68`); decodes with `OpenTsxAvro.decode`; refused fetches through `Patience.poll` |
 | `TsxTopicSink extends UnarySink<SpecificRecord>` and `JavaTsxTopicSink` | `KafScaleClients.producer`; key `seriesId`, value `OpenTsxAvro.encode`, header `tsx-schema` (`TopicLayout.HEADER_SCHEMA`); waits for all acknowledgements before the job reports success |
 | `TsxCheckpoint` | written by the executor after the sink succeeded: offsets per partition, operator state, `specHash` |
 
@@ -254,6 +281,13 @@ writes a new checkpoint. Latency is the increment interval plus the job start ti
 
 ### 5.4 Translation path
 
+The A2 implementation in `opentsx-wayang` compiles local clean episode DAGs with
+`DagToWayang.compile`. It validates parameters from `systems/processors/` and
+fuses consecutive clean nodes into `TsxSeriesChain` as specified in S2.3.
+`TsxStatsWindow` is available through the Java API for incremental episodes and
+observations, completed inputs, and explicit keyed windows including empty
+input. Statistics sink translation and federation are outside this compiler.
+
 ```mermaid
 flowchart LR
   WB["Web workbench<br/>opentsx.dag.v1 / v2"] --> BE["SaaS backend<br/>authorization"]
@@ -268,11 +302,15 @@ flowchart LR
 
 1. The workbench writes `opentsx.dag.v1`, or `opentsx.dag.v2` when the flow has a series sink, as today. There is no
    second DAG format.
-2. `DagToWayang` builds a `WayangPlan` with the Java API: one logical operator per node, one `TsxTopicSource` per
-   input topic, one `TsxTopicSink` per sink. It validates as `DagPlan` does today.
+2. `DagToWayang.compile` validates the local clean-series path through `DagPlan`; processor descriptions supply
+   parameter types, bounds, enums and defaults. Its `plan` method connects the increment's `TsxTopicSource` to
+   one fused `TsxSeriesChain` and a `TsxTopicSink` for the selected series sink. The run's last node id identifies
+   its checkpoint state, as specified in S2.3. Statistics sink translation and remote fragment compilation remain
+   outside this local compiler.
 3. The plugin does not use `wayang-api-json`: that API has no Kafka operator and compiles Scala source received in
    the request (section 3.1), which a site must not accept.
-4. Single site: `WayangContext` with `Java.basicPlugin()` and `TsxJavaPlugin` runs the plan in the driver JVM.
+4. Single site: `WayangContext` with `TsxJavaPlugin` runs the plan in the driver JVM. The plugin registers only
+   the supported Java mappings.
 5. Federation: section 9.
 
 ### 5.5 Optional engines
@@ -283,6 +321,11 @@ OpenTSx already has a Flink path (`opentsx-flink-core`).
 
 ## 6. Track B: Rust edge runner
 
+This section describes the fleet target. The implemented interface is `tsx-runner replay`, documented in the
+[local bounded guide](../devguide/integration/rust-runner-local.md), with the subset in
+[SPEC S1.9](20-WAYANG-TS-OPERATORS-SPEC.md#s19-execute-the-trusted-local-bounded-rust-subset).
+The fleet commands and broader operator table below are not the executable local profile.
+
 ### 6.1 Scope
 
 `tsx-runner` is one statically linked binary. It executes the same operator ids and versions as Track A, on the
@@ -292,7 +335,8 @@ and nothing else. Producers set `partitioner=murmur2_random` in addition to C4 (
 Modes: `agent` (mTLS REST service, outbound polling by default), `run` (one plan file, for SSH launch and tests),
 `conform` (site checks of section 8, signed report).
 
-Inside, one task per assigned partition set: fetch with `BaseConsumer` (manual `assign`, `seek`, no group id),
+Inside, one owner executes each assigned whole topic: fetch every partition with `BaseConsumer`
+(manual `assign`, `seek`, no group id),
 decode, run the operator chain in process, produce, collect delivery reports, then write the checkpoint. Unlike
 Track A, the runner is continuous: no job start per increment.
 
@@ -328,17 +372,58 @@ retention must cover that gap.
 | `pair.es` | JVM | surrogate shuffles multiply the cost by the shuffle count |
 | DFA, pattern search (MASS, DTW), twin, ONNX scoring | JVM | history or large models |
 
+### 6.4 Run the bounded UI orchestration profile
+
+The implemented profile accepts one to three whole Kafka topics and one supported v2 cleaning chain.
+`RustRollout` reuses `DagToWayang.parameters`, preserves original UI node IDs and raw-text `specHash`, and gives
+each complete per-topic fragment its own ID/hash. It freezes every internal partition from zero to its observed end.
+Sources, optional unions, a fused chain and the sink map to custom Rust execution operators in one Wayang stage.
+Topology channels carry no episode payloads in the driver. Node placement follows topic order and sorted worker IDs;
+placeholder costs are not a measured placement model. All workers must match the artifact digest and state ABI.
+
+The PostgreSQL journal accepts exact source text once per installation and persists the accepted clock and plan.
+Normal authentication and administrator permission apply. A standalone coordinator owns a database advisory lock;
+the Java driver is stateless for authoritative control. Driver and worker HTTP ports remain internal to the trusted
+Compose network. This is not the signed runner-plan protocol or production authorization in sections 8 to 11.
+
+Every worker fully prepares its bounded input and candidate output privately before any activation. The stage checks
+input-series and derived-series ownership across all preparations, then activates in parallel. Broker acknowledgements
+precede the worker checkpoint and receipt. An uncertain publication has `activationRetryable=true`; retries retain
+the same request hash, saved output, clock and source cut while PostgreSQL topic ownership remains held. Completed
+retry returns the stored receipt. Partial activation can expose at-least-once output, without atomic publication or
+rollback across workers. The [acceptance helper](../../tools/verify_wayang_rust_compose.py) exercises the real browser
+and compares output with the Java reference; its generated evidence records the actual run outcome.
+
+Continuous input, failover, signed delivery, broader kernels and durable Iceberg publication remain outside this
+profile. A topic that exceeds its assigned worker's capacity is refused rather than split across workers.
+
+### 6.5 Continue complete-topic cuts on fixed workers
+
+The [continuous local profile](../devguide/integration/wayang-rust-continuous.md) retains the same original DAG,
+clock and topic-to-worker bindings across successive finite Wayang stages. PostgreSQL saves each exact plan before
+dispatch. Workers restore their own preceding pipeline state and validate sequence, predecessor and every partition
+cursor. The per-topic record budget bounds each increment, with rotating internal partition priority; ownership
+still covers the complete topic. Empty input creates no new increment.
+
+Cumulative series manifests prevent a later topic from taking an earlier series identity. Acknowledged worker
+heads and cumulative backend counters survive service restart. The durable Stop operation reconciles dispatched
+work before releasing backend ownership. Worker history keeps one immutable chain/head and at most one candidate;
+the backend retains two completed cycles plus pending work. Uncertain publication reuses saved bytes and may
+produce identical duplicates. This is local at-least-once execution, without broker-restart qualification,
+automatic failover, chain replacement, production fencing or durable Iceberg publication. Specification S1.11
+defines the protocol and its resource limits.
+
 ## 7. Flow shapes
 
 All shapes keep the record key `seriesId`, except where an operator changes the key on purpose.
 
 | Shape | Example | Rule |
 |---|---|---|
-| 1:1 | `tsx.d.episodes.v2` to `tsx.d.clean.v2` through `dq.checks`, `resample` | one input partition, one task; output partition follows from `murmur2(seriesId)` |
+| 1:1 | `tsx.d.episodes.v2` to `tsx.d.clean.v2` through `dq.checks`, `resample` | one task owns the complete input topic; internal output partition follows from `murmur2(seriesId)` |
 | 1:m | `episodes` to `clean` and `aggregates` | one task, several sinks; one producer per sink topic (KOI-2026-10-13-02 in [11](11-SMART-TOPIC-PROZESSOR-DEVOPS.md), 5b) |
-| n:1 | `episodes` and `synthetic` to `features` | same partition count and partitioner on all inputs; the task reads partition p of every input; checked in the site contract |
+| n:1 | `episodes` and `synthetic` to `features` | co-locate the complete input topics; validate key/clock compatibility; partitions remain internal reads, never separate node assignments |
 | n:m | several inputs, several sinks | both rules above |
-| key change | `align.vector` with `key: turbine`, `pair.*` over two series | a repartition sink writes `tsx.<domain>.repartition.<dag>.<node>.v2` keyed by the new key; a second stage reads it (proposed kind) |
+| key change | `align.vector` with `key: turbine`, `pair.*` over two series | an explicit sink writes a new topic `tsx.<domain>.repartition.<dag>.<node>.v2` keyed by the new key; the next stage owns that topic in full (proposed kind) |
 
 Order holds per partition; with key `seriesId` the episodes of one series stay in order
 (`producesAndConsumesInOrderPerKey` in the conformance suite). Windows and ticks lie on the grid since
@@ -390,14 +475,14 @@ Wayang has no federation (section 3.1). The plan adds it as a platform in the dr
 
 | Class | Role |
 |---|---|
-| `TsxSitePlatform extends Platform` | stands for "a set of sites"; its executor sends one plan per site |
-| `TopicChannel` with `ChannelDescriptor(TopicChannel.class, true, true)` | names a topic, fingerprint and partition count; carries no records, like `SqlQueryChannel` carries SQL |
+| `TsxSitePlatform extends Platform` | represents the remote runtime; its executor dispatches complete fragment assignments to admitted nodes, including multiple nodes at one site |
+| `TopicChannel` | binds source identity, topic, schema, key and actual partitions; carries metadata rather than raw records. Reuse and breakpoint suitability require explicit qualified semantics; a live topic is not completed materialization. |
 | `AggregateChannel` | merged aggregates returned to the driver (route J) |
-| `TsxSiteExecutor extends PushExecutorTemplate` | builds, signs and sends site plans; polls status; collects route J results |
+| `TsxSiteExecutor extends ExecutorTemplate` | compiles a complete execution stage, performs bounded fragment fanout, verifies deployment handles and collects bounded route J results at an explicit completion boundary |
 
 The **JVM site agent** (Track A) is a small Java service in `opentsx-wayang`. It verifies the plan and runs it in a
-local `WayangContext` with the Java platform, increment by increment. The **Rust agent** (Track B) runs the same plan
-in `tsx-runner`. Both report status to `tsx.<domain>.dag-status.v1`.
+local `WayangContext` with the Java platform, increment by increment. The **Rust runtime** (Track B) executes its
+assigned complete fragments and whole topics in `tsx-runner`. Both report status to `tsx.<domain>.dag-status.v1`.
 
 ### 9.2 Plan envelope
 
@@ -424,22 +509,24 @@ Sites hold disjoint value sets of one group and one window (C9 and the epoch gri
 | count, NaN count, gap count | sum | exactly |
 | min, max | min, max | exactly |
 | mean, M2 | Chan et al.: n = nₐ + n_b, δ = μ_b − μₐ, μ = μₐ + δ·n_b/n, M2 = M2ₐ + M2_b + δ²·nₐ·n_b/n (`StatsAccumulator.java:62-86`) | exactly in real arithmetic for any split ([Chan, Golub, LeVeque 1983, doi:10.1080/00031305.1983.10483115](https://doi.org/10.1080/00031305.1983.10483115); [Welford 1962, doi:10.1080/00401706.1962.10490022](https://doi.org/10.1080/00401706.1962.10490022)). In IEEE 754 doubles the result depends on the merge order: equal within a relative tolerance, not bit for bit |
-| DDSketch bins | add bin counts (`QuantileSketch.java:101-110`) | exactly, with the same `alpha` and `maxBins`, when all values were indexed by one runtime. Collapse moves the lowest bin into the next one (`:228-233`); the kept bins are always the `maxBins` highest indexes seen and all collapsed mass ends in the lowest kept bin, in any order. This follows from the code; a test must confirm it |
-| quantiles | from the merged sketch | equal to the centralized sketch's quantile; within relative error `alpha` of the true quantile ([Masson, Rim, Lee, PVLDB 12(12) 2019, doi:10.14778/3352063.3352135](https://doi.org/10.14778/3352063.3352135)) |
+| DDSketch bins | add bin counts (`QuantileSketch.java:101-110`) | equal for uncollapsed bins with the same `alpha` and `maxBins` under one runtime; zero buckets and bounded-bin collapse need dedicated acceptance vectors |
+| quantiles | from the merged sketch | centralized sketch equality requires the qualified no-collapse domain; relative error `alpha` is qualified to nonzero magnitudes outside the zero bucket without collapsed tails ([Masson, Rim, Lee, PVLDB 12(12) 2019, doi:10.14778/3352063.3352135](https://doi.org/10.14778/3352063.3352135)) |
 | DQ check counts, segment counts | sum | exactly |
 
 ### 9.5 Where it does not hold
 
 | Case | Why | Alternative |
 |---|---|---|
-| exact median or quantile | needs all values | DDSketch quantile within `alpha` |
+| exact median or quantile | needs all values | DDSketch with the qualified zero-bucket/collapse accuracy domain |
 | `pair.xcorr`, `pair.es` with A and B at different sites | needs both series aligned at one place | only pairs within one site; for zero-lag Pearson correlation, co-moment sums (n, Σx, Σy, Σxy, Σx², Σy²) where both are present |
 | per-series stateful operators over a split series | state per series | C9 forbids the split |
-| DDSketch bins in a mixed federation | Java `Math.log` may differ from the correctly rounded result by 1 ulp ([Java SE 17 `Math.log`](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Math.html#log(double))); Rust `f64::ln` uses the platform libm. A value on a bin boundary can land in neighbouring bins on JVM and Rust sites | the merged sketch stays within `alpha`; byte equality with a centralized run holds only when all sites run one runtime; a boundary test documents the gap |
+| DDSketch bins in a mixed federation | Java `Math.log` may differ from the correctly rounded result by 1 ulp ([Java SE 17 `Math.log`](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Math.html#log(double))); Rust `f64::ln` uses the platform libm. A value on a bin boundary can land in neighbouring bins on JVM and Rust sites | apply the qualified accuracy domain; byte equality additionally needs one runtime and no collapse; boundary, zero-bucket and collapsed-tail tests document the limits |
 | model training (FedAvg) | not a statistic | stays in the Python training path of [05](05-SMART-TOPICS.md) |
 
-The merge knows `expectedSites`. A merged window is `final` when every expected site has reported it; otherwise it
-is written with `final=false` and the missing sites. Replayed site output carries the same id and is kept once.
+The merge binds expected membership to the generation. A merged window is `final` only with admitted closed-window
+or source-cut evidence from every expected assignment. Open partials are insufficient. Missing evidence produces
+`final=false` with missing membership. Byte-identical replay is kept once; conflicting content under the same
+key/revision or stale generations is refused. The evidence envelope is an explicit U09 delivery gate.
 
 ## 10. Delivery, state and recovery
 
@@ -450,7 +537,7 @@ is written with `final=false` and the missing sites. Replayed site output carrie
 | checkpoint | per task: offsets, operator state, `specHash`, catalog version; temporary file, fsync, rename, after all earlier deliveries are acknowledged |
 | producer retries | unbounded within `delivery.timeout.ms=180000` (`KafScaleClients.DELIVERY_TIMEOUT`); KafScale refuses produce for about a minute when its object store is degraded (`KafScaleClients.java:19-22`) |
 | refused fetch | reset to the positions before the fetch and retry, as `Patience` does |
-| one writer | one instance per site and partition set; an agent refuses a second plan for the same job |
+| one writer | one owner per assigned whole topic and fragment; local refusal alone does not enforce distributed ownership |
 
 | Failure | Effect | Recovery |
 |---|---|---|
@@ -524,7 +611,7 @@ partition, records in and out, operator time, checkpoint age, delivery failures.
 | Track A equals Track B: same input topic, both tracks | A, B | identical records except the DDSketch boundary case of section 9.5, which is listed |
 | KafScale conformance, required tests, KafScale v1.6.0 in CI | A (existing suite), B (port) | all pass; placement probe equal for Java and Rust producers |
 | crash between produce and checkpoint | A, B | duplicates only with identical ids; reader output equals a run without crash |
-| federated equals centralized: split by `seriesId` over k = 2, 4, 8 sites; one-runtime and mixed | A, B | counts, min, max equal; sketch bytes equal in one-runtime runs; mean and variance within relative 1e-12 (proposal, fixed from measured error) |
+| federated equals centralized: split by `seriesId` over k = 2, 4, 8 sites; one-runtime and mixed | A, B | counts, min, max equal; sketch-byte equality only in the one-runtime/no-collapse domain; qualified zero-bucket/tail checks; mean and variance within the declared tolerance |
 | offline and catch-up | B | section 6.2 |
 
 ## 14. Evaluation plan
@@ -548,7 +635,37 @@ Baselines:
 | (b) the existing OpenTSx Java streaming path (the processor in `opentsx-retrieval` and the statistics processor in `opentsx-stats`) | same server | in-repository reference for throughput and latency of the same operators |
 | (c) Track B against Track A | the same small device: one arm64 board and one armv7 board (models named in the report) | resource use and throughput on low-capacity hardware |
 
-**Measurement protocol for Track B against Track A on small hardware:**
+### 14.1 Measure Track A increments
+
+The [A1.7 harness](../../tools/wayang_increment_latency.py)
+measures the actual `TsxIncrement` passthrough and `dq.checks` plus `resample PT1M`
+plans on the complete W simulation. Each condition has one partition, a fresh JVM
+and a disposable KafScale v1.6.0 broker with in-memory storage. Intervals of
+5, 30 and 60 seconds, 30 increments and three sequential repetitions give
+18 conditions and 540 increments. Inputs are paced across each interval; the
+first increment starts after one full interval. No warm-up samples are discarded.
+
+Per-increment samples record first input Fetch from job invocation, wall time,
+record counts, scheduling lateness and output latency p50/p95/p99. Per-output
+latency subtracts successful input Produce ingress from output Produce ingress at
+a loopback protocol observer. These are monotonic transport clocks. Kafka record
+timestamps preserve event time. For aggregate output, the input clock belongs to
+the latest contributing episode with matching raw series identity and
+overlapping event-time range. The raw samples retain every contributing id and
+separate acknowledgement clocks. Observer parsing and forwarding are included.
+
+The [operations guide](../user-manual/12-operations.md#127-measure-wayang-increment-latency)
+gives the rerun command and prerequisites. The generated
+[measurement report](measurements/wayang-increment-latency-2026-11-17/REPORT.md)
+and its case directories retain hardware, OS, JDK, explicit heap, source hashes,
+exact commands and raw CSV files. Private classpath copies prevent later shared
+Maven-cache writes from changing a condition. macOS idle-sleep prevention is tied
+to the Python process and released in cleanup. This does not reserve CPU or
+remove other shared-host contention. The local, single-partition, in-memory
+baseline has no threshold and does not establish the broader throughput matrix,
+durable-storage behavior, a remote-network result or Track B parity.
+
+### 14.2 Compare Track B and Track A on small hardware
 
 1. Fix the device, OS image, kernel, CPU governor (`performance`) and storage; record them.
 2. Run a local KafScale or connect to one KafScale over a fixed network; record which.
@@ -571,7 +688,9 @@ Baselines:
 
 ## 16. Phased plan
 
-Track A first (A0 to A5), Track B when A3 is accepted (B1 to B5). Milestones, numbered acceptance criteria and the
+Use U00 to U09 of the unified plan to prove UI-to-Wayang-to-two-Rust-node deployment before full catalog expansion.
+Operator admission still requires its Java reference and cross-runtime vectors.
+Milestones, numbered acceptance criteria and the
 owner decisions are in [TASK-020](../../EVOLUTION/TASK-020-wayang-ts-operators.md).
 
 ## 17. Relation to concept 11
@@ -607,4 +726,4 @@ The owner decisions, with options and a recommendation each, are D-T1 to D-T12 i
 | partitioner mismatch in Track B | Rust and Java writers place a series on different partitions | `murmur2_random`; placement probe in the site contract |
 | `pair.xcorr` has no Java code in OpenTSx | Track A port may diverge | port from the original Java used for the vectors; vectors to 12 decimals |
 | series split across sites | wrong per-series results | C9 and the overlap check |
-| no consumer groups | no automatic failover | one instance per partition set; restart from checkpoint |
+| no consumer groups | no automatic failover | one owner per whole topic; restart its complete internal positions from a compatible checkpoint |

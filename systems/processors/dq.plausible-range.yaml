@@ -1,5 +1,3 @@
-# Example processor description, schema opentsx.processor.v1 (draft), for an operator of the workbench
-# (opentsx-saas-frontend/src/workbench/ops.ts, id dq.plausible-range, written into the DAG as dq.checks).
 schema: opentsx.processor.v1
 id: dq.plausible-range
 version: 1
@@ -18,9 +16,11 @@ semantics: { needs: point, deterministic: true, keeps: [time, unit, series], ori
 dag: { op: dq.checks, fixed: { checks: [PLAUSIBLE_RANGE] } }
 runtimes:
   workbench: { status: available }
-  processor: { status: planned, note: "TASK-013, 013.5" }
-  wayang: { status: planned, note: "TASK-020, phase A2" }
-  rust: { status: planned, note: "TASK-020, phase B2" }
+  processor: { status: available, note: "Series DAG op dq.checks in CleanChain." }
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+  rust: { status: available, note: "tsx-runner 0.1.0 trusted-local bounded replay and continuous increments; PLAUSIBLE_RANGE only." }
 state: { kind: none }
+merge: { class: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json
 tolerance: { rel: 1.0e-12, abs: 1.0e-12 }
 ui: { group: stream, label: Plausible range }

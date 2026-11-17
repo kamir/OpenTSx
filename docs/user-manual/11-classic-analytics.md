@@ -6,7 +6,8 @@ algorithms are still available:
 * in Python, through the `opentsx` top-level API (the recommended way, with verified examples below),
 * in Java, in `opentsx-core`, as tools on the 2.x `TimeSeriesObject` model,
 * for `pair.es`, in `opentsx-wayang`, as pure Java methods over arrays of samples
-  or event times.
+  or event times, and as a Wayang operator over sampled episodes through the
+  native Java API.
 
 The pure Java pair cross-correlation kernel is in `opentsx-wayang`; see
 [section 11.6](#116-compute-pair-cross-correlation-in-java).
@@ -100,6 +101,37 @@ compared exactly. See the
 [module instructions](../../opentsx-wayang/README.md#compute-pair-event-synchronisation)
 for the kernel and test entry point.
 
+### Run sampled event pairs through Wayang
+
+Use `org.opentsx.wayang.TsxPair` with method `pair.es`, a parameter map, the
+expected series ids for inputs `a` and `b`, the specification hash, and
+`TsxState`. Tag each input episode with `TsxTagged`, combine the inputs, and
+register `TsxJavaPlugin`; the
+[pair operator guide](../../opentsx-wayang/README.md#compare-two-series-in-windows)
+describes this native Java API. `pair.es` belongs to frozen Catalog 1;
+deployment admission remains separate from this Java entry point.
+
+The pair settings select episode or sliding windows and align their sample
+clocks. `sigma` controls event detection, `tauMax` is a cap in seconds with zero
+meaning uncapped, and `shuffles` and `seed` select the surrogate control.
+Output fields are `pair.es.q_total`, `pair.es.q_ab`, `pair.es.q_ba`, and
+`pair.es.q_rand`. The direct kernel's event-time cap uses the units of its
+event lists; the sampled operator converts seconds to clock ticks.
+
+Keep waiting episodes in `TsxState` and restore that state between increments
+when the other input arrives later. `TsxPairEsWayangTest` covers all four
+sampled-series cases in `pair-es.v1.json`, both in one plan and with B retained
+before A arrives in a later increment. The other four cases contain event lists
+only and remain `TsxPairEsVectorsTest` kernel checks. All eight kernel cases
+check the four synchronization fields within `5e-13`.
+
+The native settings reduce whole-number seeds modulo `2^32` for the Mulberry32
+state while preserving the original seed's workbench number formatting in
+labels. `largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` compares seed
+`1e20` with its unsigned 32-bit state. `settingsLabelsKeepWorkbenchNumberFormatting`
+checks small sigma, large duration and seed labels, including scientific
+notation where the workbench uses it.
+
 ## 11.4 Return-interval statistics (RIS)
 
 RIS analyzes the time between extreme events (values above a threshold, by default the 95th percentile). For
@@ -116,6 +148,17 @@ r["mean_ri"], r["median_ri"], r["risk_parameter"], r["risk_interpretation"], r["
 `gamma` and `tau_0` are the parameters of the stretched exponential fit. For uncorrelated data, `gamma` is ≈ 1.
 
 ## 11.5 Java tools in `opentsx-core` (2.x model)
+
+The base time-series text preview shows at most five points; legacy `writeToFile` exports every point and
+preserves existing files on preparation or I/O failure. See the
+[preview and export contract](../../opentsx-core/README.md#preview-and-export-a-time-series) for formats,
+exceptions and regression checks.
+
+The native `save PN` action writes the table, PNG and optional caption in order, replacing each file atomically.
+A failed step stops the export and displays its destination plus the files saved in that attempt. Earlier outputs
+remain available; the failed destination is preserved. See
+[native table and chart saving](../../opentsx-core/README.md#save-native-tables-and-charts) for formats, errors
+and regression checks.
 
 The Java implementations work on `org.opentsx.data.series.TimeSeriesObject` and on TSBucket sequence files. Most are
 standalone programs with a `main` method:
@@ -151,6 +194,20 @@ context-based loading and named bucket processing are not implemented. See
 The desktop FFT action derives its sampling rate from uniformly spaced coordinates. For integer index coordinates
 with spacing 1, enter the sampling rate in the dialog. Frequencies use the reciprocal of the coordinate unit.
 See [FFT coordinates](../../opentsx-core/README.md#inspect-fft-coordinates) for input requirements and output limits.
+
+The native `Histogram cross-cut` action pools raw counts within consecutive sample windows. Enter a positive
+integer window length; cancellation leaves the chart and recorder unchanged. The first selected series must
+contain samples; later series may be empty. Invalid selections, window lengths, bounds or bin counts produce a
+validation message. Window starts follow the first series; every series contributes its available samples within
+each nominal window, including the final partial window. See the
+[native histogram contract](../../opentsx-core/README.md#compare-native-histogram-slices) for limits and regression checks.
+
+The native `ENTROPY` action accepts positive integer window lengths and finite series with matching coordinates.
+Cancelling or rejecting an input produces no chart or recorder entry. Window starts advance by at least one sample,
+partial cuts stop at the available data, and output coordinates identify sample-start indices. The native maximum
+normalization and modulo-100 discretization remain distinct from browser entropy binning. See
+[native entropy windows](../../opentsx-core/README.md#compute-native-entropy-windows) for the exact input requirements,
+error messages and regression checks.
 
 ### Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 

@@ -1,0 +1,1561 @@
+{
+  "schema": "opentsx.learning.v1",
+  "lessons": [
+    {
+      "id": "library.dfa",
+      "operator": "DFA.analyze",
+      "title": "Check DFA fluctuation scaling",
+      "surface": "library",
+      "objectives": [
+        "Separate the fluctuation curve from its fitted scaling exponent.",
+        "Verify amplitude and offset invariants through the public Python API."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Analyze the fixed signal at the four explicit scales.",
+        "Analyze three times the signal plus seven.",
+        "Compare fluctuations and alpha without claiming that this signal proves long-range dependence."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import DFA\nvalues = np.sin(np.arange(256) * 0.37) + 0.2 * np.cos(np.arange(256) * 0.13)\nscales = np.array([8, 16, 32, 64], dtype=np.int32)\nresult = DFA(polynom_order=1).analyze(values, scales=scales)\nchanged = DFA(polynom_order=1).analyze(3 * values + 7, scales=scales)",
+        "data": {}
+      },
+      "expected": [
+        "Both results preserve scales [8,16,32,64].",
+        "Changed fluctuations equal three times the original within 1e-12 relative and absolute tolerance.",
+        "The fitted exponent stays equal within 1e-12; the input array remains unchanged."
+      ],
+      "pitfalls": [
+        "A short synthetic signal is a test fixture, not evidence of a physical scaling law."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/11-classic-analytics.md#111-detrended-fluctuation-analysis-dfa",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#analyze-dfa"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/dfa.py#L188"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_dfa_preserves_scales_and_rescales_fluctuations"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.mfdfa",
+      "operator": "MFDFA.analyze",
+      "title": "Select explicit MFDFA moments",
+      "surface": "library",
+      "objectives": [
+        "Relate the q=2 fluctuation row to DFA.",
+        "Interpret moment indices using q_values."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Analyze the same signal with q values [-2,0,2].",
+        "Find q=2 explicitly and compare its Fq row with DFA fluctuations.",
+        "Inspect the mass exponent at q=0."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import DFA\nvalues = np.sin(np.arange(256) * 0.37) + 0.2 * np.cos(np.arange(256) * 0.13)\nscales = np.array([8, 16, 32, 64], dtype=np.int32)\nfrom opentsx import MFDFA\nq_values = np.array([-2.0, 0.0, 2.0])\nresult = MFDFA(polynom_order=1, q_range=q_values).analyze(values, scales=scales)\nq2 = int(np.flatnonzero(result[\"q_values\"] == 2)[0])\nfluctuations_q2 = result[\"Fq\"][q2]",
+        "data": {}
+      },
+      "expected": [
+        "Fq has shape (3,4) and contains finite values for this fixture.",
+        "The selected q=2 row equals DFA fluctuations within 1e-12.",
+        "tau_q at the q=0 index is -1."
+      ],
+      "pitfalls": [
+        "The current h_2 convenience field selects the middle array element; use explicit q_values/h_q indices for custom q ranges."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/11-classic-analytics.md#112-multifractal-dfa-mfdfa",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#analyze-mfdfa"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/mfdfa.py#L254"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_mfdfa_q2_fluctuations_match_dfa"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.event-synchronization",
+      "operator": "EventSynchronization.analyze",
+      "title": "Explain directional event synchronization",
+      "surface": "library",
+      "objectives": [
+        "Identify planted events and their lead direction.",
+        "Distinguish a strict lag cap from an inclusive threshold.",
+        "Identify the four sampled-series cases that also run through Wayang among the eight kernel cases.",
+        "Explain restored pair state, unsigned 32-bit seeds and workbench settings labels."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Plant four spikes in each series with B one tick after A.",
+        "Analyze with tau_max two, then one.",
+        "Compare directional synchronization and the reported leader.",
+        "Inspect the four sampled-series cases through TsxPair in one plan and with B retained before A arrives after state restoration.",
+        "Read the large-seed and settings-label regressions in TsxPairEsWayangTest; explain why the seed label need not equal the random state.",
+        "Resolve pair.es version 1 in frozen catalog 1 and distinguish its sampled native mapping from event-list kernel coverage and full A4 deployment."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import EventSynchronization\nfirst = np.zeros(25)\nsecond = np.zeros(25)\nfirst[[2,8,14,20]] = 10\nsecond[[3,9,15,21]] = 10\nresult = EventSynchronization(tau_max=2).analyze(first, second, threshold1=5, threshold2=5)\ncapped = EventSynchronization(tau_max=1).analyze(first, second, threshold1=5, threshold2=5)",
+        "data": {}
+      },
+      "expected": [
+        "Events are [2,8,14,20] and [3,9,15,21].",
+        "Cap two gives overall_sync=1, sync_1_to_2=1, sync_2_to_1=0 and leader Series 1.",
+        "Cap one gives overall_sync=0 because the lag must be strictly below the cap.",
+        "Four sampled-series vectors match all four synchronization fields through Wayang within 5e-13, also after restoring state between increments.",
+        "The four event-list-only vectors remain kernel cases; all eight cases are checked by TsxPairEsVectorsTest.",
+        "A native seed of 1e20 gives the same window results as unsigned 32-bit state 1661992960 while its settings label retains the original number."
+      ],
+      "pitfalls": [
+        "Event synchronization is not Pearson correlation.",
+        "Use a fixed seed when adding surrogate_sync; a reproducible surrogate does not establish causality.",
+        "Event-list-only vectors do not establish sampled Wayang coverage or a deployed DAG binding.",
+        "The direct kernel uses event-list units for tauMax; the sampled native operator accepts seconds and converts them to ticks.",
+        "Frozen catalog membership does not expand the local clean-series compiler or admit a site plan."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/11-classic-analytics.md#113-event-synchronization-es",
+          "docs/user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang",
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#compare-event-synchronization",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/event_sync.py#L263",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairEs.java#L38",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxPair.java#TsxPair",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxPair.java#method",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/ops/TsxPairWindows.java#es",
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "systems/processors/pair.es.yaml"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_event_sync_exposes_direction_and_strict_cap",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/ops/TsxPairEsVectorsTest.java#L1",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#everySeriesCaseMatchesThroughAWayangPlan",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#aInALaterIncrementGivesTheSameResult",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairEsWayangTest.java#settingsLabelsKeepWorkbenchNumberFormatting",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/pair-es.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.ris",
+      "operator": "RIS.analyze",
+      "title": "Measure exact return intervals",
+      "surface": "library",
+      "objectives": [
+        "Derive return intervals from event indices.",
+        "Distinguish empirical survival from a fitted tail law."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Plant events at indices 1,3,7,13 in fifteen samples.",
+        "Analyze with a fixed absolute threshold of five.",
+        "Compute empirical survival and explain the absence of a qualified tail fit."
+      ],
+      "starter": {
+        "language": "python",
+        "code": "import numpy as np\nfrom opentsx import RIS\nvalues = np.zeros(15)\nvalues[[1,3,7,13]] = 10\nris = RIS(threshold=5)\nresult = ris.analyze(values)\nintervals, survival = ris.survival_function(result[\"return_intervals\"])",
+        "data": {}
+      },
+      "expected": [
+        "Return intervals are [2,4,6], with mean and median four.",
+        "Empirical survival is [1,2/3,1/3] at those intervals.",
+        "Three intervals leave gamma and tau_0 at zero in this implementation."
+      ],
+      "pitfalls": [
+        "Intervals are in sample positions unless the sample period supplies a time unit.",
+        "Zero fit parameters for this short fixture are not a measured physical tail exponent."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/11-classic-analytics.md#114-return-interval-statistics-ris",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#measure-return-intervals"
+        ],
+        "source": [
+          "python-package/opentsx/algorithms/ris.py#L207"
+        ],
+        "tests": [
+          "python-package/tests/test_library_learning_algorithms.py#test_learning_ris_reports_exact_intervals_and_empirical_survival"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.znorm",
+      "operator": "ZNorm.of",
+      "title": "Normalize retrieval inputs with gaps",
+      "surface": "library",
+      "objectives": [
+        "Use population-standard-deviation scaling for retrieval.",
+        "Observe the normalized representation of flat input and NaNs."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Normalize [1,2,3,NaN].",
+        "Normalize a constant [7,7] array.",
+        "Compare this population scale with the sample scale of the UI normalization lesson."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.retrieval.pattern.ZNorm;\nvar normalized = ZNorm.of(new double[]{1,2,3,Double.NaN});\nvar flat = ZNorm.of(new double[]{7,7});",
+        "data": {}
+      },
+      "expected": [
+        "Normalized values are [-sqrt(1.5),0,sqrt(1.5),0] within 1e-12.",
+        "Constant input becomes [0,0]."
+      ],
+      "pitfalls": [
+        "A NaN becomes zero in this normalized representation; do not infer that raw missing data was observed as zero."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#93-pattern-search",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#normalize-retrieval-inputs"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/ZNorm.java#L11"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L36"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.paa",
+      "operator": "Paa.of",
+      "title": "Weight fractional PAA boundaries",
+      "surface": "library",
+      "objectives": [
+        "Reduce an array without requiring its length to divide the target width.",
+        "Account for fractional boundary weights."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Reduce [0,2,4,6,8] to width two.",
+        "Explain the half-weight of the middle value in each segment.",
+        "Try an empty input and identify the boundary rejection."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.retrieval.pattern.Paa;\nvar reduced = Paa.of(new double[]{0,2,4,6,8}, 2);",
+        "data": {}
+      },
+      "expected": [
+        "The reduced values are [1.6,6.4] within 1e-12.",
+        "Empty input rejects with IllegalArgumentException."
+      ],
+      "pitfalls": [
+        "Skipping NaNs changes each segment's effective weight.",
+        "Choose width no larger than the input for this reduction exercise."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#93-pattern-search",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#approximate-with-paa"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Paa.java#L9"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L43"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.sax",
+      "operator": "Sax.word",
+      "title": "Encode comparable SAX words",
+      "surface": "library",
+      "objectives": [
+        "Compose normalization, PAA and breakpoint encoding.",
+        "Preserve the width/alphabet identity of stored words.",
+        "Separate pre-normalized Sax.word input from the registered TsxSaxWord normalization modes and derived episode identity."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Normalize [1,2,3,4] and encode width two/alphabet four.",
+        "Repeat after an affine value transformation.",
+        "Measure the same word against itself and reject alphabet one.",
+        "Replay all seven SAX vector cases through TsxSaxWord and TsxJavaPlugin, choosing normalized(...) only for cases whose input is already normalized.",
+        "Check that the output fills EpisodeSummary.sax while preserving raw samples and timestamps and recording the parent episode."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.retrieval.pattern.ZNorm;\nimport org.opentsx.retrieval.pattern.Sax;\nvar word = Sax.word(ZNorm.of(new double[]{1,2,3,4}), 2, 4);\nvar lowerBound = Sax.mindist(word, word, 4);",
+        "data": {}
+      },
+      "expected": [
+        "The stored word is 2x4:ad; its distance lower bound to itself is zero.",
+        "Normalized [12,14,16,18] gives the same word.",
+        "Alphabet one rejects; supported alphabet sizes are 2 through 26.",
+        "Actual Wayang plans reproduce every shared word. Derived episode IDs are deterministic for the series, time bounds and supplied specHash."
+      ],
+      "pitfalls": [
+        "Sax.word expects already normalized values.",
+        "A pruning lower bound is not an exact final similarity score.",
+        "TsxSaxWord normalizes by default; normalized(...) is an explicit Java API mode that skips normalization. Neither mode changes the stored sample values.",
+        "An episode is the atomic SAX input. Splitting its values into separate episodes changes the workload rather than proving stream/batch parity."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#93-pattern-search",
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#encode-sax-words",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Sax.java#L28",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSaxWord.java#normalized",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSaxWord.java#word",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSaxWord"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L49",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SaxWordVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSaxVectorsTest.java#allSharedWordsMatchThroughWayang",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/sax-word.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.mass",
+      "operator": "Mass.distanceProfile",
+      "title": "Find a shape while excluding gaps",
+      "surface": "library",
+      "objectives": [
+        "Interpret a distance profile as candidate start positions.",
+        "Distinguish invalid windows from poor finite matches."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Search [1,2,1,0] inside the supplied nine-sample array.",
+        "Identify which windows contain NaN.",
+        "Locate both identical shapes."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.retrieval.pattern.Mass;\nvar profile = Mass.distanceProfile(new double[]{1,2,1,0}, new double[]{1,2,1,0,Double.NaN,1,2,1,0});",
+        "data": {}
+      },
+      "expected": [
+        "The profile length is six.",
+        "Positions zero and five have distance zero within 1e-6.",
+        "Positions one through four have positive-infinity distance."
+      ],
+      "pitfalls": [
+        "MASS computes normalized Euclidean distances, not raw amplitude error.",
+        "Do not interpret positive infinity as an ordinary numeric score."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#93-pattern-search",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#compute-a-mass-distance-profile"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Mass.java#L15"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L58"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.dtw",
+      "operator": "Dtw.distance",
+      "title": "Control time warping with a band",
+      "surface": "library",
+      "objectives": [
+        "Compare diagonal-only matching with permitted time stretching.",
+        "Separate sample-count bands from search-config fractions."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Compare [0,1,1,0] with [0,0,1,0] using bands zero and one.",
+        "Reject a Distance.dtw fraction above one.",
+        "Explain why normalized search performs a normalization step separately."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.retrieval.pattern.Dtw;\nvar diagonal = Dtw.distance(new double[]{0,1,1,0}, new double[]{0,0,1,0}, 0, Double.POSITIVE_INFINITY);\nvar warped = Dtw.distance(new double[]{0,1,1,0}, new double[]{0,0,1,0}, 1, Double.POSITIVE_INFINITY);",
+        "data": {}
+      },
+      "expected": [
+        "Diagonal-only distance is one; band one permits a zero-distance alignment.",
+        "Distance.dtw(1.1) rejects."
+      ],
+      "pitfalls": [
+        "The direct Dtw band is an integer number of positions; Distance.dtw uses a fraction in [0,1].",
+        "This direct method does not automatically normalize the arrays."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#93-pattern-search",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#compare-dtw-distances"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Dtw.java#L14",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Distance.java#L13"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L70"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.pattern-search",
+      "operator": "PatternSearch.search",
+      "title": "Map a cross-episode search hit",
+      "surface": "library",
+      "objectives": [
+        "Assemble contiguous per-series runs.",
+        "Map a match back to its starting episode and offset."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Build adjacent episodes [9,1,2] and [1,0,9] at one-second spacing.",
+        "Search for [1,2,1,0] with topK one.",
+        "Inspect the returned starting episode, offset and length."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport org.opentsx.retrieval.pattern.*;\nvar first = Episodes.regular(key,0,1000000,new double[]{9,1,2}).episodeId(\"first\").source(\"learning\").createdAt(0).build();\nvar second = Episodes.regular(key,3000000,1000000,new double[]{1,0,9}).episodeId(\"second\").source(\"learning\").createdAt(0).build();\nvar hits = new PatternSearch(new double[]{1,2,1,0}, Distance.zNormalizedEuclidean(), 1).search(Run.of(List.of(first,second)));",
+        "data": {}
+      },
+      "expected": [
+        "One match starts in episode first at offset one and has length four.",
+        "Its distance is zero within 1e-6 although the match crosses an episode boundary."
+      ],
+      "pitfalls": [
+        "Queries need at least four finite values.",
+        "A time gap splits a run; non-overlapping top-k results need not include every candidate window."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#93-pattern-search",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#search-across-episodes"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/PatternSearch.java#L42",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/pattern/Run.java#L41"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L79"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.segment-fixed-duration",
+      "operator": "Segmenter.fixedDuration",
+      "title": "Cut epoch-aligned duration windows",
+      "surface": "library",
+      "objectives": [
+        "Explain epoch alignment and the bounded final partial window.",
+        "Retain strategy and time-axis metadata."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Build seven one-second samples [0,1,2,3,4,5,6].",
+        "Segment into four-second windows.",
+        "Inspect each segment's start and sample count."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport java.time.Duration;\nimport org.opentsx.retrieval.segment.*;\nvar input = Episodes.regular(key,0,1000000,new double[]{0,1,2,3,4,5,6}).episodeId(\"duration\").source(\"learning\").createdAt(0).build();\nvar segments = Segmentations.segment(List.of(input), Segmenter.fixedDuration(Duration.ofSeconds(4)));",
+        "data": {}
+      },
+      "expected": [
+        "Output values are [0,1,2,3] and [4,5,6].",
+        "The second segment starts at 4000000 epoch microseconds."
+      ],
+      "pitfalls": [
+        "Duration windows flush a partial tail; fixed-count windows use a different tail policy."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#92-segmentation",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#segment-by-duration"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L38"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L93"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.segment-fixed-count",
+      "operator": "Segmenter.fixedCount",
+      "title": "Overlap complete sample-count windows",
+      "surface": "library",
+      "objectives": [
+        "Calculate step size from count and overlap.",
+        "Observe the dropped incomplete tail."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Segment the same seven values with count four and overlap two.",
+        "Identify the two shared sample positions.",
+        "Reject overlap equal to the count."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport java.time.Duration;\nimport org.opentsx.retrieval.segment.*;\nvar input = Episodes.regular(key,0,1000000,new double[]{0,1,2,3,4,5,6}).episodeId(\"count\").source(\"learning\").createdAt(0).build();\nvar segments = Segmentations.segment(List.of(input), Segmenter.fixedCount(4,2));",
+        "data": {}
+      },
+      "expected": [
+        "Output values are [0,1,2,3] and [2,3,4,5].",
+        "The incomplete window starting at sample four is dropped.",
+        "Segmenter.fixedCount(4,4) rejects."
+      ],
+      "pitfalls": [
+        "Overlap duplicates samples across output episodes intentionally; it is not source replay."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#92-segmentation",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#segment-by-count"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L54"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L103"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.segment-extremum",
+      "operator": "Segmenter.extremum",
+      "title": "Retain a finalized peak neighbourhood",
+      "surface": "library",
+      "objectives": [
+        "Separate prominence, peak separation and output extent.",
+        "Identify the anchor independently of segment start.",
+        "Distinguish the public segmentation algorithm from its registered Wayang execution mapping and saved operator state."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Segment [0,0,1,4,1,0,0,0] with the stated parameters.",
+        "Inspect the three-sample output and anchor.",
+        "Explain why a streaming detector needs lookahead.",
+        "Replay the applicable shared vector cases through TsxSegment using TsxJavaPlugin, then compare chunks of one, seven and all samples in both series orders.",
+        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport java.time.Duration;\nimport org.opentsx.retrieval.segment.*;\nvar input = Episodes.regular(key,0,1000000,new double[]{0,0,1,4,1,0,0,0}).episodeId(\"peak\").source(\"learning\").createdAt(0).build();\nvar strategy = Segmenter.extremum(Segmenter.Feature.MAX,2,Duration.ofSeconds(4),Duration.ofSeconds(2),Duration.ofSeconds(1),Duration.ofSeconds(1));\nvar segments = Segmentations.segment(List.of(input), strategy);",
+        "data": {}
+      },
+      "expected": [
+        "One segment contains [1,4,1].",
+        "Its anchor is 3000000 epoch microseconds; pre/post endpoints are inclusive.",
+        "The registered threshold and extremum mappings reproduce their shared vector cases exactly, including after checkpoint restoration and bounded final flushing."
+      ],
+      "pitfalls": [
+        "A high current sample is not a finalized local maximum.",
+        "Prominence is measured against surrounding minima, not the global series mean.",
+        "Segmenter construction alone does not execute a Wayang plan. TsxIncrement supplies TsxState to its plan callback; do not invent a second state store.",
+        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#92-segmentation",
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#segment-around-extrema",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s14-state",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L69",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSegment.java#TsxSegment",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L113",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentExtremumVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#sharedVectorsThroughRealWayangPlans",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/segment-extremum.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.segment-threshold",
+      "operator": "Segmenter.threshold",
+      "title": "Carry hysteresis state across episodes",
+      "surface": "library",
+      "objectives": [
+        "Retain a phase across an input block boundary.",
+        "Distinguish the entry anchor from pre/post context.",
+        "Distinguish the public segmentation algorithm from its registered Wayang execution mapping and saved operator state."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Build [0,0,5] and adjacent [5,2,0,0,0] episodes.",
+        "Use ABOVE, enter four, exit three, pre/post one second and zero duration limits.",
+        "Compare StreamingSegmenter output plus flush with Segmentations.segment.",
+        "Replay the applicable shared vector cases through TsxSegment using TsxJavaPlugin, then compare chunks of one, seven and all samples in both series orders.",
+        "Restore the segmentation checkpoint between chunks and inspect the retained source, quality and detector state."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport java.time.Duration;\nimport org.opentsx.retrieval.segment.*;\nvar first = Episodes.regular(key,0,1000000,new double[]{0,0,5}).episodeId(\"threshold-a\").source(\"learning\").createdAt(0).build();\nvar second = Episodes.regular(key,3000000,1000000,new double[]{5,2,0,0,0}).episodeId(\"threshold-b\").source(\"learning\").createdAt(0).build();\nvar strategy = Segmenter.threshold(Segmenter.Direction.ABOVE,4,3,Duration.ofSeconds(1),Duration.ofSeconds(1),Duration.ZERO,Duration.ZERO);\nvar segments = Segmentations.segment(List.of(first,second), strategy);",
+        "data": {}
+      },
+      "expected": [
+        "One segment contains [0,5,5,2], anchored at 2000000 epoch microseconds.",
+        "Incremental and bounded results are exactly equal for the same source episodes.",
+        "The registered threshold and extremum mappings reproduce their shared vector cases exactly, including after checkpoint restoration and bounded final flushing."
+      ],
+      "pitfalls": [
+        "For ABOVE, exit cannot exceed enter.",
+        "Zero maxDuration means unlimited, not zero-length output.",
+        "Segmenter construction alone does not execute a Wayang plan. TsxIncrement supplies TsxState to its plan callback; do not invent a second state store.",
+        "Checkpoint support covers threshold and extremum strategies; it does not establish fixed-count or fixed-duration Wayang mappings."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/09-retrieval.md#92-segmentation",
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#segment-threshold-phases",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s14-state",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/Segmenter.java#L92",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxSegment.java#TsxSegment",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxSegment"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/LibraryAlgorithmsLearningTest.java#L123",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/SegmentThresholdVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#sharedVectorsThroughRealWayangPlans",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/segment-threshold.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.stats-engine",
+      "operator": "StatsEngine.onEpisode",
+      "title": "Close event-time statistics windows",
+      "surface": "library",
+      "objectives": [
+        "Compute bounded window and global statistics through the public engine.",
+        "Distinguish missing samples from duplicate episode replay."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Configure a four-second window and a one-second expected interval.",
+        "Submit [1,2,NaN,3], then submit the same episode again.",
+        "Inspect window counts/mean and global emission; explain which samples entered the statistics."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport java.time.Duration;\nimport org.opentsx.stats.StatsEngine;\nvar engine = new StatsEngine(StatsEngine.Config.defaults().withWindows(Duration.ofSeconds(4)).withExpectedInterval(id -> OptionalLong.of(1000000)));\nvar input = Episodes.regular(key,0,1000000,new double[]{1,2,Double.NaN,3}).episodeId(\"stats\").source(\"learning\").createdAt(0).build();\nvar closed = engine.onEpisode(input);\nvar duplicate = engine.onEpisode(input);\nvar global = engine.emitGlobal();",
+        "data": {}
+      },
+      "expected": [
+        "The closed window has three valid values, one NaN and mean two.",
+        "Submitting the same episode ID again adds no values and returns no new windows.",
+        "A repeated unchanged emitGlobal call returns no additional statistics."
+      ],
+      "pitfalls": [
+        "Floating-point merges are not bitwise associative.",
+        "DDSketch relative-error claims exclude its zero bucket and collapsed tails unless separately qualified.",
+        "Duplicate suppression covers only episode IDs retained within Config.dedupCapacity; an evicted ID can be counted again.",
+        "The three-argument TsxStatsWindow constructor keeps incremental state without final flushing; bounded() flushes and includes changed GLOBAL, while window() flushes then selects its explicit windows."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/07-stats-quality.md#71-what-is-computed",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#compute-window-statistics"
+        ],
+        "source": [
+          "opentsx-stats/src/main/java/org/opentsx/stats/StatsEngine.java#L132",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#TsxStatsWindow",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxStatsWindow.java#run",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#getMappings",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#bounded",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#window"
+        ],
+        "tests": [
+          "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L54",
+          "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L86",
+          "opentsx-stats/src/test/java/org/opentsx/stats/StatsWindowVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#theSketchOfAClosedWindowHasTheBytesOfTheSharedVector",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#anOpenWindowContinuesInTheNextIncrementFromTheSavedState",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/stats-window.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.data-quality",
+      "operator": "DataQuality.evaluate",
+      "title": "Judge statistics against explicit expectations",
+      "surface": "library",
+      "objectives": [
+        "Separate completeness and plausible-range checks.",
+        "Use a fixed clock for freshness.",
+        "Trace the registered Wayang quality operator, locale-independent messages and distinct JSON finding identities."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Summarize the same [1,2,NaN,3] four-second episode.",
+        "Evaluate a plausible range [0,10] and one-second expected sampling.",
+        "Explain why completeness fails while plausible range passes, without treating the source as an operating fault.",
+        "Replay all seven quality vector cases through TsxDqResult and TsxJavaPlugin with the fixture clock and selected checks.",
+        "Compare finding identities for different checks and window widths at one event time, then replay the same input.",
+        "Run the German-default-locale regression without changing the expected punctuation or numerical values."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport java.time.Duration;\nimport org.opentsx.stats.*;\nvar engine = new StatsEngine(StatsEngine.Config.defaults().withWindows(Duration.ofSeconds(4)));\nvar input = Episodes.regular(key,0,1000000,new double[]{1,2,Double.NaN,3}).episodeId(\"quality\").source(\"learning\").createdAt(0).build();\nvar stats = engine.onEpisode(input).get(0);\nvar expectation = DataQuality.Expectation.of(0.0,10.0,Duration.ofSeconds(1)).withMaxAge(Duration.ofSeconds(2));\nvar checks = DataQuality.evaluate(stats,expectation,OptionalLong.of(6000000));",
+        "data": {}
+      },
+      "expected": [
+        "Completeness is 0.75 and fails the default 0.95 threshold.",
+        "The values remain within [0,10], so plausible range succeeds.",
+        "With last sample at three seconds and now at six, freshness fails the two-second age limit.",
+        "Messages use Locale.ROOT independently of the default locale.",
+        "TsxDqResult writes one opentsx.signal.v1 JSON finding per selected applicable check; non-finite result values become JSON null.",
+        "DQ finding IDs include the check and window bounds, so different findings do not collapse under deduplication."
+      ],
+      "pitfalls": [
+        "Freshness is evaluated only when maxAge and explicit nowMicros are supplied.",
+        "A constant legitimate operating state is not automatically a faulty sensor; choose flatline policy for the signal.",
+        "DataQuality.evaluate returns library results. TsxDqResult is a registered Wayang mapping; its JSON output is not an Avro SpecificRecord.",
+        "A SeriesStats record is the atomic DQ input. Keep the fixture clock fixed and preserve its window metadata.",
+        "Direct Java execution availability does not establish a DQ sink in the current clean-DAG compiler."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/07-stats-quality.md#73-data-quality-checks",
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-wayang/README.md#emit-data-quality-signals",
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#evaluate-data-quality",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
+          "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json"
+        ],
+        "source": [
+          "opentsx-stats/src/main/java/org/opentsx/stats/DataQuality.java#evaluate",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxDqResult.java#TsxDqResult",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxDqResult.java#results",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxRetrievalMappings.java#TsxDqResult"
+        ],
+        "tests": [
+          "opentsx-stats/src/test/java/org/opentsx/stats/WindparkDataQualityTest.java#L30",
+          "opentsx-stats/src/test/java/org/opentsx/stats/DqResultVectorsTest.java#sharedVectors",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#allSharedResultsMatchThroughWayang",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#differentChecksAndWindowWidthsHaveDifferentIdsAndReplayIdentically",
+          "opentsx-stats/src/test/java/org/opentsx/stats/DataQualityLocaleTest.java#messagesMatchTheSharedReferenceUnderAGermanDefaultLocale",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/dq-result.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.avro",
+      "operator": "OpenTsxAvro.decode",
+      "title": "Preserve records through Avro single-object encoding",
+      "surface": "library",
+      "objectives": [
+        "Inspect the wire envelope and decode the exact record type.",
+        "Separate schema fingerprint compatibility from arbitrary decoding."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Build a regular episode with a fixed ID and clock.",
+        "Encode and decode it as Episode.",
+        "Compare one existing shared wire-vector hex value and inspect its fingerprint."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nvar key = SeriesKeys.of(\"learning.value\", Map.of(\"sensor\",\"one\"), \"1\");\nimport org.opentsx.model.v2.Episode;\nvar input = Episodes.regular(key,0,1000000,new double[]{1,2,3}).episodeId(\"wire\").source(\"learning\").createdAt(0).build();\nvar codec = new OpenTsxAvro();\nvar payload = codec.encode(input);\nvar decoded = codec.decode(payload,Episode.class);",
+        "data": {}
+      },
+      "expected": [
+        "The decoded episode equals the original, including time axis and provenance.",
+        "Shared wire vectors require identical hex, not only equivalent values.",
+        "The default frame begins with bytes c3 01 and its eight-byte schema fingerprint."
+      ],
+      "pitfalls": [
+        "Unknown writer schemas require explicit registration or a resolver.",
+        "A Confluent frame and an Avro single-object frame have different headers."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/03-data-model.md#34-wire-format",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#decode-avro-records"
+        ],
+        "source": [
+          "opentsx-model/src/main/java/org/opentsx/model/OpenTsxAvro.java#L92"
+        ],
+        "tests": [
+          "opentsx-model/src/test/java/org/opentsx/model/EpisodesAndWireFormatTest.java#L71"
+        ],
+        "vectors": [
+          "opentsx-model/src/test/resources/testvectors/wire-format.json"
+        ]
+      }
+    },
+    {
+      "id": "library.topic-source",
+      "operator": "TsxTopicSource",
+      "title": "Construct one whole-topic source fragment",
+      "surface": "library",
+      "objectives": [
+        "Separate logical source construction from broker execution.",
+        "Represent all internal ranges of a whole-topic assignment.",
+        "Locate the recorded-replay source in frozen catalog 1."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Construct a read description for both partitions of one synthetic topic.",
+        "Compute the Episode fingerprint from the registered schema.",
+        "Inspect source.read without opening a broker; use the existing wire/settings tests for offline evidence.",
+        "Inspect the separate RustTopicSource and topology-only channel, then compare a complete three-topic plan with the local source starter.",
+        "Resolve decode.avro-soe version 1 in the inventory and its processor description, then distinguish logical construction from native replay and deployment admission."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.util.*;\nimport org.opentsx.model.*;\nimport org.opentsx.model.v2.Episode;\nimport org.opentsx.wayang.*;\nvar fingerprint = XxHash64.hex(OpenTsxAvro.fingerprint(Episode.getClassSchema()));\nvar ranges = Map.of(0,new long[]{0,2},1,new long[]{0,3});\nvar read = new TsxRead(\"127.0.0.1:1\",\"tsx.learning.episodes.v2\",ranges,Set.of(fingerprint),\"learning\",1);\nvar source = new TsxTopicSource(read);",
+        "data": {}
+      },
+      "expected": [
+        "Source metadata describes one topic with internal ranges for partitions zero and one.",
+        "Construction alone performs no reads.",
+        "Wire tests preserve allowed record bytes and settings tests prohibit group commits."
+      ],
+      "pitfalls": [
+        "Partition positions are checkpoint/cut metadata, never independently deployable units.",
+        "The current source materializes an increment in memory; broker integration is a separate disposable-environment check.",
+        "The remote Rust source is a separate mapping. Its complete topic is read on the assigned worker, without materializing raw payloads in the Java driver.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/04-kafscale-storage.md#44-replay",
+          "opentsx-wayang/README.md#run-a-plan-in-increments",
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+        ],
+        "source": [
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSource.java#L12",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSource.java#L1",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSource.java#RustTopicSource",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPlanChannel.java#createInstance",
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "systems/processors/decode.avro-soe.yaml"
+        ],
+        "tests": [
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxClientSettingsTest.java#L14",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPlatformTest.java#threeLogicalSourcesCompileToOneRustStageAndOneCompleteAction",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPlatformTest.java#topologyChannelsCannotMaterializeRawRecords",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
+        ],
+        "vectors": [
+          "opentsx-model/src/test/resources/testvectors/wire-format.json"
+        ]
+      }
+    },
+    {
+      "id": "library.topic-sink",
+      "operator": "TsxTopicSink",
+      "title": "Construct an acknowledged topic sink",
+      "surface": "library",
+      "objectives": [
+        "Connect a source and sink in a logical Wayang plan.",
+        "Distinguish offline wire/settings checks from actual publication.",
+        "Preserve streamed Avro delivery while validating a complete JSON signal batch before its first send."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Construct a sink for a synthetic output topic.",
+        "Inspect its binding and connect an existing logical source using connectTo(0,sink,0).",
+        "Explain why acknowledgements and deterministic records do not make the transport exactly once.",
+        "Run TsxTopicSinkStreamingTest to compare an upstream Avro failure with an invalid later JSON signal.",
+        "On a disposable KafScale broker, run TsxSignalSinkIntegrationTest and inspect the signal series key, schema header and JSON payload.",
+        "Trace the shared remote sink from private preparation through cross-topic derived-series ownership checks to activation acknowledgements."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.wayang.TsxTopicSink;\nvar sink = new TsxTopicSink(\"127.0.0.1:1\",\"tsx.learning.clean.v2\");\nvar outputTopic = sink.topic();",
+        "data": {}
+      },
+      "expected": [
+        "The sink names tsx.learning.clean.v2 and construction performs no writes.",
+        "Existing tests require no idempotence, acks=all and one request in flight.",
+        "Wire conversion preserves the encoded record bytes; actual delivery requires a separate broker test.",
+        "An upstream Avro failure can leave an acknowledged output prefix without committing the increment checkpoint.",
+        "An invalid later JSON signal prevents every signal in that JSON batch from being sent; valid signal payloads have canonical field order."
+      ],
+      "pitfalls": [
+        "Do not point a learning exercise at production topics.",
+        "A sink object or successful wire encoding is not evidence that a record was published.",
+        "The Object channel accepts only supported Avro records or validated opentsx.signal.v1 JSON. It does not turn JSON signals into fake Avro records.",
+        "JSON whole-batch validation must not make Avro upstream streams eager.",
+        "A shared output topic does not make multi-worker activation atomic. A failed activation can leave an acknowledged output prefix.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/04-kafscale-storage.md#43-write-a-bucket",
+          "opentsx-wayang/README.md#run-a-plan-in-increments",
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-wayang/README.md#emit-data-quality-signals",
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#construct-a-topic-sink",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
+          "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+        ],
+        "source": [
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#L1",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#write",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSink.java#RustTopicSink",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#stage"
+        ],
+        "tests": [
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxClientSettingsTest.java#L21",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxTopicSinkStreamingTest.java#avroRecordsAreSentBeforeTheNextUpstreamRecordIsRead",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxTopicSinkStreamingTest.java#aLaterInvalidJsonSignalPreventsEverySend",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSignalSinkIntegrationTest.java#writesJsonSignalsWithTheirSeriesKeyAndSchemaHeader",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSignalSinkIntegrationTest.java#validatesTheWholeBatchBeforeSendingAnySignal",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCrashRecoveryIntegrationTest.java#aFailureAtThreePointsRepeatsOnlyIdenticalRecords",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#crossTopicDerivedIdentityCollisionAbortsEveryPrivatePreparation",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#interruptedPublicationKeepsItsPlanRetryableAndReusesCompletedPeers",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+        ],
+        "vectors": [
+          "opentsx-model/src/test/resources/testvectors/wire-format.json"
+        ]
+      }
+    },
+    {
+      "id": "library.checkpoint",
+      "operator": "TsxCheckpoint",
+      "title": "Round-trip local increment positions",
+      "surface": "library",
+      "objectives": [
+        "Persist next positions for every internal partition of one topic.",
+        "Observe actual absence, mismatch and corruption behavior.",
+        "Identify the retained segmentation buffer, source metadata and detector state inside the per-node checkpoint entry."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Write a checkpoint with next offsets ten and seven for one whole topic.",
+        "Load with the matching hash, then a different hash.",
+        "Use the existing corruption regression to distinguish an unreadable file from absence.",
+        "Follow TsxSegment state across increments and compare bounded completion with a restored run.",
+        "Run the segmentation checkpoint regressions for quality/source metadata, raw NaN bits, incompatible parameters and truncated input.",
+        "Distinguish the Rust worker prepared journal, its completed checkpoint and the authoritative PostgreSQL deployment plan during an identical retry.",
+        "Compare frozen operator versions with the local checkpoint hash rules and identify the separate admission and state-migration boundaries."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.nio.file.*;\nimport java.util.*;\nimport org.opentsx.wayang.TsxCheckpoint;\nvar directory = Files.createTempDirectory(\"tsx-learning\");\nvar path = directory.resolve(\"checkpoint.json\");\nvar hash = \"a\".repeat(64);\nnew TsxCheckpoint(\"learning\",1,hash,\"tsx.learning.episodes.v2\",Map.of(0,10L,1,7L),Map.of()).write(path);\nvar loaded = TsxCheckpoint.load(path,hash);\nvar other = TsxCheckpoint.load(path,\"b\".repeat(64));\nFiles.delete(path);\nFiles.delete(directory);",
+        "data": {}
+      },
+      "expected": [
+        "Matching load returns next positions {0:10,1:7}.",
+        "Absence and a different specHash return an empty Optional in this local API.",
+        "Unreadable existing JSON raises IllegalStateException instead of being silently ignored.",
+        "The sixth constructor argument is the per-node operator-state map; this starter uses an empty map, while the checkpoint regression preserves nonempty state.",
+        "Threshold and extremum snapshots retain source metadata, sample quality and raw NaN bits, while invalid state fails without replacing live state."
+      ],
+      "pitfalls": [
+        "Current hash-mismatch behavior is not the proposed fail-closed orchestration state-ABI policy.",
+        "A local checkpoint provides neither distributed ownership nor exactly-once output.",
+        "A segmenter checkpoint is private runtime state, not a portable signal or a partition-placement assignment.",
+        "Incremental segmentation keeps pending output; bounded completion flushes it before the next checkpoint is written.",
+        "An uncertain Rust activation retries saved bytes with the same hash while topic ownership remains held; it cannot choose another clock, source cut or worker.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "One immutable worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
+        "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration."
+      ],
+      "references": {
+        "manual": [
+          "opentsx-wayang/README.md#run-a-plan-in-increments",
+          "docs/user-manual/17-learn-operators.md",
+          "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+        ],
+        "source": [
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#TsxCheckpoint",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxState.java#TsxState",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxSegment.java#run",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#writeState",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/segment/StreamingSegmenter.java#readState",
+          "rust/tsx-runner/src/worker.rs#activate",
+          "rust/tsx-runner/src/worker.rs#recover",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_once",
+          "systems/catalogs/tsx-catalog-1.yaml"
+        ],
+        "tests": [
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aCheckpointOfAnotherDocumentIsNotUsed",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#anUnreadableCheckpointFailsInsteadOfStartingOver",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointLearningTest.java#checkpointStarterCompilesRunsAndCleansItsFiles",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesQualityAndSourceMetadataAcrossAnActiveThreshold",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#preservesRawNaNBitsAcrossCheckpoints",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/StreamingSegmenterStateTest.java#rejectsUnknownVersionsOtherParametersAndTruncatedState",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#failsClosedOnCorruptStateAndUnsupportedInput",
+          "rust/tsx-runner/tests/worker_service.rs",
+          "opentsx-saas-backend/tests/test_wayang_rust.py#test_uncertain_execution_retains_ownership_and_reconciles_same_plan_after_restart",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.execution-assignment",
+      "operator": "ExecutionAssignments.validateSet",
+      "title": "Reject split-topic physical assignments offline",
+      "surface": "library",
+      "objectives": [
+        "Keep the smallest deployable unit at a whole topic.",
+        "Preserve exact source/fragment identities and complete internal positions."
+      ],
+      "prerequisites": [
+        "Read the linked contract and use the stated runtime, not a planned DAG mapping.",
+        "Use deterministic synthetic input and the referenced executable regression case."
+      ],
+      "tasks": [
+        "Load the shared two-rust-nodes-distinct-whole-topics fixture and validate its assignment set.",
+        "Compare the overlapping-owner and split-topic rejection cases.",
+        "Remove one internal position while retaining partitionCount and observe assignment.coverage.",
+        "Trace the separate RustRollout compiler from exact UI text and catalog validation to distinct per-topic fragments, complete source cuts and one connected Wayang Rust stage."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import java.nio.file.*;\nimport java.util.*;\nimport com.fasterxml.jackson.databind.*;\nimport org.opentsx.model.contracts.ExecutionAssignments;\nvar cases = new ObjectMapper().readTree(Path.of(\"docs/datamodel-2026/testvectors/execution-contracts.v1.json\").toFile()).get(\"cases\");\nvar inputs = new ArrayList<String>();\nfor (var item : cases) { if (item.path(\"name\").asText().equals(\"two-rust-nodes-distinct-whole-topics\")) { for (var input : item.get(\"inputs\")) inputs.add(input.asText()); } }\nExecutionAssignments.validateSet(inputs);",
+        "data": {}
+      },
+      "expected": [
+        "Two nodes may own distinct whole topics for the same admitted fragment.",
+        "Each input includes all positions from zero through partitionCount minus one, in order.",
+        "Splitting a topic across nodes fails coverage; duplicate whole-topic ownership fails ownership.",
+        "Java and Rust validate the same shared cases; these offline library calls do not execute the separate bounded Rust runner."
+      ],
+      "pitfalls": [
+        "Resolve aliases to authoritative topic identity before interpreting ownership.",
+        "Passing offline validation neither authorizes deployment nor fences a live Kafka writer.",
+        "The local rollout adds actual capability and broker checks plus durable control; the offline starter remains an offline validator and does not activate workers.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission."
+      ],
+      "references": {
+        "manual": [
+          "docs/devguide/integration/wayang-shared-contracts.md#assign-whole-topics-and-preserve-exact-internal-positions",
+          "docs/user-manual/17-learn-operators.md",
+          "docs/devguide/integration/rust-runner-local.md",
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+        ],
+        "source": [
+          "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L56",
+          "rust/tsx-contracts/src/lib.rs#L38",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#parameters",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustExecutor.java#execute",
+          "opentsx-saas-backend/app/services/wayang_service.py#validate_plan"
+        ],
+        "tests": [
+          "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
+          "rust/tsx-contracts/tests/shared_vectors.rs#L8",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#oneOriginalUiDagLowersToThreeCompleteTopicsAndDistinctFragments",
+          "opentsx-saas-backend/tests/test_wayang_rust.py#test_admission_persists_exact_plan_before_any_execution_and_reuses_frozen_identity",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+        ],
+        "vectors": [
+          "docs/datamodel-2026/testvectors/execution-contracts.v1.json"
+        ]
+      }
+    },
+    {
+      "id": "library.gen-ou",
+      "operator": "gen.ou",
+      "title": "Generate mean-reverting demo values",
+      "surface": "library",
+      "objectives": [
+        "Recognize the AR(1) mean-reversion recurrence rather than a calibrated continuous-time physical process.",
+        "Separate exact noiseless predictions, seed reproducibility and clipping from scientific realism."
+      ],
+      "prerequisites": [
+        "Use the module containing the documented Java public entry point.",
+        "Keep the recorded synthetic parameters, coordinates and missing-data policy explicit."
+      ],
+      "tasks": [
+        "Generate four values with mean 10 and sigma 0.",
+        "Set the permitted maximum to 9 and inspect the clipping.",
+        "Set sigma to 2 and reversion to 1, repeat seed 7, then compare seed 8 and split-range replay."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import com.fasterxml.jackson.databind.ObjectMapper;\nimport org.opentsx.retrieval.generate.Generators;\nvar params = new ObjectMapper().createObjectNode().put(\"mean\",10).put(\"sigma\",0).put(\"reversion\",0.5);\nvar values = Generators.values(\"gen.ou\",params,7,1000000,0,4,null,null);\nvar clipped = Generators.values(\"gen.ou\",params,7,1000000,0,4,0.0,9.0);",
+        "data": {
+          "params": {
+            "mean": 10,
+            "sigma": 0,
+            "reversion": 0.5
+          },
+          "seed": 7,
+          "intervalMicros": 1000000,
+          "first": 0,
+          "count": 4
+        }
+      },
+      "expected": [
+        "The starter values are [10,10,10,10], and clipped values are [9,9,9,9].",
+        "With sigma 2 and reversion 1, repeating the seed reproduces values exactly and a tail request agrees with the same whole-range slice.",
+        "Episode generation over 601 one-second samples yields chunks of 600 and one, with SYNTHETIC origin and demo fidelity."
+      ],
+      "pitfalls": [
+        "The default warm start truncates previous history; general reversion values give approximate, not guaranteed bit-identical, agreement across differently started ranges.",
+        "The generator models no balance or coupling to other system signals and is not a continuous deployed processor."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/16-engineering-method.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#generate-mean-reverting-demo-values"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/generate/Generators.java#L36",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/generate/Generators.java#L57",
+          "systems/processors/gen.ou.yaml"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#everyRuntimeGeneratorHasExactlyOneLearningContract",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#generatorStarterCodeCompilesAndRuns",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#noiselessOuStarterAndRangeClippingHaveExactValues",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#generatorEpisodesHaveGridBoundariesAndExplicitSyntheticLineage"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.gen-sine",
+      "operator": "gen.sine",
+      "title": "Generate a bounded sine cycle",
+      "surface": "library",
+      "objectives": [
+        "Convert period and phase to sample values on an absolute grid.",
+        "Distinguish a synthetic bounded run from measured data and continuous processing."
+      ],
+      "prerequisites": [
+        "Use the module containing the documented Java public entry point.",
+        "Keep the recorded synthetic parameters, coordinates and missing-data policy explicit."
+      ],
+      "tasks": [
+        "Generate a noiseless four-second cycle centered at 10 with amplitude 2.",
+        "Shift phase by one quarter and predict the shifted samples.",
+        "Request the last three starter samples independently and compare them with the original slice."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import com.fasterxml.jackson.databind.ObjectMapper;\nimport org.opentsx.retrieval.generate.Generators;\nvar params = new ObjectMapper().createObjectNode().put(\"mean\",10).put(\"amplitude\",2).put(\"period\",\"PT4S\").put(\"phase\",0).put(\"sigma\",0);\nvar values = Generators.values(\"gen.sine\",params,7,1000000,0,5,null,null);\nvar tail = Generators.values(\"gen.sine\",params,7,1000000,2,3,null,null);",
+        "data": {
+          "params": {
+            "mean": 10,
+            "amplitude": 2,
+            "period": "PT4S",
+            "phase": 0,
+            "sigma": 0
+          },
+          "seed": 7,
+          "intervalMicros": 1000000,
+          "first": 0,
+          "count": 5
+        }
+      },
+      "expected": [
+        "The starter values are [10,12,10,8,10] within 1e-12.",
+        "Phase 0.25 gives [12,10,8,10,12]; the independent tail matches [10,8,10].",
+        "The public generator ID set is exactly the IDs covered by the generator lessons."
+      ],
+      "pitfalls": [
+        "Phase is a share of a cycle, not radians or seconds.",
+        "Noise uses a seeded step-based stream; a bounded demo generator is not a deployed runtime operator."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/16-engineering-method.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#generate-a-bounded-sine-cycle"
+        ],
+        "source": [
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/generate/Generators.java#L36",
+          "opentsx-retrieval/src/main/java/org/opentsx/retrieval/generate/Generators.java#L57",
+          "systems/processors/gen.sine.yaml"
+        ],
+        "tests": [
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#everyRuntimeGeneratorHasExactlyOneLearningContract",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#generatorStarterCodeCompilesAndRuns",
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/learning/GeneratorLearningTest.java#sineStarterHasThePredictedPeriodAndPhase"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.legacy-fft",
+      "operator": "TimeSeriesObjectFFT.getFFT",
+      "title": "Inspect legacy real FFT coefficients",
+      "surface": "library",
+      "objectives": [
+        "Read all padded real Fourier coefficients and their frequency coordinates.",
+        "Distinguish the legacy coefficient API from the browser amplitude spectrum."
+      ],
+      "prerequisites": [
+        "Use the module containing the documented Java public entry point.",
+        "Keep the recorded synthetic parameters, coordinates and missing-data policy explicit."
+      ],
+      "tasks": [
+        "Build the eight-sample impulse at a sampling rate of eight.",
+        "Predict eight real coefficients equal to one on frequencies zero through seven.",
+        "Replace the impulse by the quarter-cycle sine and inspect why its imaginary spectrum is lost from the returned real values."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.data.series.TimeSeriesObject;\nimport org.opentsx.data.series.TimeSeriesObjectFFT;\nvar input = new TimeSeriesObject(\"Impulse\");\nfor (int i=0;i<8;i++) input.addValuePair(i/8.0,i==0?1:0);\nvar converted = TimeSeriesObjectFFT.convertToMessreiheFFT(input);\nvar result = converted.getFFT(8);",
+        "data": {
+          "x": [
+            0.0,
+            0.125,
+            0.25,
+            0.375,
+            0.5,
+            0.625,
+            0.75,
+            0.875
+          ],
+          "y": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "samplingRate": 8
+        }
+      },
+      "expected": [
+        "Frequency coordinates are [0,1,2,3,4,5,6,7], and all eight returned real coefficients equal one within 1e-12.",
+        "Conversion copies both coordinate vectors; the original impulse is unchanged.",
+        "The real coefficients of [0,1,0,-1,0,1,0,-1] are zero within 1e-12 although the signal has nonzero amplitude."
+      ],
+      "pitfalls": [
+        "The result is not a one-sided amplitude spectrum and does not contain the complete complex transform.",
+        "Sampling rate is explicit; the direct library call does not perform the Swing dialog validation."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/11-classic-analytics.md#115-java-tools-in-opentsx-core-2x-model",
+          "opentsx-core/README.md#inspect-fft-coordinates",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#inspect-legacy-real-fft-coefficients"
+        ],
+        "source": [
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L710",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L964",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L1055"
+        ],
+        "tests": [
+          "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fourierStarterCodeCompilesAndRuns",
+          "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fftStarterProducesAllRealCoefficientsOnTheFrequencyGrid",
+          "opentsx-core/src/test/java/org/opentsx/data/series/TimeSeriesObjectFFTTest.java#fftPreservesCalculatedFrequencyCoordinates"
+        ],
+        "vectors": []
+      }
+    },
+    {
+      "id": "library.legacy-phase-surrogate",
+      "operator": "FFTPhaseRandomizer.getPhaseRandomizedRow",
+      "title": "Inspect the legacy surrogate facade",
+      "surface": "library",
+      "objectives": [
+        "Inspect the actual implementations behind the two documented surrogate modes.",
+        "Test deterministic invariants without claiming seeded random output or preserved Fourier magnitudes."
+      ],
+      "prerequisites": [
+        "Use the module containing the documented Java public entry point.",
+        "Keep the recorded synthetic parameters, coordinates and missing-data policy explicit."
+      ],
+      "tasks": [
+        "Build eight constant samples with noninteger coordinates and value seven.",
+        "Call both public mode constants through the facade and verify that removing the constant component produces zeros on sample indices.",
+        "Run shuffle mode on a cosine with purely real coefficients and explain why shuffling imaginary components cannot rotate those real coefficients."
+      ],
+      "starter": {
+        "language": "java",
+        "code": "import org.opentsx.data.series.TimeSeriesObject;\nimport org.opentsx.generators.FFTPhaseRandomizer;\nvar input = new TimeSeriesObject(\"Constant\");\nfor (int i=0;i<8;i++) input.addValuePair(i/8.0,7);\nvar shuffled = FFTPhaseRandomizer.getPhaseRandomizedRow(input,false,false,0,FFTPhaseRandomizer.MODE_shuffle_phase);\nvar multiplied = FFTPhaseRandomizer.getPhaseRandomizedRow(input,false,false,0,FFTPhaseRandomizer.MODE_multiply_phase_with_random_value);",
+        "data": {
+          "x": [
+            0.0,
+            0.125,
+            0.25,
+            0.375,
+            0.5,
+            0.625,
+            0.75,
+            0.875
+          ],
+          "y": [
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7
+          ]
+        }
+      },
+      "expected": [
+        "Both modes return eight zero values within 1e-12 on coordinates [0,1,2,3,4,5,6,7], while the original values remain seven.",
+        "Shuffle mode preserves [1,0,-1,0,1,0,-1,0] within 1e-12 because that fixture has zero imaginary Fourier components.",
+        "No exact random sample sequence is asserted: this API exposes no seed."
+      ],
+      "pitfalls": [
+        "The implementation shuffles imaginary coefficient components or scales complex coefficients, rather than applying an amplitude-preserving random phase rotation.",
+        "Math.random and Collections.shuffle provide no seed parameter through this facade; do not teach repeatable arbitrary surrogate values."
+      ],
+      "references": {
+        "manual": [
+          "docs/user-manual/11-classic-analytics.md#115-java-tools-in-opentsx-core-2x-model",
+          "opentsx-core/README.md",
+          "docs/user-manual/17-learn-operators.md"
+        ],
+        "spec": [
+          "docs/learning/library-operator-contracts.md#inspect-the-legacy-surrogate-facade"
+        ],
+        "source": [
+          "opentsx-core/src/main/java/org/opentsx/generators/FFTPhaseRandomizer.java#L234",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L25",
+          "opentsx-core/src/main/java/org/opentsx/data/series/TimeSeriesObjectFFT.java#L125"
+        ],
+        "tests": [
+          "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#fourierStarterCodeCompilesAndRuns",
+          "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#phaseFacadeRemovesAConstantSignalInBothModesWithoutChangingTheInput",
+          "opentsx-core/src/test/java/org/opentsx/data/series/LegacyFourierLearningTest.java#imaginaryShuffleDoesNotRotateTheRealCosineCoefficients"
+        ],
+        "vectors": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+schema: opentsx.processor.v1
+id: feature.lag
+version: 1
+kind: transformer
+title: Lag feature
+description: Returns the value a fixed number of samples earlier.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: steps, type: integer, required: true, min: 1, max: 100000 }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, count], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+state: { kind: keyed, key: series }
+merge: { class: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

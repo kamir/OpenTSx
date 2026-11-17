@@ -111,3 +111,33 @@ python tools/java_operator_vectors.py
 The command writes all five Java reference files under
 `docs/datamodel-2026/testvectors/`. Verified with JDK 21 and Python 3.12
 on 2026-11-16. See the [module guide](../../opentsx-stats/README.md).
+
+## 7.6 Run statistics and clean chains on Wayang
+
+You need JDK 17 or 21 and Maven. The `opentsx-wayang` module runs the existing
+clean chain and statistics algorithms on Apache Wayang's Java platform.
+Register `TsxJavaPlugin` and use `TsxStatsWindow` with `StatsEngine.Config`.
+The constructor preserves open windows across increments and accepts episodes
+and observations. The `bounded` factory flushes a completed engine input.
+The `window` factory requests epoch-aligned windows for an explicit series,
+including empty input. It emits NaN moments and an empty sketch for an empty
+window; an empty engine stream emits no records.
+
+For clean episode DAGs, `DagToWayang.compile` validates structure and processor
+parameters before building a plan. Select a sink from `series()` and pass
+`plan(bootstrap, sinkName)` to `TsxIncrement.loop`. Its checkpoint contains
+input positions and operator state. Status records include `track: A`, counts,
+watermark, waiting series, and skipped blocks. Heartbeats run every 30 seconds
+during processing and idle intervals.
+
+Run the module checks from the repository root:
+
+```bash
+mvn -B -ntp -pl opentsx-wayang -am verify
+```
+
+`TsxStatsVectorsTest` reads all five shared statistics cases directly and
+compares every field and sketch byte exactly. `TsxCleanVectorsTest` checks all
+15 clean cases. Broker parity and status tests need a disposable KafScale
+instance and `KAFSCALE_BOOTSTRAP`; follow the
+[module instructions](../../opentsx-wayang/README.md#test).

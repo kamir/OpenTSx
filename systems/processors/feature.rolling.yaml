@@ -1,0 +1,19 @@
+schema: opentsx.processor.v1
+id: feature.rolling
+version: 1
+kind: transformer
+title: Rolling feature
+description: Aggregates the samples in a trailing time window.
+inputs:
+  - { name: in, type: series, cardinality: one }
+outputs:
+  - { name: out, type: series }
+params:
+  - { name: window, type: duration, required: true, editAs: seconds }
+  - { name: fn, type: enum, values: [MEAN, STD, MIN, MAX], default: MEAN }
+semantics: { needs: window, deterministic: true, keeps: [time, unit, count], origin: INHERIT }
+runtimes:
+  wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
+state: { kind: keyed, key: series }
+merge: { class: none }
+testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

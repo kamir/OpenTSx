@@ -47,6 +47,8 @@ HTTP 429, 500, 502, 503 or 504.
 | Job | What it does |
 |-----|--------------|
 | Java 17, Java 21 | `mvn -B -ntp verify` |
+| Operator learning synchronization | repository gitlink URL checks, learning synchronization tests, generated student lessons and source-content hashes |
+| Shared contract vectors and Rust | generated assignment fixture check and the pinned Rust consumer of the shared cases |
 | Python 3.10 to 3.13 | `pip install -e . pytest`, `pytest -q`; on 3.12 also `tools/check_links.py` |
 | k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
 | KafScale conformance | builds the KafScale broker from source (in-memory S3) and runs the conformance suite plus the `opentsx-kafka-v2`, `opentsx-windpark` and `opentsx-stats` tests against it |

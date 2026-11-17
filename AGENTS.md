@@ -105,3 +105,21 @@ Hard rules. No exceptions. If a rule blocks you, stop and ask. Do not work aroun
 - After deploy, confirm the running version and read the logs.
 - After release, pull the artifact and run it.
 - Report what you verified, with evidence. Report what you did not verify.
+
+## 14. Operator learning and deployment contracts
+
+- The smallest deployable unit is a whole topic, regardless of partition count. Partition positions are internal
+  read, cut and checkpoint metadata. Never split one topic across runner assignments as a placement fallback.
+- Every operator addition, behavior change, deprecation or removal updates its applicable manual, SPEC, learning
+  metadata, student exercise, implementation and executable regression cases in one coordinated delivery.
+- Use the executable UI registry and documented public library families to establish implemented scope.
+  Keep UI execution, library APIs, processor support, Wayang mappings and Rust execution availability distinct.
+  A planned catalog entry or a numerical kernel does not establish a deployed runtime binding.
+- Keep operator semantics and parameters in their existing source definitions. Learning metadata supplies
+  teaching workloads and traceability; it must not become another operator implementation or configuration gate.
+- Generate student material from the versioned learning metadata. Do not hand-edit generated lessons or reuse
+  unverified expected values. Execute the workloads against the actual implementations and shared vectors.
+- Run operator coverage and student synchronization checks with the relevant runtime tests. Missing lessons,
+  unknown operators, broken manual/SPEC/code/test references and stale generated content fail the change.
+- Coordinate OpenTSx and student-repository updates. Publish referenced source commits before dependent material;
+  pin the material to the source content it verifies. No cross-runtime parity claim without executed parity cases.

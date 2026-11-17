@@ -78,6 +78,15 @@ statistics, prediction and what-if, and the node graph of each system's wiring p
 * **Kafka-native Smart Topics.** Supported vector and series projections run through Kafka clients on KafScale,
   with strict DAG validation, control/status topics and local checkpoints. See the
   [streaming operating guide](docs/devops/kafka-native-streaming.md).
+* **Bounded Rust replay.** `tsx-runner` 0.1.0 executes one complete Kafka topic with pass-through or range checks,
+  unit conversion and a trailing resample. Explicit resource caps, acknowledged output and a local checkpoint
+  bound each replay. See the [local runner guide](docs/devguide/integration/rust-runner-local.md).
+* **Bounded UI rollout through Wayang.** The workbench submits one v2 DAG to the authenticated backend and
+  PostgreSQL journal. A real custom Wayang Rust platform prepares and activates one to three whole-topic workers.
+  See the [three-worker local guide](docs/devguide/integration/wayang-rust-compose.md).
+* **Continuous Rust execution through Wayang.** The explicit continuous target keeps complete topics on fixed
+  workers, persists successive cuts and resumes acknowledged positions and operator state after service restart.
+  See the [continuous Compose guide](docs/devguide/integration/wayang-rust-continuous.md).
 * **Classic analytics.** DFA, MFDFA, event synchronization, return-interval statistics.
 
 ## Quick start
@@ -110,6 +119,7 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | Document | Content |
 |----------|---------|
 | [User manual](docs/user-manual/README.md) | concepts, every module, Python, operations, migration, CLI and REST reference |
+| [Operator lessons](docs/user-manual/17-learn-operators.md) | 30 UI/DAG lessons and 25 library/infrastructure lessons, executable expectations and generated student material |
 | [Data model v2 specification](docs/datamodel-2026/04-MODELL-V2-SPEC.md) | normative spec |
 | [Design documents](docs/datamodel-2026/) (German) | analysis, target model, gap analysis, Smart Topics (05), interplay & coordination potential (06), digital twin (07), house (08), Studio & LabVIEW (09), boat (10), Smart Topic processor & DevOps (11), Explorer (12): visual inventory & maintenance |
 | [Plan and progress](EVOLUTION/TASK-011-datamodel-refresher-2026.md) | phases, decisions, progress log |
@@ -136,7 +146,9 @@ The full walk-through, including KafScale, statistics and OpenMetadata, is in
 | `opentsx-market` | electricity-market collector (SMARD, ENTSO-E, netztransparenz.de, Energy-Charts, partner files), history archive with manifests and quality reports, backfill, twins on real history |
 | `opentsx-legacy-bridge` | 2.x → v2 conversion |
 | `opentsx-kafscale-conformance` | broker capability tests |
-| `opentsx-wayang` | Apache Wayang 1.1.1 plugin, KafScale transport, and pure Java `pair.xcorr` and `pair.es` kernels (TASK-020) |
+| `opentsx-wayang` | Apache Wayang 1.1.1 Java operators and local clean compiler; custom Rust platform, connected stage compiler, bounded and continuous whole-topic rollout (TASK-020) |
+| `rust/tsx-contracts` | Offline execution-assignment validation shared with Java; [contract guide](docs/devguide/integration/wayang-shared-contracts.md) and [unified Wayang deployment plan](docs/devguide/integration/wayang-unified-plan.md) |
+| [`rust/tsx-runner`](rust/tsx-runner/README.md) | Trusted-local bounded Kafka replay and HTTP workers, Avro episodes, three cleaning operations, private prepare and acknowledged checkpoints |
 | `opentsx-data`, `-core`, `-connectors`, `-lg`, `-flink-core` | 2.x model and classic analysis (legacy, maintained) |
 | `python-package/` | Python library `opentsx` |
 | `opentsx-saas-backend/`, `-frontend/` | experimental web stack (planned personal service layer) |

@@ -12,6 +12,13 @@
   * flows stored per user (`/api/v1/flows`: create, read, update, delete), each a JSON definition with a status,
   * `POST /api/v1/dags/deploy` and `/stop`: hand a flow to the vector processor or stop it (administrators only
     unless configured otherwise),
+  * `/api/v1/dags/wayang-rust`: administrator-only capability, bounded/continuous deployment, status and continuous
+    stop endpoints. PostgreSQL
+    stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
+    the saved plan through a custom Wayang Rust platform,
+  * **Continuous Wayang on Rust** retains complete-topic ownership between increments, saves confirmed positions
+    and cumulative counts, and restores worker state after service restart. **Stop deployment** reconciles dispatched
+    work before releasing ownership. See the [continuous guide](../devguide/integration/wayang-rust-continuous.md),
   * a `FlinkService` that submits processing-flow descriptors as Flink jobs.
 * **Frontend:**
   * **OpenTSx Flow Composer** (`/dashboard`, the page after sign-in): the flows of the account. Select a flow, open
@@ -20,8 +27,14 @@
   * **Workbench** (`/workbench`): load series from the TS inventory, a file or a sample, apply time series
     operators, inspect every result on an oscilloscope view (time base, cursors, trigger, measurements,
     ground-truth bands), build the processing flow as a graph, publish a node as a Smart Topic and deploy it. The
-    limits are in [`EVOLUTION/TASK-013-web-workbench.md`](../../EVOLUTION/TASK-013-web-workbench.md): of all
-    operators, the processor runs only the alignment of series to a common clock.
+    series processor supports `dq.checks`, `convert.unit`, `resample`, `model.wind-shear`, `model.power-curve`,
+    `feature.lag` and `feature.rolling`; vector sinks support `align.vector`.
+    Workbench execution and deployment availability are separate. Use the
+    [operator lessons](17-learn-operators.md) and the actual runtime contract when choosing an execution surface.
+    **Run bounded with Wayang** is an explicit separate action for plausible-range checks, unit conversion and an
+    optional trailing resample on one to three complete topics. HTTP workers prepare privately before activation and
+    checkpoint acknowledged output. Exact retry reuses the frozen plan and receipts; partial activation can expose
+    at-least-once output. See the [local rollout guide](../devguide/integration/wayang-rust-compose.md).
   * **Systems** (`/systems`): a shell around one system with four places. "System": the atoms of its plan and what
     feeds each input. "Signals": the signals the system expects, each with its expectation, origin, state and next
     step; "Prepare" opens the raw series of a signal in the workbench with the expected range on the screen;
