@@ -199,6 +199,12 @@ the two whole series, because a continuing input has no whole series.
 | A3.5 | Stream equals batch | `TsxStreamEqualsBatchTest` feeds every vector input in chunks of 1, 7 and all records, in two series orders | V | identical output in all 6 runs per case |
 | A3.6 | The catalog is complete and valid | `SystemDocTest` | `systems/processors/` | one description per row of S1.7 with `state`, `merge`, `runtimes.wayang.status: available`; schema validation 0 errors |
 
+Status of A3.3 on 2026-11-17, JDK 21: `TsxPairEsWayangTest` executes the four
+sampled-series cases through Wayang, both together and with restored state
+between increments. The four event-list cases remain exact kernel tests.
+All 11 native ES tests pass, including unsigned 32-bit seed conversion beyond
+the signed long range and Workbench-compatible numeric labels.
+
 Status of the retrieval operators on 2026-11-17:
 
 | #    | Result                                                   |

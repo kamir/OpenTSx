@@ -54,6 +54,13 @@ require identical event lists and an absolute error below `5e-13` for
 `q_total`, `q_ab`, `q_ba`, and `q_rand`. The random sequence is compared
 exactly.
 
+The native Java API `TsxPair` also executes `pair.es` on sampled episodes.
+Four shared sampled-series cases run through Wayang in one plan and with pair
+state restored between increments; four event-list-only cases remain kernel
+checks. Read the [native ES instructions](../docs/user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang)
+for clock units, seed reduction and settings labels. This API is separate from
+a deployed UI DAG binding or a frozen catalog entry.
+
 The [unified delivery plan](../docs/devguide/integration/wayang-unified-plan.md) covers UI DAGs deployed through
 Wayang to Java and Rust nodes, plus the bounded storage profile. The implemented
 [shared contract foundation](../docs/devguide/integration/wayang-shared-contracts.md) lives in `opentsx-model`

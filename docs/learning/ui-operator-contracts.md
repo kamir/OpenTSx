@@ -242,7 +242,20 @@ Operator: `pair.es` . Defaults: `pairing="same"` , `window="episode"` , `step=0`
 Detects strict interior maxima above mean + sigma times population standard deviation; a neighboring gap prevents a
 peak. Uses adaptive neighbor-distance windows and an optional tauMax in seconds (0 means uncapped). Exact simultaneous
 events count half in each direction. q_rand averages seeded inter-event-interval shuffles. Output is one series per
-field on the pair time grid. TsxPairEs is an available pure Java kernel, not proof of a deployed pair operator.
+field on the pair time grid.
+
+The pure Java `TsxPairEs` kernel checks all eight shared vector cases. The native
+Java API `TsxPair` also executes the four sampled-series cases through Wayang,
+including B held in `TsxState` and restored before A arrives in a later
+increment. The other four cases contain event lists only and are kernel checks.
+This native API does not establish a deployed UI DAG binding or freeze a catalog.
+Whole-number seeds use their value modulo `2^32` for the random state; labels
+retain workbench numeric formatting. The native regression methods
+`largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` and
+`settingsLabelsKeepWorkbenchNumberFormatting` cover large seeds and label
+boundaries. Read the
+[native API instructions](../user-manual/11-classic-analytics.md#run-sampled-event-pairs-through-wayang)
+for the distinction between seconds in pair settings and units in event lists.
 
 Source: [es.ts#PAIR_ES](../../opentsx-saas-frontend/src/workbench/es.ts#PAIR_ES). Executable exercise: `ui.pair.es`.
 

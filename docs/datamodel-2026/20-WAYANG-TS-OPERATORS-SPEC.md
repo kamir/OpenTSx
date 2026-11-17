@@ -145,6 +145,19 @@ parameters before a flow with this operator can be deployed.
 Wayang Java operators reuse `Sax`, `Paa`, and `DataQuality.evaluate` and are
 registered through `TsxRetrievalMappings`.
 
+The native Java API `TsxPair` executes `pair.es` through `JavaTsxPair` and
+`TsxPairWindows.es`, using the pair-window rules shared with `pair.xcorr`.
+The four sampled-series cases in `pair-es.v1.json` run through Wayang in one
+plan and across increments with restored `TsxState`. The four event-list-only
+cases remain numerical kernel checks in `TsxPairEsVectorsTest`; they are not
+sampled Wayang workloads. Native output has fields `q_total`, `q_ab`, `q_ba`,
+and `q_rand`. `tauMax` uses seconds before conversion to aligned clock ticks;
+zero means uncapped. Whole-number seeds use their value modulo `2^32` for the
+random state, and settings labels retain workbench number formatting.
+`TsxPairEsWayangTest.largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` and
+`settingsLabelsKeepWorkbenchNumberFormatting` cover those boundary cases.
+This native API does not establish a deployed DAG binding or freeze Catalog 1.
+
 ### S1.8 Limits on Track B
 
 Track B MUST reject `pair.xcorr` when `(2 * lags + 1) * window / every` exceeds the limit set in the site

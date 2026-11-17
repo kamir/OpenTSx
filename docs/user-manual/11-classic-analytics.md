@@ -6,7 +6,8 @@ algorithms are still available:
 * in Python, through the `opentsx` top-level API (the recommended way, with verified examples below),
 * in Java, in `opentsx-core`, as tools on the 2.x `TimeSeriesObject` model,
 * for `pair.es`, in `opentsx-wayang`, as pure Java methods over arrays of samples
-  or event times.
+  or event times, and as a Wayang operator over sampled episodes through the
+  native Java API.
 
 The pure Java pair cross-correlation kernel is in `opentsx-wayang`; see
 [section 11.6](#116-compute-pair-cross-correlation-in-java).
@@ -99,6 +100,37 @@ for all four synchronization fields. All ten shared Mulberry32 values are
 compared exactly. See the
 [module instructions](../../opentsx-wayang/README.md#compute-pair-event-synchronisation)
 for the kernel and test entry point.
+
+### Run sampled event pairs through Wayang
+
+Use `org.opentsx.wayang.TsxPair` with method `pair.es`, a parameter map, the
+expected series ids for inputs `a` and `b`, the specification hash, and
+`TsxState`. Tag each input episode with `TsxTagged`, combine the inputs, and
+register `TsxJavaPlugin`; the
+[pair operator guide](../../opentsx-wayang/README.md#compare-two-series-in-windows)
+describes this native Java API. It does not establish a deployed UI DAG binding
+or a frozen catalog entry.
+
+The pair settings select episode or sliding windows and align their sample
+clocks. `sigma` controls event detection, `tauMax` is a cap in seconds with zero
+meaning uncapped, and `shuffles` and `seed` select the surrogate control.
+Output fields are `pair.es.q_total`, `pair.es.q_ab`, `pair.es.q_ba`, and
+`pair.es.q_rand`. The direct kernel's event-time cap uses the units of its
+event lists; the sampled operator converts seconds to clock ticks.
+
+Keep waiting episodes in `TsxState` and restore that state between increments
+when the other input arrives later. `TsxPairEsWayangTest` covers all four
+sampled-series cases in `pair-es.v1.json`, both in one plan and with B retained
+before A arrives in a later increment. The other four cases contain event lists
+only and remain `TsxPairEsVectorsTest` kernel checks. All eight kernel cases
+check the four synchronization fields within `5e-13`.
+
+The native settings reduce whole-number seeds modulo `2^32` for the Mulberry32
+state while preserving the original seed's workbench number formatting in
+labels. `largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench` compares seed
+`1e20` with its unsigned 32-bit state. `settingsLabelsKeepWorkbenchNumberFormatting`
+checks small sigma, large duration and seed labels, including scientific
+notation where the workbench uses it.
 
 ## 11.4 Return-interval statistics (RIS)
 

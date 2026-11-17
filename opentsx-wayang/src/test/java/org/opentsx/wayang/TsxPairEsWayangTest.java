@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -96,6 +97,26 @@ class TsxPairEsWayangTest {
             check(c, TsxPairVectorsTest.plan(List.of(TsxPairVectorsTest.episode(TsxPairVectorsTest.A, doubles(c.path("a")))),
                     List.of(), TsxPairVectorsTest.pair("pair.es", params(c), new TsxState(Map.of("x", state.get("x"))))));
         }));
+    }
+
+    @Test
+    void largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench() throws Exception {
+        var large = org.opentsx.wayang.ops.TsxPairWindows.es(Map.of("seed", 1e20));
+        var reduced = org.opentsx.wayang.ops.TsxPairWindows.es(Map.of("seed", 1661992960L));
+        for (JsonNode c : seriesCases().toList()) {
+            double[] a = doubles(c.path("a"));
+            double[] b = doubles(c.path("b"));
+            assertArrayEquals(reduced.compute(a, b, 1, 1), large.compute(a, b, 1, 1), 0,
+                    c.path("name").asText());
+        }
+    }
+
+    @Test
+    void settingsLabelsKeepWorkbenchNumberFormatting() {
+        assertEquals(Map.of("sigma", "1e-7", "tauMax", "PT1e+21S", "shuffles", "10",
+                        "seed", "100000000000000000000"),
+                org.opentsx.wayang.ops.TsxPairWindows.es(
+                        Map.of("sigma", 1e-7, "tauMax", 1e21, "seed", 1e20)).settings());
     }
 
     @Test

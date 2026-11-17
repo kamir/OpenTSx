@@ -100,7 +100,7 @@ public final class TsxPairWindows {
                 Double tau = tauMax == null ? null : tauMax / every;
                 TsxPairEs.Sync sync = TsxPairEs.eventSync(ea, eb, tau);
                 return new double[]{sync.qTotal(), sync.qAb(), sync.qBa(),
-                        TsxPairEs.surrogateSync(ea, eb, (int) shuffles, (long) seed, tau)};
+                        TsxPairEs.surrogateSync(ea, eb, (int) shuffles, (long) (seed % 4294967296.0), tau)};
             }
         };
     }
@@ -126,10 +126,7 @@ public final class TsxPairWindows {
 
     /** A number as JavaScript's String() writes it, for the values that occur in settings. */
     private static String text(double v) {
-        if (v == Math.rint(v) && Math.abs(v) < 1e21) {
-            return Long.toString((long) v);
-        }
-        return new BigDecimal(Double.toString(v)).stripTrailingZeros().toPlainString();
+        return TsxPairXcorr.number(v);
     }
 
     /** The samples of one episode: start and end of its range, times and values. */

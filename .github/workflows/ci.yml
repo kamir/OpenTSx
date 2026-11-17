@@ -322,7 +322,7 @@ jobs:
               "TsxVectorVectorsTest": 13,
               "TsxVectorIntegrationTest": 1,
               "TsxPairVectorsTest": 12,
-              "TsxPairEsWayangTest": 9,
+              "TsxPairEsWayangTest": 11,
               "TsxSegmentVectorsTest": 13,
               "TsxSaxVectorsTest": 8,
               "TsxDqVectorsTest": 10,
