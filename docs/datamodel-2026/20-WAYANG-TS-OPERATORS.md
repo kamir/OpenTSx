@@ -517,11 +517,16 @@ key/revision or stale generations is refused. The evidence envelope is an explic
 | Point | Rule |
 |---|---|
 | delivery | at-least-once; nothing is committed to the broker; progress is the checkpoint |
-| output id | derived episode: `"c"` plus xxHash64 hex of `seriesId|from|to|specHash`, as `SeriesStream.java:152-153` does today. Aggregate: Kafka key `job|site|group series id|windowStart` plus header `tsx-revision` ([S4.2](20-WAYANG-TS-OPERATORS-SPEC.md#s42-aggregate-record), [S6.2](20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids)) |
+| output id | derived episode hash; partial aggregate key and revision; merged key omits site |
 | checkpoint | per task: offsets, operator state, `specHash`, catalog version; temporary file, fsync, rename, after all earlier deliveries are acknowledged |
 | producer retries | unbounded within `delivery.timeout.ms=180000` (`KafScaleClients.DELIVERY_TIMEOUT`); KafScale refuses produce for about a minute when its object store is degraded (`KafScaleClients.java:19-22`) |
 | refused fetch | reset to the positions before the fetch and retry, as `Patience` does |
 | one writer | one owner per assigned whole topic and fragment; local refusal alone does not enforce distributed ownership |
+
+A derived episode ID is `"c"` plus xxHash64 hex of `seriesId|from|to|specHash`, as `SeriesStream.java:152-153` does.
+A partial aggregate uses Kafka key `job|site|group series id|windowType|windowStart` and header `tsx-revision`;
+merged keys omit site. See [S4.2](20-WAYANG-TS-OPERATORS-SPEC.md#s42-aggregate-record) and
+[S6.2](20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids).
 
 | Failure | Effect | Recovery |
 |---|---|---|

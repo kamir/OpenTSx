@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
- * Topic names of one OpenTSx domain: {@code tsx.<domain>.<kind>.v2}.
+ * Topic names of one OpenTSx domain.
  *
  * <p>All topics are append-only logs (KafScale does not compact). The "latest state" of series, buckets and
  * statistics is derived by reading the log or kept in the catalog / Iceberg.
@@ -57,6 +57,21 @@ public final class TopicLayout {
 
     public String seriesStats() {
         return topic("series-stats");
+    }
+
+    public String aggregates() {
+        return boundedTopic(topic("aggregates"));
+    }
+
+    public String signals() {
+        return boundedTopic("tsx." + domain + ".signals.v1");
+    }
+
+    public String repartition(String dag, String node) {
+        if (dag == null || node == null || !SMART_NAME.matcher(dag).matches() || !SMART_NAME.matcher(node).matches()) {
+            throw new IllegalArgumentException("repartition DAG and node names must match " + SMART_NAME);
+        }
+        return boundedTopic(topic("repartition." + dag + "." + node));
     }
 
     public List<String> all() {
@@ -188,5 +203,10 @@ public final class TopicLayout {
 
     private String topic(String kind) {
         return "tsx." + domain + "." + kind + ".v2";
+    }
+
+    private static String boundedTopic(String name) {
+        if (name.length() > 249) throw new IllegalArgumentException("topic name exceeds 249 bytes");
+        return name;
     }
 }

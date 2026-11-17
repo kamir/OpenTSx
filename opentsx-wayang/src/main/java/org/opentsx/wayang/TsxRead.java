@@ -11,5 +11,9 @@ import java.util.Set;
  * @param fingerprints CRC-64-AVRO fingerprints as 16 lower-case hex digits
  */
 public record TsxRead(String bootstrap, String topic, Map<Integer, long[]> ranges, Set<String> fingerprints, String job,
-                      int planVersion) {
+                      int planVersion, boolean strictOffsets) {
+    public TsxRead(String bootstrap, String topic, Map<Integer, long[]> ranges, Set<String> fingerprints, String job,
+                   int planVersion) {
+        this(bootstrap, topic, ranges, fingerprints, job, planVersion, false);
+    }
 }

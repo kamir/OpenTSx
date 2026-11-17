@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentsx.org/schemas/opentsx.aggregate-delivery.v1.schema.json",
+  "title": "opentsx.aggregate-delivery.v1",
+  "description": "Bounded route-J site partials with exactly the same key, UTF-8 headers and SOE payload bytes as route S. Maximum 256 records, 16 MiB UTF-8 delivery, 1 MiB combined key/value/header bytes per record and 128 KiB UTF-8 evidence. Runtime validation enforces byte limits and admitted assignment evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "records"],
+  "properties": {
+    "schema": {"const": "opentsx.aggregate-delivery.v1"},
+    "records": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/record"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "positive": {"type": "string", "pattern": "^[1-9][0-9]{0,18}$"},
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "headers", "value"],
+      "properties": {
+        "key": {"type": "string", "maxLength": 512},
+        "value": {"type": "string", "minLength": 1, "maxLength": 1398104, "contentEncoding": "base64"},
+        "headers": {"$ref": "#/$defs/headers"}
+      }
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tsx-schema", "tsx-job", "tsx-site", "tsx-plan-version", "tsx-revision", "tsx-generation", "tsx-assignment", "tsx-fence", "tsx-spec-hash", "tsx-fragment-hash", "tsx-evidence"],
+      "properties": {
+        "tsx-schema": {"const": "org.opentsx.model.v2.SeriesStats"},
+        "tsx-job": {"$ref": "#/$defs/id"},
+        "tsx-site": {"$ref": "#/$defs/id"},
+        "tsx-plan-version": {"$ref": "#/$defs/positive"},
+        "tsx-revision": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,18})$"},
+        "tsx-generation": {"$ref": "#/$defs/positive"},
+        "tsx-assignment": {"$ref": "#/$defs/id"},
+        "tsx-fence": {"$ref": "#/$defs/positive"},
+        "tsx-spec-hash": {"$ref": "#/$defs/hash"},
+        "tsx-fragment-hash": {"$ref": "#/$defs/hash"},
+        "tsx-evidence": {"type": "string", "minLength": 1, "maxLength": 131072}
+      }
+    }
+  }
+}

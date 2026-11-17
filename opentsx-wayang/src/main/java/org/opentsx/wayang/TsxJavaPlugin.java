@@ -8,6 +8,7 @@ import org.apache.wayang.core.plugin.Plugin;
 import org.apache.wayang.core.util.ReflectionUtils;
 import org.apache.wayang.java.channels.ChannelConversions;
 import org.apache.wayang.java.mapping.CollectionSourceMapping;
+import org.apache.wayang.java.mapping.FilterMapping;
 import org.apache.wayang.java.mapping.LocalCallbackSinkMapping;
 import org.apache.wayang.java.mapping.MapMapping;
 import org.apache.wayang.java.mapping.UnionAllMapping;
@@ -28,7 +29,7 @@ public final class TsxJavaPlugin implements Plugin {
 
     @Override
     public Collection<Mapping> getMappings() {
-        return List.of(new CollectionSourceMapping(), new MapMapping(), new LocalCallbackSinkMapping(),
+        return List.of(new CollectionSourceMapping(), new MapMapping(), new FilterMapping(), new LocalCallbackSinkMapping(),
                 new TsxRetrievalMappings(),
                 new TsxTopicSourceMapping(), new TsxTopicSinkMapping(), new TsxOperatorMappings.SeriesChainMapping(),
                 new TsxOperatorMappings.StatsWindowMapping(), new UnionAllMapping(),

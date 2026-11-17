@@ -2,60 +2,256 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opentsx.org/schemas/opentsx.runner-plan.v1.schema.json",
   "title": "opentsx.runner-plan.v1",
-  "description": "Draft legacy site wrapper, not sufficient for multi-node activation. The unified deployment contract must bind an opentsx.execution-assignment.v1 envelope, exact source/fragment text, ownership and channels before network acceptance. See specification S2.4 and the unified delivery plan.",
+  "description": "Bounded JVM site wrapper. Semantic validation binds the unchanged assignment, exact source and fragment text, qualified runtime, admitted topic cuts, output bindings and aggregate scopes. The complete payload is limited to 128 KiB. The bounded JVM network profile admits one SeriesStats sink whose terminal operator is stats.welford-ddsketch.",
   "type": "object",
-  "required": ["schema", "job", "planVersion", "issued", "expires", "site", "catalog", "specHash", "dag", "inputs", "outputs", "start"],
+  "required": [
+    "schema",
+    "job",
+    "planVersion",
+    "issued",
+    "expires",
+    "site",
+    "catalog",
+    "specHash",
+    "assignmentText",
+    "inputContracts",
+    "outputs",
+    "federation"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema": {"const": "opentsx.runner-plan.v1"},
-    "job": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
-    "planVersion": {"type": "integer", "minimum": 1},
-    "issued": {"type": "string", "format": "date-time"},
-    "expires": {"type": "string", "format": "date-time"},
-    "site": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
-    "catalog": {"type": "string", "pattern": "^tsx-catalog/[1-9][0-9]*$"},
-    "specHash": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Lower-case hex SHA-256 of the exact original submitted UI DAG text. Fragment text requires a separate fragmentHash; this legacy wrapper does not carry the complete new assignment contract."},
-    "dag": {"type": "object", "required": ["nodes", "sinks"], "description": "The site stage as a DAG document in JSON form."},
-    "inputs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/topic"}},
-    "outputs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/output"}},
-    "start": {
-      "oneOf": [
-        {"enum": ["earliest", "latest"]},
-        {"type": "object", "description": "Offsets per topic and partition.", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}}
-      ]
+    "schema": {
+      "const": "opentsx.runner-plan.v1"
+    },
+    "job": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "planVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "issued": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "expires": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "site": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+    },
+    "catalog": {
+      "type": "string",
+      "pattern": "^tsx-catalog/[1-9][0-9]*$"
+    },
+    "specHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "assignmentText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 65536,
+      "description": "Exact UTF-8 opentsx.execution-assignment.v1 text, limited to 65536 bytes by semantic validation."
+    },
+    "inputContracts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "required": [
+          "binding",
+          "topic",
+          "fingerprints"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "binding": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+          },
+          "topic": {
+            "type": "string",
+            "pattern": "^tsx\\.[a-z0-9-]+\\.[a-z0-9.-]+\\.v[0-9]+$",
+            "maxLength": 249
+          },
+          "fingerprints": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{16}$"
+            }
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "sink",
+          "cluster",
+          "topic",
+          "partitionCount",
+          "fingerprints"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sink": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 249,
+            "description": "Exact compiler sink identity of the admitted fragment."
+          },
+          "cluster": {
+            "enum": [
+              "site",
+              "signal"
+            ]
+          },
+          "topic": {
+            "type": "string",
+            "pattern": "^tsx\\.[a-z0-9-]+\\.[a-z0-9.-]+\\.v[0-9]+$",
+            "maxLength": 249
+          },
+          "partitionCount": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "maxLength": 19
+          },
+          "fingerprints": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "const": "e51b48188baa6606"
+            }
+          }
+        }
+      }
     },
     "federation": {
       "type": "object",
-      "required": ["route", "expectedSites", "groupBy", "maxDelay"],
+      "required": [
+        "route",
+        "expectedAssignments",
+        "scopes",
+        "groupBy",
+        "maxDelay"
+      ],
       "additionalProperties": false,
       "properties": {
-        "route": {"enum": ["signal-cluster", "job-state"]},
-        "expectedSites": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
-        "groupBy": {"type": "array", "uniqueItems": true, "items": {"type": "string"}, "description": "Tag names that form the group key; empty: one group per metric."},
-        "maxDelay": {"type": "string", "pattern": "^P", "description": "ISO 8601 duration after the window end until a window is written as not final."}
-      }
-    }
-  },
-  "$defs": {
-    "topic": {
-      "type": "object",
-      "required": ["topic", "fingerprints", "partitions"],
-      "additionalProperties": false,
-      "properties": {
-        "topic": {"type": "string", "pattern": "^tsx\\.[a-z0-9-]+\\.[a-z0-9.-]+\\.v[0-9]+$"},
-        "fingerprints": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}, "description": "CRC-64-AVRO fingerprints allowed on the input topic."},
-        "partitions": {"type": "integer", "minimum": 1}
-      }
-    },
-    "output": {
-      "type": "object",
-      "required": ["topic", "cluster"],
-      "additionalProperties": false,
-      "properties": {
-        "topic": {"type": "string", "pattern": "^tsx\\.[a-z0-9-]+\\.[a-z0-9.-]+\\.v[0-9]+$"},
-        "cluster": {"enum": ["site", "signal"]},
-        "fingerprints": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"}},
-        "schema": {"type": "string", "description": "JSON record schema for JSON topics, for example opentsx.signal.v1."}
+        "route": {
+          "enum": [
+            "signal-cluster",
+            "job-state"
+          ]
+        },
+        "expectedAssignments": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "required": [
+              "assignment",
+              "site",
+              "node",
+              "generation",
+              "fence",
+              "fragmentHash"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "assignment": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+              },
+              "site": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+              },
+              "node": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+              },
+              "generation": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$",
+                "maxLength": 19
+              },
+              "fence": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$",
+                "maxLength": 19
+              },
+              "fragmentHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1024,
+          "items": {
+            "type": "object",
+            "required": [
+              "groupId",
+              "windowType",
+              "startMicros",
+              "endMicros"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "groupId": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{16}$"
+              },
+              "windowType": {
+                "type": "string",
+                "pattern": "^P"
+              },
+              "startMicros": {
+                "type": "string",
+                "pattern": "^(0|-?[1-9][0-9]*)$",
+                "maxLength": 20
+              },
+              "endMicros": {
+                "type": "string",
+                "pattern": "^(0|-?[1-9][0-9]*)$",
+                "maxLength": 20
+              }
+            }
+          },
+          "uniqueItems": true
+        },
+        "groupBy": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "maxDelay": {
+          "type": "string",
+          "pattern": "^P"
+        }
       }
     }
   }

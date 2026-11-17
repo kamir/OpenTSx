@@ -261,6 +261,15 @@ window bounds, preserving distinct findings under the S6.2 deduplication rule.
 ### A4: translation, signed plans, federation on JVM sites
 - [ ] `DagToWayang`, `TsxSitePlatform`, `TsxSiteExecutor`, `TsxSiteAgent`, plan service API (S5.3), forwarder, central merge.
 
+The owner-approved A4 qualification uses bounded replicated JVM assignments,
+three site instances in one execution JVM and four independent disposable
+KafScale v1.6.0 brokers. It preserves complete source cuts and exact
+source/fragment identity, and admits one statistics output per site.
+Signed member and scope inventories establish finality for those bounded cuts.
+General continuous fleet activation, production PKI/ACL enrollment and ownership
+takeover remain separate gates. The owner approved the wire/security contract
+and the measured D-T2 revision on 2026-11-17.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | A4.1 | Every rejection message is exact | `DagToWayangErrorsTest`, one fixture per message of S2.5 | fixtures | 22 of 22 messages equal character for character |
@@ -268,7 +277,7 @@ window bounds, preserving distinct findings under the S6.2 deduplication rule.
 | A4.3 | Bad plans are refused; accepted retry is idempotent | `TsxSiteAgentPlanTest`: tampered payload, `alg: none`, expired new activation, older version, conflicting bytes for an accepted version, wrong site, identical accepted retry before and after expiry | fixtures | six refusals with their exact S5.5 codes; both identical retries return the recorded outcome without reactivation |
 | A4.4 | Bad sites are refused | `ConformanceHandshakeTest`: one site with a wrong input fingerprint, one with a `seriesId` of another site | W3 on K | responses `{"result":"refused","check":"topics.fingerprints",...}` and `{"result":"refused","check":"series.disjoint",...}`; 2 of 2 |
 | A4.5 | Federated equals centralized | `FederatedStatsIntegrationTest`: `stats.welford-ddsketch` with `windows: [PT10M, PT1H]`, `alpha: 0.01`, over three sites, against one `StatsAccumulator` per group and window over all values | W3 on K | for every window: exact counts/min/max; sketch bytes equal in the one-runtime/no-collapse domain; mean/m2 within D-T2; quantile accuracy qualified by S4.3, with explicit zero-bucket and collapsed-tail cases |
-| A4.6 | The merge is order-independent | `MergeOrderTest`: the three partials of every window of A4.5 in all 6 orders | W3 partials | all 6 merged records bit-identical |
+| A4.6 | The merge is order-independent | `MergeOrderTest`, `W3StatsMergeTest`, `FederatedStatsIntegrationTest`: the three partials of every window of A4.5 in all 6 orders | W3 partials | all 6 merged records bit-identical, including comparison with the actual published record |
 | A4.7 | Late and missing sites follow S4.5 | `CompletenessIntegrationTest`: stop `s3`, wait past `maxDelay`, restart | W3 on K, `maxDelay: PT1M` | first record `tsx-final: false`, `tsx-missing-sites: s3`; after restart revision 1 with `tsx-final: true`; revision 0 unchanged in the topic |
 | A4.8 | Route J equals route S | `JobStateRouteIntegrationTest`: a bounded job over W3 | W3 on K | merged records bit-identical to A4.5 |
 | A4.9 | Data moved is known | protocol of concept 20, section 14, baseline (a) | W3 on K | bytes leaving each site and bytes of the centralized run measured and reported |
@@ -339,7 +348,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | Id | Question | Options | Recommendation | Decision |
 |---|---|---|---|---|
 | D-T1 | Edge runtime | Rust (Track B); Go (concept 11, D25); none, JVM only | Rust: `apache-avro` supports single-object encoding, `wasmtime` for later user operators; one non-JVM runtime only | as recommended, owner, 2026-11-16 |
-| D-T2 | Tolerance for federated `mean` and `m2` | fixed relative 1e-12; bound measured per data set in A4.5 | fixed 1e-12, revisited with the measured error of A4.5 | as recommended, owner, 2026-11-16 |
+| D-T2 | Tolerance for federated `mean` and `m2` | fixed relative bound; measured per data set in A4.5 | relative 3e-12 for the bounded W3 qualification; retain exact counts, extrema and uncollapsed sketch bytes | owner, 2026-11-17: measured maximum mean error 1.7308017671758118e-14 and m2 error 2.7235050829345894e-12 over all 420 windows and six merge orders; no bound established for arbitrary data or mixed runtimes |
 | D-T3 | Default federation route | signal cluster; job state; both | signal cluster: works with offline sites and continuous jobs | as recommended, owner, 2026-11-16 |
 | D-T4 | Plan delivery | pull agent (S5.3); push agent with an inbound port; SSH only | pull agent; SSH for sites that require it | as recommended, owner, 2026-11-16 |
 | D-T5 | Signature algorithm | EdDSA (Ed25519); ES256 | EdDSA: small keys, deterministic signatures | as recommended, owner, 2026-11-16 |

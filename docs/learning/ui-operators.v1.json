@@ -1602,7 +1602,7 @@
       "pitfalls": [
         "An anticorrelated extreme can be the selected peak with a negative sign.",
         "A single searched lag has undefined strength because there is no spread.",
-        "An available native mapping does not establish full A4 compilation or deployment through the workbench."
+        "A local Java catalog plan remains separate from deployment through an admitted runtime profile."
       ],
       "parameterKeys": [
         "pairing",
@@ -1700,7 +1700,7 @@
         "Observe that shuffling the single inter-event interval cannot change this two-event control.",
         "Inspect the four shared sampled-series cases through TsxPair, including state restored between B and a later A increment.",
         "Compare largeSeedsUseTheSameUnsigned32BitStateAsTheWorkbench and settingsLabelsKeepWorkbenchNumberFormatting with the workbench settings.",
-        "Resolve pair.es version 1 in the frozen inventory and explain why native availability remains separate from full A4 compilation and deployment."
+        "Resolve pair.es version 1 in the frozen inventory and explain why local Java compilation remains separate from remote deployment admission."
       ],
       "starter": {
         "bucket": {
@@ -1777,7 +1777,7 @@
       "pitfalls": [
         "A large q_total alone does not prove coupling when q_rand is equally large.",
         "First and last samples cannot be detected local-maximum events.",
-        "The frozen pair.es entry identifies native Wayang availability; it does not establish a deployed UI DAG binding or full A4 compiler support.",
+        "The frozen pair.es entry identifies native Wayang availability; local Java compilation does not establish a deployed UI runtime binding.",
         "A large whole-number seed must wrap to the unsigned 32-bit random state without changing its settings label."
       ],
       "parameterKeys": [
@@ -2417,7 +2417,9 @@
           "docs/user-manual/09-retrieval.md",
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
-          "docs/devguide/integration/wayang-rust-compose.md"
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
+          "opentsx-wayang/README.md#compile-a-catalog-dag"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#resample",
@@ -2429,7 +2431,8 @@
           "rust/tsx-runner/src/operators.rs#compile",
           "opentsx-saas-frontend/src/workbench/wayang.ts#buildWayangDag",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
-          "rust/tsx-runner/src/worker.rs#prepare"
+          "rust/tsx-runner/src/worker.rs#prepare",
+          "opentsx-saas-frontend/src/workbench/flow.ts#toDagYaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
@@ -2438,10 +2441,12 @@
           "rust/tsx-runner/src/operators.rs#open_resample_tail_survives_restore_and_is_not_flushed_at_batch_end",
           "opentsx-saas-frontend/src/workbench/wayang.test.ts",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustRolloutComposeFixtureTest.java#expectedWireRecordsUseTheSubmittedUiTargetHashAndAcceptedClock",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#realWayangStagePreparesEveryWholeTopicBeforeAnyActivation",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode"
         ],
         "vectors": [
-          "docs/datamodel-2026/testvectors/clean-ops.v1.json"
+          "docs/datamodel-2026/testvectors/clean-ops.v1.json",
+          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
         ]
       }
     },
@@ -2985,7 +2990,7 @@
       "tasks": [
         "Group the samples into [0,2) and [2,4).",
         "Predict sample standard deviation sqrt(2) for each pair.",
-        "Inspect DAG export and identify the unresolved catalog parameter translation."
+        "Inspect the actual DAG export: compare its explicit catalog window duration and full SeriesStats sink with the selected browser field retained in the saved flow."
       ],
       "starter": {
         "bucket": {
@@ -3023,7 +3028,7 @@
         "Both STD values equal sqrt(2)."
       ],
       "pitfalls": [
-        "The UI accepts window and field; the proposed catalog accepts windows and alpha.",
+        "The browser uses window and field; deployment writes windows and uses the processor description's alpha default, while field remains a saved view.",
         "A workbench statistic series is not a complete SeriesStats record."
       ],
       "parameterKeys": [
@@ -3051,19 +3056,25 @@
         "manual": [
           "docs/user-manual/14-saas-service-layer.md",
           "docs/user-manual/07-stats-quality.md",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
+          "opentsx-wayang/README.md#compile-a-catalog-dag"
         ],
         "spec": [
           "docs/learning/ui-operator-contracts.md#stats-window"
         ],
         "source": [
-          "opentsx-saas-frontend/src/workbench/ops.ts#windowStats"
+          "opentsx-saas-frontend/src/workbench/ops.ts#windowStats",
+          "opentsx-saas-frontend/src/workbench/flow.ts#toDagYaml"
         ],
         "tests": [
           "opentsx-saas-frontend/src/workbench/operator-learning.test.ts",
-          "opentsx-saas-frontend/src/workbench/workbench.test.ts"
+          "opentsx-saas-frontend/src/workbench/workbench.test.ts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode"
         ],
-        "vectors": []
+        "vectors": [
+          "docs/datamodel-2026/testvectors/workbench-dags/published-stats.yaml"
+        ]
       }
     },
     {

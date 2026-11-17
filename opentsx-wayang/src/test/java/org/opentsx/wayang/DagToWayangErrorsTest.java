@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.kafka.TopicLayout;
 
@@ -14,6 +16,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.OptionalLong;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -26,6 +31,34 @@ class DagToWayangErrorsTest {
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
     private static final Path CATALOG = Path.of("..", "systems", "processors");
     private static final TopicLayout LAYOUT = new TopicLayout("wind");
+
+    @TestFactory
+    Stream<DynamicTest> allNormativeRejections() throws Exception {
+        JsonNode vectors = new ObjectMapper().readTree(Path.of("..", "docs", "datamodel-2026", "testvectors",
+                "dag-to-wayang-rejections.v1.json").toFile());
+        assertEquals(22, vectors.path("cases").size());
+        return StreamSupport.stream(vectors.path("cases").spliterator(), false).map(c ->
+                DynamicTest.dynamicTest("message " + c.path("id").asText(), () -> assertEquals(c.path("message").asText(),
+                        assertThrows(IllegalArgumentException.class,
+                                () -> DagToWayang.compile(c.path("document"), LAYOUT, "spec", CATALOG, context(c))).getMessage())));
+    }
+
+    private static TsxCompileContext context(JsonNode c) {
+        Map<String, List<TsxCompileContext.Runtime>> assignments = Map.of();
+        if (c.has("runtimeTrack")) {
+            TsxCompileContext.Runtime runtime = new TsxCompileContext.Runtime(c.path("runtimeTrack").asText(),
+                    Map.of("decode.avro-soe", 1), Set.of("none", "keyed", "windowed"));
+            assignments = Map.of("decode", List.of(runtime), "n1", List.of(runtime));
+        }
+        Map<String, TsxCompileContext.Boundary> boundaries = c.path("federated").asBoolean()
+                ? Map.of(c.path("document").path("sinks").get(0).path("topic").asText(),
+                        new TsxCompileContext.Boundary(c.has("statisticWindow") ? Set.of(c.path("statisticWindow").asText()) : Set.of(), false))
+                : Map.of();
+        return new TsxCompileContext(assignments, boundaries,
+                c.has("productsLimit") ? OptionalLong.of(c.path("productsLimit").asLong()) : OptionalLong.empty(),
+                c.has("productsEstimate") ? Map.of("n1", c.path("productsEstimate").asLong()) : Map.of(),
+                Map.of(), Map.of(), "site", OptionalLong.empty(), false);
+    }
 
     private static ObjectNode dag(String op, String params) throws Exception {
         return (ObjectNode) YAML.readTree("""
@@ -85,10 +118,11 @@ class DagToWayangErrorsTest {
 
     @Test
     void readsBoundsFromTheProcessorFile(@TempDir Path catalog) throws Exception {
-        Files.writeString(catalog.resolve("feature.lag.yaml"), Files.readString(CATALOG.resolve("feature.lag.yaml"))
+        Path directory = copyCatalog(catalog);
+        Files.writeString(directory.resolve("feature.lag.yaml"), Files.readString(CATALOG.resolve("feature.lag.yaml"))
                 .replace("min: 1, max: 100000", "min: 2, max: 3"));
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> DagToWayang.compile(dag("feature.lag", "{steps: 1}"), LAYOUT, "spec", catalog));
+                () -> DagToWayang.compile(dag("feature.lag", "{steps: 1}"), LAYOUT, "spec", directory));
         assertEquals("node n1: parameter steps must be between 2 and 3", error.getMessage());
     }
 
@@ -110,16 +144,14 @@ class DagToWayangErrorsTest {
 
     @Test
     void validatesEveryCatalogNodeBeforeReportingParameterErrors(@TempDir Path catalog) throws Exception {
-        try (var files = Files.list(CATALOG)) {
-            for (Path file : files.toList()) Files.copy(file, catalog.resolve(file.getFileName()));
-        }
-        ObjectNode planned = (ObjectNode) YAML.readTree(catalog.resolve("align.vector.yaml").toFile());
+        Path directory = copyCatalog(catalog);
+        ObjectNode planned = (ObjectNode) YAML.readTree(directory.resolve("align.vector.yaml").toFile());
         ((ObjectNode) planned.path("runtimes").path("wayang")).put("status", "planned");
-        YAML.writeValue(catalog.resolve("align.vector.yaml").toFile(), planned);
+        YAML.writeValue(directory.resolve("align.vector.yaml").toFile(), planned);
         refused("missing.operator", "{}", "node n1: operator missing.operator is not in catalog tsx-catalog/1");
         assertEquals("node n1: operator align.vector version 1 has no runtime for track A",
                 assertThrows(IllegalArgumentException.class,
-                        () -> DagToWayang.compile(dag("align.vector", "{every: PT1M}"), LAYOUT, "spec", catalog)).getMessage());
+                        () -> DagToWayang.compile(dag("align.vector", "{every: PT1M}"), LAYOUT, "spec", directory)).getMessage());
         for (String op : List.of("missing.operator", "align.vector")) {
             ObjectNode input = dag("model.wind-shear", "{toM: 100, alpha: 0.2}");
             ((ArrayNode) input.path("nodes")).addObject().put("id", "later").put("op", op)
@@ -128,8 +160,18 @@ class DagToWayangErrorsTest {
                     ? "node later: operator missing.operator is not in catalog tsx-catalog/1"
                     : "node later: operator align.vector version 1 has no runtime for track A";
             assertEquals(expected, assertThrows(IllegalArgumentException.class,
-                    () -> DagToWayang.compile(input, LAYOUT, "spec", catalog)).getMessage());
+                    () -> DagToWayang.compile(input, LAYOUT, "spec", directory)).getMessage());
         }
+    }
+
+    private static Path copyCatalog(Path root) throws Exception {
+        Path directory = Files.createDirectory(root.resolve("processors"));
+        try (var files = Files.list(CATALOG)) {
+            for (Path file : files.toList()) Files.copy(file, directory.resolve(file.getFileName()));
+        }
+        Files.createDirectory(root.resolve("catalogs"));
+        Files.copy(CATALOG.resolveSibling("catalogs").resolve("tsx-catalog-1.yaml"), root.resolve("catalogs/tsx-catalog-1.yaml"));
+        return directory;
     }
 
     @Test

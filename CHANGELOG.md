@@ -43,6 +43,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   against Java reference output. This standalone replay fixture remains distinct from the UI-to-Wayang rollout
   acceptance helper; continuous processing and production fleet activation remain separate.
 
+- Bounded JVM federation for TASK-020 A4: complete-catalog local compilation,
+  exact rejection messages and Workbench export fixtures; signed immutable site
+  assignments, job-bound conformance, TLS 1.3 client certificates, durable
+  delivery outcomes and strict continuation identities. Site statistics carry
+  width-aware keys and closed-cut evidence through either acknowledged Kafka
+  forwarding or the authenticated aggregate endpoint. Canonical central merges
+  retain immutable completeness revisions and an acknowledged publication outbox.
+  This qualification uses three site instances in one JVM and four independent
+  brokers. Production enrollment, continuous fleet activation and ownership
+  takeover remain separate.
+
 - Frozen `tsx-catalog/1` with 16 versioned native Java entries, complete
   processor descriptions and membership/version/metadata regressions.
   Stream/batch parity covers 61 native numerical cases and four explicit
