@@ -76,6 +76,12 @@ def test_summary_counts_nan_separately():
     assert (s["validCount"], s["nanCount"], s["mean"]) == (2, 1, 2.0)
 
 
+def test_summary_counts_infinite_values_as_nan():
+    s = m.summarize([1.0, math.inf, 3.0, -math.inf, math.nan])
+    assert (s["validCount"], s["nanCount"], s["min"], s["max"], s["mean"]) == (2, 3, 1.0, 3.0, 2.0)
+    assert m.variance(s) == 2.0
+
+
 def test_fingerprints_match_java():
     for name, fp in load("wire-format.json")["fingerprints"].items():
         assert f"{m.fingerprint(name):016x}" == fp

@@ -19,7 +19,7 @@ outputs:
   - { name: q_rand, type: stats, description: Chance level from surrogate_sync }
   - { name: events, type: events, cardinality: many, description: Event indices of a and of b }
 params:
-  - { name: method, type: enum, values: [std, percentile, absolute], default: std, description: "Event threshold: mean + 2 std, the 95th percentile, or 0" }
+  - { name: method, type: enum, values: [std, percentile, absolute], default: std, description: "Event threshold: mean + 2 std, the 95th percentile, or threshold1 and threshold2, which absolute requires" }
   - { name: threshold1, type: number, description: Event threshold of a; overrides method }
   - { name: threshold2, type: number, description: Event threshold of b; overrides method }
   - { name: tau_max, type: number, min: 0, unit: samples, description: "Cap of the local window. No cap by default." }
@@ -34,7 +34,9 @@ runtimes:
     note: >-
       EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand.
       calculate_synchronization takes event indices directly. leader names a series only when the delay q is above
-      0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds.
+      0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds. analyze
+      raises ValueError for a value that is not finite, for a series without events and for method absolute without
+      threshold1 and threshold2.
   workbench:
     status: none
     note: >-

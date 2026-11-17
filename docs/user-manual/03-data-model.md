@@ -9,7 +9,7 @@ Normative specification: [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC
 |--------|---------|
 | `SeriesKey` | identity of a series: `metric`, `tags`, `unit`, `seriesId` |
 | `Episode` | immutable piece of one series: time axis, values, quality, summary, segmentation, labels, provenance |
-| `EpisodeSummary` | mergeable statistics of the finite values (count, NaN count, min, max, mean, M2), optional SAX word |
+| `EpisodeSummary` | mergeable statistics of the finite values (count, count of NaN and infinite values, min, max, mean, M2), optional SAX word |
 | `Segmentation` | how the episode was cut: strategy, parameters, anchor, source episode |
 | `Provenance` | source, producer, creation time, pipeline, parent episode |
 | `Observation` | a single live value |

@@ -15,7 +15,7 @@ inputs:
 outputs:
   - { name: events, type: events, description: Indices of the values above the threshold }
   - { name: intervals, type: xy, description: Return interval r over the event number }
-  - { name: summary, type: stats, description: "num_events, threshold, mean_ri, median_ri, std_ri, min_ri, max_ri, risk_parameter, gamma, tau_0" }
+  - { name: summary, type: stats, description: "num_events, threshold, mean_ri, median_ri, std_ri, min_ri, max_ri, risk_parameter" }
 params:
   - { name: threshold, type: number, description: "Absolute threshold. When set, threshold_percentile is not used" }
   - { name: threshold_percentile, type: number, default: 95, min: 0, max: 100, description: Percentile of the values that is the threshold }
@@ -25,9 +25,12 @@ runtimes:
     status: available
     class: opentsx.algorithms.ris.RIS#analyze
     note: >-
-      RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold. survival_function(r)
-      gives S(r), the share of intervals of r or longer. stretched_exponential_fit returns gamma = 1.0 for every input
-      and tau_0 from a straight line through log P over log r, so neither describes a stretched exponential.
+      RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold; a value that is not
+      finite or fewer than 3 events raise ValueError. survival_function(r) gives S(r), the share of intervals of r or
+      longer. stretched_exponential_fit(r) is a maximum-likelihood fit of P(r) proportional to
+      exp[-(r / tau_0)^gamma] and returns gamma and tau_0; analyze does not call it. gamma is near 1 for uncorrelated
+      values (mean 1.08 over 40 series of 8192 values at the 95th percentile, above 1 because the intervals are whole
+      numbers) and 1 − beta for 1/f^beta noise (Bunde et al. 2005).
   workbench: { status: none }
   java:
     status: available

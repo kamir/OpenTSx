@@ -4,6 +4,8 @@ from typing import Union, Dict, Any, Optional, Tuple
 import numpy as np
 import numpy.typing as npt
 
+from opentsx.algorithms._input import finite_values
+
 
 class Mulberry32:
     """
@@ -83,17 +85,18 @@ class EventSynchronization:
 
         Args:
             time_series: Input time series
-            threshold: Threshold for event detection (auto-calculated if None)
+            threshold: Threshold for event detection (auto-calculated if None; required for
+                method 'absolute')
             method: Threshold method ('std', 'percentile', 'absolute')
 
         Returns:
             Array of event indices
+
+        Raises:
+            ValueError: an empty series, a value that is not finite, method 'absolute' without a
+                threshold, or an unknown method
         """
-        # Extract data
-        if hasattr(time_series, 'values'):
-            data = time_series.values
-        else:
-            data = np.asarray(time_series, dtype=np.float64)
+        data = finite_values(time_series, "time_series")
 
         # Determine threshold
         if threshold is None:
@@ -102,9 +105,14 @@ class EventSynchronization:
             elif method == 'percentile':
                 threshold = np.percentile(data, 95)
             elif method == 'absolute':
-                threshold = 0.0  # Will be set by user
+                raise ValueError(
+                    "threshold: not set for method 'absolute'; expected the event threshold as a "
+                    "number (threshold1 and threshold2 in analyze)"
+                )
             else:
-                raise ValueError(f"Unknown threshold method: {method}")
+                raise ValueError(
+                    f"method: {method!r} is unknown; expected 'std', 'percentile' or 'absolute'"
+                )
 
         # Find local maxima above threshold
         events = []
@@ -276,7 +284,7 @@ class EventSynchronization:
             ts2: Second time series
             threshold1: Event threshold for ts1
             threshold2: Event threshold for ts2
-            method: Threshold method ('std', 'percentile')
+            method: Threshold method ('std', 'percentile', or 'absolute' with both thresholds)
 
         Returns:
             Dictionary with synchronization results including:
@@ -292,10 +300,21 @@ class EventSynchronization:
             - delay (q): Quiroga's delay measure q_12 - q_21 in [-1, 1]
               (positive if series 1 leads)
             - tau_max: Fixed cap on the local window (inf if none was set)
+
+        Raises:
+            ValueError: a value that is not finite, or a series without events
         """
-        # Detect events in both series
-        events1 = self.detect_events(ts1, threshold=threshold1, method=method)
-        events2 = self.detect_events(ts2, threshold=threshold2, method=method)
+        events = {}
+        for name, ts, threshold in (("ts1", ts1, threshold1), ("ts2", ts2, threshold2)):
+            events[name] = self.detect_events(
+                finite_values(ts, name), threshold=threshold, method=method
+            )
+            if len(events[name]) == 0:
+                raise ValueError(
+                    f"{name}: no event, no local maximum lies above the threshold; expected at "
+                    "least one event, lower the threshold or use another method"
+                )
+        events1, events2 = events["ts1"], events["ts2"]
 
         # Calculate synchronization measures
         Q, q_12, q_21 = self.calculate_synchronization(events1, events2)

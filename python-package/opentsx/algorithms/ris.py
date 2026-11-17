@@ -4,6 +4,8 @@ from typing import Union, Dict, Any, Optional, List, Tuple
 import numpy as np
 import numpy.typing as npt
 
+from opentsx.algorithms._input import finite_values
+
 
 class RIS:
     """
@@ -52,12 +54,11 @@ class RIS:
 
         Returns:
             (event_indices, threshold_used): Indices of extreme events and threshold value
+
+        Raises:
+            ValueError: an empty series or a value that is not finite
         """
-        # Extract data
-        if hasattr(time_series, 'values'):
-            data = time_series.values
-        else:
-            data = np.asarray(time_series, dtype=np.float64)
+        data = finite_values(time_series, "time_series")
 
         # Determine threshold
         if self.threshold is not None:
@@ -108,15 +109,20 @@ class RIS:
 
         Returns:
             Risk parameter R
+
+        Raises:
+            ValueError: fewer than 2 return intervals, or a mean that is not positive
         """
-        if len(return_intervals) == 0:
-            return 0.0
+        if len(return_intervals) < 2:
+            raise ValueError(
+                f"return_intervals: {len(return_intervals)} given; expected at least 2 intervals"
+            )
 
         mean_ri = np.mean(return_intervals)
         std_ri = np.std(return_intervals)
 
-        if mean_ri == 0:
-            return 0.0
+        if not mean_ri > 0:
+            raise ValueError(f"return_intervals: mean is {mean_ri:g}; expected positive intervals")
 
         R = std_ri / mean_ri
 
@@ -127,47 +133,66 @@ class RIS:
         return_intervals: npt.NDArray[np.int32]
     ) -> Dict[str, float]:
         """
-        Fit stretched exponential distribution to return intervals.
+        Maximum-likelihood fit of the stretched exponential density
 
-        P(τ) ∝ exp[-(τ/τ_0)^γ]
+        P(τ) = γ / (τ_0 Γ(1/γ)) exp[-(τ/τ_0)^γ]
+
+        to the return intervals. For a given γ the likelihood is largest at
+        τ_0 = (γ mean(τ^γ))^(1/γ), so only γ is searched, from 0.05 to 20.
 
         Args:
             return_intervals: Array of return intervals
 
         Returns:
             Dictionary with fit parameters:
-            - gamma: Stretching exponent (γ < 1: subdiffusive, γ = 1: exponential, γ > 1: superdiffusive)
+            - gamma: Stretching exponent. Uncorrelated values give about 1, an exponential;
+              long-term correlated values give γ < 1, the correlation exponent (Bunde et al. 2005)
             - tau_0: Characteristic time scale
+
+        Raises:
+            ValueError: fewer than 10 intervals, an interval that is not positive and finite, all
+                intervals equal, or the largest likelihood at a limit of the search
         """
-        if len(return_intervals) < 10:
-            return {'gamma': 0.0, 'tau_0': 0.0}
+        from scipy import optimize, special
 
-        # Create histogram
-        hist, bin_edges = np.histogram(return_intervals, bins='auto', density=True)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        r = np.asarray(return_intervals, dtype=np.float64)
+        if len(r) < 10:
+            raise ValueError(f"return_intervals: {len(r)} given; expected at least 10 intervals")
+        bad = np.flatnonzero(~(np.isfinite(r) & (r > 0)))
+        if len(bad):
+            raise ValueError(
+                f"return_intervals: interval {r[bad[0]]:g} at index {bad[0]} is not a positive "
+                "finite number; expected positive finite intervals"
+            )
+        if r.min() == r.max():
+            raise ValueError(
+                f"return_intervals: all {len(r)} intervals are {r[0]:g}; "
+                "expected intervals that vary, a stretched exponential has no fit to a constant"
+            )
+        mean = r.mean()
+        x = r / mean
 
-        # Filter out zeros
-        mask = (hist > 0) & (bin_centers > 0)
-        if np.sum(mask) < 3:
-            return {'gamma': 0.0, 'tau_0': 0.0}
+        def tau_0(gamma: float) -> float:
+            return float((gamma * np.mean(x ** gamma)) ** (1.0 / gamma))
 
-        log_tau = np.log(bin_centers[mask])
-        log_P = np.log(hist[mask])
+        def negative_log_likelihood(log_gamma: float) -> float:
+            gamma = np.exp(log_gamma)
+            t = tau_0(gamma)
+            log_norm = np.log(t) + special.gammaln(1.0 / gamma) - log_gamma
+            return len(x) * log_norm + np.sum((x / t) ** gamma)
 
-        # Linear fit in log-log space: log(P) = -a * log(τ)^γ + const
-        # Simplified: assume γ = 1 for basic fit
-        try:
-            coeffs = np.polyfit(log_tau, log_P, 1)
-            gamma = 1.0  # Simplified estimate
-            tau_0 = float(np.exp(-coeffs[1] / coeffs[0]))
-        except:
-            gamma = 0.0
-            tau_0 = 0.0
-
-        return {
-            'gamma': float(gamma),
-            'tau_0': float(tau_0)
-        }
+        lo, hi = np.log(0.05), np.log(20.0)
+        best = optimize.minimize_scalar(
+            negative_log_likelihood, bounds=(lo, hi), method="bounded", options={"xatol": 1e-8}
+        )
+        if not best.success or min(best.x - lo, hi - best.x) < 1e-4:
+            raise ValueError(
+                f"return_intervals: the likelihood is largest at gamma {np.exp(best.x):.3g}, "
+                "a limit of the search; expected intervals that a stretched exponential with "
+                "0.05 < gamma < 20 describes"
+            )
+        gamma = float(np.exp(best.x))
+        return {'gamma': gamma, 'tau_0': tau_0(gamma) * float(mean)}
 
     def survival_function(
         self,
@@ -226,45 +251,36 @@ class RIS:
             - max_ri: Maximum return interval
             - risk_parameter: Risk parameter R (σ/μ)
             - risk_interpretation: Interpretation of risk parameter
-            - gamma: Stretched exponential exponent
-            - tau_0: Characteristic time scale
+
+        Raises:
+            ValueError: a value that is not finite, or fewer than 3 events above the threshold
         """
         # Detect extreme events
         event_indices, threshold_value = self.detect_extreme_events(time_series)
 
         # Calculate return intervals
         return_intervals = self.calculate_return_intervals(event_indices)
+        if len(return_intervals) < 2:
+            raise ValueError(
+                f"time_series: {len(event_indices)} values lie above the threshold "
+                f"{threshold_value:g}; expected at least 3 events for 2 return intervals, "
+                "lower the threshold or pass a longer series"
+            )
 
-        # Calculate statistics
-        if len(return_intervals) > 0:
-            mean_ri = float(np.mean(return_intervals))
-            median_ri = float(np.median(return_intervals))
-            std_ri = float(np.std(return_intervals))
-            min_ri = float(np.min(return_intervals))
-            max_ri = float(np.max(return_intervals))
+        mean_ri = float(np.mean(return_intervals))
+        median_ri = float(np.median(return_intervals))
+        std_ri = float(np.std(return_intervals))
+        min_ri = float(np.min(return_intervals))
+        max_ri = float(np.max(return_intervals))
 
-            # Risk parameter
-            R = self.risk_parameter(return_intervals)
+        R = self.risk_parameter(return_intervals)
 
-            # Interpret risk
-            if R < 0.8:
-                risk_interp = "Low risk (regular events)"
-            elif R < 1.2:
-                risk_interp = "Moderate risk (random/Poisson)"
-            else:
-                risk_interp = "High risk (clustered events)"
-
-            # Stretched exponential fit
-            fit_params = self.stretched_exponential_fit(return_intervals)
+        if R < 0.8:
+            risk_interp = "Low risk (regular events)"
+        elif R < 1.2:
+            risk_interp = "Moderate risk (random/Poisson)"
         else:
-            mean_ri = 0.0
-            median_ri = 0.0
-            std_ri = 0.0
-            min_ri = 0.0
-            max_ri = 0.0
-            R = 0.0
-            risk_interp = "Insufficient events"
-            fit_params = {'gamma': 0.0, 'tau_0': 0.0}
+            risk_interp = "High risk (clustered events)"
 
         results = {
             'num_events': len(event_indices),
@@ -277,8 +293,6 @@ class RIS:
             'max_ri': max_ri,
             'risk_parameter': R,
             'risk_interpretation': risk_interp,
-            'gamma': fit_params['gamma'],
-            'tau_0': fit_params['tau_0'],
             'event_indices': event_indices,
         }
 
@@ -407,10 +421,6 @@ class RIS:
         Risk Parameter R = σ/μ:
         R = {results['risk_parameter']:.3f}
         {results['risk_interpretation']}
-
-        Stretched Exponential Fit:
-        - γ:   {results['gamma']:.3f}
-        - τ₀:  {results['tau_0']:.2f}
         """
 
         ax.text(

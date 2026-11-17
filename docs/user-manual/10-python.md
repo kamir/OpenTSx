@@ -28,7 +28,8 @@ pip install -e "python-package[kafka,viz]"       # + confluent-kafka, matplotlib
 
 `series_to_episode` turns a pandas series with a time-zone-aware `DatetimeIndex` into an episode and computes its
 summary. An equally spaced index with at least two values gives a `REGULAR` episode. Any other index gives an
-`IRREGULAR_DELTA` episode.
+`IRREGULAR_DELTA` episode. The summary counts NaN and infinite values in `nanCount`; `min`, `max`, `mean` and `m2`
+cover the finite values, as in Java.
 
 ```python
 import numpy as np

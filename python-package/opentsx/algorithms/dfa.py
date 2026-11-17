@@ -4,6 +4,69 @@ from typing import Optional, Tuple, Union, Dict, Any
 import numpy as np
 import numpy.typing as npt
 
+from opentsx.algorithms._input import finite_values
+
+
+def _series_and_scales(
+    time_series: Any,
+    polynom_order: int,
+    scales: Optional[Any],
+    min_scale: int,
+    max_scale: Optional[int],
+    num_scales: int,
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
+    """The finite, varying values and the window sizes; ValueError naming the argument."""
+    data = finite_values(time_series, "time_series")
+    n = len(data)
+    if data.min() == data.max():
+        raise ValueError(
+            f"time_series: all {n} values are {data[0]}; expected a series that varies"
+        )
+    lowest = polynom_order + 2
+    if scales is None:
+        if min_scale < lowest:
+            raise ValueError(
+                f"min_scale: {min_scale} is below {lowest}; expected at least polynom_order + 2"
+            )
+        if num_scales < 2:
+            raise ValueError(
+                f"num_scales: {num_scales} is below 2; expected at least 2 window sizes"
+            )
+        if max_scale is None:
+            max_scale = n // 4
+            if max_scale <= min_scale:
+                raise ValueError(
+                    f"time_series: {n} values give max_scale {max_scale}, not above min_scale "
+                    f"{min_scale}; expected at least {4 * (min_scale + 1)} values, or a smaller "
+                    "min_scale"
+                )
+        elif not min_scale < max_scale <= n:
+            raise ValueError(
+                f"max_scale: {max_scale} is outside {min_scale + 1} to {n}; "
+                "expected a window size above min_scale and at most the series length"
+            )
+        scales = DFA._generate_scales(min_scale, max_scale, num_scales)
+    else:
+        scales = np.asarray(scales, dtype=np.int32)
+        bad = scales[(scales < lowest) | (scales > n)]
+        if len(bad):
+            raise ValueError(
+                f"scales: window size {bad[0]} is outside {lowest} to {n}; "
+                "expected window sizes from polynom_order + 2 to the series length"
+            )
+    distinct = len(np.unique(scales))
+    if distinct < 2:
+        raise ValueError(f"scales: {distinct} distinct window size; expected at least 2")
+    return data, scales
+
+
+def _exact_fit(scale: int) -> ValueError:
+    return ValueError(
+        f"time_series: every window of size {scale} is fitted exactly by the trend polynomial, "
+        f"so F({scale}) is 0 up to rounding; expected values that vary within the windows of "
+        "every scale"
+    )
+
 
 class DFA:
     """
@@ -49,22 +112,15 @@ class DFA:
 
         Returns:
             (scales, fluctuations): Arrays of scales and fluctuations
+
+        Raises:
+            ValueError: a value that is not finite, a constant series, window sizes outside
+                polynom_order + 2 to the series length, fewer than 2 window sizes, or a window size
+                at which every window is fitted exactly up to rounding
         """
-        # Extract values
-        if hasattr(time_series, 'values'):
-            data = time_series.values
-        else:
-            data = np.asarray(time_series, dtype=np.float64)
-
-        n = len(data)
-
-        # Generate scales
-        if scales is None:
-            if max_scale is None:
-                max_scale = n // 4
-            scales = self._generate_scales(min_scale, max_scale, num_scales)
-        else:
-            scales = np.asarray(scales, dtype=np.int32)
+        data, scales = _series_and_scales(
+            time_series, self.polynom_order, scales, min_scale, max_scale, num_scales
+        )
 
         # Compute cumulative sum (integrated series)
         mean = np.mean(data)
@@ -72,9 +128,12 @@ class DFA:
 
         # Calculate fluctuations for each scale
         fluctuations = np.zeros(len(scales))
+        rounding = 1e-10 * np.abs(cumsum).max()
 
         for i, scale in enumerate(scales):
             fluctuations[i] = self._calculate_fluctuation(cumsum, scale)
+            if fluctuations[i] <= rounding:
+                raise _exact_fit(scale)
 
         return scales, fluctuations
 
@@ -161,12 +220,24 @@ class DFA:
 
         Returns:
             (alpha, intercept, r_squared): Scaling exponent, intercept, R²
+
+        Raises:
+            ValueError: fewer than 2 window sizes in the fit, or a fluctuation that is not positive
         """
         # Select fit range
         if fit_range is not None:
             mask = (scales >= fit_range[0]) & (scales <= fit_range[1])
             scales = scales[mask]
             fluctuations = fluctuations[mask]
+        if len(scales) < 2:
+            kept = "scales:" if fit_range is None else f"fit_range: {fit_range} keeps"
+            raise ValueError(f"{kept} {len(scales)} window size; expected at least 2")
+        bad = np.flatnonzero(~(fluctuations > 0))
+        if len(bad):
+            i = bad[0]
+            raise ValueError(
+                f"fluctuations: F({scales[i]}) is {fluctuations[i]}; expected positive values"
+            )
 
         # Log-log regression
         log_scales = np.log10(scales)

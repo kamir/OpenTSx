@@ -117,6 +117,10 @@ print(f"Alpha: {results['alpha']:.3f}")
 print(f"Interpretation: {results['interpretation']}")
 ```
 
+`DFA`, `MFDFA`, `EventSynchronization` and `RIS` raise `ValueError` naming the argument when the input gives no
+result: a value that is not finite, a constant series, or too few values or events.
+[Chapter 11](../docs/user-manual/11-classic-analytics.md) of the user manual lists the messages.
+
 ## Features
 
 - **DFA**: Detrended Fluctuation Analysis

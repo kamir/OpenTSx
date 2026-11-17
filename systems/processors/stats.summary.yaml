@@ -6,7 +6,7 @@ kind: transformer
 category: statistics
 title: Episode summary
 description: >-
-  Counts the NaN values and keeps count, min, max and Welford's running mean and m2 of the other values:
+  Counts the NaN and infinite values and keeps count, min, max and Welford's running mean and m2 of the finite values:
   delta = x − mean, mean += delta / n, m2 += delta * (x − mean). Two summaries merge exactly (Chan et al.):
   n = na + nb, mean = mean_a + delta * nb / n, m2 = m2_a + m2_b + delta^2 * na * nb / n with delta = mean_b − mean_a.
   The sample variance is m2 / (n − 1). Every episode carries the summary of its values.
@@ -16,8 +16,8 @@ outputs:
   - { name: summary, type: stats, description: "EpisodeSummary: validCount, nanCount, min, max, mean, m2" }
 semantics: { needs: window, deterministic: true }
 runtimes:
-  java: { status: available, class: org.opentsx.model.Summaries, note: "Summaries.of(values), Summaries.merge(a, b), Summaries.variance(s). Episodes.regular(...).build() sets the summary of every episode. Infinite values count as valid." }
-  python: { status: available, class: opentsx.model.summary.summarize, note: "summarize(values), merge_summaries(a, b) and variance(s) of opentsx.model, as dicts with the Avro field names. Infinite values count as valid." }
+  java: { status: available, class: org.opentsx.model.Summaries, note: "Summaries.of(values), Summaries.merge(a, b), Summaries.variance(s). Episodes.regular(...).build() sets the summary of every episode. Infinite values count as nanCount, as in StatsAccumulator." }
+  python: { status: available, class: opentsx.model.summary.summarize, note: "summarize(values), merge_summaries(a, b) and variance(s) of opentsx.model, as dicts with the Avro field names. Infinite values count as nanCount, as in Java." }
   workbench: { status: none, note: "ops.ts has a helper stats() for n, mean, std, min and max that other operators use; no operator exposes it." }
   processor: { status: none, note: "No processor merges summaries; bin/opentsx stats computes its own moments (stats.welford-ddsketch)." }
   go: { status: planned, note: "Episodes and Welford in the Go stream core of the proposed Go TSx processor." }

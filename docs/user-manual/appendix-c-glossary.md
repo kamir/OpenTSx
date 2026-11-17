@@ -5,7 +5,7 @@
 | **Series** | one measured quantity of one asset: metric + tags (for example wind speed of turbine T07) |
 | **SeriesKey / seriesId** | identity of a series; the id is the xxHash64 of the canonical form `metric{k=v,…}` |
 | **Episode** | immutable piece of one series (time axis, values, quality, summary, labels, provenance); the unit of exchange and storage. Not to be confused with the "episodes" (lessons) of the 2025 onboarding tracks |
-| **EpisodeSummary** | mergeable statistics of an episode (count, NaN count, min, max, mean, M2), optional SAX word |
+| **EpisodeSummary** | mergeable statistics of an episode (count, count of NaN and infinite values, min, max, mean, M2), optional SAX word |
 | **Segmentation** | how an episode was cut (fixed duration/count, extremum, threshold, manual) |
 | **Bucket / BucketManifest** | group of episodes (one run or import); OPEN → SEALED with checksum |
 | **Episode index** | episodeId → topic/partition/offset; replaces timestamp seek on KafScale |

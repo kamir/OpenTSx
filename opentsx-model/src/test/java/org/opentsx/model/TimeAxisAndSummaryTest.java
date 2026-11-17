@@ -60,6 +60,17 @@ class TimeAxisAndSummaryTest {
     }
 
     @Test
+    void infiniteValuesCountAsNaN() {
+        EpisodeSummary s = Summaries.of(new double[]{1, Double.POSITIVE_INFINITY, 3, Double.NEGATIVE_INFINITY, Double.NaN});
+        assertEquals(2, s.getValidCount());
+        assertEquals(3, s.getNanCount());
+        assertEquals(1.0, s.getMin());
+        assertEquals(3.0, s.getMax());
+        assertEquals(2.0, s.getMean());
+        assertEquals(2.0, Summaries.variance(s));
+    }
+
+    @Test
     void mergedSummaryEqualsSummaryOfConcatenation() {
         Random r = new Random(3);
         double[] a = r.doubles(1000, -5, 5).toArray();

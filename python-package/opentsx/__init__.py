@@ -8,8 +8,9 @@ streaming analytics.
 
 Basic usage:
 
+   >>> import numpy as np
    >>> from opentsx import TimeSeriesObject, DFA
-   >>> ts = TimeSeriesObject(data=[1, 2, 3, 4, 5], label="example")
+   >>> ts = TimeSeriesObject(data=np.random.default_rng(0).standard_normal(1000), label="example")
    >>> dfa = DFA(polynom_order=1)
    >>> results = dfa.analyze(ts)
    >>> print(f"Alpha: {results['alpha']:.3f}")

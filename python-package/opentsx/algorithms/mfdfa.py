@@ -3,7 +3,8 @@
 from typing import Optional, Tuple, Union, Dict, Any
 import numpy as np
 import numpy.typing as npt
-from opentsx.algorithms.dfa import DFA
+from opentsx.algorithms._input import finite_values
+from opentsx.algorithms.dfa import DFA, _exact_fit, _series_and_scales
 
 
 class MFDFA:
@@ -35,20 +36,27 @@ class MFDFA:
 
         Args:
             polynom_order: Order of detrending polynomial
-            q_range: Array of q values (default: -10 to 10)
+            q_range: Array of q values that holds 2 up to 1e-10, the q of h_2 (default: -10 to
+                10.5 in steps of 0.5, 42 values with 0)
+
+        Raises:
+            ValueError: q_range has no value within 1e-10 of 2
         """
         self.polynom_order = polynom_order
         self.dfa = DFA(polynom_order=polynom_order)
 
         if q_range is None:
-            # Create q range excluding zero (handled separately)
             self.q_range = np.concatenate([
                 np.arange(-10, 0, 0.5),
                 np.array([0.0]),
                 np.arange(0.5, 11, 0.5)
             ])
         else:
-            self.q_range = q_range
+            self.q_range = np.asarray(q_range, dtype=np.float64)
+        if not np.any(np.abs(self.q_range - 2.0) < 1e-10):
+            raise ValueError(
+                "q_range: no value is 2; expected q values that include 2, the q of h_2"
+            )
 
     def calculate(
         self,
@@ -70,26 +78,18 @@ class MFDFA:
 
         Returns:
             (scales, q_values, Fq): Scales, q-values, and fluctuation functions
+
+        Raises:
+            ValueError: as DFA.calculate
         """
-        # Extract values
-        if hasattr(time_series, 'values'):
-            data = time_series.values
-        else:
-            data = np.asarray(time_series, dtype=np.float64)
-
-        n = len(data)
-
-        # Generate scales
-        if scales is None:
-            if max_scale is None:
-                max_scale = n // 4
-            scales = DFA._generate_scales(min_scale, max_scale, num_scales)
-        else:
-            scales = np.asarray(scales, dtype=np.int32)
+        data, scales = _series_and_scales(
+            time_series, self.polynom_order, scales, min_scale, max_scale, num_scales
+        )
 
         # Compute cumulative sum (integrated series)
         mean = np.mean(data)
         cumsum = np.cumsum(data - mean)
+        rounding = 1e-10 * np.abs(cumsum).max()
 
         # Calculate Fq for each q and scale
         Fq = np.zeros((len(self.q_range), len(scales)))
@@ -97,6 +97,9 @@ class MFDFA:
         for s_idx, scale in enumerate(scales):
             # Get segment variances for this scale
             variances = self._calculate_segment_variances(cumsum, scale)
+            variances = variances[variances > rounding ** 2]
+            if len(variances) == 0:
+                raise _exact_fit(scale)
 
             # Calculate Fq for each q value
             for q_idx, q in enumerate(self.q_range):
@@ -119,42 +122,12 @@ class MFDFA:
         Returns:
             Array of segment variances
         """
-        n = len(cumsum)
-        num_segments = n // scale
-
-        # Truncate to fit complete segments
-        truncated = cumsum[:num_segments * scale]
-        segments = truncated.reshape(num_segments, scale)
-
-        # Calculate variance for each segment
-        variances = np.zeros(num_segments)
-        for i, segment in enumerate(segments):
-            variances[i] = self._detrend_segment(segment)
-
-        return variances
-
-    def _detrend_segment(self, segment: npt.NDArray[np.float64]) -> float:
-        """
-        Detrend a segment using polynomial fit.
-
-        Args:
-            segment: Data segment
-
-        Returns:
-            Variance of detrended segment
-        """
-        n = len(segment)
-        x = np.arange(n)
-
-        # Fit polynomial
-        coeffs = np.polyfit(x, segment, self.polynom_order)
-        trend = np.polyval(coeffs, x)
-
-        # Calculate variance of residuals
-        residuals = segment - trend
-        variance = np.mean(residuals ** 2)
-
-        return variance
+        num_segments = len(cumsum) // scale
+        segments = cumsum[:num_segments * scale].reshape(num_segments, scale).T
+        x = np.arange(scale)
+        coeffs = np.polyfit(x, segments, self.polynom_order)
+        trend = np.vander(x, self.polynom_order + 1) @ coeffs
+        return np.mean((segments - trend) ** 2, axis=0)
 
     @staticmethod
     def _calculate_Fq(variances: npt.NDArray[np.float64], q: float) -> float:
@@ -170,9 +143,6 @@ class MFDFA:
         """
         # Filter out zero or negative variances
         valid_variances = variances[variances > 0]
-
-        if len(valid_variances) == 0:
-            return 0.0
 
         if abs(q) < 1e-10:  # q ≈ 0
             # Special case: q=0 uses geometric mean
@@ -200,12 +170,22 @@ class MFDFA:
 
         Returns:
             h(q) array
+
+        Raises:
+            ValueError: a fluctuation that is not positive
         """
+        bad = np.argwhere(~(Fq > 0))
+        if len(bad):
+            q_idx, s_idx = bad[0]
+            raise ValueError(
+                f"Fq: F_q(s) is {Fq[q_idx, s_idx]} at q {self.q_range[q_idx]} and window size "
+                f"{scales[s_idx]}; expected positive values"
+            )
         log_scales = np.log10(scales)
         h_q = np.zeros(len(self.q_range))
 
         for q_idx in range(len(self.q_range)):
-            log_Fq = np.log10(Fq[q_idx, :] + 1e-10)  # Avoid log(0)
+            log_Fq = np.log10(Fq[q_idx, :])
 
             # Linear regression: log(Fq) = h(q) * log(scale) + const
             coeffs = np.polyfit(log_scales, log_Fq, 1)
@@ -254,6 +234,8 @@ class MFDFA:
     def analyze(
         self,
         time_series: Union[npt.NDArray[np.float64], Any],
+        surrogates: int = 19,
+        seed: int = 1,
         **kwargs: Any
     ) -> Dict[str, Any]:
         """
@@ -261,6 +243,8 @@ class MFDFA:
 
         Args:
             time_series: Input time series
+            surrogates: Number of phase-randomized copies that delta_h is compared with
+            seed: Seed of the generator that draws the phases
             **kwargs: Additional arguments for calculate()
 
         Returns:
@@ -271,12 +255,24 @@ class MFDFA:
             - tau_q: Mass exponent
             - alpha: Hölder exponent (singularity strength)
             - f_alpha: Singularity spectrum
-            - delta_h: Width of h(q) (multifractality measure)
+            - delta_h: Width of h(q), h at the first q minus h at the last q
             - delta_alpha: Width of singularity spectrum
-            - is_multifractal: Boolean indicating multifractality
+            - delta_h_surrogates: Largest delta_h of the phase-randomized copies, which keep the
+              power spectrum, and so the linear correlations, and have close to Gaussian values
+            - is_multifractal: delta_h is above delta_h_surrogates. A Gaussian series with linear
+              correlations passes in about 1 of surrogates + 1 cases; a multifractal cascade and
+              uncorrelated values with a broad or skewed distribution pass
+            - h_2: h(2), the Hurst exponent that DFA estimates
+
+        Raises:
+            ValueError: surrogates is below 1, or the input fails the checks of calculate
         """
-        # Calculate fluctuation functions
-        scales, q_values, Fq = self.calculate(time_series, **kwargs)
+        if surrogates < 1:
+            raise ValueError(
+                f"surrogates: {surrogates} is below 1; expected at least 1 phase-randomized copy"
+            )
+        data = finite_values(time_series, "time_series")
+        scales, q_values, Fq = self.calculate(data, **kwargs)
 
         # Calculate generalized Hurst exponent h(q)
         h_q = self.generalized_hurst_exponent(scales, Fq)
@@ -291,8 +287,18 @@ class MFDFA:
         delta_h = float(h_q[0] - h_q[-1])  # Width of h(q)
         delta_alpha = float(alpha.max() - alpha.min())  # Width of spectrum
 
-        # Multifractality threshold (heuristic: Δh > 0.1 indicates multifractality)
-        is_multifractal = delta_h > 0.1
+        rng = np.random.default_rng(seed)
+        coefficients = np.fft.rfft(data)
+        delta_h_surrogates = -np.inf
+        for _ in range(surrogates):
+            phases = np.exp(2j * np.pi * rng.random(len(coefficients)))
+            # c_0 and, for an even length, the coefficient at the Nyquist frequency are real
+            phases[0] = 1
+            if len(data) % 2 == 0:
+                phases[-1] = 1
+            copy = np.fft.irfft(coefficients * phases, len(data))
+            h_copy = self.generalized_hurst_exponent(scales, self.calculate(copy, scales=scales)[2])
+            delta_h_surrogates = max(delta_h_surrogates, float(h_copy[0] - h_copy[-1]))
 
         results = {
             'q_values': q_values,
@@ -304,8 +310,9 @@ class MFDFA:
             'f_alpha': f_alpha,
             'delta_h': delta_h,
             'delta_alpha': delta_alpha,
-            'is_multifractal': is_multifractal,
-            'h_2': float(h_q[len(h_q)//2]),  # h(q=0) ≈ standard Hurst exponent
+            'delta_h_surrogates': delta_h_surrogates,
+            'is_multifractal': delta_h > delta_h_surrogates,
+            'h_2': float(h_q[np.flatnonzero(np.abs(q_values - 2.0) < 1e-10)[0]]),
         }
 
         return results

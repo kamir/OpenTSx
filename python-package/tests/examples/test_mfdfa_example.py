@@ -51,6 +51,8 @@ def test_mfdfa_example():
     assert abs(delta_h["binomial cascade"] - expected_delta_h) < 0.05
     assert measured_gap < 0.12
     assert abs(delta_alpha["binomial cascade"] - expected_delta_alpha) < 0.05
+    assert results["white noise"]["is_multifractal"] is False
+    assert results["binomial cascade"]["is_multifractal"] is True
 
     chart = ExampleChart("mfdfa", "MF-DFA: h(q) is flat for white noise and falls with q for a multifractal cascade")
     chart.panel("Input, means of 64 values, scaled to std 1", "sample / 64", "value, cascade shifted up by 10")

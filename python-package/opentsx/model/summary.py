@@ -1,4 +1,4 @@
-"""Mergeable Welford summaries of finite values; NaN is counted separately (same as Java Summaries)."""
+"""Mergeable Welford summaries of finite values; NaN and infinities count in nanCount as in Java."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ def summarize(values: Iterable[float]) -> dict:
     lo = hi = math.nan
     for v in values:
         v = float(v)
-        if math.isnan(v):
+        if not math.isfinite(v):
             nan += 1
             continue
         n += 1

@@ -115,6 +115,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   throws `shift: offset <offset> exceeds the <n> values; expected an offset from -<n> to <n>`, `split` notes `<n>
   missing values replaced with mean=<mean>.`, `cutFromStart` labels `( -<n> values )` and `calcAveragOfRows` labels
   `mean of <n> series`.
+- `MFDFA.analyze` returns h(2) as `h_2` instead of h(0.5), and `MFDFA` raises `ValueError` for a `q_range` without 2
+  (up to 1e-10); add 2 to custom q ranges. `is_multifractal` compares `delta_h` with the largest `delta_h` of 19
+  phase-randomized copies, which keep the power spectrum (new key `delta_h_surrogates`, parameters `surrogates` and
+  `seed`), instead of the threshold 0.1. Gaussian series with linear correlations pass in about 1 of 20 cases; values
+  with a broad distribution pass.
 
 ### Removed
 
@@ -122,6 +127,8 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   stays, because the PFD runtime `DynamicTopologyJob` uses it.
 - `TimeSeriesObject.fillGapWithValue`, which ignored its arguments and did what `replaceZeroWithAverage` does, and
   `TimeSeriesObject.add2`; use `replaceZeroWithAverage` and `add`.
+- `RIS.analyze` no longer returns `gamma` and `tau_0` and raises `ValueError` with fewer than 3 events instead of
+  returning `Insufficient events`; call `RIS.stretched_exponential_fit(result["return_intervals"])` for the fit.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -210,6 +217,19 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - `TimeSeriesObject.add`, `add(series, length)` and `divide_by` keep the x values, throw for series of different
   lengths and give NaN for a zero divisor instead of padding with 0.0.
 - `RNGWrapper.getStdPoisson(lambda)` uses `lambda` instead of 1.0.
+- `DFA`, `MFDFA`, `RIS` and `EventSynchronization` in the Python package raise `ValueError` naming the argument for a
+  value that is not finite, a constant series, a series too short for the window sizes, a window size that the trend
+  polynomial fits exactly up to rounding, or too few events, instead of returning NaN or 0 with an interpretation.
+- `MFDFA` leaves windows that the trend polynomial fits exactly up to rounding out of F_q(s), as it did for exact
+  zeros, so their rounding residue no longer sets h(q) for negative q.
+- `RIS.stretched_exponential_fit` is a maximum-likelihood fit of the stretched exponential and raises `ValueError`
+  when it cannot fit, instead of returning gamma 1.0 for every input.
+- `RIS.risk_parameter` raises `ValueError` for intervals whose mean is not positive instead of returning 0.
+- `EventSynchronization` with `method="absolute"` raises `ValueError` without a threshold instead of using 0, and the
+  message for an unknown `method` lists the allowed values.
+- `Summaries.of` in Java and `summarize` in Python count infinite values in `nanCount` like NaN, as `StatsAccumulator`
+  does, so an infinite value no longer turns `mean` into NaN or infinity, `m2` into NaN and `min` or `max` into an
+  infinity.
 
 ### Added
 - Kafka-native streaming acceptance against KafScale: REST deployment, continued vector output, inventory and status,

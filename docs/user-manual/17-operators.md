@@ -971,13 +971,13 @@ Across 8 turbines whose wind speeds have a planted mean and a planted spread fro
 
 ### Episode summary (`stats.summary`)
 
-Counts the NaN values and keeps count, min, max and Welford's running mean and m2 of the other values: delta = x − mean, mean += delta / n, m2 += delta * (x − mean). Two summaries merge exactly (Chan et al.): n = na + nb, mean = mean_a + delta * nb / n, m2 = m2_a + m2_b + delta^2 * na * nb / n with delta = mean_b − mean_a. The sample variance is m2 / (n − 1). Every episode carries the summary of its values.
+Counts the NaN and infinite values and keeps count, min, max and Welford's running mean and m2 of the finite values: delta = x − mean, mean += delta / n, m2 += delta * (x − mean). Two summaries merge exactly (Chan et al.): n = na + nb, mean = mean_a + delta * nb / n, m2 = m2_a + m2_b + delta^2 * na * nb / n with delta = mean_b − mean_a. The sample variance is m2 / (n − 1). Every episode carries the summary of its values.
 
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  | ops.ts has a helper stats() for n, mean, std, min and max that other operators use; no operator exposes it. |
-| java | available | `org.opentsx.model.Summaries` | Summaries.of(values), Summaries.merge(a, b), Summaries.variance(s). Episodes.regular(...).build() sets the summary of every episode. Infinite values count as valid. |
-| python | available | `opentsx.model.summary.summarize` | summarize(values), merge_summaries(a, b) and variance(s) of opentsx.model, as dicts with the Avro field names. Infinite values count as valid. |
+| java | available | `org.opentsx.model.Summaries` | Summaries.of(values), Summaries.merge(a, b), Summaries.variance(s). Episodes.regular(...).build() sets the summary of every episode. Infinite values count as nanCount, as in StatsAccumulator. |
+| python | available | `opentsx.model.summary.summarize` | summarize(values), merge_summaries(a, b) and variance(s) of opentsx.model, as dicts with the Avro field names. Infinite values count as nanCount, as in Java. |
 | processor | none |  | No processor merges summaries; bin/opentsx stats computes its own moments (stats.welford-ddsketch). |
 | go | planned |  | Episodes and Welford in the Go stream core of the proposed Go TSx processor. |
 
@@ -1743,7 +1743,7 @@ Sums the deviations from the mean into a profile, removes a polynomial trend in 
 |---|---|---|---|
 | workbench | available | operator `dfa` | Defaults order 2, 40 scales. |
 | java | available (2.x) | `org.opentsx.algorithms.detrending.methods.DFA` | 2.x tools DFA, SingleDFATool, MultiDFATool. |
-| python | available | `opentsx.algorithms.dfa.DFA` | DFA(polynom_order=1).analyze(x): alpha, r_squared, scales, fluctuations. Windows from 10 to n/4. |
+| python | available | `opentsx.algorithms.dfa.DFA` | DFA(polynom_order=1).analyze(x): alpha, r_squared, scales, fluctuations. Windows from 10 to n/4. Raises ValueError naming the argument for a value that is not finite, a constant series, fewer than 44 values with the default windows, and a window size at which F(s) is 0 up to rounding. |
 | processor | none |  |  |
 
 | Port | Direction | Type | Description |
@@ -1790,7 +1790,7 @@ Cuts the profile (cumulative sum of the deviations from the mean) into segments 
 |---|---|---|---|
 | workbench | none |  | Listed as not ported (MF-DFA) in ops.ts NOT_PORTED. |
 | java | available (2.x) | `org.opentsx.algorithms.detrending.MFDFAAnalyzer` | 2.x model in opentsx-core: MFDFAAnalyzer.process runs the 2.x method MFDFA of order 2 for q = -5 to 5 without 0, writes measurement tables to databuffer/MFDFA and opens charts. No automated test. |
-| python | available | `opentsx.algorithms.mfdfa.MFDFA#analyze` | MFDFA(polynom_order=1).analyze(x): q_values, scales, Fq, h_q, tau_q, alpha, f_alpha, delta_h, delta_alpha, is_multifractal. Segments are cut from the start only; the rest of n / s is dropped. is_multifractal is delta_h > 0.1, which white noise of 16384 values passes in 2 of 8 seeds (delta_h 0.07 to 0.13). The key h_2 holds h(0.5), not h(2). |
+| python | available | `opentsx.algorithms.mfdfa.MFDFA#analyze` | MFDFA(polynom_order=1).analyze(x): q_values, scales, Fq, h_q, tau_q, alpha, f_alpha, delta_h, delta_alpha, delta_h_surrogates, is_multifractal, h_2. Segments are cut from the start only; the rest of n / s is dropped. Windows that the trend fits exactly up to rounding are left out of F_q(s). is_multifractal is delta_h above the largest delta_h of 19 phase-randomized copies, which keep the power spectrum and have close to Gaussian values. Of 100 series of 8192 values each, Gaussian white noise, 1/f^0.6 noise, 1/f^0.9 noise and a random walk passed 7, 7, 8 and 4 times; uncorrelated values with a broad distribution pass as well (Student-t with 1.5 degrees of freedom: 100 times). In the example it is False for the white noise (delta_h 0.09 against 0.12) and True for the cascade (1.42 against 0.15). h_2 is h(2). The input checks of dfa apply and raise ValueError. |
 | processor | none |  |  |
 | go | none |  |  |
 
@@ -1799,15 +1799,17 @@ Cuts the profile (cumulative sum of the deviations from the mean) into segments 
 | `in` | in | series (one) |  |
 | `hurst` | out | xy | h(q) over q; also tau(q) and the fluctuation functions F_q(s) |
 | `spectrum` | out | xy | f(alpha) over alpha; delta alpha is its width |
-| `summary` | out | stats | delta_h, delta_alpha, is_multifractal (delta_h > 0.1) |
+| `summary` | out | stats | delta_h, delta_alpha, delta_h_surrogates, is_multifractal (delta_h above delta_h_surrogates), h_2 = h(2) |
 
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
 | `polynom_order` | integer | `1` | 1 ..  | Order of the detrending polynomial |
-| `q_range` | list |  |  | Values of q. Default: -10 to 10.5 in steps of 0.5, with 0 (42 values) |
+| `q_range` | list |  |  | Values of q; they must include 2, up to 1e-10. Default: -10 to 10.5 in steps of 0.5, with 0 (42 values) |
 | `min_scale` | integer | `10` |  | Smallest window size s |
 | `max_scale` | integer |  |  | Largest window size s. Default: a quarter of the series length |
 | `num_scales` | integer | `20` |  | Number of window sizes, spaced evenly in log s |
+| `surrogates` | integer | `19` | 1 ..  | Number of phase-randomized copies whose largest delta_h is delta_h_surrogates |
+| `seed` | integer | `1` |  | Seed of the numpy generator that draws the phases |
 
 Semantics: needs one series of input per output value; deterministic.
 
@@ -1844,7 +1846,7 @@ Marks every value above a threshold (by default the 95th percentile) as an extre
 |---|---|---|---|
 | workbench | none |  |  |
 | java | available (2.x) | `org.opentsx.algorithms.ris.RISTool` | 2.x model in opentsx-core: collects return intervals of many series into binned distributions, scaled by the mean interval R_q. No automated test. A clean-room Java library for the univariate stage (DFA, RIS) is planned in TASK-015 P8.1. |
-| python | available | `opentsx.algorithms.ris.RIS#analyze` | RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold. survival_function(r) gives S(r), the share of intervals of r or longer. stretched_exponential_fit returns gamma = 1.0 for every input and tau_0 from a straight line through log P over log r, so neither describes a stretched exponential. |
+| python | available | `opentsx.algorithms.ris.RIS#analyze` | RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold; a value that is not finite or fewer than 3 events raise ValueError. survival_function(r) gives S(r), the share of intervals of r or longer. stretched_exponential_fit(r) is a maximum-likelihood fit of P(r) proportional to exp[-(r / tau_0)^gamma] and returns gamma and tau_0; analyze does not call it. gamma is near 1 for uncorrelated values (mean 1.08 over 40 series of 8192 values at the 95th percentile, above 1 because the intervals are whole numbers) and 1 − beta for 1/f^beta noise (Bunde et al. 2005). |
 | processor | none |  |  |
 | go | none |  |  |
 
@@ -1853,7 +1855,7 @@ Marks every value above a threshold (by default the 95th percentile) as an extre
 | `in` | in | series (one) |  |
 | `events` | out | events | Indices of the values above the threshold |
 | `intervals` | out | xy | Return interval r over the event number |
-| `summary` | out | stats | num_events, threshold, mean_ri, median_ri, std_ri, min_ri, max_ri, risk_parameter, gamma, tau_0 |
+| `summary` | out | stats | num_events, threshold, mean_ri, median_ri, std_ri, min_ri, max_ri, risk_parameter |
 
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
@@ -1950,7 +1952,7 @@ Takes the local maxima above mean + 2 std of two whole series as events and coun
 |---|---|---|---|
 | workbench | none |  | The workbench computes the same Q, q and q_rand per window of a pair with pair.es (es.ts), not over whole series. |
 | java | available (2.x) | `org.opentsx.algorithms.eventsynchronisation.ESCalc#calc` | 2.x model in opentsx-core: ESCalc.calc(ti, tj) on sorted event times returns sync and delay, counts only events with two neighbours and normalizes by sqrt((m_a − 1)(m_b − 1)). No automated test. A clean-room Java library with Q_rand calibration is planned in TASK-015 P8.1. |
-| python | available | `opentsx.algorithms.event_sync.EventSynchronization#analyze` | EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand. calculate_synchronization takes event indices directly. leader names a series only when the delay q is above 0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds. |
+| python | available | `opentsx.algorithms.event_sync.EventSynchronization#analyze` | EventSynchronization().analyze(a, b), then surrogate_sync(events_1, events_2, shuffles=10, seed=1) for q_rand. calculate_synchronization takes event indices directly. leader names a series only when the delay q is above 0.05 in magnitude; in the example, independent pairs of about 110 events pass that in 3 of 8 seeds. analyze raises ValueError for a value that is not finite, for a series without events and for method absolute without threshold1 and threshold2. |
 | processor | none |  |  |
 | go | none |  |  |
 
@@ -1964,7 +1966,7 @@ Takes the local maxima above mean + 2 std of two whole series as events and coun
 
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
-| `method` | enum: std, percentile, absolute | `std` |  | Event threshold: mean + 2 std, the 95th percentile, or 0 |
+| `method` | enum: std, percentile, absolute | `std` |  | Event threshold: mean + 2 std, the 95th percentile, or threshold1 and threshold2, which absolute requires |
 | `threshold1` | number |  |  | Event threshold of a; overrides method |
 | `threshold2` | number |  |  | Event threshold of b; overrides method |
 | `tau_max` | number |  | 0 ..  | Cap of the local window. No cap by default. Unit: samples. |

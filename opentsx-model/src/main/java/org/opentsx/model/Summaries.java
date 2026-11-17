@@ -2,7 +2,7 @@ package org.opentsx.model;
 
 import org.opentsx.model.v2.EpisodeSummary;
 
-/** Welford summaries of finite values; NaN is counted separately. Summaries merge exactly (Chan et al.). */
+/** Welford summaries of finite values; NaN and infinities count as nanCount. Summaries merge exactly (Chan et al.). */
 public final class Summaries {
 
     private Summaries() {
@@ -16,7 +16,7 @@ public final class Summaries {
         double min = Double.NaN;
         double max = Double.NaN;
         for (double v : values) {
-            if (Double.isNaN(v)) {
+            if (!Double.isFinite(v)) {
                 nan++;
                 continue;
             }

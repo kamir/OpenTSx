@@ -1,7 +1,7 @@
 # 11. Classic analytics (DFA, MFDFA, ES, RIS)
 
 Run DFA, MFDFA, event synchronization and return-interval statistics on a series, and find the Java tools of the 2.x
-model. The example output comes from the `opentsx` package 1.0.0 on Python 3.13 with NumPy 2.5.5.
+model. The example output comes from the `opentsx` package 1.0.0 on Python 3.13 with NumPy 2.5.5 and SciPy 1.18.1.
 
 OpenTSx provides algorithms for long-range correlations and extreme events:
 
@@ -58,6 +58,32 @@ gets `Correlated (persistent, trending)`.
 Set `polynom_order=2` (DFA2) to remove quadratic trends. `analyze` passes `min_scale` (default 10), `max_scale`
 (default n // 4) and `num_scales` (default 20) to `calculate`. The scales are log-spaced integers without duplicates.
 
+`calculate` and `analyze` raise `ValueError` naming the argument when the input gives no exponent:
+
+* a value that is not finite, for example a gap stored as NaN,
+* a constant series,
+* `min_scale` below `polynom_order` + 2, or `num_scales` below 2,
+* a `max_scale` not above `min_scale` or above the series length; with the default `max_scale` of n // 4, fewer
+  than 4 · (`min_scale` + 1) values,
+* a value of `scales` outside `polynom_order` + 2 to the series length, or fewer than 2 distinct window sizes,
+* a window size at which every window is fitted exactly by the trend polynomial, so that F(s) is 0 up to
+  rounding.
+
+`fit_scaling_exponent` raises `ValueError` with fewer than 2 window sizes in the fit and for a fluctuation that is
+not positive.
+
+Drop or fill gaps before the analysis:
+
+```text
+ValueError: time_series: 1 of 1000 values are not finite, the first at index 500 is nan; expected finite values only, drop or fill the gaps first
+```
+
+A series of 20 values is too short for the default window sizes:
+
+```text
+ValueError: time_series: 20 values give max_scale 5, not above min_scale 10; expected at least 44 values, or a smaller min_scale
+```
+
 The web workbench has the operator "DFA" (`dfa`, tab "Uni-variate Analysis"). It takes order 1 or 2 (default 2) and
 the number of scales (default 40, at least 4), spread from order + 4 to n/4. So the same series can give a different
 α in the workbench and in Python, even with the same order.
@@ -81,21 +107,41 @@ from opentsx import MFDFA
 
 x = np.random.default_rng(1).standard_normal(8192)
 r = MFDFA(polynom_order=1).analyze(x)
-print(round(r["delta_h"], 3), round(r["delta_alpha"], 3), r["is_multifractal"])
+print(round(r["delta_h"], 3), round(r["delta_h_surrogates"], 3), r["is_multifractal"], round(r["h_2"], 3))
 ```
 
 Output:
 
 ```text
-0.117 0.213 True
+0.117 0.143 False 0.52
 ```
 
-`r` also holds `q_values`, `scales`, `Fq`, `h_q`, `tau_q`, `alpha`, `f_alpha` and `h_2`.
-`h_2` is h(0.5), the value in the middle of the q range, not h(2).
+`r` also holds `q_values`, `scales`, `Fq`, `h_q`, `tau_q`, `alpha`, `f_alpha` and `delta_alpha`.
+`h_2` is h(2), the exponent that DFA estimates. So `q_range` must hold 2, up to 1e-10, as `np.arange(-5, 5.1, 0.1)`
+does. Without it `MFDFA` raises `ValueError: q_range: no value is 2; expected q values that include 2, the q of h_2`.
+The default q runs from -10 to 10.5 in steps of 0.5, 42 values with 0. `analyze` checks its input as DFA does.
 
-`is_multifractal` is `True` when `delta_h` is above 0.1. `delta_h` is h(q) at the first q minus h(q) at the last q.
-The default q runs from -10 to 10.5 in steps of 0.5, so `delta_h` is h(-10) minus h(10.5). `delta_alpha` does not
-decide it. The threshold is a heuristic: the white noise above is monofractal, and it gives `True`.
+`calculate` leaves out the windows that the trend polynomial fits exactly up to rounding: a detrended variance of at
+most (1e-10 times the largest absolute value of the profile) squared. Their fluctuation of 0 would dominate F_q(s)
+for q < 0.
+
+`delta_h` is h(q) at the first q minus h(q) at the last q, with the default q range h(-10) minus h(10.5).
+`analyze` computes `delta_h` again for `surrogates` phase-randomized copies of the series (default 19, phases drawn by
+`numpy.random.default_rng(seed)`, default seed 1). A copy multiplies each Fourier coefficient by a random phase
+factor. It keeps the power spectrum, and so the linear correlations, and its values are close to Gaussian.
+`delta_h_surrogates` is the largest `delta_h` of the copies. `is_multifractal` is `True` when `delta_h` is above
+`delta_h_surrogates`. The test asks whether the series is more multifractal than a Gaussian series with the same
+linear correlations. Of 100 series of 8192 values each (seeds 5000 to 5099):
+
+* Gaussian series with linear correlations gave `True` in about 1 of `surrogates` + 1 cases: white noise 7 times,
+  noise with a 1/f^0.6 spectrum 7 times, with a 1/f^0.9 spectrum 8 times, a random walk 4 times,
+* uncorrelated values with a broad or skewed distribution gave `True`: Student-t values with 1.5 degrees of freedom
+  100 times, with 5 degrees of freedom 70 times, exponential values 95 times. Uniform values gave `True` 0 times.
+  So `True` does not tell multifractal correlations from a broad distribution of the values,
+* `delta_alpha` does not decide it.
+
+The white noise above has a `delta_h` of 0.117, below the 0.143 of its copies. `analyze` runs MFDFA once for the
+series and once for each copy.
 
 <a id="113-event-synchronization-es"></a>
 
@@ -131,6 +177,18 @@ Every event pair gets its own window: half the smallest distance from either eve
 local τ of Quiroga et al.). So `overall_sync` stays in [0, 1]. `EventSynchronization(tau_max=...)` caps that window.
 Without a cap, `r["tau_max"]` is `inf`.
 
+`analyze` raises `ValueError` for a value that is not finite and for a series without events, such as a constant
+series:
+
+```text
+ValueError: ts1: no event, no local maximum lies above the threshold; expected at least one event, lower the threshold or use another method
+```
+
+`method="absolute"` takes `threshold1` and `threshold2` as the event thresholds. Without them it raises
+`ValueError: threshold: not set for method 'absolute'; expected the event threshold as a number (threshold1 and
+threshold2 in analyze)`. `calculate_synchronization` takes event lists and gives 0 for Q, q_xy and q_yx when a list is
+empty, as the web workbench does for a window without events.
+
 `surrogate_sync` gives the level chance reaches: the mean `overall_sync` against copies of `y` whose intervals
 between events are shuffled. Only an `overall_sync` clearly above it points to a coupling. `surrogate_sync` makes the
 copies with `isi_shuffle` and the seeded generator `Mulberry32`, the same generator as in the web workbench.
@@ -144,24 +202,25 @@ The web workbench computes the same numbers per window with the operator "Event 
 RIS analyzes the time between extreme events: values above a threshold, by default the 95th percentile.
 `RIS(threshold=...)` sets an absolute threshold instead. For long-term correlated data, the return intervals cluster:
 their distribution is a stretched exponential instead of an exponential, and short intervals follow short intervals.
-This matters for risk estimation, for example of storms or load peaks. `RIS` does not test for a stretched
-exponential.
+This matters for risk estimation, for example of storms or load peaks. `stretched_exponential_fit` fits a stretched
+exponential to the intervals; it does not test whether one describes them.
 
 ```python
 import numpy as np
 from opentsx import RIS
 
-x = np.random.default_rng(1).standard_normal(8192)
-r = RIS(threshold_percentile=95).analyze(x)
+ris = RIS(threshold_percentile=95)
+r = ris.analyze(np.random.default_rng(1).standard_normal(8192))
 print(r["num_events"], round(r["mean_ri"], 2), r["median_ri"], round(r["risk_parameter"], 3), r["risk_interpretation"])
-print(r["gamma"], round(r["tau_0"], 3))
+fit = ris.stretched_exponential_fit(r["return_intervals"])
+print(round(fit["gamma"], 3), round(fit["tau_0"], 3))
 ```
 
 Output:
 
 ```text
 410 19.91 15.0 0.907 Moderate risk (random/Poisson)
-1.0 1.04
+1.266 26.23
 ```
 
 `r` also holds `threshold`, `event_indices`, `return_intervals`, `std_ri`, `min_ri` and `max_ri`.
@@ -171,12 +230,32 @@ To judge clustering, read `risk_parameter`: the standard deviation of the return
 
 * `Low risk (regular events)` below 0.8,
 * `Moderate risk (random/Poisson)` from 0.8 to below 1.2,
-* `High risk (clustered events)` from 1.2,
-* `Insufficient events` with fewer than two events.
+* `High risk (clustered events)` from 1.2.
 
-`RIS` does not fit a stretched exponential. `gamma` is 1.0 whenever the fit runs. `gamma` and `tau_0` are 0.0 with
-fewer than 10 return intervals, with fewer than 3 non-empty histogram bins, or when the line fit fails. `tau_0` is
-exp(−b/a) of a straight line log P(τ) = a·log τ + b through the histogram of the intervals.
+`analyze` raises `ValueError` for a value that is not finite and with fewer than 3 events, the minimum for 2 return
+intervals:
+
+```text
+ValueError: time_series: 2 values lie above the threshold 0.961109; expected at least 3 events for 2 return intervals, lower the threshold or pass a longer series
+```
+
+Called on its own, `risk_parameter` raises `ValueError` with fewer than 2 intervals and when their mean is not
+positive.
+
+`stretched_exponential_fit` is a maximum-likelihood fit of the density P(τ) = γ / (τ₀ Γ(1/γ)) exp[−(τ/τ₀)^γ]. For a
+given γ the likelihood is largest at τ₀ = (γ · mean(τ^γ))^(1/γ), so it searches γ alone, from 0.05 to 20. `analyze`
+does not call it.
+
+* Uncorrelated values give γ near 1, an exponential. The return intervals are whole numbers from 1 on, which moves
+  the estimate above 1: over 40 seeds of the example above, γ has a mean of 1.08 and a standard deviation of 0.10.
+  The 1.266 of the example is the largest of them.
+* Long-term correlated values give γ below 1. For 1/f^β noise Bunde et al. (2005) predict γ = 1 − β. One series of
+  65536 values of 1/f^0.6 noise gives 0.41 at the 95th percentile.
+
+It raises `ValueError` with fewer than 10 intervals, with an interval that is not a positive finite number, when all
+intervals are equal, and when the likelihood is largest at a limit of the search, for example
+`return_intervals: all 12 intervals are 60; expected intervals that vary, a stretched exponential has no fit to a
+constant`.
 
 <a id="115-java-tools-in-opentsx-core-2x-model"></a>
 
