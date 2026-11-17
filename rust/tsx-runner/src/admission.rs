@@ -45,6 +45,8 @@ pub struct LocalRequest {
     pub sink: Sink,
     pub created_at_micros: String,
     pub limits: Limits,
+    pub sequence: Option<String>,
+    pub previous_request_hash: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -68,15 +70,64 @@ pub struct Admitted {
     pub cut: Cut,
     pub bootstrap: String,
     pub output_partitions: i32,
+    pub increment: Option<Increment>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Increment {
+    pub sequence: i64,
+    pub previous_request_hash: Option<String>,
 }
 
 pub fn admit(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
     let value = tsx_contracts::parse_json(text, REQUEST_BYTES).map_err(str::to_string)?;
+    let increment = match value["schema"].as_str() {
+        Some("opentsx.local-bounded-run.v1") => {
+            if value.get("sequence").is_some() || value.get("previousRequestHash").is_some() {
+                return Err("bounded requests do not carry continuation fields".into());
+            }
+            None
+        }
+        Some("opentsx.local-increment.v1") => {
+            let sequence = canonical_i64(
+                value["sequence"]
+                    .as_str()
+                    .ok_or("sequence must be a decimal string")?,
+                "sequence",
+            )?;
+            if sequence <= 0 {
+                return Err("sequence must be positive".into());
+            }
+            let previous = value
+                .get("previousRequestHash")
+                .ok_or("previousRequestHash is required")?;
+            let previous_request_hash = if previous.is_null() {
+                None
+            } else {
+                let hash = previous
+                    .as_str()
+                    .ok_or("previousRequestHash must be null or a digest")?;
+                if hash.len() != 64
+                    || !hash
+                        .bytes()
+                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                {
+                    return Err("previousRequestHash must be a lower-case SHA-256 digest".into());
+                }
+                Some(hash.to_string())
+            };
+            if (sequence == 1) != previous_request_hash.is_none() {
+                return Err("only the first increment has a null predecessor".into());
+            }
+            Some(Increment {
+                sequence,
+                previous_request_hash,
+            })
+        }
+        _ => return Err("unsupported local request schema".into()),
+    };
     let request: LocalRequest =
         serde_json::from_value(value).map_err(|e| format!("local request fields: {e}"))?;
-    if request.schema != "opentsx.local-bounded-run.v1" {
-        return Err("unsupported local request schema".into());
-    }
     validate_limits(&request.limits)?;
     if !tsx_contracts::valid_topic(&request.sink.topic) {
         return Err("invalid output topic name".into());
@@ -178,7 +229,30 @@ pub fn admit(text: &str, artifact_digest: &str) -> Result<Admitted, String> {
         pipeline,
         bootstrap,
         output_partitions: output_partitions as i32,
+        increment,
     })
+}
+
+pub(crate) fn increment_context(text: &str) -> Result<String, String> {
+    let mut value = tsx_contracts::parse_json(text, REQUEST_BYTES).map_err(str::to_string)?;
+    let mut assignment = tsx_contracts::parse_json(
+        value["assignmentText"]
+            .as_str()
+            .ok_or("assignmentText missing")?,
+        REQUEST_BYTES,
+    )
+    .map_err(str::to_string)?;
+    assignment["inputs"][0]
+        .as_object_mut()
+        .ok_or("input missing")?
+        .remove("positions");
+    let fields = value.as_object_mut().ok_or("request object missing")?;
+    fields.remove("sequence");
+    fields.remove("previousRequestHash");
+    fields.insert("assignmentText".into(), assignment);
+    let canonical =
+        serde_json::to_vec(&value).map_err(|e| format!("cannot encode increment context: {e}"))?;
+    Ok(tsx_contracts::sha256_bytes(&canonical))
 }
 
 pub fn canonical_i64(text: &str, field: &str) -> Result<i64, String> {

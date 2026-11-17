@@ -18,7 +18,7 @@ runtimes:
   workbench: { status: available }
   processor: { status: available, note: "Series DAG op dq.checks in CleanChain." }
   wayang: { status: available, class: org.opentsx.wayang.TsxSeriesChain }
-  rust: { status: available, note: "tsx-runner 0.1.0 trusted-local bounded profile; PLAUSIBLE_RANGE only." }
+  rust: { status: available, note: "tsx-runner 0.1.0 trusted-local bounded replay and continuous increments; PLAUSIBLE_RANGE only." }
 state: { kind: none }
 merge: { class: none }
 testvectors: docs/datamodel-2026/testvectors/clean-ops.v1.json

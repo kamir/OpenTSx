@@ -987,6 +987,7 @@
         "Partition positions are checkpoint/cut metadata, never independently deployable units.",
         "The current source materializes an increment in memory; broker integration is a separate disposable-environment check.",
         "The remote Rust source is a separate mapping. Its complete topic is read on the assigned worker, without materializing raw payloads in the Java driver.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate."
       ],
       "references": {
@@ -995,11 +996,13 @@
           "opentsx-wayang/README.md#run-a-plan-in-increments",
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md",
           "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSource.java#L12",
@@ -1014,6 +1017,10 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxClientSettingsTest.java#L14",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPlatformTest.java#threeLogicalSourcesCompileToOneRustStageAndOneCompleteAction",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPlatformTest.java#topologyChannelsCannotMaterializeRawRecords",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
         ],
         "vectors": [
@@ -1060,7 +1067,8 @@
         "A sink object or successful wire encoding is not evidence that a record was published.",
         "The Object channel accepts only supported Avro records or validated opentsx.signal.v1 JSON. It does not turn JSON signals into fake Avro records.",
         "JSON whole-batch validation must not make Avro upstream streams eager.",
-        "A shared output topic does not make multi-worker activation atomic. A failed activation can leave an acknowledged output prefix."
+        "A shared output topic does not make multi-worker activation atomic. A failed activation can leave an acknowledged output prefix.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero."
       ],
       "references": {
         "manual": [
@@ -1068,13 +1076,15 @@
           "opentsx-wayang/README.md#run-a-plan-in-increments",
           "docs/user-manual/17-learn-operators.md",
           "opentsx-wayang/README.md#emit-data-quality-signals",
-          "docs/devguide/integration/wayang-rust-compose.md"
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-topic-sink",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
           "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
@@ -1092,7 +1102,11 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSignalSinkIntegrationTest.java#validatesTheWholeBatchBeforeSendingAnySignal",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCrashRecoveryIntegrationTest.java#aFailureAtThreePointsRepeatsOnlyIdenticalRecords",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#crossTopicDerivedIdentityCollisionAbortsEveryPrivatePreparation",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#interruptedPublicationKeepsItsPlanRetryableAndReusesCompletedPeers"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#interruptedPublicationKeepsItsPlanRetryableAndReusesCompletedPeers",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json"
@@ -1140,6 +1154,8 @@
         "A segmenter checkpoint is private runtime state, not a portable signal or a partition-placement assignment.",
         "Incremental segmentation keeps pending output; bounded completion flushes it before the next checkpoint is written.",
         "An uncertain Rust activation retries saved bytes with the same hash while topic ownership remains held; it cannot choose another clock, source cut or worker.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "One immutable worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
         "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration."
       ],
       "references": {
@@ -1148,12 +1164,14 @@
           "docs/user-manual/17-learn-operators.md",
           "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
           "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md",
           "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#TsxCheckpoint",
@@ -1177,6 +1195,10 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxSegmentVectorsTest.java#failsClosedOnCorruptStateAndUnsupportedInput",
           "rust/tsx-runner/tests/worker_service.rs",
           "opentsx-saas-backend/tests/test_wayang_rust.py#test_uncertain_execution_retains_ownership_and_reconciles_same_plan_after_restart",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
           "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
         ],
         "vectors": []
@@ -1215,18 +1237,22 @@
       "pitfalls": [
         "Resolve aliases to authoritative topic identity before interpreting ownership.",
         "Passing offline validation neither authorizes deployment nor fences a live Kafka writer.",
-        "The local rollout adds actual capability and broker checks plus durable control; the offline starter remains an offline validator and does not activate workers."
+        "The local rollout adds actual capability and broker checks plus durable control; the offline starter remains an offline validator and does not activate workers.",
+        "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
+        "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission."
       ],
       "references": {
         "manual": [
           "docs/devguide/integration/wayang-shared-contracts.md#assign-whole-topics-and-preserve-exact-internal-positions",
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
-          "docs/devguide/integration/wayang-rust-compose.md"
+          "docs/devguide/integration/wayang-rust-compose.md",
+          "docs/devguide/integration/wayang-rust-continuous.md"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
         ],
         "source": [
           "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L56",
@@ -1240,7 +1266,11 @@
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
           "rust/tsx-contracts/tests/shared_vectors.rs#L8",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustRolloutTest.java#oneOriginalUiDagLowersToThreeCompleteTopicsAndDistinctFragments",
-          "opentsx-saas-backend/tests/test_wayang_rust.py#test_admission_persists_exact_plan_before_any_execution_and_reuses_frozen_identity"
+          "opentsx-saas-backend/tests/test_wayang_rust.py#test_admission_persists_exact_plan_before_any_execution_and_reuses_frozen_identity",
+          "rust/tsx-runner/tests/increments.rs",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
+          "opentsx-saas-backend/tests/test_wayang_continuous.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

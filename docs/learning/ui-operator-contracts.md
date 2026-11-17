@@ -23,9 +23,14 @@ pair kernel does not establish a Wayang execution mapping. The separate
 operations into one connected custom Rust stage and complete per-topic fragments for one to three workers.
 Its journal, private prepare, collision checks, activation and receipts are separate from the browser lesson workload.
 The browser lessons' zero-based coordinates do not prove Kafka timestamp validity.
+The [continuous target](../devguide/integration/wayang-rust-continuous.md) preserves the same whole-topic placement,
+source hash and accepted clock across acknowledged increments. Worker-local state and cumulative series ownership
+survive service restart. The three browser workloads retain their original local inputs and expected values;
+separate increment and Compose regressions establish the continuous runtime behavior.
 The
 workbench aliases `dq.plausible-range` to `dq.checks` and `stats.window` to `stats.welford-ddsketch` ; the latter still
-has a parameter-contract mismatch in the [execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#L129) .
+has a parameter-contract mismatch in the
+[execution SPEC](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
 
 Finite predictions use absolute comparison to ten decimal places in the lesson tests; missing-value positions must match
 exactly. Existing shared operator vectors retain their own tolerances. Each operation is repeated with a fresh input to

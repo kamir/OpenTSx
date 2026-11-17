@@ -28,7 +28,8 @@ beforeEach(() => {
       { id: 'source', op: 'source', label: 'Source', input: null, params: {} },
       { id: 'n1', op: 'convert.unit', label: 'Convert', input: 'source', params: { factor: 2, offset: 1, unit: 'MW' } },
     ] });
-  vi.spyOn(wayangAPI, 'capabilities').mockResolvedValue({ canRun: true, reason: null, operators });
+  vi.spyOn(wayangAPI, 'capabilities').mockResolvedValue({ canRun: true, reason: null, operators,
+    profiles: ['bounded', 'continuous'] });
   vi.spyOn(wayangAPI, 'list').mockResolvedValue([]);
   vi.spyOn(wayangAPI, 'deploy').mockResolvedValue(deployment);
 });
@@ -106,4 +107,75 @@ it('shows settings restored from another saved flow without changing continuous 
   act(() => useFlow.getState().setWayang({ ...configuration, system: 'restored-system' }));
   await waitFor(() => expect(screen.getByLabelText('Output system')).toHaveValue('restored-system'));
   expect(useFlow.getState().sourceTopic).toBe(configuration.inputTopics[0]);
+});
+
+it('requires explicit selection of the continuous Rust target and submits its profile with the same original graph', async () => {
+  const save = vi.fn(async () => { useFlow.getState().setSavedId(9); return 9; });
+  render(<SmartTopic node={useFlow.getState().nodes[1]} base="/retrieval" onSave={save} />);
+  fireEvent.change(screen.getByLabelText('Deployment target'), { target: { value: 'wayang-rust-continuous' } });
+  expect(screen.getByRole('group', { name: 'Continuous Wayang on Rust' })).toBeInTheDocument();
+  expect(screen.queryByText('Continuous processor controls')).not.toBeInTheDocument();
+  const run = screen.getByRole('button', { name: 'Run continuously with Wayang' });
+  await waitFor(() => expect(run).toBeEnabled());
+  fireEvent.click(run);
+  await waitFor(() => expect(wayangAPI.deploy).toHaveBeenCalledWith(9,
+    buildWayangDag(useFlow.getState(), configuration, operators), 'continuous'));
+  expect(toDefinition(useFlow.getState()).wayang).toEqual({ ...configuration, profile: 'continuous' });
+});
+
+it('keeps idle continuous progress visible and stops through the durable backend without another deploy', async () => {
+  const continuous: WayangDeployment = { ...deployment, profile: 'continuous', state: 'idle', currentCycle: '2',
+    completedCycles: '2', stopRequested: false, inputRecords: '24', outputRecords: '12',
+    assignments: deployment.assignments.map((item, index) => ({ ...item, cumulativeInputRecords: String(4 * (index + 1)),
+      cumulativeOutputRecords: String(2 * (index + 1)), positions: Array.from({ length: index + 1 }, (_, partition) =>
+        ({ partition: String(partition), next: '4' })) })) };
+  vi.mocked(wayangAPI.list).mockResolvedValue([continuous]);
+  const stop = vi.spyOn(wayangAPI, 'stop').mockResolvedValue({ ...continuous, state: 'stopping', stopRequested: true });
+  render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />);
+  await screen.findByText('Continuous deployment local-one: idle');
+  expect(screen.getByText('Cycle 2; 2 completed cycles')).toBeInTheDocument();
+  expect(screen.getByText('24 total input records; 12 total output records')).toBeInTheDocument();
+  expect(screen.getByText('12 cumulative input records; 6 cumulative output records')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Stop deployment local-one' }));
+  await screen.findByText('Continuous deployment local-one: stopping');
+  expect(stop).toHaveBeenCalledWith('local-one');
+  expect(wayangAPI.deploy).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Stop deployment local-one' })).toBeDisabled();
+});
+
+it('refuses a continuous start when only bounded capabilities are advertised', async () => {
+  vi.mocked(wayangAPI.capabilities).mockResolvedValue({ canRun: true, reason: null, operators, profiles: ['bounded'] });
+  render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />);
+  await screen.findByText('This installation does not advertise the continuous Rust profile.');
+  expect(screen.getByRole('button', { name: 'Run continuously with Wayang' })).toBeDisabled();
+  expect(wayangAPI.deploy).not.toHaveBeenCalled();
+});
+
+it('continues polling an idle deployment for new positions without submitting another deployment', async () => {
+  vi.useFakeTimers();
+  try {
+    const idle: WayangDeployment = { ...deployment, profile: 'continuous', state: 'idle', currentCycle: '1',
+      completedCycles: '1', stopRequested: false, inputRecords: '12', outputRecords: '6' };
+    vi.mocked(wayangAPI.list).mockResolvedValueOnce([idle]).mockResolvedValue([{ ...idle, currentCycle: '2',
+      completedCycles: '2', inputRecords: '24', outputRecords: '12' }]);
+    await act(async () => { render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />); });
+    expect(screen.getByText('12 total input records; 6 total output records')).toBeInTheDocument();
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+    expect(screen.getByText('24 total input records; 12 total output records')).toBeInTheDocument();
+    expect(wayangAPI.list).toHaveBeenCalledTimes(2);
+    expect(wayangAPI.deploy).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('keeps stopped deployments terminal without offering a resume or replacement action', async () => {
+  useFlow.getState().setSavedId(9);
+  vi.mocked(wayangAPI.list).mockResolvedValue([{ ...deployment, profile: 'continuous', state: 'stopped',
+    currentCycle: '2', completedCycles: '2', stopRequested: true, inputRecords: '24', outputRecords: '12' }]);
+  render(<WayangRunPanel profile="continuous" onSave={vi.fn()} />);
+  await screen.findByText('Continuous deployment local-one: stopped');
+  expect(screen.queryByRole('button', { name: 'Run continuously with Wayang' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Stop deployment local-one' })).not.toBeInTheDocument();
+  expect(screen.getByText('This deployment is stopped. Reset disposable worker state before deploying a replacement.')).toBeInTheDocument();
 });

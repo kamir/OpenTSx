@@ -1,7 +1,7 @@
-# Execute a bounded whole-topic assignment
+# Execute whole-topic assignments and increments
 
-Use `tsx-runner` 0.1.0 to execute a trusted-local bounded Kafka assignment with explicit resource caps
-and retained state.
+Use `tsx-runner` 0.1.0 to execute trusted-local bounded Kafka assignments and continuous-deployment increments
+with explicit resource caps and retained state.
 
 You need the pinned Rust 1.99.1 toolchain and the native C/C++ build tools used by `rdkafka` and zstd.
 Broker execution also needs existing input/output topics and a trusted local request.
@@ -20,7 +20,7 @@ cargo +1.99.1 run --locked --manifest-path rust/tsx-runner/Cargo.toml -- --help
 The replay command is `tsx-runner replay --request <file> --checkpoint <file>`.
 `<file>` identifies a trusted request or its private completed-checkpoint path.
 The executable verifies its own artifact digest before reading the broker.
-There is no `run --plan`, continuous execution or signed fleet activation in this crate.
+There is no `run --plan` or signed fleet activation in this crate.
 
 ## Serve a trusted local worker
 
@@ -57,6 +57,43 @@ preparation remains unfinished. It is false for failed preparation, prepared, co
 Such a retry can duplicate output after a lost acknowledgement. A different request remains blocked until the
 unfinished activation completes. A failed preparation cannot publish.
 
+## Continue one immutable whole-topic chain
+
+The worker advertises `incrementalRequestSchema: opentsx.local-increment.v1` and `limits.incrementalChains: 1`.
+Use the existing prepare, activate, status and abort operations with this increment request schema.
+Its fields are the six bounded-request fields plus `sequence` and `previousRequestHash`.
+`sequence` is a positive canonical signed-64-bit decimal string. The first sequence is `"1"` and its predecessor
+is null. Every successor names the previous completed request's lower-case SHA-256 hash.
+The inner execution assignment remains bounded and includes every internal partition's finite `from` and `to`.
+
+The first increment starts every partition at zero. A successor uses the previous sequence plus one and starts
+every partition at the preceding receipt's `next` offset. Include empty partition ranges when a topic is idle.
+Deployment, assignment, attempt, fence, artifact, node, site, source and fragment text, fixed clock, broker,
+partition inventory, sink and limits stay unchanged. Stale requests, forks and changed context fail before input
+is read. Increment requests require the worker service; the standalone replay command refuses them.
+
+The worker restores pipeline state locally. Callers send no state or filesystem paths.
+Cumulative manifests reserve every decoded source identity, including unselected and pass-through series,
+and every output identity, including pending windows. A source identity cannot move between internal partitions.
+The lifetime identity inventory stays within `limits.series`, at most 64; retained pipeline and ownership data
+together stay within `limits.stateBytes`. An unfinished resample window also retains the existing
+`limits.samples` valid-sample ceiling, at most 100,000.
+
+Increment status adds `sequence` and `previousRequestHash`; the first predecessor is JSON null.
+Receipts retain their schema. Record counts describe the current increment, positions describe its completed
+cut, and the state digest describes the retained cumulative pipeline state.
+Each new wave must prepare all participating topics and check cumulative manifests before any activation.
+
+`<directory>/increments/checkpoint.json` holds one completed head and one candidate in a checksummed atomic file.
+Only acknowledged publication advances the head. Interrupted publication retains identical prepared bytes and
+sets `activationRetryable`; restart does not reread input or reset the clock. A latest completed retry returns
+its receipt without broker I/O. Older increments become stale after a successor completes.
+Completed output bytes are discarded when their head commits, so history does not grow with increment count.
+
+One worker retains one immutable continuous chain even after Stop. Another chain requires an explicit reset of
+its disposable worker state while the deployment is stopped and no publication is uncertain.
+There is no retirement, worker migration or failover interface in this local profile.
+
 ## Keep execution within the admitted subset
 
 One assignment owns one complete topic, including every internal partition.
@@ -80,5 +117,7 @@ cargo +1.99.1 test --locked --manifest-path rust/tsx-runner/Cargo.toml
 Tests consume shared Avro, identity and cleaning vectors. They check typed admission, all chunk sizes of the
 supported cleaning cases, state restoration, immutable derived ownership, acknowledgement failures and retry.
 Lifecycle tests also exercise private preparation, activation, abort, restart, manifests and HTTP framing.
+Increment tests cover predecessor validation, cumulative ownership, pending windows, fixed-size history and
+saved-byte retries after acknowledgement or checkpoint failures.
 These offline tests use deterministic broker doubles. The separate three-worker Compose check in the operating
 guide uses real Kafka protocol I/O and Java reference output on different topics with one, two and three partitions.
