@@ -17,11 +17,16 @@ Normative specification: [04-MODELL-V2-SPEC](../datamodel-2026/04-MODELL-V2-SPEC
 | `SeriesStats` | windowed or running statistics (from `opentsx-stats`) |
 | `PatternMatch` | hit of a pattern search |
 
-All timestamps are `long` with `logicalType: timestamp-micros`. Java uses `Instant`; Python uses timezone-aware `datetime`.
+All timestamps are `long` with `logicalType: timestamp-micros`.
+
+* Java: the generated records return `Instant`. `Episodes.regular`, `Episodes.irregular` and
+  `Episodes.timestampsMicros` take or return epoch microseconds as `long`.
+* Python: `m.regular` and `m.irregular` store epoch microseconds as `int`. `m.decode` returns timezone-aware UTC
+  `datetime` values. `m.encode` accepts both.
 
 ## 3.2 Series identity
 
-```
+```text
 canonical = escape(metric) + "{" + join(",", escape(k) + "=" + escape(v) for k in tags sorted by UTF-8 bytes) + "}"
 seriesId  = lower-hex( xxHash64(utf8(canonical), seed 0) )        # 16 hex characters
 escape: prefix \ { } , = with a backslash
@@ -45,7 +50,7 @@ key = m.series_key("wind.met.wind_speed", {"park": "ost-01", "turbine": "T07"}, 
 * `tStart` is inclusive and `tEnd` exclusive. All timestamps lie in `[tStart, tEnd)`.
 * **Time encodings:**
   * `REGULAR`: `t_i = tStart + i·intervalMicros`, with no per-value timestamps.
-  * `IRREGULAR_DELTA`: zig-zag varint delta-of-deltas. With 1 Hz data and small jitter, a timestamp costs 1–2 bytes.
+  * `IRREGULAR_DELTA`: zig-zag varint delta-of-deltas. With 1 Hz data and small jitter, a timestamp costs 1 to 2 bytes.
 * **Values:**
   * `values` is an array of doubles. NaN marks missing or invalid values.
   * `quality` holds one optional byte per value. 0 means good; the wind-farm catalog defines 1 IMPLAUSIBLE,
@@ -56,7 +61,8 @@ key = m.series_key("wind.met.wind_speed", {"park": "ost-01", "turbine": "T07"}, 
 * **`episodeId`:** a ULID (sortable by time).
   * Producers may use deterministic ids (`Ulid.deterministic(millis, seed)`) so that re-running a job writes the same
     episodes.
-  * Stores deduplicate by id.
+  * Stores with the `EPISODES` capability (Iceberg, in-memory) skip an episode whose id they already hold and count
+    it as `skipped` in the `WriteResult`. The OpenTSDB store does not check ids.
 
 ```java
 Episode e = Episodes.regular(key, tStartMicros, 1_000_000L, values)
@@ -78,7 +84,8 @@ A naive (timezone-less) pandas index is rejected unless you pass `assume_utc=Tru
 * **Default: Avro single-object encoding.** The record is `C3 01`, then the 8-byte CRC-64-AVRO fingerprint of the
   schema, then Avro binary. Records are self-describing, so no Schema Registry is needed. This matters because
   KafScale has none.
-* Confluent framing (`00` + schema id) is accepted when a resolver is configured.
+* Confluent framing (`00` + schema id) is accepted when a resolver is configured. Replay, the log sync and the
+  statistics processor configure none ([chapter 13](13-migration.md#131-convert-2x-data-to-v2)).
 * Maps (`tags`, `labels`, `params`) are written in UTF-8 key order. Java and Python therefore produce identical bytes,
   which is the basis for deduplication and checksums.
 * Kafka: `org.opentsx.model.kafka.OpenTsxSerializer` / `OpenTsxDeserializer`; the key is the `seriesId`.

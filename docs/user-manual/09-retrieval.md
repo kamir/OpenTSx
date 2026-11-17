@@ -2,11 +2,12 @@
 
 Module: `opentsx-retrieval` ([README](../../opentsx-retrieval/README.md)).
 
-The HTTP server's `--iceberg` mode requires existing `episodes` and `series` tables. It uses the existing-only
-store path and does not provision missing namespaces or tables. The writer/ingestion path remains responsible
-for provisioning. Existing-only store access does not authenticate HTTP callers or enforce per-user resource grants.
+`bin/opentsx retrieval-server --iceberg` needs existing `episodes` and `series` tables. It opens them with
+`IcebergSeriesStore.openExisting` and creates no namespace and no table ([chapter 5](05-stores.md#52-choose-a-store)).
+Create them first with a writer, for example `bin/opentsx windpark-sim --iceberg` ([chapter 2](02-getting-started.md)).
+The read routes have no authentication ([chapter 12](12-operations.md#125-secure-a-deployment)).
 
-## 9.1 The retrieval API
+## 9.1 Query episodes in Java
 
 ```java
 EpisodeService svc = new EpisodeService(icebergStore);            // reads from the first store with EPISODES
@@ -26,7 +27,9 @@ List<Episode> gusts = svc.segments(Segmenter.extremum(Feature.MAX, 3.0, Duration
 Segments are **derived episodes**. They are not in the source store unless you write them somewhere with `writeTo`.
 To search for a segment's shape, pass its values as the pattern.
 
-## 9.2 Segmentation
+<a id="92-segmentation"></a>
+
+## 9.2 Cut a series into segments
 
 | Strategy | Factory | Typical use |
 |----------|---------|-------------|
@@ -42,20 +45,27 @@ Properties of all segmenters:
 * **Deterministic ids.** Segment ids derive from series, strategy, parameters and start, so re-running is idempotent.
 * **Lineage.** Each segment records strategy, parameters, anchor, source episode and parent.
 
-## 9.3 Pattern search
+<a id="93-pattern-search"></a>
+
+## 9.3 Search for a pattern
 
 | Search | Method | Exact? |
 |--------|--------|--------|
 | subsequences, z-normalized Euclidean | MASS (FFT) over runs that span episode boundaries | yes |
 | subsequences, DTW | UCR cascade: LB_Kim → LB_Keogh → early-abandoning DTW with a Sakoe-Chiba band | yes |
-| whole episodes | z-normalized PAA (64 points) with exact SAX-MINDIST pruning (`EpisodeSummary.sax`) | yes |
+| whole episodes | z-normalized PAA (64 points); with zED, exact pruning by SAX MINDIST; with DTW, every candidate is compared | yes |
 
-Matches never overlap within a series (exclusion zone of half the query length). Windows that contain NaN are skipped.
+* **Overlap:** two matches in the same run start at least half the query length apart (rounded down, at least one
+  sample). A run is the samples of one series across consecutive episodes; it breaks at a time gap or a change of the
+  sampling interval. A better match replaces worse ones that start closer.
+* **NaN:** windows that contain NaN are skipped.
+* **Whole episodes:** the query episode needs at least 64 values, and episodes with fewer than 64 values are skipped.
+  The SAX word is computed at query time unless the episode carries one in `EpisodeSummary.sax`.
 
 **Choosing a distance:**
 
-* Use z-normalized Euclidean by default; it is robust to noise.
-* Use DTW with a narrow band (0.05–0.1) when the same shape occurs at different speeds.
+* Use z-normalized Euclidean by default. In the benchmark below it keeps more recall than DTW on noisy data.
+* Use DTW with a narrow band (0.05 to 0.1) when the same shape occurs at different speeds.
 
 The benchmark below measures how the two compare. It plants gusts in simulated 1 Hz wind data and reports recall@12.
 
@@ -65,12 +75,23 @@ The benchmark below measures how the two compare. It plants gusts in simulated 1
 | 25 % time warp | 0.75 | **1.00** |
 | noise 0.2 m/s | **0.83** | 0.42 |
 
-## 9.4 REST and Python
+## 9.4 Query over REST and from Python
 
-Start the server with `bin/opentsx retrieval-server --port 8080 --iceberg …`, or with `--demo true` to serve a
-synthetic store. With `--kafscale <host:port> --domain wind` it reads the topic `tsx.wind.episodes.v2` into memory
-and follows it. `GET /v1/inventory` lists every series with its metadata; the web workbench uses it to pick series.
-The endpoints are listed in [Appendix B](appendix-b-rest.md).
+Start the server with `bin/opentsx retrieval-server --port 8080 --iceberg …`. Without `--iceberg` and `--kafscale`
+it serves a synthetic demo store: three series `demo.signal` (tags `n=0`, `n=1`, `n=2`), each 6 h at 1 Hz in
+10-minute episodes. The server ignores options it does not know, so `--demo true` changes nothing.
+
+With `--kafscale <host:port> --domain wind` it reads the topic `tsx.wind.episodes.v2` into memory and follows it:
+
+* It reads new records every `--refresh` (default `PT30S`).
+* It holds at most `--max-episodes` episodes (default `20000`). At that limit it stops reading the episodes topic,
+  and `GET /v1/inventory` shows `"truncated": true` under `source`.
+* It also reads `tsx.wind.clean.v2` and `tsx.wind.synthetic.v2` once they exist, without that limit.
+* It serves each component of a vector topic `tsx.wind.smart.<name>.vectors.v1` as a series with the metric
+  `smart.<name>.<component>` and the tag `vector=<name>`.
+
+`GET /v1/inventory` lists every series with its metadata; the web workbench uses it to pick series. The endpoints,
+the run token and the error codes are in [Appendix B](appendix-b-rest.md).
 
 ```python
 from opentsx import model as m
@@ -84,3 +105,6 @@ like = c.similar(eps[0]["episodeId"], top_k=5)
 ```
 
 Episodes travel as an Avro single-object stream. The Python records are therefore exactly what Java wrote.
+
+An error answer of the server raises `RetrievalError`; its `status` holds the HTTP status. `c.episode(<id>)` returns
+`None` for an unknown episode.

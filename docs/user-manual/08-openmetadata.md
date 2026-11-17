@@ -3,7 +3,7 @@
 Module: `opentsx-openmetadata` ([README](../../opentsx-openmetadata/README.md)). Validated against OpenMetadata
 **2.0.5**.
 
-## 8.1 What gets published
+## 8.1 Check what gets published
 
 | OpenTSx | OpenMetadata |
 |---------|--------------|
@@ -17,7 +17,7 @@ Module: `opentsx-openmetadata` ([README](../../opentsx-openmetadata/README.md)).
 | `SeriesStats` | **table profiles** per window: merged over turbines, with quartiles from merged sketches |
 | data-quality checks | **test definitions, test cases and results** per channel and window; failing turbines are named |
 
-## 8.2 Usage
+## 8.2 Publish to OpenMetadata
 
 ```bash
 # review first: every request is written to a directory
@@ -29,7 +29,9 @@ bin/opentsx metadata --scenario opentsx-windpark/scenarios/ostsee-demo.yaml \
     --kafscale localhost:9092 --domain wind --profile-window PT1H --dq-window PT10M
 ```
 
-* Use a **bot token**.
+* Use a **bot token**. Without `--token`, the client reads the environment variable `OPENMETADATA_JWT`.
 * All writes are create-or-update, so publishing again is idempotent.
-* The client retries 429 and 5xx responses.
+* The client retries 429, 502, 503 and 504 responses, up to 5 attempts, with pauses of 1, 2, 4 and 8 s. Any other
+  error status, 500 included, fails at once. A `GET` that gets 404 reads as a missing entity. A network error is not
+  retried.
 * The official Java client 2.0.5 requires Java 21, so OpenTSx uses a plain HTTP client instead.

@@ -2,7 +2,7 @@
 
 Modules: `opentsx-store-spi`, `opentsx-store-iceberg`, `opentsx-store-opentsdb-v2` (see their READMEs).
 
-## 5.1 The SPI
+## 5.1 Read and write through the SPI
 
 ```java
 public interface SeriesStore extends AutoCloseable {
@@ -26,27 +26,53 @@ List<Episode> eps = store.read(EpisodeQuery.of(SeriesSelector.metric("wind.met.w
 
 `SeriesStoreContract` is a JUnit test-jar. Run it against your own store implementation.
 
-## 5.2 Stores
+## 5.2 Choose a store
 
 | Store | Capabilities | Notes |
 |-------|--------------|-------|
 | `InMemorySeriesStore` | EPISODES, µs, NaN | reference implementation; tests and notebooks |
-| `IcebergSeriesStore` | EPISODES, µs, NaN, SQL, TIME_TRAVEL | tables `<ns>.episodes` (partitioned by `day(t_start)`, `bucket(32, series_id)`), `<ns>.series`, `<ns>.episode_index` |
+| `IcebergSeriesStore` | EPISODES, µs, NaN, SQL, TIME_TRAVEL | tables `<ns>.episodes` (partitioned by `day(t_start)`, `bucket(32, series_id)`) and `<ns>.series` |
 | `OpenTsdbSeriesStore` | RAW_POINTS, DOWNSAMPLING | OpenTSDB 2.x HTTP API; ms precision; NaN dropped (counted); unit stored as tag `_unit` |
+
+`<ns>` is the Iceberg namespace. `IcebergEpisodeIndex` keeps the replay index in `<ns>.episode_index`, partitioned by
+`day(t_start)` ([chapter 4](04-kafscale-storage.md)).
 
 ```java
 IcebergSeriesStore store = IcebergSeriesStore.open(Map.of("type", "rest", "uri", "http://localhost:8181",
         "warehouse", "s3://lake/"), "tsx");
 ```
 
-Any Iceberg catalog works: REST, JDBC (SQLite for local use), Hive or Glue. Pass the properties as with Spark.
+`open` creates the namespace and the `episodes` and `series` tables when they are missing.
+`IcebergSeriesStore.openExisting(props, "tsx")` loads the existing tables and creates nothing. A missing table fails
+with `NoSuchTableException`. Its `write` throws `UnsupportedOperationException` ("existing-only store does not accept
+writes"). `bin/opentsx retrieval-server --iceberg` opens the store this way.
 
-## 5.3 From KafScale to Iceberg
+Both pass the properties to Iceberg's `CatalogUtil`. Check the classpath for your catalog:
+
+| Catalog or warehouse | Needs | Where it is |
+|----------------------|-------|-------------|
+| REST or Hadoop catalog | `iceberg-core` | `opentsx-store-iceberg` depends on it |
+| JDBC catalog | `iceberg-core` and a JDBC driver | The SQLite driver `org.xerial:sqlite-jdbc` is on the classpath of `bin/opentsx windpark-sim`, `bin/opentsx retrieval-server` and `bin/opentsx market`. It is not in a Maven dependency on `opentsx-store-iceberg` (test scope) and not in the container image. |
+| Hive catalog | `iceberg-hive-metastore` | no module and no image |
+| Glue catalog | `iceberg-aws` and the AWS SDK | no module. `deploy/docker/stage.sh --with-s3` adds `iceberg-aws` and `iceberg-aws-bundle` to the image classpath. |
+| `s3://` warehouse | `iceberg-aws` and `iceberg-aws-bundle` (S3FileIO) | no module. `.github/workflows/image.yml` stages the image with `--with-s3`. |
+
+A missing catalog class fails with `Cannot initialize Catalog implementation <class>`, for example
+`org.apache.iceberg.hive.HiveCatalog`. A missing SQLite driver fails with `Failed to connect: jdbc:sqlite:<file>`,
+caused by `No suitable driver found`. `<file>` is the catalog database. A missing directory of that file fails with
+the same message, caused by `[SQLITE_CANTOPEN] Unable to open the database file`. Create the directory first.
+
+## 5.3 Copy episodes from KafScale to Iceberg
 
 `EpisodeLogSync.sync(consumer, layout, store, fromPositions, batchSize, timeout)` copies episodes from the episodes
-topic and returns the next positions for you to persist. Writes are idempotent, so at-least-once is safe.
+topic up to the end offsets at call time. It returns a `Result` with `written`, `skipped`, `undecodable` and
+`nextPositions`. Persist `nextPositions`. Writes are idempotent, so at-least-once is safe.
 
-## 5.4 Python reads the same tables
+Records that do not decode are counted in `undecodable` and skipped, and `nextPositions` moves past them. A
+Confluent-framed record is one of them ([chapter 13](13-migration.md)). Check `undecodable` before you persist the
+positions. The call throws `IllegalStateException` ("timed out syncing <topic>") when `timeout` passes first.
+
+## 5.4 Read the tables from Python
 
 ```python
 from opentsx.store.iceberg import load_catalog, read_episodes, read_frame

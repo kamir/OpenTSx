@@ -1,4 +1,4 @@
-# 1. Overview and architecture
+# 1. Find your way around OpenTSx
 
 ## 1.1 Core ideas
 
@@ -18,19 +18,22 @@
    * Callers check capabilities, not store types.
 5. **Everything is deterministic where it can be.**
    * Segment ids, simulator output and statistics are reproducible.
-   * Re-running a job deduplicates instead of duplicating.
+   * Re-running a job with deterministic episode ids adds no duplicates to a store with the `EPISODES` capability.
 
-## 1.2 Architecture
+## 1.2 Follow the data flow
 
-```
- sources / simulator ──► normalizer (catalog) ──► episodes ─┬─► KafScale topics  tsx.<domain>.*.v2   (cheap log, replay)
-                                                            │       │
-                                                            │       ├─► statistics processor ─► series-stats.v2 ─► OpenMetadata
-                                                            │       │                                               (profiles, DQ)
-                                                            │       └─► log sync ─► Iceberg tables (SQL, PyIceberg, time travel)
-                                                            └─► stores via SPI: Iceberg · OpenTSDB · in-memory
-                                                                          │
-                              retrieval: EpisodeService · segmentation · pattern search · REST · Python client
+```text
+ sources ──► normalizer (catalog) ──┐
+                                    ├──► episodes ─┬─► KafScale topics  tsx.<domain>.*.v2   (cheap log, replay)
+ simulator (catalog) ───────────────┘              │       │
+                                                   │       ├─► statistics processor ─► series-stats.v2 ─► OpenMetadata
+                                                   │       │                                               (profiles, DQ)
+                                                   │       ├─► vector processor ─► clean.v2 · features.v2 · smart.<name>.vectors.v1
+                                                   │       │
+                                                   │       └─► log sync ─► Iceberg tables (SQL, PyIceberg, time travel)
+                                                   └─► stores via SPI: Iceberg · OpenTSDB · in-memory
+                                                                 │
+                             retrieval: EpisodeService · segmentation · pattern search · REST · Python client
 ```
 
 ## 1.3 Modules
@@ -47,9 +50,12 @@ Active Maven modules (root `pom.xml`):
 | `opentsx-windpark` | IEC 61400-25-2 data-point catalog, normalizer, simulator, power-curve analysis, CLI | stable |
 | `opentsx-stats` | Streaming statistics, quantile sketch, data-quality checks, KafScale processor | stable |
 | `opentsx-openmetadata` | Publishes the metadata pool to OpenMetadata 2.0 | stable (validated against the 2.0.5 schemas) |
-| `opentsx-retrieval` | Segmentation, pattern search, `EpisodeService`, REST server | stable |
+| `opentsx-retrieval` | Segmentation, pattern search, `EpisodeService`, REST server, vector processor `bin/opentsx vectors` that runs operator DAGs on episode topics ([chapter 17](17-operators.md)) | stable |
 | `opentsx-twin` | Digital twin: atoms, wiring plan, runner, three modes ([README](../../opentsx-twin/README.md)) | proof of concept |
+| `opentsx-twin-live` | Events of a twin run as the topic `twin.<id>.<run>.events` (JSON, schema `twin.event.v1`) and an SSE bridge for browsers; `bin/opentsx twin-live` with `publish`, `bridge`, `demo` ([README](../../opentsx-twin-live/README.md)) | JSON contract; no Avro variant |
+| `opentsx-dwd` | DWD Open Data collector: MOSMIX forecasts and CDC station observations as v2 series and episodes, bound to the weather inputs of the twins; `bin/opentsx dwd` ([README](../../opentsx-dwd/README.md)) | tests offline on fixtures; parsers checked against live DWD downloads |
 | `opentsx-modbus` | Modbus client (JDK only), YAML register maps, poller, normalizer → v2 episodes, meter simulator ([README](../../opentsx-modbus/README.md)) | tested against the simulator; real meter pending |
+| `opentsx-market` | Electricity-market collector (SMARD, Energy-Charts, ENTSO-E, netztransparenz.de), local history archive with quality reports, twins on real history; `bin/opentsx market` ([README](../../opentsx-market/README.md)) | SMARD, Energy-Charts and DWD history collected (2019 to 2026-10-12); ENTSO-E and netztransparenz.de tested against fixtures only, no credentials |
 | `opentsx-legacy-bridge` | Converts 2.x `TimeSeriesObject`/TSBucket/EpisodesRecord to v2 episodes | stable |
 | `opentsx-kafscale-conformance` | Measures which Kafka features a broker supports (KafScale) | stable |
 | `opentsx-data` | 2.x Avro model (frozen) | legacy |
@@ -61,14 +67,16 @@ Outside the Maven build:
 
 * `python-package/`: the Python library (`pip install -e python-package`).
 * `opentsx-saas-backend` and `opentsx-saas-frontend`: experimental web stack, see [chapter 14](14-saas-service-layer.md).
-* `archive/`: the 2025 documentation and old demos; the retired modules were removed from `master`, see
+* `archive/`: the 2025 documentation and old demos. Retired modules are not on `master`. See
   [chapter 13](13-migration.md).
 
 ## 1.4 Design principles
 
 * **Use only what the broker supports.**
-  * KafScale has no compaction, no idempotent producer, no timestamp seek, and unreliable consumer-group rejoin.
-  * OpenTSx therefore uses manual partition assignment, its own episode index and "latest record wins" readers.
+  * KafScale has no compaction, no idempotent producer, no timestamp seek, no consumer-group rejoin and no
+    standalone commits.
+  * OpenTSx therefore uses manual partition assignment, its own episode index, and readers that pick one record
+    among repeated ones ([chapter 4](04-kafscale-storage.md#41-check-what-kafscale-supports)).
 * **One specification, two languages.** Schemas, the canonical series form, the sketch format and the wire format
   are shared and checked by test vectors in CI.
 * **Statistics instead of raw data for metadata.** Profiles and data quality come from mergeable statistics, so the

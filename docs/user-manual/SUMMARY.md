@@ -1,7 +1,7 @@
 # Summary
 
-* [Introduction](README.md)
-* [1. Overview and architecture](01-overview.md)
+* [OpenTSx User Manual](README.md)
+* [1. Find your way around OpenTSx](01-overview.md)
 * [2. Getting started](02-getting-started.md)
 * [3. Data model v2](03-data-model.md)
 * [4. Episode storage and replay on KafScale](04-kafscale-storage.md)
@@ -17,6 +17,7 @@
 * [14. SaaS stack and personal service layer](14-saas-service-layer.md)
 * [15. Status and roadmap](15-roadmap.md)
 * [16. Engineering method: from a decision to its effect](16-engineering-method.md)
+* [17. Time-series operators](17-operators.md)
 * [Appendix A: Command-line tools](appendix-a-cli.md)
-* [Appendix B: REST API](appendix-b-rest.md)
+* [Appendix B: REST API (retrieval server)](appendix-b-rest.md)
 * [Appendix C: Glossary](appendix-c-glossary.md)

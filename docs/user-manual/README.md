@@ -1,7 +1,7 @@
 # OpenTSx User Manual
 
-**Version 3.x (2026 refresh).** This manual describes OpenTSx as it is built and tested today: Java 17, Maven
-reactor, Python package, CI on GitHub Actions.
+**Version 3.0.1.** This manual describes OpenTSx as it is built and tested: Java 17 and 21, Maven reactor, Python
+package 1.0.0, CI on GitHub Actions.
 
 OpenTSx is a toolkit for time-series data on event-streaming infrastructure. It provides:
 
@@ -15,17 +15,23 @@ OpenTSx is a toolkit for time-series data on event-streaming infrastructure. It 
 * **Streaming statistics and data quality**, with publishing to **OpenMetadata**.
 * **Retrieval.** This covers segmentation, pattern search (MASS, SAX, DTW), a fluent Java API, REST, and a Python
   client.
+* **Stream operators.** The vector processor (`bin/opentsx vectors`) runs operator DAGs on episode topics. It writes
+  clean, feature and vector topics. [Chapter 17](17-operators.md) lists the operators and where each one runs.
+* **A digital twin** of an energy system: atoms, a wiring plan and three modes (`opentsx-twin`), and the events of a
+  run as a topic for browsers (`opentsx-twin-live`).
+* **Data collectors** for Modbus meters, DWD weather and electricity-market data (`opentsx-modbus`, `opentsx-dwd`,
+  `opentsx-market`).
 * **Classic analytics** from the project's research roots: DFA, MFDFA, event synchronization and return-interval
   statistics.
 
-## Who should read what
+## Choose where to start
 
 | You are … | Start with |
 |-----------|-----------|
-| new to OpenTSx | [Overview](01-overview.md) → [Getting started](02-getting-started.md) |
+| new to OpenTSx | [Find your way around OpenTSx](01-overview.md) → [Getting started](02-getting-started.md) |
 | a data engineer (ingest, storage, replay) | [Data model](03-data-model.md), [KafScale storage](04-kafscale-storage.md), [Stores](05-stores.md) |
 | working with wind-farm data | [Wind farm](06-windpark.md), [Statistics & data quality](07-stats-quality.md), [OpenMetadata](08-openmetadata.md) |
-| an analyst or data scientist | [Retrieval & patterns](09-retrieval.md), [Python](10-python.md), [Classic analytics](11-classic-analytics.md) |
+| an analyst or data scientist | [Retrieval & patterns](09-retrieval.md), [Python](10-python.md), [Classic analytics](11-classic-analytics.md), [Time-series operators](17-operators.md) |
 | an operator | [Operations](12-operations.md), [DevOps guide: k3s + KafScale](../devops/README.md) |
 | coming from OpenTSx 2.x (TimeSeriesObject, TSBucket) | [Migration](13-migration.md) |
 

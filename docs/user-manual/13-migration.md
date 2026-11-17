@@ -1,6 +1,6 @@
 # 13. Migration from 2.x and archived components
 
-## 13.1 From the 2.x model to v2
+## 13.1 Convert 2.x data to v2
 
 | 2.x | v2 |
 |-----|----|
@@ -8,7 +8,7 @@
 | label string `"metric k=v,…"` | `SeriesKey` (`metric`, `tags`, `unit`, xxHash64 `seriesId`) |
 | TSBucket (Hadoop SequenceFile) | bucket = episodes + `BucketManifest` on KafScale, or episodes in Iceberg |
 | `EpisodesRecord` (`opentsx-data`) | `Episode` (`opentsx-model`) |
-| Confluent Schema Registry framing | single-object encoding (self-describing); Confluent framing is still readable |
+| Confluent Schema Registry framing | single-object encoding (self-describing) |
 
 `opentsx-legacy-bridge` converts the 2.x formats:
 
@@ -23,11 +23,18 @@ List<Episode> eps = LegacyBucketImport.read(Path.of("bucket.tsb.vec.seq"), t0Mic
 The imported episodes can then be written with a `BucketWriter` or to any store. `opentsx-data` (2.x) is frozen;
 see its README.
 
-## 13.2 What was archived
+`new OpenTsxAvro(resolver)` reads Confluent-framed v2 records. The resolver is an `IntFunction<Schema>` from schema id
+to writer schema, for example backed by a schema registry client. Replay, `BucketCatalog`, `EpisodeIndexer`,
+`EpisodeLogSync` and the stats processor use `new OpenTsxAvro()` without a resolver. Without a resolver, `decode`
+throws `NullPointerException: Confluent-framed payload but no schema resolver configured` on a Confluent-framed record.
+`OpenTsxAvro` decodes v2 types only. Even with a resolver, a Confluent-framed 2.x record fails with
+`no reader type for org.opentsx.data.model.EpisodesRecord`. Convert a decoded `EpisodesRecord` with
+`LegacyBridge.fromEpisodesRecord`.
+
+## 13.2 Find or restore an archived component
 
 Archived components are not built and not maintained. The 2025 documentation and the demos are kept under
-`archive/` for reference. The archived Maven modules were removed from `master` in October 2026 because their
-outdated dependencies kept raising security alerts; their last state is commit `315f01d`.
+`archive/` for reference. The archived Maven modules are not on `master`. Their last state is commit `315f01d`.
 
 | Archived | Replaced by / reason |
 |----------|----------------------|
@@ -36,10 +43,10 @@ outdated dependencies kept raising security alerts; their last state is commit `
 | `opentsx-kafka-streams-tsa`, `opentsx-spring-example` | KafScale processors (`opentsx-stats`), Flink |
 | `opentsx-store-opentsdb` (2.x client) | `opentsx-store-opentsdb-v2` |
 | `opentsx-ext-connectors`, `ext-algorithms` | Flume/HBase/Kudu loaders; external corelib wrapper |
-| `opentsx-predict` (TensorFlow 1.15 demo), `opentsx-processors` (empty) | Smart Topics (planned, [chapter 15](15-roadmap.md)) |
+| `opentsx-predict` (TensorFlow 1.15 demo), `opentsx-processors` (empty) | Smart Topics (P7, see [chapter 15](15-roadmap.md)) |
 | `opentsx-app-tools` (SSH console, cluster scan, NetCat recorder; sshd-core 0.8) | no replacement; no module depended on it |
 | `opentsx-kstreams` (Kafka Streams/Cassandra project shell) | KafScale processors (`opentsx-stats`) |
-| demos and cluster scripts (`opentsx-app-demos`, `-cloud-bridge`, `-cluster-demo0`, `-clusters`, `-cv`, `-jetson-nano`, `scala-scripts`, `modules/`) | historical: Confluent Cloud, Kudu, Spark 2 |
+| demos and cluster scripts under `archive/demos/` (`opentsx-app-demos`, `-cloud-bridge`, `-cluster-demo0`, `-clusters`, `-cv`, `-jetson-nano`, `scala-scripts`, `legacy-modules/`) | historical: Confluent Cloud, Kudu, Spark 2 |
 | 2025 documentation (old manual, onboarding tracks, devguide guides, MANUALS) | this manual |
 
 The modules (all rows up to `opentsx-kstreams`) are only in the Git history. To get one back:
