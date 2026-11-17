@@ -196,6 +196,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native table, chart and caption saving reports the failed destination and completed outputs in the dialog.
+  Each file is prepared and replaced atomically; a failure preserves that destination and stops later outputs.
+  Table and caption text use strict UTF-8, while table layouts and 800 by 600 PNG dimensions are retained.
+  Configured folder paths are preserved, including spaces, hyphens and Unicode characters.
+
 - Native `Histogram cross-cut` validates selections, positive integer window lengths, ordered integer bounds and
   positive bin counts. Cancelling or rejecting input leaves charts and the recorder unchanged. Cuts stop at each
   series' available samples while preserving nominal window labels, pooled raw counts and input series.

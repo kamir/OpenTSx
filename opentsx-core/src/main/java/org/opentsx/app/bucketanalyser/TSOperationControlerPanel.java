@@ -13,6 +13,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.chart.simple.SigmaFilter;
 import org.opentsx.data.exporter.MeasurementTable;
+import org.opentsx.data.exporter.ExportFileWriter;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
 import org.opentsx.core.TSBucket;
@@ -20,17 +21,17 @@ import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
 import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
 import org.opentsx.algorithms.detrending.MFDFAAnalyzer;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
-import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.entity.StandardEntityCollection;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalDouble;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -412,7 +413,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         try {
             save();
         } catch (IOException ex) {
-            Logger.getLogger(TSOperationControlerPanel.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Save failed", JOptionPane.ERROR_MESSAGE);
         }
 
     }//GEN-LAST:event_jButton1ActionPerformed
@@ -1117,50 +1118,11 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton22ActionPerformed
 
     public void storeChartImageAsPNG(JFreeChart chart, File folder, String filename) {
-
-        String fn = filename;
+        File file = new File(folder, filename + ".png");
         try {
-
-            final File file1 = new File(folder.getAbsolutePath() + File.separator + fn + ".png");
-            System.out.println("\n>>> Save as PNG Image - Filename: " + file1.getAbsolutePath()
-                    + "; CP: " + chart);
-            try {
-                final ChartRenderingInfo info = new ChartRenderingInfo(new StandardEntityCollection());
-
-                Thread.currentThread().sleep(1000);
-
-                ChartUtilities.saveChartAsPNG(file1, chart, 800, 600, info);
-
-                Thread.currentThread().sleep(1000);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-//                File file = new File(folder.getAbsolutePath() + File.separator + fn + ".svg");
-//                System.out.println(">>> Save as SVG Image - Filename: " + file.getAbsolutePath()
-//                        + "; CP: "+ cp);
-//
-//
-//                // Get a DOMImplementation and create an XML document
-//                DOMImplementation domImpl =
-//                        GenericDOMImplementation.getDOMImplementation();
-//                Document document = domImpl.createDocument(null, "svg", null);
-//
-//                // Create an instance of the SVG Generator
-//                SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
-//
-//                // draw the chart in the SVG generator
-//                cp.draw(svgGenerator, new Rectangle(800, 600));
-//
-//                // Write svg file
-//                OutputStream outputStream = new FileOutputStream(file);
-//                Writer out = new OutputStreamWriter(outputStream, "UTF-8");
-//                svgGenerator.stream(out, true /* use css */);
-//                outputStream.flush();
-//                outputStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+            ExportFileWriter.write(file, ChartUtilities.encodeAsPNG(chart.createBufferedImage(800, 600)));
+        } catch (IOException failure) {
+            throw new UncheckedIOException("Failed to export chart to " + file, failure);
         }
     }
 
@@ -1211,42 +1173,45 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     private File getPixNodeFolder() {
-
-        String fn = jTextField3.getText() + this.jTextField2.getText();
-        fn = fn.replaceAll("[^a-zA-Z0-9.-/]", "_");
-        return new File(fn);
+        String fn = this.jTextField2.getText().replaceAll("[^a-zA-Z0-9./-]", "_");
+        return new File(jTextField3.getText() + fn);
     }
 
     public void save() throws IOException {
-
         File folder = getPixNodeFolder();
+        String fn = this.jTextField2.getText().replaceAll("[^a-zA-Z0-9./-]", "_");
+        List<String> completed = new ArrayList<>();
+        String stage = "table";
+        File target = new File(folder, fn + ".mwt.tsv").getAbsoluteFile();
+        try {
+            MeasurementTable tab = new MeasurementTable();
+            tab.setMessReihen(this.rows);
+            tab.writeToFile(target);
+            completed.add(target.toString());
 
-        String fn = this.jTextField2.getText().replaceAll("[^a-zA-Z0-9.-/]", "_");
+            stage = "chart";
+            target = new File(folder.getParentFile(), fn + ".png").getAbsoluteFile();
+            storeChartImageAsPNG(chart, folder.getParentFile(), fn);
+            completed.add(target.toString());
 
-        MeasurementTable tab = new MeasurementTable();
-
-        String mwtData = folder.getAbsolutePath() + "/" + fn + ".mwt.tsv";
-
-        tab.setMessReihen(this.rows);
-        tab.writeToFile(new File(mwtData));
-
-        storeChartImageAsPNG(chart, folder.getParentFile(), fn);
-
-        if (statsAndComments != null) {
-
-            File fCAP = new File(folder.getParentFile().getAbsolutePath() + "/caption_" + fn + ".tex");
-            FileWriter fw2 = new FileWriter(fCAP);
-
-            fw2.write(statsAndComments.getText());
-
-            fw2.flush();
-            fw2.close();
-
+            if (statsAndComments != null) {
+                stage = "caption";
+                target = new File(folder.getParentFile(), "caption_" + fn + ".tex").getAbsoluteFile();
+                ExportFileWriter.write(target, statsAndComments.getText());
+                completed.add(target.toString());
+            }
+        } catch (IOException | RuntimeException failure) {
+            Throwable cause = failure instanceof UncheckedIOException ioFailure ? ioFailure.getCause() : failure;
+            String message = "Failed to save " + stage + " to " + target + "\n" + cause;
+            for (Throwable additionalFailure : cause.getSuppressed()) {
+                message += "\nAdditional failure: " + additionalFailure;
+            }
+            message += completed.isEmpty() ? "\n\nNo files were saved."
+                    : "\n\nSaved in this attempt:\n" + String.join("\n", completed);
+            throw new IOException(message, cause);
         }
-
     }
-    
-    
+
     public void addCorrelationButton( JButton b ){
         this.jPanel5.add( b );
     };
