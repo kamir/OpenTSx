@@ -7,7 +7,8 @@ import json
 import mimetypes
 from pathlib import Path
 import re
-from urllib.parse import unquote, urlsplit
+import signal
+from urllib.parse import parse_qs, unquote, urlsplit
 
 import numpy as np
 
@@ -17,6 +18,7 @@ from opentsx.algorithms.episode_rms import episode_rms
 from opentsx.algorithms.spectral import welch_spectrum
 from opentsx.client.topics import TopicLimitReached, TopicReader
 from opentsx.client.modelling import MAX_BODY, run_modelling
+from opentsx.client.registry import RegistryError, RegistryUnavailable
 
 OPERATORS = {
     "welch": {
@@ -48,9 +50,7 @@ def encode_result(topic, analysis, preview):
         "analysis": analysis,
         "preview": preview,
     }
-    payload = json.dumps(
-        envelope, sort_keys=True, separators=(",", ":"), allow_nan=False
-    ).encode()
+    payload = json.dumps(envelope, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
     return hashlib.sha256(payload).hexdigest(), payload
 
 
@@ -65,9 +65,7 @@ def decode_result(key, payload):
         ):
             raise ValueError("unsupported result schema")
         analysis, preview = result["analysis"], result["preview"]
-        if not isinstance(analysis["method"], str) or not isinstance(
-            analysis["parameters"], dict
-        ):
+        if not isinstance(analysis["method"], str) or not isinstance(analysis["parameters"], dict):
             raise ValueError("invalid analysis identity or parameters")
         for field in ("name", "version"):
             if not isinstance(analysis["backend"][field], str):
@@ -75,9 +73,7 @@ def decode_result(key, payload):
         for field in ("episode_id", "values_sha256"):
             if not isinstance(analysis["input"][field], str):
                 raise ValueError("invalid input provenance")
-        if analysis["input"]["unit"] is not None and not isinstance(
-            analysis["input"]["unit"], str
-        ):
+        if analysis["input"]["unit"] is not None and not isinstance(analysis["input"]["unit"], str):
             raise ValueError("invalid measurement unit")
         if not isinstance(analysis["warnings"], list) or any(
             not isinstance(w, str) for w in analysis["warnings"]
@@ -96,12 +92,8 @@ def decode_result(key, payload):
             raise ValueError("invalid preview provenance")
         values = analysis["result"]
         if "frequency" in values:
-            frequency, _ = regular_values(
-                values["frequency"], minimum=1, allow_constant=True
-            )
-            density, _ = regular_values(
-                values["density"], minimum=1, allow_constant=True
-            )
+            frequency, _ = regular_values(values["frequency"], minimum=1, allow_constant=True)
+            density, _ = regular_values(values["density"], minimum=1, allow_constant=True)
             if len(frequency) != len(density) or not isinstance(
                 values["density_unit"], (str, type(None))
             ):
@@ -122,9 +114,7 @@ def execute(store, document):
         "parameters",
     }:
         raise ValueError("request requires exactly topic, operator and parameters")
-    topic, name, parameters = (
-        document[key] for key in ("topic", "operator", "parameters")
-    )
+    topic, name, parameters = (document[key] for key in ("topic", "operator", "parameters"))
     store.check_topic(topic)
     if not isinstance(name, str) or name not in OPERATORS:
         raise ValueError("unknown operator")
@@ -133,9 +123,7 @@ def execute(store, document):
         raise ValueError("unknown operator parameters")
     options = {}
     for key, limits in spec["parameters"].items():
-        value = integer(
-            parameters.get(key, limits["default"]), key, minimum=limits["min"]
-        )
+        value = integer(parameters.get(key, limits["default"]), key, minimum=limits["min"])
         if value > limits["max"]:
             raise ValueError(f"{key} exceeds the local workbench limit")
         options[key] = value
@@ -181,9 +169,7 @@ def permitted_request(host, origin, write=False):
 class KafkaStore:
     def __init__(self, bootstrap, prefix):
         if not re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9._-]{0,180}\.", prefix):
-            raise ValueError(
-                "prefix must be a valid Kafka topic prefix ending in a dot"
-            )
+            raise ValueError("prefix must be a valid Kafka topic prefix ending in a dot")
         self.bootstrap, self.prefix = bootstrap, prefix
         self.output_topic = prefix + "analysis.v1"
 
@@ -199,9 +185,7 @@ class KafkaStore:
     def topics(self):
         from confluent_kafka.admin import AdminClient
 
-        metadata = AdminClient({"bootstrap.servers": self.bootstrap}).list_topics(
-            timeout=10
-        )
+        metadata = AdminClient({"bootstrap.servers": self.bootstrap}).list_topics(timeout=10)
         return sorted(
             name
             for name, topic in metadata.topics.items()
@@ -216,9 +200,7 @@ class KafkaStore:
         self.check_topic(topic)
         reader = TopicReader(
             self.bootstrap,
-            consumer_factory=lambda config: Consumer(
-                {**config, "allow.auto.create.topics": False}
-            ),
+            consumer_factory=lambda config: Consumer({**config, "allow.auto.create.topics": False}),
             timeout_s=10,
         )
         return reader.episodes(topic, max_records=200)
@@ -252,9 +234,7 @@ class KafkaStore:
             )
             producer.poll(0)
         if producer.flush(30):
-            raise TimeoutError(
-                "analysis delivery timed out; replay may append duplicates"
-            )
+            raise TimeoutError("analysis delivery timed out; replay may append duplicates")
         if errors or len(delivered) != len(records):
             raise RuntimeError("analysis delivery was not acknowledged")
 
@@ -286,9 +266,7 @@ class KafkaStore:
                     ends[partition] = high
                     assigned.append(TopicPartition(self.output_topic, partition, low))
             if count > 200:
-                raise TopicLimitReached(
-                    "result snapshot exceeds the local 200 record limit"
-                )
+                raise TopicLimitReached("result snapshot exceeds the local 200 record limit")
             consumer.assign(assigned)
             pending = set(ends)
             while pending:
@@ -332,9 +310,7 @@ class KafkaStore:
             for name in names
             if name not in metadata.topics
         ]
-        for future in (
-            admin.create_topics(missing, request_timeout=30).values() if missing else []
-        ):
+        for future in admin.create_topics(missing, request_timeout=30).values() if missing else []:
             future.result(timeout=35)
         if names[0] in metadata.topics:
             existing = self.episodes(names[0])
@@ -356,9 +332,7 @@ class KafkaStore:
         producer = Producer({"bootstrap.servers": self.bootstrap, "acks": "all"})
         for index, frequency in enumerate((10, 20)):
             episode = model.regular(
-                model.series_key(
-                    "voltage", {"fixture": str(index), "origin": "SYNTHETIC"}, "V"
-                ),
+                model.series_key("voltage", {"fixture": str(index), "origin": "SYNTHETIC"}, "V"),
                 1_792_699_200_000_000 + index * 40_960_000,
                 10_000,
                 np.sin(2 * np.pi * frequency * np.arange(4096) / 100),
@@ -382,7 +356,96 @@ def reject_json_constant(value):
     raise ValueError("nonfinite JSON values are not allowed")
 
 
-def handler(store, web_root, manifest):
+def lifecycle_get(lifecycle, path, query):
+    if lifecycle is None:
+        return 503, {"error": "Model lifecycle state is unavailable in this service."}
+    if path == "/analysis/v1/modelling/models":
+        return 200, {
+            "schema": "opentsx.model-registry.v1",
+            "topic_prefix": lifecycle.prefix,
+            "models": lifecycle.store.list_models(),
+        }
+    if path == "/analysis/v1/modelling/series":
+        if set(query) != {"topic"} or len(query["topic"]) != 1:
+            raise ValueError("series catalogue requires one topic query parameter")
+        return 200, lifecycle.catalogue.series(query["topic"][0])
+    if path == "/analysis/v1/modelling/deployments":
+        return 200, lifecycle.deployments()
+    match = re.fullmatch(
+        r"/analysis/v1/modelling/deployments/([a-z0-9][a-z0-9_-]{0,63})/results", path
+    )
+    if match:
+        return 200, lifecycle.store.results(match[1])
+    return 404, {"error": "unknown lifecycle route"}
+
+
+def lifecycle_post(lifecycle, path, document):
+    if lifecycle is None:
+        return 503, {"error": "Model lifecycle state is unavailable in this service."}
+    if path == "/analysis/v1/modelling/capture":
+        return 200, lifecycle.catalogue.capture(document)
+    if path == "/analysis/v1/modelling/models":
+        model = lifecycle.store.register(document, lifecycle.registry)
+        return 200, {key: value for key, value in model.items() if key != "artifact"}
+    if path == "/analysis/v1/modelling/deployments":
+        return 200, lifecycle.deploy(document)
+    match = re.fullmatch(
+        r"/analysis/v1/modelling/deployments/([a-z0-9][a-z0-9_-]{0,63})/(start|stop)", path
+    )
+    if match:
+        from opentsx.client.modelling import fields
+
+        fields(document, set())
+        return 200, getattr(lifecycle, match[2])(match[1])
+    match = re.fullmatch(r"/analysis/v1/modelling/models/([a-f0-9]{64})/predict", path)
+    if match:
+        from opentsx.algorithms.fitted import predict_artifact
+        from opentsx.client.modelling import fields, integer, matrix
+
+        fields(document, {"steps"}, {"future_exog", "future_available_at_micros"})
+        integer(document["steps"], "prediction steps", 1, 96)
+        model = lifecycle.store.get_model(match[1])
+        artifact = model["artifact"]
+        names = artifact.get("context_names", [])
+        if names:
+            if "future_exog" not in document or "future_available_at_micros" not in document:
+                raise ValueError(
+                    "registered context requires future values and availability coordinates"
+                )
+            matrix(document["future_exog"], document["steps"], len(names), "future context")
+            matrix(
+                document["future_available_at_micros"],
+                document["steps"],
+                len(names),
+                "future context availability",
+                True,
+            )
+            cutoff = (
+                artifact["initial_checkpoint"]["next_timestamp_micros"]
+                - artifact["source"]["interval_micros"]
+            )
+            if any(
+                stamp > cutoff for row in document["future_available_at_micros"] for stamp in row
+            ):
+                raise ValueError(
+                    "future context was not available at the registered forecast origin"
+                )
+        elif "future_exog" in document or "future_available_at_micros" in document:
+            raise ValueError("this registered model does not accept external context")
+        lifecycle.registry.verify(model)
+        forecast = predict_artifact(
+            model["artifact"], steps=document["steps"], future_exog=document.get("future_exog")
+        )
+        return 200, {
+            "schema": "opentsx.registered-prediction.v1",
+            "model_id": model["id"],
+            "artifact_id": model["artifact_id"],
+            "forecast": forecast,
+        }
+    return 404, {"error": "unknown lifecycle route"}
+
+
+def handler(store, web_root, manifest, lifecycle=None):
     root = Path(web_root).resolve()
 
     class Handler(BaseHTTPRequestHandler):
@@ -405,7 +468,11 @@ def handler(store, web_root, manifest):
             if not permitted_request(self.headers.get("Host", ""), None):
                 return self.respond(403, {"error": "local host required"})
             try:
-                path = unquote(urlsplit(self.path).path)
+                parsed = urlsplit(self.path)
+                path = unquote(parsed.path)
+                if path.startswith("/analysis/v1/modelling/"):
+                    status, result = lifecycle_get(lifecycle, path, parse_qs(parsed.query))
+                    return self.respond(status, result)
                 if path == "/analysis/v1/health":
                     return self.respond(
                         200, {"status": "ready", "version": __version__, **manifest}
@@ -439,6 +506,10 @@ def handler(store, web_root, manifest):
                 self.send_header("X-Content-Type-Options", "nosniff")
                 self.end_headers()
                 self.wfile.write(raw)
+            except (RegistryError, RegistryUnavailable) as error:
+                self.respond(503, {"error": str(error)})
+            except KeyError:
+                self.respond(404, {"error": "requested lifecycle record was not found"})
             except (ValueError, TopicLimitReached) as error:
                 self.respond(400, {"error": str(error)})
             except Exception as error:
@@ -452,31 +523,32 @@ def handler(store, web_root, manifest):
             if not permitted_request(
                 self.headers.get("Host", ""), self.headers.get("Origin"), write=True
             ):
-                return self.respond(
-                    403, {"error": "same-origin local request required"}
-                )
-            if self.path not in ("/analysis/v1/runs", "/analysis/v1/modelling/runs"):
+                return self.respond(403, {"error": "same-origin local request required"})
+            modelling = self.path.startswith("/analysis/v1/modelling/")
+            if self.path != "/analysis/v1/runs" and not modelling:
                 return self.respond(404, {"error": "unknown API route"})
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                limit = (
-                    MAX_BODY if self.path == "/analysis/v1/modelling/runs" else 16384
-                )
-                if (
-                    not 0 < length <= limit
-                    or self.headers.get_content_type() != "application/json"
-                ):
+                limit = MAX_BODY if modelling else 16384
+                if not 0 < length <= limit or self.headers.get_content_type() != "application/json":
                     return self.respond(
                         400, {"error": f"request must be JSON of at most {limit} bytes"}
                     )
-                document = json.loads(
-                    self.rfile.read(length), parse_constant=reject_json_constant
-                )
+                document = json.loads(self.rfile.read(length), parse_constant=reject_json_constant)
                 if self.path == "/analysis/v1/modelling/runs":
                     status, result = run_modelling(document)
+                    if status == 200 and lifecycle is not None:
+                        lifecycle.store.save_run(document, result)
+                    return self.respond(status, result)
+                if modelling:
+                    status, result = lifecycle_post(lifecycle, self.path, document)
                     return self.respond(status, result)
                 result = execute(store, document)
                 self.respond(200, result)
+            except (RegistryError, RegistryUnavailable) as error:
+                self.respond(503, {"error": str(error)})
+            except KeyError:
+                self.respond(404, {"error": "requested lifecycle record was not found"})
             except (ValueError, TopicLimitReached, FloatingPointError) as error:
                 self.respond(400, {"error": str(error)})
             except Exception as error:
@@ -491,30 +563,69 @@ def handler(store, web_root, manifest):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("serve", "seed"))
+    parser.add_argument("command", choices=("serve", "seed", "demo-seed", "demo-append"))
     parser.add_argument("--bootstrap", required=True)
     parser.add_argument("--prefix", default="tsx.workbench-demo.")
     parser.add_argument("--web-root")
     parser.add_argument("--manifest")
     parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--state-dir")
+    parser.add_argument("--registry-url")
     args = parser.parse_args(argv)
+    if args.command in ("demo-seed", "demo-append"):
+        from opentsx.client.scoring_demo import main as scoring_demo
+
+        scoring_demo(
+            [
+                args.command.removeprefix("demo-"),
+                "--bootstrap",
+                args.bootstrap,
+                "--prefix",
+                args.prefix,
+            ]
+        )
+        return
     store = KafkaStore(args.bootstrap, args.prefix)
     if args.command == "seed":
         print(json.dumps(store.seed()))
         return
     if not args.web_root or not args.manifest:
         parser.error("serve requires --web-root and --manifest")
+    if not args.state_dir or not args.registry_url:
+        parser.error("serve requires --state-dir and --registry-url")
     manifest = json.loads(Path(args.manifest).read_text())
     if not (Path(args.web_root) / "index.html").is_file():
         parser.error("web root has no built index.html")
+    from opentsx.client.lifecycle import LifecycleStore
+    from opentsx.client.registry import MLflowRegistry
+    from opentsx.client.smart_topics import SmartTopics
+    from opentsx.client.topic_catalogue import TopicCatalogue
+
+    lifecycle = SmartTopics(
+        LifecycleStore(Path(args.state_dir) / "lifecycle.sqlite"),
+        MLflowRegistry(args.registry_url),
+        TopicCatalogue(args.bootstrap, args.prefix),
+        args.bootstrap,
+        args.prefix,
+    )
+    lifecycle.recover()
     server = ThreadingHTTPServer(
-        ("0.0.0.0", args.port), handler(store, args.web_root, manifest)
+        ("0.0.0.0", args.port), handler(store, args.web_root, manifest, lifecycle)
     )
     print(
         json.dumps({"service": "opentsx-research", "version": __version__, **manifest}),
         flush=True,
     )
-    server.serve_forever()
+
+    def terminate(signum, frame):
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, terminate)
+    try:
+        server.serve_forever()
+    finally:
+        lifecycle.close()
+        server.server_close()
 
 
 if __name__ == "__main__":

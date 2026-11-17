@@ -7,7 +7,7 @@ the exact built manifest, not an assumed upstream tag.
 
 You need Git, host Python 3.10 or newer, Docker Compose with `up --wait`, and
 the existing `cp-all-in-one-m4_default` Docker network. The profile uses pinned
-Linux ARM64 images for Python and Node. It does not require host scientific
+Linux ARM64 images for Python, Node and MLflow. It does not require host scientific
 packages or host Node for building and testing. Build-time package registries
 and the pinned container images must be reachable or cached.
 
@@ -65,8 +65,10 @@ broker listeners or credentials.
 
 Runtime installation uses the bundled wheelhouse without contacting a package
 registry. The runtime volume is keyed by the full numerical lock. The Compose
-service has a read-only root, temporary `/tmp`, no added capabilities, a 1 GiB
-memory limit and a two-CPU limit. This profile is local development
+service has a read-only root, temporary `/tmp`, no added capabilities, a 2 GiB
+memory limit and a two-CPU limit. The internal MLflow service has a separate
+1 GiB memory limit and one CPU. Its database/artifacts and the Workbench's
+lifecycle/checkpoint state use persistent named volumes. This profile is local development
 infrastructure, not a production authentication or tenant-isolation deployment.
 
 ## Fit and inspect a finite model
@@ -91,8 +93,9 @@ records itself.
 
 A rejected request, unavailable runtime, failed convergence or time limit is an
 error. The UI must not present partial output as a completed fit. This path fits
-and forecasts a finite snapshot; it does not register a reusable model, promote
-a champion or deploy continuous scoring.
+and forecasts a finite snapshot. The separate
+[review and deployment workflow](model-smart-topics.md) registers a preserved
+fit and starts supported continuous scoring after explicit review.
 
 For the forecasting workflow, baselines, diagnostics and chronological
 evaluation, read [Forecasting: Principles and Practice, chapter 5](https://otexts.com/fpp3/toolbox.html).
@@ -126,8 +129,8 @@ supported by that path.
 
 ## Inspect configuration and failures
 
-Change the existing `deploy/local-cp/settings.json` fields for
-network/bootstrap/prefix/port before rebuilding. Keep the pinned image and
+Change network, bootstrap, prefix, port and registry settings in
+`deploy/local-cp/settings.json` before rebuilding. Keep the pinned image and
 dependency versions unless intentionally qualifying a different runtime. Do not
 create a second configuration path for the same settings.
 

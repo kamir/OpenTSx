@@ -33,6 +33,8 @@ For forecasting, open **Modelling** and use the
 regular target to the numerical service and displays candidate forecasts,
 reference forecasts, prediction intervals and chronological backtests. A finite
 forecast result is separate from a deployed continuous operator.
+Continue with [reviewed model deployment](model-smart-topics.md) to preserve a
+fit in MLflow and bind its supported scorer to a local Kafka topic.
 
 ## Compare pair measurements
 

@@ -103,6 +103,70 @@ class WorkbenchTests(unittest.TestCase):
             (readme.parent / "../../docs/devguide/local-cp-workbench.md").is_file()
         )
 
+    def test_profile_keeps_registry_and_scoring_state_in_durable_volumes(self):
+        api = builder()
+        compose = (api.LOCAL / "compose.yaml").read_text()
+        settings = json.loads((api.LOCAL / "settings.json").read_text())
+        self.assertRegex(
+            settings["registry_image"], r"^ghcr\.io/mlflow/mlflow@sha256:[a-f0-9]{64}$"
+        )
+        self.assertEqual(settings["registry_url"], "http://registry:5000")
+        self.assertIn("state:/state", compose)
+        self.assertIn("registry:/mlflow", compose)
+        self.assertIn("--registry-url", compose)
+        self.assertIn("--state-dir", compose)
+        registry = compose.split("  registry:\n", 1)[1].split("\nnetworks:", 1)[0]
+        self.assertNotIn("ports:", registry)
+        self.assertIn("--allowed-hosts", registry)
+
+    def test_build_records_the_registry_runtime_and_url(self):
+        api = builder()
+        settings = {
+            "python_image": "python-fixture",
+            "node_image": "node-fixture",
+            "registry_image": "registry-fixture",
+            "registry_url": "http://registry:5000",
+            "platform": "linux/arm64",
+            "bootstrap": "broker:29092",
+            "prefix": "tsx.test.",
+            "network": "cp",
+            "port": 18081,
+        }
+        build_root = self.root / "build"
+        local = self.root / "local"
+        local.mkdir()
+        (local / "entrypoint.sh").write_text("exit 0\n")
+
+        def run(command):
+            if "/source/deploy/local-cp/build_python.py" in command:
+                stage = next(build_root.glob("stage-*"))
+                (stage / "runtime.lock").write_text("fixture-lock\n")
+                (stage / "python-build.json").write_text("{}")
+
+        def node(settings, target):
+            (target / "index.html").write_text("<html></html>")
+
+        with (
+            patch.object(api, "BUILD", build_root),
+            patch.object(api, "LOCAL", local),
+            patch.object(api, "source_digest", return_value="source-fixture"),
+            patch.object(api, "output", return_value="123"),
+            patch.object(api, "run", side_effect=run),
+            patch.object(api, "node", side_effect=node),
+            redirect_stdout(StringIO()),
+        ):
+            api.build(settings)
+        env = dict(
+            line.split("=", 1)
+            for line in (build_root / "compose.env").read_text().splitlines()
+        )
+        self.assertEqual(env["OPENTSX_REGISTRY_IMAGE"], "registry-fixture")
+        self.assertEqual(env["OPENTSX_REGISTRY_URL"], "http://registry:5000")
+        manifest = json.loads(
+            (Path(env["OPENTSX_BUNDLE"]) / "manifest.json").read_text()
+        )
+        self.assertEqual(manifest["images"]["registry"], "registry-fixture")
+
     def test_launcher_runs_host_checks_before_container_tests(self):
         api = builder()
         bundle = self.root / "bundle"

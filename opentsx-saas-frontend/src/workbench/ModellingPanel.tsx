@@ -9,6 +9,7 @@ import {
   type ModellingResult,
 } from "./modelling";
 import "./modelling.css";
+import ModelLifecyclePanel from "./ModelLifecyclePanel";
 
 function defaults(n: number): ModellingOptions {
   const stop = Math.min(n, 512),
@@ -452,16 +453,6 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
       if (controller.current === abort) setBusy(false);
     }
   }
-  if (!bucket || !series)
-    return (
-      <section className="wb-modelling" aria-label="Modelling and prediction">
-        <h2>Modelling and prediction</h2>
-        <p>
-          Load a time-series bucket to choose a target, fit candidates and
-          compare held-out forecasts.
-        </p>
-      </section>
-    );
   const family = (value: ModellingOptions["family"]) =>
     change({
       family: value,
@@ -483,7 +474,7 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
         : options.baselines.filter((b) => b !== name),
     });
   const axis =
-    bucket.xKind === "time"
+    bucket?.xKind === "time"
       ? bucket.t0Ms === undefined
         ? "Relative time; no absolute origin supplied."
         : "Absolute timestamps retained in UTC."
@@ -496,230 +487,251 @@ export default function ModellingPanel({ bucket }: { bucket: Bucket | null }) {
         forecasts against baselines, then inspect prediction intervals. Fitting
         runs in the local Python numerical service.
       </p>
-      <fieldset>
-        <legend>1. Choose target and training range</legend>
-        <div className="wb-modelling-grid">
-          <label>
-            Target series
-            <select
-              value={series.id}
-              onChange={(e) => setTarget(e.target.value)}
-            >
-              {bucket.series.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Field
-            name="Range start index"
-            value={options.start}
-            min={0}
-            max={series.y.length - 8}
-            onChange={(start) => change({ start })}
-          />
-          <Field
-            name="Range end index (exclusive)"
-            value={options.stop}
-            min={8}
-            max={series.y.length}
-            onChange={(stop) => change({ stop })}
-          />
-          <Field
-            name="Forecast steps"
-            value={options.steps}
-            min={1}
-            max={96}
-            onChange={(steps) => change({ steps })}
-          />
-        </div>
+      {!bucket || !series ? (
         <p>
-          {options.stop - options.start} selected of {series.y.length} samples;
-          unit {series.unit ?? "not supplied"}. {axis} The selected range is the
-          fitting data; future values are predicted after its end.
+          Load a time-series bucket to choose a target, fit candidates and
+          compare held-out forecasts.
         </p>
-      </fieldset>
-      <fieldset>
-        <legend>2. Configure candidate and context</legend>
-        <div className="wb-modelling-grid">
-          <label>
-            Forecast family
-            <select
-              value={options.family}
-              onChange={(e) =>
-                family(e.target.value as ModellingOptions["family"])
-              }
-            >
-              <option value="arima">ARIMA</option>
-              <option value="sarima">SARIMA</option>
-              <option value="sarimax">SARIMAX with external regressors</option>
-            </select>
-          </label>
-          {(["p", "d", "q"] as const).map((name, i) => (
-            <Field
-              key={name}
-              name={name}
-              value={options.order[i]}
-              min={0}
-              max={i === 1 ? 2 : 3}
-              onChange={(v) =>
-                change({
-                  order: options.order.map((x, k) =>
-                    k === i ? v : x,
-                  ) as ModellingOptions["order"],
-                })
-              }
-            />
-          ))}
-          <label>
-            Trend
-            <select
-              value={options.trend}
-              onChange={(e) => change({ trend: e.target.value })}
-            >
-              <option value="n">None</option>
-              <option value="c">Constant</option>
-              <option value="t">Linear</option>
-              <option value="ct">Constant and linear</option>
-            </select>
-          </label>
-          <Field
-            name="Optimizer iterations"
-            value={options.maxiter}
-            min={1}
-            max={200}
-            onChange={(maxiter) => change({ maxiter })}
-          />
-        </div>
-        {options.family !== "arima" && (
-          <div className="wb-modelling-grid">
-            {["P", "D", "Q", "Season length"].map((name, i) => (
-              <Field
-                key={name}
-                name={name}
-                value={options.seasonalOrder[i]}
-                min={0}
-                max={i === 3 ? 96 : i === 1 ? 1 : 2}
-                onChange={(v) =>
-                  change({
-                    seasonalOrder: options.seasonalOrder.map((x, k) =>
-                      k === i ? v : x,
-                    ) as ModellingOptions["seasonalOrder"],
-                  })
-                }
-              />
-            ))}
-          </div>
-        )}
-        {options.family === "sarimax" && (
-          <>
-            <label>
-              External context JSON
-              <textarea
-                aria-label="External context JSON"
-                value={options.contextText}
-                onChange={(e) => change({ contextText: e.target.value })}
-                placeholder={
-                  '{"names":["calendar"],"historical":[[1]],"historical_available_at_micros":[[0]],"future":[[1]],"future_available_at_micros":[[0]]}'
-                }
-              />
-            </label>
-            <p>
-              Supply one historical row per selected target sample and one
-              future row per forecast step. Each column needs its actual
-              availability timestamp. Every backtest forecast row must already
-              have been available at that origin. Realized future context is not
-              an acceptable substitute for a historical forecast.
-            </p>
-          </>
-        )}
-        <p>
-          AR, MA and ARMA are configurations of the ARIMA orders. These are
-          stochastic forecasts, distinct from moving-average smoothing.
-        </p>
-      </fieldset>
-      <fieldset>
-        <legend>3. Compare at chronological forecast origins</legend>
-        <div className="wb-modelling-grid">
-          <Field
-            name="Initial training samples"
-            value={options.initial}
-            min={8}
-            max={options.stop - options.start - 1}
-            onChange={(initial) => change({ initial })}
-          />
-          <Field
-            name="Backtest horizon"
-            value={options.horizon}
-            min={1}
-            max={96}
-            onChange={(horizon) => change({ horizon })}
-          />
-          <Field
-            name="Backtest step"
-            value={options.step}
-            min={1}
-            onChange={(step) => change({ step })}
-          />
-          <Field
-            name="Rolling training window (0 expands)"
-            value={options.window}
-            min={0}
-            onChange={(window) => change({ window })}
-          />
-          <Field
-            name="Baseline seasonal period"
-            value={options.seasonalPeriod}
-            min={1}
-            max={96}
-            onChange={(seasonalPeriod) => change({ seasonalPeriod })}
-          />
-          <Field
-            name="Alpha"
-            value={options.alpha}
-            min={0.001}
-            max={0.999}
-            step={0.01}
-            onChange={(alpha) => change({ alpha })}
-          />
-        </div>
-        <div className="wb-modelling-grid">
-          {(["naive", "mean", "drift", "seasonal_naive"] as Baseline[]).map(
-            (name) => (
-              <label key={name} className="wb-modelling-check">
-                <input
-                  aria-label={`${name === "seasonal_naive" ? "Seasonal naive" : name[0].toUpperCase() + name.slice(1)} baseline`}
-                  type="checkbox"
-                  checked={options.baselines.includes(name)}
-                  disabled={name === "naive"}
-                  onChange={(e) => baseline(name, e.target.checked)}
-                />
-                {name === "seasonal_naive" ? "Seasonal naive" : name} baseline
+      ) : (
+        <>
+          <fieldset>
+            <legend>1. Choose target and training range</legend>
+            <div className="wb-modelling-grid">
+              <label>
+                Target series
+                <select
+                  value={series.id}
+                  onChange={(e) => setTarget(e.target.value)}
+                >
+                  {bucket.series.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
               </label>
-            ),
+              <Field
+                name="Range start index"
+                value={options.start}
+                min={0}
+                max={series.y.length - 8}
+                onChange={(start) => change({ start })}
+              />
+              <Field
+                name="Range end index (exclusive)"
+                value={options.stop}
+                min={8}
+                max={series.y.length}
+                onChange={(stop) => change({ stop })}
+              />
+              <Field
+                name="Forecast steps"
+                value={options.steps}
+                min={1}
+                max={96}
+                onChange={(steps) => change({ steps })}
+              />
+            </div>
+            <p>
+              {options.stop - options.start} selected of {series.y.length}{" "}
+              samples; unit {series.unit ?? "not supplied"}. {axis} The selected
+              range is the fitting data; future values are predicted after its
+              end.
+            </p>
+          </fieldset>
+          <fieldset>
+            <legend>2. Configure candidate and context</legend>
+            <div className="wb-modelling-grid">
+              <label>
+                Forecast family
+                <select
+                  value={options.family}
+                  onChange={(e) =>
+                    family(e.target.value as ModellingOptions["family"])
+                  }
+                >
+                  <option value="arima">ARIMA</option>
+                  <option value="sarima">SARIMA</option>
+                  <option value="sarimax">
+                    SARIMAX with external regressors
+                  </option>
+                </select>
+              </label>
+              {(["p", "d", "q"] as const).map((name, i) => (
+                <Field
+                  key={name}
+                  name={name}
+                  value={options.order[i]}
+                  min={0}
+                  max={i === 1 ? 2 : 3}
+                  onChange={(v) =>
+                    change({
+                      order: options.order.map((x, k) =>
+                        k === i ? v : x,
+                      ) as ModellingOptions["order"],
+                    })
+                  }
+                />
+              ))}
+              <label>
+                Trend
+                <select
+                  value={options.trend}
+                  onChange={(e) => change({ trend: e.target.value })}
+                >
+                  <option value="n">None</option>
+                  <option value="c">Constant</option>
+                  <option value="t">Linear</option>
+                  <option value="ct">Constant and linear</option>
+                </select>
+              </label>
+              <Field
+                name="Optimizer iterations"
+                value={options.maxiter}
+                min={1}
+                max={200}
+                onChange={(maxiter) => change({ maxiter })}
+              />
+            </div>
+            {options.family !== "arima" && (
+              <div className="wb-modelling-grid">
+                {["P", "D", "Q", "Season length"].map((name, i) => (
+                  <Field
+                    key={name}
+                    name={name}
+                    value={options.seasonalOrder[i]}
+                    min={0}
+                    max={i === 3 ? 96 : i === 1 ? 1 : 2}
+                    onChange={(v) =>
+                      change({
+                        seasonalOrder: options.seasonalOrder.map((x, k) =>
+                          k === i ? v : x,
+                        ) as ModellingOptions["seasonalOrder"],
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            )}
+            {options.family === "sarimax" && (
+              <>
+                <label>
+                  External context JSON
+                  <textarea
+                    aria-label="External context JSON"
+                    value={options.contextText}
+                    onChange={(e) => change({ contextText: e.target.value })}
+                    placeholder={
+                      '{"names":["calendar"],"historical":[[1]],"historical_available_at_micros":[[0]],"future":[[1]],"future_available_at_micros":[[0]]}'
+                    }
+                  />
+                </label>
+                <p>
+                  Supply one historical row per selected target sample and one
+                  future row per forecast step. Each column needs its actual
+                  availability timestamp. Every backtest forecast row must
+                  already have been available at that origin. Realized future
+                  context is not an acceptable substitute for a historical
+                  forecast.
+                </p>
+              </>
+            )}
+            <p>
+              AR, MA and ARMA are configurations of the ARIMA orders. These are
+              stochastic forecasts, distinct from moving-average smoothing.
+            </p>
+          </fieldset>
+          <fieldset>
+            <legend>3. Compare at chronological forecast origins</legend>
+            <div className="wb-modelling-grid">
+              <Field
+                name="Initial training samples"
+                value={options.initial}
+                min={8}
+                max={options.stop - options.start - 1}
+                onChange={(initial) => change({ initial })}
+              />
+              <Field
+                name="Backtest horizon"
+                value={options.horizon}
+                min={1}
+                max={96}
+                onChange={(horizon) => change({ horizon })}
+              />
+              <Field
+                name="Backtest step"
+                value={options.step}
+                min={1}
+                onChange={(step) => change({ step })}
+              />
+              <Field
+                name="Rolling training window (0 expands)"
+                value={options.window}
+                min={0}
+                onChange={(window) => change({ window })}
+              />
+              <Field
+                name="Baseline seasonal period"
+                value={options.seasonalPeriod}
+                min={1}
+                max={96}
+                onChange={(seasonalPeriod) => change({ seasonalPeriod })}
+              />
+              <Field
+                name="Alpha"
+                value={options.alpha}
+                min={0.001}
+                max={0.999}
+                step={0.01}
+                onChange={(alpha) => change({ alpha })}
+              />
+            </div>
+            <div className="wb-modelling-grid">
+              {(["naive", "mean", "drift", "seasonal_naive"] as Baseline[]).map(
+                (name) => (
+                  <label key={name} className="wb-modelling-check">
+                    <input
+                      aria-label={`${name === "seasonal_naive" ? "Seasonal naive" : name[0].toUpperCase() + name.slice(1)} baseline`}
+                      type="checkbox"
+                      checked={options.baselines.includes(name)}
+                      disabled={name === "naive"}
+                      onChange={(e) => baseline(name, e.target.checked)}
+                    />
+                    {name === "seasonal_naive" ? "Seasonal naive" : name}{" "}
+                    baseline
+                  </label>
+                ),
+              )}
+            </div>
+            <p>
+              Training always precedes testing. Every origin is fitted
+              independently. MAE and RMSE retain the target unit; scaled errors
+              remain undefined when the training scale is zero. No random split
+              or automatic missing-value filling is applied.
+            </p>
+          </fieldset>
+          <button
+            className="wb-primary"
+            disabled={busy}
+            onClick={() => void fit()}
+          >
+            {busy ? "Fitting and evaluating" : "Fit, backtest and forecast"}
+          </button>
+          {busy && (
+            <p role="status">
+              The numerical service is fitting bounded chronological runs. A
+              failed fit is reported explicitly.
+            </p>
           )}
-        </div>
-        <p>
-          Training always precedes testing. Every origin is fitted
-          independently. MAE and RMSE retain the target unit; scaled errors
-          remain undefined when the training scale is zero. No random split or
-          automatic missing-value filling is applied.
-        </p>
-      </fieldset>
-      <button className="wb-primary" disabled={busy} onClick={() => void fit()}>
-        {busy ? "Fitting and evaluating" : "Fit, backtest and forecast"}
-      </button>
-      {busy && (
-        <p role="status">
-          The numerical service is fitting bounded chronological runs. A failed
-          fit is reported explicitly.
-        </p>
+          {error && <p role="alert">{error}</p>}
+          {answer && answer.signature === signature && (
+            <Output run={answer.run} series={answer.series} />
+          )}
+        </>
       )}
-      {error && <p role="alert">{error}</p>}
-      {answer && answer.signature === signature && (
-        <Output run={answer.run} series={answer.series} />
-      )}
+      <ModelLifecyclePanel
+        run={answer && answer.signature === signature ? answer.run : null}
+      />
     </section>
   );
 }

@@ -201,7 +201,11 @@ def build(settings):
         "runtime_lock_sha256": hashlib.sha256(
             (stage / "runtime.lock").read_bytes()
         ).hexdigest(),
-        "images": {"python": settings["python_image"], "node": settings["node_image"]},
+        "images": {
+            "python": settings["python_image"],
+            "node": settings["node_image"],
+            "registry": settings["registry_image"],
+        },
         **json.loads((stage / "python-build.json").read_text()),
     }
     raw = json.dumps(manifest, sort_keys=True, indent=2) + "\n"
@@ -221,6 +225,8 @@ def build(settings):
         "OPENTSX_TOPIC_PREFIX": settings["prefix"],
         "OPENTSX_CP_NETWORK": settings["network"],
         "OPENTSX_WORKBENCH_PORT": settings["port"],
+        "OPENTSX_REGISTRY_IMAGE": settings["registry_image"],
+        "OPENTSX_REGISTRY_URL": settings["registry_url"],
     }
     temporary = BUILD / "compose.env.tmp"
     temporary.write_text("".join(f"{key}={value}\n" for key, value in env.items()))
@@ -245,7 +251,18 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=("lock", "build", "test", "up", "seed", "status", "logs", "down"),
+        choices=(
+            "lock",
+            "build",
+            "test",
+            "up",
+            "seed",
+            "demo-seed",
+            "demo-append",
+            "status",
+            "logs",
+            "down",
+        ),
     )
     args = parser.parse_args(argv)
     settings = json.loads((LOCAL / "settings.json").read_text())
@@ -302,7 +319,7 @@ def main(argv=None):
     elif args.command == "up":
         run(compose() + ["up", "--detach", "--wait", "--wait-timeout", "180"])
         print(f"http://127.0.0.1:{settings['port']}/workbench")
-    elif args.command == "seed":
+    elif args.command in ("seed", "demo-seed", "demo-append"):
         run(
             compose()
             + [
@@ -310,7 +327,7 @@ def main(argv=None):
                 "--rm",
                 "--no-deps",
                 "workbench",
-                "seed",
+                args.command,
                 "--bootstrap",
                 settings["bootstrap"],
                 "--prefix",

@@ -3,7 +3,8 @@
 Serve the Workbench and local Python analysis service on the existing CP Docker
 network. Read the [developer path](../../docs/devguide/local-cp-workbench.md)
 for prerequisites, locked build, installed-artifact tests, startup and finite
-modelling.
+modelling. Continue with the [model deployment guide](../../docs/devguide/model-smart-topics.md)
+to register reviewed fits and score incoming episodes as Smart Topics.
 
 `settings.json` selects the external network, internal bootstrap addresses,
 tutorial topic prefix, pinned container images and loopback port. `workbench.py`
@@ -20,3 +21,8 @@ Kafka. Existing topic analysis and seed commands are separate operations.
 The frontend test container mounts both shared operator fixtures and
 `opentsx-model` identity/wire vectors. Generated bundles under `.build/` do not
 enter the source digest or Git.
+
+The profile includes an internal MLflow registry with a persistent database and
+artifact volume. A separate Workbench state volume stores completed runs,
+registrations, deployment intent and scoring checkpoints. The registry has no
+published host port. The Workbench remains bound to loopback.

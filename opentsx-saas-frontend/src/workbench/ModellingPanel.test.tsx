@@ -44,6 +44,18 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("finite modelling workflow", () => {
+  it("offers the Kafka capture and model lifecycle before a bucket is loaded", async () => {
+    await show(null);
+    expect(
+      screen.getByRole("region", { name: "Model registry and Smart Topics" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Load local catalogue" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Register reviewed fit" }),
+    ).toBeDisabled();
+  });
   it("offers one configured family editor, baselines and chronological backtest controls", async () => {
     await show();
     expect(
@@ -325,6 +337,9 @@ describe("numerical service results", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Candidate MAE is lower/)).toBeInTheDocument();
     expect(screen.getByText("Fixture warning")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("I reviewed this fit and its backtests"),
+    ).toBeEnabled();
     expect(
       screen.getByRole("link", { name: "Download modelling result JSON" }),
     ).toBeInTheDocument();
