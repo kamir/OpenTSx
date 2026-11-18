@@ -22,9 +22,11 @@ const credentials = JSON.parse(fs.readFileSync(options['--credentials'], 'utf8')
 const directory = options['--output'];
 const phase = options['--phase'];
 const profile = options['--profile'] ?? 'bounded';
-if (!['bounded', 'continuous'].includes(profile)) throw new Error('Unknown browser profile.');
-const continuous = profile === 'continuous';
-if (!(continuous ? ['initial', 'retry', 'new-data', 'restart', 'after-restart', 'worker-unavailable',
+if (!['bounded', 'continuous', 'fencing'].includes(profile)) throw new Error('Unknown browser profile.');
+const fencing = profile === 'fencing';
+const continuous = profile !== 'bounded';
+const fencingPhases = ['initial', 'fence-resume', 'resume-data', 'runtime-restart', 'changed-dag', 'changed-data', 'stopped'];
+if (!(fencing ? fencingPhases : continuous ? ['initial', 'retry', 'new-data', 'restart', 'after-restart', 'worker-unavailable',
   'worker-restart', 'after-worker-restart', 'stopped']
   : ['initial', 'retry', 'restart']).includes(phase)) throw new Error('Unknown browser phase.');
 const blocks = continuous ? options['--blocks'] : null;
@@ -35,21 +37,32 @@ const inputRecords = continuous ? BigInt(blocks) * BigInt(fixture.sources.reduce
 fs.mkdirSync(directory, { recursive: true });
 const initialFile = path.join(directory, 'deployment-initial.json');
 const initial = phase === 'initial' ? null : JSON.parse(fs.readFileSync(initialFile, 'utf8'));
+const previousPhase = fencingPhases[fencingPhases.indexOf(phase) - 1];
+const reference = fencing && phase !== 'initial'
+  ? JSON.parse(fs.readFileSync(path.join(directory, `deployment-${previousPhase}.json`), 'utf8')) : initial;
+const replacement = fencing && ['changed-dag', 'changed-data', 'stopped'].includes(phase);
+const sourceFile = path.join(directory, replacement ? 'submitted-dag-replacement.txt' : 'submitted-dag.txt');
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
 const page = await context.newPage();
 page.setDefaultTimeout(30_000);
 const captured = [];
-let awaitedDeployment = initial?.id ?? null;
+const switches = [];
+let awaitedDeployment = fencing && phase === 'changed-dag' ? null : reference?.id ?? null;
 let observedRows = [];
 let resolveCompletion;
 const completion = new Promise((resolve) => { resolveCompletion = resolve; });
 const expectedState = continuous ? (phase === 'stopped' ? 'stopped' : 'idle') : 'completed';
 const matches = (value) => value.id === awaitedDeployment && value.state === expectedState
-  && (!continuous || (value.profile === profile && value.inputRecords === String(inputRecords)
+  && (!continuous || (value.profile === 'continuous' && value.inputRecords === String(inputRecords)
     && (phase === 'worker-unavailable' ? typeof value.error === 'string' && value.error.length > 0 : value.error === null)
     && value.assignments.length === 3 && value.assignments.every((assignment) => assignment.positions.length === Number(assignment.partitionCount)
-      && assignment.positions.every((position, index) => position.partition === String(index) && position.next === blocks))));
+      && assignment.positions.every((position, index) => position.partition === String(index) && position.next === blocks))))
+  && (!fencing || (/^[1-9][0-9]*$/.test(value.publicationEpoch ?? '')
+    && (!['fence-resume', 'changed-dag', 'stopped'].includes(phase)
+      || BigInt(value.publicationEpoch) > BigInt(reference.publicationEpoch))
+    && (!['fence-resume', 'changed-dag'].includes(phase) || value.switch?.state === 'active')
+    && (phase !== 'stopped' || value.publicationRetired === true)));
 const observe = () => {
   const row = observedRows.find(matches);
   if (row) resolveCompletion(row);
@@ -67,6 +80,9 @@ page.on('request', (request) => {
     const body = JSON.parse(request.postData());
     if (!Number.isInteger(body.flowId) || typeof body.dagText !== 'string') throw new Error('Unexpected deployment body.');
     captured.push(body);
+  }
+  if (request.method() === 'POST' && /\/api\/v1\/dags\/wayang-rust\/deployments\/[^/]+\/replace$/.test(new URL(request.url()).pathname)) {
+    switches.push(JSON.parse(request.postData()));
   }
 });
 try {
@@ -111,8 +127,8 @@ try {
     await panel.getByLabel('Output signal', { exact: true }).fill(fixture.signal);
     await panel.getByLabel('Rust output topic', { exact: true }).fill(fixture.outputTopic);
   }
-  let deployment = initial;
-  const submit = !continuous || phase === 'initial' || phase === 'retry';
+  let deployment = reference;
+  const submit = !continuous || phase === 'initial' || (!fencing && phase === 'retry');
   if (submit) {
     const responsePromise = page.waitForResponse((response) => response.request().method() === 'POST'
       && new URL(response.url()).pathname === '/api/v1/dags/wayang-rust/deploy');
@@ -121,6 +137,35 @@ try {
     if (response.status() !== 202) throw new Error(`Deployment request returned HTTP ${response.status()}.`);
     deployment = await response.json();
     awaitedDeployment = deployment.id;
+  }
+  if (fencing && ['fence-resume', 'changed-dag'].includes(phase)) {
+    if (phase === 'changed-dag') {
+      await page.locator('.wb-node').filter({ has: page.locator('.wb-node-op', { hasText: /^Convert unit$/ }) }).click();
+      await page.getByRole('complementary', { name: 'Inspector', exact: true }).getByLabel('factor', { exact: true }).fill('0.002');
+      await page.locator('.wb-node').filter({ has: page.locator('.wb-node-op', { hasText: /^Resample$/ }) }).click();
+      await panel.getByLabel('Rust output topic', { exact: true }).fill('tsx.rust-fencing-restarted.clean.v2');
+    }
+    const switching = page.waitForResponse((response) => response.request().method() === 'POST'
+      && new URL(response.url()).pathname === `/api/v1/dags/wayang-rust/deployments/${reference.id}/replace`);
+    await panel.getByRole('button', { name: phase === 'fence-resume'
+      ? `Resume deployment ${reference.id} with fencing` : `Restart changed DAG for deployment ${reference.id}`, exact: true }).click();
+    const response = await switching;
+    if (response.status() !== 202) throw new Error(`Replacement request returned HTTP ${response.status()}.`);
+    const pending = await response.json();
+    awaitedDeployment = pending.switch.deployment;
+    deployment = null;
+    if (switches.length !== 1 || switches[0].expectedEpoch !== reference.publicationEpoch
+      || switches[0].mode !== (phase === 'fence-resume' ? 'resume' : 'restart')) throw new Error('The UI submitted another fencing request.');
+    if (phase === 'fence-resume' && Object.keys(switches[0]).sort().join(',') !== 'expectedEpoch,mode') {
+      throw new Error('Resume changed the accepted source graph.');
+    }
+    if (phase === 'changed-dag') {
+      if (switches[0].flowId !== initial.flowId || typeof switches[0].dagText !== 'string'
+        || switches[0].dagText === fs.readFileSync(path.join(directory, 'submitted-dag.txt'), 'utf8')) {
+        throw new Error('Restart did not save a changed UI graph.');
+      }
+      fs.writeFileSync(sourceFile, switches[0].dagText);
+    }
   }
   if (continuous && phase === 'stopped') {
     const stop = page.waitForResponse((response) => response.request().method() === 'POST'
@@ -131,23 +176,26 @@ try {
   }
   observe();
   if (captured.length !== Number(submit)) throw new Error('The browser submitted an unexpected deployment request.');
+  if (switches.length !== Number(fencing && ['fence-resume', 'changed-dag'].includes(phase))) {
+    throw new Error('The browser submitted an unexpected replacement request.');
+  }
   if (continuous && submit && captured[0].profile !== 'continuous') throw new Error('The UI did not select continuous execution.');
   if (phase === 'initial') fs.writeFileSync(path.join(directory, 'submitted-dag.txt'), captured[0].dagText);
   else if (submit && captured[0].dagText !== fs.readFileSync(path.join(directory, 'submitted-dag.txt'), 'utf8')) {
     throw new Error('Completed retry changed the original UI graph text.');
   }
-  await panel.getByText(`${continuous ? 'Continuous' : 'Bounded'} deployment ${deployment.id}: ${expectedState}`, { exact: true })
+  await panel.getByText(`${continuous ? 'Continuous' : 'Bounded'} deployment ${awaitedDeployment}: ${expectedState}`, { exact: true })
     .waitFor({ timeout: 600_000 });
   let timeout;
   try {
-    if (!matches(deployment)) deployment = await Promise.race([completion, new Promise((_, reject) => {
+    if (!deployment || !matches(deployment)) deployment = await Promise.race([completion, new Promise((_, reject) => {
       timeout = setTimeout(() => reject(new Error('The deployment did not reach the required complete-topic watermarks.')), 600_000);
     })]);
   } finally {
     if (timeout) clearTimeout(timeout);
   }
   if (!matches(deployment) || deployment.assignments.length !== 3) throw new Error('Three workers did not reach the required outcome.');
-  const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(directory, 'submitted-dag.txt')), 'utf8').digest('hex');
+  const hash = crypto.createHash('sha256').update(fs.readFileSync(sourceFile), 'utf8').digest('hex');
   if (deployment.specHash !== hash) throw new Error('The completion has another original source hash.');
   const actual = deployment.assignments.map((assignment) => [assignment.inputTopic, assignment.partitionCount]);
   const expected = fixture.sources.map((source) => [source.topic, String(source.partitions)]);
@@ -155,15 +203,32 @@ try {
   if (initial && (!continuous || phase === 'retry') && JSON.stringify(deployment) !== JSON.stringify(initial)) {
     throw new Error('Completed retry changed its durable outcome.');
   }
-  if (continuous && initial && (deployment.id !== initial.id || deployment.createdAtMicros !== initial.createdAtMicros)) {
+  if (continuous && initial && !replacement && (deployment.id !== initial.id || deployment.createdAtMicros !== initial.createdAtMicros)) {
     throw new Error('Continuous input changed its deployment or accepted clock.');
+  }
+  if (fencing && phase === 'fence-resume') {
+    for (const key of ['id', 'specHash', 'planHash', 'createdAtMicros', 'assignments', 'currentCycle', 'completedCycles', 'inputRecords', 'outputRecords']) {
+      if (JSON.stringify(deployment[key]) !== JSON.stringify(reference[key])) throw new Error('Resume changed its verified checkpoint.');
+    }
+  }
+  if (replacement && (deployment.id === initial.id || deployment.specHash === initial.specHash
+    || deployment.assignments.some((assignment) => assignment.outputTopic !== 'tsx.rust-fencing-restarted.clean.v2'))) {
+    throw new Error('Restart did not create a separate fresh-output deployment.');
+  }
+  if (fencing && phase === 'changed-dag') {
+    const predecessor = observedRows.find((row) => row.id === initial.id);
+    if (!predecessor || predecessor.state !== 'replaced' || predecessor.publicationRetired !== true) {
+      throw new Error('The preceding deployment was not fenced and retired.');
+    }
+    fs.writeFileSync(path.join(directory, 'deployment-predecessor.json'), JSON.stringify(predecessor, null, 2) + '\n');
   }
   fs.writeFileSync(path.join(directory, `deployment-${phase}.json`), JSON.stringify(deployment, null, 2) + '\n');
   fs.writeFileSync(path.join(directory, `browser-${phase}.json`), JSON.stringify({ phase, deployment: deployment.id,
     flowId: deployment.flowId, state: deployment.state, specHash: hash, planHash: deployment.planHash,
     createdAtMicros: deployment.createdAtMicros, assignments: deployment.assignments.length,
     ...(continuous ? { profile, blocks, inputRecords: deployment.inputRecords, outputRecords: deployment.outputRecords,
-      submissions: captured.length } : {}) }, null, 2) + '\n');
+      submissions: captured.length } : {}), ...(fencing ? { publicationEpoch: deployment.publicationEpoch,
+      switches: switches.length } : {}) }, null, 2) + '\n');
   await page.screenshot({ path: path.join(directory, `browser-${phase}.png`), fullPage: true });
   console.log(`Browser ${phase} verified three whole-topic assignments in state ${deployment.state}.`);
 } catch (error) {

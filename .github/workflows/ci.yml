@@ -357,6 +357,9 @@ jobs:
           - profile: continuous
             name: Continuous UI Wayang Rust three-worker acceptance
             artifact: wayang-rust-continuous-browser-parity
+          - profile: fencing
+            name: Fenced UI Wayang Rust three-worker acceptance
+            artifact: wayang-rust-fencing-browser-parity
     env:
       KAFSCALE_BROKER_PORT: "39093"
       WAYANG_UI_PORT: "18081"
@@ -405,6 +408,17 @@ jobs:
           root = Path("target/wayang-rust-compose")
           result = json.loads((root / "result.json").read_text())
           assert result["workers"] == 3
+          if os.environ["WAYANG_PROFILE"] == "fencing":
+              import sys
+              sys.path.insert(0, "tools")
+              from verify_wayang_rust_compose import verify_fencing_views
+              assert result == verify_fencing_views()
+              assert result["staleWorkerDenied"] and result["outputOffsetsUnchanged"]
+              assert result["oldGrantHttpStatus"] == result["forgedEpochHttpStatus"] == 403
+              for phase in result["phases"]:
+                  assert (root / f"browser-{phase}.png").is_file()
+              print("Actual UI replacement, Java parity, restored old worker and Proxy denials were verified")
+              raise SystemExit(0)
           continuous = os.environ["WAYANG_PROFILE"] == "continuous"
           phases = ["initial", "retry", "new-data", "restart", "after-restart", "worker-unavailable", "worker-restart", "after-worker-restart", "stopped"] if continuous else ["initial", "retry", "restart"]
           assert result["phases"] == phases
@@ -413,7 +427,7 @@ jobs:
               assert result["inputRecords"] == "42"
               outage = json.loads((root / "worker-outage.json").read_text())
               assert outage["worker"] == "worker-2" and outage["throughBlocks"] == 6
-              assert outage["liveServices"] == ["backend", "coordinator", "frontend", "kafscale-proxy", "postgres", "runner-1", "runner-3", "wayang"]
+              assert outage["liveServices"] == ["backend", "coordinator", "etcd", "frontend", "kafscale-broker", "kafscale-read", "kafscale-write", "postgres", "runner-1", "runner-3", "wayang"]
           for phase in result["phases"]:
               browser = json.loads((root / f"browser-{phase}.json").read_text())
               parity = json.loads((root / f"verified-{phase}.json").read_text())
@@ -436,6 +450,10 @@ jobs:
             target/wayang-rust-compose/result.json
             target/wayang-rust-compose/fixture.json
             target/wayang-rust-compose/submitted-dag.txt
+            target/wayang-rust-compose/submitted-dag-replacement.txt
+            target/wayang-rust-compose/fencing-*.json
+            target/wayang-rust-compose/fencing-*.log
+            target/wayang-rust-compose/worker-*.log
             target/wayang-rust-compose/browser-*.json
             target/wayang-rust-compose/browser-*.png
             target/wayang-rust-compose/deployment-*.json

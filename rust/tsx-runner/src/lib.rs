@@ -3,6 +3,7 @@ pub mod broker;
 pub mod checkpoint;
 pub mod model;
 pub mod operators;
+pub mod publication;
 pub mod run_loop;
 pub mod run_plan;
 mod run_reservation;

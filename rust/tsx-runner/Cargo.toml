@@ -17,3 +17,4 @@ base64 = "=0.22.1"
 ed25519-dalek = { version = "=2.2.0", features = ["pkcs8", "pem"] }
 libc = "=0.2.191"
 time = { version = "=0.3.55", features = ["parsing", "formatting"] }
+ureq = { version = "=3.2.0", default-features = false }

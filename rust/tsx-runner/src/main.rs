@@ -1,9 +1,10 @@
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use tsx_runner::publication::HttpFencedBroker;
 use tsx_runner::{admission, broker::KafkaBroker, run_loop, run_plan, runner, worker};
 
-const HELP: &str = "Usage: tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory>\n       tsx-runner --version\n\nRuns isolated signed continuous pass-through plans and trusted-local bounded assignments. Fleet control and conformance signing are separate interfaces.";
+const HELP: &str = "Usage: tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory> [--publisher <http-origin> --controller <IP>]\n       tsx-runner --version\n\nRuns isolated signed continuous pass-through plans and trusted-local bounded assignments. Fenced publication requires both publisher and controller options for serve. Fleet control and conformance signing are separate interfaces.";
 
 fn main() {
     match command() {
@@ -135,7 +136,7 @@ fn run(args: &[String]) -> Result<(), (i32, String)> {
 }
 
 fn serve(args: &[String]) -> Result<(), (i32, String)> {
-    if args.len() != 10 {
+    if ![10, 12, 14].contains(&args.len()) {
         return Err((2, HELP.into()));
     }
     let mut listen = None;
@@ -143,6 +144,8 @@ fn serve(args: &[String]) -> Result<(), (i32, String)> {
     let mut site = None;
     let mut bootstrap = None;
     let mut state = None;
+    let mut publisher = None;
+    let mut controller = None;
     for pair in args.as_chunks::<2>().0 {
         let slot = match pair[0].as_str() {
             "--listen" => &mut listen,
@@ -150,6 +153,8 @@ fn serve(args: &[String]) -> Result<(), (i32, String)> {
             "--site" => &mut site,
             "--bootstrap" => &mut bootstrap,
             "--state" => &mut state,
+            "--publisher" => &mut publisher,
+            "--controller" => &mut controller,
             _ => return Err((2, format!("unknown serve argument: {}", pair[0]))),
         };
         if slot.is_some() {
@@ -165,8 +170,36 @@ fn serve(args: &[String]) -> Result<(), (i32, String)> {
         artifact_digest: executable_digest().map_err(|e| (3, e))?,
     };
     let listen = listen.ok_or((2, "missing --listen".into()))?;
+    if publisher.is_some() != controller.is_some() {
+        return Err((
+            2,
+            "--publisher and --controller must be supplied together".into(),
+        ));
+    }
+    let publication = publisher
+        .map(|endpoint| HttpFencedBroker::new(&endpoint))
+        .transpose()
+        .map_err(|error| (2, error))?;
+    let controller = controller
+        .map(|value| {
+            value
+                .parse::<std::net::IpAddr>()
+                .map_err(|_| "controller must be an IP address".to_string())
+        })
+        .transpose()
+        .map_err(|error| (2, error))?;
+    if controller.is_some_and(|address| address.is_unspecified() || address.is_multicast()) {
+        return Err((2, "controller must identify one TCP peer".into()));
+    }
     let worker = worker::Worker::open(config).map_err(|e| (3, e))?;
-    worker.serve(&listen, KafkaBroker).map_err(|e| (3, e))
+    match (publication, controller) {
+        (Some(broker), Some(controller)) => {
+            worker.serve_with_controller(&listen, broker, controller)
+        }
+        (None, None) => worker.serve(&listen, KafkaBroker),
+        _ => return Err((2, "incomplete fenced publication configuration".into())),
+    }
+    .map_err(|e| (3, e))
 }
 
 fn executable_digest() -> Result<String, String> {

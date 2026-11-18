@@ -83,6 +83,7 @@ public final class RustRollout {
     public interface Metadata {
         Inventory inspect(List<String> topics, String output);
         void provision(String output, int partitions, boolean mayCreate);
+        default void requireEmpty(String output, int partitions) { throw new IllegalStateException("output emptiness cannot be verified"); }
     }
 
     private final String bootstrap;
@@ -90,8 +91,13 @@ public final class RustRollout {
     private final List<Worker> workers;
     private final RustWorkerClient client;
     private final Metadata metadata;
+    private final RustPublicationGateway publication;
 
     public RustRollout(String bootstrap, Path catalog, List<Worker> workers, RustWorkerClient client, Metadata metadata) {
+        this(bootstrap, catalog, workers, client, metadata, null);
+    }
+
+    public RustRollout(String bootstrap, Path catalog, List<Worker> workers, RustWorkerClient client, Metadata metadata, RustPublicationGateway publication) {
         if (workers.isEmpty() || workers.size() > 3 || workers.stream().map(Worker::node).distinct().count() != workers.size()
                 || workers.stream().map(Worker::endpoint).distinct().count() != workers.size()) {
             throw new IllegalArgumentException("configure one to three distinct worker nodes and endpoints");
@@ -101,6 +107,7 @@ public final class RustRollout {
         this.workers = workers.stream().sorted(Comparator.comparing(Worker::node)).toList();
         this.client = client;
         this.metadata = metadata;
+        this.publication = publication;
     }
 
     public ObjectNode capabilities() {
@@ -122,6 +129,11 @@ public final class RustRollout {
         }
         ArrayNode profiles = result.putArray("profiles").add("bounded");
         if (incremental) profiles.add("continuous");
+        if (publication != null) {
+            result.put("publicationFencing", true);
+            result.putArray("switchModes").add("resume").add("restart");
+            for (JsonNode capability : nodes) if (!capability.path("publicationFencing").asBoolean()) throw new IllegalStateException("worker publication fencing is not configured");
+        }
         return result;
     }
 
@@ -136,7 +148,21 @@ public final class RustRollout {
     public ObjectNode next(JsonNode previous, JsonNode result) {
         validatePlan(previous);
         if (!previous.path("schema").asText().equals(CONTINUOUS_SCHEMA)) throw new IllegalArgumentException("a successor requires a continuous plan");
-        allowed(result, Set.of("deployment", "planHash", "state", "assignments", "error"));
+        verifyCompleted(previous, result);
+        ObjectNode plan = plan(previous.path("deployment").asText(), previous.path("sourceDagText").asText(),
+                previous.path("createdAtMicros").asText(), previous, true);
+        boolean changed = false;
+        for (JsonNode unit : plan.path("assignments")) {
+            JsonNode assignment = json(json(unit.path("requestText").asText()).path("assignmentText").asText());
+            for (JsonNode cursor : assignment.path("inputs").get(0).path("positions")) changed |= !cursor.path("from").equals(cursor.path("to"));
+        }
+        ObjectNode answer = JSON.createObjectNode().put("state", changed ? "ready" : "idle");
+        if (changed) answer.set("plan", plan); else answer.putNull("plan");
+        return answer;
+    }
+
+    private void verifyCompleted(JsonNode previous, JsonNode result) {
+        allowed(result, Set.of("deployment", "planHash", "state", "assignments", "error", "publicationEpoch"));
         if (!result.path("deployment").equals(previous.path("deployment")) || !result.path("planHash").equals(previous.path("planHash"))
                 || !result.path("state").asText().equals("completed") || !result.path("assignments").isArray()
                 || result.path("assignments").size() != previous.path("assignments").size()) {
@@ -150,18 +176,6 @@ public final class RustRollout {
                     || status.path("activationRetryable").asBoolean(true)) throw new IllegalArgumentException("the previous worker inventory is not complete");
             verifyStatus(unit, status);
         }
-        ObjectNode plan = plan(previous.path("deployment").asText(), previous.path("sourceDagText").asText(),
-                previous.path("createdAtMicros").asText(), previous, true);
-        boolean changed = false;
-        for (JsonNode unit : plan.path("assignments")) {
-            JsonNode assignment = json(json(unit.path("requestText").asText()).path("assignmentText").asText());
-            for (JsonNode cursor : assignment.path("inputs").get(0).path("positions")) {
-                changed |= !cursor.path("from").equals(cursor.path("to"));
-            }
-        }
-        ObjectNode answer = JSON.createObjectNode().put("state", changed ? "ready" : "idle");
-        if (changed) answer.set("plan", plan); else answer.putNull("plan");
-        return answer;
     }
 
     private ObjectNode plan(String deployment, String sourceText, String createdAt, JsonNode previous, boolean continuous) {
@@ -312,8 +326,15 @@ public final class RustRollout {
         return budget;
     }
 
-    public ObjectNode execute(JsonNode plan) {
+    public synchronized ObjectNode execute(JsonNode plan) {
         validatePlan(plan);
+        if (publication != null && publication.epoch(plan.path("deployment").asText()).equals("0")) {
+            for (JsonNode unit : plan.path("assignments")) {
+                JsonNode current = client.get(worker(unit), "/v1/publication");
+                fields(current, Set.of("publicationEpoch", "deployment", "operation"));
+                if (!current.path("publicationEpoch").isNull() || !current.path("deployment").isNull() || !current.path("operation").isNull()) throw new IllegalArgumentException("the worker pool already retains an execution chain; use its active replacement operation or a fresh isolated pool");
+            }
+        }
         JsonNode dag = source(plan.path("sourceDagText").asText());
         AtomicReference<JsonNode> result = new AtomicReference<>();
         RustStageAction action = () -> {
@@ -368,6 +389,23 @@ public final class RustRollout {
         metadata.provision(output.path("topic").asText(), Integer.parseInt(output.path("partitionCount").asText()), output.path("create").asBoolean());
         List<JsonNode> units = new ArrayList<>();
         plan.path("assignments").forEach(units::add);
+        if (publication != null) {
+            List<Call> saved = parallel(units, unit -> client.get(worker(unit), "/v1/jobs/" + requestHash(unit)));
+            if (saved.stream().allMatch(call -> call.error() == null && call.status().path("state").asText().equals("completed"))) {
+                ArrayNode statuses = JSON.createArrayNode();
+                for (Call call : saved) {
+                    verifyStatus(call.unit(), call.status());
+                    requirePublicationEpoch(call.status());
+                    publication.verifyCompletion(call.unit(), call.status());
+                    statuses.add(call.status());
+                }
+                return outcome(plan, "completed", statuses, null);
+            }
+            for (Call call : saved) if (call.error() != null && !(call.error() instanceof RustWorkerClient.Rejected rejected && rejected.status() == 404)) throw call.error();
+            if (publication.epoch(plan.path("deployment").asText()).equals("0")) metadata.requireEmpty(output.path("topic").asText(), Integer.parseInt(output.path("partitionCount").asText()));
+            publication.admit(plan);
+            for (JsonNode unit : units) installPublication(plan, unit, false, null);
+        }
         List<Call> prepared = parallel(units, unit -> client.post(worker(unit), "/v1/prepare", unit.path("requestText").asText()));
         if (CONTINUOUS_SCHEMA.equals(plan.path("schema").asText()) && prepared.stream().anyMatch(call -> call.error() != null
                 && !(call.error() instanceof RustWorkerClient.Rejected rejected && Set.of(400, 409, 413, 422).contains(rejected.status())))) {
@@ -390,6 +428,7 @@ public final class RustRollout {
         } catch (RuntimeException error) {
             return abort(plan, prepared, error.getMessage());
         }
+        if (publication != null) for (Call call : prepared) publication.register(plan, call.unit(), call.status());
         List<Call> activated = parallel(units, unit -> client.post(worker(unit), "/v1/activate/" + requestHash(unit), ""));
         ArrayNode statuses = JSON.createArrayNode();
         boolean completed = true;
@@ -401,9 +440,69 @@ public final class RustRollout {
             if (status.path("activationRetryable").asBoolean()) throw new IllegalStateException("prepared publication requires identical retry");
             if (!Set.of("completed", "failed", "cancelled").contains(state)) throw new IllegalStateException("worker outcome requires reconciliation");
             completed &= state.equals("completed");
+            if (publication != null && state.equals("completed")) publication.verifyCompletion(call.unit(), status);
             statuses.add(status);
         }
         return outcome(plan, completed ? "completed" : "failed", statuses, completed ? null : "one or more workers failed");
+    }
+
+    private void installPublication(JsonNode plan, JsonNode unit, boolean reset, String expectedHead) {
+        JsonNode grant = publication.grant(plan.path("deployment").asText(), unit.path("node").asText());
+        JsonNode current = client.get(worker(unit), "/v1/publication");
+        if (current.path("publicationEpoch").equals(grant.path("epoch")) && current.path("deployment").equals(grant.path("deployment"))
+                && current.path("operation").equals(grant.path("operation"))) return;
+        ObjectNode install = JSON.createObjectNode().put("reset", reset);
+        install.set("grant", grant);
+        if (expectedHead == null) install.putNull("expectedHead"); else install.put("expectedHead", expectedHead);
+        JsonNode installed = client.post(worker(unit), "/v1/publication", stringify(install));
+        if (!installed.path("publicationEpoch").equals(grant.path("epoch")) || !installed.path("operation").equals(grant.path("operation"))
+                || !installed.path("node").equals(unit.path("node")) || !installed.path("state").asText().equals("installed")) throw new IllegalStateException("worker publication installation requires reconciliation");
+    }
+
+    public synchronized ObjectNode replace(JsonNode input) {
+        if (publication == null) throw new IllegalArgumentException("publication fencing is not configured");
+        fields(input, Set.of("operation", "mode", "expectedEpoch", "plan", "result", "replacement"));
+        JsonNode previous = input.path("plan");
+        validatePlan(previous);
+        if (!previous.path("schema").asText().equals(CONTINUOUS_SCHEMA)) throw new IllegalArgumentException("replacement requires continuous execution");
+        verifyCompleted(previous, input.path("result"));
+        if (!publication.hasOperation(input.path("operation").asText())) for (JsonNode status : input.path("result").path("assignments")) {
+            for (JsonNode unit : previous.path("assignments")) if (unit.path("node").equals(status.path("node"))) publication.verifyCompletion(unit, status);
+        }
+        String mode = input.path("mode").asText();
+        JsonNode target = mode.equals("resume") ? previous : input.path("replacement");
+        if (mode.equals("resume") && !input.path("replacement").isNull()) throw new IllegalArgumentException("resume does not accept a replacement plan");
+        if (mode.equals("restart")) {
+            validatePlan(target);
+            if (!target.path("schema").asText().equals(CONTINUOUS_SCHEMA) || !target.path("sequence").asText().equals("1")) throw new IllegalArgumentException("restart requires a new continuous plan from the beginning");
+            for (int index = 0; index < target.path("assignments").size(); index++) {
+                JsonNode unit = target.path("assignments").get(index);
+                JsonNode old = previous.path("assignments").get(index);
+                JsonNode request = json(unit.path("requestText").asText());
+                JsonNode assignment = json(request.path("assignmentText").asText());
+                JsonNode oldAssignment = json(json(old.path("requestText").asText()).path("assignmentText").asText());
+                if (!unit.path("node").equals(old.path("node")) || !unit.path("endpoint").equals(old.path("endpoint"))
+                        || !unit.path("inputTopic").equals(old.path("inputTopic")) || !assignment.path("inputs").get(0).path("partitionCount").equals(oldAssignment.path("inputs").get(0).path("partitionCount"))) throw new IllegalArgumentException("restart changed the complete topic placement");
+                for (JsonNode position : assignment.path("inputs").get(0).path("positions")) if (!position.path("from").asText().equals("0")) throw new IllegalArgumentException("restart must start from offset zero");
+            }
+            if (!publication.hasOperation(input.path("operation").asText())) {
+                metadata.provision(target.path("output").path("topic").asText(), Integer.parseInt(target.path("output").path("partitionCount").asText()), target.path("output").path("create").asBoolean());
+                metadata.requireEmpty(target.path("output").path("topic").asText(), Integer.parseInt(target.path("output").path("partitionCount").asText()));
+            }
+        }
+        ObjectNode result = publication.rotate(input.path("operation").asText(), mode, input.path("expectedEpoch").asText(), previous, target);
+        for (int index = 0; index < target.path("assignments").size(); index++) installPublication(target, target.path("assignments").get(index), mode.equals("restart"), requestHash(previous.path("assignments").get(index)));
+        return result;
+    }
+
+    public synchronized ObjectNode retire(JsonNode input) {
+        if (publication == null) throw new IllegalArgumentException("publication fencing is not configured");
+        fields(input, Set.of("operation", "deployment", "expectedEpoch"));
+        return publication.retire(input.path("operation").asText(), input.path("deployment").asText(), input.path("expectedEpoch").asText());
+    }
+
+    private static void requirePublicationEpoch(JsonNode status) {
+        if (!status.path("publicationEpoch").isTextual() || decimal(status.path("publicationEpoch").asText()) <= 0) throw new IllegalStateException("worker did not retain its publication epoch");
     }
 
     private ObjectNode abort(JsonNode plan, List<Call> calls, String reason) {
@@ -457,6 +556,18 @@ public final class RustRollout {
         ObjectNode value = JSON.createObjectNode().put("deployment", plan.path("deployment").asText())
                 .put("planHash", plan.path("planHash").asText()).put("state", state);
         value.set("assignments", statuses);
+        if (publication != null) {
+            String epoch = publication.epoch(plan.path("deployment").asText());
+            if (state.equals("completed")) {
+                epoch = null;
+                for (JsonNode status : statuses) {
+                    requirePublicationEpoch(status);
+                    if (epoch != null && !epoch.equals(status.path("publicationEpoch").asText())) throw new IllegalStateException("worker completion epochs disagree");
+                    epoch = status.path("publicationEpoch").asText();
+                }
+            }
+            value.put("publicationEpoch", epoch);
+        }
         if (error != null) value.put("error", error);
         return value;
     }
@@ -743,10 +854,14 @@ public final class RustRollout {
     }
 
     public static Metadata kafka(String bootstrap) {
+        return kafka(bootstrap, bootstrap);
+    }
+
+    public static Metadata kafka(String readBootstrap, String writeBootstrap) {
         return new Metadata() {
             @Override
             public Inventory inspect(List<String> topics, String output) {
-                try (Admin admin = KafScaleClients.admin(bootstrap); KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap)) {
+                try (Admin admin = KafScaleClients.admin(writeBootstrap); KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(readBootstrap)) {
                     Set<String> existing = admin.listTopics().names().get(30, TimeUnit.SECONDS);
                     if (!existing.containsAll(topics)) throw new IllegalArgumentException("one or more source topics do not exist");
                     Map<String, List<Position>> inputs = new LinkedHashMap<>();
@@ -764,7 +879,7 @@ public final class RustRollout {
 
             @Override
             public void provision(String output, int count, boolean mayCreate) {
-                try (Admin admin = KafScaleClients.admin(bootstrap); KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(bootstrap)) {
+                try (Admin admin = KafScaleClients.admin(writeBootstrap); KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(readBootstrap)) {
                     if (!admin.listTopics().names().get(30, TimeUnit.SECONDS).contains(output)) {
                         if (!mayCreate) throw new IllegalStateException("admitted output topic disappeared");
                         try { admin.createTopics(List.of(new NewTopic(output, count, (short) 1))).all().get(30, TimeUnit.SECONDS); }
@@ -773,6 +888,14 @@ public final class RustRollout {
                     if (partitions(consumer, output).size() != count) throw new IllegalStateException("output topic inventory changed");
                 } catch (InterruptedException error) { Thread.currentThread().interrupt(); throw new IllegalStateException("output provisioning interrupted", error); }
                 catch (Exception error) { throw new IllegalStateException("output topic cannot be provisioned", error); }
+            }
+
+            @Override
+            public void requireEmpty(String output, int count) {
+                try (KafkaConsumer<byte[], byte[]> consumer = KafScaleClients.consumer(readBootstrap)) {
+                    List<TopicPartition> partitions = partitions(consumer, output);
+                    if (partitions.size() != count || consumer.endOffsets(partitions, Duration.ofSeconds(30)).values().stream().anyMatch(offset -> offset != 0)) throw new IllegalArgumentException("fenced deployment requires an empty output topic");
+                }
             }
         };
     }

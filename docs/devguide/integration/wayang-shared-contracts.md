@@ -125,3 +125,16 @@ python3 tools/execution_contract_vectors.py --check
 The command writes `docs/datamodel-2026/testvectors/execution-contracts.v1.json`.
 Algorithm fixtures such as `pair-xcorr.v1.json` and statistics/segment vectors retain their existing producers.
 These assignment cases establish neither numerical operator parity nor deployed Rust execution.
+
+## Keep publication authority outside the assignment envelope
+
+The local [fencing protocol](../../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
+adds private publication grants and a separate `publicationEpoch`. It does not change shared assignment generation,
+fence, raw source/fragment hashes, complete internal positions or offline refusal vectors. A current number in an
+assignment is not publication authority. The gateway checks the captured token and registered output at the actual
+write boundary; read/write Proxy separation and broker ACL prevent a worker from bypassing that gateway.
+
+Same-DAG resume retains the original assignment context and state while advancing only publication authority.
+Changed-DAG restart creates a distinct normal deployment and replays the same complete inputs from zero into a
+fresh output after old grants are revoked. Neither case adds cross-runtime checkpoint portability. The public
+assignment validator remains an offline boundary and does not inspect private grants or contact the gateway.

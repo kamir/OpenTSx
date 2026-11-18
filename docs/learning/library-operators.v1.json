@@ -1037,7 +1037,8 @@
         "Read the original exported YAML through DagToWayang, compare its raw-text hash, and build the two-topic multi-sink fixture without splitting either topic.",
         "Run the shared 22-message rejection fixture and distinguish an unsupported operator from a missing target or series binding.",
         "Trace the signed bounded JVM delivery from the job-bound conformance challenge through TsxSiteAgent.pollOnce, then distinguish one driver JVM with three site-agent instances from three independent JVM processes.",
-        "Freeze the source HEAD and tracked runtime, fixture and tool hashes before a measurement; reject an untracked Java class and a source commit made during execution."
+        "Freeze the source HEAD and tracked runtime, fixture and tool hashes before a measurement; reject an untracked Java class and a source commit made during execution.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
       ],
       "starter": {
         "language": "java",
@@ -1055,7 +1056,8 @@
         "The remote Rust source is a separate mapping. Its complete topic is read on the assigned worker, without materializing raw payloads in the Java driver.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
         "A frozen source entry neither performs broker reads during construction nor supplies a production admission gate.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "references": {
         "manual": [
@@ -1073,7 +1075,8 @@
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSource.java#L12",
@@ -1090,7 +1093,11 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanClient.java#challenge",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#pollOnce",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/ConformanceHandshake.java#validate",
-          "tools/wayang_federation_measurement.py#source_snapshot"
+          "tools/wayang_federation_measurement.py#source_snapshot",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
@@ -1111,7 +1118,11 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/ConformanceHandshakeTest.java#aTrustedServerRejectsAClientWithoutACertificateDuringTls",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/SiteConformanceChecks.java#report",
           "tools/test_wayang_federation_measurement.py#test_untracked_java_source_refuses_the_run_before_build_or_output",
-          "tools/test_wayang_federation_measurement.py#test_a_source_commit_during_java_execution_prevents_a_complete_report"
+          "tools/test_wayang_federation_measurement.py#test_a_source_commit_during_java_execution_prevents_a_complete_report",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json",
@@ -1140,7 +1151,8 @@
         "Explain why acknowledgements and deterministic records do not make the transport exactly once.",
         "Run TsxTopicSinkStreamingTest to compare an upstream Avro failure with an invalid later JSON signal.",
         "On a disposable KafScale broker, run TsxSignalSinkIntegrationTest and inspect the signal series key, schema header and JSON payload.",
-        "Trace the shared remote sink from private preparation through cross-topic derived-series ownership checks to activation acknowledgements."
+        "Trace the shared remote sink from private preparation through cross-topic derived-series ownership checks to activation acknowledgements.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
       ],
       "starter": {
         "language": "java",
@@ -1161,7 +1173,8 @@
         "JSON whole-batch validation must not make Avro upstream streams eager.",
         "A shared output topic does not make multi-worker activation atomic. A failed activation can leave an acknowledged output prefix.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "references": {
         "manual": [
@@ -1177,14 +1190,19 @@
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids",
           "docs/datamodel-2026/schemas/opentsx.signal.v1.schema.json",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxTopicSink.java#L14",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#L1",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxTopicSink.java#write",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSink.java#RustTopicSink",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#stage"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#stage",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
@@ -1199,7 +1217,11 @@
           "rust/tsx-runner/tests/increments.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
-          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py"
         ],
         "vectors": [
           "opentsx-model/src/test/resources/testvectors/wire-format.json"
@@ -1231,7 +1253,9 @@
         "Restore state after every input of the compiled single-input pair workload and verify one result per unordered pair with the original input orientation.",
         "Explain why an original-text hash changes with YAML whitespace while the normalized graph remains equal.",
         "Compare the local increment checkpoint with the signed JVM continuation identity and its durable admission outcome.",
-        "Stop one site, reload the completeness coordinator, return the site and verify appended final revisions without replacing earlier Kafka records."
+        "Stop one site, reload the completeness coordinator, return the site and verify appended final revisions without replacing earlier Kafka records.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
+        "Lose a retirement reply after a bounded result is acknowledged. Verify that recovery reuses the saved result and the same retirement operation, without another execute call or early topic release."
       ],
       "starter": {
         "language": "java",
@@ -1250,11 +1274,12 @@
         "A local checkpoint provides neither distributed ownership nor exactly-once output.",
         "A segmenter checkpoint is private runtime state, not a portable signal or a partition-placement assignment.",
         "Incremental segmentation keeps pending output; bounded completion flushes it before the next checkpoint is written.",
-        "An uncertain Rust activation retries saved bytes with the same hash while topic ownership remains held; it cannot choose another clock, source cut or worker.",
+        "A lost gateway HTTP acknowledgement can return its durable cached receipt. An unknown broker outcome blocks retransmission and replacement while whole-topic ownership remains held.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "One immutable worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
+        "One completed worker head and one uncertain candidate bound history. A stopped deployment does not authorize another chain or an implicit state reset.",
         "Catalog membership does not turn the local checkpoint round-trip into catalog admission, fenced ownership or state-ABI migration.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "references": {
         "manual": [
@@ -1272,7 +1297,8 @@
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s63-checkpoints",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCheckpoint.java#TsxCheckpoint",
@@ -1287,7 +1313,12 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#requireContinuation",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#checkpoint",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#resume",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/CompletenessCoordinator.java#acknowledge"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/CompletenessCoordinator.java#acknowledge",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
+          "opentsx-saas-backend/app/services/wayang_service.py#finish_stop"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1309,7 +1340,12 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#hashesOriginalTextBeforeParsing",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#retainedCheckpointMustMatchExactAdmittedIdentity",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#explicitRecoveryRequiresTheSameGrantAndRetainedAtomicCheckpoint",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java#stoppedSiteLeavesImmutableIncompleteRecordsThenAppendsFinalRevisionOne"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java#stoppedSiteLeavesImmutableIncompleteRecordsThenAppendsFinalRevisionOne",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py",
+          "opentsx-saas-backend/tests/test_wayang_switch.py#test_bounded_lost_retirement_reply_reuses_durable_result_and_operation"
         ],
         "vectors": []
       }
@@ -1335,7 +1371,8 @@
         "Bind the existing exact assignment text to the signed bounded JVM wrapper and its output sink identity, fingerprint contract, membership and declared scopes.",
         "Compare plain RunnerPlan.parse with signature-verified admission and prove that unsigned parsing cannot access a continuation.",
         "Replay a retained acknowledgement after losing its request or response and advancing the logical clock beyond conformance expiry; then verify that a fresh unqualified delivery remains blocked.",
-        "For the bounded JVM wrapper, add an unused admitted topic or remove a required input and verify plan.invalid before admission; retain a matching multi-topic control."
+        "For the bounded JVM wrapper, add an unused admitted topic or remove a required input and verify plan.invalid before admission; retain a matching multi-topic control.",
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
       ],
       "starter": {
         "language": "java",
@@ -1358,7 +1395,8 @@
         "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission.",
         "An expired conformance report still blocks fresh activation; it does not invalidate an already retained acknowledgement.",
         "The JVM wrapper source-topic gate does not change the shared offline assignment validator or the Rust contract.",
-        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation."
+        "A transient continuous preparation failure retains the exact plan and private candidates for retry; every preparation and cross-topic ownership check must succeed before activation.",
+        "Fenced replacement changes publication authority, not the numerical starter. Resume preserves state and cursors; restart requires a changed DAG and fresh output, with no automatic gateway failover or state migration."
       ],
       "references": {
         "manual": [
@@ -1373,7 +1411,8 @@
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment",
           "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s110-orchestrate-the-bounded-ui-rust-profile",
-          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers"
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s111-continue-complete-topics-on-fixed-rust-workers",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment"
         ],
         "source": [
           "opentsx-model/src/main/java/org/opentsx/model/contracts/ExecutionAssignments.java#L56",
@@ -1387,7 +1426,11 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#accept",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxBoundedSiteExecution.java#run",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#pollOnce",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/RunnerPlan.java#parse"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/RunnerPlan.java#parse",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
+          "rust/tsx-runner/src/publication.rs",
+          "rust/tsx-runner/src/worker.rs#install_publication",
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
         ],
         "tests": [
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
@@ -1405,7 +1448,11 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unsentAckReplaysTheRetainedOutcomeAfterConformanceExpires",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unusedAdmittedInputIsRejectedBeforeExecution",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#aFragmentSourceWithoutAnAdmittedInputIsRejectedBeforeExecution",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#matchingMultipleWholeTopicInputsAreAcceptedIndependentlyOfInventoryOrder"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#matchingMultipleWholeTopicInputsAreAcceptedIndependentlyOfInventoryOrder",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
+          "rust/tsx-runner/tests/publication_fencing.rs",
+          "opentsx-saas-backend/tests/test_wayang_switch.py",
+          "tools/test_kafscale_fenced_topology.py"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

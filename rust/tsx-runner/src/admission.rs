@@ -63,6 +63,7 @@ pub struct Cut {
 }
 
 pub struct Admitted {
+    pub request_text: String,
     pub request: LocalRequest,
     pub assignment: Value,
     pub request_hash: String,
@@ -233,6 +234,7 @@ fn admit_with_caps(
         return Err("whole input cut exceeds the record limit".into());
     }
     Ok(Admitted {
+        request_text: text.into(),
         cut: Cut {
             topic: topic.to_string(),
             positions,

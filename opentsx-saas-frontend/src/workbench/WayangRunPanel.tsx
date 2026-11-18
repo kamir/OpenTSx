@@ -56,7 +56,7 @@ export default function WayangRunPanel({ onSave, profile = 'bounded' }: {
     return () => { active = false; };
   }, [signedIn]);
   const visibleDeployments = deployments.filter((deployment) => (deployment.profile ?? 'bounded') === profile);
-  const pending = visibleDeployments.some((deployment) => ['queued', 'running', 'idle', 'stopping'].includes(deployment.state));
+  const pending = visibleDeployments.some((deployment) => ['queued', 'running', 'idle', 'stopping', 'waiting', 'switching'].includes(deployment.state));
   useEffect(() => {
     if (!signedIn || !pending) return;
     let active = true;
@@ -69,6 +69,12 @@ export default function WayangRunPanel({ onSave, profile = 'bounded' }: {
   const available = capabilities?.canRun && (profile === 'bounded' || capabilities.profiles?.includes('continuous'));
   const stopped = profile === 'continuous' && visibleDeployments.some((deployment) =>
     deployment.flowId === flow.savedId && deployment.state === 'stopped');
+  const canReplace = (deployment: WayangDeployment) => profile === 'continuous' && capabilities?.publicationFencing
+    && available && deployment.flowId === flow.savedId && !deployment.stopRequested && !deployment.publicationRetired
+    && /^[1-9]\d*$/.test(deployment.publicationEpoch ?? '') && /^[1-9]\d*$/.test(deployment.completedCycles ?? '')
+    && ['idle', 'queued', 'running'].includes(deployment.state) && deployment.switch?.state !== 'pending';
+  const sameTopics = (deployment: WayangDeployment) => JSON.stringify(configuration().inputTopics.slice().sort())
+    === JSON.stringify(deployment.assignments.map((item) => item.inputTopic).sort());
   const title = profile === 'continuous' ? 'Continuous' : 'Bounded';
   let dagText = '';
   let blocker: string | null = null;
@@ -106,12 +112,33 @@ export default function WayangRunPanel({ onSave, profile = 'bounded' }: {
       setBusy(false);
     }
   };
+  const replace = async (current: WayangDeployment, mode: 'resume' | 'restart') => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!current.publicationEpoch) throw new Error('The deployment has no publication epoch.');
+      let target: { flowId: number; dagText: string } | undefined;
+      if (mode === 'restart') {
+        flow.setWayang(configuration());
+        const id = await onSave();
+        if (id === null) throw new Error('Save the flow to your account before running it.');
+        target = { flowId: id, dagText: buildWayangDag(useFlow.getState(), configuration(), capabilities?.operators ?? []) };
+      }
+      const deployment = await wayangAPI.replace(current.id, { expectedEpoch: current.publicationEpoch, mode, ...target });
+      setDeployments((rows) => rows.map((item) => item.id === current.id ? deployment : item));
+    } catch (failure) {
+      setError(reason(failure));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <fieldset className="wb-wayang-run">
       <legend>{title} Wayang on Rust</legend>
       {profile === 'continuous' ? <p>Keep reading each whole topic from its last verified positions.
         Operator state continues between capped cycles. Stop waits for any in-flight cycle to reconcile.
-        This local worker profile retains one continuous chain; a replacement requires resetting its disposable state.</p>
+        {capabilities?.publicationFencing ? ' Resume rotates publication authority and preserves the verified checkpoint.'
+          : ' This local worker profile retains one continuous chain; a replacement requires resetting its disposable state.'}</p>
         : <p>Run the selected cleaning chain to a frozen Kafka cut. Each selected topic stays whole on one worker.
           This target is separate from the continuous Java processor and Flink execution.</p>}
       {error && <p role="alert">{error}</p>}
@@ -121,8 +148,25 @@ export default function WayangRunPanel({ onSave, profile = 'bounded' }: {
           {profile === 'continuous' && <>
             <p>Cycle {deployment.currentCycle}; {deployment.completedCycles} completed cycles</p>
             <p>{deployment.inputRecords} total input records; {deployment.outputRecords} total output records</p>
-            {deployment.state !== 'stopped' && <button disabled={busy || deployment.stopRequested}
+            {deployment.publicationEpoch !== undefined && <p>Publication epoch {deployment.publicationEpoch}</p>}
+            {!['stopped', 'replaced'].includes(deployment.state) && <button disabled={busy || deployment.stopRequested
+              || ['switching', 'waiting'].includes(deployment.state)}
               onClick={() => stop(deployment.id)}>Stop deployment {deployment.id}</button>}
+            {canReplace(deployment) && <>
+              {capabilities?.switchModes?.includes('resume') && <button disabled={busy}
+                onClick={() => replace(deployment, 'resume')}>Resume deployment {deployment.id} with fencing</button>}
+              {capabilities?.switchModes?.includes('restart') && <>
+                <p>Restart replays all selected topics from the start into a fresh output topic.</p>
+                <button disabled={busy || !!blocker || !sameTopics(deployment)
+                  || deployment.assignments.some((item) => item.outputTopic === fields.outputTopic.trim())}
+                  onClick={() => replace(deployment, 'restart')}>Restart changed DAG for deployment {deployment.id}</button>
+              </>}
+            </>}
+            {deployment.switch && <>
+              <p>Publication switch {deployment.switch.operation}: {deployment.switch.state}</p>
+              {deployment.switch.deployment !== deployment.id && <p>Replacement target: {deployment.switch.deployment}</p>}
+              {deployment.switch.error && deployment.switch.error !== deployment.error && <p>{deployment.switch.error}</p>}
+            </>}
           </>}
           {deployment.error && <p>{deployment.error}</p>}
           <ul>{deployment.assignments.map((assignment) => <li key={assignment.node}>
@@ -173,7 +217,9 @@ export default function WayangRunPanel({ onSave, profile = 'bounded' }: {
       {signedIn && !capabilities?.canRun && <p>{capabilities?.reason ?? `Checking the ${profile} target.`}</p>}
       {signedIn && capabilities?.canRun && !available && <p>This installation does not advertise the continuous Rust profile.</p>}
       {blocker && <p className="wb-muted">{blocker}</p>}
-      {stopped ? <p>This deployment is stopped. Reset disposable worker state before deploying a replacement.</p>
+      {stopped ? <p>{capabilities?.publicationFencing
+        ? 'This deployment is retired. Replacement is unavailable after Stop.'
+        : 'This deployment is stopped. Reset disposable worker state before deploying a replacement.'}</p>
         : <button disabled={!signedIn || !available || !!blocker || busy} onClick={run}>
           {busy ? `Queuing ${profile} run` : profile === 'continuous' ? 'Run continuously with Wayang' : 'Run bounded with Wayang'}
         </button>}

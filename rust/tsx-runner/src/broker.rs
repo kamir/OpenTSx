@@ -37,6 +37,33 @@ pub struct OutputRecord {
 pub trait Broker {
     fn read(&mut self, run: &Admitted) -> Result<Vec<InputRecord>, String>;
     fn publish(&mut self, run: &Admitted, records: &[OutputRecord]) -> Result<(), String>;
+
+    fn fenced(&self) -> bool {
+        false
+    }
+
+    fn capture_grant(
+        &mut self,
+        _: &Admitted,
+        grant: Option<&crate::publication::PublicationGrant>,
+    ) -> Result<Option<crate::publication::PublicationGrant>, String> {
+        if grant.is_some() {
+            return Err("this broker does not support captured publication grants".into());
+        }
+        Ok(None)
+    }
+
+    fn publish_captured(
+        &mut self,
+        run: &Admitted,
+        records: &[OutputRecord],
+        grant: Option<&crate::publication::PublicationGrant>,
+    ) -> Result<(), String> {
+        if grant.is_some() {
+            return Err("this broker does not support captured publication grants".into());
+        }
+        self.publish(run, records)
+    }
 }
 
 #[derive(Clone)]

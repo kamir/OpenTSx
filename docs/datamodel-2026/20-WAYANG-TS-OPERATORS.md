@@ -410,13 +410,15 @@ placeholder costs are not a measured placement model. All workers must match the
 
 The PostgreSQL journal accepts exact source text once per installation and persists the accepted clock and plan.
 Normal authentication and administrator permission apply. A standalone coordinator owns a database advisory lock;
-the Java driver is stateless for authoritative control. Driver and worker HTTP ports remain internal to the trusted
-Compose network. This is not the signed runner-plan protocol or production authorization in sections 8 to 11.
+PostgreSQL owns deployment control while the Java driver keeps a separate private publication ledger.
+Driver control and worker publication bind separate internal networks; a private token protects control.
+This is not the signed runner-plan protocol or production authorization in sections 8 to 11.
 
 Every worker fully prepares its bounded input and candidate output privately before any activation. The stage checks
 input-series and derived-series ownership across all preparations, then activates in parallel. Broker acknowledgements
-precede the worker checkpoint and receipt. An uncertain publication has `activationRetryable=true`; retries retain
-the same request hash, saved output, clock and source cut while PostgreSQL topic ownership remains held. Completed
+precede the worker checkpoint and receipt. The local gateway verifies captured grants and registered output.
+A lost HTTP response after durable acknowledgement returns the cached receipt; an unknown broker outcome remains
+quarantined and blocks replacement while PostgreSQL topic ownership remains held. Completed
 retry returns the stored receipt. Partial activation can expose at-least-once output, without atomic publication or
 rollback across workers. The [acceptance helper](../../tools/verify_wayang_rust_compose.py) exercises the real browser
 and compares output with the Java reference; its generated evidence records the actual run outcome.
@@ -435,10 +437,12 @@ still covers the complete topic. Empty input creates no new increment.
 Cumulative series manifests prevent a later topic from taking an earlier series identity. Acknowledged worker
 heads and cumulative backend counters survive service restart. The durable Stop operation reconciles dispatched
 work before releasing backend ownership. Worker history keeps one immutable chain/head and at most one candidate;
-the backend retains two completed cycles plus pending work. Uncertain publication reuses saved bytes and may
-produce identical duplicates. This is local at-least-once execution, without broker-restart qualification,
-automatic failover, chain replacement, production fencing or durable Iceberg publication. Specification S1.11
-defines the protocol and its resource limits.
+the backend retains two completed cycles plus pending work. A single-owner gateway serializes publication and
+whole-topic epoch rotation, using segregated KafScale proxies and broker ACL. Same-DAG resume preserves state and
+cursors; changed-DAG restart replays the same complete inputs from zero into a distinct fresh output after
+revocation. Unknown broker outcomes block handover. The gateway has explicit local capacity limits and no
+automatic failover. Specifications S1.11 and S1.12 define these local boundaries; broker-restart qualification,
+signed fleet operation, state migration and durable Iceberg publication remain separate.
 
 ## 7. Flow shapes
 

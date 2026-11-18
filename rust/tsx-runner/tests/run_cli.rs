@@ -1,34 +1,15 @@
+#[path = "common/runner.rs"]
+mod cli_runner;
+
 use std::fs;
 use std::path::PathBuf;
-use std::process::{Command, Output};
+use std::process::Output;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static NEXT_DIRECTORY: AtomicU64 = AtomicU64::new(0);
 
 fn cli(arguments: &[&str]) -> Output {
-    let binary = env!("CARGO_BIN_EXE_tsx-runner");
-    let prefix = match std::env::var("CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER") {
-        Ok(value) => {
-            let words: Vec<_> = value.split_ascii_whitespace().map(str::to_owned).collect();
-            assert!(
-                !words.is_empty(),
-                "the configured ARMv7 runner prefix is empty"
-            );
-            words
-        }
-        Err(std::env::VarError::NotPresent) => Vec::new(),
-        Err(std::env::VarError::NotUnicode(_)) => {
-            panic!("the configured ARMv7 runner prefix is not UTF-8")
-        }
-    };
-    let mut command = if let Some(program) = prefix.first() {
-        let mut command = Command::new(program);
-        command.args(&prefix[1..]).arg(binary);
-        command
-    } else {
-        Command::new(binary)
-    };
-    command.args(arguments).output().unwrap()
+    cli_runner::runner().args(arguments).output().unwrap()
 }
 
 #[test]
@@ -39,6 +20,7 @@ fn help_advertises_the_signed_run_and_preserves_bounded_commands() {
     assert!(text.contains("tsx-runner run --plan <file>|- --config <file>"));
     assert!(text.contains("tsx-runner replay --request <file> --checkpoint <file>"));
     assert!(text.contains("tsx-runner serve --listen <addr>"));
+    assert!(text.contains("[--publisher <http-origin> --controller <IP>]"));
     assert!(output.stderr.is_empty());
 }
 
@@ -95,4 +77,47 @@ fn version_is_the_stamped_package_version() {
         format!("tsx-runner {}\n", env!("CARGO_PKG_VERSION"))
     );
     assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn signed_run_and_fenced_serve_keep_distinct_explicit_cli_authority() {
+    let output = cli(&[
+        "run",
+        "--plan",
+        "-",
+        "--publisher",
+        "http://127.0.0.1:39095",
+    ]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8(output.stderr).unwrap(),
+        "unknown run argument: --publisher\n"
+    );
+    for (option, value) in [
+        ("--publisher", "http://127.0.0.1:39095"),
+        ("--controller", "127.0.0.1"),
+    ] {
+        let output = cli(&[
+            "serve",
+            "--listen",
+            "127.0.0.1:39096",
+            "--node",
+            "worker-1",
+            "--site",
+            "local",
+            "--bootstrap",
+            "127.0.0.1:39093",
+            "--state",
+            "unused-cli-state",
+            option,
+            value,
+        ]);
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert_eq!(
+            String::from_utf8(output.stderr).unwrap(),
+            "--publisher and --controller must be supplied together\n"
+        );
+    }
 }

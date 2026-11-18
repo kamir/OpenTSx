@@ -115,7 +115,12 @@ context; they are not skipped.
 
 The [trusted-local replay and worker profiles](rust-runner-local.md) also
 execute the existing local cleaning subset. Their availability does not extend
-the signed B1 profile beyond pass-through. The public `agent` and signed
+the signed B1 profile beyond pass-through.
+The separate [local UI worker profile](wayang-rust-compose.md) uses a
+publication gateway with captured grants and controller-only replacement.
+Its HTTP-worker publication contract is separate from this signed
+pass-through grant.
+The public `agent` and signed
 `conform` interfaces, fleet enrollment, ownership takeover, remote deployment
 and production release gates remain outside this isolated profile. The protocol
 acceptance example is a test fixture, not the signed S3 conformance handshake.

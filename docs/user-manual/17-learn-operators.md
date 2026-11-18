@@ -26,18 +26,26 @@ For Rust execution, use the [bounded local runner guide](../devguide/integration
 It accepts `dq.checks` with `PLAUSIBLE_RANGE`, `convert.unit` and an optional trailing `resample`.
 The [bounded UI rollout guide](../devguide/integration/wayang-rust-compose.md) connects one actual workbench DAG
 to the backend PostgreSQL journal, standalone coordinator, custom Wayang Rust platform and three HTTP workers.
+Select **Legacy** in the Workbench header, then open **Smart Topic** to choose the explicit Wayang deployment target.
 The three UI lessons retain their browser workloads and link the separate Rust vector, state and rollout tests.
 The [continuous guide](../devguide/integration/wayang-rust-continuous.md) adds live-input, predecessor/cursor,
 retained-window and restart cases. Increment manifests reserve cumulative series ownership, including unselected
 input series. A finite increment is not a new deployment, and a partition cursor is not a placement unit.
 The source/sink/checkpoint/assignment lessons trace the infrastructure without introducing another operator catalog.
 Private preparation precedes every activation; completed retry reuses receipts, while uncertain activation retains
-ownership and retries saved bytes. These are at-least-once bounded writes, without atomic publication across workers.
+ownership and its captured grant. Durable gateway acknowledgements return cached receipts on retry; an unknown
+broker outcome blocks retransmission and handover. Publication is not atomic across workers.
 For continuous increments, a transient preparation failure retains private candidates and the exact admitted plan.
 Its identical retry still requires every preparation and cross-topic ownership check before activation.
 Their zero-based coordinates do not establish a Kafka timestamp policy: published Rust records require
 `tStart / 1000` rounded down to be strictly positive milliseconds.
 Open resample tails remain in retained state at the cut; source series cannot merge into one derived identity.
+The [local fenced replacement contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
+separates immutable assignment identity from publication authority. Resume keeps the same DAG, clock, cursors and
+open windows; changed-DAG restart creates a distinct deployment and replays complete topics from zero into a fresh
+output after revocation. The single-owner gateway has explicit capacity ceilings and no automatic failover.
+Existing browser examples and numerical test vectors remain unchanged. Follow the linked gateway, worker and
+backend regressions for operational behavior; passing an operator lesson does not qualify network fencing.
 
 ## Distinguish signed runner admission from operator availability
 
