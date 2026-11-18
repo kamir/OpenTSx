@@ -40,6 +40,7 @@ import org.apache.mahout.math.VectorWritable;
 
 import java.io.*;
 import java.text.DecimalFormat;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -240,6 +241,8 @@ public class TSBucket {
 
     public void loadFromSequenceFile(String fn, java.util.Vector<Integer> ids, TSOperation tst) throws IOException {
 
+        HashSet<Integer> selectedIds = ids == null ? null : new HashSet<>(ids);
+
         if (tst != null) {
             isProcessed = true;
         }
@@ -257,18 +260,17 @@ public class TSBucket {
             System.out.println("--> key-classename    : " + reader.getKeyClassName());
             System.out.println("--> value-classname   : " + reader.getValueClassName());
 
-            // TSBucket.setRecordMode( "page-id" );
             TSBucket.setRecordMode("counter");
 
-            int i = 1;
-            while (i <= LIMIT) {
+            int i = 0;
+            while (i < LIMIT) {
 
                 Text key = new Text();
 
-                VectorWritable vec = new VectorWritable();
                 if (!reader.next(key)) {
                     break;
                 }
+                i++;
 
                 String seriesID = key.toString();
 
@@ -276,16 +278,11 @@ public class TSBucket {
                     seriesID = "" + TSBucket.getRecordID(key.toString());
                 }
 
-                boolean skipped = false;
-
-                if (ids != null) {
-                    if (ids.contains(seriesID)) {
-                        skipped = false;
-                    } else {
-                        skipped = true;
-                    }
+                if (selectedIds != null && !selectedIds.contains(i)) {
+                    continue;
                 }
 
+                VectorWritable vec = new VectorWritable();
                 reader.getCurrentValue(vec);
 
                 TimeSeriesObject mr = new TimeSeriesObject();
@@ -298,7 +295,6 @@ public class TSBucket {
                 while (c < vector.size()) {
 
                     double value = vector.get(c);
-                    //System.out.println( c + "\t" + value  );
 
                     mr.addValue(value);
 
@@ -312,20 +308,12 @@ public class TSBucket {
                     throw new IOException("Failed to process series " + seriesID, ex);
                 }
 
-                i = i + 1;
-
-                int code = 1;
-                if (skipped) {
-                    code = 0;
-                }
-
                 if (inMEM) {
                     bucketData.add(mr);
                 }
 
-                //System.out.println( code + "\t" + mr.getLabel() + "\t" + mr.xValues.size() + "\t" + mr.summeY() );
             }
-            System.out.println("--> nr of records     : " + (i - 1));
+            System.out.println("--> nr of records     : " + i);
         }
     }
 
