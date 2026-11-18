@@ -117,6 +117,29 @@ POST /v1/dags/deploy       opentsx.dag.v1 (YAML): hands the DAG to the vector pr
 POST /v1/dags/stop?name=   stops the DAG of that name
 ```
 
+### Send one JSON object
+
+`POST /v1/patterns/search`, `POST /v1/episodes/similar` and `POST /v1/segments` require exactly one JSON object.
+Whitespace around the object is accepted. Missing or whitespace-only bodies, JSON null, arrays, scalars, malformed
+JSON and trailing tokens return HTTP 400 with `Request body must be a single JSON object` as the error message.
+Request-stream I/O failures propagate as `IOException`.
+
+The response helper preserves the status, content type, byte length and payload and closes the exchange after
+sending or after a response failure. If sending and closing both fail, the sending failure stays primary and the
+close failure is attached as a suppressed exception.
+
+You need JDK 17 or later and Maven. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-retrieval -am test \
+  -Dtest=RetrievalServerBodyAndSendTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+The regression cases invoke the private body and response helpers with local `FakeHttpExchange` fixtures.
+They cover JSON shape/parsing, UTF-8 and binary payloads, request I/O failures, response header/write failures
+and exchange closure. They start no server and use no network.
+
 ### Vector topics
 
 With `--kafscale` the server also reads the vector topics of the domain (`tsx.<domain>.smart.<name>.vectors.v1`,

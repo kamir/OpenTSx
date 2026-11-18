@@ -300,6 +300,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Retrieval POST routes `/v1/patterns/search`, `/v1/episodes/similar` and `/v1/segments` require a single JSON object
+  and report invalid bodies as HTTP 400. Response exchanges close after success or failure while preserving the
+  primary exception and any suppressed close failure.
+
 - Native maximum normalization validates finite matching samples, a positive maximum and finite quotients while
   preserving original coordinates and axis labels. Rejected selections or series produce a visible error without
   opening a chart or recording a transformation. Public legacy normalization and entropy calculations are retained.
