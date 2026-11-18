@@ -238,6 +238,8 @@ class WayangComposeGuardsTest(unittest.TestCase):
                  "opentsx-saas-frontend/package-lock.json", "opentsx-saas-backend/requirements.txt",
                  "docker-compose.wayang-rust.yml", "deploy/compose/wayang-rust-nginx.conf",
                  "tools/verify_wayang_rust_compose.py", "tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
+                 "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go",
+                 "tools/kafscale_proxy_protocol_overlay.py", "tools/kafscale_proxy_protocol_test.go",
                  "bin/opentsx", "opentsx-saas-frontend/package.json",
                  "opentsx-saas-frontend/vite.config.ts", "opentsx-saas-frontend/tsconfig.json",
                  "opentsx-saas-frontend/tsconfig.node.json", "opentsx-saas-frontend/postcss.config.js",
