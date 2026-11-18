@@ -184,7 +184,10 @@ The modern tracker also disables Java and Scala export. Both trackers use `Show 
 The modern tracker starts without sample tree items.
 
 Local SequenceFile loading reads the actual records, handles empty buckets and respects the file loader's
-record limit. Processing errors stop the load with their cause retained. The format stores labels and Y values;
+record limit. Integer selection IDs identify 1-based file positions independently of labels; only selected records
+are processed or retained, in file order. An explicit null selection clears a `BucketLoader` filter, and an empty
+selection loads none. The scan limit includes excluded records. Processing errors stop the load with their cause
+retained. The format stores labels and Y values;
 loading reconstructs sequential X values. See [local bucket loading](../../opentsx-core/README.md#reload-local-sequencefile-buckets).
 
 Executing a `MacroRunner` or an exported Java/Scala bucket workflow stops with `UnsupportedOperationException`:

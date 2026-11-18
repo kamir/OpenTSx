@@ -262,6 +262,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Legacy SequenceFile selection uses 1-based physical record positions for callbacks and in-memory results,
+  preserving file order and scan limits independently of stored labels. Explicit null selections clear stored
+  `BucketLoader` filters; empty selections process no records.
+
 - Native standard normalization preserves original sample coordinates and axis labels and reports invalid series.
   Per-series histograms validate selections, integer bounds, positive bin counts and finite matching samples.
   Both desktop actions prepare all results before opening a chart or recording a transformation; rejected input
