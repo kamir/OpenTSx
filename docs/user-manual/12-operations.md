@@ -179,3 +179,98 @@ applied. `--pilot` explicitly excludes a shortened run from the A1.7 baseline.
 Read the [measurement report](../datamodel-2026/measurements/wayang-increment-latency-2026-11-17/REPORT.md)
 for the recorded run and [concept 20, section 14](../datamodel-2026/20-WAYANG-TS-OPERATORS.md#14-evaluation-plan)
 for the broader evaluation protocol.
+
+## 12.8 Evaluate the bounded Track A baselines
+
+Use the [A5 harness](../../tools/wayang_track_a_evaluation.py) to compare
+centralized and federated statistics and the bounded Java catch-up paths.
+You need JDK 17 or 21, Maven 3.9 or later, Python 3.10 or later, Git and Go
+with `go1.25.2` available. Network access is needed for dependencies. Start
+from a clean checkout with no untracked runtime, fixture or tool sources.
+Stop other builds and benchmarks before measuring; the harness does not
+reserve CPU on a shared host.
+
+Run from the repository root. `<jdk-home>` is the selected JDK installation
+directory and `<new-result-directory>` is an unused output directory. Read
+the arguments, then run the complete matrix:
+
+```bash
+python3 tools/wayang_track_a_evaluation.py --help
+python3 tools/wayang_track_a_evaluation.py \
+  --output <new-result-directory> \
+  --java-home <jdk-home>
+python3 -m json.tool <new-result-directory>/metadata.json
+```
+
+The default matrix contains 63 sequential conditions: three repetitions of
+1/3/10-site federation and both runtimes for each decode, clean and statistics
+chain at 1/4/12 partitions. Every condition uses the complete fixed-seed
+`ostsee-demo.yaml` scenario, a fresh execution JVM with `-Xms512m -Xmx2g`
+and disposable in-memory brokers. No warm-up samples are discarded.
+The tool builds KafScale v1.6.0 from pinned source with Go 1.25.2, freezes the
+Java classpath and checks source hashes and HEAD before and after execution.
+The `--pilot` flag labels a reduced matrix as excluded from A5.
+
+Federation keeps complete turbines on one site and runs the signed bounded
+profile. The central baseline executes statistics over its received raw
+records. Streaming reads a complete acknowledged backlog: Track A runs one
+`TsxIncrement`, native clean runs `VectorProcessor`, native statistics runs
+`StatsProcessor`, and native decode uses the SOE decoder in a plain Kafka
+loop with canonical re-encoding and acknowledged writes. Both decode paths
+include publication; this is not a decoder-only CPU benchmark. The native
+decode baseline is not a `VectorProcessor` binding.
+
+Read the generated `REPORT.md`, top-level `metadata.json` and the condition
+directories after the run. Federation directories are
+`federation/k<sites>-r<repetition>`; streaming directories are
+`streaming/<chain>-p<partitions>-<runtime>-r<repetition>`.
+Metadata records the exact commands, hardware, OS, JDK, heap, broker source,
+artifact sizes and source/runtime hashes.
+
+| File in a condition directory | Evidence |
+| --- | --- |
+| Federation `bytes.csv` | Per-site Kafka, HTTP and TLS counters |
+| Federation `windows.csv` | Central and federated reference comparisons |
+| Federation `run.json` | Correctness, topology and separate central clocks |
+| Streaming `measurement.csv` | Wall time, rates and latency percentiles |
+| Streaming `records.csv` | Contributor ids and request/ACK clocks |
+| Streaming `produce-attempts.csv` | Partitions, offsets and response codes |
+| Streaming `case.json` | Runtime, counts, CPU, I/O and checkpoint result |
+| `resources.csv` | Once-per-second RSS and cumulative CPU samples |
+
+The directory placeholders identify the matrix dimensions: sites are 1, 3
+or 10; repetitions are 1 to 3 by default; chains are `passthrough`, `clean`
+or `stats`; partitions are 1, 4 or 12; runtimes are `wayang` or `java`.
+Resource samples cover the driver, owned brokers and observed subprocesses
+across setup, execution and independent validation. Short-lived processes
+between samples can be missed. Sampled driver CPU is the largest observed
+cumulative process CPU time, not the exact CPU-at-exit total. Job CPU time
+includes the in-JVM observer and harness but excludes Go broker CPU.
+Per-core rates divide by the recorded available logical CPUs.
+`case.json` records process start, main entry, activation and job-end instants
+separately. Its checkpoint field reports the verification result; the file
+does not contain the checkpoint's partition cut.
+
+Activation wall time includes runtime construction, planning or deployment,
+processing, acknowledged output and checkpoint persistence. Independent
+checkpoint inspection, output scans and reference checks are outside this
+clock. Latency subtracts successful input Produce ingress from successful
+output Produce ingress at the loopback observer. Aggregate outputs use the
+latest contributing input. Kafka event and envelope timestamps are not
+transport clocks. Clean equivalence checks ids, keys, event times and values,
+without requiring equal `createdAt` or Kafka envelope timestamps.
+
+The finite backlog profile records `intervalSeconds: 0`; the paced
+5/30/60-second A1.7 measurements remain separate evidence in section 12.7.
+Kafka Produce frames, aggregate HTTP bodies and TLS client-stream bytes are
+distinct protocol layers, not total network egress. Their route clocks
+cover different work. The harness applies no threshold and does not qualify
+the 30-kill recovery protocol, durable storage, remote networking or Track B.
+Read [concept 20, section 14.4](../datamodel-2026/20-WAYANG-TS-OPERATORS.md#144-evaluate-the-bounded-track-a-baselines)
+for the protocol and scope.
+
+The [recorded A5 run](../datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+completed all 63 conditions on 2026-11-18. Its nine federation and 54
+streaming conditions passed the correctness and clock checks. Read the
+report with its case CSV files and metadata; the measured local bounded
+profile does not replace the separate paced, recovery or Track B protocols.

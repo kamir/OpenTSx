@@ -333,10 +333,48 @@ error is `1.7308017671758118e-14`; maximum relative M2 error is
 `2.7235050829345894e-12`, below the owner-approved `3e-12` bound.
 
 ### A5: evaluation of Track A
+
+- [x] Baselines (a) and (b), qualified for the documented bounded local
+  profile on 2026-11-18.
+
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
 | A5.1 | Baseline (a), centralized against federated, is reproducible | script under `tools/` that runs A4.5 and A4.9 at 1, 3 and 10 sites | W split by turbine | script runs from a clean checkout; report with raw samples committed |
 | A5.2 | Baseline (b), Java streaming path, is measured | same script, chains of concept 20, section 14 | W on K | throughput and latency of Track A and of `VectorProcessor` measured with the protocol and reported; no threshold unless the owner sets one |
+
+Qualification results from the complete 63-condition run:
+
+- A5.1 met: `FederationEvaluation` runs the complete W scenario at 1, 3
+  and 10 sites with three repetitions, an actual centralized Wayang statistics
+  plan and both signed aggregate routes. The nine conditions retain 3,780
+  window comparisons, 17,640 partials and 126 site/route byte rows. Exact
+  fields and sketch bytes match; all six mean/M2 relative-error fields stay
+  within `3e-12`, with maximum `2.7235050829345894e-12`. Recorded q01, q50
+  and q99 sketch-quantile differences are zero. The 11,340 explicit merge-order
+  comparisons cover 1, 6 and 2 orders for 1, 3 and 10 sites, respectively;
+  they do not cover all ten-site permutations.
+- A5.2 met: `StreamingEvaluation` runs 54 conditions: decode, clean and
+  statistics at 1, 4 and 12 partitions through Track A and the native Java
+  path, with three repetitions. Native clean executes `VectorProcessor`,
+  native statistics executes `StatsProcessor`, and native decode uses the
+  SOE decoder with canonical re-encoding and acknowledged publication.
+  Every condition passes output/reference, checkpoint and source-clock checks.
+  Throughput and p50/p95/p99 latency are recorded without a threshold.
+
+The [report and raw samples](../docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+retain the executed commands, hardware, OS, JDK, artifact sizes and source/runtime
+hashes. The clean measured source is
+`1365d8cf27aeb8978b8ab51eeec2d48fbc698e83`. Resource samples cover setup,
+execution and independent validation; sampled driver CPU is the largest
+observed cumulative value, not the exact CPU-at-exit total. Transport counters
+remain separate protocol layers and do not establish a route speed comparison.
+
+This qualification is the bounded local backlog/catch-up profile of
+[concept 20, section 14.4](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#144-evaluate-the-bounded-track-a-baselines),
+with one Track A increment and `intervalSeconds: 0`. Paced A1.7 interval
+measurements remain separate evidence. The 30-kill recovery protocol,
+durable-storage and remote-network performance, Track B parity and the
+small-device matrix remain separate qualification work.
 
 ### B1: Rust runner foundation
 - [ ] `tsx-runner run`: decode, encode, pass-through, checkpoint; cross builds.
