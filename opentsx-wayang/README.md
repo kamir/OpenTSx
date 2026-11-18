@@ -302,7 +302,8 @@ sequentially in fresh execution JVMs and disposable in-memory brokers.
 
 Every Kafka client uses a KafScale Proxy. The harness builds the broker,
 Proxy and isolated cluster launcher through the shared guarded metadata
-and protocol overlays. Each cluster has private etcd metadata. Its source
+and protocol overlays. Public metadata reads refresh each cluster's private
+etcd snapshot and propagate read failures. The transport source
 and binary hashes are recorded in `metadata.json`. This is the local
 single-broker fixture, without an unmodified-upstream or multi-broker claim.
 

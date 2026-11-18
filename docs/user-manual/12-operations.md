@@ -225,7 +225,8 @@ The `--pilot` flag labels a reduced matrix as excluded from A5.
 
 Every Kafka client connects to a KafScale Proxy. The shared transport builder
 applies guarded metadata and Proxy protocol overlays to the pinned source
-and runs the Proxy package regression tests before compilation. Each cluster
+and runs the Proxy and metadata package regressions before compilation. Public
+metadata reads refresh durable state and propagate read failures. Each cluster
 launcher starts one private broker, one Proxy and its own embedded etcd.
 `metadata.json` records the transport source and binary hashes. Proxy and
 launcher resources are retained as subprocess rows, outside the broker RSS

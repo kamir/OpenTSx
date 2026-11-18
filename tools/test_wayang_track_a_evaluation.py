@@ -115,7 +115,7 @@ class TrackAEvaluationTest(unittest.TestCase):
     def test_measurement_builds_guarded_transport_and_uses_only_proxy_endpoints(self):
         output = self.root / "results"
         transport_sources = ("tools/build_kafscale_proxy.py", "tools/kafscale_proxy_cluster.go",
-                             "tools/kafscale_metadata_overlay.py", "tools/kafscale_proxy_protocol_overlay.py",
+                             "tools/kafscale_metadata_overlay.py", "tools/kafscale_metadata_test.go", "tools/kafscale_proxy_protocol_overlay.py",
                              "tools/kafscale_proxy_protocol_test.go")
         snapshot = {"commit": "a" * 40, "files": {name: "b" * 64 for name in (*self.tool.SOURCES, *transport_sources)}}
         commands, measured = [], []
@@ -177,7 +177,7 @@ class TrackAEvaluationTest(unittest.TestCase):
         builds = [command for command in commands if command[:2] == ["go", "build"]]
         self.assertEqual({"kafscale-broker", "kafscale-proxy", "kafscale-cluster"}, {Path(command[3]).name for command in builds})
         self.assertTrue(all(f"-overlay={overlay}" in command for command in builds))
-        self.assertIn(["go", "test", f"-overlay={overlay}", "-run", "^TestOpenTSxProxy", "-count=1", "./cmd/proxy"], commands)
+        self.assertIn(["go", "test", f"-overlay={overlay}", "-run", "^TestOpenTSx(Proxy|Metadata)", "-count=1", "./cmd/proxy", "./pkg/metadata"], commands)
         self.assertEqual(2, len(measured))
         for name in ("BROKER", "PROXY", "CLUSTER"):
             self.assertEqual(f"kafscale-{name.lower()}", Path(measured[0][1][f"KAFSCALE_{name}_BINARY"]).name)

@@ -732,9 +732,10 @@ resulting 9 federation and 54 streaming conditions run sequentially with
 fresh execution JVMs and disposable in-memory KafScale v1.6.0 brokers.
 
 All Kafka clients use a KafScale Proxy. The harness reuses the guarded
-metadata and Proxy protocol overlays and verifies the Proxy package tests
+metadata and Proxy protocol overlays and verifies the Proxy and metadata tests
 before compiling the broker, Proxy and isolated cluster launcher. Each
-cluster has one private broker and its own embedded etcd. Transport source
+cluster has one private broker and its own embedded etcd. Public metadata reads
+refresh durable state and propagate read failures. Transport source
 and binary hashes are retained in `metadata.json`. This local fixture does
 not establish unmodified-upstream or multi-broker behavior. Recorded reports
 retain their own source and transport scope; this harness change supplies
