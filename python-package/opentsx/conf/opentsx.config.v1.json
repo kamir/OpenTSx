@@ -789,6 +789,66 @@
       "doc": "Create the topics of the domain that do not exist yet."
     },
     {
+      "key": "opentsx.log.level",
+      "type": "enum",
+      "values": [
+        "error",
+        "warn",
+        "info",
+        "debug",
+        "trace"
+      ],
+      "default": "info",
+      "secret": false,
+      "commands": [
+        "boat",
+        "dwd house",
+        "dwd mosmix",
+        "dwd obs",
+        "dwd stations",
+        "history-twin boat",
+        "history-twin house",
+        "history-twin twin",
+        "house",
+        "kafscale-check",
+        "market backfill",
+        "market catalog",
+        "market forward",
+        "market import",
+        "market load",
+        "market marktwert",
+        "market mosmix-archive",
+        "market prices",
+        "market publish",
+        "market rebap",
+        "market report",
+        "market series",
+        "market weather-backfill",
+        "market weather-forward",
+        "metadata",
+        "modbus check",
+        "modbus poll",
+        "modbus read",
+        "modbus simulate",
+        "retrieval-server",
+        "stats",
+        "studio-export",
+        "twin",
+        "twin-coupling",
+        "twin-live bridge",
+        "twin-live demo",
+        "twin-live publish",
+        "twin-schemas",
+        "vectors",
+        "vectors deploy",
+        "vectors run",
+        "vectors stop",
+        "windpark-sim"
+      ],
+      "since": "unreleased",
+      "doc": "Lowest level of the log lines: slf4j-simple in Java, the logger opentsx in Python."
+    },
+    {
       "key": "opentsx.market.backfill.fromYear",
       "type": "int",
       "default": "2019",
@@ -1205,6 +1265,26 @@
       "doc": "Source of the day-ahead prices."
     },
     {
+      "key": "opentsx.market.store",
+      "type": "enum",
+      "values": [
+        "auto",
+        "always",
+        "never"
+      ],
+      "default": "auto",
+      "secret": false,
+      "flag": "store",
+      "commands": [
+        "market marktwert",
+        "market prices",
+        "market rebap",
+        "market series"
+      ],
+      "since": "unreleased",
+      "doc": "Store the fetched series into the history archive; auto stores them when opentsx.archive.dir is set on the command line."
+    },
+    {
       "key": "opentsx.market.to",
       "type": "string",
       "secret": false,
@@ -1471,6 +1551,23 @@
       "doc": "Statistics window that is published as the table profile."
     },
     {
+      "key": "opentsx.openmetadata.profiles",
+      "type": "enum",
+      "values": [
+        "auto",
+        "always",
+        "never"
+      ],
+      "default": "auto",
+      "secret": false,
+      "flag": "profiles",
+      "commands": [
+        "metadata"
+      ],
+      "since": "unreleased",
+      "doc": "Publish profiles and data-quality results from the statistics topic; auto publishes them when opentsx.kafscale.bootstrap is set on the command line."
+    },
+    {
       "key": "opentsx.openmetadata.token",
       "type": "string",
       "secret": true,
@@ -1494,6 +1591,17 @@
       ],
       "since": "3.0.1",
       "doc": "Base URL of the OpenMetadata API, ending in /api."
+    },
+    {
+      "key": "opentsx.retrieval.bind",
+      "type": "string",
+      "secret": false,
+      "flag": "bind",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "unreleased",
+      "doc": "Address the retrieval server listens on; without it, every interface, or 127.0.0.1 when opentsx.retrieval.openDagRuns is true."
     },
     {
       "key": "opentsx.retrieval.dagRunToken",
@@ -1534,6 +1642,18 @@
       "doc": "Most episodes the server keeps in memory from the episodes topic."
     },
     {
+      "key": "opentsx.retrieval.openDagRuns",
+      "type": "boolean",
+      "default": "false",
+      "secret": false,
+      "flag": "open-dag-runs",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "unreleased",
+      "doc": "Accept DAG runs without a run token; the server then listens on 127.0.0.1 only."
+    },
+    {
       "key": "opentsx.retrieval.port",
       "type": "int",
       "default": "8080",
@@ -1556,6 +1676,24 @@
       ],
       "since": "3.0.1",
       "doc": "How often the server polls the episodes topic for new records."
+    },
+    {
+      "key": "opentsx.retrieval.source",
+      "type": "enum",
+      "values": [
+        "auto",
+        "demo",
+        "iceberg",
+        "kafscale"
+      ],
+      "default": "auto",
+      "secret": false,
+      "flag": "source",
+      "commands": [
+        "retrieval-server"
+      ],
+      "since": "unreleased",
+      "doc": "Store the retrieval server serves; auto takes iceberg when opentsx.iceberg.properties is set on the command line, else kafscale when opentsx.kafscale.bootstrap is, else demo."
     },
     {
       "key": "opentsx.retrieval.systems",
@@ -1905,6 +2043,24 @@
       ],
       "since": "3.0.1",
       "doc": "Wind-farm scenario file (YAML)."
+    },
+    {
+      "key": "opentsx.windpark.sinks",
+      "type": "list",
+      "items": "enum",
+      "values": [
+        "auto",
+        "iceberg",
+        "kafscale"
+      ],
+      "default": "auto",
+      "secret": false,
+      "flag": "sinks",
+      "commands": [
+        "windpark-sim"
+      ],
+      "since": "unreleased",
+      "doc": "Sinks of windpark-sim; auto writes to kafscale when opentsx.kafscale.bootstrap is set on the command line and to iceberg when opentsx.iceberg.properties is."
     }
   ]
 }

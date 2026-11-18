@@ -157,14 +157,36 @@ class ConfCliTest {
     void toDebugStringMasksSecretsAndGetAllReturnsThem() {
         OpenTsxConf conf = new OpenTsxConf().set(TOKEN, "t0k3n-value").set("opentsx.domain", "solar");
         String debug = conf.toDebugString();
-        assertTrue(debug.contains("\nopentsx.openmetadata.token=******\n"), debug);
-        assertTrue(debug.contains("\nopentsx.domain=solar\n"), debug);
+        assertTrue(debug.contains("\nopentsx.openmetadata.token=****** (code)\n"), debug);
+        assertTrue(debug.contains("\nopentsx.domain=solar (code)\n"), debug);
         assertFalse(debug.contains("t0k3n"), debug);
         assertTrue(conf.getAll().contains(Map.entry(TOKEN, "t0k3n-value")));
         assertEquals("t0k3n-value", conf.get(TOKEN));
         List<String> keys = new ArrayList<>();
         conf.getAll().forEach(p -> keys.add(p.getKey()));
         assertEquals(keys.stream().sorted().toList(), keys);
+    }
+
+    @Test
+    void loadSetsTheSlf4jSimpleLevelWhenASourceSetsTheLogLevel() throws IOException, InterruptedException {
+        Path out = tmp.resolve("probe.out");
+        Path err = tmp.resolve("probe.err");
+        Process p = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-cp", System.getProperty("surefire.test.class.path"), LevelProbe.class.getName(),
+                "stats", "--conf", "opentsx.log.level=debug")
+                .redirectOutput(out.toFile()).redirectError(err.toFile()).start();
+        assertEquals(0, p.waitFor(), Files.readString(err));
+        assertEquals("before=null after=debug", Files.readString(out));
+    }
+
+    /** Runs in a fresh JVM, so that no logger exists yet and the property does not leak into the other tests. */
+    public static class LevelProbe {
+        public static void main(String[] args) {
+            OpenTsxConf.load(List.of("stats"), Map.of(), null);
+            String before = System.getProperty("org.slf4j.simpleLogger.defaultLogLevel");
+            OpenTsxConf.load(List.of(args), Map.of(), null);
+            System.out.print("before=" + before + " after=" + System.getProperty("org.slf4j.simpleLogger.defaultLogLevel"));
+        }
     }
 
     @Test
@@ -226,7 +248,7 @@ class ConfCliTest {
         Run text = run(Map.of(), "config", "list");
         assertEquals(0, text.exit());
         List<String> lines = text.out().lines().toList();
-        assertEquals(127, lines.size());
+        assertEquals(134, lines.size());
         assertTrue(Pattern.matches("KEY +TYPE +DEFAULT +FLAG +ENV", lines.get(0)), lines.get(0));
         assertTrue(Pattern.compile("\nopentsx\\.stats\\.sketchAlpha +double +0\\.01 +--alpha +OPENTSX_STATS_SKETCH_ALPHA\n")
                 .matcher(text.out()).find(), text.out());

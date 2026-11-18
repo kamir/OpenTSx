@@ -54,7 +54,7 @@ class RegistryTest {
     @Test
     void theShippedRegistryLoadsWithItsCounts() throws IOException {
         Registry reg = Registry.shipped();
-        assertEquals(126, reg.keys().size());
+        assertEquals(133, reg.keys().size());
         assertEquals(48, reg.commands().size());
         assertEquals(List.of("opentsx.dwd.httpsProxy", "opentsx.market.entsoeToken", "opentsx.market.ntpClientId",
                         "opentsx.market.ntpClientSecret", "opentsx.openmetadata.token", "opentsx.retrieval.dagRunToken"),
@@ -150,6 +150,8 @@ class RegistryTest {
                       Domain of the topic names tsx.<domain>.<kind>.v2.
                   opentsx.kafscale.bootstrap  string  --kafscale, --bootstrap  OPENTSX_KAFSCALE_BOOTSTRAP, KAFSCALE_BOOTSTRAP
                       Bootstrap address of the KafScale proxy as host:port, several separated by commas.
+                  opentsx.log.level  enum = info  one of error|warn|info|debug|trace  OPENTSX_LOG_LEVEL
+                      Lowest level of the log lines: slf4j-simple in Java, the logger opentsx in Python.
                   opentsx.stats.allowedLateness  duration = PT0S  --lateness  OPENTSX_STATS_ALLOWED_LATENESS
                       How long a closed window still accepts late episodes.
                   opentsx.stats.checkpoint  path  --checkpoint  OPENTSX_STATS_CHECKPOINT
@@ -169,6 +171,16 @@ class RegistryTest {
                   -h, --help                  print this help and exit
                   --version                   print the version and exit
                 """, Registry.shipped().help("stats"));
+    }
+
+    @Test
+    void theLogLevelBelongsToTheCommandsThatLogThroughSlf4jSimple() {
+        Registry reg = Registry.shipped();
+        List<String> expected = reg.commands().keySet().stream()
+                .filter(c -> !Registry.LOADS_CONF.contains(c) && !c.equals("stats-flink")).sorted().toList();
+        List<String> actual = reg.keys().stream().filter(k -> k.key().equals("opentsx.log.level"))
+                .findFirst().orElseThrow().commands();
+        assertEquals(expected, actual);
     }
 
     @Test

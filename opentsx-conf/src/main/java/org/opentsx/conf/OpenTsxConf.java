@@ -22,9 +22,22 @@ public final class OpenTsxConf {
 
     public static final List<String> SOURCES =
             List.of("code", "commandLine", "environment", "propertiesFile", "defaultsFile", "default");
+    static final String LOG_LEVEL = "opentsx.log.level";
+    static final String SLF4J_LEVEL = "org.slf4j.simpleLogger.defaultLogLevel";
 
     /** The result of {@link #load}: with help or version, {@code conf} is null and nothing else was checked. */
     public record Loaded(String command, OpenTsxConf conf, List<String> args, boolean help, boolean version) {
+
+        /** {@code starting <command>: key=value (source), ...} for the keys the command reads, secrets masked. */
+        public String startLine() {
+            List<String> pairs = new ArrayList<>();
+            for (String key : conf.values.keySet()) {
+                if (conf.registry.reads(command, conf.registry.entry(key, key))) {
+                    pairs.add(conf.pair(key));
+                }
+            }
+            return "starting " + command + (pairs.isEmpty() ? "" : ": " + String.join(", ", pairs));
+        }
     }
 
     private record Value(String text, String source) {
@@ -50,7 +63,11 @@ public final class OpenTsxConf {
         return registry;
     }
 
-    /** {@code args} starts with the command words; {@code confDir} is the value of OPENTSX_CONF_DIR as given. */
+    /**
+     * {@code args} starts with the command words; {@code confDir} is the value of OPENTSX_CONF_DIR as given. When a
+     * source sets {@code opentsx.log.level}, the level of slf4j-simple is set from it; slf4j-simple reads it once, so
+     * a main class calls {@code load} before it creates its first logger.
+     */
     public static Loaded load(List<String> args, Map<String, String> env, String confDir) {
         return load(Registry.shipped(), args, env, confDir);
     }
@@ -74,6 +91,10 @@ public final class OpenTsxConf {
                     break;
                 }
             }
+        }
+        Value level = conf.values.get(LOG_LEVEL);
+        if (level != null && !level.source().equals("default")) {
+            System.setProperty(SLF4J_LEVEL, level.text());
         }
         return new Loaded(a.command(), conf, a.positional(), false, false);
     }
@@ -230,10 +251,14 @@ public final class OpenTsxConf {
 
     public String toDebugString() {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, Value> v : values.entrySet()) {
-            sb.append(v.getKey()).append('=').append(shown(v.getKey())).append('\n');
+        for (String key : values.keySet()) {
+            sb.append(pair(key)).append('\n');
         }
         return sb.toString();
+    }
+
+    private String pair(String key) {
+        return key + "=" + shown(key) + " (" + values.get(key).source() + ")";
     }
 
     String shown(String key) {

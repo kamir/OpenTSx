@@ -23,13 +23,31 @@ runbooks.
 
 ## 12.2 Configure the tools
 
-The v2 tools take their configuration from command-line options ([appendix A](appendix-a-cli.md)) and from these
-environment variables. They read no properties file.
+Every setting of a v2 tool is a key of the registry `opentsx.config.v1` ([chapter 18](18-configuration.md); every key
+with its flag and variables in [appendix D](appendix-d-configuration.md)). `bin/opentsx config list`, `config show`,
+`config get` and `version` read the registry, and so does a command whose `bin/opentsx <command> --help` prints a
+`keys:` section. The highest source that sets a key wins. The order matters:
+
+1. code: `set` on `OpenTsxConf`,
+2. the command line: `--conf <key>=<value>`, `-c <key>=<value>` or the flag of the key,
+3. the environment: `OPENTSX_<NAME>`, then the legacy names of the key,
+4. `--properties-file <path>`,
+5. the defaults file `opentsx-defaults.conf` or `opentsx-defaults.yaml` in `$OPENTSX_CONF_DIR`,
+6. the registry default.
+
+`<NAME>` is the key without `opentsx.`, in upper case, with `_` at every dot and before every upper-case letter:
+`opentsx.kafscale.bootstrap` is `OPENTSX_KAFSCALE_BOOTSTRAP`, and its legacy name is `KAFSCALE_BOOTSTRAP`.
+`bin/opentsx config list` prints every name in the column `ENV`. `bin/opentsx config show` prints the effective value
+of every key with its source.
+
+Any other command takes its configuration from its own command-line options
+([appendix A](appendix-a-cli.md)) and from these environment variables. Pass a token only in the environment, never
+as a command-line option: a value there shows in `ps`, the shell history and the pod spec.
 
 | Variable | Read by |
 |----------|---------|
-| `OPENMETADATA_JWT` | `metadata`, when `--token` is not given |
-| `OPENTSX_DAG_RUN_TOKEN` | `retrieval-server`, when `--dag-run-token` is not given |
+| `OPENMETADATA_JWT` | `metadata`: the OpenMetadata token |
+| `OPENTSX_DAG_RUN_TOKEN` | `retrieval-server`: the run token of the DAG runs (`--dag-runs true`) |
 | `KAFSCALE_BOOTSTRAP` | `twin-live`, when `--bootstrap` is not given; the KafScale tests ([12.4](#124-run-the-tests)) |
 | `EVENT_BRIDGE_ALLOW_ORIGIN` | `twin-live bridge`, when `--allow-origin` is not given (default `*`) |
 | `ENTSOE_TOKEN` | `market`, for the source `entsoe` |
@@ -40,7 +58,7 @@ environment variables. They read no properties file.
 |-----------|----------|
 | KafScale/Kafka clients | `KafScaleClients.producerProps/consumerProps(bootstrap)` (idempotence off, `max.in.flight.requests.per.connection=1`, zstd, no auto-commit) |
 | Iceberg | catalog properties as Iceberg's `CatalogUtil` reads them (`type`, `uri`, `warehouse`, ...); catalog name `opentsx` unless `name` is set. `type=rest` and `type=hadoop` work. `type=jdbc` needs a JDBC driver: `bin/opentsx windpark-sim`, `retrieval-server`, `market` and the container image have the SQLite driver. `type=glue` needs `iceberg-aws`, which only `deploy/docker/stage.sh --with-s3` adds. `type=hive` is not available. See [chapter 5](05-stores.md#52-choose-a-store). |
-| OpenMetadata | `--om <url>/api`, token via `--token` or `OPENMETADATA_JWT` |
+| OpenMetadata | `--om <url>/api`, token via `OPENMETADATA_JWT` |
 | Statistics processor | `--windows`, `--lateness`, `--alpha`, `--checkpoint`; `stats-flink` takes `--checkpoint-every` instead of `--checkpoint` |
 | Wind farm | scenario YAML, catalog YAML (`--catalog`) |
 
@@ -65,8 +83,12 @@ number stops it with `<key>: "<value>" is not an int; expected a whole number fr
 `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` from the environment only, so a JVM system property or
 `config/opentsx-default.properties` does not set them.
 
-[`opentsx.properties.example`](../../opentsx.properties.example) lists the keys the code reads, including how the v2
-modules are configured (command-line options and environment variables, no properties file). The 2.x Kafka client
+[`opentsx.properties.example`](../../opentsx.properties.example) lists the keys the 2.x tools read from
+`./opentsx.properties` and `config/opentsx-default.properties`; the registry does not read these files.
+`opentsx.log.level` in that file belongs to the 2.x `ProductionConfig`, not to the registry. The variable
+`OPENTSX_LOG_LEVEL` belongs to the registry key `opentsx.log.level` and takes `error`, `warn`, `info`, `debug` or
+`trace`. A 2.x level such as `INFO` stops every command that reads the registry with
+`OPENTSX_LOG_LEVEL: "INFO" is not allowed; expected one of error, warn, info, debug, trace`. The 2.x Kafka client
 profile is `config/opentsx-local.props` (git-ignored; set `OPENTSX_PRIMARY_CLUSTER_CLIENT_CFG_FILE_NAME` to use
 another file). Without it, the template [`config/opentsx-local.props.example`](../../config/opentsx-local.props.example)
 (localhost, KafScale-compatible) is used. Profiles with real hosts or credentials belong in `config/private/`
@@ -116,12 +138,14 @@ must not be a prerelease.
 * Never commit credentials. `config/private/` is in `.gitignore`.
 * Treat any key that was ever committed as compromised and rotate it.
 * Use bot tokens for OpenMetadata.
-* The read routes of the retrieval server have no authentication. The server listens on all interfaces and has no
-  option to bind one address. Restrict the port with a gateway or a firewall.
+* The read routes of the retrieval server have no authentication. The server listens on all interfaces.
+  `bin/opentsx retrieval-server` does not read `opentsx.retrieval.bind` or `opentsx.retrieval.openDagRuns` (marked
+  `unreleased` in [appendix D](appendix-d-configuration.md)), and it ignores an option it does not know, so
+  `--bind 127.0.0.1` does not restrict the address. Restrict the port with a gateway or a firewall.
 * With `--kafscale` and `--dag-runs true`, the retrieval server writes to KafScale on `POST /v1/dags/deploy`,
-  `POST /v1/dags/stop` and `POST /v1/systems/<id>/generate`. Set a run token with `--dag-run-token <token>` or
-  `OPENTSX_DAG_RUN_TOKEN`. Callers then send the token in the header `X-OpenTSx-Run-Token`; a call without it gets
-  HTTP 401.
+  `POST /v1/dags/stop` and `POST /v1/systems/<id>/generate`. Set a run token in the environment variable
+  `OPENTSX_DAG_RUN_TOKEN`, not on the command line, where `ps` and the shell history show it. Callers then send the
+  token in the header `X-OpenTSx-Run-Token`; a call without it gets HTTP 401.
 * Without a run token, anyone who reaches the port can write. The server then prints
   `dag deployments: OPEN, anyone who reaches this port can deploy and stop DAGs (set OPENTSX_DAG_RUN_TOKEN)`.
 

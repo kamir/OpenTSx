@@ -1,6 +1,6 @@
 {
  "schema": "opentsx.testvectors.conf.v1",
- "description": "Shared vectors of the OpenTSx configuration (EVOLUTION/TASK-020-configuration-and-cli.md). Normative: the Java module opentsx-conf and the Python package opentsx.conf must reproduce every case byte for byte. The registry below is a fixture in the format opentsx.config.v1, independent of the shipped registry. {dir} stands for a fresh temporary directory: a test writes each entry of files below it, creates each entry of dirs, and replaces {dir} in args, confDir, file and every expected string. A file case holds the file as text, or as base64 when the bytes are not UTF-8. Durations are compared as milliseconds.",
+ "description": "Shared vectors of the OpenTSx configuration (EVOLUTION/TASK-020-configuration-and-cli.md). Normative: the Java module opentsx-conf and the Python package opentsx.conf must reproduce every case byte for byte. The registry below is a fixture in the format opentsx.config.v1, independent of the shipped registry. A case with \"registry\": \"shipped\" runs on the shipped registry opentsx.config.v1.json instead. {dir} stands for a fresh temporary directory: a test writes each entry of files below it, creates each entry of dirs, and replaces {dir} in args, confDir, file and every expected string. A file case holds the file as text, or as base64 when the bytes are not UTF-8. Durations are compared as milliseconds.",
  "registry": {
   "schema": "opentsx.config.v1",
   "commands": [
@@ -3702,6 +3702,251 @@
    }
   },
   {
+   "id": "log-level-default",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "opentsx.log.level defaults to info. Runs on the shipped registry.",
+   "args": [
+    "stats"
+   ],
+   "expect": {
+    "command": "stats",
+    "positional": [],
+    "values": {
+     "opentsx.log.level": {
+      "value": "info",
+      "source": "default"
+     }
+    }
+   }
+  },
+  {
+   "id": "log-level-environment",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "OPENTSX_LOG_LEVEL sets opentsx.log.level. Runs on the shipped registry.",
+   "args": [
+    "stats"
+   ],
+   "env": {
+    "OPENTSX_LOG_LEVEL": "debug"
+   },
+   "expect": {
+    "command": "stats",
+    "positional": [],
+    "values": {
+     "opentsx.log.level": {
+      "value": "debug",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "log-level-not-allowed",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "A log level outside the enum is an error that lists the levels. Runs on the shipped registry.",
+   "args": [
+    "stats",
+    "--conf",
+    "opentsx.log.level=verbose"
+   ],
+   "expect": {
+    "error": "opentsx.log.level: \"verbose\" is not allowed; expected one of error, warn, info, debug, trace",
+    "exit": 2
+   }
+  },
+  {
+   "id": "log-level-misspelled",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "A misspelled log level key names the key. Runs on the shipped registry.",
+   "args": [
+    "stats",
+    "--conf",
+    "opentsx.log.levl=debug"
+   ],
+   "expect": {
+    "error": "opentsx.log.levl: unknown key; did you mean opentsx.log.level?",
+    "exit": 2
+   }
+  },
+  {
+   "id": "mode-retrieval-source-environment",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "Mode rule of TASK-020 D10: a bootstrap address in the environment leaves opentsx.retrieval.source at auto. Runs on the shipped registry.",
+   "args": [
+    "retrieval-server"
+   ],
+   "env": {
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "k:9092"
+   },
+   "expect": {
+    "command": "retrieval-server",
+    "positional": [],
+    "values": {
+     "opentsx.retrieval.source": {
+      "value": "auto",
+      "source": "default"
+     },
+     "opentsx.kafscale.bootstrap": {
+      "value": "k:9092",
+      "source": "environment"
+     },
+     "opentsx.retrieval.openDagRuns": {
+      "value": "false",
+      "source": "default"
+     }
+    },
+    "unset": [
+     "opentsx.retrieval.bind"
+    ]
+   }
+  },
+  {
+   "id": "mode-retrieval-flags",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "--source, --open-dag-runs and --bind set the mode and security keys of retrieval-server. Runs on the shipped registry.",
+   "args": [
+    "retrieval-server",
+    "--source",
+    "kafscale",
+    "--open-dag-runs",
+    "--bind",
+    "127.0.0.1"
+   ],
+   "expect": {
+    "command": "retrieval-server",
+    "positional": [],
+    "values": {
+     "opentsx.retrieval.source": {
+      "value": "kafscale",
+      "source": "commandLine"
+     },
+     "opentsx.retrieval.openDagRuns": {
+      "value": "true",
+      "source": "commandLine"
+     },
+     "opentsx.retrieval.bind": {
+      "value": "127.0.0.1",
+      "source": "commandLine"
+     }
+    }
+   }
+  },
+  {
+   "id": "mode-retrieval-open-dag-runs-not-boolean",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "opentsx.retrieval.openDagRuns takes true or false only. Runs on the shipped registry.",
+   "args": [
+    "retrieval-server",
+    "--conf",
+    "opentsx.retrieval.openDagRuns=yes"
+   ],
+   "expect": {
+    "error": "opentsx.retrieval.openDagRuns: \"yes\" is not a boolean; expected true or false",
+    "exit": 2
+   }
+  },
+  {
+   "id": "mode-windpark-sinks-environment",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "Mode rule of TASK-020 D10: a bootstrap address in the environment leaves opentsx.windpark.sinks at auto. Runs on the shipped registry.",
+   "args": [
+    "windpark-sim"
+   ],
+   "env": {
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "k:9092"
+   },
+   "expect": {
+    "command": "windpark-sim",
+    "positional": [],
+    "values": {
+     "opentsx.windpark.sinks": {
+      "value": "auto",
+      "source": "default"
+     },
+     "opentsx.kafscale.bootstrap": {
+      "value": "k:9092",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "mode-windpark-sinks-unknown",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "An item of --sinks outside auto, iceberg and kafscale is an error. Runs on the shipped registry.",
+   "args": [
+    "windpark-sim",
+    "--sinks",
+    "iceberg,hbase"
+   ],
+   "expect": {
+    "error": "--sinks: item \"hbase\" is not allowed; expected one of auto, iceberg, kafscale",
+    "exit": 2
+   }
+  },
+  {
+   "id": "mode-metadata-profiles-environment",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "Mode rule of TASK-020 D10: a bootstrap address in the environment leaves opentsx.openmetadata.profiles at auto. Runs on the shipped registry.",
+   "args": [
+    "metadata"
+   ],
+   "env": {
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "k:9092"
+   },
+   "expect": {
+    "command": "metadata",
+    "positional": [],
+    "values": {
+     "opentsx.openmetadata.profiles": {
+      "value": "auto",
+      "source": "default"
+     },
+     "opentsx.kafscale.bootstrap": {
+      "value": "k:9092",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
+   "id": "mode-market-store-environment",
+   "kind": "load",
+   "registry": "shipped",
+   "description": "Mode rule of TASK-020 D10: an archive directory in the environment leaves opentsx.market.store at auto. Runs on the shipped registry.",
+   "args": [
+    "market",
+    "prices"
+   ],
+   "env": {
+    "OPENTSX_ARCHIVE_DIR": "data/history"
+   },
+   "expect": {
+    "command": "market prices",
+    "positional": [],
+    "values": {
+     "opentsx.market.store": {
+      "value": "auto",
+      "source": "default"
+     },
+     "opentsx.archive.dir": {
+      "value": "data/history",
+      "source": "environment"
+     }
+    }
+   }
+  },
+  {
    "id": "not-set-opentsx.kafscale.bootstrap",
    "kind": "notSet",
    "description": "get(key) of a key without a value and without a default.",
@@ -3782,7 +4027,7 @@
   {
    "id": "debug-string",
    "kind": "debugString",
-   "description": "toDebugString: key=value lines, sorted, secrets masked.",
+   "description": "toDebugString: key=value (source) lines, sorted, secrets masked; startLine: the keys the command reads on one line.",
    "args": [
     "serve"
    ],
@@ -3790,7 +4035,56 @@
     "TEST_TOKEN": "s3cr3t"
    },
    "expect": {
-    "text": "opentsx.domain=wind\nopentsx.stats.sketchAlpha=0.01\nopentsx.stats.windows=PT10M,PT1H\nopentsx.test.count=6\nopentsx.test.delayMs=500\nopentsx.test.enabled=false\nopentsx.test.mode=csv\nopentsx.test.once=false\nopentsx.test.timeout=PT20S\nopentsx.test.token=******\n"
+    "text": "opentsx.domain=wind (default)\nopentsx.stats.sketchAlpha=0.01 (default)\nopentsx.stats.windows=PT10M,PT1H (default)\nopentsx.test.count=6 (default)\nopentsx.test.delayMs=500 (default)\nopentsx.test.enabled=false (default)\nopentsx.test.mode=csv (default)\nopentsx.test.once=false (default)\nopentsx.test.timeout=PT20S (default)\nopentsx.test.token=****** (environment)\n",
+    "line": "starting serve: opentsx.domain=wind (default), opentsx.stats.sketchAlpha=0.01 (default), opentsx.stats.windows=PT10M,PT1H (default), opentsx.test.count=6 (default), opentsx.test.enabled=false (default), opentsx.test.mode=csv (default), opentsx.test.once=false (default), opentsx.test.timeout=PT20S (default), opentsx.test.token=****** (environment)"
+   }
+  },
+  {
+   "id": "debug-string-sources",
+   "kind": "debugString",
+   "description": "toDebugString and startLine name the source of each value and mask secrets.",
+   "args": [
+    "serve",
+    "--count",
+    "7"
+   ],
+   "env": {
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "k:9092",
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "text": "opentsx.domain=wind (default)\nopentsx.kafscale.bootstrap=k:9092 (environment)\nopentsx.stats.sketchAlpha=0.01 (default)\nopentsx.stats.windows=PT10M,PT1H (default)\nopentsx.test.count=7 (commandLine)\nopentsx.test.delayMs=500 (default)\nopentsx.test.enabled=false (default)\nopentsx.test.mode=csv (default)\nopentsx.test.once=false (default)\nopentsx.test.timeout=PT20S (default)\nopentsx.test.token=****** (environment)\n",
+    "line": "starting serve: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=k:9092 (environment), opentsx.stats.sketchAlpha=0.01 (default), opentsx.stats.windows=PT10M,PT1H (default), opentsx.test.count=7 (commandLine), opentsx.test.enabled=false (default), opentsx.test.mode=csv (default), opentsx.test.once=false (default), opentsx.test.timeout=PT20S (default), opentsx.test.token=****** (environment)"
+   }
+  },
+  {
+   "id": "debug-string-command-keys",
+   "kind": "debugString",
+   "description": "startLine leaves out the keys the command does not read; toDebugString keeps them.",
+   "args": [
+    "jobs",
+    "run"
+   ],
+   "env": {
+    "OPENTSX_KAFSCALE_BOOTSTRAP": "k:9092",
+    "TEST_TOKEN": "s3cr3t"
+   },
+   "expect": {
+    "text": "opentsx.domain=wind (default)\nopentsx.kafscale.bootstrap=k:9092 (environment)\nopentsx.stats.sketchAlpha=0.01 (default)\nopentsx.stats.windows=PT10M,PT1H (default)\nopentsx.test.count=6 (default)\nopentsx.test.delayMs=500 (default)\nopentsx.test.enabled=false (default)\nopentsx.test.mode=csv (default)\nopentsx.test.once=false (default)\nopentsx.test.timeout=PT20S (default)\nopentsx.test.token=****** (environment)\n",
+    "line": "starting jobs run: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=k:9092 (environment), opentsx.test.delayMs=500 (default)"
+   }
+  },
+  {
+   "id": "debug-string-no-value",
+   "kind": "debugString",
+   "description": "startLine of a command without a key that has a value ends after the command.",
+   "args": [
+    "export",
+    "out.json"
+   ],
+   "expect": {
+    "text": "opentsx.domain=wind (default)\nopentsx.stats.sketchAlpha=0.01 (default)\nopentsx.stats.windows=PT10M,PT1H (default)\nopentsx.test.count=6 (default)\nopentsx.test.delayMs=500 (default)\nopentsx.test.enabled=false (default)\nopentsx.test.mode=csv (default)\nopentsx.test.once=false (default)\nopentsx.test.timeout=PT20S (default)\n",
+    "line": "starting export"
    }
   },
   {

@@ -20,9 +20,9 @@
 #   ./bin/episode_10_production_config.sh
 #
 # Environment Variables (optional):
-#   OPENTSX_THREADS_POOL_SIZE - Number of threads for parallel processing
-#   OPENTSX_RETRY_ATTEMPTS - Number of retry attempts
-#   OPENTSX_LOG_LEVEL - Logging level (INFO, WARNING, SEVERE, etc.)
+#   OPENTSX_THREADS_POOL_SIZE: number of threads for parallel processing
+#   OPENTSX_RETRY_ATTEMPTS: number of retry attempts
+#   OPENTSX_LOG_LEVEL: registry key opentsx.log.level, one of error, warn, info, debug, trace (ProductionConfig does not apply it)
 ###############################################################################
 
 set -e  # Exit on error

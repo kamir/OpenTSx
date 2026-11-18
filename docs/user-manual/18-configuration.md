@@ -24,16 +24,18 @@ from the repository root. The files of the examples go to `config/private/`, whi
 ## Know what reads the configuration
 
 Every setting of an OpenTSx command is a key of the registry `opentsx.config.v1`, for example
-`opentsx.stats.sketchAlpha`. [Appendix D](appendix-d-configuration.md) lists all 126 keys with type, default, flag and
-environment variables. These read the registry today:
+`opentsx.stats.sketchAlpha`. [Appendix D](appendix-d-configuration.md) lists all 133 keys with type, default, flag and
+environment variables. These read the registry:
 
 * `opentsx config list`, `opentsx config show`, `opentsx config get` and `opentsx version`, in both runtimes.
+* A command of `bin/opentsx` whose `bin/opentsx <command> --help` prints a `keys:` section.
 * `opentsx <command> --help` of the Python console script, for every command of the registry.
 * Your code, through `OpenTsxConf` in Java (module `opentsx-conf`) and in Python (package `opentsx.conf`).
 
-The other commands of [Appendix A](appendix-a-cli.md), for example `bin/opentsx stats`, parse their own flags. They
-do not read `--conf`, `--properties-file`, `$OPENTSX_CONF_DIR` or the canonical `OPENTSX_` variables. The Python
-console script runs only the commands above; `opentsx stats --kafscale localhost:9092` exits with 2 and
+Any other command of [Appendix A](appendix-a-cli.md), one whose `bin/opentsx <command> --help` prints no `keys:`
+section, parses its own flags, for example `bin/opentsx stats`. It does not read `--conf`, `--properties-file`,
+`$OPENTSX_CONF_DIR` or the canonical `OPENTSX_` variables. The Python console script runs only `config list`,
+`config show`, `config get` and `version`; `opentsx stats --kafscale localhost:9092` exits with 2 and
 `opentsx: stats: runs only in the Java runtime; use bin/opentsx or the opentsx-tools image`.
 
 The 2.x tools in `opentsx-core` and `opentsx-lg` use their own `ConfigManager` and `config/opentsx-default.properties`
@@ -58,9 +60,30 @@ the column `ENV`.
 Every source is read and checked, also when a higher source sets the same key. A malformed defaults file fails the
 command even when `--conf` sets the key. A variable that is set but blank counts as unset.
 
+## Choose a mode
+
+Four keys choose the mode of a command: `opentsx.retrieval.source`, `opentsx.windpark.sinks`,
+`opentsx.openmetadata.profiles` and `opentsx.market.store`. Their default `auto` follows only values set on the
+command line, never a value from the environment or a file. [Appendix D](appendix-d-configuration.md) names the keys
+that `auto` follows. A bootstrap address in your shell profile does not switch `retrieval-server` to KafScale:
+
+```bash
+OPENTSX_KAFSCALE_BOOTSTRAP=192.0.2.10:9092 bin/opentsx config show | grep -E '^KEY|retrieval.source|kafscale.bootstrap'
+```
+
+```text
+KEY                                  VALUE                                      SOURCE
+opentsx.kafscale.bootstrap           192.0.2.10:9092                            environment
+opentsx.retrieval.source             auto                                       default
+```
+
+Set the mode key to choose the mode from any source, for example `--source kafscale`. A command reads these keys once
+its `bin/opentsx <command> --help` prints a `keys:` section; until then its own flags choose the mode as
+[Appendix A](appendix-a-cli.md) describes.
+
 ## Show the effective configuration
 
-`config show` prints every key that has a value, sorted, with its source. Without any source it prints the 65 keys
+`config show` prints every key that has a value, sorted, with its source. Without any source it prints the 71 keys
 that have a registry default.
 
 ```bash
@@ -129,6 +152,8 @@ keys:
       Domain of the topic names tsx.<domain>.<kind>.v2.
   opentsx.kafscale.bootstrap  string  --kafscale, --bootstrap  OPENTSX_KAFSCALE_BOOTSTRAP, KAFSCALE_BOOTSTRAP
       Bootstrap address of the KafScale proxy as host:port, several separated by commas.
+  opentsx.log.level  enum = info  one of error|warn|info|debug|trace  OPENTSX_LOG_LEVEL
+      Lowest level of the log lines: slf4j-simple in Java, the logger opentsx in Python.
   opentsx.stats.allowedLateness  duration = PT0S  --lateness  OPENTSX_STATS_ALLOWED_LATENESS
       How long a closed window still accepts late episodes.
   opentsx.stats.checkpoint  path  --checkpoint  OPENTSX_STATS_CHECKPOINT
@@ -149,8 +174,8 @@ common options:
   --version                   print the version and exit
 ```
 
-The third line says what `bin/opentsx stats` reads: the help lists every key of the registry, but the Java command
-parses its own flags. In the Java runtime, `bin/opentsx config show --help` and the other `config` subcommands print
+The third line says what `bin/opentsx stats` reads: the help lists the keys of the command from the registry, but the
+Java command parses its own flags. In the Java runtime, `bin/opentsx config show --help` and the other `config` subcommands print
 their help the same way, without that line. `--help` wins over every other error: `opentsx config --help` prints the
 list of commands.
 
@@ -342,21 +367,24 @@ bin/opentsx config show --conf opentsx.openmetadata.token=abc
 opentsx: opentsx.openmetadata.token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file
 ```
 
-Set it in the environment instead. The legacy name works too. `<token>` stands for your token:
+Set it in the environment instead. The legacy name works too. `read -rs` reads the token without showing it, and the
+token stays out of the shell history:
 
 ```bash
-OPENMETADATA_JWT='<token>' bin/opentsx config show | grep -E '^KEY|openmetadata'
+read -rs OPENMETADATA_JWT && export OPENMETADATA_JWT
+bin/opentsx config show | grep -E '^KEY|openmetadata'
 ```
 
 ```text
 KEY                                  VALUE                                      SOURCE
 opentsx.openmetadata.dqWindow        PT10M                                      default
 opentsx.openmetadata.profileWindow   PT1H                                       default
+opentsx.openmetadata.profiles        auto                                       default
 opentsx.openmetadata.token           ******                                     environment
 ```
 
 Or keep it in a file that only you can read. Create the file, then write the line
-`opentsx.market.entsoeToken <token>` into it with an editor:
+`opentsx.market.entsoeToken <token>` into it with an editor; `<token>` stands for your token:
 
 ```bash
 touch config/private/secrets.conf
@@ -372,15 +400,38 @@ KEY                                  VALUE                                      
 opentsx.market.entsoeToken           ******                                     propertiesFile
 ```
 
-`config show`, `config get`, the JSON output, `toDebugString` and every error message show a secret as `******`. `get`
-and `getAll` in code return the real value. A secret has no default.
+`config show`, `config get`, the JSON output, `toDebugString`, `startLine` and every error message show a secret as
+`******`. `get` and `getAll` in code return the real value. A secret has no default.
 
 A key that is not secret is shown in clear. `opentsx.iceberg.properties` is one of them, because `--iceberg` passes it
 on the command line. Keep catalog credentials such as `credential`, `token` or `s3.secret-access-key` out of it.
 
-The refusal applies where the registry is read. `bin/opentsx metadata` and `bin/opentsx retrieval-server` still take
-`--token` and `--dag-run-token` with their own parsers. Set `OPENMETADATA_JWT` and `OPENTSX_DAG_RUN_TOKEN` for them
-instead.
+The refusal applies to every command that reads the registry ([Know what reads the configuration](#know-what-reads-the-configuration)).
+`bin/opentsx metadata` reads its token from `OPENMETADATA_JWT` and `bin/opentsx retrieval-server` from
+`OPENTSX_DAG_RUN_TOKEN`. Set the token there, not on the command line.
+
+## Set the log level
+
+`opentsx.log.level` is the lowest level of the log lines: `error`, `warn`, `info`, `debug` or `trace`.
+`OpenTsxConf.load` applies the key when a source sets it: in Java it sets the slf4j-simple property
+`org.slf4j.simpleLogger.defaultLogLevel` and replaces a JVM option `-Dorg.slf4j.simpleLogger.defaultLogLevel`; in
+Python it sets the level of the logger `opentsx`. Without a source, Java keeps the level that slf4j-simple reads from a
+JVM option or from [`conf/simplelogger.properties`](../../conf/simplelogger.properties), which sets `info`, and Python
+keeps the level your code gave the logger.
+
+```bash
+OPENTSX_LOG_LEVEL=debug bin/opentsx config get opentsx.log.level
+bin/opentsx config get opentsx.log.level --conf opentsx.log.level=verbose
+```
+
+```text
+debug
+opentsx: opentsx.log.level: "verbose" is not allowed; expected one of error, warn, info, debug, trace
+```
+
+slf4j-simple reads the level once, when the first logger is created, so a main class calls `OpenTsxConf.load` before
+it creates a logger. A command that parses its own flags does not read the key. `stats-flink` logs through log4j2 with
+[`conf/log4j2-stats-flink.properties`](../../conf/log4j2-stats-flink.properties) and does not read it.
 
 ## Read configuration in Java
 
@@ -438,8 +489,13 @@ opentsx: OPENTSX_STATS_ONCE: "yes" is not a boolean; expected true or false
 
 Catch `OpenTsxConfException` once, in `main`, print `opentsx: <message>` on stderr and exit with 2. Any other
 exception is a runtime failure with exit code 1. With `--help`, `-h` or `--version` in the arguments, `load` checks
-nothing else and returns `help()` or `version()` true and `conf()` null; check them before you read `conf()`.
+nothing else and returns `help()` or `version()` true and `conf()` null; check them before you read `conf()` or call
+`startLine()`.
 `Registry.shipped().help("stats")` returns the help text of a command.
+
+`startLine()` of the result of `load` returns the line a service logs once at INFO when it starts:
+`starting <command>: <key>=<value> (<source>), ...` with every key the command reads that has a value, sorted,
+secrets as `******`. [Read configuration in Python](#read-configuration-in-python) shows the line.
 
 ## Read configuration in Python
 
@@ -475,6 +531,15 @@ once      False from default
 ```
 
 `OpenTsxConf.load` returns `Loaded(command, conf, args, help, version)`; `args` holds the positional arguments.
+`startLine()` puts the effective configuration of the command on one line:
+
+```bash
+OPENTSX_KAFSCALE_BOOTSTRAP=192.0.2.10:9092 python -c 'import os; from opentsx.conf import OpenTsxConf; print(OpenTsxConf.load(["stats", "--alpha", "0.02"], os.environ, None).startLine())'
+```
+
+```text
+starting stats: opentsx.domain=wind (default), opentsx.kafscale.bootstrap=192.0.2.10:9092 (environment), opentsx.log.level=info (default), opentsx.stats.allowedLateness=PT0S (default), opentsx.stats.observations=false (default), opentsx.stats.once=false (default), opentsx.stats.sketchAlpha=0.02 (commandLine), opentsx.stats.windows=PT10M,PT1H (default)
+```
 
 ## Find the same method in Java and Python
 
@@ -493,7 +558,8 @@ once      False from default
 | set by a source of rank 1 to 5 | `contains(key)` | `contains(key)` |
 | every key with a value, sorted, real values | `getAll()` | `getAll()` |
 | source of the value | `source(key)`, null without value | `source(key)`, `None` without value |
-| `key=value` lines, secrets as `******` | `toDebugString()` | `toDebugString()` |
+| `key=value (source)` lines, secrets as `******` | `toDebugString()` | `toDebugString()` |
+| one line `starting <command>: ...` with the keys the command reads | `Loaded.startLine()` | `Loaded.startLine()` |
 | error type | `OpenTsxConfException`, an `IllegalArgumentException` | `OpenTsxConfError`, a `ValueError` |
 | registry of the configuration | `registry()` | `registry()` |
 | names of the six sources, highest first | `OpenTsxConf.SOURCES` | `OpenTsxConf.SOURCES` |

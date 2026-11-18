@@ -5,9 +5,10 @@
 # write its value after the key; a key without default has no value yet. A line is "key value" or
 # "key = value"; a line that starts with # or ! is a comment; a backslash is an error. A # after
 # the key is part of the value.
-# opentsx config show, opentsx config get and code that calls OpenTsxConf.load read this file; code,
-# the command line, the environment and --properties-file win over it. The other commands of bin/opentsx
-# parse their own flags and do not read it.
+# opentsx config list, config show, config get, opentsx version, code that calls OpenTsxConf.load and
+# every command whose bin/opentsx <command> --help prints a keys: section read this file; code, the
+# command line, the environment and --properties-file win over it. Every other command of bin/opentsx
+# parses its own flags and does not read it.
 
 # Root directory of the history archive.
 # Type: path.
@@ -165,6 +166,10 @@
 # Type: boolean.
 # opentsx.kafscale.provision false
 
+# Lowest level of the log lines: slf4j-simple in Java, the logger opentsx in Python.
+# Type: enum, one of error, warn, info, debug, trace.
+# opentsx.log.level info
+
 # First year of the backfill.
 # Type: int.
 # opentsx.market.backfill.fromYear 2019
@@ -289,6 +294,10 @@
 # Type: enum, one of smard, energy-charts, entsoe.
 # opentsx.market.source smard
 
+# Store the fetched series into the history archive; auto stores them when opentsx.archive.dir is set on the command line.
+# Type: enum, one of auto, always, never.
+# opentsx.market.store auto
+
 # End, exclusive: a local date (Europe/Berlin, start of day) or an ISO instant.
 # Type: string; no default.
 # opentsx.market.to
@@ -373,6 +382,10 @@
 # Type: duration.
 # opentsx.openmetadata.profileWindow PT1H
 
+# Publish profiles and data-quality results from the statistics topic; auto publishes them when opentsx.kafscale.bootstrap is set on the command line.
+# Type: enum, one of auto, always, never.
+# opentsx.openmetadata.profiles auto
+
 # Bot token (JWT) for the OpenMetadata API.
 # Type: string; secret: environment or file only; no default.
 # opentsx.openmetadata.token
@@ -380,6 +393,10 @@
 # Base URL of the OpenMetadata API, ending in /api.
 # Type: string; no default.
 # opentsx.openmetadata.url
+
+# Address the retrieval server listens on; without it, every interface, or 127.0.0.1 when opentsx.retrieval.openDagRuns is true.
+# Type: string; no default.
+# opentsx.retrieval.bind
 
 # Token a caller of the DAG write routes must send in the header X-OpenTSx-Run-Token.
 # Type: string; secret: environment or file only; no default.
@@ -393,6 +410,10 @@
 # Type: int.
 # opentsx.retrieval.maxEpisodes 20000
 
+# Accept DAG runs without a run token; the server then listens on 127.0.0.1 only.
+# Type: boolean.
+# opentsx.retrieval.openDagRuns false
+
 # HTTP port of the retrieval server.
 # Type: int.
 # opentsx.retrieval.port 8080
@@ -400,6 +421,10 @@
 # How often the server polls the episodes topic for new records.
 # Type: duration.
 # opentsx.retrieval.refreshInterval PT30S
+
+# Store the retrieval server serves; auto takes iceberg when opentsx.iceberg.properties is set on the command line, else kafscale when opentsx.kafscale.bootstrap is, else demo.
+# Type: enum, one of auto, demo, iceberg, kafscale.
+# opentsx.retrieval.source auto
 
 # Directory of system documents (*.system.yaml) behind /v1/systems.
 # Type: path; no default.
@@ -512,3 +537,7 @@
 # Wind-farm scenario file (YAML).
 # Type: path; no default.
 # opentsx.windpark.scenario
+
+# Sinks of windpark-sim; auto writes to kafscale when opentsx.kafscale.bootstrap is set on the command line and to iceberg when opentsx.iceberg.properties is.
+# Type: list of enum, one of auto, iceberg, kafscale.
+# opentsx.windpark.sinks auto

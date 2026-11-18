@@ -3,6 +3,7 @@
 import base64
 import importlib.util
 import json
+import logging
 import pathlib
 import sys
 from datetime import timedelta
@@ -20,6 +21,14 @@ JAVA_REGISTRY = REPO / "opentsx-conf/src/main/resources/org/opentsx/conf/opentsx
 PYTHON_REGISTRY = REPO / "python-package/opentsx/conf/opentsx.config.v1.json"
 HAVE_YAML = importlib.util.find_spec("yaml") is not None
 YAML_EXTRA = 'YAML files need the extra opentsx[yaml]; run pip install "opentsx[yaml]"'
+
+
+@pytest.fixture(autouse=True)
+def keep_the_opentsx_log_level():
+    logger = logging.getLogger("opentsx")
+    level = logger.level
+    yield
+    logger.setLevel(level)
 
 
 def ids(kind):
@@ -68,13 +77,13 @@ def test_vector_counts():
         "value": 92,
         "properties": 22,
         "yaml": 33,
-        "load": 92,
+        "load": 103,
         "notSet": 4,
         "show": 7,
-        "debugString": 1,
+        "debugString": 4,
         "api": 1,
     }
-    assert len(VECTORS["cases"]) == 272
+    assert len(VECTORS["cases"]) == 286
 
 
 @pytest.mark.parametrize("case_id", ids("keyGrammar"))
@@ -137,7 +146,8 @@ def run_load(case, directory):
         path.write_bytes(text.encode("utf-8"))
     for name in case.get("dirs", []):
         (directory / name).mkdir(parents=True)
-    loaded = OpenTsxConf.load(case["args"], case.get("env", {}), case.get("confDir"), registry=FIXTURE)
+    registry = Registry.shipped() if case.get("registry") == "shipped" else FIXTURE
+    loaded = OpenTsxConf.load(case["args"], case.get("env", {}), case.get("confDir"), registry=registry)
     if loaded.conf is not None:
         for key, value in case.get("set", []):
             loaded.conf.set(key, value)
@@ -200,6 +210,7 @@ def test_debug_string(case_id, tmp_path):
     case = CASES[case_id]
     loaded = run_load(case, tmp_path)
     assert loaded.conf.toDebugString() == case["expect"]["text"]
+    assert loaded.startLine() == case["expect"]["line"]
 
 
 def test_registry_copy_is_identical_to_the_java_resource():
@@ -278,11 +289,24 @@ def test_legacy_environment_name_loses_against_the_canonical_name():
     assert conf.get("opentsx.kafscale.bootstrap") == "canonical:9092"
 
 
+def test_log_level_sets_the_level_of_the_opentsx_logger():
+    logger = logging.getLogger("opentsx")
+    logger.setLevel(logging.NOTSET)
+    OpenTsxConf.load(["stats"], {}, None)
+    assert logger.level == logging.NOTSET
+    OpenTsxConf.load(["stats"], {"OPENTSX_LOG_LEVEL": "debug"}, None)
+    assert logger.level == logging.DEBUG
+    levels = {"error": logging.ERROR, "warn": logging.WARNING, "info": logging.INFO, "trace": 5}
+    for text, level in levels.items():
+        OpenTsxConf.load(["stats", "--conf", f"opentsx.log.level={text}"], {}, None)
+        assert logger.level == level, text
+
+
 def test_secrets_are_masked_but_returned_to_code():
     conf = OpenTsxConf.load(["market", "prices"], {"ENTSOE_TOKEN": "t0ken-value"}, None).conf
     assert conf.get("opentsx.market.entsoeToken") == "t0ken-value"
     assert ("opentsx.market.entsoeToken", "t0ken-value") in conf.getAll()
-    assert "opentsx.market.entsoeToken=******\n" in conf.toDebugString()
+    assert "opentsx.market.entsoeToken=****** (environment)\n" in conf.toDebugString()
     assert "t0ken-value" not in conf.toDebugString()
 
 

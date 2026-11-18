@@ -2,6 +2,7 @@
 
 import functools
 import json
+import logging
 import math
 import os
 import re
@@ -46,6 +47,13 @@ _GETTERS = {
     "duration": "getDuration",
 }
 _UNSET = object()
+_LOG_LEVELS = {
+    "error": logging.ERROR,
+    "warn": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+    "trace": 5,
+}
 
 
 class OpenTsxConfError(ValueError):
@@ -249,6 +257,9 @@ class OpenTsxConf:
         for values, source in reversed(layers):
             for key, text in values.items():
                 conf._values[key] = (text, source)
+        level = conf._values.get("opentsx.log.level")
+        if level is not None:
+            logging.getLogger("opentsx").setLevel(_LOG_LEVELS[level[0]])
         return Loaded(parsed.command, conf, parsed.positional, False, False)
 
     def registry(self) -> Registry:
@@ -321,8 +332,11 @@ class OpenTsxConf:
         return None if found is None else found[1]
 
     def toDebugString(self) -> str:
-        entries = self._registry.entries
-        return "".join(f"{key}={MASK if entries[key]['secret'] else value}\n" for key, value in self.getAll())
+        return "".join(self._pair(key) + "\n" for key, _ in self.getAll())
+
+    def _pair(self, key: str) -> str:
+        text, source = self._lookup(key)
+        return f"{key}={MASK if self._registry.entries[key]['secret'] else text} ({source})"
 
     def _lookup(self, key: str) -> tuple[str, str] | None:
         entry = self._registry.entry(key)
@@ -351,6 +365,13 @@ class Loaded:
     args: list[str]
     help: bool
     version: bool
+
+    def startLine(self) -> str:
+        """`starting <command>: key=value (source), ...` for the keys the command reads, secrets masked."""
+        registry = self.conf.registry()
+        keys = [key for key, _ in self.conf.getAll() if registry.reads(self.command, key)]
+        pairs = ", ".join(self.conf._pair(key) for key in keys)
+        return f"starting {self.command}" + (f": {pairs}" if pairs else "")
 
 
 class _Arguments(NamedTuple):

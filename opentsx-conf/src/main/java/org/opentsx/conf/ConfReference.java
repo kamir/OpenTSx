@@ -25,9 +25,10 @@ public final class ConfReference {
     public static final String YAML_TEMPLATE = "conf/opentsx-defaults.yaml.template";
     public static final String REGENERATE = "java -cp \"$(bin/opentsx classpath opentsx-conf)\" org.opentsx.conf.ConfReference";
 
-    static final String READERS = "# opentsx config show, opentsx config get and code that calls OpenTsxConf.load read this file; code,\n"
-            + "# the command line, the environment and --properties-file win over it. The other commands of bin/opentsx\n"
-            + "# parse their own flags and do not read it.\n";
+    static final String READERS = "# opentsx config list, config show, config get, opentsx version, code that calls OpenTsxConf.load and\n"
+            + "# every command whose bin/opentsx <command> --help prints a keys: section read this file; code, the\n"
+            + "# command line, the environment and --properties-file win over it. Every other command of bin/opentsx\n"
+            + "# parses its own flags and does not read it.\n";
     static final Pattern MARKDOWN_SPECIAL = Pattern.compile("([\\\\`*_\\[\\]<>|])");
     static final Pattern PLAIN_YAML = Pattern.compile("^[A-Za-z0-9./][A-Za-z0-9._/:-]*$");
 
@@ -96,9 +97,10 @@ public final class ConfReference {
         sb.append("| Env | the environment variables: the canonical name first, then the legacy names |\n");
         sb.append("| Meaning | what the key sets |\n");
         sb.append("| Since | the first OpenTSx release that reads the setting under any name; `unreleased` means no release reads it yet |\n\n");
-        sb.append("The Env column, `--conf`, `--properties-file` and the defaults file reach `opentsx config show`,\n")
-                .append("`opentsx config get` and code that calls `OpenTsxConf.load`. The other commands of `bin/opentsx` parse their\n")
-                .append("own flags and do not read them; see [chapter 18](18-configuration.md).\n\n");
+        sb.append("The Env column, `--conf`, `--properties-file` and the defaults file reach `opentsx config list`, `config show`,\n")
+                .append("`config get`, `opentsx version`, code that calls `OpenTsxConf.load` and every command whose\n")
+                .append("`bin/opentsx <command> --help` prints a `keys:` section. Every other command of `bin/opentsx` parses its own flags\n")
+                .append("and does not read them; see [chapter 18](18-configuration.md).\n\n");
         sb.append("A key marked **Secret.** comes only from code, the environment or a file. `OpenTsxConf.load` refuses it on the\n")
                 .append("command line, so its Alias is none. Every output of `opentsx config` shows its value as `******`. A secret has no\n")
                 .append("default.\n");

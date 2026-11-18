@@ -50,6 +50,10 @@ conf.getDurationList("opentsx.stats.windows")  # [datetime.timedelta(seconds=600
 A mistake raises `OpenTsxConfError` with one line that names the key, the flag or the file. A YAML file needs the
 `yaml` extra; without it the load fails with `<file>: YAML files need the extra opentsx[yaml]; run pip install "opentsx[yaml]"`.
 
+`OpenTsxConf.load` sets the level of the logger `opentsx` when a source sets `opentsx.log.level` (`error`, `warn`,
+`info`, `debug`, `trace`). `Loaded.startLine()` returns one line `starting <command>: <key>=<value> (<source>), ...`
+with the keys the command reads, secrets as `******`; `toDebugString()` returns `key=value (source)` lines.
+
 ## Run the opentsx command
 
 The installation registers the console script `opentsx`. The Python runtime runs `config list`, `config show`,

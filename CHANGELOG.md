@@ -103,6 +103,21 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `deploy/`. On Java 21 it also checks the classpaths of `bin/opentsx` and of the staged image for no test jars,
   exactly one SLF4J provider, and zstd-jni wherever kafka-clients is. It also checks that the shaded
   `opentsx-flink-core` jar holds no `log4j.properties`.
+- Configuration key `opentsx.log.level` (`error`, `warn`, `info`, `debug`, `trace`, default `info`) for every command
+  of `bin/opentsx` except `config`, `version` and `stats-flink`, which logs through log4j2. When a source sets it,
+  `OpenTsxConf.load` sets the slf4j-simple level `org.slf4j.simpleLogger.defaultLogLevel` in Java and the level of the
+  logger `opentsx` in Python. Without a source the level of `conf/simplelogger.properties` stays.
+- `OpenTsxConf.Loaded.startLine()` in Java and Python returns one line `starting <command>: <key>=<value> (<source>),
+  ...` with every key the command reads that has a value, secrets as `******`, for the start log of a service.
+- Registry keys for the mode rule of TASK-020 D10 and the DAG runs of the retrieval server, marked `unreleased` and
+  not yet read by a command: `opentsx.retrieval.source` (`auto`, `demo`, `iceberg`, `kafscale`),
+  `opentsx.windpark.sinks` (list of `auto`, `iceberg`, `kafscale`), `opentsx.openmetadata.profiles` and
+  `opentsx.market.store` (`auto`, `always`, `never`), each with the default `auto`, which follows only values set on
+  the command line; `opentsx.retrieval.openDagRuns` (default `false`) and `opentsx.retrieval.bind` (without it every
+  interface, or 127.0.0.1 when `opentsx.retrieval.openDagRuns` is true). The registry holds 133 keys; appendix D and
+  the defaults templates are regenerated.
+- Shared configuration vectors `conf.v1.json`: 286 cases. A case with `"registry": "shipped"` runs on the shipped
+  registry and checks the log level and the mode keys in both runtimes.
 
 ### Changed
 
@@ -164,6 +179,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   the method is wrong. Before, `GET /v1/systems/{id}/generate` and `POST /v1/systems/{id}/scenario` answered 404. Any
   unknown path, also outside `/v1/`, answers a JSON 404 `no such endpoint: <path>` instead of the HTML page of the
   JDK.
+- `toDebugString()` in Java and Python prints `key=value (source)` lines instead of `key=value`.
+- User manual chapters 18 and 12.2, appendix D and the defaults templates say that `config list`, `config show`,
+  `config get`, `version` and every command of `bin/opentsx` whose `--help` prints a `keys:` section read `--conf`,
+  `--properties-file`, `$OPENTSX_CONF_DIR` and the `OPENTSX_` variables, and that every other command parses its own
+  flags. Chapter 12 lists the six sources and the variable names, passes the OpenMetadata and DAG-run tokens only
+  through `OPENMETADATA_JWT` and `OPENTSX_DAG_RUN_TOKEN`, and says that `OPENTSX_LOG_LEVEL` takes only the registry
+  levels. Chapter 12.5 says that `retrieval-server` does not read `opentsx.retrieval.bind` and ignores an unknown
+  option such as `--bind`. Chapter 18 gains the sections Choose a mode and Set the log level.
+- `opentsx.properties.example` names the commands that read the key registry and says that 2.x `ProductionConfig` does
+  not apply `opentsx.log.level` to logging. `bin/episode_10_production_config.sh` says that `OPENTSX_LOG_LEVEL` takes
+  `error`, `warn`, `info`, `debug` or `trace`.
 
 ### Removed
 

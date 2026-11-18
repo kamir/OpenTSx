@@ -173,7 +173,7 @@ Rules the registry tests check in both languages (the schema cannot express them
 7. Every command named by a key is in `commands`.
 8. Every `doc` is one sentence: it starts with an upper-case letter and ends with a period.
 
-The shipped registry holds 126 keys and 48 commands.
+The shipped registry holds 133 keys and 48 commands.
 
 ### Types (D3)
 
@@ -408,7 +408,7 @@ The registry marks 6 keys as secret: `opentsx.openmetadata.token`, `opentsx.retr
   --token: secret keys are not accepted on the command line; set OPENTSX_OPENMETADATA_TOKEN or put opentsx.openmetadata.token in a properties file
   ```
 
-- `toDebugString`, `opentsx config show`, `opentsx config get`, the help, every error message and every log line show
+- `toDebugString`, `Loaded.startLine`, `opentsx config show`, `opentsx config get`, the help, every error message and every log line show
   a secret value as `******`. `getAll` and `get` return the real value, for the code that needs it.
 - A secret has no default.
 - A key that is not secret is shown in clear. `opentsx.iceberg.properties` is passed on the command line today
@@ -432,6 +432,7 @@ both:
 | load sources 2 to 6 | `static Loaded load(List<String> args, Map<String, String> env, String confDir)` | `OpenTsxConf.load(args, env, confDir) -> Loaded`, `confDir` a `str` or path-like |
 | load with another registry (tests, vectors) | `static Loaded load(Registry registry, List<String> args, Map<String, String> env, String confDir)` | `OpenTsxConf.load(args, env, confDir, registry=...)` |
 | result of the load | `record Loaded(String command, OpenTsxConf conf, List<String> args, boolean help, boolean version)` | `Loaded(command, conf, args, help, version)`, a dataclass |
+| one line `starting <command>: key=value (source), ...` with the keys the command reads, secrets masked | `String Loaded.startLine()` | `Loaded.startLine() -> str` |
 | set a value (source code) | `OpenTsxConf set(String key, String value)` | `set(key, value) -> OpenTsxConf` |
 | set unless a source of rank 1 to 5 set it; the value is checked either way | `OpenTsxConf setIfMissing(String key, String value)` | `setIfMissing(key, value)` |
 | set several | `OpenTsxConf setAll(Map<String, String> pairs)` | `setAll(pairs)`, a mapping or an iterable of `(key, value)` |
@@ -442,7 +443,7 @@ both:
 | set by a source of rank 1 to 5 | `boolean contains(String key)` | `contains(key) -> bool` |
 | every key with a value, sorted, real values | `List<Map.Entry<String, String>> getAll()` | `getAll() -> list[tuple[str, str]]` |
 | where the value comes from | `String source(String key)`, null without value | `source(key) -> str \| None` |
-| `key=value` lines, sorted, secrets masked | `String toDebugString()` | `toDebugString() -> str` |
+| `key=value (source)` lines, sorted, secrets masked | `String toDebugString()` | `toDebugString() -> str` |
 | error type | `OpenTsxConfException extends IllegalArgumentException` | `OpenTsxConfError(ValueError)` |
 | the registry of the configuration | `Registry registry()` | `registry() -> Registry` |
 | the six source names, highest first | `static final List<String> SOURCES` | `SOURCES`, a tuple |
@@ -505,6 +506,8 @@ keys:
       Domain of the topic names tsx.<domain>.<kind>.v2.
   opentsx.kafscale.bootstrap  string  --kafscale, --bootstrap  OPENTSX_KAFSCALE_BOOTSTRAP, KAFSCALE_BOOTSTRAP
       Bootstrap address of the KafScale proxy as host:port, several separated by commas.
+  opentsx.log.level  enum = info  one of error|warn|info|debug|trace  OPENTSX_LOG_LEVEL
+      Lowest level of the log lines: slf4j-simple in Java, the logger opentsx in Python.
   opentsx.stats.allowedLateness  duration = PT0S  --lateness  OPENTSX_STATS_ALLOWED_LATENESS
       How long a closed window still accepts late episodes.
   opentsx.stats.checkpoint  path  --checkpoint  OPENTSX_STATS_CHECKPOINT
@@ -638,9 +641,9 @@ exception is a runtime failure: exit 1, and the message on stderr.
 ### Test vectors
 
 [`docs/datamodel-2026/testvectors/conf.v1.json`](../docs/datamodel-2026/testvectors/conf.v1.json),
-`"schema": "opentsx.testvectors.conf.v1"`, holds a fixture registry in the format `opentsx.config.v1` and 272 cases.
+`"schema": "opentsx.testvectors.conf.v1"`, holds a fixture registry in the format `opentsx.config.v1` and 286 cases.
 The vectors are normative data: they change together with this specification, and both runtimes must reproduce every
-case byte for byte. They do not depend on the shipped registry, so a migration batch that adds keys leaves them valid.
+case byte for byte. A case with `"registry": "shipped"` runs on the shipped registry and checks its keys (`opentsx.log.level` and the mode keys); the other cases do not depend on it, so a migration batch that adds keys leaves them valid.
 
 | Kind | Cases | Input | Expected |
 |------|-------|-------|----------|
@@ -649,10 +652,10 @@ case byte for byte. They do not depend on the shipped registry, so a migration b
 | `value` | 92 | `key`, `input`, applied with `set(key, input)` | `text` (stored) and `value` (typed; durations as `{"millis": n}`), or `error` |
 | `properties` | 22 | `file`, `text` or `base64` (bytes that are not UTF-8) | `pairs` in file order, or `error` |
 | `yaml` | 33 | `file`, `text` or `base64` | `pairs` in document order, `error`, or `errorStartsWith` for parser errors |
-| `load` | 92 | `args`, `env`, `files`, `dirs`, `confDir`, then `set` and `setIfMissing` | `command`, `positional`, `values` (value and source of the listed keys), `unset`; or `help`/`version`; or `error` with `exit` 2 |
+| `load` | 103 | `args`, `env`, `files`, `dirs`, `confDir`, `registry`, then `set` and `setIfMissing` | `command`, `positional`, `values` (value and source of the listed keys), `unset`; or `help`/`version`; or `error` with `exit` 2 |
 | `notSet` | 4 | `key` on an empty configuration | `error` of `get` |
 | `show` | 7 | `args`, `env` of `config show` and `config get` | `exit`, `stdout` or `stderr` |
-| `debugString` | 1 | `args`, `env` | `text` of `toDebugString` |
+| `debugString` | 4 | `args`, `env` | `text` of `toDebugString`, `line` of `Loaded.startLine` |
 | `api` | 1 | none | `names`: the public methods and fields of `OpenTsxConf`, sorted |
 
 `{dir}` stands for a fresh temporary directory: the test writes each entry of `files` below it, creates each entry of
@@ -776,7 +779,7 @@ The order matters: the foundation first, then one batch per module, then errors 
 
 ## Success Criteria
 
-- Both runtimes pass all 272 vectors and the registry rules 1 to 8; the registry copies are byte-identical.
+- Both runtimes pass all 286 vectors and the registry rules 1 to 8; the registry copies are byte-identical.
 - `opentsx config list`, `config show` and `config get` give the same bytes in Java and Python for the same registry,
   environment and files (the `show` vectors). `version` prints the version of each runtime (see
   [Command line](#command-line-d9)), and the YAML parser detail after `not valid YAML; ` differs.

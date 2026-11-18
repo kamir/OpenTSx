@@ -15,7 +15,7 @@ The rules (key names, types, the six sources, file formats, errors) are in
 |---------------|---------|
 | `src/main/resources/org/opentsx/conf/opentsx.config.v1.json` | the registry: every key with type, default, flag, environment variables and the commands that read it |
 | `Registry` | reads the registry, checks the registry rules, renders `--help` |
-| `OpenTsxConf` | `load(args, env, confDir)`, `set`, `setIfMissing`, `get`, `getOption`, the typed getters, `contains`, `getAll`, `source`, `toDebugString` |
+| `OpenTsxConf` | `load(args, env, confDir)`, `set`, `setIfMissing`, `get`, `getOption`, the typed getters, `contains`, `getAll`, `source`, `toDebugString`; `Loaded.startLine` |
 | `OpenTsxConfException` | every usage and configuration error, one line `<subject>: <problem>; <what is allowed>` |
 | `ConfCli` | main class of `opentsx config` and `opentsx version` |
 | `ConfReference` | renders Appendix D and the defaults-file templates in `conf/` from the registry |
@@ -80,6 +80,19 @@ bin/opentsx version
 opentsx 3.0.1 (java)
 ```
 
+## Log the configuration and set the log level
+
+`OpenTsxConf.load` sets the slf4j-simple property `org.slf4j.simpleLogger.defaultLogLevel` from `opentsx.log.level`
+(`error`, `warn`, `info`, `debug`, `trace`) when a source sets the key. slf4j-simple reads the property once, so a
+main class calls `load` before it creates its first logger. `startLine()` of the result returns the line a service
+logs once at INFO when it starts: `starting <command>: <key>=<value> (<source>), ...` with every key the command reads
+that has a value, secrets as `******`. [Chapter 18](../docs/user-manual/18-configuration.md#set-the-log-level) shows
+the log level and the line. `toDebugString()` returns every key with a value as `key=value (source)` lines.
+
+A command reads the configuration once its main class calls `load`. `Registry.LOADS_CONF` and `CONF_COMMANDS` in
+`python-package/opentsx/conf/conf.py` list these commands; the help of every other command says that the Java command
+parses its own flags.
+
 ## Fix a usage error
 
 A usage or configuration error prints one line on stderr and exits with code 2. A runtime failure exits with code 1,
@@ -124,8 +137,9 @@ Commit the registry change and the three files together. Do not edit the files b
 mvn -B -ntp -q -pl opentsx-conf install
 ```
 
-`ConfVectorsTest` runs all 272 shared vectors. `RegistryTest` checks the registry against
+`ConfVectorsTest` runs all 286 shared vectors. `RegistryTest` checks the registry against
 [`opentsx.config.v1.schema.json`](../docs/datamodel-2026/schemas/opentsx.config.v1.schema.json) and the registry
-rules, and that the Python copy is byte-identical. `ConfCliTest` checks output, exit codes, precedence and masking.
+rules, and that the Python copy is byte-identical. `ConfCliTest` checks output, exit codes, precedence and masking,
+and, in a fresh JVM, that `load` sets the slf4j-simple level.
 `ConfReferenceTest` fails when one of the three generated files differs from the rendering of the registry, and checks
 that both templates read back as the registry defaults.

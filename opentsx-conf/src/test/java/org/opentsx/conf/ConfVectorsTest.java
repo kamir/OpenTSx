@@ -45,10 +45,19 @@ class ConfVectorsTest {
         Registry fixture = Registry.parse(mapper.writeValueAsBytes(doc.get("registry")));
         List<JsonNode> cases = new ArrayList<>();
         doc.get("cases").forEach(cases::add);
-        assertEquals(272, cases.size());
+        assertEquals(286, cases.size());
         return cases.stream().map(c -> DynamicTest.dynamicTest(c.get("id").asText(), () -> {
             Path dir = Files.createDirectory(tmp.resolve(c.get("id").asText()));
-            run(fixture, c, dir.toString());
+            String level = System.getProperty(OpenTsxConf.SLF4J_LEVEL);
+            try {
+                run("shipped".equals(c.path("registry").asText()) ? Registry.shipped() : fixture, c, dir.toString());
+            } finally {
+                if (level == null) {
+                    System.clearProperty(OpenTsxConf.SLF4J_LEVEL);
+                } else {
+                    System.setProperty(OpenTsxConf.SLF4J_LEVEL, level);
+                }
+            }
         }));
     }
 
@@ -63,8 +72,11 @@ class ConfVectorsTest {
             case "notSet" -> assertEquals(expect.get("error").asText(),
                     assertThrows(OpenTsxConfException.class, () -> new OpenTsxConf(reg).get(c.get("key").asText())).getMessage());
             case "show" -> show(reg, c, expect);
-            case "debugString" -> assertEquals(expect.get("text").asText(),
-                    OpenTsxConf.load(reg, strings(c.get("args"), dir), env(c), null).conf().toDebugString());
+            case "debugString" -> {
+                OpenTsxConf.Loaded loaded = OpenTsxConf.load(reg, strings(c.get("args"), dir), env(c), null);
+                assertEquals(expect.get("text").asText(), loaded.conf().toDebugString());
+                assertEquals(expect.get("line").asText(), loaded.startLine());
+            }
             case "api" -> assertEquals(strings(c.get("names"), dir), publicNames());
             default -> fail("unknown kind " + c.get("kind").asText());
         }

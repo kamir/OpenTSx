@@ -56,13 +56,25 @@ class ConfReferenceTest {
                 assertEquals("none", cells[3], e.key());
             }
         }
-        assertEquals(17, page.lines().filter(l -> l.startsWith("## opentsx.")).count());
+        assertEquals(18, page.lines().filter(l -> l.startsWith("## opentsx.")).count());
         assertTrue(page.contains("| `opentsx.domain` | `string` | `wind` | `--domain` | `OPENTSX_DOMAIN` | Domain of the topic names "
                 + "tsx.\\<domain\\>.\\<kind\\>.v2. | 3.0.1 |"));
         assertTrue(page.contains("| `opentsx.kafscale.bootstrap` | `string` | none | `--kafscale`, `--bootstrap` | "
                 + "`OPENTSX_KAFSCALE_BOOTSTRAP`, `KAFSCALE_BOOTSTRAP` |"));
         assertTrue(page.contains("| `opentsx.modbus.out` | `enum`, one of `csv`, `episodes` | `csv` |"));
         assertTrue(page.contains("| `opentsx.market.fetchDelayMs` | `long`, unit `ms` | `300` |"));
+    }
+
+    @Test
+    void theReaderStatementsNameEveryCommandThatLoadsTheConfiguration() {
+        String appendix = rendered().get(ConfReference.APPENDIX);
+        int start = appendix.indexOf("The Env column");
+        String statement = appendix.substring(start, appendix.indexOf("\n\n", start)).replace('\n', ' ');
+        for (String text : List.of(statement, ConfReference.READERS.replace("\n# ", " "))) {
+            for (String command : Registry.LOADS_CONF) {
+                assertTrue(text.contains(command), command + " is missing in: " + text);
+            }
+        }
     }
 
     @Test
