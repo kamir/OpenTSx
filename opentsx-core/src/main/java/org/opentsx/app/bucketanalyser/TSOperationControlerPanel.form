@@ -199,7 +199,7 @@
             </Component>
             <Component class="javax.swing.JButton" name="jButton22">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Log"/>
+                <Property name="text" type="java.lang.String" value="ln"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton22ActionPerformed"/>

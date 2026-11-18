@@ -75,8 +75,6 @@ public class TSBucket {
     // record mode is a domain specific feature from WIKIPEDIA analysis.
     static String recoderIdMode = "counter";
 
-    public String sourcFolder = "/media/esata/wiki/extract/svwiki/";
-
     FileWriter fw = null;
     FileWriter fwe = null;
     public static String FN_EXT = "A";
@@ -113,24 +111,6 @@ public class TSBucket {
     private static void setRecordMode(String c) {
         recoderIdMode = c;
         resetCounter();
-    }
-
-    /**
-     * Where should the time series be loaded from?
-     *
-     * Within the source folder, there is a "group folder", from which data can
-     * be loaded.
-     *
-     * @param in
-     */
-    public void setSourceDataFolder(String in) {
-        sourcFolder = in;
-        System.out.println("> bucket source base : " + in);
-        System.out.println("> bucket limit       : " + LIMIT);
-    }
-
-    public TSBucket(String in, String out, String s) {
-        setSourceDataFolder(in);
     }
 
     public TSBucket() {
@@ -178,20 +158,27 @@ public class TSBucket {
     }
 
     /**
-     * Writes the files of a source group into a bucket without retaining it in memory.
+     * Writes the files of the folder groupFolder in sourceFolder into the bucket groupFolder.tsb.vec.seq without
+     * retaining it in memory.
      *
+     * @param sourceFolder
      * @param groupFolder
      * @param limit
      *
      */
-    public void createBucketFromLocalFilesInDirectory(String groupFolder, int limit) throws IOException {
+    public void createBucketFromLocalFilesInDirectory(String sourceFolder, String groupFolder, int limit) throws IOException {
 
         LIMIT = limit;
         String s = groupFolder;
 
-        File f = new File(sourcFolder + s);
+        File f = new File(sourceFolder, s);
 
         System.out.println("--> load data from ($source/$group) : " + f.getAbsolutePath());
+
+        File[] files = f.listFiles();
+        if (files == null) {
+            throw new IOException(f + ": cannot list the files; expected a readable folder");
+        }
 
         Configuration config = initConfig();
         FileSystem fs = initFileSystem();
@@ -202,7 +189,6 @@ public class TSBucket {
         // write a SequenceFile form a Vector
         SequenceFile.Writer writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
 
-        File[] files = f.listFiles();
         System.out.println(files.length);
         System.out.println("--> process bucket : " + f.getAbsolutePath() + " (" + files.length + ")");
 
@@ -357,32 +343,13 @@ public class TSBucket {
     }
 
     private FileSystem initFileSystem() throws IOException {
-
-        FileSystem fs = null;
-        
+        Configuration conf = initConfig();
         try {
-        
-            fs = FileSystem.get(initConfig());
-
-            if (initConfig() == null) {
-                System.err.println("!!! ERROR !!! ");
-            }
-
-            if (fs == null) {
-                System.err.println("!!! ERROR !!! ");
-            }
-            
-            System.out.println(fs);
+            return FileSystem.get(conf);
         }
         catch (IOException ex) {
-            ex.printStackTrace();
-            System.out.println(">>> IOException: " + ex.getMessage() );
+            throw new IOException(FileSystem.getDefaultUri(conf) + ": cannot open the file system (" + ex + ")", ex);
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return fs;
     }
 
     public java.util.Vector<TimeSeriesObject> getBucketData() {
@@ -638,12 +605,7 @@ public class TSBucket {
         // write a SequenceFile form a Vector
         if ( writeSequence ) {
             fs = initFileSystem();
-            if (fs != null) {
-                writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-            } else {
-                writeSequence = false;
-                writeCsv = true;
-            }
+            writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
         }
         if ( writeCsv ) {
             File csvFile = new File(filename_core + ".csv");
@@ -716,21 +678,14 @@ public class TSBucket {
      */
     public static final String KEY_PREFIX_DELIMITER = "###";
 
-    public void putMessreihe(TimeSeriesObject mr, String keyPrefix) {
-        try {
+    public void putMessreihe(TimeSeriesObject mr, String keyPrefix) throws IOException {
+        TSData data = TSData.convertMessreihe(mr);
 
-            TSData data = TSData.convertMessreihe(mr);
+        NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+        VectorWritable vec = new VectorWritable();
+        vec.set(nv);
 
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(keyPrefix + KEY_PREFIX_DELIMITER + nv.getName()), vec);
-
-        }
-        catch (IOException ex) {
-            Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        writer.append(new Text(keyPrefix + KEY_PREFIX_DELIMITER + nv.getName()), vec);
     }
 
     /**
@@ -741,24 +696,18 @@ public class TSBucket {
      *
      * @param mr
      */
-    public void putMessreihe(TimeSeriesObject mr) {
-        try {
-
-            if (mr == null) {
-                return;
-            }
-
-            TSData data = TSData.convertMessreihe(mr);
-
-            NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
-            VectorWritable vec = new VectorWritable();
-            vec.set(nv);
-
-            writer.append(new Text(nv.getName()), vec);
-
-        } catch (IOException ex) {
-            Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
+    public void putMessreihe(TimeSeriesObject mr) throws IOException {
+        if (mr == null) {
+            return;
         }
+
+        TSData data = TSData.convertMessreihe(mr);
+
+        NamedVector nv = new NamedVector(new DenseVector(data.getData()), data.label);
+        VectorWritable vec = new VectorWritable();
+        vec.set(nv);
+
+        writer.append(new Text(nv.getName()), vec);
     }
 
 
@@ -770,49 +719,30 @@ public class TSBucket {
      *
      * @param file
      */
-    public void _open(File file) {
-        try {
-            DecimalFormat df = new DecimalFormat("0.000");
-            writerFile = file;
+    public void _open(File file) throws IOException {
+        writerFile = file;
 
-            System.out.println("--> open a time series bucket for write : " + file.getAbsolutePath());
+        System.out.println("--> open a time series bucket for write : " + file.getAbsolutePath());
 
-            Configuration config = initConfig();
-            FileSystem fs = initFileSystem();
+        Configuration config = initConfig();
+        FileSystem fs = initFileSystem();
 
-            Path path = new Path(file.getAbsolutePath());
-            System.out.println("--> bucket path : " + path.toString());
+        Path path = new Path(file.getAbsolutePath());
+        System.out.println("--> bucket path : " + path.toString());
 
-            // write a SequenceFile form a Vector
-            writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
-        } catch (IOException ex) {
-            Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
+        // write a SequenceFile form a Vector
+        writer = new SequenceFile.Writer(fs, config, path, Text.class, VectorWritable.class);
     }
 
-    public void _open(String s) {
+    public void _open(String s) throws IOException {
         File f = new File( s );
         _open( f );
     }
 
-
-    public void flush() {
-        try {
-            // writer.hflush();
-        } catch (Exception ex) {
-            Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public void close() {
-        try {
-            if ( writer != null ) {
-                writer.close();
-                System.out.println("--> closed the time series bucket writer : " + writerFile.getAbsolutePath());
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(TSBucket.class.getName()).log(Level.SEVERE, null, ex);
+    public void close() throws IOException {
+        if ( writer != null ) {
+            writer.close();
+            System.out.println("--> closed the time series bucket writer : " + writerFile.getAbsolutePath());
         }
     }
 

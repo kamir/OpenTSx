@@ -18,8 +18,8 @@ runtimes:
   workbench: { status: available, note: "The output keeps the unit of the input although it has none." }
   java:
     status: available
-    class: "org.opentsx.data.series.TimeSeriesObject#calcMR_Log_for_Y"
-    note: "2.x model in opentsx-core: drops only 0 and infinite values; a negative value gives NaN and stays in the output. No automated test."
+    class: "org.opentsx.data.series.TimeSeriesObject#calcMR_Ln_for_Y"
+    note: "2.x model in opentsx-core: a value of 0 or below gives NaN and keeps its time, so the output has as many points as the input. TimeSeriesObjectStatisticsTest checks [e, 0, -1]."
   python: { status: none }
   processor: { status: none }
   go: { status: none }

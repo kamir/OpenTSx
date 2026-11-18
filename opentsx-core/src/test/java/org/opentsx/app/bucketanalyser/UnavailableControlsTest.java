@@ -33,6 +33,21 @@ class UnavailableControlsTest {
         }
     }
 
+    @Test
+    void naturalLogarithmButtonIsLabelledLn() throws Exception {
+        String original = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", home.toString());
+            SwingUtilities.invokeAndWait(() -> {
+                TSOperationControlerPanel panel = new TSOperationControlerPanel();
+                assertTrue(findButton(panel, "ln").isEnabled());
+                assertNull(searchButton(panel, "Log"));
+            });
+        } finally {
+            System.setProperty("user.home", original);
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"Export Java", "Export Scala"})
     void unavailableExportsCannotBeClicked(String label) throws Exception {

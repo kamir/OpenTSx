@@ -1,17 +1,16 @@
 package org.opentsx.algorithms.ris;
 
 /**
- * Berechnung der Verteilung der Wiederkehr-Intervalle
+ * Computes the distribution of return intervals.
  * 
- * - Normierung mit Rq erfolgt mit Aufruf der Methode calcMessreihen() und
- *   sobald die Instanz zu einer ContainerInstanz hinzugefügt wird 
- * - Zusammenfassung verschiedener Auswertungen mehrerer Zeit-(Intervall)-
- *   Reihen in einer ContainerInstanz
- * - Histogramm von Rq-Werten ausgeben wenn es eine ContainerInstanz ist
- * - Anzeige der Daten für einzelne Zeit-Reihen
+ * - The values are scaled with Rq when calcMessreihen() is called and
+ *   when the instance is added to a container instance
+ * - A container instance combines the results of several interval
+ *   series
+ * - A container instance gives a histogram of the Rq values
+ * - Shows the data of single series
  */
 
-import org.opentsx.chart.panels.MessreiheWindow3Frame;
 import org.opentsx.chart.simple.MultiChart;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.exporter.OriginProject;
@@ -28,16 +27,16 @@ import org.opentsx.algorithms.statistics.HaeufigkeitsZaehlerDouble;
 
 /**
  * 
- * Die Zusammenfassung von einzelnen Return-Intervall-Statistik Resultaten
- * kann nur auf Reihen mit gleichem Rq angewendet werden.
+ * Results of single return interval statistics can only be combined
+ * for series with the same Rq.
  * 
- * Ist Rq sehr verschieden, dann wird mit Rq skaliert
+ * When the Rq values differ a lot, the values are scaled with Rq.
  * 
- * Die skalierten Werte können zusammegefasst werden.
+ * The scaled values can be combined.
  * 
- * add( RIS2 )                  => sammeln im Container
- * addData( Vector<Long> ...  ) => Zeitpunkte
- * addDistData( Vector<Double)  => Zeitintervalle sammeln
+ * add( RIS2 )                  => collect in the container
+ * addData( Vector<Long> ...  ) => points in time
+ * addDistData( Vector<Double)  => collect time intervals
  * 
  * 
  * 
@@ -51,8 +50,7 @@ public class RISTool {
     public static HaeufigkeitsZaehlerDouble debug1[] = null;
     
     /** 
-     * wird beim setzen von Daten umgeschaltet und zum Konsistenz-Check 
-     * benutzt.
+     * Marks a container instance; the data methods check it.
      */
     public boolean isContainerInstanz = false;
 
@@ -62,27 +60,27 @@ public class RISTool {
     public String folder = null;
     
     /*
-     * einfach nur gezählte Werte
+     * plain counts
      */
     public TimeSeriesObject mrHaeufigkeit = new TimeSeriesObject();
     /*
-     * normierte Häufigkeiten, somit ergibt die summe aller Werte 1
+     * normalized frequencies, so the sum of all values is 1
      */
     public TimeSeriesObject mrVerteilung = new TimeSeriesObject();
     public TimeSeriesObject mrVerteilungSkaliert = new TimeSeriesObject();
 
-    private int binning = 300;   // anzahl der Werte pro Intervall
-    private int scale = 24;    // größter Wert
+    private int binning = 300;   // number of values per interval
+    private int scale = 24;    // largest value
     
-    // DEFAULT, wird nicht im Konstruktor definiert!!!
-    private static int binningSKALIERT = 8;   // anzahl der Werte pro Intervall
-    private static int scaleSKALIERT = 5;    // größter Wert
+    // default, not set in the constructor
+    private static int binningSKALIERT = 8;   // number of values per interval
+    private static int scaleSKALIERT = 5;    // largest value
 
     private double _Rq = 0.0;
     private int zElements = 0;
 
     /* 
-     * die "gebinnten" Werte, also ein Feld von Zählern 
+     * the binned values, an array of counters
      */
     int data[] = null;
     int dataSKALIERT[] = null;
@@ -94,7 +92,7 @@ public class RISTool {
     static public boolean debug = false;
     static public boolean verbose = false;
     
-    // ab welchem Wert für r soll es losgehen?
+    // smallest value of r that is used
 //    public static final double offset = 24*1;
     public static double offset = 0;
 
@@ -132,23 +130,24 @@ public class RISTool {
 
     /** 
      *
-     * Aufsammeln von mehreren RIS aus vielen Zeitreihen einer Gruppe 
-     * wobei die Werte noch nicht normiert (mit Rq) sind.
+     * Collects the RIS of many series of a group whose values are not
+     * scaled with Rq yet.
      * 
      */
     Vector<Double> allRqs = new Vector<Double>();
     TimeSeriesObject test = new TimeSeriesObject();
     public void add( RISTool ris ) throws Exception {
-        if (!_checkRIS( ris ) ) { 
-            throw new Exception( "[RIS] ist ungültig!");
-        }
-        
         if ( !this.isContainerInstanz ) {
-            throw new Exception( "[RIS] Keine ContainerInstanz!");
+            throw new IllegalStateException( "add: " + name + " is not a container; set isContainerInstanz to true before adding results");
         }
         
         if ( ris.data.length != data.length ) {
-            throw new Exception( "[RIS] Unterschiedliches Binning !!!");
+            throw new IllegalArgumentException( "add: " + ris.name + " has " + ris.data.length + " bins and " + name
+                    + " has " + data.length + "; expected the same binning and scale");
+        }
+        
+        if ( ris.dataRawFILTERED == null ) { 
+            throw new IllegalArgumentException( "add: " + ris.name + " has no return intervals; add intervals with addDistData first");
         }
         
         if ( debug ) {
@@ -156,21 +155,25 @@ public class RISTool {
             // ris.showData();
         }
         
+        // an empty result has NaN probabilities (0 of 0 intervals) and adds nothing
         if ( ris.dataRawFILTERED.size() < 1 ) {
             if ( debug ) {
-                System.out.println(">>> " + ris.label + " ist leer ..." + ris._Rq );
+                System.out.println(">>> " + ris.label + " is empty ..." + ris._Rq );
             }        
             return;
         } 
 
         for( int i = 0; i < probSKALIERT.length; i++ ) { 
             double prob = ris.probSKALIERT[i];
-            
             if ( Double.isNaN( prob ) || Double.isInfinite( prob ) ) {
-                System.err.println("ERROR 3:");
-                System.err.println( ris.label + "\ti: (" + probSKALIERT.length + ") "+ i + "\t" + prob + " \t" + ris.dataSKALIERT[i] + " #=" + ris.dataRawFILTERED.size() );
+                throw new IllegalArgumentException( "add: probability " + i + " of " + ris.name + " is " + prob
+                        + "; expected a finite probability" );
             }
-            
+        }
+
+        _checkRIS( ris );
+
+        for( int i = 0; i < probSKALIERT.length; i++ ) { 
             probSKALIERT[i] = probSKALIERT[i] + ris.probSKALIERT[i];
             dataSKALIERT[i] = dataSKALIERT[i] + 1;
             
@@ -179,41 +182,40 @@ public class RISTool {
         allRqs.add(ris._Rq);
         
         if ( debug ) {
-            System.out.println( ris.dataRawFILTERED.size() + " Werte kommen an ...");
+            System.out.println( ris.dataRawFILTERED.size() + " values arrive ...");
         }
         
     }
 
     /** 
-     * Vector<Long> times ==> Zeitpunkte, in geordneter Reihenfolge.
-     *                        keine y-Werte !!! Nur Folge von t ....
+     * Vector<Long> times ==> points in time, in order.
+     *                        No y values, only the sequence of t.
      *  
-     * Ein Vector mit "Zeiten" wird übergeben. 
+     * A vector of times is passed.
      * 
-     * Daraus sind zunächst die "Wiederkehrzeiten" 
-     * zu bestimmen.
+     * The return intervals are computed from it first.
      **/
     public void _addData( Vector<Double> times ) throws Exception {
 
         if ( this.isContainerInstanz ) {
-            throw new Exception("[RIS] ist eine Container-Instanz!");
+            throw new IllegalStateException("_addData: " + name + " is a container; add times to a result that is not a container");
         }
 
         if ( debug ) {
             System.out.println( 
-                    ">>> berechne n=" + (times.size()-1) + " Intervalle." );
+                    ">>> computing n=" + (times.size()-1) + " intervals." );
         }
 
         
-        // Container neu erstellen ...
+        // recreate the container
         dataRawTIMES = new Vector<Double>();
 
         int nullDistCounter = 0;
         
-        // Zeitpunkte 
+        // points in time
         Enumeration<Double> en = times.elements();
         
-        // erstes Element (Index: 0)
+        // first element (index 0)
         double vor = en.nextElement(); 
         
         while( en.hasMoreElements() ) {
@@ -221,14 +223,14 @@ public class RISTool {
             double dist = (double)(now - vor);
             if ( dist > 0.0 ) {
                 
-                // INTERVALLE in Stunden ...
+                // intervals in hours
                 dist = dist / (60 * 60 * 1000);
                 dataRawTIMES.add(dist);
             }
             else {
                 nullDistCounter++;
             }
-            if (debug )System.out.println(dist + " \t now:=" + now + "\t vor:=" + vor);
+            if (debug )System.out.println(dist + " \t now:=" + now + "\t before:=" + vor);
             vor = now;
         } 
 
@@ -247,48 +249,50 @@ public class RISTool {
     
     
     /**
-     * bleibt über den gesamten Lauf erhalten ...
+     * kept for the whole run
      */
     public static HaeufigkeitsZaehler anzRowRAW = new HaeufigkeitsZaehler("length of rows (raw)");
     public static HaeufigkeitsZaehler anzRowsFILTERED = new HaeufigkeitsZaehler("length of rows (filtered, offset="+RISTool.offset+"h)");
 
     /** 
-     * Ein Vector mit "Wiederkehrzeiten" wird hinzugefügt.
+     * Adds a vector of return intervals.
      * 
-     * Es erfolgt die Einsortierung in das Binning, und eine 
-     * sofortige Normierung mit Rq.
+     * The intervals are sorted into the bins and scaled with Rq
+     * at once.
      * 
-     * Zuvor wird das vorhandene Array geleert.
+     * The existing array is cleared first.
      * 
      **/
     int cutOff = 0;
     public int anzFiltered = 0;
     public void addDistData( Vector dists ) throws Exception {
         if ( this.isContainerInstanz ) {
-            throw new Exception("[RIS] ist eine Container-Instanz!");
+            throw new IllegalStateException("addDistData: " + name + " is a container; add intervals to a result that is not a container");
         }
         
         if ( debug ) {
             System.out.println( 
-                    ">>> n=" + dists.size() + " Intervalle einfügen ...");
+                    ">>> n=" + dists.size() + " intervals to insert ...");
         }
         
         long anzahlVor = (long)dists.size();
         anzRowRAW.addData( anzahlVor  );
         
         dataRawFILTERED = new Vector<Double>();
-        Vector<Double> dataRawNOT_FILTERED = new Vector<Double>();
         Enumeration en1 = dists.elements();
         while( en1.hasMoreElements() ) {
             double da = (Double)en1.nextElement();
-            dataRawNOT_FILTERED.add(da);
             if ( da >= offset && da != 0.0  ) {
                 dataRawFILTERED.add( da );
             }
             else {
-                System.out.println("  Filtered: =>  " + da  );
                 cutOff++;
             }
+        }
+
+        if ( cutOff != 0 && offset == 0 ) {
+            throw new IllegalStateException( "addDistData: " + cutOff
+                    + " intervals are 0 or negative; expected positive intervals while offset is 0" );
         }
         
         long anzahlNach = (long)dataRawFILTERED.size();
@@ -304,26 +308,17 @@ public class RISTool {
         if ( debug ) {
             System.out.println( 
                     ">>> n_cutoff=" + cutOff + 
-                    " Intervalle zu klein (offset:="+offset+")");
+                    " intervals too small (offset:="+offset+")");
         }
-   
-        if ( cutOff != 0 && offset == 0 ) throw new Exception( 
-                "SCHWEERER FEHLER" );
         
         anzFiltered = dataRawFILTERED.size();
-        
-        if ( dataRawFILTERED.size() >= 512 ) {
-            MessreiheWindow3Frame f = new MessreiheWindow3Frame();
-            f.show( dataRawTIMES , dataRawFILTERED, dataRawNOT_FILTERED );
-            System.out.println( "***>  " + dataRawFILTERED.size() );
-        }
         
         clear();
         
         double sumRq_alt = 0.0;
         int anzRq_alt =0;
         
-        // Rq_alt für Daten ermitteln ...
+        // Rq of all intervals
         Enumeration enUM_Rq_alt = dists.elements();
         while( enUM_Rq_alt.hasMoreElements() ) {
             double v = (Double) enUM_Rq_alt.nextElement();
@@ -333,7 +328,7 @@ public class RISTool {
         }
         double Rq_alt = sumRq_alt /(1.0*anzRq_alt);
         
-        // Rq_neu für die neuen Daten ermitteln ...
+        // Rq of the filtered intervals
         double sumRq_filteres = 0.0;
         int anzRq_filterd = 0;
         Enumeration enUM_Rq_filteres = dataRawFILTERED.elements();
@@ -346,25 +341,23 @@ public class RISTool {
         double Rq_filtered = sumRq_filteres/(1.0*anzRq_filterd);
         zElements = anzRq_filterd;
        
-        if ( debug ) System.out.println(">>> R_q_alt=" + Rq_alt + "\tR_q_neu=" + Rq_filtered );
+        if ( debug ) System.out.println(">>> R_q of all=" + Rq_alt + "\tR_q filtered=" + Rq_filtered );
         _Rq = Rq_filtered;
 
         
         
         
-        // SKALIERTEN WERT zaehlen ... hier wird mit Rq_neu normiert ... 
-        // es werden die gefilterten Daten benutzt.
+        // count the filtered intervals scaled with their Rq
         Enumeration en = dataRawFILTERED.elements();
         while( en.hasMoreElements() ) {
              double dist1 = (Double) en.nextElement();
              double v = dist1  / (double)Rq_filtered;
              int index = (int)(v * (double)scaleSKALIERT);
-             System.out.println( "v="+ v + "\tindex=" + index + "\t dist=" + dist1 + "\tRq_neu=" + Rq_filtered );
              if ( index >= dataSKALIERT.length ) index = dataSKALIERT.length-1;
-             dataSKALIERT[index]++;  // hochzählen ...             
+             dataSKALIERT[index]++;
         }
         
-        // Mittelwert der Wahrscheinlichkeiten berechnen ...
+        // probability of each bin
         for( int i = 0; i < probSKALIERT.length; i++ ) { 
             probSKALIERT[i] = (double)( dataSKALIERT[i] / (double)zElements );
         }              
@@ -392,7 +385,7 @@ public class RISTool {
     
     private void calcContainerMR() throws Exception {
         
-        mrVerteilungSkaliert = new TimeSeriesObject( "Vert_SK");
+        mrVerteilungSkaliert = new TimeSeriesObject( "dist_scaled");
         
         for (int i = 0; i < dataSKALIERT.length; i++) {
             if ( dataSKALIERT[i] != 0 ) {
@@ -424,7 +417,7 @@ public class RISTool {
 
         double summe = 0.0;
         
-        // für jedes BIN i
+        // for every bin i
         for (int i = 0; i < data.length; i++) {
 
             double relAnzahl = 0.0;
@@ -449,7 +442,7 @@ public class RISTool {
             summe = summe + relAnzahl;
            
             
-//        // erste Werte weglassen ....
+//        // leave out the first values
 //        if ( i >= (offset*scale / Rq) ) { 
 //                
 //          anzahlProSpalte = dataSKALIERT[i];
@@ -462,12 +455,12 @@ public class RISTool {
         // mrVerteilungSkaliert = mrVerteilungSkaliert.scaleY_2(1.0/summe);
         // if ( summe-1.0 > epsilon ) 
         //   throw new Exception(
-        //     "Norm. Sum wrong! \n(epsilon="+epsilon+", summe="+summe+")");
+        //     "Norm. Sum wrong! \n(epsilon="+epsilon+", sum="+summe+")");
         if ( debug ) {
             System.out.println(
-               "(a) Anzahl Elemente=" + this.zElements);
+               "(a) number of elements=" + this.zElements);
             System.out.println(
-               "(b) Rq=" + _Rq + "\t summe=" + summe );    
+               "(b) Rq=" + _Rq + "\t sum=" + summe );    
         }
     }
     
@@ -485,14 +478,14 @@ public class RISTool {
     Vector<TimeSeriesObject> v2 = new Vector<TimeSeriesObject>();
     
     private void showVerteilungen() {
-        // Verteilungen
+        // distributions
         if ( !this.isContainerInstanz ) v1.add( this.mrVerteilung);
         v1.add( this.mrVerteilungSkaliert);        
     }
 
 
     private void showRawData() {
-        // Rohdaten (Intervalle)
+        // raw data (intervals)
         TimeSeriesObject mr = new TimeSeriesObject( this.name + " (rawdata)");
         for( double y: this.dataRawFILTERED ) {
             mr.addValue(y);
@@ -511,9 +504,9 @@ public class RISTool {
         sb.append("\n#---------------------\n# " +
                  label + "\n#---------------------\n");
         sb.append("# Rq            =" + _Rq + "\n");
-        sb.append("# Anzahl-Werte  =" + zElements + "\n");
+        sb.append("# Values        =" + zElements + "\n");
         sb.append("# Binning       =" + binning + "\n" );
-        sb.append("# [ --- Häufigkeit --- ]" );
+        sb.append("# [ --- frequency --- ]" );
         mrHaeufigkeit.setLabel(sb.toString());
         return mrHaeufigkeit.toString();
     }
@@ -524,10 +517,10 @@ public class RISTool {
         sb.append("\n#---------------------\n# " +
                  label + "\n#---------------------\n");
         sb.append("# Rq            =" + _Rq + "\n");
-        sb.append("# Anzahl-Werte  =" + zElements + "\n");
+        sb.append("# Values        =" + zElements + "\n");
         sb.append("# Binning       =" +binning + "\n" );
         sb.append("# Scale         =" +scale + "\n" );
-        sb.append("# [ --- Verteilung --- ]" );
+        sb.append("# [ --- distribution --- ]" );
         mrVerteilung.setLabel(sb.toString());
         return mrVerteilung.toString();
     }
@@ -555,15 +548,15 @@ public class RISTool {
     }
 
     /**
-     * auf dem rawDataVector rechnen ...
+     * Computes Rq from the filtered intervals.
      * @param offset 
      */
     int zahl = 0;
     int verlust = 0;
     private void calcRq(double offset) throws Exception {
         if ( this.isContainerInstanz ) {
-            throw new Exception( "[RIS] R_q ist für Containerinstanz" + 
-                                 " nicht berechnbar!" );
+            throw new IllegalStateException( "calcRq: " + name
+                    + " is a container; R_q is computed for a result that is not a container" );
         }
         zahl = 0;
         verlust = 0;
@@ -587,10 +580,10 @@ public class RISTool {
     
     static Vector<TimeSeriesObject> mrv = null;
     
-    static int risBinning = 300*24;  // Auflösung in Stunden
+    static int risBinning = 300*24;  // resolution in hours
     static int risScale = 1;
 
-    static int maxB = 5; // anzahl der Input-Files
+    static int maxB = 5; // number of input files
     static int maxROWS = -1; // default -1
     
     public static String logFileNames[] = null;
@@ -619,7 +612,7 @@ public class RISTool {
             mrANZ[i].max = 300*24;
             
             RISTool.debug1[i] = new HaeufigkeitsZaehlerDouble();
-            RISTool.debug1[i].label = "bis="+grenzen[i];
+            RISTool.debug1[i].label = "upTo="+grenzen[i];
         }
     }
     
@@ -697,7 +690,7 @@ public class RISTool {
         RISTool ris3 = new RISTool( 
                 "ris3", _binning, _scale);
        
-        // die Distancen sind nun hinzugefügt ....
+        // the intervals are added now
         data1 = RISTool.initTestData( 100, 10, 3);
         ris1.addDistData(data1);
         ris1.calcMessreihen();
@@ -819,17 +812,11 @@ public class RISTool {
 //        javax.swing.JOptionPane.showMessageDialog(null, "go");
     }    
 
-    private static boolean _checkRIS(RISTool ris) throws IOException {
-        boolean b = true;
-        
-        if ( ris.dataRawFILTERED == null ) return false;
-        
-        if ( ris == null ) return false;
-        
+    private static void _checkRIS(RISTool ris) throws IOException {
         for ( int i = 1; i < grenzen.length ; i++ ) {
             if ( ris.anzFiltered <= grenzen[i] && ris.anzFiltered > grenzen[i-1] ) { 
 
-                // ist die Summe aller r größer als die gesamte Zeitreihe?
+                // is the sum of all r larger than the whole series?
                 double sum = 0.0;
                 for( double v3 : ris.dataRawFILTERED ) {
                     sum = sum + v3;
@@ -839,8 +826,8 @@ public class RISTool {
                 for( double v : ris.dataRawFILTERED ) {
                
                                   
-                    String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t rq_min=" + rqMIN[i] + "\t summe(r_i)=" + sum;
-                    // String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t summe(r_i)=" + sum;
+                    String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t rq_min=" + rqMIN[i] + "\t sum(r_i)=" + sum;
+                    // String line = "\t\tr=" + v + "\tRq=" + ris._Rq + "\tr/Rq=(" + (v/ris._Rq) + ")\t sum(r_i)=" + sum;
  
                     if ( ( v / ris._Rq ) < rqMIN[i] ) {
                         
@@ -857,15 +844,14 @@ public class RISTool {
                 }
                 
                 if ( sum > 300*24 ) {
-                    System.out.println( "SUMME >>> 300*24 " + sum );
+                    System.out.println( "SUM >>> 300*24 " + sum );
                 }
                 double RQMAX = 300.0 * 24.0 / (1.0 * grenzen[i-1] );
                 if( ris._Rq > RQMAX ) {
-                    projekt.logLine(  "RzuGROS" , ris._Rq + " " + ris.label );
+                    projekt.logLine(  "RqTooLarge" , ris._Rq + " " + ris.label );
                 }
             }
-        }     
-        return b;
+        }
     }
 
     private boolean preCheck(Vector<Double> dataRawTIMES) {

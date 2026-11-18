@@ -26,10 +26,9 @@ public class Exercise3_LoadAndTransform {
             System.out.println("Loading: " + inputFile.getPath());
 
             MessreihenLoader loader = MessreihenLoader.getLoader();
-            loader.delim = ",";
 
             // Load temperature column (assuming column 1 is timestamp, column 2 is temperature)
-            TimeSeriesObject temperatures = loader.loadMessreihe_2(inputFile, 1, 2);
+            TimeSeriesObject temperatures = loader.loadMessreihe_2(inputFile, 1, 2, ",");
             temperatures.setLabel("sensor_temperatures");
 
             // Print basic statistics

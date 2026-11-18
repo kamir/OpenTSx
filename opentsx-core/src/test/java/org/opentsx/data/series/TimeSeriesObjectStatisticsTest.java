@@ -8,6 +8,7 @@ import org.opentsx.algorithms.statistics.DatasetNormalizationTool;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -119,6 +120,55 @@ class TimeSeriesObjectStatisticsTest {
         TimeSeriesObject input = row;
         assertThrows(IllegalArgumentException.class,
                 () -> DatasetNormalizationTool.normalizeToMWZeroANDSTDevONE(input));
+    }
+
+    @Test
+    void logarithmsOfValuesThatAreNotPositiveAreNaN() {
+        TimeSeriesObject log10 = values(10.0, 0.0, -1.0);
+        log10.calcLog10_for_Y();
+        assertEquals(List.of(1.0, Double.NaN, Double.NaN), log10.yValues);
+
+        TimeSeriesObject ln = values(Math.E, 0.0, -1.0);
+        ln.calcLn_for_Y();
+        assertEquals(List.of(1.0, Double.NaN, Double.NaN), ln.yValues);
+
+        TimeSeriesObject lnCopy = values(Math.E, 0.0, -1.0).calcMR_Ln_for_Y();
+        assertEquals(List.of(1.0, Double.NaN, Double.NaN), lnCopy.yValues);
+        assertEquals(List.of(1.0, 2.0, 3.0), lnCopy.xValues);
+    }
+
+    @Test
+    void theLogarithmHasOneMethodThatReturnsANewSeries() {
+        assertThrows(NoSuchMethodException.class, () -> TimeSeriesObject.class.getMethod("calcMR_Log_for_Y"));
+    }
+
+    @Test
+    void meanOfRowsDividesEachPointByTheNumberOfRows() throws Exception {
+        TimeSeriesObject mean = TimeSeriesObject.calcAveragOfRows(new Vector<>(List.of(values(1.0, 1.0), values(3.0, 3.0))));
+        assertEquals(List.of(2.0, 2.0), mean.yValues);
+        assertEquals(List.of(1.0, 2.0), mean.xValues);
+        TimeSeriesObject partial = TimeSeriesObject.calcAveragOfRows(new Vector<>(List.of(values(1.0, 1.0, 1.0), values(3.0))));
+        assertEquals(List.of(2.0, 1.0, 1.0), partial.yValues);
+    }
+
+    @Test
+    void xForYReturnsTheFirstPointWithinEpsilon() {
+        TimeSeriesObject row = new TimeSeriesObject();
+        row.addValuePair(0.5, 3.0);
+        row.addValuePair(1.5, 7.0);
+        row.addValuePair(2.5, 7.05);
+        assertEquals(1.5, row.getX_for_Y2(7.02, 0.1));
+        assertEquals(0.5, row.getX_for_Y2(3.0, 0.1));
+        assertTrue(Double.isNaN(row.getX_for_Y2(5.0, 0.1)));
+        assertTrue(Double.isNaN(new TimeSeriesObject().getX_for_Y2(5.0, 0.1)));
+    }
+
+    private static TimeSeriesObject values(double... y) {
+        TimeSeriesObject row = new TimeSeriesObject();
+        for (int i = 0; i < y.length; i++) {
+            row.addValuePair(i + 1.0, y[i]);
+        }
+        return row;
     }
 
     private TimeSeriesObject series() {

@@ -238,12 +238,10 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
     }
 
     public void setDecimalFomrmatX(String format) {
-        this.dfx = format;
         this.decimalFormat_X = new DecimalFormat(format);
     }
 
     public void setDecimalFomrmatY(String format) {
-        this.dfy = format;
         this.decimalFormat_Y = new DecimalFormat(format);
     }
 
@@ -701,8 +699,8 @@ public class TimeSeriesObjectFFT extends TimeSeriesObject {
         TimeSeriesObject[] rows = new TimeSeriesObject[count];
         Enumeration en = this.yValues.elements();
 
-        int c = 0;
         for (int i = 0; i < count; i++) {
+            int c = 0;
             TimeSeriesObject mr = new TimeSeriesObject(this.label + " (" + i + ")");
             mr.setLabel("" + i);
 

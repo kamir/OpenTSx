@@ -39,8 +39,9 @@ input folder, legacy label, raw-DFA boolean and normalized-DFA boolean. The labe
 for compatibility and does not change output names. Both booleans accept only `true` or `false`.
 
 An optional fifth argument filters bucket filenames by substring. An omitted filter selects all
-`.tsb.vec.seq` files. An optional sixth argument sets a nonnegative record limit. The default comes from
-`BucketLoader.default_LIMIT`, initially 50. `BucketLoader.setLimit` applies to data loading and processing.
+`.tsb.vec.seq` files. An optional sixth argument sets a nonnegative record limit. The default is the constant
+`BucketLoader.default_LIMIT`, 50. `BucketLoader.setLimit` sets the limit of that loader for data loading and
+processing. It changes no other loader and not `TSBucket.default_LIMIT`.
 Missing folders, unreadable directory listings, invalid booleans and invalid limits stop the invocation.
 
 ## Export a supported processing flow
@@ -70,6 +71,20 @@ and retains the original exception as its cause. Processing output writers close
 
 The SequenceFile writer stores each series label and Y values. Loading reconstructs sequential X values;
 arbitrary input X coordinates and other metadata are not persisted by this format.
+
+## Write a bucket
+
+A `TSBucket` writes through the default Hadoop file system of its configuration. When that file system cannot be
+opened, every method that uses it throws `IOException` with
+`<default file system URI>: cannot open the file system (<cause>)`. `createBucketWithRandomTS_sinus` writes a
+SequenceFile when `SKIP_WRITES` is false and `opentsx.demo.output.format` is not `csv`; in that case it throws and
+writes no CSV file instead. `_open`, `putMessreihe` and `close` throw the `IOException` of the writer, so opening a
+bucket under a regular file fails with a message that names that file.
+
+`createBucketFromLocalFilesInDirectory(sourceFolder, groupFolder, limit)` reads the files in
+`<sourceFolder>/<groupFolder>`. There is no default source folder. A folder that cannot be listed throws
+`IOException` with `<sourceFolder>/<groupFolder>: cannot list the files; expected a readable folder` before the
+bucket file is created.
 
 ## Check bucket workflow support
 
@@ -107,6 +122,29 @@ returns the pairs of `other`. Series of different lengths throw `IllegalArgument
 `getAvarage()` computes the mean of the y values on every call. An empty series gives NaN.
 `replaceZeroWithAverage()` replaces every value 0 with the mean of all values, the zeros included.
 
+`calcAveragOfRows(rows)` keeps the x values of the first row. Each point is the mean of the rows that have a value at
+that index, so rows `[1, 1]` and `[3, 3]` give `[2, 2]`, and rows `[1, 1, 1]` and `[3]` give `[2, 1, 1]`.
+
+`split(length, count)` cuts the y values into `count` rows of `length` values. A row with fewer values is padded with
+its own mean up to `length` and gets the comment `<n> missing values replaced with mean=<mean>.`. A row without values
+holds NaN.
+
+`getX_for_Y2(y, epsilon)` returns the x value of the first point whose y value differs from `y` by less than
+`epsilon`, or NaN when no point does.
+
+## Take logarithms
+
+`calcLog10_for_Y()` and `calcLn_for_Y()` replace every y value with its logarithm. `calcMR_Ln_for_Y()` returns a new
+series with the natural logarithm at the same x values. A value of 0 or below gives NaN, so `[10, 0, -1]` gives
+`[1, NaN, NaN]` in base 10, and the result has as many points as the input. The desktop action for the natural
+logarithm is labelled `ln` and records the prefix `LN_`.
+
+## Format the text of a series
+
+`toString()` formats x and y with the patterns of the series, `0.00000` by default. `setDecimalFomrmatX(pattern)` and
+`setDecimalFomrmatY(pattern)` change only the series they are called on. The constants `TimeSeriesObject.dfx`,
+`dfy` and `dfstat` hold the default pattern.
+
 ## Compute the entropy in sliding windows
 
 `calcEntropyForWindow(length)` starts a window every `length / 4` values, rounded down. A length below 4 throws
@@ -119,15 +157,27 @@ separator and y in the notation of `Double.toString`, for example `0.5,1.25`. `w
 space. Both create missing parent directories. A failed write throws `UncheckedIOException` with
 `<file>: cannot write the file (<cause>)`. `toString()` lists at most the first 5 pairs.
 
-`MessreihenLoader.loadMessreihe_2(file, columnX, columnY, delimiter)` reads such a file. Columns count from 1. Lines
-that start with `#` and empty lines are skipped. The delimiter is a set of separator characters, as in
+`MessreihenLoader.loadMessreihe_2(file, columnX, columnY, delimiter, limit)` reads such a file. Columns count from 1.
+Lines that start with `#` and empty lines are skipped. The delimiter is a set of separator characters, as in
 `StringTokenizer`. A comma is read as a decimal point unless the delimiter contains a comma, so `0,5;1,25` with `;`
-loads as 0.5 and 1.25. The call sets the static `MessreihenLoader.delim` for later calls. Errors stop the load:
+loads as 0.5 and 1.25. At most `limit` pairs are read. The overloads without a delimiter use
+`MessreihenLoader.DEFAULT_DELIMITER` (`,`), and those without a limit use `MessreihenLoader.DEFAULT_LIMIT`
+(1000000000). The delimiter and the limit apply to that call only.
+
+The other `MessreihenLoader` methods skip the same lines and stop the same way. `loadMessreihe` and `loadMessreihe_1`
+split at white space, the methods with a delimiter argument split at that delimiter, and `_loadLogBinnedMessreihe` and
+the five-argument `_loadLogBinnedMessreihe_DIV_BY_BINWIDTH` split at `,`. `loadMessreihe_1`, `loadMessreihe_zr_SC`,
+both `loadMessreihe_For_LinkStrength` methods and `_loadMessreihe_For_FD` read a comma as a decimal point unless the
+delimiter contains a comma. Errors stop the load:
 
 | Problem | Exception and message |
 |---------|-----------------------|
 | value is not a number | `IllegalArgumentException`: `<file>:<line>: "<token>" is not a number; expected a decimal number such as 1.5` |
 | too few columns | `IllegalArgumentException`: `<file>:<line>: the line has <n> columns; expected at least <m> columns separated by "<delimiter>"` |
+| column 1 without `_` in `loadMessreihe_zr_SC` | `IllegalArgumentException`: `<file>:<line>: "<token>" has no "_"; expected two labels joined by "_" in column 1` |
+| the mapper throws | `IllegalArgumentException`: `<file>:<line>: <mapper name> cannot read the line (<cause>); expected a line the mapper accepts` |
+| the mapper returns no date in `_loadMessreihe_For_FD` | `IllegalArgumentException`: `<file>:<line>: <mapper name> returned no date; expected a date for every line` |
+| no data line in `_loadLogBinnedMessreihe` | `IllegalArgumentException`: `<file>: the file has no data lines; expected at least one line with <n> columns separated by ","` |
 | missing or unreadable file | `UncheckedIOException`: `<file>: cannot read the file (<cause>)` |
 
 ## Test for normality and Granger causality
@@ -158,6 +208,46 @@ Pass a `java.util.Random` with a seed to get the same surrogate again. Without t
 `Random`. `FFTPhaseRandomizer.getPhaseRandomizedRow(ts, showTest, runDFA, testZaehler, mode)` calls the shuffle for
 `MODE_shuffle_phase` and the random phases for `MODE_multiply_phase_with_random_value`, both without a seed. It does
 not use `showTest`, `runDFA` or `testZaehler`. None of these methods opens a window.
+
+## Generate long-range correlated noise
+
+`LongTermCorrelationSeriesGenerator.getRandomRow(length, beta, random, showTest, runDFA)` draws `length` Gaussian
+values from `random`, multiplies the Fourier coefficient at frequency f by f^(-beta/2) with
+`TimeSeriesObjectFFT.getModifiedTimeSeries_FourierFiltered(beta)` and divides the result by its standard deviation.
+Every beta, 0 included, is filtered, and the result has variance 1. The same seed gives the same series. The calls
+without `random` share one `java.util.Random` with the seed `DEFAULT_SEED` (1), so a program gets the same series in
+the same order on every run. The generator needs no `RNGWrapper.init()`. A series that cannot be
+normalized throws `IllegalArgumentException` with
+`getRandomRow: the filtered series of <n> values has standard deviation <s>; expected at least 2 values that are not all equal`.
+
+`LongTermCorrelationSeriesGenerator.main` takes two optional arguments: the output directory, `./data/` by default,
+and the seed, 1 by default. It runs DFA on 10 series for each of 15 values of beta and on one more series with beta 0,
+writes
+`random_numbers_CHECK.csv` and `random_numbers_FS.csv` into the output directory and opens two charts. A seed that
+is not a whole number throws `IllegalArgumentException` with
+`seed: "<value>" is not a whole number; expected a seed such as 1`.
+
+## Collect return intervals
+
+`RISTool.addDistData(intervals)` sorts the intervals into bins scaled with their mean R_q. It opens no window and
+writes nothing to standard output unless `RISTool.debug` is set. `add(result)` adds the probabilities of a single
+result to a container instance. Errors stop the call:
+
+| Problem | Exception and message |
+|---------|-----------------------|
+| a probability of the result is NaN or infinite | `IllegalArgumentException`: `add: probability <index> of <name> is <value>; expected a finite probability` |
+| the receiver is not a container | `IllegalStateException`: `add: <name> is not a container; set isContainerInstanz to true before adding results` |
+| the binning differs | `IllegalArgumentException`: `add: <name> has <n> bins and <container> has <m>; expected the same binning and scale` |
+| an interval is 0 or negative while `RISTool.offset` is 0 | `IllegalStateException`: `addDistData: <n> intervals are 0 or negative; expected positive intervals while offset is 0` |
+| intervals are added to a container | `IllegalStateException`: `addDistData: <name> is a container; add intervals to a result that is not a container` |
+
+`add` checks the container, the binning and the probabilities first, so a rejected result leaves the container
+unchanged and writes no log line. A result without intervals adds nothing. For a result with 2 to 1024 filtered
+intervals, `add` then writes one line per interval through `RISTool.projekt` to the log named in
+`RISTool.logFileNames` and compares each interval with `RISTool.rqMIN`. Set `RISTool.projekt` and
+`RISTool.logFileNames` and call `RISTool.initRqMIN()` first. Without them, `add` throws `NullPointerException`. When
+`RISTool.offset` is not 0, also call `RISTool.initRqCollectors()`: `add` counts an interval below `RISTool.rqMIN` in
+`RISTool.debug1`, which `initRqCollectors()` creates.
 
 ## Draw Poisson numbers
 

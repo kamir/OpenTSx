@@ -76,7 +76,7 @@ public class BucketCreator2 {
             
 //            int limit = 10;
             
-            tsb.createBucketFromLocalFilesInDirectory(s, limit);
+            tsb.createBucketFromLocalFilesInDirectory(baseIn, s, limit);
         }
     }
 

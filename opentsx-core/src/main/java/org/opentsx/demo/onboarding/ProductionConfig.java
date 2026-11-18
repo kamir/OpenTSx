@@ -188,9 +188,8 @@ public class ProductionConfig {
                           " (attempt " + attempt + "/" + maxAttempts + ")");
 
                 MessreihenLoader loader = MessreihenLoader.getLoader();
-                loader.delim = ",";
 
-                TimeSeriesObject ts = loader.loadMessreihe_2(file, 1, 2);
+                TimeSeriesObject ts = loader.loadMessreihe_2(file, 1, 2, ",");
 
                 if (ts == null || ts.yValues.size() == 0) {
                     logger.warning("Loaded empty time series from: " + file.getName());

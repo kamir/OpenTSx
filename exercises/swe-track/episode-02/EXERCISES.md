@@ -159,9 +159,8 @@ import java.io.File;
 public class Exercise3_LoadAndTransform {
     public static void main(String[] args) throws Exception {
         // TODO: Load sensor_data.csv
-        // Hint: Use MessreihenLoader
+        // Hint: Use loader.loadMessreihe_2(file, 1, 2, ",")
         MessreihenLoader loader = MessreihenLoader.getLoader();
-        loader.delim = ",";
 
 
         // TODO: Print basic statistics

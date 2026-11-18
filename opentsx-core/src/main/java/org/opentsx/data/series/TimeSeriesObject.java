@@ -389,9 +389,9 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
 
     
 
-    public static String dfx = "0.00000";
-    public static String dfy = "0.00000";
-    public static String dfstat = "0.00000";
+    public static final String dfx = "0.00000";
+    public static final String dfy = "0.00000";
+    public static final String dfstat = "0.00000";
 
     DecimalFormat decimalFormat_X = new DecimalFormat( dfx );
     DecimalFormat decimalFormat_Y = new DecimalFormat( dfy );
@@ -572,11 +572,9 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     public void setDecimalFomrmatX(String format) {
-        this.dfx = format;
         this.decimalFormat_X = new DecimalFormat( format );
     }
     public void setDecimalFomrmatY(String format) {
-        this.dfy = format;
         this.decimalFormat_Y = new DecimalFormat( format );
     }
 
@@ -861,77 +859,38 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     }
  
     
+    /**
+     * Replaces every y value with its base 10 logarithm. A value of 0 or below gives NaN.
+     */
     public void calcLog10_for_Y() {
-        
-        double[][] data = this.getData();
-        
-        double[] dx = data[0];
-        double[] dy = data[1];
-
         for( int i = 0; i < this.yValues.size(); i++ ) {
             double d = (Double)this.yValues.elementAt(i);
-            if ( d > 0) this.yValues.set(i, Math.log10(d) );
-            else { 
-                this.yValues.set(i, 0.0 );
-            }
+            this.yValues.set(i, d > 0 ? Math.log10(d) : Double.NaN );
         }
         this.label = this.label.concat("_log10" );
     }
-    
+
+    /**
+     * Replaces every y value with its natural logarithm. A value of 0 or below gives NaN.
+     */
     public void calcLn_for_Y() {
-        double[][] data = this.getData();
-        double[] dx = data[0];
-        double[] dy = data[1];
-
-         
-
         for( int i = 0; i < this.yValues.size(); i++ ) {
             double d = (Double)this.yValues.elementAt(i);
-
-            double v = Math.log(d);
-            if ( v != Double.NEGATIVE_INFINITY && v != Double.POSITIVE_INFINITY ) {
-                this.yValues.set(i, v );
-            }    
+            this.yValues.set(i, d > 0 ? Math.log(d) : Double.NaN );
         }
         this.label = this.label.concat("_ln" );
     }
-    
+
+    /**
+     * Returns a new series with the natural logarithm of every y value at the same x. A value of 0 or below gives
+     * NaN, so the result has as many points as this series.
+     */
     public TimeSeriesObject calcMR_Ln_for_Y() {
         TimeSeriesObject mr = new TimeSeriesObject( this.label.concat("_ln" ) );
-        
-        double[][] data = this.getData();
-        double[] dx = data[0];
-        double[] dy = data[1];
-
         for( int i = 0; i < this.yValues.size(); i++ ) {
             double d = (Double)this.yValues.elementAt(i);
             double x = (Double)this.xValues.elementAt(i);
-
-            double v = Math.log(d);
-            
-            if ( v != Double.NEGATIVE_INFINITY && v != Double.POSITIVE_INFINITY ) {
-                mr.addValuePair( x, v );
-            }    
-        }
-        return mr;
-    }
-
-    public TimeSeriesObject calcMR_Log_for_Y() {
-        TimeSeriesObject mr = new TimeSeriesObject( this.label.concat("_ln" ) );
-        
-        double[][] data = this.getData();
-        double[] dx = data[0];
-        double[] dy = data[1];
-
-        for( int i = 0; i < this.yValues.size(); i++ ) {
-            double d = (Double)this.yValues.elementAt(i);
-            double x = (Double)this.xValues.elementAt(i);
-
-            double v = Math.log(d);
-            
-            if ( v != Double.NEGATIVE_INFINITY && v != Double.POSITIVE_INFINITY ) {
-                mr.addValuePair( x, v );
-            }    
+            mr.addValuePair( x, d > 0 ? Math.log(d) : Double.NaN );
         }
         return mr;
     }
@@ -1497,23 +1456,18 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         return mr;
     }
     
+    /**
+     * Returns the x value of the first point whose y value lies strictly within epsilon of y, or NaN when no point
+     * does.
+     */
     public double getX_for_Y2( double y , double epsilon ) {
-        
-        double returnValueX = Double.NaN;
- 
-        Enumeration<Double> vy = this.yValues.elements();
-        while( vy.hasMoreElements() ) {
-            double wy = vy.nextElement();
-            if ( returnValueX == Double.NaN ) {
-                if( y > (wy-epsilon) && y < (wy+epsilon) ) { 
-                    returnValueX = wy;
-                }    
+        for( int i = 0; i < this.yValues.size(); i++ ) {
+            double wy = (Double)this.yValues.elementAt(i);
+            if( y > (wy-epsilon) && y < (wy+epsilon) ) {
+                return (Double)this.xValues.elementAt(i);
             }
-            else { 
-                return returnValueX;
-            } 
         }
-        return returnValueX;
+        return Double.NaN;
     };
 
     public double getX_for_Y( double y ) {
@@ -1576,8 +1530,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         TimeSeriesObject[] rows = new TimeSeriesObject[anzahl];
         Enumeration en = yValues.elements();
 
-        int c = 0;
         for( int i = 0; i <  anzahl; i++ ) {
+            int c = 0;
             TimeSeriesObject mr = new TimeSeriesObject( this.label+" ("+i+")" );
             mr.setLabel(""+i);
 
@@ -1765,7 +1719,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
     };
 
     /**
-     * Uses the x values of the first row. The x values of the other rows are not compared.
+     * Uses the x values of the first row. The x values of the other rows are not compared. Each point is the mean
+     * of the rows that have a value at that index.
      *
      * @param rows
      * @return
@@ -1780,10 +1735,8 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
         int i = rows.elementAt(0).xValues.size();
         int j = rows.size();
         int a = 0;
-        int c = 0;
         while( a < i ) {
-         
-            
+            int c = 1;
             TimeSeriesObject ref = rows.elementAt(0);
 
             Double vx0 = (Double)ref.xValues.elementAt(a);
@@ -1791,27 +1744,13 @@ public class TimeSeriesObject implements ITimeSeriesObject, Serializable {
             double sum = (Double)ref.yValues.elementAt(a);
 
             for( int z=1; z<j; z++) {
-                
-                try{
-                    TimeSeriesObject vergl = rows.elementAt(z);
-
-                    Double vxn = (Double)vergl.xValues.elementAt(a);
-                    double vyn = (Double)vergl.yValues.elementAt(a);
-
-                    String info="\n z=" + z + ", a=" + a;
-
-    //                if ( vx0.doubleValue() != vxn.doubleValue() )
-    //                    throw new Exception( " x-values are not equal X0=" + vx0 + " != X"+z+"="+vxn + info);
-
-                    sum = sum + vyn;
+                TimeSeriesObject vergl = rows.elementAt(z);
+                if ( a < vergl.yValues.size() ) {
+                    sum = sum + (Double)vergl.yValues.elementAt(a);
                     c++;
                 }
-                catch( Exception ex ) { 
-                    
-                }
-
             }
-            
+
             double mw = sum / (double)c;
             
             r.addValuePair(vx0, mw);

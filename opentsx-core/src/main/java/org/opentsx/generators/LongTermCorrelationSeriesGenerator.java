@@ -24,7 +24,6 @@ import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opentsx.chart.simple.MultiChart;
-import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.exporter.MeasurementTable;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.data.series.TimeSeriesObjectFFT;
@@ -32,7 +31,9 @@ import org.opentsx.algorithms.detrending.DetrendingMethodFactory;
 import org.opentsx.algorithms.detrending.methods.IDetrendingMethod;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Random;
 import java.util.Vector;
 
 public class LongTermCorrelationSeriesGenerator {
@@ -54,7 +55,7 @@ public class LongTermCorrelationSeriesGenerator {
     
   
     
-    // nur in dem Fall auch eine DFA Kurve zeigen
+    // show a DFA curve only in this case
     static boolean firstInLoop = false;
     static int numberOfLoop = 0;
     static int numberOfBeta = 0;
@@ -69,13 +70,45 @@ public class LongTermCorrelationSeriesGenerator {
     
     static int EXP = 10; // 2 ^ EXP = length of the row                     //  <--------
 
+    public static final String DEFAULT_DIRECTORY = "./data/";
+    public static final long DEFAULT_SEED = 1;
+
+    private static final Random DEFAULT_RANDOM = new Random( DEFAULT_SEED );
+
+    /**
+     * Arguments: [output directory, default ./data/] [seed, default 1]. Writes random_numbers_CHECK.csv and
+     * random_numbers_FS.csv into the output directory and shows both charts.
+     */
     public static void main(String args[]) throws Exception {
         
         System.out.println( "*** LongTermCorrelationSeriesGenerator *** " );
-        
-        boolean showTest = true;
 
-        RNGWrapper.init();
+        File directory = new File( args.length > 0 ? args[0] : DEFAULT_DIRECTORY );
+        long seed = DEFAULT_SEED;
+        if ( args.length > 1 ) {
+            try {
+                seed = Long.parseLong( args[1] );
+            }
+            catch ( NumberFormatException ex ) {
+                throw new IllegalArgumentException( "seed: \"" + args[1] + "\" is not a whole number; expected a seed such as 1", ex );
+            }
+        }
+
+        writeTables( directory, new Random( seed ) );
+
+        MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
+                        "log(s)", "log(F(s))", false, log.toString(), null );
+        MultiChart.open(check, "alpha vs. beta", 
+                        "beta", "alpha", true, log.toString() , null);
+    }
+
+    /**
+     * Runs DFA on series for 15 values of beta, 10 series each, and writes random_numbers_CHECK.csv and
+     * random_numbers_FS.csv into directory.
+     */
+    public static void writeTables( File directory, Random random ) throws Exception {
+
+        boolean showTest = true;
 
         // prepare some data structures
         tests = new Vector<TimeSeriesObject>();
@@ -84,7 +117,7 @@ public class LongTermCorrelationSeriesGenerator {
         log.append("fit range: [" + fitMIN + ", ..., " + fitMAX + " ]\n" );
         
 //        int Z = 15;
-//        double STRETCH = 4;   // PRODUCT muss 60 sein ...
+//        double STRETCH = 4;   // the product must be 60
 
         int Z = 15;                                                         //  <--------
         double STRETCH = 6;                                                 //  <--------
@@ -112,40 +145,27 @@ public class LongTermCorrelationSeriesGenerator {
                 else firstInLoop = false;
                 numberOfLoop = j;
                 
-                TimeSeriesObject mr = getRandomRow( (int)Math.pow(2, EXP), beta , showTest, true );
+                TimeSeriesObject mr = getRandomRow( (int)Math.pow(2, EXP), beta , random, showTest, true );
             }    
         }
         
         firstInLoop = true;
-        TimeSeriesObject mr = getRandomRow( (int)Math.pow(2, EXP), 0 , showTest, true );
-        
-        boolean showLegend = true;
-        MultiChart.open(tests, "Fluctuation Function F(s): DFA " + order, 
-                        "log(s)", "log(F(s))", false, log.toString(), null );
-        
+        TimeSeriesObject mr = getRandomRow( (int)Math.pow(2, EXP), 0 , random, showTest, true );
         
         alphasCALC.setLabel("CALC");
-        alphasTHEO.setLabel("Theorie");
+        alphasTHEO.setLabel("theory");
         // check.add( alphasCALC );
        // check.add( alphasTHEO );
         
         _calcErrorChart( alphas, numberOfBeta, numberOfLoop, 100.0 );
-        
-//        MultiChart.open(check, "alpha vs. beta", 
-//                        "beta", "alpha", showLegend );
 
-                MultiChart.open(check, "alpha vs. beta", 
-                        "beta", "alpha", showLegend, log.toString() , null);
-
-
+        File f = directory;
+        if ( !f.isDirectory() && !f.mkdirs() ) {
+            throw new IOException( f + ": cannot create the directory; expected a writable path" );
+        }
         
-        String a = "/Users/kamir/Documents/THESIS/dissertationFINAL/main/FINAL/LATEX/semanpix/RandomNumbers/";
-        
-        File f = new File( a );
-        if ( !f.exists() ) f.mkdirs();
-        
-        File f1 = new File( a + "random_numbers_CHECK.csv" );
-        File f2 = new File( a + "random_numbers_FS.csv" );
+        File f1 = new File( f, "random_numbers_CHECK.csv" );
+        File f2 = new File( f, "random_numbers_FS.csv" );
         
         MeasurementTable mwt = new MeasurementTable( "random_numbers_CHECK" );
        
@@ -192,7 +212,7 @@ public class LongTermCorrelationSeriesGenerator {
         
         double[] zr = new double[N];
 
-        // nun wird das Array mit den Daten der ZR übergeben
+        // pass the array with the data of the series
         TimeSeriesObjectFFT mr4_NEW = TimeSeriesObjectFFT.convertToMessreiheFFT(d4);
         
         TimeSeriesObjectFFT temp = mr4_NEW.getModifiedTimeSeries_PhaseRandomized();
@@ -210,10 +230,10 @@ public class LongTermCorrelationSeriesGenerator {
             dfa.getPara().setzSValues( nrOfSValues );
 
             System.out.println( "nrOfSValues="+nrOfSValues );
-            // Anzahl der Werte in der Zeitreihe
+            // number of values in the series
             dfa.setNrOfValues(N);
 
-            // die Werte für die Fensterbreiten sind zu wählen ...
+            // choose the values of the window sizes
 //            dfa.initIntervalS();
             dfa.initIntervalSlog();
             
@@ -255,7 +275,9 @@ public class LongTermCorrelationSeriesGenerator {
         
     /**
      * A time series with long term correlation (according to parameter BETA)
-     * is generated with Fourier Filtering.
+     * is generated with Fourier Filtering. For every beta, beta 0 included,
+     * the filtered values are divided by their standard deviation, so the
+     * result has variance 1.
      * 
      * @param d4
      * @param beta
@@ -272,12 +294,19 @@ public class LongTermCorrelationSeriesGenerator {
         
         double[] zr = new double[N];
 
-        // nun wird das Array mit den Daten der ZR übergeben
+        // pass the array with the data of the series
         TimeSeriesObjectFFT mr4_NEW = TimeSeriesObjectFFT.convertToMessreiheFFT(d4);
         
         TimeSeriesObjectFFT temp = mr4_NEW.getModifiedTimeSeries_FourierFiltered( beta );
-        
-        if ( beta == 0 ) temp = mr4_NEW;
+
+        double std = temp.getStddev();
+        if ( !(std > 0) || Double.isInfinite( std ) ) {
+            throw new IllegalArgumentException( "getRandomRow: the filtered series of " + N + " values has standard deviation "
+                    + std + "; expected at least 2 values that are not all equal" );
+        }
+        for ( int i = 0; i < temp.yValues.size(); i++ ) {
+            temp.yValues.set( i, (Double) temp.yValues.elementAt( i ) / std );
+        }
 
         if ( runDFA ) {
 
@@ -292,10 +321,10 @@ public class LongTermCorrelationSeriesGenerator {
             dfa.getPara().setzSValues( nrOfSValues );
 
             System.out.println( "nrOfSValues="+nrOfSValues );
-            // Anzahl der Werte in der Zeitreihe
+            // number of values in the series
             dfa.setNrOfValues(N);
 
-            // die Werte für die Fensterbreiten sind zu wählen ...
+            // choose the values of the window sizes
 //            dfa.initIntervalS();
             dfa.initIntervalSlog();
             
@@ -348,7 +377,9 @@ public class LongTermCorrelationSeriesGenerator {
     }
 
     /**
-     * 
+     * Filters Gaussian white noise drawn from one Random with the seed DEFAULT_SEED that all calls without a Random
+     * share, so a program gets the same series in the same order on every run.
+     *
      * @param length
      * @param beta
      * @param showTest
@@ -356,6 +387,20 @@ public class LongTermCorrelationSeriesGenerator {
      * @throws Exception 
      */
     public static TimeSeriesObject getRandomRow(int length, double beta, boolean showTest, boolean runDFA ) throws Exception {
+        return getRandomRow(length, beta, DEFAULT_RANDOM, showTest, runDFA);
+    }
+
+    /**
+     * Filters Gaussian white noise drawn from random. The same seed gives the same series.
+     *
+     * @param length
+     * @param beta
+     * @param random
+     * @param showTest
+     * @return
+     * @throws Exception 
+     */
+    public static TimeSeriesObject getRandomRow(int length, double beta, Random random, boolean showTest, boolean runDFA ) throws Exception {
         
         // has to be of type int
         // N = length; by a multiple of 4 !!!
@@ -364,19 +409,23 @@ public class LongTermCorrelationSeriesGenerator {
         
         System.out.println( "N=" + N );
         /**
-         * Vorbedingungen:
+         * Precondition:
          *
-         * Eine Zeitreihe mit bereinigten Werten, ohne Lücken, ausser
-         * es hat einen fahlichen Sinn, Lücken zu nutzen.
+         * A series with clean values and no gaps, unless gaps have a
+         * meaning in the domain.
          */
         
-        TimeSeriesObject d4 = TimeSeriesObject.getGaussianDistribution(N);
+        TimeSeriesObject d4 = new TimeSeriesObject();
+        d4.setLabel( N + " => gaussian" );
+        for ( int j = 0; j < N; j++ ) {
+            d4.addValuePair( 1.0 * j, random.nextGaussian() );
+        }
         
         return getRandomRow(d4, beta, showTest, runDFA);
     }  
     
-    static TimeSeriesObject mrAV = new TimeSeriesObject();  // Mittelwerte
-    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standardabweichung
+    static TimeSeriesObject mrAV = new TimeSeriesObject();  // means
+    static TimeSeriesObject mrSTD = new TimeSeriesObject();  // standard deviations
     static TimeSeriesObject mrMAX = new TimeSeriesObject();  // ERROR
     static TimeSeriesObject mrMIN = new TimeSeriesObject();  // ERROR
         
@@ -385,8 +434,8 @@ public class LongTermCorrelationSeriesGenerator {
      */ 
     private static void _calcErrorChart(double[][] d, int nrB, int nrLOOPS , double scaleSTDEV ) {
         
-        mrAV = new TimeSeriesObject();  // Mittelwerte
-        mrSTD = new TimeSeriesObject();  // standardabweichung
+        mrAV = new TimeSeriesObject();  // means
+        mrSTD = new TimeSeriesObject();  // standard deviations
         mrMAX = new TimeSeriesObject();  // ERROR
         mrMIN = new TimeSeriesObject();  // ERROR
     
@@ -399,7 +448,7 @@ public class LongTermCorrelationSeriesGenerator {
             
             double[] L = new double[nrLOOPS];
             
-            // werte umlagern
+            // copy the values
             for( int iL = 0; iL < nrLOOPS; iL++ ) { 
                 L[iL] = d[iB][iL];
             }

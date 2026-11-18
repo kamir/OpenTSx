@@ -119,12 +119,12 @@
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel2">
       <Properties>
-        <Property name="text" type="java.lang.String" value="X-Werte : "/>
+        <Property name="text" type="java.lang.String" value="X values : "/>
       </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel3">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Y-Werte : "/>
+        <Property name="text" type="java.lang.String" value="Y values : "/>
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="jtXWLabel">

@@ -8,18 +8,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.opentsx.data.generator.RNGWrapper;
 import org.opentsx.data.series.TimeSeriesObject;
 import org.opentsx.tsbucket.BucketLoader;
 import org.opentsx.tsbucket.folderStore.TSBASE;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TSBucketSequenceFileTest {
+
+    static final String OUTPUT_FORMAT = "opentsx.demo.output.format";
 
     @TempDir
     Path directory;
@@ -88,6 +92,40 @@ class TSBucketSequenceFileTest {
         IOException thrown = assertThrows(IOException.class,
                 () -> bucket()._loadAndProcess(save("failure", rows()).toString(), operation, null));
         assertSame(failure, thrown.getCause());
+    }
+
+    @Test
+    void aSineBucketOnAFileSystemThatCannotBeOpenedFailsNamingItAndWritesNoCsv() throws Exception {
+        Configuration configuration = new Configuration(false);
+        configuration.set(CommonConfigurationKeysPublic.FS_DEFAULT_NAME_KEY, "unopenable:///");
+        TSBucket bucket = new TSBucket(configuration);
+        bucket.SKIP_WRITES = false;
+        RNGWrapper.init();
+        String format = System.getProperty(OUTPUT_FORMAT);
+        System.setProperty(OUTPUT_FORMAT, "sequence");
+        try {
+            String core = directory.resolve("sine").toString();
+            IOException e = assertThrows(IOException.class,
+                    () -> bucket.createBucketWithRandomTS_sinus(core, 1, 1.0, 2.0, 1.0, 2.0, 4.0, 1.0, null, "m"));
+            assertTrue(e.getMessage().startsWith("unopenable:///: cannot open the file system ("), e.getMessage());
+            assertNotNull(e.getCause());
+            assertFalse(Files.exists(directory.resolve("sine.csv")));
+        } finally {
+            if (format == null) System.clearProperty(OUTPUT_FORMAT);
+            else System.setProperty(OUTPUT_FORMAT, format);
+        }
+    }
+
+    @Test
+    void openingABucketUnderAFileFailsNamingThePath() throws Exception {
+        Path blocker = Files.writeString(directory.resolve("blocker"), "x");
+        IOException e = assertThrows(IOException.class, () -> bucket()._open(blocker.resolve("out.tsb.vec.seq").toFile()));
+        assertTrue(e.getMessage().contains(blocker.toString()), e.getMessage());
+    }
+
+    @Test
+    void aBucketHasNoFlushThatDoesNothing() {
+        assertThrows(NoSuchMethodException.class, () -> TSBucket.class.getMethod("flush"));
     }
 
     private Vector<TimeSeriesObject> rows() {

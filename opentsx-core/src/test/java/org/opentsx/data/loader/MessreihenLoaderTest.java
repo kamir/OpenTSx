@@ -1,16 +1,22 @@
 package org.opentsx.data.loader;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.opentsx.data.loader.util.ColumnValueCalculator;
+import org.opentsx.data.loader.util.LineFilter;
+import org.opentsx.data.loader.util.TSValueCalculator;
 import org.opentsx.data.series.TimeSeriesObject;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,18 +25,6 @@ class MessreihenLoaderTest {
 
     @TempDir
     Path dir;
-
-    private String delimiter;
-
-    @BeforeEach
-    void keepTheDelimiter() {
-        delimiter = MessreihenLoader.delim;
-    }
-
-    @AfterEach
-    void restoreTheDelimiter() {
-        MessreihenLoader.delim = delimiter;
-    }
 
     @Test
     void aCommaSeparatedFileWithDecimalPointsLoadsEveryRow() throws IOException {
@@ -87,6 +81,176 @@ class MessreihenLoaderTest {
                 () -> MessreihenLoader.getLoader().loadMessreihe_2(file, 1, 2, ","));
         assertTrue(e.getMessage().startsWith(file + ": cannot read the file"), e.getMessage());
         assertNotNull(e.getCause());
+    }
+
+    @Test
+    void twoLoadersWithDifferentDelimitersReadTheirOwnFiles() throws IOException {
+        File comma = write("comma.csv", "0.5,1.25\n1.5,2.5\n");
+        File semicolon = write("semicolon.csv", "0,5;1,25\n1,5;2,5\n");
+        MessreihenLoader first = MessreihenLoader.getLoader();
+        MessreihenLoader second = MessreihenLoader.getLoader();
+
+        TimeSeriesObject before = first.loadMessreihe_2(comma, 1, 2);
+        TimeSeriesObject other = second.loadMessreihe_2(semicolon, 1, 2, ";");
+        TimeSeriesObject after = first.loadMessreihe_2(comma, 1, 2);
+
+        assertEquals(List.of(1.25, 2.5), before.yValues);
+        assertEquals(List.of(1.25, 2.5), other.yValues);
+        assertEquals(List.of(1.25, 2.5), after.yValues);
+    }
+
+    @Test
+    void aRowLimitAppliesOnlyToItsOwnCall() throws IOException {
+        File file = write("rows.csv", "1,10\n2,20\n3,30\n");
+
+        TimeSeriesObject limited = MessreihenLoader.getLoader().loadMessreihe_2(file, 1, 2, 1);
+        TimeSeriesObject full = MessreihenLoader.getLoader().loadMessreihe_2(file, 1, 2);
+
+        assertEquals(List.of(10.0), limited.yValues);
+        assertEquals(List.of(10.0, 20.0, 30.0), full.yValues);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"loadMessreihe", "loadMessreihe_1", "loadMessreihe_2", "loadMessreihe_zr_SC",
+            "linkStrengthColumn", "linkStrengthMapper", "fd", "logBinned", "logBinnedByWidth", "logBinnedByWidthFiltered"})
+    void everyLoaderFailsOnAMissingFileNamingThePath(String method) {
+        File file = dir.resolve("missing.txt").toFile();
+        MessreihenLoader loader = MessreihenLoader.getLoader();
+        Executable load = switch (method) {
+            case "loadMessreihe" -> () -> loader.loadMessreihe(file);
+            case "loadMessreihe_1" -> () -> loader.loadMessreihe_1(file);
+            case "loadMessreihe_2" -> () -> loader.loadMessreihe_2(file, 1, 2);
+            case "loadMessreihe_zr_SC" -> () -> loader.loadMessreihe_zr_SC(file, 2, ",");
+            case "linkStrengthColumn" -> () -> loader.loadMessreihe_For_LinkStrength(file, 1, 2, 3, ",");
+            case "linkStrengthMapper" -> () -> loader.loadMessreihe_For_LinkStrength(file, 1, 2, columnMapper(), ",");
+            case "fd" -> () -> loader._loadMessreihe_For_FD(file, valueMapper(), ",", false);
+            case "logBinned" -> () -> loader._loadLogBinnedMessreihe(file, 1, 2, 2.0, 10.0);
+            case "logBinnedByWidth" -> () -> loader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH(file, 1, 2, 2.0, 10.0);
+            case "logBinnedByWidthFiltered" -> () -> loader._loadLogBinnedMessreihe_DIV_BY_BINWIDTH(file, 1, 2, 2.0,
+                    10.0, " ", new LineFilter());
+            default -> throw new IllegalArgumentException(method);
+        };
+        UncheckedIOException e = assertThrows(UncheckedIOException.class, load);
+        assertEquals(file + ": cannot read the file (" + e.getCause() + ")", e.getMessage());
+        assertInstanceOf(FileNotFoundException.class, e.getCause());
+    }
+
+    @Test
+    void aValueThatIsNotANumberFailsInEveryLoaderNamingTheFileAndTheLine() throws IOException {
+        File file = write("bad.txt", "# x y\n1 2\n3 abc\n");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> MessreihenLoader.getLoader().loadMessreihe(file));
+        assertEquals(file + ":3: \"abc\" is not a number; expected a decimal number such as 1.5", e.getMessage());
+    }
+
+    @Test
+    void aMapperFailureNamesTheFileAndTheLine() throws IOException {
+        File file = write("links.csv", "a,b,1\nc,d,2\n");
+        ColumnValueCalculator failing = columnMapper();
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> MessreihenLoader.getLoader().loadMessreihe_For_LinkStrength(file, 1, 2, failing, ","));
+        assertEquals(file + ":2: test mapper cannot read the line (java.lang.IllegalStateException: c); expected a line"
+                + " the mapper accepts", e.getMessage());
+    }
+
+    @Test
+    void aMapperDateFailureNamesTheFileAndTheLine() throws IOException {
+        File file = write("dates.csv", "a,1\nb,2\n");
+        TSValueCalculator failing = dateMapper(new IllegalStateException("b"));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> MessreihenLoader.getLoader()._loadMessreihe_For_FD(file, failing, ",", false));
+        assertEquals(file + ":2: test mapper cannot read the line (java.lang.IllegalStateException: b); expected a line"
+                + " the mapper accepts", e.getMessage());
+    }
+
+    @Test
+    void aMapperWithoutADateFailsNamingTheFileAndTheLine() throws IOException {
+        File file = write("dates.csv", "a,1\nb,2\n");
+        TSValueCalculator noDate = dateMapper(null);
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> MessreihenLoader.getLoader()._loadMessreihe_For_FD(file, noDate, ",", false));
+        assertEquals(file + ":2: test mapper returned no date; expected a date for every line", e.getMessage());
+    }
+
+    @Test
+    void aLogBinnedFileWithoutDataLinesFailsNamingTheFile() throws IOException {
+        File file = write("comment.csv", "# only a comment\n");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> MessreihenLoader.getLoader()._loadLogBinnedMessreihe(file, 1, 2, 2.0, 10.0));
+        assertEquals(file + ": the file has no data lines; expected at least one line with 2 columns separated by \",\"",
+                e.getMessage());
+    }
+
+    @Test
+    void aLoaderReadsAFileOfAnyName() throws IOException {
+        File file = write("data.csv", "1 2\n3 4\n");
+        assertEquals(List.of(2.0, 4.0), MessreihenLoader.getLoader().loadMessreihe(file).yValues);
+        assertEquals(List.of(1.0, 3.0), MessreihenLoader.getLoader().loadMessreihe_1(file).yValues);
+    }
+
+    @Test
+    void aLabelColumnWithoutUnderscoreFailsNamingTheFileAndTheLine() throws IOException {
+        File file = write("labels.csv", "a_b,1.5\nab,2.5\n");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> MessreihenLoader.getLoader().loadMessreihe_zr_SC(file, 2, ","));
+        assertEquals(file + ":2: \"ab\" has no \"_\"; expected two labels joined by \"_\" in column 1", e.getMessage());
+    }
+
+    private static ColumnValueCalculator columnMapper() {
+        return new ColumnValueCalculator() {
+            public double getValue(int mode, String[] line) {
+                return 0.0;
+            }
+
+            public double calcLinkStrength(String[] line) {
+                if (line[0].equals("c")) throw new IllegalStateException("c");
+                return Double.parseDouble(line[2]);
+            }
+
+            public String getName() {
+                return "test mapper";
+            }
+        };
+    }
+
+    private static TSValueCalculator valueMapper() {
+        return new TSValueCalculator() {
+            public void setTimeIntervall(Date begin, Date end) {
+            }
+
+            public Date getDate(String[] line) {
+                return new Date(0);
+            }
+
+            public double getValue(String[] line) {
+                return 0.0;
+            }
+
+            public String getName() {
+                return "test mapper";
+            }
+        };
+    }
+
+    private static TSValueCalculator dateMapper(RuntimeException onLineB) {
+        return new TSValueCalculator() {
+            public void setTimeIntervall(Date begin, Date end) {
+            }
+
+            public Date getDate(String[] line) {
+                if (!line[0].equals("b")) return new Date(0);
+                if (onLineB != null) throw onLineB;
+                return null;
+            }
+
+            public double getValue(String[] line) {
+                return Double.parseDouble(line[1]);
+            }
+
+            public String getName() {
+                return "test mapper";
+            }
+        };
     }
 
     private File write(String name, String text) throws IOException {

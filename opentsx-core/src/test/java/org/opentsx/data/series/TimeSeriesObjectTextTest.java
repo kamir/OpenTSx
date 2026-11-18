@@ -24,6 +24,21 @@ class TimeSeriesObjectTextTest {
     }
 
     @Test
+    void splitPadsEveryRowToTheRequestedLength() {
+        TimeSeriesObject[] parts = series(2.0, 4.0).split(4, 2);
+        assertEquals(List.of(2.0, 4.0, 3.0, 3.0), parts[0].yValues);
+        assertEquals(4, parts[1].yValues.size());
+        assertEquals("# 4 missing values replaced with mean=NaN.\n", parts[1].sbComments.toString());
+    }
+
+    @Test
+    void splitOfAnFftSeriesPadsEveryRowToTheRequestedLength() {
+        TimeSeriesObject[] parts = TimeSeriesObjectFFT.convertToMessreiheFFT(series(2.0, 4.0)).split(4, 2);
+        assertEquals(List.of(2.0, 4.0, 3.0, 3.0), parts[0].yValues);
+        assertEquals(4, parts[1].yValues.size());
+    }
+
+    @Test
     void shiftBeyondTheLengthFailsNamingTheOffset() {
         TimeSeriesObject row = series(1.0, 2.0, 3.0);
         Exception left = assertThrows(Exception.class, () -> row.shift(-4));

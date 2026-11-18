@@ -14,7 +14,7 @@ outputs:
   - { name: out, type: series }
 params:
   - { name: beta, type: number, required: true, description: "Exponent β of the power spectrum f^(−β)." }
-  - { name: length, type: integer, required: true, min: 1, description: Number of values; a power of two avoids zero padding before the FFT. }
+  - { name: length, type: integer, required: true, min: 2, description: Number of values; a power of two avoids zero padding before the FFT. }
   - { name: seed, type: integer, required: true, description: Seed of the random generator. }
 semantics: { deterministic: true, origin: SYNTHETIC }
 runtimes:
@@ -22,11 +22,12 @@ runtimes:
     status: available
     class: "org.opentsx.generators.LongTermCorrelationSeriesGenerator#getRandomRow"
     note: >-
-      2.x model in opentsx-core: getRandomRow(length, beta, false, false) filters the noise of
-      TimeSeriesObject.getGaussianDistribution with TimeSeriesObjectFFT.getModifiedTimeSeries_FourierFiltered. Call
-      stdlib.StdRandom.initRandomGen(seed) or RNGWrapper.init() (seed 1) first; without it the call throws a
-      NullPointerException. The mean is 0 and the variance is not normalized: at 16384 values and seed 1 the standard
-      deviation is 6.2 for β = −0.4 and 0.021 for β = 1.0. β = 0 returns the noise unfiltered. No automated test.
+      2.x model in opentsx-core: getRandomRow(length, beta, new java.util.Random(seed), false, false) draws Gaussian
+      noise from that Random, filters it with TimeSeriesObjectFFT.getModifiedTimeSeries_FourierFiltered for every beta,
+      0 included, and divides it by its standard deviation, so the result has variance 1; the mean is 0 for a length
+      that is a power of two. The same seed gives the same series, and no RNGWrapper.init() is needed.
+      getRandomRow(length, beta, false, false) draws from one Random with the seed 1 that all such calls share.
+      LongTermCorrelationSeriesGeneratorTest checks the variance, the seed and beta 0.
   workbench: { status: none }
   python: { status: none }
   processor: { status: none }

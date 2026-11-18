@@ -118,7 +118,7 @@ Draws Gaussian white noise, multiplies its Fourier coefficient at frequency f by
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  |  |
-| java | available (2.x) | `org.opentsx.generators.LongTermCorrelationSeriesGenerator#getRandomRow` | 2.x model in opentsx-core: getRandomRow(length, beta, false, false) filters the noise of TimeSeriesObject.getGaussianDistribution with TimeSeriesObjectFFT.getModifiedTimeSeries_FourierFiltered. Call stdlib.StdRandom.initRandomGen(seed) or RNGWrapper.init() (seed 1) first; without it the call throws a NullPointerException. The mean is 0 and the variance is not normalized: at 16384 values and seed 1 the standard deviation is 6.2 for β = −0.4 and 0.021 for β = 1.0. β = 0 returns the noise unfiltered. No automated test. |
+| java | available (2.x) | `org.opentsx.generators.LongTermCorrelationSeriesGenerator#getRandomRow` | 2.x model in opentsx-core: getRandomRow(length, beta, new java.util.Random(seed), false, false) draws Gaussian noise from that Random, filters it with TimeSeriesObjectFFT.getModifiedTimeSeries_FourierFiltered for every beta, 0 included, and divides it by its standard deviation, so the result has variance 1; the mean is 0 for a length that is a power of two. The same seed gives the same series, and no RNGWrapper.init() is needed. getRandomRow(length, beta, false, false) draws from one Random with the seed 1 that all such calls share. LongTermCorrelationSeriesGeneratorTest checks the variance, the seed and beta 0. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -130,7 +130,7 @@ Draws Gaussian white noise, multiplies its Fourier coefficient at frequency f by
 | Parameter | Type | Default | Range | Description |
 |---|---|---|---|---|
 | `beta` | number | required |  | Exponent β of the power spectrum f^(−β). |
-| `length` | integer | required | 1 ..  | Number of values; a power of two avoids zero padding before the FFT. |
+| `length` | integer | required | 2 ..  | Number of values; a power of two avoids zero padding before the FFT. |
 | `seed` | integer | required |  | Seed of the random generator. |
 
 Semantics: deterministic; origin SYNTHETIC.
@@ -1166,7 +1166,7 @@ Takes the natural logarithm of every value, out = ln(y). Values without a finite
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | available | operator `log` | The output keeps the unit of the input although it has none. |
-| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#calcMR_Log_for_Y` | 2.x model in opentsx-core: drops only 0 and infinite values; a negative value gives NaN and stays in the output. No automated test. |
+| java | available (2.x) | `org.opentsx.data.series.TimeSeriesObject#calcMR_Ln_for_Y` | 2.x model in opentsx-core: a value of 0 or below gives NaN and keeps its time, so the output has as many points as the input. TimeSeriesObjectStatisticsTest checks [e, 0, -1]. |
 | python | none |  |  |
 | processor | none |  |  |
 | go | none |  |  |
@@ -1845,7 +1845,7 @@ Marks every value above a threshold (by default the 95th percentile) as an extre
 | Runtime | Status | Entry point | Note |
 |---|---|---|---|
 | workbench | none |  |  |
-| java | available (2.x) | `org.opentsx.algorithms.ris.RISTool` | 2.x model in opentsx-core: collects return intervals of many series into binned distributions, scaled by the mean interval R_q. No automated test. A clean-room Java library for the univariate stage (DFA, RIS) is planned in TASK-015 P8.1. |
+| java | available (2.x) | `org.opentsx.algorithms.ris.RISTool` | 2.x model in opentsx-core: collects return intervals of many series into binned distributions, scaled by the mean interval R_q. It opens no window and stops with English messages. add rejects a NaN or infinite probability with IllegalArgumentException that names its index, before it writes a log line or changes the container. RISToolTest checks these. For results with 2 to 1024 intervals add needs RISTool.projekt, RISTool.logFileNames and initRqMIN(), and initRqCollectors() as well when RISTool.offset is not 0. A clean-room Java library for the univariate stage (DFA, RIS) is planned in TASK-015 P8.1. |
 | python | available | `opentsx.algorithms.ris.RIS#analyze` | RIS(threshold_percentile=95).analyze(x). An event is a value strictly above the threshold; a value that is not finite or fewer than 3 events raise ValueError. survival_function(r) gives S(r), the share of intervals of r or longer. stretched_exponential_fit(r) is a maximum-likelihood fit of P(r) proportional to exp[-(r / tau_0)^gamma] and returns gamma and tau_0; analyze does not call it. gamma is near 1 for uncorrelated values (mean 1.08 over 40 series of 8192 values at the 95th percentile, above 1 because the intervals are whole numbers) and 1 − beta for 1/f^beta noise (Bunde et al. 2005). |
 | processor | none |  |  |
 | go | none |  |  |

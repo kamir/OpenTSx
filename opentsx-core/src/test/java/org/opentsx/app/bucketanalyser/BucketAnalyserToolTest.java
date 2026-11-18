@@ -10,7 +10,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import org.opentsx.core.TSBucket;
-import org.opentsx.tsbucket.BucketLoader;
 import org.opentsx.experimental.SimpleFilteredBucketTool;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +18,6 @@ class BucketAnalyserToolTest {
 
     @TempDir
     Path directory;
-    int loaderLimit;
     int bucketLimit;
     int processingMode;
     boolean hdfs;
@@ -28,7 +26,6 @@ class BucketAnalyserToolTest {
 
     @BeforeEach
     void saveConfiguration() {
-        loaderLimit = BucketLoader.default_LIMIT;
         bucketLimit = TSBucket.default_LIMIT;
         processingMode = SimpleFilteredBucketTool.procm;
         hdfs = TSBucket.useHDFS;
@@ -38,7 +35,6 @@ class BucketAnalyserToolTest {
 
     @AfterEach
     void restoreConfiguration() {
-        BucketLoader.default_LIMIT = loaderLimit;
         TSBucket.default_LIMIT = bucketLimit;
         SimpleFilteredBucketTool.procm = processingMode;
         TSBucket.useHDFS = hdfs;

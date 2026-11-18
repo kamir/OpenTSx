@@ -161,6 +161,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   `EpisodeIndex.addAll`, which had no callers. Use `provisionTopic(admin, layout.smartVectors(name),
   replicationFactor)` for a vector topic.
 - `StatsAccumulator.emptyLike` and `QuantileSketch.copy`, which had no callers.
+- `TimeSeriesObject.calcMR_Log_for_Y` (a copy of `calcMR_Ln_for_Y`), `MessreihenLoader.checkFileAccess`,
+  `TSBucket.flush` (it did nothing), `TSBucket.setSourceDataFolder`, the field `TSBucket.sourcFolder` and the
+  constructor `TSBucket(String, String, String)`. The constants `DEFAULT_DELIMITER` and `DEFAULT_LIMIT` replace the
+  static fields `MessreihenLoader.delim` and `MessreihenLoader.limit`.
 
 ### Fixed
 - Streaming deployment rejects unsupported sinks, duplicate node and sink identities, missing inputs, unsupported
@@ -327,6 +331,38 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   at the start and the next record it reads on that partition lies at or past that offset. It counts the deleted
   records in `lostToRetention` instead of waiting until its deadline and failing with `timed out computing
   statistics`.
+- `TimeSeriesObject.setDecimalFomrmatX` and `setDecimalFomrmatY` change only the series they are called on. Before,
+  they changed the static default and with it the format of every new series, including from Flink task threads.
+- `TimeSeriesObject.calcLog10_for_Y`, `calcLn_for_Y` and `calcMR_Ln_for_Y` give NaN for a value of 0 or below. Before,
+  they gave 0 or the raw value, or dropped the point. The desktop action for the natural logarithm is labelled `ln`
+  and records the prefix `LN_`.
+- `TimeSeriesObject.split(length, count)` pads every row to `length` values; a later row no longer gets the missing
+  values of the rows before it.
+- `TimeSeriesObject.calcAveragOfRows` divides each point by the number of rows that have a value there, so rows [1, 1]
+  and [3, 3] give [2, 2] instead of [4, 2].
+- `TimeSeriesObject.getX_for_Y2(y, epsilon)` returns the x value of the first point within `epsilon` of `y`. Before,
+  it returned NaN for every input.
+- `MessreihenLoader` takes the delimiter and the row limit per call, so one call no longer changes them for later
+  calls in the JVM. `debug` is off by default. `BucketLoader.setLimit` changes only its own loader and no longer
+  `TSBucket.default_LIMIT`.
+- Every `MessreihenLoader` method stops with `UncheckedIOException` that names a missing or unreadable file. It stops
+  with `IllegalArgumentException` that names the file and the line of a value, a column count, a label, a date or a
+  mapper call it cannot read, and `_loadLogBinnedMessreihe` names a file without data lines. Before, nine methods
+  logged a parse error and returned partial data. For a missing file they returned null or failed with a
+  NullPointerException, and a file without data lines failed with a division by zero. `loadMessreihe`,
+  `loadMessreihe_1` and `_loadLogBinnedMessreihe` now read files of any name; before, they returned null for a name
+  without `.txt` or `.dat`.
+- `TSBucket` throws `IOException` that names the default file system when that file system cannot be opened. Before,
+  it wrote a CSV file in its place. `putMessreihe`, `_open` and `close` throw instead of logging.
+  `createBucketFromLocalFilesInDirectory(sourceFolder, groupFolder, limit)` takes the source folder from the caller
+  instead of a personal default path.
+- `RISTool` opens no window and prints no value during the computation, and it stops with English
+  `IllegalStateException` and `IllegalArgumentException` messages. `add` rejects a NaN or infinite probability with a
+  message that names its index, before it writes a log line or changes the container.
+- `LongTermCorrelationSeriesGenerator` draws its noise from a `java.util.Random` and needs no `RNGWrapper.init()`. It
+  filters beta 0 like every other beta and returns a series with variance 1. `main` writes its tables into the
+  directory named by its first argument, `./data/` by default, instead of a personal thesis directory. The second
+  argument is the seed, 1 by default.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

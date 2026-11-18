@@ -2,6 +2,7 @@ package org.opentsx.core;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -21,13 +22,11 @@ class BucketLoaderLimitTest {
     @TempDir
     Path directory;
     String originalBase;
-    int originalLoaderLimit;
     int originalBucketLimit;
 
     @BeforeEach
     void configureStorage() {
         originalBase = TSBASE.BASE_PATH;
-        originalLoaderLimit = BucketLoader.default_LIMIT;
         originalBucketLimit = TSBucket.default_LIMIT;
         TSBASE.BASE_PATH = directory.toString();
     }
@@ -35,8 +34,27 @@ class BucketLoaderLimitTest {
     @AfterEach
     void restoreStorage() {
         TSBASE.BASE_PATH = originalBase;
-        BucketLoader.default_LIMIT = originalLoaderLimit;
         TSBucket.default_LIMIT = originalBucketLimit;
+    }
+
+    @Test
+    void aLimitSetOnOneLoaderDoesNotChangeOtherLoadersOrBuckets() throws Exception {
+        Vector<TimeSeriesObject> rows = new Vector<>();
+        for (int i = 0; i < 3; i++) {
+            TimeSeriesObject row = new TimeSeriesObject();
+            row.addValue(i);
+            rows.add(row);
+        }
+        new TSBucket().createBucketFromVectorOfSeries("test", "shared", rows);
+        String path = directory.resolve("test/shared.tsb.vec.seq").toString();
+        int bucketLimit = TSBucket.default_LIMIT;
+        BucketLoader limited = new BucketLoader();
+        limited.setLimit(1);
+        BucketLoader other = new BucketLoader();
+
+        assertEquals(1, limited.loadBucket(path).bucketData.size());
+        assertEquals(3, other.loadBucket(path).bucketData.size());
+        assertEquals(bucketLimit, TSBucket.default_LIMIT);
     }
 
     @ParameterizedTest

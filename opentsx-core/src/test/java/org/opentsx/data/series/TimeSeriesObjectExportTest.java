@@ -77,6 +77,24 @@ class TimeSeriesObjectExportTest {
                 text.lines().filter(line -> !line.startsWith("#") && line.matches("\\S+ \\S+")).toList());
     }
 
+    @Test
+    void aFormatSetOnOneSeriesDoesNotChangeTheTextOfANewSeries() {
+        TimeSeriesObject coarse = series(1);
+        coarse.setDecimalFomrmatX("0.0");
+        coarse.setDecimalFomrmatY("0.0");
+        TimeSeriesObjectFFT coarseFft = TimeSeriesObjectFFT.convertToMessreiheFFT(series(1));
+        coarseFft.setDecimalFomrmatX("0.0");
+        coarseFft.setDecimalFomrmatY("0.0");
+
+        TimeSeriesObject fresh = series(1);
+
+        assertEquals("1.00000", fresh.getDecimalFormat_X().format(1.0));
+        assertEquals("0.50000", fresh.getDecimalFormat_Y().format(0.5));
+        assertTrue(fresh.toString().contains("\n1.00000 0.50000\n"), fresh.toString());
+        assertTrue(coarse.toString().contains("\n1.0 0.5\n"), coarse.toString());
+        assertEquals("1.0", coarseFft.getDecimalFormat_X().format(1.0));
+    }
+
     private static List<String> dataLines(File file) throws IOException {
         return Files.readAllLines(file.toPath(), StandardCharsets.UTF_8).stream()
                 .filter(line -> !line.startsWith("#"))

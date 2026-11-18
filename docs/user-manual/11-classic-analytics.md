@@ -307,7 +307,23 @@ surrogate; `FFTPhaseRandomizer` does not. See
 [surrogates](../../opentsx-core/README.md#make-a-phase-randomized-surrogate).
 
 `TimeSeriesObject.writeToFile` writes every pair, and `MessreihenLoader.loadMessreihe_2` reads the file back. Both
-stop with an exception that names the file. See [export and load](../../opentsx-core/README.md#export-and-load-a-series).
+stop with an exception that names the file. No `MessreihenLoader` call changes the delimiter or the row limit of
+another call, and every method names the file and the line it cannot read. See
+[export and load](../../opentsx-core/README.md#export-and-load-a-series).
+
+The logarithm methods of `TimeSeriesObject` give NaN for a value of 0 or below, and the desktop action for the natural
+logarithm is labelled `ln`. See [logarithms](../../opentsx-core/README.md#take-logarithms).
+
+`LongTermCorrelationSeriesGenerator.getRandomRow(length, beta, random, false, false)` filters every beta, 0 included,
+returns a series with variance 1 and gives the same series for the same seed. Its `main` writes its tables into the
+directory of its first argument, `./data/` by default. See
+[long-range correlated noise](../../opentsx-core/README.md#generate-long-range-correlated-noise).
+
+`RISTool` opens no window, rejects a NaN probability with `IllegalArgumentException` and stops with English messages.
+See [return intervals](../../opentsx-core/README.md#collect-return-intervals).
+
+`TSBucket` throws `IOException` when its file system cannot be opened, writes no CSV file in its place and takes the
+folder of local input files from the caller. See [write a bucket](../../opentsx-core/README.md#write-a-bucket).
 
 ### Run the Flink jobs (`opentsx-flink-core`, Flink 1.20.5)
 

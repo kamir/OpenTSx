@@ -37,8 +37,11 @@ runtimes:
     class: org.opentsx.algorithms.ris.RISTool
     note: >-
       2.x model in opentsx-core: collects return intervals of many series into binned distributions, scaled by the
-      mean interval R_q. No automated test. A clean-room Java library for the univariate stage (DFA, RIS) is planned in
-      TASK-015 P8.1.
+      mean interval R_q. It opens no window and stops with English messages. add rejects a NaN or infinite probability
+      with IllegalArgumentException that names its index, before it writes a log line or changes the container.
+      RISToolTest checks these. For results with 2 to 1024 intervals add needs RISTool.projekt, RISTool.logFileNames
+      and initRqMIN(), and initRqCollectors() as well when RISTool.offset is not 0. A clean-room Java library for the
+      univariate stage (DFA, RIS) is planned in TASK-015 P8.1.
   processor: { status: none }
   go: { status: none }
 docs: docs/user-manual/11-classic-analytics.md#114-return-interval-statistics-ris

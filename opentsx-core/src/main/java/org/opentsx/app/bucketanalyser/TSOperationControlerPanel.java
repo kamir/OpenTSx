@@ -243,7 +243,7 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
         });
         jPanel3.add(jButton13);
 
-        jButton22.setText("Log");
+        jButton22.setText("ln");
         jButton22.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton22ActionPerformed(evt);
@@ -1073,8 +1073,8 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
     private void jButton22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton22ActionPerformed
 
-        String operationLabel = "Log of ";
-        String operationPrefix = "LOG_";
+        String operationLabel = "ln of ";
+        String operationPrefix = "LN_";
 
         String source = this.label;
         String target = operationPrefix + this.label;
@@ -1085,13 +1085,13 @@ public class TSOperationControlerPanel extends javax.swing.JPanel {
 
         for (TimeSeriesObject r : this.rows) {
 
-            TimeSeriesObject diffs = r.calcMR_Log_for_Y();
+            TimeSeriesObject diffs = r.calcMR_Ln_for_Y();
             
             v.add(diffs);
 
         }
 
-        MultiChart.open(v, this.jRadioButton1.isSelected(), "Log of " + this.label);
+        MultiChart.open(v, this.jRadioButton1.isSelected(), "ln of " + this.label);
     }//GEN-LAST:event_jButton22ActionPerformed
 
     public void storeChartImageAsPNG(JFreeChart chart, File folder, String filename) {

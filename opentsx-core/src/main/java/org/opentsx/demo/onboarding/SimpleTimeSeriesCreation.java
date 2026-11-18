@@ -128,8 +128,7 @@ public class SimpleTimeSeriesCreation {
         System.out.println("----------------------------------");
 
         MessreihenLoader loader = MessreihenLoader.getLoader();
-        loader.delim = ",";
-        TimeSeriesObject loaded = loader.loadMessreihe_2(new File(csvFile), 1, 2);
+        TimeSeriesObject loaded = loader.loadMessreihe_2(new File(csvFile), 1, 2, ",");
         loaded.setLabel("loaded_from_csv");
 
         System.out.println("Loaded time series: " + loaded.getLabel());

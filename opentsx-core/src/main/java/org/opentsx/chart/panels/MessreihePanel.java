@@ -68,9 +68,9 @@ public class MessreihePanel extends javax.swing.JPanel {
 
         jtMRLabel.setText("  ");
 
-        jLabel2.setText("X-Werte : ");
+        jLabel2.setText("X values : ");
 
-        jLabel3.setText("Y-Werte : ");
+        jLabel3.setText("Y values : ");
 
         jtXWLabel.setText("  ");
 
@@ -255,7 +255,7 @@ public class MessreihePanel extends javax.swing.JPanel {
         this.jtYWLabel.setText( mr.getLabel_Y() );
         this.jtaStatus.setText( mr.getStatusInfo() );
         this.jtaStatistik.setText( mr.getStatisticData( "" ));
-        this.jtFORMAT_X.setText( mr.dfx );
-        this.jtFORMAT_Y.setText( mr.dfy );
+        this.jtFORMAT_X.setText( mr.getDecimalFormat_X().toPattern() );
+        this.jtFORMAT_Y.setText( mr.getDecimalFormat_Y().toPattern() );
     };
 }

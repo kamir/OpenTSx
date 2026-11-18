@@ -30,8 +30,10 @@ public class BucketLoader {
     boolean DO_FILTER = true;
     Vector<Integer> ids = null;
     
-    public static int default_LIMIT = 50;
+    public static final int default_LIMIT = 50;
     public static boolean default_INMEM = true;
+
+    int limit = default_LIMIT;
     
     /**
      * load bucket and store it in a variable called : b
@@ -42,7 +44,7 @@ public class BucketLoader {
     public void loadBucketData( String fn ) throws IOException {
                 
         TSBucket bucket = TSBucket.createEmptyBucketFull();
-        bucket.setLimitTo(default_LIMIT);
+        bucket.setLimitTo(limit);
         bucket.inMEM = default_INMEM;
         
         // no ID-vector, no TSOperation
@@ -61,7 +63,7 @@ public class BucketLoader {
     public TSBucket loadBucket( String fn ) throws IOException {
         
         TSBucket bucket = TSBucket.createEmptyBucketFull();
-        bucket.setLimitTo(default_LIMIT);
+        bucket.setLimitTo(limit);
         bucket.inMEM = default_INMEM;
         
         bucket.loadFromSequenceFile( fn, ids, null );
@@ -84,7 +86,7 @@ public class BucketLoader {
     public TSBucket _processBucket( String fn, TSOperation tst ) throws IOException {
 
         TSBucket bucket = TSBucket.createEmptyBucketFull();
-        bucket.setLimitTo(default_LIMIT);
+        bucket.setLimitTo(limit);
         
         bucket.isProcessed = true;
         
@@ -127,8 +129,7 @@ public class BucketLoader {
     }
 
     public void setLimit(int i) {
-       default_LIMIT = i;
-       TSBucket.default_LIMIT = i;
+       limit = i;
     }
     
     

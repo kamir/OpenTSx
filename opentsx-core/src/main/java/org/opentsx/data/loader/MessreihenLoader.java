@@ -18,46 +18,17 @@ import java.io.UncheckedIOException;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MessreihenLoader {
 
-    public static boolean debug = true;
-    public static String delim = ",";
+    public static boolean debug = false;
+    public static final String DEFAULT_DELIMITER = ",";
+    public static final int DEFAULT_LIMIT = 1000000000;
 
     public static MessreihenLoader getLoader() {
         return new MessreihenLoader();
     };
 
-    public static boolean checkFileAccess( String name ) {
-        boolean state = true;
-        
-        File f = new File( name );
-        //System.out.println("> use selected file ... " + name );
-        
-        String info = f.getName();
-        boolean error = false;
-        if (!f.getName().endsWith(".txt") && !f.getName().endsWith(".dat")) {
-            error = true;
-            System.out.println("not .dat or .txt...");
-        }
-        if (!f.canRead()) {
-            error = true;
-            System.out.println("not readable...");
-        };
-
-        if (error) {
-            System.out.println("Error ... MessreihenLoader.checkFileAccess().");
-            state = false;
-        }
-        else {
-            state = true;
-        }
-        return state;
-    };
-
-    
     /**
      * Assumes that the file has no header line and
      * that all lines have the same number of columns.
@@ -114,68 +85,24 @@ public class MessreihenLoader {
 
         System.out.println("File: "+fn.getAbsolutePath());
 
-        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) { 
-            mr = null;
-            
-            return mr;
-        };
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            br = new BufferedReader(new FileReader(fn));
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( "> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( delim != null ) {
-                st = new StringTokenizer(line, delim );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                    
-                   
-                line = line.replace(',','.');
+        int lineNumber = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
+                    continue;
+                }
+                line = decimalPoints(line, DEFAULT_DELIMITER);
                 if ( debug ) System.out.println( "> line=[" + line + "]" );
 
-                if ( delim != null ) {
-                    st = new StringTokenizer(line, delim );
-                }
-                else {
-                    st = new StringTokenizer(line);
-                };
-
-                int i = 0;
-                while ( st.hasMoreElements() ) {
-                   data[i] = st.nextToken();
-                   // System.out.println( i + " [" + data[i] + "]" );
-                   i++;
-                }
                 // columns count from 1
-                String sx = data[_spalteX-1];
-                String sy = data[spalteY-1];
-                Double dx = Double.parseDouble(sx);
-                Double dy = Double.parseDouble(sy);
+                String[] data = columns(fn, lineNumber, line, DEFAULT_DELIMITER, Math.max(_spalteX, spalteY));
+                double dx = parseNumber(fn, lineNumber, data[_spalteX-1]);
+                double dy = parseNumber(fn, lineNumber, data[spalteY-1]);
 
-                // System.out.println( line + " : " + dx + " " + dy );
                 boolean notCorrectBin = true;
                 int zi = 1;
                 
@@ -202,28 +129,14 @@ public class MessreihenLoader {
                         }
                     }
                 }
-                    
-                
-//                    mr.addValuePair(dx, dy);
-//                       limitCounter++;
-
-//                
-                };
-
-                
-
-            };
-            br.close();
-        }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
+        }
+        if ( logSkipped + logUsed == 0 ) {
+            throw new IllegalArgumentException(fn + ": the file has no data lines; expected at least one line with "
+                    + Math.max(_spalteX, spalteY) + " columns separated by \"" + DEFAULT_DELIMITER + "\"");
         }
         
         // summarize
@@ -299,69 +212,24 @@ public class MessreihenLoader {
         TimeSeriesObject mr = new TimeSeriesObject();
 
         System.out.println("File: "+fn.getAbsolutePath());
-//
-//        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) { 
-//            mr = null;
-//            
-//            return mr;
-//        };
 
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            br = new BufferedReader(new FileReader(fn));
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( "> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( delim != null ) {
-                st = new StringTokenizer(line, delim );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                                       
-                // line = line.replace(',','.');
-                
+        int lineNumber = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
+                    continue;
+                }
                 if ( debug ) System.out.println( "> line=[" + line + "]" );
 
-                if ( delim != null ) {
-                    st = new StringTokenizer(line, delim );
-                }
-                else {
-                    st = new StringTokenizer(line);
-                };
-
-                int i = 0;
-                while ( st.hasMoreElements() ) {
-                   data[i] = st.nextToken();
-                   // System.out.println( i + " [" + data[i] + "]" );
-                   i++;
-                }
                 // columns count from 1
-                String sx = data[_spalteX-1];
-                String sy = data[spalteY-1];
-                Double dx = Double.parseDouble(sx);
-                Double dy = Double.parseDouble(sy);
+                String[] data = columns(fn, lineNumber, line, DEFAULT_DELIMITER, Math.max(_spalteX, spalteY));
+                double dx = parseNumber(fn, lineNumber, data[_spalteX-1]);
+                double dy = parseNumber(fn, lineNumber, data[spalteY-1]);
 
-                // System.out.println( "LINE: " + line + " : " + dx + " " + dy );
                 boolean notCorrectBin = true;
                 int zi = 1;
                 
@@ -384,32 +252,13 @@ public class MessreihenLoader {
                             conuterBin2[zi-1] = conuterBin2[zi-1] + 1; 
                             
                             notCorrectBin = false;
-                            // System.out.println( dx + "\t " + dy + "\t" + zi + "\t" + lowerBorder[zi]);
                         }
                     }
                 }
-                    
-                
-//                    mr.addValuePair(dx, dy);
-//                       limitCounter++;
-
-//                
-                };
-
-                
-
-            };
-            br.close();
-        }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         
         // summarize
@@ -506,75 +355,26 @@ public class MessreihenLoader {
         TimeSeriesObject mr = new TimeSeriesObject();
 
         System.out.println("File: "+fn.getAbsolutePath());
-//
-//        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) { 
-//            mr = null;
-//            
-//            return mr;
-//        };
 
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            br = new BufferedReader(new FileReader(fn));
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( "> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            if ( filter != null ) { 
-                line = filter.doFilterLine(line);
-            }
-            
-            StringTokenizer st = new StringTokenizer(line);
-            if ( delim != null ) {
-                st = new StringTokenizer(line, delim );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                                       
-                if ( filter != null ) { 
+        int lineNumber = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
+                    continue;
+                }
+                if ( filter != null ) {
                     line = filter.doFilterLine(line);
                 }
-            
-
-                
                 if ( debug ) System.out.println( "> line=[" + line + "]" );
 
-                if ( delim != null ) {
-                    st = new StringTokenizer(line, delim );
-                }
-                else {
-                    st = new StringTokenizer(line);
-                };
-
-                int i = 0;
-                while ( st.hasMoreElements() ) {
-                   data[i] = st.nextToken();
-                   if ( debug ) System.out.println( i + " [" + data[i] + "]" );
-                   i++;
-                }
-                
                 // columns count from 1
-                String sx = data[spalteX-1];
-                String sy = data[spalteY-1];
-                Double dx = Double.parseDouble(sx);
-                Double dy = Double.parseDouble(sy);
+                String[] data = columns(fn, lineNumber, line, delim, Math.max(spalteX, spalteY));
+                double dx = parseNumber(fn, lineNumber, data[spalteX-1]);
+                double dy = parseNumber(fn, lineNumber, data[spalteY-1]);
 
                 if ( debug ) System.out.println( line + " : " + dx + " " + dy );
                 boolean notCorrectBin = true;
@@ -603,28 +403,10 @@ public class MessreihenLoader {
                         }
                     }
                 }
-                    
-                
-//                    mr.addValuePair(dx, dy);
-//                       limitCounter++;
-
-//                
-                };
-
-                
-
-            };
-            br.close();
-        }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         
         // summarize
@@ -676,14 +458,13 @@ public class MessreihenLoader {
     /**
      * Loads x from column spalteX and y from column spalteY, both counted from 1. Lines that start with # and empty
      * lines are skipped. The columns are split at the characters of delim, or at white space when delim is null.
-     * A comma is read as a decimal point unless delim contains a comma.
+     * A comma is read as a decimal point unless delim contains a comma. At most limit pairs are read.
      */
-    public TimeSeriesObject loadMessreihe_2(File fn , int spalteX , int spalteY ) {
+    public TimeSeriesObject loadMessreihe_2(File fn , int spalteX , int spalteY, String delim, int limit ) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
         mr.setLabel( fn.getName() );
 
-        boolean decimalComma = delim == null || delim.indexOf(',') < 0;
         int columns = Math.max(spalteX, spalteY);
         int lineNumber = 0;
         int limitCounter = 0;
@@ -694,30 +475,31 @@ public class MessreihenLoader {
                 if ( line.startsWith("#") || line.length() == 0 ) {
                     continue;
                 }
-                if ( decimalComma ) {
-                    line = line.replace(',','.');
-                }
+                line = decimalPoints(line, delim);
                 if ( debug ) System.out.println( "> line=[" + line + "]" );
 
-                StringTokenizer st = delim != null ? new StringTokenizer(line, delim) : new StringTokenizer(line);
-                String[] data = new String[st.countTokens()];
-                for (int i = 0; i < data.length; i++) {
-                    data[i] = st.nextToken();
-                }
-                if ( data.length < columns ) {
-                    throw new IllegalArgumentException(fn + ":" + lineNumber + ": the line has " + data.length
-                            + " columns; expected at least " + columns + " columns separated by "
-                            + (delim == null ? "white space" : "\"" + delim + "\""));
-                }
+                String[] data = columns(fn, lineNumber, line, delim, columns);
                 mr.addValuePair(parseNumber(fn, lineNumber, data[spalteX - 1]), parseNumber(fn, lineNumber, data[spalteY - 1]));
                 limitCounter++;
             }
         }
         catch (IOException ex) {
-            throw new UncheckedIOException(fn + ": cannot read the file (" + ex + ")", ex);
+            throw readFailure(fn, ex);
         }
         return mr;
     };
+
+    public TimeSeriesObject loadMessreihe_2(File fn , int spalteX , int spalteY ) {
+        return loadMessreihe_2(fn, spalteX, spalteY, DEFAULT_DELIMITER, DEFAULT_LIMIT);
+    }
+
+    public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, int limit) {
+        return loadMessreihe_2(f, i, i0, DEFAULT_DELIMITER, limit);
+    }
+
+    public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, String theDelim) {
+        return loadMessreihe_2(f, i, i0, theDelim, DEFAULT_LIMIT);
+    }
 
     private static double parseNumber(File fn, int lineNumber, String token) {
         try {
@@ -729,89 +511,62 @@ public class MessreihenLoader {
         }
     }
 
+    private static String[] columns(File fn, int lineNumber, String line, String delim, int needed) {
+        StringTokenizer st = delim != null ? new StringTokenizer(line, delim) : new StringTokenizer(line);
+        String[] data = new String[st.countTokens()];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = st.nextToken();
+        }
+        if ( data.length < needed ) {
+            throw new IllegalArgumentException(fn + ":" + lineNumber + ": the line has " + data.length
+                    + " columns; expected at least " + needed + " columns separated by "
+                    + (delim == null ? "white space" : "\"" + delim + "\""));
+        }
+        return data;
+    }
+
+    private static String decimalPoints(String line, String delim) {
+        return delim == null || delim.indexOf(',') < 0 ? line.replace(',', '.') : line;
+    }
+
+    private static UncheckedIOException readFailure(File fn, IOException ex) {
+        return new UncheckedIOException(fn + ": cannot read the file (" + ex + ")", ex);
+    }
+
+    private static IllegalArgumentException mapperFailure(File fn, int lineNumber, String mapper, RuntimeException ex) {
+        return new IllegalArgumentException(fn + ":" + lineNumber + ": " + mapper + " cannot read the line (" + ex
+                + "); expected a line the mapper accepts", ex);
+    }
 
     /**
-    * Reads a file that holds only the y values, in one column.
+    * Reads a file that holds only the y values, in column 1. The x values count the values from 0.
      */
     public TimeSeriesObject loadMessreihe_1(File fn ) {
 
-
         TimeSeriesObject mr = new TimeSeriesObject();
-
-       if ( ! this.checkFileAccess( fn.getAbsolutePath() ) ) {
-            mr = null;
-            return mr;
-        }
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-
-
-        try {
-            br = new BufferedReader(new FileReader(fn));
-            String line = br.readLine();
-            boolean goOn = true;
-            while( goOn  ) {
-                line = br.readLine();
-                if ( line.startsWith("#") || line.startsWith(" ") || line.length() < 1 ) goOn=true;
-                else goOn = false;
-                System.out.println( line );
+        int lineNumber = 0;
+        double cnt = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
+                    continue;
+                }
+                String[] data = columns(fn, lineNumber, decimalPoints(line, null), null, 1);
+                mr.addValuePair(cnt++, parseNumber(fn, lineNumber, data[0]));
             }
-            // now read the line after the header
-            line = br.readLine();
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-            int zahlSpalten = st.countTokens();
-            System.out.println( "number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            double cnt=0;
-            while (br.ready()) {
-
-                line = br.readLine();
-                if ( !line.startsWith("#") ) {
-
-                    line = line.replace(',','.');
-                    // System.out.println( "> [" + line + "]" );
-                    st = new StringTokenizer(line);
-                    int i = 0;
-                    while ( st.hasMoreElements() ) {
-                        data[i] = st.nextToken();
-                        // System.out.println( i + " [" + data[i] + "]" );
-                        i++;
-                    }
-                    // columns count from 1
-                    String sy = data[0];
-                    Double dx = cnt++;
-                    Double dy = Double.parseDouble(sy);
-//                    System.out.println( line + " : " + dx + " " + dy );
-                mr.addValuePair(dx, dy);
-                };
-
-            };
-            br.close();
         }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         return mr;
     };
 
-    public static int limit = 1000000000;
-
     /**
-     * Loads x from column 1 and y from column 2.
+     * Loads x from column 1 and y from column 2, split at white space.
      * 
      * @param fn
      * @return
@@ -819,159 +574,68 @@ public class MessreihenLoader {
     public TimeSeriesObject loadMessreihe(File fn ) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
-
-        mr.setLabel( fn.getName() );
-        
-        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) {
-            mr = null;
-            return mr;
-        }
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        try {
-            br = new BufferedReader(new FileReader(fn));
-            int limitCounter = 0;
-            while (br.ready()) {
-                String line = br.readLine();
-                if ( !line.startsWith( "#" ) && limitCounter < limit && line.length()>0 ) {
-                    StringTokenizer st = new StringTokenizer(line);
-                    String sx = (String)st.nextElement();
-                    String sy = (String)st.nextElement();
-                    Double dx = Double.parseDouble(sx);
-                    Double dy = Double.parseDouble(sy);
-
-                    mr.addValuePair(dx, dy);
-                    limitCounter++;
+        int lineNumber = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith( "#" ) || line.length() == 0 ) {
+                    continue;
                 }
+                String[] data = columns(fn, lineNumber, line, null, 2);
+                mr.addValuePair(parseNumber(fn, lineNumber, data[0]), parseNumber(fn, lineNumber, data[1]));
             }
-            br.close();
         }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         return mr;
     };
 
-    public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, int _limit) {
-        limit = _limit;
-        System.out.println( ">>> WARNING >>>  setting limit=" + _limit);
-        return loadMessreihe_2(f, i, i0);
-    }
-
-    public TimeSeriesObject loadMessreihe_2(File f, int i, int i0, String theDelim) {
-        delim = theDelim;
-        return loadMessreihe_2(f, i, i0);
-    }
-
+    /**
+     * Loads y from column spalteY and the label pair a_b from column 1. The x values count the values from 1.
+     */
     public TimeSeriesObject loadMessreihe_zr_SC(File fn, int spalteY , String del ) {
 
         TimeSeriesObject mr = new TimeSeriesObject();
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " reading column nr:=" + spalteY );
 
-//        if ( !this.checkFileAccess( fn.getAbsolutePath() ) ) { 
-//            mr = null;
-//            
-//            return mr;
-//        };
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            
-            br = new BufferedReader(new FileReader(fn));
-            
-            System.out.println(">>> File: "+fn.getAbsolutePath() + " " + fn.canRead() );
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( ">>> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( del != null ) {
-                st = new StringTokenizer(line, del );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( ">>> number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-            int x = 0;
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                    
-                   
-                    line = line.replace(',','.');
-                    if ( debug ) System.out.println( "> line=[" + line + "]" );
-
-                    if ( del != null ) {
-                        st = new StringTokenizer(line, del );
-                    }
-                    else {
-                        st = new StringTokenizer(line);
-                    };
-
-                    int i = 0;
-                    while ( st.hasMoreElements() ) {
-                    data[i] = st.nextToken();
-                    // System.out.println( i + " [" + data[i] + "]" );
-                    i++;
-                    }
-
-                    x++;
-                    // columns count from 1
-
-                    String sy = data[spalteY-1];
-                    Double dx = 1.0 * x;
-                    Double dy = Double.parseDouble(sy);
-
-                    // System.out.println( line + " : " + dx + " " + dy );
-                    mr.addValuePair(dx, dy);
-                    
-                    StringTokenizer st2 = new StringTokenizer(data[0], "_" );
-                    String lA1 = st2.nextToken();
-                    String lA2 = st2.nextToken();
-                
-                    String[] aray = new String[2];
-                    aray[0] = lA1;
-                    aray[1] = lA2;
-                    mr.xLabels.add( aray );
-                    limitCounter++;
-                } 
-                else {
+        int lineNumber = 0;
+        int x = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
                     System.out.println( "> empty: " + line );
+                    continue;
                 }
+                line = decimalPoints(line, del);
+                if ( debug ) System.out.println( "> line=[" + line + "]" );
+
+                // columns count from 1
+                String[] data = columns(fn, lineNumber, line, del, Math.max(1, spalteY));
+                x++;
+                mr.addValuePair(1.0 * x, parseNumber(fn, lineNumber, data[spalteY-1]));
+
+                StringTokenizer st2 = new StringTokenizer(data[0], "_" );
+                if ( st2.countTokens() < 2 ) {
+                    throw new IllegalArgumentException(fn + ":" + lineNumber + ": \"" + data[0]
+                            + "\" has no \"_\"; expected two labels joined by \"_\" in column 1");
+                }
+                String[] aray = new String[2];
+                aray[0] = st2.nextToken();
+                aray[1] = st2.nextToken();
+                mr.xLabels.add( aray );
             }
-            br.close();
         }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         return mr;
     }
@@ -982,92 +646,30 @@ public class MessreihenLoader {
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " reading column nr:=" + spalteValue );
 
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            
-            br = new BufferedReader(new FileReader(fn));
-            
-            System.out.println(">>> File: "+fn.getAbsolutePath() + " " + fn.canRead() );
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( ">>> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( del != null ) {
-                st = new StringTokenizer(line, del );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( ">>> number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-            int x = 0;
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                    
-                   
-                    line = line.replace(',','.');
-                    //if ( debug ) System.out.println( "> line=[" + line + "]" );
-
-                    if ( del != null ) {
-                        st = new StringTokenizer(line, del );
-                    }
-                    else {
-                        st = new StringTokenizer(line);
-                    };
-
-                    int i = 0;
-                    while ( st.hasMoreElements() ) {
-                        data[i] = st.nextToken();
-                        //System.out.println( i + " [" + data[i] + "]" );
-                        i++;
-                    }
-
-                    x++;
-                    
-                    // columns count from 1
-                    String labelA = data[spalteLabel1-1];
-                    String labelB = data[spalteLabel2-1];
-                    
-                    String sy = data[spalteValue-1];
-
-                    Double dy = Double.parseDouble(sy);
-
-                    String[] aray = new String[2];
-                    aray[0] = labelA;
-                    aray[1] = labelB;
-                    mr.addValue( dy , aray );
-                    
-                    limitCounter++;
-                } 
-                else {
+        int columns = Math.max(spalteValue, Math.max(spalteLabel1, spalteLabel2));
+        int lineNumber = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
                     System.out.println( "> empty: " + line );
+                    continue;
                 }
+                line = decimalPoints(line, del);
+
+                // columns count from 1
+                String[] data = columns(fn, lineNumber, line, del, columns);
+                String[] aray = new String[2];
+                aray[0] = data[spalteLabel1-1];
+                aray[1] = data[spalteLabel2-1];
+                mr.addValue( parseNumber(fn, lineNumber, data[spalteValue-1]) , aray );
             }
-            br.close();
         }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         return mr;
     }
@@ -1077,99 +679,41 @@ public class MessreihenLoader {
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " reading with mapper:=" + mapper.getName() );
 
-
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            
-            br = new BufferedReader(new FileReader(fn));
-            
-            System.out.println(">>> File: "+fn.getAbsolutePath() + " " + fn.canRead() );
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( ">>> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( del != null ) {
-                st = new StringTokenizer(line, del );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( ">>> number of columns in the file ("+ fn +") : " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-            int x = 0;
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                    
-                   
-                    line = line.replace(',','.');
-                    if ( x ==0 ) System.out.println( "> line=[" + line + "]" );
-
-                    if ( del != null ) {
-                        st = new StringTokenizer(line, del );
-                    }
-                    else {
-                        st = new StringTokenizer(line);
-                    };
-
-                    int i = 0;
-                    while ( st.hasMoreElements() ) {
-                        data[i] = st.nextToken();
-                        //System.out.println( i + " [" + data[i] + "]" );
-                        i++;
-                    }
-
-                    x++;
-                    
-                    // columns count from 1
-                    
-                    
-                    String labelA = data[spalteLabel1-1];
-                    String labelB = data[spalteLabel2-1];
-                    Double dy = 0.0;
-                    try {
-                        dy = mapper.calcLinkStrength( data );
-                    }
-                    catch( Exception ex ){ 
-                        System.out.println( "***>>>> line=[" + line + "]" );
-                        ex.printStackTrace();
-                    };
-
-                    String[] aray = new String[2];
-                    aray[0] = labelA;
-                    aray[1] = labelB;
-                    
-                    mr.addValue( dy , aray );
-                    
-                    limitCounter++;
-                } 
-                else {
+        int columns = Math.max(spalteLabel1, spalteLabel2);
+        int lineNumber = 0;
+        int x = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
                     System.out.println( "> empty: " + line );
+                    continue;
                 }
+                line = decimalPoints(line, del);
+                if ( x == 0 ) System.out.println( "> line=[" + line + "]" );
+                x++;
+
+                // columns count from 1
+                String[] data = columns(fn, lineNumber, line, del, columns);
+                double dy;
+                try {
+                    dy = mapper.calcLinkStrength( data );
+                }
+                catch( RuntimeException ex ) {
+                    throw mapperFailure(fn, lineNumber, mapper.getName(), ex);
+                }
+
+                String[] aray = new String[2];
+                aray[0] = data[spalteLabel1-1];
+                aray[1] = data[spalteLabel2-1];
+                mr.addValue( dy , aray );
             }
-            br.close();
         }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
         return mr;
     }
@@ -1182,96 +726,44 @@ public class MessreihenLoader {
         
         System.out.println(">>> File: "+fn.getAbsolutePath() + " reading with mapper:=" + mapper.getName() );
 
-        BufferedReader br = null;
         mr.setLabel( fn.getName() );
 
-        int skipped = 0;
-        try {
-            
-            br = new BufferedReader(new FileReader(fn));
-            
-            System.out.println(">>> File: "+fn.getAbsolutePath() + " " + fn.canRead() );
-            String line = br.readLine();
-            while( line.startsWith("#") || line.length()<1 ) {
-                line = br.readLine();
-                skipped++;
-            }
-            System.out.println( ">>> skipped z=" + skipped + " lines in file: " + fn );
-            br.close();
-
-            StringTokenizer st = new StringTokenizer(line);
-
-            if ( del != null ) {
-                st = new StringTokenizer(line, del );
-            };
-
-            int zahlSpalten = st.countTokens();
-            System.out.println( ">>> number of columns in the file ("+ fn +") " + zahlSpalten );
-
-            String[] data = new String[zahlSpalten];
-
-            br = new BufferedReader(new FileReader(fn));
-            int  limitCounter = 0;
-            int x = 0;
-            while (br.ready()) {
-                line = br.readLine();
-                if ( !line.startsWith("#") &&  limitCounter < limit && line.length() > 0) {
-                    
-                   
-                    line = line.replace(',','.');
-                    if ( x ==0 ) System.out.println( "[" + line + "]" );
-
-                    if ( del != null ) {
-                        st = new StringTokenizer(line, del );
-                    }
-                    else {
-                        st = new StringTokenizer(line);
-                    };
-
-                    int i = 0;
-                    while ( st.hasMoreElements() ) {
-                        data[i] = st.nextToken();
-                        i++;
-                    }
-
-                    x++;
-                    
-                    // columns count from 1
-                    Double dy = 0.0;
-                    
-                    int mode = 1;
-                    try {
-                        dy = mapper.getValue( data );
-                    }
-                    catch( Exception ex ){ 
-                        System.out.println( "***>>>> line=[" + line + "]" );
-                        ex.printStackTrace();
-                    };
-                    
-                    mr.addValue( dy );
-                    mr.hashValueByDate( mapper.getDate( data ), dy );
-                    
-                    limitCounter++;
-                } 
-                else {
+        int lineNumber = 0;
+        int x = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
+            String line;
+            while ( (line = br.readLine()) != null ) {
+                lineNumber++;
+                if ( line.startsWith("#") || line.length() == 0 ) {
                     System.out.println( "> empty: " + line );
+                    continue;
                 }
+                line = decimalPoints(line, del);
+                if ( x == 0 ) System.out.println( "[" + line + "]" );
+                x++;
+
+                String[] data = columns(fn, lineNumber, line, del, 0);
+                double dy;
+                Date date;
+                try {
+                    dy = mapper.getValue( data );
+                    date = mapper.getDate( data );
+                }
+                catch( RuntimeException ex ) {
+                    throw mapperFailure(fn, lineNumber, mapper.getName(), ex);
+                }
+                if ( date == null ) {
+                    throw new IllegalArgumentException(fn + ":" + lineNumber + ": " + mapper.getName()
+                            + " returned no date; expected a date for every line");
+                }
+
+                mr.addValue( dy );
+                mr.hashValueByDate( date, dy );
             }
-            br.close();
         }
-        catch (Exception ex) {
-            Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
+        catch (IOException ex) {
+            throw readFailure(fn, ex);
         }
-        finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(MessreihenLoader.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        
-        //System.out.print( mr.toString() );
-        
         return mr;
     }
 
