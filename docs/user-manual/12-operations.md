@@ -114,8 +114,10 @@ run's artifacts and reports.
 
 The isolated signed Rust profile has a separate
 [operating guide](../devguide/integration/rust-runner-b1.md). Its pass-through
-loop uses explicit finite-cut caps and acknowledged progress checkpoints. The
-existing local replay and HTTP cleaning workers keep their own request limits
+loop uses explicit finite-cut caps and acknowledged progress checkpoints.
+Rust worker and checkpoint owners explicitly release their file locks when they
+close in the acquiring process, even while inherited descriptors remain open.
+The existing local replay and HTTP cleaning workers keep their own request limits
 and state formats. The disposable KafScale acceptance harness is protocol test
 evidence, not a signed site-conformance report or a public `conform` mode.
 

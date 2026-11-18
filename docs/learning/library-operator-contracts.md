@@ -417,6 +417,14 @@ with zero writes on a disposable broker. JSON signals are not Avro records.
 
 ## Persist an increment checkpoint
 
+Rust worker and checkpoint owners explicitly unlock when they close in the
+acquiring process, including error returns. An inherited descriptor cannot
+postpone reacquisition, and a copied owner in another process cannot unlock its
+parent. The deterministic owner-drop regressions retain duplicated descriptors
+while checking live-owner exclusion, restart and successor exclusion. These
+Rust lock lifetimes do not change the Java checkpoint starter or its state
+format.
+
 `TsxCheckpoint(job, planVersion, specHash, topic, next, state).write(path)` persists next offsets and per-node
 operator state to a temporary file,
 forces it, and atomically renames it. `load(path, hash)` returns empty for absence or a different hash, and rejects

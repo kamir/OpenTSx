@@ -57,6 +57,9 @@ followed by `--bootstrap <host:port> --state <directory>`.
 `<host:port>` is the fixed permitted Apache Kafka Broker or KafScale Proxy address list. Never publish directly
 to KafScale Broker. `<directory>` is the worker-owned state directory.
 The service holds one exclusive directory lock and accepts one unfinished whole-topic request at a time.
+Worker and checkpoint owners explicitly unlock in the acquiring process when
+they close. Inherited descriptors do not postpone that release or authorize
+another process to unlock the owner.
 Keep this unauthenticated HTTP interface inside a trusted local network.
 
 Use these HTTP operations:

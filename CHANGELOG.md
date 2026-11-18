@@ -28,7 +28,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 - Isolated signed continuous pass-through in `tsx-runner` 0.1.0: Ed25519 plan
   verification, local site policy, whole-topic authority, explicit cut caps and
-  acknowledgement-before-checkpoint recovery. Trusted-local replay and HTTP
+  acknowledgement-before-checkpoint recovery. Checkpoint and worker locks
+  release in their acquiring process even with inherited descriptors open.
+  Trusted-local replay and HTTP
   cleaning workers retain their separate contracts. Production fleet activation
   remains outside this profile.
 - Rust shared-vector coverage for xxHash64, bucket checksums and time deltas,

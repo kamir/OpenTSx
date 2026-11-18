@@ -80,8 +80,11 @@ foreign-owned directories are refused with `plan.policy`. Endpoint order,
 duplicates, host case, numeric ports and IPv6 spelling are normalized. Use the
 same endpoint set in configurations for the same cluster.
 
-Stop, error return and process death release the kernel lock. Retain the
-directory and lock files while processes can be running. Stop the owning process
+Stop, error return and process death release the kernel lock. The acquiring
+process explicitly unlocks when its reservation owner closes, even while an
+inherited descriptor remains open. A copied owner in another process cannot
+unlock the acquiring process's reservation. Retain the directory and lock files
+while processes can be running. Stop the owning process
 before retrying a busy grant. This reservation does not establish distributed
 ownership or production fencing.
 

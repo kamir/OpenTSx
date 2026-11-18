@@ -751,6 +751,10 @@ job and configured endpoint set on the same host and effective Unix user.
 Changing checkpoint paths or assignment versions cannot bypass that lock.
 Different jobs can run independently. This local reservation is released on
 Stop, error or process death and does not establish distributed fencing.
+Rust checkpoint and worker owners MUST explicitly unlock in the acquiring
+process when they close, including error returns. Inherited descriptors MUST
+NOT postpone that release. A copied owner in another process MUST NOT unlock
+the acquiring process's lock.
 
 This subset publishes track-B status and exact S3.2 input failures. Its
 independent status worker schedules
