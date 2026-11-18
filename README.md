@@ -105,6 +105,11 @@ bounded and trusted-local continuous Rust processing, and signed bounded JVM
 statistics federation. Operator support, topic ownership, checkpoints and
 publication guarantees are defined per profile.
 
+The separate [signed Rust profile](docs/devguide/integration/rust-runner-b1.md)
+verifies Ed25519 continuous pass-through plans against local policy and retains
+acknowledged whole-topic checkpoints. Native x86_64/ARM64 and three-target musl
+CI gates are defined. Physical ARMv7 qualification remains open.
+
 For the local three-worker Rust profile, choose **Legacy** in the Workbench
 header, then open **Smart Topic**. The [bounded rollout
 guide](docs/devguide/integration/wayang-rust-compose.md) connects the original

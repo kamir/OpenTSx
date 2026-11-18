@@ -106,7 +106,18 @@ pub struct Worker {
     config: Config,
     active: Option<String>,
     _lock: File,
+    lock_owner_pid: u32,
     controller: Option<IpAddr>,
+}
+
+impl Drop for Worker {
+    fn drop(&mut self) {
+        if self.lock_owner_pid == std::process::id() {
+            if let Err(error) = self._lock.unlock() {
+                eprintln!("cannot release worker state lock: {error}");
+            }
+        }
+    }
 }
 
 impl Worker {
@@ -132,6 +143,7 @@ impl Worker {
             config,
             active: None,
             _lock: lock,
+            lock_owner_pid: std::process::id(),
             controller: None,
         };
         for entry in fs::read_dir(&worker.config.state)
@@ -1437,6 +1449,88 @@ fn sync_directory(path: &Path) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+
+    fn directory() -> PathBuf {
+        let path = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "tsx-worker-owner-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::SeqCst)
+        ));
+        fs::create_dir(&path).unwrap();
+        path
+    }
+
+    fn owner(path: &Path) -> Result<Worker, String> {
+        Worker::open(Config {
+            node: "worker-1".into(),
+            site: "local".into(),
+            bootstrap: "localhost:9092".into(),
+            artifact_digest: format!("sha256:{}", tsx_contracts::sha256("artifact")),
+            state: path.to_path_buf(),
+        })
+    }
+
+    #[test]
+    fn worker_owner_drop_releases_inherited_descriptors_without_unlocking_a_successor() {
+        let directory = directory();
+        let worker = owner(&directory).unwrap();
+        let inherited = worker._lock.try_clone().unwrap();
+        assert!(owner(&directory).is_err());
+        drop(worker);
+        let successor = owner(&directory).unwrap();
+        drop(inherited);
+        assert!(owner(&directory).is_err());
+        drop(successor);
+        drop(owner(&directory).unwrap());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn worker_body_errors_release_ownership_with_an_inherited_descriptor_alive() {
+        let directory = directory();
+        let mut inherited = None;
+        let result: Result<(), String> = (|| {
+            let worker = owner(&directory)?;
+            inherited = Some(worker._lock.try_clone().unwrap());
+            Err("rejected worker body".into())
+        })();
+        assert_eq!(result, Err("rejected worker body".into()));
+        let successor = owner(&directory).unwrap();
+        drop(inherited);
+        assert!(owner(&directory).is_err());
+        drop(successor);
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn worker_validation_errors_release_the_acquired_lock() {
+        let directory = directory();
+        let unknown = directory.join("unknown.json");
+        fs::write(&unknown, "{}").unwrap();
+        assert!(owner(&directory).is_err());
+        fs::remove_file(unknown).unwrap();
+        drop(owner(&directory).unwrap());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn worker_drop_respects_the_acquiring_process_identity() {
+        let directory = directory();
+        let mut worker = owner(&directory).unwrap();
+        let inherited = worker._lock.try_clone().unwrap();
+        worker.lock_owner_pid = std::process::id().wrapping_add(1);
+        drop(worker);
+        assert!(owner(&directory).is_err());
+        inherited.unlock().unwrap();
+        drop(inherited);
+        drop(owner(&directory).unwrap());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
     #[test]
     fn http_without_body_headers_has_zero_length() {
         assert_eq!(super::framed_length(None, &[]), Ok(0));
