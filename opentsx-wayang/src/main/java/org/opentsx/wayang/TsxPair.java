@@ -27,9 +27,15 @@ public class TsxPair extends UnaryToUnaryOperator<TsxTagged, SpecificRecord> {
     private final Set<String> bSeries;
     private final String specHash;
     private final TsxState state;
+    private final boolean within;
 
     public TsxPair(String node, String method, Map<String, Object> params, Set<String> aSeries, Set<String> bSeries,
                    String specHash, TsxState state) {
+        this(node, method, params, aSeries, bSeries, specHash, state, false);
+    }
+
+    public TsxPair(String node, String method, Map<String, Object> params, Set<String> aSeries, Set<String> bSeries,
+                   String specHash, TsxState state, boolean within) {
         super(DataSetType.createDefault(TsxTagged.class), DataSetType.createDefault(SpecificRecord.class), false);
         this.node = node;
         this.method = method;
@@ -38,6 +44,8 @@ public class TsxPair extends UnaryToUnaryOperator<TsxTagged, SpecificRecord> {
         this.bSeries = bSeries;
         this.specHash = specHash;
         this.state = state;
+        this.within = within;
+        if (within && !aSeries.equals(bSeries)) throw new IllegalArgumentException("within-input pairing needs the same ordered series on both sides");
     }
 
     protected TsxPair(TsxPair that) {
@@ -49,6 +57,7 @@ public class TsxPair extends UnaryToUnaryOperator<TsxTagged, SpecificRecord> {
         this.bSeries = that.bSeries;
         this.specHash = that.specHash;
         this.state = that.state;
+        this.within = that.within;
     }
 
     public String node() {
@@ -77,5 +86,9 @@ public class TsxPair extends UnaryToUnaryOperator<TsxTagged, SpecificRecord> {
 
     public TsxState state() {
         return state;
+    }
+
+    public boolean within() {
+        return within;
     }
 }

@@ -7,16 +7,23 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.opentsx.kafka.TopicLayout;
 import org.opentsx.retrieval.vector.DagPlan;
 import org.opentsx.retrieval.vector.SeriesJob;
+import org.opentsx.retrieval.clean.CleanChain;
+import org.apache.wayang.core.plan.wayangplan.Operator;
+import org.apache.wayang.core.plan.wayangplan.WayangPlan;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HexFormat;
 
 public final class DagToWayang {
 
@@ -24,19 +31,99 @@ public final class DagToWayang {
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
     private final JsonNode dag;
     private final List<SeriesJob> series;
+    private final String specHash;
+    private final TopicLayout layout;
+    private final TsxCompileContext context;
 
-    private DagToWayang(JsonNode dag, List<SeriesJob> series) {
+    private DagToWayang(JsonNode dag, List<SeriesJob> series, String specHash, TopicLayout layout, TsxCompileContext context) {
         this.dag = dag;
         this.series = List.copyOf(series);
+        this.specHash = specHash;
+        this.layout = layout;
+        this.context = context;
     }
 
     public static DagToWayang compile(JsonNode dag, TopicLayout layout, String specHash, Path catalogDirectory)
             throws IOException {
-        DagPlan.validateStructure(dag, layout);
+        return compile(dag, layout, specHash, catalogDirectory, TsxCompileContext.local());
+    }
+
+    public static DagToWayang compile(String document, TopicLayout layout, Path catalogDirectory) throws IOException {
+        return compile(document, layout, catalogDirectory, TsxCompileContext.local());
+    }
+
+    public static DagToWayang compile(String document, TopicLayout layout, Path catalogDirectory, TsxCompileContext context)
+            throws IOException {
+        if (document == null) throw new IllegalArgumentException("the document is no opentsx.dag DAG (no nodes)");
+        return compile(YAML.readTree(document), layout, hash(document), catalogDirectory, context);
+    }
+
+    public static DagToWayang compile(JsonNode dag, TopicLayout layout, String specHash, Path catalogDirectory,
+                                      TsxCompileContext context) throws IOException {
+        Map<String, JsonNode> nodes = DagToWayangValidation.structure(dag, layout);
+        Map<String, JsonNode> catalog = frozenCatalog(catalogDirectory);
+        DagToWayangValidation.runtimes(nodes, catalog, context);
         JsonNode normalized = parameters(dag, catalogDirectory);
-        DagPlan plan = DagPlan.of(normalized, layout, specHash);
-        if (!plan.vectors().isEmpty()) throw new IllegalArgumentException("this runtime translates clean series sinks only");
-        return new DagToWayang(normalized, plan.series());
+        DagToWayangValidation.parameterNames(normalized, catalog);
+        Map<String, JsonNode> normalizedNodes = new LinkedHashMap<>();
+        normalized.path("nodes").forEach(n -> normalizedNodes.put(n.path("id").asText(), n));
+        DagToWayangValidation.topics(normalized, layout);
+        DagToWayangValidation.federation(normalized, normalizedNodes, catalog, context);
+        DagToWayangValidation.edges(normalized, normalizedNodes, catalog);
+        DagToWayangBuild.validateCleanRuns(normalized);
+        boolean legacy = true;
+        for (JsonNode node : normalized.path("nodes")) {
+            legacy &= node.path("op").asText().equals("decode.avro-soe") || CleanChain.OPS.contains(node.path("op").asText());
+        }
+        for (JsonNode sink : normalized.path("sinks")) {
+            legacy &= sink.path("schema").asText().equals(SeriesJob.SCHEMA) && sink.path("signal").path("id").isTextual();
+        }
+        List<SeriesJob> series = legacy ? DagPlan.of(normalized, layout, specHash).series() : List.of();
+        return new DagToWayang(normalized, series, specHash, layout, context);
+    }
+
+    public String specHash() {
+        return specHash;
+    }
+
+    public static String sinkIdentity(JsonNode sink, TopicLayout layout) {
+        return DagToWayangValidation.identity(sink, layout);
+    }
+
+    public WayangPlan build(Map<String, TsxRead> reads, TsxState state, String bootstrap) {
+        Map<String, Operator> sources = new LinkedHashMap<>();
+        for (JsonNode topic : dag.path("source").path("topics")) {
+            TsxRead read = reads.get(topic.asText());
+            if (read == null || !read.topic().equals(topic.asText())) throw new IllegalArgumentException("missing topic read " + topic.asText());
+            sources.put(topic.asText(), new TsxTopicSource(read));
+        }
+        if (!sources.keySet().equals(reads.keySet())) throw new IllegalArgumentException("topic reads must match the DAG source topics");
+        Map<String, Operator> outputs = outputsBySink(sources, state);
+        List<Operator> sinks = new ArrayList<>();
+        for (JsonNode sink : dag.path("sinks")) {
+            Operator output = outputs.get(DagToWayangValidation.identity(sink, layout));
+            Operator target = sink.path("schema").asText().equals("opentsx.vector.v1")
+                    ? new TsxVectorSink(bootstrap, sink.path("topic").asText()) : new TsxTopicSink(bootstrap, sink.path("topic").asText());
+            output.connectTo(0, target, 0);
+            sinks.add(target);
+        }
+        return new WayangPlan(sinks.toArray(Operator[]::new));
+    }
+
+    Map<String, Operator> outputs(Map<String, Operator> sources, TsxState state) {
+        return new DagToWayangBuild(dag, specHash, layout, context, sources, state).outputs();
+    }
+
+    Map<String, Operator> outputsBySink(Map<String, Operator> sources, TsxState state) {
+        return new DagToWayangBuild(dag, specHash, layout, context, sources, state).sinks();
+    }
+
+    private static String hash(String document) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(document.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException error) {
+            throw new IllegalStateException("SHA-256 is unavailable", error);
+        }
     }
 
     public JsonNode dag() {
@@ -160,6 +247,28 @@ public final class DagToWayang {
             }
         }
         return catalog;
+    }
+
+    private static Map<String, JsonNode> frozenCatalog(Path directory) throws IOException {
+        Map<String, JsonNode> descriptions = catalog(directory);
+        Path inventory = directory.resolveSibling("catalogs").resolve("tsx-catalog-1.yaml");
+        JsonNode frozen = YAML.readTree(inventory.toFile());
+        if (!frozen.path("catalog").asText().equals(CATALOG) || !frozen.path("operators").isArray()) {
+            throw new IllegalArgumentException("invalid catalog inventory " + inventory);
+        }
+        Map<String, JsonNode> byId = new LinkedHashMap<>();
+        descriptions.values().forEach(card -> byId.put(card.path("id").asText(), card));
+        Map<String, JsonNode> result = new LinkedHashMap<>();
+        for (JsonNode entry : frozen.path("operators")) {
+            JsonNode card = byId.get(entry.path("id").asText());
+            if (card == null || !entry.path("version").isIntegralNumber()
+                    || entry.path("version").asInt() != card.path("version").asInt()) {
+                throw new IllegalArgumentException("catalog description version mismatch: " + entry.path("id").asText());
+            }
+            String op = card.path("dag").path("op").asText(card.path("id").asText());
+            if (result.putIfAbsent(op, card) != null) throw new IllegalArgumentException("duplicate catalog operator " + op);
+        }
+        return result;
     }
 
     private static boolean hasType(JsonNode value, String type) {

@@ -5,7 +5,7 @@ See [concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specificatio
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md) and
 [TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md). Verified with JDK 21 on 2026-11-17.
 
-Status: phases A2 and A3, with all 16 native Java entries in frozen
+Status: phases A2, A3 and the qualified bounded JVM profile of A4, with all 16 native Java entries in frozen
 [`tsx-catalog/1`](../systems/catalogs/tsx-catalog-1.yaml). The module reads and
 writes KafScale topics from Wayang plans, runs checkpointed increments, and executes
 the clean chain and window statistics. It also contains the pure Java
@@ -32,8 +32,8 @@ Changing an operator's output requires a new operator version and a new
 catalog version.
 
 Pair `window` is catalog text, either `episode` or positive decimal seconds.
-Direct Java APIs also accept numbers. Native availability is separate from
-the local clean-DAG compiler and the admitted Rust subset described below.
+Direct Java APIs also accept numbers. The local catalog compiler lowers these
+Java bindings; the admitted Rust subset described below remains separate.
 Read the [catalog manual](../docs/user-manual/17-learn-operators.md#use-frozen-catalog-1)
 for runtime selection and the [normative inventory](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s17-catalog-1).
 
@@ -114,21 +114,170 @@ its channel conversions and the mappings OpenTSx uses: collection source,
 map, local callback sink, the OpenTSx topic source and sink, clean chains,
 window statistics, and the retrieval operators.
 
+<a id="compile-a-catalog-dag"></a>
+
+## Compile a catalog DAG
+
+You need the original workbench YAML, the domain's `TopicLayout`, processor
+descriptions in `systems/processors/`, and the sibling frozen inventory in
+`systems/catalogs/`. `DagToWayang.compile(document, layout, catalogDirectory)`
+parses the original text and computes `specHash()` over its UTF-8 bytes before
+applying parameter defaults. Both exported DAG versions are accepted, including
+version 1 documents without a `schema` field.
+
+The compiler validates structure, sink identities, catalog versions and runtime
+availability before parameters, topics and boundary admission. Required
+parameters remain required when a description supplies a default. Unknown
+parameters fail instead of selecting another operation's defaults.
+`DagToWayangErrorsTest` reads 22 exact rejection cases from the shared repository
+fixture. `DagToWayangWorkbenchTest` reads the five actual YAML exports generated
+by the frontend tests; an exported `diff` branch names its noncatalog operator.
+
+`build(reads, state, bootstrap)` creates one `TsxTopicSource` per source topic
+and all declared sinks in one `WayangPlan`. Each read is a `TsxRead` for a whole
+topic, with its internal partition ranges. Episode, `org.opentsx.model.v2.SeriesStats`
+and JSON signal sinks use `TsxTopicSink`; vector output uses `TsxVectorSink`.
+Consecutive clean operations share a `TsxSeriesChain`. Pair and alignment edges
+use typed tags and unions. A single pair input compares each unordered series
+pair once, preserving the supplied series order.
+
+Use the `TsxCompileContext` overload for explicit node assignments and replicas,
+boundary selections, a trusted cross-correlation product estimate and site
+budget, ordered series inventories, clean targets, site identity and an optional
+fixed clock. Every assigned replica must support the operator version and state
+kind. Pair cross-correlation requires both an admitted budget and estimate.
+Building an intermediate clean run requires its signal target; building pair or
+alignment inputs requires their series inventories. Missing bindings fail.
+Ordinary clean sinks derive their target from `sink.signal`.
+
+A direct federated statistics edge keeps all configured tumbling widths by
+default and excludes `GLOBAL` on that edge. A shared local statistics sink keeps
+its global output. A signal collector preserves local DQ findings; it does not
+merge their upstream statistics. These explicit compiler admissions do not
+perform network placement or grant remote execution rights.
+
+`DagToWayangCatalogTest` executes all 16 catalog bindings through compiled Java
+Wayang plans and checks the admission boundaries.
+
+The workbench exports `resample.every` as an ISO duration. A published
+`stats.window` exports its width as `windows` and writes complete `SeriesStats`;
+its selected `field` remains a browser view in the stored flow. This is a
+deployment representation, not parity with that projected browser output.
+The UI threshold segmenter's sample-count context is separate from the catalog's
+duration parameters and is not converted by this export path.
+
 ## Compile a local clean DAG
 
-You need a valid series DAG, its SHA-256 hash, the domain's `TopicLayout`, and the
-processor descriptions in `systems/processors/`.
-`DagToWayang.compile(dag, layout, specHash, catalogDirectory)` validates structure
-through `DagPlan`, validates parameters against those descriptions, and applies
-optional defaults to a copy. Required parameters remain required when a UI default
-exists. Type, range, and enum errors use messages 13 to 16 of specification S2.5.
+The `series()` and `plan(bootstrap, sinkName)` APIs select named clean-series
+sinks for `TsxIncrement`. `DagToWayang.parameters` remains the separate parameter
+helper used by the bounded Rust rollout. Required parameters and optional
+defaults follow the same processor descriptions as the general compiler.
 
-Read `series()` to select a sink, then pass `plan(bootstrap, sinkName)` to
-`TsxIncrement.run` or `TsxIncrement.loop`. Each consecutive clean chain becomes
-one `TsxSeriesChain`, preserving the final series key and episode identity. This
-compiler accepts local episode sinks; it does not compile statistics sinks or
-federated plans. `DagToWayang.parameters` also validates statistics parameters
-without building a sink.
+## Execute a signed bounded JVM statistics stage
+
+You need JDK 17 or 21, the built Java modules, explicit local broker bindings,
+Ed25519 keys, mutual-TLS contexts, local input/output policy and a durable state
+directory. Use the programmatic APIs from an embedding application. The signed
+profile binds one complete immutable whole-topic cut to a statistics fragment
+with one `org.opentsx.model.v2.SeriesStats` sink. General local catalog
+compilation remains the broader API described above.
+
+The order matters:
+
+1. Keep the original DAG text and the exact assignment text. The bounded
+   [runner wrapper](../docs/datamodel-2026/schemas/opentsx.runner-plan.v1.schema.json)
+   binds their hashes, generation, runtime artifact, inputs, output and admitted
+   aggregate scopes. `DagToWayang.sinkIdentity` supplies the existing output
+   identity. Every fragment source topic needs an admitted input, and every
+   admitted input must appear in the fragment. Broker aliases resolve through
+   local configuration.
+2. Sign the exact wrapper bytes with
+   [`SignedJws.sign`](src/main/java/org/opentsx/wayang/site/SignedJws.java).
+   [`TsxPlanService`](src/main/java/org/opentsx/wayang/site/TsxPlanService.java)
+   pins qualified runtime identities, driver/site keys and certificate-to-site
+   mappings, then durably publishes signed deliveries.
+3. Obtain the job-bound challenge with
+   [`TsxPlanClient.challenge`](src/main/java/org/opentsx/wayang/site/TsxPlanClient.java).
+   The integration harness's
+   [`SiteConformanceChecks`](src/test/java/org/opentsx/wayang/SiteConformanceChecks.java)
+   executes shared vectors, required broker checks, actual topic inventories,
+   fingerprints, series disjointness and loaded runtime identity. Submit the
+   signed report before requesting activation.
+4. Supply [`TsxBoundedSiteExecution.run`](src/main/java/org/opentsx/wayang/TsxBoundedSiteExecution.java)
+   with the admitted complete `TsxCompileContext` as the execution callback to
+   [`TsxSiteAgent.pollOnce`](src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java).
+   The agent verifies the signed grant and local policy and persists its intent
+   before invoking that callback. Execution reads strict bounded cuts, compiles
+   the fragment, groups statistics, supplies known empty scopes, publishes
+   partials and saves the compatible checkpoint. The agent then persists the
+   outcome, acknowledges the delivery and retains the cursor. An identical retry
+   reuses the saved outcome. Pending acknowledgements are retried before another
+   pull, including after conformance expiry; fresh activation still requires
+   conformance. Conflicting bytes under the same identity reject.
+5. [`TsxSiteStage`](src/main/java/org/opentsx/wayang/TsxSiteStage.java),
+   [`TsxSitePlatform`](src/main/java/org/opentsx/wayang/TsxSitePlatform.java) and
+   [`TsxSiteExecutor`](src/main/java/org/opentsx/wayang/TsxSiteExecutor.java)
+   connect this complete action to the driver through `AggregateChannel`.
+
+The transport profile uses TLS 1.3 with client certificates and pinned site
+identities. Signatures use Ed25519 with the exact protected `EdDSA` header.
+The embedding application supplies the keys, trust material and local policy.
+Read [SPEC S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s7-security)
+for that boundary and
+[`ConformanceHandshakeTest`](src/test/java/org/opentsx/wayang/ConformanceHandshakeTest.java)
+for actual wrong fingerprints, overlapping series and a client without a
+certificate being refused.
+
+Route `signal-cluster` preserves aggregate record bytes and headers through
+Kafka. Its checkpointed
+[`AggregateForwarder`](src/main/java/org/opentsx/wayang/federation/AggregateForwarder.java)
+is one adapter; the fixture also exercises direct signal-cluster publication.
+Route `job-state` carries the same records in an authenticated
+`opentsx.aggregate-delivery.v1` body. `AggregateInventory` binds membership and
+scope evidence; `CompletenessCoordinator` persists received partials, revisions
+and pending acknowledged output. Missing evidence yields an incomplete
+revision; a late compatible site appends a final revision while preserving the
+earlier Kafka records.
+
+[`FederatedStatsIntegrationTest`](src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java)
+checks the complete W3 workload: 3,600 episodes, 2,160,000 values and 420 windows.
+It checks all six merge orders on received partials and exact merged SOE bytes.
+[`JobStateRouteIntegrationTest`](src/test/java/org/opentsx/wayang/JobStateRouteIntegrationTest.java)
+compares complete partial and merged records across both routes.
+[`CompletenessIntegrationTest`](src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java)
+checks 420 incomplete revision-zero records followed by 420 final revision-one
+records after the stopped site returns and the coordinator reloads its state.
+The bounded W3 numerical qualification uses the approved relative `3e-12`
+mean/M2 criterion in
+[SPEC S4.3](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions).
+These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
+require `KAFSCALE_BROKER_BINARY` to name the source-built KafScale v1.6.0
+executable. The fixture starts and stops its four disposable brokers.
+
+The bounded integration topology contains three site-agent instances in one JVM
+and four Go broker processes. Execution topology excludes build and transient
+conformance-check subprocesses. The measurement harness records that topology,
+actual per-route elapsed times, Kafka Produce frames, HTTP bodies and encrypted
+TLS client-stream bytes as separate counters. Read its arguments from the
+repository root:
+
+```bash
+python3 tools/wayang_federation_measurement.py --help
+```
+
+The harness requires clean source trees with no untracked runtime, fixture or
+tool inputs. It records their hashes and HEAD, builds pinned KafScale v1.6.0
+and freezes its Java classpath. The same source guard runs before and after
+execution. Its result directory contains `bytes.csv`, `windows.csv`, `run.json`,
+`metadata.json`, logs and a generated `REPORT.md`. Results are written from the
+executed workload and validated before report generation.
+
+The [A4.9 report and raw samples](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+record nine site/route measurements, 420 reference windows and 2,520 exact
+merge-order comparisons. Use the
+[measurement instructions](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#143-measure-bounded-jvm-federation)
+to rerun the bounded profile. Kafka frames, HTTP bodies and TLS client-stream
+bytes describe different layers; their route clocks cover different work.
 
 ## Compute window statistics
 

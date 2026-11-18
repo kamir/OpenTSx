@@ -23,20 +23,34 @@ also identifies the implemented vector and pair mappings. A numerical kernel
 alone remains insufficient evidence of a mapping.
 
 The local [`DagToWayang`](../../opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java)
-compiler validates parameters from processor descriptions and constructs fused
-clean-series plans with topic sinks. Its current physical compilation accepts
-clean series sinks, not statistics sinks or federated plans. Statistics parameter
-validation and the separately constructible `TsxStatsWindow` operator do not
-expand that compiler scope.
-Remote deployment and authorization remain outside this local Java API. The separate
+compiler validates the frozen inventory and processor parameters, preserves the
+original text hash and constructs all 16 native catalog bindings. Its graph
+builder supports episode, statistics, vector and signal sinks. Clean runs remain
+fused; metadata and series inventories needed to build a graph are explicit
+bindings, rather than guessed identities.
+[`DagToWayangCatalogTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java)
+executes those bindings and checks replica/state admission, product budgets and
+separate local versus federated statistics edges. Explicit compiler context
+does not grant remote execution rights. The separate
 [`tsx-runner` bounded profile](../devguide/integration/rust-runner-local.md) executes pass-through, plausible-range
 checks, unit conversion and a trailing resample. The separate
 [local UI rollout](../devguide/integration/wayang-rust-compose.md) uses `RustRollout` with `DagToWayang.parameters`
 and a custom Rust platform. Its logical sources, union, fused clean chain and sink form one Wayang stage; complete
-fragments run on HTTP workers. It does not expand the original local Java compiler's sink or operator scope.
+fragments run on HTTP workers. Java catalog availability does not expand that Rust profile.
 The [continuous local target](../devguide/integration/wayang-rust-continuous.md) executes successive finite cuts on
 the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also reference its durable predecessor,
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
+
+The [signed bounded JVM profile](../user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile)
+binds an immutable whole-topic assignment to a statistics fragment and one
+SeriesStats sink. `TsxPlanService` persists signed deliveries and admits
+job-bound conformance; `TsxPlanClient` uses certificate-authenticated TLS 1.3.
+`TsxSiteAgent` retains the accepted command, outcome and cursor.
+`TsxBoundedSiteExecution` compiles the admitted cut and publishes every declared
+aggregate scope before saving its compatible continuation.
+`TsxSitePlatform` and `AggregateChannel` connect the complete action to the
+driver. The application supplies signing keys, trust material and local policy.
+The integration harness executes the shared checks with ephemeral certificates.
 
 The finite forecasting and preparation examples use the scientific runtime
 pinned by the [local CP profile](../devguide/local-cp-workbench.md). They need
@@ -158,8 +172,9 @@ cases; all eight run on the kernel. The native Java `TsxPair` operator executes
 the four sampled cases through Wayang, once together and once with B retained
 in `TsxState` before A arrives after state restoration in a later increment.
 `pair.es` version 1 belongs to the
-[frozen catalog](../../systems/catalogs/tsx-catalog-1.yaml). Its available native
-Wayang API remains separate from full A4 compilation and a deployed UI DAG binding.
+[frozen catalog](../../systems/catalogs/tsx-catalog-1.yaml). The local compiler
+also lowers that operator. A compiled Java graph remains separate from a
+deployed UI runtime binding or remote execution admission.
 
 For sampled pair windows, `tauMax` is in seconds and zero means uncapped; the
 operator converts it to aligned tick units before calling the kernel. A
@@ -291,12 +306,30 @@ The three-argument constructor is incremental: it emits windows closed by input 
 by node ID in `TsxState`, without final flushing. `TsxStatsWindow.bounded(...)` calls `engine.flush()`, including
 changed GLOBAL statistics. `TsxStatsWindow.window(...)` also flushes, then returns only the requested aligned
 series windows, constructing an empty record when a requested window has no data; it rejects saved incremental
-state. The direct library starter calls `emitGlobal()` explicitly. The browser's `stats.window` projection still
-has its own `window`/`field` parameter contract; these Java modes do not resolve that UI export translation. See
+state. The direct library starter calls `emitGlobal()` explicitly. The browser's
+`stats.window` projection keeps its own `window`/`field` view contract. Its
+deployment exporter writes the selected width as catalog `windows` and the sink
+as full `org.opentsx.model.v2.SeriesStats`; `field` remains in the saved flow.
+The compiler rejects legacy `window` or `field` parameters instead of silently
+choosing its default windows. See
 [`TsxStatsWindowTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java)
 for sketch-byte and cross-increment state checks. The
 [`Wayang statistics vectors`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsVectorsTest.java)
 replay all five shared cases through actual plans, including bounded and explicit-window modes.
+The compiler's admitted statistics boundary keeps all configured tumbling widths
+and excludes `GLOBAL` only on the outgoing boundary edge. A local sink sharing
+that statistics node retains its global record. A signal collector preserves
+local DQ findings without merging their upstream statistics.
+The bounded federation harness executes the complete W3 workload through both
+signal-cluster and authenticated job-state routes. It compares complete records
+and all six merge orders on received partials. Missing-site recovery preserves
+incomplete records and appends final revisions after coordinator restoration.
+Read the approved bounded W3 mean/M2 criterion in
+[SPEC S4.3](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions)
+and the actual cases in
+[`FederatedStatsIntegrationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java),
+[`JobStateRouteIntegrationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/JobStateRouteIntegrationTest.java)
+and [`CompletenessIntegrationTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java).
 
 ## Evaluate data quality
 
@@ -318,8 +351,9 @@ checks and window widths remain distinct. The signal schema and S6.2 of
 [specification
 20](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s62-deterministic-ids)
 define that contract. `TsxDqVectorsTest` replays all seven shared cases through
-Wayang. A whole `SeriesStats` record is atomic input; native execution
-availability does not extend the current clean-DAG compiler to DQ sinks.
+Wayang. A whole `SeriesStats` record is atomic input. The catalog compiler also
+lowers a statistics-to-DQ graph to a JSON signal sink; remote activation requires
+its separate admitted deployment profile.
 
 ## Decode Avro records
 
@@ -377,6 +411,17 @@ bits, quality and pending detector work. The direct checkpoint starter remains
 an empty-state example; segmentation and Wayang vector tests separately exercise
 nonempty snapshots, restoration between chunks and bounded final flushing.
 
+The signed JVM site checkpoint is a separate continuation contract. It binds
+the exact admitted grant, generation, artifact, state ABI and source cuts;
+`TsxSiteAgent` refuses incompatible or unadmitted access. An identical delivery
+uses its saved outcome. A pending acknowledgement is retried before another
+plan pull, including after conformance expiry, without another activation.
+Explicit execution recovery requires the same grant and a retained compatible
+checkpoint. The local `TsxCheckpoint` starter keeps its
+existing hash-mismatch behavior. Read
+[`TsxSiteAgentPlanTest`](../../opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java)
+for the admission and recovery regressions.
+
 ## Validate a whole-topic execution assignment
 
 `ExecutionAssignments.validate(text)` and `validateSet(texts)` perform offline preflight.
@@ -391,6 +436,11 @@ Passing these gates does not authorize deployment, prove broker metadata or enfo
 UI text/hash while giving per-topic fragments distinct identities. The authenticated backend persists its physical
 plan, clock and topic ownership before the standalone coordinator executes the Wayang stage. The three-worker
 acceptance fixture reads actual output and receipts; the offline assignment starter does not dispatch that workload.
+
+The bounded JVM runner wrapper adds an exact source-topic gate before admission:
+every declared fragment source needs an input, and no admitted input may remain
+unused. Matching multiple topics may use a different inventory order. This gate
+belongs to `RunnerPlan`, not the shared offline assignment validator.
 
 ## Generate mean-reverting demo values
 

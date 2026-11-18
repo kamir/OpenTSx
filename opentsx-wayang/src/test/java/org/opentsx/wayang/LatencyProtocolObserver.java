@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 final class LatencyProtocolObserver implements AutoCloseable {
 
@@ -41,6 +42,10 @@ final class LatencyProtocolObserver implements AutoCloseable {
     final List<Entry> entries = Collections.synchronizedList(new ArrayList<>());
     final Map<Uuid, String> topics = new ConcurrentHashMap<>();
     final AtomicReference<Throwable> failure = new AtomicReference<>();
+    final AtomicLong produceFrameBytes = new AtomicLong();
+    final AtomicLong produceRecords = new AtomicLong();
+    final AtomicLong produceErrors = new AtomicLong();
+    final AtomicReference<String> produceTopic = new AtomicReference<>();
     final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
     final ExecutorService threads = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r, "latency-observer");
@@ -49,13 +54,19 @@ final class LatencyProtocolObserver implements AutoCloseable {
     });
     final ServerSocket server;
     final int backend;
+    final boolean decodeEpisodes;
     volatile boolean closing;
     volatile int increment = -1;
     volatile String inputTopic;
     volatile long firstFetch = -1;
 
     LatencyProtocolObserver(int backend) throws IOException {
+        this(backend, true);
+    }
+
+    LatencyProtocolObserver(int backend, boolean decodeEpisodes) throws IOException {
         this.backend = backend;
+        this.decodeEpisodes = decodeEpisodes;
         server = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
         threads.submit(() -> {
             while (!closing) {
@@ -106,6 +117,13 @@ final class LatencyProtocolObserver implements AutoCloseable {
                 ByteBuffer buffer = ByteBuffer.wrap(frame);
                 RequestHeader header = RequestHeader.parse(buffer);
                 ProduceRequest produce = header.apiKey() == ApiKeys.PRODUCE ? ProduceRequest.parse(buffer, header.apiVersion()) : null;
+                if (produce != null && !decodeEpisodes) {
+                    String topic = measurementTopic(produce, produceTopic.get());
+                    produceTopic.compareAndSet(null, topic);
+                    measurementTopic(produce, produceTopic.get());
+                    produceFrameBytes.addAndGet((long) frame.length + Integer.BYTES);
+                    produceRecords.addAndGet(recordCount(produce));
+                }
                 if (header.apiKey() == ApiKeys.FETCH && increment >= 0 && firstFetch < 0) {
                     FetchRequest fetch = FetchRequest.parse(buffer, header.apiVersion());
                     if (fetch.fetchData(topics).keySet().stream().anyMatch(p -> inputTopic.equals(p.topic()))) firstFetch = nanos;
@@ -133,7 +151,8 @@ final class LatencyProtocolObserver implements AutoCloseable {
                 if (request.header.apiKey() == ApiKeys.METADATA) {
                     frame = metadata(frame, request.header, server.getLocalPort(), topics);
                 } else if (request.produce != null) {
-                    acknowledge(frame, request, System.nanoTime(), entries);
+                    if (decodeEpisodes) acknowledge(frame, request, System.nanoTime(), entries);
+                    else produceErrors.addAndGet(acknowledge(frame, request, System.nanoTime(), entries, false));
                 }
                 writeFrame(out, frame);
             }
@@ -160,10 +179,35 @@ final class LatencyProtocolObserver implements AutoCloseable {
     }
 
     static void acknowledge(byte[] frame, Pending request, long acknowledgedNanos, List<Entry> entries) {
+        acknowledge(frame, request, acknowledgedNanos, entries, true);
+    }
+
+    static String measurementTopic(ProduceRequest request, String previous) {
+        if (request.acks() == 0) throw new IllegalStateException("measurement requires acknowledged Produce requests");
+        if (request.data().topicData().size() != 1) throw new IllegalStateException("measurement requires single-topic Produce frames");
+        String topic = request.data().topicData().iterator().next().name();
+        if (previous != null && !previous.equals(topic)) throw new IllegalStateException("measurement requires one Produce topic per observer");
+        return topic;
+    }
+
+    static long recordCount(ProduceRequest request) {
+        long count = 0;
+        for (var topic : request.data().topicData()) {
+            for (var partition : topic.partitionData()) {
+                for (var batch : ((MemoryRecords) partition.records()).batches()) {
+                    for (var record : batch) count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    static long acknowledge(byte[] frame, Pending request, long acknowledgedNanos, List<Entry> entries, boolean decodeEpisodes) {
         ByteBuffer buffer = ByteBuffer.wrap(frame);
         ResponseHeader.parse(buffer, ApiKeys.PRODUCE.responseHeaderVersion(request.header.apiVersion()));
         ProduceResponse response = ProduceResponse.parse(buffer, request.header.apiVersion());
-        OpenTsxAvro avro = new OpenTsxAvro();
+        OpenTsxAvro avro = decodeEpisodes ? new OpenTsxAvro() : null;
+        long errors = 0;
         for (var topic : request.produce.data().topicData()) {
             var result = response.data().responses().stream().filter(t -> t.name().equals(topic.name())).findFirst().orElseThrow();
             for (var partition : topic.partitionData()) {
@@ -172,15 +216,19 @@ final class LatencyProtocolObserver implements AutoCloseable {
                 long index = 0;
                 for (var batch : records.batches()) {
                     for (var record : batch) {
-                        Episode episode = avro.decode(MessageUtil.byteBufferToArray(record.value()), Episode.class);
+                        if (ack.errorCode() != 0) errors++;
                         long offset = ack.errorCode() == 0 ? ack.baseOffset() + index : -1;
                         index++;
-                        entries.add(new Entry(topic.name(), partition.index(), offset, episode,
-                                request.nanos, acknowledgedNanos, request.at, request.increment, ack.errorCode()));
+                        if (decodeEpisodes) {
+                            Episode episode = avro.decode(MessageUtil.byteBufferToArray(record.value()), Episode.class);
+                            entries.add(new Entry(topic.name(), partition.index(), offset, episode,
+                                    request.nanos, acknowledgedNanos, request.at, request.increment, ack.errorCode()));
+                        }
                     }
                 }
             }
         }
+        return errors;
     }
 
     static byte[] readFrame(DataInputStream in) throws IOException {

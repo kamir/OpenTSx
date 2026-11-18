@@ -1,4 +1,4 @@
-# opentsx-kafka-v2 — episode storage and replay on KafScale
+# opentsx-kafka-v2: episode storage and replay on KafScale
 
 Stores v2 episodes ([`opentsx-model`](../opentsx-model)) in Kafka-protocol topics and replays them.
 Designed for [KafScale](https://kafscale.io), so it relies only on what KafScale supports
@@ -16,6 +16,12 @@ Designed for [KafScale](https://kafscale.io), so it relies only on what KafScale
 `tsx.<domain>.{episodes,buckets,series,observations,series-stats}.v2`, zstd, delete policy.
 Episode records: key = `seriesId`, record timestamp = `tStart`, headers `tsx-schema`, `tsx-bucket`,
 value = Avro single-object encoding.
+
+`TopicLayout.aggregates()` names `tsx.<domain>.aggregates.v2` for Avro `SeriesStats`;
+`signals()` names `tsx.<domain>.signals.v1` for JSON signals. `repartition(dag, node)` names
+`tsx.<domain>.repartition.<dag>.<node>.v2` for Avro episodes. DAG and node names must match
+`[a-z0-9][a-z0-9-]*`; each new topic name is limited to 249 bytes. `all()` and `provision(...)`
+use the five topics listed above. Create additional topics explicitly with `provisionTopic(...)`.
 
 ## Write a bucket
 
@@ -56,8 +62,8 @@ with a `BucketWriter`.
 
 * Unit tests with `MockProducer`, always run.
 * `EpisodeLogIntegrationTest` (write → verified replay, chunked replay, range replay, index rebuild,
-  duplicates, unsealed buckets, pacing) runs when `KAFSCALE_BOOTSTRAP` is set — green on KafScale v1.6.0 and
-  Apache Kafka 3.9.1; CI runs it against KafScale built from source.
+  duplicates, unsealed buckets, pacing) runs when `KAFSCALE_BOOTSTRAP` is set. CI runs it against KafScale built
+  from source.
 
 ## Storage cost (measured, `StorageCostTest`)
 
@@ -70,5 +76,5 @@ Episodes of 10 min at 1 Hz, Avro single-object records batched to ~512 KB and co
 | sensor resolution with ≤ 2 ms timestamp jitter, `IRREGULAR_DELTA` | 10.32 B/value | 4.07 B/value |
 
 Values at sensor resolution compress well; full-precision derived values barely compress. A quantized integer
-value encoding (scale + zig-zag deltas) would bring regular sensor data well below 1 B/value — a candidate for a
+value encoding (scale + zig-zag deltas) would bring regular sensor data well below 1 B/value, a candidate for a
 future schema version if storage cost demands it.

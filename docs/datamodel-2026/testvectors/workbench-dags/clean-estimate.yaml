@@ -1,0 +1,18 @@
+# opentsx.dag.v2, written by the OpenTSx web workbench
+schema: opentsx.dag.v2
+dag: wind-flow-23
+version: 1
+source:
+  kind: kafscale-broker
+  topics: [tsx.wind.clean.v2]
+  series: [abc123]
+checkpoint: { backend: file }
+nodes:
+  - id: decode
+    op: decode.avro-soe
+  - id: n1
+    op: model.power-curve   # not in the stream operator catalog
+    in: [decode]
+    params: { ratedKw: 3000, cutIn: 3, ratedWind: 12.5, cutOut: 25, count: 4 }
+sinks:
+  - { from: n1, topic: tsx.wind.clean.v2, schema: opentsx.episode.v2, signal: { system: h2-chain, id: park.p_avail_kw, grade: clean, metric: h2-chain.park.p_avail_kw }, origin: ESTIMATED, madeOf: "park/T02/WMET.HorWdSpd@clean (SYNTHETIC)" }

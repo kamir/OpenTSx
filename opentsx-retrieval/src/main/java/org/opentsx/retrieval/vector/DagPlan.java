@@ -76,7 +76,7 @@ public record DagPlan(List<VectorJob> vectors, List<SeriesJob> series, List<Stri
         return nodes;
     }
 
-    private static Map<String, JsonNode> validateNodes(JsonNode document) {
+    public static Map<String, JsonNode> validateNodes(JsonNode document) {
         Map<String, JsonNode> nodes = new LinkedHashMap<>();
         Map<String, Integer> incoming = new LinkedHashMap<>();
         Map<String, List<String>> next = new HashMap<>();

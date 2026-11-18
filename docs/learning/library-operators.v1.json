@@ -118,7 +118,7 @@
         "Compare directional synchronization and the reported leader.",
         "Inspect the four sampled-series cases through TsxPair in one plan and with B retained before A arrives after state restoration.",
         "Read the large-seed and settings-label regressions in TsxPairEsWayangTest; explain why the seed label need not equal the random state.",
-        "Resolve pair.es version 1 in frozen catalog 1 and distinguish its sampled native mapping from event-list kernel coverage and full A4 deployment."
+        "Resolve pair.es version 1 in frozen catalog 1 and distinguish its sampled native mapping from event-list kernel coverage and remote Java deployment admission."
       ],
       "starter": {
         "language": "python",
@@ -138,7 +138,7 @@
         "Use a fixed seed when adding surrogate_sync; a reproducible surrogate does not establish causality.",
         "Event-list-only vectors do not establish sampled Wayang coverage or a deployed DAG binding.",
         "The direct kernel uses event-list units for tauMax; the sampled native operator accepts seconds and converts them to ticks.",
-        "Frozen catalog membership does not expand the local clean-series compiler or admit a site plan."
+        "Frozen catalog membership alone does not bind graph metadata or admit remote execution."
       ],
       "references": {
         "manual": [
@@ -781,7 +781,12 @@
       "tasks": [
         "Configure a four-second window and a one-second expected interval.",
         "Submit [1,2,NaN,3], then submit the same episode again.",
-        "Inspect window counts/mean and global emission; explain which samples entered the statistics."
+        "Inspect window counts/mean and global emission; explain which samples entered the statistics.",
+        "Run the compiled catalog statistics fixture with both configured window widths, then compare its local and admitted federated edges.",
+        "Inspect the actual workbench statistics export: retain field as a saved browser view and compare the deployed full SeriesStats representation.",
+        "Execute the complete W3 federation fixture, compare all six merge orders on received partials and preserve complete SOE records across signal-cluster and authenticated job-state delivery.",
+        "Read the approved bounded W3 mean/M2 criterion in SPEC S4.3 and distinguish that observed numerical qualification from unrestricted floating-point associativity.",
+        "Keep Kafka Produce frames, HTTP body bytes, encrypted TLS client-stream bytes and route elapsed time as separate measured quantities."
       ],
       "starter": {
         "language": "java",
@@ -797,15 +802,26 @@
         "Floating-point merges are not bitwise associative.",
         "DDSketch relative-error claims exclude its zero bucket and collapsed tails unless separately qualified.",
         "Duplicate suppression covers only episode IDs retained within Config.dedupCapacity; an evicted ID can be counted again.",
-        "The three-argument TsxStatsWindow constructor keeps incremental state without final flushing; bounded() flushes and includes changed GLOBAL, while window() flushes then selects its explicit windows."
+        "The three-argument TsxStatsWindow constructor keeps incremental state without final flushing; bounded() flushes and includes changed GLOBAL, while window() flushes then selects its explicit windows.",
+        "A federated statistics edge excludes GLOBAL without removing the same node's local global output.",
+        "Workbench field projection and deployed full SeriesStats records are different representations. Legacy window/field parameters are rejected by the catalog compiler.",
+        "The bounded signed JVM statistics profile admits one SeriesStats sink; local catalog compilation has a broader graph API.",
+        "The integration topology contains three site-agent instances in one JVM and four Go brokers; transient build and conformance-check subprocesses are excluded from that execution count."
       ],
       "references": {
         "manual": [
           "docs/user-manual/07-stats-quality.md#71-what-is-computed",
-          "docs/user-manual/17-learn-operators.md"
+          "docs/user-manual/17-learn-operators.md",
+          "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
+          "opentsx-wayang/README.md#compile-a-catalog-dag",
+          "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
         ],
         "spec": [
-          "docs/learning/library-operator-contracts.md#compute-window-statistics"
+          "docs/learning/library-operator-contracts.md#compute-window-statistics",
+          "docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s43-merge-functions",
+          "docs/datamodel-2026/schemas/opentsx.aggregate-delivery.v1.schema.json",
+          "docs/datamodel-2026/schemas/opentsx.aggregate-evidence.v1.schema.json"
         ],
         "source": [
           "opentsx-stats/src/main/java/org/opentsx/stats/StatsEngine.java#L132",
@@ -813,7 +829,16 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/JavaTsxStatsWindow.java#run",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxJavaPlugin.java#getMappings",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#bounded",
-          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#window"
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsWindow.java#window",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#compile",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangBuild.java#sinks",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxStatsMerge.java#merge",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/SiteStats.java#group",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateRecord.java#partial",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/AggregateForwarder.java#copy",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/CompletenessCoordinator.java#accept",
+          "tools/wayang_federation_measurement.py#read_results",
+          "tools/wayang_federation_measurement.py#report"
         ],
         "tests": [
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsEngineTest.java#L54",
@@ -821,7 +846,16 @@
           "opentsx-stats/src/test/java/org/opentsx/stats/StatsWindowVectorsTest.java#sharedVectors",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#theSketchOfAClosedWindowHasTheBytesOfTheSharedVector",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsWindowTest.java#anOpenWindowContinuesInTheNextIncrementFromTheSavedState",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStatsVectorsTest.java#everySharedCaseMatchesThroughAWayangPlan",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#aFederatedBoundaryKeepsBothConfiguredTumblingWidthsAndDropsGlobal",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#oneStatsNodeKeepsGlobalForTheLocalSinkAndFiltersOnlyTheFederatedEdge",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#refusesUnknownStatisticsParametersInsteadOfSelectingDefaultWindows",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederatedStatsIntegrationTest.java#everyActualW3WindowMatchesCentralizedAndAllSixMergeOrders",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/JobStateRouteIntegrationTest.java#authenticatedJobStateAndSignalClusterRoutesKeepIdenticalFullRecords",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java#stoppedSiteLeavesImmutableIncompleteRecordsThenAppendsFinalRevisionOne",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/FederationMeasurement.java#main",
+          "tools/test_wayang_federation_measurement.py#test_inapplicable_transport_metrics_stay_blank_and_measured_fields_are_required"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/stats-window.v1.json"
@@ -848,7 +882,8 @@
         "Explain why completeness fails while plausible range passes, without treating the source as an operating fault.",
         "Replay all seven quality vector cases through TsxDqResult and TsxJavaPlugin with the fixture clock and selected checks.",
         "Compare finding identities for different checks and window widths at one event time, then replay the same input.",
-        "Run the German-default-locale regression without changing the expected punctuation or numerical values."
+        "Run the German-default-locale regression without changing the expected punctuation or numerical values.",
+        "Compile the statistics-to-DQ catalog fixture and compare local findings with findings crossing an admitted signal-collector boundary."
       ],
       "starter": {
         "language": "java",
@@ -868,14 +903,18 @@
         "A constant legitimate operating state is not automatically a faulty sensor; choose flatline policy for the signal.",
         "DataQuality.evaluate returns library results. TsxDqResult is a registered Wayang mapping; its JSON output is not an Avro SpecificRecord.",
         "A SeriesStats record is the atomic DQ input. Keep the fixture clock fixed and preserve its window metadata.",
-        "Direct Java execution availability does not establish a DQ sink in the current clean-DAG compiler."
+        "The catalog compiler supports a DQ signal sink; a compiled graph does not grant remote execution rights.",
+        "The signed bounded JVM statistics profile publishes SeriesStats partials; direct local DQ compilation and signal collection remain separate execution boundaries."
       ],
       "references": {
         "manual": [
           "docs/user-manual/07-stats-quality.md#73-data-quality-checks",
           "docs/user-manual/17-learn-operators.md",
           "opentsx-wayang/README.md#emit-data-quality-signals",
-          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang"
+          "docs/user-manual/09-retrieval.md#96-run-retrieval-operators-on-wayang",
+          "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
+          "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#evaluate-data-quality",
@@ -894,7 +933,8 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#allSharedResultsMatchThroughWayang",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxDqVectorsTest.java#differentChecksAndWindowWidthsHaveDifferentIdsAndReplayIdentically",
           "opentsx-stats/src/test/java/org/opentsx/stats/DataQualityLocaleTest.java#messagesMatchTheSharedReferenceUnderAGermanDefaultLocale",
-          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders"
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxStreamEqualsBatchTest.java#everyVectorCaseMatchesInSixChunkAndSeriesOrders",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#aSignalCollectorPreservesLocalDqFindingsWithoutMergingUpstreamStatistics"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/dq-result.v1.json"
@@ -971,7 +1011,11 @@
         "Compute the Episode fingerprint from the registered schema.",
         "Inspect source.read without opening a broker; use the existing wire/settings tests for offline evidence.",
         "Inspect the separate RustTopicSource and topology-only channel, then compare a complete three-topic plan with the local source starter.",
-        "Resolve decode.avro-soe version 1 in the inventory and its processor description, then distinguish logical construction from native replay and deployment admission."
+        "Resolve decode.avro-soe version 1 in the inventory and its processor description, then distinguish logical construction from native replay and deployment admission.",
+        "Read the original exported YAML through DagToWayang, compare its raw-text hash, and build the two-topic multi-sink fixture without splitting either topic.",
+        "Run the shared 22-message rejection fixture and distinguish an unsupported operator from a missing target or series binding.",
+        "Trace the signed bounded JVM delivery from the job-bound conformance challenge through TsxSiteAgent.pollOnce, then distinguish one driver JVM with three site-agent instances from three independent JVM processes.",
+        "Freeze the source HEAD and tracked runtime, fixture and tool hashes before a measurement; reject an untracked Java class and a source commit made during execution."
       ],
       "starter": {
         "language": "java",
@@ -997,7 +1041,11 @@
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/wayang-rust-compose.md",
           "docs/devguide/integration/wayang-rust-continuous.md",
-          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1",
+          "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
+          "opentsx-wayang/README.md#compile-a-catalog-dag",
+          "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#construct-a-whole-topic-source",
@@ -1010,7 +1058,16 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustTopicSource.java#RustTopicSource",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPlanChannel.java#createInstance",
           "systems/catalogs/tsx-catalog-1.yaml",
-          "systems/processors/decode.avro-soe.yaml"
+          "systems/processors/decode.avro-soe.yaml",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#compile",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#build",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxCompileContext.java#TsxCompileContext",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayangValidation.java#structure",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanService.java#publish",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxPlanClient.java#challenge",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#pollOnce",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/ConformanceHandshake.java#validate",
+          "tools/wayang_federation_measurement.py#source_snapshot"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxWireVectorsTest.java#L39",
@@ -1021,10 +1078,22 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
           "opentsx-saas-backend/tests/test_wayang_continuous.py",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#actualWorkbenchExportsTranslateOrNameTheNonCatalogNode",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#hashesOriginalTextBeforeParsing",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangErrorsTest.java#allNormativeRejections",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangCatalogTest.java#aTwoTopicMultiSinkGraphBuildsOneSourcePerWholeTopic",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/ConformanceHandshakeTest.java#anActualWrongInputFingerprintIsRefusedOverMutualTls",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/ConformanceHandshakeTest.java#anActualSeriesFromAnAcceptedSiteIsRefusedAtAnotherSite",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/ConformanceHandshakeTest.java#aTrustedServerRejectsAClientWithoutACertificateDuringTls",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/SiteConformanceChecks.java#report",
+          "tools/test_wayang_federation_measurement.py#test_untracked_java_source_refuses_the_run_before_build_or_output",
+          "tools/test_wayang_federation_measurement.py#test_a_source_commit_during_java_execution_prevents_a_complete_report"
         ],
         "vectors": [
-          "opentsx-model/src/test/resources/testvectors/wire-format.json"
+          "opentsx-model/src/test/resources/testvectors/wire-format.json",
+          "docs/datamodel-2026/testvectors/dag-to-wayang-rejections.v1.json",
+          "docs/datamodel-2026/testvectors/workbench-dags/clean-signal.yaml"
         ]
       }
     },
@@ -1134,7 +1203,11 @@
         "Follow TsxSegment state across increments and compare bounded completion with a restored run.",
         "Run the segmentation checkpoint regressions for quality/source metadata, raw NaN bits, incompatible parameters and truncated input.",
         "Distinguish the Rust worker prepared journal, its completed checkpoint and the authoritative PostgreSQL deployment plan during an identical retry.",
-        "Compare frozen operator versions with the local checkpoint hash rules and identify the separate admission and state-migration boundaries."
+        "Compare frozen operator versions with the local checkpoint hash rules and identify the separate admission and state-migration boundaries.",
+        "Restore state after every input of the compiled single-input pair workload and verify one result per unordered pair with the original input orientation.",
+        "Explain why an original-text hash changes with YAML whitespace while the normalized graph remains equal.",
+        "Compare the local increment checkpoint with the signed JVM continuation identity and its durable admission outcome.",
+        "Stop one site, reload the completeness coordinator, return the site and verify appended final revisions without replacing earlier Kafka records."
       ],
       "starter": {
         "language": "java",
@@ -1165,7 +1238,10 @@
           "opentsx-wayang/README.md#segment-episodes-and-annotate-sax-words",
           "docs/devguide/integration/wayang-rust-compose.md",
           "docs/devguide/integration/wayang-rust-continuous.md",
-          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1"
+          "docs/user-manual/17-learn-operators.md#use-frozen-catalog-1",
+          "docs/user-manual/17-learn-operators.md#compile-the-exported-workbench-document",
+          "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#persist-an-increment-checkpoint",
@@ -1182,7 +1258,11 @@
           "rust/tsx-runner/src/worker.rs#activate",
           "rust/tsx-runner/src/worker.rs#recover",
           "opentsx-saas-backend/app/services/wayang_service.py#reconcile_once",
-          "systems/catalogs/tsx-catalog-1.yaml"
+          "systems/catalogs/tsx-catalog-1.yaml",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#requireContinuation",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#checkpoint",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#resume",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/federation/CompletenessCoordinator.java#acknowledge"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1199,7 +1279,12 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
           "opentsx-saas-backend/tests/test_wayang_continuous.py",
-          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions"
+          "opentsx-retrieval/src/test/java/org/opentsx/retrieval/system/SystemDocTest.java#catalogOneMatchesSpecAndProcessorDescriptions",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxPairWithinTest.java#oneInputProducesEachUnorderedPairOnceAndKeepsInputOrientationAcrossRestarts",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/DagToWayangWorkbenchTest.java#hashesOriginalTextBeforeParsing",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#retainedCheckpointMustMatchExactAdmittedIdentity",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#explicitRecoveryRequiresTheSameGrantAndRetainedAtomicCheckpoint",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/CompletenessIntegrationTest.java#stoppedSiteLeavesImmutableIncompleteRecordsThenAppendsFinalRevisionOne"
         ],
         "vectors": []
       }
@@ -1221,7 +1306,11 @@
         "Load the shared two-rust-nodes-distinct-whole-topics fixture and validate its assignment set.",
         "Compare the overlapping-owner and split-topic rejection cases.",
         "Remove one internal position while retaining partitionCount and observe assignment.coverage.",
-        "Trace the separate RustRollout compiler from exact UI text and catalog validation to distinct per-topic fragments, complete source cuts and one connected Wayang Rust stage."
+        "Trace the separate RustRollout compiler from exact UI text and catalog validation to distinct per-topic fragments, complete source cuts and one connected Wayang Rust stage.",
+        "Bind the existing exact assignment text to the signed bounded JVM wrapper and its output sink identity, fingerprint contract, membership and declared scopes.",
+        "Compare plain RunnerPlan.parse with signature-verified admission and prove that unsigned parsing cannot access a continuation.",
+        "Replay a retained acknowledgement after losing its request or response and advancing the logical clock beyond conformance expiry; then verify that a fresh unqualified delivery remains blocked.",
+        "For the bounded JVM wrapper, add an unused admitted topic or remove a required input and verify plan.invalid before admission; retain a matching multi-topic control."
       ],
       "starter": {
         "language": "java",
@@ -1232,14 +1321,18 @@
         "Two nodes may own distinct whole topics for the same admitted fragment.",
         "Each input includes all positions from zero through partitionCount minus one, in order.",
         "Splitting a topic across nodes fails coverage; duplicate whole-topic ownership fails ownership.",
-        "Java and Rust validate the same shared cases; these offline library calls do not execute the separate bounded Rust runner."
+        "Java and Rust validate the same shared cases; these offline library calls do not execute the separate bounded Rust runner.",
+        "Pending acknowledgement recovery returns the stored outcome without another execution or a new plan pull.",
+        "The bounded JVM wrapper requires exact equality between admitted input topics and fragment source.topics, independent of inventory order."
       ],
       "pitfalls": [
         "Resolve aliases to authoritative topic identity before interpreting ownership.",
         "Passing offline validation neither authorizes deployment nor fences a live Kafka writer.",
         "The local rollout adds actual capability and broker checks plus durable control; the offline starter remains an offline validator and does not activate workers.",
         "The continuous Wayang target preserves whole-topic placement, the original source hash and clock; each finite increment restores its preceding acknowledged state instead of replaying from zero.",
-        "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission."
+        "The worker service wraps each finite bounded assignment in opentsx.local-increment.v1 with a sequence and previous request hash. The offline starter does not perform that stateful admission.",
+        "An expired conformance report still blocks fresh activation; it does not invalidate an already retained acknowledgement.",
+        "The JVM wrapper source-topic gate does not change the shared offline assignment validator or the Rust contract."
       ],
       "references": {
         "manual": [
@@ -1247,7 +1340,9 @@
           "docs/user-manual/17-learn-operators.md",
           "docs/devguide/integration/rust-runner-local.md",
           "docs/devguide/integration/wayang-rust-compose.md",
-          "docs/devguide/integration/wayang-rust-continuous.md"
+          "docs/devguide/integration/wayang-rust-continuous.md",
+          "docs/user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile",
+          "opentsx-wayang/README.md#execute-a-signed-bounded-jvm-statistics-stage"
         ],
         "spec": [
           "docs/learning/library-operator-contracts.md#validate-a-whole-topic-execution-assignment",
@@ -1260,7 +1355,13 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/DagToWayang.java#parameters",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustRollout.java#plan",
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustExecutor.java#execute",
-          "opentsx-saas-backend/app/services/wayang_service.py#validate_plan"
+          "opentsx-saas-backend/app/services/wayang_service.py#validate_plan",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/RunnerPlan.java#verify",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/SignedJws.java#verify",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#accept",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/TsxBoundedSiteExecution.java#run",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/TsxSiteAgent.java#pollOnce",
+          "opentsx-wayang/src/main/java/org/opentsx/wayang/site/RunnerPlan.java#parse"
         ],
         "tests": [
           "opentsx-model/src/test/java/org/opentsx/model/contracts/ExecutionAssignmentsTest.java#L35",
@@ -1270,7 +1371,15 @@
           "rust/tsx-runner/tests/increments.rs",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustContinuousRolloutTest.java",
           "opentsx-wayang/src/test/java/org/opentsx/wayang/RustContinuousComposeFixtureTest.java",
-          "opentsx-saas-backend/tests/test_wayang_continuous.py"
+          "opentsx-saas-backend/tests/test_wayang_continuous.py",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unadmittedExecutionCannotReadOrCreateAContinuation",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#outputBindingsAndByteLimitsFailClosed",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#sixBadPlansRefuseWithExactCodesAndAcceptedRetriesNeverReactivate",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#lostAckResponseReplaysTheRetainedOutcomeAfterConformanceExpires",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unsentAckReplaysTheRetainedOutcomeAfterConformanceExpires",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#unusedAdmittedInputIsRejectedBeforeExecution",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#aFragmentSourceWithoutAnAdmittedInputIsRejectedBeforeExecution",
+          "opentsx-wayang/src/test/java/org/opentsx/wayang/site/TsxSiteAgentPlanTest.java#matchingMultipleWholeTopicInputsAreAcceptedIndependentlyOfInventoryOrder"
         ],
         "vectors": [
           "docs/datamodel-2026/testvectors/execution-contracts.v1.json"

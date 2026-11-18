@@ -273,7 +273,19 @@ invalid batch before any records are sent. DQ ids include the check and both
 window bounds, preserving distinct findings under the S6.2 deduplication rule.
 
 ### A4: translation, signed plans, federation on JVM sites
-- [ ] `DagToWayang`, `TsxSitePlatform`, `TsxSiteExecutor`, `TsxSiteAgent`, plan service API (S5.3), forwarder, central merge.
+
+- [x] `DagToWayang`, `TsxSitePlatform`, `TsxSiteExecutor`, `TsxSiteAgent`,
+  plan service API (S5.3), forwarder and central merge, qualified for the
+  bounded JVM profile on 2026-11-17.
+
+The owner-approved A4 qualification uses bounded replicated JVM assignments,
+three site instances in one execution JVM and four independent disposable
+KafScale v1.6.0 brokers. It preserves complete source cuts and exact
+source/fragment identity, and admits one statistics output per site.
+Signed member and scope inventories establish finality for those bounded cuts.
+General continuous fleet activation, production PKI/ACL enrollment and ownership
+takeover remain separate gates. The owner approved the wire/security contract
+and the measured D-T2 revision on 2026-11-17.
 
 | # | Criterion | Proof | Data | Pass |
 |---|---|---|---|---|
@@ -282,10 +294,37 @@ window bounds, preserving distinct findings under the S6.2 deduplication rule.
 | A4.3 | Bad plans are refused; accepted retry is idempotent | `TsxSiteAgentPlanTest`: tampered payload, `alg: none`, expired new activation, older version, conflicting bytes for an accepted version, wrong site, identical accepted retry before and after expiry | fixtures | six refusals with their exact S5.5 codes; both identical retries return the recorded outcome without reactivation |
 | A4.4 | Bad sites are refused | `ConformanceHandshakeTest`: one site with a wrong input fingerprint, one with a `seriesId` of another site | W3 on K | responses `{"result":"refused","check":"topics.fingerprints",...}` and `{"result":"refused","check":"series.disjoint",...}`; 2 of 2 |
 | A4.5 | Federated equals centralized | `FederatedStatsIntegrationTest`: `stats.welford-ddsketch` with `windows: [PT10M, PT1H]`, `alpha: 0.01`, over three sites, against one `StatsAccumulator` per group and window over all values | W3 on K | for every window: exact counts/min/max; sketch bytes equal in the one-runtime/no-collapse domain; mean/m2 within D-T2; quantile accuracy qualified by S4.3, with explicit zero-bucket and collapsed-tail cases |
-| A4.6 | The merge is order-independent | `MergeOrderTest`: the three partials of every window of A4.5 in all 6 orders | W3 partials | all 6 merged records bit-identical |
+| A4.6 | The merge is order-independent | See the proof below | W3 partials | See the proof below |
 | A4.7 | Late and missing sites follow S4.5 | `CompletenessIntegrationTest`: stop `s3`, wait past `maxDelay`, restart | W3 on K, `maxDelay: PT1M` | first record `tsx-final: false`, `tsx-missing-sites: s3`; after restart revision 1 with `tsx-final: true`; revision 0 unchanged in the topic |
 | A4.8 | Route J equals route S | `JobStateRouteIntegrationTest`: a bounded job over W3 | W3 on K | merged records bit-identical to A4.5 |
 | A4.9 | Data moved is known | protocol of concept 20, section 14, baseline (a) | W3 on K | bytes leaving each site and bytes of the centralized run measured and reported |
+
+For A4.6, `MergeOrderTest`, `W3StatsMergeTest` and
+`FederatedStatsIntegrationTest` merge the three partials of every A4.5 window
+in all six orders. All six merged records are bit-identical, including
+comparison with the actual published record.
+
+Qualification results on JDK 21 and source-built KafScale v1.6.0, 2026-11-17:
+
+| # | Result |
+| --- | --- |
+| A4.1 | met: `DagToWayangErrorsTest`, 35 tests including all 22 exact rejection vectors |
+| A4.2 | met: `DagToWayangWorkbenchTest`, 6 tests over 5 exported YAML files; all 16 catalog bindings execute |
+| A4.3 | met: `TsxSiteAgentPlanTest`, 14 tests, including both lost-ACK paths and exact input-topic coverage |
+| A4.4 | met: `ConformanceHandshakeTest`, 3 real transport cases, including both specified site refusals |
+| A4.5 | met: `FederatedStatsIntegrationTest`, all 420 windows; exact fields/sketches and approved D-T2 bound |
+| A4.6 | met: `MergeOrderTest`, 8 tests; `W3StatsMergeTest`, 2 tests; 2,520 published-record comparisons |
+| A4.7 | met: `CompletenessIntegrationTest`, 420 incomplete records, then 420 final revisions; old bytes unchanged |
+| A4.8 | met: `JobStateRouteIntegrationTest`, identical 1,260 partials and 420 merged records across both routes |
+| A4.9 | met: 9 measured site/route samples; report and raw CSV files linked below |
+
+The [measurement report and raw samples](../docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)
+record the clean source commit, hardware, OS, JDK, broker source and commands.
+The measured counters are Kafka Produce request frames, aggregate HTTP bodies
+and encrypted client-stream bytes. These are separate protocol layers, not a
+total network-egress counter or a latency comparison. Maximum relative mean
+error is `1.7308017671758118e-14`; maximum relative M2 error is
+`2.7235050829345894e-12`, below the owner-approved `3e-12` bound.
 
 ### A5: evaluation of Track A
 | # | Criterion | Proof | Data | Pass |
@@ -353,7 +392,7 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | Id | Question | Options | Recommendation | Decision |
 |---|---|---|---|---|
 | D-T1 | Edge runtime | Rust (Track B); Go (concept 11, D25); none, JVM only | Rust: `apache-avro` supports single-object encoding, `wasmtime` for later user operators; one non-JVM runtime only | as recommended, owner, 2026-11-16 |
-| D-T2 | Tolerance for federated `mean` and `m2` | fixed relative 1e-12; bound measured per data set in A4.5 | fixed 1e-12, revisited with the measured error of A4.5 | as recommended, owner, 2026-11-16 |
+| D-T2 | Tolerance for federated moments | See qualification below | See qualification below | Owner, 2026-11-17 |
 | D-T3 | Default federation route | signal cluster; job state; both | signal cluster: works with offline sites and continuous jobs | as recommended, owner, 2026-11-16 |
 | D-T4 | Plan delivery | pull agent (S5.3); push agent with an inbound port; SSH only | pull agent; SSH for sites that require it | as recommended, owner, 2026-11-16 |
 | D-T5 | Signature algorithm | EdDSA (Ed25519); ES256 | EdDSA: small keys, deterministic signatures | as recommended, owner, 2026-11-16 |
@@ -364,6 +403,13 @@ Criteria per milestone: A0 5, A1 7, A2 6, A3 6, A4 9, A5 2, B1 6, B2 3, B3 4, B4
 | D-T10 | S3 segment input | not needed; Go KafScale template; Rust segment decoder | not needed: both tracks read the Kafka protocol | as recommended, owner, 2026-11-16 |
 | D-T11 | Kafka transport security until KafScale is checked | TLS-terminating proxy; isolated network; wait for KafScale support | TLS-terminating proxy | as recommended, owner, 2026-11-16 |
 | D-T12 | Where `opentsx-wayang` lives | module in this repository; separate repository | module in this repository: it reuses five OpenTSx modules | as recommended, owner, 2026-11-16 |
+
+D-T2 compares a fixed relative bound with per-data-set measurement in A4.5.
+The owner approved relative `3e-12` for bounded W3 `mean` and `m2` on
+2026-11-17, retaining exact counts, extrema and uncollapsed sketch bytes.
+The measured maximum mean error is `1.7308017671758118e-14`; maximum M2 error
+is `2.7235050829345894e-12` over all 420 windows and six merge orders.
+No bound is established for arbitrary data or mixed runtimes.
 
 ## Non-goals
 - A Kafka Streams-like runtime: no RocksDB state stores, no changelog topics, no automatic repartition topics, no
