@@ -21,7 +21,7 @@ pip install -e "python-package[kafka,viz]"       # + confluent-kafka, matplotlib
 | `opentsx.model` | v2 data model, byte-identical to Java ([chapter 3](03-data-model.md)). Series identity: `canonical`, `series_key`, `series_id`, `verify_series_key`. Episodes: `regular`, `irregular`, `values`. Time axis: `timestamps_us`, `encode_deltas`, `decode_deltas`. Summaries: `summarize`, `merge_summaries`, `variance`. Wire format: `encode`, `decode`, `fingerprint`, `schema`. IDs and hashes: `new_ulid`, `xxh64_hex`, `bucket_checksum`. pandas I/O in `opentsx.model.pandas_io`: `series_to_episode`, `episode_to_series`, `episodes_to_frame` |
 | `opentsx.store.iceberg` | `load_catalog`, `read_episodes`, `read_frame`: read the Iceberg tables written by Java |
 | `opentsx.stats` | `QuantileSketch` (same format as Java), `stats_to_frame` for `SeriesStats` records |
-| `opentsx.client` | `RetrievalClient` for the REST API (episodes, patterns, segments; the inventory, systems, signals, decisions; the scenario and runs of the twin). It raises `RetrievalError` with the HTTP status on an error response. `TopicReader` reads the episodes of a topic directly, once, with a limit, and raises `TopicLimitReached` above it |
+| `opentsx.client` | `RetrievalClient` for the REST API (episodes, patterns, segments; the inventory, systems, signals, decisions; the scenario and runs of the twin). Every failed request raises `RetrievalError` with `method`, `url`, `status` (`None` when no answer came) and the server's error `type`. `TopicReader` reads the episodes of a topic directly, once, with a limit, and raises `TopicLimitReached` above it |
 | `opentsx` (top level) | classic algorithms `DFA`, `MFDFA`, `EventSynchronization`, `RIS` (see [chapter 11](11-classic-analytics.md)). `TimeSeriesObject` with `describe`, `normalize`, `detrend`, `diff`, `resample` and `apply`. `TSBucket` with `add`, `apply` and `filter`. `TSProcessor` and `ProcessorChain`: chain processors with `>>` |
 
 ## Build an episode from a pandas series
@@ -60,12 +60,25 @@ record key. `episodes_to_frame` gives one row per value, with `ts` in UTC.
 An index without a time zone fails with `ValueError: naive DatetimeIndex; localize it or pass assume_utc=True`.
 Localize the index, or pass `assume_utc=True` when the times are UTC.
 
+## Query the retrieval server
+
+You need a running retrieval server ([chapter 9](09-retrieval.md)).
+`RetrievalClient("http://localhost:8080")` waits up to 120 seconds for each answer; pass `timeout=<seconds>` for
+another limit. It checks times, ids, `series` and `timeout` before it sends a request and raises `ValueError` for
+a bad one.
+Every failed request raises `RetrievalError`; its message starts with the method and the URL, and `status` is `None`
+when no answer came. `c.episode(<id>)` returns `None` only when the server answers 404 with the type `not_found`.
+The server also answers `not_found` for a path it does not know, so check the base URL when every id gives `None`.
+See [the messages and their fix](../../python-package/README.md#handle-retrieval-errors).
+
 ## Read a topic directly
 
 You need the `kafka` extra and a reachable Kafka endpoint or KafScale proxy.
 `TopicReader` uses explicit partition assignment, disables automatic commits and offset storage, and applies one
 `timeout_s` deadline across metadata, watermarks and polling. `episodes()` raises `TopicLimitReached` when the topic
-holds more than `max_records` records (default 20,000).
+holds more than `max_records` records (default 20,000). A record that is not a v2 record raises `ValueError` with a
+message that starts with `<topic>[<partition>]@<offset>:`. A v2 record of another type is skipped and counted in
+`reader.skipped`.
 See the [topic reader limits and error handling](../../python-package/README.md#read-a-topic).
 
 ## Read the Iceberg tables from Spark

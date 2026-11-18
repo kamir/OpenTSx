@@ -10,13 +10,15 @@ records Java works with; pattern matches come back as pandas DataFrames.
 """
 from __future__ import annotations
 
+import http.client
 import json
 import struct
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from math import isfinite
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence
 
 import pandas as pd
 
@@ -27,65 +29,149 @@ AVRO_STREAM = "application/x-opentsx-avro-stream"
 
 
 class RetrievalError(RuntimeError):
-    def __init__(self, status: int, message: str):
-        super().__init__(f"HTTP {status}: {message}")
+    """A failed request: ``method``, ``url``, ``status`` (None when no answer came) and the server's error ``type``."""
+
+    def __init__(self, method: str, url: str, status: Optional[int], message: str, error_type: Optional[str] = None):
+        super().__init__(f"{method} {url}: " + ("" if status is None else f"HTTP {status}: ") + message)
+        self.method = method
+        self.url = url
         self.status = status
+        self.type = error_type
 
 
-def _iso(t: Any) -> Optional[str]:
+_EXAMPLE_TIME = "such as 2026-10-01T00:00:00Z"
+_NOT_THE_SERVER = "check that the base URL points at the retrieval server"
+
+
+def _iso(t: Any, name: str) -> Optional[str]:
     if t is None:
         return None
     if isinstance(t, str):
-        return t
+        bad = f'{name}: "{t}" is not an ISO-8601 time; pass a time with a zone, {_EXAMPLE_TIME}'
+        if not t[:1].isdigit():  # pandas reads "now" and "today" as local times
+            raise ValueError(bad)
+        try:
+            parsed = pd.to_datetime(t, format="ISO8601")
+        except pd.errors.OutOfBoundsDatetime as e:
+            if int(pd.__version__.split(".")[0]) >= 3:  # pandas 3 holds nanoseconds only within the pandas 2 range
+                raise ValueError(f'{name}: "{t}" is finer than a microsecond; pass at most six decimal places') from e
+            raise ValueError(f'{name}: "{t}" is outside the times pandas {pd.__version__} can hold; '
+                             "pass a time from 1677-09-21T00:12:44Z to 2262-04-11T23:47:16Z") from e
+        except ValueError as e:
+            raise ValueError(bad) from e
+        if parsed.tzinfo is None:
+            raise ValueError(f'{name}: "{t}" has no time zone; pass a time with a zone, {_EXAMPLE_TIME}')
+        t = parsed
     if isinstance(t, pd.Timestamp):
+        if t.nanosecond:
+            raise ValueError(f"{name}: {t.isoformat()} is finer than a microsecond; pass at most six decimal places")
         t = t.to_pydatetime()
     if isinstance(t, datetime):
         if t.tzinfo is None:
-            raise ValueError("naive datetime; pass a timezone-aware value (UTC)")
+            raise ValueError(f"{name}: {t} has no time zone; pass a timezone-aware value, {_EXAMPLE_TIME}")
         return t.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-    raise TypeError(f"unsupported time value {t!r}")
+    raise TypeError(f"{name}: unsupported time value {t!r}; pass a str, datetime or pandas Timestamp")
+
+
+def _id(value: str, name: str) -> str:
+    if not isinstance(value, str) or not value or "/" in value:
+        raise ValueError(f"{name}: \"{value}\" is not an id; pass a non-empty id without '/'")
+    return urllib.parse.quote(value)
+
+
+def _object(raw: bytes) -> dict:
+    doc = _parse_json(raw)
+    if not isinstance(doc, dict):
+        raise ValueError(f"the answer is not a JSON object but a {type(doc).__name__}")
+    return doc
+
+
+def _array(raw: bytes) -> list:
+    doc = _parse_json(raw)
+    if not isinstance(doc, list):
+        raise ValueError(f"the answer is not a JSON array but a {type(doc).__name__}")
+    return doc
+
+
+def _one_episode(raw: bytes) -> dict:
+    eps = decode_stream(raw)
+    if len(eps) != 1:
+        raise ValueError(f"the answer holds {len(eps)} episodes, expected 1")
+    return eps[0]
+
+
+def _parse_json(raw: bytes) -> Any:
+    try:
+        return json.loads(raw)
+    except ValueError as e:
+        raise ValueError(f"the answer is not JSON ({e})") from e
 
 
 def decode_stream(data: bytes) -> List[dict]:
     """Decodes ``[uint32 BE length][Avro single-object Episode]*``."""
     out, pos = [], 0
     while pos < len(data):
-        (n,) = struct.unpack_from(">I", data, pos)
-        pos += 4
-        name, rec = m.decode(data[pos:pos + n])
+        n = struct.unpack_from(">I", data, pos)[0] if pos + 4 <= len(data) else None
+        if n is None or pos + 4 + n > len(data):
+            need = "a 4-byte length" if n is None else f"{4 + n} bytes"
+            raise ValueError(f"truncated episode stream at byte {len(data)}; the record at byte {pos} needs {need}")
+        name, rec = m.decode(data[pos + 4:pos + 4 + n])
         if name != "Episode":
             raise ValueError(f"expected Episode records, got {name}")
         out.append(rec)
-        pos += n
+        pos += 4 + n
     return out
 
 
 class RetrievalClient:
     def __init__(self, base_url: str, timeout: float = 120.0):
+        if not isfinite(timeout) or timeout <= 0:
+            raise ValueError(f"timeout: {timeout} is not allowed; pass a finite number of seconds above 0")
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
     # ---- transport ---------------------------------------------------------------------------------------------
 
-    def _request(self, method: str, path: str, body: Optional[dict] = None, accept: str = "application/json") -> bytes:
+    def _request(self, method: str, path: str, body: Optional[dict] = None, accept: str = "application/json",
+                 parse: Callable[[bytes], Any] = _object) -> Any:
+        url = self.base_url + path
         data = None if body is None else json.dumps({k: v for k, v in body.items() if v is not None}).encode()
-        req = urllib.request.Request(self.base_url + path, data=data, method=method,
+        req = urllib.request.Request(url, data=data, method=method,
                                      headers={"Accept": accept, "Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                return r.read()
+                status, raw = r.status, r.read()
         except urllib.error.HTTPError as e:
-            raw = e.read()
             try:
-                msg = json.loads(raw).get("error", raw.decode())
+                raw = e.read()
+            except (OSError, http.client.HTTPException) as read_error:
+                raise RetrievalError(method, url, e.code,
+                                     f"the error answer cannot be read ({read_error})") from read_error
+            try:
+                doc = json.loads(raw)
             except ValueError:
-                msg = raw.decode(errors="replace")
-            raise RetrievalError(e.code, msg) from None
+                doc = None
+            if isinstance(doc, dict) and isinstance(doc.get("error"), str):
+                error_type = doc.get("type") if isinstance(doc.get("type"), str) else None
+                raise RetrievalError(method, url, e.code, doc["error"], error_type) from e
+            text = " ".join(raw.decode(errors="replace").split())
+            text = text if len(text) <= 200 else text[:200] + "..."
+            raise RetrievalError(method, url, e.code, f"{text or 'an empty answer'}; {_NOT_THE_SERVER}") from e
+        except (OSError, http.client.HTTPException) as e:
+            reason = e.reason if isinstance(e, urllib.error.URLError) else e
+            raise RetrievalError(method, url, None, f"no answer: {reason}; check the base URL, the network and the "
+                                                    f"timeout of {self.timeout} s") from e
+        try:
+            return parse(raw)
+        except ValueError as e:
+            raise RetrievalError(method, url, status, f"{e}; {_NOT_THE_SERVER}") from e
 
     @staticmethod
     def _selection(metric, tags, series, start, end) -> Dict[str, Any]:
+        if isinstance(series, str):
+            raise ValueError(f'series: "{series}" is a string; pass a list of series ids, such as ["{series}"]')
         return {"metric": metric, "tags": dict(tags) if tags else None,
-                "series": ",".join(series) if series else None, "from": _iso(start), "to": _iso(end)}
+                "series": ",".join(series) if series else None, "from": _iso(start, "start"), "to": _iso(end, "end")}
 
     # ---- episodes ----------------------------------------------------------------------------------------------
 
@@ -106,16 +192,17 @@ class RetrievalClient:
         if resample:
             q["resample"], q["agg"] = resample, agg
         path = "/v1/episodes" + ("?" + urllib.parse.urlencode(q) if q else "")
-        return decode_stream(self._request("GET", path, accept=AVRO_STREAM))
+        return self._request("GET", path, accept=AVRO_STREAM, parse=decode_stream)
 
     def episode(self, episode_id: str) -> Optional[dict]:
+        """The episode with this id; None when the server answers 404 with the type ``not_found``."""
+        path = "/v1/episodes/" + _id(episode_id, "episode_id")
         try:
-            eps = decode_stream(self._request("GET", "/v1/episodes/" + urllib.parse.quote(episode_id), accept=AVRO_STREAM))
+            return self._request("GET", path, accept=AVRO_STREAM, parse=_one_episode)
         except RetrievalError as e:
-            if e.status == 404:
+            if e.status == 404 and e.type == "not_found":
                 return None
             raise
-        return eps[0] if eps else None
 
     def frame(self, **kwargs) -> pd.DataFrame:
         """Long DataFrame (series_id, metric, episode_id, ts, value) of :meth:`episodes`."""
@@ -133,24 +220,26 @@ class RetrievalClient:
         else:
             body.update(episodeId=episode_id, offset=offset, length=length)
         body.update(distance=distance, band=band, topK=top_k)
-        return pd.DataFrame(json.loads(self._request("POST", "/v1/patterns/search", body)))
+        return pd.DataFrame(self._request("POST", "/v1/patterns/search", body, parse=_array))
 
     def similar(self, episode_id: str, metric: Optional[str] = None, tags: Optional[Mapping[str, str]] = None,
-                start=None, end=None, distance: str = "zED", band: float = 0.1, top_k: int = 10) -> pd.DataFrame:
-        body = self._selection(metric, tags, None, start, end)
+                series: Optional[Sequence[str]] = None, start=None, end=None, distance: str = "zED", band: float = 0.1,
+                top_k: int = 10) -> pd.DataFrame:
+        body = self._selection(metric, tags, series, start, end)
         body.update(episodeId=episode_id, distance=distance, band=band, topK=top_k)
-        return pd.DataFrame(json.loads(self._request("POST", "/v1/episodes/similar", body)))
+        return pd.DataFrame(self._request("POST", "/v1/episodes/similar", body, parse=_array))
 
     def segments(self, strategy: str, params: Mapping[str, Any], metric: Optional[str] = None,
-                 tags: Optional[Mapping[str, str]] = None, start=None, end=None) -> List[dict]:
-        body = self._selection(metric, tags, None, start, end)
+                 tags: Optional[Mapping[str, str]] = None, series: Optional[Sequence[str]] = None, start=None,
+                 end=None) -> List[dict]:
+        body = self._selection(metric, tags, series, start, end)
         body.update(strategy=strategy, params=dict(params))
-        return decode_stream(self._request("POST", "/v1/segments", body, accept=AVRO_STREAM))
+        return self._request("POST", "/v1/segments", body, accept=AVRO_STREAM, parse=decode_stream)
 
     # ---- what the server knows: inventory, systems, signals, decisions -----------------------------------------
 
     def _json(self, method: str, path: str, body: Optional[dict] = None) -> Any:
-        return json.loads(self._request(method, path, body))
+        return self._request(method, path, body)
 
     def inventory(self) -> pd.DataFrame:
         """The series the server holds, one row each: identity, quantity, period, values, gaps and origin.
@@ -191,7 +280,7 @@ class RetrievalClient:
 
     def signals(self, system: str) -> pd.DataFrame:
         """The signals of a system with what is expected, where each grade comes from and the state."""
-        doc = self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/signals")
+        doc = self._json("GET", f"/v1/systems/{_id(system, 'system')}/signals")
         rows = []
         for s in doc.get("signals", []):
             e = s.get("expect") or {}
@@ -210,13 +299,13 @@ class RetrievalClient:
 
     def decisions(self, system: str) -> dict:
         """The decision cards of a system with what each analysis may claim today (``opentsx.decision-status.v1``)."""
-        return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/decisions")
+        return self._json("GET", f"/v1/systems/{_id(system, 'system')}/decisions")
 
     # ---- the twin: scenario and runs ---------------------------------------------------------------------------
 
     def scenario(self, system: str) -> dict:
         """What can be asked of the twin of a system: controls, policies, reference decisions, KPIs."""
-        return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/scenario")
+        return self._json("GET", f"/v1/systems/{_id(system, 'system')}/scenario")
 
     def run(self, system: str, interventions: Sequence[Mapping[str, Any]] = (), policies: Optional[Mapping[str, str]] = None,
             start_minute: Optional[int] = None, on_reference: bool = True, label: Optional[str] = None,
@@ -239,16 +328,16 @@ class RetrievalClient:
             body["label"] = label
         if inputs != "scenario":
             body["inputs"] = inputs
-        return self._json("POST", f"/v1/systems/{urllib.parse.quote(system)}/runs", body)
+        return self._json("POST", f"/v1/systems/{_id(system, 'system')}/runs", body)
 
     def runs(self, system: str) -> pd.DataFrame:
         """The runs the server keeps for a system, newest first."""
-        doc = self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs")
+        doc = self._json("GET", f"/v1/systems/{_id(system, 'system')}/runs")
         return pd.DataFrame([{k: r.get(k) for k in ("run", "kind", "label", "createdAt")} for r in doc.get("runs", [])])
 
     def run_series(self, system: str, run: str, keys: Sequence[str]) -> pd.DataFrame:
         """Series of a run as a wide frame indexed by UTC time; one column per key, the run id in ``attrs``."""
-        doc = self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs/{urllib.parse.quote(run)}/series?keys="
+        doc = self._json("GET", f"/v1/systems/{_id(system, 'system')}/runs/{_id(run, 'run')}/series?keys="
                          + urllib.parse.quote(",".join(keys), safe=","))
         start = pd.Timestamp(doc["start"])
         step = pd.Timedelta(seconds=doc["stepSeconds"])
@@ -262,5 +351,5 @@ class RetrievalClient:
     def compare(self, system: str, run: str, base: Optional[str] = None) -> dict:
         """A run next to another (by default the reference): KPIs with difference and verdict, end stocks, series."""
         q = "" if base is None else "?base=" + urllib.parse.quote(base)
-        return self._json("GET", f"/v1/systems/{urllib.parse.quote(system)}/runs/{urllib.parse.quote(run)}/compare{q}")
+        return self._json("GET", f"/v1/systems/{_id(system, 'system')}/runs/{_id(run, 'run')}/compare{q}")
 

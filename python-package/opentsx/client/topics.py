@@ -82,6 +82,7 @@ class TopicReader:
         self.bootstrap = bootstrap
         self.timeout_s = timeout_s
         self._factory = consumer_factory
+        self.skipped = 0
 
     def _consumer(self):
         conf = {
@@ -111,7 +112,14 @@ class TopicReader:
         end: Any = None,
         max_records: int = 20_000,
     ) -> List[dict]:
-        """Episodes of ``topic`` that match; raises :class:`TopicLimitReached` past ``max_records`` records read."""
+        """Episodes of ``topic`` that match; raises :class:`TopicLimitReached` past ``max_records`` records read.
+
+        A record that is no v2 record raises
+        ``ValueError("<topic>[<partition>]@<offset>: <problem>")``. A v2 record of another type is
+        skipped; :attr:`skipped` holds how many the last successful read skipped.
+        """
+        if not max_records >= 1:
+            raise ValueError(f"max_records: {max_records} is below 1; pass a limit of at least 1")
         lo, hi = _micros(start), _micros(end)
         deadline = monotonic() + self.timeout_s
 
@@ -123,11 +131,17 @@ class TopicReader:
 
         c = self._consumer()
         out: List[dict] = []
+        skipped = 0
         try:
             meta = c.list_topics(topic, timeout=remaining())
             remaining()
-            if topic not in meta.topics or meta.topics[topic].error is not None:
+            if topic not in meta.topics:
                 raise ValueError(f"the broker has no topic {topic}")
+            error = meta.topics[topic].error
+            if error is not None:
+                if error.code() == 3:  # UNKNOWN_TOPIC_OR_PART
+                    raise ValueError(f"the broker has no topic {topic} ({error.str()})")
+                raise RuntimeError(f"{topic}: metadata error from the broker: {error.str()}")
             parts = sorted(meta.topics[topic].partitions)
             ends = {}
             assign = []
@@ -181,12 +195,24 @@ class TopicReader:
                     continue
                 if offset + 1 >= ends[partition]:
                     open_parts.discard(partition)
-                name, rec = m.decode(msg.value())
+                value = msg.value()
+                if value is None:
+                    raise ValueError(
+                        f"{topic}[{partition}]@{offset}: a record without a value (tombstone); "
+                        "the reader reads v2 records only"
+                    )
+                try:
+                    name, rec = m.decode(value)
+                except ValueError as e:
+                    raise ValueError(f"{topic}[{partition}]@{offset}: {e}") from e
                 remaining()
-                if name == "Episode" and _matches(rec, metric, tags, lo, hi):
+                if name != "Episode":
+                    skipped += 1
+                elif _matches(rec, metric, tags, lo, hi):
                     out.append(rec)
         finally:
             c.close()
+        self.skipped = skipped
         # one episode per identity: a topic may hold the same episode twice when it was written again
         seen = {}
         for e in out:

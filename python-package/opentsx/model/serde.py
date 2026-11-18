@@ -9,7 +9,7 @@ import io
 import json
 import struct
 from importlib import resources
-from typing import Dict, Mapping, Tuple
+from typing import Dict, Mapping, Optional, Tuple
 
 import fastavro
 from fastavro.schema import expand_schema, parse_schema, to_parsing_canonical_form
@@ -20,9 +20,7 @@ _ORDER = ["SeriesKey", "Segmentation", "EpisodeSummary", "Provenance",
 _TOP_LEVEL = ["Episode", "Observation", "SeriesKey", "BucketManifest", "SeriesStats", "PatternMatch"]
 _NAMESPACE = "org.opentsx.model.v2"
 
-_named: Dict[str, dict] = {}
-_parsed: Dict[str, dict] = {}
-_by_fp: Dict[int, Tuple[str, dict]] = {}
+_cache: Optional[Tuple[Dict[str, dict], Dict[int, Tuple[str, dict]]]] = None
 
 _EMPTY64 = 0xC15D213AA4D7A795
 _TABLE = []
@@ -40,47 +38,57 @@ def _crc64_avro(data: bytes) -> int:
     return fp
 
 
-def _load() -> None:
-    if _parsed:
-        return
-    base = resources.files("opentsx.model") / "schemas"
-    for name in _ORDER:
-        raw = json.loads((base / f"{name}.avsc").read_text(encoding="utf-8"))
-        _parsed[name] = parse_schema(raw, named_schemas=_named)
-    for name in _TOP_LEVEL:
-        fp = fingerprint(name)
-        _by_fp[fp] = (name, _parsed[name])
+def _fingerprint(parsed: dict) -> int:
+    pcf = to_parsing_canonical_form(expand_schema(parsed))
+    return _crc64_avro(pcf.encode("utf-8"))
+
+
+def _load() -> Tuple[Dict[str, dict], Dict[int, Tuple[str, dict]]]:
+    global _cache
+    if _cache is None:
+        base = resources.files("opentsx.model") / "schemas"
+        named: Dict[str, dict] = {}
+        parsed: Dict[str, dict] = {}
+        for name in _ORDER:
+            raw = json.loads((base / f"{name}.avsc").read_text(encoding="utf-8"))
+            parsed[name] = parse_schema(raw, named_schemas=named)
+        by_fp = {_fingerprint(parsed[name]): (name, parsed[name]) for name in _TOP_LEVEL}
+        _cache = (parsed, by_fp)
+    return _cache
 
 
 def schema(name: str) -> dict:
     """Parsed fastavro schema of a v2 record, e.g. ``schema("Episode")``."""
-    _load()
-    return _parsed[name]
+    parsed = _load()[0]
+    if name not in parsed:
+        raise ValueError(f'schema: "{name}" is unknown; use one of {", ".join(_ORDER)}')
+    return parsed[name]
 
 
 def fingerprint(name: str) -> int:
     """CRC-64-AVRO fingerprint of the parsing canonical form (same as Java SchemaNormalization)."""
-    _load()
-    pcf = to_parsing_canonical_form(expand_schema(_parsed[name]))
-    return _crc64_avro(pcf.encode("utf-8"))
+    return _fingerprint(schema(name))
 
 
 def encode(name: str, record: Mapping) -> bytes:
-    _load()
+    sch = schema(name)
     buf = io.BytesIO()
     buf.write(_MAGIC)
-    buf.write(struct.pack("<Q", fingerprint(name)))
-    fastavro.schemaless_writer(buf, _parsed[name], record)
+    buf.write(struct.pack("<Q", _fingerprint(sch)))
+    fastavro.schemaless_writer(buf, sch, record)
     return buf.getvalue()
 
 
 def decode(payload: bytes) -> Tuple[str, dict]:
     """Returns (record name, record). Timestamps are decoded as timezone-aware datetimes (UTC)."""
-    _load()
+    by_fp = _load()[1]
     if len(payload) < 10 or payload[:2] != _MAGIC:
         raise ValueError("not an Avro single-object payload")
     fp = struct.unpack("<Q", payload[2:10])[0]
-    if fp not in _by_fp:
+    if fp not in by_fp:
         raise ValueError(f"unknown schema fingerprint {fp:016x}")
-    name, sch = _by_fp[fp]
-    return name, fastavro.schemaless_reader(io.BytesIO(payload[10:]), sch, sch)
+    name, sch = by_fp[fp]
+    try:
+        return name, fastavro.schemaless_reader(io.BytesIO(payload[10:]), sch, sch)
+    except (EOFError, IndexError, ValueError, struct.error) as e:
+        raise ValueError(f"{name}: unreadable Avro body ({e})") from e

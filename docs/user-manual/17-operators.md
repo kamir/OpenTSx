@@ -2363,7 +2363,7 @@ Ranks whole episodes by how much they look like a query episode. Each episode be
 |---|---|---|---|
 | workbench | none |  |  |
 | java | available | `org.opentsx.retrieval.pattern.EpisodeSimilarity` | EpisodeService.similarEpisodes(episodeId).topK(k).fetch(); representation(points, saxLength, alphabet) changes 64, 16 and 8. EpisodeSimilarity.annotate stores the SAX word in EpisodeSummary.sax when episodes are written, otherwise it is computed per search. The SAX bound skips candidates for zED only. The retrieval server offers it as POST /v1/episodes/similar. |
-| python | available | `opentsx.client.retrieval.RetrievalClient#similar` | similar(episode_id, top_k=10) calls POST /v1/episodes/similar of the retrieval server and returns a DataFrame; Python computes nothing. The method has no test of its own; the endpoint is tested in RetrievalServerTest. |
+| python | available | `opentsx.client.retrieval.RetrievalClient#similar` | similar(episode_id, series=[...], top_k=10) calls POST /v1/episodes/similar of the retrieval server and returns a DataFrame; Python computes nothing. python-package/tests/test_retrieval_client.py checks the request body and the frame against a stub server; the endpoint is tested in RetrievalServerTest. |
 | processor | none |  |  |
 | go | none |  |  |
 

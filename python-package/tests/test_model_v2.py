@@ -1,14 +1,17 @@
 """v2 model: Python must agree with Java byte for byte (shared vectors in opentsx-model)."""
 
+import importlib
 import json
 import math
 import pathlib
+import threading
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from opentsx import model as m
+from opentsx.model import serde
 from opentsx.model.pandas_io import episode_to_series, episodes_to_frame, series_to_episode
 from opentsx.model.series_key import sorted_by_utf8
 
@@ -118,6 +121,60 @@ def test_decode_rejects_unknown_payloads():
         m.decode(b"\x00\x00\x00\x00\x01abc")
     with pytest.raises(ValueError):
         m.decode(b"\xc3\x01" + bytes(8) + b"x")
+
+
+def test_decode_rejects_a_truncated_body():
+    payload = m.encode("Episode", m.regular(m.series_key("x"), 0, 10, [1.0, 2.0]))
+    for cut in (12, 30, len(payload) - 3):
+        with pytest.raises(ValueError, match="^Episode: unreadable Avro body"):
+            m.decode(payload[:cut])
+
+
+def test_an_unknown_schema_name_lists_the_known_names():
+    for call in (m.schema, m.fingerprint, lambda name: m.encode(name, {})):
+        with pytest.raises(ValueError, match=r'^schema: "Episodes" is unknown; use one of .*\bEpisode\b'):
+            call("Episodes")
+
+
+def test_two_threads_decoding_on_first_use_both_succeed(monkeypatch):
+    payload = m.encode("Episode", m.regular(m.series_key("x"), 0, 10, [1.0, 2.0]))
+    importlib.reload(serde)
+    real = serde.parse_schema
+    first_paused, second_done = threading.Event(), threading.Event()
+    calls = []
+
+    def parse_schema(*args, **kwargs):
+        if threading.current_thread().name == "first":
+            calls.append(1)
+            if len(calls) == 2:
+                first_paused.set()
+                assert second_done.wait(30)
+        return real(*args, **kwargs)
+
+    def first():
+        results["first"] = serde.decode(payload)[0]
+
+    def second():
+        assert first_paused.wait(30)
+        try:
+            results["second"] = serde.decode(payload)[0]
+        except Exception as e:
+            results["second"] = repr(e)
+        finally:
+            second_done.set()
+
+    results = {}
+    monkeypatch.setattr(serde, "parse_schema", parse_schema)
+    try:
+        threads = [threading.Thread(target=first, name="first"), threading.Thread(target=second, name="second")]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(30)
+        assert results == {"first": "Episode", "second": "Episode"}
+    finally:
+        monkeypatch.undo()
+        importlib.reload(serde)
 
 
 def test_pandas_regular_roundtrip_keeps_utc_and_spacing():

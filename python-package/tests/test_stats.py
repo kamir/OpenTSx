@@ -54,3 +54,15 @@ def test_stats_frame_from_avro_records():
     assert first["std"] == pytest.approx(math.sqrt(1.25 / 3))
     assert first["q50"] == pytest.approx(8.0, rel=0.01)
     assert str(first["window_start"].tz) == "UTC"
+
+
+@pytest.mark.parametrize("cut", [0, 1, 5, 9, 12, len(JAVA_VECTOR) // 2 - 1])
+def test_a_truncated_sketch_raises_value_error(cut):
+    with pytest.raises(ValueError, match=f"^truncated sketch at byte {cut}$"):
+        QuantileSketch.from_bytes(bytes.fromhex(JAVA_VECTOR)[:cut])
+
+
+def test_trailing_bytes_after_a_sketch_are_rejected():
+    data = bytes.fromhex(JAVA_VECTOR) + b"\x00"
+    with pytest.raises(ValueError, match=f"^trailing bytes in sketch at byte {len(data) - 1}$"):
+        QuantileSketch.from_bytes(data)

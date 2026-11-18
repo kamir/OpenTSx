@@ -197,6 +197,11 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   read the OpenMetadata bot token, the run token and the S3 keys with `read -rs <KEY> && export <KEY>` and no longer
   put a secret on a command line. The history archive comment creates `opentsx-market` with `--from-env-file`, and
   `40-demo.sh` names that way in its `--help` and when `OM_URL` is missing for `metadata-publish`.
+- The Python `RetrievalError` carries `method`, `url`, `status` and the server's error `type`, and its message starts
+  with the method and the URL. It is built as `RetrievalError(method, url, status, message, error_type)`.
+- `RetrievalClient.similar()` and `RetrievalClient.segments()` take `series` after `tags`, as `episodes()` and
+  `search()` do. `start` and `end` of both methods moved one place to the right; pass them by name. A call in the old
+  positional order raises `ValueError` because `series` must be a list.
 
 ### Removed
 
@@ -466,6 +471,26 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 - SaaS frontend: a production build without `VITE_API_BASE_URL` calls the backend at the page origin;
   `http://localhost:8000` applies only under `npm run dev`. `.env` is no longer tracked and is git-ignored;
   `.env.example` holds an empty value. The retrieval path `/retrieval` is one constant `RETRIEVAL_BASE`.
+- The Python `RetrievalClient` raises `RetrievalError` for every failed request: a refused connection or a timeout
+  (`status` is `None`), an error page that is not JSON, and an answer that is not JSON, not the expected JSON object
+  or array, or a truncated episode stream. It keeps the cause.
+- `RetrievalClient.episode()` returns `None` only when the server answers 404 with the type `not_found`. Any other 404
+  and an answer without exactly one episode raise `RetrievalError`.
+- `RetrievalClient` checks its arguments before it sends a request: a time must be ISO-8601 with a zone and goes out
+  in UTC, on Python 3.10 as on later versions; `timeout` must be a finite number of seconds above 0; an episode,
+  system or run id must be non-empty and hold no `/`; `series` must be a list of series ids, not a string. Each
+  mistake raises `ValueError` naming the argument.
+- `opentsx.client.retrieval.decode_stream` raises `ValueError("truncated episode stream at byte N; ...")` for a cut
+  stream instead of `struct.error`.
+- `TopicReader.episodes()` names topic, partition and offset of a record it cannot decode, a tombstone included, keeps
+  the broker's text for a metadata error other than an unknown topic, rejects a `max_records` below 1 or NaN and
+  counts records of another v2 type in `TopicReader.skipped`.
+- `QuantileSketch.from_bytes` raises `ValueError` for truncated input and for trailing bytes, `opentsx.model.schema`,
+  `fingerprint` and `encode` list the known schemas for an unknown name, and `opentsx.model.decode` raises
+  `ValueError` for an unreadable Avro body.
+- `opentsx.model` builds its schema cache once, so two threads that encode or decode on first use both succeed.
+- The Python `RetrievalClient` refuses a time finer than a microsecond instead of cutting it. With pandas 2, it names
+  the range 1677-09-21T00:12:44Z to 2262-04-11T23:47:16Z for a time outside it.
 
 ### Security
 - SaaS backend: `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` have no default. The backend does not

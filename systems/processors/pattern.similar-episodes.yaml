@@ -37,8 +37,9 @@ runtimes:
     status: available
     class: "opentsx.client.retrieval.RetrievalClient#similar"
     note: >-
-      similar(episode_id, top_k=10) calls POST /v1/episodes/similar of the retrieval server and returns a DataFrame;
-      Python computes nothing. The method has no test of its own; the endpoint is tested in RetrievalServerTest.
+      similar(episode_id, series=[...], top_k=10) calls POST /v1/episodes/similar of the retrieval server and returns a
+      DataFrame; Python computes nothing. python-package/tests/test_retrieval_client.py checks the request body and the
+      frame against a stub server; the endpoint is tested in RetrievalServerTest.
   workbench: { status: none }
   processor: { status: none }
   go: { status: none }

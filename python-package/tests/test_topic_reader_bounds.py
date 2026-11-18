@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from opentsx import model as m
 from opentsx.client import TopicReader
 from opentsx.client import topics
 
@@ -205,3 +206,99 @@ def test_two_partitions_keep_only_the_initial_watermark_range(clock, monkeypatch
     assert {e["episodeId"] for e in got} == {str(payload) for payload in expected}
     assert len(got) <= 2
     assert consumer.closed == 1
+
+
+def reader_over(clock, values, low=5):
+    events = [
+        SimpleNamespace(
+            error=lambda: None,
+            partition=lambda: 0,
+            offset=lambda o=o: o,
+            value=lambda v=v: v,
+        )
+        for o, v in enumerate(values, start=low)
+    ]
+    consumer = Consumer(clock, events)
+    consumer.get_watermark_offsets = lambda partition, timeout: (low, low + len(values))
+    return consumer, TopicReader("broker:9092", consumer_factory=lambda conf: consumer)
+
+
+def truncated_episode():
+    key = m.series_key("demo.signal", {"n": "1"}, "1")
+    episode = m.regular(key, 1_790_000_000_000_000, 1_000_000, [1.0, 2.0], source="t")
+    return m.encode("Episode", episode)[:30]
+
+
+@pytest.mark.parametrize(
+    "value,problem",
+    [
+        (b'{"metric": "wind"}', "not an Avro single-object payload"),
+        (None, "a record without a value (tombstone)"),
+        (truncated_episode(), "Episode: unreadable Avro body"),
+    ],
+)
+def test_a_bad_record_names_topic_partition_and_offset(clock, value, problem):
+    consumer, reader = reader_over(clock, [value])
+    with pytest.raises(ValueError, match=r"^tsx\.wind\.episodes\.v2\[0\]@5: ") as err:
+        reader.episodes("tsx.wind.episodes.v2")
+    assert problem in str(err.value)
+    assert consumer.closed == 1
+
+
+@pytest.mark.parametrize(
+    "code,text,expected",
+    [
+        (
+            29,
+            "Broker: Topic authorization failed",
+            "tsx.wind.episodes.v2: metadata error from the broker: "
+            "Broker: Topic authorization failed",
+        ),
+        (
+            3,
+            "Broker: Unknown topic or partition",
+            "the broker has no topic tsx.wind.episodes.v2 (Broker: Unknown topic or partition)",
+        ),
+    ],
+)
+def test_a_metadata_error_keeps_the_broker_text(clock, code, text, expected):
+    consumer = Consumer(clock)
+    error = SimpleNamespace(code=lambda: code, str=lambda: text)
+    consumer.list_topics = lambda topic, timeout: SimpleNamespace(
+        topics={topic: SimpleNamespace(error=error, partitions={})}
+    )
+    with pytest.raises((ValueError, RuntimeError)) as err:
+        TopicReader("broker:9092", consumer_factory=lambda conf: consumer).episodes(
+            "tsx.wind.episodes.v2"
+        )
+    assert str(err.value) == expected
+    assert consumer.closed == 1
+
+
+@pytest.mark.parametrize("max_records", [0, -1, float("nan")])
+def test_max_records_must_be_at_least_one(clock, max_records):
+    created = []
+    reader = TopicReader(
+        "broker:9092", consumer_factory=lambda conf: created.append(conf) or Consumer(clock)
+    )
+    with pytest.raises(ValueError, match=f"^max_records: {max_records} is below 1"):
+        reader.episodes("episodes", max_records=max_records)
+    assert created == []
+
+
+def test_records_of_another_type_are_counted(clock, monkeypatch):
+    consumer, reader = reader_over(clock, [b"observation", b"episode", b"observation"])
+
+    def decode(payload):
+        if payload == b"observation":
+            return "Observation", {}
+        return "Episode", {
+            "episodeId": "e1",
+            "series": {"seriesId": "s", "metric": "m"},
+            "tStart": 0,
+            "tEnd": 1,
+        }
+
+    monkeypatch.setattr(topics.m, "decode", decode)
+    assert [e["episodeId"] for e in reader.episodes("episodes")] == ["e1"]
+    assert reader.skipped == 2

@@ -106,5 +106,6 @@ like = c.similar(eps[0]["episodeId"], top_k=5)
 
 Episodes travel as an Avro single-object stream. The Python records are therefore exactly what Java wrote.
 
-An error answer of the server raises `RetrievalError`; its `status` holds the HTTP status. `c.episode(<id>)` returns
-`None` for an unknown episode.
+Every failed request raises `RetrievalError`; `status` holds the HTTP status and is `None` when no answer came.
+`c.episode(<id>)` returns `None` only when the server answers 404 with the type `not_found`. The
+[package README](../../python-package/README.md#handle-retrieval-errors) lists the messages and their fix.
