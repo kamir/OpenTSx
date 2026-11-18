@@ -14,7 +14,7 @@ KafScale Broker directly.
 The [builder](../tools/build_kafscale_proxy.py) compiles the broker, Proxy and
 isolated cluster launcher from KafScale v1.6.0 commit
 `2809a3a20bf40ed8a2b82cd93215cb59396efb0a`. It runs the pinned Go 1.25.2
-compiler container and builds binaries without building a container image.
+compiler container with two CPUs and a 3 GiB memory limit. It builds binaries without building a container image.
 
 ```bash
 python3 tools/build_kafscale_proxy.py

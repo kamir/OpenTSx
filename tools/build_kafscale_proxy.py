@@ -74,12 +74,12 @@ def build():
     subprocess.run(["git", "diff", "--exit-code", "HEAD"], cwd=source, check=True)
     broker_overlay(source, DIRECTORY, "/source", "/artifacts")
     (DIRECTORY / "manifest.json").unlink(missing_ok=True)
-    command = ["docker", "run", "--rm", "--user", f"{os.getuid()}:{os.getgid()}",
+    command = ["docker", "run", "--rm", "--cpus", "2", "--memory", "3g", "--user", f"{os.getuid()}:{os.getgid()}",
                "--mount", f"type=bind,src={source},dst=/source,readonly",
                "--mount", f"type=bind,src={ROOT / 'tools/kafscale_proxy_cluster.go'},dst=/cluster.go,readonly",
                "--mount", f"type=bind,src={DIRECTORY},dst=/artifacts",
                "--mount", f"type=bind,src={cache},dst=/cache",
-               "--workdir", "/source", "--env", "CGO_ENABLED=0", "--env", "GOTOOLCHAIN=local",
+               "--workdir", "/source", "--env", "CGO_ENABLED=0", "--env", "GOMAXPROCS=2", "--env", "GOTOOLCHAIN=local",
                "--env", "GOPATH=/cache/modules", "--env", "GOCACHE=/cache/build", COMPILER_IMAGE,
                "sh", "-ec", "go build -overlay=/artifacts/broker-overlay.json -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-broker ./cmd/broker; "
                "go build -trimpath -buildvcs=false -ldflags=-buildid= -o /artifacts/kafscale-proxy ./cmd/proxy; "

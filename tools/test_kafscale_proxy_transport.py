@@ -2,6 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -56,6 +57,34 @@ class KafScaleProxyTransportTest(unittest.TestCase):
         self.assertNotIn("  kafscale-broker:", compose)
         helper = (ROOT / "tools/verify_wayang_rust_compose.py").read_text()
         self.assertNotIn("kafscale-broker", helper)
+
+    def test_binary_compilation_has_explicit_resource_limits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "target/kafscale-v1.6.0/cmd/broker"
+            source.mkdir(parents=True)
+            (source / "main.go").write_text('package main\nconst brokerVersion        = "dev"\n')
+            (root / "tools").mkdir()
+            (root / "tools/kafscale_proxy_cluster.go").write_text("pinned launcher")
+            directory = root / "target/bundle"
+            commands = []
+
+            def execute(command, **kwargs):
+                commands.append(command)
+                if command[0] == "docker":
+                    for name in BUILD.BINARIES:
+                        path = directory / name
+                        path.write_bytes(name.encode())
+                        path.chmod(0o700)
+                return subprocess.CompletedProcess(command, 0, stdout=BUILD.SOURCE_COMMIT + "\n")
+
+            with patch.object(BUILD, "ROOT", root), patch.object(BUILD, "DIRECTORY", directory), \
+                    patch.object(BUILD.shutil, "which", return_value="/tool"), patch.object(BUILD.subprocess, "run", side_effect=execute):
+                BUILD.build()
+            compiler = next(command for command in commands if command[0] == "docker")
+            self.assertEqual("2", compiler[compiler.index("--cpus") + 1])
+            self.assertEqual("3g", compiler[compiler.index("--memory") + 1])
+            self.assertIn("GOMAXPROCS=2", compiler)
 
     def test_bundle_verification_rejects_changed_binaries_and_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
