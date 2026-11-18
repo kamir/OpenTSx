@@ -260,12 +260,29 @@ Swing control tests use a display; the Java CI jobs run them under Xvfb on Ubunt
 ## Reload local SequenceFile buckets
 
 The file and string loaders stop at the actual end of a SequenceFile, including empty buckets.
-The file loader reads at most `LIMIT` records; a zero limit reads no records.
+`LIMIT` counts scanned records, including unselected records; a zero limit reads no records.
 Readers close after loading or failure. A failing `TSOperation` stops loading with `IOException`
 and retains the original exception as its cause. Processing output writers close on failure.
 
+The integer ID vector in `TSBucket.loadFromSequenceFile(String, Vector<Integer>, TSOperation)` selects 1-based
+physical record positions, independently of stored labels. `null` selects all records and an empty vector selects
+none. Unmatched IDs add no records, repeated IDs do not duplicate them, and results retain file order. Only selected
+records reach the operation callback or in-memory bucket. With `TSBucket.processSeriesLabelOnLoad=true`, selected
+rows keep their original ordinal positions as labels; `false` retains the stored labels.
+
+`BucketLoader.loadBucket` and `_processBucket` store each explicit ID argument, including `null` to clear selection.
+Calls to those methods without an ID argument reuse the stored selection. `loadBucketData` remains unfiltered.
+
 The SequenceFile writer stores each series label and Y values. Loading reconstructs sequential X values;
 arbitrary input X coordinates and other metadata are not persisted by this format.
+
+You need JDK 17 or later and Maven. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TSBucketSelectionTest,TSBucketSequenceFileTest,BucketLoaderLimitTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
 
 ## Check bucket workflow support
 
