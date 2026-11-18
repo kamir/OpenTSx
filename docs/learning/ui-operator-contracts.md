@@ -58,6 +58,12 @@ workbench transform, not a deployed DAG binding.
 
 Source: [ops.ts#shuffle](../../opentsx-saas-frontend/src/workbench/ops.ts#shuffle). Executable exercise: `ui.shuffle`.
 
+The native `Shuffle` action uses a separate [desktop contract](../../opentsx-core/README.md#shuffle-native-series).
+It requires labeled nonempty series with matching finite coordinate/value pairs and a positive signed 32-bit pass
+count, with at most 10000000 requested sample visits across the selection. Cancellation is quiet, and rejected input
+produces no chart or recorder entry. Coordinates, axis labels and Y multiplicities are preserved on copies.
+The native action exposes no seed; the public legacy shuffle API is separate from these desktop checks.
+
 <a id="norm-max"></a>
 
 ## Scale a series by its maximum

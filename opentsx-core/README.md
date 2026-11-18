@@ -192,6 +192,44 @@ mvn -B -ntp -pl opentsx-core -am test \
   -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
 ```
 
+## Shuffle native series
+
+The native `Shuffle` action accepts a nonempty selection of labeled series, each with at least one matching X/Y
+pair. Coordinates and values must be finite `Double` entries. The result preserves original coordinates and axis
+labels, permutes each series' Y values without changing their multiplicities, and appends `(s<count>)` to its label.
+The input series are unchanged.
+
+Enter a positive signed 32-bit integer in `Number of shuffle passes:`. The requested work must satisfy
+`passes * totalSamples <= 10000000`, where `totalSamples` is the sum of the selected series' Y-vector sizes.
+The implementation checks `passes <= 10000000 / totalSamples` using integer division before copying or shuffling.
+This bounds requested sample visits; it does not specify elapsed time.
+
+Selection, shape and label checks run before the prompt. Cancelling returns quietly. After a valid count passes
+the work check, every selected row's cells are validated before any series is copied or shuffled. All results are
+prepared before opening the chart and recording one transformation. The chart opens before recording.
+Rejection opens a `Shuffle failed` error dialog and changes neither the selected inputs nor existing tree/PFD history.
+
+| Error | Accepted input |
+| --- | --- |
+| `Select at least one series for shuffling` | A nonempty selection |
+| `Shuffle requires at least one coordinate-value pair` | Matching X/Y vectors with at least one sample |
+| `Shuffle requires a series label` | A non-null series label |
+| `Shuffle pass count must be a positive integer` | A positive signed 32-bit integer |
+| `Shuffle work exceeds the desktop limit of 10000000 sample visits` | Requested work at or below the sample-visit limit |
+| `Shuffle requires finite coordinates and values` | Finite `Double` entries in both vectors |
+
+The action applies the legacy `shuffleYValues(int)` calculation to copies and has no seed input.
+The [browser shuffle lesson](../docs/learning/ui-operator-contracts.md#shuffle) uses its own seeded random sequence
+and permits gaps. These desktop checks are separate from the public shuffle API.
+
+You need JDK 17 or later, Maven, and a display for the desktop checks. From the repository root, run:
+
+```bash
+mvn -B -ntp -pl opentsx-core -am test \
+  -Dtest=TSOperationControlerPanelShuffleTest \
+  -Dsurefire.failIfNoSpecifiedTests=false -Djava.awt.headless=false
+```
+
 ## Scale native series by a positive maximum
 
 The native `NORM max=1` action divides each selected series by its own positive maximum. Each series needs a non-null
