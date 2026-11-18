@@ -766,11 +766,29 @@ fields or Kafka envelope timestamps.
 
 Every condition retains once-per-second RSS and cumulative CPU samples for
 the driver, owned brokers and observed subprocesses across setup and
-execution. Short-lived processes between samples can be missed. JVM
-launch-to-exit lifetime, activation-to-first-fetch and activation-to-first-output
-are distinct clocks. Metadata records artifact sizes, hardware, versions,
-heap, commands and source/runtime hashes. No CPU reservation or performance
-threshold is applied.
+execution, including independent validation. Short-lived processes between
+samples can be missed. Sampled driver CPU is the largest observed cumulative
+process CPU time, not the exact CPU-at-exit total. Process start, main entry,
+activation-to-first-fetch and activation-to-first-output are distinct clocks.
+Metadata records artifact sizes, hardware, versions, heap, commands and
+source/runtime hashes. No CPU reservation or performance threshold is applied.
+
+The [report and raw samples](measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+record the completed 63-condition run on 2026-11-18 with JDK 21 on an Apple
+M3 Max host. The nine federation conditions compare 3,780 windows and 17,640
+partials and retain 126 site/route byte rows. Counts, extrema and sketch
+bytes are exact; recorded q01, q50 and q99 sketch-quantile differences are
+zero. All six recorded mean/M2 relative-error fields stay within `3e-12`;
+the largest is `2.7235050829345894e-12`. Explicit merge-order checks cover
+one order at one site, all six at three sites, and canonical plus reverse
+order at ten sites, for 11,340 comparisons. This is not a check of all ten-site
+permutations.
+
+All 54 streaming conditions passed the real-runtime, output, checkpoint and
+source-clock checks. The report retains each repetition's throughput and
+latency rather than applying a performance threshold. Metadata identifies
+the clean measured source commit and frozen runtime; the case directories
+retain every raw sample.
 
 Use the [operations instructions](../user-manual/12-operations.md#128-evaluate-the-bounded-track-a-baselines)
 to run the harness and inspect its raw evidence. These finite backlog results

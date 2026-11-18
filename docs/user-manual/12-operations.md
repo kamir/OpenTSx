@@ -212,9 +212,11 @@ The directory placeholders identify the matrix dimensions: sites are 1, 3
 or 10; repetitions are 1 to 3 by default; chains are `passthrough`, `clean`
 or `stats`; partitions are 1, 4 or 12; runtimes are `wayang` or `java`.
 Resource samples cover the driver, owned brokers and observed subprocesses
-across setup and execution. Short-lived processes between samples can be
-missed. Job CPU time includes the in-JVM observer and harness but excludes
-Go broker CPU. Per-core rates divide by the recorded available logical CPUs.
+across setup, execution and independent validation. Short-lived processes
+between samples can be missed. Sampled driver CPU is the largest observed
+cumulative process CPU time, not the exact CPU-at-exit total. Job CPU time
+includes the in-JVM observer and harness but excludes Go broker CPU.
+Per-core rates divide by the recorded available logical CPUs.
 `case.json` records process start, main entry, activation and job-end instants
 separately. Its checkpoint field reports the verification result; the file
 does not contain the checkpoint's partition cut.
@@ -236,3 +238,9 @@ cover different work. The harness applies no threshold and does not qualify
 the 30-kill recovery protocol, durable storage, remote networking or Track B.
 Read [concept 20, section 14.4](../datamodel-2026/20-WAYANG-TS-OPERATORS.md#144-evaluate-the-bounded-track-a-baselines)
 for the protocol and scope.
+
+The [recorded A5 run](../datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+completed all 63 conditions on 2026-11-18. Its nine federation and 54
+streaming conditions passed the correctness and clock checks. Read the
+report with its case CSV files and metadata; the measured local bounded
+profile does not replace the separate paced, recovery or Track B protocols.

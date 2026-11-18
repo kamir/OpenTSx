@@ -14,8 +14,9 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
   federated statistics at 1, 3 and 10 sites, and Java catch-up comparisons
   at 1, 4 and 12 partitions. It records throughput, Produce-clock latency,
   RSS, CPU, artifact sizes and source/runtime provenance without thresholds.
-  The profile uses the complete synthetic W scenario and keeps paced
-  increment, recovery and Track B measurements separate.
+  The [report and raw samples](docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+  retain all 63 completed conditions over the complete synthetic W scenario.
+  Paced increment, recovery and Track B measurements remain separate.
 
 - Qualified bounded W3 JVM federation measurement for TASK-020 A4.9. The
   [report and raw samples](docs/datamodel-2026/measurements/wayang-federation-2026-11-17/REPORT.md)

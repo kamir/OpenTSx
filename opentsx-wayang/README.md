@@ -3,9 +3,11 @@
 OpenTSx time-series operators on Apache Wayang 1.1.1, with Java execution and a trusted-local bounded Rust platform.
 See [concept 20](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md), specification
 [S1 to S7](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md) and
-[TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md). Verified with JDK 21 on 2026-11-17.
+[TASK-020](../EVOLUTION/TASK-020-wayang-ts-operators.md).
+Verified with JDK 21 on 2026-11-18.
 
-Status: phases A2, A3 and the qualified bounded JVM profile of A4, with all 16 native Java entries in frozen
+Status: phases A2, A3, the qualified bounded JVM profile of A4 and the bounded
+local A5 evaluation, with all 16 native Java entries in frozen
 [`tsx-catalog/1`](../systems/catalogs/tsx-catalog-1.yaml). The module reads and
 writes KafScale topics from Wayang plans, runs checkpointed increments, and executes
 the clean chain and window statistics. It also contains the pure Java
@@ -308,6 +310,13 @@ for prerequisites, commands, raw files and clock definitions. The harness
 applies no performance threshold. Its backlog results remain distinct from
 the [paced A1.7 measurements](../docs/datamodel-2026/20-WAYANG-TS-OPERATORS.md#141-measure-track-a-increments),
 the 30-kill recovery protocol and the Track B small-device matrix.
+
+The [A5 report and raw samples](../docs/datamodel-2026/measurements/wayang-track-a-evaluation-2026-11-18/REPORT.md)
+record the complete 63-condition run on 2026-11-18. All nine federation
+conditions and all 54 streaming conditions passed their received-record,
+reference, checkpoint and clock checks. Federation retains 3,780 window
+comparisons, 17,640 partials and 126 site/route byte rows. This qualification
+covers the documented local bounded profile.
 
 ## Compute window statistics
 
