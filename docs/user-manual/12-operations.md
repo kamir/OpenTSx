@@ -99,6 +99,26 @@ GitHub Actions runs these jobs:
 * the cross-language job: Java writes Iceberg and PyIceberg must read identical bytes; the Python client queries the
   Java retrieval server.
 
+The Rust CI definition adds native x86_64 and ARM64 jobs and a separate static
+musl build matrix for `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`
+and `armv7-unknown-linux-musleabihf`. The
+[artifact checker](../../tools/rust_runner_artifacts.py) validates ELF
+architecture, absence of a dynamic interpreter or needed libraries, executable
+version, SHA-256 and actual test summaries. Reports retain source and tool
+versions. The `rust-native-<target>` and `rust-static-<target>` artifacts have
+seven-day retention. The ARMv7 job executes tests under QEMU and labels its
+result as emulated. It does not satisfy the physical ARMv7 requirement in
+[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
+Job definitions alone do not establish a successful cross build; inspect the
+run's artifacts and reports.
+
+The isolated signed Rust profile has a separate
+[operating guide](../devguide/integration/rust-runner-b1.md). Its pass-through
+loop uses explicit finite-cut caps and acknowledged progress checkpoints. The
+existing local replay and HTTP cleaning workers keep their own request limits
+and state formats. The disposable KafScale acceptance harness is protocol test
+evidence, not a signed site-conformance report or a public `conform` mode.
+
 For a failed bounded JVM federation test, download `kafscale-capabilities` from the KafScale conformance job.
 It includes `opentsx-wayang/target/surefire-reports/` and retained
 `opentsx-wayang/target/federation-test-logs/**/brokers/*.log`. Fixtures retain their directories when construction,

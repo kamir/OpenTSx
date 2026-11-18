@@ -17,7 +17,7 @@ Read the lesson's source, manual, SPEC and test references before choosing its r
 | Java or Python library | A public numerical entry point. A library implementation alone does not supply a DAG binding or a Wayang mapping. |
 | Processor DAG | An operator accepted by the current series/vector processor, with that runtime's parameters and state rules. |
 | Wayang | An implemented mapping or infrastructure entry point, separately identified by the lesson. A pure Java kernel alone does not establish a mapping. |
-| Rust | `tsx-contracts` validates offline assignments. `tsx-runner` 0.1.0 executes trusted-local pass-through and three cleaning operations. Explicit bounded and continuous UI targets use a custom Wayang stage and one to three whole-topic HTTP workers; signed production fleet execution remains separate. |
+| Rust | Offline contracts, local cleaning and isolated signed pass-through. |
 
 The [UI contracts](../learning/ui-operator-contracts.md) and
 [library contracts](../learning/library-operator-contracts.md) identify the actual algorithm behavior.
@@ -38,6 +38,25 @@ Its identical retry still requires every preparation and cross-topic ownership c
 Their zero-based coordinates do not establish a Kafka timestamp policy: published Rust records require
 `tStart / 1000` rounded down to be strictly positive milliseconds.
 Open resample tails remain in retained state at the cut; source series cannot merge into one derived identity.
+
+## Distinguish signed runner admission from operator availability
+
+The isolated signed runner accepts one complete input topic and one Episode sink
+on the same local binding. Ed25519 plan verification, local policy, exact
+assignment text and the executable digest precede broker access. This
+pass-through profile does not enable the three cleaning UI lessons or the
+remaining catalog operators. Its durable activation intent and progress
+checkpoint belong to the signed runner, rather than the local HTTP worker's
+prepare/activate protocol. Read the
+[signed runner guide](../devguide/integration/rust-runner-b1.md).
+
+The Avro library lesson preserves its Java starter. Its Rust references
+separately trace Episode wire bytes, canonical series identity, xxHash64, time
+deltas and bucket checksums to the same repository vectors. The bucket-checksum
+helper is a library utility, not another runtime operator. Native x86_64 and
+ARM64 CI and supplementary ARMv7 QEMU execution are distinct evidence. Physical
+ARMv7 vector execution is still required by
+[TASK-020 B1.2](../../EVOLUTION/TASK-020-wayang-ts-operators.md#b1-rust-runner-foundation).
 
 <a id="use-frozen-catalog-1"></a>
 

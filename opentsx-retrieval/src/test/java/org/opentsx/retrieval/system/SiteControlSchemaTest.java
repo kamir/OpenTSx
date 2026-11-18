@@ -84,4 +84,54 @@ class SiteControlSchemaTest {
         federation.remove("scopes");
         assertFalse(schema.validate(plan).isEmpty());
     }
+
+    private static ObjectNode rustPlan() {
+        ObjectNode plan = JSON.createObjectNode().put("schema", "opentsx.runner-plan.v1").put("job", "rust-pass")
+                .put("planVersion", 1).put("issued", "2026-11-18T00:00:00Z").put("expires", "2026-11-19T00:00:00Z")
+                .put("site", "s1").put("catalog", "tsx-catalog/1").put("specHash", "a".repeat(64))
+                .put("assignmentText", "{\"runtime\":\"rust\",\"mode\":\"continuous\"}");
+        plan.putArray("inputContracts").addObject().put("binding", "site").put("topic", "tsx.wind.episodes.v2")
+                .putArray("fingerprints").add("8985f02b48c77195");
+        plan.putArray("outputs").addObject().put("sink", "out").put("cluster", "site")
+                .put("topic", "tsx.wind.clean.v2").put("partitionCount", "1")
+                .putArray("fingerprints").add("8985f02b48c77195");
+        return plan;
+    }
+
+    @Test void rustPassThroughHasOneLocalEpisodeOutputWithoutJvmFederation() throws Exception {
+        JsonSchema schema = schema("opentsx.runner-plan.v1.schema.json");
+        ObjectNode plan = rustPlan();
+        assertTrue(schema.validate(plan).isEmpty(), schema.validate(plan).toString());
+        ((ObjectNode) plan.path("outputs").get(0)).put("cluster", "signal");
+        assertFalse(schema.validate(plan).isEmpty());
+        plan = rustPlan();
+        plan.putObject("federation");
+        assertFalse(schema.validate(plan).isEmpty());
+        plan = rustPlan();
+        ((ObjectNode) plan.path("outputs").get(0)).putArray("fingerprints").add("e51b48188baa6606");
+        assertFalse(schema.validate(plan).isEmpty());
+        plan = rustPlan();
+        plan.withArray("outputs").add(plan.path("outputs").get(0).deepCopy());
+        assertFalse(schema.validate(plan).isEmpty());
+        plan = rustPlan();
+        plan.put("bootstrap", "127.0.0.1:39092");
+        assertFalse(schema.validate(plan).isEmpty());
+    }
+
+    @Test void runnerTopicsUseTheSharedAssignmentNamingRules() throws Exception {
+        JsonSchema schema = schema("opentsx.runner-plan.v1.schema.json");
+        ObjectNode plan = rustPlan();
+        ((ObjectNode) plan.path("inputContracts").get(0)).put("topic", "tsx.wind_park.episodes.v2");
+        ((ObjectNode) plan.path("outputs").get(0)).put("topic", "tsx.wind_park.clean.v2");
+        assertTrue(schema.validate(plan).isEmpty(), schema.validate(plan).toString());
+        for (String topic : List.of("tsx._wind.clean.v2", "tsx.wind..v2", "tsx.wind.clean.v0",
+                "tsx.wind.clean.v02", "tsx.wind.clean_name.v2", "tsx.wind.-clean.v2")) {
+            ObjectNode invalid = rustPlan();
+            ((ObjectNode) invalid.path("inputContracts").get(0)).put("topic", topic);
+            assertFalse(schema.validate(invalid).isEmpty(), topic);
+            invalid = rustPlan();
+            ((ObjectNode) invalid.path("outputs").get(0)).put("topic", topic);
+            assertFalse(schema.validate(invalid).isEmpty(), topic);
+        }
+    }
 }

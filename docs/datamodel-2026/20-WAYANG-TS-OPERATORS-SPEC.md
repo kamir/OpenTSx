@@ -365,22 +365,25 @@ The site plan is an `opentsx.runner-plan.v1` document ([schema](schemas/opentsx.
 | `site` | the receiving site id |
 | `catalog` | catalog version, for example `tsx-catalog/1` |
 | `specHash` | as defined above, of the original submitted DAG text; a fragment has its own `fragmentHash` |
-| `assignmentText` | exact bounded Java assignment text; wrapper identities must match |
+| `assignmentText` | exact shared assignment; matching wrapper and profile |
 | `inputContracts[]` | one `(binding, topic)` per whole input, with allowed writer fingerprints |
-| `outputs[]` | exactly one SeriesStats output, with its existing DAG sink identity and full writer contract |
-| `federation.route` | `signal-cluster` or `job-state` |
+| `outputs[]` | one typed output with DAG sink identity and writer contract |
+| `federation.route` | JVM only: `signal-cluster` or `job-state` |
 | `federation.expectedAssignments[]` | exact admitted assignment membership; one aggregate-producing member per site |
 | `federation.scopes[]` | at most 1024 unique admitted windows on the epoch grid |
 | `federation.groupBy`, `federation.maxDelay` | restricted tag names and explicit ISO 8601 duration |
 
-`assignmentText` contains exact `opentsx.execution-assignment.v1` JSON text, with runtime `java` and mode `bounded`.
+For the bounded JVM profile, `assignmentText` contains exact
+`opentsx.execution-assignment.v1` JSON text,
+with runtime `java` and mode `bounded`.
 Input fingerprints are 16-character lower-case hexadecimal strings. An output names `sink`, `cluster`, `topic`,
 decimal-string `partitionCount` and the actual writer fingerprint. Its `sink` is the existing compiled DAG identity.
 Expected membership binds exact `assignment`, `site`, `node`, `generation`, `fence` and `fragmentHash` values.
 Each scope contains `{groupId, windowType, startMicros, endMicros}`; micros are canonical signed int64 decimal strings.
 
-The fragment's single sink MUST consume `stats.welford-ddsketch`. Local compilation remains a separate API
-for the complete catalog. Source fingerprints and explicit cleaning targets must match the actual input;
+In the bounded JVM profile, the fragment's single sink MUST consume `stats.welford-ddsketch`.
+Local compilation remains a separate API for the complete catalog.
+Source fingerprints and explicit cleaning targets must match the actual input;
 an unbound target is not invented from a Workbench label.
 All declared scopes receive a partial, including known empty scopes. Scope membership is not inferred from samples.
 The wrapper payload is limited to 128 KiB and the compact JWS to 176 KiB.
@@ -391,6 +394,26 @@ The assignment input-topic set MUST equal the fragment's nonempty, distinct
 before admission.
 
 The site plan MUST be signed (S7.1).
+
+The isolated B1 Rust profile uses the same wrapper with runtime `rust`, mode
+`continuous` and no `federation`
+field. It admits one complete input topic, one `decode.avro-soe` node and one
+Episode sink in the same local
+binding. Its input and output fingerprints are exactly `8985f02b48c77195`; the
+output cluster is `site`.
+The exact input-topic set and sink identity MUST match the embedded fragment.
+This branch does not establish
+statistics, remote raw-data movement or admission by the JVM plan service.
+
+Local configuration pins the driver public key, site and node, binding endpoint
+and topic allowlists, domain
+and catalog policy, checkpoint location and resource caps. The output policy
+also authorizes the derived
+`tsx.<domain>.dag-status.v1` topic. Plans MUST NOT supply these local paths or endpoints.
+The [isolated B1 operating contract](../devguide/integration/rust-runner-b1.md)
+records the caps and persistence
+rules. Existing trusted-local replay and HTTP-worker profiles keep their
+separate limits.
 
 ### S2.5 Rejection messages
 
@@ -649,6 +672,36 @@ SSH launch: the driver connects with an OpenSSH user certificate whose `force-co
 `tsx-runner run --plan -` and sends the signed plan (compact JWS) on standard input. Exit codes: 0 stopped on
 request, 2 plan refused (message on standard error, S5.5), 3 runtime failure.
 
+The isolated B1 executable subset is `run --plan <file> --config <file>`, with
+`-` selecting compact JWS on
+standard input. It verifies the pinned Ed25519 signature and local pass-through
+policy before broker access.
+One process retains one immutable whole-topic grant and executes acknowledged
+finite internal cuts until Stop.
+The separate intent record binds accepted authority; the progress checkpoint
+advances only after output and
+healthy status acknowledgements. An exact persisted active grant can resume
+under its recorded recovery policy;
+a stopped outcome is idempotent. Neither an expired fresh command nor changed
+accepted bytes can reset state.
+SIGINT or SIGTERM requests Stop without starting another cut or flushing an
+unfinished tail.
+
+Before broker access, a kernel file lock reserves the complete input topic per
+job and configured endpoint set on the same host and effective Unix user.
+Changing checkpoint paths or assignment versions cannot bypass that lock.
+Different jobs can run independently. This local reservation is released on
+Stop, error or process death and does not establish distributed fencing.
+
+This subset publishes track-B status and exact S3.2 input failures. Its
+independent status worker schedules
+15-second heartbeats and serializes publication health with checkpoint commits.
+The public `agent` and signed
+`conform` modes, SSH certificate enrollment, distributed stale-writer fencing
+and production release qualification
+are separate interfaces. An unsigned protocol fixture is not a signed
+site-conformance report.
+
 ### S5.3 Plan service API
 
 The driver serves this API over HTTPS with mutual TLS. Sites are clients; they open no inbound port. All bodies are
@@ -801,12 +854,17 @@ The earlier local `TsxCheckpoint.load` helper is not an admission boundary for t
    Rollback and freeze protection follow
    [TUF](https://theupdateframework.github.io/specification/latest/).
 
-The bounded JVM profile selects the owner-approved Ed25519 algorithm with the exact protected header
+The bounded JVM and isolated B1 Rust profiles select the owner-approved Ed25519
+algorithm with the exact
+protected header
 `{"alg":"EdDSA"}`. It rejects padding, noncanonical base64url, extra headers and unsigned algorithms.
 The JWS algorithm binding and signing-input rules follow
 [RFC 8037 section 3.1](https://www.rfc-editor.org/rfc/rfc8037.html#section-3.1).
-Driver and site role keys are pinned separately. It does not implement TUF metadata, key rotation or
-production release enrollment.
+Driver and site role keys are pinned separately where the profile uses both
+roles. These isolated profiles do
+not implement TUF metadata, key rotation or production release enrollment. The
+B1 Rust profile verifies the
+driver's plan-signing key and does not expose the signed site-report interface.
 
 ### S7.2 Transport
 

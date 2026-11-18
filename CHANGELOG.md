@@ -24,6 +24,17 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Added
 
+- Isolated signed continuous pass-through in `tsx-runner` 0.1.0: Ed25519 plan
+  verification, local site policy, whole-topic authority, explicit cut caps and
+  acknowledgement-before-checkpoint recovery. Trusted-local replay and HTTP
+  cleaning workers retain their separate contracts. Production fleet activation
+  remains outside this profile.
+- Rust shared-vector coverage for xxHash64, bucket checksums and time deltas,
+  plus native x86_64/ARM64 and three-target static
+  musl CI gates with ELF and test-report validation. ARMv7 QEMU execution is
+  supplementary; physical ARMv7 qualification and full TASK-020 B1 closure
+  remain open.
+
 - A rerunnable TASK-020 A5 evaluation harness for bounded centralized and
   federated statistics at 1, 3 and 10 sites, and Java catch-up comparisons
   at 1, 4 and 12 partitions. It records throughput, Produce-clock latency,

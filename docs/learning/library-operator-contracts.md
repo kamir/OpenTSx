@@ -42,6 +42,11 @@ the same whole-topic bindings. Source/sink/checkpoint/assignment lessons also re
 cumulative ownership and restart tests. Their standalone workloads remain unchanged and do not deploy a service.
 Continuous preparation recovery retains private candidates after a transient failure, including a lost response.
 Identical retry still requires every preparation and cross-topic ownership check before activation.
+The [isolated signed Rust run](../devguide/integration/rust-runner-b1.md) is
+another admission profile: continuous Episode pass-through only, with a pinned
+Ed25519 driver key and local bindings/policy. It does not expand the cleaning
+lessons or the available Rust operators. Physical ARMv7 qualification remains
+open.
 
 The [signed bounded JVM profile](../user-manual/17-learn-operators.md#follow-the-signed-bounded-jvm-statistics-profile)
 binds an immutable whole-topic assignment to a statistics fragment and one
@@ -363,6 +368,16 @@ its separate admitted deployment profile.
 The default wire frame is Avro single-object encoding, including its schema fingerprint.
 Shared wire vectors check bytes, not only decoded values. Register or resolve an older writer schema explicitly;
 an unknown fingerprint is not permission to decode with an arbitrary current schema.
+
+The separate Rust `wire` module encodes and decodes Episode SOE records only.
+Its shared wire cases require byte equality and preserve the complete Episode
+fields. `model::series_id`, `xxh64_hex` and `bucket_checksum` consume the same
+identity vectors as Java; time-axis tests cover the repository's shared delta
+cases. `bucket_checksum` sorts unique episode IDs, joins them with a newline,
+and hashes the UTF-8 bytes with xxHash64 seed zero, matching Java
+`Buckets.checksum`. These are public identity helpers, not additional DAG
+operators. The lesson's Java starter does not execute or authorize a signed Rust
+runner.
 
 ## Construct a whole-topic source
 

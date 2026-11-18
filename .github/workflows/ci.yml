@@ -63,7 +63,224 @@ jobs:
       - name: Check all runner targets with Clippy
         run: cargo +1.99.1 clippy --locked --manifest-path rust/tsx-runner/Cargo.toml --all-targets -- -D warnings
       - name: Run locked runner tests
-        run: cargo +1.99.1 test --locked --manifest-path rust/tsx-runner/Cargo.toml -- --nocapture
+        run: cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml -- --nocapture
+
+  rust-runner-native:
+    name: Rust native ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal
+      - name: Execute native shared vectors and runner regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/rust-native
+          cargo +1.99.1 test --locked --manifest-path rust/tsx-contracts/Cargo.toml -- --nocapture 2>&1 | tee target/rust-native/contracts.log
+          cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml -- --nocapture 2>&1 | tee target/rust-native/runner.log
+          python3 tools/rust_runner_artifacts.py tests --mode native --target ${{ matrix.target }} --log target/rust-native/contracts.log --log target/rust-native/runner.log --report target/rust-native/report.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rust-native-${{ matrix.target }}
+          path: target/rust-native/
+          if-no-files-found: error
+          retention-days: 7
+
+  rust-runner-static:
+    name: Rust static ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+          - armv7-unknown-linux-musleabihf
+    env:
+      RUSTUP_TOOLCHAIN: "1.99.1"
+      RUSTFLAGS: "-C relocation-model=static -C target-feature=+crt-static"
+      CC: "${{ runner.temp }}/rust-target-tools/cc"
+      CXX: "${{ runner.temp }}/rust-target-tools/cxx"
+      AR: "${{ runner.temp }}/rust-target-tools/ar"
+      RANLIB: "${{ runner.temp }}/rust-target-tools/ranlib"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Rust target and cross-build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup target add --toolchain 1.99.1 ${{ matrix.target }}
+          mkdir -p "$RUNNER_TEMP/rust-target-tools"
+          for tool in cc cxx ar ranlib; do
+            printf '#!/bin/sh\nexec python3 "%s" compiler "%s" "$@"\n' "$GITHUB_WORKSPACE/tools/rust_runner_artifacts.py" "$tool" > "$RUNNER_TEMP/rust-target-tools/$tool"
+            chmod +x "$RUNNER_TEMP/rust-target-tools/$tool"
+          done
+          curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --output "$RUNNER_TEMP/zig.tar.xz" https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz
+          printf '%s  %s\n' '02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239' "$RUNNER_TEMP/zig.tar.xz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/zig" "$RUNNER_TEMP/cargo-zigbuild"
+          tar xf "$RUNNER_TEMP/zig.tar.xz" --strip-components 1 -C "$RUNNER_TEMP/zig"
+          curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --output "$RUNNER_TEMP/cargo-zigbuild.tar.xz" https://github.com/rust-cross/cargo-zigbuild/releases/download/v0.23.4/cargo-zigbuild-x86_64-unknown-linux-musl.tar.xz
+          printf '%s  %s\n' '9e3cf73485edbd45905c8aadbc0fdf869c7ddc3848f0c898229f2680db52e44b' "$RUNNER_TEMP/cargo-zigbuild.tar.xz" | sha256sum --check
+          tar xf "$RUNNER_TEMP/cargo-zigbuild.tar.xz" --strip-components 1 -C "$RUNNER_TEMP/cargo-zigbuild"
+          echo "$RUNNER_TEMP/zig" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/cargo-zigbuild" >> "$GITHUB_PATH"
+      - name: Install the pinned user-mode emulator
+        if: matrix.target != 'x86_64-unknown-linux-musl'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --output "$RUNNER_TEMP/qemu-user.deb" https://archive.ubuntu.com/ubuntu/pool/universe/q/qemu/qemu-user_8.2.2+ds-0ubuntu1.18_amd64.deb
+          printf '%s  %s\n' '9655f3e7e50af597e1b845822c47af9231f9f1bcb8c99e586db9da775d70c041' "$RUNNER_TEMP/qemu-user.deb" | sha256sum --check
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends "$RUNNER_TEMP/qemu-user.deb"
+      - name: Build and inspect the static executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/rust-static-evidence
+          cargo-zigbuild build --locked --release --target ${{ matrix.target }} --manifest-path rust/tsx-runner/Cargo.toml --target-dir target/rust-static 2>&1 | tee target/rust-static-evidence/build.log
+          python3 tools/rust_runner_artifacts.py inspect --binary target/rust-static/${{ matrix.target }}/release/tsx-runner --target ${{ matrix.target }} --report target/rust-static-evidence/artifact.json
+      - name: Execute supplementary ARMv7 emulated shared vectors and regressions
+        if: matrix.target == 'armv7-unknown-linux-musleabihf'
+        shell: bash
+        env:
+          CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER: qemu-arm
+        run: |
+          set -euo pipefail
+          cargo-zigbuild test --locked --release --target ${{ matrix.target }} --manifest-path rust/tsx-contracts/Cargo.toml --target-dir target/rust-static -- --nocapture 2>&1 | tee target/rust-static-evidence/contracts-emulated.log
+          cargo-zigbuild test --locked --release --all-targets --target ${{ matrix.target }} --manifest-path rust/tsx-runner/Cargo.toml --target-dir target/rust-static -- --nocapture 2>&1 | tee target/rust-static-evidence/runner-emulated.log
+          python3 tools/rust_runner_artifacts.py tests --mode emulated --target ${{ matrix.target }} --log target/rust-static-evidence/contracts-emulated.log --log target/rust-static-evidence/runner-emulated.log --report target/rust-static-evidence/tests-emulated.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rust-static-${{ matrix.target }}
+          path: |
+            target/rust-static/${{ matrix.target }}/release/tsx-runner
+            target/rust-static-evidence/
+          if-no-files-found: error
+          retention-days: 7
+
+  rust-b1-acceptance:
+    name: Rust B1 Proxy acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      KAFSCALE_REF: v1.6.0
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install Maven 3.9.8
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
+            -o "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" \
+            https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz
+          printf '%s  %s\n' '7d171def9b85846bf757a2cec94b7529371068a0670df14682447224e57983528e97a6d1b850327e4ca02b139abaab7fcb93c4315119e6f0ffb3f0cbc0d0b9a2' "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" | sha512sum --check
+          tar xzf "$RUNNER_TEMP/apache-maven-3.9.8-bin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.8/bin" >> "$GITHUB_PATH"
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal
+      - uses: actions/checkout@v7
+        with:
+          repository: KafScale/platform
+          ref: ${{ env.KAFSCALE_REF }}
+          path: kafscale
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.25.2"
+          cache-dependency-path: kafscale/go.sum
+      - name: Build pinned KafScale broker and Proxy fixtures
+        working-directory: kafscale
+        run: |
+          test "$(git rev-parse HEAD)" = 2809a3a20bf40ed8a2b82cd93215cb59396efb0a
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python3 -c 'import os; from pathlib import Path; import build_kafscale_proxy; build_kafscale_proxy.transport_overlay(Path.cwd(), Path(os.environ["RUNNER_TEMP"]))'
+          CGO_ENABLED=0 go test -overlay="$RUNNER_TEMP/broker-overlay.json" ./cmd/proxy ./pkg/metadata -run '^TestOpenTSx(Proxy|Metadata)' -count=1 -v
+          CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-broker" ./cmd/broker
+          CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-proxy" ./cmd/proxy
+          CGO_ENABLED=0 go build -overlay="$RUNNER_TEMP/broker-overlay.json" -trimpath -buildvcs=false -ldflags=-buildid= -o "$RUNNER_TEMP/kafscale-cluster" "$GITHUB_WORKSPACE/tools/kafscale_proxy_cluster.go"
+      - name: Compile the Java reference and Rust production probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target
+          mvn -B -ntp -pl opentsx-wayang -am -DskipTests install 2>&1 | tee target/rust-b1-java.log
+          bin/opentsx classpath opentsx-wayang > "$RUNNER_TEMP/rust-b1-classpath.log"
+          cargo +1.99.1 build --locked --release --examples --bins --manifest-path rust/tsx-runner/Cargo.toml --target-dir target/rust-b1 2>&1 | tee target/rust-b1-build.log
+      - name: Start isolated KafScale Proxy with private broker and metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          nohup "$RUNNER_TEMP/kafscale-cluster" --listen 127.0.0.1:39092 \
+            --advertised-host 127.0.0.1 --advertised-port 39092 --data-dir "$RUNNER_TEMP/kafscale-metadata" \
+            --broker-binary "$RUNNER_TEMP/kafscale-broker" --proxy-binary "$RUNNER_TEMP/kafscale-proxy" \
+            > "$RUNNER_TEMP/kafscale-broker.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/rust-b1-cluster.pid"
+          for _ in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/39092) 2>/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/kafscale-broker.log"; exit 1
+      - name: Verify protocol families, producer placement and signed-run recovery against the Proxy
+        env:
+          KAFSCALE_BOOTSTRAP: 127.0.0.1:39092
+        run: |
+          python3 tools/rust_b1_acceptance.py \
+            --runner target/rust-b1/release/tsx-runner \
+            --conformance-binary target/rust-b1/release/examples/b1_acceptance \
+            --placement-binary target/rust-b1/release/examples/b1_placement \
+            --run-binary target/rust-b1/release/examples/b1_run_acceptance \
+            --output target/rust-b1-evidence
+      - name: Stop the owned disposable Proxy cluster
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/rust-b1-cluster.pid" ]]; then
+            cluster_pid=$(cat "$RUNNER_TEMP/rust-b1-cluster.pid")
+            [[ "$cluster_pid" =~ ^[1-9][0-9]*$ ]]
+            if kill -0 "$cluster_pid" 2>/dev/null; then kill "$cluster_pid"; fi
+          fi
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rust-b1-proxy-acceptance
+          path: |
+            target/rust-b1-evidence/report.json
+            target/rust-b1-evidence/**/stdout.log
+            target/rust-b1-evidence/**/stderr.log
+            target/rust-b1-evidence/**/result.json
+            target/rust-b1-evidence/run/rust-run-report.json
+            target/rust-b1-evidence/run/**/*.stdout
+            target/rust-b1-evidence/run/**/*.stderr
+            target/rust-b1-evidence/run/verified-*.json
+            target/rust-b1-java.log
+            target/rust-b1-build.log
+            ${{ runner.temp }}/kafscale-broker.log
+          if-no-files-found: error
+          retention-days: 7
 
   rust-runner-compose:
     name: Rust runner three-worker Compose acceptance

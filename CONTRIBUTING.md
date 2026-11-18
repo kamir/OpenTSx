@@ -53,9 +53,13 @@ and on pushes to `master`:
 | Java 17, Java 21 | `mvn -B -ntp verify` |
 | Operator learning synchronization | repository gitlink URL checks, learning synchronization tests, generated student lessons and source-content hashes |
 | Shared contract vectors and Rust | generated assignment fixture check and the pinned Rust consumer of the shared cases |
+| Rust runner tests and lint | all-target tests, formatting and Clippy |
+| Rust native x86_64 and ARM64 | native vectors and runner regressions |
+| Rust static musl targets | three static artifacts and ARMv7 QEMU tests |
+| Rust B1 Proxy acceptance | protocol, producer placement and signed recovery |
 | Python 3.10 to 3.13 | `pip install -e ".[forecasting,kafka]" pytest`, `pytest -q`; on 3.12 also local CP launcher tests and `tools/check_links.py` |
 | k3s scripts and manifests | `bash -n` and `shellcheck` on `deploy/k3s/*.sh` and `deploy/docker/*.sh`; renders the kustomize overlays with `deploy/k3s/20-configure.sh` |
-| KafScale conformance | builds the KafScale broker from source (in-memory S3) and runs the conformance suite plus the `opentsx-kafka-v2`, `opentsx-windpark` and `opentsx-stats` tests against it |
+| KafScale conformance | source-built KafScale, Proxy I/O and module tests |
 | Java -> Iceberg -> Python | Java writes an Iceberg fixture that PyIceberg must read byte-identically; the Python client queries a Java retrieval server |
 
 Pull requests are squash-merged when every required check is green.

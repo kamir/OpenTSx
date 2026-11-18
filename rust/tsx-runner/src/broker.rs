@@ -1,4 +1,5 @@
 use crate::admission::{Admitted, Cut};
+use crate::run_loop::{RunBroker, Watermark};
 use crate::wire;
 use rdkafka::bindings as native;
 use rdkafka::config::ClientConfig;
@@ -38,6 +39,7 @@ pub trait Broker {
     fn publish(&mut self, run: &Admitted, records: &[OutputRecord]) -> Result<(), String>;
 }
 
+#[derive(Clone)]
 pub struct KafkaBroker;
 
 fn consumer(bootstrap: &str) -> Result<BaseConsumer, String> {
@@ -61,6 +63,26 @@ fn consumer_config(bootstrap: &str) -> ClientConfig {
         .set("receive.message.max.bytes", "33554432")
         .set("queued.max.messages.kbytes", "16384")
         .set("queued.min.messages", "1");
+    config
+}
+
+fn producer_config(bootstrap: &str) -> ClientConfig {
+    let mut config = ClientConfig::new();
+    config
+        .set("bootstrap.servers", bootstrap)
+        .set("enable.idempotence", "false")
+        .set("acks", "all")
+        .set("compression.type", "zstd")
+        .set("linger.ms", "50")
+        .set("batch.size", "524288")
+        .set("message.max.bytes", "4194304")
+        .set("delivery.timeout.ms", "180000")
+        .set("retry.backoff.ms", "1000")
+        .set("retry.backoff.max.ms", "10000")
+        .set("max.in.flight.requests.per.connection", "1")
+        .set("partitioner", "murmur2_random")
+        .set("allow.auto.create.topics", "false")
+        .set("queue.buffering.max.kbytes", "32768");
     config
 }
 
@@ -134,6 +156,18 @@ impl Broker for KafkaBroker {
                         return Err("input cut read timed out".into());
                     }
                     if let Some(event) = consumer.poll(Duration::ZERO) {
+                        let code = match &event {
+                            Err(error) => error.rdkafka_error_code().map(|code| code as i32),
+                            Ok(_) => None,
+                        };
+                        if code.is_some_and(retryable_fetch) {
+                            reset_refused(
+                                next,
+                                || topic.stop(position.partition),
+                                |offset| topic.start(position.partition, offset),
+                            )?;
+                            continue;
+                        }
                         return Err(match event {
                             Err(error) => format!("input client failed: {error}"),
                             Ok(_) => {
@@ -149,6 +183,15 @@ impl Broker for KafkaBroker {
                         return Err("input ended before every admitted offset was read".into());
                     }
                     if data.err != native::rd_kafka_resp_err_t::RD_KAFKA_RESP_ERR_NO_ERROR {
+                        if retryable_fetch(data.err as i32) {
+                            drop(message);
+                            reset_refused(
+                                next,
+                                || topic.stop(position.partition),
+                                |offset| topic.start(position.partition, offset),
+                            )?;
+                            continue;
+                        }
                         return Err(format!(
                             "input fetch failed: {}",
                             KafkaError::MessageConsumption(data.err.into())
@@ -165,7 +208,7 @@ impl Broker for KafkaBroker {
                     {
                         return Err("whole topic cut exceeds the input memory limits".into());
                     }
-                    records.push(message.record(run.request.limits.payload_bytes)?);
+                    records.push(message.record(run)?);
                     next = next.checked_add(1).ok_or("input offset overflow")?;
                 }
                 Ok(())
@@ -191,21 +234,7 @@ impl Broker for KafkaBroker {
         )?;
         let (sender, receiver) = mpsc::channel();
         let callback_failed = Arc::new(AtomicBool::new(false));
-        let producer: BaseProducer<DeliveryContext> = ClientConfig::new()
-            .set("bootstrap.servers", &run.bootstrap)
-            .set("enable.idempotence", "false")
-            .set("acks", "all")
-            .set("compression.type", "zstd")
-            .set("linger.ms", "50")
-            .set("batch.size", "524288")
-            .set("message.max.bytes", "4194304")
-            .set("delivery.timeout.ms", "180000")
-            .set("retry.backoff.ms", "1000")
-            .set("retry.backoff.max.ms", "10000")
-            .set("max.in.flight.requests.per.connection", "1")
-            .set("partitioner", "murmur2_random")
-            .set("allow.auto.create.topics", "false")
-            .set("queue.buffering.max.kbytes", "32768")
+        let producer: BaseProducer<DeliveryContext> = producer_config(&run.bootstrap)
             .create_with_context(DeliveryContext {
                 sender,
                 callback_failed: callback_failed.clone(),
@@ -244,6 +273,87 @@ impl Broker for KafkaBroker {
         )?;
         Ok(())
     }
+}
+
+impl RunBroker for KafkaBroker {
+    fn watermarks(
+        &mut self,
+        bootstrap: &str,
+        topic: &str,
+        partitions: usize,
+    ) -> Result<Vec<Watermark>, String> {
+        let reader = consumer(bootstrap)?;
+        inventory(&reader, topic, partitions)?;
+        (0..partitions)
+            .map(|partition| {
+                let (low, high) = reader
+                    .fetch_watermarks(topic, partition as i32, Duration::from_secs(30))
+                    .map_err(|error| format!("cannot inspect signed-run offsets: {error}"))?;
+                Ok(Watermark {
+                    partition: partition as i32,
+                    low,
+                    high,
+                })
+            })
+            .collect()
+    }
+
+    fn publish_status(
+        &mut self,
+        bootstrap: &str,
+        topic: &str,
+        key: &str,
+        payload: &[u8],
+    ) -> Result<(), String> {
+        let (sender, receiver) = mpsc::channel();
+        let failed = Arc::new(AtomicBool::new(false));
+        let producer: BaseProducer<DeliveryContext> = producer_config(bootstrap)
+            .create_with_context(DeliveryContext {
+                sender,
+                callback_failed: failed.clone(),
+            })
+            .map_err(|error| format!("cannot create the status writer: {error}"))?;
+        producer
+            .send(BaseRecord::to(topic).key(key).payload(payload))
+            .map_err(|(error, _)| format!("cannot enqueue run status: {error}"))?;
+        producer
+            .flush(Duration::from_secs(180))
+            .map_err(|error| format!("run status delivery failed: {error}"))?;
+        if failed.load(Ordering::SeqCst) {
+            return Err("the status delivery callback failed".into());
+        }
+        receiver
+            .try_recv()
+            .map_err(|_| "the status acknowledgement is missing")??;
+        if receiver.try_recv().is_ok() {
+            return Err("unexpected extra status acknowledgement".into());
+        }
+        Ok(())
+    }
+}
+
+fn retryable_fetch(error: i32) -> bool {
+    use native::rd_kafka_resp_err_t::*;
+    [
+        RD_KAFKA_RESP_ERR_LEADER_NOT_AVAILABLE,
+        RD_KAFKA_RESP_ERR_NOT_LEADER_FOR_PARTITION,
+        RD_KAFKA_RESP_ERR_REQUEST_TIMED_OUT,
+        RD_KAFKA_RESP_ERR_BROKER_NOT_AVAILABLE,
+        RD_KAFKA_RESP_ERR_REPLICA_NOT_AVAILABLE,
+        RD_KAFKA_RESP_ERR_NETWORK_EXCEPTION,
+        RD_KAFKA_RESP_ERR_KAFKA_STORAGE_ERROR,
+    ]
+    .iter()
+    .any(|code| *code as i32 == error)
+}
+
+fn reset_refused(
+    offset: i64,
+    stop: impl FnOnce() -> Result<(), String>,
+    start: impl FnOnce(i64) -> Result<(), String>,
+) -> Result<(), String> {
+    stop()?;
+    start(offset)
 }
 
 // FindCoordinator supports v0..2 here; KafScale 1.6.0 advertises v3 only.
@@ -330,17 +440,32 @@ impl LegacyMessage<'_> {
         unsafe { self.pointer.as_ref() }
     }
 
-    fn record(&self, payload_limit: usize) -> Result<InputRecord, String> {
+    fn record(&self, run: &Admitted) -> Result<InputRecord, String> {
         let data = self.data();
         if data.payload.is_null() {
-            return Err("episode topic contains a tombstone".into());
+            return Err(format!(
+                "record {}/{}@{} is not Avro single-object encoded",
+                run.cut.topic, data.partition, data.offset
+            ));
         }
         if data.key.is_null() {
             return Err("episode record has no series key".into());
         }
-        if data.len > payload_limit || data.len > isize::MAX as usize || data.key_len != 16 {
+        if data.len > run.request.limits.payload_bytes
+            || data.len > isize::MAX as usize
+            || data.key_len != 16
+        {
             return Err("input payload or key exceeds the local record contract".into());
         }
+        let record = InputRecord {
+            partition: data.partition,
+            offset: data.offset,
+            key: unsafe { std::slice::from_raw_parts(data.key.cast::<u8>(), data.key_len) }
+                .to_vec(),
+            payload: unsafe { std::slice::from_raw_parts(data.payload.cast::<u8>(), data.len) }
+                .to_vec(),
+        };
+        crate::runner::validate_record_schema(run, &record)?;
         let mut headers = std::ptr::null_mut();
         if unsafe { native::rd_kafka_message_headers(self.pointer.as_ptr(), &mut headers) }
             != native::rd_kafka_resp_err_t::RD_KAFKA_RESP_ERR_NO_ERROR
@@ -348,14 +473,7 @@ impl LegacyMessage<'_> {
             return Err("episode record has no schema header".into());
         }
         validate_schema_headers(headers)?;
-        Ok(InputRecord {
-            partition: data.partition,
-            offset: data.offset,
-            key: unsafe { std::slice::from_raw_parts(data.key.cast::<u8>(), data.key_len) }
-                .to_vec(),
-            payload: unsafe { std::slice::from_raw_parts(data.payload.cast::<u8>(), data.len) }
-                .to_vec(),
-        })
+        Ok(record)
     }
 }
 
@@ -438,6 +556,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn native_tombstones_use_the_contextual_fatal_single_object_error() {
+        use crate::run_loop::run_profile::{Fixture, ARTIFACT_DIGEST};
+        use crate::run_plan::{RunConfig, SignedPlan};
+        let fixture = Fixture::new();
+        let config = RunConfig::load(&fixture.config_path).unwrap();
+        let plan = SignedPlan::verify(
+            &fixture.sign(&fixture.plan_document()),
+            &config,
+            ARTIFACT_DIGEST,
+        )
+        .unwrap();
+        let admitted = plan.admit_cut(&config, &plan.positions).unwrap();
+        let mut data: native::rd_kafka_message_t = unsafe { std::mem::zeroed() };
+        data.partition = 1;
+        data.offset = 7;
+        let message = std::mem::ManuallyDrop::new(LegacyMessage {
+            pointer: NonNull::from(&mut data),
+            _topic: PhantomData,
+        });
+        assert_eq!(
+            message.record(&admitted).unwrap_err(),
+            "record tsx.b1.episodes.v2/1@7 is not Avro single-object encoded"
+        );
+    }
+
+    #[test]
     fn local_reader_has_no_group_and_matches_java_isolation() {
         let config = consumer_config("127.0.0.1:39093");
         assert_eq!(config.get("group.id"), None);
@@ -445,6 +589,62 @@ mod tests {
         assert_eq!(config.get("enable.auto.commit"), Some("false"));
         assert_eq!(config.get("enable.auto.offset.store"), Some("false"));
         assert_eq!(config.get("auto.offset.reset"), Some("error"));
+    }
+
+    #[test]
+    fn refused_fetches_restart_only_at_the_current_unfinished_cut_offset() {
+        let calls = std::cell::RefCell::new(Vec::new());
+        reset_refused(
+            13,
+            || {
+                calls.borrow_mut().push(0);
+                Ok(())
+            },
+            |offset| {
+                calls.borrow_mut().push(offset);
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert_eq!(*calls.borrow(), [0, 13]);
+        assert_eq!(
+            reset_refused(
+                13,
+                || Err("stop refused".into()),
+                |_| panic!("must not restart")
+            ),
+            Err("stop refused".into())
+        );
+        assert_eq!(
+            reset_refused(13, || Ok(()), |_| Err("restart refused".into())),
+            Err("restart refused".into())
+        );
+    }
+
+    #[test]
+    fn only_transient_fetch_refusals_are_retryable() {
+        for code in -200..200 {
+            assert_eq!(
+                retryable_fetch(code),
+                [5, 6, 7, 8, 9, 13, 56].contains(&code),
+                "{code}"
+            );
+        }
+    }
+
+    #[test]
+    fn status_and_episode_publishers_use_the_existing_acknowledged_configuration() {
+        let config = producer_config("127.0.0.1:39093");
+        for (key, value) in [
+            ("acks", "all"),
+            ("compression.type", "zstd"),
+            ("enable.idempotence", "false"),
+            ("partitioner", "murmur2_random"),
+            ("allow.auto.create.topics", "false"),
+            ("max.in.flight.requests.per.connection", "1"),
+        ] {
+            assert_eq!(config.get(key), Some(value));
+        }
     }
 
     struct TestHeaders(NonNull<native::rd_kafka_headers_t>);

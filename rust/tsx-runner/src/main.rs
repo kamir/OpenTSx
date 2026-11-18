@@ -1,9 +1,9 @@
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use tsx_runner::{admission, broker::KafkaBroker, runner, worker};
+use tsx_runner::{admission, broker::KafkaBroker, run_loop, run_plan, runner, worker};
 
-const HELP: &str = "Usage: tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory>\n       tsx-runner --version\n\nExecutes trusted-local bounded whole-topic assignments. Signed fleet activation is a separate interface.";
+const HELP: &str = "Usage: tsx-runner run --plan <file>|- --config <file>\n       tsx-runner replay --request <file> --checkpoint <file>\n       tsx-runner serve --listen <addr> --node <id> --site <id> --bootstrap <host:port> --state <directory>\n       tsx-runner --version\n\nRuns isolated signed continuous pass-through plans and trusted-local bounded assignments. Fleet control and conformance signing are separate interfaces.";
 
 fn main() {
     match command() {
@@ -27,6 +27,9 @@ fn command() -> Result<(), (i32, String)> {
     }
     if args.first().is_some_and(|arg| arg == "serve") {
         return serve(&args[1..]);
+    }
+    if args.first().is_some_and(|arg| arg == "run") {
+        return run(&args[1..]);
     }
     if args.len() != 5 || args[0] != "replay" {
         return Err((2, HELP.into()));
@@ -54,6 +57,79 @@ fn command() -> Result<(), (i32, String)> {
     println!(
         "{}",
         serde_json::to_string(&receipt).map_err(|e| (3, format!("cannot encode receipt: {e}")))?
+    );
+    Ok(())
+}
+
+fn run(args: &[String]) -> Result<(), (i32, String)> {
+    if args.len() != 4 {
+        return Err((2, HELP.into()));
+    }
+    let mut plan = None;
+    let mut config = None;
+    for pair in args.as_chunks::<2>().0 {
+        let slot = match pair[0].as_str() {
+            "--plan" => &mut plan,
+            "--config" => &mut config,
+            _ => return Err((2, format!("unknown run argument: {}", pair[0]))),
+        };
+        if slot.is_some() {
+            return Err((2, "duplicate run argument".into()));
+        }
+        *slot = Some(pair[1].clone());
+    }
+    let plan = plan.ok_or((2, "missing --plan".into()))?;
+    let config = config.ok_or((2, "missing --config".into()))?;
+    let config = run_plan::RunConfig::load(Path::new(&config))
+        .map_err(|error| (2, format!("{}: {}", error.code, error.message)))?;
+    let bytes = if plan == "-" {
+        let mut bytes = Vec::new();
+        std::io::stdin()
+            .lock()
+            .take(run_plan::MAX_COMPACT_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|error| {
+                (
+                    2,
+                    format!("cannot read the signed plan from standard input: {error}"),
+                )
+            })?;
+        if bytes.len() > run_plan::MAX_COMPACT_BYTES {
+            return Err((2, "signed plan exceeds its byte limit".into()));
+        }
+        bytes
+    } else {
+        read_bounded(Path::new(&plan), run_plan::MAX_COMPACT_BYTES).map_err(|error| (2, error))?
+    };
+    let text = std::str::from_utf8(&bytes).map_err(|_| (2, "signed plan is not UTF-8".into()))?;
+    let digest = executable_digest().map_err(|error| (3, error))?;
+    let plan = run_plan::SignedPlan::verify(text, &config, &digest)
+        .map_err(|error| (2, format!("{}: {}", error.code, error.message)))?;
+    let signals = run_loop::SignalGuard::install().map_err(|error| (3, error))?;
+    let result = run_loop::execute(
+        &plan,
+        &config,
+        &mut KafkaBroker,
+        &run_loop::StopToken::new(),
+    );
+    let restored = signals.restore();
+    let outcome = match (result, restored) {
+        (Ok(outcome), Ok(())) => outcome,
+        (Err(error), Ok(())) => {
+            let code = if matches!(error, run_loop::RunError::Refused(_)) {
+                2
+            } else {
+                3
+            };
+            return Err((code, error.to_string()));
+        }
+        (Ok(_), Err(error)) => return Err((3, error)),
+        (Err(primary), Err(secondary)) => return Err((3, format!("{primary}; {secondary}"))),
+    };
+    println!(
+        "{}",
+        serde_json::to_string(&outcome)
+            .map_err(|error| (3, format!("cannot encode the stopped outcome: {error}")))?
     );
     Ok(())
 }

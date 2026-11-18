@@ -1,7 +1,8 @@
 # Execute whole-topic assignments and increments
 
-Use `tsx-runner` 0.1.0 to execute trusted-local bounded Kafka assignments and continuous-deployment increments
-with explicit resource caps and retained state.
+Use `tsx-runner` 0.1.0 to execute trusted-local Kafka assignments and isolated
+signed continuous pass-through with explicit resource caps and acknowledged
+checkpoints.
 
 You need the pinned Rust 1.99.1 toolchain and the native C/C++ build tools used by `rdkafka` and zstd.
 Broker execution also needs existing input/output topics and a trusted local request.
@@ -20,7 +21,33 @@ cargo +1.99.1 run --locked --manifest-path rust/tsx-runner/Cargo.toml -- --help
 The replay command is `tsx-runner replay --request <file> --checkpoint <file>`.
 `<file>` identifies a trusted request or its private completed-checkpoint path.
 The executable verifies its own artifact digest before reading the broker.
-There is no `run --plan` or signed fleet activation in this crate.
+The separate signed `run` profile admits continuous pass-through only. It does
+not activate the trusted-local cleaning chain or supply a fleet service.
+
+## Qualify signed continuous pass-through
+
+Read the
+[signed runner operating guide](../../docs/devguide/integration/rust-runner-b1.md)
+for its local configuration and activation contract. The `run` profile verifies
+a compact Ed25519 JWS with a pinned local driver public key before broker
+access. It binds the original assignment, DAG text, artifact digest, site, node,
+catalog and plan version to one complete input topic and one Episode output
+topic on the same locally allowed binding. Broker addresses, policy and
+checkpoint paths come from the local configuration. Both publication and status
+use Apache Kafka or KafScale Proxy.
+
+Each finite cut has explicit record, byte, sample, series and state ceilings.
+All output acknowledgements precede the progress checkpoint. Durable activation
+intent binds the exact signed grant and local configuration; it is separate from
+the trusted-local replay checkpoint and HTTP worker state. Public `agent` and
+`conform` modes, automatic takeover and signed production fleet deployment are
+not implemented.
+
+The CI definition runs shared-vector and runner tests on native x86_64 and ARM64
+Linux, builds the three B1 musl targets, and executes supplementary ARMv7 tests
+under QEMU. Static-artifact reports check the actual ELF, dynamic dependencies,
+version and digest. A QEMU result is not physical ARMv7 qualification. TASK-020
+B1 and B1.2 remain open until the shared cases run on physical ARMv7 hardware.
 
 ## Serve a trusted local worker
 
@@ -111,7 +138,7 @@ An identical completed retry returns its saved receipt without broker I/O.
 ## Run deterministic checks
 
 ```bash
-cargo +1.99.1 test --locked --manifest-path rust/tsx-runner/Cargo.toml
+cargo +1.99.1 test --locked --all-targets --manifest-path rust/tsx-runner/Cargo.toml
 ```
 
 Tests consume shared Avro, identity and cleaning vectors. They check typed admission, all chunk sizes of the
@@ -119,5 +146,12 @@ supported cleaning cases, state restoration, immutable derived ownership, acknow
 Lifecycle tests also exercise private preparation, activation, abort, restart, manifests and HTTP framing.
 Increment tests cover predecessor validation, cumulative ownership, pending windows, fixed-size history and
 saved-byte retries after acknowledgement or checkpoint failures.
+The identity tests also consume the repository's xxHash64, bucket-checksum and
+time-delta vectors. The public `model::bucket_checksum` helper sorts unique
+episode IDs and hashes their newline-joined UTF-8 bytes with seed zero; it does
+not add a DAG operator. Signed-plan tests reject altered signatures, unsupported
+graphs and changed local authority before execution. `--all-targets` also
+executes the acceptance examples' unit-test harnesses.
+
 These offline tests use deterministic broker doubles. The separate three-worker Compose check in the operating
 guide uses real Kafka protocol I/O and Java reference output on different topics with one, two and three partitions.
