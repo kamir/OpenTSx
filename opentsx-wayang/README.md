@@ -257,6 +257,12 @@ These integration classes use the existing `KAFSCALE_BOOTSTRAP` test switch and
 require `KAFSCALE_BROKER_BINARY` to name the source-built KafScale v1.6.0
 executable. The fixture starts and stops its four disposable brokers.
 
+The JUnit fixtures use unique directories under `opentsx-wayang/target/federation-test-logs/` with
+`ON_SUCCESS` cleanup. A fixture-construction, test or broker-shutdown failure retains the directory;
+successful tests delete it. The [CI diagnostic artifacts](../docs/user-manual/12-operations.md#124-testing-and-ci)
+include retained broker logs and Wayang test reports. The measurement harness keeps its broker logs under
+`<result-directory>/execution/brokers/`.
+
 The bounded integration topology contains three site-agent instances in one JVM
 and four Go broker processes. Execution topology excludes build and transient
 conformance-check subprocesses. The measurement harness records that topology,

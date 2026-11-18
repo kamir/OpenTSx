@@ -2,6 +2,7 @@ package org.opentsx.wayang;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.wayang.federation.AggregateRecord;
 
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
 class JobStateRouteIntegrationTest {
-    @TempDir Path directory;
+    @TempDir(factory = FederationLogDirectory.class, cleanup = CleanupMode.ON_SUCCESS) Path directory;
 
     private static List<AggregateRecord> sorted(List<AggregateRecord> records) {
         return records.stream().sorted(Comparator.comparing(AggregateRecord::key).thenComparingLong(AggregateRecord::revision)).toList();

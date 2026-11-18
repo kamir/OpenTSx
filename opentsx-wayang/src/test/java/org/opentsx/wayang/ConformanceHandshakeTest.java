@@ -2,6 +2,7 @@ package org.opentsx.wayang;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentsx.wayang.site.EphemeralSiteTlsFixture;
 import org.opentsx.wayang.site.TsxPlanClient;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
 class ConformanceHandshakeTest {
-    @TempDir Path temporary;
+    @TempDir(factory = FederationLogDirectory.class, cleanup = CleanupMode.ON_SUCCESS) Path temporary;
 
     @Test void anActualWrongInputFingerprintIsRefusedOverMutualTls() throws Exception {
         try (var fixture = new FederationFixture(temporary.resolve("fingerprint"), FederationFixture.Fault.WRONG_FINGERPRINT);

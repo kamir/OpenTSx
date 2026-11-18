@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.charset.StandardCharsets;
@@ -15,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "KAFSCALE_BOOTSTRAP", matches = ".+")
 class SiteLifecycleIntegrationTest {
-    @TempDir Path temporary;
+    @TempDir(factory = FederationLogDirectory.class, cleanup = CleanupMode.ON_SUCCESS) Path temporary;
 
     @Test void aBoundedSitePublishesItsActualLifecycleThroughHttpAndAcknowledgedKafka() throws Exception {
         try (var fixture = new FederationFixture(temporary.resolve("lifecycle")); var session = fixture.conformanceSession()) {
