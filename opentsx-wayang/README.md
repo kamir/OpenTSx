@@ -93,6 +93,8 @@ The backend owns the frozen plan and clock in PostgreSQL; the Java driver has no
 All workers prepare privately before cross-topic series ownership checks and parallel activation. Completed retries
 reuse stored receipts. The local gateway retains unknown publication outcomes and topic ownership; a durable
 acknowledgement can be retried through its cached receipt without another Kafka send.
+Bounded completion persists the verified result and gateway epoch before retirement. Recovery retries the same
+retirement operation from that result, then releases ownership without another execute call.
 Activation can expose partial at-least-once output. Placeholder load costs do not select worker placement, and this
 local profile does not implement the signed continuous fleet contract.
 

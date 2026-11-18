@@ -15,7 +15,8 @@
   * `/api/v1/dags/wayang-rust`: administrator-only capability, bounded/continuous deployment, status and continuous
     stop and explicit fenced replacement endpoints. PostgreSQL
     stores the exact DAG, accepted clock, source cuts and whole-topic ownership; a standalone coordinator reconciles
-    the saved plan through a custom Wayang Rust platform,
+    the saved plan through a custom Wayang Rust platform. Bounded completion saves its verified result and
+    publication epoch before retirement. A lost retirement reply retries that operation without executing again,
   * **Continuous Wayang on Rust** retains complete-topic ownership between increments, saves confirmed positions
     and cumulative counts, and restores worker state after service restart. Transient preparation failures retain
     private candidates for identical retry. **Stop deployment** reconciles dispatched

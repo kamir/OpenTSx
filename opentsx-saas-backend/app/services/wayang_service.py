@@ -402,7 +402,7 @@ class Journal:
 
 
 def validate_result(plan, result):
-    if (result.get("deployment") != plan["deployment"] or result.get("planHash") != plan["planHash"]
+    if (not isinstance(result, dict) or result.get("deployment") != plan["deployment"] or result.get("planHash") != plan["planHash"]
             or result.get("state") not in ("completed", "failed") or not isinstance(result.get("assignments"), list)):
         raise WayangError(502, "The Wayang completion does not match the persisted plan.")
     expected = {item["node"] for item in plan_assignments(plan)}
@@ -521,6 +521,7 @@ async def retire_publication(journal, row):
 
 
 async def finish_stop(journal, row, cycle):
+    await journal.save(row)
     await retire_publication(journal, row)
     if cycle.state == "queued":
         cycle.state = "cancelled"
@@ -635,12 +636,16 @@ async def reconcile_once(journal):
             await reconcile_continuous(journal, row)
             return True
         row.state = "running"
-        await journal.save(row)
-        _, result = await driver("/v1/execute", row.plan_text)
+        if row.result is None:
+            await journal.save(row)
+            _, result = await driver("/v1/execute", row.plan_text)
+        else:
+            result = row.result
         validate_result(strict_json(row.plan_text), result)
         await execute_publication(journal, row, result)
         row.result = result
         row.error = result.get("error") if isinstance(result.get("error"), str) else None
+        await journal.save(row)
         await retire_publication(journal, row)
         row.state = result["state"]
         await journal.save(row, terminal=True)

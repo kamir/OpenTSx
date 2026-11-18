@@ -1,3 +1,4 @@
+import asyncio
 import json
 import secrets
 
@@ -13,7 +14,7 @@ from sqlalchemy import event, select
 from sqlalchemy.exc import MissingGreenlet
 from sqlalchemy.orm import Session
 from test_wayang_continuous import continuous_driver, owned, progress, submit_continuous, tick
-from test_wayang_rust import AsyncDatabase, OTHER, PLAIN, cleanup, client, database, reconcile
+from test_wayang_rust import AsyncDatabase, OTHER, PLAIN, cleanup, client, database, reconcile, submit
 
 
 class AwaitedDatabase(AsyncDatabase):
@@ -71,6 +72,8 @@ def fenced_driver(monkeypatch, continuous_driver):
         if path in ("/v1/switch", "/v1/retire"):
             state["calls"].append((path, request.content))
             body = json.loads(request.content)
+            if path == "/v1/retire" and state.get("beforeRetire"):
+                state["beforeRetire"](body)
             if state.get("unresolved"):
                 return httpx.Response(503, json={"error": "Publication outcome remains uncertain."})
             operation = body["operation"]
@@ -110,6 +113,167 @@ def fenced_driver(monkeypatch, continuous_driver):
 def service_test_dag():
     from test_wayang_rust import DAG
     return DAG
+
+
+def reconcile_without_autoflush(database):
+    with Session(database, expire_on_commit=False, autoflush=False) as session:
+        assert session.autoflush is False
+        return asyncio.run(service.reconcile_once(service.Journal(AwaitedDatabase(session))))
+
+
+def test_bounded_completion_and_actual_epoch_are_durable_before_retirement(constrained_database, fenced_driver):
+    database = constrained_database
+    api = client(database)
+    admitted = submit(api).json()
+
+    def before_retire(body):
+        assert body["expectedEpoch"] == "1"
+        with Session(database, autoflush=False) as session:
+            saved = session.get(WayangDeployment, admitted["id"])
+            assert saved.state == "running"
+            assert saved.result["state"] == "completed"
+            assert saved.result["planHash"] == admitted["planHash"]
+            assert saved.result["publicationEpoch"] == "1"
+            assert saved.publication.epoch == 1
+            assert saved.publication.retired is False
+            assert len(session.execute(select(WayangTopicOwner)).scalars().all()) == 4
+
+    fenced_driver["beforeRetire"] = before_retire
+    assert reconcile_without_autoflush(database)
+    completed = progress(api, admitted["id"])
+    assert completed["state"] == "completed"
+    assert completed["error"] is None
+    assert completed["publicationEpoch"] == "2"
+    assert completed["publicationRetired"] is True
+    assert owned(database) == 0
+    with Session(database) as session:
+        saved = session.get(WayangDeployment, admitted["id"])
+        assert saved.state == "completed"
+        assert saved.result["publicationEpoch"] == "1"
+        assert saved.publication.epoch == 2
+        assert saved.publication.retired is True
+    assert not reconcile_without_autoflush(database)
+
+
+def test_bounded_lost_retirement_reply_reuses_durable_result_and_operation(constrained_database, fenced_driver):
+    database = constrained_database
+    api = client(database)
+    admitted = submit(api).json()
+    fenced_driver["loseReply"] = True
+    assert reconcile_without_autoflush(database)
+    pending = progress(api, admitted["id"])
+    assert pending["state"] == "running"
+    assert pending["publicationEpoch"] == "1"
+    assert pending["publicationRetired"] is False
+    assert owned(database) == 4
+    first = [body for path, body in fenced_driver["calls"] if path == "/v1/retire"][-1]
+    with Session(database) as session:
+        saved = session.get(WayangDeployment, admitted["id"])
+        result = saved.result
+        operation = saved.publication.retire_operation
+        assert result["state"] == "completed"
+        assert result["publicationEpoch"] == "1"
+        assert operation == json.loads(first)["operation"]
+    assert reconcile_without_autoflush(database)
+    completed = progress(api, admitted["id"])
+    assert completed["state"] == "completed"
+    assert completed["error"] is None
+    assert completed["publicationEpoch"] == "2"
+    assert completed["publicationRetired"] is True
+    assert owned(database) == 0
+    assert [path for path, _ in fenced_driver["calls"]].count("/v1/execute") == 1
+    assert [body for path, body in fenced_driver["calls"] if path == "/v1/retire"] == [first, first]
+    with Session(database) as session:
+        saved = session.get(WayangDeployment, admitted["id"])
+        assert saved.result == result
+        assert saved.publication.retire_operation == operation
+        assert saved.state == "completed"
+
+
+@pytest.mark.parametrize("lose_reply", [False, True])
+def test_stop_during_first_fenced_cycle_persists_completion_before_retirement(constrained_database, fenced_driver, lose_reply):
+    database = constrained_database
+    api = client(database)
+    admitted = submit_continuous(api).json()
+    stops = []
+    fenced_driver["onExecute"] = lambda: stops.append(api.post(
+        f"/api/v1/dags/wayang-rust/deployments/{admitted['id']}/stop").status_code)
+    fenced_driver["loseReply"] = lose_reply
+
+    def before_retire(body):
+        assert body["expectedEpoch"] == "1"
+        with Session(database, autoflush=False) as session:
+            saved = session.get(WayangDeployment, admitted["id"])
+            cycle = session.get(WayangCycle, (admitted["id"], 1))
+            assert saved.state == "stopping"
+            assert saved.continuous.stop_requested is True
+            assert saved.continuous.completed_cycles == 1
+            assert saved.continuous.totals["inputRecords"] == "12"
+            assert saved.publication.epoch == 1
+            assert saved.publication.retired is False
+            assert saved.result["publicationEpoch"] == "1"
+            assert cycle.state == "completed"
+            assert cycle.result == saved.result
+            assert len(session.execute(select(WayangTopicOwner)).scalars().all()) == 4
+
+    fenced_driver["beforeRetire"] = before_retire
+    assert reconcile_without_autoflush(database)
+    assert stops == [202]
+    first = [body for path, body in fenced_driver["calls"] if path == "/v1/retire"][-1]
+    if lose_reply:
+        pending = progress(api, admitted["id"])
+        assert pending["state"] == "stopping"
+        assert pending["error"]
+        assert pending["publicationEpoch"] == "1"
+        assert pending["publicationRetired"] is False
+        assert pending["completedCycles"] == "1"
+        assert pending["inputRecords"] == "12"
+        assert owned(database) == 4
+        assert reconcile_without_autoflush(database)
+    stopped = progress(api, admitted["id"])
+    assert stopped["state"] == "stopped"
+    assert stopped["error"] is None
+    assert stopped["publicationEpoch"] == "2"
+    assert stopped["publicationRetired"] is True
+    assert stopped["completedCycles"] == "1"
+    assert stopped["inputRecords"] == "12"
+    assert owned(database) == 0
+    assert [path for path, _ in fenced_driver["calls"]].count("/v1/execute") == 1
+    assert [body for path, body in fenced_driver["calls"] if path == "/v1/retire"] == [first] * (2 if lose_reply else 1)
+    with Session(database) as session:
+        saved = session.get(WayangDeployment, admitted["id"])
+        assert saved.state == "stopped"
+        assert saved.publication.retire_operation == json.loads(first)["operation"]
+        assert session.get(WayangCycle, (admitted["id"], 1)).state == "completed"
+    assert not reconcile_without_autoflush(database)
+
+
+@pytest.mark.parametrize("invalid", ["plan", "epoch", "shape"])
+def test_bounded_retirement_retry_validates_the_durable_result_before_remote_calls(constrained_database, fenced_driver, invalid):
+    database = constrained_database
+    api = client(database)
+    admitted = submit(api).json()
+    fenced_driver["loseReply"] = True
+    assert reconcile(database)
+    with Session(database) as session:
+        saved = session.get(WayangDeployment, admitted["id"])
+        value = dict(saved.result)
+        if invalid == "plan":
+            value["planHash"] = "f" * 64
+        elif invalid == "epoch":
+            value["publicationEpoch"] = "2"
+        else:
+            value = []
+        saved.result = value
+        session.commit()
+    calls = len(fenced_driver["calls"])
+    assert reconcile_without_autoflush(database)
+    pending = progress(api, admitted["id"])
+    assert pending["state"] == "running"
+    assert pending["error"]
+    assert pending["publicationRetired"] is False
+    assert owned(database) == 4
+    assert len(fenced_driver["calls"]) == calls
 
 
 def test_resume_switch_is_owner_authenticated_and_keeps_the_verified_checkpoint(database, fenced_driver):

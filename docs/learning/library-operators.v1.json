@@ -1232,7 +1232,8 @@
         "Explain why an original-text hash changes with YAML whitespace while the normalized graph remains equal.",
         "Compare the local increment checkpoint with the signed JVM continuation identity and its durable admission outcome.",
         "Stop one site, reload the completeness coordinator, return the site and verify appended final revisions without replacing earlier Kafka records.",
-        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output."
+        "Trace a captured old publication grant through the local gateway refusal, then distinguish same-DAG state-preserving resume from changed-DAG replay into a fresh output.",
+        "Lose a retirement reply after a bounded result is acknowledged. Verify that recovery reuses the saved result and the same retirement operation, without another execute call or early topic release."
       ],
       "starter": {
         "language": "java",
@@ -1294,7 +1295,8 @@
           "opentsx-wayang/src/main/java/org/opentsx/wayang/rust/RustPublicationGateway.java",
           "rust/tsx-runner/src/publication.rs",
           "rust/tsx-runner/src/worker.rs#install_publication",
-          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch"
+          "opentsx-saas-backend/app/services/wayang_service.py#reconcile_switch",
+          "opentsx-saas-backend/app/services/wayang_service.py#finish_stop"
         ],
         "tests": [
           "opentsx-wayang/src/test/java/org/opentsx/wayang/TsxCheckpointTest.java#aWrittenCheckpointReadsBackAndLeavesNoTemporaryFile",
@@ -1320,7 +1322,8 @@
           "opentsx-wayang/src/test/java/org/opentsx/wayang/rust/RustPublicationGatewayTest.java",
           "rust/tsx-runner/tests/publication_fencing.rs",
           "opentsx-saas-backend/tests/test_wayang_switch.py",
-          "tools/test_kafscale_fenced_topology.py"
+          "tools/test_kafscale_fenced_topology.py",
+          "opentsx-saas-backend/tests/test_wayang_switch.py#test_bounded_lost_retirement_reply_reuses_durable_result_and_operation"
         ],
         "vectors": []
       }

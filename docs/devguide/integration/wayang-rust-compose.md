@@ -57,6 +57,10 @@ its grant once; installing a newer grant cannot refresh an old candidate's autho
 returns the retained receipt. Partial activation can expose an output prefix; there is no atomic multi-worker
 publication, Kafka transaction or exactly-once claim.
 
+The backend saves a verified execution result and its gateway epoch before retiring publication authority.
+Bounded recovery reuses that saved result and the same retirement operation after a lost reply. It does not execute
+the plan again or release topic ownership before the retirement acknowledgement.
+
 ## Keep control credentials and the ledger private
 
 The Compose topology has four internal role networks:

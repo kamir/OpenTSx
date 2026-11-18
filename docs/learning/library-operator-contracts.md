@@ -44,6 +44,9 @@ Continuous preparation recovery retains private candidates after a transient fai
 Identical retry still requires every preparation and cross-topic ownership check before activation.
 The [local publication contract](../datamodel-2026/20-WAYANG-TS-OPERATORS-SPEC.md#s112-fence-local-publication-and-replace-a-continuous-deployment)
 adds explicit same-DAG resume and changed-DAG replay into a fresh output after old authority is revoked.
+Terminal recovery saves verified results and publication epochs before retiring authority. The checkpoint lesson
+traces a lost retirement reply: recovery reuses the saved result and operation without another execute call or
+early topic release. The same persistence boundary applies to Stop during the first continuous cycle.
 These gateway/worker lifecycle checks do not change `TsxCheckpoint.load`, the offline assignment validator or
 any numerical starter, and do not make private Java and Rust state interchangeable.
 
