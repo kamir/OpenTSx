@@ -300,6 +300,10 @@ entries before 3.0.0 are grouped by date. The detailed progress log is in
 
 ### Fixed
 
+- Native shuffling validates selections, pass counts, finite samples and a requested-work limit before copying or
+  shuffling. Cancellation is quiet, failures are visible, and results preserve original coordinates, axis labels
+  and Y multiplicities. The chart opens before recording one transformation; rejected input preserves history.
+
 - Native maximum normalization validates finite matching samples, a positive maximum and finite quotients while
   preserving original coordinates and axis labels. Rejected selections or series produce a visible error without
   opening a chart or recording a transformation. Public legacy normalization and entropy calculations are retained.
